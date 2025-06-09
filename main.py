@@ -20,7 +20,10 @@ def generar_web():
 
         # Deploy a Vercel
         comando = f"vercel --prod --yes --cwd {path}"
+        print("Ejecutando comando:", comando)
         resultado = subprocess.run(comando, shell=True, capture_output=True, text=True)
+        print("STDOUT:", resultado.stdout)
+        print("STDERR:", resultado.stderr)
 
         # Extraer URL del output
         salida = resultado.stdout
@@ -35,6 +38,7 @@ def generar_web():
         else:
             return jsonify({"status": "error", "output": salida}), 500
     except Exception as e:
+        print("Error:", str(e))
         return jsonify({"status": "error", "message": str(e)}), 500
 
 if __name__ == '__main__':
