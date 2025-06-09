@@ -36,11 +36,17 @@ def generar_web():
         if url:
             return jsonify({"status": "ok", "url": url})
         else:
-            return jsonify({"status": "error", "output": salida}), 500
+            return jsonify({
+                "status": "error",
+                "stdout": resultado.stdout,
+                "stderr": resultado.stderr
+            }), 500
     except Exception as e:
         print("Error:", str(e))
         return jsonify({"status": "error", "message": str(e)}), 500
 
 if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port) 
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port) 
