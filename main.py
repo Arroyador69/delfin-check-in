@@ -19,7 +19,8 @@ def generar_web():
         path = crear_proyecto_astro(carpeta, datos)
 
         # Deploy a Vercel
-        comando = f"npx vercel --prod --yes --cwd {path}"
+        token = os.environ.get("VERCEL_TOKEN")
+        comando = f"npx vercel --token {token} --prod --yes --cwd {path}"
         print("Ejecutando comando:", comando)
         resultado = subprocess.run(comando, shell=True, capture_output=True, text=True)
         print("STDOUT:", resultado.stdout)
