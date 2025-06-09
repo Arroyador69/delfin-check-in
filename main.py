@@ -19,7 +19,7 @@ def generar_web():
         path = crear_proyecto_astro(carpeta, datos)
 
         # Deploy a Vercel
-        comando = f"vercel --prod --yes --cwd {path}"
+        comando = f"npx vercel --prod --yes --cwd {path}"
         print("Ejecutando comando:", comando)
         resultado = subprocess.run(comando, shell=True, capture_output=True, text=True)
         print("STDOUT:", resultado.stdout)
@@ -46,6 +46,8 @@ def generar_web():
         return jsonify({"status": "error", "message": str(e)}), 500
 
 if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port) 
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port) 
     port = int(os.environ.get('PORT', 5000))
