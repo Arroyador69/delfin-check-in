@@ -101,5 +101,6 @@ Desktop.ini
 dump.rdb
 
 # Test files
-test-env.js
-test-supabase.js
+scripts/test-env.js
+scripts/test-supabase.js
+scripts/setup-messages.js
