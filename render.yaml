@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: delfin-checkin-app
+    env: node
+    plan: starter
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+    healthCheckPath: /health
+    autoDeploy: true
+
+  - type: redis
+    name: delfin-checkin-redis
+    plan: starter
+    maxmemoryPolicy: allkeys-lru
+
+databases:
+  - name: delfin-checkin-db
+    databaseName: delfin_checkin
+    user: delfin_user
