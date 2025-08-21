@@ -127,6 +127,24 @@ export default function HomePage() {
             </div>
           </Link>
 
+          <Link href="/guest-registration" className="group">
+            <div className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow cursor-pointer">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+                    Registro Oficial España
+                  </h3>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Cumplimiento Ley 4/2015
+                  </p>
+                </div>
+                <div className="h-8 w-8 text-gray-400 group-hover:text-blue-600 transition-colors">
+                  🇪🇸
+                </div>
+              </div>
+            </div>
+          </Link>
+
           <Link href="/messages" className="group">
             <div className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow cursor-pointer">
               <div className="flex items-center justify-between">
