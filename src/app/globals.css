@@ -24,3 +24,33 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Mejorar legibilidad de campos de entrada */
+input[type="text"],
+input[type="url"],
+input[type="number"],
+input[type="email"],
+input[type="password"],
+select,
+textarea {
+  color: #1f2937 !important; /* Texto negro/gris oscuro */
+  background-color: #ffffff !important; /* Fondo blanco */
+}
+
+input[type="text"]::placeholder,
+input[type="url"]::placeholder,
+input[type="number"]::placeholder,
+input[type="email"]::placeholder,
+input[type="password"]::placeholder,
+textarea::placeholder {
+  color: #9ca3af !important; /* Placeholder gris medio */
+  opacity: 1;
+}
+
+/* Campos con foco */
+input:focus,
+select:focus,
+textarea:focus {
+  color: #111827 !important; /* Texto más oscuro al hacer foco */
+  background-color: #ffffff !important;
+}
