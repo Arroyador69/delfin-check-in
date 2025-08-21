@@ -5,6 +5,13 @@ const nextConfig: NextConfig = {
   images: {
     domains: ['localhost', 'supabase.co'],
   },
+  // Excluir carpeta scripts de la compilación
+  webpack: (config, { isServer }) => {
+    config.watchOptions = {
+      ignored: ['**/scripts/**']
+    };
+    return config;
+  },
   // Configuración PWA simplificada
   async headers() {
     return [
