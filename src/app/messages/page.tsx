@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Message } from '@/lib/supabase';
-import { MessageSquare, Save, Plus, Trash2, Send } from 'lucide-react';
+import { MessageSquare, Save, Trash2, Send } from 'lucide-react';
 
 export default function MessagesPage() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -229,7 +229,7 @@ export default function MessagesPage() {
                   onChange={(e) => setFormData({ ...formData, template: e.target.value })}
                   rows={8}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Escribe tu mensaje aquí. Usa {{variable}} para datos dinámicos."
+                  placeholder="Escribe tu mensaje aquí. Usa variables como: nombre_huesped, numero_habitacion, codigo_habitacion, fecha_entrada, fecha_salida"
                   required
                 />
               </div>
@@ -309,8 +309,11 @@ export default function MessagesPage() {
                             <span>{getChannelText(message.channel)}</span>
                             <span>{message.language === 'es' ? 'Español' : 'English'}</span>
                           </div>
-                          <p className="text-sm text-gray-600 mt-2 line-clamp-2">
-                            {message.template.substring(0, 100)}...
+                          <p className="text-sm text-gray-600 mt-2">
+                            {message.template.length > 100 ? 
+                              `${message.template.substring(0, 100)}...` : 
+                              message.template
+                            }
                           </p>
                         </div>
                         
@@ -350,25 +353,32 @@ export default function MessagesPage() {
 
         {/* Información de ayuda */}
         <div className="mt-8 bg-blue-50 rounded-lg p-6">
-          <h3 className="text-lg font-semibold text-blue-900 mb-4">Variables disponibles</h3>
+          <h3 className="text-lg font-semibold text-blue-900 mb-4">Variables disponibles para tus mensajes</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-blue-700">
             <div>
               <h4 className="font-medium text-blue-800 mb-2">Datos del huésped</h4>
               <ul className="space-y-1">
-                <li><code>{{guest_name}}</code> - Nombre del huésped</li>
-                <li><code>{{guest_email}}</code> - Email del huésped</li>
-                <li><code>{{guest_phone}}</code> - Teléfono del huésped</li>
+                <li><strong>nombre_huesped</strong> - Nombre del huésped</li>
+                <li><strong>email_huesped</strong> - Email del huésped</li>
+                <li><strong>telefono_huesped</strong> - Teléfono del huésped</li>
               </ul>
             </div>
             <div>
               <h4 className="font-medium text-blue-800 mb-2">Datos de la reserva</h4>
               <ul className="space-y-1">
-                <li><code>{{room_number}}</code> - Número de habitación</li>
-                <li><code>{{room_code}}</code> - Código de la habitación</li>
-                <li><code>{{check_in_date}}</code> - Fecha de llegada</li>
-                <li><code>{{check_out_date}}</code> - Fecha de salida</li>
+                <li><strong>numero_habitacion</strong> - Número de habitación (1-6)</li>
+                <li><strong>codigo_habitacion</strong> - Código (8101-8106)</li>
+                <li><strong>fecha_entrada</strong> - Fecha de llegada</li>
+                <li><strong>fecha_salida</strong> - Fecha de salida</li>
               </ul>
             </div>
+          </div>
+          <div className="mt-4 p-4 bg-blue-100 rounded-lg">
+            <h4 className="font-medium text-blue-800 mb-2">Ejemplo de mensaje:</h4>
+            <p className="text-blue-700 text-sm">
+              ¡Hola <strong>nombre_huesped</strong>! Tu habitación es la número <strong>numero_habitacion</strong>. 
+              El código para entrar es "<strong>codigo_habitacion</strong>". Tu llegada es el <strong>fecha_entrada</strong>.
+            </p>
           </div>
         </div>
       </div>
