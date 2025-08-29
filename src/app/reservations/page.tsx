@@ -1,8 +1,27 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
-import { Reservation } from '@/lib/supabase';
+// Removido: import { supabase } from '@/lib/supabase';
+// Removido: import { Reservation } from '@/lib/supabase';
+
+interface Reservation {
+  id: string;
+  external_id: string;
+  room_id: string;
+  guest_name: string;
+  guest_email: string;
+  check_in: string;
+  check_out: string;
+  channel: 'airbnb' | 'booking' | 'manual';
+  total_price: number;
+  guest_paid: number;
+  platform_commission: number;
+  net_income: number;
+  currency: string;
+  status: 'confirmed' | 'cancelled' | 'completed';
+  created_at: string;
+  updated_at: string;
+}
 
 export default function ReservationsPage() {
   const [reservations, setReservations] = useState<Reservation[]>([]);
@@ -16,24 +35,17 @@ export default function ReservationsPage() {
   const fetchReservations = async () => {
     try {
       setError(null);
-      const { data, error } = await supabase
-        .from('reservations')
-        .select(`
-          *,
-          rooms (name)
-        `)
-        .order('check_in');
-
-      if (error) {
-        console.error('Error fetching reservations:', error);
-        setError('Error al cargar las reservas. Verifica que la base de datos esté configurada.');
-        return;
-      }
+      const response = await fetch('/api/reservations');
+      const data = await response.json();
       
+      if (!response.ok) {
+        throw new Error(data.error || 'Error al obtener las reservas');
+      }
+
       setReservations(data || []);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching reservations:', error);
-      setError('Error de conexión con la base de datos.');
+      setError(error.message);
     } finally {
       setLoading(false);
     }
@@ -145,7 +157,13 @@ export default function ReservationsPage() {
                     Estado
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Total
+                    Pagó Huésped
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Comisión
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Tu Ganancia
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Acciones
@@ -173,7 +191,13 @@ export default function ReservationsPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      €{reservation.total_price}
+                      €{(reservation.guest_paid || reservation.total_price || 0).toFixed(2)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-red-600">
+                      €{(reservation.platform_commission || 0).toFixed(2)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-semibold">
+                      €{(reservation.net_income || 0).toFixed(2)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <button className="text-blue-600 hover:text-blue-900 mr-3">

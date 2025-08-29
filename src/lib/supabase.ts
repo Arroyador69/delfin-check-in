@@ -1,9 +1,125 @@
-import { createClient } from '@supabase/supabase-js';
+// Sistema de almacenamiento local con archivos JSON
+import * as storage from './storage';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+// Exportar las funciones de almacenamiento como "supabase" para compatibilidad
+export const supabase = {
+  from: (table: string) => ({
+    select: (columns?: string) => ({
+      eq: (column: string, value: any) => ({
+        single: async () => {
+          const data = getTableData(table);
+          const item = data.find((item: any) => item[column] === value);
+          return { data: item || null, error: null };
+        },
+        order: (column: string) => ({
+          async then(callback: any) {
+            const data = getTableData(table);
+            const sorted = data.sort((a: any, b: any) => a[column].localeCompare(b[column]));
+            return callback({ data: sorted, error: null });
+          }
+        })
+      }),
+      order: (column: string) => ({
+        async then(callback: any) {
+          const data = getTableData(table);
+          const sorted = data.sort((a: any, b: any) => a[column].localeCompare(b[column]));
+          return callback({ data: sorted, error: null });
+        }
+      }),
+      async then(callback: any) {
+        const data = getTableData(table);
+        return callback({ data, error: null });
+      }
+    }),
+    insert: (data: any) => ({
+      select: () => ({
+        single: async () => {
+          const newItem = Array.isArray(data) ? data[0] : data;
+          const result = createTableItem(table, newItem);
+          return { data: result, error: null };
+        }
+      }),
+      async then(callback: any) {
+        const newItem = Array.isArray(data) ? data[0] : data;
+        const result = createTableItem(table, newItem);
+        return callback({ data: result, error: null });
+      }
+    }),
+    update: (data: any) => ({
+      eq: (column: string, value: any) => ({
+        async then(callback: any) {
+          const result = updateTableItem(table, column, value, data);
+          return callback({ data: result, error: null });
+        }
+      })
+    }),
+    delete: () => ({
+      eq: (column: string, value: any) => ({
+        async then(callback: any) {
+          const result = deleteTableItem(table, column, value);
+          return callback({ data: result, error: null });
+        }
+      })
+    })
+  })
+};
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Funciones auxiliares para manejar los datos
+function getTableData(table: string): any[] {
+  switch (table) {
+    case 'rooms':
+      return storage.getRooms();
+    case 'reservations':
+      return storage.getReservations();
+    case 'guests':
+      return storage.getGuests();
+    case 'messages':
+      return storage.getMessages();
+    case 'guest_registrations':
+      return storage.getGuestRegistrations();
+    default:
+      return [];
+  }
+}
+
+function createTableItem(table: string, data: any): any {
+  switch (table) {
+    case 'rooms':
+      return storage.createRoom(data);
+    case 'reservations':
+      return storage.createReservation(data);
+    case 'guests':
+      return storage.createGuest(data);
+    case 'messages':
+      return storage.createMessage(data);
+    case 'guest_registrations':
+      return storage.createGuestRegistration(data);
+    default:
+      throw new Error(`Unknown table: ${table}`);
+  }
+}
+
+function updateTableItem(table: string, column: string, value: any, data: any): any {
+  switch (table) {
+    case 'rooms':
+      return storage.updateRoom(value, data);
+    case 'messages':
+      return storage.updateMessage(value, data);
+    default:
+      throw new Error(`Update not implemented for table: ${table}`);
+  }
+}
+
+function deleteTableItem(table: string, column: string, value: any): any {
+  switch (table) {
+    case 'rooms':
+      return storage.deleteRoom(value);
+    case 'messages':
+      return storage.deleteMessage(value);
+    default:
+      throw new Error(`Delete not implemented for table: ${table}`);
+  }
+}
 
 // Tipos para TypeScript
 export interface Room {
