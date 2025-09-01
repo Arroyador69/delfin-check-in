@@ -1,15 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-// Almacenamiento en memoria del servidor
-if (typeof global.serverStorage === 'undefined') {
-  global.serverStorage = {
-    reservations: []
-  };
-}
+import { getReservations, createReservation } from '@/lib/storage';
 
 export async function GET() {
   try {
-    const reservations = global.serverStorage.reservations || [];
+    const reservations = getReservations();
     return NextResponse.json(reservations);
   } catch (error) {
     console.error('Error fetching reservations:', error);
@@ -56,8 +50,8 @@ export async function POST(request: NextRequest) {
       updated_at: new Date().toISOString(),
     };
 
-    // Guardar en almacenamiento del servidor
-    global.serverStorage.reservations.push(reservation);
+    // Guardar en almacenamiento
+    createReservation(reservation);
 
     return NextResponse.json(reservation);
   } catch (error) {
