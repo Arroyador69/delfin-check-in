@@ -3,10 +3,10 @@ import { generateICalForRoom } from '@/lib/ical-generator';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { roomId: string } }
+  context: { params: Promise<{ roomId: string }> }
 ) {
   try {
-    const { roomId } = params;
+    const { roomId } = await context.params;
     
     if (!roomId) {
       return new NextResponse('Room ID is required', { status: 400 });
