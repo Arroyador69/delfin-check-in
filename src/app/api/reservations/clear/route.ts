@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { clearReservations } from '@/lib/storage';
 
 export async function POST(request: NextRequest) {
   try {
-    // Limpiar todas las reservas del almacenamiento del servidor
-    global.serverStorage.reservations = [];
+    // Limpiar todas las reservas del almacenamiento
+    clearReservations();
     
     return NextResponse.json({
       success: true,

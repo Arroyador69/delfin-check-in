@@ -419,3 +419,8 @@ export function exportDataAsJson(): string {
   
   return JSON.stringify(data, null, 2);
 }
+
+// Función para limpiar todas las reservas
+export function clearReservations(): void {
+  writeStorageData(STORAGE_KEYS.RESERVATIONS, []);
+}
