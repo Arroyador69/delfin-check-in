@@ -44,7 +44,7 @@ async function syncBookingICalForRoom(roomId: string, icalUrl: string): Promise<
     for (const event of events) {
       try {
         createReservationFromICalEvent(event, roomId, 'booking');
-        console.log(`✅ Reserva creada: ${event.summary} (${event.start.toLocaleDateString()} - ${event.end.toLocaleDateString()})`);
+        // El log se maneja dentro de createReservationFromICalEvent
       } catch (error) {
         console.error(`❌ Error creando reserva:`, error);
       }

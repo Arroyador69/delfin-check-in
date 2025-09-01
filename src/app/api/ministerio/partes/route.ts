@@ -127,11 +127,13 @@ export async function POST(req: NextRequest) {
 
   const { codigoEstablecimiento, comunicaciones } = parsed.data;
 
-  const root: any = {
+  const root = {
     peticion: {
       solicitud: {
         codigoEstablecimiento,
-        comunicacion: comunicaciones.map((c) => ({
+        comunicacion: comunicaciones.map((c) => {
+          const personasXml = c.personas.map(personaToXML).map((n) => n.persona);
+          return {
           contrato: {
             referencia: c.contrato.referencia,
             fechaContrato: c.contrato.fechaContrato,
@@ -148,11 +150,9 @@ export async function POST(req: NextRequest) {
               ...(c.contrato.pago.caducidadTarjeta ? { caducidadTarjeta: c.contrato.pago.caducidadTarjeta } : {})
             }
           },
-          ...c.personas.map(personaToXML).reduce((acc: any, item: any) => {
-            acc.persona = acc.persona ? ([] as any[]).concat(acc.persona, item.persona) : item.persona;
-            return acc;
-          }, {})
-        }))
+          persona: personasXml.length === 1 ? personasXml[0] : personasXml
+        };
+        })
       }
     }
   };

@@ -168,18 +168,28 @@ export function createReservationFromICalEvent(
   roomId: string,
   channel: 'airbnb' | 'booking' | 'manual'
 ): void {
-  // Extraer nombre del huésped del summary
-  const guestName = event.summary.split(' - ')[1] || 'Huésped';
+  // Determinar si es un bloqueo de fechas o una reserva real
+  const isBlocked = event.summary.includes('CLOSED') || event.summary.includes('Not available');
+  
+  if (isBlocked) {
+    // Es un bloqueo de fechas, no crear reserva
+    console.log(`🚫 Bloqueo de fechas detectado: ${event.summary} (${event.start.toLocaleDateString()} - ${event.end.toLocaleDateString()})`);
+    return;
+  }
+  
+  // Es una reserva real, extraer datos del huésped
+  const guestName = extractGuestName(event.summary);
+  const guestEmail = extractGuestEmail(event.description || '');
   
   const reservation = {
     external_id: `ical_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
     room_id: roomId,
     guest_name: guestName,
-    guest_email: '',
+    guest_email: guestEmail,
     check_in: event.start.toISOString(),
     check_out: event.end.toISOString(),
     channel,
-    total_price: 0,
+    total_price: 0, // Se calculará después si no está disponible
     guest_paid: 0,
     platform_commission: 0,
     net_income: 0,
@@ -201,5 +211,35 @@ export function createReservationFromICalEvent(
     };
     
     global.serverStorage.reservations.push(newReservation);
+    console.log(`✅ Reserva real creada: ${guestName} (${event.start.toLocaleDateString()} - ${event.end.toLocaleDateString()})`);
   }
+}
+
+// Función para extraer nombre del huésped del summary
+function extractGuestName(summary: string): string {
+  // Diferentes formatos posibles:
+  // "Habitación 1 - Juan Pérez"
+  // "Juan Pérez - Habitación 1"
+  // "Reserva: Juan Pérez"
+  // "Juan Pérez"
+  
+  const parts = summary.split(' - ');
+  if (parts.length > 1) {
+    // Buscar la parte que parece un nombre (no contiene números)
+    for (const part of parts) {
+      if (!part.match(/\d/) && part.length > 2) {
+        return part.trim();
+      }
+    }
+  }
+  
+  // Si no se puede extraer, usar el summary completo
+  return summary.replace(/^(Reserva|Booking|Airbnb):\s*/i, '').trim() || 'Huésped';
+}
+
+// Función para extraer email del huésped de la descripción
+function extractGuestEmail(description: string): string {
+  const emailRegex = /([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/;
+  const match = description.match(emailRegex);
+  return match ? match[1] : '';
 }

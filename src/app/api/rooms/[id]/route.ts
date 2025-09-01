@@ -1,48 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
-import { roomSchema } from '@/lib/validation';
-
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  try {
-    const { data: room, error } = await supabase
-      .from('rooms')
-      .select('*')
-      .eq('id', params.id)
-      .single();
-
-    if (error) throw error;
-
-    return NextResponse.json(room);
-  } catch (error) {
-    console.error('Error fetching room:', error);
-    return NextResponse.json(
-      { error: 'Error al obtener la habitación' },
-      { status: 500 }
-    );
-  }
-}
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const body = await request.json();
-    const validatedData = roomSchema.parse(body);
 
-    const { data, error } = await supabase
-      .from('rooms')
-      .update(validatedData)
-      .eq('id', params.id)
-      .select()
-      .single();
+    // Buscar la habitación en el almacenamiento del servidor
+    const roomIndex = global.serverStorage.rooms.findIndex((room: any) => room.id === id);
+    
+    if (roomIndex === -1) {
+      return NextResponse.json(
+        { error: 'Habitación no encontrada' },
+        { status: 404 }
+      );
+    }
 
-    if (error) throw error;
+    // Actualizar la habitación
+    global.serverStorage.rooms[roomIndex] = {
+      ...global.serverStorage.rooms[roomIndex],
+      ...body,
+      updated_at: new Date().toISOString(),
+    };
 
-    return NextResponse.json(data);
+    return NextResponse.json(global.serverStorage.rooms[roomIndex]);
   } catch (error) {
     console.error('Error updating room:', error);
     return NextResponse.json(
@@ -52,23 +35,28 @@ export async function PUT(
   }
 }
 
-export async function DELETE(
+export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { error } = await supabase
-      .from('rooms')
-      .delete()
-      .eq('id', params.id);
+    const { id } = await params;
 
-    if (error) throw error;
+    // Buscar la habitación en el almacenamiento del servidor
+    const room = global.serverStorage.rooms.find((room: any) => room.id === id);
+    
+    if (!room) {
+      return NextResponse.json(
+        { error: 'Habitación no encontrada' },
+        { status: 404 }
+      );
+    }
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json(room);
   } catch (error) {
-    console.error('Error deleting room:', error);
+    console.error('Error fetching room:', error);
     return NextResponse.json(
-      { error: 'Error al eliminar la habitación' },
+      { error: 'Error al obtener la habitación' },
       { status: 500 }
     );
   }
