@@ -104,3 +104,4 @@ dump.rdb
 scripts/test-env.js
 scripts/test-supabase.js
 scripts/setup-messages.js
+.vercel
