@@ -242,3 +242,5 @@ Si tienes problemas o preguntas:
 # Forzar deploy con ESLint desactivado
 # Forzar deploy del commit 9993ade
 # Forzar nuevo deployment con todas las correcciones
+
+## Último deployment: Tue Sep  2 01:33:44 CEST 2025
