@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getRooms, updateRoom, getRoomById } from '@/lib/storage';
 
 export async function PUT(
   request: NextRequest,
@@ -8,8 +9,8 @@ export async function PUT(
     const { id } = await params;
     const body = await request.json();
 
-    // Buscar la habitación en el almacenamiento del servidor
-    const roomIndex = global.serverStorage.rooms.findIndex((room: any) => room.id === id);
+    // Buscar la habitación en el almacenamiento
+    const roomIndex = getRooms().findIndex((room: any) => room.id === id);
     
     if (roomIndex === -1) {
       return NextResponse.json(
@@ -19,13 +20,15 @@ export async function PUT(
     }
 
     // Actualizar la habitación
-    global.serverStorage.rooms[roomIndex] = {
-      ...global.serverStorage.rooms[roomIndex],
+    const updatedRoom = {
+      ...getRooms()[roomIndex],
       ...body,
       updated_at: new Date().toISOString(),
     };
 
-    return NextResponse.json(global.serverStorage.rooms[roomIndex]);
+    updateRoom(id, updatedRoom);
+
+    return NextResponse.json(updatedRoom);
   } catch (error) {
     console.error('Error updating room:', error);
     return NextResponse.json(
@@ -42,8 +45,8 @@ export async function GET(
   try {
     const { id } = await params;
 
-    // Buscar la habitación en el almacenamiento del servidor
-    const room = global.serverStorage.rooms.find((room: any) => room.id === id);
+    // Buscar la habitación en el almacenamiento
+    const room = getRoomById(id);
     
     if (!room) {
       return NextResponse.json(
