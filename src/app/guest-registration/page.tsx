@@ -95,13 +95,23 @@ export default function GuestRegistrationPage() {
 
   const syncNumPersonas = () => setContrato(c => ({ ...c, numPersonas: personas.length }));
 
-  const generarYDescargarXML = async () => {
+  const generarYDescargarXML = async (): Promise<void> => {
     setDownloading(true);
     try {
       const payload = {
         codigoEstablecimiento: codigoEstablecimiento.trim(),
         comunicaciones: [{ contrato: { ...contrato, numPersonas: personas.length }, personas }]
       };
+      // Guardar comunicación del día (para Alta masiva)
+      await fetch('/api/ministerio/comunicaciones', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          codigoEstablecimiento: payload.codigoEstablecimiento,
+          contrato: payload.comunicaciones[0].contrato,
+          personas: payload.comunicaciones[0].personas
+        })
+      });
       const res = await fetch("/api/ministerio/partes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -120,8 +130,9 @@ export default function GuestRegistrationPage() {
       a.click();
       a.remove();
       URL.revokeObjectURL(url);
-    } catch (e: any) {
-      alert(e?.message || "No se pudo generar el XML");
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "No se pudo generar el XML";
+      alert(message);
     } finally {
       setDownloading(false);
     }
