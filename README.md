@@ -238,3 +238,4 @@ Si tienes problemas o preguntas:
 ---
 
 **Desarrollado con ❤️ por el equipo de Delfín Check-in**
+# Test deploy sin GitHub Actions - Tue Sep  2 00:20:36 CEST 2025
