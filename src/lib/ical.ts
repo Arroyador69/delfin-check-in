@@ -1,6 +1,7 @@
-import ical from 'ical-generator';
-import { supabase } from './supabase';
-import { icalSyncQueue } from './redis';
+// TODO: Implementar con storage local
+// import ical from 'ical-generator';
+// import { supabase } from './supabase';
+// import { icalSyncQueue } from './redis';
 
 // Función para descargar y parsear un calendario iCal
 export async function fetchICalCalendar(url: string): Promise<any[]> {
@@ -76,28 +77,9 @@ function parseICalDate(dateString: string): Date {
 // Función para generar calendario iCal de salida
 export async function generateOutgoingICal(roomId: string): Promise<string> {
   try {
-    // Obtener bloqueos y tareas de limpieza para esta habitación
-    const { data: cleaningTasks } = await supabase
-      .from('cleaning_tasks')
-      .select('*')
-      .eq('room_id', roomId)
-      .eq('status', 'pending');
-    
-    // Crear calendario iCal
-    const calendar = ical({
-      name: `Delfín Check-in - Habitación ${roomId}`,
-      description: 'Bloqueos automáticos para limpieza'
-    });
-    
-    // Agregar eventos de limpieza como bloqueos
-    cleaningTasks?.forEach(task => {
-      calendar.createEvent({
-        start: new Date(task.date),
-        end: new Date(new Date(task.date).getTime() + 2 * 60 * 60 * 1000), // 2 horas
-        summary: 'Limpieza - Habitación Bloqueada',
-        description: 'Habitación bloqueada para limpieza',
-        uid: `cleaning-${task.id}`
-      });
+    // TODO: Implementar con storage local
+    console.log('Generating iCal for room:', roomId);
+    return '';
     });
     
     return calendar.toString();
