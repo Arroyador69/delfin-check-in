@@ -174,7 +174,7 @@ export default function ReservationsPage() {
                 {reservations.map((reservation) => (
                   <tr key={reservation.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {reservation.rooms?.name || 'Sin habitación'}
+                      {reservation.room_id || 'Sin habitación'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {reservation.guest_name}

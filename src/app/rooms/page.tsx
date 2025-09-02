@@ -2,9 +2,16 @@
 
 import { useState, useEffect } from 'react';
 import { Home, Calendar, DollarSign, Save, Plus, Trash2 } from 'lucide-react';
-import { Room } from '@/lib/supabase';
 import { roomSchema, RoomFormData } from '@/lib/validation';
-import { supabase } from '@/lib/supabase';
+
+// Tipo local para habitaciones
+interface Room {
+  id: string;
+  name: string;
+  ical_in_airbnb_url?: string;
+  ical_in_booking_url?: string;
+  base_price: number;
+}
 
 export default function RoomsPage() {
   const [rooms, setRooms] = useState<Room[]>([]);
@@ -23,13 +30,8 @@ export default function RoomsPage() {
 
   const fetchRooms = async () => {
     try {
-      const { data, error } = await supabase
-        .from('rooms')
-        .select('*')
-        .order('name');
-
-      if (error) throw error;
-      setRooms(data || []);
+      // TODO: Implementar con storage local
+      setRooms([]);
     } catch (error) {
       console.error('Error fetching rooms:', error);
     } finally {
@@ -43,23 +45,9 @@ export default function RoomsPage() {
     try {
       const validatedData = roomSchema.parse(formData);
       
-      if (editingRoom) {
-        // Actualizar habitación existente
-        const { error } = await supabase
-          .from('rooms')
-          .update(validatedData)
-          .eq('id', editingRoom.id);
-
-        if (error) throw error;
-      } else {
-        // Crear nueva habitación
-        const { error } = await supabase
-          .from('rooms')
-          .insert(validatedData);
-
-        if (error) throw error;
-      }
-
+      // TODO: Implementar con storage local
+      console.log('Room data:', validatedData);
+      
       // Limpiar formulario y recargar datos
       setFormData({
         name: '',
@@ -89,12 +77,8 @@ export default function RoomsPage() {
     if (!confirm('¿Estás seguro de que quieres eliminar esta habitación?')) return;
 
     try {
-      const { error } = await supabase
-        .from('rooms')
-        .delete()
-        .eq('id', roomId);
-
-      if (error) throw error;
+      // TODO: Implementar con storage local
+      console.log('Deleting room:', roomId);
       fetchRooms();
     } catch (error) {
       console.error('Error deleting room:', error);
