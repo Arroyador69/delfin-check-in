@@ -7,28 +7,6 @@
       "maxDuration": 30
     }
   },
-  "routes": [
-    {
-      "src": "/guest-registration",
-      "dest": "/guest-registration",
-      "headers": {
-        "Cache-Control": "public, max-age=0, must-revalidate",
-        "Access-Control-Allow-Origin": "*"
-      }
-    },
-    {
-      "src": "/reservations-form",
-      "dest": "/reservations-form",
-      "headers": {
-        "Cache-Control": "public, max-age=0, must-revalidate",
-        "Access-Control-Allow-Origin": "*"
-      }
-    }
-  ],
-  "public": true,
-  "github": {
-    "silent": true
-  },
   "headers": [
     {
       "source": "/guest-registration",
@@ -56,5 +34,9 @@
         }
       ]
     }
-  ]
+  ],
+  "public": true,
+  "github": {
+    "silent": true
+  }
 }
