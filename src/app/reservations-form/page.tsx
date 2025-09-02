@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, X, Calendar, User, Bed, Euro, CreditCard, CheckCircle } from 'lucide-react';
 
 interface Room {
