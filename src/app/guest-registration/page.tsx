@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Save, FileText, Globe, Languages, CheckCircle } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Save, FileText, Globe, CheckCircle } from "lucide-react";
 
 type TipoPago = "EFECT" | "TARJT" | "PLATF" | "TRANS" | "MOVIL" | "TREG" | "DESTI" | "OTRO";
 type TipoDocumento = "NIF" | "NIE" | "PAS" | "OTRO";
