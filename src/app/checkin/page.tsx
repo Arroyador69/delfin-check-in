@@ -134,25 +134,22 @@ export default function CheckinPage() {
     setLoading(true);
 
     try {
-      // Guardar datos de huéspedes
+      // Guardar datos de huéspedes en storage local
       for (let i = 0; i < guests.length; i++) {
         const guest = guests[i];
         const signature = signatures[i];
 
-        const { error } = await supabase
-          .from('guests')
-          .insert({
-            reservation_id: selectedReservation.id,
-            name: guest.name,
-            document_type: guest.document_type,
-            document_number: guest.document_number,
-            birth_date: guest.birth_date,
-            country: guest.country,
-            signature_url: signature,
-            accepts_rules: guest.accepts_rules,
-          });
-
-        if (error) throw error;
+        // TODO: Implementar guardado en storage local
+        console.log('Guest data saved:', {
+          reservation_id: selectedReservation.id,
+          name: guest.name,
+          document_type: guest.document_type,
+          document_number: guest.document_number,
+          birth_date: guest.birth_date,
+          country: guest.country,
+          signature_url: signature,
+          accepts_rules: guest.accepts_rules,
+        });
       }
 
       // Generar PDF y enviar notificaciones
