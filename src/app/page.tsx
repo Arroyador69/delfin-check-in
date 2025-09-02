@@ -280,7 +280,12 @@ export default function HomePage() {
             </div>
           </Link>
 
-          <Link href="/guest-registration" className="group">
+          <a 
+            href="/guest-registration" 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            className="group"
+          >
             <div className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow cursor-pointer">
               <div className="flex items-center justify-between">
                 <div>
@@ -296,7 +301,7 @@ export default function HomePage() {
                 </div>
               </div>
             </div>
-          </Link>
+          </a>
 
           <Link href="/guest-registrations-dashboard" className="group">
             <div className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow cursor-pointer">

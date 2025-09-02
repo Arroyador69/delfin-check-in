@@ -435,18 +435,10 @@ export default function GuestRegistrationPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header con selector de idioma */}
+      {/* Header solo con selector de idioma */}
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <div className="flex items-center">
-              <div className="text-3xl mr-3">🐬</div>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">Delfín Check-in</h1>
-                <p className="text-sm text-gray-600">{t.title}</p>
-                <p className="text-xs text-gray-500">{t.subtitle}</p>
-              </div>
-            </div>
+          <div className="flex justify-end items-center py-4">
             <div className="flex items-center space-x-2">
               <Languages className="h-5 w-5 text-gray-400" />
               <select
@@ -464,6 +456,13 @@ export default function GuestRegistrationPage() {
       </header>
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        {/* Título principal */}
+        <div className="text-center mb-8">
+          <div className="text-4xl mb-4">🐬</div>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">{t.title}</h1>
+          <p className="text-lg text-gray-600">{t.subtitle}</p>
+        </div>
+
         <div className="bg-white rounded-lg shadow p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-6 flex items-center">
             <FileText className="h-5 w-5 mr-2" />
@@ -655,16 +654,16 @@ export default function GuestRegistrationPage() {
                     value={p.nacionalidad ?? ""} 
                     onChange={e=>handlePersonaChange(idx,{ nacionalidad: e.target.value || undefined })} 
                   />
-                                      <select 
-                      className="px-3 py-2 border border-gray-300 rounded-md" 
-                      value={p.sexo ?? ""} 
-                      onChange={e=>handlePersonaChange(idx,{ sexo: (e.target.value || undefined) as Sexo | undefined })}
-                    >
-                      <option value="">{t.gender}</option>
-                      {Object.entries(genderLabels).map(([key, labels]) => (
-                        <option key={key} value={key}>{labels[language]}</option>
-                      ))}
-                    </select>
+                  <select 
+                    className="px-3 py-2 border border-gray-300 rounded-md" 
+                    value={p.sexo ?? ""} 
+                    onChange={e=>handlePersonaChange(idx,{ sexo: (e.target.value || undefined) as Sexo | undefined })}
+                  >
+                    <option value="">{t.gender}</option>
+                    {Object.entries(genderLabels).map(([key, labels]) => (
+                      <option key={key} value={key}>{labels[language]}</option>
+                    ))}
+                  </select>
                   <input 
                     placeholder={t.phone} 
                     className="px-3 py-2 border border-gray-300 rounded-md" 
@@ -714,7 +713,7 @@ export default function GuestRegistrationPage() {
                       value={p.direccion.codigoMunicipio ?? ""} 
                       onChange={e=>handlePersonaChange(idx,{ direccion: { ...p.direccion, codigoMunicipio: e.target.value || undefined } })} 
                       required 
-                  />
+                    />
                   ) : (
                     <input 
                       placeholder={t.municipalityName} 
