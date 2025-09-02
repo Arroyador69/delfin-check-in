@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Download, Eye, Users, FileText, Calendar, Search, Filter } from 'lucide-react';
+import { Download, Eye, Users, FileText, Calendar, Search, Filter, CheckSquare, Square } from 'lucide-react';
 
 interface ComunicacionPayload {
   codigoEstablecimiento: string;
@@ -33,25 +33,32 @@ interface GuestRegistration {
 export default function GuestRegistrationsDashboard() {
   const [registrations, setRegistrations] = useState<GuestRegistration[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().slice(0, 10));
+  const [selectedDate, setSelectedDate] = useState<string>("");
   const [searchTerm, setSearchTerm] = useState("");
   const [filterEstablishment, setFilterEstablishment] = useState("");
   const [generatingXML, setGeneratingXML] = useState(false);
   const [selectedRegistration, setSelectedRegistration] = useState<GuestRegistration | null>(null);
+  const [selectedRegistrations, setSelectedRegistrations] = useState<Set<string>>(new Set());
+  const [showAllRegistrations, setShowAllRegistrations] = useState(true);
 
   useEffect(() => {
     loadRegistrations();
-  }, [selectedDate]);
+  }, [selectedDate, showAllRegistrations]);
 
   const loadRegistrations = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/guest-registrations?date=${selectedDate}`);
+      const url = showAllRegistrations 
+        ? '/api/guest-registrations' 
+        : `/api/guest-registrations?date=${selectedDate}`;
+      
+      const response = await fetch(url);
       if (!response.ok) {
         throw new Error('Error al cargar registros');
       }
       const data = await response.json();
       setRegistrations(data);
+      setSelectedRegistrations(new Set()); // Reset selección
     } catch (error) {
       console.error('Error cargando registros:', error);
       setRegistrations([]);
@@ -94,6 +101,85 @@ export default function GuestRegistrationsDashboard() {
       alert("Error al generar XML");
     } finally {
       setGeneratingXML(false);
+    }
+  };
+
+  const generateConjuntoXML = async () => {
+    if (selectedRegistrations.size === 0) {
+      alert("Por favor, selecciona al menos un registro para generar XML conjunto");
+      return;
+    }
+
+    setGeneratingXML(true);
+    try {
+      const selectedData = registrations.filter(reg => selectedRegistrations.has(reg.id));
+      
+      // Agrupar por establecimiento
+      const groupedByEstablishment = selectedData.reduce((acc, reg) => {
+        const est = reg.data.codigoEstablecimiento;
+        if (!acc[est]) {
+          acc[est] = [];
+        }
+        acc[est].push({
+          contrato: reg.data.contrato,
+          personas: reg.data.personas
+        });
+        return acc;
+      }, {} as Record<string, any[]>);
+
+      // Generar XML para cada establecimiento
+      for (const [establecimiento, comunicaciones] of Object.entries(groupedByEstablishment)) {
+        const payload = {
+          codigoEstablecimiento: establecimiento,
+          comunicaciones
+        };
+
+        const res = await fetch("/api/ministerio/partes-conjunto", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) {
+          throw new Error(`Error al generar XML para ${establecimiento}`);
+        }
+
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `partes_viajeros_conjunto_${establecimiento}_${new Date().toISOString().slice(0,10)}.xml`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      }
+
+      alert(`XML conjunto generado correctamente para ${Object.keys(groupedByEstablishment).length} establecimiento(s)`);
+      setSelectedRegistrations(new Set()); // Reset selección
+    } catch (error) {
+      console.error('Error generando XML conjunto:', error);
+      alert("Error al generar XML conjunto");
+    } finally {
+      setGeneratingXML(false);
+    }
+  };
+
+  const toggleRegistrationSelection = (id: string) => {
+    const newSelection = new Set(selectedRegistrations);
+    if (newSelection.has(id)) {
+      newSelection.delete(id);
+    } else {
+      newSelection.add(id);
+    }
+    setSelectedRegistrations(newSelection);
+  };
+
+  const toggleAllRegistrations = () => {
+    if (selectedRegistrations.size === filteredRegistrations.length) {
+      setSelectedRegistrations(new Set());
+    } else {
+      setSelectedRegistrations(new Set(filteredRegistrations.map(reg => reg.id)));
     }
   };
 
@@ -157,16 +243,27 @@ export default function GuestRegistrationsDashboard() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Filtros y búsqueda */}
         <div className="bg-white rounded-lg shadow p-6 mb-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Fecha</label>
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <div className="flex items-center space-x-2">
               <input
-                type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                type="checkbox"
+                checked={showAllRegistrations}
+                onChange={(e) => setShowAllRegistrations(e.target.checked)}
+                className="rounded border-gray-300"
               />
+              <label className="text-sm font-medium text-gray-700">Mostrar todos los registros</label>
             </div>
+            {!showAllRegistrations && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Fecha específica</label>
+                <input
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            )}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Establecimiento</label>
               <select
@@ -206,7 +303,7 @@ export default function GuestRegistrationsDashboard() {
         </div>
 
         {/* Estadísticas */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center">
               <div className="p-2 bg-blue-100 rounded-lg">
@@ -237,10 +334,8 @@ export default function GuestRegistrationsDashboard() {
                 <Calendar className="h-6 w-6 text-yellow-600" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Fecha Seleccionada</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {new Date(selectedDate).toLocaleDateString('es-ES')}
-                </p>
+                <p className="text-sm font-medium text-gray-600">Registros Seleccionados</p>
+                <p className="text-2xl font-bold text-gray-900">{selectedRegistrations.size}</p>
               </div>
             </div>
           </div>
@@ -250,8 +345,27 @@ export default function GuestRegistrationsDashboard() {
                 <Download className="h-6 w-6 text-purple-600" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">XML Generados</p>
-                <p className="text-2xl font-bold text-gray-900">0</p>
+                <p className="text-sm font-medium text-gray-600">Establecimientos</p>
+                <p className="text-2xl font-bold text-gray-900">{uniqueEstablishments.length}</p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center">
+              <div className="p-2 bg-indigo-100 rounded-lg">
+                <CheckSquare className="h-6 w-6 text-indigo-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Acciones</p>
+                <div className="space-y-1">
+                  <button
+                    onClick={generateConjuntoXML}
+                    disabled={generatingXML || selectedRegistrations.size === 0}
+                    className="text-xs px-2 py-1 bg-blue-600 text-white rounded disabled:opacity-50"
+                  >
+                    {generatingXML ? "Generando..." : "XML Conjunto"}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -259,14 +373,34 @@ export default function GuestRegistrationsDashboard() {
 
         {/* Lista de registros */}
         <div className="bg-white rounded-lg shadow">
-          <div className="px-6 py-4 border-b border-gray-200">
+          <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
             <h3 className="text-lg font-semibold text-gray-900">Registros de Viajeros</h3>
+            {filteredRegistrations.length > 0 && (
+              <div className="flex items-center space-x-4">
+                <button
+                  onClick={toggleAllRegistrations}
+                  className="text-sm text-blue-600 hover:text-blue-800"
+                >
+                  {selectedRegistrations.size === filteredRegistrations.length ? "Deseleccionar todo" : "Seleccionar todo"}
+                </button>
+                {selectedRegistrations.size > 0 && (
+                  <button
+                    onClick={generateConjuntoXML}
+                    disabled={generatingXML}
+                    className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50"
+                  >
+                    <Download className="h-4 w-4 inline mr-2" />
+                    {generatingXML ? "Generando..." : `Generar XML Conjunto (${selectedRegistrations.size})`}
+                  </button>
+                )}
+              </div>
+            )}
           </div>
           <div className="p-6">
             {filteredRegistrations.length === 0 ? (
               <div className="text-center py-8">
                 <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-500">No hay registros para la fecha seleccionada</p>
+                <p className="text-gray-500">No hay registros para los filtros seleccionados</p>
                 <p className="text-sm text-gray-400 mt-2">
                   Los clientes pueden enviar registros desde el formulario público
                 </p>
@@ -277,6 +411,12 @@ export default function GuestRegistrationsDashboard() {
                   <div key={registration.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center space-x-4">
+                        <input
+                          type="checkbox"
+                          checked={selectedRegistrations.has(registration.id)}
+                          onChange={() => toggleRegistrationSelection(registration.id)}
+                          className="rounded border-gray-300 h-5 w-5"
+                        />
                         <div className="text-2xl">📋</div>
                         <div>
                           <h4 className="font-semibold text-gray-900">
@@ -307,7 +447,7 @@ export default function GuestRegistrationsDashboard() {
                           className="px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
                         >
                           <Download className="h-4 w-4 inline mr-1" />
-                          {generatingXML ? "Generando..." : "Generar XML"}
+                          {generatingXML ? "Generando..." : "XML Individual"}
                         </button>
                       </div>
                     </div>
@@ -440,7 +580,7 @@ export default function GuestRegistrationsDashboard() {
                 className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
               >
                 <Download className="h-4 w-4 inline mr-1" />
-                {generatingXML ? "Generando..." : "Generar XML"}
+                {generatingXML ? "Generando..." : "Generar XML Individual"}
               </button>
             </div>
           </div>
