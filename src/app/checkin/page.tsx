@@ -402,7 +402,7 @@ export default function CheckinPage() {
                               </label>
                               <div className="border border-gray-300 rounded-md p-4">
                                 <canvas
-                                  ref={(el) => (canvasRefs.current[index] = el)}
+                                  ref={(el) => { canvasRefs.current[index] = el; }}
                                   width={400}
                                   height={100}
                                   className="border border-gray-200 rounded cursor-crosshair"
