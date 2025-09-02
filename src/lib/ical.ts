@@ -104,13 +104,6 @@ async function processCalendarEvent(event: any, roomId: string) {
     // TODO: Implementar con storage local
     console.log('Processing calendar event:', event, 'for room:', roomId);
   } catch (error) {
-          roomId,
-          guestName: newReservation.guest_name,
-          checkIn: newReservation.check_in
-        });
-      }
-    }
-  } catch (error) {
     console.error('Error procesando evento del calendario:', error);
     throw error;
   }
@@ -118,9 +111,6 @@ async function processCalendarEvent(event: any, roomId: string) {
 
 // Función para programar sincronización periódica
 export async function scheduleICalSync(roomId: string, intervalMinutes: number = 10) {
-  await icalSyncQueue.add('periodic-sync', { roomId }, {
-    repeat: {
-      every: intervalMinutes * 60 * 1000 // Convertir a milisegundos
-    }
-  });
+  // TODO: Implementar con storage local
+  console.log('Scheduling iCal sync for room:', roomId, 'every', intervalMinutes, 'minutes');
 }
