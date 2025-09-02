@@ -122,7 +122,7 @@ const translations = {
     // Géneros
     male: "Masculino",
     female: "Femenino",
-    other: "Otro",
+    otherGender: "Otro",
     // Sin documento
     noDocument: "Sin documento (menor)"
   },
@@ -192,7 +192,7 @@ const translations = {
     // Genders
     male: "Male",
     female: "Female",
-    other: "Other",
+    otherGender: "Other",
     // No document
     noDocument: "No document (minor)"
   },
@@ -262,7 +262,7 @@ const translations = {
     // Genres
     male: "Masculin",
     female: "Féminin",
-    other: "Autre",
+    otherGender: "Autre",
     // Pas de document
     noDocument: "Pas de document (mineur)"
   }
