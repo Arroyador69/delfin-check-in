@@ -89,37 +89,9 @@ export async function generateOutgoingICal(roomId: string): Promise<string> {
 // Función para sincronizar calendarios de una habitación
 export async function syncRoomCalendars(roomId: string) {
   try {
-    // Obtener información de la habitación
-    const { data: room } = await supabase
-      .from('rooms')
-      .select('*')
-      .eq('id', roomId)
-      .single();
-    
-    if (!room) {
-      throw new Error('Habitación no encontrada');
-    }
-    
-    const events: any[] = [];
-    
-    // Sincronizar desde Airbnb si existe URL
-    if (room.ical_in_airbnb_url) {
-      const airbnbEvents = await fetchICalCalendar(room.ical_in_airbnb_url);
-      events.push(...airbnbEvents.map(event => ({ ...event, source: 'airbnb' })));
-    }
-    
-    // Sincronizar desde Booking si existe URL
-    if (room.ical_in_booking_url) {
-      const bookingEvents = await fetchICalCalendar(room.ical_in_booking_url);
-      events.push(...bookingEvents.map(event => ({ ...event, source: 'booking' })));
-    }
-    
-    // Procesar eventos y guardar reservas
-    for (const event of events) {
-      await processCalendarEvent(event, roomId);
-    }
-    
-    return { success: true, eventsProcessed: events.length };
+    // TODO: Implementar con storage local
+    console.log('Syncing calendars for room:', roomId);
+    return { success: true, eventsProcessed: 0 };
   } catch (error) {
     console.error('Error sincronizando calendarios:', error);
     throw error;
@@ -129,46 +101,9 @@ export async function syncRoomCalendars(roomId: string) {
 // Función para procesar un evento del calendario
 async function processCalendarEvent(event: any, roomId: string) {
   try {
-    // Verificar si la reserva ya existe
-    const { data: existingReservation } = await supabase
-      .from('reservations')
-      .select('*')
-      .eq('external_id', event.uid)
-      .single();
-    
-    if (existingReservation) {
-      // Actualizar reserva existente
-      await supabase
-        .from('reservations')
-        .update({
-          guest_name: event.summary || 'Sin nombre',
-          check_in: event.start.toISOString(),
-          check_out: event.end.toISOString(),
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', existingReservation.id);
-    } else {
-      // Crear nueva reserva
-      const { data: newReservation } = await supabase
-        .from('reservations')
-        .insert({
-          external_id: event.uid,
-          room_id: roomId,
-          guest_name: event.summary || 'Sin nombre',
-          guest_email: event.description || '',
-          check_in: event.start.toISOString(),
-          check_out: event.end.toISOString(),
-          channel: event.source || 'manual',
-          total_price: 0, // Se calculará después
-          status: 'confirmed'
-        })
-        .select()
-        .single();
-      
-      // Encolar notificación de nueva reserva
-      if (newReservation) {
-        await icalSyncQueue.add('new-reservation-notification', {
-          reservationId: newReservation.id,
+    // TODO: Implementar con storage local
+    console.log('Processing calendar event:', event, 'for room:', roomId);
+  } catch (error) {
           roomId,
           guestName: newReservation.guest_name,
           checkIn: newReservation.check_in
