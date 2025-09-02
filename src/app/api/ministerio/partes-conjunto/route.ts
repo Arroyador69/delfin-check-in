@@ -1,6 +1,5 @@
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
-import { generatePartesXML } from '@/lib/spain-ministry';
 
 const PayloadSchema = z.object({
   codigoEstablecimiento: z.string().min(1).max(10),
@@ -39,17 +38,38 @@ export async function POST(req: NextRequest) {
 
     const { codigoEstablecimiento, comunicaciones } = parsed.data;
     
-    // Generar XML conjunto
-    const xml = await generatePartesXML({
-      codigoEstablecimiento,
-      comunicaciones
-    });
-
-    return new Response(xml, {
+    // Por ahora, redirigir a la API existente para generar XML individual
+    // TODO: Implementar generación de XML conjunto
+    const xmlResponses = [];
+    
+    for (const comunicacion of comunicaciones) {
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/ministerio/partes`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            codigoEstablecimiento,
+            comunicaciones: [comunicacion]
+          })
+        });
+        
+        if (res.ok) {
+          const xml = await res.text();
+          xmlResponses.push(xml);
+        }
+      } catch (error) {
+        console.error('Error generando XML para comunicación:', error);
+      }
+    }
+    
+    // Combinar todos los XML en uno solo
+    const combinedXML = xmlResponses.join('\n\n<!-- Separador entre comunicaciones -->\n\n');
+    
+    return new Response(combinedXML, {
       status: 200,
       headers: { 
         'Content-Type': 'application/xml',
-        'Content-Disposition': `attachment; filename="partes_viajeros_conjunto_${new Date().toISOString().slice(0,10)}.xml"`
+        'Content-Disposition': `attachment; filename="partes_viajeros_conjunto_${codigoEstablecimiento}_${new Date().toISOString().slice(0,10)}.xml"`
       }
     });
   } catch (error) {
