@@ -1,0 +1,60 @@
+{
+  "functions": {
+    "src/app/guest-registration/page.tsx": {
+      "maxDuration": 30
+    },
+    "src/app/reservations-form/page.tsx": {
+      "maxDuration": 30
+    }
+  },
+  "routes": [
+    {
+      "src": "/guest-registration",
+      "dest": "/guest-registration",
+      "headers": {
+        "Cache-Control": "public, max-age=0, must-revalidate",
+        "Access-Control-Allow-Origin": "*"
+      }
+    },
+    {
+      "src": "/reservations-form",
+      "dest": "/reservations-form",
+      "headers": {
+        "Cache-Control": "public, max-age=0, must-revalidate",
+        "Access-Control-Allow-Origin": "*"
+      }
+    }
+  ],
+  "public": true,
+  "github": {
+    "silent": true
+  },
+  "headers": [
+    {
+      "source": "/guest-registration",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, must-revalidate"
+        },
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        }
+      ]
+    },
+    {
+      "source": "/reservations-form",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, must-revalidate"
+        },
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        }
+      ]
+    }
+  ]
+}

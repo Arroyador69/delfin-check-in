@@ -31,7 +31,7 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Excluir rutas estáticas y API
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+    // Excluir rutas estáticas, API y formularios públicos
+    '/((?!api|_next/static|_next/image|favicon.ico|guest-registration|reservations-form).*)',
   ],
 };
