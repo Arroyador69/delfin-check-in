@@ -80,9 +80,6 @@ export async function generateOutgoingICal(roomId: string): Promise<string> {
     // TODO: Implementar con storage local
     console.log('Generating iCal for room:', roomId);
     return '';
-    });
-    
-    return calendar.toString();
   } catch (error) {
     console.error('Error generando iCal de salida:', error);
     throw error;
