@@ -248,21 +248,28 @@ export default function HomePage() {
             </div>
           </Link>
 
-          <Link href="/reservations" className="group">
+          <a 
+            href="/reservations-form" 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            className="group"
+          >
             <div className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow cursor-pointer">
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
-                    Ver Reservas
+                    Formulario de Reservas
                   </h3>
                   <p className="text-sm text-gray-600 mt-1">
-                    Calendario y gestión de reservas
+                    Crear reservas manuales y generar XML
                   </p>
                 </div>
-                <CalendarDays className="h-8 w-8 text-gray-400 group-hover:text-blue-600 transition-colors" />
+                <div className="h-8 w-8 text-gray-400 group-hover:text-blue-600 transition-colors">
+                  📅
+                </div>
               </div>
             </div>
-          </Link>
+          </a>
 
           <Link href="/checkin" className="group">
             <div className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow cursor-pointer">

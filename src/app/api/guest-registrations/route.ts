@@ -1,5 +1,6 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getComunicaciones } from '@/lib/kv';
+import { createGuestRegistration } from '@/lib/storage';
 
 export async function GET(req: NextRequest) {
   try {
@@ -55,5 +56,30 @@ export async function GET(req: NextRequest) {
       status: 500,
       headers: { 'Content-Type': 'application/json' }
     });
+  }
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    const body = await req.json();
+    
+    // Validar datos requeridos
+    if (!body.name || !body.arrival_date || !body.departure_date) {
+      return NextResponse.json(
+        { error: 'Faltan datos requeridos: nombre, fecha de llegada, fecha de salida' },
+        { status: 400 }
+      );
+    }
+
+    // Crear el registro de huésped
+    const guestRegistration = createGuestRegistration(body);
+    
+    return NextResponse.json(guestRegistration, { status: 201 });
+  } catch (error) {
+    console.error('Error creando registro de huésped:', error);
+    return NextResponse.json(
+      { error: 'Error interno del servidor' },
+      { status: 500 }
+    );
   }
 }
