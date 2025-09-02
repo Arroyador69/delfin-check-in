@@ -1,23 +1,49 @@
-import { Redis } from 'ioredis';
-import { Queue, Worker } from 'bullmq';
+// TODO: Implementar con storage local
+// import { Redis } from 'ioredis';
+// import { Queue, Worker } from 'bullmq';
 
-// Configuración de Redis
-const redis = new Redis({
-  host: process.env.REDIS_HOST || 'localhost',
-  port: parseInt(process.env.REDIS_PORT || '6379'),
-  password: process.env.REDIS_PASSWORD,
+// Mock Redis para desarrollo
+const mockRedis = {
+  host: 'localhost',
+  port: 6379,
+  password: undefined,
   retryDelayOnFailover: 100,
   maxRetriesPerRequest: 3,
-});
+};
 
-// Colas principales
-export const icalSyncQueue = new Queue('ical-sync', { connection: redis });
-export const messageQueue = new Queue('messages', { connection: redis });
-export const pdfQueue = new Queue('pdf-generation', { connection: redis });
-export const telegramQueue = new Queue('telegram-notifications', { connection: redis });
+// Mock Queue para desarrollo
+class MockQueue {
+  constructor(name: string) {
+    this.name = name;
+  }
+  
+  name: string;
+  
+  async add(jobType: string, data: any, options?: any) {
+    console.log(`Mock Queue ${this.name}: Adding job ${jobType}`, data);
+    return { id: Date.now().toString() };
+  }
+}
 
-// Workers
-export const icalSyncWorker = new Worker('ical-sync', async (job) => {
+// Mock Worker para desarrollo
+class MockWorker {
+  constructor(name: string, handler: Function) {
+    this.name = name;
+    this.handler = handler;
+  }
+  
+  name: string;
+  handler: Function;
+}
+
+// Colas principales (mock)
+export const icalSyncQueue = new MockQueue('ical-sync') as any;
+export const messageQueue = new MockQueue('messages') as any;
+export const pdfQueue = new MockQueue('pdf-generation') as any;
+export const telegramQueue = new MockQueue('telegram-notifications') as any;
+
+// Workers (mock)
+export const icalSyncWorker = new MockWorker('ical-sync', async (job: any) => {
   const { roomId, icalUrl, source } = job.data;
   
   try {
@@ -32,9 +58,9 @@ export const icalSyncWorker = new Worker('ical-sync', async (job) => {
     console.error('Error en sincronización iCal:', error);
     throw error;
   }
-}, { connection: redis });
+}) as any;
 
-export const messageWorker = new Worker('messages', async (job) => {
+export const messageWorker = new MockWorker('messages', async (job: any) => {
   const { reservationId, trigger, channel } = job.data;
   
   try {
@@ -49,9 +75,9 @@ export const messageWorker = new Worker('messages', async (job) => {
     console.error('Error enviando mensaje:', error);
     throw error;
   }
-}, { connection: redis });
+}) as any;
 
-export const pdfWorker = new Worker('pdf-generation', async (job) => {
+export const pdfWorker = new MockWorker('pdf-generation', async (job: any) => {
   const { type, data } = job.data;
   
   try {
@@ -66,9 +92,9 @@ export const pdfWorker = new Worker('pdf-generation', async (job) => {
     console.error('Error generando PDF:', error);
     throw error;
   }
-}, { connection: redis });
+}) as any;
 
-export const telegramWorker = new Worker('telegram-notifications', async (job) => {
+export const telegramWorker = new MockWorker('telegram-notifications', async (job: any) => {
   const { message, chatId } = job.data;
   
   try {
@@ -83,6 +109,6 @@ export const telegramWorker = new Worker('telegram-notifications', async (job) =
     console.error('Error enviando notificación Telegram:', error);
     throw error;
   }
-}, { connection: redis });
+}) as any;
 
-export { redis };
+export { mockRedis as redis };
