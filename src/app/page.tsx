@@ -285,10 +285,28 @@ export default function HomePage() {
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
-                    Registro Oficial España
+                    Formulario Cliente
                   </h3>
                   <p className="text-sm text-gray-600 mt-1">
-                    Cumplimiento Ley 4/2015
+                    Enviar a clientes para registro
+                  </p>
+                </div>
+                <div className="h-8 w-8 text-gray-400 group-hover:text-blue-600 transition-colors">
+                  📝
+                </div>
+              </div>
+            </div>
+          </Link>
+
+          <Link href="/guest-registrations-dashboard" className="group">
+            <div className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow cursor-pointer">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+                    Dashboard Registros
+                  </h3>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Ver registros y generar XML
                   </p>
                 </div>
                 <div className="h-8 w-8 text-gray-400 group-hover:text-blue-600 transition-colors">

@@ -1,0 +1,451 @@
+"use client";
+
+import { useState, useEffect } from 'react';
+import { Download, Eye, Users, FileText, Calendar, Search, Filter } from 'lucide-react';
+
+interface ComunicacionPayload {
+  codigoEstablecimiento: string;
+  contrato: {
+    referencia: string;
+    fechaContrato: string;
+    fechaEntrada: string;
+    fechaSalida: string;
+    numPersonas: number;
+    numHabitaciones?: number;
+    internet?: boolean;
+    pago: {
+      tipoPago: string;
+      fechaPago?: string;
+      medioPago?: string;
+      titular?: string;
+      caducidadTarjeta?: string;
+    };
+  };
+  personas: any[];
+}
+
+interface GuestRegistration {
+  id: string;
+  date: string;
+  data: ComunicacionPayload;
+}
+
+export default function GuestRegistrationsDashboard() {
+  const [registrations, setRegistrations] = useState<GuestRegistration[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().slice(0, 10));
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterEstablishment, setFilterEstablishment] = useState("");
+  const [generatingXML, setGeneratingXML] = useState(false);
+  const [selectedRegistration, setSelectedRegistration] = useState<GuestRegistration | null>(null);
+
+  useEffect(() => {
+    loadRegistrations();
+  }, [selectedDate]);
+
+  const loadRegistrations = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(`/api/guest-registrations?date=${selectedDate}`);
+      if (!response.ok) {
+        throw new Error('Error al cargar registros');
+      }
+      const data = await response.json();
+      setRegistrations(data);
+    } catch (error) {
+      console.error('Error cargando registros:', error);
+      setRegistrations([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const generateXML = async (registration: GuestRegistration) => {
+    setGeneratingXML(true);
+    try {
+      const payload = {
+        codigoEstablecimiento: registration.data.codigoEstablecimiento,
+        comunicaciones: [{ contrato: registration.data.contrato, personas: registration.data.personas }]
+      };
+
+      const res = await fetch("/api/ministerio/partes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) {
+        throw new Error("Error al generar XML");
+      }
+
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `partes_viajeros_${registration.date}_${registration.data.contrato.referencia}.xml`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+
+      alert("XML generado y descargado correctamente");
+    } catch (error) {
+      console.error('Error generando XML:', error);
+      alert("Error al generar XML");
+    } finally {
+      setGeneratingXML(false);
+    }
+  };
+
+  const filteredRegistrations = registrations.filter(reg => {
+    const matchesSearch = reg.data.contrato.referencia.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         reg.data.personas.some(p => 
+                           p.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           p.apellido1.toLowerCase().includes(searchTerm.toLowerCase())
+                         );
+    const matchesEstablishment = !filterEstablishment || 
+                                reg.data.codigoEstablecimiento === filterEstablishment;
+    return matchesSearch && matchesEstablishment;
+  });
+
+  const uniqueEstablishments = [...new Set(registrations.map(r => r.data.codigoEstablecimiento))];
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Cargando registros...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <header className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-6">
+            <div className="flex items-center">
+              <div className="text-3xl mr-3">🐬</div>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">Delfín Check-in</h1>
+                <p className="text-sm text-gray-600">Dashboard de Registros de Viajeros</p>
+                <p className="text-xs text-gray-500">Gestión y generación de XML para Ministerio del Interior</p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={async () => {
+                  try {
+                    await fetch('/api/admin/logout', { method: 'POST' });
+                    window.location.href = '/admin-login';
+                  } catch (error) {
+                    console.error('Error en logout:', error);
+                  }
+                }}
+                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
+              >
+                Cerrar Sesión
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Filtros y búsqueda */}
+        <div className="bg-white rounded-lg shadow p-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Fecha</label>
+              <input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Establecimiento</label>
+              <select
+                value={filterEstablishment}
+                onChange={(e) => setFilterEstablishment(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Todos</option>
+                {uniqueEstablishments.map(est => (
+                  <option key={est} value={est}>{est}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Búsqueda</label>
+              <div className="relative">
+                <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Referencia, nombre, apellido..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+            <div className="flex items-end">
+              <button
+                onClick={loadRegistrations}
+                className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <Filter className="h-4 w-4 inline mr-2" />
+                Filtrar
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Estadísticas */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <FileText className="h-6 w-6 text-blue-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Total Registros</p>
+                <p className="text-2xl font-bold text-gray-900">{filteredRegistrations.length}</p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center">
+              <div className="p-2 bg-green-100 rounded-lg">
+                <Users className="h-6 w-6 text-green-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Total Viajeros</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {filteredRegistrations.reduce((sum, reg) => sum + reg.data.personas.length, 0)}
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center">
+              <div className="p-2 bg-yellow-100 rounded-lg">
+                <Calendar className="h-6 w-6 text-yellow-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Fecha Seleccionada</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {new Date(selectedDate).toLocaleDateString('es-ES')}
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center">
+              <div className="p-2 bg-purple-100 rounded-lg">
+                <Download className="h-6 w-6 text-purple-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">XML Generados</p>
+                <p className="text-2xl font-bold text-gray-900">0</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Lista de registros */}
+        <div className="bg-white rounded-lg shadow">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h3 className="text-lg font-semibold text-gray-900">Registros de Viajeros</h3>
+          </div>
+          <div className="p-6">
+            {filteredRegistrations.length === 0 ? (
+              <div className="text-center py-8">
+                <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-500">No hay registros para la fecha seleccionada</p>
+                <p className="text-sm text-gray-400 mt-2">
+                  Los clientes pueden enviar registros desde el formulario público
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {filteredRegistrations.map((registration) => (
+                  <div key={registration.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center space-x-4">
+                        <div className="text-2xl">📋</div>
+                        <div>
+                          <h4 className="font-semibold text-gray-900">
+                            Referencia: {registration.data.contrato.referencia}
+                          </h4>
+                          <p className="text-sm text-gray-600">
+                            Establecimiento: {registration.data.codigoEstablecimiento} | 
+                            Fecha: {new Date(registration.date).toLocaleDateString('es-ES')}
+                          </p>
+                          <p className="text-sm text-gray-500">
+                            {registration.data.personas.length} viajero(s) | 
+                            Entrada: {new Date(registration.data.contrato.fechaEntrada).toLocaleDateString('es-ES')} | 
+                            Salida: {new Date(registration.data.contrato.fechaSalida).toLocaleDateString('es-ES')}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => setSelectedRegistration(registration)}
+                          className="px-3 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                        >
+                          <Eye className="h-4 w-4 inline mr-1" />
+                          Ver
+                        </button>
+                        <button
+                          onClick={() => generateXML(registration)}
+                          disabled={generatingXML}
+                          className="px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                        >
+                          <Download className="h-4 w-4 inline mr-1" />
+                          {generatingXML ? "Generando..." : "Generar XML"}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Modal para ver detalles */}
+      {selectedRegistration && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+              <h3 className="text-lg font-semibold text-gray-900">
+                Detalles del Registro - {selectedRegistration.data.contrato.referencia}
+              </h3>
+              <button
+                onClick={() => setSelectedRegistration(null)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="p-6">
+              {/* Información del contrato */}
+              <div className="mb-6">
+                <h4 className="font-semibold text-gray-900 mb-3">Información del Contrato</h4>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                  <div>
+                    <span className="font-medium text-gray-600">Referencia:</span>
+                    <p className="text-gray-900">{selectedRegistration.data.contrato.referencia}</p>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-600">Establecimiento:</span>
+                    <p className="text-gray-900">{selectedRegistration.data.codigoEstablecimiento}</p>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-600">Fecha Contrato:</span>
+                    <p className="text-gray-900">{new Date(selectedRegistration.data.contrato.fechaContrato).toLocaleDateString('es-ES')}</p>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-600">Nº Personas:</span>
+                    <p className="text-gray-900">{selectedRegistration.data.contrato.numPersonas}</p>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-600">Entrada:</span>
+                    <p className="text-gray-900">{new Date(selectedRegistration.data.contrato.fechaEntrada).toLocaleString('es-ES')}</p>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-600">Salida:</span>
+                    <p className="text-gray-900">{new Date(selectedRegistration.data.contrato.fechaSalida).toLocaleString('es-ES')}</p>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-600">Tipo Pago:</span>
+                    <p className="text-gray-900">{selectedRegistration.data.contrato.pago.tipoPago}</p>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-600">Internet:</span>
+                    <p className="text-gray-900">{selectedRegistration.data.contrato.internet ? "Sí" : "No"}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Información de las personas */}
+              <div>
+                <h4 className="font-semibold text-gray-900 mb-3">Viajeros ({selectedRegistration.data.personas.length})</h4>
+                <div className="space-y-4">
+                  {selectedRegistration.data.personas.map((persona, idx) => (
+                    <div key={idx} className="border rounded-lg p-4 bg-gray-50">
+                      <h5 className="font-medium text-gray-900 mb-2">Viajero {idx + 1}</h5>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+                        <div>
+                          <span className="font-medium text-gray-600">Nombre:</span>
+                          <p className="text-gray-900">{persona.nombre} {persona.apellido1} {persona.apellido2 || ""}</p>
+                        </div>
+                        <div>
+                          <span className="font-medium text-gray-600">Fecha Nacimiento:</span>
+                          <p className="text-gray-900">{persona.fechaNacimiento ? new Date(persona.fechaNacimiento).toLocaleDateString('es-ES') : "No especificada"}</p>
+                        </div>
+                        <div>
+                          <span className="font-medium text-gray-600">Documento:</span>
+                          <p className="text-gray-900">
+                            {persona.tipoDocumento ? `${persona.tipoDocumento}: ${persona.numeroDocumento}` : "Sin documento"}
+                          </p>
+                        </div>
+                        <div>
+                          <span className="font-medium text-gray-600">Nacionalidad:</span>
+                          <p className="text-gray-900">{persona.nacionalidad || "No especificada"}</p>
+                        </div>
+                        <div>
+                          <span className="font-medium text-gray-600">Sexo:</span>
+                          <p className="text-gray-900">{persona.sexo || "No especificado"}</p>
+                        </div>
+                        <div>
+                          <span className="font-medium text-gray-600">Teléfono:</span>
+                          <p className="text-gray-900">{persona.contacto.telefono || "No especificado"}</p>
+                        </div>
+                        <div>
+                          <span className="font-medium text-gray-600">Email:</span>
+                          <p className="text-gray-900">{persona.contacto.correo || "No especificado"}</p>
+                        </div>
+                        <div>
+                          <span className="font-medium text-gray-600">Dirección:</span>
+                          <p className="text-gray-900">
+                            {persona.direccion.direccion}, {persona.direccion.codigoPostal}, {persona.direccion.pais}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
+              <button
+                onClick={() => setSelectedRegistration(null)}
+                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200"
+              >
+                Cerrar
+              </button>
+              <button
+                onClick={() => {
+                  generateXML(selectedRegistration);
+                  setSelectedRegistration(null);
+                }}
+                disabled={generatingXML}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+              >
+                <Download className="h-4 w-4 inline mr-1" />
+                {generatingXML ? "Generando..." : "Generar XML"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
