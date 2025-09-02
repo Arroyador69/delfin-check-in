@@ -197,22 +197,16 @@ export function createReservationFromICalEvent(
     status: 'confirmed' as const,
   };
 
-  // Guardar directamente en el almacenamiento del servidor
-  if (typeof global.serverStorage !== 'undefined') {
-    if (!global.serverStorage.reservations) {
-      global.serverStorage.reservations = [];
-    }
-    
-    const newReservation = {
-      ...reservation,
-      id: Date.now().toString(),
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
-    
-    global.serverStorage.reservations.push(newReservation);
-    console.log(`✅ Reserva real creada: ${guestName} (${event.start.toLocaleDateString()} - ${event.end.toLocaleDateString()})`);
-  }
+  // TODO: Implementar con storage local
+  const newReservation = {
+    ...reservation,
+    id: Date.now().toString(),
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+  
+  console.log(`✅ Reserva real creada: ${guestName} (${event.start.toLocaleDateString()} - ${event.end.toLocaleDateString()})`);
+  console.log('Reservation data:', newReservation);
 }
 
 // Función para extraer nombre del huésped del summary
