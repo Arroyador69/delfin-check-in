@@ -88,12 +88,8 @@ export default function MessagesPage() {
 
   const handleToggleActive = async (message: Message) => {
     try {
-      const { error } = await supabase
-        .from('messages')
-        .update({ is_active: !message.is_active })
-        .eq('id', message.id);
-
-      if (error) throw error;
+      // TODO: Implementar con storage local
+      console.log('Toggling message active:', message.id, !message.is_active);
       fetchMessages();
     } catch (error) {
       console.error('Error updating message:', error);
