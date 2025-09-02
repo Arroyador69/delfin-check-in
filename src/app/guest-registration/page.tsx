@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Save, Users, FileText, Globe, Languages } from "lucide-react";
+import { Save, FileText, Globe, Languages } from "lucide-react";
 
 type TipoPago = "EFECT" | "TARJT" | "PLATF" | "TRANS" | "MOVIL" | "TREG" | "DESTI" | "OTRO";
 type TipoDocumento = "NIF" | "NIE" | "PAS" | "OTRO";
@@ -65,6 +65,7 @@ const translations = {
     submitting: "Enviando...",
     success: "Registro enviado correctamente",
     error: "Error al enviar el registro",
+    validationError: "Por favor, complete todos los campos obligatorios",
     // Campos del contrato
     establishmentCode: "Código establecimiento *",
     reference: "Referencia *",
@@ -98,9 +99,6 @@ const translations = {
     municipalityCode: "Código municipio INE (5) *",
     municipalityName: "Nombre municipio *",
     relationship: "Parentesco con menor",
-    addTraveler: "Añadir viajero",
-    removeTraveler: "Eliminar",
-    totalPeople: "Total personas",
     // Opciones
     unspecified: "Sin especificar",
     yes: "Sí",
@@ -135,6 +133,7 @@ const translations = {
     submitting: "Submitting...",
     success: "Registration submitted successfully",
     error: "Error submitting registration",
+    validationError: "Please complete all required fields",
     // Contract fields
     establishmentCode: "Establishment code *",
     reference: "Reference *",
@@ -168,9 +167,6 @@ const translations = {
     municipalityCode: "Municipality code INE (5) *",
     municipalityName: "Municipality name *",
     relationship: "Relationship with minor",
-    addTraveler: "Add traveler",
-    removeTraveler: "Remove",
-    totalPeople: "Total people",
     // Options
     unspecified: "Unspecified",
     yes: "Yes",
@@ -205,6 +201,7 @@ const translations = {
     submitting: "Soumission...",
     success: "Enregistrement soumis avec succès",
     error: "Erreur lors de la soumission",
+    validationError: "Veuillez remplir tous les champs obligatoires",
     // Champs du contrat
     establishmentCode: "Code établissement *",
     reference: "Référence *",
@@ -238,9 +235,6 @@ const translations = {
     municipalityCode: "Code municipal INE (5) *",
     municipalityName: "Nom de la municipalité *",
     relationship: "Relation avec le mineur",
-    addTraveler: "Ajouter un voyageur",
-    removeTraveler: "Supprimer",
-    totalPeople: "Total des personnes",
     // Options
     unspecified: "Non spécifié",
     yes: "Oui",
@@ -316,6 +310,7 @@ export default function GuestRegistrationPage() {
   }]);
   const [submitting, setSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [validationError, setValidationError] = useState("");
 
   const t = translations[language];
 
@@ -325,14 +320,6 @@ export default function GuestRegistrationPage() {
     return age < 18;
   }).length, [personas]);
 
-  const addPersona = () => {
-    setPersonas(prev => [...prev, { rol: "VI", nombre: "", apellido1: "", fechaNacimiento: "", contacto: {}, direccion: { direccion: "", codigoPostal: "", pais: "ESP", codigoMunicipio: "" } }]);
-  };
-  
-  const removePersona = (idx: number) => {
-    setPersonas(prev => prev.filter((_, i) => i !== idx));
-  };
-
   const handlePersonaChange = (idx: number, patch: Partial<PersonaForm>) => {
     setPersonas(prev => prev.map((p, i) => i === idx ? { ...p, ...patch } : p));
   };
@@ -341,9 +328,38 @@ export default function GuestRegistrationPage() {
     setPersonas(prev => prev.map((p, i) => i === idx ? { ...p, direccion: { ...p.direccion, ...patch } } : p));
   };
 
-  const syncNumPersonas = () => setContrato(c => ({ ...c, numPersonas: personas.length }));
+  const validateForm = (): boolean => {
+    // Validar campos obligatorios del contrato
+    if (!codigoEstablecimiento.trim() || !contrato.referencia.trim() || 
+        !contrato.fechaContrato || !contrato.fechaEntrada || !contrato.fechaSalida) {
+      setValidationError(t.validationError);
+      return false;
+    }
+
+    // Validar campos obligatorios de la persona
+    const persona = personas[0];
+    if (!persona.nombre.trim() || !persona.apellido1.trim() || 
+        !persona.fechaNacimiento || !persona.direccion.direccion.trim() || 
+        !persona.direccion.codigoPostal.trim()) {
+      setValidationError(t.validationError);
+      return false;
+    }
+
+    // Si es España, validar código municipio
+    if (persona.direccion.pais === "ESP" && !persona.direccion.codigoMunicipio?.trim()) {
+      setValidationError(t.validationError);
+      return false;
+    }
+
+    setValidationError("");
+    return true;
+  };
 
   const handleSubmit = async (): Promise<void> => {
+    if (!validateForm()) {
+      return;
+    }
+
     setSubmitting(true);
     try {
       const payload = {
@@ -579,17 +595,8 @@ export default function GuestRegistrationPage() {
           <div className="space-y-8">
             {personas.map((p, idx) => (
               <div key={idx} className="border rounded-md p-4">
-                <div className="flex items-center justify-between mb-4">
+                <div className="mb-4">
                   <h3 className="font-semibold">{t.traveler} #{idx+1}</h3>
-                  {personas.length > 1 && (
-                    <button 
-                      type="button" 
-                      onClick={() => { removePersona(idx); syncNumPersonas(); }} 
-                      className="text-red-600 text-sm"
-                    >
-                      {t.removeTraveler}
-                    </button>
-                  )}
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <input 
@@ -597,12 +604,14 @@ export default function GuestRegistrationPage() {
                     className="px-3 py-2 border border-gray-300 rounded-md" 
                     value={p.nombre} 
                     onChange={e=>handlePersonaChange(idx,{ nombre: e.target.value })} 
+                    required 
                   />
                   <input 
                     placeholder={t.lastName1} 
                     className="px-3 py-2 border border-gray-300 rounded-md" 
                     value={p.apellido1} 
                     onChange={e=>handlePersonaChange(idx,{ apellido1: e.target.value })} 
+                    required 
                   />
                   <input 
                     placeholder={t.lastName2} 
@@ -616,6 +625,7 @@ export default function GuestRegistrationPage() {
                     className="px-3 py-2 border border-gray-300 rounded-md" 
                     value={p.fechaNacimiento} 
                     onChange={e=>handlePersonaChange(idx,{ fechaNacimiento: e.target.value })} 
+                    required 
                   />
                   <select 
                     className="px-3 py-2 border border-gray-300 rounded-md" 
@@ -645,16 +655,16 @@ export default function GuestRegistrationPage() {
                     value={p.nacionalidad ?? ""} 
                     onChange={e=>handlePersonaChange(idx,{ nacionalidad: e.target.value || undefined })} 
                   />
-                  <select 
-                    className="px-3 py-2 border border-gray-300 rounded-md" 
-                    value={p.sexo ?? ""} 
-                    onChange={e=>handlePersonaChange(idx,{ sexo: (e.target.value || undefined) as Sexo | undefined })}
-                  >
-                    <option value="">{t.gender}</option>
-                    {Object.entries(genderLabels).map(([key, labels]) => (
-                      <option key={key} value={key}>{labels[language]}</option>
-                    ))}
-                  </select>
+                                      <select 
+                      className="px-3 py-2 border border-gray-300 rounded-md" 
+                      value={p.sexo ?? ""} 
+                      onChange={e=>handlePersonaChange(idx,{ sexo: (e.target.value || undefined) as Sexo | undefined })}
+                    >
+                      <option value="">{t.gender}</option>
+                      {Object.entries(genderLabels).map(([key, labels]) => (
+                        <option key={key} value={key}>{labels[language]}</option>
+                      ))}
+                    </select>
                   <input 
                     placeholder={t.phone} 
                     className="px-3 py-2 border border-gray-300 rounded-md" 
@@ -681,32 +691,37 @@ export default function GuestRegistrationPage() {
                     className="px-3 py-2 border border-gray-300 rounded-md" 
                     value={p.direccion.direccion} 
                     onChange={e=>handlePersonaDireccionChange(idx,{ direccion: e.target.value })} 
+                    required 
                   />
                   <input 
                     placeholder={t.postalCode} 
                     className="px-3 py-2 border border-gray-300 rounded-md" 
                     value={p.direccion.codigoPostal} 
-                    onChange={e=>handlePersonaDireccionChange(idx,{ codigoPostal: e.target.value })} 
+                    onChange={e=>handlePersonaChange(idx,{ direccion: { ...p.direccion, codigoPostal: e.target.value } })} 
+                    required 
                   />
                   <input 
                     placeholder={t.country} 
                     className="px-3 py-2 border border-gray-300 rounded-md" 
                     value={p.direccion.pais} 
-                    onChange={e=>handlePersonaDireccionChange(idx,{ pais: e.target.value })} 
+                    onChange={e=>handlePersonaChange(idx,{ direccion: { ...p.direccion, pais: e.target.value } })} 
+                    required 
                   />
                   {p.direccion.pais === "ESP" ? (
                     <input 
                       placeholder={t.municipalityCode} 
                       className="px-3 py-2 border border-gray-300 rounded-md" 
                       value={p.direccion.codigoMunicipio ?? ""} 
-                      onChange={e=>handlePersonaDireccionChange(idx,{ codigoMunicipio: e.target.value || undefined })} 
-                    />
+                      onChange={e=>handlePersonaChange(idx,{ direccion: { ...p.direccion, codigoMunicipio: e.target.value || undefined } })} 
+                      required 
+                  />
                   ) : (
                     <input 
                       placeholder={t.municipalityName} 
                       className="px-3 py-2 border border-gray-300 rounded-md" 
                       value={p.direccion.nombreMunicipio ?? ""} 
-                      onChange={e=>handlePersonaDireccionChange(idx,{ nombreMunicipio: e.target.value || undefined })} 
+                      onChange={e=>handlePersonaChange(idx,{ direccion: { ...p.direccion, nombreMunicipio: e.target.value || undefined } })} 
+                      required 
                     />
                   )}
                 </div>
@@ -727,22 +742,19 @@ export default function GuestRegistrationPage() {
                 )}
               </div>
             ))}
-            <div className="flex justify-between">
-              <button 
-                type="button" 
-                onClick={() => { addPersona(); syncNumPersonas(); }} 
-                className="px-4 py-2 bg-gray-100 rounded-md hover:bg-gray-200"
-              >
-                {t.addTraveler}
-              </button>
-              <div className="text-sm text-gray-600">{t.totalPeople}: {personas.length}</div>
-            </div>
           </div>
         </div>
 
+        {/* Mensaje de error de validación */}
+        {validationError && (
+          <div className="bg-red-50 border border-red-200 rounded-md p-4">
+            <p className="text-red-600">{validationError}</p>
+          </div>
+        )}
+
         <div className="flex items-center justify-center gap-4">
           <button 
-            onClick={() => { syncNumPersonas(); handleSubmit(); }} 
+            onClick={handleSubmit} 
             className="flex items-center px-8 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50" 
             disabled={submitting}
           >
