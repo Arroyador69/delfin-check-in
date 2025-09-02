@@ -1,9 +1,17 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
-import { Message } from '@/lib/supabase';
 import { MessageSquare, Save, Trash2, Send } from 'lucide-react';
+
+// Tipo local para mensajes
+interface Message {
+  id: string;
+  trigger: string;
+  channel: 'email' | 'telegram' | 'whatsapp';
+  template: string;
+  language: 'es' | 'en';
+  is_active: boolean;
+}
 
 export default function MessagesPage() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -23,13 +31,8 @@ export default function MessagesPage() {
 
   const fetchMessages = async () => {
     try {
-      const { data, error } = await supabase
-        .from('messages')
-        .select('*')
-        .order('trigger');
-
-      if (error) throw error;
-      setMessages(data || []);
+      // TODO: Implementar con storage local
+      setMessages([]);
     } catch (error) {
       console.error('Error fetching messages:', error);
     } finally {
@@ -41,21 +44,9 @@ export default function MessagesPage() {
     e.preventDefault();
     
     try {
-      if (editingMessage) {
-        const { error } = await supabase
-          .from('messages')
-          .update(formData)
-          .eq('id', editingMessage.id);
-
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from('messages')
-          .insert(formData);
-
-        if (error) throw error;
-      }
-
+      // TODO: Implementar con storage local
+      console.log('Message data:', formData);
+      
       setFormData({
         trigger: '',
         channel: 'telegram',
@@ -86,12 +77,8 @@ export default function MessagesPage() {
     if (!confirm('¿Estás seguro de que quieres eliminar este mensaje?')) return;
 
     try {
-      const { error } = await supabase
-        .from('messages')
-        .delete()
-        .eq('id', messageId);
-
-      if (error) throw error;
+      // TODO: Implementar con storage local
+      console.log('Deleting message:', messageId);
       fetchMessages();
     } catch (error) {
       console.error('Error deleting message:', error);
