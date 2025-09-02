@@ -2,8 +2,21 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 export function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+  
+  // Rutas que NO deben tener autenticación (formularios independientes)
+  const PUBLIC_ROUTES = [
+    '/guest-registration',
+    '/reservations-form'
+  ];
+  
+  // Si es una ruta pública, permitir acceso sin autenticación
+  if (PUBLIC_ROUTES.includes(pathname)) {
+    return NextResponse.next();
+  }
+  
   // Proteger solo las rutas del dashboard
-  if (request.nextUrl.pathname.startsWith('/guest-registrations-dashboard')) {
+  if (pathname.startsWith('/guest-registrations-dashboard')) {
     // Verificar si hay un token de autenticación en las cookies
     const authToken = request.cookies.get('auth_token');
     
@@ -18,6 +31,7 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/guest-registrations-dashboard/:path*',
+    // Excluir rutas estáticas y API
+    '/((?!api|_next/static|_next/image|favicon.ico).*)',
   ],
 };
