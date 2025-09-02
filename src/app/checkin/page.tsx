@@ -2,13 +2,13 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Users, FileText, Download, Send } from 'lucide-react';
-import { Guest, guestsSchema, GuestsFormData } from '@/lib/validation';
+import { GuestFormData, guestsSchema, GuestsFormData } from '@/lib/validation';
 import { supabase } from '@/lib/supabase';
 
 export default function CheckinPage() {
   const [reservations, setReservations] = useState<any[]>([]);
   const [selectedReservation, setSelectedReservation] = useState<any>(null);
-  const [guests, setGuests] = useState<Guest[]>([{
+  const [guests, setGuests] = useState<GuestFormData[]>([{
     name: '',
     document_type: 'dni',
     document_number: '',
@@ -64,7 +64,7 @@ export default function CheckinPage() {
     }
   };
 
-  const updateGuest = (index: number, field: keyof Guest, value: any) => {
+  const updateGuest = (index: number, field: keyof GuestFormData, value: any) => {
     const updatedGuests = [...guests];
     updatedGuests[index] = { ...updatedGuests[index], [field]: value };
     setGuests(updatedGuests);
