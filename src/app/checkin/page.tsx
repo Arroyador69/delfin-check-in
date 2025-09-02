@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Users, FileText, Download, Send } from 'lucide-react';
 import { GuestFormData, guestsSchema, GuestsFormData } from '@/lib/validation';
-import { supabase } from '@/lib/supabase';
+import { getReservations } from '@/lib/storage';
 
 export default function CheckinPage() {
   const [reservations, setReservations] = useState<any[]>([]);
@@ -28,17 +28,11 @@ export default function CheckinPage() {
 
   const fetchReservations = async () => {
     try {
-      const { data, error } = await supabase
-        .from('reservations')
-        .select(`
-          *,
-          rooms(name)
-        `)
-        .eq('status', 'confirmed')
-        .gte('check_in', new Date().toISOString())
-        .order('check_in');
-
-      if (error) throw error;
+      // Usar storage local en lugar de Supabase
+      const data = getReservations().filter(reservation => 
+        reservation.status === 'confirmed' && 
+        new Date(reservation.check_in) >= new Date()
+      );
       setReservations(data || []);
     } catch (error) {
       console.error('Error fetching reservations:', error);
