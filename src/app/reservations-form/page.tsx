@@ -43,9 +43,9 @@ export default function ReservationsFormPage() {
   });
 
   // Cargar habitaciones al montar el componente
-  useState(() => {
+  useEffect(() => {
     loadRooms();
-  });
+  }, []);
 
   const loadRooms = async () => {
     try {
