@@ -1,4 +1,6 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 :root {
   --background: #ffffff;
@@ -43,7 +45,7 @@ input[type="number"]::placeholder,
 input[type="email"]::placeholder,
 input[type="password"]::placeholder,
 textarea::placeholder {
-  color: #9ca3af !important; /* Placeholder gris medio */
+  color: #9c3af !important; /* Placeholder gris medio */
   opacity: 1;
 }
 
