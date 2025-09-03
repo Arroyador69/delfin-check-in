@@ -1,4 +1,8 @@
-# 🐬 Delfín Check-in - Sistema de Gestión de Habitaciones
+# Delfín Check-in 🐬
+
+Sistema de gestión de check-in para hoteles y alojamientos turísticos.
+
+## 🚀 **DEPLOYMENT FORZADO - TIMESTAMP: 2024-12-19 15:30**
 
 ## 🔒 **SISTEMA DE AUTENTICACIÓN TOTALMENTE PROTEGIDO**
 
