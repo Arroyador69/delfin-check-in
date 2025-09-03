@@ -1,98 +1,141 @@
-"use client";
+'use client'
 
-import { useState } from 'react';
-import { Lock, Eye, EyeOff } from 'lucide-react';
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 
 export default function AdminLoginPage() {
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const router = useRouter()
+
+  // Credenciales de administrador
+  const ADMIN_CREDENTIALS = {
+    username: 'admin',
+    password: 'Cuaderno2314'
+  }
+
+  // Verificar si ya está autenticado
+  useEffect(() => {
+    const cookies = document.cookie.split(';')
+    const authCookie = cookies.find(cookie => 
+      cookie.trim().startsWith('auth_token=')
+    )
+    
+    if (authCookie && authCookie.includes('Cuaderno2314')) {
+      router.push('/')
+    }
+  }, [router])
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
+    e.preventDefault()
+    setIsLoading(true)
+    setError('')
 
     try {
-      const response = await fetch('/api/admin/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ password }),
-      });
-
-      if (response.ok) {
-        // Redirigir al dashboard después del login exitoso
-        window.location.href = '/guest-registrations-dashboard';
+      // Verificar credenciales
+      if (username === ADMIN_CREDENTIALS.username && password === ADMIN_CREDENTIALS.password) {
+        // Credenciales correctas
+        setSuccess(true)
+        
+        // Establecer cookie de autenticación
+        const expires = new Date()
+        expires.setTime(expires.getTime() + (24 * 60 * 60 * 1000)) // 24 horas
+        document.cookie = `auth_token=Cuaderno2314; expires=${expires.toUTCString()}; path=/; SameSite=Strict`
+        
+        // Redirigir después de 1.5 segundos
+        setTimeout(() => {
+          router.push('/')
+        }, 1500)
+        
       } else {
-        const data = await response.json();
-        setError(data.error || 'Contraseña incorrecta');
+        setError('Usuario o contraseña incorrectos')
+        setPassword('')
       }
     } catch (error) {
-      setError('Error de conexión');
+      setError('Error al procesar el login')
     } finally {
-      setLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-xl p-8 max-w-md w-full">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        {/* Logo y Título */}
         <div className="text-center mb-8">
-          <div className="text-4xl mb-4">🐬</div>
-          <h1 className="text-2xl font-bold text-gray-900">Delfín Check-in</h1>
-          <p className="text-sm text-gray-600 mt-2">Acceso Administrador</p>
+          <div className="text-6xl mb-4">🐬</div>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Delfín Check-in</h1>
+          <p className="text-gray-600">Panel de Administración</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-              Contraseña de Administrador
-            </label>
-            <div className="relative">
+        {/* Formulario de Login */}
+        <div className="bg-white rounded-lg shadow-lg p-8">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">Iniciar Sesión</h2>
+          
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Usuario
+              </label>
               <input
-                id="password"
-                type={showPassword ? 'text' : 'password'}
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="admin"
+                autoComplete="username"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Contraseña
+              </label>
+              <input
+                type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-3 py-2 pl-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Ingrese la contraseña"
                 required
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="••••••••"
+                autoComplete="current-password"
               />
-              <Lock className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600"
-              >
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
             </div>
-          </div>
+            
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isLoading ? 'Verificando...' : 'Acceder al Dashboard'}
+            </button>
+          </form>
 
+          {/* Mensajes de Estado */}
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-md p-3">
-              <p className="text-sm text-red-600">{error}</p>
+            <div className="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+              {error}
             </div>
           )}
 
-          <button
-            type="submit"
-            disabled={loading || !password}
-            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? 'Verificando...' : 'Acceder'}
-          </button>
-        </form>
+          {success && (
+            <div className="mt-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded">
+              ¡Acceso correcto! Redirigiendo al dashboard...
+            </div>
+          )}
+        </div>
 
-        <div className="mt-6 text-center">
-          <p className="text-xs text-gray-500">
-            Esta área es solo para administradores autorizados
+        {/* Información de Seguridad */}
+        <div className="text-center mt-6">
+          <p className="text-sm text-gray-500">
+            🔒 Acceso restringido solo para administradores autorizados
           </p>
         </div>
       </div>
     </div>
-  );
+  )
 }

@@ -3,51 +3,42 @@ import type { NextRequest } from 'next/server'
 
 // Rutas que están permitidas sin autenticación
 const PUBLIC_ROUTES = [
-  '/admin-login.html',
+  '/admin-login',
   '/api/ministerio/comunicaciones', // API para recibir datos del formulario
   '/api/guest-registrations', // API para recibir datos
   '/api/ical', // API para calendarios
   '/api/sync', // API para sincronización
   '/api/test-deploy', // API de prueba
+  '/api/auth/verify', // API de verificación
+  '/api/auth/logout', // API de logout
   '/_next', // Archivos estáticos de Next.js
   '/favicon.ico',
   '/manifest.json',
   '/sw.js'
 ]
 
-// Rutas que requieren autenticación (dashboard)
-const PROTECTED_ROUTES = [
-  '/guest-registrations-dashboard',
-  '/reservations',
-  '/rooms',
-  '/settings',
-  '/partes',
-  '/messages',
-  '/checkin',
-  '/guest-registration'
-]
+// Función para verificar si una ruta es pública
+function isPublicRoute(pathname: string): boolean {
+  return PUBLIC_ROUTES.some(route => pathname.startsWith(route))
+}
+
+// Función para verificar si es un archivo estático
+function isStaticFile(pathname: string): boolean {
+  return pathname.includes('.') || 
+         pathname.startsWith('/_next/') || 
+         pathname.startsWith('/api/')
+}
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
   
-  // Permitir rutas públicas
-  if (PUBLIC_ROUTES.some(route => pathname.startsWith(route))) {
+  // Permitir rutas públicas y archivos estáticos
+  if (isPublicRoute(pathname) || isStaticFile(pathname)) {
     return NextResponse.next()
   }
   
-  // Permitir archivos estáticos y assets
-  if (pathname.includes('.') || pathname.startsWith('/_next/')) {
-    return NextResponse.next()
-  }
-  
-  // Si es la ruta raíz o cualquier ruta protegida, redirigir al login
-  if (pathname === '/' || PROTECTED_ROUTES.some(route => pathname.startsWith(route))) {
-    const loginUrl = new URL('/admin-login.html', request.url)
-    return NextResponse.redirect(loginUrl)
-  }
-  
-  // Para cualquier otra ruta, también redirigir al login
-  const loginUrl = new URL('/admin-login.html', request.url)
+  // BLOQUEAR TODAS LAS DEMÁS RUTAS - Redirigir al login
+  const loginUrl = new URL('/admin-login', request.url)
   return NextResponse.redirect(loginUrl)
 }
 
