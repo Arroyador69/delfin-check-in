@@ -6,36 +6,21 @@ Sistema de gestión de check-in para hoteles y alojamientos turísticos.
 
 ## 🔒 **SISTEMA DE AUTENTICACIÓN TOTALMENTE PROTEGIDO**
 
-### **🛡️ Protección Implementada:**
-- ✅ **Middleware de Next.js** → Bloquea TODAS las rutas del admin
-- ✅ **AdminLayout Component** → Protege TODAS las páginas del admin  
-- ✅ **Página de Login Nativa** → `/admin-login` (no HTML estático)
-- ✅ **Redirección Automática** → Cualquier ruta → login
-- ✅ **Protección Doble** → Middleware + Componente
-
-### **🔐 Credenciales de Acceso:**
-- **Usuario**: `admin`
-- **Contraseña**: `Cuaderno2314`
-
-### **🚫 Páginas Completamente Bloqueadas:**
-- `/` (Dashboard principal)
-- `/guest-registrations-dashboard`
-- `/reservations`
-- `/rooms`
-- `/settings`
-- `/partes`
-- `/messages`
-- `/checkin`
-- `/guest-registration`
-- **CUALQUIER otra ruta del admin**
-
-### **✅ Solo Accesible:**
-- `/admin-login` → Página de login nativa
-- `/api/*` → APIs para recibir datos del formulario
-
-## 🚀 **Despliegue:**
-- **GitHub**: `form.delfincheckin.com` (formulario público)
+### **📋 Configuración de Subdominios:**
+- **GitHub Pages**: `form.delfincheckin.com` (formulario público)
 - **Vercel**: `admin.delfincheckin.com` (dashboard protegido)
+
+### **🛡️ Protección del Dashboard:**
+- **Middleware Next.js**: Bloquea todas las rutas del admin
+- **Redirección automática**: A `/admin-login` para autenticación
+- **Credenciales**: `admin` / `Cuaderno2314`
+
+### **🌐 Formulario Público:**
+- **Acceso libre**: Sin autenticación requerida
+- **Envío de datos**: A APIs de Vercel
+- **Multi-idioma**: Español, Inglés, Francés
+
+## 🚀 **FORZANDO DEPLOYMENT EN VERCEL - 2024-12-19 15:35**
 
 ## 🔒 **Seguridad:**
 - **Acceso restringido** solo para administradores autorizados
