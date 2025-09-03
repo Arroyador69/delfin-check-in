@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { saveComunicacion } from '@/lib/spain-ministry';
+import { saveComunicacion } from '@/lib/kv';
 
 // Schema de validación para el formulario público
 const PublicGuestRegistrationSchema = z.object({
