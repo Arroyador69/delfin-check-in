@@ -1,20 +1,21 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { saveComunicacion } from '@/lib/kv';
+import { saveComunicacion } from '@/lib/spain-ministry';
 
-const PayloadSchema = z.object({
+// Schema de validación para el formulario público
+const PublicGuestRegistrationSchema = z.object({
   codigoEstablecimiento: z.string().min(1).max(10),
   comunicaciones: z.array(z.object({
     contrato: z.object({
       referencia: z.string().min(1),
       fechaContrato: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-      fechaEntrada: z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/),
-      fechaSalida: z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/),
+      fechaEntrada: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+      fechaSalida: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
       numPersonas: z.number().int().positive(),
       numHabitaciones: z.number().int().positive().optional(),
       internet: z.boolean().optional(),
       pago: z.object({
-        tipoPago: z.string().min(1), // Aceptamos cualquier string para mayor flexibilidad
+        tipoPago: z.string().min(1),
         fechaPago: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
         medioPago: z.string().optional(),
         titular: z.string().optional(),
@@ -51,30 +52,27 @@ const PayloadSchema = z.object({
 
 export async function POST(req: NextRequest) {
   try {
+    console.log('📨 Endpoint público recibiendo registro de viajero...');
+    
     const json = await req.json().catch(() => undefined);
     
     if (!json) {
-      return new Response(JSON.stringify({ 
+      console.error('❌ Datos JSON inválidos o vacíos');
+      return NextResponse.json({ 
         error: 'Datos JSON inválidos o vacíos' 
-      }), { 
-        status: 400, 
-        headers: { 'Content-Type': 'application/json' } 
-      });
+      }, { status: 400 });
     }
 
-    console.log('📨 Datos recibidos del formulario:', JSON.stringify(json, null, 2));
+    console.log('📋 Datos recibidos del formulario público:', JSON.stringify(json, null, 2));
 
-    const parsed = PayloadSchema.safeParse(json);
+    const parsed = PublicGuestRegistrationSchema.safeParse(json);
     
     if (!parsed.success) {
       console.error('❌ Error de validación:', parsed.error.flatten());
-      return new Response(JSON.stringify({ 
+      return NextResponse.json({ 
         error: 'Datos del formulario inválidos',
         details: parsed.error.flatten() 
-      }), { 
-        status: 400, 
-        headers: { 'Content-Type': 'application/json' } 
-      });
+      }, { status: 400 });
     }
 
     // Extraer la primera comunicación (el formulario solo envía una)
@@ -87,33 +85,25 @@ export async function POST(req: NextRequest) {
       personas: comunicacion.personas,
     };
 
-    console.log('💾 Guardando datos:', JSON.stringify(dataToSave, null, 2));
+    console.log('💾 Guardando datos del formulario público:', JSON.stringify(dataToSave, null, 2));
 
     const today = new Date().toISOString().slice(0, 10);
     await saveComunicacion(today, dataToSave);
 
-    console.log('✅ Datos guardados exitosamente para la fecha:', today);
+    console.log('✅ Registro público guardado exitosamente para la fecha:', today);
 
-    return new Response(JSON.stringify({ 
+    return NextResponse.json({ 
       success: true, 
       message: 'Registro guardado correctamente',
       date: today 
-    }), { 
-      status: 200, 
-      headers: { 'Content-Type': 'application/json' } 
     });
 
   } catch (error) {
-    console.error('💥 Error interno del servidor:', error);
+    console.error('💥 Error interno del servidor en endpoint público:', error);
     
-    return new Response(JSON.stringify({ 
+    return NextResponse.json({ 
       error: 'Error interno del servidor',
       message: error instanceof Error ? error.message : 'Error desconocido'
-    }), { 
-      status: 500, 
-      headers: { 'Content-Type': 'application/json' } 
-    });
+    }, { status: 500 });
   }
 }
-
-

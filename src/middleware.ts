@@ -12,7 +12,7 @@ export function middleware(req: NextRequest) {
 
   // Rutas que quieres dejar públicas (si alguna)
   const url = req.nextUrl
-  if (url.pathname.startsWith('/public')) {
+  if (url.pathname.startsWith('/public') || url.pathname.startsWith('/api/public')) {
     return NextResponse.next()
   }
 
