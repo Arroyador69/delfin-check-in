@@ -140,12 +140,16 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error('💥 Error interno del servidor en endpoint público:', error);
     
+    // En caso de error, usar origen por defecto
+    const fallbackOrigin = req.headers.get('origin') || '';
+    const fallbackAllowed = ALLOWED_ORIGINS.includes(fallbackOrigin) ? fallbackOrigin : '';
+    
     return NextResponse.json({ 
       error: 'Error interno del servidor',
       message: error instanceof Error ? error.message : 'Error desconocido'
     }, { 
       status: 500,
-      headers: corsHeaders(allowed)
+      headers: corsHeaders(fallbackAllowed)
     });
   }
 }
