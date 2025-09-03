@@ -1,9 +1,11 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-// SOLO estas rutas están permitidas sin autenticación
-const ALLOWED_ROUTES = [
+// Rutas que están permitidas sin autenticación (formulario público + APIs)
+const PUBLIC_ROUTES = [
   '/admin-login', // Página de login
+  '/guest-registration', // FORMULARIO PÚBLICO - NO BLOQUEAR
+  '/reservations-form', // FORMULARIO PÚBLICO - NO BLOQUEAR
   '/api/ministerio/comunicaciones', // API para recibir datos del formulario
   '/api/guest-registrations', // API para recibir datos
   '/api/ical', // API para calendarios
@@ -17,20 +19,35 @@ const ALLOWED_ROUTES = [
   '/sw.js'
 ]
 
+// Rutas que SÍ requieren autenticación (dashboard admin)
+const PROTECTED_ROUTES = [
+  '/', // Dashboard principal
+  '/guest-registrations-dashboard',
+  '/reservations',
+  '/rooms',
+  '/settings',
+  '/partes',
+  '/messages',
+  '/checkin'
+]
+
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
   
-  // Verificar si la ruta está permitida
-  const isAllowed = ALLOWED_ROUTES.some(route => pathname.startsWith(route))
+  // Permitir rutas públicas (formularios + APIs)
+  if (PUBLIC_ROUTES.some(route => pathname.startsWith(route))) {
+    console.log(`✅ PERMITIENDO ACCESO PÚBLICO A: ${pathname}`)
+    return NextResponse.next()
+  }
   
-  // Si NO está permitida, BLOQUEAR y redirigir al login
-  if (!isAllowed) {
-    console.log(`🚫 BLOQUEANDO ACCESO A: ${pathname}`)
+  // BLOQUEAR solo las rutas del dashboard admin
+  if (PROTECTED_ROUTES.some(route => pathname.startsWith(route))) {
+    console.log(`🚫 BLOQUEANDO ACCESO ADMIN A: ${pathname}`)
     const loginUrl = new URL('/admin-login', request.url)
     return NextResponse.redirect(loginUrl)
   }
   
-  // Si está permitida, continuar
+  // Para cualquier otra ruta, permitir acceso (por si acaso)
   console.log(`✅ PERMITIENDO ACCESO A: ${pathname}`)
   return NextResponse.next()
 }

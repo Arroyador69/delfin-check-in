@@ -39,11 +39,6 @@
       "source": "/checkin",
       "destination": "/admin-login",
       "permanent": false
-    },
-    {
-      "source": "/guest-registration",
-      "destination": "/admin-login",
-      "permanent": false
     }
   ],
   "headers": [
