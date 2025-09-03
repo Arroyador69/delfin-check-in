@@ -2,6 +2,32 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { saveComunicacion } from '@/lib/kv';
 
+// Configuración CORS
+const ALLOWED_ORIGINS = [
+  'https://form.delfincheckin.com',
+  'https://arroyador69.github.io'
+];
+
+function corsHeaders(origin: string) {
+  return {
+    'Access-Control-Allow-Origin': origin,
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Access-Control-Max-Age': '86400',
+  };
+}
+
+// Manejar preflight OPTIONS
+export async function OPTIONS(req: NextRequest) {
+  const origin = req.headers.get('origin') || '';
+  const allowed = ALLOWED_ORIGINS.includes(origin) ? origin : '';
+  
+  return new NextResponse(null, { 
+    status: 204,
+    headers: corsHeaders(allowed)
+  });
+}
+
 // Schema de validación para el formulario público
 const PublicGuestRegistrationSchema = z.object({
   codigoEstablecimiento: z.string().min(1).max(10),
@@ -33,11 +59,11 @@ const PublicGuestRegistrationSchema = z.object({
       fechaNacimiento: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
       nacionalidad: z.string().optional(),
       sexo: z.string().optional(),
-      contacto: z.object({
-        telefono: z.string().optional(),
-        telefono2: z.string().optional(),
-        correo: z.string().email().optional(),
-      }).optional(),
+              contacto: z.object({
+          telefono: z.string().optional(),
+          telefono2: z.string().optional(),
+          correo: z.string().email().optional().or(z.literal('')),
+        }).optional(),
       direccion: z.object({
         direccion: z.string().min(1),
         direccionComplementaria: z.string().optional(),
@@ -52,7 +78,12 @@ const PublicGuestRegistrationSchema = z.object({
 
 export async function POST(req: NextRequest) {
   try {
+    // Configurar CORS
+    const origin = req.headers.get('origin') || '';
+    const allowed = ALLOWED_ORIGINS.includes(origin) ? origin : '';
+    
     console.log('📨 Endpoint público recibiendo registro de viajero...');
+    console.log('🌐 Origen de la petición:', origin);
     
     const json = await req.json().catch(() => undefined);
     
@@ -60,7 +91,10 @@ export async function POST(req: NextRequest) {
       console.error('❌ Datos JSON inválidos o vacíos');
       return NextResponse.json({ 
         error: 'Datos JSON inválidos o vacíos' 
-      }, { status: 400 });
+      }, { 
+        status: 400,
+        headers: corsHeaders(allowed)
+      });
     }
 
     console.log('📋 Datos recibidos del formulario público:', JSON.stringify(json, null, 2));
@@ -72,7 +106,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ 
         error: 'Datos del formulario inválidos',
         details: parsed.error.flatten() 
-      }, { status: 400 });
+      }, { 
+        status: 400,
+        headers: corsHeaders(allowed)
+      });
     }
 
     // Extraer la primera comunicación (el formulario solo envía una)
@@ -96,6 +133,8 @@ export async function POST(req: NextRequest) {
       success: true, 
       message: 'Registro guardado correctamente',
       date: today 
+    }, {
+      headers: corsHeaders(allowed)
     });
 
   } catch (error) {
@@ -104,6 +143,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ 
       error: 'Error interno del servidor',
       message: error instanceof Error ? error.message : 'Error desconocido'
-    }, { status: 500 });
+    }, { 
+      status: 500,
+      headers: corsHeaders(allowed)
+    });
   }
 }
