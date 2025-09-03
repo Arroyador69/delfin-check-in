@@ -395,6 +395,6 @@ export default function HomePage() {
         </div>
       </main>
       </div>
-    </AuthGuard>
+    </AdminLayout>
   );
 }

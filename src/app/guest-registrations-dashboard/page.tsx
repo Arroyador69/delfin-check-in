@@ -589,6 +589,6 @@ export default function GuestRegistrationsDashboard() {
         </div>
       )}
       </div>
-    </AuthGuard>
+    </AdminLayout>
   );
 }
