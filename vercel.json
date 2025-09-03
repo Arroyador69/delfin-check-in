@@ -1,46 +1,4 @@
 {
-  "redirects": [
-    {
-      "source": "/",
-      "destination": "/admin-login",
-      "permanent": false
-    },
-    {
-      "source": "/guest-registrations-dashboard",
-      "destination": "/admin-login",
-      "permanent": false
-    },
-    {
-      "source": "/reservations",
-      "destination": "/admin-login",
-      "permanent": false
-    },
-    {
-      "source": "/rooms",
-      "destination": "/admin-login",
-      "permanent": false
-    },
-    {
-      "source": "/settings",
-      "destination": "/admin-login",
-      "permanent": false
-    },
-    {
-      "source": "/partes",
-      "destination": "/admin-login",
-      "permanent": false
-    },
-    {
-      "source": "/messages",
-      "destination": "/admin-login",
-      "permanent": false
-    },
-    {
-      "source": "/checkin",
-      "destination": "/admin-login",
-      "permanent": false
-    }
-  ],
   "headers": [
     {
       "source": "/(.*)",
@@ -72,7 +30,6 @@
       "maxDuration": 30
     }
   },
-  "public": true,
   "github": {
     "silent": true
   }

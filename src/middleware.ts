@@ -1,52 +1,43 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl
-  
-  console.log(`🔒 MIDDLEWARE: Verificando ruta: ${pathname}`)
-  
-  // PERMITIR SOLO estas rutas (login + APIs + archivos estáticos)
-  const ALLOWED_ROUTES = [
-    '/admin-login',
-    '/api',
-    '/_next',
-    '/favicon.ico',
-    '/manifest.json',
-    '/sw.js'
-  ]
-  
-  // BLOQUEAR TODO LO DEMÁS
-  const isAllowed = ALLOWED_ROUTES.some(route => pathname.startsWith(route))
-  
-  if (!isAllowed) {
-    console.log(`🚫 BLOQUEANDO ACCESO A: ${pathname} - Redirigiendo a login`)
-    
-    // Verificar si ya está autenticado
-    const authToken = request.cookies.get('auth_token')
-    
-    if (!authToken || authToken.value !== 'Cuaderno2314') {
-      console.log(`🔐 Usuario NO autenticado - Redirigiendo a /admin-login`)
-      return NextResponse.redirect(new URL('/admin-login', request.url))
-    }
-    
-    console.log(`✅ Usuario autenticado - Permitido acceso a: ${pathname}`)
-  } else {
-    console.log(`✅ PERMITIENDO ACCESO A: ${pathname}`)
+export function middleware(req: NextRequest) {
+  // Solo proteger el host del admin
+  const host = req.headers.get('host') || ''
+  if (!host.startsWith('admin.')) return NextResponse.next()
+
+  // Rutas que quieres dejar públicas (si alguna)
+  const url = req.nextUrl
+  if (url.pathname.startsWith('/public')) {
+    return NextResponse.next()
   }
-  
-  return NextResponse.next()
+
+  const auth = req.headers.get('authorization')
+  if (!auth) {
+    return new NextResponse('Auth required', {
+      status: 401,
+      headers: { 'WWW-Authenticate': 'Basic realm="Secure Area"' }
+    })
+  }
+
+  const [scheme, encoded] = auth.split(' ')
+  if (scheme !== 'Basic' || !encoded) {
+    return new NextResponse('Invalid auth', { status: 401 })
+  }
+
+  const decoded = Buffer.from(encoded, 'base64').toString()
+  const [user, pass] = decoded.split(':')
+
+  const USER = process.env.AUTH_USER
+  const PASS = process.env.AUTH_PASS
+
+  if (user === USER && pass === PASS) {
+    return NextResponse.next()
+  }
+
+  return new NextResponse('Unauthorized', { status: 401 })
 }
 
 export const config = {
-  matcher: [
-    /*
-     * Match ALL request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     */
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
-  ],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|robots.txt).*)']
 }
