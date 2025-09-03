@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-// Rutas que están permitidas sin autenticación
+// Rutas que están permitidas sin autenticación (SOLO APIs y archivos estáticos)
 const PUBLIC_ROUTES = [
-  '/admin-login',
   '/api/ministerio/comunicaciones', // API para recibir datos del formulario
   '/api/guest-registrations', // API para recibir datos
   '/api/ical', // API para calendarios
@@ -32,12 +31,13 @@ function isStaticFile(pathname: string): boolean {
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
   
-  // Permitir rutas públicas y archivos estáticos
+  // Permitir SOLO rutas públicas y archivos estáticos
   if (isPublicRoute(pathname) || isStaticFile(pathname)) {
     return NextResponse.next()
   }
   
   // BLOQUEAR TODAS LAS DEMÁS RUTAS - Redirigir al login
+  // Esto incluye: /, /admin-login, /guest-registrations-dashboard, /reservations, /rooms, /settings, etc.
   const loginUrl = new URL('/admin-login', request.url)
   return NextResponse.redirect(loginUrl)
 }

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Download, Eye, Users, FileText, Calendar, Search, Filter, CheckSquare, Square } from 'lucide-react';
-import AuthGuard from '@/components/AuthGuard';
+import AdminLayout from '@/components/AdminLayout';
 
 interface ComunicacionPayload {
   codigoEstablecimiento: string;
@@ -209,7 +209,7 @@ export default function GuestRegistrationsDashboard() {
   }
 
   return (
-    <AuthGuard>
+    <AdminLayout>
       <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-white shadow-sm border-b">

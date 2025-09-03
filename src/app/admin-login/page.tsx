@@ -25,6 +25,7 @@ export default function AdminLoginPage() {
     )
     
     if (authCookie && authCookie.includes('Cuaderno2314')) {
+      // Si ya está autenticado, redirigir al dashboard
       router.push('/')
     }
   }, [router])

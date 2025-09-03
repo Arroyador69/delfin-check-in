@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { CalendarDays, Users, Home, Settings, BarChart3, MessageSquare, RefreshCw } from 'lucide-react';
-import AuthGuard from '@/components/AuthGuard';
+import AdminLayout from '@/components/AdminLayout';
 // Removido: import { getRooms, getReservations } from '@/lib/storage';
 
 export default function HomePage() {
@@ -94,7 +94,7 @@ export default function HomePage() {
   }
 
   return (
-    <AuthGuard>
+    <AdminLayout>
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
         {/* Header */}
         <header className="bg-white shadow-sm border-b">
