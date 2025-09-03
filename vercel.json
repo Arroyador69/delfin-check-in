@@ -9,6 +9,32 @@
       "source": "/admin-login",
       "destination": "/admin-login.html",
       "permanent": false
+    },
+    {
+      "source": "/guest-registrations-dashboard",
+      "destination": "/admin-login.html",
+      "permanent": false
+    },
+    {
+      "source": "/reservations",
+      "destination": "/admin-login.html",
+      "permanent": false
+    },
+    {
+      "source": "/rooms",
+      "destination": "/admin-login.html",
+      "permanent": false
+    },
+    {
+      "source": "/settings",
+      "destination": "/admin-login.html",
+      "permanent": false
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/admin-login.html"
     }
   ],
   "headers": [
