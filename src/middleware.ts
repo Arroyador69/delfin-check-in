@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-// Rutas que están permitidas sin autenticación (SOLO APIs y archivos estáticos)
-const PUBLIC_ROUTES = [
+// SOLO estas rutas están permitidas sin autenticación
+const ALLOWED_ROUTES = [
+  '/admin-login', // Página de login
   '/api/ministerio/comunicaciones', // API para recibir datos del formulario
   '/api/guest-registrations', // API para recibir datos
   '/api/ical', // API para calendarios
@@ -16,36 +17,28 @@ const PUBLIC_ROUTES = [
   '/sw.js'
 ]
 
-// Función para verificar si una ruta es pública
-function isPublicRoute(pathname: string): boolean {
-  return PUBLIC_ROUTES.some(route => pathname.startsWith(route))
-}
-
-// Función para verificar si es un archivo estático
-function isStaticFile(pathname: string): boolean {
-  return pathname.includes('.') || 
-         pathname.startsWith('/_next/') || 
-         pathname.startsWith('/api/')
-}
-
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
   
-  // Permitir SOLO rutas públicas y archivos estáticos
-  if (isPublicRoute(pathname) || isStaticFile(pathname)) {
-    return NextResponse.next()
+  // Verificar si la ruta está permitida
+  const isAllowed = ALLOWED_ROUTES.some(route => pathname.startsWith(route))
+  
+  // Si NO está permitida, BLOQUEAR y redirigir al login
+  if (!isAllowed) {
+    console.log(`🚫 BLOQUEANDO ACCESO A: ${pathname}`)
+    const loginUrl = new URL('/admin-login', request.url)
+    return NextResponse.redirect(loginUrl)
   }
   
-  // BLOQUEAR TODAS LAS DEMÁS RUTAS - Redirigir al login
-  // Esto incluye: /, /admin-login, /guest-registrations-dashboard, /reservations, /rooms, /settings, etc.
-  const loginUrl = new URL('/admin-login', request.url)
-  return NextResponse.redirect(loginUrl)
+  // Si está permitida, continuar
+  console.log(`✅ PERMITIENDO ACCESO A: ${pathname}`)
+  return NextResponse.next()
 }
 
 export const config = {
   matcher: [
     /*
-     * Match all request paths except for the ones starting with:
+     * Match ALL request paths except for the ones starting with:
      * - api (API routes)
      * - _next/static (static files)
      * - _next/image (image optimization files)

@@ -2,44 +2,53 @@
   "redirects": [
     {
       "source": "/",
-      "destination": "/admin-login.html",
-      "permanent": false
-    },
-    {
-      "source": "/admin-login",
-      "destination": "/admin-login.html",
+      "destination": "/admin-login",
       "permanent": false
     },
     {
       "source": "/guest-registrations-dashboard",
-      "destination": "/admin-login.html",
+      "destination": "/admin-login",
       "permanent": false
     },
     {
       "source": "/reservations",
-      "destination": "/admin-login.html",
+      "destination": "/admin-login",
       "permanent": false
     },
     {
       "source": "/rooms",
-      "destination": "/admin-login.html",
+      "destination": "/admin-login",
       "permanent": false
     },
     {
       "source": "/settings",
-      "destination": "/admin-login.html",
+      "destination": "/admin-login",
       "permanent": false
-    }
-  ],
-  "rewrites": [
+    },
     {
-      "source": "/(.*)",
-      "destination": "/admin-login.html"
+      "source": "/partes",
+      "destination": "/admin-login",
+      "permanent": false
+    },
+    {
+      "source": "/messages",
+      "destination": "/admin-login",
+      "permanent": false
+    },
+    {
+      "source": "/checkin",
+      "destination": "/admin-login",
+      "permanent": false
+    },
+    {
+      "source": "/guest-registration",
+      "destination": "/admin-login",
+      "permanent": false
     }
   ],
   "headers": [
     {
-      "source": "/admin-login.html",
+      "source": "/(.*)",
       "headers": [
         {
           "key": "X-Frame-Options",
@@ -52,6 +61,10 @@
         {
           "key": "Referrer-Policy",
           "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "X-XSS-Protection",
+          "value": "1; mode=block"
         }
       ]
     }
