@@ -1,4 +1,35 @@
 {
+  "redirects": [
+    {
+      "source": "/",
+      "destination": "/admin-login.html",
+      "permanent": false
+    },
+    {
+      "source": "/admin-login",
+      "destination": "/admin-login.html",
+      "permanent": false
+    }
+  ],
+  "headers": [
+    {
+      "source": "/admin-login.html",
+      "headers": [
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        }
+      ]
+    }
+  ],
   "functions": {
     "src/app/guest-registration/page.tsx": {
       "maxDuration": 30
@@ -7,34 +38,6 @@
       "maxDuration": 30
     }
   },
-  "headers": [
-    {
-      "source": "/guest-registration",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=0, must-revalidate"
-        },
-        {
-          "key": "Access-Control-Allow-Origin",
-          "value": "*"
-        }
-      ]
-    },
-    {
-      "source": "/reservations-form",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=0, must-revalidate"
-        },
-        {
-          "key": "Access-Control-Allow-Origin",
-          "value": "*"
-        }
-      ]
-    }
-  ],
   "public": true,
   "github": {
     "silent": true
