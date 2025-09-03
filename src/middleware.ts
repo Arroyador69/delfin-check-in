@@ -2,9 +2,13 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 export function middleware(req: NextRequest) {
-  // Solo proteger el host del admin
+  // Solo proteger el host del admin (o URLs de Vercel para testing)
   const host = req.headers.get('host') || ''
-  if (!host.startsWith('admin.')) return NextResponse.next()
+  const isAdminDomain = host.startsWith('admin.')
+  const isVercelDomain = host.includes('vercel.app')
+  
+  // Para testing, permitir que funcione en ambos
+  if (!isAdminDomain && !isVercelDomain) return NextResponse.next()
 
   // Rutas que quieres dejar públicas (si alguna)
   const url = req.nextUrl
