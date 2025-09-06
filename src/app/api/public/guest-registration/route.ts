@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { saveComunicacion } from '@/lib/kv';
 
-// Configuración CORS
+// Configuración CORS robusta
 const ALLOWED_ORIGINS = [
   'https://form.delfincheckin.com',
+  'https://www.form.delfincheckin.com',
   'https://arroyador69.github.io'
 ];
 
@@ -12,20 +13,30 @@ function corsHeaders(origin: string) {
   return {
     'Access-Control-Allow-Origin': origin,
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-DCI-Key',
     'Access-Control-Max-Age': '86400',
+    'Vary': 'Origin'
   };
 }
 
 // Manejar preflight OPTIONS
 export async function OPTIONS(req: NextRequest) {
   const origin = req.headers.get('origin') || '';
-  const allowed = ALLOWED_ORIGINS.includes(origin) ? origin : '';
+  const allowed = ALLOWED_ORIGINS.includes(origin);
   
-  return new NextResponse(null, { 
-    status: 204,
-    headers: corsHeaders(allowed)
+  const res = new NextResponse(null, { 
+    status: allowed ? 204 : 403 
   });
+  
+  if (allowed) {
+    res.headers.set('Access-Control-Allow-Origin', origin);
+    res.headers.set('Vary', 'Origin');
+    res.headers.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-DCI-Key');
+    res.headers.set('Access-Control-Max-Age', '86400');
+  }
+  
+  return res;
 }
 
 // Schema de validación para el formulario público
@@ -78,9 +89,17 @@ const PublicGuestRegistrationSchema = z.object({
 
 export async function POST(req: NextRequest) {
   try {
-    // Configurar CORS
+    // Validar origen CORS
     const origin = req.headers.get('origin') || '';
-    const allowed = ALLOWED_ORIGINS.includes(origin) ? origin : '';
+    if (!ALLOWED_ORIGINS.includes(origin)) {
+      console.error('❌ Origen no permitido:', origin);
+      return NextResponse.json({ 
+        error: 'Origin not allowed' 
+      }, { 
+        status: 403,
+        headers: corsHeaders('')
+      });
+    }
     
     console.log('📨 Endpoint público recibiendo registro de viajero...');
     console.log('🌐 Origen de la petición:', origin);
@@ -93,7 +112,7 @@ export async function POST(req: NextRequest) {
         error: 'Datos JSON inválidos o vacíos' 
       }, { 
         status: 400,
-        headers: corsHeaders(allowed)
+        headers: corsHeaders(origin)
       });
     }
 
@@ -108,7 +127,7 @@ export async function POST(req: NextRequest) {
         details: parsed.error.flatten() 
       }, { 
         status: 400,
-        headers: corsHeaders(allowed)
+        headers: corsHeaders(origin)
       });
     }
 
@@ -134,7 +153,7 @@ export async function POST(req: NextRequest) {
       message: 'Registro guardado correctamente',
       date: today 
     }, {
-      headers: corsHeaders(allowed)
+      headers: corsHeaders(origin)
     });
 
   } catch (error) {
