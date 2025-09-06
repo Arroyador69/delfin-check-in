@@ -1,85 +1,76 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getComunicaciones } from '@/lib/kv';
-import { createGuestRegistration } from '@/lib/storage';
+import { getGuestRegistrations } from '@/lib/db';
+
+// Configuración para evitar caché
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export async function GET(req: NextRequest) {
   try {
-    const { searchParams } = new URL(req.url);
-    const date = searchParams.get('date');
+    const url = new URL(req.url);
+    const limit = Math.min(parseInt(url.searchParams.get("limit") || "200"), 500);
     
-    let registrations = [];
+    console.log('📊 Obteniendo registros de viajeros desde base de datos...');
+    console.log('🔢 Límite:', limit);
     
-    if (date) {
-      // Si se especifica una fecha, obtener solo esa fecha
-      const comunicaciones = await getComunicaciones(date);
-      registrations = comunicaciones.map((com, index) => ({
-        id: `${date}-${index}`,
-        date: date,
-        data: com
-      }));
-    } else {
-      // Si no se especifica fecha, obtener todos los registros de los últimos 30 días
-      const today = new Date();
-      const allRegistrations = [];
-      
-      for (let i = 0; i < 30; i++) {
-        const checkDate = new Date(today);
-        checkDate.setDate(today.getDate() - i);
-        const dateString = checkDate.toISOString().slice(0, 10);
-        
-        try {
-          const comunicaciones = await getComunicaciones(dateString);
-          if (comunicaciones.length > 0) {
-            const dayRegistrations = comunicaciones.map((com, index) => ({
-              id: `${dateString}-${index}`,
-              date: dateString,
-              data: com
-            }));
-            allRegistrations.push(...dayRegistrations);
-          }
-        } catch (error) {
-          // Continuar con la siguiente fecha si hay error
-          console.log(`Error obteniendo registros para ${dateString}:`, error);
-        }
-      }
-      
-      registrations = allRegistrations;
-    }
+    // Obtener registros desde la base de datos
+    const registros = await getGuestRegistrations(limit);
     
-    return new Response(JSON.stringify(registrations), {
+    console.log(`✅ Se encontraron ${registros.length} registros`);
+    
+    // Formatear datos para el dashboard
+    const items = registros.map(registro => ({
+      id: registro.id,
+      reserva_ref: registro.reserva_ref,
+      fecha_entrada: registro.fecha_entrada,
+      fecha_salida: registro.fecha_salida,
+      created_at: registro.created_at,
+      updated_at: registro.updated_at,
+      // Extraer datos del viajero para mostrar en la tabla
+      viajero: {
+        nombre: registro.data?.comunicaciones?.[0]?.personas?.[0]?.nombre || 'N/A',
+        apellido1: registro.data?.comunicaciones?.[0]?.personas?.[0]?.apellido1 || 'N/A',
+        apellido2: registro.data?.comunicaciones?.[0]?.personas?.[0]?.apellido2 || '',
+        nacionalidad: registro.data?.comunicaciones?.[0]?.personas?.[0]?.nacionalidad || 'N/A',
+        tipoDocumento: registro.data?.comunicaciones?.[0]?.personas?.[0]?.tipoDocumento || 'N/A',
+        numeroDocumento: registro.data?.comunicaciones?.[0]?.personas?.[0]?.numeroDocumento || 'N/A',
+      },
+      // Datos del contrato
+      contrato: {
+        codigoEstablecimiento: registro.data?.codigoEstablecimiento || 'N/A',
+        referencia: registro.data?.comunicaciones?.[0]?.contrato?.referencia || 'N/A',
+        numHabitaciones: registro.data?.comunicaciones?.[0]?.contrato?.numHabitaciones || 1,
+        internet: registro.data?.comunicaciones?.[0]?.contrato?.internet || false,
+        tipoPago: registro.data?.comunicaciones?.[0]?.contrato?.pago?.tipoPago || 'N/A',
+      },
+      // Datos completos para XML
+      data: registro.data
+    }));
+    
+    return new NextResponse(JSON.stringify({ 
+      ok: true, 
+      items: items,
+      total: items.length,
+      timestamp: new Date().toISOString()
+    }), {
       status: 200,
-      headers: { 'Content-Type': 'application/json' }
+      headers: {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+        "Pragma": "no-cache",
+        "Expires": "0"
+      }
     });
+    
   } catch (error) {
-    console.error('Error obteniendo registros:', error);
-    return new Response(JSON.stringify({ error: 'Error interno del servidor' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
+    console.error('❌ Error al obtener registros:', error);
+    
+    return NextResponse.json({ 
+      ok: false, 
+      error: 'Error al obtener registros',
+      message: error instanceof Error ? error.message : 'Error desconocido'
+    }, { 
+      status: 500 
     });
-  }
-}
-
-export async function POST(req: NextRequest) {
-  try {
-    const body = await req.json();
-    
-    // Validar datos requeridos
-    if (!body.name || !body.arrival_date || !body.departure_date) {
-      return NextResponse.json(
-        { error: 'Faltan datos requeridos: nombre, fecha de llegada, fecha de salida' },
-        { status: 400 }
-      );
-    }
-
-    // Crear el registro de huésped
-    const guestRegistration = createGuestRegistration(body);
-    
-    return NextResponse.json(guestRegistration, { status: 201 });
-  } catch (error) {
-    console.error('Error creando registro de huésped:', error);
-    return NextResponse.json(
-      { error: 'Error interno del servidor' },
-      { status: 500 }
-    );
   }
 }

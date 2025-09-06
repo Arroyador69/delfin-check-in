@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { saveComunicacion } from '@/lib/kv';
+import { insertGuestRegistration } from '@/lib/db';
 
 // Configuración CORS robusta
 const ALLOWED_ORIGINS = [
   'https://form.delfincheckin.com',
   'https://www.form.delfincheckin.com',
-  'https://arroyador69.github.io'
+  'https://arroyador69.github.io',
+  'http://localhost:3000' // Para desarrollo
 ];
 
 function corsHeaders(origin: string) {
@@ -39,42 +40,42 @@ export async function OPTIONS(req: NextRequest) {
   return res;
 }
 
-// Schema de validación para el formulario público
+// Schema de validación simplificado para el formulario público
 const PublicGuestRegistrationSchema = z.object({
-  codigoEstablecimiento: z.string().min(1).max(10),
+  codigoEstablecimiento: z.string().min(1),
   comunicaciones: z.array(z.object({
     contrato: z.object({
       referencia: z.string().min(1),
-      fechaContrato: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-      fechaEntrada: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-      fechaSalida: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-      numPersonas: z.number().int().positive(),
-      numHabitaciones: z.number().int().positive().optional(),
-      internet: z.boolean().optional(),
+      fechaContrato: z.string(),
+      fechaEntrada: z.string(),
+      fechaSalida: z.string(),
+      numPersonas: z.number().int().positive().optional().default(1),
+      numHabitaciones: z.number().int().positive().optional().default(1),
+      internet: z.boolean().optional().default(false),
       pago: z.object({
         tipoPago: z.string().min(1),
-        fechaPago: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+        fechaPago: z.string().optional(),
         medioPago: z.string().optional(),
         titular: z.string().optional(),
         caducidadTarjeta: z.string().optional(),
       })
     }),
     personas: z.array(z.object({
-      rol: z.string().optional(),
+      rol: z.string().optional().default('VI'),
       nombre: z.string().min(1),
       apellido1: z.string().min(1),
       apellido2: z.string().optional(),
       tipoDocumento: z.string().optional(),
       numeroDocumento: z.string().optional(),
       soporteDocumento: z.string().optional(),
-      fechaNacimiento: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+      fechaNacimiento: z.string(),
       nacionalidad: z.string().optional(),
       sexo: z.string().optional(),
-              contacto: z.object({
-          telefono: z.string().optional(),
-          telefono2: z.string().optional(),
-          correo: z.string().email().optional().or(z.literal('')),
-        }).optional(),
+      contacto: z.object({
+        telefono: z.string().optional(),
+        telefono2: z.string().optional(),
+        correo: z.string().optional(),
+      }).optional(),
       direccion: z.object({
         direccion: z.string().min(1),
         direccionComplementaria: z.string().optional(),
@@ -86,6 +87,29 @@ const PublicGuestRegistrationSchema = z.object({
     })).min(1),
   })).min(1),
 });
+
+// Función para convertir fecha a formato ISO
+function convertToISODate(dateString: string): string {
+  // Si ya está en formato ISO, devolverlo
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+    return dateString;
+  }
+  
+  // Si está en formato DD/MM/AAAA, convertir a AAAA-MM-DD
+  if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(dateString)) {
+    const [day, month, year] = dateString.split('/');
+    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+  }
+  
+  // Si está en formato AAAA-MM-DDThh:mm:ss, extraer solo la fecha
+  if (/^\d{4}-\d{2}-\d{2}T/.test(dateString)) {
+    return dateString.split('T')[0];
+  }
+  
+  // Si no se puede convertir, devolver la fecha actual
+  console.warn(`No se pudo convertir la fecha: ${dateString}`);
+  return new Date().toISOString().split('T')[0];
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -131,28 +155,39 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Extraer la primera comunicación (el formulario solo envía una)
+    // Extraer la primera comunicación
     const comunicacion = parsed.data.comunicaciones[0];
     
-    // Crear el formato que espera saveComunicacion
-    const dataToSave = {
-      codigoEstablecimiento: parsed.data.codigoEstablecimiento,
-      contrato: comunicacion.contrato,
-      personas: comunicacion.personas,
-    };
+    // Convertir fechas a formato ISO
+    const fecha_entrada = convertToISODate(comunicacion.contrato.fechaEntrada);
+    const fecha_salida = convertToISODate(comunicacion.contrato.fechaSalida);
+    
+    // Generar referencia única
+    const reserva_ref = comunicacion.contrato.referencia || `REG-${Date.now()}`;
 
-    console.log('💾 Guardando datos del formulario público:', JSON.stringify(dataToSave, null, 2));
+    console.log('💾 Guardando en base de datos Postgres...');
+    console.log('📅 Fecha entrada:', fecha_entrada);
+    console.log('📅 Fecha salida:', fecha_salida);
+    console.log('🔖 Referencia:', reserva_ref);
 
-    const today = new Date().toISOString().slice(0, 10);
-    await saveComunicacion(today, dataToSave);
+    // Guardar en base de datos Postgres
+    const id = await insertGuestRegistration({
+      reserva_ref,
+      fecha_entrada,
+      fecha_salida,
+      data: parsed.data
+    });
 
-    console.log('✅ Registro público guardado exitosamente para la fecha:', today);
+    console.log('✅ Registro guardado en DB con ID:', id);
 
     return NextResponse.json({ 
       success: true, 
-      message: 'Registro guardado correctamente',
-      date: today 
+      message: 'Registro guardado correctamente en base de datos',
+      id: id,
+      reserva_ref: reserva_ref,
+      date: new Date().toISOString().split('T')[0]
     }, {
+      status: 201,
       headers: corsHeaders(origin)
     });
 
