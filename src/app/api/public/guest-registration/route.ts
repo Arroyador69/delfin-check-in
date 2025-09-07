@@ -59,7 +59,7 @@ const PublicGuestRegistrationSchema = z.object({
         titular: z.string().optional(),
         caducidadTarjeta: z.string().optional(),
       }).partial()
-    }),
+    }).optional(),
     personas: z.array(z.object({
       rol: z.string().default('VI'),
       nombre: z.string().optional(),
