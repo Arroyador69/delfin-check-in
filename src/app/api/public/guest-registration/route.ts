@@ -53,14 +53,12 @@ const PublicGuestRegistrationSchema = z.object({
       numHabitaciones: z.number().int().positive().default(1),
       internet: z.boolean().default(false),
       pago: z.object({
-        tipoPago: z.string().min(1),
+        tipoPago: z.string().optional(),
         fechaPago: z.string().optional(),
         medioPago: z.string().optional(),
         titular: z.string().optional(),
         caducidadTarjeta: z.string().optional(),
-      }).partial().extend({
-        tipoPago: z.string().min(1),
-      })
+      }).partial()
     }),
     personas: z.array(z.object({
       rol: z.string().default('VI'),
