@@ -42,7 +42,7 @@ export async function OPTIONS(req: NextRequest) {
 
 // Schema de validación simplificado para el formulario público
 const PublicGuestRegistrationSchema = z.object({
-  codigoEstablecimiento: z.string().min(1),
+  codigoEstablecimiento: z.string().optional(),
   comunicaciones: z.array(z.object({
     contrato: z.object({
       referencia: z.string().optional(),
