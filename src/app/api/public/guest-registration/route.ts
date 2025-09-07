@@ -58,6 +58,8 @@ const PublicGuestRegistrationSchema = z.object({
         medioPago: z.string().optional(),
         titular: z.string().optional(),
         caducidadTarjeta: z.string().optional(),
+      }).partial().extend({
+        tipoPago: z.string().min(1),
       })
     }),
     personas: z.array(z.object({
