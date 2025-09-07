@@ -46,7 +46,7 @@ const PublicGuestRegistrationSchema = z.object({
   comunicaciones: z.array(z.object({
     contrato: z.object({
       referencia: z.string().min(1),
-      fechaContrato: z.string(),
+      fechaContrato: z.string().optional(),
       fechaEntrada: z.string(),
       fechaSalida: z.string(),
       numPersonas: z.number().int().positive().default(1),
