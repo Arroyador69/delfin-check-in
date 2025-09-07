@@ -81,7 +81,7 @@ const PublicGuestRegistrationSchema = z.object({
         direccionComplementaria: z.string().optional(),
         codigoPostal: z.string().min(1),
         pais: z.string().min(1),
-        codigoMunicipio: z.string().min(1),
+        codigoMunicipio: z.string().optional(),
         nombreMunicipio: z.string().optional(),
       }),
     })).min(1),
