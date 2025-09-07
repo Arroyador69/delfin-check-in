@@ -49,8 +49,8 @@ const PublicGuestRegistrationSchema = z.object({
       fechaContrato: z.string().optional(),
       fechaEntrada: z.string().min(1),
       fechaSalida: z.string().min(1),
-      numPersonas: z.number().int().positive().default(1),
-      numHabitaciones: z.number().int().positive().default(1),
+      numPersonas: z.number().int().positive().optional().default(1),
+      numHabitaciones: z.number().int().positive().optional().default(1),
       internet: z.boolean().default(false),
       pago: z.object({
         tipoPago: z.string().min(1),
