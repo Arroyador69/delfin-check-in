@@ -61,7 +61,7 @@ const PublicGuestRegistrationSchema = z.object({
       }).partial().extend({
         tipoPago: z.string().min(1),
       })
-    }),
+    }).optional(),
     personas: z.array(z.object({
       rol: z.string().optional().default('VI'),
       nombre: z.string().min(1),
