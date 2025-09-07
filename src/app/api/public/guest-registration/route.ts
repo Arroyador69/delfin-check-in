@@ -70,7 +70,7 @@ const PublicGuestRegistrationSchema = z.object({
       tipoDocumento: z.string().optional(),
       numeroDocumento: z.string().optional(),
       soporteDocumento: z.string().optional(),
-      fechaNacimiento: z.string(),
+      fechaNacimiento: z.string().optional(),
       nacionalidad: z.string().optional(),
       sexo: z.string().optional(),
       contacto: z.object({
