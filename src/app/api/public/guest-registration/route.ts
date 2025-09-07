@@ -62,7 +62,7 @@ const PublicGuestRegistrationSchema = z.object({
     }),
     personas: z.array(z.object({
       rol: z.string().default('VI'),
-      nombre: z.string().min(1),
+      nombre: z.string().optional(),
       apellido1: z.string().optional(),
       apellido2: z.string().optional(),
       tipoDocumento: z.string().optional(),
