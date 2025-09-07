@@ -87,7 +87,7 @@ const PublicGuestRegistrationSchema = z.object({
         nombreMunicipio: z.string().optional(),
       }).optional(),
     })).optional(),
-  })).min(1),
+  })).optional(),
 });
 
 // Función para convertir fecha a formato ISO
