@@ -162,8 +162,25 @@ export async function POST(req: NextRequest) {
     const fecha_entrada = convertToISODate(comunicacion.contrato.fechaEntrada);
     const fecha_salida = convertToISODate(comunicacion.contrato.fechaSalida);
     
+    // Valores automáticos del establecimiento (no visibles para el cliente)
+    const ESTABLISHMENT_CODE = "0000256653"; // HABITACIONES EN CASA VACACIONAL FUENGIROLA
+    const ESTABLISHMENT_REFERENCE = "0000146967"; // DOLORES MARIA ARROYO ZAMBRANO
+    
+    // Asegurar que los valores automáticos estén incluidos
+    const dataWithDefaults = {
+      ...parsed.data,
+      codigoEstablecimiento: ESTABLISHMENT_CODE,
+      comunicaciones: parsed.data.comunicaciones.map(com => ({
+        ...com,
+        contrato: {
+          ...com.contrato,
+          referencia: ESTABLISHMENT_REFERENCE
+        }
+      }))
+    };
+    
     // Generar referencia única
-    const reserva_ref = comunicacion.contrato.referencia || `REG-${Date.now()}`;
+    const reserva_ref = ESTABLISHMENT_REFERENCE;
 
     console.log('💾 Guardando en base de datos Postgres...');
     console.log('📅 Fecha entrada:', fecha_entrada);
@@ -175,7 +192,7 @@ export async function POST(req: NextRequest) {
       reserva_ref,
       fecha_entrada,
       fecha_salida,
-      data: parsed.data
+      data: dataWithDefaults
     });
 
     console.log('✅ Registro guardado en DB con ID:', id);
