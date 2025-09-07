@@ -42,16 +42,16 @@ export async function OPTIONS(req: NextRequest) {
 
 // Schema de validación simplificado para el formulario público
 const PublicGuestRegistrationSchema = z.object({
-  codigoEstablecimiento: z.string().optional(),
+  codigoEstablecimiento: z.string().min(1),
   comunicaciones: z.array(z.object({
     contrato: z.object({
       referencia: z.string().min(1),
       fechaContrato: z.string().optional(),
       fechaEntrada: z.string().min(1),
       fechaSalida: z.string().min(1),
-      numPersonas: z.number().int().positive().optional().default(1),
-      numHabitaciones: z.number().int().positive().optional().default(1),
-      internet: z.boolean().optional().default(false),
+      numPersonas: z.number().int().positive().default(1),
+      numHabitaciones: z.number().int().positive().default(1),
+      internet: z.boolean().default(false),
       pago: z.object({
         tipoPago: z.string().min(1),
         fechaPago: z.string().optional(),
@@ -61,9 +61,9 @@ const PublicGuestRegistrationSchema = z.object({
       }).partial().extend({
         tipoPago: z.string().min(1),
       })
-    }).optional(),
+    }),
     personas: z.array(z.object({
-      rol: z.string().optional().default('VI'),
+      rol: z.string().default('VI'),
       nombre: z.string().min(1),
       apellido1: z.string().min(1),
       apellido2: z.string().optional(),
@@ -81,13 +81,13 @@ const PublicGuestRegistrationSchema = z.object({
       direccion: z.object({
         direccion: z.string().min(1),
         direccionComplementaria: z.string().optional(),
-        codigoPostal: z.string().optional(),
-        pais: z.string().optional(),
+        codigoPostal: z.string().min(1),
+        pais: z.string().min(1),
         codigoMunicipio: z.string().optional(),
         nombreMunicipio: z.string().optional(),
-      }).optional(),
-    })).optional(),
-  })).optional(),
+      }),
+    })).min(1),
+  })).min(1),
 });
 
 // Función para convertir fecha a formato ISO
