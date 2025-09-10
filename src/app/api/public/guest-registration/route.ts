@@ -2,42 +2,37 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { insertGuestRegistration } from '@/lib/db';
 
-// Configuración CORS robusta
+// Configuración CORS robusta - Fix definitivo
 const ALLOWED_ORIGINS = [
   'https://form.delfincheckin.com',
   'https://www.form.delfincheckin.com',
   'https://arroyador69.github.io',
-  'http://localhost:3000' // Para desarrollo
+  'http://localhost:3000', // Para desarrollo
+  'http://localhost:3001', // Para desarrollo alternativo
+  'http://127.0.0.1:3000', // Para desarrollo local
+  'http://127.0.0.1:3001'  // Para desarrollo local alternativo
 ];
 
-function corsHeaders(origin: string) {
+function corsHeaders(req: NextRequest) {
+  const origin = req.headers.get('origin') || '*';
+  const allowed = ALLOWED_ORIGINS.includes(origin) || origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:');
+  
   return {
-    'Access-Control-Allow-Origin': origin,
+    'Access-Control-Allow-Origin': allowed ? origin : '*',
+    'Vary': 'Origin',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-DCI-Key',
-    'Access-Control-Max-Age': '86400',
-    'Vary': 'Origin'
+    'Access-Control-Allow-Headers': 'Content-Type, Accept',
+    'Access-Control-Max-Age': '86400'
   };
 }
 
-// Manejar preflight OPTIONS
+// Manejar preflight OPTIONS - Fix definitivo
 export async function OPTIONS(req: NextRequest) {
-  const origin = req.headers.get('origin') || '';
-  const allowed = ALLOWED_ORIGINS.includes(origin);
-  
-  const res = new NextResponse(null, { 
-    status: allowed ? 204 : 403 
+  const headers = corsHeaders(req);
+  return new NextResponse(null, { 
+    status: 200, 
+    headers 
   });
-  
-  if (allowed) {
-    res.headers.set('Access-Control-Allow-Origin', origin);
-    res.headers.set('Vary', 'Origin');
-    res.headers.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
-    res.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-DCI-Key');
-    res.headers.set('Access-Control-Max-Age', '86400');
-  }
-  
-  return res;
 }
 
 // Schema de validación simplificado para el formulario público
@@ -49,8 +44,8 @@ const PublicGuestRegistrationSchema = z.object({
       fechaContrato: z.string().optional(),
       fechaEntrada: z.string().min(1),
       fechaSalida: z.string().min(1),
-      numPersonas: z.number().int().positive().default(1),
-      numHabitaciones: z.number().int().positive().default(1),
+      numPersonas: z.number().int().positive().optional().default(1),
+      numHabitaciones: z.number().int().positive().optional().default(1),
       internet: z.boolean().default(false),
       pago: z.object({
         tipoPago: z.string().min(1),
@@ -115,17 +110,8 @@ function convertToISODate(dateString: string): string {
 
 export async function POST(req: NextRequest) {
   try {
-    // Validar origen CORS
+    const headers = corsHeaders(req);
     const origin = req.headers.get('origin') || '';
-    if (!ALLOWED_ORIGINS.includes(origin)) {
-      console.error('❌ Origen no permitido:', origin);
-      return NextResponse.json({ 
-        error: 'Origin not allowed' 
-      }, { 
-        status: 403,
-        headers: corsHeaders('')
-      });
-    }
     
     console.log('📨 Endpoint público recibiendo registro de viajero...');
     console.log('🌐 Origen de la petición:', origin);
@@ -138,7 +124,7 @@ export async function POST(req: NextRequest) {
         error: 'Datos JSON inválidos o vacíos' 
       }, { 
         status: 400,
-        headers: corsHeaders(origin)
+        headers
       });
     }
 
@@ -152,8 +138,8 @@ export async function POST(req: NextRequest) {
         error: 'Datos del formulario inválidos',
         details: parsed.error.flatten() 
       }, { 
-        status: 400,
-        headers: corsHeaders(origin)
+        status: 422,
+        headers
       });
     }
 
@@ -206,23 +192,19 @@ export async function POST(req: NextRequest) {
       reserva_ref: reserva_ref,
       date: new Date().toISOString().split('T')[0]
     }, {
-      status: 201,
-      headers: corsHeaders(origin)
+      status: 200,
+      headers
     });
 
   } catch (error) {
     console.error('💥 Error interno del servidor en endpoint público:', error);
     
-    // En caso de error, usar origen por defecto
-    const fallbackOrigin = req.headers.get('origin') || '';
-    const fallbackAllowed = ALLOWED_ORIGINS.includes(fallbackOrigin) ? fallbackOrigin : '';
-    
     return NextResponse.json({ 
       error: 'Error interno del servidor',
       message: error instanceof Error ? error.message : 'Error desconocido'
     }, { 
-      status: 500,
-      headers: corsHeaders(fallbackAllowed)
+      status: 422,
+      headers: corsHeaders(req)
     });
   }
 }
