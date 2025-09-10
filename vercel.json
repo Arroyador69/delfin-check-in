@@ -5,7 +5,7 @@
       "headers": [
         {
           "key": "Access-Control-Allow-Origin",
-          "value": "*"
+          "value": "https://form.delfincheckin.com"
         },
         {
           "key": "Vary",

@@ -3,22 +3,24 @@ import { z } from 'zod';
 import { insertGuestRegistration } from '@/lib/db';
 
 // Configuración CORS robusta - Fix definitivo
-const ALLOWED_ORIGINS = [
+const ALLOWED_ORIGINS = new Set([
   'https://form.delfincheckin.com',
   'https://www.form.delfincheckin.com',
+  'https://admin.delfincheckin.com',
   'https://arroyador69.github.io',
   'http://localhost:3000', // Para desarrollo
   'http://localhost:3001', // Para desarrollo alternativo
   'http://127.0.0.1:3000', // Para desarrollo local
   'http://127.0.0.1:3001'  // Para desarrollo local alternativo
-];
+]);
 
 function corsHeaders(req: NextRequest) {
-  const origin = req.headers.get('origin') || '*';
-  const allowed = ALLOWED_ORIGINS.includes(origin) || origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:');
+  const origin = req.headers.get('origin') || '';
+  const allowed = ALLOWED_ORIGINS.has(origin) || origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:');
+  const allow = allowed ? origin : 'https://form.delfincheckin.com';
   
   return {
-    'Access-Control-Allow-Origin': allowed ? origin : '*',
+    'Access-Control-Allow-Origin': allow,
     'Vary': 'Origin',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Accept',
