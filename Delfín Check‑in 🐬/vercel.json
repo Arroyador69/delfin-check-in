@@ -1,0 +1,33 @@
+{
+  "redirects": [
+    {
+      "source": "/",
+      "destination": "/admin-login.html",
+      "permanent": false
+    },
+    {
+      "source": "/admin-login",
+      "destination": "/admin-login.html",
+      "permanent": false
+    }
+  ],
+  "headers": [
+    {
+      "source": "/admin-login.html",
+      "headers": [
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        }
+      ]
+    }
+  ]
+}
