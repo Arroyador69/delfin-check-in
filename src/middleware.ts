@@ -12,7 +12,14 @@ export function middleware(req: NextRequest) {
 
   // Rutas que quieres dejar públicas (si alguna)
   const url = req.nextUrl
-  if (url.pathname.startsWith('/public') || url.pathname.startsWith('/api/public')) {
+  
+  // Permitir endpoints de API públicos
+  if (url.pathname.startsWith('/api/registro-flex') || 
+      url.pathname.startsWith('/api/setup-db') || 
+      url.pathname.startsWith('/api/check-db') || 
+      url.pathname.startsWith('/api/test-registro') ||
+      url.pathname.startsWith('/api/public') ||
+      url.pathname.startsWith('/public')) {
     return NextResponse.next()
   }
 
