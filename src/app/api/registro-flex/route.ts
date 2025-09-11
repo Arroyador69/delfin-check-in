@@ -22,7 +22,7 @@ const cors = (req: NextRequest) => {
     'Access-Control-Allow-Origin': isAllowed ? origin : 'https://form.delfincheckin.com',
     'Vary': 'Origin',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Accept',
+    'Access-Control-Allow-Headers': 'Content-Type, Accept, X-Dry-Run',
     'Access-Control-Max-Age': '86400'
   };
 };
@@ -179,6 +179,22 @@ export async function OPTIONS(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     console.log('🚀 Endpoint flexible recibiendo registro...');
+    
+    // Verificar si es un test de conectividad (dry-run)
+    const isDryRun = req.headers.get('X-Dry-Run') === '1';
+    if (isDryRun) {
+      console.log('🔍 Test de conectividad detectado');
+      const headers = cors(req);
+      return NextResponse.json({ 
+        status: 'ok',
+        message: 'Endpoint funcionando correctamente',
+        timestamp: new Date().toISOString(),
+        source: 'registro-flex-endpoint'
+      }, {
+        status: 200,
+        headers
+      });
+    }
     
     const json = await req.json().catch(() => undefined);
     
