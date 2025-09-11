@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getGuestRegistrations } from '@/lib/db';
+import { sql } from '@/lib/db';
 
 // Configuración para evitar caché
 export const dynamic = "force-dynamic";
@@ -12,6 +13,42 @@ export async function GET(req: NextRequest) {
     
     console.log('📊 Obteniendo registros de viajeros desde base de datos...');
     console.log('🔢 Límite:', limit);
+    
+    // Verificar si la tabla existe, si no, crearla
+    try {
+      await sql`SELECT 1 FROM guest_registrations LIMIT 1`;
+    } catch (error) {
+      console.log('🔧 Tabla guest_registrations no existe, creándola...');
+      await sql`
+        CREATE TABLE IF NOT EXISTS guest_registrations (
+          id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+          reserva_ref VARCHAR(50),
+          fecha_entrada DATE NOT NULL,
+          fecha_salida DATE NOT NULL,
+          data JSONB NOT NULL,
+          created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+          updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+        );
+      `;
+      
+      // Crear índices
+      await sql`
+        CREATE INDEX IF NOT EXISTS idx_guest_registrations_fecha_entrada 
+        ON guest_registrations(fecha_entrada);
+      `;
+      
+      await sql`
+        CREATE INDEX IF NOT EXISTS idx_guest_registrations_fecha_salida 
+        ON guest_registrations(fecha_salida);
+      `;
+      
+      await sql`
+        CREATE INDEX IF NOT EXISTS idx_guest_registrations_created_at 
+        ON guest_registrations(created_at);
+      `;
+      
+      console.log('✅ Tabla guest_registrations creada correctamente');
+    }
     
     // Obtener registros desde la base de datos
     const registros = await getGuestRegistrations(limit);
