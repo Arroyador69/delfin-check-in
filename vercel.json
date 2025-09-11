@@ -1,7 +1,7 @@
 {
   "headers": [
     {
-      "source": "/api/public/guest-registration",
+      "source": "/api/registro-flex",
       "headers": [
         {
           "key": "Access-Control-Allow-Origin",
@@ -17,11 +17,62 @@
         },
         {
           "key": "Access-Control-Allow-Headers",
-          "value": "Content-Type, Accept"
+          "value": "Content-Type, Accept, X-Dry-Run"
         },
         {
           "key": "Access-Control-Max-Age",
           "value": "86400"
+        }
+      ]
+    },
+    {
+      "source": "/api/setup-db",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "POST, OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "Content-Type, Accept"
+        }
+      ]
+    },
+    {
+      "source": "/api/check-db",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET, OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "Content-Type, Accept"
+        }
+      ]
+    },
+    {
+      "source": "/api/test-registro",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "POST, OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "Content-Type, Accept"
         }
       ]
     },

@@ -10,8 +10,8 @@ export async function executeQuery<T = any>(
   ...values: any[]
 ): Promise<T[]> {
   try {
-    const result = await sql<T>(query, ...values);
-    return result.rows;
+    const result = await sql(query, ...values);
+    return result.rows as T[];
   } catch (error) {
     console.error('Database error:', error);
     throw new Error(`Database operation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
