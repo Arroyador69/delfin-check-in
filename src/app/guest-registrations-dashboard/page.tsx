@@ -27,7 +27,26 @@ interface ComunicacionPayload {
 
 interface GuestRegistration {
   id: string;
-  date: string;
+  reserva_ref: string;
+  fecha_entrada: string;
+  fecha_salida: string;
+  created_at: string;
+  updated_at: string;
+  viajero: {
+    nombre: string;
+    apellido1: string;
+    apellido2: string;
+    nacionalidad: string;
+    tipoDocumento: string;
+    numeroDocumento: string;
+  };
+  contrato: {
+    codigoEstablecimiento: string;
+    referencia: string;
+    numHabitaciones: number;
+    internet: boolean;
+    tipoPago: string;
+  };
   data: ComunicacionPayload;
 }
 
@@ -53,16 +72,40 @@ export default function GuestRegistrationsDashboard() {
         ? '/api/guest-registrations' 
         : `/api/guest-registrations?date=${selectedDate}`;
       
-      const response = await fetch(url);
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include'
+      });
+      
       if (!response.ok) {
-        throw new Error('Error al cargar registros');
+        const errorText = await response.text();
+        console.error('API Error:', response.status, errorText);
+        throw new Error(`Error ${response.status}: ${response.statusText}`);
       }
+      
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        console.error('Non-JSON response:', text);
+        throw new Error('La respuesta no es JSON válido');
+      }
+      
       const data = await response.json();
-      setRegistrations(data);
+      console.log('Registros cargados:', data);
+      
+      // Manejar tanto array directo como objeto con items
+      const registrationsData = Array.isArray(data) ? data : (data.items || []);
+      setRegistrations(registrationsData);
       setSelectedRegistrations(new Set()); // Reset selección
     } catch (error) {
       console.error('Error cargando registros:', error);
+      // En caso de error, mostrar datos de ejemplo para desarrollo
       setRegistrations([]);
+      alert(`Error al cargar registros: ${error instanceof Error ? error.message : 'Error desconocido'}`);
     } finally {
       setLoading(false);
     }
@@ -72,7 +115,7 @@ export default function GuestRegistrationsDashboard() {
     setGeneratingXML(true);
     try {
       const payload = {
-        codigoEstablecimiento: registration.data.codigoEstablecimiento,
+        codigoEstablecimiento: registration.contrato.codigoEstablecimiento,
         comunicaciones: [{ contrato: registration.data.contrato, personas: registration.data.personas }]
       };
 
@@ -90,7 +133,7 @@ export default function GuestRegistrationsDashboard() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `partes_viajeros_${registration.date}_${registration.data.contrato.referencia}.xml`;
+      a.download = `partes_viajeros_${registration.created_at}_${registration.contrato.referencia}.xml`;
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -117,7 +160,7 @@ export default function GuestRegistrationsDashboard() {
       
       // Agrupar por establecimiento
       const groupedByEstablishment = selectedData.reduce((acc, reg) => {
-        const est = reg.data.codigoEstablecimiento;
+        const est = reg.contrato.codigoEstablecimiento;
         if (!acc[est]) {
           acc[est] = [];
         }
@@ -185,26 +228,28 @@ export default function GuestRegistrationsDashboard() {
   };
 
   const filteredRegistrations = registrations.filter(reg => {
-    const matchesSearch = reg.data.contrato.referencia.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         reg.data.personas.some(p => 
-                           p.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           p.apellido1.toLowerCase().includes(searchTerm.toLowerCase())
-                         );
+    const matchesSearch = reg.contrato.referencia.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         reg.viajero.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         reg.viajero.apellido1.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesEstablishment = !filterEstablishment || 
-                                reg.data.codigoEstablecimiento === filterEstablishment;
+                                reg.contrato.codigoEstablecimiento === filterEstablishment;
     return matchesSearch && matchesEstablishment;
   });
 
-  const uniqueEstablishments = [...new Set(registrations.map(r => r.data.codigoEstablecimiento))];
+  const uniqueEstablishments = [...new Set(registrations.map(r => r.contrato.codigoEstablecimiento))];
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Cargando registros...</p>
+      <AdminLayout>
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="text-center">
+            <div className="text-6xl mb-4">🐬</div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Cargando registros de viajeros...</p>
+            <p className="text-sm text-gray-500 mt-2">Conectando con la base de datos</p>
+          </div>
         </div>
-      </div>
+      </AdminLayout>
     );
   }
 
@@ -325,7 +370,7 @@ export default function GuestRegistrationsDashboard() {
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Total Viajeros</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {filteredRegistrations.reduce((sum, reg) => sum + reg.data.personas.length, 0)}
+                  {filteredRegistrations.length}
                 </p>
               </div>
             </div>
@@ -400,12 +445,23 @@ export default function GuestRegistrationsDashboard() {
           </div>
           <div className="p-6">
             {filteredRegistrations.length === 0 ? (
-              <div className="text-center py-8">
+              <div className="text-center py-12">
+                <div className="text-6xl mb-4">🐬</div>
                 <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-500">No hay registros para los filtros seleccionados</p>
-                <p className="text-sm text-gray-400 mt-2">
-                  Los clientes pueden enviar registros desde el formulario público
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  {registrations.length === 0 ? 'No hay registros aún' : 'No hay registros para los filtros seleccionados'}
+                </h3>
+                <p className="text-gray-500 mb-4">
+                  {registrations.length === 0 
+                    ? 'Los clientes pueden enviar registros desde el formulario público'
+                    : 'Intenta ajustar los filtros de búsqueda'
+                  }
                 </p>
+                <div className="space-y-2 text-sm text-gray-400">
+                  <p>• Los registros aparecerán aquí cuando los clientes completen el formulario</p>
+                  <p>• Puedes generar XML individual o conjunto para enviar al Ministerio del Interior</p>
+                  <p>• Usa los filtros para encontrar registros específicos</p>
+                </div>
               </div>
             ) : (
               <div className="space-y-4">
@@ -422,16 +478,16 @@ export default function GuestRegistrationsDashboard() {
                         <div className="text-2xl">📋</div>
                         <div>
                           <h4 className="font-semibold text-gray-900">
-                            Referencia: {registration.data.contrato.referencia}
+                            Referencia: {registration.contrato.referencia}
                           </h4>
                           <p className="text-sm text-gray-600">
-                            Establecimiento: {registration.data.codigoEstablecimiento} | 
-                            Fecha: {new Date(registration.date).toLocaleDateString('es-ES')}
+                            Establecimiento: {registration.contrato.codigoEstablecimiento} | 
+                            Fecha: {new Date(registration.created_at).toLocaleDateString('es-ES')}
                           </p>
                           <p className="text-sm text-gray-500">
-                            {registration.data.personas.length} viajero(s) | 
-                            Entrada: {new Date(registration.data.contrato.fechaEntrada).toLocaleDateString('es-ES')} | 
-                            Salida: {new Date(registration.data.contrato.fechaSalida).toLocaleDateString('es-ES')}
+                            Viajero: {registration.viajero.nombre} {registration.viajero.apellido1} | 
+                            Entrada: {new Date(registration.fecha_entrada).toLocaleDateString('es-ES')} | 
+                            Salida: {new Date(registration.fecha_salida).toLocaleDateString('es-ES')}
                           </p>
                         </div>
                       </div>
@@ -467,7 +523,7 @@ export default function GuestRegistrationsDashboard() {
           <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
               <h3 className="text-lg font-semibold text-gray-900">
-                Detalles del Registro - {selectedRegistration.data.contrato.referencia}
+                Detalles del Registro - {selectedRegistration.contrato.referencia}
               </h3>
               <button
                 onClick={() => setSelectedRegistration(null)}
@@ -483,86 +539,65 @@ export default function GuestRegistrationsDashboard() {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                   <div>
                     <span className="font-medium text-gray-600">Referencia:</span>
-                    <p className="text-gray-900">{selectedRegistration.data.contrato.referencia}</p>
+                    <p className="text-gray-900">{selectedRegistration.contrato.referencia}</p>
                   </div>
                   <div>
                     <span className="font-medium text-gray-600">Establecimiento:</span>
-                    <p className="text-gray-900">{selectedRegistration.data.codigoEstablecimiento}</p>
+                    <p className="text-gray-900">{selectedRegistration.contrato.codigoEstablecimiento}</p>
                   </div>
                   <div>
-                    <span className="font-medium text-gray-600">Fecha Contrato:</span>
-                    <p className="text-gray-900">{new Date(selectedRegistration.data.contrato.fechaContrato).toLocaleDateString('es-ES')}</p>
+                    <span className="font-medium text-gray-600">Fecha Registro:</span>
+                    <p className="text-gray-900">{new Date(selectedRegistration.created_at).toLocaleDateString('es-ES')}</p>
                   </div>
                   <div>
-                    <span className="font-medium text-gray-600">Nº Personas:</span>
-                    <p className="text-gray-900">{selectedRegistration.data.contrato.numPersonas}</p>
+                    <span className="font-medium text-gray-600">Nº Habitaciones:</span>
+                    <p className="text-gray-900">{selectedRegistration.contrato.numHabitaciones}</p>
                   </div>
                   <div>
                     <span className="font-medium text-gray-600">Entrada:</span>
-                    <p className="text-gray-900">{new Date(selectedRegistration.data.contrato.fechaEntrada).toLocaleString('es-ES')}</p>
+                    <p className="text-gray-900">{new Date(selectedRegistration.fecha_entrada).toLocaleString('es-ES')}</p>
                   </div>
                   <div>
                     <span className="font-medium text-gray-600">Salida:</span>
-                    <p className="text-gray-900">{new Date(selectedRegistration.data.contrato.fechaSalida).toLocaleString('es-ES')}</p>
+                    <p className="text-gray-900">{new Date(selectedRegistration.fecha_salida).toLocaleString('es-ES')}</p>
                   </div>
                   <div>
                     <span className="font-medium text-gray-600">Tipo Pago:</span>
-                    <p className="text-gray-900">{selectedRegistration.data.contrato.pago.tipoPago}</p>
+                    <p className="text-gray-900">{selectedRegistration.contrato.tipoPago}</p>
                   </div>
                   <div>
                     <span className="font-medium text-gray-600">Internet:</span>
-                    <p className="text-gray-900">{selectedRegistration.data.contrato.internet ? "Sí" : "No"}</p>
+                    <p className="text-gray-900">{selectedRegistration.contrato.internet ? "Sí" : "No"}</p>
                   </div>
                 </div>
               </div>
 
-              {/* Información de las personas */}
+              {/* Información del viajero */}
               <div>
-                <h4 className="font-semibold text-gray-900 mb-3">Viajeros ({selectedRegistration.data.personas.length})</h4>
-                <div className="space-y-4">
-                  {selectedRegistration.data.personas.map((persona, idx) => (
-                    <div key={idx} className="border rounded-lg p-4 bg-gray-50">
-                      <h5 className="font-medium text-gray-900 mb-2">Viajero {idx + 1}</h5>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
-                        <div>
-                          <span className="font-medium text-gray-600">Nombre:</span>
-                          <p className="text-gray-900">{persona.nombre} {persona.apellido1} {persona.apellido2 || ""}</p>
-                        </div>
-                        <div>
-                          <span className="font-medium text-gray-600">Fecha Nacimiento:</span>
-                          <p className="text-gray-900">{persona.fechaNacimiento ? new Date(persona.fechaNacimiento).toLocaleDateString('es-ES') : "No especificada"}</p>
-                        </div>
-                        <div>
-                          <span className="font-medium text-gray-600">Documento:</span>
-                          <p className="text-gray-900">
-                            {persona.tipoDocumento ? `${persona.tipoDocumento}: ${persona.numeroDocumento}` : "Sin documento"}
-                          </p>
-                        </div>
-                        <div>
-                          <span className="font-medium text-gray-600">Nacionalidad:</span>
-                          <p className="text-gray-900">{persona.nacionalidad || "No especificada"}</p>
-                        </div>
-                        <div>
-                          <span className="font-medium text-gray-600">Sexo:</span>
-                          <p className="text-gray-900">{persona.sexo || "No especificado"}</p>
-                        </div>
-                        <div>
-                          <span className="font-medium text-gray-600">Teléfono:</span>
-                          <p className="text-gray-900">{persona.contacto.telefono || "No especificado"}</p>
-                        </div>
-                        <div>
-                          <span className="font-medium text-gray-600">Email:</span>
-                          <p className="text-gray-900">{persona.contacto.correo || "No especificado"}</p>
-                        </div>
-                        <div>
-                          <span className="font-medium text-gray-600">Dirección:</span>
-                          <p className="text-gray-900">
-                            {persona.direccion.direccion}, {persona.direccion.codigoPostal}, {persona.direccion.pais}
-                          </p>
-                        </div>
-                      </div>
+                <h4 className="font-semibold text-gray-900 mb-3">Información del Viajero</h4>
+                <div className="border rounded-lg p-4 bg-gray-50">
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+                    <div>
+                      <span className="font-medium text-gray-600">Nombre:</span>
+                      <p className="text-gray-900">{selectedRegistration.viajero.nombre} {selectedRegistration.viajero.apellido1} {selectedRegistration.viajero.apellido2 || ""}</p>
                     </div>
-                  ))}
+                    <div>
+                      <span className="font-medium text-gray-600">Documento:</span>
+                      <p className="text-gray-900">
+                        {selectedRegistration.viajero.tipoDocumento}: {selectedRegistration.viajero.numeroDocumento}
+                      </p>
+                    </div>
+                    <div>
+                      <span className="font-medium text-gray-600">Nacionalidad:</span>
+                      <p className="text-gray-900">{selectedRegistration.viajero.nacionalidad}</p>
+                    </div>
+                    <div>
+                      <span className="font-medium text-gray-600">Datos completos:</span>
+                      <p className="text-gray-900 text-xs">
+                        {JSON.stringify(selectedRegistration.data, null, 2)}
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
