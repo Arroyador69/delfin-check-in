@@ -6,7 +6,7 @@ import AdminLayout from '@/components/AdminLayout';
 
 interface ComunicacionPayload {
   codigoEstablecimiento: string;
-  contrato: {
+  contrato?: {
     referencia: string;
     fechaContrato: string;
     fechaEntrada: string;
@@ -24,6 +24,26 @@ interface ComunicacionPayload {
   };
   personas?: any[];
   viajeros?: any[];
+  comunicaciones?: Array<{
+    contrato: {
+      referencia: string;
+      fechaContrato: string;
+      fechaEntrada: string;
+      fechaSalida: string;
+      numPersonas: number;
+      numHabitaciones?: number;
+      internet?: boolean;
+      pago: {
+        tipoPago: string;
+        fechaPago?: string;
+        medioPago?: string;
+        titular?: string;
+        caducidadTarjeta?: string;
+      };
+    };
+    personas?: any[];
+    viajeros?: any[];
+  }>;
 }
 
 interface GuestRegistration {
