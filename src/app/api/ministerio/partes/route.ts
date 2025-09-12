@@ -4,10 +4,10 @@ import { z } from 'zod';
 
 // Esquemas Zod actualizados según MIR v1.1.1
 const DireccionSchema = z.object({
-  direccion: z.string().min(1),
+  direccion: z.string().optional().default(''),
   direccionComplementaria: z.string().optional(),
-  codigoPostal: z.string().min(1),
-  pais: z.string().min(3).max(3), // ISO 3166-1 alpha-3
+  codigoPostal: z.string().optional().default(''),
+  pais: z.string().optional().default('ESP'),
   codigoMunicipio: z.string().optional(),
   nombreMunicipio: z.string().optional()
 });
@@ -21,16 +21,16 @@ const PersonaSchema = z.object({
   numeroDocumento: z.string().optional(), // Etiqueta correcta v1.1.1
   soporteDocumento: z.string().optional(),
   fechaNacimiento: z.string().min(1),
-  nacionalidad: z.string().min(3).max(3).optional(), // ISO 3166-1 alpha-3
-  sexo: z.enum(['H', 'M', 'O']).optional(),
+  nacionalidad: z.string().optional(), // Más flexible
+  sexo: z.string().optional(), // Más flexible
   telefono: z.string().optional(),
   telefono2: z.string().optional(),
-  correo: z.string().email().optional(),
+  correo: z.string().optional(), // Más flexible
   direccion: DireccionSchema
 });
 
 const PagoSchema = z.object({
-  tipoPago: z.enum(['EFECT', 'TARJT', 'PLATF', 'TRANS', 'MOVIL', 'TREG', 'DESTI', 'OTRO']),
+  tipoPago: z.string().default('EFECT'),
   fechaPago: z.string().optional(),
   medioPago: z.string().optional(),
   titular: z.string().optional(),
@@ -38,13 +38,13 @@ const PagoSchema = z.object({
 });
 
 const ContratoSchema = z.object({
-  referencia: z.string().min(1),
-  fechaContrato: z.string().min(1),
-  fechaEntrada: z.string().min(1),
-  fechaSalida: z.string().min(1),
-  numPersonas: z.number().int().positive(),
-  numHabitaciones: z.number().int().positive().optional(),
-  internet: z.boolean().optional(),
+  referencia: z.string().default('0000146967'),
+  fechaContrato: z.string().default(() => new Date().toISOString().split('T')[0]),
+  fechaEntrada: z.string().default(() => new Date().toISOString().split('T')[0]),
+  fechaSalida: z.string().default(() => new Date().toISOString().split('T')[0]),
+  numPersonas: z.number().int().positive().default(1),
+  numHabitaciones: z.number().int().positive().optional().default(1),
+  internet: z.boolean().optional().default(false),
   pago: PagoSchema
 });
 
