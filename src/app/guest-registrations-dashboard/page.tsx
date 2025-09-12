@@ -179,6 +179,11 @@ export default function GuestRegistrationsDashboard() {
       };
 
       const mapearContrato = (contrato: any) => {
+        // Si contrato es undefined, crear un objeto por defecto
+        if (!contrato) {
+          contrato = {};
+        }
+        
         return {
           referencia: contrato.referencia || '0000146967',
           fechaContrato: contrato.fechaContrato || new Date().toISOString().split('T')[0],
@@ -314,6 +319,11 @@ export default function GuestRegistrationsDashboard() {
       };
 
       const mapearContrato = (contrato: any) => {
+        // Si contrato es undefined, crear un objeto por defecto
+        if (!contrato) {
+          contrato = {};
+        }
+        
         return {
           referencia: contrato.referencia || '0000146967',
           fechaContrato: contrato.fechaContrato || new Date().toISOString().split('T')[0],
