@@ -22,7 +22,8 @@ interface ComunicacionPayload {
       caducidadTarjeta?: string;
     };
   };
-  personas: any[];
+  personas?: any[];
+  viajeros?: any[];
 }
 
 interface GuestRegistration {
