@@ -2,37 +2,35 @@ import { NextRequest } from 'next/server';
 import { create } from 'xmlbuilder2';
 import { z } from 'zod';
 
-// Esquemas Zod basados en los requisitos aportados
+// Esquemas Zod actualizados según MIR v1.1.1
 const DireccionSchema = z.object({
   direccion: z.string().min(1),
   direccionComplementaria: z.string().optional(),
   codigoPostal: z.string().min(1),
-  pais: z.string().min(1),
+  pais: z.string().min(3).max(3), // ISO 3166-1 alpha-3
   codigoMunicipio: z.string().optional(),
   nombreMunicipio: z.string().optional()
 });
 
 const PersonaSchema = z.object({
-  rol: z.string().optional().default('VI'),
+  rol: z.string().default('VI'), // Siempre VI para Partes de viajeros
   nombre: z.string().min(1),
   apellido1: z.string().min(1),
   apellido2: z.string().optional(),
   tipoDocumento: z.string().optional(),
-  numeroDocumento: z.string().optional(),
+  numeroDocumento: z.string().optional(), // Etiqueta correcta v1.1.1
   soporteDocumento: z.string().optional(),
   fechaNacimiento: z.string().min(1),
-  nacionalidad: z.string().optional(),
-  sexo: z.string().optional(),
-  contacto: z.object({
-    telefono: z.string().optional(),
-    telefono2: z.string().optional(),
-    correo: z.string().optional()
-  }).optional(),
+  nacionalidad: z.string().min(3).max(3).optional(), // ISO 3166-1 alpha-3
+  sexo: z.enum(['H', 'M', 'O']).optional(),
+  telefono: z.string().optional(),
+  telefono2: z.string().optional(),
+  correo: z.string().email().optional(),
   direccion: DireccionSchema
 });
 
 const PagoSchema = z.object({
-  tipoPago: z.string().min(1),
+  tipoPago: z.enum(['EFECT', 'TARJT', 'PLATF', 'TRANS', 'MOVIL', 'TREG', 'DESTI', 'OTRO']),
   fechaPago: z.string().optional(),
   medioPago: z.string().optional(),
   titular: z.string().optional(),
@@ -60,9 +58,71 @@ const PayloadSchema = z.object({
   comunicaciones: z.array(ComunicacionSchema).min(1)
 });
 
+// Función de validación exhaustiva según MIR v1.1.1
+function validateParte(parte: any): string[] {
+  const errs: string[] = [];
+  
+  // Validar numPersonas vs personas.length
+  if (parte.contrato.numPersonas !== parte.personas.length) {
+    errs.push(`numPersonas=${parte.contrato.numPersonas} pero personas=${parte.personas.length}`);
+  }
+
+  // Validar cada persona
+  parte.personas.forEach((p: any, i: number) => {
+    if (p.rol !== 'VI') {
+      errs.push(`persona[${i}].rol debe ser 'VI'`);
+    }
+    
+    // Al menos un contacto obligatorio
+    if (!(p.telefono || p.telefono2 || p.correo)) {
+      errs.push(`persona[${i}] sin contacto (telefono, telefono2 o correo)`);
+    }
+    
+    // Dirección obligatoria
+    if (!p.direccion) {
+      errs.push(`persona[${i}] sin direccion`);
+    } else {
+      if (!p.direccion.pais) {
+        errs.push(`persona[${i}].direccion.pais requerido (ISO-3)`);
+      }
+      if (p.direccion.pais === 'ESP' && !/^\d{5}$/.test(p.direccion.codigoMunicipio || '')) {
+        errs.push(`persona[${i}].codigoMunicipio debe ser INE de 5 dígitos para España`);
+      }
+      if (p.direccion.pais !== 'ESP' && !p.direccion.nombreMunicipio) {
+        errs.push(`persona[${i}].nombreMunicipio requerido para países no españoles`);
+      }
+    }
+    
+    // Validar mayor de edad
+    const fechaNac = new Date(p.fechaNacimiento);
+    const hoy = new Date();
+    const edad = hoy.getFullYear() - fechaNac.getFullYear();
+    const mayorDeEdad = edad >= 18;
+    
+    if (mayorDeEdad) {
+      if (!p.tipoDocumento) {
+        errs.push(`persona[${i}].tipoDocumento requerido para mayores de edad`);
+      }
+      if (!p.numeroDocumento) {
+        errs.push(`persona[${i}].numeroDocumento requerido para mayores de edad`);
+      }
+      if (p.tipoDocumento === 'NIF' && !p.apellido2) {
+        errs.push(`persona[${i}].apellido2 requerido para NIF`);
+      }
+    }
+  });
+
+  // Validar pago obligatorio
+  if (!parte.pago || !parte.pago.tipoPago) {
+    errs.push(`pago.tipoPago requerido`);
+  }
+
+  return errs;
+}
+
 function personaToXML(p: z.infer<typeof PersonaSchema>) {
   const persona: any = {
-    rol: p.rol || 'VI',
+    rol: 'VI', // Siempre VI para Partes de viajeros
     nombre: p.nombre,
     apellido1: p.apellido1
   };
@@ -70,7 +130,7 @@ function personaToXML(p: z.infer<typeof PersonaSchema>) {
   // Campos opcionales
   if (p.apellido2) persona.apellido2 = p.apellido2;
   if (p.tipoDocumento) persona.tipoDocumento = p.tipoDocumento;
-  if (p.numeroDocumento) persona.numeroDocumento = p.numeroDocumento;
+  if (p.numeroDocumento) persona.numeroDocumento = p.numeroDocumento; // Etiqueta correcta v1.1.1
   if (p.soporteDocumento) persona.soporteDocumento = p.soporteDocumento;
   if (p.nacionalidad) persona.nacionalidad = p.nacionalidad;
   if (p.sexo) persona.sexo = p.sexo;
@@ -78,7 +138,7 @@ function personaToXML(p: z.infer<typeof PersonaSchema>) {
   // Fecha de nacimiento
   persona.fechaNacimiento = p.fechaNacimiento;
 
-  // Dirección
+  // Dirección obligatoria
   persona.direccion = {
     direccion: p.direccion.direccion,
     codigoPostal: p.direccion.codigoPostal,
@@ -95,15 +155,28 @@ function personaToXML(p: z.infer<typeof PersonaSchema>) {
     persona.direccion.nombreMunicipio = p.direccion.nombreMunicipio;
   }
 
-  // Contacto
-  if (p.contacto) {
-    if (p.contacto.telefono) persona.telefono = p.contacto.telefono;
-    if (p.contacto.telefono2) persona.telefono2 = p.contacto.telefono2;
-    if (p.contacto.correo) persona.correo = p.contacto.correo;
-  }
+  // Contacto - al menos uno obligatorio
+  if (p.telefono) persona.telefono = p.telefono;
+  if (p.telefono2) persona.telefono2 = p.telefono2;
+  if (p.correo) persona.correo = p.correo;
 
   return { persona };
 }
+
+// Funciones de formateo de fechas según MIR v1.1.1
+const toDate = (d: string) => d.split('T')[0]; // AAAA-MM-DD
+const toDateTime = (d: string) => {
+  if (!d) return '';
+  // Si ya tiene formato AAAA-MM-DD, añadir T00:00:00
+  if (/^\d{4}-\d{2}-\d{2}$/.test(d)) {
+    return d + 'T00:00:00';
+  }
+  // Si ya tiene formato AAAA-MM-DDThh:mm:ss, devolverlo
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(d)) {
+    return d;
+  }
+  return d;
+};
 
 export async function POST(req: NextRequest) {
   try {
@@ -115,53 +188,64 @@ export async function POST(req: NextRequest) {
     const parsed = PayloadSchema.safeParse(json);
     if (!parsed.success) {
       console.error('❌ Error de validación:', parsed.error.flatten());
-      return new Response(JSON.stringify({ error: parsed.error.flatten() }), { status: 400, headers: { 'Content-Type': 'application/json' } });
+      return new Response(JSON.stringify({ 
+        error: 'Error de validación de datos',
+        details: parsed.error.flatten() 
+      }), { 
+        status: 400, 
+        headers: { 'Content-Type': 'application/json' } 
+      });
     }
     
     console.log('✅ Datos validados correctamente');
 
-  const { codigoEstablecimiento, comunicaciones } = parsed.data;
+    const { codigoEstablecimiento, comunicaciones } = parsed.data;
 
-  const root = {
-    peticion: {
-      solicitud: {
-        codigoEstablecimiento,
-        comunicacion: comunicaciones.map((c) => {
-          const personasXml = c.personas.map(personaToXML).map((n) => n.persona);
-          
-          // Formatear fechas para el XML
-          const formatDateForXML = (dateStr: string) => {
-            if (!dateStr) return '';
-            // Si ya tiene formato AAAA-MM-DD, añadir T00:00:00
-            if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
-              return dateStr + 'T00:00:00';
-            }
-            return dateStr;
-          };
-
-          return {
-            contrato: {
-              referencia: c.contrato.referencia,
-              fechaContrato: c.contrato.fechaContrato,
-              fechaEntrada: formatDateForXML(c.contrato.fechaEntrada),
-              fechaSalida: formatDateForXML(c.contrato.fechaSalida),
-              numPersonas: String(c.contrato.numPersonas),
-              ...(c.contrato.numHabitaciones ? { numHabitaciones: String(c.contrato.numHabitaciones) } : {}),
-              ...(typeof c.contrato.internet === 'boolean' ? { internet: c.contrato.internet ? 'true' : 'false' } : {}),
-              pago: {
-                tipoPago: c.contrato.pago.tipoPago,
-                ...(c.contrato.pago.fechaPago ? { fechaPago: c.contrato.pago.fechaPago } : {}),
-                ...(c.contrato.pago.medioPago ? { medioPago: c.contrato.pago.medioPago } : {}),
-                ...(c.contrato.pago.titular ? { titular: c.contrato.pago.titular } : {}),
-                ...(c.contrato.pago.caducidadTarjeta ? { caducidadTarjeta: c.contrato.pago.caducidadTarjeta } : {})
-              }
-            },
-            persona: personasXml.length === 1 ? personasXml[0] : personasXml
-          };
-        })
+    // Validar cada comunicación según MIR v1.1.1
+    for (const comunicacion of comunicaciones) {
+      const validationErrors = validateParte(comunicacion);
+      if (validationErrors.length > 0) {
+        console.error('❌ Errores de validación MIR:', validationErrors);
+        return new Response(JSON.stringify({ 
+          error: 'Error de validación MIR v1.1.1',
+          details: validationErrors 
+        }), { 
+          status: 422, 
+          headers: { 'Content-Type': 'application/json' } 
+        });
       }
     }
-  };
+
+    const root = {
+      peticion: {
+        solicitud: {
+          codigoEstablecimiento,
+          comunicacion: comunicaciones.map((c) => {
+            const personasXml = c.personas.map(personaToXML).map((n) => n.persona);
+            
+            return {
+              contrato: {
+                referencia: c.contrato.referencia,
+                fechaContrato: toDate(c.contrato.fechaContrato),
+                fechaEntrada: toDateTime(c.contrato.fechaEntrada),
+                fechaSalida: toDateTime(c.contrato.fechaSalida),
+                numPersonas: String(c.contrato.numPersonas),
+                ...(c.contrato.numHabitaciones ? { numHabitaciones: String(c.contrato.numHabitaciones) } : {}),
+                ...(typeof c.contrato.internet === 'boolean' ? { internet: c.contrato.internet ? 'true' : 'false' } : {}),
+                pago: {
+                  tipoPago: c.contrato.pago.tipoPago,
+                  ...(c.contrato.pago.fechaPago ? { fechaPago: toDate(c.contrato.pago.fechaPago) } : {}),
+                  ...(c.contrato.pago.medioPago ? { medioPago: c.contrato.pago.medioPago } : {}),
+                  ...(c.contrato.pago.titular ? { titular: c.contrato.pago.titular } : {}),
+                  ...(c.contrato.pago.caducidadTarjeta ? { caducidadTarjeta: c.contrato.pago.caducidadTarjeta } : {})
+                }
+              },
+              persona: personasXml.length === 1 ? personasXml[0] : personasXml
+            };
+          })
+        }
+      }
+    };
 
     console.log('📝 Generando estructura XML...');
     
@@ -189,5 +273,6 @@ export async function POST(req: NextRequest) {
     });
   }
 }
+
 
 

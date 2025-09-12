@@ -114,10 +114,77 @@ export default function GuestRegistrationsDashboard() {
   const generateXML = async (registration: GuestRegistration) => {
     setGeneratingXML(true);
     try {
-      const payload = {
-        codigoEstablecimiento: registration.contrato.codigoEstablecimiento,
-        comunicaciones: [{ contrato: registration.data.contrato, personas: registration.data.personas }]
+      // Mapear datos del formulario público al formato MIR v1.1.1
+      const mapearPersona = (persona: any) => {
+        return {
+          rol: 'VI', // Siempre VI para Partes de viajeros
+          nombre: persona.nombre || persona.nombreCompleto?.split(' ')[0] || '',
+          apellido1: persona.primerApellido || persona.apellido1 || '',
+          apellido2: persona.segundoApellido || persona.apellido2 || '',
+          tipoDocumento: persona.tipoDocumento || '',
+          numeroDocumento: persona.numeroDocumento || '',
+          soporteDocumento: persona.soporteDocumento || '',
+          fechaNacimiento: persona.fechaNacimiento || '',
+          nacionalidad: persona.nacionalidadISO2 ? 
+            (persona.nacionalidadISO2 === 'ES' ? 'ESP' : 
+             persona.nacionalidadISO2 === 'FR' ? 'FRA' :
+             persona.nacionalidadISO2 === 'DE' ? 'DEU' :
+             persona.nacionalidadISO2 === 'IT' ? 'ITA' :
+             persona.nacionalidadISO2 === 'PT' ? 'PRT' :
+             persona.nacionalidadISO2 === 'GB' ? 'GBR' :
+             persona.nacionalidadISO2 === 'US' ? 'USA' :
+             'ESP') : 'ESP',
+          sexo: persona.sexo === 'Hombre' ? 'H' : persona.sexo === 'Mujer' ? 'M' : 'O',
+          telefono: persona.telefono || '',
+          telefono2: persona.telefono2 || '',
+          correo: persona.email || persona.correo || '',
+          direccion: {
+            direccion: persona.direccion || '',
+            direccionComplementaria: persona.direccionComplementaria || '',
+            codigoPostal: persona.cp || persona.codigoPostal || '',
+            pais: persona.paisResidencia === 'ES' ? 'ESP' : 
+                  persona.paisResidencia === 'FR' ? 'FRA' :
+                  persona.paisResidencia === 'DE' ? 'DEU' :
+                  persona.paisResidencia === 'IT' ? 'ITA' :
+                  persona.paisResidencia === 'PT' ? 'PRT' :
+                  persona.paisResidencia === 'GB' ? 'GBR' :
+                  persona.paisResidencia === 'US' ? 'USA' :
+                  'ESP',
+            codigoMunicipio: persona.ine || persona.codigoMunicipio || '',
+            nombreMunicipio: persona.nombreMunicipio || ''
+          }
+        };
       };
+
+      const mapearContrato = (contrato: any) => {
+        return {
+          referencia: contrato.referencia || '0000146967',
+          fechaContrato: contrato.fechaContrato || new Date().toISOString().split('T')[0],
+          fechaEntrada: contrato.entrada || contrato.fechaEntrada || '',
+          fechaSalida: contrato.salida || contrato.fechaSalida || '',
+          numPersonas: contrato.numPersonas || 1,
+          numHabitaciones: contrato.nHabitaciones || contrato.numHabitaciones || 1,
+          internet: contrato.internet || false,
+          pago: {
+            tipoPago: contrato.tipoPagoCode || contrato.pago?.tipoPago || 'EFECT',
+            fechaPago: contrato.fechaPago || contrato.pago?.fechaPago || '',
+            medioPago: contrato.medioPago || contrato.pago?.medioPago || '',
+            titular: contrato.titular?.nombreCompleto || contrato.pago?.titular || '',
+            caducidadTarjeta: contrato.titular?.tarjetaCaducidad || contrato.pago?.caducidadTarjeta || ''
+          }
+        };
+      };
+
+      const payload = {
+        codigoEstablecimiento: registration.contrato.codigoEstablecimiento || '0000256653',
+        comunicaciones: [{
+          contrato: mapearContrato(registration.data.contrato),
+          personas: registration.data.personas?.map(mapearPersona) || 
+                   registration.data.viajeros?.map(mapearPersona) || []
+        }]
+      };
+
+      console.log('📤 Payload mapeado para MIR:', JSON.stringify(payload, null, 2));
 
       const res = await fetch("/api/ministerio/partes", {
         method: "POST",
@@ -126,7 +193,14 @@ export default function GuestRegistrationsDashboard() {
       });
 
       if (!res.ok) {
-        throw new Error("Error al generar XML");
+        const errorData = await res.json().catch(() => ({}));
+        console.error('❌ Error del servidor:', errorData);
+        
+        if (errorData.details && Array.isArray(errorData.details)) {
+          throw new Error(`Errores de validación MIR:\n${errorData.details.join('\n')}`);
+        } else {
+          throw new Error(errorData.error || "Error al generar XML");
+        }
       }
 
       const blob = await res.blob();
@@ -142,7 +216,7 @@ export default function GuestRegistrationsDashboard() {
       alert("XML generado y descargado correctamente");
     } catch (error) {
       console.error('Error generando XML:', error);
-      alert("Error al generar XML");
+      alert(`Error al generar XML: ${error instanceof Error ? error.message : 'Error desconocido'}`);
     } finally {
       setGeneratingXML(false);
     }
@@ -158,15 +232,77 @@ export default function GuestRegistrationsDashboard() {
     try {
       const selectedData = registrations.filter(reg => selectedRegistrations.has(reg.id));
       
+      // Mapear datos del formulario público al formato MIR v1.1.1
+      const mapearPersona = (persona: any) => {
+        return {
+          rol: 'VI', // Siempre VI para Partes de viajeros
+          nombre: persona.nombre || persona.nombreCompleto?.split(' ')[0] || '',
+          apellido1: persona.primerApellido || persona.apellido1 || '',
+          apellido2: persona.segundoApellido || persona.apellido2 || '',
+          tipoDocumento: persona.tipoDocumento || '',
+          numeroDocumento: persona.numeroDocumento || '',
+          soporteDocumento: persona.soporteDocumento || '',
+          fechaNacimiento: persona.fechaNacimiento || '',
+          nacionalidad: persona.nacionalidadISO2 ? 
+            (persona.nacionalidadISO2 === 'ES' ? 'ESP' : 
+             persona.nacionalidadISO2 === 'FR' ? 'FRA' :
+             persona.nacionalidadISO2 === 'DE' ? 'DEU' :
+             persona.nacionalidadISO2 === 'IT' ? 'ITA' :
+             persona.nacionalidadISO2 === 'PT' ? 'PRT' :
+             persona.nacionalidadISO2 === 'GB' ? 'GBR' :
+             persona.nacionalidadISO2 === 'US' ? 'USA' :
+             'ESP') : 'ESP',
+          sexo: persona.sexo === 'Hombre' ? 'H' : persona.sexo === 'Mujer' ? 'M' : 'O',
+          telefono: persona.telefono || '',
+          telefono2: persona.telefono2 || '',
+          correo: persona.email || persona.correo || '',
+          direccion: {
+            direccion: persona.direccion || '',
+            direccionComplementaria: persona.direccionComplementaria || '',
+            codigoPostal: persona.cp || persona.codigoPostal || '',
+            pais: persona.paisResidencia === 'ES' ? 'ESP' : 
+                  persona.paisResidencia === 'FR' ? 'FRA' :
+                  persona.paisResidencia === 'DE' ? 'DEU' :
+                  persona.paisResidencia === 'IT' ? 'ITA' :
+                  persona.paisResidencia === 'PT' ? 'PRT' :
+                  persona.paisResidencia === 'GB' ? 'GBR' :
+                  persona.paisResidencia === 'US' ? 'USA' :
+                  'ESP',
+            codigoMunicipio: persona.ine || persona.codigoMunicipio || '',
+            nombreMunicipio: persona.nombreMunicipio || ''
+          }
+        };
+      };
+
+      const mapearContrato = (contrato: any) => {
+        return {
+          referencia: contrato.referencia || '0000146967',
+          fechaContrato: contrato.fechaContrato || new Date().toISOString().split('T')[0],
+          fechaEntrada: contrato.entrada || contrato.fechaEntrada || '',
+          fechaSalida: contrato.salida || contrato.fechaSalida || '',
+          numPersonas: contrato.numPersonas || 1,
+          numHabitaciones: contrato.nHabitaciones || contrato.numHabitaciones || 1,
+          internet: contrato.internet || false,
+          pago: {
+            tipoPago: contrato.tipoPagoCode || contrato.pago?.tipoPago || 'EFECT',
+            fechaPago: contrato.fechaPago || contrato.pago?.fechaPago || '',
+            medioPago: contrato.medioPago || contrato.pago?.medioPago || '',
+            titular: contrato.titular?.nombreCompleto || contrato.pago?.titular || '',
+            caducidadTarjeta: contrato.titular?.tarjetaCaducidad || contrato.pago?.caducidadTarjeta || ''
+          }
+        };
+      };
+      
       // Agrupar por establecimiento
       const groupedByEstablishment = selectedData.reduce((acc, reg) => {
-        const est = reg.contrato.codigoEstablecimiento;
+        const est = reg.contrato.codigoEstablecimiento || '0000256653';
         if (!acc[est]) {
           acc[est] = [];
         }
         acc[est].push({
-          contrato: reg.data.contrato,
-          personas: reg.data.personas
+          contrato: mapearContrato(reg.data.contrato),
+          personas: reg.data.personas?.map(mapearPersona) || 
+                   reg.data.viajeros?.map(mapearPersona) || []
         });
         return acc;
       }, {} as Record<string, any[]>);
@@ -178,6 +314,8 @@ export default function GuestRegistrationsDashboard() {
           comunicaciones
         };
 
+        console.log('📤 Payload conjunto mapeado para MIR:', JSON.stringify(payload, null, 2));
+
         const res = await fetch("/api/ministerio/partes-conjunto", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -185,7 +323,14 @@ export default function GuestRegistrationsDashboard() {
         });
 
         if (!res.ok) {
-          throw new Error(`Error al generar XML para ${establecimiento}`);
+          const errorData = await res.json().catch(() => ({}));
+          console.error('❌ Error del servidor:', errorData);
+          
+          if (errorData.details && Array.isArray(errorData.details)) {
+            throw new Error(`Errores de validación MIR para ${establecimiento}:\n${errorData.details.join('\n')}`);
+          } else {
+            throw new Error(errorData.error || `Error al generar XML para ${establecimiento}`);
+          }
         }
 
         const blob = await res.blob();
