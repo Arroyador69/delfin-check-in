@@ -160,19 +160,20 @@ export default function GuestRegistrationsDashboard() {
           telefono2: persona.telefono2 || '',
           correo: persona.email || persona.correo || '',
           direccion: {
-            direccion: persona.direccion || '',
-            direccionComplementaria: persona.direccionComplementaria || '',
-            codigoPostal: persona.cp || persona.codigoPostal || '',
-            pais: persona.paisResidencia === 'ES' ? 'ESP' : 
-                  persona.paisResidencia === 'FR' ? 'FRA' :
-                  persona.paisResidencia === 'DE' ? 'DEU' :
-                  persona.paisResidencia === 'IT' ? 'ITA' :
-                  persona.paisResidencia === 'PT' ? 'PRT' :
-                  persona.paisResidencia === 'GB' ? 'GBR' :
-                  persona.paisResidencia === 'US' ? 'USA' :
-                  'ESP',
-            codigoMunicipio: persona.ine || persona.codigoMunicipio || '',
-            nombreMunicipio: persona.nombreMunicipio || ''
+            direccion: persona.direccion?.direccion || persona.direccion || '',
+            direccionComplementaria: persona.direccion?.direccionComplementaria || persona.direccionComplementaria || '',
+            codigoPostal: persona.direccion?.codigoPostal || persona.cp || persona.codigoPostal || '',
+            pais: persona.direccion?.pais || 
+                  (persona.paisResidencia === 'ES' ? 'ESP' : 
+                   persona.paisResidencia === 'FR' ? 'FRA' :
+                   persona.paisResidencia === 'DE' ? 'DEU' :
+                   persona.paisResidencia === 'IT' ? 'ITA' :
+                   persona.paisResidencia === 'PT' ? 'PRT' :
+                   persona.paisResidencia === 'GB' ? 'GBR' :
+                   persona.paisResidencia === 'US' ? 'USA' :
+                   'ESP'),
+            codigoMunicipio: persona.direccion?.codigoMunicipio || persona.ine || persona.codigoMunicipio || '',
+            nombreMunicipio: persona.direccion?.nombreMunicipio || persona.nombreMunicipio || ''
           }
         };
       };
@@ -284,19 +285,20 @@ export default function GuestRegistrationsDashboard() {
           telefono2: persona.telefono2 || '',
           correo: persona.email || persona.correo || '',
           direccion: {
-            direccion: persona.direccion || '',
-            direccionComplementaria: persona.direccionComplementaria || '',
-            codigoPostal: persona.cp || persona.codigoPostal || '',
-            pais: persona.paisResidencia === 'ES' ? 'ESP' : 
-                  persona.paisResidencia === 'FR' ? 'FRA' :
-                  persona.paisResidencia === 'DE' ? 'DEU' :
-                  persona.paisResidencia === 'IT' ? 'ITA' :
-                  persona.paisResidencia === 'PT' ? 'PRT' :
-                  persona.paisResidencia === 'GB' ? 'GBR' :
-                  persona.paisResidencia === 'US' ? 'USA' :
-                  'ESP',
-            codigoMunicipio: persona.ine || persona.codigoMunicipio || '',
-            nombreMunicipio: persona.nombreMunicipio || ''
+            direccion: persona.direccion?.direccion || persona.direccion || '',
+            direccionComplementaria: persona.direccion?.direccionComplementaria || persona.direccionComplementaria || '',
+            codigoPostal: persona.direccion?.codigoPostal || persona.cp || persona.codigoPostal || '',
+            pais: persona.direccion?.pais || 
+                  (persona.paisResidencia === 'ES' ? 'ESP' : 
+                   persona.paisResidencia === 'FR' ? 'FRA' :
+                   persona.paisResidencia === 'DE' ? 'DEU' :
+                   persona.paisResidencia === 'IT' ? 'ITA' :
+                   persona.paisResidencia === 'PT' ? 'PRT' :
+                   persona.paisResidencia === 'GB' ? 'GBR' :
+                   persona.paisResidencia === 'US' ? 'USA' :
+                   'ESP'),
+            codigoMunicipio: persona.direccion?.codigoMunicipio || persona.ine || persona.codigoMunicipio || '',
+            nombreMunicipio: persona.direccion?.nombreMunicipio || persona.nombreMunicipio || ''
           }
         };
       };
