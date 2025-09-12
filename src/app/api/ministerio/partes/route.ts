@@ -112,10 +112,12 @@ function validateParte(parte: any): string[] {
     }
   });
 
-  // Validar pago obligatorio
-  if (!parte.pago || !parte.pago.tipoPago) {
-    errs.push(`pago.tipoPago requerido`);
-  }
+  // Validar pago obligatorio en cada comunicación
+  parte.comunicaciones.forEach((com, i) => {
+    if (!com.contrato.pago || !com.contrato.pago.tipoPago) {
+      errs.push(`comunicacion[${i}].pago.tipoPago requerido`);
+    }
+  });
 
   return errs;
 }

@@ -221,7 +221,17 @@ export default function GuestRegistrationsDashboard() {
       });
 
       if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
+        let errorData;
+        try {
+          // Try to parse as JSON
+          errorData = await res.json();
+        } catch (e) {
+          // If JSON parsing fails, read as text
+          const textResponse = await res.text().catch(() => 'Unable to read response body');
+          console.error('❌ Error del servidor (text):', textResponse);
+          errorData = { error: textResponse, details: [] };
+        }
+        
         console.error('❌ Error del servidor:', errorData);
         
         if (errorData.details && Array.isArray(errorData.details)) {
@@ -354,7 +364,17 @@ export default function GuestRegistrationsDashboard() {
         });
 
         if (!res.ok) {
-          const errorData = await res.json().catch(() => ({}));
+          let errorData;
+          try {
+            // Try to parse as JSON
+            errorData = await res.json();
+          } catch (e) {
+            // If JSON parsing fails, read as text
+            const textResponse = await res.text().catch(() => 'Unable to read response body');
+            console.error('❌ Error del servidor (text):', textResponse);
+            errorData = { error: textResponse, details: [] };
+          }
+          
           console.error('❌ Error del servidor:', errorData);
           
           if (errorData.details && Array.isArray(errorData.details)) {
