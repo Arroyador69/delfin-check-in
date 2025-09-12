@@ -113,7 +113,7 @@ function validateParte(parte: any): string[] {
   });
 
   // Validar pago obligatorio en cada comunicación
-  parte.comunicaciones.forEach((com, i) => {
+  parte.comunicaciones.forEach((com: any, i: number) => {
     if (!com.contrato.pago || !com.contrato.pago.tipoPago) {
       errs.push(`comunicacion[${i}].pago.tipoPago requerido`);
     }
