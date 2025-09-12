@@ -113,11 +113,15 @@ function validateParte(parte: any): string[] {
   });
 
   // Validar pago obligatorio en cada comunicación
-  parte.comunicaciones.forEach((com: any, i: number) => {
-    if (!com.contrato.pago || !com.contrato.pago.tipoPago) {
-      errs.push(`comunicacion[${i}].pago.tipoPago requerido`);
-    }
-  });
+  if (parte.comunicaciones && Array.isArray(parte.comunicaciones)) {
+    parte.comunicaciones.forEach((com: any, i: number) => {
+      if (!com.contrato.pago || !com.contrato.pago.tipoPago) {
+        errs.push(`comunicacion[${i}].pago.tipoPago requerido`);
+      }
+    });
+  } else {
+    errs.push('comunicaciones es requerido y debe ser un array');
+  }
 
   return errs;
 }
