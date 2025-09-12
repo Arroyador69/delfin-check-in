@@ -188,9 +188,11 @@ export async function POST(req: NextRequest) {
     const parsed = PayloadSchema.safeParse(json);
     if (!parsed.success) {
       console.error('❌ Error de validación:', parsed.error.flatten());
+      console.error('❌ Datos que fallaron la validación:', JSON.stringify(json, null, 2));
       return new Response(JSON.stringify({ 
         error: 'Error de validación de datos',
-        details: parsed.error.flatten() 
+        details: parsed.error.flatten(),
+        receivedData: json
       }), { 
         status: 400, 
         headers: { 'Content-Type': 'application/json' } 
