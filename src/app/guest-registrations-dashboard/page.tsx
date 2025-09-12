@@ -232,7 +232,7 @@ export default function GuestRegistrationsDashboard() {
           errorData = { error: textResponse, details: [] };
         }
         
-        console.error('❌ Error del servidor:', errorData);
+        console.error('❌ Error del servidor:', JSON.stringify(errorData, null, 2));
         
         if (errorData.details && Array.isArray(errorData.details)) {
           throw new Error(`Errores de validación MIR:\n${errorData.details.join('\n')}`);
@@ -375,7 +375,7 @@ export default function GuestRegistrationsDashboard() {
             errorData = { error: textResponse, details: [] };
           }
           
-          console.error('❌ Error del servidor:', errorData);
+          console.error('❌ Error del servidor:', JSON.stringify(errorData, null, 2));
           
           if (errorData.details && Array.isArray(errorData.details)) {
             throw new Error(`Errores de validación MIR para ${establecimiento}:\n${errorData.details.join('\n')}`);
