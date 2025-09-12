@@ -176,12 +176,18 @@ export default function GuestRegistrationsDashboard() {
         };
       };
 
+      // Debug: Ver la estructura real de los datos
+      console.log('🔍 Debug - registration.data:', JSON.stringify(registration.data, null, 2));
+      console.log('🔍 Debug - registration.contrato:', JSON.stringify(registration.contrato, null, 2));
+
       const payload = {
         codigoEstablecimiento: registration.contrato.codigoEstablecimiento || '0000256653',
         comunicaciones: [{
-          contrato: mapearContrato(registration.data.contrato),
+          contrato: mapearContrato(registration.data.contrato || registration.data.comunicaciones?.[0]?.contrato),
           personas: registration.data.personas?.map(mapearPersona) || 
-                   registration.data.viajeros?.map(mapearPersona) || []
+                   registration.data.viajeros?.map(mapearPersona) ||
+                   registration.data.comunicaciones?.[0]?.personas?.map(mapearPersona) ||
+                   registration.data.comunicaciones?.[0]?.viajeros?.map(mapearPersona) || []
         }]
       };
 
@@ -301,9 +307,11 @@ export default function GuestRegistrationsDashboard() {
           acc[est] = [];
         }
         acc[est].push({
-          contrato: mapearContrato(reg.data.contrato),
+          contrato: mapearContrato(reg.data.contrato || reg.data.comunicaciones?.[0]?.contrato),
           personas: reg.data.personas?.map(mapearPersona) || 
-                   reg.data.viajeros?.map(mapearPersona) || []
+                   reg.data.viajeros?.map(mapearPersona) ||
+                   reg.data.comunicaciones?.[0]?.personas?.map(mapearPersona) ||
+                   reg.data.comunicaciones?.[0]?.viajeros?.map(mapearPersona) || []
         });
         return acc;
       }, {} as Record<string, any[]>);
