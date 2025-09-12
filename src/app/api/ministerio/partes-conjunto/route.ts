@@ -234,6 +234,10 @@ export async function POST(req: NextRequest) {
         solicitud: {
           codigoEstablecimiento,
           comunicacion: comunicaciones.map((c) => {
+            console.log('🔍 Debug - comunicacion:', JSON.stringify(c, null, 2));
+            console.log('🔍 Debug - c.contrato:', JSON.stringify(c.contrato, null, 2));
+            console.log('🔍 Debug - c.personas:', JSON.stringify(c.personas, null, 2));
+            
             const personasXml = c.personas.map(personaToXML).map((n) => n.persona);
             
             return {
