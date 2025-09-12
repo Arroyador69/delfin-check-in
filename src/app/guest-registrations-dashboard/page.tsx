@@ -156,9 +156,9 @@ export default function GuestRegistrationsDashboard() {
              persona.nacionalidadISO2 === 'US' ? 'USA' :
              'ESP') : 'ESP',
           sexo: persona.sexo === 'Hombre' ? 'H' : persona.sexo === 'Mujer' ? 'M' : 'O',
-          telefono: persona.telefono || '',
+          telefono: persona.telefono || persona.telefono2 || '000000000',
           telefono2: persona.telefono2 || '',
-          correo: persona.email || persona.correo || '',
+          correo: persona.email || persona.correo || 'no-email@example.com',
           direccion: {
             direccion: persona.direccion?.direccion || persona.direccion || '',
             direccionComplementaria: persona.direccion?.direccionComplementaria || persona.direccionComplementaria || '',
@@ -189,9 +189,9 @@ export default function GuestRegistrationsDashboard() {
           internet: contrato.internet || false,
           pago: {
             tipoPago: contrato.tipoPagoCode || contrato.pago?.tipoPago || 'EFECT',
-            fechaPago: contrato.fechaPago || contrato.pago?.fechaPago || '',
-            medioPago: contrato.medioPago || contrato.pago?.medioPago || '',
-            titular: contrato.titular?.nombreCompleto || contrato.pago?.titular || '',
+            fechaPago: contrato.fechaPago || contrato.pago?.fechaPago || contrato.fechaContrato || new Date().toISOString().split('T')[0],
+            medioPago: contrato.medioPago || contrato.pago?.medioPago || 'Efectivo',
+            titular: contrato.titular?.nombreCompleto || contrato.pago?.titular || 'Titular por defecto',
             caducidadTarjeta: contrato.titular?.tarjetaCaducidad || contrato.pago?.caducidadTarjeta || ''
           }
         };
@@ -281,9 +281,9 @@ export default function GuestRegistrationsDashboard() {
              persona.nacionalidadISO2 === 'US' ? 'USA' :
              'ESP') : 'ESP',
           sexo: persona.sexo === 'Hombre' ? 'H' : persona.sexo === 'Mujer' ? 'M' : 'O',
-          telefono: persona.telefono || '',
+          telefono: persona.telefono || persona.telefono2 || '000000000',
           telefono2: persona.telefono2 || '',
-          correo: persona.email || persona.correo || '',
+          correo: persona.email || persona.correo || 'no-email@example.com',
           direccion: {
             direccion: persona.direccion?.direccion || persona.direccion || '',
             direccionComplementaria: persona.direccion?.direccionComplementaria || persona.direccionComplementaria || '',
@@ -314,9 +314,9 @@ export default function GuestRegistrationsDashboard() {
           internet: contrato.internet || false,
           pago: {
             tipoPago: contrato.tipoPagoCode || contrato.pago?.tipoPago || 'EFECT',
-            fechaPago: contrato.fechaPago || contrato.pago?.fechaPago || '',
-            medioPago: contrato.medioPago || contrato.pago?.medioPago || '',
-            titular: contrato.titular?.nombreCompleto || contrato.pago?.titular || '',
+            fechaPago: contrato.fechaPago || contrato.pago?.fechaPago || contrato.fechaContrato || new Date().toISOString().split('T')[0],
+            medioPago: contrato.medioPago || contrato.pago?.medioPago || 'Efectivo',
+            titular: contrato.titular?.nombreCompleto || contrato.pago?.titular || 'Titular por defecto',
             caducidadTarjeta: contrato.titular?.tarjetaCaducidad || contrato.pago?.caducidadTarjeta || ''
           }
         };
