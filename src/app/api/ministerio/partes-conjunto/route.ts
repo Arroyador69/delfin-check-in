@@ -211,7 +211,12 @@ export async function POST(req: NextRequest) {
 
     // Validar cada comunicación según MIR v1.1.1
     for (const comunicacion of comunicaciones) {
-      const validationErrors = validateParte(comunicacion);
+      // Crear estructura esperada por validateParte
+      const parteParaValidar = {
+        comunicaciones: [comunicacion]
+      };
+      
+      const validationErrors = validateParte(parteParaValidar);
       if (validationErrors.length > 0) {
         console.error('❌ Errores de validación MIR:', validationErrors);
         return new Response(JSON.stringify({ 
