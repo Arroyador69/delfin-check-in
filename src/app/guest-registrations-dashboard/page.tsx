@@ -147,6 +147,7 @@ export default function GuestRegistrationsDashboard() {
     };
   };
 
+  // Función simplificada para XML conjunto que usa el nuevo endpoint robusto
   const generateConjuntoXML = async () => {
     if (selectedRegistrations.size === 0) {
       alert("Por favor, selecciona al menos un registro para generar XML conjunto");
@@ -157,141 +158,73 @@ export default function GuestRegistrationsDashboard() {
     try {
       const selectedData = registrations.filter(reg => selectedRegistrations.has(reg.id));
       
-      // Mapear datos del formulario público al formato MIR v1.1.1
-      const mapearPersona = (persona: any) => {
-        return {
-          rol: 'VI', // Siempre VI para Partes de viajeros
-          nombre: persona.nombre || persona.nombreCompleto?.split(' ')[0] || '',
-          apellido1: persona.primerApellido || persona.apellido1 || '',
-          apellido2: persona.segundoApellido || persona.apellido2 || '',
-          tipoDocumento: persona.tipoDocumento || '',
-          numeroDocumento: persona.numeroDocumento || '',
-          soporteDocumento: persona.soporteDocumento || '',
-          fechaNacimiento: persona.fechaNacimiento || '',
-          nacionalidad: persona.nacionalidadISO2 ? 
-            (persona.nacionalidadISO2 === 'ES' ? 'ESP' : 
-             persona.nacionalidadISO2 === 'FR' ? 'FRA' :
-             persona.nacionalidadISO2 === 'DE' ? 'DEU' :
-             persona.nacionalidadISO2 === 'IT' ? 'ITA' :
-             persona.nacionalidadISO2 === 'PT' ? 'PRT' :
-             persona.nacionalidadISO2 === 'GB' ? 'GBR' :
-             persona.nacionalidadISO2 === 'US' ? 'USA' :
-             'ESP') : 'ESP',
-          sexo: persona.sexo === 'Hombre' ? 'H' : persona.sexo === 'Mujer' ? 'M' : 'O',
-          telefono: persona.telefono || persona.telefono2 || '000000000',
-          telefono2: persona.telefono2 || '',
-          correo: persona.email || persona.correo || 'no-email@example.com',
-          direccion: {
-            direccion: persona.direccion?.direccion || persona.direccion || '',
-            direccionComplementaria: persona.direccion?.direccionComplementaria || persona.direccionComplementaria || '',
-            codigoPostal: persona.direccion?.codigoPostal || persona.cp || persona.codigoPostal || '',
-            pais: persona.direccion?.pais || 
-                  (persona.paisResidencia === 'ES' ? 'ESP' : 
-                   persona.paisResidencia === 'FR' ? 'FRA' :
-                   persona.paisResidencia === 'DE' ? 'DEU' :
-                   persona.paisResidencia === 'IT' ? 'ITA' :
-                   persona.paisResidencia === 'PT' ? 'PRT' :
-                   persona.paisResidencia === 'GB' ? 'GBR' :
-                   persona.paisResidencia === 'US' ? 'USA' :
-                   'ESP'),
-            codigoMunicipio: persona.direccion?.codigoMunicipio || persona.ine || persona.codigoMunicipio || '',
-            nombreMunicipio: persona.direccion?.nombreMunicipio || persona.nombreMunicipio || ''
-          }
-        };
+      // Preparar datos para el nuevo endpoint robusto
+      const comunicaciones = selectedData.map(reg => ({
+        contrato: reg.data.comunicaciones?.[0]?.contrato || reg.data.contrato || {},
+        personas: reg.data.comunicaciones?.[0]?.personas || 
+                 reg.data.comunicaciones?.[0]?.viajeros ||
+                 reg.data.personas || 
+                 reg.data.viajeros || []
+      }));
+
+      const payload = {
+        codigoEstablecimiento: selectedData[0]?.contrato?.codigoEstablecimiento || '0000256653',
+        comunicaciones
       };
 
-      const mapearContrato = (contrato: any) => {
-        // Si contrato es undefined, crear un objeto por defecto
-        if (!contrato) {
-          contrato = {};
+      console.log('📤 Payload conjunto para nuevo endpoint:', JSON.stringify(payload, null, 2));
+
+      // Usar el nuevo endpoint robusto
+      const res = await fetch("/api/export/pv", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: 'include',
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) {
+        // Intentar leer JSON; si no, texto
+        let error: any = { 
+          error: `${res.status} ${res.statusText}`, 
+          details: [] as string[],
+          correlationId: res.headers.get('x-correlation-id') || 'N/A'
+        };
+        
+        try {
+          const j = await res.json();
+          error = { ...error, ...j };
+        } catch {
+          try {
+            const t = await res.text();
+            error.error = t || error.error;
+          } catch {}
         }
         
-        return {
-          referencia: contrato.referencia || '0000146967',
-          fechaContrato: contrato.fechaContrato || new Date().toISOString().split('T')[0],
-          fechaEntrada: contrato.entrada || contrato.fechaEntrada || '',
-          fechaSalida: contrato.salida || contrato.fechaSalida || '',
-          numPersonas: contrato.numPersonas || 1,
-          numHabitaciones: contrato.nHabitaciones || contrato.numHabitaciones || 1,
-          internet: contrato.internet || false,
-          pago: {
-            tipoPago: contrato.tipoPagoCode || contrato.pago?.tipoPago || 'EFECT',
-            fechaPago: contrato.fechaPago || contrato.pago?.fechaPago || contrato.fechaContrato || new Date().toISOString().split('T')[0],
-            medioPago: contrato.medioPago || contrato.pago?.medioPago || 'Efectivo',
-            titular: contrato.titular?.nombreCompleto || contrato.pago?.titular || 'Titular por defecto',
-            caducidadTarjeta: contrato.titular?.tarjetaCaducidad || contrato.pago?.caducidadTarjeta || ''
-          }
-        };
-      };
-      
-      // Agrupar por establecimiento
-      const groupedByEstablishment = selectedData.reduce((acc, reg) => {
-        const est = reg.contrato.codigoEstablecimiento || '0000256653';
-        if (!acc[est]) {
-          acc[est] = [];
+        console.error('❌ Error del servidor:', JSON.stringify(error, null, 2));
+        
+        if (Array.isArray(error.details) && error.details.length) {
+          throw new Error(`Errores de validación MIR:\n${error.details.join('\n')}\n\nID: ${error.correlationId}`);
         }
-        acc[est].push({
-          contrato: mapearContrato(reg.data.comunicaciones?.[0]?.contrato || reg.data.contrato),
-          personas: reg.data.comunicaciones?.[0]?.personas?.map(mapearPersona) ||
-                   reg.data.comunicaciones?.[0]?.viajeros?.map(mapearPersona) ||
-                   reg.data.personas?.map(mapearPersona) || 
-                   reg.data.viajeros?.map(mapearPersona) || []
-        });
-        return acc;
-      }, {} as Record<string, any[]>);
-
-      // Generar XML para cada establecimiento
-      for (const [establecimiento, comunicaciones] of Object.entries(groupedByEstablishment)) {
-        const payload = {
-          codigoEstablecimiento: establecimiento,
-          comunicaciones
-        };
-
-        console.log('📤 Payload conjunto mapeado para MIR:', JSON.stringify(payload, null, 2));
-
-        const res = await fetch("/api/ministerio/partes-conjunto", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
-        });
-
-        if (!res.ok) {
-          let errorData;
-          try {
-            // Try to parse as JSON
-            errorData = await res.json();
-          } catch (e) {
-            // If JSON parsing fails, read as text
-            const textResponse = await res.text().catch(() => 'Unable to read response body');
-            console.error('❌ Error del servidor (text):', textResponse);
-            errorData = { error: textResponse, details: [] };
-          }
-          
-          console.error('❌ Error del servidor:', JSON.stringify(errorData, null, 2));
-          
-          if (errorData.details && Array.isArray(errorData.details)) {
-            throw new Error(`Errores de validación MIR para ${establecimiento}:\n${errorData.details.join('\n')}`);
-          } else {
-            throw new Error(errorData.error || `Error al generar XML para ${establecimiento}`);
-          }
-        }
-
-        const blob = await res.blob();
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `partes_viajeros_conjunto_${establecimiento}_${new Date().toISOString().slice(0,10)}.xml`;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        URL.revokeObjectURL(url);
+        
+        throw new Error(`${error.error}\nID: ${error.correlationId}`);
       }
 
-      alert(`XML conjunto generado correctamente para ${Object.keys(groupedByEstablishment).length} establecimiento(s)`);
+      // Descargar archivo
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `partes_viajeros_conjunto_${new Date().toISOString().slice(0,10)}.xml`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+
+      alert("XML conjunto generado y descargado correctamente");
       setSelectedRegistrations(new Set()); // Reset selección
     } catch (error) {
       console.error('Error generando XML conjunto:', error);
-      alert("Error al generar XML conjunto");
+      alert(`Error al generar XML conjunto:\n${error instanceof Error ? error.message : 'Error desconocido'}`);
     } finally {
       setGeneratingXML(false);
     }
