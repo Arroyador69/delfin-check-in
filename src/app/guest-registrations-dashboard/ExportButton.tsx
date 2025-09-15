@@ -47,9 +47,10 @@ function normalizeData(rawData: any) {
         fechaNacimiento: persona.fechaNacimiento || persona.fecha_nacimiento || '',
         nacionalidad: persona.nacionalidad,
         sexo: persona.sexo,
-        telefono: persona.telefono,
-        telefono2: persona.telefono2,
-        correo: persona.correo || persona.email,
+        // Asegurar que al menos un contacto esté presente
+        telefono: persona.telefono || persona.telefono2 || '000000000',
+        telefono2: persona.telefono2 || '',
+        correo: persona.correo || persona.email || 'no-email@example.com',
         direccion: {
           direccion: persona.direccion?.direccion || persona.direccion || '',
           direccionComplementaria: persona.direccion?.direccionComplementaria || persona.direccion_complementaria,
