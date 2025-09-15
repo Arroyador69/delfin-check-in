@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Download, Eye, Users, FileText, Calendar, Search, Filter, CheckSquare, Square } from 'lucide-react';
 import AdminLayout from '@/components/AdminLayout';
+import ExportButton from './ExportButton';
 
 interface ComunicacionPayload {
   codigoEstablecimiento: string;
@@ -132,137 +133,18 @@ export default function GuestRegistrationsDashboard() {
     }
   };
 
-  const generateXML = async (registration: GuestRegistration) => {
-    setGeneratingXML(true);
-    try {
-      // Mapear datos del formulario público al formato MIR v1.1.1
-      const mapearPersona = (persona: any) => {
-        return {
-          rol: 'VI', // Siempre VI para Partes de viajeros
-          nombre: persona.nombre || persona.nombreCompleto?.split(' ')[0] || '',
-          apellido1: persona.primerApellido || persona.apellido1 || '',
-          apellido2: persona.segundoApellido || persona.apellido2 || '',
-          tipoDocumento: persona.tipoDocumento || '',
-          numeroDocumento: persona.numeroDocumento || '',
-          soporteDocumento: persona.soporteDocumento || '',
-          fechaNacimiento: persona.fechaNacimiento || '',
-          nacionalidad: persona.nacionalidadISO2 ? 
-            (persona.nacionalidadISO2 === 'ES' ? 'ESP' : 
-             persona.nacionalidadISO2 === 'FR' ? 'FRA' :
-             persona.nacionalidadISO2 === 'DE' ? 'DEU' :
-             persona.nacionalidadISO2 === 'IT' ? 'ITA' :
-             persona.nacionalidadISO2 === 'PT' ? 'PRT' :
-             persona.nacionalidadISO2 === 'GB' ? 'GBR' :
-             persona.nacionalidadISO2 === 'US' ? 'USA' :
-             'ESP') : 'ESP',
-          sexo: persona.sexo === 'Hombre' ? 'H' : persona.sexo === 'Mujer' ? 'M' : 'O',
-          telefono: persona.telefono || persona.telefono2 || '000000000',
-          telefono2: persona.telefono2 || '',
-          correo: persona.email || persona.correo || 'no-email@example.com',
-          direccion: {
-            direccion: persona.direccion?.direccion || persona.direccion || '',
-            direccionComplementaria: persona.direccion?.direccionComplementaria || persona.direccionComplementaria || '',
-            codigoPostal: persona.direccion?.codigoPostal || persona.cp || persona.codigoPostal || '',
-            pais: persona.direccion?.pais || 
-                  (persona.paisResidencia === 'ES' ? 'ESP' : 
-                   persona.paisResidencia === 'FR' ? 'FRA' :
-                   persona.paisResidencia === 'DE' ? 'DEU' :
-                   persona.paisResidencia === 'IT' ? 'ITA' :
-                   persona.paisResidencia === 'PT' ? 'PRT' :
-                   persona.paisResidencia === 'GB' ? 'GBR' :
-                   persona.paisResidencia === 'US' ? 'USA' :
-                   'ESP'),
-            codigoMunicipio: persona.direccion?.codigoMunicipio || persona.ine || persona.codigoMunicipio || '',
-            nombreMunicipio: persona.direccion?.nombreMunicipio || persona.nombreMunicipio || ''
-          }
-        };
-      };
-
-      const mapearContrato = (contrato: any) => {
-        // Si contrato es undefined, crear un objeto por defecto
-        if (!contrato) {
-          contrato = {};
-        }
-        
-        return {
-          referencia: contrato.referencia || '0000146967',
-          fechaContrato: contrato.fechaContrato || new Date().toISOString().split('T')[0],
-          fechaEntrada: contrato.entrada || contrato.fechaEntrada || '',
-          fechaSalida: contrato.salida || contrato.fechaSalida || '',
-          numPersonas: contrato.numPersonas || 1,
-          numHabitaciones: contrato.nHabitaciones || contrato.numHabitaciones || 1,
-          internet: contrato.internet || false,
-          pago: {
-            tipoPago: contrato.tipoPagoCode || contrato.pago?.tipoPago || 'EFECT',
-            fechaPago: contrato.fechaPago || contrato.pago?.fechaPago || contrato.fechaContrato || new Date().toISOString().split('T')[0],
-            medioPago: contrato.medioPago || contrato.pago?.medioPago || 'Efectivo',
-            titular: contrato.titular?.nombreCompleto || contrato.pago?.titular || 'Titular por defecto',
-            caducidadTarjeta: contrato.titular?.tarjetaCaducidad || contrato.pago?.caducidadTarjeta || ''
-          }
-        };
-      };
-
-      // Debug: Ver la estructura real de los datos
-      console.log('🔍 Debug - registration.data:', JSON.stringify(registration.data, null, 2));
-      console.log('🔍 Debug - registration.contrato:', JSON.stringify(registration.contrato, null, 2));
-
-      const payload = {
-        codigoEstablecimiento: registration.contrato.codigoEstablecimiento || '0000256653',
-        comunicaciones: [{
-          contrato: mapearContrato(registration.data.comunicaciones?.[0]?.contrato || registration.data.contrato),
-          personas: registration.data.comunicaciones?.[0]?.personas?.map(mapearPersona) ||
-                   registration.data.comunicaciones?.[0]?.viajeros?.map(mapearPersona) ||
-                   registration.data.personas?.map(mapearPersona) || 
-                   registration.data.viajeros?.map(mapearPersona) || []
-        }]
-      };
-
-      console.log('📤 Payload mapeado para MIR:', JSON.stringify(payload, null, 2));
-
-      const res = await fetch("/api/ministerio/partes", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-
-      if (!res.ok) {
-        let errorData;
-        try {
-          // Try to parse as JSON
-          errorData = await res.json();
-        } catch (e) {
-          // If JSON parsing fails, read as text
-          const textResponse = await res.text().catch(() => 'Unable to read response body');
-          console.error('❌ Error del servidor (text):', textResponse);
-          errorData = { error: textResponse, details: [] };
-        }
-        
-        console.error('❌ Error del servidor:', JSON.stringify(errorData, null, 2));
-        
-        if (errorData.details && Array.isArray(errorData.details)) {
-          throw new Error(`Errores de validación MIR:\n${errorData.details.join('\n')}`);
-        } else {
-          throw new Error(errorData.error || "Error al generar XML");
-        }
-      }
-
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `partes_viajeros_${registration.created_at}_${registration.contrato.referencia}.xml`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-
-      alert("XML generado y descargado correctamente");
-    } catch (error) {
-      console.error('Error generando XML:', error);
-      alert(`Error al generar XML: ${error instanceof Error ? error.message : 'Error desconocido'}`);
-    } finally {
-      setGeneratingXML(false);
-    }
+  // Función simplificada que prepara los datos para el ExportButton
+  const prepareSolicitudData = (registration: GuestRegistration) => {
+    return {
+      codigoEstablecimiento: registration.contrato.codigoEstablecimiento || '0000256653',
+      comunicaciones: [{
+        contrato: registration.data.comunicaciones?.[0]?.contrato || registration.data.contrato || {},
+        personas: registration.data.comunicaciones?.[0]?.personas || 
+                 registration.data.comunicaciones?.[0]?.viajeros ||
+                 registration.data.personas || 
+                 registration.data.viajeros || []
+      }]
+    };
   };
 
   const generateConjuntoXML = async () => {
@@ -705,14 +587,11 @@ export default function GuestRegistrationsDashboard() {
                           <Eye className="h-4 w-4 inline mr-1" />
                           Ver
                         </button>
-                        <button
-                          onClick={() => generateXML(registration)}
-                          disabled={generatingXML}
-                          className="px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
-                        >
-                          <Download className="h-4 w-4 inline mr-1" />
-                          {generatingXML ? "Generando..." : "XML Individual"}
-                        </button>
+                        <ExportButton
+                          solicitud={prepareSolicitudData(registration)}
+                          onSuccess={() => alert("XML generado y descargado correctamente")}
+                          onError={(error) => alert(`Error al generar XML:\n${error}`)}
+                        />
                       </div>
                     </div>
                   </div>
@@ -814,17 +693,14 @@ export default function GuestRegistrationsDashboard() {
               >
                 Cerrar
               </button>
-              <button
-                onClick={() => {
-                  generateXML(selectedRegistration);
+              <ExportButton
+                solicitud={prepareSolicitudData(selectedRegistration)}
+                onSuccess={() => {
+                  alert("XML generado y descargado correctamente");
                   setSelectedRegistration(null);
                 }}
-                disabled={generatingXML}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
-              >
-                <Download className="h-4 w-4 inline mr-1" />
-                {generatingXML ? "Generando..." : "Generar XML Individual"}
-              </button>
+                onError={(error) => alert(`Error al generar XML:\n${error}`)}
+              />
             </div>
           </div>
         </div>

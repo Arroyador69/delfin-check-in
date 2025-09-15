@@ -13,6 +13,21 @@ export function middleware(req: NextRequest) {
   // Rutas que quieres dejar públicas (si alguna)
   const url = req.nextUrl
   
+  // ✅ Allowlist de archivos estáticos y manifest
+  if (
+    url.pathname.startsWith('/_next') ||
+    url.pathname.startsWith('/static') ||
+    url.pathname.startsWith('/images') ||
+    url.pathname.startsWith('/fonts') ||
+    url.pathname === '/manifest.json' ||
+    url.pathname === '/favicon.ico' ||
+    url.pathname === '/robots.txt' ||
+    url.pathname.startsWith('/icon') ||
+    url.pathname.startsWith('/sw.js')
+  ) {
+    return NextResponse.next();
+  }
+  
   // Permitir endpoints de API públicos
   if (url.pathname.startsWith('/api/registro-flex') || 
       url.pathname.startsWith('/api/setup-db') || 
@@ -50,5 +65,5 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|robots.txt).*)']
+  matcher: ['/((?!_next|static|images|fonts|favicon.ico|manifest.json|robots.txt|icon|sw.js).*)']
 }
