@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Download, Eye, Users, FileText, Calendar, Search, Filter, CheckSquare, Square } from 'lucide-react';
 import AdminLayout from '@/components/AdminLayout';
-import ExportButton from './ExportButton';
+import ExportButton, { normalizeData } from './ExportButton';
 
 interface ComunicacionPayload {
   codigoEstablecimiento: string;
@@ -158,14 +158,11 @@ export default function GuestRegistrationsDashboard() {
     try {
       const selectedData = registrations.filter(reg => selectedRegistrations.has(reg.id));
       
-      // Preparar datos para el nuevo endpoint robusto
-      const comunicaciones = selectedData.map(reg => ({
-        contrato: reg.data.comunicaciones?.[0]?.contrato || reg.data.contrato || {},
-        personas: reg.data.comunicaciones?.[0]?.personas || 
-                 reg.data.comunicaciones?.[0]?.viajeros ||
-                 reg.data.personas || 
-                 reg.data.viajeros || []
-      }));
+      // Usar la misma función de normalización que funciona para XML individuales
+      const comunicaciones = selectedData.flatMap(reg => {
+        const normalized = normalizeData(reg.data);
+        return normalized.comunicaciones;
+      });
 
       const payload = {
         codigoEstablecimiento: selectedData[0]?.contrato?.codigoEstablecimiento || '0000256653',
