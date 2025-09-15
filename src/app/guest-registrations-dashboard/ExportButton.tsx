@@ -9,7 +9,7 @@ interface ExportButtonProps {
 }
 
 // Función para normalizar datos antes del envío
-function normalizeData(rawData: any) {
+export function normalizeData(rawData: any) {
   // Asegurar que comunicaciones es un array
   const comunicaciones = Array.isArray(rawData.comunicaciones) 
     ? rawData.comunicaciones 
