@@ -60,3 +60,27 @@ export async function getGuestRegistrationById(id: string): Promise<any | null> 
   
   return result.rows[0] || null;
 }
+
+// Función helper para eliminar un registro por ID
+export async function deleteGuestRegistrationById(id: string): Promise<boolean> {
+  const result = await sql`
+    DELETE FROM guest_registrations
+    WHERE id = ${id}
+    RETURNING id;
+  `;
+  
+  return result.rows.length > 0;
+}
+
+// Función helper para eliminar múltiples registros por IDs
+export async function deleteGuestRegistrationsByIds(ids: string[]): Promise<number> {
+  if (ids.length === 0) return 0;
+  
+  const result = await sql`
+    DELETE FROM guest_registrations
+    WHERE id = ANY(${ids})
+    RETURNING id;
+  `;
+  
+  return result.rows.length;
+}

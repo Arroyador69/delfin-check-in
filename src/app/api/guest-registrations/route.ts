@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getGuestRegistrations } from '@/lib/db';
+import { getGuestRegistrations, deleteGuestRegistrationById, deleteGuestRegistrationsByIds } from '@/lib/db';
 import { sql } from '@/lib/db';
 
 // Configuración para evitar caché
@@ -108,6 +108,91 @@ export async function GET(req: NextRequest) {
       message: error instanceof Error ? error.message : 'Error desconocido'
     }, { 
       status: 500 
+    });
+  }
+}
+
+// Eliminar registros (individual o múltiple)
+export async function DELETE(req: NextRequest) {
+  try {
+    const url = new URL(req.url);
+    const id = url.searchParams.get('id');
+    const ids = url.searchParams.get('ids');
+    
+    console.log('🗑️ Eliminando registros de viajeros...');
+    
+    if (id) {
+      // Eliminar registro individual
+      console.log('🔍 Eliminando registro individual:', id);
+      const deleted = await deleteGuestRegistrationById(id);
+      
+      if (!deleted) {
+        return new NextResponse(JSON.stringify({
+          ok: false,
+          error: 'Registro no encontrado'
+        }), {
+          status: 404,
+          headers: { "Content-Type": "application/json" }
+        });
+      }
+      
+      console.log('✅ Registro eliminado correctamente:', id);
+      return new NextResponse(JSON.stringify({
+        ok: true,
+        message: 'Registro eliminado correctamente',
+        deletedId: id
+      }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" }
+      });
+      
+    } else if (ids) {
+      // Eliminar múltiples registros
+      const idsArray = ids.split(',').filter(Boolean);
+      console.log('🔍 Eliminando múltiples registros:', idsArray);
+      
+      if (idsArray.length === 0) {
+        return new NextResponse(JSON.stringify({
+          ok: false,
+          error: 'No se proporcionaron IDs válidos'
+        }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" }
+        });
+      }
+      
+      const deletedCount = await deleteGuestRegistrationsByIds(idsArray);
+      
+      console.log(`✅ ${deletedCount} registros eliminados correctamente`);
+      return new NextResponse(JSON.stringify({
+        ok: true,
+        message: `${deletedCount} registros eliminados correctamente`,
+        deletedCount: deletedCount,
+        requestedCount: idsArray.length
+      }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" }
+      });
+      
+    } else {
+      return new NextResponse(JSON.stringify({
+        ok: false,
+        error: 'Se requiere el parámetro "id" para eliminación individual o "ids" para eliminación múltiple'
+      }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" }
+      });
+    }
+    
+  } catch (error) {
+    console.error('❌ Error al eliminar registros:', error);
+    return new NextResponse(JSON.stringify({
+      ok: false,
+      error: 'Error interno del servidor',
+      details: error instanceof Error ? error.message : 'Error desconocido'
+    }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" }
     });
   }
 }

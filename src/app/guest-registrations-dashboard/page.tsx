@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Download, Eye, Users, FileText, Calendar, Search, Filter, CheckSquare, Square } from 'lucide-react';
+import { Download, Eye, Users, FileText, Calendar, Search, Filter, CheckSquare, Square, Trash2, AlertTriangle } from 'lucide-react';
 import AdminLayout from '@/components/AdminLayout';
 import ExportButton, { normalizeData } from './ExportButton';
 
@@ -82,6 +82,12 @@ export default function GuestRegistrationsDashboard() {
   const [selectedRegistration, setSelectedRegistration] = useState<GuestRegistration | null>(null);
   const [selectedRegistrations, setSelectedRegistrations] = useState<Set<string>>(new Set());
   const [showAllRegistrations, setShowAllRegistrations] = useState(true);
+  const [deleting, setDeleting] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState<{
+    type: 'single' | 'multiple';
+    ids: string[];
+    names: string[];
+  } | null>(null);
 
   useEffect(() => {
     loadRegistrations();
@@ -242,6 +248,85 @@ export default function GuestRegistrationsDashboard() {
       setSelectedRegistrations(new Set());
     } else {
       setSelectedRegistrations(new Set(filteredRegistrations.map(reg => reg.id)));
+    }
+  };
+
+  // Función para eliminar registro individual
+  const deleteRegistration = async (id: string) => {
+    const registration = registrations.find(reg => reg.id === id);
+    if (!registration) return;
+
+    setConfirmDelete({
+      type: 'single',
+      ids: [id],
+      names: [`${registration.viajero.nombre} ${registration.viajero.apellido1} (${registration.contrato.referencia})`]
+    });
+  };
+
+  // Función para eliminar registros seleccionados
+  const deleteSelectedRegistrations = async () => {
+    if (selectedRegistrations.size === 0) return;
+
+    const selectedData = registrations.filter(reg => selectedRegistrations.has(reg.id));
+    const names = selectedData.map(reg => 
+      `${reg.viajero.nombre} ${reg.viajero.apellido1} (${reg.contrato.referencia})`
+    );
+
+    setConfirmDelete({
+      type: 'multiple',
+      ids: Array.from(selectedRegistrations),
+      names
+    });
+  };
+
+  // Función para confirmar eliminación
+  const confirmDeletion = async () => {
+    if (!confirmDelete) return;
+
+    setDeleting(true);
+    try {
+      const { type, ids } = confirmDelete;
+      
+      let url = '/api/guest-registrations?';
+      if (type === 'single') {
+        url += `id=${ids[0]}`;
+      } else {
+        url += `ids=${ids.join(',')}`;
+      }
+
+      const response = await fetch(url, {
+        method: 'DELETE',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Error desconocido' }));
+        throw new Error(errorData.error || `Error ${response.status}: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      console.log('✅ Eliminación exitosa:', result);
+
+      // Recargar registros
+      await loadRegistrations();
+      
+      // Mostrar mensaje de éxito
+      const message = type === 'single' 
+        ? 'Registro eliminado correctamente'
+        : `${result.deletedCount} registros eliminados correctamente`;
+      
+      alert(message);
+
+    } catch (error) {
+      console.error('❌ Error eliminando registros:', error);
+      alert(`Error al eliminar registros:\n${error instanceof Error ? error.message : 'Error desconocido'}`);
+    } finally {
+      setDeleting(false);
+      setConfirmDelete(null);
     }
   };
 
@@ -426,9 +511,16 @@ export default function GuestRegistrationsDashboard() {
                   <button
                     onClick={generateConjuntoXML}
                     disabled={generatingXML || selectedRegistrations.size === 0}
-                    className="text-xs px-2 py-1 bg-blue-600 text-white rounded disabled:opacity-50"
+                    className="text-xs px-2 py-1 bg-blue-600 text-white rounded disabled:opacity-50 block w-full"
                   >
                     {generatingXML ? "Generando..." : "XML Conjunto"}
+                  </button>
+                  <button
+                    onClick={deleteSelectedRegistrations}
+                    disabled={deleting || selectedRegistrations.size === 0}
+                    className="text-xs px-2 py-1 bg-red-600 text-white rounded disabled:opacity-50 block w-full"
+                  >
+                    {deleting ? "Eliminando..." : `Eliminar (${selectedRegistrations.size})`}
                   </button>
                 </div>
               </div>
@@ -449,14 +541,24 @@ export default function GuestRegistrationsDashboard() {
                   {selectedRegistrations.size === filteredRegistrations.length ? "Deseleccionar todo" : "Seleccionar todo"}
                 </button>
                 {selectedRegistrations.size > 0 && (
-                  <button
-                    onClick={generateConjuntoXML}
-                    disabled={generatingXML}
-                    className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50"
-                  >
-                    <Download className="h-4 w-4 inline mr-2" />
-                    {generatingXML ? "Generando..." : `Generar XML Conjunto (${selectedRegistrations.size})`}
-                  </button>
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={generateConjuntoXML}
+                      disabled={generatingXML}
+                      className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50"
+                    >
+                      <Download className="h-4 w-4 inline mr-2" />
+                      {generatingXML ? "Generando..." : `Generar XML Conjunto (${selectedRegistrations.size})`}
+                    </button>
+                    <button
+                      onClick={deleteSelectedRegistrations}
+                      disabled={deleting}
+                      className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50"
+                    >
+                      <Trash2 className="h-4 w-4 inline mr-2" />
+                      {deleting ? "Eliminando..." : `Eliminar Seleccionados (${selectedRegistrations.size})`}
+                    </button>
+                  </div>
                 )}
               </div>
             )}
@@ -522,6 +624,14 @@ export default function GuestRegistrationsDashboard() {
                           onSuccess={() => alert("XML generado y descargado correctamente")}
                           onError={(error) => alert(`Error al generar XML:\n${error}`)}
                         />
+                        <button
+                          onClick={() => deleteRegistration(registration.id)}
+                          disabled={deleting}
+                          className="px-3 py-2 bg-red-100 text-red-700 rounded-md hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50"
+                        >
+                          <Trash2 className="h-4 w-4 inline mr-1" />
+                          Eliminar
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -531,6 +641,72 @@ export default function GuestRegistrationsDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Modal de confirmación de eliminación */}
+      {confirmDelete && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <div className="flex items-center">
+                <div className="p-2 bg-red-100 rounded-full mr-3">
+                  <AlertTriangle className="h-6 w-6 text-red-600" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Confirmar Eliminación
+                </h3>
+              </div>
+            </div>
+            <div className="px-6 py-4">
+              <p className="text-gray-700 mb-4">
+                {confirmDelete.type === 'single' 
+                  ? '¿Estás seguro de que quieres eliminar este registro?'
+                  : `¿Estás seguro de que quieres eliminar ${confirmDelete.ids.length} registros?`
+                }
+              </p>
+              <div className="bg-gray-50 rounded-lg p-3 max-h-32 overflow-y-auto">
+                {confirmDelete.names.map((name, index) => (
+                  <div key={index} className="text-sm text-gray-600 py-1">
+                    • {name}
+                  </div>
+                ))}
+              </div>
+              <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <div className="flex">
+                  <AlertTriangle className="h-5 w-5 text-yellow-600 mr-2 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium text-yellow-800">
+                      ⚠️ Esta acción no se puede deshacer
+                    </p>
+                    <p className="text-sm text-yellow-700 mt-1">
+                      Los registros eliminados no podrán ser recuperados.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
+              <button
+                onClick={() => setConfirmDelete(null)}
+                disabled={deleting}
+                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmDeletion}
+                disabled={deleting}
+                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 flex items-center"
+              >
+                {deleting && (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                )}
+                <Trash2 className="h-4 w-4 mr-2" />
+                {deleting ? 'Eliminando...' : 'Eliminar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal para ver detalles */}
       {selectedRegistration && (
