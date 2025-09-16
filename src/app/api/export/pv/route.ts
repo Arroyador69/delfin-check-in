@@ -239,19 +239,37 @@ function buildXML(data: z.infer<typeof PayloadSchema>): string {
 
 // Función para normalizar códigos de pago antiguos a códigos MIR oficiales
 function normalizeTipoPago(tipoPago: string): string {
-  const codigo = String(tipoPago || '').toUpperCase();
+  const codigo = String(tipoPago || '').toUpperCase().trim();
   
-  // Mapeo de códigos antiguos a códigos MIR oficiales
+  // Mapeo completo de códigos antiguos a códigos MIR oficiales
   const mapeo: Record<string, string> = {
+    // Códigos completos
     'EFECTIVO': 'EFECT',
     'TARJETA': 'TARJT', 
     'PLATAFORMA': 'PLATF',
     'TRANSFERENCIA': 'TRANS',
     'CHEQUE': 'TREG',
-    'DESTINO': 'DESTI'
+    'DESTINO': 'DESTI',
+    'MOVIL': 'MOVIL',  // Ya es correcto
+    'OTRO': 'OTRO',    // Ya es correcto
+    
+    // Códigos parciales por si acaso
+    'EFECT': 'EFECT',
+    'TARJT': 'TARJT',
+    'PLATF': 'PLATF', 
+    'TRANS': 'TRANS',
+    'TREG': 'TREG',
+    'DESTI': 'DESTI'
   };
   
-  return mapeo[codigo] || codigo;
+  const resultado = mapeo[codigo] || codigo;
+  
+  // Log para debugging
+  if (codigo !== resultado) {
+    console.log(`[NORMALIZE] Tipo pago: "${codigo}" → "${resultado}"`);
+  }
+  
+  return resultado;
 }
 
 // Función para normalizar payload completo
@@ -260,14 +278,28 @@ function normalizePayload(data: any): any {
   
   // Clonar para no mutar el original
   const normalized = JSON.parse(JSON.stringify(data));
+  let cambiosRealizados = false;
   
   // Normalizar tipos de pago en todas las comunicaciones
   if (normalized.comunicaciones && Array.isArray(normalized.comunicaciones)) {
-    normalized.comunicaciones.forEach((com: any) => {
+    normalized.comunicaciones.forEach((com: any, idx: number) => {
       if (com.contrato?.pago?.tipoPago) {
-        com.contrato.pago.tipoPago = normalizeTipoPago(com.contrato.pago.tipoPago);
+        const original = com.contrato.pago.tipoPago;
+        const normalizado = normalizeTipoPago(original);
+        
+        if (original !== normalizado) {
+          console.log(`[NORMALIZE] Comunicación ${idx}: "${original}" → "${normalizado}"`);
+          com.contrato.pago.tipoPago = normalizado;
+          cambiosRealizados = true;
+        }
       }
     });
+  }
+  
+  if (cambiosRealizados) {
+    console.log('[NORMALIZE] Payload normalizado con éxito');
+  } else {
+    console.log('[NORMALIZE] No se requirieron cambios en el payload');
   }
   
   return normalized;
