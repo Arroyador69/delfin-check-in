@@ -39,17 +39,17 @@ const sendError = (req: NextRequest, status: number, message: string, issues?: a
   });
 };
 
-// Mapeadores flexibles
+// Mapeadores flexibles - Usar códigos oficiales del Ministerio del Interior
 const mapPagoIn = (x?: string) => {
   const k = String(x || '').toLowerCase();
-  if (k.includes('efect')) return 'EFECTIVO';
-  if (k.includes('tarj')) return 'TARJETA';
-  if (k.includes('trans')) return 'TRANSFERENCIA';
-  if (k.includes('plat')) return 'PLATAFORMA';
-  if (k.includes('movil')) return 'MOVIL';
-  if (k.includes('cheq') || k.includes('treg')) return 'CHEQUE';
-  if (k.includes('dest')) return 'DESTINO';
-  return x || 'OTRO';
+  if (k.includes('efect')) return 'EFECT';  // Efectivo
+  if (k.includes('tarj')) return 'TARJT';   // Tarjeta
+  if (k.includes('trans')) return 'TRANS';  // Transferencia
+  if (k.includes('plat')) return 'PLATF';   // Plataforma
+  if (k.includes('movil')) return 'MOVIL';  // Móvil
+  if (k.includes('cheq') || k.includes('treg')) return 'TREG';  // Cheque
+  if (k.includes('dest')) return 'DESTI';   // Destino
+  return 'OTRO';  // Otro
 };
 
 const mapSexoIn = (x?: string) => {
