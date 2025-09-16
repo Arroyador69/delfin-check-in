@@ -76,11 +76,13 @@ export async function deleteGuestRegistrationById(id: string): Promise<boolean> 
 export async function deleteGuestRegistrationsByIds(ids: string[]): Promise<number> {
   if (ids.length === 0) return 0;
   
-  const result = await sql`
-    DELETE FROM guest_registrations
-    WHERE id = ANY(${ids})
-    RETURNING id;
-  `;
+  // Crear placeholders para cada ID
+  const placeholders = ids.map((_, index) => `$${index + 1}`).join(', ');
+  
+  const result = await sql.query(
+    `DELETE FROM guest_registrations WHERE id IN (${placeholders}) RETURNING id`,
+    ids
+  );
   
   return result.rows.length;
 }
