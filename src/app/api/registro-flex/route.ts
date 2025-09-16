@@ -124,7 +124,7 @@ const normalize = (body: any) => {
     
     // Acepta tanto el formato nuevo como el antiguo
     const contrato = b?.contrato || {};
-    const viajero = b?.viajeros?.[0] || {};
+    const viajeros = b?.viajeros || [];
     
     // Normalizar contrato
     const contratoNormalizado = {
@@ -138,8 +138,8 @@ const normalize = (body: any) => {
       medioPago: contrato.medioPago || null,
     };
     
-    // Normalizar viajero
-    const viajeroNormalizado = {
+    // Función para normalizar un viajero
+    const normalizeViajero = (viajero: any) => ({
       nombre: String(viajero.nombre || '').trim(),
       primerApellido: String(viajero.primerApellido || '').trim(),
       segundoApellido: String(viajero.segundoApellido || '').trim() || null,
@@ -154,11 +154,16 @@ const normalize = (body: any) => {
       cp: String(viajero.cp || '').padStart(5, '0'),
       ine: String(viajero.ine || '').padStart(5, '0'),
       paisResidencia: iso3to2(viajero.paisResidencia || viajero.pais || 'ES'),
-    };
+    });
+    
+    // Normalizar todos los viajeros
+    const viajerosNormalizados = viajeros.length > 0 
+      ? viajeros.map(normalizeViajero).filter((v: any) => v.nombre) // Solo viajeros con nombre
+      : [normalizeViajero({})]; // Al menos un viajero vacío si no hay ninguno
     
     return {
       contrato: contratoNormalizado,
-      viajeros: [viajeroNormalizado],
+      viajeros: viajerosNormalizados,
       titular: b?.titular || {}
     };
   } catch (e: any) {
@@ -215,7 +220,7 @@ export async function POST(req: NextRequest) {
     // Validaciones mínimas con mensajes claros
     const issues: any[] = [];
     const c = normalized.contrato || {};
-    const v = (normalized.viajeros || [])[0] || {};
+    const viajeros = normalized.viajeros || [];
 
     // Validar contrato
     if (!c.fechaContrato) issues.push({ path: 'contrato.fechaContrato', message: 'Requerido (YYYY-MM-DD)' });
@@ -226,15 +231,23 @@ export async function POST(req: NextRequest) {
     }
     if (!c.tipoPago) issues.push({ path: 'contrato.tipoPago', message: 'Requerido' });
 
-    // Validar viajero
-    if (!v.nombre) issues.push({ path: 'viajeros[0].nombre', message: 'Requerido' });
-    if (!v.primerApellido) issues.push({ path: 'viajeros[0].primerApellido', message: 'Requerido' });
-    if (!v.fechaNacimiento) issues.push({ path: 'viajeros[0].fechaNacimiento', message: 'Requerido (YYYY-MM-DD)' });
-    if (!v.tipoDocumento) issues.push({ path: 'viajeros[0].tipoDocumento', message: 'Requerido' });
-    if (!v.numeroDocumento) issues.push({ path: 'viajeros[0].numeroDocumento', message: 'Requerido' });
-    if (!v.direccion) issues.push({ path: 'viajeros[0].direccion', message: 'Requerido' });
-    if (!v.cp || !/^\d{5}$/.test(v.cp)) issues.push({ path: 'viajeros[0].cp', message: 'Debe ser 5 dígitos' });
-    if (!v.ine || !/^\d{5}$/.test(v.ine)) issues.push({ path: 'viajeros[0].ine', message: 'Debe ser 5 dígitos' });
+    // Validar que haya al menos un viajero
+    if (!viajeros.length) {
+      issues.push({ path: 'viajeros', message: 'Se requiere al menos un viajero' });
+    } else {
+      // Validar cada viajero
+      viajeros.forEach((v: any, index: number) => {
+        const prefix = `viajeros[${index}]`;
+        if (!v.nombre) issues.push({ path: `${prefix}.nombre`, message: 'Requerido' });
+        if (!v.primerApellido) issues.push({ path: `${prefix}.primerApellido`, message: 'Requerido' });
+        if (!v.fechaNacimiento) issues.push({ path: `${prefix}.fechaNacimiento`, message: 'Requerido (YYYY-MM-DD)' });
+        if (!v.tipoDocumento) issues.push({ path: `${prefix}.tipoDocumento`, message: 'Requerido' });
+        if (!v.numeroDocumento) issues.push({ path: `${prefix}.numeroDocumento`, message: 'Requerido' });
+        if (!v.direccion) issues.push({ path: `${prefix}.direccion`, message: 'Requerido' });
+        if (!v.cp || !/^\d{5}$/.test(v.cp)) issues.push({ path: `${prefix}.cp`, message: 'Debe ser 5 dígitos' });
+        if (!v.ine || !/^\d{5}$/.test(v.ine)) issues.push({ path: `${prefix}.ine`, message: 'Debe ser 5 dígitos' });
+      });
+    }
 
     if (issues.length) {
       console.error('❌ Errores de validación:', issues);
@@ -245,6 +258,28 @@ export async function POST(req: NextRequest) {
     const ESTABLISHMENT_CODE = "0000256653";
     const ESTABLISHMENT_REFERENCE = "0000146967";
     
+    // Convertir viajeros al formato de base de datos
+    const personasDB = viajeros.map((v: any) => ({
+      rol: 'VI',
+      nombre: v.nombre,
+      apellido1: v.primerApellido,
+      apellido2: v.segundoApellido,
+      tipoDocumento: v.tipoDocumento,
+      numeroDocumento: v.numeroDocumento,
+      fechaNacimiento: v.fechaNacimiento,
+      nacionalidad: v.nacionalidadISO2,
+      sexo: v.sexo,
+      telefono: v.telefono,
+      telefono2: '', // Campo adicional vacío
+      correo: v.email,
+      direccion: {
+        direccion: v.direccion,
+        codigoPostal: v.cp,
+        pais: v.paisResidencia,
+        codigoMunicipio: v.ine
+      }
+    }));
+    
     const dbData = {
       codigoEstablecimiento: ESTABLISHMENT_CODE,
       comunicaciones: [{
@@ -253,7 +288,7 @@ export async function POST(req: NextRequest) {
           fechaContrato: c.fechaContrato,
           fechaEntrada: c.entrada,
           fechaSalida: c.salida,
-          numPersonas: 1,
+          numPersonas: viajeros.length,
           numHabitaciones: c.nHabitaciones,
           internet: c.internet,
           pago: {
@@ -264,27 +299,7 @@ export async function POST(req: NextRequest) {
             caducidadTarjeta: normalized.titular?.tarjetaCaducidad
           }
         },
-        personas: [{
-          rol: 'VI',
-          nombre: v.nombre,
-          apellido1: v.primerApellido,
-          apellido2: v.segundoApellido,
-          tipoDocumento: v.tipoDocumento,
-          numeroDocumento: v.numeroDocumento,
-          fechaNacimiento: v.fechaNacimiento,
-          nacionalidad: v.nacionalidadISO2,
-          sexo: v.sexo,
-          contacto: {
-            telefono: v.telefono,
-            correo: v.email
-          },
-          direccion: {
-            direccion: v.direccion,
-            codigoPostal: v.cp,
-            pais: v.paisResidencia,
-            codigoMunicipio: v.ine
-          }
-        }]
+        personas: personasDB
       }]
     };
 

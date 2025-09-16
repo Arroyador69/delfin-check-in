@@ -85,10 +85,14 @@ function validateParte(parte: any): string[] {
       if (!p.direccion.pais) {
         errs.push(`persona[${i}].direccion.pais requerido (ISO-3)`);
       }
-      if (p.direccion.pais === 'ESP' && !/^\d{5}$/.test(p.direccion.codigoMunicipio || '')) {
+      // Normalizar país para manejar tanto ISO-2 como ISO-3
+      const paisNormalizado = p.direccion.pais?.toUpperCase();
+      const esEspana = paisNormalizado === 'ESP' || paisNormalizado === 'ES';
+      
+      if (esEspana && !/^\d{5}$/.test(p.direccion.codigoMunicipio || '')) {
         errs.push(`persona[${i}].codigoMunicipio debe ser INE de 5 dígitos para España`);
       }
-      if (p.direccion.pais !== 'ESP' && !p.direccion.nombreMunicipio) {
+      if (!esEspana && !p.direccion.nombreMunicipio) {
         errs.push(`persona[${i}].nombreMunicipio requerido para países no españoles`);
       }
     }
