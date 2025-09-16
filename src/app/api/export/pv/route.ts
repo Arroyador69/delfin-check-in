@@ -237,6 +237,42 @@ function buildXML(data: z.infer<typeof PayloadSchema>): string {
   return xml;
 }
 
+// Función para normalizar códigos de pago antiguos a códigos MIR oficiales
+function normalizeTipoPago(tipoPago: string): string {
+  const codigo = String(tipoPago || '').toUpperCase();
+  
+  // Mapeo de códigos antiguos a códigos MIR oficiales
+  const mapeo: Record<string, string> = {
+    'EFECTIVO': 'EFECT',
+    'TARJETA': 'TARJT', 
+    'PLATAFORMA': 'PLATF',
+    'TRANSFERENCIA': 'TRANS',
+    'CHEQUE': 'TREG',
+    'DESTINO': 'DESTI'
+  };
+  
+  return mapeo[codigo] || codigo;
+}
+
+// Función para normalizar payload completo
+function normalizePayload(data: any): any {
+  if (!data || typeof data !== 'object') return data;
+  
+  // Clonar para no mutar el original
+  const normalized = JSON.parse(JSON.stringify(data));
+  
+  // Normalizar tipos de pago en todas las comunicaciones
+  if (normalized.comunicaciones && Array.isArray(normalized.comunicaciones)) {
+    normalized.comunicaciones.forEach((com: any) => {
+      if (com.contrato?.pago?.tipoPago) {
+        com.contrato.pago.tipoPago = normalizeTipoPago(com.contrato.pago.tipoPago);
+      }
+    });
+  }
+  
+  return normalized;
+}
+
 export async function POST(req: NextRequest) {
   const correlationId = crypto.randomBytes(8).toString('hex');
   
@@ -246,8 +282,12 @@ export async function POST(req: NextRequest) {
     const json = await req.json();
     console.log(`[PV-EXPORT] ${correlationId} - Datos recibidos:`, JSON.stringify(json, null, 2));
 
+    // Normalizar códigos antes de validar
+    const normalizedJson = normalizePayload(json);
+    console.log(`[PV-EXPORT] ${correlationId} - Datos normalizados:`, JSON.stringify(normalizedJson, null, 2));
+
     // Validación de esquema
-    const parsed = PayloadSchema.safeParse(json);
+    const parsed = PayloadSchema.safeParse(normalizedJson);
     if (!parsed.success) {
       const details = parsed.error.errors.map(e => `${e.path.join('.')} — ${e.message}`);
       console.error(`[PV-EXPORT] ${correlationId} - Error de validación:`, details);
@@ -269,6 +309,7 @@ export async function POST(req: NextRequest) {
 
     // Construir XML
     console.log(`[PV-EXPORT] ${correlationId} - Generando XML`);
+    // Generar XML con datos normalizados
     const xml = buildXML(parsed.data);
     console.log(`[PV-EXPORT] ${correlationId} - XML generado exitosamente`);
 
