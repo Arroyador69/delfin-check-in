@@ -8,8 +8,125 @@ interface ExportButtonProps {
   onError?: (error: string) => void;
 }
 
+// Función para normalizar fechas al formato MIR requerido
+function normalizeDateForMIR(dateValue: any, fallbackDate?: Date): string {
+  if (!dateValue) {
+    const fallback = fallbackDate || new Date();
+    return fallback.toISOString();
+  }
+  
+  // Si ya es una fecha ISO válida con tiempo, devolverla
+  if (typeof dateValue === 'string' && dateValue.length >= 19 && dateValue.includes('T')) {
+    return dateValue;
+  }
+  
+  // Si es solo una fecha (YYYY-MM-DD), agregar tiempo
+  if (typeof dateValue === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateValue)) {
+    return `${dateValue}T12:00:00`;
+  }
+  
+  // Si es una fecha en formato DD/MM/YYYY, convertir
+  if (typeof dateValue === 'string' && /^\d{2}\/\d{2}\/\d{4}$/.test(dateValue)) {
+    const [day, month, year] = dateValue.split('/');
+    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T12:00:00`;
+  }
+  
+  // Intentar parsear como fecha
+  try {
+    const parsedDate = new Date(dateValue);
+    if (!isNaN(parsedDate.getTime())) {
+      return parsedDate.toISOString();
+    }
+  } catch (e) {
+    console.warn('Error parsing date:', dateValue, e);
+  }
+  
+  // Fallback
+  const fallback = fallbackDate || new Date();
+  return fallback.toISOString();
+}
+
+// Función para extraer fechas del registro con múltiples fuentes posibles
+function extractDatesFromRegistration(registration: any) {
+  console.log('🔍 Extrayendo fechas del registro:', JSON.stringify(registration, null, 2));
+  
+  let fechaEntrada: string | null = null;
+  let fechaSalida: string | null = null;
+  
+  // Buscar en múltiples ubicaciones posibles
+  const possibleSources = [
+    // Nivel raíz del registro
+    {
+      entrada: registration.fecha_entrada,
+      salida: registration.fecha_salida
+    },
+    // Dentro de data
+    {
+      entrada: registration.data?.fecha_entrada,
+      salida: registration.data?.fecha_salida
+    },
+    // Dentro de contrato en data
+    {
+      entrada: registration.data?.contrato?.fechaEntrada,
+      salida: registration.data?.contrato?.fechaSalida
+    },
+    // Dentro de comunicaciones[0].contrato
+    {
+      entrada: registration.data?.comunicaciones?.[0]?.contrato?.fechaEntrada,
+      salida: registration.data?.comunicaciones?.[0]?.contrato?.fechaSalida
+    },
+    // Campos directos en comunicaciones[0]
+    {
+      entrada: registration.data?.comunicaciones?.[0]?.fechaEntrada,
+      salida: registration.data?.comunicaciones?.[0]?.fechaSalida
+    },
+    // Campos de entrada/salida directos
+    {
+      entrada: registration.data?.comunicaciones?.[0]?.entrada,
+      salida: registration.data?.comunicaciones?.[0]?.salida
+    }
+  ];
+  
+  // Buscar la primera fuente válida
+  for (const source of possibleSources) {
+    if (source.entrada && !fechaEntrada) {
+      fechaEntrada = source.entrada;
+      console.log('✅ Fecha entrada encontrada:', fechaEntrada);
+    }
+    if (source.salida && !fechaSalida) {
+      fechaSalida = source.salida;
+      console.log('✅ Fecha salida encontrada:', fechaSalida);
+    }
+    
+    if (fechaEntrada && fechaSalida) break;
+  }
+  
+  // Si no se encontraron, usar fechas por defecto
+  if (!fechaEntrada) {
+    fechaEntrada = new Date().toISOString().split('T')[0];
+    console.warn('⚠️ No se encontró fecha entrada, usando por defecto:', fechaEntrada);
+  }
+  
+  if (!fechaSalida) {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    fechaSalida = tomorrow.toISOString().split('T')[0];
+    console.warn('⚠️ No se encontró fecha salida, usando por defecto:', fechaSalida);
+  }
+  
+  return {
+    fechaEntrada: normalizeDateForMIR(fechaEntrada),
+    fechaSalida: normalizeDateForMIR(fechaSalida)
+  };
+}
+
 // Función para normalizar datos antes del envío
 export function normalizeData(rawData: any) {
+  console.log('🔄 Normalizando datos para MIR:', JSON.stringify(rawData, null, 2));
+  
+  // Extraer fechas con lógica robusta
+  const { fechaEntrada, fechaSalida } = extractDatesFromRegistration(rawData);
+  
   // Asegurar que comunicaciones es un array
   const comunicaciones = Array.isArray(rawData.comunicaciones) 
     ? rawData.comunicaciones 
@@ -17,14 +134,17 @@ export function normalizeData(rawData: any) {
       ? [rawData.comunicaciones] 
       : [];
 
-  return {
+  const normalized = {
     codigoEstablecimiento: rawData.codigoEstablecimiento || '0000256653',
     comunicaciones: comunicaciones.map((com: any) => ({
       contrato: {
         referencia: com.contrato?.referencia || com.referencia || '0000146967',
-        fechaContrato: com.contrato?.fechaContrato || com.fechaContrato || new Date().toISOString().split('T')[0],
-        fechaEntrada: com.contrato?.fechaEntrada || com.fechaEntrada || new Date().toISOString(),
-        fechaSalida: com.contrato?.fechaSalida || com.fechaSalida || new Date().toISOString(),
+        fechaContrato: normalizeDateForMIR(
+          com.contrato?.fechaContrato || com.fechaContrato,
+          new Date()
+        ),
+        fechaEntrada: fechaEntrada,
+        fechaSalida: fechaSalida,
         numPersonas: com.contrato?.numPersonas || com.personas?.length || com.viajeros?.length || 1,
         numHabitaciones: com.contrato?.numHabitaciones || 1,
         internet: com.contrato?.internet || false,
@@ -63,6 +183,9 @@ export function normalizeData(rawData: any) {
       }))
     }))
   };
+  
+  console.log('✅ Datos normalizados:', JSON.stringify(normalized, null, 2));
+  return normalized;
 }
 
 // Función principal de exportación

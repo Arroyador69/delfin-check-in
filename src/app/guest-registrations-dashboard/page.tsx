@@ -166,7 +166,13 @@ export default function GuestRegistrationsDashboard() {
       
       // Usar la misma función de normalización que funciona para XML individuales
       const comunicaciones = selectedData.flatMap(reg => {
-        const normalized = normalizeData(reg.data);
+        // Pasar el registro completo (no solo data) para que pueda acceder a fecha_entrada y fecha_salida
+        const fullRegistration = {
+          ...reg.data,
+          fecha_entrada: reg.fecha_entrada,
+          fecha_salida: reg.fecha_salida
+        };
+        const normalized = normalizeData(fullRegistration);
         return normalized.comunicaciones;
       });
 

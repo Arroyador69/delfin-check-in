@@ -314,17 +314,58 @@ export async function POST(req: NextRequest) {
     const json = await req.json();
     console.log(`[PV-EXPORT] ${correlationId} - Datos recibidos:`, JSON.stringify(json, null, 2));
 
+    // Validación básica de estructura
+    if (!json || typeof json !== 'object') {
+      console.error(`[PV-EXPORT] ${correlationId} - Datos inválidos: no es un objeto`);
+      return NextResponse.json(
+        { 
+          error: 'INVALID_INPUT', 
+          details: ['Los datos enviados no son válidos o están vacíos'], 
+          correlationId,
+          received: typeof json
+        },
+        { status: 400, headers: { 'x-correlation-id': correlationId } }
+      );
+    }
+
+    if (!json.comunicaciones || (!Array.isArray(json.comunicaciones) && typeof json.comunicaciones !== 'object')) {
+      console.error(`[PV-EXPORT] ${correlationId} - Falta campo comunicaciones`);
+      return NextResponse.json(
+        { 
+          error: 'MISSING_COMUNICACIONES', 
+          details: ['El campo "comunicaciones" es requerido y debe ser un array o objeto'], 
+          correlationId,
+          received: json
+        },
+        { status: 400, headers: { 'x-correlation-id': correlationId } }
+      );
+    }
+
     // Normalizar códigos antes de validar
     const normalizedJson = normalizePayload(json);
     console.log(`[PV-EXPORT] ${correlationId} - Datos normalizados:`, JSON.stringify(normalizedJson, null, 2));
 
-    // Validación de esquema
+    // Validación de esquema con mejor manejo de errores
     const parsed = PayloadSchema.safeParse(normalizedJson);
     if (!parsed.success) {
-      const details = parsed.error.errors.map(e => `${e.path.join('.')} — ${e.message}`);
+      const details = parsed.error.errors.map(e => {
+        const path = e.path.join('.');
+        const message = e.message;
+        const value = e.path.reduce((obj, key) => obj?.[key], normalizedJson);
+        return `${path} — ${message} (valor recibido: ${JSON.stringify(value)})`;
+      });
+      
       console.error(`[PV-EXPORT] ${correlationId} - Error de validación:`, details);
+      console.error(`[PV-EXPORT] ${correlationId} - Errores detallados:`, JSON.stringify(parsed.error.errors, null, 2));
+      
       return NextResponse.json(
-        { error: 'VALIDATION_ERROR', details, correlationId },
+        { 
+          error: 'VALIDATION_ERROR', 
+          details, 
+          correlationId,
+          rawErrors: parsed.error.errors,
+          normalizedData: normalizedJson
+        },
         { status: 422, headers: { 'x-correlation-id': correlationId } }
       );
     }
@@ -334,31 +375,65 @@ export async function POST(req: NextRequest) {
     if (businessErrors.length > 0) {
       console.error(`[PV-EXPORT] ${correlationId} - Errores de negocio:`, businessErrors);
       return NextResponse.json(
-        { error: 'VALIDATION_ERROR', details: businessErrors, correlationId },
+        { 
+          error: 'BUSINESS_RULES_ERROR', 
+          details: businessErrors, 
+          correlationId,
+          validatedData: parsed.data
+        },
         { status: 422, headers: { 'x-correlation-id': correlationId } }
       );
     }
 
     // Construir XML
     console.log(`[PV-EXPORT] ${correlationId} - Generando XML`);
-    // Generar XML con datos normalizados
-    const xml = buildXML(parsed.data);
-    console.log(`[PV-EXPORT] ${correlationId} - XML generado exitosamente`);
+    
+    try {
+      const xml = buildXML(parsed.data);
+      console.log(`[PV-EXPORT] ${correlationId} - XML generado exitosamente (${xml.length} caracteres)`);
 
-    return new NextResponse(xml, {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/xml; charset=utf-8',
-        'Content-Disposition': `attachment; filename="partes_viajeros_${Date.now()}.xml"`,
-        'x-correlation-id': correlationId,
-        'Cache-Control': 'no-store',
-      },
-    });
+      return new NextResponse(xml, {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/xml; charset=utf-8',
+          'Content-Disposition': `attachment; filename="partes_viajeros_${Date.now()}.xml"`,
+          'x-correlation-id': correlationId,
+          'Cache-Control': 'no-store',
+        },
+      });
+    } catch (xmlError: any) {
+      console.error(`[PV-EXPORT] ${correlationId} - Error generando XML:`, xmlError);
+      return NextResponse.json(
+        { 
+          error: 'XML_GENERATION_ERROR', 
+          correlationId, 
+          message: xmlError?.message || 'Error al generar XML',
+          data: parsed.data
+        },
+        { status: 500, headers: { 'x-correlation-id': correlationId } }
+      );
+    }
+    
   } catch (err: any) {
     console.error(`[PV-EXPORT] ${correlationId} - Error interno:`, err?.stack || err?.message || err);
+    
+    // Diferentes tipos de errores
+    let errorType = 'INTERNAL_ERROR';
+    let statusCode = 500;
+    
+    if (err?.name === 'SyntaxError' && err?.message?.includes('JSON')) {
+      errorType = 'INVALID_JSON';
+      statusCode = 400;
+    }
+    
     return NextResponse.json(
-      { error: 'INTERNAL', correlationId, message: err?.message || 'Error interno del servidor' },
-      { status: 500, headers: { 'x-correlation-id': correlationId } }
+      { 
+        error: errorType, 
+        correlationId, 
+        message: err?.message || 'Error interno del servidor',
+        stack: process.env.NODE_ENV === 'development' ? err?.stack : undefined
+      },
+      { status: statusCode, headers: { 'x-correlation-id': correlationId } }
     );
   }
 }
