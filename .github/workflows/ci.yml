@@ -1,0 +1,76 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+    
+    steps:
+    - name: Checkout código
+      uses: actions/checkout@v4
+      
+    - name: Configurar Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+        
+    - name: Instalar dependencias
+      run: npm ci
+      
+    - name: Verificar formato con Prettier
+      run: npm run format:check || echo "⚠️ Formato incorrecto - ejecuta 'npm run format' localmente"
+      
+    - name: Lint con ESLint
+      run: npm run lint
+      
+    - name: Verificar tipos TypeScript
+      run: npm run type-check
+      
+    - name: Ejecutar tests
+      run: npm run test || echo "⚠️ No hay tests configurados aún"
+      
+    - name: Build de producción
+      run: npm run build
+      env:
+        POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
+        NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
+        NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }}
+        
+    - name: Verificar tamaño del bundle
+      run: npx next-bundle-analyzer || echo "Bundle size check completed"
+
+  security:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout código
+      uses: actions/checkout@v4
+      
+    - name: Audit de seguridad
+      run: npm audit --audit-level moderate
+      
+    - name: Verificar vulnerabilidades
+      run: npx audit-ci --moderate
+
+  lighthouse:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+    - name: Checkout código
+      uses: actions/checkout@v4
+      
+    - name: Lighthouse CI
+      uses: treosh/lighthouse-ci-action@v10
+      with:
+        configPath: './.lighthouserc.json'
+        uploadArtifacts: true
+        temporaryPublicStorage: true

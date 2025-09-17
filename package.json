@@ -7,7 +7,26 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "lint:fix": "next lint --fix",
+    "type-check": "tsc --noEmit",
+    "format": "prettier --write \"src/**/*.{js,jsx,ts,tsx,json,md}\"",
+    "format:check": "prettier --check \"src/**/*.{js,jsx,ts,tsx,json,md}\"",
+    "test": "echo 'Tests will be implemented soon' && exit 0",
+    "test:watch": "echo 'Test watch mode will be implemented soon'",
+    "analyze": "ANALYZE=true next build",
+    "clean": "rm -rf .next out dist",
+    "prepare": "husky install || echo 'Husky not installed yet'",
+    "pre-commit": "lint-staged"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md}": [
+      "prettier --write"
+    ]
   },
   "dependencies": {
     "@vercel/kv": "^1.0.0",

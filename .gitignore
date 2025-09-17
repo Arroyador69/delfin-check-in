@@ -104,4 +104,72 @@ dump.rdb
 scripts/test-env.js
 scripts/test-supabase.js
 scripts/setup-messages.js
+test-*.js
+test-*.ts
+
+# Vercel
 .vercel
+
+# Husky
+.husky/_
+
+# Lint staged
+.lintstagedrc*
+
+# Bundle analyzer
+.next/analyze/
+
+# Storybook
+storybook-static/
+
+# Playwright
+test-results/
+playwright-report/
+playwright/.cache/
+
+# Coverage
+coverage/
+*.lcov
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Secrets y configuración sensible
+.env.secret
+.env.private
+*.pem
+*.key
+secrets.json
+
+# Archivos temporales de desarrollo
+*.local.ts
+*.local.js
+debug.log
+error.log
+
+# Backups
+*.backup
+*.bak
+*.old
+
+# OS específicos
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+.Spotlight-V100
+.Trashes
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+.nfs*
