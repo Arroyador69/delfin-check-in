@@ -129,14 +129,12 @@ export async function insertReservation(data: {
   return result.rows[0];
 }
 
-// Función helper para obtener reservas con información de habitación
+// Función helper para obtener reservas (sin JOIN con rooms por ahora)
 export async function getReservations(limit: number = 200): Promise<any[]> {
   const result = await sql`
     SELECT 
-      r.*,
-      rm.name as room_name
+      r.*
     FROM reservations r
-    LEFT JOIN rooms rm ON rm.id = r.room_id
     ORDER BY r.check_in DESC
     LIMIT ${limit};
   `;
@@ -144,14 +142,12 @@ export async function getReservations(limit: number = 200): Promise<any[]> {
   return result.rows;
 }
 
-// Función helper para obtener reserva por ID
+// Función helper para obtener reserva por ID (sin JOIN con rooms por ahora)
 export async function getReservationById(id: string): Promise<any | null> {
   const result = await sql`
     SELECT 
-      r.*,
-      rm.name as room_name
+      r.*
     FROM reservations r
-    LEFT JOIN rooms rm ON rm.id = r.room_id
     WHERE r.id = ${id};
   `;
   

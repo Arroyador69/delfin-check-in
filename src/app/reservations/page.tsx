@@ -327,13 +327,13 @@ export default function ReservationsPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      €{(reservation.guest_paid || reservation.total_price || 0).toFixed(2)}
+                      €{(Number(reservation.guest_paid || reservation.total_price || 0)).toFixed(2)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-red-600">
-                      €{(reservation.platform_commission || 0).toFixed(2)}
+                      €{(Number(reservation.platform_commission || 0)).toFixed(2)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-semibold">
-                      €{(reservation.net_income || 0).toFixed(2)}
+                      €{(Number(reservation.net_income || 0)).toFixed(2)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
