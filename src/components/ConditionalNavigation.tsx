@@ -7,7 +7,7 @@ export default function ConditionalNavigation() {
   const pathname = usePathname();
   
   // Páginas que NO deben tener navegación (formularios independientes)
-  const INDEPENDENT_PAGES = [
+  const INDEPENDENT_PAGES: string[] = [
     // Formularios eliminados - ya no se usan
     // '/guest-registration', - Eliminado: se usa form.delfincheckin.com
     // '/reservations-form'   - Eliminado: no se utiliza
