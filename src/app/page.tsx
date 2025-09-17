@@ -77,10 +77,16 @@ export default function HomePage() {
   // Calcular ocupación
   const occupancyRate = totalRooms > 0 ? Math.round((confirmedReservations / (totalRooms * 30)) * 100) : 0;
 
-  // Calcular datos financieros
-  const totalRevenue = reservations.reduce((sum, r) => sum + (r.guest_paid || 0), 0);
-  const totalCommissions = reservations.reduce((sum, r) => sum + (r.platform_commission || 0), 0);
-  const totalNetIncome = reservations.reduce((sum, r) => sum + (r.net_income || 0), 0);
+  // Calcular datos financieros con validación segura
+  const safeNumber = (value: any) => {
+    if (value === null || value === undefined || value === '') return 0;
+    const num = parseFloat(String(value));
+    return isNaN(num) ? 0 : num;
+  };
+
+  const totalRevenue = reservations.reduce((sum, r) => sum + safeNumber(r.guest_paid), 0);
+  const totalCommissions = reservations.reduce((sum, r) => sum + safeNumber(r.platform_commission), 0);
+  const totalNetIncome = reservations.reduce((sum, r) => sum + safeNumber(r.net_income), 0);
 
   if (loading) {
     return (
