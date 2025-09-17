@@ -37,6 +37,9 @@ export default function ReservationsPage() {
   const [error, setError] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [deleting, setDeleting] = useState<string | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [reservationToDelete, setReservationToDelete] = useState<Reservation | null>(null);
   const [formData, setFormData] = useState({
     room_id: '',
     guest_name: '',
@@ -143,6 +146,43 @@ export default function ReservationsPage() {
       status: 'confirmed',
       channel: 'manual',
     });
+  };
+
+  const handleDeleteClick = (reservation: Reservation) => {
+    setReservationToDelete(reservation);
+    setShowDeleteModal(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!reservationToDelete) return;
+
+    setDeleting(reservationToDelete.id);
+    try {
+      const response = await fetch(`/api/reservations/${reservationToDelete.id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Error al eliminar la reserva');
+      }
+
+      // Eliminar de la lista local
+      setReservations(prev => prev.filter(r => r.id !== reservationToDelete.id));
+      setShowDeleteModal(false);
+      setReservationToDelete(null);
+      alert('Reserva eliminada exitosamente');
+    } catch (error: any) {
+      console.error('Error deleting reservation:', error);
+      alert(`Error al eliminar la reserva: ${error.message}`);
+    } finally {
+      setDeleting(null);
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setShowDeleteModal(false);
+    setReservationToDelete(null);
   };
 
   const formatDate = (date: string) => {
@@ -347,8 +387,12 @@ export default function ReservationsPage() {
                       <button className="text-green-600 hover:text-green-900 mr-3">
                         Check-in
                       </button>
-                      <button className="text-red-600 hover:text-red-900">
-                        Cancelar
+                      <button 
+                        onClick={() => handleDeleteClick(reservation)}
+                        disabled={deleting === reservation.id}
+                        className="text-red-600 hover:text-red-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {deleting === reservation.id ? 'Eliminando...' : 'Eliminar'}
                       </button>
                     </td>
                   </tr>
@@ -594,6 +638,83 @@ export default function ReservationsPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de confirmación de eliminación */}
+      {showDeleteModal && reservationToDelete && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                <svg className="h-6 w-6 mr-2 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 18.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+                Confirmar Eliminación
+              </h3>
+            </div>
+            
+            <div className="p-6">
+              <div className="mb-4">
+                <p className="text-gray-700 mb-2">
+                  ¿Estás seguro de que quieres eliminar esta reserva?
+                </p>
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <p className="font-medium text-gray-900">{reservationToDelete.guest_name}</p>
+                  <p className="text-sm text-gray-600">{reservationToDelete.guest_email}</p>
+                  <p className="text-sm text-gray-600">
+                    {formatDate(reservationToDelete.check_in)} - {formatDate(reservationToDelete.check_out)}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    Habitación: {rooms.find(r => r.id === reservationToDelete.room_id)?.name || reservationToDelete.room_id}
+                  </p>
+                </div>
+              </div>
+              
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+                <div className="flex">
+                  <svg className="h-5 w-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 18.5c-.77.833.192 2.5 1.732 2.5z" />
+                  </svg>
+                  <div className="ml-3">
+                    <h4 className="text-sm font-medium text-red-800">Esta acción no se puede deshacer</h4>
+                    <p className="text-sm text-red-700 mt-1">
+                      La reserva será eliminada permanentemente de la base de datos.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
+              <button
+                onClick={handleDeleteCancel}
+                disabled={deleting === reservationToDelete.id}
+                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleDeleteConfirm}
+                disabled={deleting === reservationToDelete.id}
+                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 flex items-center"
+              >
+                {deleting === reservationToDelete.id ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Eliminando...
+                  </>
+                ) : (
+                  <>
+                    <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    Eliminar Reserva
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}
