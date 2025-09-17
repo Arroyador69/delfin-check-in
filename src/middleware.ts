@@ -35,6 +35,8 @@ export function middleware(req: NextRequest) {
       url.pathname.startsWith('/api/test-registro') ||
       url.pathname.startsWith('/api/upgrade-db-public') ||
       url.pathname.startsWith('/api/public') ||
+      url.pathname.startsWith('/api/reservations') ||
+      url.pathname.startsWith('/api/rooms') ||
       url.pathname.startsWith('/public')) {
     return NextResponse.next()
   }
