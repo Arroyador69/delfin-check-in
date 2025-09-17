@@ -302,6 +302,24 @@ export default function HomePage() {
             </div>
           </Link>
 
+          <Link href="/database-manager" className="group">
+            <div className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow cursor-pointer">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+                    Gestor Base de Datos
+                  </h3>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Control total de datos desde Cursor
+                  </p>
+                </div>
+                <div className="h-8 w-8 text-gray-400 group-hover:text-blue-600 transition-colors">
+                  🗄️
+                </div>
+              </div>
+            </div>
+          </Link>
+
         </div>
 
         {/* Recent Activity */}
