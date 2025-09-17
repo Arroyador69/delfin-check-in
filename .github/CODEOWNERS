@@ -27,8 +27,12 @@
 /src/components/AuthGuard.tsx @Arroyador69
 
 # Formularios públicos (requiere revisión especial)
-/src/app/guest-registration/ @Arroyador69
-/delfin-formulario-publico/ @Arroyador69
+/src/app/guest-registration/ @Arroyador69 @andresarrroyoaa
+/delfin-formulario-publico/ @andresarrroyoaa
+
+# Componentes de UI y dashboard
+/src/components/ @Arroyador69 @andresarrroyoaa
+/src/app/guest-registrations-dashboard/ @andresarrroyoaa
 
 # Exportación MIR (crítico para cumplimiento legal)
 /src/app/api/export/ @Arroyador69
@@ -39,7 +43,4 @@
 *.md @Arroyador69
 /README.md @Arroyador69
 
-# NOTA: Cuando añadas a tu compañero, reemplaza una de las líneas @Arroyador69 
-# con su usuario de GitHub. Ejemplo:
-# /src/components/ @Arroyador69 @usuario-compañero
-# /src/app/dashboard/ @usuario-compañero
+# NOTA: Tu compañero @andresarrroyoaa ya está añadido en las áreas correspondientes
