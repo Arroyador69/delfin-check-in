@@ -28,7 +28,7 @@ export function middleware(req: NextRequest) {
     return NextResponse.next();
   }
   
-  // Permitir endpoints de API públicos
+  // Permitir endpoints de API públicos y páginas específicas
   if (url.pathname.startsWith('/api/registro-flex') || 
       url.pathname.startsWith('/api/setup-db') || 
       url.pathname.startsWith('/api/check-db') || 
@@ -37,7 +37,9 @@ export function middleware(req: NextRequest) {
       url.pathname.startsWith('/api/public') ||
       url.pathname.startsWith('/api/reservations') ||
       url.pathname.startsWith('/api/rooms') ||
-      url.pathname.startsWith('/public')) {
+      url.pathname.startsWith('/public') ||
+      url.pathname === '/reservations' ||
+      url.pathname.startsWith('/reservations/')) {
     return NextResponse.next()
   }
 

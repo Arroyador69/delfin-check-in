@@ -241,6 +241,11 @@ export default function ReservationsPage() {
             <div>
               <h2 className="text-lg font-semibold text-gray-900">Gestión de Reservas</h2>
               <p className="text-sm text-gray-600">Crear y gestionar reservas de clientes</p>
+              {reservations.length > 0 && (
+                <p className="text-xs text-blue-600 mt-1">
+                  {reservations.length} reserva{reservations.length !== 1 ? 's' : ''} encontrada{reservations.length !== 1 ? 's' : ''}
+                </p>
+              )}
             </div>
             <button 
               onClick={() => setShowCreateModal(true)}
@@ -250,7 +255,7 @@ export default function ReservationsPage() {
               <span>Nueva Reserva</span>
             </button>
           </div>
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto max-h-[70vh] overflow-y-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
@@ -287,7 +292,17 @@ export default function ReservationsPage() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {reservations.map((reservation) => (
+                {reservations.length === 0 ? (
+                  <tr>
+                    <td colSpan={10} className="px-6 py-12 text-center">
+                      <div className="text-gray-500">
+                        <div className="text-lg mb-2">No hay reservas disponibles</div>
+                        <div className="text-sm">Las reservas aparecerán aquí cuando las crees</div>
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  reservations.map((reservation) => (
                   <tr key={reservation.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       {rooms.find(r => r.id === reservation.room_id)?.name || reservation.room_id || 'Sin habitación'}
@@ -337,7 +352,8 @@ export default function ReservationsPage() {
                       </button>
                     </td>
                   </tr>
-                ))}
+                  ))
+                )}
               </tbody>
             </table>
           </div>
