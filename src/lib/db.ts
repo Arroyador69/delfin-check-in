@@ -86,3 +86,85 @@ export async function deleteGuestRegistrationsByIds(ids: string[]): Promise<numb
   
   return result.rows.length;
 }
+
+// ========================================
+// FUNCIONES PARA RESERVAS (RESERVATIONS)
+// ========================================
+
+// Función helper para insertar una reserva
+export async function insertReservation(data: {
+  external_id: string;
+  room_id: string;
+  guest_name: string;
+  guest_email?: string;
+  check_in: string;
+  check_out: string;
+  channel: string;
+  total_price: number;
+  guest_paid?: number;
+  platform_commission?: number;
+  net_income?: number;
+  currency?: string;
+  status: string;
+}): Promise<any> {
+  const result = await sql`
+    INSERT INTO reservations (
+      external_id, room_id, guest_name, guest_email, 
+      check_in, check_out, channel, total_price, 
+      guest_paid, platform_commission, net_income, currency, status
+    )
+    VALUES (
+      ${data.external_id}, ${data.room_id}, ${data.guest_name}, ${data.guest_email || ''}, 
+      ${data.check_in}::timestamp, ${data.check_out}::timestamp, ${data.channel}, ${data.total_price}, 
+      ${data.guest_paid || data.total_price}, ${data.platform_commission || 0}, ${data.net_income || data.total_price}, 
+      ${data.currency || 'EUR'}, ${data.status}
+    )
+    RETURNING *;
+  `;
+  
+  if (result.rows.length === 0) {
+    throw new Error('Failed to insert reservation');
+  }
+  
+  return result.rows[0];
+}
+
+// Función helper para obtener reservas con información de habitación
+export async function getReservations(limit: number = 200): Promise<any[]> {
+  const result = await sql`
+    SELECT 
+      r.*,
+      rm.name as room_name
+    FROM reservations r
+    LEFT JOIN rooms rm ON rm.id = r.room_id
+    ORDER BY r.check_in DESC
+    LIMIT ${limit};
+  `;
+  
+  return result.rows;
+}
+
+// Función helper para obtener reserva por ID
+export async function getReservationById(id: string): Promise<any | null> {
+  const result = await sql`
+    SELECT 
+      r.*,
+      rm.name as room_name
+    FROM reservations r
+    LEFT JOIN rooms rm ON rm.id = r.room_id
+    WHERE r.id = ${id};
+  `;
+  
+  return result.rows[0] || null;
+}
+
+// Función helper para eliminar una reserva por ID
+export async function deleteReservationById(id: string): Promise<boolean> {
+  const result = await sql`
+    DELETE FROM reservations
+    WHERE id = ${id}
+    RETURNING id;
+  `;
+  
+  return result.rows.length > 0;
+}
