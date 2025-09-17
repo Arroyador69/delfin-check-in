@@ -70,13 +70,22 @@ export default function ReservationsPage() {
       }
 
       // Sanitizar los datos para evitar errores de toFixed
-      const sanitizedReservations = (data || []).map((reservation: any) => ({
-        ...reservation,
-        guest_paid: reservation.guest_paid ? String(reservation.guest_paid) : '0',
-        total_price: reservation.total_price ? String(reservation.total_price) : '0',
-        platform_commission: reservation.platform_commission ? String(reservation.platform_commission) : '0',
-        net_income: reservation.net_income ? String(reservation.net_income) : '0',
-      }));
+      const sanitizedReservations = (data || []).map((reservation: any) => {
+        // Asegurar que todos los campos numéricos sean válidos
+        const safeNumber = (val: any) => {
+          if (val === null || val === undefined || val === '') return 0;
+          const num = parseFloat(String(val));
+          return isNaN(num) ? 0 : num;
+        };
+
+        return {
+          ...reservation,
+          guest_paid: safeNumber(reservation.guest_paid),
+          total_price: safeNumber(reservation.total_price),
+          platform_commission: safeNumber(reservation.platform_commission),
+          net_income: safeNumber(reservation.net_income),
+        };
+      });
 
       setReservations(sanitizedReservations);
     } catch (error: any) {
@@ -222,6 +231,26 @@ export default function ReservationsPage() {
       case 'booking': return 'Booking.com';
       case 'manual': return 'Manual';
       default: return channel;
+    }
+  };
+
+  // Función helper para formatear números de forma segura
+  const safeFormatCurrency = (value: any): string => {
+    try {
+      if (value === null || value === undefined || value === '') {
+        return '0.00';
+      }
+      
+      const num = typeof value === 'number' ? value : parseFloat(String(value));
+      
+      if (isNaN(num)) {
+        return '0.00';
+      }
+      
+      return num.toFixed(2);
+    } catch (error) {
+      console.warn('Error formatting currency:', error);
+      return '0.00';
     }
   };
 
@@ -419,13 +448,13 @@ export default function ReservationsPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      €{(parseFloat(String(reservation.guest_paid || reservation.total_price || 0)) || 0).toFixed(2)}
+                      €{safeFormatCurrency(reservation.guest_paid || reservation.total_price)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-red-600">
-                      €{(parseFloat(String(reservation.platform_commission || 0)) || 0).toFixed(2)}
+                      €{safeFormatCurrency(reservation.platform_commission)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-semibold">
-                      €{(parseFloat(String(reservation.net_income || 0)) || 0).toFixed(2)}
+                      €{safeFormatCurrency(reservation.net_income)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
