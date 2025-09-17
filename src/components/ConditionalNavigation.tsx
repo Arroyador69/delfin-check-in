@@ -8,8 +8,9 @@ export default function ConditionalNavigation() {
   
   // Páginas que NO deben tener navegación (formularios independientes)
   const INDEPENDENT_PAGES = [
-    '/guest-registration',
-    '/reservations-form'
+    // Formularios eliminados - ya no se usan
+    // '/guest-registration', - Eliminado: se usa form.delfincheckin.com
+    // '/reservations-form'   - Eliminado: no se utiliza
   ];
   
   // Si es una página independiente, no mostrar navegación

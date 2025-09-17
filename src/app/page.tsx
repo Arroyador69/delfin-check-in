@@ -233,7 +233,7 @@ export default function HomePage() {
         </div>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <Link href="/rooms" className="group">
             <div className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow cursor-pointer">
               <div className="flex items-center justify-between">
@@ -250,28 +250,6 @@ export default function HomePage() {
             </div>
           </Link>
 
-          <a 
-            href="/reservations-form" 
-            target="_blank" 
-            rel="noopener noreferrer" 
-            className="group"
-          >
-            <div className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow cursor-pointer">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
-                    Formulario de Reservas
-                  </h3>
-                  <p className="text-sm text-gray-600 mt-1">
-                    Crear reservas manuales y generar XML
-                  </p>
-                </div>
-                <div className="h-8 w-8 text-gray-400 group-hover:text-blue-600 transition-colors">
-                  📅
-                </div>
-              </div>
-            </div>
-          </a>
 
           <Link href="/checkin" className="group">
             <div className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow cursor-pointer">
@@ -289,28 +267,6 @@ export default function HomePage() {
             </div>
           </Link>
 
-          <a 
-            href="/guest-registration" 
-            target="_blank" 
-            rel="noopener noreferrer" 
-            className="group"
-          >
-            <div className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow cursor-pointer">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
-                    Formulario Cliente
-                  </h3>
-                  <p className="text-sm text-gray-600 mt-1">
-                    Enviar a clientes para registro
-                  </p>
-                </div>
-                <div className="h-8 w-8 text-gray-400 group-hover:text-blue-600 transition-colors">
-                  📝
-                </div>
-              </div>
-            </div>
-          </a>
 
           <Link href="/guest-registrations-dashboard" className="group">
             <div className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow cursor-pointer">
@@ -346,19 +302,6 @@ export default function HomePage() {
             </div>
           </Link>
 
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">
-                  Sincronización iCal
-                </h3>
-                <p className="text-sm text-gray-600 mt-1">
-                  {rooms.filter(r => r.ical_in_booking_url).length} habitaciones con Booking.com
-                </p>
-              </div>
-              <RefreshCw className="h-8 w-8 text-gray-400" />
-            </div>
-          </div>
         </div>
 
         {/* Recent Activity */}
