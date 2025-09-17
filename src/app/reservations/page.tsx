@@ -69,7 +69,16 @@ export default function ReservationsPage() {
         throw new Error(data.error || 'Error al obtener las reservas');
       }
 
-      setReservations(data || []);
+      // Sanitizar los datos para evitar errores de toFixed
+      const sanitizedReservations = (data || []).map((reservation: any) => ({
+        ...reservation,
+        guest_paid: reservation.guest_paid ? String(reservation.guest_paid) : '0',
+        total_price: reservation.total_price ? String(reservation.total_price) : '0',
+        platform_commission: reservation.platform_commission ? String(reservation.platform_commission) : '0',
+        net_income: reservation.net_income ? String(reservation.net_income) : '0',
+      }));
+
+      setReservations(sanitizedReservations);
     } catch (error: any) {
       console.error('Error fetching reservations:', error);
       setError(error.message);
@@ -410,13 +419,13 @@ export default function ReservationsPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      €{(Number(reservation.guest_paid || reservation.total_price || 0)).toFixed(2)}
+                      €{(parseFloat(String(reservation.guest_paid || reservation.total_price || 0)) || 0).toFixed(2)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-red-600">
-                      €{(Number(reservation.platform_commission || 0)).toFixed(2)}
+                      €{(parseFloat(String(reservation.platform_commission || 0)) || 0).toFixed(2)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-semibold">
-                      €{(Number(reservation.net_income || 0)).toFixed(2)}
+                      €{(parseFloat(String(reservation.net_income || 0)) || 0).toFixed(2)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
