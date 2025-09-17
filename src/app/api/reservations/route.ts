@@ -1,9 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getReservations, createReservation } from '@/lib/storage';
+import { sql } from '@/lib/db';
 
 export async function GET() {
   try {
-    const reservations = getReservations();
+    console.log('📊 Obteniendo reservas desde PostgreSQL...');
+    
+    // Obtener todas las reservas con información de habitación
+    const reservations = await sql`
+      SELECT 
+        r.*,
+        rm.name as room_name
+      FROM reservations r
+      LEFT JOIN rooms rm ON rm.id = r.room_id
+      ORDER BY r.check_in DESC
+    `;
+    
+    console.log(`✅ Encontradas ${reservations.length} reservas`);
     return NextResponse.json(reservations);
   } catch (error) {
     console.error('Error fetching reservations:', error);
@@ -16,48 +28,67 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('📝 Creando nueva reserva en PostgreSQL...');
+    
     const body = await request.json();
+    console.log('📋 Datos recibidos:', body);
     
     // Validar datos requeridos
     if (!body.guest_name || !body.room_id || !body.check_in || !body.check_out) {
       return NextResponse.json(
-        { error: 'Faltan datos requeridos' },
+        { error: 'Faltan datos requeridos: guest_name, room_id, check_in, check_out' },
         { status: 400 }
       );
     }
 
     // Calcular datos financieros
-    const guest_paid = body.guest_paid || body.total_price || 0;
-    const platform_commission = body.platform_commission || calculateCommission(guest_paid, body.channel || 'manual');
-    const net_income = body.net_income || (guest_paid - platform_commission);
+    const total_price = parseFloat(body.total_price) || 0;
+    const guest_paid = parseFloat(body.guest_paid) || total_price;
+    const platform_commission = parseFloat(body.platform_commission) || calculateCommission(guest_paid, body.channel || 'manual');
+    const net_income = guest_paid - platform_commission;
 
-    const reservation = {
-      id: Date.now().toString(),
-      external_id: body.external_id || `manual_${Date.now()}`,
-      room_id: body.room_id,
-      guest_name: body.guest_name,
-      guest_email: body.guest_email || '',
-      check_in: body.check_in,
-      check_out: body.check_out,
-      channel: body.channel || 'manual',
-      total_price: body.total_price || 0,
+    // Generar external_id único
+    const external_id = body.external_id || `manual_${Date.now()}`;
+
+    // Insertar en PostgreSQL
+    const result = await sql`
+      INSERT INTO reservations (
+        external_id,
+        room_id,
+        guest_name,
+        guest_email,
+        check_in,
+        check_out,
+        channel,
+        total_price,
+        status
+      ) VALUES (
+        ${external_id},
+        ${body.room_id},
+        ${body.guest_name},
+        ${body.guest_email || ''},
+        ${body.check_in}::timestamp,
+        ${body.check_out}::timestamp,
+        ${body.channel || 'manual'},
+        ${total_price},
+        ${body.status || 'confirmed'}
+      )
+      RETURNING *
+    `;
+
+    const newReservation = (result as any)[0];
+    console.log('✅ Reserva creada:', newReservation.id);
+
+    return NextResponse.json({
+      ...newReservation,
       guest_paid,
       platform_commission,
-      net_income,
-      currency: body.currency || 'EUR',
-      status: body.status || 'confirmed',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
-
-    // Guardar en almacenamiento
-    createReservation(reservation);
-
-    return NextResponse.json(reservation);
-  } catch (error) {
+      net_income
+    });
+  } catch (error: any) {
     console.error('Error creating reservation:', error);
     return NextResponse.json(
-      { error: 'Error al crear la reserva' },
+      { error: 'Error al crear la reserva', details: error.message },
       { status: 500 }
     );
   }

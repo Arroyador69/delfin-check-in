@@ -232,18 +232,24 @@ export default function ReservationsPage() {
   return (
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
+        <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Reservas</h1>
-          <button 
-            onClick={() => setShowCreateModal(true)}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center space-x-2"
-          >
-            <Plus className="h-5 w-5" />
-            <span>Nueva Reserva</span>
-          </button>
         </div>
 
         <div className="bg-white rounded-lg shadow overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">Gestión de Reservas</h2>
+              <p className="text-sm text-gray-600">Crear y gestionar reservas de clientes</p>
+            </div>
+            <button 
+              onClick={() => setShowCreateModal(true)}
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center space-x-2"
+            >
+              <Plus className="h-5 w-5" />
+              <span>Nueva Reserva</span>
+            </button>
+          </div>
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
@@ -338,9 +344,16 @@ export default function ReservationsPage() {
         </div>
 
         {reservations.length === 0 && !error && (
-          <div className="text-center py-12">
-            <div className="text-gray-400 text-lg">No hay reservas disponibles</div>
-            <p className="text-gray-500 mt-2">Las reservas aparecerán aquí cuando se sincronicen desde Airbnb y Booking.com o las crees manualmente</p>
+          <div className="text-center py-12 bg-white">
+            <div className="text-gray-400 text-lg mb-4">No hay reservas disponibles</div>
+            <p className="text-gray-500 mb-6">Las reservas aparecerán aquí cuando se sincronicen desde Airbnb y Booking.com o las crees manualmente</p>
+            <button 
+              onClick={() => setShowCreateModal(true)}
+              className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 flex items-center space-x-2 mx-auto"
+            >
+              <Plus className="h-5 w-5" />
+              <span>Crear Primera Reserva</span>
+            </button>
           </div>
         )}
       </div>
