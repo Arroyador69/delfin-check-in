@@ -1,8 +1,10 @@
 # Archivo CODEOWNERS - Define quién debe revisar cada parte del código
 # Más info: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
 
-# Propietarios globales - revisar TODOS los cambios
+# Propietarios globales - TÚ REVISAS TODO (control total)
 * @Arroyador69
+
+# Tu compañero puede contribuir pero SIEMPRE necesita tu aprobación
 
 # APIs y lógica de backend
 /src/app/api/ @Arroyador69
@@ -26,13 +28,16 @@
 /src/app/api/auth/ @Arroyador69
 /src/components/AuthGuard.tsx @Arroyador69
 
-# Formularios públicos (requiere revisión especial)
-/src/app/guest-registration/ @Arroyador69 @andresarrroyoaa
-/delfin-formulario-publico/ @andresarrroyoaa
+# Formularios públicos (TÚ siempre revisas)
+/src/app/guest-registration/ @Arroyador69
+/delfin-formulario-publico/ @Arroyador69
 
-# Componentes de UI y dashboard
-/src/components/ @Arroyador69 @andresarrroyoaa
-/src/app/guest-registrations-dashboard/ @andresarrroyoaa
+# Componentes de UI y dashboard (TÚ siempre revisas)
+/src/components/ @Arroyador69
+/src/app/guest-registrations-dashboard/ @Arroyador69
+
+# NOTA: Con la regla global (*), @andresarrroyoaa puede trabajar en cualquier área
+# pero TÚ (@Arroyador69) SIEMPRE debes aprobar sus PRs antes del merge
 
 # Exportación MIR (crítico para cumplimiento legal)
 /src/app/api/export/ @Arroyador69
@@ -43,4 +48,7 @@
 *.md @Arroyador69
 /README.md @Arroyador69
 
-# NOTA: Tu compañero @andresarrroyoaa ya está añadido en las áreas correspondientes
+# CONFIGURACIÓN FINAL: Control total para @Arroyador69
+# - Tu compañero @andresarrroyoaa puede trabajar en cualquier archivo
+# - Pero TÚ SIEMPRE debes aprobar todos sus Pull Requests
+# - Tienes control total sobre todo el código que entra al repositorio
