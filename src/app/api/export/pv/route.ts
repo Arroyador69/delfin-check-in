@@ -93,8 +93,9 @@ function validateBusinessRules(data: z.infer<typeof PayloadSchema>): string[] {
         if (esEspana && !/^\d{5}$/.test(p.direccion.codigoMunicipio || '')) {
           details.push(`comunicaciones[${idx}].personas[${i}].codigoMunicipio debe ser INE de 5 dígitos para España`);
         }
-        if (!esEspana && !p.direccion.nombreMunicipio) {
-          details.push(`comunicaciones[${idx}].personas[${i}].nombreMunicipio requerido para países no españoles`);
+        // TEMPORAL: Permitir nombreMunicipio vacío para extranjeros (mientras se arregla formulario)
+        if (!esEspana && !p.direccion.nombreMunicipio && !p.direccion.codigoMunicipio) {
+          details.push(`comunicaciones[${idx}].personas[${i}].nombreMunicipio requerido para países no españoles (o codigoMunicipio como alternativa)`);
         }
       }
       
