@@ -38,6 +38,7 @@ export function middleware(req: NextRequest) {
       url.pathname.startsWith('/api/reservations') ||
       url.pathname.startsWith('/api/rooms') ||
       url.pathname.startsWith('/api/setup-rooms') ||
+      url.pathname.startsWith('/api/ical') ||
       url.pathname.startsWith('/public') ||
       url.pathname === '/reservations' ||
       url.pathname.startsWith('/reservations/')) {

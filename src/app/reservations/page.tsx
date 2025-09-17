@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, X, Calendar, User, Bed, Euro, CreditCard } from 'lucide-react';
+import { Plus, X, Calendar, User, Bed, Euro, CreditCard, Download, Smartphone } from 'lucide-react';
 // Removido: import { supabase } from '@/lib/supabase';
 // Removido: import { Reservation } from '@/lib/supabase';
 
@@ -273,7 +273,50 @@ export default function ReservationsPage() {
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-7xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Reservas</h1>
+          <div className="flex justify-between items-center">
+            <h1 className="text-3xl font-bold text-gray-900">Reservas</h1>
+            <div className="flex space-x-3">
+              <a
+                href="/api/ical/reservations"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center space-x-2"
+              >
+                <Calendar className="h-5 w-5" />
+                <span>Calendario</span>
+              </a>
+              <button
+                onClick={() => {
+                  const url = `${window.location.origin}/api/ical/reservations`;
+                  navigator.clipboard.writeText(url);
+                  alert('URL del calendario copiada al portapapeles. Compártela con tus padres para que se suscriban.');
+                }}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center space-x-2"
+              >
+                <Smartphone className="h-5 w-5" />
+                <span>Compartir</span>
+              </button>
+            </div>
+          </div>
+          <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="flex items-start">
+              <Smartphone className="h-5 w-5 text-blue-600 mt-0.5 mr-3" />
+              <div>
+                <h3 className="text-sm font-medium text-blue-800 mb-1">
+                  📱 Para tus padres: Acceso móvil al calendario
+                </h3>
+                <p className="text-sm text-blue-700 mb-2">
+                  Comparte la URL del calendario con tus padres para que puedan ver todas las reservas en sus móviles:
+                </p>
+                <div className="bg-white p-3 rounded border text-xs font-mono text-gray-700 break-all">
+                  {typeof window !== 'undefined' ? `${window.location.origin}/api/ical/reservations` : 'Cargando...'}
+                </div>
+                <p className="text-xs text-blue-600 mt-2">
+                  💡 <strong>Instrucciones:</strong> Copia esta URL y envíala por WhatsApp. Tus padres pueden suscribirse desde Google Calendar, Apple Calendar, o cualquier app de calendario.
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div className="bg-white rounded-lg shadow overflow-hidden">
