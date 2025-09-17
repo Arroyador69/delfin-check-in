@@ -345,8 +345,8 @@ export default function ReservationsPage() {
 
         {reservations.length === 0 && !error && (
           <div className="text-center py-12 bg-white">
-            <div className="text-gray-400 text-lg mb-4">No hay reservas disponibles</div>
-            <p className="text-gray-500 mb-6">Las reservas aparecerán aquí cuando se sincronicen desde Airbnb y Booking.com o las crees manualmente</p>
+            <div className="text-black text-lg mb-4 font-medium">No hay reservas disponibles</div>
+            <p className="text-black mb-6">Las reservas aparecerán aquí cuando se sincronicen desde Airbnb y Booking.com o las crees manualmente</p>
             <button 
               onClick={() => setShowCreateModal(true)}
               className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 flex items-center space-x-2 mx-auto"
