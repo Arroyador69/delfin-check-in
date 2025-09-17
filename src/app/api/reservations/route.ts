@@ -82,6 +82,52 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     console.log('📋 Datos recibidos:', body);
     
+    // PRIMERO: Verificar si la tabla existe, si no, crearla
+    try {
+      await sql`SELECT 1 FROM reservations LIMIT 1`;
+      console.log('✅ Tabla reservations existe');
+    } catch (error) {
+      console.log('🔧 Tabla reservations no existe, creándola...');
+      await sql`
+        CREATE TABLE IF NOT EXISTS reservations (
+          id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+          external_id VARCHAR(100) UNIQUE NOT NULL,
+          room_id VARCHAR(50) NOT NULL,
+          guest_name VARCHAR(255) NOT NULL,
+          guest_email VARCHAR(255),
+          check_in TIMESTAMP NOT NULL,
+          check_out TIMESTAMP NOT NULL,
+          channel VARCHAR(50) DEFAULT 'manual',
+          total_price DECIMAL(10,2) DEFAULT 0,
+          guest_paid DECIMAL(10,2) DEFAULT 0,
+          platform_commission DECIMAL(10,2) DEFAULT 0,
+          net_income DECIMAL(10,2) DEFAULT 0,
+          currency VARCHAR(3) DEFAULT 'EUR',
+          status VARCHAR(50) DEFAULT 'confirmed',
+          created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+          updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+        );
+      `;
+      
+      // Crear índices
+      await sql`
+        CREATE INDEX IF NOT EXISTS idx_reservations_check_in 
+        ON reservations(check_in);
+      `;
+      
+      await sql`
+        CREATE INDEX IF NOT EXISTS idx_reservations_room_id 
+        ON reservations(room_id);
+      `;
+      
+      await sql`
+        CREATE INDEX IF NOT EXISTS idx_reservations_external_id 
+        ON reservations(external_id);
+      `;
+      
+      console.log('✅ Tabla reservations creada correctamente');
+    }
+    
     // Validar datos requeridos
     if (!body.guest_name || !body.room_id || !body.check_in || !body.check_out) {
       return NextResponse.json(
