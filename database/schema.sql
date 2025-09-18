@@ -17,6 +17,8 @@ CREATE TABLE reservations (
   room_id UUID REFERENCES rooms(id) ON DELETE CASCADE,
   guest_name VARCHAR(255) NOT NULL,
   guest_email VARCHAR(255),
+  guest_phone VARCHAR(50),
+  guest_count INTEGER NOT NULL DEFAULT 1 CHECK (guest_count > 0),
   check_in TIMESTAMP WITH TIME ZONE NOT NULL,
   check_out TIMESTAMP WITH TIME ZONE NOT NULL,
   channel VARCHAR(50) NOT NULL DEFAULT 'manual' CHECK (channel IN ('airbnb', 'booking', 'manual')),

@@ -97,6 +97,8 @@ export async function insertReservation(data: {
   room_id: string;
   guest_name: string;
   guest_email?: string;
+  guest_phone?: string;
+  guest_count?: number;
   check_in: string;
   check_out: string;
   channel: string;
@@ -109,12 +111,12 @@ export async function insertReservation(data: {
 }): Promise<any> {
   const result = await sql`
     INSERT INTO reservations (
-      external_id, room_id, guest_name, guest_email, 
+      external_id, room_id, guest_name, guest_email, guest_phone, guest_count,
       check_in, check_out, channel, total_price, 
       guest_paid, platform_commission, net_income, currency, status
     )
     VALUES (
-      ${data.external_id}, ${data.room_id}, ${data.guest_name}, ${data.guest_email || ''}, 
+      ${data.external_id}, ${data.room_id}, ${data.guest_name}, ${data.guest_email || ''}, ${data.guest_phone || ''}, ${data.guest_count || 1}, 
       ${data.check_in}::timestamp, ${data.check_out}::timestamp, ${data.channel}, ${data.total_price}, 
       ${data.guest_paid || data.total_price}, ${data.platform_commission || 0}, ${data.net_income || data.total_price}, 
       ${data.currency || 'EUR'}, ${data.status}

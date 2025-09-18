@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, X, Calendar, User, Bed, Euro, CreditCard, Download, Smartphone } from 'lucide-react';
+import { Plus, X, Calendar, User, Bed, Euro, CreditCard, Download, Smartphone, Phone, Users, Globe } from 'lucide-react';
 // Removido: import { supabase } from '@/lib/supabase';
 // Removido: import { Reservation } from '@/lib/supabase';
 
@@ -44,6 +44,8 @@ export default function ReservationsPage() {
     room_id: '',
     guest_name: '',
     guest_email: '',
+    guest_phone: '',
+    guest_count: 1,
     check_in: '',
     check_out: '',
     total_price: '',
@@ -155,6 +157,8 @@ export default function ReservationsPage() {
       room_id: '',
       guest_name: '',
       guest_email: '',
+      guest_phone: '',
+      guest_count: 1,
       check_in: '',
       check_out: '',
       total_price: '',
@@ -592,6 +596,39 @@ export default function ReservationsPage() {
                 </div>
               </div>
 
+              {/* Información adicional del huésped */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <Phone className="h-4 w-4 inline mr-2" />
+                    Teléfono del huésped
+                  </label>
+                  <input
+                    type="tel"
+                    value={formData.guest_phone}
+                    onChange={(e) => setFormData({...formData, guest_phone: e.target.value})}
+                    placeholder="+34 600 000 000"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <Users className="h-4 w-4 inline mr-2" />
+                    Número de personas *
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="10"
+                    required
+                    value={formData.guest_count}
+                    onChange={(e) => setFormData({...formData, guest_count: parseInt(e.target.value) || 1})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+
               {/* Fechas */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -671,21 +708,40 @@ export default function ReservationsPage() {
                 </div>
               </div>
 
-              {/* Moneda */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <Euro className="h-4 w-4 inline mr-2" />
-                  Moneda
-                </label>
-                <select
-                  value={formData.currency}
-                  onChange={(e) => setFormData({...formData, currency: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="EUR">EUR (Euro)</option>
-                  <option value="USD">USD (Dólar)</option>
-                  <option value="GBP">GBP (Libra)</option>
-                </select>
+              {/* Canal y Moneda */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <Globe className="h-4 w-4 inline mr-2" />
+                    Canal de reserva *
+                  </label>
+                  <select
+                    required
+                    value={formData.channel}
+                    onChange={(e) => setFormData({...formData, channel: e.target.value as 'airbnb' | 'booking' | 'manual'})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="manual">📝 Manual</option>
+                    <option value="airbnb">🏠 Airbnb</option>
+                    <option value="booking">🌐 Booking.com</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <Euro className="h-4 w-4 inline mr-2" />
+                    Moneda
+                  </label>
+                  <select
+                    value={formData.currency}
+                    onChange={(e) => setFormData({...formData, currency: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="EUR">EUR (Euro)</option>
+                    <option value="USD">USD (Dólar)</option>
+                    <option value="GBP">GBP (Libra)</option>
+                  </select>
+                </div>
               </div>
 
               {/* Botones */}

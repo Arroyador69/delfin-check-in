@@ -48,19 +48,20 @@ X-WR-TIMEZONE:Europe/Madrid
 `;
 
   reservations.forEach((reservation, index) => {
-    const startDate = formatDateForICal(reservation.check_in);
-    const endDate = formatDateForICal(reservation.check_out);
+    const startDate = formatDateForICal(reservation.check_in, false); // false = check-in
+    const endDate = formatDateForICal(reservation.check_out, true); // true = check-out
     const uid = `reserva-${reservation.id}@delfincheckin.com`;
     const summary = `🏨 ${reservation.guest_name} - Habitación ${reservation.room_id}`;
     const description = `Huésped: ${reservation.guest_name}
 Email: ${reservation.guest_email || 'No especificado'}
+Teléfono: ${reservation.guest_phone || 'No especificado'}
+Número de personas: ${reservation.guest_count || 1}
 Habitación: ${reservation.room_id}
 Estado: ${getStatusText(reservation.status)}
 Canal: ${getChannelText(reservation.channel)}
 Precio: €${Number(reservation.guest_paid || 0).toFixed(2)}
 Comisión: €${Number(reservation.platform_commission || 0).toFixed(2)}
-Ganancia: €${Number(reservation.net_income || 0).toFixed(2)}
-Teléfono: +34 XXX XXX XXX`;
+Ganancia: €${Number(reservation.net_income || 0).toFixed(2)}`;
 
     ical += `BEGIN:VEVENT
 UID:${uid}
@@ -83,8 +84,18 @@ END:VEVENT
   return ical;
 }
 
-function formatDateForICal(dateString: string): string {
+function formatDateForICal(dateString: string, isCheckOut: boolean = false): string {
   const date = new Date(dateString);
+  
+  // Configurar horarios automáticos:
+  // - Check-in: 16:00h (4:00 PM)
+  // - Check-out: 12:00h (12:00 PM)
+  if (isCheckOut) {
+    date.setHours(12, 0, 0, 0); // 12:00 PM para salida
+  } else {
+    date.setHours(16, 0, 0, 0); // 4:00 PM para entrada
+  }
+  
   return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
 }
 
