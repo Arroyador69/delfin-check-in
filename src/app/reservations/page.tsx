@@ -53,7 +53,7 @@ export default function ReservationsPage() {
     platform_commission: '',
     currency: 'EUR',
     status: 'confirmed' as const,
-    channel: 'manual' as const,
+    channel: 'manual' as 'airbnb' | 'booking' | 'manual',
   });
 
   useEffect(() => {
@@ -166,7 +166,7 @@ export default function ReservationsPage() {
       platform_commission: '',
       currency: 'EUR',
       status: 'confirmed',
-      channel: 'manual',
+      channel: 'manual' as 'airbnb' | 'booking' | 'manual',
     });
   };
 
