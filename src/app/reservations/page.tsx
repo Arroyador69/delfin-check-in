@@ -57,7 +57,7 @@ export default function ReservationsPage() {
     guest_paid: '',
     platform_commission: '',
     currency: 'EUR',
-    status: 'confirmed' as const,
+    status: 'confirmed' as 'confirmed' | 'cancelled' | 'completed',
     channel: 'manual' as 'airbnb' | 'booking' | 'manual',
   });
 
@@ -170,7 +170,7 @@ export default function ReservationsPage() {
       guest_paid: '',
       platform_commission: '',
       currency: 'EUR',
-      status: 'confirmed',
+      status: 'confirmed' as 'confirmed' | 'cancelled' | 'completed',
       channel: 'manual' as 'airbnb' | 'booking' | 'manual',
     });
   };
