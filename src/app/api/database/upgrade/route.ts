@@ -72,8 +72,8 @@ export async function GET() {
     
     return NextResponse.json({
       success: true,
-      columns: result,
-      message: result.length === 2 ? 
+      columns: result.rows,
+      message: result.rows.length === 2 ? 
         'Los campos guest_phone y guest_count ya están presentes en la base de datos' :
         'Faltan algunos campos. Ejecuta POST para actualizar la base de datos.'
     });
