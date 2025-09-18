@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
 
+// ENDPOINT TEMPORAL PARA APLICAR MIGRACIONES - ELIMINAR DESPUÉS DEL USO
 export async function POST(request: NextRequest) {
   try {
     console.log('🔧 Iniciando actualización de la base de datos...');
