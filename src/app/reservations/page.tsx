@@ -189,7 +189,7 @@ export default function ReservationsPage() {
       guest_paid: reservation.guest_paid?.toString() || '',
       platform_commission: reservation.platform_commission?.toString() || '',
       currency: reservation.currency || 'EUR',
-      status: reservation.status || 'confirmed',
+      status: reservation.status || 'confirmed' as 'confirmed' | 'cancelled' | 'completed',
       channel: reservation.channel || 'manual',
     });
     setShowEditModal(true);
