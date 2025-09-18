@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Bed, Calendar, Users, Settings, Menu, X } from 'lucide-react';
+import { Home, Bed, Calendar, Users, Settings, Menu, X, Smartphone } from 'lucide-react';
 import { useState } from 'react';
 
 export default function Navigation() {
@@ -14,6 +14,7 @@ export default function Navigation() {
     { name: 'Habitaciones', href: '/rooms', icon: Bed },
     { name: 'Reservas', href: '/reservations', icon: Calendar },
     { name: 'Check-in', href: '/checkin', icon: Users },
+    { name: 'Sincronizar Calendarios', href: '/calendar-sync', icon: Smartphone },
     { name: 'Configuración', href: '/settings', icon: Settings },
   ];
 

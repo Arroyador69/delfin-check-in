@@ -21,7 +21,13 @@ export async function GET() {
       headers: {
         'Content-Type': 'text/calendar; charset=utf-8',
         'Content-Disposition': 'attachment; filename="reservas-delfin.ics"',
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+        'ETag': `"reservas-${Date.now()}"`,
+        'Last-Modified': new Date().toUTCString(),
+        'X-WR-RELCALID': `reservas-delfin-${Date.now()}`,
+        'X-WR-TIMEZONE': 'Europe/Madrid',
       },
     });
 
@@ -42,9 +48,12 @@ VERSION:2.0
 PRODID:-//Delfín Check-in//Reservas//ES
 CALSCALE:GREGORIAN
 METHOD:PUBLISH
-X-WR-CALNAME:Reservas Delfín Check-in
-X-WR-CALDESC:Calendario de reservas del hotel
+X-WR-CALNAME:Reservas Delfín Check-in 🐬
+X-WR-CALDESC:Calendario actualizado automáticamente - ${reservations.length} reservas
 X-WR-TIMEZONE:Europe/Madrid
+X-WR-RELCALID:reservas-delfin-${now}
+X-PUBLISHED-TTL:PT15M
+REFRESH-INTERVAL;VALUE=DURATION:PT15M
 `;
 
   reservations.forEach((reservation, index) => {

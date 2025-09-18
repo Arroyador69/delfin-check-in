@@ -32,7 +32,13 @@ export async function GET(
       headers: {
         'Content-Type': 'text/calendar; charset=utf-8',
         'Content-Disposition': `attachment; filename="habitacion-${roomId}-delfin.ics"`,
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+        'ETag': `"habitacion-${roomId}-${Date.now()}"`,
+        'Last-Modified': new Date().toUTCString(),
+        'X-WR-RELCALID': `habitacion-${roomId}-${Date.now()}`,
+        'X-WR-TIMEZONE': 'Europe/Madrid',
       },
     });
 
@@ -53,9 +59,12 @@ VERSION:2.0
 PRODID:-//Delfín Check-in//Habitación ${roomId}//ES
 CALSCALE:GREGORIAN
 METHOD:PUBLISH
-X-WR-CALNAME:Habitación ${roomId} - Delfín Check-in
-X-WR-CALDESC:Calendario de ocupación de la habitación ${roomId}
+X-WR-CALNAME:Habitación ${roomId} - Delfín Check-in 🐬
+X-WR-CALDESC:Ocupación actualizada automáticamente - ${reservations.length} reservas
 X-WR-TIMEZONE:Europe/Madrid
+X-WR-RELCALID:habitacion-${roomId}-${now}
+X-PUBLISHED-TTL:PT15M
+REFRESH-INTERVAL;VALUE=DURATION:PT15M
 `;
 
   reservations.forEach((reservation) => {
