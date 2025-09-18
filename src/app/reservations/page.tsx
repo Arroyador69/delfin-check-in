@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, X, Calendar, User, Bed, Euro, CreditCard, Download, Smartphone, Phone, Users, Globe } from 'lucide-react';
+import { Plus, X, Calendar, User, Bed, Euro, CreditCard, Download, Smartphone, Phone, Users, Globe, Edit } from 'lucide-react';
 // Removido: import { supabase } from '@/lib/supabase';
 // Removido: import { Reservation } from '@/lib/supabase';
 
@@ -36,10 +36,13 @@ export default function ReservationsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [updating, setUpdating] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [reservationToDelete, setReservationToDelete] = useState<Reservation | null>(null);
+  const [reservationToEdit, setReservationToEdit] = useState<Reservation | null>(null);
   const [formData, setFormData] = useState({
     room_id: '',
     guest_name: '',
@@ -168,6 +171,70 @@ export default function ReservationsPage() {
       status: 'confirmed',
       channel: 'manual' as 'airbnb' | 'booking' | 'manual',
     });
+  };
+
+  const handleEditClick = (reservation: Reservation) => {
+    setReservationToEdit(reservation);
+    setFormData({
+      room_id: reservation.room_id,
+      guest_name: reservation.guest_name,
+      guest_email: reservation.guest_email || '',
+      guest_phone: reservation.guest_phone || '',
+      guest_count: reservation.guest_count || 1,
+      check_in: reservation.check_in.split('T')[0], // Solo la fecha
+      check_out: reservation.check_out.split('T')[0], // Solo la fecha
+      total_price: reservation.total_price?.toString() || '',
+      guest_paid: reservation.guest_paid?.toString() || '',
+      platform_commission: reservation.platform_commission?.toString() || '',
+      currency: reservation.currency || 'EUR',
+      status: reservation.status || 'confirmed',
+      channel: reservation.channel || 'manual',
+    });
+    setShowEditModal(true);
+  };
+
+  const handleUpdateReservation = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!reservationToEdit) return;
+
+    setUpdating(true);
+    try {
+      const response = await fetch('/api/reservations', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: reservationToEdit.id,
+          ...formData,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Error al actualizar la reserva');
+      }
+
+      const updatedReservation = await response.json();
+      
+      // Actualizar la lista de reservas
+      setReservations(prev => 
+        prev.map(res => 
+          res.id === updatedReservation.id ? updatedReservation : res
+        )
+      );
+
+      setShowEditModal(false);
+      setReservationToEdit(null);
+      resetForm();
+      
+      alert('✅ Reserva actualizada correctamente');
+    } catch (error: any) {
+      console.error('Error updating reservation:', error);
+      alert(`❌ Error al actualizar la reserva: ${error.message}`);
+    } finally {
+      setUpdating(false);
+    }
   };
 
   const handleDeleteClick = (reservation: Reservation) => {
@@ -472,6 +539,14 @@ export default function ReservationsPage() {
                       <button className="text-green-600 hover:text-green-900 mr-3">
                         Check-in
                       </button>
+                      <button
+                        onClick={() => handleEditClick(reservation)}
+                        className="text-blue-600 hover:text-blue-900 mr-3 flex items-center"
+                        title="Editar reserva"
+                      >
+                        <Edit className="h-4 w-4 mr-1" />
+                        Editar
+                      </button>
                       <button 
                         onClick={() => handleDeleteClick(reservation)}
                         disabled={deleting === reservation.id}
@@ -770,6 +845,284 @@ export default function ReservationsPage() {
                     <>
                       <Plus className="h-4 w-4 mr-2" />
                       Crear Reserva
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de edición de reserva */}
+      {showEditModal && reservationToEdit && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <h2 className="text-xl font-semibold text-gray-900 flex items-center">
+                <Edit className="h-6 w-6 mr-2 text-blue-600" />
+                Editar Reserva
+              </h2>
+              <button
+                onClick={() => {
+                  setShowEditModal(false);
+                  setReservationToEdit(null);
+                  resetForm();
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+            
+            <form onSubmit={handleUpdateReservation} className="p-6 space-y-6">
+              {/* Información de la habitación */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <Bed className="h-4 w-4 inline mr-2" />
+                    Habitación *
+                  </label>
+                  <select
+                    required
+                    value={formData.room_id}
+                    onChange={(e) => setFormData({...formData, room_id: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Seleccionar habitación</option>
+                    {rooms.map(room => (
+                      <option key={room.id} value={room.id}>
+                        {room.name} - €{room.base_price}/noche
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <User className="h-4 w-4 inline mr-2" />
+                    Estado *
+                  </label>
+                  <select
+                    required
+                    value={formData.status}
+                    onChange={(e) => setFormData({...formData, status: e.target.value as any})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="confirmed">Confirmada</option>
+                    <option value="completed">Completada</option>
+                    <option value="cancelled">Cancelada</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Información del huésped */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <User className="h-4 w-4 inline mr-2" />
+                    Nombre del huésped *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.guest_name}
+                    onChange={(e) => setFormData({...formData, guest_name: e.target.value})}
+                    placeholder="Nombre completo"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <User className="h-4 w-4 inline mr-2" />
+                    Email del huésped
+                  </label>
+                  <input
+                    type="email"
+                    value={formData.guest_email}
+                    onChange={(e) => setFormData({...formData, guest_email: e.target.value})}
+                    placeholder="email@ejemplo.com"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+
+              {/* Información adicional del huésped */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <Phone className="h-4 w-4 inline mr-2" />
+                    Teléfono del huésped
+                  </label>
+                  <input
+                    type="tel"
+                    value={formData.guest_phone}
+                    onChange={(e) => setFormData({...formData, guest_phone: e.target.value})}
+                    placeholder="+34 600 000 000"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <Users className="h-4 w-4 inline mr-2" />
+                    Número de personas *
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="10"
+                    required
+                    value={formData.guest_count}
+                    onChange={(e) => setFormData({...formData, guest_count: parseInt(e.target.value) || 1})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+
+              {/* Fechas */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <Calendar className="h-4 w-4 inline mr-2" />
+                    Fecha de llegada *
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={formData.check_in}
+                    onChange={(e) => setFormData({...formData, check_in: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <Calendar className="h-4 w-4 inline mr-2" />
+                    Fecha de salida *
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={formData.check_out}
+                    onChange={(e) => setFormData({...formData, check_out: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+
+              {/* Información financiera */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <Euro className="h-4 w-4 inline mr-2" />
+                    Precio total
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={formData.total_price}
+                    onChange={(e) => setFormData({...formData, total_price: e.target.value})}
+                    placeholder="0.00"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <CreditCard className="h-4 w-4 inline mr-2" />
+                    Pagó huésped
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={formData.guest_paid}
+                    onChange={(e) => setFormData({...formData, guest_paid: e.target.value})}
+                    placeholder="0.00"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <Euro className="h-4 w-4 inline mr-2" />
+                    Comisión plataforma
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={formData.platform_commission}
+                    onChange={(e) => setFormData({...formData, platform_commission: e.target.value})}
+                    placeholder="0.00"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+
+              {/* Canal y Moneda */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <Globe className="h-4 w-4 inline mr-2" />
+                    Canal de reserva *
+                  </label>
+                  <select
+                    required
+                    value={formData.channel}
+                    onChange={(e) => setFormData({...formData, channel: e.target.value as 'airbnb' | 'booking' | 'manual'})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="manual">📝 Manual</option>
+                    <option value="airbnb">🏠 Airbnb</option>
+                    <option value="booking">🌐 Booking.com</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <Euro className="h-4 w-4 inline mr-2" />
+                    Moneda
+                  </label>
+                  <select
+                    value={formData.currency}
+                    onChange={(e) => setFormData({...formData, currency: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="EUR">EUR (Euro)</option>
+                    <option value="USD">USD (Dólar)</option>
+                    <option value="GBP">GBP (Libra)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Botones */}
+              <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowEditModal(false);
+                    setReservationToEdit(null);
+                    resetForm();
+                  }}
+                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={updating}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center"
+                >
+                  {updating ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Actualizando...
+                    </>
+                  ) : (
+                    <>
+                      <Edit className="h-4 w-4 mr-2" />
+                      Actualizar Reserva
                     </>
                   )}
                 </button>

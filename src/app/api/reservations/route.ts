@@ -246,6 +246,69 @@ export async function POST(request: NextRequest) {
 }
 
 // Función para calcular comisiones
+export async function PUT(request: NextRequest) {
+  try {
+    console.log('📝 Actualizando reserva en PostgreSQL...');
+    
+    const body = await request.json();
+    console.log('📋 Datos recibidos para actualización:', body);
+    
+    // Validar datos requeridos
+    if (!body.id || !body.guest_name || !body.room_id || !body.check_in || !body.check_out) {
+      return NextResponse.json(
+        { error: 'Faltan datos requeridos: id, guest_name, room_id, check_in, check_out' },
+        { status: 400 }
+      );
+    }
+
+    // Calcular datos financieros
+    const total_price = parseFloat(body.total_price) || 0;
+    const guest_paid = parseFloat(body.guest_paid) || total_price;
+    const platform_commission = parseFloat(body.platform_commission) || calculateCommission(guest_paid, body.channel || 'manual');
+    const net_income = guest_paid - platform_commission;
+
+    // Actualizar la reserva
+    const result = await sql`
+      UPDATE reservations 
+      SET 
+        room_id = ${body.room_id},
+        guest_name = ${body.guest_name},
+        guest_email = ${body.guest_email || ''},
+        guest_phone = ${body.guest_phone || ''},
+        guest_count = ${parseInt(body.guest_count) || 1},
+        check_in = ${body.check_in}::timestamp,
+        check_out = ${body.check_out}::timestamp,
+        channel = ${body.channel || 'manual'},
+        total_price = ${total_price},
+        guest_paid = ${guest_paid},
+        platform_commission = ${platform_commission},
+        net_income = ${net_income},
+        currency = ${body.currency || 'EUR'},
+        status = ${body.status || 'confirmed'},
+        updated_at = NOW()
+      WHERE id = ${body.id}
+      RETURNING *;
+    `;
+    
+    if (result.rows.length === 0) {
+      return NextResponse.json(
+        { error: 'Reserva no encontrada' },
+        { status: 404 }
+      );
+    }
+
+    console.log('✅ Reserva actualizada:', result.rows[0].id);
+    return NextResponse.json(result.rows[0]);
+    
+  } catch (error: any) {
+    console.error('Error updating reservation:', error);
+    return NextResponse.json(
+      { error: 'Error al actualizar la reserva', details: error.message },
+      { status: 500 }
+    );
+  }
+}
+
 function calculateCommission(amount: number, channel: 'airbnb' | 'booking' | 'manual'): number {
   switch (channel) {
     case 'booking':
