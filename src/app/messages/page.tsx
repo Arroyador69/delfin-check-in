@@ -296,15 +296,15 @@ export default function MessagesPage() {
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
+          <div className="flex justify-between items-center py-3">
             <div className="flex items-center">
-              <MessageSquare className="h-8 w-8 text-blue-600 mr-3" />
+              <MessageSquare className="h-6 w-6 text-blue-600 mr-2" />
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Mensajes Automáticos</h1>
-                <p className="text-sm text-gray-600">Configura plantillas para comunicación automática por WhatsApp</p>
+                <h1 className="text-lg font-bold text-gray-900">Mensajes Automáticos</h1>
+                <p className="text-xs text-gray-600">Configura plantillas para comunicación automática por WhatsApp</p>
               </div>
             </div>
-            <div className="flex space-x-3">
+            <div className="flex space-x-2">
               <button
                 onClick={async () => {
                   try {
@@ -320,16 +320,16 @@ export default function MessagesPage() {
                     alert('Error al inicializar la base de datos');
                   }
                 }}
-                className="flex items-center px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
+                className="flex items-center px-2 py-1.5 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 text-xs"
               >
-                <Settings className="h-4 w-4 mr-2" />
+                <Settings className="h-3 w-3 mr-1" />
                 Inicializar BD
               </button>
               <button
                 onClick={() => setActiveTab('config')}
-                className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="flex items-center px-2 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs"
               >
-                <Settings className="h-4 w-4 mr-2" />
+                <Settings className="h-3 w-3 mr-1" />
                 Configurar WhatsApp
               </button>
             </div>
@@ -340,10 +340,10 @@ export default function MessagesPage() {
       {/* Tabs */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="border-b border-gray-200">
-          <nav className="-mb-px flex space-x-8">
+          <nav className="-mb-px flex space-x-6">
             <button
               onClick={() => setActiveTab('templates')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${
                 activeTab === 'templates'
                   ? 'border-blue-500 text-blue-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -353,7 +353,7 @@ export default function MessagesPage() {
             </button>
             <button
               onClick={() => setActiveTab('sent')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${
                 activeTab === 'sent'
                   ? 'border-blue-500 text-blue-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -363,7 +363,7 @@ export default function MessagesPage() {
             </button>
             <button
               onClick={() => setActiveTab('config')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${
                 activeTab === 'config'
                   ? 'border-blue-500 text-blue-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -375,38 +375,38 @@ export default function MessagesPage() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         {activeTab === 'templates' && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {/* Formulario */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-6">
+            <div className="bg-white rounded-lg shadow p-4">
+              <h2 className="text-md font-semibold text-gray-900 mb-3">
                 {editingTemplate ? 'Editar Plantilla' : 'Nueva Plantilla'}
               </h2>
               
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <form onSubmit={handleSubmit} className="space-y-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
                     Nombre de la Plantilla
                   </label>
                   <input
                     type="text"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-2 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                     placeholder="Ej: Confirmación de Reserva"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
                     Trigger (Cuándo enviar)
                   </label>
                   <select
                     value={formData.trigger_type}
                     onChange={(e) => setFormData({ ...formData, trigger_type: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-2 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                     required
                   >
                     <option value="">Seleccionar trigger</option>
@@ -420,13 +420,13 @@ export default function MessagesPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
                     Idioma
                   </label>
                   <select
                     value={formData.language}
                     onChange={(e) => setFormData({ ...formData, language: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-2 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                     required
                   >
                     <option value="es">Español</option>
@@ -435,14 +435,14 @@ export default function MessagesPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
                     Plantilla del Mensaje
                   </label>
                   <textarea
                     value={formData.template_content}
                     onChange={(e) => setFormData({ ...formData, template_content: e.target.value })}
-                    rows={8}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    rows={5}
+                    className="w-full px-2 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                     placeholder="Escribe tu mensaje aquí. Usa variables como: {{guest_name}}, {{room_number}}, {{room_code}}, {{check_in}}, {{check_out}}"
                     required
                   />
@@ -454,19 +454,19 @@ export default function MessagesPage() {
                     id="is_active"
                     checked={formData.is_active}
                     onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    className="h-3 w-3 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                   />
-                  <label htmlFor="is_active" className="ml-2 block text-sm text-gray-900">
+                  <label htmlFor="is_active" className="ml-2 block text-xs text-gray-900">
                     Plantilla activa
                   </label>
                 </div>
 
-                <div className="flex space-x-3 pt-4">
+                <div className="flex space-x-2 pt-2">
                   <button
                     type="submit"
-                    className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="flex items-center px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                   >
-                    <Save className="h-4 w-4 mr-2" />
+                    <Save className="h-3 w-3 mr-1" />
                     {editingTemplate ? 'Actualizar' : 'Crear'}
                   </button>
                   
@@ -485,7 +485,7 @@ export default function MessagesPage() {
                           is_active: true,
                         });
                       }}
-                      className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="px-3 py-1.5 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                     >
                       Cancelar
                     </button>
@@ -496,11 +496,11 @@ export default function MessagesPage() {
 
             {/* Lista de plantillas */}
             <div className="bg-white rounded-lg shadow">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <h2 className="text-lg font-semibold text-gray-900">Tus Plantillas</h2>
+              <div className="px-4 py-2 border-b border-gray-200">
+                <h2 className="text-md font-semibold text-gray-900">Tus Plantillas</h2>
               </div>
               
-              <div className="p-6">
+              <div className="p-3">
                 {templates.length === 0 ? (
                   <p className="text-gray-500 text-center py-8">
                     No hay plantillas configuradas. Crea tu primera plantilla automática.
