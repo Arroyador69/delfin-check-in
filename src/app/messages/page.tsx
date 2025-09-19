@@ -1,40 +1,110 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { MessageSquare, Save, Trash2, Send } from 'lucide-react';
+import { MessageSquare, Save, Trash2, Send, Settings, Eye, EyeOff } from 'lucide-react';
 
-// Tipo local para mensajes
-interface Message {
-  id: string;
-  trigger: string;
-  channel: 'email' | 'telegram' | 'whatsapp';
-  template: string;
-  language: 'es' | 'en';
+// Tipo para plantillas de mensajes
+interface MessageTemplate {
+  id: number;
+  name: string;
+  trigger_type: string;
+  channel: string;
+  language: string;
+  template_content: string;
+  variables: string[];
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+// Tipo para mensajes enviados
+interface SentMessage {
+  id: number;
+  template_id: number;
+  reservation_id?: number;
+  guest_phone: string;
+  guest_name?: string;
+  message_content: string;
+  whatsapp_message_id?: string;
+  status: string;
+  sent_at?: string;
+  delivered_at?: string;
+  read_at?: string;
+  error_message?: string;
+  created_at: string;
+  template_name?: string;
+  trigger_type?: string;
+}
+
+// Tipo para configuración de WhatsApp
+interface WhatsAppConfig {
+  id: number;
+  phone_number: string;
+  access_token?: string;
+  webhook_verify_token?: string;
   is_active: boolean;
 }
 
 export default function MessagesPage() {
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [templates, setTemplates] = useState<MessageTemplate[]>([]);
+  const [sentMessages, setSentMessages] = useState<SentMessage[]>([]);
+  const [whatsappConfig, setWhatsappConfig] = useState<WhatsAppConfig | null>(null);
   const [loading, setLoading] = useState(true);
-  const [editingMessage, setEditingMessage] = useState<Message | null>(null);
+  const [activeTab, setActiveTab] = useState<'templates' | 'sent' | 'config'>('templates');
+  const [editingTemplate, setEditingTemplate] = useState<MessageTemplate | null>(null);
+  const [showConfigForm, setShowConfigForm] = useState(false);
   const [formData, setFormData] = useState({
-    trigger: '',
-    channel: 'telegram' as 'email' | 'telegram' | 'whatsapp',
-    template: '',
-    language: 'es' as 'es' | 'en',
+    name: '',
+    trigger_type: '',
+    channel: 'whatsapp',
+    language: 'es',
+    template_content: '',
+    variables: [] as string[],
+    is_active: true,
+  });
+  const [configData, setConfigData] = useState({
+    phone_number: '+34617555255',
+    access_token: '',
+    webhook_verify_token: '',
     is_active: true,
   });
 
   useEffect(() => {
-    fetchMessages();
+    fetchData();
   }, []);
 
-  const fetchMessages = async () => {
+  const fetchData = async () => {
     try {
-      // TODO: Implementar con storage local
-      setMessages([]);
+      setLoading(true);
+      
+      // Obtener plantillas
+      const templatesResponse = await fetch('/api/messages/templates');
+      const templatesData = await templatesResponse.json();
+      if (templatesData.success) {
+        setTemplates(templatesData.data);
+      }
+
+      // Obtener mensajes enviados
+      const sentResponse = await fetch('/api/messages/sent');
+      const sentData = await sentResponse.json();
+      if (sentData.success) {
+        setSentMessages(sentData.data);
+      }
+
+      // Obtener configuración de WhatsApp
+      const configResponse = await fetch('/api/whatsapp/config');
+      const configData = await configResponse.json();
+      if (configData.success) {
+        setWhatsappConfig(configData.data);
+        setConfigData({
+          phone_number: configData.data?.phone_number || '+34617555255',
+          access_token: configData.data?.access_token || '',
+          webhook_verify_token: configData.data?.webhook_verify_token || '',
+          is_active: configData.data?.is_active !== false,
+        });
+      }
     } catch (error) {
-      console.error('Error fetching messages:', error);
+      console.error('Error fetching data:', error);
     } finally {
       setLoading(false);
     }
@@ -44,55 +114,128 @@ export default function MessagesPage() {
     e.preventDefault();
     
     try {
-      // TODO: Implementar con storage local
-      console.log('Message data:', formData);
+      const url = editingTemplate ? '/api/messages/templates' : '/api/messages/templates';
+      const method = editingTemplate ? 'PUT' : 'POST';
       
-      setFormData({
-        trigger: '',
-        channel: 'telegram',
-        template: '',
-        language: 'es',
-        is_active: true,
+      const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...(editingTemplate && { id: editingTemplate.id }),
+          ...formData
+        })
       });
-      setEditingMessage(null);
-      fetchMessages();
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        setFormData({
+          name: '',
+          trigger_type: '',
+          channel: 'whatsapp',
+          language: 'es',
+          template_content: '',
+          variables: [],
+          is_active: true,
+        });
+        setEditingTemplate(null);
+        fetchData();
+        alert(editingTemplate ? 'Plantilla actualizada' : 'Plantilla creada');
+      } else {
+        alert(`Error: ${result.error}`);
+      }
     } catch (error) {
-      console.error('Error saving message:', error);
-      alert('Error al guardar el mensaje');
+      console.error('Error saving template:', error);
+      alert('Error al guardar la plantilla');
     }
   };
 
-  const handleEdit = (message: Message) => {
-    setEditingMessage(message);
+  const handleEdit = (template: MessageTemplate) => {
+    setEditingTemplate(template);
     setFormData({
-      trigger: message.trigger,
-      channel: message.channel,
-      template: message.template,
-      language: message.language,
-      is_active: message.is_active,
+      name: template.name,
+      trigger_type: template.trigger_type,
+      channel: template.channel,
+      language: template.language,
+      template_content: template.template_content,
+      variables: template.variables,
+      is_active: template.is_active,
     });
   };
 
-  const handleDelete = async (messageId: string) => {
-    if (!confirm('¿Estás seguro de que quieres eliminar este mensaje?')) return;
+  const handleDelete = async (templateId: number) => {
+    if (!confirm('¿Estás seguro de que quieres eliminar esta plantilla?')) return;
 
     try {
-      // TODO: Implementar con storage local
-      console.log('Deleting message:', messageId);
-      fetchMessages();
+      const response = await fetch(`/api/messages/templates?id=${templateId}`, {
+        method: 'DELETE'
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        fetchData();
+        alert('Plantilla eliminada');
+      } else {
+        alert(`Error: ${result.error}`);
+      }
     } catch (error) {
-      console.error('Error deleting message:', error);
-      alert('Error al eliminar el mensaje');
+      console.error('Error deleting template:', error);
+      alert('Error al eliminar la plantilla');
     }
   };
 
-  const handleToggleActive = async (message: Message) => {
+  const handleToggleActive = async (template: MessageTemplate) => {
     try {
-      // TODO: Implementar con storage local
-      console.log('Toggling message active:', message.id, !message.is_active);
-      fetchMessages();
+      const response = await fetch('/api/messages/templates', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: template.id,
+          name: template.name,
+          trigger_type: template.trigger_type,
+          channel: template.channel,
+          language: template.language,
+          template_content: template.template_content,
+          variables: template.variables,
+          is_active: !template.is_active
+        })
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        fetchData();
+      } else {
+        alert(`Error: ${result.error}`);
+      }
     } catch (error) {
-      console.error('Error updating message:', error);
+      console.error('Error updating template:', error);
+    }
+  };
+
+  const handleConfigSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      const response = await fetch('/api/whatsapp/config', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(configData)
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        setShowConfigForm(false);
+        fetchData();
+        alert('Configuración actualizada');
+      } else {
+        alert(`Error: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Error updating config:', error);
+      alert('Error al actualizar configuración');
     }
   };
 
@@ -103,6 +246,7 @@ export default function MessagesPage() {
       case 't_minus_24_hours': return '24h antes';
       case 'post_checkout': return 'Post check-out';
       case 'checkin_instructions': return 'Instrucciones Check-in';
+      case 'send_form': return 'Envío Formulario';
       default: return trigger;
     }
   };
@@ -113,6 +257,28 @@ export default function MessagesPage() {
       case 'email': return 'Email';
       case 'whatsapp': return 'WhatsApp';
       default: return channel;
+    }
+  };
+
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'pending': return 'Pendiente';
+      case 'sent': return 'Enviado';
+      case 'delivered': return 'Entregado';
+      case 'read': return 'Leído';
+      case 'failed': return 'Fallido';
+      default: return status;
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'pending': return 'bg-yellow-100 text-yellow-800';
+      case 'sent': return 'bg-blue-100 text-blue-800';
+      case 'delivered': return 'bg-green-100 text-green-800';
+      case 'read': return 'bg-purple-100 text-purple-800';
+      case 'failed': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   };
 
@@ -137,202 +303,401 @@ export default function MessagesPage() {
               <MessageSquare className="h-8 w-8 text-blue-600 mr-3" />
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">Mensajes Automáticos</h1>
-                <p className="text-sm text-gray-600">Configura plantillas para comunicación automática</p>
+                <p className="text-sm text-gray-600">Configura plantillas para comunicación automática por WhatsApp</p>
               </div>
             </div>
+            <button
+              onClick={() => setShowConfigForm(true)}
+              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+            >
+              <Settings className="h-4 w-4 mr-2" />
+              Configurar WhatsApp
+            </button>
           </div>
         </div>
       </header>
 
+      {/* Tabs */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="border-b border-gray-200">
+          <nav className="-mb-px flex space-x-8">
+            <button
+              onClick={() => setActiveTab('templates')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'templates'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Plantillas
+            </button>
+            <button
+              onClick={() => setActiveTab('sent')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'sent'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Mensajes Enviados
+            </button>
+            <button
+              onClick={() => setActiveTab('config')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'config'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Configuración
+            </button>
+          </nav>
+        </div>
+      </div>
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Formulario */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-6">
-              {editingMessage ? 'Editar Mensaje' : 'Nuevo Mensaje'}
-            </h2>
-            
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Trigger (Cuándo enviar)
-                </label>
-                <select
-                  value={formData.trigger}
-                  onChange={(e) => setFormData({ ...formData, trigger: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                >
-                  <option value="">Seleccionar trigger</option>
-                  <option value="reservation_confirmed">Reserva Confirmada</option>
-                  <option value="t_minus_7_days">7 días antes del check-in</option>
-                  <option value="t_minus_24_hours">24h antes del check-in</option>
-                  <option value="checkin_instructions">Instrucciones de Check-in</option>
-                  <option value="post_checkout">Post check-out</option>
-                </select>
-              </div>
+        {activeTab === 'templates' && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Formulario */}
+            <div className="bg-white rounded-lg shadow p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-6">
+                {editingTemplate ? 'Editar Plantilla' : 'Nueva Plantilla'}
+              </h2>
+              
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Nombre de la Plantilla
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Ej: Confirmación de Reserva"
+                    required
+                  />
+                </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Canal
-                </label>
-                <select
-                  value={formData.channel}
-                  onChange={(e) => setFormData({ ...formData, channel: e.target.value as any })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                >
-                  <option value="telegram">Telegram</option>
-                  <option value="email">Email</option>
-                  <option value="whatsapp">WhatsApp</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Idioma
-                </label>
-                <select
-                  value={formData.language}
-                  onChange={(e) => setFormData({ ...formData, language: e.target.value as any })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                >
-                  <option value="es">Español</option>
-                  <option value="en">English</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Plantilla del Mensaje
-                </label>
-                <textarea
-                  value={formData.template}
-                  onChange={(e) => setFormData({ ...formData, template: e.target.value })}
-                  rows={8}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Escribe tu mensaje aquí. Usa variables como: nombre_huesped, numero_habitacion, codigo_habitacion, fecha_entrada, fecha_salida"
-                  required
-                />
-              </div>
-
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  id="is_active"
-                  checked={formData.is_active}
-                  onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                />
-                <label htmlFor="is_active" className="ml-2 block text-sm text-gray-900">
-                  Mensaje activo
-                </label>
-              </div>
-
-              <div className="flex space-x-3 pt-4">
-                <button
-                  type="submit"
-                  className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <Save className="h-4 w-4 mr-2" />
-                  {editingMessage ? 'Actualizar' : 'Crear'}
-                </button>
-                
-                {editingMessage && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setEditingMessage(null);
-                      setFormData({
-                        trigger: '',
-                        channel: 'telegram',
-                        template: '',
-                        language: 'es',
-                        is_active: true,
-                      });
-                    }}
-                    className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Trigger (Cuándo enviar)
+                  </label>
+                  <select
+                    value={formData.trigger_type}
+                    onChange={(e) => setFormData({ ...formData, trigger_type: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
                   >
-                    Cancelar
+                    <option value="">Seleccionar trigger</option>
+                    <option value="reservation_confirmed">Reserva Confirmada</option>
+                    <option value="t_minus_7_days">7 días antes del check-in</option>
+                    <option value="t_minus_24_hours">24h antes del check-in</option>
+                    <option value="checkin_instructions">Instrucciones de Check-in</option>
+                    <option value="send_form">Envío de Formulario</option>
+                    <option value="post_checkout">Post check-out</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Idioma
+                  </label>
+                  <select
+                    value={formData.language}
+                    onChange={(e) => setFormData({ ...formData, language: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                  >
+                    <option value="es">Español</option>
+                    <option value="en">English</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Plantilla del Mensaje
+                  </label>
+                  <textarea
+                    value={formData.template_content}
+                    onChange={(e) => setFormData({ ...formData, template_content: e.target.value })}
+                    rows={8}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Escribe tu mensaje aquí. Usa variables como: {{guest_name}}, {{room_number}}, {{room_code}}, {{check_in}}, {{check_out}}"
+                    required
+                  />
+                </div>
+
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id="is_active"
+                    checked={formData.is_active}
+                    onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  <label htmlFor="is_active" className="ml-2 block text-sm text-gray-900">
+                    Plantilla activa
+                  </label>
+                </div>
+
+                <div className="flex space-x-3 pt-4">
+                  <button
+                    type="submit"
+                    className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <Save className="h-4 w-4 mr-2" />
+                    {editingTemplate ? 'Actualizar' : 'Crear'}
                   </button>
+                  
+                  {editingTemplate && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingTemplate(null);
+                        setFormData({
+                          name: '',
+                          trigger_type: '',
+                          channel: 'whatsapp',
+                          language: 'es',
+                          template_content: '',
+                          variables: [],
+                          is_active: true,
+                        });
+                      }}
+                      className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      Cancelar
+                    </button>
+                  )}
+                </div>
+              </form>
+            </div>
+
+            {/* Lista de plantillas */}
+            <div className="bg-white rounded-lg shadow">
+              <div className="px-6 py-4 border-b border-gray-200">
+                <h2 className="text-lg font-semibold text-gray-900">Tus Plantillas</h2>
+              </div>
+              
+              <div className="p-6">
+                {templates.length === 0 ? (
+                  <p className="text-gray-500 text-center py-8">
+                    No hay plantillas configuradas. Crea tu primera plantilla automática.
+                  </p>
+                ) : (
+                  <div className="space-y-4">
+                    {templates.map((template) => (
+                      <div key={template.id} className="border border-gray-200 rounded-lg p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-2 mb-2">
+                              <h3 className="font-semibold text-gray-900">
+                                {template.name}
+                              </h3>
+                              <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                template.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                              }`}>
+                                {template.is_active ? 'Activo' : 'Inactivo'}
+                              </span>
+                            </div>
+                            <div className="flex items-center space-x-4 text-sm text-gray-600">
+                              <span>{getTriggerText(template.trigger_type)}</span>
+                              <span>{template.language === 'es' ? 'Español' : 'English'}</span>
+                            </div>
+                            <p className="text-sm text-gray-600 mt-2">
+                              {template.template_content.length > 100 ? 
+                                `${template.template_content.substring(0, 100)}...` : 
+                                template.template_content
+                              }
+                            </p>
+                          </div>
+                          
+                          <div className="flex space-x-2">
+                            <button
+                              onClick={() => handleToggleActive(template)}
+                              className={`p-2 rounded-md ${
+                                template.is_active 
+                                  ? 'text-yellow-600 hover:bg-yellow-50' 
+                                  : 'text-green-600 hover:bg-green-50'
+                              }`}
+                              title={template.is_active ? 'Desactivar' : 'Activar'}
+                            >
+                              {template.is_active ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            </button>
+                            <button
+                              onClick={() => handleEdit(template)}
+                              className="p-2 text-blue-600 hover:bg-blue-50 rounded-md"
+                            >
+                              <Save className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDelete(template.id)}
+                              className="p-2 text-red-600 hover:bg-red-50 rounded-md"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 )}
               </div>
-            </form>
+            </div>
           </div>
+        )}
 
-          {/* Lista de mensajes */}
+        {activeTab === 'sent' && (
           <div className="bg-white rounded-lg shadow">
             <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-900">Tus Mensajes</h2>
+              <h2 className="text-lg font-semibold text-gray-900">Mensajes Enviados</h2>
             </div>
             
             <div className="p-6">
-              {messages.length === 0 ? (
+              {sentMessages.length === 0 ? (
                 <p className="text-gray-500 text-center py-8">
-                  No hay mensajes configurados. Crea tu primer mensaje automático.
+                  No hay mensajes enviados aún.
                 </p>
               ) : (
-                <div className="space-y-4">
-                  {messages.map((message) => (
-                    <div key={message.id} className="border border-gray-200 rounded-lg p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-2 mb-2">
-                            <h3 className="font-semibold text-gray-900">
-                              {getTriggerText(message.trigger)}
-                            </h3>
-                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                              message.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                            }`}>
-                              {message.is_active ? 'Activo' : 'Inactivo'}
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Huésped
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Plantilla
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Estado
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Enviado
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Mensaje
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {sentMessages.map((message) => (
+                        <tr key={message.id}>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div>
+                              <div className="text-sm font-medium text-gray-900">
+                                {message.guest_name || 'Sin nombre'}
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                {message.guest_phone}
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {message.template_name}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(message.status)}`}>
+                              {getStatusText(message.status)}
                             </span>
-                          </div>
-                          <div className="flex items-center space-x-4 text-sm text-gray-600">
-                            <span>{getChannelText(message.channel)}</span>
-                            <span>{message.language === 'es' ? 'Español' : 'English'}</span>
-                          </div>
-                          <p className="text-sm text-gray-600 mt-2">
-                            {message.template.length > 100 ? 
-                              `${message.template.substring(0, 100)}...` : 
-                              message.template
-                            }
-                          </p>
-                        </div>
-                        
-                        <div className="flex space-x-2">
-                          <button
-                            onClick={() => handleToggleActive(message)}
-                            className={`p-2 rounded-md ${
-                              message.is_active 
-                                ? 'text-yellow-600 hover:bg-yellow-50' 
-                                : 'text-green-600 hover:bg-green-50'
-                            }`}
-                            title={message.is_active ? 'Desactivar' : 'Activar'}
-                          >
-                            <Send className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={() => handleEdit(message)}
-                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-md"
-                          >
-                            <Save className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(message.id)}
-                            className="p-2 text-red-600 hover:bg-red-50 rounded-md"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {new Date(message.created_at).toLocaleString('es-ES')}
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="text-sm text-gray-900 max-w-xs truncate">
+                              {message.message_content}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               )}
             </div>
           </div>
-        </div>
+        )}
+
+        {activeTab === 'config' && (
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-6">Configuración de WhatsApp</h2>
+            
+            {whatsappConfig && (
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Número de Teléfono
+                    </label>
+                    <input
+                      type="text"
+                      value={configData.phone_number}
+                      onChange={(e) => setConfigData({ ...configData, phone_number: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="+34617555255"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Estado
+                    </label>
+                    <div className="flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={configData.is_active}
+                        onChange={(e) => setConfigData({ ...configData, is_active: e.target.checked })}
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      />
+                      <span className="ml-2 text-sm text-gray-900">
+                        WhatsApp activo
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Access Token (WhatsApp Business API)
+                  </label>
+                  <input
+                    type="password"
+                    value={configData.access_token}
+                    onChange={(e) => setConfigData({ ...configData, access_token: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Token de acceso de WhatsApp Business API"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Sin este token, los mensajes se registrarán pero no se enviarán realmente
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Webhook Verify Token
+                  </label>
+                  <input
+                    type="text"
+                    value={configData.webhook_verify_token}
+                    onChange={(e) => setConfigData({ ...configData, webhook_verify_token: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Token de verificación del webhook"
+                  />
+                </div>
+
+                <button
+                  onClick={handleConfigSubmit}
+                  className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                >
+                  <Save className="h-4 w-4 mr-2" />
+                  Guardar Configuración
+                </button>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Información de ayuda */}
         <div className="mt-8 bg-blue-50 rounded-lg p-6">
@@ -341,26 +706,27 @@ export default function MessagesPage() {
             <div>
               <h4 className="font-medium text-blue-800 mb-2">Datos del huésped</h4>
               <ul className="space-y-1">
-                <li><strong>nombre_huesped</strong> - Nombre del huésped</li>
-                <li><strong>email_huesped</strong> - Email del huésped</li>
-                <li><strong>telefono_huesped</strong> - Teléfono del huésped</li>
+                <li><strong>{{guest_name}}</strong> - Nombre del huésped</li>
+                <li><strong>{{guest_email}}</strong> - Email del huésped</li>
+                <li><strong>{{guest_phone}}</strong> - Teléfono del huésped</li>
+                <li><strong>{{guest_count}}</strong> - Número de huéspedes</li>
               </ul>
             </div>
             <div>
               <h4 className="font-medium text-blue-800 mb-2">Datos de la reserva</h4>
               <ul className="space-y-1">
-                <li><strong>numero_habitacion</strong> - Número de habitación (1-6)</li>
-                <li><strong>codigo_habitacion</strong> - Código (8101-8106)</li>
-                <li><strong>fecha_entrada</strong> - Fecha de llegada</li>
-                <li><strong>fecha_salida</strong> - Fecha de salida</li>
+                <li><strong>{{room_number}}</strong> - Número de habitación (1-6)</li>
+                <li><strong>{{room_code}}</strong> - Código (8101-8106)</li>
+                <li><strong>{{check_in}}</strong> - Fecha de llegada</li>
+                <li><strong>{{check_out}}</strong> - Fecha de salida</li>
               </ul>
             </div>
           </div>
           <div className="mt-4 p-4 bg-blue-100 rounded-lg">
             <h4 className="font-medium text-blue-800 mb-2">Ejemplo de mensaje:</h4>
             <p className="text-blue-700 text-sm">
-              ¡Hola <strong>nombre_huesped</strong>! Tu habitación es la número <strong>numero_habitacion</strong>. 
-              El código para entrar es "<strong>codigo_habitacion</strong>". Tu llegada es el <strong>fecha_entrada</strong>.
+              ¡Hola <strong>{{guest_name}}</strong>! Tu habitación es la número <strong>{{room_number}}</strong>. 
+              El código para entrar es "<strong>{{room_code}}</strong>". Tu llegada es el <strong>{{check_in}}</strong>.
             </p>
           </div>
         </div>

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getReservations, insertReservation, sql } from '@/lib/db';
+import { sendReservationConfirmation } from '@/lib/whatsapp';
 
 // Configuración para evitar caché
 export const dynamic = "force-dynamic";
@@ -234,6 +235,32 @@ export async function POST(request: NextRequest) {
     // Insertar en PostgreSQL usando la función helper
     const newReservation = await insertReservation(reservationData);
     console.log('✅ Reserva creada:', newReservation.id);
+
+    // Enviar mensaje de confirmación por WhatsApp si hay teléfono
+    if (body.guest_phone) {
+      try {
+        console.log('📱 Enviando mensaje de confirmación por WhatsApp...');
+        const whatsappResult = await sendReservationConfirmation({
+          id: newReservation.id,
+          guest_name: body.guest_name,
+          guest_phone: body.guest_phone,
+          guest_email: body.guest_email,
+          room_id: body.room_id,
+          check_in: body.check_in,
+          check_out: body.check_out,
+          guest_count: parseInt(body.guest_count) || 1
+        });
+        
+        if (whatsappResult.success) {
+          console.log('✅ Mensaje de WhatsApp enviado exitosamente');
+        } else {
+          console.log('⚠️ Error enviando WhatsApp:', whatsappResult.error);
+        }
+      } catch (whatsappError) {
+        console.error('❌ Error en envío de WhatsApp:', whatsappError);
+        // No fallar la creación de reserva por error de WhatsApp
+      }
+    }
 
     return NextResponse.json(newReservation);
   } catch (error: any) {

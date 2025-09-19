@@ -144,6 +144,169 @@ export async function getReservations(limit: number = 200): Promise<any[]> {
   return result.rows;
 }
 
+// ========================================
+// FUNCIONES PARA MENSAJES DE WHATSAPP
+// ========================================
+
+// Función para obtener plantillas de mensajes
+export async function getMessageTemplates(): Promise<any[]> {
+  const result = await sql`
+    SELECT * FROM message_templates 
+    ORDER BY created_at ASC
+  `;
+  return result.rows;
+}
+
+// Función para obtener plantilla por ID
+export async function getMessageTemplate(id: number): Promise<any> {
+  const result = await sql`
+    SELECT * FROM message_templates 
+    WHERE id = ${id}
+  `;
+  return result.rows[0];
+}
+
+// Función para crear o actualizar plantilla
+export async function upsertMessageTemplate(data: {
+  id?: number;
+  name: string;
+  trigger_type: string;
+  channel: string;
+  language: string;
+  template_content: string;
+  variables: string[];
+  is_active: boolean;
+}): Promise<any> {
+  if (data.id) {
+    // Actualizar
+    const result = await sql`
+      UPDATE message_templates 
+      SET name = ${data.name},
+          trigger_type = ${data.trigger_type},
+          channel = ${data.channel},
+          language = ${data.language},
+          template_content = ${data.template_content},
+          variables = ${JSON.stringify(data.variables)}::jsonb,
+          is_active = ${data.is_active},
+          updated_at = CURRENT_TIMESTAMP
+      WHERE id = ${data.id}
+      RETURNING *;
+    `;
+    return result.rows[0];
+  } else {
+    // Insertar
+    const result = await sql`
+      INSERT INTO message_templates (
+        name, trigger_type, channel, language, template_content, variables, is_active
+      )
+      VALUES (
+        ${data.name}, ${data.trigger_type}, ${data.channel}, ${data.language}, 
+        ${data.template_content}, ${JSON.stringify(data.variables)}::jsonb, ${data.is_active}
+      )
+      RETURNING *;
+    `;
+    return result.rows[0];
+  }
+}
+
+// Función para eliminar plantilla
+export async function deleteMessageTemplate(id: number): Promise<boolean> {
+  const result = await sql`
+    DELETE FROM message_templates 
+    WHERE id = ${id}
+  `;
+  return result.rowCount > 0;
+}
+
+// Función para registrar mensaje enviado
+export async function insertSentMessage(data: {
+  template_id: number;
+  reservation_id?: number;
+  guest_phone: string;
+  guest_name?: string;
+  message_content: string;
+  whatsapp_message_id?: string;
+  status: string;
+  error_message?: string;
+}): Promise<any> {
+  const result = await sql`
+    INSERT INTO sent_messages (
+      template_id, reservation_id, guest_phone, guest_name, 
+      message_content, whatsapp_message_id, status, error_message
+    )
+    VALUES (
+      ${data.template_id}, ${data.reservation_id || null}, ${data.guest_phone}, 
+      ${data.guest_name || ''}, ${data.message_content}, ${data.whatsapp_message_id || null}, 
+      ${data.status}, ${data.error_message || null}
+    )
+    RETURNING *;
+  `;
+  return result.rows[0];
+}
+
+// Función para actualizar estado de mensaje enviado
+export async function updateSentMessageStatus(
+  id: number, 
+  status: string, 
+  whatsapp_message_id?: string,
+  error_message?: string
+): Promise<any> {
+  const result = await sql`
+    UPDATE sent_messages 
+    SET status = ${status},
+        whatsapp_message_id = COALESCE(${whatsapp_message_id || null}, whatsapp_message_id),
+        sent_at = CASE WHEN ${status} = 'sent' THEN CURRENT_TIMESTAMP ELSE sent_at END,
+        delivered_at = CASE WHEN ${status} = 'delivered' THEN CURRENT_TIMESTAMP ELSE delivered_at END,
+        read_at = CASE WHEN ${status} = 'read' THEN CURRENT_TIMESTAMP ELSE read_at END,
+        error_message = COALESCE(${error_message || null}, error_message)
+    WHERE id = ${id}
+    RETURNING *;
+  `;
+  return result.rows[0];
+}
+
+// Función para obtener mensajes enviados
+export async function getSentMessages(limit: number = 100): Promise<any[]> {
+  const result = await sql`
+    SELECT sm.*, mt.name as template_name, mt.trigger_type
+    FROM sent_messages sm
+    LEFT JOIN message_templates mt ON sm.template_id = mt.id
+    ORDER BY sm.created_at DESC 
+    LIMIT ${limit}
+  `;
+  return result.rows;
+}
+
+// Función para obtener configuración de WhatsApp
+export async function getWhatsAppConfig(): Promise<any> {
+  const result = await sql`
+    SELECT * FROM whatsapp_config 
+    WHERE is_active = true 
+    LIMIT 1
+  `;
+  return result.rows[0];
+}
+
+// Función para actualizar configuración de WhatsApp
+export async function updateWhatsAppConfig(data: {
+  phone_number?: string;
+  access_token?: string;
+  webhook_verify_token?: string;
+  is_active?: boolean;
+}): Promise<any> {
+  const result = await sql`
+    UPDATE whatsapp_config 
+    SET phone_number = COALESCE(${data.phone_number || null}, phone_number),
+        access_token = COALESCE(${data.access_token || null}, access_token),
+        webhook_verify_token = COALESCE(${data.webhook_verify_token || null}, webhook_verify_token),
+        is_active = COALESCE(${data.is_active || null}, is_active),
+        updated_at = CURRENT_TIMESTAMP
+    WHERE id = 1
+    RETURNING *;
+  `;
+  return result.rows[0];
+}
+
 // Función helper para obtener reserva por ID (sin JOIN con rooms por ahora)
 export async function getReservationById(id: string): Promise<any | null> {
   const result = await sql`
