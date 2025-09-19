@@ -304,13 +304,35 @@ export default function MessagesPage() {
                 <p className="text-sm text-gray-600">Configura plantillas para comunicación automática por WhatsApp</p>
               </div>
             </div>
-            <button
-              onClick={() => setActiveTab('config')}
-              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <Settings className="h-4 w-4 mr-2" />
-              Configurar WhatsApp
-            </button>
+            <div className="flex space-x-3">
+              <button
+                onClick={async () => {
+                  try {
+                    const response = await fetch('/api/init-whatsapp-db', { method: 'POST' });
+                    const result = await response.json();
+                    if (result.success) {
+                      alert('Base de datos de WhatsApp inicializada correctamente');
+                      fetchData(); // Recargar datos
+                    } else {
+                      alert(`Error: ${result.error}`);
+                    }
+                  } catch (error) {
+                    alert('Error al inicializar la base de datos');
+                  }
+                }}
+                className="flex items-center px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
+              >
+                <Settings className="h-4 w-4 mr-2" />
+                Inicializar BD
+              </button>
+              <button
+                onClick={() => setActiveTab('config')}
+                className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <Settings className="h-4 w-4 mr-2" />
+                Configurar WhatsApp
+              </button>
+            </div>
           </div>
         </div>
       </header>
