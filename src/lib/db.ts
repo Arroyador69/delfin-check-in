@@ -215,7 +215,7 @@ export async function deleteMessageTemplate(id: number): Promise<boolean> {
     DELETE FROM message_templates 
     WHERE id = ${id}
   `;
-  return result.rowCount > 0;
+  return (result.rowCount ?? 0) > 0;
 }
 
 // Función para registrar mensaje enviado

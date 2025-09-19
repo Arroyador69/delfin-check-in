@@ -706,27 +706,27 @@ export default function MessagesPage() {
             <div>
               <h4 className="font-medium text-blue-800 mb-2">Datos del huésped</h4>
               <ul className="space-y-1">
-                <li><strong>{{guest_name}}</strong> - Nombre del huésped</li>
-                <li><strong>{{guest_email}}</strong> - Email del huésped</li>
-                <li><strong>{{guest_phone}}</strong> - Teléfono del huésped</li>
-                <li><strong>{{guest_count}}</strong> - Número de huéspedes</li>
+                <li><strong>{'{{guest_name}}'}</strong> - Nombre del huésped</li>
+                <li><strong>{'{{guest_email}}'}</strong> - Email del huésped</li>
+                <li><strong>{'{{guest_phone}}'}</strong> - Teléfono del huésped</li>
+                <li><strong>{'{{guest_count}}'}</strong> - Número de huéspedes</li>
               </ul>
             </div>
             <div>
               <h4 className="font-medium text-blue-800 mb-2">Datos de la reserva</h4>
               <ul className="space-y-1">
-                <li><strong>{{room_number}}</strong> - Número de habitación (1-6)</li>
-                <li><strong>{{room_code}}</strong> - Código (8101-8106)</li>
-                <li><strong>{{check_in}}</strong> - Fecha de llegada</li>
-                <li><strong>{{check_out}}</strong> - Fecha de salida</li>
+                <li><strong>{'{{room_number}}'}</strong> - Número de habitación (1-6)</li>
+                <li><strong>{'{{room_code}}'}</strong> - Código (8101-8106)</li>
+                <li><strong>{'{{check_in}}'}</strong> - Fecha de llegada</li>
+                <li><strong>{'{{check_out}}'}</strong> - Fecha de salida</li>
               </ul>
             </div>
           </div>
           <div className="mt-4 p-4 bg-blue-100 rounded-lg">
             <h4 className="font-medium text-blue-800 mb-2">Ejemplo de mensaje:</h4>
             <p className="text-blue-700 text-sm">
-              ¡Hola <strong>{{guest_name}}</strong>! Tu habitación es la número <strong>{{room_number}}</strong>. 
-              El código para entrar es "<strong>{{room_code}}</strong>". Tu llegada es el <strong>{{check_in}}</strong>.
+              ¡Hola <strong>{'{{guest_name}}'}</strong>! Tu habitación es la número <strong>{'{{room_number}}'}</strong>. 
+              El código para entrar es "<strong>{'{{room_code}}'}</strong>". Tu llegada es el <strong>{'{{check_in}}'}</strong>.
             </p>
           </div>
         </div>
