@@ -619,14 +619,14 @@ export default function MessagesPage() {
         )}
 
         {activeTab === 'config' && (
-          <div className="space-y-8">
-            {/* Información de ayuda primero */}
-            <div className="bg-blue-50 rounded-lg p-6">
-              <h3 className="text-lg font-semibold text-blue-900 mb-4">Variables disponibles para tus mensajes</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-blue-700">
+          <div className="space-y-6">
+            {/* Información de ayuda más compacta */}
+            <div className="bg-blue-50 rounded-lg p-4">
+              <h3 className="text-md font-semibold text-blue-900 mb-3">Variables disponibles para tus mensajes</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs text-blue-700">
                 <div>
-                  <h4 className="font-medium text-blue-800 mb-2">Datos del huésped</h4>
-                  <ul className="space-y-1">
+                  <h4 className="font-medium text-blue-800 mb-1 text-sm">Datos del huésped</h4>
+                  <ul className="space-y-0.5">
                     <li><strong>{'{{guest_name}}'}</strong> - Nombre del huésped</li>
                     <li><strong>{'{{guest_email}}'}</strong> - Email del huésped</li>
                     <li><strong>{'{{guest_phone}}'}</strong> - Teléfono del huésped</li>
@@ -634,8 +634,8 @@ export default function MessagesPage() {
                   </ul>
                 </div>
                 <div>
-                  <h4 className="font-medium text-blue-800 mb-2">Datos de la reserva</h4>
-                  <ul className="space-y-1">
+                  <h4 className="font-medium text-blue-800 mb-1 text-sm">Datos de la reserva</h4>
+                  <ul className="space-y-0.5">
                     <li><strong>{'{{room_number}}'}</strong> - Número de habitación (1-6)</li>
                     <li><strong>{'{{room_code}}'}</strong> - Código (8101-8106)</li>
                     <li><strong>{'{{check_in}}'}</strong> - Fecha de llegada</li>
@@ -643,48 +643,48 @@ export default function MessagesPage() {
                   </ul>
                 </div>
               </div>
-              <div className="mt-4 p-4 bg-blue-100 rounded-lg">
-                <h4 className="font-medium text-blue-800 mb-2">Ejemplo de mensaje:</h4>
-                <p className="text-blue-700 text-sm">
-                  ¡Hola <strong>{'{{guest_name}}'}</strong>! Tu habitación es la número <strong>{'{{room_number}}'}</strong>. 
-                  El código para entrar es "<strong>{'{{room_code}}'}</strong>". Tu llegada es el <strong>{'{{check_in}}'}</strong>.
+              <div className="mt-3 p-3 bg-blue-100 rounded-lg">
+                <h4 className="font-medium text-blue-800 mb-1 text-sm">Ejemplo:</h4>
+                <p className="text-blue-700 text-xs">
+                  ¡Hola <strong>{'{{guest_name}}'}</strong>! Tu habitación es la <strong>{'{{room_number}}'}</strong> (código: <strong>{'{{room_code}}'}</strong>). 
+                  Llegada: <strong>{'{{check_in}}'}</strong>.
                 </p>
               </div>
             </div>
 
             {/* Configuración de WhatsApp después */}
-            <div className="bg-white rounded-lg shadow-lg border-2 border-blue-200 p-6">
-              <div className="flex items-center mb-6">
+            <div className="bg-white rounded-lg shadow-lg border-2 border-blue-200 p-4">
+              <div className="flex items-center mb-4">
                 <div className="bg-blue-100 p-2 rounded-lg mr-3">
-                  <Settings className="h-6 w-6 text-blue-600" />
+                  <Settings className="h-5 w-5 text-blue-600" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-gray-900">Configuración de WhatsApp</h2>
-                  <p className="text-sm text-gray-600">Configura tu número de WhatsApp y tokens para enviar mensajes automáticos</p>
+                  <h2 className="text-lg font-bold text-gray-900">Configuración de WhatsApp</h2>
+                  <p className="text-xs text-gray-600">Configura tu número de WhatsApp y tokens para enviar mensajes automáticos</p>
                 </div>
               </div>
               
               {whatsappConfig && (
-                <div className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
                         Número de Teléfono
                       </label>
                       <input
                         type="text"
                         value={configData.phone_number}
                         onChange={(e) => setConfigData({ ...configData, phone_number: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                         placeholder="+34617555255"
                       />
                     </div>
                     
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
                         Estado
                       </label>
-                      <div className="flex items-center">
+                      <div className="flex items-center pt-2">
                         <input
                           type="checkbox"
                           checked={configData.is_active}
@@ -699,14 +699,14 @@ export default function MessagesPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
                       Access Token (WhatsApp Business API)
                     </label>
                     <input
                       type="password"
                       value={configData.access_token}
                       onChange={(e) => setConfigData({ ...configData, access_token: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                       placeholder="Token de acceso de WhatsApp Business API"
                     />
                     <p className="text-xs text-gray-500 mt-1">
@@ -715,27 +715,27 @@ export default function MessagesPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
                       Webhook Verify Token
                     </label>
                     <input
                       type="text"
                       value={configData.webhook_verify_token}
                       onChange={(e) => setConfigData({ ...configData, webhook_verify_token: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                       placeholder="Token de verificación del webhook"
                     />
                   </div>
 
-                  <div className="pt-4 border-t border-gray-200">
+                  <div className="pt-3 border-t border-gray-200">
                     <button
                       onClick={handleConfigSubmit}
-                      className="flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium shadow-md hover:shadow-lg transition-all duration-200"
+                      className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium shadow-md hover:shadow-lg transition-all duration-200"
                     >
-                      <Save className="h-5 w-5 mr-2" />
+                      <Save className="h-4 w-4 mr-2" />
                       Guardar Configuración de WhatsApp
                     </button>
-                    <p className="text-xs text-gray-500 mt-2">
+                    <p className="text-xs text-gray-500 mt-1">
                       Una vez guardado, podrás enviar mensajes automáticos a tus huéspedes
                     </p>
                   </div>
