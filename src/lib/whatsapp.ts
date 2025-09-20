@@ -102,6 +102,8 @@ export async function sendAutomatedMessage(
       guest_count: reservationData.guest_count || 1,
       room_number: getRoomNumber(reservationData.room_id),
       room_code: getRoomCode(reservationData.room_id),
+      room_location: getRoomLocation(reservationData.room_id),
+      bathroom_info: getBathroomInfo(reservationData.room_id),
       check_in: formatDate(reservationData.check_in),
       check_out: formatDate(reservationData.check_out),
       form_url: `${process.env.NEXT_PUBLIC_BASE_URL}/guest-registrations`,
@@ -201,6 +203,32 @@ function getRoomCode(roomId: string): string {
     'room_6': '8106'
   };
   return codeMap[roomId] || '8100';
+}
+
+// Función para obtener ubicación de la habitación
+function getRoomLocation(roomId: string): string {
+  const locationMap: Record<string, string> = {
+    'room_1': 'Se encuentra subiendo las escaleras a la izquierda.',
+    'room_2': 'Se encuentra subiendo las escaleras a la derecha.',
+    'room_3': 'Se encuentra subiendo las escaleras a la derecha.',
+    'room_4': 'Se encuentra por la misma planta que se entra a la izquierda.',
+    'room_5': 'Se encuentra en la misma planta por la que se entra a la derecha.',
+    'room_6': 'Se encuentra en la misma planta por la que se entra a la derecha, enfrente de la 5.'
+  };
+  return locationMap[roomId] || '';
+}
+
+// Función para obtener información del baño
+function getBathroomInfo(roomId: string): string {
+  const bathroomMap: Record<string, string> = {
+    'room_1': 'Tu baño es privado y está dentro de la habitación.',
+    'room_2': 'El baño está fuera de la habitación y es compartido. Hay dos baños: uno en la planta baja (al lado de la cocina) y otro en el primer piso (enfrente nada más subir las escaleras).',
+    'room_3': 'El baño está fuera de la habitación y es compartido. Hay dos baños: uno en la planta baja (al lado de la cocina) y otro en el primer piso (enfrente nada más subir las escaleras).',
+    'room_4': 'El baño está fuera de la habitación y es compartido. Hay dos baños: uno en la planta baja (al lado de la cocina) y otro en el primer piso (enfrente nada más subir las escaleras).',
+    'room_5': 'El baño está fuera de la habitación y es compartido. Hay dos baños: uno en la planta baja (al lado de la cocina) y otro en el primer piso (enfrente nada más subir las escaleras).',
+    'room_6': 'El baño está fuera de la habitación y es compartido. Hay dos baños: uno en la planta baja (al lado de la cocina) y otro en el primer piso (enfrente nada más subir las escaleras).'
+  };
+  return bathroomMap[roomId] || '';
 }
 
 // Función para formatear fecha

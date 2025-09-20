@@ -788,7 +788,9 @@ export default function MessagesPage() {
                 <h4 className="font-medium text-blue-800 mb-2">Datos de la reserva</h4>
                 <ul className="space-y-1">
                   <li><strong>{'{{room_number}}'}</strong> - Número de habitación (1-6)</li>
-                  <li><strong>{'{{room_code}}'}</strong> - Código (8101-8106)</li>
+                  <li><strong>{'{{room_code}}'}</strong> - Código de acceso (8101-8106)</li>
+                  <li><strong>{'{{room_location}}'}</strong> - Ubicación específica de la habitación</li>
+                  <li><strong>{'{{bathroom_info}}'}</strong> - Información sobre el baño (privado/compartido)</li>
                   <li><strong>{'{{check_in}}'}</strong> - Fecha de llegada</li>
                   <li><strong>{'{{check_out}}'}</strong> - Fecha de salida</li>
                 </ul>
@@ -798,7 +800,8 @@ export default function MessagesPage() {
               <h4 className="font-medium text-blue-800 mb-2">Ejemplo de mensaje:</h4>
               <p className="text-blue-700 text-sm">
                 ¡Hola <strong>{'{{guest_name}}'}</strong>! Tu habitación es la número <strong>{'{{room_number}}'}</strong>. 
-                El código para entrar es "<strong>{'{{room_code}}'}</strong>". Tu llegada es el <strong>{'{{check_in}}'}</strong>.
+                El código para entrar es "<strong>{'{{room_code}}'}</strong>". <strong>{'{{room_location}}'}</strong> 
+                <strong>{'{{bathroom_info}}'}</strong> Tu llegada es el <strong>{'{{check_in}}'}</strong>.
               </p>
             </div>
           </div>

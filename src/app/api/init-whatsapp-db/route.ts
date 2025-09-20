@@ -136,25 +136,37 @@ export async function GET(request: NextRequest) {
           'es',
           '🏠 ¡Hola {{guest_name}}! Ya puedes hacer el check-in.
 
-🔑 **Código de acceso:** {{door_code}}
+🔑 **Código de acceso:** {{room_code}}
 
-📍 **Dirección:** {{property_address}}
+📍 **Dirección:** Calle Ceuta Nº 5, en Fuengirola, Málaga.
 
-⏰ **Horario de check-in:** A partir de las 15:00h
+⏰ **Horario de check-in:** A partir de las 16:00h
 
-📋 **Instrucciones:**
-1. Usa el código {{door_code}} en la cerradura electrónica
-2. Tu habitación es la {{room_name}}
-3. Completa el registro digital: {{checkin_link}}
+🚪 **Acceso a la casa:**
+1. La primera puerta (pequeña) siempre está abierta, solo empuja
+2. Verás otra puerta y a la derecha las cajas de llaves
+3. Usa la llave rectangular para abrir la puerta principal
+4. La llave solo se puede meter y sacar horizontalmente
+5. La puerta no se echa con llave, solo empuja al salir
+
+🏠 **Tu habitación:** {{room_number}}
+{{room_location}}
+
+🚿 **Baño:** {{bathroom_info}}
+
+📋 **Instrucciones adicionales:**
+1. La otra llave es la de tu habitación
+2. En la cocina verás la nevera con tu tabla marcada (Habitación {{room_number}})
+3. Completa el registro digital: https://form.delfincheckin.com/
 
 📶 **WiFi:**
-Red: {{wifi_network}}
-Contraseña: {{wifi_password}}
+Red: Casa_Alberto
+Contraseña: Fuengirola_2022
 
-❓ ¿Dudas? Escríbenos por WhatsApp.
+❓ ¿Dudas? Escríbenos por aquí mismo y te respondemos inmediatamente.
 
 🐬 ¡Bienvenido!',
-          '["guest_name", "door_code", "property_address", "room_name", "checkin_link", "wifi_network", "wifi_password"]'::jsonb,
+          '["guest_name", "room_code", "room_number", "room_location", "bathroom_info"]'::jsonb,
           true
         ),
         (
