@@ -170,7 +170,7 @@ export async function POST(req: NextRequest) {
 
 ¡Nos vemos pronto!
 🐬 Equipo Delfín Check-in',
-          $1::jsonb,
+          '["guest_name", "room_name", "check_in_date", "check_out_date", "guest_count"]'::jsonb,
           true
         ),
         (
@@ -198,7 +198,7 @@ Contraseña: {{wifi_password}}
 ❓ ¿Dudas? Escríbenos por WhatsApp.
 
 🐬 ¡Bienvenido!',
-          $2::jsonb,
+          '["guest_name", "door_code", "property_address", "room_name", "checkin_link", "wifi_network", "wifi_password"]'::jsonb,
           true
         ),
         (
@@ -225,14 +225,10 @@ Contraseña: {{wifi_password}}
 🐬 Equipo Delfín Check-in
 
 💬 ¿Todo bien? ¡Escríbenos si necesitas algo!',
-          $3::jsonb,
+          '["guest_name", "review_link"]'::jsonb,
           true
         )
-      `, 
-      ['["guest_name", "room_name", "check_in_date", "check_out_date", "guest_count"]'],
-      ['["guest_name", "door_code", "property_address", "room_name", "checkin_link", "wifi_network", "wifi_password"]'],
-      ['["guest_name", "review_link"]']
-    );
+      `;
       console.log('✅ Plantillas predefinidas de WhatsApp creadas');
     } else {
       console.log('⚠️  Las plantillas de WhatsApp ya existen');
