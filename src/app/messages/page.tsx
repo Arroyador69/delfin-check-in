@@ -731,9 +731,9 @@ export default function MessagesPage() {
                   <li>Activa WhatsApp marcando la casilla</li>
                 </ol>
               </div>
-              
-              {whatsappConfig && (
-                <div className="space-y-3">
+
+              {/* Campos de configuración - Siempre visibles */}
+              <div className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-medium text-gray-700 mb-1">
@@ -795,20 +795,28 @@ export default function MessagesPage() {
                     />
                   </div>
 
-                  <div className="pt-2 border-t border-gray-200">
-                    <button
-                      onClick={handleConfigSubmit}
-                      className="flex items-center px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium shadow-md hover:shadow-lg transition-all duration-200 text-sm"
-                    >
-                      <Save className="h-3 w-3 mr-1.5" />
-                      Guardar Configuración de WhatsApp
-                    </button>
-                    <p className="text-xs text-gray-500 mt-0.5">
-                      Una vez guardado, podrás enviar mensajes automáticos a tus huéspedes
+                <div className="pt-2 border-t border-gray-200">
+                  <button
+                    onClick={handleConfigSubmit}
+                    className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium shadow-md hover:shadow-lg transition-all duration-200 text-sm"
+                  >
+                    <Save className="h-4 w-4 mr-2" />
+                    Guardar Configuración de WhatsApp
+                  </button>
+                  <p className="text-xs text-gray-500 mt-2">
+                    Una vez guardado, podrás enviar mensajes automáticos a tus huéspedes
+                  </p>
+                </div>
+
+                {/* Mensaje si no hay configuración */}
+                {!whatsappConfig && (
+                  <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-3">
+                    <p className="text-sm text-blue-700">
+                      💡 <strong>Primero haz clic en "Inicializar WhatsApp"</strong> para cargar tu configuración
                     </p>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           </div>
         )}
