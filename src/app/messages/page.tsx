@@ -308,16 +308,16 @@ export default function MessagesPage() {
               <button
                 onClick={async () => {
                   try {
-                    const response = await fetch('/api/init-whatsapp-db', { method: 'POST' });
+                    const response = await fetch('/api/database/setup-whatsapp');
                     const result = await response.json();
                     if (result.success) {
-                      alert('Base de datos de WhatsApp inicializada correctamente');
+                      alert('Base de datos de WhatsApp inicializada correctamente\n\nDetalles:\n' + result.steps.join('\n'));
                       fetchData(); // Recargar datos
                     } else {
-                      alert(`Error: ${result.error}`);
+                      alert(`Error: ${result.error}\n\nDetalles:\n${result.steps ? result.steps.join('\n') : result.details}`);
                     }
                   } catch (error) {
-                    alert('Error al inicializar la base de datos');
+                    alert('Error al inicializar la base de datos: ' + error);
                   }
                 }}
                 className="flex items-center px-2 py-1.5 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 text-xs"
