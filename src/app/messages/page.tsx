@@ -306,59 +306,6 @@ export default function MessagesPage() {
               </div>
             </div>
             
-            {/* Botones con mejor responsividad */}
-            <div className="flex flex-col sm:flex-row gap-2 sm:gap-2">
-              <button
-                onClick={async () => {
-                  try {
-                    const response = await fetch('/api/database/setup-whatsapp');
-                    const result = await response.json();
-                    if (result.success) {
-                      alert('✅ Base de datos de WhatsApp inicializada correctamente\n\nDetalles:\n' + result.steps.join('\n'));
-                      fetchData(); // Recargar datos
-                    } else {
-                      alert(`❌ Error: ${result.error}\n\nDetalles:\n${result.steps ? result.steps.join('\n') : result.details}`);
-                    }
-                  } catch (error) {
-                    alert('❌ Error al inicializar la base de datos: ' + error);
-                  }
-                }}
-                className="flex items-center justify-center px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 text-sm font-medium shadow-sm transition-colors duration-200 min-w-0"
-              >
-                <Settings className="h-4 w-4 mr-2 flex-shrink-0" />
-                <span className="whitespace-nowrap">Inicializar BD</span>
-              </button>
-              
-              <button
-                onClick={async () => {
-                  try {
-                    const response = await fetch('/api/whatsapp/init-config', { method: 'POST' });
-                    const result = await response.json();
-                    if (result.success) {
-                      alert('✅ Configuración de WhatsApp inicializada\n\nTu número +34 617 555 255 está configurado\n\nAhora puedes configurar tu token de acceso');
-                      fetchData(); // Recargar datos
-                      setActiveTab('config'); // Ir a la pestaña de configuración
-                    } else {
-                      alert(`❌ Error: ${result.error}`);
-                    }
-                  } catch (error) {
-                    alert('❌ Error al inicializar configuración: ' + error);
-                  }
-                }}
-                className="flex items-center justify-center px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm font-medium shadow-sm transition-colors duration-200 min-w-0"
-              >
-                <Settings className="h-4 w-4 mr-2 flex-shrink-0" />
-                <span className="whitespace-nowrap">Inicializar WhatsApp</span>
-              </button>
-              
-              <button
-                onClick={() => setActiveTab('config')}
-                className="flex items-center justify-center px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-medium shadow-sm transition-colors duration-200 min-w-0"
-              >
-                <Settings className="h-4 w-4 mr-2 flex-shrink-0" />
-                <span className="whitespace-nowrap">Configurar WhatsApp</span>
-              </button>
-            </div>
           </div>
         </div>
       </header>
@@ -398,6 +345,67 @@ export default function MessagesPage() {
               Configuración
             </button>
           </nav>
+        </div>
+
+        {/* Botones de acción - Ahora más accesibles */}
+        <div className="py-4 bg-gray-50 border-b border-gray-200">
+          <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+            <div className="text-sm font-medium text-gray-700">
+              🔧 Acciones de configuración:
+            </div>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <button
+                onClick={async () => {
+                  try {
+                    const response = await fetch('/api/database/setup-whatsapp');
+                    const result = await response.json();
+                    if (result.success) {
+                      alert('✅ Base de datos de WhatsApp inicializada correctamente\n\nDetalles:\n' + result.steps.join('\n'));
+                      fetchData(); // Recargar datos
+                    } else {
+                      alert(`❌ Error: ${result.error}\n\nDetalles:\n${result.steps ? result.steps.join('\n') : result.details}`);
+                    }
+                  } catch (error) {
+                    alert('❌ Error al inicializar la base de datos: ' + error);
+                  }
+                }}
+                className="flex items-center justify-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 text-sm font-medium shadow-sm transition-colors duration-200"
+              >
+                <Settings className="h-4 w-4 mr-2 flex-shrink-0" />
+                <span>Inicializar BD</span>
+              </button>
+              
+              <button
+                onClick={async () => {
+                  try {
+                    const response = await fetch('/api/whatsapp/init-config', { method: 'POST' });
+                    const result = await response.json();
+                    if (result.success) {
+                      alert('✅ Configuración de WhatsApp inicializada\n\nTu número +34 617 555 255 está configurado\n\nAhora puedes configurar tu token de acceso');
+                      fetchData(); // Recargar datos
+                      setActiveTab('config'); // Ir a la pestaña de configuración
+                    } else {
+                      alert(`❌ Error: ${result.error}`);
+                    }
+                  } catch (error) {
+                    alert('❌ Error al inicializar configuración: ' + error);
+                  }
+                }}
+                className="flex items-center justify-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm font-medium shadow-sm transition-colors duration-200"
+              >
+                <Settings className="h-4 w-4 mr-2 flex-shrink-0" />
+                <span>Inicializar WhatsApp</span>
+              </button>
+              
+              <button
+                onClick={() => setActiveTab('config')}
+                className="flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-medium shadow-sm transition-colors duration-200"
+              >
+                <Settings className="h-4 w-4 mr-2 flex-shrink-0" />
+                <span>Configurar WhatsApp</span>
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
