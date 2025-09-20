@@ -314,13 +314,13 @@ export default function MessagesPage() {
                     const response = await fetch('/api/database/setup-whatsapp');
                     const result = await response.json();
                     if (result.success) {
-                      alert('Base de datos de WhatsApp inicializada correctamente\n\nDetalles:\n' + result.steps.join('\n'));
+                      alert('✅ Base de datos de WhatsApp inicializada correctamente\n\nDetalles:\n' + result.steps.join('\n'));
                       fetchData(); // Recargar datos
                     } else {
-                      alert(`Error: ${result.error}\n\nDetalles:\n${result.steps ? result.steps.join('\n') : result.details}`);
+                      alert(`❌ Error: ${result.error}\n\nDetalles:\n${result.steps ? result.steps.join('\n') : result.details}`);
                     }
                   } catch (error) {
-                    alert('Error al inicializar la base de datos: ' + error);
+                    alert('❌ Error al inicializar la base de datos: ' + error);
                   }
                 }}
                 className="flex items-center justify-center px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 text-sm font-medium shadow-sm transition-colors duration-200 min-w-0"
@@ -328,6 +328,29 @@ export default function MessagesPage() {
                 <Settings className="h-4 w-4 mr-2 flex-shrink-0" />
                 <span className="whitespace-nowrap">Inicializar BD</span>
               </button>
+              
+              <button
+                onClick={async () => {
+                  try {
+                    const response = await fetch('/api/whatsapp/init-config', { method: 'POST' });
+                    const result = await response.json();
+                    if (result.success) {
+                      alert('✅ Configuración de WhatsApp inicializada\n\nTu número +34 617 555 255 está configurado\n\nAhora puedes configurar tu token de acceso');
+                      fetchData(); // Recargar datos
+                      setActiveTab('config'); // Ir a la pestaña de configuración
+                    } else {
+                      alert(`❌ Error: ${result.error}`);
+                    }
+                  } catch (error) {
+                    alert('❌ Error al inicializar configuración: ' + error);
+                  }
+                }}
+                className="flex items-center justify-center px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm font-medium shadow-sm transition-colors duration-200 min-w-0"
+              >
+                <Settings className="h-4 w-4 mr-2 flex-shrink-0" />
+                <span className="whitespace-nowrap">Inicializar WhatsApp</span>
+              </button>
+              
               <button
                 onClick={() => setActiveTab('config')}
                 className="flex items-center justify-center px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-medium shadow-sm transition-colors duration-200 min-w-0"
@@ -677,16 +700,28 @@ export default function MessagesPage() {
               </div>
             </div>
 
-            {/* Configuración de WhatsApp después */}
-            <div className="bg-white rounded-lg shadow-lg border-2 border-blue-200 p-3">
-              <div className="flex items-center mb-3">
+            {/* Configuración de WhatsApp */}
+            <div className="bg-white rounded-lg shadow-lg border-2 border-blue-200 p-4">
+              <div className="flex items-center mb-4">
                 <div className="bg-blue-100 p-1.5 rounded-lg mr-2">
                   <Settings className="h-4 w-4 text-blue-600" />
                 </div>
                 <div>
-                  <h2 className="text-md font-bold text-gray-900">Configuración de WhatsApp</h2>
-                  <p className="text-xs text-gray-600">Configura tu número de WhatsApp y tokens para enviar mensajes automáticos</p>
+                  <h2 className="text-md font-bold text-gray-900">Configuración de WhatsApp Business</h2>
+                  <p className="text-xs text-gray-600">Tu número +34 617 555 255 está configurado. Completa los siguientes pasos:</p>
                 </div>
+              </div>
+
+              {/* Pasos de configuración */}
+              <div className="mb-4 bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                <h3 className="text-sm font-semibold text-yellow-800 mb-2">📋 Pasos para configurar WhatsApp Business API:</h3>
+                <ol className="text-xs text-yellow-700 space-y-1 list-decimal list-inside">
+                  <li>Regístrate en <strong>Meta for Developers</strong> (developers.facebook.com)</li>
+                  <li>Crea una aplicación y obtén tu <strong>Access Token</strong></li>
+                  <li>Configura un webhook y obtén el <strong>Verify Token</strong></li>
+                  <li>Pega los tokens en los campos de abajo</li>
+                  <li>Activa WhatsApp marcando la casilla</li>
+                </ol>
               </div>
               
               {whatsappConfig && (
@@ -770,40 +805,43 @@ export default function MessagesPage() {
           </div>
         )}
 
-        {/* Información de ayuda para otras pestañas */}
+        {/* Información de ayuda compacta para otras pestañas */}
         {activeTab !== 'config' && (
-          <div className="mt-8 bg-blue-50 rounded-lg p-6">
-            <h3 className="text-lg font-semibold text-blue-900 mb-4">Variables disponibles para tus mensajes</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-blue-700">
-              <div>
-                <h4 className="font-medium text-blue-800 mb-2">Datos del huésped</h4>
-                <ul className="space-y-1">
-                  <li><strong>{'{{guest_name}}'}</strong> - Nombre del huésped</li>
-                  <li><strong>{'{{guest_email}}'}</strong> - Email del huésped</li>
-                  <li><strong>{'{{guest_phone}}'}</strong> - Teléfono del huésped</li>
-                  <li><strong>{'{{guest_count}}'}</strong> - Número de huéspedes</li>
-                </ul>
+          <div className="mt-4 bg-blue-50 rounded-lg p-4">
+            <details className="cursor-pointer">
+              <summary className="text-sm font-semibold text-blue-900 mb-2 hover:text-blue-700">
+                📝 Variables disponibles para tus mensajes (click para ver)
+              </summary>
+              <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3 text-xs text-blue-700">
+                <div>
+                  <h5 className="font-medium text-blue-800 mb-1">Datos del huésped</h5>
+                  <ul className="space-y-0.5">
+                    <li><strong>{'{{guest_name}}'}</strong> - Nombre del huésped</li>
+                    <li><strong>{'{{guest_email}}'}</strong> - Email del huésped</li>
+                    <li><strong>{'{{guest_phone}}'}</strong> - Teléfono del huésped</li>
+                    <li><strong>{'{{guest_count}}'}</strong> - Número de huéspedes</li>
+                  </ul>
+                </div>
+                <div>
+                  <h5 className="font-medium text-blue-800 mb-1">Datos de la reserva</h5>
+                  <ul className="space-y-0.5">
+                    <li><strong>{'{{room_number}}'}</strong> - Número de habitación (1-6)</li>
+                    <li><strong>{'{{room_code}}'}</strong> - Código de acceso (8101-8106)</li>
+                    <li><strong>{'{{room_location}}'}</strong> - Ubicación específica de la habitación</li>
+                    <li><strong>{'{{bathroom_info}}'}</strong> - Información sobre el baño (privado/compartido)</li>
+                    <li><strong>{'{{check_in}}'}</strong> - Fecha de llegada</li>
+                    <li><strong>{'{{check_out}}'}</strong> - Fecha de salida</li>
+                  </ul>
+                </div>
               </div>
-              <div>
-                <h4 className="font-medium text-blue-800 mb-2">Datos de la reserva</h4>
-                <ul className="space-y-1">
-                  <li><strong>{'{{room_number}}'}</strong> - Número de habitación (1-6)</li>
-                  <li><strong>{'{{room_code}}'}</strong> - Código de acceso (8101-8106)</li>
-                  <li><strong>{'{{room_location}}'}</strong> - Ubicación específica de la habitación</li>
-                  <li><strong>{'{{bathroom_info}}'}</strong> - Información sobre el baño (privado/compartido)</li>
-                  <li><strong>{'{{check_in}}'}</strong> - Fecha de llegada</li>
-                  <li><strong>{'{{check_out}}'}</strong> - Fecha de salida</li>
-                </ul>
+              <div className="mt-3 p-3 bg-blue-100 rounded text-xs">
+                <strong className="text-blue-800">Ejemplo:</strong>
+                <span className="text-blue-700 ml-1">
+                  ¡Hola <strong>{'{{guest_name}}'}</strong>! Tu habitación es la <strong>{'{{room_number}}'}</strong>. 
+                  Código: <strong>{'{{room_code}}'}</strong>
+                </span>
               </div>
-            </div>
-            <div className="mt-4 p-4 bg-blue-100 rounded-lg">
-              <h4 className="font-medium text-blue-800 mb-2">Ejemplo de mensaje:</h4>
-              <p className="text-blue-700 text-sm">
-                ¡Hola <strong>{'{{guest_name}}'}</strong>! Tu habitación es la número <strong>{'{{room_number}}'}</strong>. 
-                El código para entrar es "<strong>{'{{room_code}}'}</strong>". <strong>{'{{room_location}}'}</strong> 
-                <strong>{'{{bathroom_info}}'}</strong> Tu llegada es el <strong>{'{{check_in}}'}</strong>.
-              </p>
-            </div>
+            </details>
           </div>
         )}
       </div>
