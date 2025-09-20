@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { CalendarDays, TrendingUp, Target, Zap, AlertCircle, CheckCircle, Settings, MapPin, RefreshCw } from 'lucide-react';
+import { CalendarDays, TrendingUp, Target, Zap, AlertCircle, CheckCircle, Settings, MapPin, RefreshCw, Wrench } from 'lucide-react';
 
 interface PriceRecommendation {
   date: string;
@@ -164,6 +164,44 @@ export default function PricingDashboard() {
             </div>
             
             <div className="flex gap-3">
+              <button
+                onClick={async () => {
+                  try {
+                    const response = await fetch('/api/pricing/verify-schema');
+                    const result = await response.json();
+                    if (result.success) {
+                      const data = result.data;
+                      let message = `🔍 Estado del Esquema:\n\n`;
+                      message += `✅ Tablas existentes: ${data.existingTables.length}\n`;
+                      message += `❌ Tablas faltantes: ${data.missingTables.length}\n\n`;
+                      if (data.missingTables.length > 0) {
+                        message += `Tablas faltantes:\n${data.missingTables.join('\n')}\n\n`;
+                        message += `¿Quieres reparar el esquema?`;
+                        if (confirm(message)) {
+                          const repairResponse = await fetch('/api/pricing/verify-schema', { method: 'POST' });
+                          const repairResult = await repairResponse.json();
+                          if (repairResult.success) {
+                            alert('✅ Esquema reparado correctamente\n\n' + repairResult.steps.join('\n'));
+                          } else {
+                            alert(`❌ Error reparando esquema: ${repairResult.error}`);
+                          }
+                        }
+                      } else {
+                        alert(message + '✅ Todas las tablas están presentes');
+                      }
+                    } else {
+                      alert(`❌ Error verificando esquema: ${result.error}`);
+                    }
+                  } catch (error) {
+                    alert('❌ Error al verificar esquema: ' + error);
+                  }
+                }}
+                className="flex items-center px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm font-medium shadow-sm transition-colors duration-200"
+              >
+                <Wrench className="h-4 w-4 mr-2" />
+                Verificar BD
+              </button>
+              
               <button
                 onClick={async () => {
                   try {
