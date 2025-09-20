@@ -167,6 +167,28 @@ export default function PricingDashboard() {
               <button
                 onClick={async () => {
                   try {
+                    const response = await fetch('/api/pricing/fix-schema', { method: 'POST' });
+                    const result = await response.json();
+                    if (result.success) {
+                      alert('✅ Esquema reparado correctamente\n\n' + result.steps.join('\n') + '\n\nVerificación: Columna price existe = ' + result.verification.priceColumnExists);
+                      // Recargar la página para aplicar los cambios
+                      window.location.reload();
+                    } else {
+                      alert(`❌ Error reparando esquema: ${result.error}`);
+                    }
+                  } catch (error) {
+                    alert('❌ Error al reparar esquema: ' + error);
+                  }
+                }}
+                className="flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 text-sm font-medium shadow-sm transition-colors duration-200"
+              >
+                <Wrench className="h-4 w-4 mr-2" />
+                Reparar BD
+              </button>
+              
+              <button
+                onClick={async () => {
+                  try {
                     const response = await fetch('/api/pricing/verify-schema');
                     const result = await response.json();
                     if (result.success) {
@@ -176,19 +198,12 @@ export default function PricingDashboard() {
                       message += `❌ Tablas faltantes: ${data.missingTables.length}\n\n`;
                       if (data.missingTables.length > 0) {
                         message += `Tablas faltantes:\n${data.missingTables.join('\n')}\n\n`;
-                        message += `¿Quieres reparar el esquema?`;
-                        if (confirm(message)) {
-                          const repairResponse = await fetch('/api/pricing/verify-schema', { method: 'POST' });
-                          const repairResult = await repairResponse.json();
-                          if (repairResult.success) {
-                            alert('✅ Esquema reparado correctamente\n\n' + repairResult.steps.join('\n'));
-                          } else {
-                            alert(`❌ Error reparando esquema: ${repairResult.error}`);
-                          }
-                        }
-                      } else {
-                        alert(message + '✅ Todas las tablas están presentes');
                       }
+                      if (data.competitorPricesColumns && data.competitorPricesColumns.length > 0) {
+                        message += `Columnas en competitor_daily_prices:\n${data.competitorPricesColumns.map((col: any) => `${col.column_name} (${col.data_type})`).join('\n')}\n\n`;
+                      }
+                      message += '✅ Todas las tablas están presentes';
+                      alert(message);
                     } else {
                       alert(`❌ Error verificando esquema: ${result.error}`);
                     }
