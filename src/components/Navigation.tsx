@@ -13,7 +13,6 @@ export default function Navigation() {
     { name: 'Dashboard', href: '/', icon: Home },
     { name: 'Habitaciones', href: '/rooms', icon: Bed },
     { name: 'Reservas', href: '/reservations', icon: Calendar },
-    { name: 'Check-in', href: '/checkin', icon: Users },
     { name: 'Sincronizar Calendarios', href: '/calendar-sync', icon: Smartphone },
     { name: 'Configuración', href: '/settings', icon: Settings },
   ];

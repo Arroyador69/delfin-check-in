@@ -257,22 +257,21 @@ export default function HomePage() {
           </Link>
 
 
-          <Link href="/checkin" className="group">
+          <Link href="/reservations" className="group">
             <div className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow cursor-pointer">
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
-                    Check-in Digital
+                    Reservas
                   </h3>
                   <p className="text-sm text-gray-600 mt-1">
-                    Formularios para huéspedes
+                    Gestionar reservas y calendario
                   </p>
                 </div>
-                <Users className="h-8 w-8 text-gray-400 group-hover:text-blue-600 transition-colors" />
+                <CalendarDays className="h-8 w-8 text-gray-400 group-hover:text-blue-600 transition-colors" />
               </div>
             </div>
           </Link>
-
 
           <Link href="/guest-registrations-dashboard" className="group">
             <div className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow cursor-pointer">
