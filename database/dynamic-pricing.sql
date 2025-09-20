@@ -127,13 +127,14 @@ CREATE INDEX IF NOT EXISTS idx_price_recommendations_date ON price_recommendatio
 CREATE INDEX IF NOT EXISTS idx_price_recommendations_room_date ON price_recommendations(room_id, date);
 
 -- Datos iniciales de configuración para nuestras 6 habitaciones
+-- Precios basados en realidad actual (septiembre 2024): €40-€55 por noche
 INSERT INTO pricing_config (room_id, base_price, min_price, max_price) VALUES
-('room_1', 80.00, 56.00, 120.00),
-('room_2', 85.00, 59.50, 127.50),
-('room_3', 90.00, 63.00, 135.00),
-('room_4', 95.00, 66.50, 142.50),
-('room_5', 100.00, 70.00, 150.00),
-('room_6', 105.00, 73.50, 157.50)
+('room_1', 45.00, 35.00, 80.00),   -- Habitación 1: precio base €45, rango €35-€80
+('room_2', 47.00, 37.00, 85.00),   -- Habitación 2: precio base €47, rango €37-€85
+('room_3', 50.00, 40.00, 90.00),   -- Habitación 3: precio base €50, rango €40-€90
+('room_4', 52.00, 42.00, 95.00),   -- Habitación 4: precio base €52, rango €42-€95
+('room_5', 55.00, 45.00, 100.00),  -- Habitación 5: precio base €55, rango €45-€100
+('room_6', 57.00, 47.00, 105.00)   -- Habitación 6: precio base €57, rango €47-€105
 ON CONFLICT (room_id) DO NOTHING;
 
 -- Función para actualizar updated_at automáticamente

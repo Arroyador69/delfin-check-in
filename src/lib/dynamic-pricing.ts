@@ -147,7 +147,7 @@ export async function getMarketData(
     ORDER BY date
   `;
 
-  return result.rows;
+  return result.rows as MarketData[];
 }
 
 /**
@@ -172,7 +172,7 @@ export async function getLocalEvents(
     ORDER BY starts_at
   `;
 
-  return result.rows;
+  return result.rows as EventData[];
 }
 
 /**
@@ -191,7 +191,7 @@ export async function getMyOccupancy(
     ORDER BY date
   `;
 
-  return result.rows;
+  return result.rows as Array<{ date: string; occupancyPct: number }>;
 }
 
 /**
@@ -287,7 +287,7 @@ export async function generatePriceRecommendations(
 
     // Calcular confianza basada en datos disponibles
     const confidence = Math.min(1.0, 
-      (market?.sample_size || 0) / 10 * 0.4 + // 40% por tamaño de muestra
+      (market?.sampleSize || 0) / 10 * 0.4 + // 40% por tamaño de muestra
       (maxEventImpact > 0 ? 1 : 0.5) * 0.3 + // 30% por eventos
       (occupancyMap.has(dateStr) ? 1 : 0.3) * 0.3 // 30% por datos de ocupación
     );
@@ -383,5 +383,5 @@ export async function getPriceRecommendations(
     ORDER BY date
   `;
 
-  return result.rows;
+  return result.rows as PriceRecommendation[];
 }

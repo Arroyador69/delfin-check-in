@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { CalendarDays, TrendingUp, Target, Zap, AlertCircle, CheckCircle } from 'lucide-react';
+import { CalendarDays, TrendingUp, Target, Zap, AlertCircle, CheckCircle, Settings } from 'lucide-react';
 
 interface PriceRecommendation {
   date: string;
@@ -31,12 +31,12 @@ interface PricingStats {
 }
 
 const ROOMS = [
-  { id: 'room_1', name: 'Habitación 1', basePrice: 80 },
-  { id: 'room_2', name: 'Habitación 2', basePrice: 85 },
-  { id: 'room_3', name: 'Habitación 3', basePrice: 90 },
-  { id: 'room_4', name: 'Habitación 4', basePrice: 95 },
-  { id: 'room_5', name: 'Habitación 5', basePrice: 100 },
-  { id: 'room_6', name: 'Habitación 6', basePrice: 105 }
+  { id: 'room_1', name: 'Habitación 1', basePrice: 45 },
+  { id: 'room_2', name: 'Habitación 2', basePrice: 47 },
+  { id: 'room_3', name: 'Habitación 3', basePrice: 50 },
+  { id: 'room_4', name: 'Habitación 4', basePrice: 52 },
+  { id: 'room_5', name: 'Habitación 5', basePrice: 55 },
+  { id: 'room_6', name: 'Habitación 6', basePrice: 57 }
 ];
 
 export default function PricingDashboard() {
@@ -140,13 +140,35 @@ export default function PricingDashboard() {
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
+            <div className="flex justify-between items-center py-6">
             <div className="flex items-center">
               <TrendingUp className="h-8 w-8 text-blue-600 mr-3" />
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">Precios Dinámicos</h1>
                 <p className="text-sm text-gray-600">Gestión inteligente de precios basada en mercado y eventos</p>
               </div>
+            </div>
+            
+            <div className="flex gap-3">
+              <button
+                onClick={async () => {
+                  try {
+                    const response = await fetch('/api/pricing/setup-db', { method: 'POST' });
+                    const result = await response.json();
+                    if (result.success) {
+                      alert('✅ Base de datos de precios dinámicos inicializada correctamente\n\nDetalles:\n' + result.steps.join('\n'));
+                    } else {
+                      alert(`❌ Error: ${result.error}\n\nDetalles:\n${result.steps ? result.steps.join('\n') : result.details}`);
+                    }
+                  } catch (error) {
+                    alert('❌ Error al inicializar la base de datos: ' + error);
+                  }
+                }}
+                className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 text-sm font-medium shadow-sm transition-colors duration-200"
+              >
+                <Settings className="h-4 w-4 mr-2" />
+                Inicializar BD
+              </button>
             </div>
           </div>
         </div>
@@ -369,8 +391,8 @@ export default function PricingDashboard() {
             <div>
               <h4 className="font-medium text-blue-800 mb-2">Iconos de factores:</h4>
               <ul className="space-y-1">
-                <li>• <TrendingUp className="h-3 w-3 text-green-500 inline mr-1" /> Factor > 1.05 (precio sube)</li>
-                <li>• <TrendingUp className="h-3 w-3 text-red-500 inline mr-1 rotate-180" /> Factor < 0.95 (precio baja)</li>
+                <li>• <TrendingUp className="h-3 w-3 text-green-500 inline mr-1" /> Factor &gt; 1.05 (precio sube)</li>
+                <li>• <TrendingUp className="h-3 w-3 text-red-500 inline mr-1 rotate-180" /> Factor &lt; 0.95 (precio baja)</li>
                 <li>• <Target className="h-3 w-3 text-gray-500 inline mr-1" /> Factor neutral (0.95-1.05)</li>
               </ul>
             </div>

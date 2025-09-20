@@ -11,8 +11,22 @@ export async function POST(request: NextRequest) {
     const sqlFilePath = path.join(process.cwd(), 'database', 'dynamic-pricing.sql');
     const sqlContent = fs.readFileSync(sqlFilePath, 'utf8');
 
-    // Ejecutar el esquema SQL
-    await sql.unsafe(sqlContent);
+    // Ejecutar el esquema SQL línea por línea para evitar problemas con Vercel Postgres
+    const sqlLines = sqlContent.split(';').filter(line => line.trim());
+    
+    for (const line of sqlLines) {
+      if (line.trim()) {
+        try {
+          await sql.query(line.trim() + ';');
+        } catch (error) {
+          // Ignorar errores de "already exists" y similares
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          if (!errorMessage.includes('already exists') && !errorMessage.includes('duplicate')) {
+            console.warn('Warning executing SQL:', line.trim(), errorMessage);
+          }
+        }
+      }
+    }
 
     console.log('✅ Base de datos de precios dinámicos inicializada correctamente');
 
