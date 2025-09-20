@@ -296,15 +296,18 @@ export default function MessagesPage() {
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-3">
+          {/* Layout responsivo: stack en móvil, side-by-side en desktop */}
+          <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center py-3 gap-3">
             <div className="flex items-center">
-              <MessageSquare className="h-6 w-6 text-blue-600 mr-2" />
+              <MessageSquare className="h-6 w-6 text-blue-600 mr-2 flex-shrink-0" />
               <div>
                 <h1 className="text-lg font-bold text-gray-900">Mensajes Automáticos</h1>
-                <p className="text-xs text-gray-600">Configura plantillas para comunicación automática por WhatsApp</p>
+                <p className="text-xs text-gray-600 hidden sm:block">Configura plantillas para comunicación automática por WhatsApp</p>
               </div>
             </div>
-            <div className="flex space-x-2">
+            
+            {/* Botones con mejor responsividad */}
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-2">
               <button
                 onClick={async () => {
                   try {
@@ -320,17 +323,17 @@ export default function MessagesPage() {
                     alert('Error al inicializar la base de datos: ' + error);
                   }
                 }}
-                className="flex items-center px-2 py-1.5 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 text-xs"
+                className="flex items-center justify-center px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 text-sm font-medium shadow-sm transition-colors duration-200 min-w-0"
               >
-                <Settings className="h-3 w-3 mr-1" />
-                Inicializar BD
+                <Settings className="h-4 w-4 mr-2 flex-shrink-0" />
+                <span className="whitespace-nowrap">Inicializar BD</span>
               </button>
               <button
                 onClick={() => setActiveTab('config')}
-                className="flex items-center px-2 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs"
+                className="flex items-center justify-center px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-medium shadow-sm transition-colors duration-200 min-w-0"
               >
-                <Settings className="h-3 w-3 mr-1" />
-                Configurar WhatsApp
+                <Settings className="h-4 w-4 mr-2 flex-shrink-0" />
+                <span className="whitespace-nowrap">Configurar WhatsApp</span>
               </button>
             </div>
           </div>
