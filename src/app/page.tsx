@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { CalendarDays, Users, Home, Settings, BarChart3, MessageSquare, RefreshCw } from 'lucide-react';
+import { CalendarDays, Users, Home, Settings, BarChart3, MessageSquare, RefreshCw, TrendingUp } from 'lucide-react';
 import AdminLayout from '@/components/AdminLayout';
 // Removido: import { getRooms, getReservations } from '@/lib/storage';
 
@@ -269,6 +269,22 @@ export default function HomePage() {
                   </p>
                 </div>
                 <CalendarDays className="h-8 w-8 text-gray-400 group-hover:text-blue-600 transition-colors" />
+              </div>
+            </div>
+          </Link>
+
+          <Link href="/pricing" className="group">
+            <div className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow cursor-pointer">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+                    Precios Dinámicos
+                  </h3>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Optimización automática de precios
+                  </p>
+                </div>
+                <TrendingUp className="h-8 w-8 text-gray-400 group-hover:text-blue-600 transition-colors" />
               </div>
             </div>
           </Link>
