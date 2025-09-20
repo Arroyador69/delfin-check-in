@@ -1,46 +1,49 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { sendAutomatedMessage } from '@/lib/whatsapp';
+import { sql } from '@vercel/postgres';
 
-export async function POST(request: NextRequest) {
+export async function GET(request: NextRequest) {
   try {
-    const body = await request.json();
-    
-    const { trigger_type, guest_phone, guest_name, room_id } = body;
-    
-    if (!trigger_type || !guest_phone || !guest_name || !room_id) {
-      return NextResponse.json(
-        { success: false, error: 'Faltan datos requeridos: trigger_type, guest_phone, guest_name, room_id' },
-        { status: 400 }
-      );
-    }
+    console.log('🔄 Probando configuración de WhatsApp...');
 
-    // Datos de prueba
-    const testData = {
-      guest_name: guest_name || 'Juan Pérez',
-      guest_phone: guest_phone,
-      guest_email: 'test@example.com',
-      room_id: room_id || 'room_1',
-      check_in: '2024-02-15',
-      check_out: '2024-02-17',
-      guest_count: 2
-    };
+    // Probar crear solo una tabla primero
+    await sql`
+      CREATE TABLE IF NOT EXISTS message_templates (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        trigger_type VARCHAR(100) NOT NULL,
+        channel VARCHAR(50) NOT NULL DEFAULT 'whatsapp',
+        language VARCHAR(10) NOT NULL DEFAULT 'es',
+        template_content TEXT NOT NULL,
+        variables JSONB DEFAULT '[]'::jsonb,
+        is_active BOOLEAN NOT NULL DEFAULT true,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+      )
+    `;
 
-    console.log(`🧪 Enviando mensaje de prueba para trigger: ${trigger_type}`);
-    
-    const result = await sendAutomatedMessage(trigger_type, testData);
-    
+    console.log('✅ Tabla message_templates creada');
+
+    // Verificar que existe
+    const result = await sql`
+      SELECT table_name 
+      FROM information_schema.tables 
+      WHERE table_schema = 'public' AND table_name = 'message_templates'
+    `;
+
     return NextResponse.json({
-      success: result.success,
-      message: result.success ? 'Mensaje de prueba enviado' : 'Error enviando mensaje',
-      details: result.error || result.messageId,
-      trigger_type,
-      test_data: testData
+      success: true,
+      message: 'Prueba exitosa',
+      table_exists: result.rows.length > 0
     });
 
   } catch (error) {
-    console.error('Error testing WhatsApp:', error);
+    console.error('❌ Error en prueba:', error);
     return NextResponse.json(
-      { success: false, error: 'Error en prueba de WhatsApp' },
+      { 
+        success: false, 
+        error: 'Error en prueba',
+        details: error instanceof Error ? error.message : 'Error desconocido'
+      },
       { status: 500 }
     );
   }
