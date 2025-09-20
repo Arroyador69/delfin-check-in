@@ -32,6 +32,7 @@ export function middleware(req: NextRequest) {
   if (url.pathname.startsWith('/api/registro-flex') || 
       url.pathname.startsWith('/api/setup-db') || 
       url.pathname.startsWith('/api/setup-whatsapp-db') || 
+      url.pathname.startsWith('/api/init-whatsapp-db') || 
       url.pathname.startsWith('/api/check-db') || 
       url.pathname.startsWith('/api/test-registro') ||
       url.pathname.startsWith('/api/upgrade-db-public') ||
