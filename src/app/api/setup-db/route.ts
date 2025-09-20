@@ -46,11 +46,15 @@ export async function POST(req: NextRequest) {
     `;
     
     // Crear trigger
-    await sql`
-      CREATE TRIGGER IF NOT EXISTS update_guest_registrations_updated_at 
-      BEFORE UPDATE ON guest_registrations 
-      FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-    `;
+    try {
+      await sql`
+        CREATE TRIGGER update_guest_registrations_updated_at 
+        BEFORE UPDATE ON guest_registrations 
+        FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+      `;
+    } catch (e) {
+      console.log('⚠️  Trigger para guest_registrations ya existe');
+    }
     
     console.log('✅ Tabla guest_registrations creada correctamente');
     
