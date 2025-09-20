@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { CalendarDays, TrendingUp, Target, Zap, AlertCircle, CheckCircle, Settings } from 'lucide-react';
+import { CalendarDays, TrendingUp, Target, Zap, AlertCircle, CheckCircle, Settings, MapPin, RefreshCw } from 'lucide-react';
 
 interface PriceRecommendation {
   date: string;
@@ -49,10 +49,24 @@ export default function PricingDashboard() {
   const [stats, setStats] = useState<PricingStats | null>(null);
   const [loading, setLoading] = useState(false);
   const [applying, setApplying] = useState<string | null>(null);
+  const [scraperStats, setScraperStats] = useState<any>(null);
 
   useEffect(() => {
     loadRecommendations();
+    loadScraperStats();
   }, [selectedRoom, dateRange]);
+
+  const loadScraperStats = async () => {
+    try {
+      const response = await fetch('/api/pricing/scraper');
+      const result = await response.json();
+      if (result.success) {
+        setScraperStats(result.data);
+      }
+    } catch (error) {
+      console.error('Error cargando estadísticas del scraper:', error);
+    }
+  };
 
   const loadRecommendations = async () => {
     setLoading(true);
@@ -169,6 +183,61 @@ export default function PricingDashboard() {
                 <Settings className="h-4 w-4 mr-2" />
                 Inicializar BD
               </button>
+              
+              <button
+                onClick={async () => {
+                  try {
+                    const response = await fetch('/api/pricing/scraper', { 
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ action: 'initialize' })
+                    });
+                    const result = await response.json();
+                    if (result.success) {
+                      alert(`✅ Competidores locales de Fuengirola inicializados\n\nCompetidores: ${result.data.competitors}\nUbicación: ${result.data.location}`);
+                      loadScraperStats();
+                    } else {
+                      alert(`❌ Error: ${result.error}`);
+                    }
+                  } catch (error) {
+                    alert('❌ Error al inicializar competidores: ' + error);
+                  }
+                }}
+                className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-medium shadow-sm transition-colors duration-200"
+              >
+                <MapPin className="h-4 w-4 mr-2" />
+                Competidores
+              </button>
+              
+              <button
+                onClick={async () => {
+                  try {
+                    const response = await fetch('/api/pricing/scraper', { 
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ 
+                        action: 'scrape',
+                        startDate: dateRange.from,
+                        endDate: dateRange.to
+                      })
+                    });
+                    const result = await response.json();
+                    if (result.success) {
+                      alert(`✅ Scraping completado\n\nRango: ${result.data.dateRange.from} - ${result.data.dateRange.to}\nCompetidores: ${result.data.totalCompetitors}\nPrecio promedio: €${result.data.avgPrice.toFixed(2)}`);
+                      loadScraperStats();
+                      loadRecommendations(); // Recargar recomendaciones con nuevos datos
+                    } else {
+                      alert(`❌ Error: ${result.error}`);
+                    }
+                  } catch (error) {
+                    alert('❌ Error al ejecutar scraping: ' + error);
+                  }
+                }}
+                className="flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm font-medium shadow-sm transition-colors duration-200"
+              >
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Scrapear
+              </button>
             </div>
           </div>
         </div>
@@ -220,6 +289,34 @@ export default function PricingDashboard() {
             </div>
           </div>
         </div>
+
+        {/* Estadísticas del Scraper Local */}
+        {scraperStats && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8">
+            <div className="flex items-center mb-4">
+              <MapPin className="h-6 w-6 text-blue-600 mr-2" />
+              <h3 className="text-lg font-semibold text-blue-900">Datos de Competencia Local - Fuengirola</h3>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="text-center">
+                <p className="text-2xl font-bold text-blue-700">{scraperStats.totalCompetitors}</p>
+                <p className="text-sm text-blue-600">Competidores</p>
+              </div>
+              <div className="text-center">
+                <p className="text-2xl font-bold text-blue-700">€{scraperStats.avgPrice?.toFixed(2) || '45.00'}</p>
+                <p className="text-sm text-blue-600">Precio Promedio</p>
+              </div>
+              <div className="text-center">
+                <p className="text-2xl font-bold text-blue-700">€{scraperStats.priceRange?.min || '35'}-{scraperStats.priceRange?.max || '65'}</p>
+                <p className="text-sm text-blue-600">Rango de Precios</p>
+              </div>
+              <div className="text-center">
+                <p className="text-sm font-bold text-blue-700">{scraperStats.lastScrapedFormatted || 'Nunca'}</p>
+                <p className="text-sm text-blue-600">Último Scraping</p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Estadísticas */}
         {stats && (

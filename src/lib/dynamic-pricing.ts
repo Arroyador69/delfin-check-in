@@ -124,6 +124,7 @@ export function calculateRecommendedPrice(params: PricingFactors): {
 
 /**
  * Obtiene datos de mercado (percentiles) para un rango de fechas
+ * Prioriza competidores locales de Fuengirola
  */
 export async function getMarketData(
   startDate: string,
@@ -132,19 +133,21 @@ export async function getMarketData(
 ): Promise<MarketData[]> {
   const result = await sql`
     SELECT 
-      date,
-      PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY price) as p25,
-      PERCENTILE_CONT(0.40) WITHIN GROUP (ORDER BY price) as p40,
-      PERCENTILE_CONT(0.50) WITHIN GROUP (ORDER BY price) as p50,
-      PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY price) as p75,
+      cdp.date,
+      PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY cdp.price) as p25,
+      PERCENTILE_CONT(0.40) WITHIN GROUP (ORDER BY cdp.price) as p40,
+      PERCENTILE_CONT(0.50) WITHIN GROUP (ORDER BY cdp.price) as p50,
+      PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY cdp.price) as p75,
       COUNT(*) as sample_size
-    FROM competitor_daily_prices 
-    WHERE date BETWEEN ${startDate} AND ${endDate}
-      AND room_type = ${roomType}
-      AND price IS NOT NULL
-      AND availability = true
-    GROUP BY date
-    ORDER BY date
+    FROM competitor_daily_prices cdp
+    JOIN competitor_listings cl ON cdp.listing_id = cl.id
+    WHERE cdp.date BETWEEN ${startDate} AND ${endDate}
+      AND cdp.room_type = ${roomType}
+      AND cdp.price IS NOT NULL
+      AND cdp.availability = true
+      AND cl.source = 'fuengirola_local'  -- Priorizar competidores locales
+    GROUP BY cdp.date
+    ORDER BY cdp.date
   `;
 
   return result.rows as MarketData[];
