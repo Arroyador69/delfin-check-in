@@ -9,11 +9,8 @@ const processed = new Set<string>();
 
 export async function POST(request: NextRequest) {
   try {
-    const origin = request.headers.get('origin') || '';
-    const allowedOrigin = process.env.PUBLIC_FORM_ORIGIN || 'https://form.delfincheckin.com';
     const corsHeaders: Record<string, string> = {
-      'Access-Control-Allow-Origin': origin === allowedOrigin ? allowedOrigin : '*',
-      'Access-Control-Allow-Credentials': 'true',
+      'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'POST, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     };
@@ -96,11 +93,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, queued: false, hash }, { status: 201, headers: corsHeaders });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    const origin = (typeof err === 'object' && err && 'origin' in (err as any)) ? '' : '';
-    const allowedOrigin = process.env.PUBLIC_FORM_ORIGIN || 'https://form.delfincheckin.com';
     const corsHeaders: Record<string, string> = {
-      'Access-Control-Allow-Origin': origin === allowedOrigin ? allowedOrigin : '*',
-      'Access-Control-Allow-Credentials': 'true',
+      'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'POST, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     };
@@ -109,13 +103,10 @@ export async function POST(request: NextRequest) {
 }
 
 export async function OPTIONS(request: NextRequest) {
-  const origin = request.headers.get('origin') || '';
-  const allowedOrigin = process.env.PUBLIC_FORM_ORIGIN || 'https://form.delfincheckin.com';
   return new NextResponse(null, {
     status: 204,
     headers: {
-      'Access-Control-Allow-Origin': origin === allowedOrigin ? allowedOrigin : '*',
-      'Access-Control-Allow-Credentials': 'true',
+      'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'POST, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, Authorization',
       'Access-Control-Max-Age': '86400',
