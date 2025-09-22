@@ -121,7 +121,7 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    const id = parseInt(idParam, 10);
+    const id = Number.parseInt(String(idParam), 10);
     const deleted = await deleteMessageTemplate(id);
     
     if (!deleted) {
