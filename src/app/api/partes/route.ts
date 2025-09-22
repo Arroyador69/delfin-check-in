@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { parteSchema } from '@/lib/rd933';
+import { sql } from '@/lib/db';
 import crypto from 'crypto';
 
 // Memoria temporal (MVP) para idempotencia por hash
@@ -24,7 +25,45 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, queued: false, duplicate: true, hash }, { status: 200 });
     }
 
-    // MVP: no persistimos aún, solo marcamos como procesado
+    // Persistir en guest_registrations para que aparezca en el dashboard
+    const entrada = parsed.data.ejecucionContrato.fechaHoraEntrada;
+    const salida = parsed.data.ejecucionContrato.fechaHoraSalida;
+
+    // Normalizar estructura mínima compatible con exportador actual
+    const registro = {
+      contrato: {
+        codigoEstablecimiento: parsed.data.establecimiento.codigoEstablecimiento || '0000256653',
+        referencia: 'FORM-' + new Date().toISOString().slice(0,10),
+        numHabitaciones: 1,
+        internet: false,
+        tipoPago: parsed.data.pago.tipo,
+      },
+      comunicaciones: [
+        {
+          contrato: {
+            referencia: 'FORM-' + new Date().toISOString(),
+            fechaContrato: new Date(entrada).toISOString(),
+            fechaEntrada: new Date(entrada).toISOString(),
+            fechaSalida: new Date(salida).toISOString(),
+            numPersonas: parsed.data.viajeros.length
+          },
+          personas: parsed.data.viajeros.map(v => ({
+            nombre: v.nombre,
+            apellido1: v.primerApellido,
+            apellido2: v.segundoApellido || '',
+            tipoDocumento: v.documento.tipo,
+            numeroDocumento: v.documento.numero,
+            nacionalidad: v.nacionalidad,
+          }))
+        }
+      ]
+    };
+
+    await sql`
+      INSERT INTO guest_registrations (reserva_ref, fecha_entrada, fecha_salida, data)
+      VALUES (${registro.contrato.referencia}, ${entrada}::timestamp, ${salida}::timestamp, ${JSON.stringify(registro)}::jsonb)
+    `;
+
     processed.add(hash);
 
     return NextResponse.json({ success: true, queued: false, hash }, { status: 201 });
