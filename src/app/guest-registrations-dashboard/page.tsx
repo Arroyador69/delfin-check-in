@@ -656,6 +656,13 @@ export default function GuestRegistrationsDashboard() {
                           onSuccess={() => alert("XML generado y descargado correctamente")}
                           onError={(error) => alert(`Error al generar XML:\n${error}`)}
                         />
+                        <a
+                          href={`/api/export/aeat?from=${new Date().toISOString().slice(0,10)}&to=${new Date().toISOString().slice(0,10)}&vat=21&format=csv`}
+                          target="_blank"
+                          className="px-3 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700"
+                        >
+                          Exportar AEAT CSV
+                        </a>
                         <button
                           onClick={() => deleteRegistration(registration.id)}
                           disabled={deleting}
