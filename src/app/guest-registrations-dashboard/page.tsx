@@ -89,6 +89,26 @@ export default function GuestRegistrationsDashboard() {
     names: string[];
   } | null>(null);
 
+  // Abrir bitácora en nueva pestaña (usa hash persistido o calculado al vuelo)
+  const openAuditFor = async (reg: any) => {
+    try {
+      let hash: string | undefined = reg?.data?.audit_hash;
+      if (!hash) {
+        const encoder = new TextEncoder();
+        const bytes = encoder.encode(JSON.stringify(reg.data || {}));
+        const digest = await crypto.subtle.digest('SHA-256', bytes);
+        hash = Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('');
+      }
+      if (hash) {
+        window.open(`/api/audit?entityId=${hash}`, '_blank');
+      } else {
+        alert('No se pudo calcular el hash del registro');
+      }
+    } catch (e) {
+      alert('No se pudo abrir la bitácora');
+    }
+  };
+
   useEffect(() => {
     loadRegistrations();
   }, [selectedDate, showAllRegistrations]);
@@ -625,16 +645,12 @@ export default function GuestRegistrationsDashboard() {
                           <Eye className="h-4 w-4 inline mr-1" />
                           Ver
                         </button>
-                        {registration?.data?.audit_hash && (
-                          <a
-                            href={`/api/audit?entityId=${registration.data.audit_hash}`}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="px-3 py-2 bg-white border text-gray-700 rounded-md hover:bg-gray-50"
-                          >
-                            Ver bitácora
-                          </a>
-                        )}
+                        <button
+                          onClick={() => openAuditFor(registration)}
+                          className="px-3 py-2 bg-white border text-gray-700 rounded-md hover:bg-gray-50"
+                        >
+                          Ver bitácora
+                        </button>
                         <ExportButton
                           solicitud={prepareSolicitudData(registration)}
                           onSuccess={() => alert("XML generado y descargado correctamente")}
@@ -780,24 +796,20 @@ export default function GuestRegistrationsDashboard() {
               </div>
 
               {/* Bitácora */}
-              {selectedRegistration?.data?.audit_hash && (
-                <div className="mb-6 bg-gray-50 border rounded-lg p-4">
-                  <h4 className="font-semibold text-gray-900 mb-2">Bitácora</h4>
-                  <div className="flex items-center justify-between">
-                    <p className="text-xs text-gray-600 break-all">
-                      Hash: {selectedRegistration.data.audit_hash}
-                    </p>
-                    <a
-                      href={`/api/audit?entityId=${selectedRegistration.data.audit_hash}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="px-3 py-1.5 bg-white border text-gray-700 rounded-md hover:bg-gray-50 text-sm"
-                    >
-                      Ver bitácora
-                    </a>
-                  </div>
+              <div className="mb-6 bg-gray-50 border rounded-lg p-4">
+                <h4 className="font-semibold text-gray-900 mb-2">Bitácora</h4>
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-gray-600 break-all">
+                    Hash: {selectedRegistration?.data?.audit_hash || 'calculando…'}
+                  </p>
+                  <button
+                    onClick={() => openAuditFor(selectedRegistration)}
+                    className="px-3 py-1.5 bg-white border text-gray-700 rounded-md hover:bg-gray-50 text-sm"
+                  >
+                    Ver bitácora
+                  </button>
                 </div>
-              )}
+              </div>
 
               {/* Información del viajero */}
               <div>
