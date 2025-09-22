@@ -22,6 +22,32 @@ export default function AEATPage() {
     window.open(`/api/export/aeat?${params.toString()}`, '_blank');
   };
 
+  const setMonth = (offset: number) => {
+    const d = new Date();
+    d.setDate(1);
+    d.setMonth(d.getMonth() + offset);
+    const start = d.toISOString().slice(0,10);
+    const endDate = new Date(d);
+    endDate.setMonth(d.getMonth() + 1);
+    endDate.setDate(0); // último día del mes
+    const end = endDate.toISOString().slice(0,10);
+    setFrom(start);
+    setTo(end);
+  };
+
+  const setQuarter = (offsetQuarters: number) => {
+    const d = new Date();
+    const currentQuarter = Math.floor(d.getMonth() / 3);
+    const q = currentQuarter + offsetQuarters;
+    const startMonth = (Math.floor(q / 4) * 12) + ((q % 4 + 4) % 4) * 3; // normaliza
+    const year = d.getFullYear() + Math.floor(startMonth / 12);
+    const month = ((startMonth % 12) + 12) % 12;
+    const start = new Date(year, month, 1);
+    const end = new Date(year, month + 3, 0);
+    setFrom(start.toISOString().slice(0,10));
+    setTo(end.toISOString().slice(0,10));
+  };
+
   return (
     <div className="p-6">
       <h1 className="text-2xl font-semibold text-gray-900 mb-4">Exportar AEAT</h1>
@@ -46,7 +72,12 @@ export default function AEATPage() {
         </div>
       </div>
 
-      <button onClick={exportCsv} className="px-4 py-2 bg-emerald-600 text-white rounded hover:bg-emerald-700">Descargar CSV</button>
+      <div className="flex items-center gap-3 mb-6">
+        <button onClick={exportCsv} className="px-4 py-2 bg-emerald-600 text-white rounded hover:bg-emerald-700">Descargar CSV</button>
+        <button onClick={() => setMonth(0)} className="px-3 py-2 bg-gray-100 rounded hover:bg-gray-200">Mes actual</button>
+        <button onClick={() => setMonth(-1)} className="px-3 py-2 bg-gray-100 rounded hover:bg-gray-200">Mes anterior</button>
+        <button onClick={() => setQuarter(0)} className="px-3 py-2 bg-gray-100 rounded hover:bg-gray-200">Trimestre actual</button>
+      </div>
     </div>
   );
 }
