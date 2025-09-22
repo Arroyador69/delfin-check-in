@@ -7,6 +7,9 @@ export function middleware(req: NextRequest) {
   const isAdminDomain = host.startsWith('admin.')
   const isVercelDomain = host.includes('vercel.app')
   
+  // Preflight CORS: dejar pasar siempre OPTIONS
+  if (req.method === 'OPTIONS') return NextResponse.next();
+
   // Para testing, permitir que funcione en ambos
   if (!isAdminDomain && !isVercelDomain) return NextResponse.next()
 
@@ -30,6 +33,7 @@ export function middleware(req: NextRequest) {
   
   // Permitir endpoints de API públicos y páginas específicas
   if (url.pathname.startsWith('/api/registro-flex') || 
+      url.pathname.startsWith('/api/partes') ||
       url.pathname.startsWith('/api/setup-db') || 
       url.pathname.startsWith('/api/setup-whatsapp-db') || 
       url.pathname.startsWith('/api/init-whatsapp-db') || 
