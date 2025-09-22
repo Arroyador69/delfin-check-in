@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Home, Calendar, DollarSign, Save, Plus, Trash2 } from 'lucide-react';
 import { roomSchema, RoomFormData } from '@/lib/validation';
 
@@ -14,6 +15,11 @@ interface Room {
 }
 
 export default function RoomsPage() {
+  const router = useRouter();
+  useEffect(() => {
+    router.replace('/');
+  }, [router]);
+
   const [rooms, setRooms] = useState<Room[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingRoom, setEditingRoom] = useState<Room | null>(null);

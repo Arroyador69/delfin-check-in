@@ -3,6 +3,11 @@ import { applyPriceRecommendation } from '@/lib/dynamic-pricing';
 import { sql } from '@/lib/db';
 
 export async function POST(request: NextRequest) {
+  // Deshabilitado temporalmente para MVP
+  return NextResponse.json(
+    { success: false, error: 'Endpoint deshabilitado temporalmente (MVP)' },
+    { status: 404 }
+  );
   try {
     const body = await request.json();
     const { roomId, date, price, applyToAll = false } = body;

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { MessageSquare, Save, Trash2, Send, Settings, Eye, EyeOff } from 'lucide-react';
 
 // Tipo para plantillas de mensajes
@@ -46,6 +47,10 @@ interface WhatsAppConfig {
 }
 
 export default function MessagesPage() {
+  const router = useRouter();
+  useEffect(() => {
+    router.replace('/');
+  }, [router]);
   const [templates, setTemplates] = useState<MessageTemplate[]>([]);
   const [sentMessages, setSentMessages] = useState<SentMessage[]>([]);
   const [whatsappConfig, setWhatsappConfig] = useState<WhatsAppConfig | null>(null);

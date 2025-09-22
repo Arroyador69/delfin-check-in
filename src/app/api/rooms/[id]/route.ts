@@ -5,6 +5,11 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // Deshabilitado temporalmente para MVP
+  return NextResponse.json(
+    { error: 'Endpoint deshabilitado temporalmente (MVP)' },
+    { status: 404 }
+  );
   try {
     const { id } = await params;
     const body = await request.json();
@@ -42,6 +47,11 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // Deshabilitado temporalmente para MVP
+  return NextResponse.json(
+    { error: 'Endpoint deshabilitado temporalmente (MVP)' },
+    { status: 404 }
+  );
   try {
     const { id } = await params;
 

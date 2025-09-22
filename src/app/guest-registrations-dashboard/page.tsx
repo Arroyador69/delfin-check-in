@@ -373,7 +373,7 @@ export default function GuestRegistrationsDashboard() {
               <div className="text-3xl mr-3">🐬</div>
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">Delfín Check-in</h1>
-                <p className="text-sm text-gray-600">Dashboard de Registros de Viajeros</p>
+                <p className="text-sm text-gray-600">Registros de formularios</p>
                 <p className="text-xs text-gray-500">Gestión y generación de XML para Ministerio del Interior</p>
               </div>
             </div>

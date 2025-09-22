@@ -7,6 +7,11 @@ import {
 
 // GET - Obtener todas las plantillas
 export async function GET() {
+  // Deshabilitado temporalmente para MVP
+  return NextResponse.json(
+    { success: false, error: 'Endpoint deshabilitado temporalmente (MVP)' },
+    { status: 404 }
+  );
   try {
     const templates = await getMessageTemplates();
     return NextResponse.json({ success: true, data: templates });
@@ -21,6 +26,11 @@ export async function GET() {
 
 // POST - Crear nueva plantilla
 export async function POST(request: NextRequest) {
+  // Deshabilitado temporalmente para MVP
+  return NextResponse.json(
+    { success: false, error: 'Endpoint deshabilitado temporalmente (MVP)' },
+    { status: 404 }
+  );
   try {
     const body = await request.json();
     
@@ -55,6 +65,11 @@ export async function POST(request: NextRequest) {
 
 // PUT - Actualizar plantilla existente
 export async function PUT(request: NextRequest) {
+  // Deshabilitado temporalmente para MVP
+  return NextResponse.json(
+    { success: false, error: 'Endpoint deshabilitado temporalmente (MVP)' },
+    { status: 404 }
+  );
   try {
     const body = await request.json();
     
@@ -90,6 +105,11 @@ export async function PUT(request: NextRequest) {
 
 // DELETE - Eliminar plantilla
 export async function DELETE(request: NextRequest) {
+  // Deshabilitado temporalmente para MVP
+  return NextResponse.json(
+    { success: false, error: 'Endpoint deshabilitado temporalmente (MVP)' },
+    { status: 404 }
+  );
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');

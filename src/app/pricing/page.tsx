@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { CalendarDays, TrendingUp, Target, Zap, AlertCircle, CheckCircle, Settings, MapPin, RefreshCw, Wrench } from 'lucide-react';
 
 interface PriceRecommendation {
@@ -40,6 +41,10 @@ const ROOMS = [
 ];
 
 export default function PricingDashboard() {
+  const router = useRouter();
+  useEffect(() => {
+    router.replace('/');
+  }, [router]);
   const [selectedRoom, setSelectedRoom] = useState('room_1');
   const [dateRange, setDateRange] = useState({
     from: new Date().toISOString().split('T')[0],

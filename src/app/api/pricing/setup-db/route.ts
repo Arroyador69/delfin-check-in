@@ -4,6 +4,11 @@ import fs from 'fs';
 import path from 'path';
 
 export async function POST(request: NextRequest) {
+  // Deshabilitado temporalmente para MVP
+  return NextResponse.json(
+    { success: false, error: 'Endpoint deshabilitado temporalmente (MVP)' },
+    { status: 404 }
+  );
   try {
     console.log('🔄 Inicializando base de datos para precios dinámicos...');
 
@@ -58,6 +63,11 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
+  // Deshabilitado temporalmente para MVP
+  return NextResponse.json(
+    { success: false, error: 'Endpoint deshabilitado temporalmente (MVP)' },
+    { status: 404 }
+  );
   try {
     console.log('🔍 Verificando estado de la base de datos de precios dinámicos...');
 

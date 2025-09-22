@@ -3,6 +3,11 @@ import { getSentMessages } from '@/lib/db';
 
 // GET - Obtener mensajes enviados
 export async function GET(request: NextRequest) {
+  // Deshabilitado temporalmente para MVP
+  return NextResponse.json(
+    { success: false, error: 'Endpoint deshabilitado temporalmente (MVP)' },
+    { status: 404 }
+  );
   try {
     const { searchParams } = new URL(request.url);
     const limit = parseInt(searchParams.get('limit') || '100');

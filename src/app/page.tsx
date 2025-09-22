@@ -238,25 +238,8 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Quick Actions */}
+        {/* Acciones rápidas (MVP) */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Link href="/rooms" className="group">
-            <div className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow cursor-pointer">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
-                    Gestionar Habitaciones
-                  </h3>
-                  <p className="text-sm text-gray-600 mt-1">
-                    Configura URLs de iCal y precios
-                  </p>
-                </div>
-                <Home className="h-8 w-8 text-gray-400 group-hover:text-blue-600 transition-colors" />
-              </div>
-            </div>
-          </Link>
-
-
           <Link href="/reservations" className="group">
             <div className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow cursor-pointer">
               <div className="flex items-center justify-between">
@@ -272,29 +255,12 @@ export default function HomePage() {
               </div>
             </div>
           </Link>
-
-          <Link href="/pricing" className="group">
-            <div className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow cursor-pointer">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
-                    Precios Dinámicos
-                  </h3>
-                  <p className="text-sm text-gray-600 mt-1">
-                    Optimización automática de precios
-                  </p>
-                </div>
-                <TrendingUp className="h-8 w-8 text-gray-400 group-hover:text-blue-600 transition-colors" />
-              </div>
-            </div>
-          </Link>
-
           <Link href="/guest-registrations-dashboard" className="group">
             <div className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow cursor-pointer">
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
-                    Dashboard Registros
+                    Registros de formularios
                   </h3>
                   <p className="text-sm text-gray-600 mt-1">
                     Ver registros y generar XML
@@ -306,24 +272,7 @@ export default function HomePage() {
               </div>
             </div>
           </Link>
-
-          <Link href="/messages" className="group">
-            <div className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow cursor-pointer">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
-                    Mensajes Automáticos
-                  </h3>
-                  <p className="text-sm text-gray-600 mt-1">
-                    Plantillas y automatizaciones
-                  </p>
-                </div>
-                <MessageSquare className="h-8 w-8 text-gray-400 group-hover:text-blue-600 transition-colors" />
-              </div>
-            </div>
-          </Link>
-
-
+        
         </div>
 
         {/* Recent Activity */}
@@ -336,7 +285,7 @@ export default function HomePage() {
               <div className="text-center py-8">
                 <p className="text-gray-500">No hay reservas aún</p>
                 <p className="text-sm text-gray-400 mt-2">
-                  Configura los URLs de iCal en "Gestionar Habitaciones" y haz clic en "Sincronizar"
+                  Asegúrate de tener tus calendarios conectados y haz clic en "Sincronizar"
                 </p>
               </div>
             ) : (

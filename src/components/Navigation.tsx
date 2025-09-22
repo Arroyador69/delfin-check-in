@@ -11,9 +11,8 @@ export default function Navigation() {
 
   const navigation = [
     { name: 'Dashboard', href: '/', icon: Home },
-    { name: 'Habitaciones', href: '/rooms', icon: Bed },
     { name: 'Reservas', href: '/reservations', icon: Calendar },
-    { name: 'Precios Dinámicos', href: '/pricing', icon: TrendingUp },
+    { name: 'Registros de formularios', href: '/guest-registrations-dashboard', icon: Users },
     { name: 'Sincronizar Calendarios', href: '/calendar-sync', icon: Smartphone },
     { name: 'Configuración', href: '/settings', icon: Settings },
   ];

@@ -6,6 +6,11 @@ import {
 } from '@/lib/dynamic-pricing';
 
 export async function GET(request: NextRequest) {
+  // Deshabilitado temporalmente para MVP
+  return NextResponse.json(
+    { success: false, error: 'Endpoint deshabilitado temporalmente (MVP)' },
+    { status: 404 }
+  );
   try {
     const { searchParams } = new URL(request.url);
     const roomId = searchParams.get('roomId');
@@ -107,6 +112,11 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  // Deshabilitado temporalmente para MVP
+  return NextResponse.json(
+    { success: false, error: 'Endpoint deshabilitado temporalmente (MVP)' },
+    { status: 404 }
+  );
   try {
     const body = await request.json();
     const { roomId, startDate, endDate } = body;

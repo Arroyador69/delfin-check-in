@@ -5,6 +5,11 @@ import { initializeLocalCompetitors, scrapeLocalPrices, getLocalCompetitionStats
  * GET - Obtener estadísticas del scraper local
  */
 export async function GET(request: NextRequest) {
+  // Deshabilitado temporalmente para MVP
+  return NextResponse.json(
+    { success: false, error: 'Endpoint deshabilitado temporalmente (MVP)' },
+    { status: 404 }
+  );
   try {
     const stats = await getLocalCompetitionStats();
     
@@ -38,6 +43,11 @@ export async function GET(request: NextRequest) {
  * POST - Ejecutar scraping de competidores locales
  */
 export async function POST(request: NextRequest) {
+  // Deshabilitado temporalmente para MVP
+  return NextResponse.json(
+    { success: false, error: 'Endpoint deshabilitado temporalmente (MVP)' },
+    { status: 404 }
+  );
   try {
     const { action, startDate, endDate } = await request.json();
     

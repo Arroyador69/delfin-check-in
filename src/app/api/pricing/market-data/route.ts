@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getMarketData } from '@/lib/dynamic-pricing';
 
 export async function GET(request: NextRequest) {
+  // Deshabilitado temporalmente para MVP
+  return NextResponse.json(
+    { success: false, error: 'Endpoint deshabilitado temporalmente (MVP)' },
+    { status: 404 }
+  );
   try {
     const { searchParams } = new URL(request.url);
     const startDate = searchParams.get('from');
