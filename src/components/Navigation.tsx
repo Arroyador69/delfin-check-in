@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Bed, Calendar, Users, Settings, Menu, X, Smartphone, TrendingUp } from 'lucide-react';
+import { Home, Bed, Calendar, Users, Settings, Menu, X, Smartphone, TrendingUp, FileText } from 'lucide-react';
 import { useState } from 'react';
 
 export default function Navigation() {
@@ -13,6 +13,7 @@ export default function Navigation() {
     { name: 'Dashboard', href: '/', icon: Home },
     { name: 'Reservas', href: '/reservations', icon: Calendar },
     { name: 'Registros de formularios', href: '/guest-registrations-dashboard', icon: Users },
+    { name: 'Exportar AEAT', href: '/aeat', icon: FileText },
     { name: 'Sincronizar Calendarios', href: '/calendar-sync', icon: Smartphone },
     { name: 'Configuración', href: '/settings', icon: Settings },
   ];
