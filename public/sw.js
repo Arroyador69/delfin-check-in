@@ -33,40 +33,92 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Interceptación de peticiones
+// === Cola offline para /api/partes ===
+const OUTBOX_DB = 'dci-outbox-db';
+const OUTBOX_STORE = 'outbox';
+
+function idbOpen() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(OUTBOX_DB, 1);
+    req.onupgradeneeded = () => {
+      const db = req.result;
+      if (!db.objectStoreNames.contains(OUTBOX_STORE)) {
+        db.createObjectStore(OUTBOX_STORE, { keyPath: 'id' });
+      }
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function idbSave(store, value) {
+  const db = await idbOpen();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(store, 'readwrite');
+    tx.objectStore(store).put(value);
+    tx.oncomplete = () => resolve(true);
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+async function idbAll(store) {
+  const db = await idbOpen();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(store, 'readonly');
+    const req = tx.objectStore(store).getAll();
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function idbDelete(store, id) {
+  const db = await idbOpen();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(store, 'readwrite');
+    tx.objectStore(store).delete(id);
+    tx.oncomplete = () => resolve(true);
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
 self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    caches.match(event.request)
-      .then((response) => {
-        // Cache hit - return response
-        if (response) {
-          return response;
-        }
+  const isPartesPost = event.request.url.endsWith('/api/partes') && event.request.method === 'POST';
+  if (!isPartesPost) return;
 
-        return fetch(event.request).then(
-          (response) => {
-            // Check if we received a valid response
-            if(!response || response.status !== 200 || response.type !== 'basic') {
-              return response;
-            }
-
-            // IMPORTANT: Clone the response. A response is a stream
-            // and because we want the browser to consume the response
-            // as well as the cache consuming the response, we need
-            // to clone it so we have two streams.
-            var responseToCache = response.clone();
-
-            caches.open(CACHE_NAME)
-              .then((cache) => {
-                cache.put(event.request, responseToCache);
-              });
-
-            return response;
-          }
-        );
-      })
-    );
+  event.respondWith((async () => {
+    try {
+      const res = await fetch(event.request.clone());
+      if (!res.ok) throw new Error('Server error');
+      return res;
+    } catch (e) {
+      try {
+        const body = await event.request.clone().json();
+        const id = (body && body.id) || (self.crypto?.randomUUID ? self.crypto.randomUUID() : String(Date.now()));
+        await idbSave(OUTBOX_STORE, { id, body, ts: Date.now() });
+        try { await self.registration.sync.register('dci-flush'); } catch {}
+        return new Response(JSON.stringify({ queued: true, id }), { status: 202, headers: { 'Content-Type': 'application/json' } });
+      } catch {
+        return new Response(JSON.stringify({ queued: true }), { status: 202, headers: { 'Content-Type': 'application/json' } });
+      }
+    }
+  })());
 });
+
+self.addEventListener('sync', (event) => {
+  if (event.tag === 'dci-flush') {
+    event.waitUntil(flushOutbox());
+  }
+});
+
+async function flushOutbox() {
+  const items = await idbAll(OUTBOX_STORE);
+  for (const item of items) {
+    try {
+      const res = await fetch('/api/partes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(item.body) });
+      if (res.ok) await idbDelete(OUTBOX_STORE, item.id);
+    } catch {}
+  }
+}
 
 // Manejo de notificaciones push (futuro)
 self.addEventListener('push', (event) => {
