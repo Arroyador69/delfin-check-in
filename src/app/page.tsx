@@ -66,7 +66,8 @@ export default function HomePage() {
   };
 
   // Calcular estadísticas
-  const totalRooms = rooms.length;
+  // Mostrar un valor fijo de habitaciones en el dashboard (MVP)
+  const totalRooms = 6;
   const totalReservations = reservations.length;
   const confirmedReservations = reservations.filter(r => r.status === 'confirmed').length;
   const today = new Date().toISOString().split('T')[0];
