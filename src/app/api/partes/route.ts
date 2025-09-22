@@ -65,7 +65,8 @@ export async function POST(request: NextRequest) {
             nacionalidad: v.nacionalidad,
           }))
         }
-      ]
+      ],
+      audit_hash: hash
     };
 
     await sql`

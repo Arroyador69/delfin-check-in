@@ -625,6 +625,16 @@ export default function GuestRegistrationsDashboard() {
                           <Eye className="h-4 w-4 inline mr-1" />
                           Ver
                         </button>
+                        {registration?.data?.audit_hash && (
+                          <a
+                            href={`/api/audit?entityId=${registration.data.audit_hash}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="px-3 py-2 bg-white border text-gray-700 rounded-md hover:bg-gray-50"
+                          >
+                            Ver bitácora
+                          </a>
+                        )}
                         <ExportButton
                           solicitud={prepareSolicitudData(registration)}
                           onSuccess={() => alert("XML generado y descargado correctamente")}
