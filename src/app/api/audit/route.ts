@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
+import { ensureAuditTable } from '@/lib/audit';
 
 export async function GET(request: NextRequest) {
   try {
@@ -11,6 +12,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Falta entityId' }, { status: 400 });
     }
 
+    await ensureAuditTable();
     const result = await sql`
       SELECT action, entity_type, entity_id, payload_hash, at, ip, meta
       FROM audit_log

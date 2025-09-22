@@ -11,15 +11,11 @@ type AuditAction =
 
 let auditTableEnsured = false;
 
-async function ensureAuditTable(): Promise<void> {
+export async function ensureAuditTable(): Promise<void> {
   if (auditTableEnsured) return;
-  // Asegurar extensión para UUID
-  try {
-    await sql`CREATE EXTENSION IF NOT EXISTS pgcrypto;`;
-  } catch {}
   await sql`
     CREATE TABLE IF NOT EXISTS audit_log (
-      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      id TEXT PRIMARY KEY DEFAULT md5((random())::text || clock_timestamp()::text),
       tenant_id UUID,
       actor_id UUID,
       action TEXT NOT NULL,
