@@ -779,6 +779,26 @@ export default function GuestRegistrationsDashboard() {
                 </div>
               </div>
 
+              {/* Bitácora */}
+              {selectedRegistration?.data?.audit_hash && (
+                <div className="mb-6 bg-gray-50 border rounded-lg p-4">
+                  <h4 className="font-semibold text-gray-900 mb-2">Bitácora</h4>
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs text-gray-600 break-all">
+                      Hash: {selectedRegistration.data.audit_hash}
+                    </p>
+                    <a
+                      href={`/api/audit?entityId=${selectedRegistration.data.audit_hash}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="px-3 py-1.5 bg-white border text-gray-700 rounded-md hover:bg-gray-50 text-sm"
+                    >
+                      Ver bitácora
+                    </a>
+                  </div>
+                </div>
+              )}
+
               {/* Información del viajero */}
               <div>
                 <h4 className="font-semibold text-gray-900 mb-3">Información del Viajero</h4>
