@@ -233,12 +233,13 @@ export async function POST(request: NextRequest) {
       }
     });
     
-  } catch (error) {
-    console.error('Error reparando esquema:', error);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error('Error reparando esquema:', message);
     return NextResponse.json(
       { 
         success: false, 
-        error: 'Error interno del servidor al reparar esquema: ' + (error instanceof Error ? error.message : String(error))
+        error: 'Error interno del servidor al reparar esquema: ' + message
       },
       { status: 500 }
     );
