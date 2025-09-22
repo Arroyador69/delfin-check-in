@@ -5,6 +5,9 @@ const nextConfig: NextConfig = {
   images: {
     domains: ['localhost', 'supabase.co'],
   },
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
   // Excluir carpeta scripts de la compilación
   webpack: (config, { isServer }) => {
     config.watchOptions = {

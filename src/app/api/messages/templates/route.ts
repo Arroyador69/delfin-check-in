@@ -112,16 +112,17 @@ export async function DELETE(request: NextRequest) {
   );
   try {
     const { searchParams } = new URL(request.url);
-    const id = searchParams.get('id');
+    const idParam = searchParams.get('id');
     
-    if (!id) {
+    if (!idParam) {
       return NextResponse.json(
         { success: false, error: 'ID de plantilla requerido' },
         { status: 400 }
       );
     }
 
-    const deleted = await deleteMessageTemplate(parseInt(id));
+    const id = parseInt(idParam, 10);
+    const deleted = await deleteMessageTemplate(id);
     
     if (!deleted) {
       return NextResponse.json(
