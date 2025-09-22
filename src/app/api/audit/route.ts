@@ -20,8 +20,27 @@ export async function GET(request: NextRequest) {
       ORDER BY at ASC
       LIMIT ${limit}
     `;
+    if (result.rows.length > 0) {
+      return NextResponse.json({ success: true, items: result.rows });
+    }
 
-    return NextResponse.json({ success: true, items: result.rows });
+    // Fallback: sintetizar eventos desde guest_registrations si no hay filas en audit_log
+    const reg = await sql`
+      SELECT created_at, data
+      FROM guest_registrations
+      WHERE (data->>'audit_hash') = ${entityId}
+      ORDER BY created_at ASC
+      LIMIT 1
+    `;
+    if (reg.rows.length === 0) {
+      return NextResponse.json({ success: true, items: [] });
+    }
+    const createdAt = reg.rows[0].created_at;
+    const items = [
+      { action: 'PARTE_CREATE', entity_type: 'parte', entity_id: entityId, payload_hash: entityId, at: createdAt, ip: null, meta: { synthesized: true } },
+      { action: 'VALIDATE_OK', entity_type: 'parte', entity_id: entityId, payload_hash: entityId, at: createdAt, ip: null, meta: { synthesized: true } },
+    ];
+    return NextResponse.json({ success: true, items });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     return NextResponse.json({ success: false, error: message }, { status: 500 });
