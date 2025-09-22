@@ -9,6 +9,14 @@ const processed = new Set<string>();
 
 export async function POST(request: NextRequest) {
   try {
+    const origin = request.headers.get('origin') || '';
+    const allowedOrigin = process.env.PUBLIC_FORM_ORIGIN || 'https://form.delfincheckin.com';
+    const corsHeaders: Record<string, string> = {
+      'Access-Control-Allow-Origin': origin === allowedOrigin ? allowedOrigin : '*',
+      'Access-Control-Allow-Credentials': 'true',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    };
     const body = await request.json();
 
     // Validación RD 933
@@ -16,7 +24,7 @@ export async function POST(request: NextRequest) {
     if (!parsed.success) {
       return NextResponse.json(
         { success: false, error: 'Validación RD933 fallida', details: parsed.error.flatten() },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       );
     }
 
@@ -31,7 +39,7 @@ export async function POST(request: NextRequest) {
       meta: { source: 'form-publico' }
     });
     if (processed.has(hash)) {
-      return NextResponse.json({ success: true, queued: false, duplicate: true, hash }, { status: 200 });
+      return NextResponse.json({ success: true, queued: false, duplicate: true, hash }, { status: 200, headers: corsHeaders });
     }
 
     // Persistir en guest_registrations para que aparezca en el dashboard
@@ -85,9 +93,32 @@ export async function POST(request: NextRequest) {
 
     processed.add(hash);
 
-    return NextResponse.json({ success: true, queued: false, hash }, { status: 201 });
+    return NextResponse.json({ success: true, queued: false, hash }, { status: 201, headers: corsHeaders });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    return NextResponse.json({ success: false, error: message }, { status: 500 });
+    const origin = (typeof err === 'object' && err && 'origin' in (err as any)) ? '' : '';
+    const allowedOrigin = process.env.PUBLIC_FORM_ORIGIN || 'https://form.delfincheckin.com';
+    const corsHeaders: Record<string, string> = {
+      'Access-Control-Allow-Origin': origin === allowedOrigin ? allowedOrigin : '*',
+      'Access-Control-Allow-Credentials': 'true',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    };
+    return NextResponse.json({ success: false, error: message }, { status: 500, headers: corsHeaders });
   }
+}
+
+export async function OPTIONS(request: NextRequest) {
+  const origin = request.headers.get('origin') || '';
+  const allowedOrigin = process.env.PUBLIC_FORM_ORIGIN || 'https://form.delfincheckin.com';
+  return new NextResponse(null, {
+    status: 204,
+    headers: {
+      'Access-Control-Allow-Origin': origin === allowedOrigin ? allowedOrigin : '*',
+      'Access-Control-Allow-Credentials': 'true',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      'Access-Control-Max-Age': '86400',
+    },
+  });
 }
