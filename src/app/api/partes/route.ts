@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { parteSchema } from '@/lib/rd933';
 import { sql } from '@/lib/db';
+import { logAudit } from '@/lib/audit';
 import crypto from 'crypto';
 
 // Memoria temporal (MVP) para idempotencia por hash
@@ -21,6 +22,14 @@ export async function POST(request: NextRequest) {
 
     // Hash del payload para idempotencia y auditoría básica
     const hash = crypto.createHash('sha256').update(JSON.stringify(parsed.data)).digest('hex');
+    await logAudit({
+      action: 'PARTE_CREATE',
+      entityType: 'parte',
+      entityId: hash,
+      payloadHash: hash,
+      ip: request.headers.get('x-forwarded-for') || null,
+      meta: { source: 'form-publico' }
+    });
     if (processed.has(hash)) {
       return NextResponse.json({ success: true, queued: false, duplicate: true, hash }, { status: 200 });
     }
@@ -63,6 +72,15 @@ export async function POST(request: NextRequest) {
       INSERT INTO guest_registrations (reserva_ref, fecha_entrada, fecha_salida, data)
       VALUES (${registro.contrato.referencia}, ${entrada}::timestamp, ${salida}::timestamp, ${JSON.stringify(registro)}::jsonb)
     `;
+
+    await logAudit({
+      action: 'VALIDATE_OK',
+      entityType: 'parte',
+      entityId: hash,
+      payloadHash: hash,
+      ip: request.headers.get('x-forwarded-for') || null,
+      meta: { saved: true }
+    });
 
     processed.add(hash);
 
