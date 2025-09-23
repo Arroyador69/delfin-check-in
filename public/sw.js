@@ -36,6 +36,8 @@ self.addEventListener('activate', (event) => {
 // === Cola offline para /api/partes ===
 const OUTBOX_DB = 'dci-outbox-db';
 const OUTBOX_STORE = 'outbox';
+const MAX_RETRIES = 5;
+const BASE_BACKOFF_MS = 5000; // 5s, exponencial
 
 function idbOpen() {
   return new Promise((resolve, reject) => {
@@ -98,7 +100,7 @@ self.addEventListener('fetch', (event) => {
       try {
         const body = await event.request.clone().json();
         const id = (body && body.id) || (self.crypto?.randomUUID ? self.crypto.randomUUID() : String(Date.now()));
-        await idbSave(OUTBOX_STORE, { id, body, ts: Date.now(), url: url.pathname, method: 'POST' });
+        await idbSave(OUTBOX_STORE, { id, body, ts: Date.now(), url: url.pathname, method: 'POST', retry: 0, nextAt: Date.now() });
         try { await self.registration.sync.register('dci-flush'); } catch {}
         return new Response(JSON.stringify({ queued: true, id }), { status: 202, headers: { 'Content-Type': 'application/json' } });
       } catch {
@@ -114,15 +116,41 @@ self.addEventListener('sync', (event) => {
   }
 });
 
+function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
+
 async function flushOutbox() {
+  const now = Date.now();
   const items = await idbAll(OUTBOX_STORE);
   for (const item of items) {
     try {
+      if (item.nextAt && item.nextAt > now) {
+        continue; // aún no toca reintentar
+      }
       const target = item.url || '/api/partes';
       const method = item.method || 'POST';
       const res = await fetch(target, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(item.body) });
-      if (res.ok) await idbDelete(OUTBOX_STORE, item.id);
-    } catch {}
+      if (res.ok) {
+        await idbDelete(OUTBOX_STORE, item.id);
+      } else {
+        const retry = (item.retry || 0) + 1;
+        const backoff = Math.min(BASE_BACKOFF_MS * Math.pow(2, retry - 1), 5 * 60 * 1000); // máx 5 min
+        const nextAt = Date.now() + backoff;
+        const updated = { ...item, retry, nextAt };
+        if (retry <= MAX_RETRIES) {
+          await idbSave(OUTBOX_STORE, updated);
+        }
+        await sleep(250); // evitar ráfagas
+      }
+    } catch {
+      const retry = (item.retry || 0) + 1;
+      const backoff = Math.min(BASE_BACKOFF_MS * Math.pow(2, retry - 1), 5 * 60 * 1000);
+      const nextAt = Date.now() + backoff;
+      const updated = { ...item, retry, nextAt };
+      if (retry <= MAX_RETRIES) {
+        await idbSave(OUTBOX_STORE, updated);
+      }
+      await sleep(250);
+    }
   }
 }
 
