@@ -36,16 +36,21 @@ self.addEventListener('activate', (event) => {
 // === Cola offline para /api/partes ===
 const OUTBOX_DB = 'dci-outbox-db';
 const OUTBOX_STORE = 'outbox';
+const KEY_STORE = 'keys';
 const MAX_RETRIES = 5;
 const BASE_BACKOFF_MS = 5000; // 5s, exponencial
+const PURGE_DAYS = 7; // purga automática
 
 function idbOpen() {
   return new Promise((resolve, reject) => {
-    const req = indexedDB.open(OUTBOX_DB, 1);
+    const req = indexedDB.open(OUTBOX_DB, 2);
     req.onupgradeneeded = () => {
       const db = req.result;
       if (!db.objectStoreNames.contains(OUTBOX_STORE)) {
         db.createObjectStore(OUTBOX_STORE, { keyPath: 'id' });
+      }
+      if (!db.objectStoreNames.contains(KEY_STORE)) {
+        db.createObjectStore(KEY_STORE, { keyPath: 'id' });
       }
     };
     req.onsuccess = () => resolve(req.result);
@@ -83,6 +88,66 @@ async function idbDelete(store, id) {
   });
 }
 
+// === Cifrado en reposo de payloads (AES-GCM) ===
+async function getOrCreateQueueKey() {
+  const db = await idbOpen();
+  const keyId = 'queueKey';
+  // intentar leer
+  const existing = await new Promise((resolve) => {
+    const tx = db.transaction(KEY_STORE, 'readonly');
+    const req = tx.objectStore(KEY_STORE).get(keyId);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => resolve(null);
+  });
+  if (existing && existing.raw) {
+    const raw = base64ToBytes(existing.raw);
+    return await crypto.subtle.importKey('raw', raw, 'AES-GCM', false, ['encrypt', 'decrypt']);
+  }
+  const key = await crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, true, ['encrypt', 'decrypt']);
+  const raw = new Uint8Array(await crypto.subtle.exportKey('raw', key));
+  const record = { id: keyId, raw: bytesToBase64(raw) };
+  await new Promise((resolve) => {
+    const tx = db.transaction(KEY_STORE, 'readwrite');
+    tx.objectStore(KEY_STORE).put(record);
+    tx.oncomplete = () => resolve(true);
+    tx.onerror = () => resolve(true);
+  });
+  return key;
+}
+
+function bytesToBase64(bytes) {
+  let binary = '';
+  const chunk = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunk) {
+    const sub = bytes.subarray(i, i + chunk);
+    binary += String.fromCharCode.apply(null, Array.from(sub));
+  }
+  return btoa(binary);
+}
+
+function base64ToBytes(base64) {
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes;
+}
+
+async function encryptPayload(obj) {
+  const key = await getOrCreateQueueKey();
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const data = new TextEncoder().encode(JSON.stringify(obj));
+  const cipher = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, data));
+  return { cipher: bytesToBase64(cipher), iv: bytesToBase64(iv) };
+}
+
+async function decryptPayload(record) {
+  const key = await getOrCreateQueueKey();
+  const iv = base64ToBytes(record.iv);
+  const cipher = base64ToBytes(record.cipher);
+  const plain = new Uint8Array(await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, cipher));
+  return JSON.parse(new TextDecoder().decode(plain));
+}
+
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
   const isEligiblePost = event.request.method === 'POST' && (
@@ -100,7 +165,8 @@ self.addEventListener('fetch', (event) => {
       try {
         const body = await event.request.clone().json();
         const id = (body && body.id) || (self.crypto?.randomUUID ? self.crypto.randomUUID() : String(Date.now()));
-        await idbSave(OUTBOX_STORE, { id, body, ts: Date.now(), url: url.pathname, method: 'POST', retry: 0, nextAt: Date.now() });
+        const enc = await encryptPayload(body);
+        await idbSave(OUTBOX_STORE, { id, ...enc, ts: Date.now(), url: url.pathname, method: 'POST', retry: 0, nextAt: Date.now() });
         try { await self.registration.sync.register('dci-flush'); } catch {}
         return new Response(JSON.stringify({ queued: true, id }), { status: 202, headers: { 'Content-Type': 'application/json' } });
       } catch {
@@ -123,12 +189,18 @@ async function flushOutbox() {
   const items = await idbAll(OUTBOX_STORE);
   for (const item of items) {
     try {
+      // purga automática por antigüedad
+      if (item.ts && (now - item.ts) > PURGE_DAYS * 24 * 60 * 60 * 1000) {
+        await idbDelete(OUTBOX_STORE, item.id);
+        continue;
+      }
       if (item.nextAt && item.nextAt > now) {
         continue; // aún no toca reintentar
       }
       const target = item.url || '/api/partes';
       const method = item.method || 'POST';
-      const res = await fetch(target, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(item.body) });
+      const body = await decryptPayload(item);
+      const res = await fetch(target, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
       if (res.ok) {
         await idbDelete(OUTBOX_STORE, item.id);
       } else {
@@ -206,7 +278,8 @@ self.addEventListener('message', (event) => {
     switch (data.type) {
       case 'OUTBOX_LIST': {
         const items = await idbAll(OUTBOX_STORE);
-        reply({ type: 'OUTBOX_LIST_RESULT', items });
+        // no devolver el cipher/iv completo por seguridad; solo metadatos
+        reply({ type: 'OUTBOX_LIST_RESULT', items: items.map(i => ({ id: i.id, url: i.url, method: i.method, ts: i.ts, retry: i.retry, nextAt: i.nextAt })) });
         break;
       }
       case 'OUTBOX_DELETE': {
@@ -230,7 +303,8 @@ self.addEventListener('message', (event) => {
             try {
               const target = item.url || '/api/partes';
               const method = item.method || 'POST';
-              const res = await fetch(target, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(item.body) });
+              const body = await decryptPayload(item);
+              const res = await fetch(target, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
               if (res.ok) {
                 await idbDelete(OUTBOX_STORE, item.id);
                 reply({ type: 'OUTBOX_RESEND_OK', id: item.id });
