@@ -176,8 +176,14 @@ export function normalizeData(rawData: any) {
           direccion: persona.direccion?.direccion || persona.direccion || '',
           direccionComplementaria: persona.direccion?.direccionComplementaria || persona.direccion_complementaria,
           codigoPostal: persona.direccion?.codigoPostal || persona.codigo_postal || '',
-          pais: persona.direccion?.pais || persona.pais || 'ESP',
-          codigoMunicipio: persona.direccion?.codigoMunicipio || persona.codigo_municipio,
+          // Preferir país declarado o nacionalidad si falta
+          pais: (persona.direccion?.pais || persona.pais || persona.nacionalidad || 'ESP')?.toUpperCase(),
+          // Para extranjeros, limpiar INE y priorizar nombreMunicipio
+          codigoMunicipio: (() => {
+            const pais = (persona.direccion?.pais || persona.pais || persona.nacionalidad || 'ESP')?.toUpperCase();
+            if (pais !== 'ESP' && pais !== 'ES') return undefined;
+            return persona.direccion?.codigoMunicipio || persona.codigo_municipio;
+          })(),
           nombreMunicipio: persona.direccion?.nombreMunicipio || persona.nombre_municipio
         }
       }))
