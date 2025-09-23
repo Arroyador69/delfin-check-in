@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import crypto from 'crypto';
+import { logAudit } from '@/lib/audit';
 
 // Esquemas Zod actualizados según MIR v1.1.1
 const DireccionSchema = z.object({
@@ -315,6 +316,23 @@ export async function POST(req: NextRequest) {
     const json = await req.json();
     console.log(`[PV-EXPORT] ${correlationId} - Datos recibidos:`, JSON.stringify(json, null, 2));
 
+    // Bitácora: creación de solicitud
+    try {
+      const payloadHash = crypto
+        .createHash('sha256')
+        .update(JSON.stringify(json))
+        .digest('hex');
+      await logAudit({
+        action: 'PARTE_CREATE',
+        entityType: 'PV_EXPORT',
+        entityId: correlationId,
+        payloadHash,
+        meta: { stage: 'received' }
+      });
+    } catch (e) {
+      console.warn(`[PV-EXPORT] ${correlationId} - No se pudo registrar audit inicial`, e);
+    }
+
     // Validación básica de estructura
     if (!json || typeof json !== 'object') {
       console.error(`[PV-EXPORT] ${correlationId} - Datos inválidos: no es un objeto`);
@@ -371,6 +389,23 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Bitácora: validación correcta
+    try {
+      const payloadHash = crypto
+        .createHash('sha256')
+        .update(JSON.stringify(parsed.data))
+        .digest('hex');
+      await logAudit({
+        action: 'VALIDATE_OK',
+        entityType: 'PV_EXPORT',
+        entityId: correlationId,
+        payloadHash,
+        meta: { stage: 'validated' }
+      });
+    } catch (e) {
+      console.warn(`[PV-EXPORT] ${correlationId} - No se pudo registrar audit VALIDATE_OK`, e);
+    }
+
     // Reglas de negocio MIR
     const businessErrors = validateBusinessRules(parsed.data);
     if (businessErrors.length > 0) {
@@ -393,6 +428,23 @@ export async function POST(req: NextRequest) {
       const xml = buildXML(parsed.data);
       console.log(`[PV-EXPORT] ${correlationId} - XML generado exitosamente (${xml.length} caracteres)`);
 
+      // Bitácora: generación lista (equivalente a preparado para envío)
+      try {
+        const payloadHash = crypto
+          .createHash('sha256')
+          .update(xml)
+          .digest('hex');
+        await logAudit({
+          action: 'SES_SENT',
+          entityType: 'PV_EXPORT',
+          entityId: correlationId,
+          payloadHash,
+          meta: { stage: 'xml_generated' }
+        });
+      } catch (e) {
+        console.warn(`[PV-EXPORT] ${correlationId} - No se pudo registrar audit SES_SENT`, e);
+      }
+
       return new NextResponse(xml, {
         status: 200,
         headers: {
@@ -404,6 +456,21 @@ export async function POST(req: NextRequest) {
       });
     } catch (xmlError: any) {
       console.error(`[PV-EXPORT] ${correlationId} - Error generando XML:`, xmlError);
+
+      // Bitácora: error
+      try {
+        const payloadHash = crypto
+          .createHash('sha256')
+          .update(String(xmlError?.message || xmlError))
+          .digest('hex');
+        await logAudit({
+          action: 'ERROR',
+          entityType: 'PV_EXPORT',
+          entityId: correlationId,
+          payloadHash,
+          meta: { stage: 'xml_generation_error' }
+        });
+      } catch {}
       return NextResponse.json(
         { 
           error: 'XML_GENERATION_ERROR', 
@@ -427,6 +494,21 @@ export async function POST(req: NextRequest) {
       statusCode = 400;
     }
     
+    // Bitácora: error interno
+    try {
+      const payloadHash = crypto
+        .createHash('sha256')
+        .update(String(err?.message || err))
+        .digest('hex');
+      await logAudit({
+        action: 'ERROR',
+        entityType: 'PV_EXPORT',
+        entityId: correlationId,
+        payloadHash,
+        meta: { stage: 'internal_error', errorType }
+      });
+    } catch {}
+
     return NextResponse.json(
       { 
         error: errorType, 

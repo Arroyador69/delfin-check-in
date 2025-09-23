@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import ConditionalNavigation from "@/components/ConditionalNavigation";
+import SWRegister from "@/components/SWRegister";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -20,6 +21,7 @@ export default function RootLayout({
     <html lang="es">
       <body className={inter.className}>
         <div className="min-h-screen bg-gray-50">
+          <SWRegister />
           <ConditionalNavigation />
           <main>
             {children}

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
+import crypto from 'crypto';
+import { logAudit } from '@/lib/audit';
 
 type Row = {
   id: string;
@@ -40,10 +42,26 @@ export async function GET(request: NextRequest) {
     const vatParam = parseFloat(searchParams.get('vat') || '21');
     const vat = isNaN(vatParam) ? 21 : Math.max(0, vatParam);
     const format = (searchParams.get('format') || 'csv').toLowerCase();
+    const correlationId = crypto.randomBytes(8).toString('hex');
 
     if (!from || !to) {
-      return NextResponse.json({ error: 'Parámetros requeridos: from, to (YYYY-MM-DD)' }, { status: 400 });
+      return NextResponse.json({ error: 'Parámetros requeridos: from, to (YYYY-MM-DD)' }, { status: 400, headers: { 'x-correlation-id': correlationId } });
     }
+
+    // Bitácora: petición recibida
+    try {
+      const payloadHash = crypto
+        .createHash('sha256')
+        .update(JSON.stringify({ from, to, property, vat, format }))
+        .digest('hex');
+      await logAudit({
+        action: 'PARTE_CREATE',
+        entityType: 'AEAT_EXPORT',
+        entityId: correlationId,
+        payloadHash,
+        meta: { stage: 'received' }
+      });
+    } catch {}
 
     // Asegurar tabla (no rompe si ya existe)
     await sql`
@@ -120,11 +138,31 @@ export async function GET(request: NextRequest) {
     });
 
     if (format === 'json') {
-      return NextResponse.json({ success: true, items: exportRows });
+      try {
+        const payloadHash = crypto.createHash('sha256').update(JSON.stringify(exportRows)).digest('hex');
+        await logAudit({
+          action: 'VALIDATE_OK',
+          entityType: 'AEAT_EXPORT',
+          entityId: correlationId,
+          payloadHash,
+          meta: { stage: 'generated_json' }
+        });
+      } catch {}
+      return new NextResponse(JSON.stringify({ success: true, items: exportRows }), { status: 200, headers: { 'Content-Type': 'application/json', 'x-correlation-id': correlationId } });
     }
 
     const csv = toCsv(exportRows);
     const filename = `export_aeat_${from}_a_${to}.csv`;
+    try {
+      const payloadHash = crypto.createHash('sha256').update(csv).digest('hex');
+      await logAudit({
+        action: 'SES_SENT',
+        entityType: 'AEAT_EXPORT',
+        entityId: correlationId,
+        payloadHash,
+        meta: { stage: 'csv_generated' }
+      });
+    } catch {}
     return new NextResponse(csv, {
       status: 200,
       headers: {
@@ -132,11 +170,23 @@ export async function GET(request: NextRequest) {
         'Content-Disposition': `attachment; filename="${filename}"`,
         'Cache-Control': 'no-store',
         'Access-Control-Allow-Origin': '*',
+        'x-correlation-id': correlationId,
       },
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    return NextResponse.json({ success: false, error: message }, { status: 500 });
+    const correlationId = crypto.randomBytes(8).toString('hex');
+    try {
+      const payloadHash = crypto.createHash('sha256').update(String(message)).digest('hex');
+      await logAudit({
+        action: 'ERROR',
+        entityType: 'AEAT_EXPORT',
+        entityId: correlationId,
+        payloadHash,
+        meta: { stage: 'internal_error' }
+      });
+    } catch {}
+    return NextResponse.json({ success: false, error: message }, { status: 500, headers: { 'x-correlation-id': correlationId } });
   }
 }
 

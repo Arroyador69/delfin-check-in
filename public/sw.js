@@ -82,8 +82,12 @@ async function idbDelete(store, id) {
 }
 
 self.addEventListener('fetch', (event) => {
-  const isPartesPost = event.request.url.endsWith('/api/partes') && event.request.method === 'POST';
-  if (!isPartesPost) return;
+  const url = new URL(event.request.url);
+  const isEligiblePost = event.request.method === 'POST' && (
+    url.pathname === '/api/partes' ||
+    url.pathname === '/api/export/pv'
+  );
+  if (!isEligiblePost) return;
 
   event.respondWith((async () => {
     try {
@@ -94,7 +98,7 @@ self.addEventListener('fetch', (event) => {
       try {
         const body = await event.request.clone().json();
         const id = (body && body.id) || (self.crypto?.randomUUID ? self.crypto.randomUUID() : String(Date.now()));
-        await idbSave(OUTBOX_STORE, { id, body, ts: Date.now() });
+        await idbSave(OUTBOX_STORE, { id, body, ts: Date.now(), url: url.pathname, method: 'POST' });
         try { await self.registration.sync.register('dci-flush'); } catch {}
         return new Response(JSON.stringify({ queued: true, id }), { status: 202, headers: { 'Content-Type': 'application/json' } });
       } catch {
@@ -114,7 +118,9 @@ async function flushOutbox() {
   const items = await idbAll(OUTBOX_STORE);
   for (const item of items) {
     try {
-      const res = await fetch('/api/partes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(item.body) });
+      const target = item.url || '/api/partes';
+      const method = item.method || 'POST';
+      const res = await fetch(target, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(item.body) });
       if (res.ok) await idbDelete(OUTBOX_STORE, item.id);
     } catch {}
   }
@@ -159,4 +165,59 @@ self.addEventListener('notificationclick', (event) => {
       clients.openWindow('/')
     );
   }
+});
+
+// Mensajería para panel de cola offline
+self.addEventListener('message', (event) => {
+  const data = event.data || {};
+  const source = event.source;
+  const reply = (payload) => {
+    try { source && source.postMessage(payload); } catch {}
+  };
+  (async () => {
+    switch (data.type) {
+      case 'OUTBOX_LIST': {
+        const items = await idbAll(OUTBOX_STORE);
+        reply({ type: 'OUTBOX_LIST_RESULT', items });
+        break;
+      }
+      case 'OUTBOX_DELETE': {
+        if (data.id) {
+          await idbDelete(OUTBOX_STORE, data.id);
+          reply({ type: 'OUTBOX_DELETE_OK', id: data.id });
+        }
+        break;
+      }
+      case 'OUTBOX_FLUSH': {
+        await flushOutbox();
+        const items = await idbAll(OUTBOX_STORE);
+        reply({ type: 'OUTBOX_FLUSH_DONE', remaining: items.length });
+        break;
+      }
+      case 'OUTBOX_RESEND_ONE': {
+        if (data.id) {
+          const items = await idbAll(OUTBOX_STORE);
+          const item = items.find((i) => i.id === data.id);
+          if (item) {
+            try {
+              const target = item.url || '/api/partes';
+              const method = item.method || 'POST';
+              const res = await fetch(target, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(item.body) });
+              if (res.ok) {
+                await idbDelete(OUTBOX_STORE, item.id);
+                reply({ type: 'OUTBOX_RESEND_OK', id: item.id });
+              } else {
+                reply({ type: 'OUTBOX_RESEND_FAIL', id: item.id, status: res.status });
+              }
+            } catch (e) {
+              reply({ type: 'OUTBOX_RESEND_FAIL', id: item.id, error: String(e) });
+            }
+          }
+        }
+        break;
+      }
+      default:
+        break;
+    }
+  })();
 });

@@ -2,8 +2,11 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Bed, Calendar, Users, Settings, Menu, X, Smartphone, TrendingUp, FileText } from 'lucide-react';
+import { Home, Bed, Calendar, Users, Settings, Menu, X, Smartphone, TrendingUp, FileText, Download } from 'lucide-react';
 import { useState } from 'react';
+import dynamic from 'next/dynamic';
+
+const PWAInstallButton = dynamic(() => import('./PWAInstallButton'), { ssr: false });
 
 export default function Navigation() {
   const pathname = usePathname();
@@ -15,6 +18,7 @@ export default function Navigation() {
     { name: 'Registros de formularios', href: '/guest-registrations-dashboard', icon: Users },
     { name: 'Exportar AEAT', href: '/aeat', icon: FileText },
     { name: 'Sincronizar Calendarios', href: '/calendar-sync', icon: Smartphone },
+    { name: 'Cola offline', href: '/offline-queue', icon: Download },
     { name: 'Configuración', href: '/settings', icon: Settings },
   ];
 
@@ -48,6 +52,7 @@ export default function Navigation() {
                 </Link>
               );
             })}
+            <PWAInstallButton />
           </div>
 
           {/* Mobile menu button */}
