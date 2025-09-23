@@ -176,11 +176,18 @@ export function normalizeData(rawData: any) {
           direccion: persona.direccion?.direccion || persona.direccion || '',
           direccionComplementaria: persona.direccion?.direccionComplementaria || persona.direccion_complementaria,
           codigoPostal: persona.direccion?.codigoPostal || persona.codigo_postal || '',
-          // Preferir país declarado o nacionalidad si falta
-          pais: (persona.direccion?.pais || persona.pais || persona.nacionalidad || 'ESP')?.toUpperCase(),
+          // Si la nacionalidad no es ESP, usarla como país para evitar exigir INE
+          pais: (() => {
+            const nat = (persona.nacionalidad || '').toUpperCase();
+            if (nat && nat !== 'ESP' && nat !== 'ES') return nat;
+            return (persona.direccion?.pais || persona.pais || 'ESP')?.toUpperCase();
+          })(),
           // Para extranjeros, limpiar INE y priorizar nombreMunicipio
           codigoMunicipio: (() => {
-            const pais = (persona.direccion?.pais || persona.pais || persona.nacionalidad || 'ESP')?.toUpperCase();
+            const nat = (persona.nacionalidad || '').toUpperCase();
+            const pais = nat && nat !== 'ESP' && nat !== 'ES'
+              ? nat
+              : (persona.direccion?.pais || persona.pais || 'ESP')?.toUpperCase();
             if (pais !== 'ESP' && pais !== 'ES') return undefined;
             return persona.direccion?.codigoMunicipio || persona.codigo_municipio;
           })(),
