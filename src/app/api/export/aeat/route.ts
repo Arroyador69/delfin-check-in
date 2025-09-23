@@ -40,6 +40,9 @@ export async function GET(request: NextRequest) {
     const to = searchParams.get('to');
     const property = searchParams.get('property');
     const channelFilter = searchParams.get('channel');
+    const roomsCsv = (searchParams.get('rooms') || '').trim();
+    const channelsCsv = (searchParams.get('channels') || '').trim();
+    const dateField = (searchParams.get('dateField') || 'check_out') === 'check_in' ? 'check_in' : 'check_out';
     const vatParam = parseFloat(searchParams.get('vat') || '21');
     const vat = isNaN(vatParam) ? 21 : Math.max(0, vatParam);
     const format = (searchParams.get('format') || 'csv').toLowerCase();
@@ -88,38 +91,31 @@ export async function GET(request: NextRequest) {
       );
     `;
 
-    const query = property
-      ? sql<Row>`
-          SELECT id, external_id, room_id, check_in, check_out, channel, 
-                 COALESCE(total_price,0)::float AS total_price,
-                 COALESCE(guest_paid,0)::float AS guest_paid,
-                 COALESCE(platform_commission,0)::float AS platform_commission,
-                 COALESCE(net_income,0)::float AS net_income,
-                 currency
-          FROM reservations
-          WHERE check_out >= ${from}::date 
-            AND check_out < (${to}::date + INTERVAL '1 day')
-            AND room_id = ${property}
-            ${channelFilter ? sql`AND channel = ${channelFilter}` : sql``}
-            AND status != 'cancelled'
-          ORDER BY check_out ASC
-        `
-      : sql<Row>`
-          SELECT id, external_id, room_id, check_in, check_out, channel, 
-                 COALESCE(total_price,0)::float AS total_price,
-                 COALESCE(guest_paid,0)::float AS guest_paid,
-                 COALESCE(platform_commission,0)::float AS platform_commission,
-                 COALESCE(net_income,0)::float AS net_income,
-                 currency
-          FROM reservations
-          WHERE check_out >= ${from}::date 
-            AND check_out < (${to}::date + INTERVAL '1 day')
-            ${channelFilter ? sql`AND channel = ${channelFilter}` : sql``}
-            AND status != 'cancelled'
-          ORDER BY check_out ASC
-        `;
+    // Construcción dinámica con parámetros seguros
+    const where: string[] = [];
+    const params: any[] = [];
+    where.push(`${dateField} >= $${params.length + 1}::date`); params.push(from);
+    where.push(`${dateField} < ($${params.length + 1}::date + INTERVAL '1 day')`); params.push(to);
+    where.push(`status != 'cancelled'`);
+    if (property) { where.push(`room_id = $${params.length + 1}`); params.push(property); }
+    const rooms = roomsCsv ? roomsCsv.split(',').map(s=>s.trim()).filter(Boolean) : [];
+    if (rooms.length) { where.push(`room_id = ANY($${params.length + 1}::text[])`); params.push(rooms); }
+    if (channelFilter) { where.push(`channel = $${params.length + 1}`); params.push(channelFilter); }
+    const channels = channelsCsv ? channelsCsv.split(',').map(s=>s.trim()).filter(Boolean) : [];
+    if (channels.length) { where.push(`channel = ANY($${params.length + 1}::text[])`); params.push(channels); }
 
-    const rows = (await query).rows;
+    const sqlText = `
+      SELECT id, external_id, room_id, check_in, check_out, channel,
+             COALESCE(total_price,0)::float AS total_price,
+             COALESCE(guest_paid,0)::float AS guest_paid,
+             COALESCE(platform_commission,0)::float AS platform_commission,
+             COALESCE(net_income,0)::float AS net_income,
+             currency
+      FROM reservations
+      WHERE ${where.join(' AND ')}
+      ORDER BY ${dateField} ASC
+    `;
+    const rows = (await sql.query<Row>(sqlText, params)).rows;
 
     const exportRows = rows.map(r => {
       const base = r.net_income != null ? Number(r.net_income) : Number(r.guest_paid) - Number(r.platform_commission);
@@ -160,7 +156,21 @@ export async function GET(request: NextRequest) {
         return acc;
       }, { base: 0, cuota_iva: 0, total: 0, comision_ota: 0 });
 
-      return new NextResponse(JSON.stringify({ success: true, items: exportRows, totals, count: exportRows.length }), { status: 200, headers: { 'Content-Type': 'application/json', 'x-correlation-id': correlationId } });
+      const totalsByChannel = exportRows.reduce((acc: any, r) => {
+        const ch = String(r.metodo_pago || '').toLowerCase();
+        if (!acc[ch]) acc[ch] = { base: 0, cuota_iva: 0, total: 0, comision_ota: 0, count: 0 };
+        acc[ch].base += Number(r.base);
+        acc[ch].cuota_iva += Number(r.cuota_iva);
+        acc[ch].total += Number(r.total);
+        acc[ch].comision_ota += Number(r.comision_ota);
+        acc[ch].count += 1;
+        return acc;
+      }, {} as Record<string, any>);
+
+      return new NextResponse(
+        JSON.stringify({ success: true, items: exportRows, totals, totalsByChannel, count: exportRows.length, dateField }),
+        { status: 200, headers: { 'Content-Type': 'application/json', 'x-correlation-id': correlationId } }
+      );
     }
 
     const csv = toCsv(exportRows);
