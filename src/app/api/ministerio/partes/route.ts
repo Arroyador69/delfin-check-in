@@ -242,7 +242,17 @@ export async function POST(req: NextRequest) {
             console.log('🔍 Debug - c.contrato:', JSON.stringify(c.contrato, null, 2));
             console.log('🔍 Debug - c.personas:', JSON.stringify(c.personas, null, 2));
             
-            const personasXml = c.personas.map(personaToXML).map((n) => n.persona);
+            const personasXml = c.personas.map((p:any) => {
+              const pais = (p.direccion?.pais || p.pais || '').toUpperCase();
+              if (pais && pais !== 'ESP') {
+                if (!p.direccion) p.direccion = {};
+                p.direccion.codigoMunicipio = undefined;
+                if (!p.direccion.nombreMunicipio) {
+                  p.direccion.nombreMunicipio = p.nombreMunicipio || p.ciudad || 'N/A';
+                }
+              }
+              return p;
+            }).map(personaToXML).map((n:any) => n.persona);
             
             return {
               contrato: {
