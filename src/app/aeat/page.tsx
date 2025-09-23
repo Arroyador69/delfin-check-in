@@ -11,7 +11,9 @@ export default function AEATPage() {
   const [from, setFrom] = useState(defaultFrom);
   const [to, setTo] = useState(today);
   const [property, setProperty] = useState('');
+  const [channel, setChannel] = useState('');
   const [vat, setVat] = useState(21);
+  const [preview, setPreview] = useState<{count:number;base:number;cuota_iva:number;total:number;comision_ota:number}|null>(null);
 
   const exportCsv = () => {
     const params = new URLSearchParams();
@@ -19,7 +21,21 @@ export default function AEATPage() {
     params.set('to', to);
     params.set('vat', String(vat));
     if (property) params.set('property', property);
+    if (channel) params.set('channel', channel);
     window.open(`/api/export/aeat?${params.toString()}`, '_blank');
+  };
+
+  const doPreview = async () => {
+    const params = new URLSearchParams();
+    params.set('from', from);
+    params.set('to', to);
+    params.set('vat', String(vat));
+    params.set('format', 'json');
+    if (property) params.set('property', property);
+    if (channel) params.set('channel', channel);
+    const res = await fetch(`/api/export/aeat?${params.toString()}`, { cache: 'no-store' });
+    const json = await res.json();
+    if (json && json.totals) setPreview(json.totals);
   };
 
   const setMonth = (offset: number) => {
@@ -67,6 +83,10 @@ export default function AEATPage() {
           <input type="text" value={property} onChange={e=>setProperty(e.target.value)} placeholder="Opcional" className="border rounded px-3 py-2 w-full" />
         </div>
         <div>
+          <label className="block text-sm text-gray-600 mb-1">Canal</label>
+          <input type="text" value={channel} onChange={e=>setChannel(e.target.value)} placeholder="p.ej. airbnb, booking, manual" className="border rounded px-3 py-2 w-full" />
+        </div>
+        <div>
           <label className="block text-sm text-gray-600 mb-1">IVA %</label>
           <input type="number" value={vat} onChange={e=>setVat(parseInt(e.target.value||'21',10))} className="border rounded px-3 py-2 w-full" />
         </div>
@@ -74,10 +94,20 @@ export default function AEATPage() {
 
       <div className="flex items-center gap-3 mb-6">
         <button onClick={exportCsv} className="px-4 py-2 bg-emerald-600 text-white rounded hover:bg-emerald-700">Descargar CSV</button>
+        <button onClick={doPreview} className="px-3 py-2 bg-gray-100 rounded hover:bg-gray-200">Previsualizar totales</button>
         <button onClick={() => setMonth(0)} className="px-3 py-2 bg-gray-100 rounded hover:bg-gray-200">Mes actual</button>
         <button onClick={() => setMonth(-1)} className="px-3 py-2 bg-gray-100 rounded hover:bg-gray-200">Mes anterior</button>
         <button onClick={() => setQuarter(0)} className="px-3 py-2 bg-gray-100 rounded hover:bg-gray-200">Trimestre actual</button>
       </div>
+
+      {preview && (
+        <div className="mb-6 text-sm text-gray-700">
+          <div><span className="font-medium">Base:</span> {preview.base.toFixed(2)} €</div>
+          <div><span className="font-medium">Cuota IVA:</span> {preview.cuota_iva.toFixed(2)} €</div>
+          <div><span className="font-medium">Total:</span> {preview.total.toFixed(2)} €</div>
+          <div><span className="font-medium">Comisión OTA:</span> {preview.comision_ota.toFixed(2)} €</div>
+        </div>
+      )}
     </div>
   );
 }

@@ -39,6 +39,7 @@ export async function GET(request: NextRequest) {
     const from = searchParams.get('from');
     const to = searchParams.get('to');
     const property = searchParams.get('property');
+    const channelFilter = searchParams.get('channel');
     const vatParam = parseFloat(searchParams.get('vat') || '21');
     const vat = isNaN(vatParam) ? 21 : Math.max(0, vatParam);
     const format = (searchParams.get('format') || 'csv').toLowerCase();
@@ -99,6 +100,7 @@ export async function GET(request: NextRequest) {
           WHERE check_out >= ${from}::date 
             AND check_out < (${to}::date + INTERVAL '1 day')
             AND room_id = ${property}
+            ${channelFilter ? sql`AND channel = ${channelFilter}` : sql``}
             AND status != 'cancelled'
           ORDER BY check_out ASC
         `
@@ -112,6 +114,7 @@ export async function GET(request: NextRequest) {
           FROM reservations
           WHERE check_out >= ${from}::date 
             AND check_out < (${to}::date + INTERVAL '1 day')
+            ${channelFilter ? sql`AND channel = ${channelFilter}` : sql``}
             AND status != 'cancelled'
           ORDER BY check_out ASC
         `;
@@ -148,7 +151,16 @@ export async function GET(request: NextRequest) {
           meta: { stage: 'generated_json' }
         });
       } catch {}
-      return new NextResponse(JSON.stringify({ success: true, items: exportRows }), { status: 200, headers: { 'Content-Type': 'application/json', 'x-correlation-id': correlationId } });
+
+      const totals = exportRows.reduce((acc, r) => {
+        acc.base += Number(r.base);
+        acc.cuota_iva += Number(r.cuota_iva);
+        acc.total += Number(r.total);
+        acc.comision_ota += Number(r.comision_ota);
+        return acc;
+      }, { base: 0, cuota_iva: 0, total: 0, comision_ota: 0 });
+
+      return new NextResponse(JSON.stringify({ success: true, items: exportRows, totals, count: exportRows.length }), { status: 200, headers: { 'Content-Type': 'application/json', 'x-correlation-id': correlationId } });
     }
 
     const csv = toCsv(exportRows);
