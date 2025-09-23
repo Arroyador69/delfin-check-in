@@ -3,8 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import ConditionalNavigation from "@/components/ConditionalNavigation";
 import SWRegister from "@/components/SWRegister";
-import dynamic from "next/dynamic";
-const PWAInstallGuide = dynamic(() => import("@/components/PWAInstallGuide"), { ssr: false });
+import PWAInstallGuide from "@/components/PWAInstallGuide";
 
 const inter = Inter({ subsets: ["latin"] });
 
