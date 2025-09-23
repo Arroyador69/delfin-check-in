@@ -239,6 +239,31 @@ function buildXML(data: z.infer<typeof PayloadSchema>): string {
   return xml;
 }
 
+// Validación estructural adicional (pre-XSD): comprueba presencia de nodos clave y formatos básicos
+function validateXmlStructure(xml: string): { ok: boolean; errors: string[] } {
+  const errors: string[] = [];
+  const mustHave = [
+    /<peticion>[\s\S]*<solicitud>[\s\S]*<codigoEstablecimiento>[A-Za-z0-9\-]+<\/codigoEstablecimiento>/,
+    /<comunicacion>[\s\S]*<contrato>[\s\S]*<referencia>[\s\S]+<\/referencia>/,
+    /<contrato>[\s\S]*<fechaContrato>\d{4}-\d{2}-\d{2}<\/fechaContrato>/,
+    /<contrato>[\s\S]*<fechaEntrada>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}<\/fechaEntrada>/,
+    /<contrato>[\s\S]*<fechaSalida>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}<\/fechaSalida>/,
+    /<contrato>[\s\S]*<numPersonas>\d+<\/numPersonas>/,
+    /<pago>[\s\S]*<tipoPago>(EFECT|TARJT|PLATF|TRANS|MOVIL|TREG|DESTI|OTRO)<\/tipoPago>/,
+    /<persona>[\s\S]*<rol>VI<\/rol>/,
+    /<persona>[\s\S]*<nombre>[\s\S]+<\/nombre>/,
+    /<persona>[\s\S]*<apellido1>[\s\S]+<\/apellido1>/,
+    /<persona>[\s\S]*<fechaNacimiento>\d{4}-\d{2}-\d{2}<\/fechaNacimiento>/,
+    /<direccion>[\s\S]*<pais>[A-Z]{2,3}<\/pais>/
+  ];
+  for (const re of mustHave) {
+    if (!re.test(xml)) {
+      errors.push(`Estructura inválida según regla: ${String(re)}`);
+    }
+  }
+  return { ok: errors.length === 0, errors };
+}
+
 // Función para normalizar códigos de pago antiguos a códigos MIR oficiales
 function normalizeTipoPago(tipoPago: string): string {
   const codigo = String(tipoPago || '').toUpperCase().trim();
@@ -428,6 +453,23 @@ export async function POST(req: NextRequest) {
       const xml = buildXML(parsed.data);
       console.log(`[PV-EXPORT] ${correlationId} - XML generado exitosamente (${xml.length} caracteres)`);
 
+      // Validación opcional previa tipo XSD (básica): ?validate=1
+      const validate = (() => { try { return new URL(req.url).searchParams.get('validate') === '1'; } catch { return false; } })();
+      if (validate) {
+        const result = validateXmlStructure(xml);
+        if (!result.ok) {
+          console.error(`[PV-EXPORT] ${correlationId} - Fallo validación estructural:`, result.errors);
+          return NextResponse.json(
+            {
+              error: 'XML_SCHEMA_PRECHECK_FAILED',
+              details: result.errors,
+              correlationId
+            },
+            { status: 422, headers: { 'x-correlation-id': correlationId } }
+          );
+        }
+      }
+
       // Bitácora: generación lista (equivalente a preparado para envío)
       try {
         const payloadHash = crypto
@@ -439,7 +481,7 @@ export async function POST(req: NextRequest) {
           entityType: 'PV_EXPORT',
           entityId: correlationId,
           payloadHash,
-          meta: { stage: 'xml_generated' }
+          meta: { stage: 'xml_generated', validated: validate || false }
         });
       } catch (e) {
         console.warn(`[PV-EXPORT] ${correlationId} - No se pudo registrar audit SES_SENT`, e);
@@ -451,6 +493,7 @@ export async function POST(req: NextRequest) {
           'Content-Type': 'application/xml; charset=utf-8',
           'Content-Disposition': `attachment; filename="partes_viajeros_${Date.now()}.xml"`,
           'x-correlation-id': correlationId,
+          ...(validate ? { 'x-mir-validation': 'ok' } : {}),
           'Cache-Control': 'no-store',
         },
       });
