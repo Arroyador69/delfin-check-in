@@ -80,6 +80,7 @@ export default function GuestRegistrationsDashboard() {
   const [filterEstablishment, setFilterEstablishment] = useState("");
   const [generatingXML, setGeneratingXML] = useState(false);
   const [selectedRegistration, setSelectedRegistration] = useState<GuestRegistration | null>(null);
+  const [editData, setEditData] = useState<any | null>(null);
   const [selectedRegistrations, setSelectedRegistrations] = useState<Set<string>>(new Set());
   const [showAllRegistrations, setShowAllRegistrations] = useState(true);
   const [deleting, setDeleting] = useState(false);
@@ -818,32 +819,64 @@ export default function GuestRegistrationsDashboard() {
                 </div>
               </div>
 
-              {/* Información del viajero */}
+              {/* Información del viajero (editable) */}
               <div>
                 <h4 className="font-semibold text-gray-900 mb-3">Información del Viajero</h4>
                 <div className="border rounded-lg p-4 bg-gray-50">
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+                  <form className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm" onSubmit={async (e) => {
+                    e.preventDefault();
+                    if (!selectedRegistration) return;
+                    try {
+                      const updated = { ...selectedRegistration.data };
+                      const p = (updated.comunicaciones?.[0]?.personas?.[0]) || {};
+                      p.nombre = (document.getElementById('edit_nombre') as HTMLInputElement).value || p.nombre;
+                      p.apellido1 = (document.getElementById('edit_apellido1') as HTMLInputElement).value || p.apellido1;
+                      p.fechaNacimiento = (document.getElementById('edit_fechaNacimiento') as HTMLInputElement).value || p.fechaNacimiento;
+                      p.tipoDocumento = (document.getElementById('edit_tipoDocumento') as HTMLInputElement).value || p.tipoDocumento;
+                      p.numeroDocumento = (document.getElementById('edit_numeroDocumento') as HTMLInputElement).value || p.numeroDocumento;
+                      if (!updated.comunicaciones) updated.comunicaciones = [{ contrato: {}, personas: [p] }];
+                      else {
+                        if (!updated.comunicaciones[0]) updated.comunicaciones[0] = { contrato: {}, personas: [p] } as any;
+                        if (!updated.comunicaciones[0].personas) updated.comunicaciones[0].personas = [p];
+                        else updated.comunicaciones[0].personas[0] = p;
+                      }
+                      const res = await fetch('/api/guest-registrations', {
+                        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ id: selectedRegistration.id, data: updated })
+                      });
+                      const json = await res.json();
+                      if (!res.ok || !json.ok) throw new Error(json.error || 'Error al guardar cambios');
+                      alert('Cambios guardados');
+                      setSelectedRegistration({ ...selectedRegistration, data: json.item.data } as any);
+                      await loadRegistrations();
+                    } catch (err: any) {
+                      alert(err.message || 'Error');
+                    }
+                  }}>
                     <div>
-                      <span className="font-medium text-gray-600">Nombre:</span>
-                      <p className="text-gray-900">{selectedRegistration.viajero.nombre} {selectedRegistration.viajero.apellido1} {selectedRegistration.viajero.apellido2 || ""}</p>
+                      <label className="block text-gray-600 mb-1">Nombre</label>
+                      <input id="edit_nombre" defaultValue={selectedRegistration.viajero.nombre} className="border rounded px-2 py-1 w-full" />
                     </div>
                     <div>
-                      <span className="font-medium text-gray-600">Documento:</span>
-                      <p className="text-gray-900">
-                        {selectedRegistration.viajero.tipoDocumento}: {selectedRegistration.viajero.numeroDocumento}
-                      </p>
+                      <label className="block text-gray-600 mb-1">Apellido 1</label>
+                      <input id="edit_apellido1" defaultValue={selectedRegistration.viajero.apellido1} className="border rounded px-2 py-1 w-full" />
                     </div>
                     <div>
-                      <span className="font-medium text-gray-600">Nacionalidad:</span>
-                      <p className="text-gray-900">{selectedRegistration.viajero.nacionalidad}</p>
+                      <label className="block text-gray-600 mb-1">Fecha nacimiento (AAAA-MM-DD)</label>
+                      <input id="edit_fechaNacimiento" type="date" className="border rounded px-2 py-1 w-full" />
                     </div>
                     <div>
-                      <span className="font-medium text-gray-600">Datos completos:</span>
-                      <p className="text-gray-900 text-xs">
-                        {JSON.stringify(selectedRegistration.data, null, 2)}
-                      </p>
+                      <label className="block text-gray-600 mb-1">Tipo documento</label>
+                      <input id="edit_tipoDocumento" defaultValue={selectedRegistration.viajero.tipoDocumento} className="border rounded px-2 py-1 w-full" />
                     </div>
-                  </div>
+                    <div>
+                      <label className="block text-gray-600 mb-1">Número documento</label>
+                      <input id="edit_numeroDocumento" defaultValue={selectedRegistration.viajero.numeroDocumento} className="border rounded px-2 py-1 w-full" />
+                    </div>
+                    <div className="md:col-span-3 flex justify-end">
+                      <button type="submit" className="px-3 py-2 bg-blue-600 text-white rounded">Guardar cambios</button>
+                    </div>
+                  </form>
                 </div>
               </div>
             </div>

@@ -196,3 +196,41 @@ export async function DELETE(req: NextRequest) {
     });
   }
 }
+
+// Actualizar datos (solo campo data o subcampos típicos)
+export async function PUT(req: NextRequest) {
+  try {
+    const body = await req.json();
+    const { id, data } = body || {};
+    if (!id || !data) {
+      return NextResponse.json({ ok: false, error: 'Faltan id o data' }, { status: 400 });
+    }
+
+    // Asegurar tabla
+    await sql`CREATE TABLE IF NOT EXISTS guest_registrations (
+      id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+      reserva_ref VARCHAR(50),
+      fecha_entrada DATE NOT NULL,
+      fecha_salida DATE NOT NULL,
+      data JSONB NOT NULL,
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+      updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    );`;
+
+    const updated = await sql`
+      UPDATE guest_registrations
+      SET data = ${JSON.stringify(data)}::jsonb,
+          updated_at = NOW()
+      WHERE id = ${id}
+      RETURNING id, reserva_ref, fecha_entrada, fecha_salida, data, created_at, updated_at;
+    `;
+
+    if (updated.rows.length === 0) {
+      return NextResponse.json({ ok: false, error: 'Registro no encontrado' }, { status: 404 });
+    }
+    return NextResponse.json({ ok: true, item: updated.rows[0] });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return NextResponse.json({ ok: false, error: message }, { status: 500 });
+  }
+}
