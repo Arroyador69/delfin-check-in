@@ -2,11 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getRooms, createRoom } from '@/lib/storage';
 
 export async function GET() {
-  // Deshabilitado temporalmente para MVP
-  return NextResponse.json(
-    { error: 'Endpoint deshabilitado temporalmente (MVP)' },
-    { status: 404 }
-  );
   try {
     const rooms = getRooms();
     return NextResponse.json(rooms);
@@ -20,11 +15,6 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
-  // Deshabilitado temporalmente para MVP
-  return NextResponse.json(
-    { error: 'Endpoint deshabilitado temporalmente (MVP)' },
-    { status: 404 }
-  );
   try {
     const body = await request.json();
     
