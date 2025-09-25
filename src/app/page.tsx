@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { CalendarDays, Users, Home, Settings, BarChart3, MessageSquare, RefreshCw, TrendingUp } from 'lucide-react';
+import { Settings, RefreshCw } from 'lucide-react';
 import AdminLayout from '@/components/AdminLayout';
 // Removido: import { getRooms, getReservations } from '@/lib/storage';
 
@@ -93,7 +93,7 @@ export default function HomePage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <div className="loading mx-auto"></div>
           <p className="mt-4 text-gray-600">Cargando dashboard...</p>
         </div>
       </div>
@@ -150,163 +150,124 @@ export default function HomePage() {
         )}
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <Home className="h-6 w-6 text-blue-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Habitaciones</p>
-                <p className="text-2xl font-bold text-gray-900">{totalRooms}</p>
-              </div>
+        <div className="kpis">
+          <div className="kpi">
+            <div className="ic" style={{background:'#e0ecff'}}>🏠</div>
+            <div>
+              <div className="meta">Habitaciones</div>
+              <div className="value">{totalRooms}</div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <Users className="h-6 w-6 text-green-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Huéspedes Hoy</p>
-                <p className="text-2xl font-bold text-gray-900">{guestsToday}</p>
-              </div>
+          <div className="kpi">
+            <div className="ic" style={{background:'#dcfce7'}}>👥</div>
+            <div>
+              <div className="meta">Huéspedes Hoy</div>
+              <div className="value">{guestsToday}</div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="p-2 bg-yellow-100 rounded-lg">
-                <CalendarDays className="h-6 w-6 text-yellow-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Reservas Activas</p>
-                <p className="text-2xl font-bold text-gray-900">{confirmedReservations}</p>
-              </div>
+          <div className="kpi">
+            <div className="ic" style={{background:'#fef9c3'}}>📅</div>
+            <div>
+              <div className="meta">Reservas Activas</div>
+              <div className="value">{confirmedReservations}</div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <BarChart3 className="h-6 w-6 text-purple-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Ocupación</p>
-                <p className="text-2xl font-bold text-gray-900">{occupancyRate}%</p>
-              </div>
+          <div className="kpi">
+            <div className="ic" style={{background:'#f5e8ff'}}>📈</div>
+            <div>
+              <div className="meta">Ocupación</div>
+              <div className="value">{occupancyRate}%</div>
             </div>
           </div>
         </div>
 
         {/* Financial Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <BarChart3 className="h-6 w-6 text-green-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Facturación Total</p>
-                <p className="text-2xl font-bold text-gray-900">€{totalRevenue.toFixed(2)}</p>
-              </div>
+        <div className="kpis">
+          <div className="kpi" style={{gridColumn: 'span 2'}}>
+            <div className="ic" style={{background:'#e5f4ff'}}>💶</div>
+            <div>
+              <div className="meta">Facturación</div>
+              <div className="value">€{totalRevenue.toFixed(2)}</div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="p-2 bg-red-100 rounded-lg">
-                <BarChart3 className="h-6 w-6 text-red-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Comisiones Pagadas</p>
-                <p className="text-2xl font-bold text-gray-900">€{totalCommissions.toFixed(2)}</p>
-              </div>
+          <div className="kpi">
+            <div className="ic" style={{background:'#ffe4e6'}}>💳</div>
+            <div>
+              <div className="meta">Comisiones Pagadas</div>
+              <div className="value">€{totalCommissions.toFixed(2)}</div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <BarChart3 className="h-6 w-6 text-blue-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Ganancia Neta</p>
-                <p className="text-2xl font-bold text-gray-900">€{totalNetIncome.toFixed(2)}</p>
-              </div>
+          <div className="kpi">
+            <div className="ic" style={{background:'#e0ecff'}}>📊</div>
+            <div>
+              <div className="meta">Ganancia Neta</div>
+              <div className="value">€{totalNetIncome.toFixed(2)}</div>
             </div>
           </div>
         </div>
 
         {/* Acciones rápidas (MVP) */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Link href="/reservations" className="group">
-            <div className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow cursor-pointer">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
-                    Reservas
-                  </h3>
-                  <p className="text-sm text-gray-600 mt-1">
-                    Gestionar reservas y calendario
-                  </p>
-                </div>
-                <CalendarDays className="h-8 w-8 text-gray-400 group-hover:text-blue-600 transition-colors" />
+        <div className="pricing">
+          <Link href="/reservations" className="card group">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+                  Reservas
+                </h3>
+                <p className="text-sm text-gray-600 mt-1">
+                  Gestionar reservas y calendario
+                </p>
               </div>
+              <div className="text-2xl">📅</div>
             </div>
           </Link>
-          <Link href="/guest-registrations-dashboard" className="group">
-            <div className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow cursor-pointer">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
-                    Registros de formularios
-                  </h3>
-                  <p className="text-sm text-gray-600 mt-1">
-                    Ver registros y generar XML
-                  </p>
-                </div>
-                <div className="h-8 w-8 text-gray-400 group-hover:text-blue-600 transition-colors">
-                  🇪🇸
-                </div>
+          <Link href="/guest-registrations-dashboard" className="card group">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+                  Registros de formularios
+                </h3>
+                <p className="text-sm text-gray-600 mt-1">
+                  Ver registros y generar XML
+                </p>
               </div>
+              <div className="text-2xl">🇪🇸</div>
             </div>
           </Link>
-        
         </div>
 
         {/* Recent Activity */}
-        <div className="bg-white rounded-lg shadow">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-900">Actividad Reciente</h3>
-          </div>
-          <div className="p-6">
-            {reservations.length === 0 ? (
-              <div className="text-center py-8">
-                <p className="text-gray-500">No hay reservas aún</p>
-                <p className="text-sm text-gray-400 mt-2">
-                  Asegúrate de tener tus calendarios conectados y haz clic en "Sincronizar"
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {reservations.slice(0, 5).map((reservation) => (
-                  <div key={reservation.id} className="flex items-center space-x-3">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <div className="flex-1">
-                      <p className="text-sm text-gray-900">
-                        Nueva reserva - {reservation.guest_name}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {new Date(reservation.check_in).toLocaleDateString('es-ES')} - {new Date(reservation.check_out).toLocaleDateString('es-ES')}
-                      </p>
-                    </div>
+        <div className="card">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Actividad Reciente</h3>
+          {reservations.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-gray-500">No hay reservas aún</p>
+              <p className="text-sm text-gray-400 mt-2">
+                Asegúrate de tener tus calendarios conectados y haz clic en "Sincronizar"
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {reservations.slice(0, 5).map((reservation) => (
+                <div key={reservation.id} className="flex items-center space-x-3">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <div className="flex-1">
+                    <p className="text-sm text-gray-900">
+                      Nueva reserva - {reservation.guest_name}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {new Date(reservation.check_in).toLocaleDateString('es-ES')} - {new Date(reservation.check_out).toLocaleDateString('es-ES')}
+                    </p>
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </main>
       </div>
