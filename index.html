@@ -1,0 +1,2633 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Delfín Check‑in · Software de gestión hotelera y auto check‑in</title>
+  <meta name="description" content="Delfín Check‑in: software para hoteles y alojamientos con reservas, check‑in online, gestión de habitaciones y panel de administración sencillo. Plan mensual o anual.">
+  <meta name="keywords" content="software hotel, channel manager, check-in online, PMS, reservas, gestión de hoteles, motor de reservas">
+  <link rel="canonical" href="https://delfincheckin.com/">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Delfín Check‑in · Software de gestión hotelera y auto check‑in">
+  <meta property="og:description" content="Gestiona reservas, habitaciones y check‑ins desde una sola plataforma. Plan mensual o anual.">
+  <meta property="og:image" content="https://delfincheckin.com/og-image.svg">
+  <meta property="og:url" content="https://delfincheckin.com/">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Delfín Check‑in · Software de gestión hotelera">
+  <meta name="twitter:description" content="Reservas, check‑in online y gestión de habitaciones.">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐬</text></svg>">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐬</text></svg>">
+
+  <style>
+    :root{
+      --bg: #0b1220;
+      --card: #0f1629;
+      --text: #e5ecff;
+      --muted: #9fb0d1;
+      --brand: #44c0ff;
+      --accent: #7cf07c;
+      --danger: #ff6b6b;
+      --ring: rgba(68,192,255,0.35);
+      --maxw: 1180px;
+      --radius: 14px;
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+    }
+    *{ box-sizing: border-box }
+    html,body{ height:100% }
+    body{
+      margin:0; font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; color:var(--text); background: radial-gradient(1200px 800px at 70% -10%, rgba(68,192,255,.15), transparent), linear-gradient(180deg, #0b1220 0%, #0a1020 100%);
+    }
+    a{ color: var(--brand); text-decoration: none }
+    .container{ max-width: var(--maxw); margin:0 auto; padding: 0 20px }
+
+    /* Header */
+    header{
+      position: sticky; top:0; z-index:100; backdrop-filter: saturate(160%) blur(8px);
+      background: rgba(11,18,32,.6); border-bottom: 1px solid rgba(255,255,255,.06);
+    }
+    .nav{ display:flex; align-items:center; justify-content:space-between; gap:16px; padding:16px 0 }
+    .brand{ display:flex; gap:12px; align-items:center }
+    .logo{ font-size:32px; line-height:1; display:grid; place-items:center }
+    .brand b{ font-weight:800; letter-spacing:.2px; font-size:22px }
+    .actions{ display:flex; gap:10px; align-items:center }
+    .btn{ display:inline-flex; align-items:center; justify-content:center; gap:8px; height:40px; padding:0 14px; border-radius:10px; border:1px solid rgba(255,255,255,.12); color:var(--text); background: rgba(255,255,255,.03) }
+    .btn:hover{ border-color: rgba(255,255,255,.22); background: rgba(255,255,255,.06) }
+    .btn.primary{ background: linear-gradient(135deg, var(--brand), #2bb3ff); border: none; color: #0a1020; font-weight:700; box-shadow: 0 6px 20px var(--ring) }
+    .btn.primary:hover{ filter: brightness(1.05) }
+
+    /* Hero */
+    .hero{ padding: 56px 0 28px }
+    .hero h1{ font-size: clamp(32px, 6vw, 52px); line-height: 1.05; margin: 0 0 14px }
+    .hero p{ color: var(--muted); margin: 0 0 20px; font-size: clamp(16px, 2.2vw, 18px) }
+    .badges{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px }
+    .badge{ font-size:12px; color:#0a1020; background:#b5f1ff; padding:6px 10px; border-radius:999px; font-weight:700 }
+    .hero-card{ background: var(--card); border:1px solid rgba(255,255,255,.06); border-radius: var(--radius); padding: 18px; box-shadow: var(--shadow) }
+    .checklist{ display:grid; grid-template-columns: repeat(2, minmax(200px, 1fr)); gap:12px; margin-top:8px }
+    .check{ display:flex; gap:10px; align-items:flex-start; color: var(--muted) }
+    .check strong{ min-width: 200px; display: inline-block; }
+    .check i{ color:#93fba3 }
+
+    /* Social proof */
+    .logos{ opacity:.95; display:flex; gap:22px; flex-wrap:wrap; align-items:flex-start; justify-content:center; padding: 18px 0 }
+    .logos .logo-txt{ font-weight:800; color:#0f172a; letter-spacing:.2px }
+    .brand-box{ display:flex; flex-direction:column; align-items:center; gap:8px }
+    .brand-box .brand-name{ font-weight:800; color:#0f172a }
+    .brand-box img{ height:40px; filter:none; opacity:1 }
+
+    /* Pricing */
+    .section{ padding: 32px 0 }
+    .section h2{ font-size: clamp(26px, 4vw, 36px); margin:0 0 14px }
+    .section p.lead{ color:var(--muted); margin:0 0 20px }
+    .pricing{ display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap:16px }
+    .card{ background: var(--card); border:1px solid rgba(255,255,255,.06); border-radius: var(--radius); padding:16px; box-shadow: var(--shadow) }
+    .card h3{ margin:0 0 6px }
+    .price{ display:flex; align-items:baseline; gap:8px; margin: 10px 0 14px }
+    .price strong{ font-size:34px }
+    .price small{ color:var(--muted) }
+    .features{ display:grid; gap:8px; color: var(--muted); margin: 10px 0 16px }
+    .cta{ display:flex; gap:10px; flex-wrap:wrap }
+    .note{ color:var(--muted); font-size:13px }
+
+    /* KPIs dashboard */
+    .kpis{ display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:18px; margin: 8px 0 18px }
+    .kpi{ background: #ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:16px; display:flex; align-items:center; gap:14px; box-shadow: 0 2px 8px rgba(0,0,0,0.1) }
+    .kpi .ic{ width:42px; height:42px; display:grid; place-items:center; border-radius:12px; font-size:20px }
+    .kpi .meta{ color:#64748b; font-weight:600 }
+    .kpi .value{ font-size:24px; font-weight:800; color:#0f172a }
+
+    /* FAQ */
+    details{ background: var(--card); border:1px solid rgba(255,255,255,.06); border-radius:12px; padding:12px 16px }
+    details+details{ margin-top:10px }
+    summary{ cursor:pointer; font-weight:600 }
+    summary::-webkit-details-marker{ display:none }
+
+    /* Footer */
+    footer{ color:var(--muted); border-top:1px solid rgba(255,255,255,.06); margin-top:32px; padding:14px 0 26px }
+
+    /* Animaciones */
+    .btn, .card, .kpi{ transition: all 0.3s ease; }
+    .btn:hover{ transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,0,0,.15); }
+    .card:hover{ transform: translateY(-4px); box-shadow: 0 12px 40px rgba(0,0,0,.2); }
+    .kpi:hover{ transform: translateY(-2px); }
+    
+    /* Loading spinner */
+    .loading{ display: inline-block; width: 20px; height: 20px; border: 2px solid #f3f3f3; border-top: 2px solid #2563eb; border-radius: 50%; animation: spin 1s linear infinite; }
+    @keyframes spin{ 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    
+    /* Testimonios */
+    .testimonials{ display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin: 20px 0; }
+    .testimonial{ background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; position: relative; }
+    .testimonial::before{ content: '"'; font-size: 48px; color: #2563eb; position: absolute; top: 10px; left: 15px; opacity: 0.3; }
+    .testimonial-text{ margin: 20px 0 15px; font-style: italic; }
+    .testimonial-author{ font-weight: 600; color: #2563eb; }
+    .testimonial-role{ color: var(--muted); font-size: 14px; }
+
+    /* Cookies Banner */
+    .cookies-banner{ position: fixed; bottom: 0; left: 0; right: 0; background: var(--card); border-top: 1px solid var(--border); padding: 16px 20px; z-index: 1000; transform: translateY(100%); transition: transform 0.3s ease; }
+    .cookies-banner.show{ transform: translateY(0); }
+    .cookies-content{ display: flex; align-items: center; justify-content: space-between; gap: 16px; max-width: var(--maxw); margin: 0 auto; }
+    .cookies-text{ flex: 1; font-size: 14px; color: var(--muted); }
+    .cookies-actions{ display: flex; gap: 10px; align-items: center; }
+    .cookies-actions .btn{ height: 36px; padding: 0 12px; font-size: 13px; }
+
+    /* ===== RESPONSIVE DESIGN COMPLETO ===== */
+    @media (max-width: 768px) {
+      /* Márgenes laterales para móviles */
+      .container {
+        padding: 0 16px !important;
+      }
+      
+      .section {
+        padding: 32px 0;
+      }
+      
+      .card {
+        margin: 0 4px 20px 4px;
+      }
+      
+      /* Header móvil */
+      .nav {
+        flex-direction: column;
+        gap: 16px;
+        padding: 24px 0 20px 0;
+      }
+      
+      header {
+        padding-top: 16px;
+      }
+      
+      .nav .actions {
+        flex-direction: column;
+        width: 100%;
+        gap: 8px;
+      }
+      
+      .nav .actions .btn {
+        width: 100%;
+        text-align: center;
+      }
+      
+      /* Hero section móvil */
+      .hero {
+        padding: 40px 16px;
+        text-align: center;
+      }
+      
+      .hero h1 {
+        font-size: 28px;
+        line-height: 1.2;
+        margin-bottom: 16px;
+      }
+      
+      .hero .lead {
+        font-size: 16px;
+        margin-bottom: 24px;
+      }
+      
+      /* Cards responsive */
+      .card {
+        margin-bottom: 20px;
+        padding: 20px;
+      }
+      
+      /* Grid responsive */
+      .checklist {
+        grid-template-columns: 1fr;
+        gap: 16px;
+      }
+      
+      .features-grid {
+        grid-template-columns: 1fr !important;
+        gap: 16px !important;
+      }
+      
+      /* Tabla responsive */
+      .table-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+      
+      .table-container table {
+        min-width: 600px;
+        font-size: 14px;
+      }
+      
+      .table-container th,
+      .table-container td {
+        padding: 8px 6px;
+        white-space: nowrap;
+      }
+      
+      /* Botones de acción en tabla */
+      .table-container .btn {
+        padding: 4px 8px;
+        font-size: 11px;
+        margin: 2px;
+      }
+      
+      /* Calculadora móvil */
+      .calculator-grid {
+        grid-template-columns: 1fr !important;
+        gap: 16px !important;
+      }
+      
+      .calculator-input {
+        height: 44px !important;
+        font-size: 16px !important;
+      }
+      
+      /* Modales móviles */
+      .modal-content {
+        width: 95vw !important;
+        max-width: none !important;
+        margin: 20px auto !important;
+        max-height: 90vh !important;
+      }
+      
+      /* Elementos específicos con márgenes */
+      .hero {
+        padding: 40px 16px;
+      }
+      
+      .kpis {
+        margin: 0 8px 18px 8px;
+      }
+      
+      .testimonials {
+        margin: 20px 8px;
+      }
+      
+      .pricing {
+        margin: 0 8px;
+      }
+      
+      /* Formularios móviles */
+      .form-grid {
+        grid-template-columns: 1fr !important;
+        gap: 16px !important;
+      }
+      
+      /* Footer móvil */
+      .footer-content {
+        flex-direction: column;
+        text-align: center;
+        gap: 20px;
+      }
+      
+      /* Pricing cards móvil */
+      .pricing {
+        grid-template-columns: 1fr;
+        gap: 20px;
+      }
+      
+      .pricing .card {
+        margin-bottom: 16px;
+      }
+      
+      /* Elementos específicos con márgenes en móviles pequeños */
+      .hero {
+        padding: 30px 12px;
+      }
+      
+      .kpis {
+        margin: 0 4px 16px 4px;
+      }
+      
+      .testimonials {
+        margin: 16px 4px;
+      }
+      
+      .pricing {
+        margin: 0 4px;
+      }
+      
+    }
+    
+    @media (max-width: 480px) {
+      /* Móviles pequeños - márgenes más amplios */
+      .container {
+        padding: 0 12px !important;
+      }
+      
+      .card {
+        margin: 0 2px 16px 2px;
+      }
+      
+      /* Header móviles pequeños - más separación del techo */
+      .nav {
+        padding: 28px 0 24px 0;
+      }
+      
+      header {
+        padding-top: 20px;
+      }
+      
+      .hero h1 {
+        font-size: 24px;
+      }
+      
+      .hero .lead {
+        font-size: 14px;
+      }
+      
+      .card {
+        padding: 16px;
+        margin-bottom: 16px;
+      }
+      
+      .btn {
+        padding: 12px 16px;
+        font-size: 14px;
+      }
+      
+      /* Tabla ultra compacta */
+      .table-container table {
+        min-width: 500px;
+        font-size: 12px;
+      }
+      
+      .table-container th,
+      .table-container td {
+        padding: 6px 4px;
+      }
+      
+      /* Botones de tabla más pequeños */
+      .table-container .btn {
+        padding: 3px 6px;
+        font-size: 10px;
+        min-width: 60px;
+      }
+      
+      /* Modales más pequeños */
+      .modal-content {
+        width: 98vw !important;
+        margin: 10px auto !important;
+        padding: 16px !important;
+      }
+      
+      /* Calculadora compacta */
+      .calculator-results {
+        padding: 20px !important;
+      }
+      
+      .calculator-results h3 {
+        font-size: 18px !important;
+      }
+      
+      .calculator-results .price {
+        font-size: 24px !important;
+      }
+    }
+    
+    /* Mejoras generales para touch */
+    @media (hover: none) and (pointer: coarse) {
+      .btn {
+        min-height: 44px;
+        padding: 12px 20px;
+      }
+      
+      .btn:hover {
+        transform: none;
+      }
+      
+      .btn:active {
+        transform: scale(0.98);
+      }
+      
+      /* Inputs más grandes para touch */
+      input, select, textarea {
+        min-height: 44px;
+        font-size: 16px;
+      }
+    }
+    
+    /* ===== ARREGLOS ESPECÍFICOS ===== */
+    
+    /* Vista previa del dashboard - arreglar scroll horizontal */
+    #dashboard .table-container {
+      max-width: 100%;
+      overflow-x: auto;
+      margin: 0 auto;
+    }
+    
+      #dashboard .kpis {
+        max-width: 100%;
+        overflow-x: auto;
+      }
+    
+    /* Modales centrados correctamente */
+    .modal {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    
+    .modal-content {
+      position: relative;
+      left: auto;
+      top: auto;
+      transform: none;
+      margin: 0;
+      max-width: 90vw;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    
+    /* Datos centralizados - arreglar texto que se sale */
+    #datos .checklist {
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important;
+      gap: 16px !important;
+    }
+    
+    #datos .check {
+      text-align: center;
+      white-space: nowrap;
+    }
+    
+    /* Calculadora - arreglar incremento doble */
+    .calculator-input {
+      user-select: none;
+    }
+    
+    /* ===== MEJORAS PARA MÓVILES ===== */
+    
+    /* Botones táctiles más grandes en móviles */
+    @media (max-width: 768px) {
+      #incrementBtn, #decrementBtn {
+        min-width: 44px !important;
+        min-height: 44px !important;
+        font-size: 16px !important;
+        touch-action: manipulation;
+      }
+      
+      /* Efectos táctiles mejorados */
+      #incrementBtn:active, #decrementBtn:active {
+        transform: scale(0.9) !important;
+        background: #1d4ed8 !important;
+      }
+    }
+    
+    /* Prevenir selección de texto en botones táctiles */
+    #incrementBtn, #decrementBtn {
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+  </style>
+  <!-- Tema claro: sobreescritura para apariencia similar a public/guest-registration.html -->
+  <style>
+    :root{
+      --bg: #eef6ff; /* azul pastel muy tenue para el fondo */
+      --card: #ffffff;
+      --text: #0f172a;
+      --muted: #475569;
+      --brand: #2563eb;
+      --accent: #16a34a;
+      --danger: #ef4444;
+      --ring: rgba(37,99,235,.18);
+      --border: rgba(15,23,42,.08);
+    }
+    
+    /* Navegación suave */
+    html { 
+      scroll-behavior: smooth; 
+      scroll-padding-top: 80px; /* Espacio para el header fijo */
+    }
+    
+    /* Estado activo para enlaces de navegación */
+    .nav a.active {
+      background: var(--brand) !important;
+      color: white !important;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+    }
+    
+    /* Efecto hover mejorado para botones de navegación */
+    .nav a:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2);
+      transition: all 0.2s ease;
+    }
+    body{ background: var(--bg); color: var(--text); }
+    header{ background:#ffffff; border-bottom:1px solid var(--border); backdrop-filter: none; }
+    .nav{ padding: 16px 0; }
+    
+    /* KPIs con fondo blanco como las demás tarjetas */
+    .kpi{ 
+      background: #ffffff !important; 
+      border: 1px solid #e2e8f0 !important; 
+      border-radius: 14px; 
+      padding: 16px; 
+      display: flex; 
+      align-items: center; 
+      gap: 14px; 
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+    }
+    .logo{ background: transparent; }
+    .btn{ height: 42px; padding: 0 16px; border:1px solid rgba(15,23,42,.12); background:#ffffff; color:#0f172a }
+    .btn:hover{ background:#f8fafc; border-color: rgba(15,23,42,.18) }
+    .btn.primary{ background: #2563eb; color:#ffffff; border-color:#2563eb; box-shadow: 0 6px 18px var(--ring) }
+    .hero{ padding: 48px 0 20px }
+    .hero-card, .card, details{ background:#ffffff; border:1px solid var(--border); }
+    .badge{ background:#e2e8f0; color:#0f172a }
+    .section{ padding: 28px 0 }
+    .note{ color:#64748b }
+    table thead th{ background:#f8fafc }
+    table td, table th{ border-color: var(--border) }
+    footer{ background:#ffffff; border-top:1px solid var(--border) }
+    /* Logos en texto, legibles y en negrita */
+    .logos .logo-txt{ font-weight:800; font-family: system-ui, Inter, Segoe UI, Roboto, Arial, sans-serif }
+    /* Registro de viajeros: campos en claro */
+    #form-registro label span{ color:#0f172a; font-weight:600 }
+    #form-registro input, #form-registro select, #form-registro textarea{
+      background:#ffffff !important;
+      color:#0f172a !important;
+      border:1px solid rgba(15,23,42,.2) !important;
+      border-radius:10px;
+      height:40px;
+      padding:0 12px;
+    }
+    #form-registro input::placeholder, #form-registro textarea::placeholder{ color:#64748b }
+    #form-registro .btn{ border-color: rgba(15,23,42,.12); background:#ffffff; color:#0f172a }
+    #form-registro .btn:hover{ background:#f8fafc }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container nav">
+      <div class="brand">
+        <div class="logo" aria-hidden="true">🐬</div>
+        <b>Delfín Check‑in</b>
+      </div>
+      <div class="actions">
+        <a class="btn" href="#precio">Precios</a>
+        <a class="btn" href="#caracteristicas">Funciones</a>
+        <a class="btn primary" href="https://wa.me/34600000000" rel="noopener" target="_blank">Pedir demo</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero container" id="inicio">
+      <div class="badges">
+        <span class="badge">Check‑in online</span>
+        <span class="badge">Gestión de reservas</span>
+        <span class="badge">Panel sencillo</span>
+      </div>
+      <h1>Gestiona tu alojamiento sin complicarte: reservas, habitaciones y check‑in online</h1>
+      <p>Centraliza la operativa diaria: asigna habitaciones, recopila documentación antes de la llegada y reduce el tiempo en recepción. Ideal para hoteles, hostales y apartamentos turísticos.</p>
+      <div class="hero-card">
+        <div class="checklist">
+          <div class="check"><i>✔</i> Motor de reservas y panel de administración.</div>
+          <div class="check"><i>✔</i> Check‑in online con verificación de datos.</div>
+          <div class="check"><i>✔</i> Gestión de habitaciones, tarifas y disponibilidad.</div>
+          <div class="check"><i>✔</i> Informes básicos y exportación.</div>
+        </div>
+      </div>
+      <div class="logos">
+        <div class="brand-box">
+          <div class="brand-name">Booking</div>
+          <img alt="Logo Booking" src="https://upload.wikimedia.org/wikipedia/commons/b/be/Booking.com_logo.svg">
+        </div>
+        <div class="brand-box">
+          <div class="brand-name">Airbnb</div>
+          <img alt="Logo Airbnb" src="https://upload.wikimedia.org/wikipedia/commons/6/69/Airbnb_Logo_Bélo.svg">
+        </div>
+        <div class="brand-box">
+          <div class="brand-name">Expedia</div>
+          <img alt="Logo Expedia" src="https://upload.wikimedia.org/wikipedia/commons/3/3b/Expedia_Logo_2023.svg">
+        </div>
+        <div class="brand-box">
+          <div class="brand-name">Vrbo</div>
+          <img alt="Logo Vrbo" src="https://upload.wikimedia.org/wikipedia/commons/5/51/Vrbo.svg">
+        </div>
+      </div>
+      
+      <!-- Badges de confianza -->
+      <div style="display: flex; justify-content: center; align-items: center; gap: 24px; margin-top: 20px; flex-wrap: wrap;">
+        <div style="display: flex; align-items: center; gap: 8px; padding: 8px 16px; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 20px; font-size: 14px; font-weight: 600; color: #2563eb;">
+          <span>🔒</span>
+          <span>SSL Seguro</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px; padding: 8px 16px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 20px; font-size: 14px; font-weight: 600; color: #16a34a;">
+          <span>🛡️</span>
+          <span>RGPD Compliant</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px; padding: 8px 16px; background: #fef3c7; border: 1px solid #fde68a; border-radius: 20px; font-size: 14px; font-weight: 600; color: #d97706;">
+          <span>⭐</span>
+          <span>4.8/5 Valoración</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px; padding: 8px 16px; background: #f3e8ff; border: 1px solid #c4b5fd; border-radius: 20px; font-size: 14px; font-weight: 600; color: #7c3aed;">
+          <span>🚀</span>
+          <span>99.9% Uptime</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Vista previa tipo admin/dashboard -->
+    <section id="dashboard" class="section container" aria-labelledby="dashboard-title">
+      <h2 id="dashboard-title" data-es="Vista previa del Dashboard" data-en="Dashboard Preview">Vista previa del Dashboard</h2>
+      <p class="lead" data-es="Una muestra simple de cómo verías tus métricas y operaciones diarias." data-en="A simple preview of how you would see your metrics and daily operations.">Una muestra simple de cómo verías tus métricas y operaciones diarias.</p>
+      <div class="kpis">
+        <div class="kpi">
+          <div class="ic" style="background:#e0ecff">🏠</div>
+          <div>
+            <div class="meta" data-es="Habitaciones" data-en="Rooms">Habitaciones</div>
+            <div class="value" id="kpi-rooms">—</div>
+          </div>
+        </div>
+        <div class="kpi">
+          <div class="ic" style="background:#dcfce7">👥</div>
+          <div>
+            <div class="meta" data-es="Huéspedes Hoy" data-en="Guests Today">Huéspedes Hoy</div>
+            <div class="value" id="kpi-guests">—</div>
+          </div>
+        </div>
+        <div class="kpi">
+          <div class="ic" style="background:#fef9c3">📅</div>
+          <div>
+            <div class="meta" data-es="Reservas Activas" data-en="Active Reservations">Reservas Activas</div>
+            <div class="value" id="kpi-active">—</div>
+          </div>
+        </div>
+        <div class="kpi">
+          <div class="ic" style="background:#f5e8ff">📈</div>
+          <div>
+            <div class="meta" data-es="Ocupación" data-en="Occupancy">Ocupación</div>
+            <div class="value" id="kpi-occ">—</div>
+          </div>
+        </div>
+        <div class="kpi" style="grid-column: span 2">
+          <div class="ic" style="background:#e5f4ff">💶</div>
+          <div>
+            <div class="meta" data-es="Facturación" data-en="Revenue">Facturación</div>
+            <div class="value" id="kpi-revenue">—</div>
+          </div>
+        </div>
+        <div class="kpi">
+          <div class="ic" style="background:#ffe4e6">💳</div>
+          <div>
+            <div class="meta" data-es="Comisiones Pagadas" data-en="Commissions Paid">Comisiones Pagadas</div>
+            <div class="value" id="kpi-fees">—</div>
+          </div>
+        </div>
+        <div class="kpi">
+          <div class="ic" style="background:#e0ecff">📊</div>
+          <div>
+            <div class="meta" data-es="Ganancia Neta" data-en="Net Profit">Ganancia Neta</div>
+            <div class="value" id="kpi-profit">—</div>
+          </div>
+        </div>
+      </div>
+      
+
+      <div class="card" style="margin-top:16px">
+        <h3 style="margin:0 0 8px" data-es="Gestión de reservas" data-en="Reservation Management">Gestión de reservas</h3>
+        <div class="table-container">
+          <table style="width:100%; border-collapse:collapse">
+          <thead>
+            <tr style="color:var(--muted); font-size:13px; text-align:left">
+              <th style="padding:10px 8px; border-bottom:1px solid rgba(255,255,255,.08)" data-es="Habitación" data-en="Room">Habitación</th>
+              <th style="padding:10px 8px; border-bottom:1px solid rgba(255,255,255,.08)" data-es="Huésped" data-en="Guest">Huésped</th>
+              <th style="padding:10px 8px; border-bottom:1px solid rgba(255,255,255,.08)" data-es="Llegada" data-en="Arrival">Llegada</th>
+              <th style="padding:10px 8px; border-bottom:1px solid rgba(255,255,255,.08)" data-es="Salida" data-en="Departure">Salida</th>
+              <th style="padding:10px 8px; border-bottom:1px solid rgba(255,255,255,.08)" data-es="Estado" data-en="Status">Estado</th>
+              <th style="padding:10px 8px; border-bottom:1px solid rgba(255,255,255,.08)" data-es="Pagó huésped" data-en="Guest paid">Pagó huésped</th>
+              <th style="padding:10px 8px; border-bottom:1px solid rgba(255,255,255,.08)" data-es="Comisión" data-en="Commission">Comisión</th>
+              <th style="padding:10px 8px; border-bottom:1px solid rgba(255,255,255,.08)" data-es="Tu ganancia" data-en="Your profit">Tu ganancia</th>
+              <th style="padding:10px 8px; border-bottom:1px solid rgba(255,255,255,.08)" data-es="Canal" data-en="Channel">Canal</th>
+              <th style="padding:10px 8px; border-bottom:1px solid rgba(255,255,255,.08)" data-es="Teléfono" data-en="Phone">Teléfono</th>
+              <th style="padding:10px 8px; border-bottom:1px solid rgba(255,255,255,.08)" data-es="Email" data-en="Email">Email</th>
+              <th style="padding:10px 8px; border-bottom:1px solid rgba(255,255,255,.08)" data-es="Acciones" data-en="Actions">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="res-tbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="caracteristicas" class="section container">
+      <h2 data-es="Todo lo que necesitas para el día a día" data-en="Everything you need for daily operations">Todo lo que necesitas para el día a día</h2>
+      <p class="lead" data-es="Simplifica tareas repetitivas y mejora la experiencia del huésped. <strong>Importante:</strong> Las reservas se crean manualmente desde la página web de Delfín Check-in, no hay conexión automática con Booking, Airbnb u otros portales." data-en="Simplify repetitive tasks and improve guest experience. <strong>Important:</strong> Reservations are created manually from the Delfín Check-in website, there is no automatic connection with Booking, Airbnb or other portals.">Simplifica tareas repetitivas y mejora la experiencia del huésped. <strong>Importante:</strong> Las reservas se crean manualmente desde la página web de Delfín Check-in, no hay conexión automática con Booking, Airbnb u otros portales.</p>
+      <div class="features-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin: 30px 0;">
+        <style>
+          .feature-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15) !important;
+          }
+        </style>
+        <div class="feature-card" style="background: white; padding: 24px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-left: 4px solid #3b82f6; transition: transform 0.2s ease;">
+          <div style="display: flex; align-items: center; margin-bottom: 12px;">
+            <div style="background: #3b82f6; color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 12px; font-weight: bold;">1</div>
+            <h3 style="margin: 0; color: #1e40af; font-size: 18px;">Gestión manual de reservas</h3>
+          </div>
+          <p style="margin: 0; color: #64748b; line-height: 1.5;">Crear nuevas reservas desde "Nueva reserva" en el panel web</p>
+        </div>
+
+        <div class="feature-card" style="background: white; padding: 24px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-left: 4px solid #10b981; transition: transform 0.2s ease;">
+          <div style="display: flex; align-items: center; margin-bottom: 12px;">
+            <div style="background: #10b981; color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 12px; font-weight: bold;">2</div>
+            <h3 style="margin: 0; color: #047857; font-size: 18px;">Gestión de habitaciones</h3>
+          </div>
+          <p style="margin: 0; color: #64748b; line-height: 1.5;">Asignar habitaciones específicas a cada reserva</p>
+        </div>
+
+        <div class="feature-card" style="background: white; padding: 24px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-left: 4px solid #f59e0b; transition: transform 0.2s ease;">
+          <div style="display: flex; align-items: center; margin-bottom: 12px;">
+            <div style="background: #f59e0b; color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 12px; font-weight: bold;">3</div>
+            <h3 style="margin: 0; color: #d97706; font-size: 18px;">Pre‑check‑in online</h3>
+          </div>
+          <p style="margin: 0; color: #64748b; line-height: 1.5;">Enviar enlace al huésped para completar datos antes de llegar</p>
+        </div>
+
+        <div class="feature-card" style="background: white; padding: 24px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-left: 4px solid #8b5cf6; transition: transform 0.2s ease;">
+          <div style="display: flex; align-items: center; margin-bottom: 12px;">
+            <div style="background: #8b5cf6; color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 12px; font-weight: bold;">4</div>
+            <h3 style="margin: 0; color: #7c3aed; font-size: 18px;">Sincronización móvil</h3>
+          </div>
+          <p style="margin: 0; color: #64748b; line-height: 1.5;">Las reservas del dashboard se sincronizan con el calendario de tu móvil</p>
+        </div>
+
+        <div class="feature-card" style="background: white; padding: 24px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-left: 4px solid #ef4444; transition: transform 0.2s ease;">
+          <div style="display: flex; align-items: center; margin-bottom: 12px;">
+            <div style="background: #ef4444; color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 12px; font-weight: bold;">5</div>
+            <h3 style="margin: 0; color: #dc2626; font-size: 18px;">Registro de viajeros</h3>
+          </div>
+          <p style="margin: 0; color: #64748b; line-height: 1.5;">Generación automática de fichas para el Ministerio del Interior</p>
+        </div>
+
+        <div class="feature-card" style="background: white; padding: 24px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-left: 4px solid #06b6d4; transition: transform 0.2s ease;">
+          <div style="display: flex; align-items: center; margin-bottom: 12px;">
+            <div style="background: #06b6d4; color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 12px; font-weight: bold;">6</div>
+            <h3 style="margin: 0; color: #0891b2; font-size: 18px;">Exportación de datos</h3>
+          </div>
+          <p style="margin: 0; color: #64748b; line-height: 1.5;">CSV/Excel para contabilidad y declaración de renta</p>
+        </div>
+      </div>
+      <div class="note" style="margin-top:12px; padding:12px; background:#f0f9ff; border:1px solid #bae6fd; border-radius:8px;">
+        <strong>Nota sobre integraciones:</strong> Actualmente no hay conexión automática con portales externos. Las reservas de Booking, Airbnb, etc. deben introducirse manualmente en el sistema para gestionar el check-in y registro de viajeros.
+      </div>
+    </section>
+
+    <!-- Registro de viajeros / Formulario multi‑idioma -->
+    <section id="registro-viajeros" class="section container" aria-labelledby="registro-title">
+      <h2 id="registro-title">Registro de viajeros (Ministerio del Interior)</h2>
+      <p class="lead">Genera automáticamente las fichas y envíalas según normativa. Pide a tus huéspedes que completen un formulario seguro antes de llegar, disponible en varios idiomas.</p>
+
+      <div class="card">
+        <form id="form-registro" onsubmit="return false">
+          <div style="display:flex; gap:10px; margin-bottom:12px; flex-wrap:wrap">
+            <button class="btn primary" id="sendLinkBtn" type="button">Enviar enlace al huésped</button>
+            <button class="btn" id="previewBtn" type="button">Previsualizar ficha</button>
+          </div>
+          <div class="form-grid" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:12px">
+            <label>
+              <span>Entrada (check‑in)</span>
+              <input id="arrivalDt" type="datetime-local" style="width:100%; height:40px; border-radius:10px; background:#0c1428; color:var(--text); border:1px solid rgba(255,255,255,.12); padding:0 12px">
+            </label>
+            <label>
+              <span>Salida (check‑out)</span>
+              <input id="departureDt" type="datetime-local" style="width:100%; height:40px; border-radius:10px; background:#0c1428; color:var(--text); border:1px solid rgba(255,255,255,.12); padding:0 12px">
+            </label>
+            <label>
+              <span>Idioma del formulario</span>
+              <select id="lang" style="width:100%; height:40px; border-radius:10px; background:#0c1428; color:var(--text); border:1px solid rgba(255,255,255,.12); padding:0 10px">
+                <option value="es">Español</option>
+                <option value="en">English</option>
+                <option value="fr">Français</option>
+                <option value="de">Deutsch</option>
+                <option value="it">Italiano</option>
+              </select>
+            </label>
+            <label>
+              <span>Nombre y apellidos</span>
+              <input id="guestName" required placeholder="Nombre del huésped" style="width:100%; height:40px; border-radius:10px; background:#0c1428; color:var(--text); border:1px solid rgba(255,255,255,.12); padding:0 12px">
+            </label>
+            <label>
+              <span>Documento (DNI/Pasaporte)</span>
+              <input id="docNumber" required placeholder="Número de documento" style="width:100%; height:40px; border-radius:10px; background:#0c1428; color:var(--text); border:1px solid rgba(255,255,255,.12); padding:0 12px">
+            </label>
+            <label>
+              <span>Fecha de nacimiento</span>
+              <input id="birthDate" type="date" required style="width:100%; height:40px; border-radius:10px; background:#0c1428; color:var(--text); border:1px solid rgba(255,255,255,.12); padding:0 12px">
+            </label>
+            <label>
+              <span>Nacionalidad</span>
+              <input id="nationality" placeholder="Ej. Española" style="width:100%; height:40px; border-radius:10px; background:#0c1428; color:var(--text); border:1px solid rgba(255,255,255,.12); padding:0 12px">
+            </label>
+            <label>
+              <span>Correo</span>
+              <input id="email" type="email" placeholder="email@ejemplo.com" style="width:100%; height:40px; border-radius:10px; background:#0c1428; color:var(--text); border:1px solid rgba(255,255,255,.12); padding:0 12px">
+            </label>
+          </div>
+          <p class="note" style="margin-top:10px">Este es un ejemplo estático para mostrar el flujo. En producción, se validan y almacenan los datos y se generan los ficheros oficiales.</p>
+          <div class="note" style="margin-top:6px">
+            <strong>Ejemplos de parte de viajero:</strong> DNI/NIE o Pasaporte, nombre completo, fecha de nacimiento, nacionalidad, dirección y contacto, fechas de entrada/salida.
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- Instrucciones de uso en 3 pasos -->
+    <section id="instrucciones" class="section container" aria-labelledby="steps-title">
+      <h2 id="steps-title">Cómo usar Delfín Check‑in en 3 pasos</h2>
+      <p class="lead">Guía rápida para enviar, recibir y presentar los partes de viajero.</p>
+      <div class="pricing" style="grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));">
+        <article class="card">
+          <h3>Paso 1 · Enviar formulario</h3>
+          <p class="note">Envía al huésped el enlace del <strong>formulario de registro de parte de viajero</strong> en su idioma.</p>
+        </article>
+        <article class="card">
+          <h3>Paso 2 · Recibir en Delfín Check‑in</h3>
+          <p class="note">Cuando el huésped lo completa, el <strong>parte de viajero</strong> llega automáticamente a <strong>Delfín Check‑in</strong> y queda guardado.</p>
+        </article>
+        <article class="card">
+          <h3>Paso 3 · Descargar y enviar al Ministerio</h3>
+          <p class="note">Descarga los <strong>partes de viajero</strong> desde el panel y <strong>envíalos</strong> al <strong>Ministerio del Interior de España</strong> según la normativa.</p>
+        </article>
+      </div>
+    </section>
+
+    <!-- Datos centralizados y descarga para renta anual -->
+    <section id="datos" class="section container" aria-labelledby="datos-title">
+      <h2 id="datos-title">Todos los datos centralizados</h2>
+      <p class="lead">Exporta un único archivo con todos los ingresos y reservas para tu declaración de la renta anual. Ahorra tiempo y errores.</p>
+      <div class="card">
+        <div class="checklist" style="grid-template-columns: repeat(auto-fit, minmax(180px,1fr)); justify-items: center; gap: 16px;">
+          <div class="check" style="justify-content: center; text-align: center; white-space: nowrap;"><i>✔</i> Descarga CSV/Excel unificado</div>
+          <div class="check" style="justify-content: center; text-align: center; white-space: nowrap;"><i>✔</i> Rangos de fechas (mes/año fiscal)</div>
+          <div class="check" style="justify-content: center; text-align: center; white-space: nowrap;"><i>✔</i> Datos listos para asesoría</div>
+        </div>
+        <div class="cta" style="margin-top:12px">
+          <a class="btn primary" href="#" id="downloadCsvBtn">Descargar ejemplo (CSV)</a>
+          <a class="btn" href="#precio">Ver planes</a>
+        </div>
+      </div>
+    </section>
+
+    <section id="precio" class="section container">
+      <h2 data-es="Precios simples y claros" data-en="Simple and clear pricing">Precios simples y claros</h2>
+      <p class="lead" data-es="Precio por propiedad: mensual o anual con descuento. Descuento especial a partir de 5 propiedades. <strong>Precio vigente hasta el próximo ajuste.</strong>" data-en="Price per property: monthly or annual with discount. Special discount from 5 properties. <strong>Current price until next adjustment.</strong>">Precio por propiedad: mensual o anual con descuento. Descuento especial a partir de 5 propiedades. <strong>Precio vigente hasta el próximo ajuste.</strong></p>
+      
+      <!-- Comparación de planes -->
+      <div class="card" style="margin-bottom: 32px; padding: 24px;">
+        <h3 style="text-align: center; margin-bottom: 24px;" data-es="Comparación de planes" data-en="Plan comparison">Comparación de planes</h3>
+        <div style="overflow-x: auto;">
+          <table style="width: 100%; border-collapse: collapse; min-width: 600px;">
+            <thead>
+              <tr style="background: #f8fafc;">
+                <th style="padding: 16px 12px; text-align: left; border-bottom: 2px solid var(--border); font-weight: 600;" data-es="Características" data-en="Features">Características</th>
+                <th style="padding: 16px 12px; text-align: center; border-bottom: 2px solid var(--border); font-weight: 600;" data-es="Mensual" data-en="Monthly">Mensual</th>
+                <th style="padding: 16px 12px; text-align: center; border-bottom: 2px solid var(--border); font-weight: 600; background: #e0f2fe; color: #2563eb;" data-es="Anual (Recomendado)" data-en="Annual (Recommended)">Anual (Recomendado)</th>
+                <th style="padding: 16px 12px; text-align: center; border-bottom: 2px solid var(--border); font-weight: 600;" data-es="Volumen (5+ propiedades)" data-en="Volume (5+ properties)">Volumen (5+ propiedades)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="padding: 12px; border-bottom: 1px solid var(--border); font-weight: 500;" data-es="Precio por propiedad" data-en="Price per property">Precio por propiedad</td>
+                <td style="padding: 12px; border-bottom: 1px solid var(--border); text-align: center; font-weight: 600;">4€/mes</td>
+                <td style="padding: 12px; border-bottom: 1px solid var(--border); text-align: center; font-weight: 600; background: #f0f9ff; color: #2563eb;">40€/año (3,33€/mes)</td>
+                <td style="padding: 12px; border-bottom: 1px solid var(--border); text-align: center; font-weight: 600;" data-es="Precio negociable" data-en="Negotiable price">Precio negociable</td>
+              </tr>
+              <tr>
+                <td style="padding: 12px; border-bottom: 1px solid var(--border);" data-es="Gestión de reservas" data-en="Reservation management">Gestión de reservas</td>
+                <td style="padding: 12px; border-bottom: 1px solid var(--border); text-align: center;">✅</td>
+                <td style="padding: 12px; border-bottom: 1px solid var(--border); text-align: center; background: #f0f9ff;">✅</td>
+                <td style="padding: 12px; border-bottom: 1px solid var(--border); text-align: center;">✅</td>
+              </tr>
+              <tr>
+                <td style="padding: 12px; border-bottom: 1px solid var(--border);" data-es="Check-in online" data-en="Online check-in">Check-in online</td>
+                <td style="padding: 12px; border-bottom: 1px solid var(--border); text-align: center;">✅</td>
+                <td style="padding: 12px; border-bottom: 1px solid var(--border); text-align: center; background: #f0f9ff;">✅</td>
+                <td style="padding: 12px; border-bottom: 1px solid var(--border); text-align: center;">✅</td>
+              </tr>
+              <tr>
+                <td style="padding: 12px; border-bottom: 1px solid var(--border);" data-es="Registro de viajeros" data-en="Traveler registration">Registro de viajeros</td>
+                <td style="padding: 12px; border-bottom: 1px solid var(--border); text-align: center;">✅</td>
+                <td style="padding: 12px; border-bottom: 1px solid var(--border); text-align: center; background: #f0f9ff;">✅</td>
+                <td style="padding: 12px; border-bottom: 1px solid var(--border); text-align: center;">✅</td>
+              </tr>
+              <tr>
+                <td style="padding: 12px; border-bottom: 1px solid var(--border);" data-es="Exportación CSV/Excel" data-en="CSV/Excel export">Exportación CSV/Excel</td>
+                <td style="padding: 12px; border-bottom: 1px solid var(--border); text-align: center;">✅</td>
+                <td style="padding: 12px; border-bottom: 1px solid var(--border); text-align: center; background: #f0f9ff;">✅</td>
+                <td style="padding: 12px; border-bottom: 1px solid var(--border); text-align: center;">✅</td>
+              </tr>
+              <tr>
+                <td style="padding: 12px; border-bottom: 1px solid var(--border);" data-es="Soporte por email" data-en="Email support">Soporte por email</td>
+                <td style="padding: 12px; border-bottom: 1px solid var(--border); text-align: center;">✅</td>
+                <td style="padding: 12px; border-bottom: 1px solid var(--border); text-align: center; background: #f0f9ff;" data-es="✅ Prioritario" data-en="✅ Priority">✅ Prioritario</td>
+                <td style="padding: 12px; border-bottom: 1px solid var(--border); text-align: center;" data-es="✅ Dedicado" data-en="✅ Dedicated">✅ Dedicado</td>
+              </tr>
+              <tr>
+                <td style="padding: 12px; border-bottom: 1px solid var(--border);" data-es="Onboarding" data-en="Onboarding">Onboarding</td>
+                <td style="padding: 12px; border-bottom: 1px solid var(--border); text-align: center;" data-es="Básico" data-en="Basic">Básico</td>
+                <td style="padding: 12px; border-bottom: 1px solid var(--border); text-align: center; background: #f0f9ff;" data-es="✅ Asistido" data-en="✅ Assisted">✅ Asistido</td>
+                <td style="padding: 12px; border-bottom: 1px solid var(--border); text-align: center;" data-es="✅ Personalizado" data-en="✅ Customized">✅ Personalizado</td>
+              </tr>
+              <tr>
+                <td style="padding: 12px; border-bottom: 1px solid var(--border);" data-es="Facturación" data-en="Billing">Facturación</td>
+                <td style="padding: 12px; border-bottom: 1px solid var(--border); text-align: center;" data-es="Individual" data-en="Individual">Individual</td>
+                <td style="padding: 12px; border-bottom: 1px solid var(--border); text-align: center; background: #f0f9ff;" data-es="Individual" data-en="Individual">Individual</td>
+                <td style="padding: 12px; border-bottom: 1px solid var(--border); text-align: center;" data-es="✅ Unificada" data-en="✅ Unified">✅ Unificada</td>
+              </tr>
+              <tr>
+                <td style="padding: 12px; border-bottom: 1px solid var(--border);" data-es="Ahorro anual" data-en="Annual savings">Ahorro anual</td>
+                <td style="padding: 12px; border-bottom: 1px solid var(--border); text-align: center;">—</td>
+                <td style="padding: 12px; border-bottom: 1px solid var(--border); text-align: center; background: #f0f9ff; color: #16a34a; font-weight: 600;" data-es="8€ por propiedad" data-en="8€ per property">8€ por propiedad</td>
+                <td style="padding: 12px; border-bottom: 1px solid var(--border); text-align: center; color: #16a34a; font-weight: 600;" data-es="Hasta 30% descuento" data-en="Up to 30% discount">Hasta 30% descuento</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        </div>
+      </div>
+      
+      <!-- Calculadora de precios -->
+      <div class="card" style="margin-bottom: 32px; padding: 0; background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); border: 2px solid #2563eb; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(37, 99, 235, 0.1);">
+        <!-- Header con gradiente -->
+        <div style="background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); padding: 24px; text-align: center; color: white;">
+          <div style="font-size: 32px; margin-bottom: 8px;">💰</div>
+          <h3 style="margin: 0 0 8px; font-size: 24px; font-weight: 700;">Calculadora de precios</h3>
+          <p style="margin: 0; opacity: 0.9; font-size: 16px;">Descubre cuánto te costaría Delfín Check-in según tus necesidades</p>
+        </div>
+        
+        <!-- Contenido principal -->
+        <div style="padding: 32px;">
+          <div class="calculator-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; margin-bottom: 32px;">
+            <!-- Selector de propiedades -->
+            <div style="position: relative;">
+              <label style="display: block; margin-bottom: 12px; font-weight: 600; color: var(--text); font-size: 16px;">
+                🏠 Número de propiedades
+              </label>
+              <div style="position: relative;">
+                <input type="number" id="calcProperties" min="1" max="50" value="1" readonly class="calculator-input"
+                       style="width: 100%; height: 50px; border-radius: 12px; border: 2px solid #e2e8f0; padding: 0 20px 0 20px; font-size: 18px; text-align: center; font-weight: 600; color: #2563eb; background: white; transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(0,0,0,0.05); -moz-appearance: textfield; cursor: default;"
+                       onfocus="this.style.borderColor='#2563eb'; this.style.boxShadow='0 0 0 3px rgba(37, 99, 235, 0.1)'"
+                       onblur="this.style.borderColor='#e2e8f0'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.05)'"
+                       onkeydown="return false;"
+                       onpaste="return false;"
+                       oninput="return false;">
+                <!-- Flechas personalizadas más grandes y bonitas -->
+                <div style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 2px; pointer-events: auto; z-index: 10;">
+           <button type="button" id="incrementBtn"
+                   onmousedown="startIncrement()"
+                   onmouseup="stopIncrement()"
+                   onmouseleave="stopIncrement()"
+                   onclick="singleIncrement()"
+                          style="width: 24px; height: 20px; background: #2563eb; color: white; border: none; border-radius: 4px 4px 0 0; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; transition: all 0.2s ease; user-select: none;"
+                          onmouseover="this.style.background='#1d4ed8'"
+                          onmouseout="this.style.background='#2563eb'">▲</button>
+                  <button type="button" id="decrementBtn"
+                          onmousedown="startDecrement()"
+                          onmouseup="stopDecrement()"
+                          onmouseleave="stopDecrement()"
+                          onclick="singleDecrement()"
+                          style="width: 24px; height: 20px; background: #2563eb; color: white; border: none; border-radius: 0 0 4px 4px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; transition: all 0.2s ease; user-select: none;"
+                          onmouseover="this.style.background='#1d4ed8'"
+                          onmouseout="this.style.background='#2563eb'">▼</button>
+                </div>
+                <div style="position: absolute; right: 40px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 14px; font-weight: 500; pointer-events: none;">propiedades</div>
+              </div>
+            </div>
+            
+            <!-- Selector de plan -->
+            <div>
+              <label style="display: block; margin-bottom: 12px; font-weight: 600; color: var(--text); font-size: 16px;">
+                📅 Tipo de plan
+              </label>
+              <div style="position: relative;">
+                <select id="calcPlan" class="calculator-input" style="width: 100%; height: 50px; border-radius: 12px; border: 2px solid #e2e8f0; padding: 0 50px 0 20px; font-size: 16px; font-weight: 500; background: white; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(0,0,0,0.05); appearance: none; -webkit-appearance: none; -moz-appearance: none;"
+                        onfocus="this.style.borderColor='#2563eb'; this.style.boxShadow='0 0 0 3px rgba(37, 99, 235, 0.1)'"
+                        onblur="this.style.borderColor='#e2e8f0'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.05)'">
+                  <option value="monthly">💳 Mensual (4€/propiedad)</option>
+                  <option value="yearly" selected>🎯 Anual (40€/propiedad) - RECOMENDADO</option>
+                  <option value="volume">🚀 Volumen (5+ propiedades)</option>
+                </select>
+                <!-- Flecha personalizada para el select -->
+                <div style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); pointer-events: none; color: #2563eb; font-size: 16px; font-weight: bold;">▼</div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Resultados con diseño mejorado -->
+          <div id="calcResults" class="calculator-results" style="background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); border-radius: 16px; padding: 32px; text-align: center; border: 2px solid #e2e8f0; position: relative; overflow: hidden;">
+            <!-- Decoración de fondo -->
+            <div style="position: absolute; top: -20px; right: -20px; width: 100px; height: 100px; background: linear-gradient(135deg, #2563eb, #1d4ed8); border-radius: 50%; opacity: 0.1;"></div>
+            <div style="position: absolute; bottom: -30px; left: -30px; width: 80px; height: 80px; background: linear-gradient(135deg, #16a34a, #15803d); border-radius: 50%; opacity: 0.1;"></div>
+            
+            <div style="position: relative; z-index: 1;">
+              <div style="font-size: 36px; font-weight: 900; color: #2563eb; margin-bottom: 12px; text-shadow: 0 2px 4px rgba(37, 99, 235, 0.1);" id="calcTotal">40€/año</div>
+              <div style="color: #64748b; margin-bottom: 16px; font-size: 16px; font-weight: 500;" id="calcPerProperty">40€ por propiedad</div>
+              <div style="color: #16a34a; font-weight: 700; font-size: 18px; padding: 8px 16px; background: rgba(22, 163, 74, 0.1); border-radius: 20px; display: inline-block;" id="calcSavings">Ahorras 8€ al año</div>
+            </div>
+          </div>
+          
+          <!-- Botones de acción -->
+          <div style="text-align: center; margin-top: 32px; display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;">
+            <button class="btn primary" onclick="openCalculator()" style="height: 50px; padding: 0 24px; font-size: 16px; font-weight: 600; border-radius: 12px; background: linear-gradient(135deg, #2563eb, #1d4ed8); box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); transition: all 0.3s ease; transform: translateY(0);"
+                    onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(37, 99, 235, 0.4)'"
+                    onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(37, 99, 235, 0.3)'">
+              💬 Ver detalles
+            </button>
+            <a class="btn" href="https://wa.me/34600000000?text=Hola,%20me%20interesa%20Delfin%20Check-in%20para%20mis%20propiedades" target="_blank" rel="noopener" 
+               style="height: 50px; padding: 0 24px; font-size: 16px; font-weight: 600; border-radius: 12px; background: white; color: #2563eb; border: 2px solid #2563eb; text-decoration: none; display: inline-flex; align-items: center; transition: all 0.3s ease; transform: translateY(0);"
+               onmouseover="this.style.transform='translateY(-2px)'; this.style.background='#2563eb'; this.style.color='white'; this.style.boxShadow='0 6px 16px rgba(37, 99, 235, 0.3)'"
+               onmouseout="this.style.transform='translateY(0)'; this.style.background='white'; this.style.color='#2563eb'; this.style.boxShadow='none'">
+              📞 Contactar
+            </a>
+          </div>
+        </div>
+      </div>
+      
+      <div class="pricing">
+        <article class="card" itemscope itemtype="https://schema.org/Offer">
+          <h3 itemprop="name">Suscripción mensual</h3>
+          <div class="price"><strong itemprop="price" content="4">4€</strong><small>/ propiedad / mes</small></div>
+          <meta itemprop="priceCurrency" content="EUR">
+          <ul class="features">
+            <li>Gestión manual de reservas</li>
+            <li>Check‑in online</li>
+            <li>Gestión de habitaciones</li>
+            <li>Registro de viajeros</li>
+            <li>Soporte por email</li>
+          </ul>
+          <div class="cta">
+            <button class="btn primary" onclick="startPayment('monthly')">Empezar ahora</button>
+            <a class="btn" href="mailto:ventas@ejemplo.com?subject=Consulta%20plan%20mensual">Hablar con ventas</a>
+          </div>
+          <p class="note">Sin permanencia. Cancela cuando quieras.</p>
+        </article>
+        <article class="card" itemscope itemtype="https://schema.org/Offer" style="border: 2px solid #2563eb; position: relative;">
+          <div style="position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: #2563eb; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600;">Recomendado</div>
+          <h3 itemprop="name">Plan anual</h3>
+          <div class="price"><strong itemprop="price" content="40">40€</strong><small>/ propiedad / año</small></div>
+          <meta itemprop="priceCurrency" content="EUR">
+          <ul class="features">
+            <li>Todo lo del mensual</li>
+            <li>Descuento por pago anual</li>
+            <li>Soporte prioritario</li>
+            <li>Onboarding asistido</li>
+            <li>Equivale a 3,33€/mes</li>
+          </ul>
+          <div class="cta">
+            <button class="btn primary" onclick="startPayment('yearly')">Contratar anual</button>
+            <a class="btn" href="mailto:ventas@ejemplo.com?subject=Consulta%20plan%20anual">Hablar con ventas</a>
+          </div>
+          <p class="note">Ahorra 8€ al año por propiedad.</p>
+        </article>
+        <article class="card" itemscope itemtype="https://schema.org/Offer">
+          <h3 itemprop="name">Descuento por volumen</h3>
+          <div class="price"><strong>Desde 5</strong><small>propiedades</small></div>
+          <ul class="features">
+            <li>Precio especial negociable</li>
+            <li>Gestión centralizada</li>
+            <li>Soporte dedicado</li>
+            <li>Facturación unificada</li>
+            <li>Onboarding personalizado</li>
+          </ul>
+          <div class="cta">
+            <a class="btn primary" href="https://wa.me/34600000000?text=Consulta%20descuento%20por%20volumen" rel="noopener" target="_blank">Consultar precio</a>
+            <a class="btn" href="mailto:ventas@ejemplo.com?subject=Consulta%20descuento%20volumen">Hablar con ventas</a>
+          </div>
+          <p class="note">Contacta para precio personalizado.</p>
+        </article>
+      </div>
+      <div class="note" style="margin-top:16px; padding:12px; background:#fef3c7; border:1px solid #f59e0b; border-radius:8px; text-align:center;">
+        <strong>Próximo ajuste de precios:</strong> Tras la finalización del workshop SES, los precios subirán a aproximadamente <strong>7€/mes</strong> manteniendo el descuento anual proporcional. <strong>Contrata ahora al precio actual.</strong>
+      </div>
+    </section>
+
+    <!-- Formulario de Contacto -->
+    <section id="contacto" class="section container">
+      <h2 data-es="¿Tienes alguna pregunta?" data-en="Do you have any questions?">¿Tienes alguna pregunta?</h2>
+      <p class="lead" data-es="Contáctanos y te ayudaremos a encontrar la mejor solución para tu alojamiento." data-en="Contact us and we'll help you find the best solution for your accommodation.">Contáctanos y te ayudaremos a encontrar la mejor solución para tu alojamiento.</p>
+      <div style="display: flex; flex-direction: column; gap: 32px;">
+        <div class="card">
+          <h3 data-es="Enviar mensaje" data-en="Send message">Enviar mensaje</h3>
+          <form id="contactForm" onsubmit="return false">
+            <div style="display: grid; gap: 12px; margin-bottom: 16px;">
+              <label>
+                <span data-es="Nombre *" data-en="Name *">Nombre *</span>
+                <input id="contactName" required placeholder="Tu nombre completo" data-es-placeholder="Tu nombre completo" data-en-placeholder="Your full name" style="width: 100%; height: 40px; border-radius: 10px; background: #ffffff; color: #0f172a; border: 1px solid rgba(15,23,42,.2); padding: 0 12px;">
+              </label>
+              <label>
+                <span data-es="Email *" data-en="Email *">Email *</span>
+                <input id="contactEmail" type="email" required placeholder="tu@email.com" data-es-placeholder="tu@email.com" data-en-placeholder="your@email.com" style="width: 100%; height: 40px; border-radius: 10px; background: #ffffff; color: #0f172a; border: 1px solid rgba(15,23,42,.2); padding: 0 12px;">
+              </label>
+              <label>
+                <span data-es="Teléfono" data-en="Phone">Teléfono</span>
+                <input id="contactPhone" placeholder="+34 600 000 000" data-es-placeholder="+34 600 000 000" data-en-placeholder="+1 555 000 000" style="width: 100%; height: 40px; border-radius: 10px; background: #ffffff; color: #0f172a; border: 1px solid rgba(15,23,42,.2); padding: 0 12px;">
+              </label>
+              <label>
+                <span data-es="Empresa/Alojamiento" data-en="Company/Accommodation">Empresa/Alojamiento</span>
+                <input id="contactBusiness" placeholder="Nombre de tu negocio" data-es-placeholder="Nombre de tu negocio" data-en-placeholder="Your business name" style="width: 100%; height: 40px; border-radius: 10px; background: #ffffff; color: #0f172a; border: 1px solid rgba(15,23,42,.2); padding: 0 12px;">
+              </label>
+              <label>
+                <span data-es="Mensaje *" data-en="Message *">Mensaje *</span>
+                <textarea id="contactMessage" required placeholder="Cuéntanos qué necesitas..." data-es-placeholder="Cuéntanos qué necesitas..." data-en-placeholder="Tell us what you need..." rows="4" style="width: 100%; border-radius: 10px; background: #ffffff; color: #0f172a; border: 1px solid rgba(15,23,42,.2); padding: 12px; resize: vertical;"></textarea>
+              </label>
+            </div>
+            <div class="cta">
+              <button class="btn primary" id="sendContact" type="submit" data-es="Enviar mensaje" data-en="Send message">Enviar mensaje</button>
+            </div>
+            <p class="note" style="margin-top: 12px;" data-es="Te responderemos en menos de 24 horas." data-en="We'll respond within 24 hours.">Te responderemos en menos de 24 horas.</p>
+          </form>
+        </div>
+        <!-- Información de contacto compacta -->
+        <div class="card" style="background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); border: 1px solid #e2e8f0;">
+          <h3 style="text-align: center; margin-bottom: 20px;">Información de contacto</h3>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; text-align: center;">
+            <div>
+              <div style="font-size: 20px; margin-bottom: 8px;">📱</div>
+              <div style="font-weight: 600; color: var(--text); margin-bottom: 4px;">WhatsApp</div>
+              <div style="color: var(--muted); font-size: 14px;">+34 600 000 000</div>
+            </div>
+            <div>
+              <div style="font-size: 20px; margin-bottom: 8px;">📧</div>
+              <div style="font-weight: 600; color: var(--text); margin-bottom: 4px;">Email</div>
+              <div style="color: var(--muted); font-size: 14px;">ventas@delfincheckin.com</div>
+            </div>
+            <div>
+              <div style="font-size: 20px; margin-bottom: 8px;">🕒</div>
+              <div style="font-weight: 600; color: var(--text); margin-bottom: 4px;">Horario</div>
+              <div style="color: var(--muted); font-size: 14px;">Lun-Vie: 9:00-18:00</div>
+            </div>
+          </div>
+          <div class="cta" style="margin-top: 20px; justify-content: center;">
+            <a class="btn primary" href="https://wa.me/34600000000?text=Hola,%20me%20interesa%20Delfin%20Check-in" target="_blank" rel="noopener">Chat directo</a>
+            <a class="btn" href="mailto:ventas@delfincheckin.com?subject=Consulta%20Delfin%20Check-in">Email directo</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Testimonios -->
+    <section id="testimonios" class="section container">
+      <h2>Lo que dicen nuestros clientes</h2>
+      <p class="lead">Hostales y apartamentos que ya confían en Delfín Check-in para su gestión diaria.</p>
+      <div class="testimonials">
+        <div class="testimonial">
+          <div class="testimonial-text">Desde que uso Delfín Check-in, el registro de viajeros es automático. Antes tardaba 10 minutos por huésped, ahora 2 minutos. Los huéspedes llegan con todo completado.</div>
+          <div class="testimonial-author">María González</div>
+          <div class="testimonial-role">Gerente, Hostal Centro Málaga</div>
+        </div>
+        <div class="testimonial">
+          <div class="testimonial-text">El precio es imbatible: 4€ por propiedad. Otros PMS nos cobraban 50€/mes. La gestión manual es perfecta para nosotros, tenemos control total.</div>
+          <div class="testimonial-author">Carlos Ruiz</div>
+          <div class="testimonial-role">Propietario, Apartamentos Costa del Sol</div>
+        </div>
+        <div class="testimonial">
+          <div class="testimonial-text">La exportación para la renta me ahorra horas cada mes. Un solo CSV con todos los datos. Mi asesor está encantado con la organización.</div>
+          <div class="testimonial-author">Ana Martín</div>
+          <div class="testimonial-role">Administradora, Pensión La Playa</div>
+        </div>
+      </div>
+    </section>
+
+    <section id="faq" class="section container">
+      <h2>Preguntas frecuentes</h2>
+      <details>
+        <summary>¿Puedo cancelar cuando quiera?</summary>
+        <p>
+          Sí. El plan mensual funciona como una suscripción sin permanencia: puedes darte de baja en cualquier momento desde el panel o solicitándolo a soporte, y no se te volverán a emitir cargos a partir del siguiente ciclo. 
+          Si eliges el plan anual, disfrutas de un precio reducido y la licencia permanece activa durante 12 meses completos; al finalizar el periodo puedes renovar o cambiarte a mensual sin penalización.
+        </p>
+      </details>
+      <details>
+        <summary>¿Incluye channel manager?</summary>
+        <p>
+          Trabajamos con conectores para sincronizar disponibilidad, tarifas y reservas con los principales portales (p. ej., Booking.com, Airbnb, Expedia). 
+          La activación depende de tu mix de canales y del plan contratado. Si ya tienes un channel manager, podemos integrarnos para evitar duplicidades. 
+          Te asesoramos en la configuración inicial para minimizar overbookings y mantener inventario unificado.
+        </p>
+      </details>
+      <details>
+        <summary>¿Cómo se hace el check‑in online?</summary>
+        <p>
+          Desde el dashboard generas o programas el envío de un enlace seguro al huésped (por email o WhatsApp). 
+          El viajero completa sus datos, adjunta documentación y firma si procede, todo en su idioma. 
+          La información llega validada al sistema y se consolida en el registro de viajeros para su posterior envío al Ministerio del Interior. 
+          Al llegar, el proceso en recepción se reduce a validar identidad y entregar llaves.
+        </p>
+      </details>
+      <details>
+        <summary>¿Puedo exportar datos para la asesoría y la renta?</summary>
+        <p>
+          Sí. Puedes descargar un único archivo (CSV/Excel) con ingresos, tasas y ocupación filtrado por rango de fechas o ejercicio fiscal. 
+          Además, el registro de viajeros se exporta en los formatos requeridos para su notificación oficial.
+        </p>
+      </details>
+    </section>
+  </main>
+
+  <!-- Modal de previsualización -->
+  <div id="previewModal" style="position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(15,23,42,.6); z-index:1000; backdrop-filter: blur(4px);">
+    <div style="width:min(800px, 95vw); max-height:90vh; background:#ffffff; color:#0f172a; border-radius:16px; box-shadow:0 25px 80px rgba(0,0,0,.4); overflow:hidden; animation: slideIn 0.3s ease-out;">
+      <!-- Header con gradiente -->
+      <div style="background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white; padding: 20px 24px; display:flex; align-items:center; justify-content:space-between;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div style="font-size: 24px;">📋</div>
+          <div>
+            <h3 style="margin: 0; font-size: 20px; font-weight: 700;">Previsualización de Ficha de Registro</h3>
+            <p style="margin: 4px 0 0; font-size: 14px; opacity: 0.9;">Datos del huésped generados automáticamente</p>
+          </div>
+        </div>
+        <button id="previewClose" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); height: 40px; width: 40px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: bold; transition: all 0.2s ease;"
+                onmouseover="this.style.background='rgba(255,255,255,0.3)'"
+                onmouseout="this.style.background='rgba(255,255,255,0.2)'">×</button>
+      </div>
+      
+      <!-- Contenido principal -->
+      <div style="padding: 24px; max-height: calc(90vh - 100px); overflow-y: auto;">
+        <!-- Información personal -->
+        <div style="background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); border-radius: 12px; padding: 20px; margin-bottom: 20px; border: 1px solid #e2e8f0;">
+          <h4 style="margin: 0 0 16px; color: #1e40af; font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+            👤 Información Personal
+          </h4>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px;">
+            <div style="background: white; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0;">
+              <div style="color: #64748b; font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Nombre completo</div>
+              <div id="pv-name" style="font-weight: 600; color: #0f172a; font-size: 16px;"></div>
+            </div>
+            <div style="background: white; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0;">
+              <div style="color: #64748b; font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Documento de identidad</div>
+              <div id="pv-doc" style="font-weight: 600; color: #0f172a; font-size: 16px;"></div>
+            </div>
+            <div style="background: white; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0;">
+              <div style="color: #64748b; font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Fecha de nacimiento</div>
+              <div id="pv-birth" style="font-weight: 600; color: #0f172a; font-size: 16px;"></div>
+            </div>
+            <div style="background: white; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0;">
+              <div style="color: #64748b; font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Nacionalidad</div>
+              <div id="pv-nation" style="font-weight: 600; color: #0f172a; font-size: 16px;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Información de contacto -->
+        <div style="background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border-radius: 12px; padding: 20px; margin-bottom: 20px; border: 1px solid #bae6fd;">
+          <h4 style="margin: 0 0 16px; color: #1e40af; font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+            📧 Información de Contacto
+          </h4>
+          <div style="background: white; padding: 12px; border-radius: 8px; border: 1px solid #bae6fd;">
+            <div style="color: #64748b; font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Correo electrónico</div>
+            <div id="pv-email" style="font-weight: 600; color: #0f172a; font-size: 16px;"></div>
+          </div>
+        </div>
+
+        <!-- Información de estancia -->
+        <div style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border-radius: 12px; padding: 20px; margin-bottom: 20px; border: 1px solid #bbf7d0;">
+          <h4 style="margin: 0 0 16px; color: #166534; font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+            🏨 Información de Estancia
+          </h4>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px;">
+            <div style="background: white; padding: 12px; border-radius: 8px; border: 1px solid #bbf7d0;">
+              <div style="color: #64748b; font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Fecha de entrada</div>
+              <div id="pv-arrival" style="font-weight: 600; color: #0f172a; font-size: 16px;"></div>
+            </div>
+            <div style="background: white; padding: 12px; border-radius: 8px; border: 1px solid #bbf7d0;">
+              <div style="color: #64748b; font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Fecha de salida</div>
+              <div id="pv-departure" style="font-weight: 600; color: #0f172a; font-size: 16px;"></div>
+            </div>
+            <div style="background: white; padding: 12px; border-radius: 8px; border: 1px solid #bbf7d0;">
+              <div style="color: #64748b; font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Idioma del formulario</div>
+              <div id="pv-lang" style="font-weight: 600; color: #0f172a; font-size: 16px;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Nota informativa -->
+        <div style="background: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; padding: 16px; text-align: center;">
+          <div style="color: #92400e; font-size: 14px; font-weight: 500;">
+            <strong>ℹ️ Nota:</strong> Esta es una previsualización con datos de ejemplo. En producción se generará el documento oficial conforme a la normativa del Ministerio del Interior.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: scale(0.9) translateY(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+    }
+  </style>
+
+  <!-- Modal para enviar enlace -->
+  <div id="sendModal" style="position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(15,23,42,.4); z-index:1000">
+    <div style="width:min(560px, 92vw); background:#ffffff; color:#0f172a; border-radius:12px; box-shadow:0 20px 60px rgba(0,0,0,.35); overflow:hidden">
+      <div style="display:flex; align-items:center; justify-content:space-between; padding:14px 16px; border-bottom:1px solid rgba(15,23,42,.08)">
+        <strong>Enviar enlace al huésped</strong>
+        <button id="sendClose" class="btn" style="height:34px">Cerrar</button>
+      </div>
+      <div style="padding:16px; display:grid; gap:12px">
+        <label>
+          <span class="note">Teléfono (con prefijo, ej. +34)</span>
+          <input id="sendPhone" placeholder="+34 600 000 000" style="width:100%; height:40px; border-radius:10px; background:#ffffff; color:#0f172a; border:1px solid rgba(15,23,42,.2); padding:0 12px">
+        </label>
+        <label>
+          <span class="note">Correo electrónico</span>
+          <input id="sendEmail" type="email" placeholder="email@ejemplo.com" style="width:100%; height:40px; border-radius:10px; background:#ffffff; color:#0f172a; border:1px solid rgba(15,23,42,.2); padding:0 12px">
+        </label>
+        <div class="cta">
+          <button class="btn primary" id="sendWhatsApp" type="button">Enviar por WhatsApp</button>
+          <button class="btn" id="sendMail" type="button">Enviar por Email</button>
+        </div>
+        <div class="note">Se generará un enlace con idioma seleccionado para el formulario.</div>
+      </div>
+    </div>
+  </div>
+
+    <footer>
+      <div class="container">
+        <div class="footer-content" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 20px;">
+          <div>
+            <h4 style="margin: 0 0 10px; color: var(--text);">Delfín Check‑in</h4>
+            <p style="margin: 0; color: var(--muted); font-size: 14px;">Software de gestión hotelera y auto check‑in para hostales y apartamentos.</p>
+          </div>
+          <div>
+            <h4 style="margin: 0 0 10px; color: var(--text);">Contacto</h4>
+            <p style="margin: 0; color: var(--muted); font-size: 14px;">
+              📧 ventas@delfincheckin.com<br>
+              📱 <a href="https://wa.me/34600000000" style="color: var(--brand);">+34 600 000 000</a><br>
+              🕒 Lun-Vie: 9:00-18:00
+            </p>
+          </div>
+          <div>
+            <h4 style="margin: 0 0 10px; color: var(--text);">Legal</h4>
+            <p style="margin: 0; color: var(--muted); font-size: 14px;">
+              <a href="politica-privacidad.html" style="color: var(--brand);">Política de Privacidad</a><br>
+              <a href="politica-cookies.html" style="color: var(--brand);">Política de Cookies</a><br>
+              <a href="terminos-servicio.html" style="color: var(--brand);">Términos de Servicio</a><br>
+              <a href="aviso-legal.html" style="color: var(--brand);">Aviso Legal</a><br>
+              <button id="manageCookies" style="background: none; border: none; color: var(--brand); cursor: pointer; text-decoration: underline; padding: 0; margin-top: 8px; font-size: 14px;">Gestionar Cookies</button>
+            </p>
+          </div>
+        </div>
+        <div style="border-top: 1px solid var(--border); padding-top: 15px; text-align: center; color: var(--muted);">
+          © <span id="year"></span> Delfín Check‑in · <a href="#precio" style="color: var(--brand);">Ver precios</a>
+        </div>
+      </div>
+    </footer>
+
+  <!-- Modal de Pago Stripe -->
+  <div id="paymentModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 2000; align-items: center; justify-content: center;">
+    <div style="background: white; padding: 30px; border-radius: 12px; max-width: 500px; width: 90%; position: relative;">
+      <button id="closePayment" style="position: absolute; top: 15px; right: 15px; background: none; border: none; font-size: 24px; cursor: pointer;">×</button>
+      <h3 style="margin: 0 0 20px; color: #1e40af;">💳 Pago seguro con Stripe</h3>
+      <div id="paymentInfo" style="margin-bottom: 20px; padding: 15px; background: #f8fafc; border-radius: 8px;">
+        <div id="planName" style="font-weight: 600; margin-bottom: 5px;"></div>
+        <div id="planPrice" style="font-size: 18px; color: #2563eb; font-weight: 600;"></div>
+        <div id="planDescription" style="font-size: 14px; color: #64748b; margin-top: 5px;"></div>
+      </div>
+      
+      <form id="paymentForm">
+        <div style="margin-bottom: 20px;">
+          <label style="display: block; margin-bottom: 8px; font-weight: 600;">Número de propiedades</label>
+          <input type="number" id="paymentProperties" min="1" value="1" style="width: 100%; height: 40px; border: 1px solid #d1d5db; border-radius: 8px; padding: 0 12px;">
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+          <label style="display: block; margin-bottom: 8px; font-weight: 600;">Email de facturación</label>
+          <input type="email" id="paymentEmail" placeholder="tu@email.com" required style="width: 100%; height: 40px; border: 1px solid #d1d5db; border-radius: 8px; padding: 0 12px;">
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+          <label style="display: block; margin-bottom: 8px; font-weight: 600;">Nombre completo</label>
+          <input type="text" id="paymentName" placeholder="Tu nombre completo" required style="width: 100%; height: 40px; border: 1px solid #d1d5db; border-radius: 8px; padding: 0 12px;">
+        </div>
+        
+        <div id="cardElement" style="margin-bottom: 20px; padding: 12px; border: 1px solid #d1d5db; border-radius: 8px; background: white;">
+          <!-- Stripe Elements se insertará aquí -->
+        </div>
+        
+        <div id="cardErrors" style="color: #dc2626; margin-bottom: 20px; font-size: 14px;"></div>
+        
+        <button type="submit" id="submitPayment" style="width: 100%; height: 50px; background: #2563eb; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer;">
+          <span id="buttonText">Pagar ahora</span>
+          <span id="spinner" style="display: none;">⏳ Procesando...</span>
+        </button>
+        
+        <div style="margin-top: 15px; text-align: center; font-size: 12px; color: #64748b;">
+          🔒 Pago 100% seguro procesado por Stripe
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Cookies Banner -->
+  <div id="cookiesBanner" class="cookies-banner">
+    <div class="cookies-content">
+      <div class="cookies-text">
+        🍪 <strong>Utilizamos cookies</strong> para mejorar tu experiencia, analizar el tráfico y personalizar contenido. 
+        <a href="politica-privacidad.html" style="color: var(--brand); text-decoration: underline;">Política de Cookies</a> | 
+        <a href="politica-privacidad.html" style="color: var(--brand); text-decoration: underline;">Privacidad</a>
+      </div>
+      <div class="cookies-actions">
+        <button class="btn" id="cookiesReject">Solo necesarias</button>
+        <button class="btn" id="cookiesCustomize">Personalizar</button>
+        <button class="btn primary" id="cookiesAccept">Aceptar todas</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stripe.js -->
+  <script src="https://js.stripe.com/v3/"></script>
+  
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+    const $ = (s) => document.querySelector(s);
+    const mapLang = { es:'Español', en:'English', fr:'Français', de:'Deutsch', it:'Italiano' };
+    
+    // Inicializar Stripe (reemplaza con tu clave pública)
+    const stripe = Stripe('pk_test_51234567890abcdef...'); // Cambiar por tu clave real
+    const openModal = () => { $('#previewModal').style.display = 'flex'; document.body.style.overflow='hidden'; };
+    const closeModal = () => { $('#previewModal').style.display = 'none'; document.body.style.overflow=''; };
+    $('#previewClose').addEventListener('click', closeModal);
+    // Función mejorada para previsualización de ficha
+    function generatePreviewData() {
+      const rnd = (min,max) => Math.floor(Math.random()*(max-min+1))+min;
+      const today = new Date();
+      
+      function randDateTime(offsetMin=0, offsetMax=2){
+        const d = new Date(today);
+        d.setDate(d.getDate() + rnd(offsetMin, offsetMax));
+        d.setHours(rnd(12,22), [0,15,30,45][rnd(0,3)], 0, 0);
+        return d.toISOString().slice(0,16);
+      }
+      
+      const firstNames = ['Daniel','Lucía','Rafael','Andrea','Miguel','Sofía','Carlos','Elena','María','José','Ana','Antonio','Carmen','Francisco','Isabel','Manuel'];
+      const lastNames = ['Gómez','López','Martínez','Ibar','Jiménez','Lara','Pérez','Santos','García','Rodríguez','Fernández','González','Ruiz','Díaz','Hernández','Moreno'];
+      const nationalities = ['Española','Francesa','Italiana','Alemana','Británica','Portuguesa','Holandesa','Belga','Sueca','Noruega','Danesa','Austriaca'];
+      const docTypes = ['DNI','NIE','Pasaporte'];
+      const docNumbers = ['12345678A','X1234567L','AB1234567','87654321Z','Y9876543M','CD9876543'];
+      const emailDomains = ['gmail.com','hotmail.com','yahoo.es','outlook.com','icloud.com'];
+      
+      const firstName = firstNames[rnd(0, firstNames.length-1)];
+      const lastName = lastNames[rnd(0, lastNames.length-1)];
+      const fullName = `${firstName} ${lastName}`;
+      const docType = docTypes[rnd(0, docTypes.length-1)];
+      const docNumber = docNumbers[rnd(0, docNumbers.length-1)];
+      const nationality = nationalities[rnd(0, nationalities.length-1)];
+      const emailDomain = emailDomains[rnd(0, emailDomains.length-1)];
+      
+      // Generar fecha de nacimiento realista
+      const birthYear = rnd(1950, 2005);
+      const birthMonth = rnd(1, 12);
+      const birthDay = rnd(1, 28);
+      
+      return {
+        language: 'Español',
+        arrival: randDateTime(0, 1).replace('T', ' ').replace(/-/g, '/'),
+        departure: randDateTime(2, 5).replace('T', ' ').replace(/-/g, '/'),
+        name: fullName,
+        document: `${docType}: ${docNumber}`,
+        birth: `${birthDay.toString().padStart(2, '0')}/${birthMonth.toString().padStart(2, '0')}/${birthYear}`,
+        nationality: nationality,
+        email: `${firstName.toLowerCase()}.${lastName.toLowerCase()}${rnd(1, 99)}@${emailDomain}`
+      };
+    }
+
+    $('#previewBtn').addEventListener('click', () => {
+      // Generar datos aleatorios cada vez
+      const data = generatePreviewData();
+      
+      // Actualizar el modal con los datos
+      $('#pv-lang').textContent = data.language;
+      $('#pv-arrival').textContent = data.arrival;
+      $('#pv-departure').textContent = data.departure;
+      $('#pv-name').textContent = data.name;
+      $('#pv-doc').textContent = data.document;
+      $('#pv-birth').textContent = data.birth;
+      $('#pv-nation').textContent = data.nationality;
+      $('#pv-email').textContent = data.email;
+      
+      // Mostrar el modal
+      openModal();
+    });
+
+    // Enviar enlace al huésped (WhatsApp / Email)
+    const openSend = () => { $('#sendModal').style.display = 'flex'; document.body.style.overflow='hidden'; };
+    const closeSend = () => { $('#sendModal').style.display = 'none'; document.body.style.overflow=''; };
+    $('#sendLinkBtn').addEventListener('click', openSend);
+    $('#sendClose').addEventListener('click', closeSend);
+
+    function getFormUrl(){
+      const lang = 'es'; // Idioma fijo en español
+      // Si se abre el HTML como file://, usamos dominio de producción como fallback
+      const base = location.protocol.startsWith('http')
+        ? `${location.origin}/public/guest-registration.html`
+        : `https://admin.delfincheckin.com/guest-registration`;
+      return `${base}?lang=${encodeURIComponent(lang)}`;
+    }
+
+    $('#sendWhatsApp').addEventListener('click', () => {
+      const phone = ($('#sendPhone').value || '').replace(/\s+/g,'');
+      
+      // Validar teléfono
+      if (!phone || phone.length < 9) {
+        alert('❌ Por favor, introduce un número de teléfono válido');
+        $('#sendPhone').focus();
+        return;
+      }
+      
+      const url = getFormUrl();
+      const text = `Hola, este es tu enlace para completar el registro de viajero: ${url}`;
+      const wa = `https://wa.me/${encodeURIComponent(phone.replace('+',''))}?text=${encodeURIComponent(text)}`;
+      
+      // Efecto visual
+      const btn = $('#sendWhatsApp');
+      const originalText = btn.textContent;
+      btn.textContent = '⏳ Enviando...';
+      btn.style.opacity = '0.7';
+      btn.disabled = true;
+      
+      setTimeout(() => {
+        try {
+          window.open(wa, '_blank');
+          closeSend();
+        } catch (error) {
+          console.error('Error al abrir WhatsApp:', error);
+          alert('❌ Error al abrir WhatsApp. Por favor, copia este enlace manualmente:\n\n' + url);
+        } finally {
+          btn.textContent = originalText;
+          btn.style.opacity = '1';
+          btn.disabled = false;
+        }
+      }, 500);
+    });
+
+    $('#sendMail').addEventListener('click', () => {
+      const email = ($('#sendEmail').value || '').trim();
+      
+      // Validar email
+      if (!email || !email.includes('@')) {
+        alert('❌ Por favor, introduce un email válido');
+        $('#sendEmail').focus();
+        return;
+      }
+      
+      const url = getFormUrl();
+      const subject = `Registro de viajero – Delfín Check‑in`;
+      const body = `Hola,%0D%0A%0D%0APor favor, completa tu registro de viajero en el siguiente enlace:%0D%0A${encodeURIComponent(url)}%0D%0A%0D%0AGracias.`;
+      const mailto = `mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent(subject)}&body=${body}`;
+      
+      // Efecto visual
+      const btn = $('#sendMail');
+      const originalText = btn.textContent;
+      btn.textContent = '⏳ Abriendo...';
+      btn.style.opacity = '0.7';
+      btn.disabled = true;
+      
+      setTimeout(() => {
+        try {
+          window.location.href = mailto;
+          closeSend();
+        } catch (error) {
+          console.error('Error al abrir email:', error);
+          alert('❌ Error al abrir el cliente de correo. Por favor, copia este enlace manualmente:\n\n' + url);
+        } finally {
+          btn.textContent = originalText;
+          btn.style.opacity = '1';
+          btn.disabled = false;
+        }
+      }, 500);
+    });
+
+    // Acciones desde dashboard: enviar formulario a huésped
+    function sendReservationWA(phone, guest, arrival){
+      if (!phone || phone.trim() === '') {
+        alert('❌ No se puede enviar WhatsApp: número de teléfono no válido');
+        return;
+      }
+      
+      const url = getFormUrl();
+      const msg = `Hola ${guest}, este es tu enlace para completar el registro de viajero (llegada ${arrival}): ${url}`;
+      const cleanPhone = phone.replace(/\s|\+/g,'');
+      const wa = `https://wa.me/${encodeURIComponent(cleanPhone)}?text=${encodeURIComponent(msg)}`;
+      
+      // Efecto visual
+      const btn = event.target;
+      const originalText = btn.textContent;
+      btn.textContent = '⏳ Enviando...';
+      btn.style.opacity = '0.7';
+      
+      setTimeout(() => {
+        window.open(wa, '_blank');
+        btn.textContent = originalText;
+        btn.style.opacity = '1';
+      }, 500);
+    }
+    
+    function sendReservationMail(email, guest, arrival){
+      if (!email || email.trim() === '' || !email.includes('@')) {
+        alert('❌ No se puede enviar email: dirección de correo no válida');
+        return;
+      }
+      
+      const url = getFormUrl();
+      const subject = `Registro de viajero – ${guest}`;
+      const body = `Hola ${guest},%0D%0A%0D%0ACompleta tu registro de viajero aquí (llegada ${arrival}):%0D%0A${encodeURIComponent(url)}%0D%0A%0D%0AGracias.`;
+      const mailto = `mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent(subject)}&body=${body}`;
+      
+      // Efecto visual
+      const btn = event.target;
+      const originalText = btn.textContent;
+      btn.textContent = '⏳ Abriendo...';
+      btn.style.opacity = '0.7';
+      
+      setTimeout(() => {
+        window.location.href = mailto;
+        btn.textContent = originalText;
+        btn.style.opacity = '1';
+      }, 500);
+    }
+
+    // Generar y descargar CSV con datos de reservas
+    function generateReservationsCSV(){
+      const firstNames = ['Daniel','Lucía','Rafael','Andrea','Miguel','Sofía','Carlos','Elena','María','José','Ana','Luis'];
+      const lastNames  = ['Gómez','López','Martínez','Ibar','Jiménez','Lara','Pérez','Santos','García','Rodríguez','Fernández','González'];
+      const channels = ['Booking','Airbnb','Expedia','Vrbo','Manual'];
+      const states = ['Confirmada','Pendiente','Cancelada'];
+      const categories = ['Individual','Doble','Triple','Suite'];
+      
+      const rnd = (min,max) => Math.floor(Math.random()*(max-min+1))+min;
+      const pad2 = n => String(n).padStart(2,'0');
+      const today = new Date();
+      
+      function randDate(offsetMin=0, offsetMax=30){
+        const d = new Date(today);
+        d.setDate(d.getDate() + rnd(offsetMin, offsetMax));
+        return `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
+      }
+      
+      function randDateTime(offsetMin=0, offsetMax=30){
+        const d = new Date(today);
+        d.setDate(d.getDate() + rnd(offsetMin, offsetMax));
+        d.setHours(rnd(12,22), [0,15,30,45][rnd(0,3)], 0, 0);
+        return d.toISOString().slice(0,16).replace('T',' ').replace(/-/g,'/');
+      }
+      
+      const currency = v => v.toLocaleString('es-ES', { style:'currency', currency:'EUR' });
+      
+      // Generar 15-25 reservas aleatorias
+      const numReservations = rnd(15, 25);
+      const reservations = Array.from({length: numReservations}).map((_,i) => {
+        const roomNum = rnd(1, 20);
+        const category = categories[rnd(0, categories.length-1)];
+        const guest = `${firstNames[rnd(0, firstNames.length-1)]} ${lastNames[rnd(0, lastNames.length-1)]}`;
+        const arrival = randDateTime(0, 30);
+        const departure = randDateTime(31, 60);
+        const state = states[rnd(0, states.length-1)];
+        const channel = channels[rnd(0, channels.length-1)];
+        const paid = state === 'Cancelada' ? 0 : rnd(40, 200);
+        const commission = paid > 0 ? +(paid * (channel === 'Manual' ? 0 : 0.15)).toFixed(2) : 0;
+        const netGain = +(paid - commission).toFixed(2);
+        const phone = `+34 6${rnd(10,99)} ${pad2(rnd(10,99))} ${pad2(rnd(10,99))}`;
+        const email = `${guest.split(' ')[0].toLowerCase()}${rnd(1,99)}@mail.com`;
+        
+        return {
+          habitacion: `Habitación ${roomNum} · ${category}`,
+          huesped: guest,
+          llegada: arrival,
+          salida: departure,
+          estado: state,
+          pagoHuesped: currency(paid),
+          comision: currency(commission),
+          gananciaNeta: currency(netGain),
+          canal: channel,
+          telefono: phone,
+          email: email
+        };
+      });
+      
+      // Crear CSV
+      const headers = ['Habitación','Huésped','Llegada','Salida','Estado','Pagó Huésped','Comisión','Ganancia Neta','Canal','Teléfono','Email'];
+      const csvContent = [
+        headers.join(','),
+        ...reservations.map(r => [
+          `"${r.habitacion}"`,
+          `"${r.huesped}"`,
+          `"${r.llegada}"`,
+          `"${r.salida}"`,
+          `"${r.estado}"`,
+          `"${r.pagoHuesped}"`,
+          `"${r.comision}"`,
+          `"${r.gananciaNeta}"`,
+          `"${r.canal}"`,
+          `"${r.telefono}"`,
+          `"${r.email}"`
+        ].join(','))
+      ].join('\n');
+      
+      // Descargar archivo
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `reservas_delfin_checkin_${new Date().toISOString().slice(0,10)}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+    
+    // Event listener para el botón de descarga con loading
+    $('#downloadCsvBtn').addEventListener('click', (e) => {
+      e.preventDefault();
+      const btn = e.target;
+      const originalText = btn.textContent;
+      btn.innerHTML = '<span class="loading"></span> Generando CSV...';
+      btn.disabled = true;
+      
+      setTimeout(() => {
+        generateReservationsCSV();
+        btn.textContent = originalText;
+        btn.disabled = false;
+      }, 1500);
+    });
+
+    // Datos aleatorios de KPIs (demo)
+    (function fillKpis(){
+      const rnd = (min,max) => Math.floor(Math.random()*(max-min+1))+min;
+      const money = v => v.toLocaleString('es-ES', { style:'currency', currency:'EUR' });
+      const rooms = rnd(4, 18);
+      const guests= rnd(1, 12);
+      const active= rnd(6, 26);
+      const occ   = rnd(5, 98);
+      const revenue = rnd(800, 4000) + Math.random();
+      const fees    = revenue * 0.12;
+      const profit  = revenue - fees;
+
+      const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+      set('kpi-rooms', String(rooms));
+      set('kpi-guests', String(guests));
+      set('kpi-active', String(active));
+      set('kpi-occ', `${occ}%`);
+      set('kpi-revenue', money(revenue));
+      set('kpi-fees', money(fees));
+      set('kpi-profit', money(profit));
+    })();
+
+    // Calculadora de precios
+    function updateCalculator() {
+      const properties = parseInt($('#calcProperties').value) || 1;
+      const plan = $('#calcPlan').value;
+      
+      let pricePerProperty, total, savings, perPropertyText, savingsText;
+      
+      if (plan === 'monthly') {
+        pricePerProperty = 4;
+        total = properties * pricePerProperty;
+        perPropertyText = `${pricePerProperty}€ por propiedad`;
+        savingsText = 'Sin descuento';
+      } else if (plan === 'yearly') {
+        pricePerProperty = 40;
+        total = properties * pricePerProperty;
+        perPropertyText = `${pricePerProperty}€ por propiedad`;
+        const monthlyEquivalent = properties * 4 * 12;
+        savings = monthlyEquivalent - total;
+        savingsText = `Ahorras ${savings}€ al año`;
+      } else if (plan === 'volume') {
+        if (properties < 5) {
+          pricePerProperty = 40;
+          total = properties * pricePerProperty;
+          perPropertyText = `${pricePerProperty}€ por propiedad`;
+          savingsText = 'Mínimo 5 propiedades para descuento';
+        } else {
+          pricePerProperty = Math.round(40 * 0.7); // 30% descuento
+          total = properties * pricePerProperty;
+          perPropertyText = `${pricePerProperty}€ por propiedad (descuento aplicado)`;
+          const regularPrice = properties * 40;
+          savings = regularPrice - total;
+          savingsText = `Ahorras ${savings}€ al año`;
+        }
+      }
+      
+      const periodText = plan === 'yearly' ? '/año' : plan === 'monthly' ? '/mes' : '/año';
+        
+      $('#calcTotal').textContent = `${total}€${periodText}`;
+      $('#calcPerProperty').textContent = perPropertyText;
+      $('#calcSavings').textContent = savingsText;
+      
+      // Cambiar color según ahorro
+      if (savings > 0) {
+        $('#calcSavings').style.color = '#16a34a';
+      } else {
+        $('#calcSavings').style.color = '#64748b';
+      }
+    }
+    
+    function openCalculator() {
+      const properties = $('#calcProperties').value;
+      const plan = $('#calcPlan').value;
+      
+      let planText, message;
+      planText = plan === 'monthly' ? 'mensual' : plan === 'yearly' ? 'anual' : 'volumen';
+      message = `Hola, me interesa el plan ${planText} de Delfín Check-in para ${properties} ${properties == 1 ? 'propiedad' : 'propiedades'}. ¿Podrían darme más información?`;
+      
+      const waUrl = `https://wa.me/34600000000?text=${encodeURIComponent(message)}`;
+      window.open(waUrl, '_blank');
+    }
+
+    // Variables para el mantenimiento de pulsación
+    let incrementInterval = null;
+    let decrementInterval = null;
+    let isIncrementing = false;
+    let isDecrementing = false;
+
+    // Funciones para los botones de incremento/decremento
+    function incrementProperties() {
+      const input = $('#calcProperties');
+      const currentValue = parseInt(input.value) || 1;
+      const maxValue = parseInt(input.getAttribute('max')) || 50;
+      
+      if (currentValue < maxValue) {
+        input.value = currentValue + 1;
+        updateCalculator();
+        
+        // Efecto visual de pulsación
+        input.style.transform = 'scale(0.98)';
+        setTimeout(() => {
+          input.style.transform = 'scale(1)';
+        }, 100);
+      }
+    }
+    
+    // Función para click simple (solo un incremento)
+    function singleIncrement() {
+      incrementProperties();
+    }
+
+    function decrementProperties() {
+      const input = $('#calcProperties');
+      const currentValue = parseInt(input.value) || 1;
+      const minValue = parseInt(input.getAttribute('min')) || 1;
+      
+      if (currentValue > minValue) {
+        input.value = currentValue - 1;
+        updateCalculator();
+        
+        // Efecto visual de pulsación
+        input.style.transform = 'scale(0.98)';
+        setTimeout(() => {
+          input.style.transform = 'scale(1)';
+        }, 100);
+      }
+    }
+    
+    // Función para click simple (solo un decremento)
+    function singleDecrement() {
+      decrementProperties();
+    }
+
+    // Variables para crecimiento exponencial
+    let incrementSpeed = 500; // Velocidad inicial
+    let incrementCount = 0; // Contador de incrementos
+    
+    // Funciones para mantener pulsado
+    function startIncrement() {
+      if (isIncrementing) return;
+      isIncrementing = true;
+      incrementCount = 0;
+      incrementSpeed = 300; // Resetear velocidad
+      
+      // Efecto visual en el botón
+      const btn = $('#incrementBtn');
+      btn.style.background = '#1d4ed8';
+      btn.style.transform = 'scale(0.95)';
+      
+      // NO hacer incremento inmediato, solo empezar el timer
+      
+      // Función recursiva con crecimiento exponencial
+      function doIncrement() {
+        if (!isIncrementing) return;
+        
+        const input = $('#calcProperties');
+        const currentValue = parseInt(input.value) || 1;
+        const maxValue = parseInt(input.getAttribute('max')) || 50;
+        
+        if (currentValue < maxValue) {
+          incrementProperties();
+          incrementCount++;
+          
+          // Reducir velocidad exponencialmente (mínimo 20ms)
+          // Empieza lento y acelera gradualmente
+          incrementSpeed = Math.max(20, 500 - (incrementCount * 30));
+          
+          // Programar siguiente incremento
+          incrementInterval = setTimeout(doIncrement, incrementSpeed);
+        } else {
+          stopIncrement();
+        }
+      }
+      
+      // Empezar la secuencia con delay inicial más corto
+      incrementInterval = setTimeout(doIncrement, 300);
+    }
+
+    function stopIncrement() {
+      isIncrementing = false;
+      if (incrementInterval) {
+        clearTimeout(incrementInterval);
+        incrementInterval = null;
+      }
+      
+      // Restaurar efecto visual del botón
+      const btn = $('#incrementBtn');
+      btn.style.background = '#2563eb';
+      btn.style.transform = 'scale(1)';
+    }
+
+    // Variables para decremento exponencial
+    let decrementSpeed = 500; // Velocidad inicial
+    let decrementCount = 0; // Contador de decrementos
+    
+    function startDecrement() {
+      if (isDecrementing) return;
+      isDecrementing = true;
+      decrementCount = 0;
+      decrementSpeed = 300; // Resetear velocidad
+      
+      // Efecto visual en el botón
+      const btn = $('#decrementBtn');
+      btn.style.background = '#1d4ed8';
+      btn.style.transform = 'scale(0.95)';
+      
+      // NO hacer decremento inmediato, solo empezar el timer
+      
+      // Función recursiva con crecimiento exponencial
+      function doDecrement() {
+        if (!isDecrementing) return;
+        
+        const input = $('#calcProperties');
+        const currentValue = parseInt(input.value) || 1;
+        const minValue = parseInt(input.getAttribute('min')) || 1;
+        
+        if (currentValue > minValue) {
+          decrementProperties();
+          decrementCount++;
+          
+          // Reducir velocidad exponencialmente (mínimo 20ms)
+          // Empieza lento y acelera gradualmente
+          decrementSpeed = Math.max(20, 500 - (decrementCount * 30));
+          
+          // Programar siguiente decremento
+          decrementInterval = setTimeout(doDecrement, decrementSpeed);
+        } else {
+          stopDecrement();
+        }
+      }
+      
+      // Empezar la secuencia con delay inicial más corto
+      decrementInterval = setTimeout(doDecrement, 300);
+    }
+
+    function stopDecrement() {
+      isDecrementing = false;
+      if (decrementInterval) {
+        clearTimeout(decrementInterval);
+        decrementInterval = null;
+      }
+      
+      // Restaurar efecto visual del botón
+      const btn = $('#decrementBtn');
+      btn.style.background = '#2563eb';
+      btn.style.transform = 'scale(1)';
+    }
+    
+    // Event listeners para la calculadora
+    $('#calcPlan').addEventListener('change', updateCalculator);
+    
+    // Soporte para teclas de flecha en el input de propiedades (aunque sea readonly)
+    $('#calcProperties').addEventListener('keydown', function(e) {
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (!isIncrementing) {
+          startIncrement();
+        }
+      } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        if (!isDecrementing) {
+          startDecrement();
+        }
+      }
+    });
+
+    // Detener cuando se suelta la tecla
+    $('#calcProperties').addEventListener('keyup', function(e) {
+      if (e.key === 'ArrowUp') {
+        stopIncrement();
+      } else if (e.key === 'ArrowDown') {
+        stopDecrement();
+      }
+    });
+
+    // Detener todos los intervalos cuando se pierde el foco
+    $('#calcProperties').addEventListener('blur', function() {
+      stopIncrement();
+      stopDecrement();
+    });
+    
+    // ===== SOPORTE PARA MÓVILES (TOUCH EVENTS) =====
+    
+    // Función para detectar si es un dispositivo táctil
+    function isTouchDevice() {
+      return 'ontouchstart' in window || 
+             navigator.maxTouchPoints > 0 || 
+             window.matchMedia('(pointer: coarse)').matches;
+    }
+    
+    // Event listeners para touch en móviles
+    if (isTouchDevice()) {
+      // Función para añadir feedback visual táctil
+      function addTouchFeedback(button) {
+        button.style.transform = 'scale(0.9)';
+        button.style.background = '#1d4ed8';
+        button.style.boxShadow = '0 0 0 3px rgba(37, 99, 235, 0.3)';
+      }
+      
+      function removeTouchFeedback(button) {
+        button.style.transform = 'scale(1)';
+        button.style.background = '#2563eb';
+        button.style.boxShadow = 'none';
+      }
+      
+      // Botón de incremento - SOLO click simple
+      $('#incrementBtn').addEventListener('touchstart', function(e) {
+        e.preventDefault();
+        addTouchFeedback(this);
+      });
+      
+      $('#incrementBtn').addEventListener('touchend', function(e) {
+        e.preventDefault();
+        removeTouchFeedback(this);
+        singleIncrement(); // Solo un incremento
+      });
+      
+      $('#incrementBtn').addEventListener('touchcancel', function(e) {
+        e.preventDefault();
+        removeTouchFeedback(this);
+      });
+      
+      // Botón de decremento - SOLO click simple
+      $('#decrementBtn').addEventListener('touchstart', function(e) {
+        e.preventDefault();
+        addTouchFeedback(this);
+      });
+      
+      $('#decrementBtn').addEventListener('touchend', function(e) {
+        e.preventDefault();
+        removeTouchFeedback(this);
+        singleDecrement(); // Solo un decremento
+      });
+      
+      $('#decrementBtn').addEventListener('touchcancel', function(e) {
+        e.preventDefault();
+        removeTouchFeedback(this);
+      });
+      
+      // Prevenir zoom en doble tap
+      let lastTouchEnd = 0;
+      document.addEventListener('touchend', function(e) {
+        const now = (new Date()).getTime();
+        if (now - lastTouchEnd <= 300) {
+          e.preventDefault();
+        }
+        lastTouchEnd = now;
+      }, false);
+      
+      // Prevenir scroll cuando se toca la calculadora
+      const calculatorContainer = document.querySelector('.calculator-grid');
+      if (calculatorContainer) {
+        calculatorContainer.addEventListener('touchstart', function(e) {
+          e.stopPropagation();
+        });
+      }
+    }
+    
+    // Inicializar calculadora
+    updateCalculator();
+
+
+    // Formulario de Contacto
+    $('#sendContact').addEventListener('click', (e) => {
+      e.preventDefault();
+      const name = $('#contactName').value.trim();
+      const email = $('#contactEmail').value.trim();
+      const phone = $('#contactPhone').value.trim();
+      const business = $('#contactBusiness').value.trim();
+      const message = $('#contactMessage').value.trim();
+      
+      if (!name || !email || !message) {
+        alert('Por favor, completa los campos obligatorios (Nombre, Email y Mensaje).');
+        return;
+      }
+      
+      // Crear mensaje para WhatsApp
+      const waMessage = `Nueva consulta desde la web:%0D%0A%0D%0ANombre: ${name}%0D%0AEmail: ${email}%0D%0ATeléfono: ${phone || 'No proporcionado'}%0D%0AEmpresa: ${business || 'No proporcionada'}%0D%0A%0D%0AMensaje:%0D%0A${message}`;
+      const waUrl = `https://wa.me/34600000000?text=${encodeURIComponent(waMessage)}`;
+      
+      // Abrir WhatsApp
+      window.open(waUrl, '_blank');
+      
+      // Mostrar confirmación
+      alert('¡Mensaje enviado! Te contactaremos pronto.');
+      
+      // Limpiar formulario
+      $('#contactForm').reset();
+    });
+
+    // Cookies Banner - RGPD Compliant
+    (function initCookies(){
+      const banner = $('#cookiesBanner');
+      const acceptBtn = $('#cookiesAccept');
+      const rejectBtn = $('#cookiesReject');
+      const customizeBtn = $('#cookiesCustomize');
+      
+      // Mostrar banner si no hay consentimiento previo
+      if (!localStorage.getItem('cookiesConsent')) {
+        setTimeout(() => banner.classList.add('show'), 1000);
+      }
+      
+      // Aceptar todas las cookies
+      acceptBtn.addEventListener('click', () => {
+        const consent = {
+          necessary: true,
+          analytics: true,
+          marketing: true,
+          timestamp: new Date().toISOString()
+        };
+        localStorage.setItem('cookiesConsent', JSON.stringify(consent));
+        banner.classList.remove('show');
+        console.log('Cookies aceptadas:', consent);
+      });
+      
+      // Solo cookies necesarias
+      rejectBtn.addEventListener('click', () => {
+        const consent = {
+          necessary: true,
+          analytics: false,
+          marketing: false,
+          timestamp: new Date().toISOString()
+        };
+        localStorage.setItem('cookiesConsent', JSON.stringify(consent));
+        banner.classList.remove('show');
+        console.log('Solo cookies necesarias:', consent);
+      });
+      
+      // Personalizar cookies (por ahora igual que rechazar)
+      customizeBtn.addEventListener('click', () => {
+        const consent = {
+          necessary: true,
+          analytics: false,
+          marketing: false,
+          timestamp: new Date().toISOString()
+        };
+        localStorage.setItem('cookiesConsent', JSON.stringify(consent));
+        banner.classList.remove('show');
+        console.log('Cookies personalizadas:', consent);
+      });
+    })();
+
+    // Función para verificar consentimiento de cookies
+    function hasCookieConsent(type = 'analytics') {
+      const consent = localStorage.getItem('cookiesConsent');
+      if (!consent) return false;
+      
+      try {
+        const parsed = JSON.parse(consent);
+        return parsed[type] === true;
+      } catch {
+        return false;
+      }
+    }
+
+    // Botón gestionar cookies
+    $('#manageCookies').addEventListener('click', () => {
+      const banner = $('#cookiesBanner');
+      banner.classList.add('show');
+    });
+
+    // ===== NAVEGACIÓN SUAVE =====
+    function initSmoothNavigation() {
+      // Navegación suave para enlaces internos
+      document.querySelectorAll('a[href^="#"]').forEach(link => {
+        link.addEventListener('click', function(e) {
+          e.preventDefault();
+          const targetId = this.getAttribute('href').substring(1);
+          const targetElement = document.getElementById(targetId);
+          
+          if (targetElement) {
+            // Scroll suave con offset para el header
+            const headerHeight = 80;
+            const targetPosition = targetElement.offsetTop - headerHeight;
+            
+            window.scrollTo({
+              top: targetPosition,
+              behavior: 'smooth'
+            });
+            
+            // Añadir efecto visual al elemento de destino
+            targetElement.style.transition = 'all 0.3s ease';
+            targetElement.style.transform = 'scale(1.02)';
+            targetElement.style.boxShadow = '0 0 20px rgba(37, 99, 235, 0.3)';
+            
+            setTimeout(() => {
+              targetElement.style.transform = 'scale(1)';
+              targetElement.style.boxShadow = '';
+            }, 300);
+          }
+        });
+      });
+      
+      // Resaltar sección activa en el scroll
+      const sections = document.querySelectorAll('section[id]');
+      const navLinks = document.querySelectorAll('a[href^="#"]');
+      
+      window.addEventListener('scroll', () => {
+        let current = '';
+        sections.forEach(section => {
+          const sectionTop = section.offsetTop - 100;
+          if (window.pageYOffset >= sectionTop) {
+            current = section.getAttribute('id');
+          }
+        });
+        
+        navLinks.forEach(link => {
+          link.classList.remove('active');
+          if (link.getAttribute('href') === `#${current}`) {
+            link.classList.add('active');
+          }
+        });
+      });
+    }
+
+    // ===== SISTEMA DE PAGOS STRIPE =====
+    let elements, cardElement, clientSecret;
+    let currentPlan = 'monthly';
+
+    // Inicializar Stripe Elements
+    function initializeStripe() {
+      elements = stripe.elements();
+      cardElement = elements.create('card', {
+        style: {
+          base: {
+            fontSize: '16px',
+            color: '#424770',
+            '::placeholder': {
+              color: '#aab7c4',
+            },
+          },
+        },
+      });
+      cardElement.mount('#cardElement');
+      
+      cardElement.on('change', ({error}) => {
+        const displayError = $('#cardErrors');
+        if (error) {
+          displayError.textContent = error.message;
+        } else {
+          displayError.textContent = '';
+        }
+      });
+    }
+
+    // Función para iniciar el pago
+    function startPayment(plan) {
+      currentPlan = plan;
+      const modal = $('#paymentModal');
+      const planName = $('#planName');
+      const planPrice = $('#planPrice');
+      const planDescription = $('#planDescription');
+      
+      // Configurar información del plan
+      if (plan === 'monthly') {
+        planName.textContent = 'Plan Mensual';
+        planPrice.textContent = '4€ por propiedad/mes';
+        planDescription.textContent = 'Facturación mensual • Sin permanencia';
+      } else if (plan === 'yearly') {
+        planName.textContent = 'Plan Anual';
+        planPrice.textContent = '40€ por propiedad/año';
+        planDescription.textContent = 'Ahorra 8€ por propiedad • Equivale a 3,33€/mes';
+      }
+      
+      modal.style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+      
+      // Inicializar Stripe si no está inicializado
+      if (!elements) {
+        initializeStripe();
+      }
+    }
+
+    // Cerrar modal de pago
+    function closePaymentModal() {
+      const modal = $('#paymentModal');
+      modal.style.display = 'none';
+      document.body.style.overflow = '';
+    }
+
+    // Event listeners para el modal de pago
+    $('#closePayment').addEventListener('click', closePaymentModal);
+    $('#paymentModal').addEventListener('click', (e) => {
+      if (e.target === $('#paymentModal')) {
+        closePaymentModal();
+      }
+    });
+
+    // Manejar envío del formulario de pago
+    $('#paymentForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const submitButton = $('#submitPayment');
+      const buttonText = $('#buttonText');
+      const spinner = $('#spinner');
+      const properties = parseInt($('#paymentProperties').value) || 1;
+      const email = $('#paymentEmail').value;
+      const name = $('#paymentName').value;
+      
+      if (!email || !name) {
+        alert('Por favor, completa todos los campos obligatorios.');
+        return;
+      }
+      
+      // Mostrar spinner
+      buttonText.style.display = 'none';
+      spinner.style.display = 'inline';
+      submitButton.disabled = true;
+      
+      try {
+        // Crear Payment Intent en el backend (simulado)
+        const response = await fetch('/create-payment-intent', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            plan: currentPlan,
+            properties: properties,
+            email: email,
+            name: name
+          })
+        });
+        
+        if (!response.ok) {
+          throw new Error('Error al crear el pago');
+        }
+        
+        const {client_secret} = await response.json();
+        
+        // Confirmar el pago
+        const {error, paymentIntent} = await stripe.confirmCardPayment(client_secret, {
+          payment_method: {
+            card: cardElement,
+            billing_details: {
+              name: name,
+              email: email,
+            },
+          }
+        });
+        
+        if (error) {
+          $('#cardErrors').textContent = error.message;
+        } else if (paymentIntent.status === 'succeeded') {
+          // Pago exitoso
+          alert('¡Pago procesado correctamente! Te hemos enviado un email de confirmación.');
+          closePaymentModal();
+          
+          // Redirigir a dashboard o página de éxito
+          window.location.href = '/dashboard?payment=success';
+        }
+        
+      } catch (error) {
+        console.error('Error:', error);
+        alert('Error al procesar el pago. Por favor, inténtalo de nuevo.');
+      } finally {
+        // Ocultar spinner
+        buttonText.style.display = 'inline';
+        spinner.style.display = 'none';
+        submitButton.disabled = false;
+      }
+    });
+
+    // Actualizar precio cuando cambie el número de propiedades
+    $('#paymentProperties').addEventListener('input', () => {
+      const properties = parseInt($('#paymentProperties').value) || 1;
+      const planPrice = $('#planPrice');
+      
+      if (currentPlan === 'monthly') {
+        planPrice.textContent = `${properties * 4}€ total (${properties} propiedades × 4€)`;
+      } else if (currentPlan === 'yearly') {
+        planPrice.textContent = `${properties * 40}€ total (${properties} propiedades × 40€)`;
+      }
+    });
+
+    // Inicializar navegación suave cuando el DOM esté listo
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initSmoothNavigation);
+    } else {
+      initSmoothNavigation();
+    }
+
+    // ===== FUNCIÓN PARA BOTONES DE VENTAS =====
+    function initSalesButtons() {
+      // Función para abrir modal de contacto de ventas
+      function openSalesContact(plan = '') {
+        const modal = document.createElement('div');
+        modal.style.cssText = `
+          position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+          background: rgba(15,23,42,.6); z-index: 1000; backdrop-filter: blur(4px);
+        `;
+        
+        modal.innerHTML = `
+          <div style="width: min(500px, 95vw); background: white; border-radius: 16px; box-shadow: 0 25px 80px rgba(0,0,0,.4); overflow: hidden; animation: slideIn 0.3s ease-out;">
+            <div style="background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white; padding: 20px 24px; display: flex; align-items: center; justify-content: space-between;">
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <div style="font-size: 24px;">💬</div>
+                <div>
+                  <h3 style="margin: 0; font-size: 20px; font-weight: 700;">Hablar con Ventas</h3>
+                  <p style="margin: 4px 0 0; font-size: 14px; opacity: 0.9;">Te ayudamos a elegir el mejor plan</p>
+                </div>
+              </div>
+              <button onclick="this.closest('.sales-modal').remove()" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); height: 40px; width: 40px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: bold;">×</button>
+            </div>
+            <div style="padding: 24px;">
+              <div style="margin-bottom: 20px;">
+                <h4 style="margin: 0 0 12px; color: #1e40af; font-size: 16px;">¿Cómo prefieres que te contactemos?</h4>
+                <p style="margin: 0; color: #64748b; font-size: 14px;">Elige el método que más te convenga y te responderemos en menos de 24 horas.</p>
+              </div>
+              
+              <div style="display: grid; gap: 12px; margin-bottom: 20px;">
+                <button onclick="openWhatsAppSales('${plan}')" style="background: #25d366; color: white; border: none; padding: 16px; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 12px; transition: all 0.2s ease;" onmouseover="this.style.background='#128c7e'; this.style.transform='translateY(-2px)'" onmouseout="this.style.background='#25d366'; this.style.transform='translateY(0)'">
+                  <div style="font-size: 20px;">📱</div>
+                  <div>
+                    <div style="font-weight: 600;">WhatsApp</div>
+                    <div style="font-size: 12px; opacity: 0.9;">Respuesta inmediata</div>
+                  </div>
+                </button>
+                
+                <button onclick="openEmailSales('${plan}')" style="background: #2563eb; color: white; border: none; padding: 16px; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 12px; transition: all 0.2s ease;" onmouseover="this.style.background='#1d4ed8'; this.style.transform='translateY(-2px)'" onmouseout="this.style.background='#2563eb'; this.style.transform='translateY(0)'">
+                  <div style="font-size: 20px;">📧</div>
+                  <div>
+                    <div style="font-weight: 600;">Email</div>
+                    <div style="font-size: 12px; opacity: 0.9;">Respuesta en 24h</div>
+                  </div>
+                </button>
+              </div>
+              
+              <div style="background: #f8fafc; border-radius: 8px; padding: 16px; text-align: center;">
+                <div style="color: #64748b; font-size: 14px;">
+                  <strong>💡 Consejo:</strong> Si tienes prisa, usa WhatsApp para respuesta inmediata
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+        
+        modal.className = 'sales-modal';
+        document.body.appendChild(modal);
+        document.body.style.overflow = 'hidden';
+      }
+
+      // Función para abrir WhatsApp de ventas
+      function openWhatsAppSales(plan) {
+        const planText = plan ? ` (${plan})` : '';
+        const message = `Hola, me interesa Delfín Check-in${planText}. ¿Podrían darme más información sobre precios y funcionalidades?`;
+        const waUrl = `https://wa.me/34600000000?text=${encodeURIComponent(message)}`;
+        window.open(waUrl, '_blank');
+        document.querySelector('.sales-modal')?.remove();
+        document.body.style.overflow = '';
+      }
+
+      // Función para abrir email de ventas
+      function openEmailSales(plan) {
+        const planText = plan ? ` - ${plan}` : '';
+        const subject = `Consulta Delfín Check-in${planText}`;
+        const body = `Hola,%0D%0A%0D%0AMe interesa conocer más sobre Delfín Check-in${planText}.%0D%0A%0D%0A¿Podrían enviarme información sobre:%0D%0A- Precios y planes disponibles%0D%0A- Funcionalidades incluidas%0D%0A- Proceso de implementación%0D%0A%0D%0AGracias.`;
+        const mailto = `mailto:ventas@delfincheckin.com?subject=${encodeURIComponent(subject)}&body=${body}`;
+        window.location.href = mailto;
+        document.querySelector('.sales-modal')?.remove();
+        document.body.style.overflow = '';
+      }
+
+      // Hacer las funciones globales
+      window.openSalesContact = openSalesContact;
+      window.openWhatsAppSales = openWhatsAppSales;
+      window.openEmailSales = openEmailSales;
+
+      // Reemplazar enlaces de ventas con la nueva función
+      document.querySelectorAll('a[href*="ventas@ejemplo.com"]').forEach(link => {
+        const href = link.getAttribute('href');
+        const plan = href.includes('mensual') ? 'Plan Mensual' : 
+                    href.includes('anual') ? 'Plan Anual' : 
+                    href.includes('volumen') ? 'Descuento Volumen' : '';
+        
+        link.href = '#';
+        link.onclick = (e) => {
+          e.preventDefault();
+          openSalesContact(plan);
+        };
+      });
+    }
+
+    // Inicializar botones de ventas
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initSalesButtons);
+    } else {
+      initSalesButtons();
+    }
+
+    // Generar tabla de gestión de reservas con datos aleatorios
+    (function fillReservations(){
+      const tbody = document.getElementById('res-tbody');
+      if (!tbody) return;
+      const firstNames = ['Daniel','Lucía','Rafael','Andrea','Miguel','Sofía','Carlos','Elena'];
+      const lastNames  = ['Gómez','López','Martínez','Ibar','Jiménez','Lara','Pérez','Santos'];
+      const channels = ['Manual','Booking','Airbnb','Expedia','Vrbo'];
+      const states = [
+        {label:'Confirmada', color:'#c7f9cc'},
+        {label:'Pendiente', color:'#ffeaa7'}
+      ];
+      const currency = v => v.toLocaleString('es-ES', { style:'currency', currency:'EUR' });
+      const rnd = (min,max) => Math.floor(Math.random()*(max-min+1))+min;
+      const pad2 = n => String(n).padStart(2,'0');
+      const today = new Date();
+
+      function randDate(offsetMin=0, offsetMax=2){
+        const d = new Date(today);
+        d.setDate(d.getDate() + rnd(offsetMin, offsetMax));
+        return `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
+      }
+      function randHour(){ return `${pad2(rnd(12,22))}:${pad2([0,15,30,45][rnd(0,3)])}`; }
+      function randPhone(){ return `+34 6${rnd(10,99)} ${pad2(rnd(10,99))} ${pad2(rnd(10,99))}`; }
+
+      const rows = Array.from({length:8}).map((_,i) => {
+        const roomNum = rnd(1,12);
+        const category = ['Individual','Doble','Triple'][rnd(0,2)];
+        const guest = `${firstNames[rnd(0,firstNames.length-1)]} ${lastNames[rnd(0,lastNames.length-1)]}`;
+        const arrival = `${randDate(0,1)} ${randHour()}`;
+        const departure = `${randDate(2,5)}`;
+        const state = states[rnd(0,states.length-1)];
+        const paid  = Math.random()<0.5 ? 0 : rnd(50,120);
+        const commission = paid>0 ? +(paid*0.15).toFixed(2) : 0;
+        const gain = +(paid - commission).toFixed(2);
+        const channel = channels[rnd(0,channels.length-1)];
+        const phone = randPhone();
+        const email = `${guest.split(' ')[0].toLowerCase()}${rnd(1,99)}@mail.com`;
+
+        return `
+          <tr>
+            <td style="padding:10px 8px; border-bottom:1px solid var(--border)">Habitación ${roomNum} · ${category}</td>
+            <td style="padding:10px 8px; border-bottom:1px solid var(--border)">${guest}</td>
+            <td style="padding:10px 8px; border-bottom:1px solid var(--border)">${arrival}</td>
+            <td style="padding:10px 8px; border-bottom:1px solid var(--border)">${departure}</td>
+            <td style="padding:10px 8px; border-bottom:1px solid var(--border)"><span class="badge" style="background:${state.color}">${state.label}</span></td>
+            <td style="padding:10px 8px; border-bottom:1px solid var(--border)">${currency(paid)}</td>
+            <td style="padding:10px 8px; border-bottom:1px solid var(--border); color:#ef4444">${currency(commission)}</td>
+            <td style="padding:10px 8px; border-bottom:1px solid var(--border); color:#16a34a">${currency(gain)}</td>
+            <td style="padding:10px 8px; border-bottom:1px solid var(--border)"><span class="badge" style="background:#f1f5f9">${channel}</span></td>
+            <td style="padding:10px 8px; border-bottom:1px solid var(--border)">${phone}</td>
+            <td style="padding:10px 8px; border-bottom:1px solid var(--border)">${email}</td>
+            <td style="padding:10px 8px; border-bottom:1px solid var(--border)">
+              <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <button class="btn" onclick="sendReservationWA('${phone}','${guest}','${arrival}')" 
+                        style="background: #25d366; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s ease;"
+                        onmouseover="this.style.background='#128c7e'; this.style.transform='translateY(-1px)'"
+                        onmouseout="this.style.background='#25d366'; this.style.transform='translateY(0)'">
+                  WhatsApp
+                </button>
+                <button class="btn" onclick="sendReservationMail('${email}','${guest}','${arrival}')" 
+                        style="background: #2563eb; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s ease;"
+                        onmouseover="this.style.background='#1d4ed8'; this.style.transform='translateY(-1px)'"
+                        onmouseout="this.style.background='#2563eb'; this.style.transform='translateY(0)'">
+                  Email
+                </button>
+              </div>
+            </td>
+          </tr>`;
+      }).join('');
+      tbody.innerHTML = rows;
+    })();
+  </script>
+</body>
+</html>
+
+

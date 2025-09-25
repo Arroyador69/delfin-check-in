@@ -77,6 +77,198 @@
       ]
     },
     {
+      "source": "/api/guest-registrations",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET, POST, PUT, DELETE, OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "Content-Type, Accept, Authorization"
+        }
+      ]
+    },
+    {
+      "source": "/api/whatsapp/send",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "POST, OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "Content-Type, Accept, Authorization"
+        }
+      ]
+    },
+    {
+      "source": "/api/whatsapp/webhook",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "POST, OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "Content-Type, Accept"
+        }
+      ]
+    },
+    {
+      "source": "/api/export/aeat",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET, POST, OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "Content-Type, Accept, Authorization"
+        }
+      ]
+    },
+    {
+      "source": "/api/export/pv",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET, POST, OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "Content-Type, Accept, Authorization"
+        }
+      ]
+    },
+    {
+      "source": "/api/ministerio/partes",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET, POST, OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "Content-Type, Accept, Authorization"
+        }
+      ]
+    },
+    {
+      "source": "/api/ministerio/comunicaciones",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET, POST, OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "Content-Type, Accept, Authorization"
+        }
+      ]
+    },
+    {
+      "source": "/api/ical/reservations",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET, OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "Content-Type, Accept"
+        }
+      ]
+    },
+    {
+      "source": "/api/ical/rooms",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET, OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "Content-Type, Accept"
+        }
+      ]
+    },
+    {
+      "source": "/robots.txt",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "text/plain"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=86400"
+        }
+      ]
+    },
+    {
+      "source": "/sitemap.xml",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/xml"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=86400"
+        }
+      ]
+    },
+    {
+      "source": "/(.*\\.html)",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "text/html; charset=utf-8"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=3600"
+        }
+      ]
+    },
+    {
       "source": "/(.*)",
       "headers": [
         {
@@ -104,8 +296,50 @@
     },
     "src/app/reservations-form/page.tsx": {
       "maxDuration": 30
+    },
+    "src/app/guest-registrations-dashboard/page.tsx": {
+      "maxDuration": 30
+    },
+    "src/app/pricing/page.tsx": {
+      "maxDuration": 30
+    },
+    "src/app/partes/page.tsx": {
+      "maxDuration": 30
+    },
+    "src/app/aeat/page.tsx": {
+      "maxDuration": 30
+    },
+    "src/app/audit/page.tsx": {
+      "maxDuration": 30
+    },
+    "src/app/messages/page.tsx": {
+      "maxDuration": 30
+    },
+    "src/app/calendar-sync/page.tsx": {
+      "maxDuration": 30
+    },
+    "src/app/offline-queue/page.tsx": {
+      "maxDuration": 30
     }
   },
+  "rewrites": [
+    {
+      "source": "/aviso-legal",
+      "destination": "/aviso-legal.html"
+    },
+    {
+      "source": "/politica-cookies",
+      "destination": "/politica-cookies.html"
+    },
+    {
+      "source": "/politica-privacidad",
+      "destination": "/politica-privacidad.html"
+    },
+    {
+      "source": "/terminos-servicio",
+      "destination": "/terminos-servicio.html"
+    }
+  ],
   "github": {
     "silent": true
   }
