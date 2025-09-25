@@ -50,6 +50,20 @@ export default function CostCalculator() {
     },
     {
       id: '4',
+      name: 'Seguro de la casa',
+      amount: 0,
+      frequency: 'yearly',
+      isPercentage: false
+    },
+    {
+      id: '5',
+      name: 'Software de gestión',
+      amount: 0,
+      frequency: 'monthly',
+      isPercentage: false
+    },
+    {
+      id: '6',
       name: 'Impuestos',
       amount: 0,
       frequency: 'yearly',
@@ -57,7 +71,7 @@ export default function CostCalculator() {
       percentage: 0
     },
     {
-      id: '5',
+      id: '7',
       name: 'Comisiones OTA',
       amount: 0,
       frequency: 'per_guest',
@@ -468,6 +482,31 @@ export default function CostCalculator() {
                   <li>• Los costos por huésped se calculan dividiendo entre el total de huéspedes mensuales</li>
                   <li>• Los datos se guardan automáticamente en tu navegador</li>
                 </ul>
+              </div>
+
+              {/* Ejemplos de gastos */}
+              <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <h4 className="font-semibold text-blue-800 mb-2">📋 Ejemplos de Gastos Comunes</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-blue-700">
+                  <div>
+                    <p className="font-medium mb-1">Gastos Fijos:</p>
+                    <ul className="space-y-1">
+                      <li>• Luz: €80/mes</li>
+                      <li>• Agua: €120/trimestre</li>
+                      <li>• Seguro: €300/año</li>
+                      <li>• Software gestión: €25/mes</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <p className="font-medium mb-1">Gastos Variables:</p>
+                    <ul className="space-y-1">
+                      <li>• Limpieza: €15/habitación</li>
+                      <li>• Desayunos: €5/huésped</li>
+                      <li>• Ropa de cama: €200/año</li>
+                      <li>• Mantenimiento: €50/mes</li>
+                    </ul>
+                  </div>
+                </div>
               </div>
             </div>
           )}
