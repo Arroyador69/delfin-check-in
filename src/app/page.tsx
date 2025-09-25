@@ -239,6 +239,19 @@ export default function HomePage() {
               <div className="text-2xl">🇪🇸</div>
             </div>
           </Link>
+          <Link href="/cost-calculator" className="card group">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+                  Calculadora de Costos
+                </h3>
+                <p className="text-sm text-gray-600 mt-1">
+                  Calcular costos reales por huésped
+                </p>
+              </div>
+              <div className="text-2xl">🧮</div>
+            </div>
+          </Link>
         </div>
 
         {/* Recent Activity */}
@@ -273,6 +286,8 @@ export default function HomePage() {
       </div>
     </AdminLayout>
   );
-}/ /   D e p l o y m e n t   t r i g g e r   0 9 / 2 5 / 2 0 2 5   1 3 : 1 2 : 0 6  
- / *   W e b h o o k   t e s t   0 9 / 2 5 / 2 0 2 5   1 3 : 3 4 : 2 9   * /  
+}/ /   D e p l o y m e n t   t r i g g e r   0 9 / 2 5 / 2 0 2 5   1 3 : 1 2 : 0 6 
+ 
+ / *   W e b h o o k   t e s t   0 9 / 2 5 / 2 0 2 5   1 3 : 3 4 : 2 9   * / 
+ 
  
