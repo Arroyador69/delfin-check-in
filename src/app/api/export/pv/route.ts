@@ -3,6 +3,24 @@ import { z } from 'zod';
 import crypto from 'crypto';
 import { logAudit } from '@/lib/audit';
 
+// Utilidades de normalización/detección de país
+function normalizeCountryString(value?: string): string {
+  return String(value || '')
+    .trim()
+    .toUpperCase()
+    .replace(/Á/g, 'A')
+    .replace(/É/g, 'E')
+    .replace(/Í/g, 'I')
+    .replace(/Ó/g, 'O')
+    .replace(/Ú/g, 'U')
+    .replace(/Ñ/g, 'N');
+}
+
+function isSpain(value?: string): boolean {
+  const v = normalizeCountryString(value);
+  return v === 'ESP' || v === 'ES' || v === 'SPAIN' || v === 'ESPANA' || v === 'ESPAÑA';
+}
+
 // Esquemas Zod actualizados según MIR v1.1.1
 const DireccionSchema = z.object({
   direccion: z.string().optional().default(''),
@@ -87,15 +105,17 @@ function validateBusinessRules(data: z.infer<typeof PayloadSchema>): string[] {
         if (!p.direccion.pais) {
           details.push(`comunicaciones[${idx}].personas[${i}].direccion.pais requerido (ISO-3)`);
         }
-        // Normalizar país para manejar tanto ISO-2 como ISO-3
-        const paisNormalizado = p.direccion.pais?.toUpperCase();
-        const esEspana = paisNormalizado === 'ESP' || paisNormalizado === 'ES';
+        // Normalizar país para manejar tanto ISO-2 como ISO-3 y textos
+        const esPaisEspana = isSpain(p.direccion.pais);
+        const esNacionalidadEsp = isSpain(p.nacionalidad);
+        const esPasaporte = String(p.tipoDocumento || '').toUpperCase().includes('PASAP');
         
-        if (esEspana && !/^\d{5}$/.test(p.direccion.codigoMunicipio || '')) {
+        // Regla: INE obligatorio solo si PAIS y NACIONALIDAD son España, y no es un pasaporte extranjero
+        if (esPaisEspana && esNacionalidadEsp && !esPasaporte && !/^\d{5}$/.test(p.direccion.codigoMunicipio || '')) {
           details.push(`comunicaciones[${idx}].personas[${i}].codigoMunicipio debe ser INE de 5 dígitos para España`);
         }
-        // TEMPORAL: Permitir nombreMunicipio vacío para extranjeros (mientras se arregla formulario)
-        if (!esEspana && !p.direccion.nombreMunicipio && !p.direccion.codigoMunicipio) {
+        // Para no España o documentación de pasaporte (posible extranjero), exigir nombreMunicipio como alternativa
+        if ((!esPaisEspana || !esNacionalidadEsp || esPasaporte) && !p.direccion.nombreMunicipio && !p.direccion.codigoMunicipio) {
           details.push(`comunicaciones[${idx}].personas[${i}].nombreMunicipio requerido para países no españoles (o codigoMunicipio como alternativa)`);
         }
       }
@@ -319,6 +339,39 @@ function normalizePayload(data: any): any {
           com.contrato.pago.tipoPago = normalizado;
           cambiosRealizados = true;
         }
+      }
+
+      // Sanitizar personas/dirección
+      if (Array.isArray(com.personas)) {
+        com.personas.forEach((p: any, i: number) => {
+          // Si documento es pasaporte y nacionalidad no es española, forzar país = nacionalidad
+          const esPasaporte = String(p?.tipoDocumento || '').toUpperCase().includes('PASAP');
+          const n = normalizeCountryString(p?.nacionalidad);
+          const esNacionalidadEsp = isSpain(n);
+          p.direccion = p.direccion && typeof p.direccion === 'object' ? p.direccion : {};
+
+          if (esPasaporte && !esNacionalidadEsp) {
+            const paisPrev = p.direccion?.pais;
+            p.direccion.pais = n || paisPrev || 'ESP';
+          }
+
+          // Si dirección.direccion viene como objeto (errores de UI), convertirlo a string vacío
+          if (p?.direccion && typeof p.direccion.direccion === 'object') {
+            console.log(`[NORMALIZE] Comunicación ${idx} persona ${i}: direccion.direccion era objeto → ""`);
+            p.direccion.direccion = '';
+            cambiosRealizados = true;
+          }
+
+          // Asegurar tipos string en campos básicos
+          ['direccion','direccionComplementaria','codigoPostal','pais','codigoMunicipio','nombreMunicipio']
+            .forEach((k) => {
+              const val = p.direccion?.[k];
+              if (val != null && typeof val !== 'string') {
+                p.direccion[k] = String(val);
+                cambiosRealizados = true;
+              }
+            });
+        });
       }
     });
   }

@@ -176,19 +176,19 @@ export function normalizeData(rawData: any) {
           direccion: persona.direccion?.direccion || persona.direccion || '',
           direccionComplementaria: persona.direccion?.direccionComplementaria || persona.direccion_complementaria,
           codigoPostal: persona.direccion?.codigoPostal || persona.codigo_postal || '',
-          // Si la nacionalidad no es ESP, usarla como país para evitar exigir INE
+          // País: si hay nacionalidad extranjera, forzar país = nacionalidad
           pais: (() => {
             const nat = (persona.nacionalidad || '').toUpperCase();
+            const candidate = (persona.direccion?.pais || persona.pais || '').toUpperCase();
             if (nat && nat !== 'ESP' && nat !== 'ES') return nat;
-            return (persona.direccion?.pais || persona.pais || 'ESP')?.toUpperCase();
+            return candidate || 'ESP';
           })(),
-          // Para extranjeros, limpiar INE y priorizar nombreMunicipio
+          // INE solo si el país final es España
           codigoMunicipio: (() => {
             const nat = (persona.nacionalidad || '').toUpperCase();
-            const pais = nat && nat !== 'ESP' && nat !== 'ES'
-              ? nat
-              : (persona.direccion?.pais || persona.pais || 'ESP')?.toUpperCase();
-            if (pais !== 'ESP' && pais !== 'ES') return undefined;
+            const candidatePais = (persona.direccion?.pais || persona.pais || '').toUpperCase();
+            const finalPais = (nat && nat !== 'ESP' && nat !== 'ES') ? nat : (candidatePais || 'ESP');
+            if (finalPais !== 'ESP' && finalPais !== 'ES') return undefined;
             return persona.direccion?.codigoMunicipio || persona.codigo_municipio;
           })(),
           nombreMunicipio: persona.direccion?.nombreMunicipio || persona.nombre_municipio

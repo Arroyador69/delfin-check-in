@@ -384,40 +384,26 @@ export default function GuestRegistrationsDashboard() {
   }
 
   return (
-    <AdminLayout>
+    <AdminLayout showHeader={false}>
       <div className="min-h-screen bg-gray-50">
-      {/* Header */}
+      {/* Header compacto */}
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
+          <div className="flex justify-between items-center py-4">
             <div className="flex items-center">
-              <div className="text-3xl mr-3">🐬</div>
+              <div className="text-2xl mr-2">🐬</div>
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">Delfín Check-in</h1>
                 <p className="text-sm text-gray-600">Registros de formularios</p>
                 <p className="text-xs text-gray-500">Gestión y generación de XML para Ministerio del Interior</p>
               </div>
             </div>
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={async () => {
-                  try {
-                    await fetch('/api/admin/logout', { method: 'POST' });
-                    window.location.href = '/admin-login';
-                  } catch (error) {
-                    console.error('Error en logout:', error);
-                  }
-                }}
-                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
-              >
-                Cerrar Sesión
-              </button>
-            </div>
+            {/* Sin botón de cerrar sesión aquí */}
           </div>
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Filtros y búsqueda */}
         <div className="bg-white rounded-lg shadow p-6 mb-8">
           <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
@@ -834,6 +820,16 @@ export default function GuestRegistrationsDashboard() {
                       p.fechaNacimiento = (document.getElementById('edit_fechaNacimiento') as HTMLInputElement).value || p.fechaNacimiento;
                       p.tipoDocumento = (document.getElementById('edit_tipoDocumento') as HTMLInputElement).value || p.tipoDocumento;
                       p.numeroDocumento = (document.getElementById('edit_numeroDocumento') as HTMLInputElement).value || p.numeroDocumento;
+                      p.nacionalidad = (document.getElementById('edit_nacionalidad') as HTMLInputElement)?.value || p.nacionalidad;
+                      p.telefono = (document.getElementById('edit_telefono') as HTMLInputElement)?.value || p.telefono;
+                      p.correo = (document.getElementById('edit_correo') as HTMLInputElement)?.value || p.correo;
+                      // Dirección
+                      p.direccion = p.direccion || {};
+                      p.direccion.direccion = (document.getElementById('edit_direccion') as HTMLInputElement)?.value || p.direccion.direccion;
+                      p.direccion.codigoPostal = (document.getElementById('edit_codigoPostal') as HTMLInputElement)?.value || p.direccion.codigoPostal;
+                      p.direccion.pais = (document.getElementById('edit_pais') as HTMLInputElement)?.value || p.direccion.pais;
+                      p.direccion.nombreMunicipio = (document.getElementById('edit_nombreMunicipio') as HTMLInputElement)?.value || p.direccion.nombreMunicipio;
+                      p.direccion.codigoMunicipio = (document.getElementById('edit_codigoMunicipio') as HTMLInputElement)?.value || p.direccion.codigoMunicipio;
                       if (!updated.comunicaciones) updated.comunicaciones = [{ contrato: {}, personas: [p] }];
                       else {
                         if (!updated.comunicaciones[0]) updated.comunicaciones[0] = { contrato: {}, personas: [p] } as any;
@@ -872,6 +868,43 @@ export default function GuestRegistrationsDashboard() {
                     <div>
                       <label className="block text-gray-600 mb-1">Número documento</label>
                       <input id="edit_numeroDocumento" defaultValue={selectedRegistration.viajero.numeroDocumento} className="border rounded px-2 py-1 w-full" />
+                    </div>
+                    <div>
+                      <label className="block text-gray-600 mb-1">Nacionalidad (ISO-3 o nombre)</label>
+                      <input id="edit_nacionalidad" defaultValue={selectedRegistration?.data?.comunicaciones?.[0]?.personas?.[0]?.nacionalidad || ''} className="border rounded px-2 py-1 w-full" />
+                    </div>
+                    <div>
+                      <label className="block text-gray-600 mb-1">Teléfono</label>
+                      <input id="edit_telefono" defaultValue={selectedRegistration?.data?.comunicaciones?.[0]?.personas?.[0]?.telefono || ''} className="border rounded px-2 py-1 w-full" />
+                    </div>
+                    <div>
+                      <label className="block text-gray-600 mb-1">Correo</label>
+                      <input id="edit_correo" defaultValue={selectedRegistration?.data?.comunicaciones?.[0]?.personas?.[0]?.correo || ''} className="border rounded px-2 py-1 w-full" />
+                    </div>
+                    <div className="md:col-span-3 pt-2">
+                      <h5 className="font-medium text-gray-700 mb-2">Dirección</h5>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <label className="block text-gray-600 mb-1">Dirección</label>
+                          <input id="edit_direccion" defaultValue={selectedRegistration?.data?.comunicaciones?.[0]?.personas?.[0]?.direccion?.direccion || ''} className="border rounded px-2 py-1 w-full" />
+                        </div>
+                        <div>
+                          <label className="block text-gray-600 mb-1">Código Postal</label>
+                          <input id="edit_codigoPostal" defaultValue={selectedRegistration?.data?.comunicaciones?.[0]?.personas?.[0]?.direccion?.codigoPostal || ''} className="border rounded px-2 py-1 w-full" />
+                        </div>
+                        <div>
+                          <label className="block text-gray-600 mb-1">País (ISO-3 o nombre)</label>
+                          <input id="edit_pais" defaultValue={selectedRegistration?.data?.comunicaciones?.[0]?.personas?.[0]?.direccion?.pais || ''} className="border rounded px-2 py-1 w-full" />
+                        </div>
+                        <div>
+                          <label className="block text-gray-600 mb-1">Nombre Municipio</label>
+                          <input id="edit_nombreMunicipio" defaultValue={selectedRegistration?.data?.comunicaciones?.[0]?.personas?.[0]?.direccion?.nombreMunicipio || ''} className="border rounded px-2 py-1 w-full" />
+                        </div>
+                        <div>
+                          <label className="block text-gray-600 mb-1">Código Municipio (INE 5 dígitos)</label>
+                          <input id="edit_codigoMunicipio" defaultValue={selectedRegistration?.data?.comunicaciones?.[0]?.personas?.[0]?.direccion?.codigoMunicipio || ''} className="border rounded px-2 py-1 w-full" />
+                        </div>
+                      </div>
                     </div>
                     <div className="md:col-span-3 flex justify-end">
                       <button type="submit" className="px-3 py-2 bg-blue-600 text-white rounded">Guardar cambios</button>

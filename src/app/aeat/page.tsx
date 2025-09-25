@@ -74,42 +74,51 @@ export default function AEATPage() {
   };
 
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-semibold text-gray-900 mb-4">Exportar AEAT</h1>
-      <p className="text-gray-600 mb-6">Descarga CSV desde reservas (guest_paid, comisión OTA, neto). IVA por defecto 21%.</p>
+    <div className="min-h-screen bg-gray-50">
+      {/* Header compacto */}
+      <header className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-4">
+            <h1 className="text-2xl font-bold text-gray-900">Exportar AEAT</h1>
+          </div>
+        </div>
+      </header>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <p className="text-black mb-6">Descarga CSV desde reservas (guest_paid, comisión OTA, neto). IVA por defecto 21%.</p>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <div>
-          <label className="block text-sm text-gray-600 mb-1">Desde</label>
-          <input type="date" value={from} onChange={e=>setFrom(e.target.value)} className="border rounded px-3 py-2 w-full" />
+          <label className="block text-sm text-black mb-1">Desde</label>
+          <input type="date" value={from} onChange={e=>setFrom(e.target.value)} className="border rounded px-3 py-2 w-full text-black" />
         </div>
         <div>
-          <label className="block text-sm text-gray-600 mb-1">Hasta</label>
-          <input type="date" value={to} onChange={e=>setTo(e.target.value)} className="border rounded px-3 py-2 w-full" />
+          <label className="block text-sm text-black mb-1">Hasta</label>
+          <input type="date" value={to} onChange={e=>setTo(e.target.value)} className="border rounded px-3 py-2 w-full text-black" />
         </div>
         <div>
-          <label className="block text-sm text-gray-600 mb-1">Propiedad (room_id)</label>
-          <input type="text" value={property} onChange={e=>setProperty(e.target.value)} placeholder="Opcional" className="border rounded px-3 py-2 w-full" />
+          <label className="block text-sm text-black mb-1">Propiedad (room_id)</label>
+          <input type="text" value={property} onChange={e=>setProperty(e.target.value)} placeholder="Opcional" className="border rounded px-3 py-2 w-full text-black placeholder-gray-500" />
         </div>
         <div>
-          <label className="block text-sm text-gray-600 mb-1">Canal</label>
-          <input type="text" value={channel} onChange={e=>setChannel(e.target.value)} placeholder="p.ej. airbnb, booking, manual" className="border rounded px-3 py-2 w-full" />
+          <label className="block text-sm text-black mb-1">Canal</label>
+          <input type="text" value={channel} onChange={e=>setChannel(e.target.value)} placeholder="p.ej. airbnb, booking, manual" className="border rounded px-3 py-2 w-full text-black placeholder-gray-500" />
         </div>
         <div>
-          <label className="block text-sm text-gray-600 mb-1">Canales (CSV)</label>
-          <input type="text" value={channelsCsv} onChange={e=>setChannelsCsv(e.target.value)} placeholder="airbnb,booking,manual" className="border rounded px-3 py-2 w-full" />
+          <label className="block text-sm text-black mb-1">Canales (CSV)</label>
+          <input type="text" value={channelsCsv} onChange={e=>setChannelsCsv(e.target.value)} placeholder="airbnb,booking,manual" className="border rounded px-3 py-2 w-full text-black placeholder-gray-500" />
         </div>
         <div>
-          <label className="block text-sm text-gray-600 mb-1">Habitaciones (CSV)</label>
-          <input type="text" value={roomsCsv} onChange={e=>setRoomsCsv(e.target.value)} placeholder="1,2,3" className="border rounded px-3 py-2 w-full" />
+          <label className="block text-sm text-black mb-1">Habitaciones (CSV)</label>
+          <input type="text" value={roomsCsv} onChange={e=>setRoomsCsv(e.target.value)} placeholder="1,2,3" className="border rounded px-3 py-2 w-full text-black placeholder-gray-500" />
         </div>
         <div>
-          <label className="block text-sm text-gray-600 mb-1">IVA %</label>
-          <input type="number" value={vat} onChange={e=>setVat(parseInt(e.target.value||'21',10))} className="border rounded px-3 py-2 w-full" />
+          <label className="block text-sm text-black mb-1">IVA %</label>
+          <input type="number" value={vat} onChange={e=>setVat(parseInt(e.target.value||'21',10))} className="border rounded px-3 py-2 w-full text-black" />
         </div>
         <div>
-          <label className="block text-sm text-gray-600 mb-1">Campo de fecha</label>
-          <select value={dateField} onChange={e=>setDateField(e.target.value as any)} className="border rounded px-3 py-2 w-full">
+          <label className="block text-sm text-black mb-1">Campo de fecha</label>
+          <select value={dateField} onChange={e=>setDateField(e.target.value as any)} className="border rounded px-3 py-2 w-full text-black">
             <option value="check_out">Por check-out</option>
             <option value="check_in">Por check-in</option>
           </select>
@@ -118,10 +127,10 @@ export default function AEATPage() {
 
       <div className="flex items-center gap-3 mb-6">
         <button onClick={exportCsv} className="px-4 py-2 bg-emerald-600 text-white rounded hover:bg-emerald-700">Descargar CSV</button>
-        <button onClick={doPreview} className="px-3 py-2 bg-gray-100 rounded hover:bg-gray-200">Previsualizar totales</button>
-        <button onClick={() => setMonth(0)} className="px-3 py-2 bg-gray-100 rounded hover:bg-gray-200">Mes actual</button>
-        <button onClick={() => setMonth(-1)} className="px-3 py-2 bg-gray-100 rounded hover:bg-gray-200">Mes anterior</button>
-        <button onClick={() => setQuarter(0)} className="px-3 py-2 bg-gray-100 rounded hover:bg-gray-200">Trimestre actual</button>
+        <button onClick={doPreview} className="px-3 py-2 bg-gray-100 text-black rounded hover:bg-gray-200">Previsualizar totales</button>
+        <button onClick={() => setMonth(0)} className="px-3 py-2 bg-gray-100 text-black rounded hover:bg-gray-200">Mes actual</button>
+        <button onClick={() => setMonth(-1)} className="px-3 py-2 bg-gray-100 text-black rounded hover:bg-gray-200">Mes anterior</button>
+        <button onClick={() => setQuarter(0)} className="px-3 py-2 bg-gray-100 text-black rounded hover:bg-gray-200">Trimestre actual</button>
       </div>
 
       {preview && (
@@ -143,6 +152,7 @@ export default function AEATPage() {
           )}
         </div>
       )}
+      </div>
     </div>
   );
 }

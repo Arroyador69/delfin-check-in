@@ -25,7 +25,8 @@ export default function RootLayout({
           <SWRegister />
           <ConditionalNavigation />
           <PWAInstallGuide />
-          <main>
+          {/* Compensar la barra de navegación fija (h-16) */}
+          <main className="pt-16">
             {children}
           </main>
         </div>

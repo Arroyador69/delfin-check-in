@@ -1,4 +1,5 @@
-const CACHE_NAME = 'delfin-checkin-v1';
+// Version bump para invalidar caché y forzar actualización en clientes
+const CACHE_NAME = 'delfin-checkin-v2';
 const urlsToCache = [
   '/',
   '/manifest.json',
@@ -15,6 +16,8 @@ self.addEventListener('install', (event) => {
         return cache.addAll(urlsToCache);
       })
   );
+  // Activación inmediata de la nueva versión
+  self.skipWaiting();
 });
 
 // Activación del service worker
@@ -31,6 +34,8 @@ self.addEventListener('activate', (event) => {
       );
     })
   );
+  // Tomar control de las páginas abiertas
+  self.clients.claim();
 });
 
 // === Cola offline para /api/partes ===

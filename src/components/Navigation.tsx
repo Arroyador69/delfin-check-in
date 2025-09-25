@@ -33,49 +33,28 @@ export default function Navigation() {
               <span className="text-xl font-bold text-gray-900">Delfín Check-in</span>
             </Link>
           </div>
-
-          {/* Desktop navigation */}
-          <div className="hidden md:flex items-center space-x-8">
-            {navigation.map((item) => {
-              const isActive = pathname === item.href;
-              return (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                    isActive
-                      ? 'bg-blue-100 text-blue-700'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                  }`}
-                >
-                  <item.icon className="w-4 h-4 mr-2" />
-                  {item.name}
-                </Link>
-              );
-            })}
+          {/* Botón de menú (visible en móvil y escritorio) */}
+          <div className="flex items-center">
             <PWAInstallButton />
-          </div>
-
-          {/* Mobile menu button */}
-          <div className="md:hidden flex items-center">
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="text-gray-600 hover:text-gray-900 focus:outline-none focus:text-gray-900"
+              className="ml-4 inline-flex items-center px-3 py-2 rounded-md text-gray-700 hover:text-gray-900 hover:bg-gray-50 focus:outline-none"
             >
               {mobileMenuOpen ? (
                 <X className="h-6 w-6" />
               ) : (
                 <Menu className="h-6 w-6" />
               )}
+              <span className="hidden md:inline ml-2 font-medium">Menú</span>
             </button>
           </div>
         </div>
       </div>
 
-      {/* Mobile menu */}
+      {/* Menú desplegable (se muestra en cualquier tamaño cuando está abierto) */}
       {mobileMenuOpen && (
-        <div className="md:hidden">
-          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white border-t">
+        <div>
+          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white border-t shadow">
             {navigation.map((item) => {
               const isActive = pathname === item.href;
               return (

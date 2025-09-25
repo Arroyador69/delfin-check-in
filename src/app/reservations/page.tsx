@@ -381,35 +381,22 @@ export default function ReservationsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-7xl mx-auto">
-        <div className="mb-8">
-          <div className="flex justify-between items-center">
-            <h1 className="text-3xl font-bold text-gray-900">Reservas</h1>
-            <div className="flex space-x-3">
-              <a
-                href="/api/ical/reservations"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center space-x-2"
-              >
-                <Calendar className="h-5 w-5" />
-                <span>Calendario</span>
-              </a>
-              <button
-                onClick={() => {
-                  const url = `${window.location.origin}/api/ical/reservations`;
-                  navigator.clipboard.writeText(url);
-                  alert('URL del calendario copiada al portapapeles. Compártela con tus padres para que se suscriban.');
-                }}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center space-x-2"
-              >
-                <Smartphone className="h-5 w-5" />
-                <span>Compartir</span>
-              </button>
+    <div className="min-h-screen bg-gray-50">
+      {/* Encabezado compacto con el título visible bajo la barra fija */}
+      <header className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-4">
+            <div className="flex items-center">
+              <Calendar className="h-6 w-6 text-blue-600 mr-2" />
+              <h1 className="text-2xl font-bold text-gray-900">Reservas</h1>
             </div>
           </div>
-          <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
+        </div>
+      </header>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="mb-6">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <div className="flex items-start">
               <Smartphone className="h-5 w-5 text-blue-600 mt-0.5 mr-3" />
               <div>
@@ -419,8 +406,31 @@ export default function ReservationsPage() {
                 <p className="text-sm text-blue-700 mb-2">
                   Comparte la URL del calendario con tus padres para que puedan ver todas las reservas en sus móviles:
                 </p>
-                <div className="bg-white p-3 rounded border text-xs font-mono text-gray-700 break-all">
-                  {typeof window !== 'undefined' ? `${window.location.origin}/api/ical/reservations` : 'Cargando...'}
+                <div className="flex items-center space-x-3">
+                  <div className="flex-1 bg-white p-3 rounded border text-xs font-mono text-gray-700 break-all">
+                    {typeof window !== 'undefined' ? `${window.location.origin}/api/ical/reservations` : 'Cargando...'}
+                  </div>
+                  <button
+                    onClick={() => {
+                      try {
+                        const url = `${window.location.origin}/api/ical/reservations`;
+                        const html = `<!doctype html><html><head><meta charset=\"utf-8\" /><title>Calendario de reservas</title><style>body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;padding:24px;color:#111} h1{font-size:20px;margin:0 0 12px} .box{border:1px solid #ddd;border-radius:8px;padding:12px;background:#fff;font-family:ui-monospace,Menlo,Consolas,monospace;word-break:break-all} p{margin:8px 0}</style></head><body><h1>Calendario de reservas</h1><p>URL para suscribirse al calendario en el móvil:</p><div class=\"box\">${url}</div><p>Instrucciones: Copia esta URL y añádela en Google Calendar, Apple Calendar u otra app de calendarios como suscripción por URL (solo lectura).</p></body></html>`;
+                        const win = window.open('', '_blank');
+                        if (win) {
+                          win.document.write(html);
+                          win.document.close();
+                          win.focus();
+                          win.print();
+                        }
+                      } catch (e) {
+                        alert('No se pudo generar el PDF. Prueba a imprimir esta página.');
+                      }
+                    }}
+                    className="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs"
+                    title="Descargar PDF con la URL"
+                  >
+                    Descargar PDF
+                  </button>
                 </div>
                 <p className="text-xs text-blue-600 mt-2">
                   💡 <strong>Instrucciones:</strong> Copia esta URL y envíala por WhatsApp. Tus padres pueden suscribirse desde Google Calendar, Apple Calendar, o cualquier app de calendario.
@@ -460,6 +470,12 @@ export default function ReservationsPage() {
                     Huésped
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Teléfono
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Personas
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Llegada
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -488,7 +504,7 @@ export default function ReservationsPage() {
               <tbody className="bg-white divide-y divide-gray-200">
                 {reservations.length === 0 ? (
                   <tr>
-                    <td colSpan={10} className="px-6 py-12 text-center">
+                    <td colSpan={12} className="px-6 py-12 text-center">
                       <div className="text-gray-500">
                         <div className="text-lg mb-2">No hay reservas disponibles</div>
                         <div className="text-sm">Las reservas aparecerán aquí cuando las crees</div>
@@ -508,6 +524,12 @@ export default function ReservationsPage() {
                           <div className="text-xs text-gray-500">{reservation.guest_email}</div>
                         )}
                       </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {reservation.guest_phone || '-'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {reservation.guest_count || 1}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {formatDate(reservation.check_in)}
@@ -535,12 +557,14 @@ export default function ReservationsPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <button className="text-blue-600 hover:text-blue-900 mr-3">
+                      <button
+                        onClick={() => handleEditClick(reservation)}
+                        className="text-gray-700 hover:text-gray-900 mr-3"
+                        title="Ver/editar reserva"
+                      >
                         Ver
                       </button>
-                      <button className="text-green-600 hover:text-green-900 mr-3">
-                        Check-in
-                      </button>
+                      {/* Botón Check-in retirado a petición del usuario */}
                       <button
                         onClick={() => handleEditClick(reservation)}
                         className="text-blue-600 hover:text-blue-900 mr-3 flex items-center"
@@ -668,7 +692,7 @@ export default function ReservationsPage() {
                     value={formData.guest_email}
                     onChange={(e) => setFormData({...formData, guest_email: e.target.value})}
                     placeholder="email@ejemplo.com"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black placeholder-gray-500"
                   />
                 </div>
               </div>
@@ -685,7 +709,7 @@ export default function ReservationsPage() {
                     value={formData.guest_phone}
                     onChange={(e) => setFormData({...formData, guest_phone: e.target.value})}
                     placeholder="+34 600 000 000"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black placeholder-gray-500"
                   />
                 </div>
                 
@@ -718,7 +742,7 @@ export default function ReservationsPage() {
                     required
                     value={formData.check_in}
                     onChange={(e) => setFormData({...formData, check_in: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
                   />
                 </div>
                 
@@ -732,7 +756,7 @@ export default function ReservationsPage() {
                     required
                     value={formData.check_out}
                     onChange={(e) => setFormData({...formData, check_out: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
                   />
                 </div>
               </div>

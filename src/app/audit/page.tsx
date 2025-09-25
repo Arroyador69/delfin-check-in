@@ -43,8 +43,17 @@ export default function AuditPage() {
   }, []);
 
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-semibold text-gray-900 mb-4">Bitácora de cumplimiento</h1>
+    <div className="min-h-screen bg-gray-50">
+      {/* Header compacto */}
+      <header className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center py-4">
+            <h1 className="text-2xl font-bold text-gray-900">Bitácora de cumplimiento</h1>
+          </div>
+        </div>
+      </header>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
       <div className="grid grid-cols-1 md:grid-cols-6 gap-3 mb-4">
         <input value={q} onChange={e=>setQ(e.target.value)} placeholder="Buscar (texto)" className="border rounded px-3 py-2" />
         <input value={action} onChange={e=>setAction(e.target.value)} placeholder="Acción (p.ej. VALIDATE_OK)" className="border rounded px-3 py-2" />
@@ -79,6 +88,7 @@ export default function AuditPage() {
             ))}
           </tbody>
         </table>
+      </div>
       </div>
     </div>
   );
