@@ -49,34 +49,21 @@ export function middleware(req: NextRequest) {
       url.pathname.startsWith('/api/ical') ||
       url.pathname.startsWith('/public') ||
       url.pathname === '/reservations' ||
-      url.pathname.startsWith('/reservations/')) {
+      url.pathname.startsWith('/reservations/') ||
+      url.pathname === '/admin-login') {
     return NextResponse.next()
   }
 
-  const auth = req.headers.get('authorization')
-  if (!auth) {
-    return new NextResponse('Auth required', {
-      status: 401,
-      headers: { 'WWW-Authenticate': 'Basic realm="Secure Area"' }
-    })
+  // Verificar autenticación por cookie
+  const authToken = req.cookies.get('auth_token')?.value
+  
+  if (!authToken || authToken !== 'Cuaderno2314') {
+    // Redirigir al login en lugar de mostrar error 401
+    const loginUrl = new URL('/admin-login', req.url)
+    return NextResponse.redirect(loginUrl)
   }
 
-  const [scheme, encoded] = auth.split(' ')
-  if (scheme !== 'Basic' || !encoded) {
-    return new NextResponse('Invalid auth', { status: 401 })
-  }
-
-  const decoded = Buffer.from(encoded, 'base64').toString()
-  const [user, pass] = decoded.split(':')
-
-  const USER = process.env.AUTH_USER
-  const PASS = process.env.AUTH_PASS
-
-  if (user === USER && pass === PASS) {
-    return NextResponse.next()
-  }
-
-  return new NextResponse('Unauthorized', { status: 401 })
+  return NextResponse.next()
 }
 
 export const config = {
