@@ -2,16 +2,14 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Settings, RefreshCw } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import AdminLayout from '@/components/AdminLayout';
-// Removido: import { getRooms, getReservations } from '@/lib/storage';
 
 export default function HomePage() {
   const [rooms, setRooms] = useState<any[]>([]);
   const [reservations, setReservations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [syncing, setSyncing] = useState(false);
-  const [lastSync, setLastSync] = useState<string | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     loadData();
@@ -38,30 +36,20 @@ export default function HomePage() {
     }
   };
 
-  const handleSync = async () => {
-    setSyncing(true);
+  const handleLogout = async () => {
     try {
-      const response = await fetch('/api/sync', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      // Llamar a la API de logout
+      await fetch('/api/auth/logout', { method: 'POST' })
       
-      const result = await response.json();
+      // Eliminar cookie manualmente
+      document.cookie = 'auth_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
       
-      if (result.success) {
-        setLastSync(new Date().toLocaleString());
-        loadData(); // Recargar datos
-        alert(`✅ ${result.message}`);
-      } else {
-        alert(`❌ ${result.message}`);
-      }
+      // Redirigir al login
+      router.push('/admin-login')
     } catch (error) {
-      console.error('Error en sincronización:', error);
-      alert('❌ Error en la sincronización');
-    } finally {
-      setSyncing(false);
+      console.error('Error logging out:', error)
+      // Redirigir de todas formas
+      router.push('/admin-login')
     }
   };
 
@@ -116,15 +104,10 @@ export default function HomePage() {
             </div>
             <div className="flex items-center space-x-4">
               <button
-                onClick={handleSync}
-                disabled={syncing}
-                className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+                onClick={handleLogout}
+                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
               >
-                <RefreshCw className={`h-4 w-4 mr-2 ${syncing ? 'animate-spin' : ''}`} />
-                {syncing ? 'Sincronizando...' : 'Sincronizar'}
-              </button>
-              <button className="text-gray-500 hover:text-gray-700">
-                <Settings className="h-6 w-6" />
+                Cerrar Sesión
               </button>
             </div>
           </div>
@@ -133,21 +116,6 @@ export default function HomePage() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Status de sincronización */}
-        {lastSync && (
-          <div className="mb-6 bg-green-50 border border-green-200 rounded-lg p-4">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              </div>
-              <div className="ml-3">
-                <p className="text-sm text-green-700">
-                  Última sincronización: {lastSync}
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Stats Cards */}
         <div className="kpis">
@@ -286,8 +254,4 @@ export default function HomePage() {
       </div>
     </AdminLayout>
   );
-}/ /   D e p l o y m e n t   t r i g g e r   0 9 / 2 5 / 2 0 2 5   1 3 : 1 2 : 0 6 
- 
- / *   W e b h o o k   t e s t   0 9 / 2 5 / 2 0 2 5   1 3 : 3 4 : 2 9   * / 
- 
- 
+}

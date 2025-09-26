@@ -75,24 +75,6 @@ export default function AdminLayout({ children, showHeader = true }: AdminLayout
 
   return (
     <div>
-      {/* Header con botón de logout (opcional) */}
-      {showHeader && (
-        <div className="bg-white shadow-sm border-b px-4 py-2">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center">
-              <div className="text-2xl mr-2">🐬</div>
-              <span className="text-sm text-gray-600">Panel Administrativo</span>
-            </div>
-            <button
-              onClick={handleLogout}
-              className="px-3 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
-            >
-              Cerrar Sesión
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* Contenido de la página */}
       {children}
     </div>

@@ -1,0 +1,77 @@
+[33mcommit c185ac81ab0a099140d8bde3be51b8f1c72ac578[m
+Author: Arroyador69 <alberto80558@gmail.com>
+Date:   Thu Sep 25 20:01:47 2025 +0200
+
+    ✨ Añadir gastos de seguro y software de gestión a la calculadora
+    
+    - Incluido 'Seguro de la casa' como gasto anual
+    - Incluido 'Software de gestión' como gasto mensual
+    - Añadida sección de ejemplos de gastos comunes
+    - Mejorada la guía de uso con ejemplos prácticos
+
+[1mdiff --git a/src/app/cost-calculator/page.tsx b/src/app/cost-calculator/page.tsx[m
+[1mindex 0761f0d..fb6c25d 100644[m
+[1m--- a/src/app/cost-calculator/page.tsx[m
+[1m+++ b/src/app/cost-calculator/page.tsx[m
+[36m@@ -50,6 +50,20 @@[m [mexport default function CostCalculator() {[m
+     },[m
+     {[m
+       id: '4',[m
+[32m+[m[32m      name: 'Seguro de la casa',[m
+[32m+[m[32m      amount: 0,[m
+[32m+[m[32m      frequency: 'yearly',[m
+[32m+[m[32m      isPercentage: false[m
+[32m+[m[32m    },[m
+[32m+[m[32m    {[m
+[32m+[m[32m      id: '5',[m
+[32m+[m[32m      name: 'Software de gestión',[m
+[32m+[m[32m      amount: 0,[m
+[32m+[m[32m      frequency: 'monthly',[m
+[32m+[m[32m      isPercentage: false[m
+[32m+[m[32m    },[m
+[32m+[m[32m    {[m
+[32m+[m[32m      id: '6',[m
+       name: 'Impuestos',[m
+       amount: 0,[m
+       frequency: 'yearly',[m
+[36m@@ -57,7 +71,7 @@[m [mexport default function CostCalculator() {[m
+       percentage: 0[m
+     },[m
+     {[m
+[31m-      id: '5',[m
+[32m+[m[32m      id: '7',[m
+       name: 'Comisiones OTA',[m
+       amount: 0,[m
+       frequency: 'per_guest',[m
+[36m@@ -469,6 +483,31 @@[m [mexport default function CostCalculator() {[m
+                   <li>• Los datos se guardan automáticamente en tu navegador</li>[m
+                 </ul>[m
+               </div>[m
+[32m+[m
+[32m+[m[32m              {/* Ejemplos de gastos */}[m
+[32m+[m[32m              <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-4">[m
+[32m+[m[32m                <h4 className="font-semibold text-blue-800 mb-2">📋 Ejemplos de Gastos Comunes</h4>[m
+[32m+[m[32m                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-blue-700">[m
+[32m+[m[32m                  <div>[m
+[32m+[m[32m                    <p className="font-medium mb-1">Gastos Fijos:</p>[m
+[32m+[m[32m                    <ul className="space-y-1">[m
+[32m+[m[32m                      <li>• Luz: €80/mes</li>[m
+[32m+[m[32m                      <li>• Agua: €120/trimestre</li>[m
+[32m+[m[32m                      <li>• Seguro: €300/año</li>[m
+[32m+[m[32m                      <li>• Software gestión: €25/mes</li>[m
+[32m+[m[32m                    </ul>[m
+[32m+[m[32m                  </div>[m
+[32m+[m[32m                  <div>[m
+[32m+[m[32m                    <p className="font-medium mb-1">Gastos Variables:</p>[m
+[32m+[m[32m                    <ul className="space-y-1">[m
+[32m+[m[32m                      <li>• Limpieza: €15/habitación</li>[m
+[32m+[m[32m                      <li>• Desayunos: €5/huésped</li>[m
+[32m+[m[32m                      <li>• Ropa de cama: €200/año</li>[m
+[32m+[m[32m                      <li>• Mantenimiento: €50/mes</li>[m
+[32m+[m[32m                    </ul>[m
+[32m+[m[32m                  </div>[m
+[32m+[m[32m                </div>[m
+[32m+[m[32m              </div>[m
+             </div>[m
+           )}[m
+         </div>[m
