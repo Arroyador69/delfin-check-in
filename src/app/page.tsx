@@ -180,7 +180,7 @@ export default function HomePage() {
         </div>
 
         {/* Acciones rápidas (MVP) */}
-        <div className="pricing">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Link href="/reservations" className="card group">
             <div className="flex items-center justify-between">
               <div>
@@ -218,6 +218,19 @@ export default function HomePage() {
                 </p>
               </div>
               <div className="text-2xl">🧮</div>
+            </div>
+          </Link>
+          <Link href="/aeat" className="card group">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+                  Exportar AEAT
+                </h3>
+                <p className="text-sm text-gray-600 mt-1">
+                  Generar archivos para Hacienda
+                </p>
+              </div>
+              <div className="text-2xl">🏛️</div>
             </div>
           </Link>
         </div>
