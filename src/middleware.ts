@@ -57,7 +57,10 @@ export function middleware(req: NextRequest) {
   // Verificar autenticación por cookie
   const authToken = req.cookies.get('auth_token')?.value
   
-  if (!authToken || authToken !== 'Cuaderno2314') {
+  // Obtener credenciales personalizadas (en producción esto vendría de una base de datos)
+  const storedPassword = process.env.ADMIN_PASSWORD || 'Cuaderno2314'
+  
+  if (!authToken || authToken !== storedPassword) {
     // Redirigir al login en lugar de mostrar error 401
     const loginUrl = new URL('/admin-login', req.url)
     return NextResponse.redirect(loginUrl)

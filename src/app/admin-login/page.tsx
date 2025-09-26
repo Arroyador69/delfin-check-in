@@ -11,11 +11,30 @@ export default function AdminLoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
 
-  // Credenciales de administrador
-  const ADMIN_CREDENTIALS = {
+  // Cargar credenciales personalizadas
+  const [adminCredentials, setAdminCredentials] = useState({
     username: 'admin',
     password: 'Cuaderno2314'
-  }
+  })
+
+  // Cargar credenciales personalizadas al montar el componente
+  useEffect(() => {
+    const loadCredentials = () => {
+      try {
+        const savedUsername = localStorage.getItem('admin_username') || 'admin'
+        const savedPassword = localStorage.getItem('admin_password') || 'Cuaderno2314'
+        
+        setAdminCredentials({
+          username: savedUsername,
+          password: savedPassword
+        })
+      } catch (error) {
+        console.error('Error cargando credenciales:', error)
+      }
+    }
+    
+    loadCredentials()
+  }, [])
 
   // Verificar si ya está autenticado
   useEffect(() => {
@@ -24,9 +43,15 @@ export default function AdminLoginPage() {
       cookie.trim().startsWith('auth_token=')
     )
     
-    if (authCookie && authCookie.includes('Cuaderno2314')) {
-      // Si ya está autenticado, redirigir al dashboard
-      router.push('/')
+    if (authCookie) {
+      // Verificar si el token coincide con la contraseña actual
+      const token = authCookie.split('=')[1]
+      const currentPassword = localStorage.getItem('admin_password') || 'Cuaderno2314'
+      
+      if (token === currentPassword) {
+        // Si ya está autenticado, redirigir al dashboard
+        router.push('/')
+      }
     }
   }, [router])
 
@@ -36,15 +61,15 @@ export default function AdminLoginPage() {
     setError('')
 
     try {
-      // Verificar credenciales
-      if (username === ADMIN_CREDENTIALS.username && password === ADMIN_CREDENTIALS.password) {
+      // Verificar credenciales con las credenciales personalizadas
+      if (username === adminCredentials.username && password === adminCredentials.password) {
         // Credenciales correctas
         setSuccess(true)
         
-        // Establecer cookie de autenticación
+        // Establecer cookie de autenticación con la contraseña actual
         const expires = new Date()
         expires.setTime(expires.getTime() + (24 * 60 * 60 * 1000)) // 24 horas
-        document.cookie = `auth_token=Cuaderno2314; expires=${expires.toUTCString()}; path=/; SameSite=Strict`
+        document.cookie = `auth_token=${adminCredentials.password}; expires=${expires.toUTCString()}; path=/; SameSite=Strict`
         
         // Redirigir después de 1.5 segundos
         setTimeout(() => {
