@@ -81,7 +81,7 @@ export default function CalendarSyncPage() {
                     const roomNumber = key.replace('room', '');
                     return (
                       <div key={key} className="flex items-center space-x-2">
-                        <span className="text-sm font-medium w-24">Habitación {roomNumber}:</span>
+                        <span className="text-sm font-bold text-gray-800 w-24">Habitación {roomNumber}:</span>
                         <input
                           type="text"
                           value={url}

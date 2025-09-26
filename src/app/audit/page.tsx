@@ -78,7 +78,7 @@ export default function AuditPage() {
           <tbody className="bg-white divide-y divide-gray-200">
             {items.map((it) => (
               <tr key={it.id}>
-                <td className="px-4 py-2 text-sm text-gray-700">{new Date(it.at).toLocaleString()}</td>
+                <td className="px-4 py-2 text-sm font-bold text-gray-800">{new Date(it.at).toLocaleString()}</td>
                 <td className="px-4 py-2 text-sm text-gray-900">{it.action}</td>
                 <td className="px-4 py-2 text-sm text-gray-700">{it.entity_type}</td>
                 <td className="px-4 py-2 text-sm text-gray-700">{it.entity_id}</td>

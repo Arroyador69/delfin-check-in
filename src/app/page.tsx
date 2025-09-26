@@ -223,7 +223,7 @@ export default function HomePage() {
         </div>
 
         {/* Recent Activity */}
-        <div className="card">
+        <div className="card mt-8">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Actividad Reciente</h3>
           {reservations.length === 0 ? (
             <div className="text-center py-8">

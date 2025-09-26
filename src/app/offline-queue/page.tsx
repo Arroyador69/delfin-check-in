@@ -108,9 +108,9 @@ export default function OfflineQueuePage() {
       <div className="flex items-center justify-between mb-4">
         <h1 className="sr-only">Cola offline</h1>
         <div className="flex gap-2">
-          <button onClick={() => (window as any).__requestOutboxList?.()} className="px-3 py-2 bg-gray-100 rounded hover:bg-gray-200">Actualizar</button>
-          <button onClick={flushAll} disabled={loading} className="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50">{loading ? 'Reintentando...' : 'Reintentar todo'}</button>
-          <Link href="/" className="px-3 py-2 bg-gray-100 rounded hover:bg-gray-200">Volver</Link>
+          <button onClick={() => (window as any).__requestOutboxList?.()} className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 font-medium">Actualizar</button>
+          <button onClick={flushAll} disabled={loading} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 font-medium">{loading ? 'Reintentando...' : 'Reintentar todo'}</button>
+          <Link href="/" className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 font-medium">Volver</Link>
         </div>
       </div>
 
