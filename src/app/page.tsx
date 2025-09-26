@@ -235,33 +235,116 @@ export default function HomePage() {
           </Link>
         </div>
 
-        {/* Recent Activity */}
-        <div className="card mt-8">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Actividad Reciente</h3>
-          {reservations.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-gray-500">No hay reservas aún</p>
-              <p className="text-sm text-gray-400 mt-2">
-                Asegúrate de tener tus calendarios conectados y haz clic en "Sincronizar"
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {reservations.slice(0, 5).map((reservation) => (
-                <div key={reservation.id} className="flex items-center space-x-3">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <div className="flex-1">
-                    <p className="text-sm text-gray-900">
-                      Nueva reserva - {reservation.guest_name}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {new Date(reservation.check_in).toLocaleDateString('es-ES')} - {new Date(reservation.check_out).toLocaleDateString('es-ES')}
-                    </p>
+        {/* Reservas Actuales y Próximas */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
+          {/* Reservas Actuales */}
+          <div className="card">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+              <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
+              Reservas Actuales
+            </h3>
+            {reservations.length === 0 ? (
+              <div className="text-center py-6">
+                <p className="text-gray-500">No hay reservas actuales</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {reservations
+                  .filter(r => {
+                    const checkIn = new Date(r.check_in);
+                    const checkOut = new Date(r.check_out);
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    return checkIn <= today && checkOut > today && r.status === 'confirmed';
+                  })
+                  .slice(0, 5)
+                  .map((reservation) => (
+                    <div key={reservation.id} className="flex items-center space-x-3 p-3 bg-green-50 rounded-lg">
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-900">
+                          {reservation.guest_name}
+                        </p>
+                        <div className="flex items-center space-x-4 text-xs text-gray-600 mt-1">
+                          <span>👥 {reservation.guest_count || 'N/A'} personas</span>
+                          <span>🏨 Hab. {reservation.room_id || 'N/A'}</span>
+                          <span>🚪 Check-out: 12:00</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                {reservations.filter(r => {
+                  const checkIn = new Date(r.check_in);
+                  const checkOut = new Date(r.check_out);
+                  const today = new Date();
+                  today.setHours(0, 0, 0, 0);
+                  return checkIn <= today && checkOut > today && r.status === 'confirmed';
+                }).length === 0 && (
+                  <div className="text-center py-6">
+                    <p className="text-gray-500">No hay huéspedes actuales</p>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Próximas Reservas */}
+          <div className="card">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+              <div className="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
+              Próximas Reservas
+            </h3>
+            {reservations.length === 0 ? (
+              <div className="text-center py-6">
+                <p className="text-gray-500">No hay reservas próximas</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {reservations
+                  .filter(r => {
+                    const checkIn = new Date(r.check_in);
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    return checkIn > today && r.status === 'confirmed';
+                  })
+                  .sort((a, b) => new Date(a.check_in).getTime() - new Date(b.check_in).getTime())
+                  .slice(0, 5)
+                  .map((reservation) => (
+                    <div key={reservation.id} className="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-900">
+                          {reservation.guest_name}
+                        </p>
+                        <div className="flex items-center space-x-4 text-xs text-gray-600 mt-1">
+                          <span>👥 {reservation.guest_count || 'N/A'} personas</span>
+                          <span>🏨 Hab. {reservation.room_id || 'N/A'}</span>
+                          <span>🚪 Check-in: 16:00</span>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-1">
+                          {new Date(reservation.check_in).toLocaleDateString('es-ES', { 
+                            weekday: 'long', 
+                            year: 'numeric', 
+                            month: 'long', 
+                            day: 'numeric' 
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                {reservations.filter(r => {
+                  const checkIn = new Date(r.check_in);
+                  const today = new Date();
+                  today.setHours(0, 0, 0, 0);
+                  return checkIn > today && r.status === 'confirmed';
+                }).length === 0 && (
+                  <div className="text-center py-6">
+                    <p className="text-gray-500">No hay reservas próximas</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </main>
       </div>
