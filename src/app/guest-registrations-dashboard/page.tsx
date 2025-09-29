@@ -928,58 +928,58 @@ export default function GuestRegistrationsDashboard() {
                   }}>
                     <div>
                       <label className="block text-gray-600 mb-1">Nombre</label>
-                      <input id="edit_nombre" defaultValue={selectedRegistration.viajero.nombre} className="border rounded px-2 py-1 w-full" />
+                      <input id="edit_nombre" defaultValue={selectedRegistration.viajero.nombre} className="border rounded px-2 py-1 w-full text-gray-900 font-medium" />
                     </div>
                     <div>
                       <label className="block text-gray-600 mb-1">Apellido 1</label>
-                      <input id="edit_apellido1" defaultValue={selectedRegistration.viajero.apellido1} className="border rounded px-2 py-1 w-full" />
+                      <input id="edit_apellido1" defaultValue={selectedRegistration.viajero.apellido1} className="border rounded px-2 py-1 w-full text-gray-900 font-medium" />
                     </div>
                     <div>
                       <label className="block text-gray-600 mb-1">Fecha nacimiento (AAAA-MM-DD)</label>
-                      <input id="edit_fechaNacimiento" type="date" defaultValue={selectedRegistration?.data?.comunicaciones?.[0]?.personas?.[0]?.fechaNacimiento || ''} className="border rounded px-2 py-1 w-full" />
+                      <input id="edit_fechaNacimiento" type="date" defaultValue={selectedRegistration?.data?.comunicaciones?.[0]?.personas?.[0]?.fechaNacimiento || ''} className="border rounded px-2 py-1 w-full text-gray-900 font-medium" />
                     </div>
                     <div>
                       <label className="block text-gray-600 mb-1">Tipo documento</label>
-                      <input id="edit_tipoDocumento" defaultValue={selectedRegistration.viajero.tipoDocumento} className="border rounded px-2 py-1 w-full" />
+                      <input id="edit_tipoDocumento" defaultValue={selectedRegistration.viajero.tipoDocumento} className="border rounded px-2 py-1 w-full text-gray-900 font-medium" />
                     </div>
                     <div>
                       <label className="block text-gray-600 mb-1">Número documento</label>
-                      <input id="edit_numeroDocumento" defaultValue={selectedRegistration.viajero.numeroDocumento} className="border rounded px-2 py-1 w-full" />
+                      <input id="edit_numeroDocumento" defaultValue={selectedRegistration.viajero.numeroDocumento} className="border rounded px-2 py-1 w-full text-gray-900 font-medium" />
                     </div>
                     <div>
                       <label className="block text-gray-600 mb-1">Nacionalidad (ISO-3 o nombre)</label>
-                      <input id="edit_nacionalidad" defaultValue={selectedRegistration?.data?.comunicaciones?.[0]?.personas?.[0]?.nacionalidad || ''} className="border rounded px-2 py-1 w-full" />
+                      <input id="edit_nacionalidad" defaultValue={selectedRegistration?.data?.comunicaciones?.[0]?.personas?.[0]?.nacionalidad || ''} className="border rounded px-2 py-1 w-full text-gray-900 font-medium" />
                     </div>
                     <div>
                       <label className="block text-gray-600 mb-1">Teléfono</label>
-                      <input id="edit_telefono" defaultValue={selectedRegistration?.data?.comunicaciones?.[0]?.personas?.[0]?.telefono || ''} className="border rounded px-2 py-1 w-full" />
+                      <input id="edit_telefono" defaultValue={selectedRegistration?.data?.comunicaciones?.[0]?.personas?.[0]?.telefono || ''} className="border rounded px-2 py-1 w-full text-gray-900 font-medium" />
                     </div>
                     <div>
                       <label className="block text-gray-600 mb-1">Correo</label>
-                      <input id="edit_correo" defaultValue={selectedRegistration?.data?.comunicaciones?.[0]?.personas?.[0]?.correo || ''} className="border rounded px-2 py-1 w-full" />
+                      <input id="edit_correo" defaultValue={selectedRegistration?.data?.comunicaciones?.[0]?.personas?.[0]?.correo || ''} className="border rounded px-2 py-1 w-full text-gray-900 font-medium" />
                     </div>
                     <div className="md:col-span-3 pt-2">
                       <h5 className="font-medium text-gray-700 mb-2">Dirección</h5>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
                           <label className="block text-gray-600 mb-1">Dirección</label>
-                          <input id="edit_direccion" defaultValue={selectedRegistration?.data?.comunicaciones?.[0]?.personas?.[0]?.direccion?.direccion || ''} className="border rounded px-2 py-1 w-full" />
+                          <input id="edit_direccion" defaultValue={selectedRegistration?.data?.comunicaciones?.[0]?.personas?.[0]?.direccion?.direccion || ''} className="border rounded px-2 py-1 w-full text-gray-900 font-medium" />
                         </div>
                         <div>
                           <label className="block text-gray-600 mb-1">Código Postal</label>
-                          <input id="edit_codigoPostal" defaultValue={selectedRegistration?.data?.comunicaciones?.[0]?.personas?.[0]?.direccion?.codigoPostal || ''} className="border rounded px-2 py-1 w-full" />
+                          <input id="edit_codigoPostal" defaultValue={selectedRegistration?.data?.comunicaciones?.[0]?.personas?.[0]?.direccion?.codigoPostal || ''} className="border rounded px-2 py-1 w-full text-gray-900 font-medium" />
                         </div>
                         <div>
                           <label className="block text-gray-600 mb-1">País (ISO-3 o nombre)</label>
-                          <input id="edit_pais" defaultValue={selectedRegistration?.data?.comunicaciones?.[0]?.personas?.[0]?.direccion?.pais || ''} className="border rounded px-2 py-1 w-full" />
+                          <input id="edit_pais" defaultValue={selectedRegistration?.data?.comunicaciones?.[0]?.personas?.[0]?.direccion?.pais || ''} className="border rounded px-2 py-1 w-full text-gray-900 font-medium" />
                         </div>
                         <div>
                           <label className="block text-gray-600 mb-1">Nombre Municipio</label>
-                          <input id="edit_nombreMunicipio" defaultValue={selectedRegistration?.data?.comunicaciones?.[0]?.personas?.[0]?.direccion?.nombreMunicipio || ''} className="border rounded px-2 py-1 w-full" />
+                          <input id="edit_nombreMunicipio" defaultValue={selectedRegistration?.data?.comunicaciones?.[0]?.personas?.[0]?.direccion?.nombreMunicipio || ''} className="border rounded px-2 py-1 w-full text-gray-900 font-medium" />
                         </div>
                         <div>
                           <label className="block text-gray-600 mb-1">Código Municipio (INE 5 dígitos)</label>
-                          <input id="edit_codigoMunicipio" defaultValue={selectedRegistration?.data?.comunicaciones?.[0]?.personas?.[0]?.direccion?.codigoMunicipio || ''} className="border rounded px-2 py-1 w-full" />
+                          <input id="edit_codigoMunicipio" defaultValue={selectedRegistration?.data?.comunicaciones?.[0]?.personas?.[0]?.direccion?.codigoMunicipio || ''} className="border rounded px-2 py-1 w-full text-gray-900 font-medium" />
                         </div>
                       </div>
                     </div>
