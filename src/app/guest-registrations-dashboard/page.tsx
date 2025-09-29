@@ -76,6 +76,9 @@ interface GuestRegistration {
 const getTravelerData = (registration: GuestRegistration) => {
   const data = registration.data;
   
+  // Debug: mostrar la estructura completa de datos
+  console.log('🔍 Debug - Estructura completa de datos:', JSON.stringify(data, null, 2));
+  
   // Intentar diferentes ubicaciones donde pueden estar los datos
   const personas = data?.comunicaciones?.[0]?.personas?.[0] || 
                   data?.comunicaciones?.[0]?.viajeros?.[0] ||
@@ -83,18 +86,27 @@ const getTravelerData = (registration: GuestRegistration) => {
                   data?.viajeros?.[0] ||
                   {};
   
-  return {
+  console.log('🔍 Debug - Datos de personas encontrados:', JSON.stringify(personas, null, 2));
+  
+  // Extraer datos de contacto (pueden estar en contacto.telefono o directamente en telefono)
+  const contacto = personas.contacto || {};
+  
+  const result = {
     nombre: personas.nombre || registration.viajero?.nombre || '',
     apellido1: personas.apellido1 || registration.viajero?.apellido1 || '',
     apellido2: personas.apellido2 || registration.viajero?.apellido2 || '',
     tipoDocumento: personas.tipoDocumento || registration.viajero?.tipoDocumento || '',
     numeroDocumento: personas.numeroDocumento || registration.viajero?.numeroDocumento || '',
     nacionalidad: personas.nacionalidad || registration.viajero?.nacionalidad || '',
-    telefono: personas.telefono || '',
-    correo: personas.correo || '',
+    telefono: personas.telefono || contacto.telefono || '',
+    correo: personas.correo || contacto.correo || '',
     fechaNacimiento: personas.fechaNacimiento || '',
     direccion: personas.direccion || {}
   };
+  
+  console.log('🔍 Debug - Resultado final:', JSON.stringify(result, null, 2));
+  
+  return result;
 };
 
 export default function GuestRegistrationsDashboard() {
