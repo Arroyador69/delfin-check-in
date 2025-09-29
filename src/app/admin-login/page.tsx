@@ -71,10 +71,11 @@ export default function AdminLoginPage() {
         expires.setTime(expires.getTime() + (24 * 60 * 60 * 1000)) // 24 horas
         document.cookie = `auth_token=${adminCredentials.password}; expires=${expires.toUTCString()}; path=/; SameSite=Strict`
         
-        // Redirigir después de 1.5 segundos
-        setTimeout(() => {
-          router.push('/')
-        }, 1500)
+        // Disparar evento personalizado para notificar el login
+        window.dispatchEvent(new CustomEvent('authChanged', { detail: { authenticated: true } }))
+        
+        // Redirigir inmediatamente sin delay
+        router.push('/')
         
       } else {
         setError('Usuario o contraseña incorrectos')

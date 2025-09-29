@@ -15,6 +15,36 @@ export default function AdminLayout({ children, showHeader = true }: AdminLayout
 
   useEffect(() => {
     checkAuth()
+    
+    // Listener para detectar cambios en localStorage (cambio de contraseña)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'admin_password') {
+        // Si cambió la contraseña, verificar autenticación de nuevo
+        checkAuth()
+      }
+    }
+    
+    // Listener para detectar cambios en cookies (login/logout)
+    const handleCookieChange = () => {
+      checkAuth()
+    }
+    
+    // Listener para eventos personalizados de autenticación
+    const handleAuthChange = () => {
+      checkAuth()
+    }
+    
+    // Añadir listeners
+    window.addEventListener('storage', handleStorageChange)
+    document.addEventListener('visibilitychange', handleCookieChange)
+    window.addEventListener('authChanged', handleAuthChange)
+    
+    // Cleanup
+    return () => {
+      window.removeEventListener('storage', handleStorageChange)
+      document.removeEventListener('visibilitychange', handleCookieChange)
+      window.removeEventListener('authChanged', handleAuthChange)
+    }
   }, [])
 
   const checkAuth = async () => {
@@ -25,8 +55,18 @@ export default function AdminLayout({ children, showHeader = true }: AdminLayout
         cookie.trim().startsWith('auth_token=')
       )
 
-      if (authCookie && authCookie.includes('Cuaderno2314')) {
-        setIsAuthenticated(true)
+      if (authCookie) {
+        // Obtener la contraseña actual del localStorage
+        const currentPassword = localStorage.getItem('admin_password') || 'Cuaderno2314'
+        const token = authCookie.split('=')[1]
+        
+        if (token === currentPassword) {
+          setIsAuthenticated(true)
+        } else {
+          // Token no coincide con la contraseña actual
+          router.push('/admin-login')
+          return
+        }
       } else {
         // Si no está autenticado, redirigir al login
         router.push('/admin-login')
