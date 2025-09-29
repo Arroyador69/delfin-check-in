@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function AEATPage() {
   const today = new Date().toISOString().slice(0,10);
@@ -17,6 +18,48 @@ export default function AEATPage() {
   const [dateField, setDateField] = useState<'check_in'|'check_out'>('check_out');
   const [vat, setVat] = useState(21);
   const [preview, setPreview] = useState<{count:number;base:number;cuota_iva:number;total:number;comision_ota:number;totalsByChannel?:Record<string,any>}|null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [authLoading, setAuthLoading] = useState(true);
+  const router = useRouter();
+
+  // Verificar autenticación
+  useEffect(() => {
+    checkAuth();
+  }, []);
+
+  const checkAuth = async () => {
+    try {
+      // Verificar si existe la cookie de autenticación
+      const cookies = document.cookie.split(';');
+      const authCookie = cookies.find(cookie => 
+        cookie.trim().startsWith('auth_token=')
+      );
+
+      if (authCookie) {
+        // Obtener la contraseña actual del localStorage
+        const currentPassword = localStorage.getItem('admin_password') || 'Cuaderno2314';
+        const token = authCookie.split('=')[1];
+        
+        if (token === currentPassword) {
+          setIsAuthenticated(true);
+        } else {
+          // Token no coincide con la contraseña actual
+          router.push('/admin-login');
+          return;
+        }
+      } else {
+        // Si no está autenticado, redirigir al login
+        router.push('/admin-login');
+        return;
+      }
+    } catch (error) {
+      console.error('Error checking auth:', error);
+      router.push('/admin-login');
+      return;
+    } finally {
+      setAuthLoading(false);
+    }
+  };
 
   const exportCsv = () => {
     const params = new URLSearchParams();
@@ -72,6 +115,61 @@ export default function AEATPage() {
     setFrom(start.toISOString().slice(0,10));
     setTo(end.toISOString().slice(0,10));
   };
+
+  // Mostrar pantalla de autenticación si no está autenticado
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Verificando autenticación...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center p-4">
+        <div className="w-full max-w-md">
+          {/* Logo y Título */}
+          <div className="text-center mb-8">
+            <div className="text-6xl mb-4">🐬</div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Delfín Check-in</h1>
+            <p className="text-gray-600">Panel de Administración</p>
+          </div>
+
+          {/* Mensaje de acceso requerido */}
+          <div className="bg-white rounded-lg shadow-lg p-8">
+            <div className="text-center">
+              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+                <svg className="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m0 0v4m0-4h4m-4 0H8m4-9V3m0 0h4m-4 0H8m4 6v6m0 0h4m-4 0H8" />
+                </svg>
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">Acceso Requerido</h2>
+              <p className="text-gray-600 mb-6">
+                Necesitas iniciar sesión para acceder a la exportación de AEAT.
+              </p>
+              <button
+                onClick={() => router.push('/admin-login')}
+                className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              >
+                Iniciar Sesión
+              </button>
+            </div>
+          </div>
+
+          {/* Información de Seguridad */}
+          <div className="text-center mt-6">
+            <p className="text-sm text-gray-500">
+              🔒 Acceso restringido solo para administradores autorizados
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
