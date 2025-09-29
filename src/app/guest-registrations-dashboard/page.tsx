@@ -808,7 +808,84 @@ export default function GuestRegistrationsDashboard() {
               {/* Información del viajero (editable) */}
               <div>
                 <h4 className="font-semibold text-gray-900 mb-3">Información del Viajero</h4>
+                
+                {/* Mostrar datos actuales del viajero */}
+                <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <h5 className="font-semibold text-blue-900 mb-3 flex items-center">
+                    📋 Datos Actuales del Viajero
+                  </h5>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                    <div>
+                      <span className="font-bold text-gray-700">Nombre:</span>
+                      <p className="font-bold text-gray-900">{selectedRegistration.viajero.nombre || 'No especificado'}</p>
+                    </div>
+                    <div>
+                      <span className="font-bold text-gray-700">Apellido 1:</span>
+                      <p className="font-bold text-gray-900">{selectedRegistration.viajero.apellido1 || 'No especificado'}</p>
+                    </div>
+                    <div>
+                      <span className="font-bold text-gray-700">Apellido 2:</span>
+                      <p className="font-bold text-gray-900">{selectedRegistration.viajero.apellido2 || 'No especificado'}</p>
+                    </div>
+                    <div>
+                      <span className="font-bold text-gray-700">Tipo Documento:</span>
+                      <p className="font-bold text-gray-900">{selectedRegistration.viajero.tipoDocumento || 'No especificado'}</p>
+                    </div>
+                    <div>
+                      <span className="font-bold text-gray-700">Número Documento:</span>
+                      <p className="font-bold text-gray-900">{selectedRegistration.viajero.numeroDocumento || 'No especificado'}</p>
+                    </div>
+                    <div>
+                      <span className="font-bold text-gray-700">Nacionalidad:</span>
+                      <p className="font-bold text-gray-900">{selectedRegistration?.data?.comunicaciones?.[0]?.personas?.[0]?.nacionalidad || 'No especificado'}</p>
+                    </div>
+                    <div>
+                      <span className="font-bold text-gray-700">Teléfono:</span>
+                      <p className="font-bold text-gray-900">{selectedRegistration?.data?.comunicaciones?.[0]?.personas?.[0]?.telefono || 'No especificado'}</p>
+                    </div>
+                    <div>
+                      <span className="font-bold text-gray-700">Correo:</span>
+                      <p className="font-bold text-gray-900">{selectedRegistration?.data?.comunicaciones?.[0]?.personas?.[0]?.correo || 'No especificado'}</p>
+                    </div>
+                    <div>
+                      <span className="font-bold text-gray-700">Fecha Nacimiento:</span>
+                      <p className="font-bold text-gray-900">{selectedRegistration?.data?.comunicaciones?.[0]?.personas?.[0]?.fechaNacimiento || 'No especificado'}</p>
+                    </div>
+                  </div>
+                  
+                  {/* Dirección */}
+                  <div className="mt-4 pt-4 border-t border-blue-300">
+                    <h6 className="font-bold text-blue-900 mb-2">📍 Dirección</h6>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                      <div>
+                        <span className="font-bold text-gray-700">Dirección:</span>
+                        <p className="font-bold text-gray-900">{selectedRegistration?.data?.comunicaciones?.[0]?.personas?.[0]?.direccion?.direccion || 'No especificado'}</p>
+                      </div>
+                      <div>
+                        <span className="font-bold text-gray-700">Código Postal:</span>
+                        <p className="font-bold text-gray-900">{selectedRegistration?.data?.comunicaciones?.[0]?.personas?.[0]?.direccion?.codigoPostal || 'No especificado'}</p>
+                      </div>
+                      <div>
+                        <span className="font-bold text-gray-700">País:</span>
+                        <p className="font-bold text-gray-900">{selectedRegistration?.data?.comunicaciones?.[0]?.personas?.[0]?.direccion?.pais || 'No especificado'}</p>
+                      </div>
+                      <div>
+                        <span className="font-bold text-gray-700">Nombre Municipio:</span>
+                        <p className="font-bold text-gray-900">{selectedRegistration?.data?.comunicaciones?.[0]?.personas?.[0]?.direccion?.nombreMunicipio || 'No especificado'}</p>
+                      </div>
+                      <div>
+                        <span className="font-bold text-gray-700">Código Municipio:</span>
+                        <p className="font-bold text-gray-900">{selectedRegistration?.data?.comunicaciones?.[0]?.personas?.[0]?.direccion?.codigoMunicipio || 'No especificado'}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Formulario de edición */}
                 <div className="border rounded-lg p-4 bg-gray-50">
+                  <h5 className="font-semibold text-gray-900 mb-3 flex items-center">
+                    ✏️ Editar Información del Viajero
+                  </h5>
                   <form className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm" onSubmit={async (e) => {
                     e.preventDefault();
                     if (!selectedRegistration) return;
@@ -859,7 +936,7 @@ export default function GuestRegistrationsDashboard() {
                     </div>
                     <div>
                       <label className="block text-gray-600 mb-1">Fecha nacimiento (AAAA-MM-DD)</label>
-                      <input id="edit_fechaNacimiento" type="date" className="border rounded px-2 py-1 w-full" />
+                      <input id="edit_fechaNacimiento" type="date" defaultValue={selectedRegistration?.data?.comunicaciones?.[0]?.personas?.[0]?.fechaNacimiento || ''} className="border rounded px-2 py-1 w-full" />
                     </div>
                     <div>
                       <label className="block text-gray-600 mb-1">Tipo documento</label>
