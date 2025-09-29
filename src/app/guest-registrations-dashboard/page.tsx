@@ -72,6 +72,31 @@ interface GuestRegistration {
   data: ComunicacionPayload;
 }
 
+// Función helper para extraer datos del viajero de cualquier estructura
+const getTravelerData = (registration: GuestRegistration) => {
+  const data = registration.data;
+  
+  // Intentar diferentes ubicaciones donde pueden estar los datos
+  const personas = data?.comunicaciones?.[0]?.personas?.[0] || 
+                  data?.comunicaciones?.[0]?.viajeros?.[0] ||
+                  data?.personas?.[0] ||
+                  data?.viajeros?.[0] ||
+                  {};
+  
+  return {
+    nombre: personas.nombre || registration.viajero?.nombre || '',
+    apellido1: personas.apellido1 || registration.viajero?.apellido1 || '',
+    apellido2: personas.apellido2 || registration.viajero?.apellido2 || '',
+    tipoDocumento: personas.tipoDocumento || registration.viajero?.tipoDocumento || '',
+    numeroDocumento: personas.numeroDocumento || registration.viajero?.numeroDocumento || '',
+    nacionalidad: personas.nacionalidad || registration.viajero?.nacionalidad || '',
+    telefono: personas.telefono || '',
+    correo: personas.correo || '',
+    fechaNacimiento: personas.fechaNacimiento || '',
+    direccion: personas.direccion || {}
+  };
+};
+
 export default function GuestRegistrationsDashboard() {
   const [registrations, setRegistrations] = useState<GuestRegistration[]>([]);
   const [loading, setLoading] = useState(true);
@@ -814,71 +839,78 @@ export default function GuestRegistrationsDashboard() {
                   <h5 className="font-semibold text-blue-900 mb-3 flex items-center">
                     📋 Datos Actuales del Viajero
                   </h5>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                    <div>
-                      <span className="font-bold text-gray-700">Nombre:</span>
-                      <p className="font-bold text-gray-900">{selectedRegistration.viajero.nombre || 'No especificado'}</p>
-                    </div>
-                    <div>
-                      <span className="font-bold text-gray-700">Apellido 1:</span>
-                      <p className="font-bold text-gray-900">{selectedRegistration.viajero.apellido1 || 'No especificado'}</p>
-                    </div>
-                    <div>
-                      <span className="font-bold text-gray-700">Apellido 2:</span>
-                      <p className="font-bold text-gray-900">{selectedRegistration.viajero.apellido2 || 'No especificado'}</p>
-                    </div>
-                    <div>
-                      <span className="font-bold text-gray-700">Tipo Documento:</span>
-                      <p className="font-bold text-gray-900">{selectedRegistration.viajero.tipoDocumento || 'No especificado'}</p>
-                    </div>
-                    <div>
-                      <span className="font-bold text-gray-700">Número Documento:</span>
-                      <p className="font-bold text-gray-900">{selectedRegistration.viajero.numeroDocumento || 'No especificado'}</p>
-                    </div>
-                    <div>
-                      <span className="font-bold text-gray-700">Nacionalidad:</span>
-                      <p className="font-bold text-gray-900">{selectedRegistration?.data?.comunicaciones?.[0]?.personas?.[0]?.nacionalidad || 'No especificado'}</p>
-                    </div>
-                    <div>
-                      <span className="font-bold text-gray-700">Teléfono:</span>
-                      <p className="font-bold text-gray-900">{selectedRegistration?.data?.comunicaciones?.[0]?.personas?.[0]?.telefono || 'No especificado'}</p>
-                    </div>
-                    <div>
-                      <span className="font-bold text-gray-700">Correo:</span>
-                      <p className="font-bold text-gray-900">{selectedRegistration?.data?.comunicaciones?.[0]?.personas?.[0]?.correo || 'No especificado'}</p>
-                    </div>
-                    <div>
-                      <span className="font-bold text-gray-700">Fecha Nacimiento:</span>
-                      <p className="font-bold text-gray-900">{selectedRegistration?.data?.comunicaciones?.[0]?.personas?.[0]?.fechaNacimiento || 'No especificado'}</p>
-                    </div>
-                  </div>
-                  
-                  {/* Dirección */}
-                  <div className="mt-4 pt-4 border-t border-blue-300">
-                    <h6 className="font-bold text-blue-900 mb-2">📍 Dirección</h6>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                      <div>
-                        <span className="font-bold text-gray-700">Dirección:</span>
-                        <p className="font-bold text-gray-900">{selectedRegistration?.data?.comunicaciones?.[0]?.personas?.[0]?.direccion?.direccion || 'No especificado'}</p>
-                      </div>
-                      <div>
-                        <span className="font-bold text-gray-700">Código Postal:</span>
-                        <p className="font-bold text-gray-900">{selectedRegistration?.data?.comunicaciones?.[0]?.personas?.[0]?.direccion?.codigoPostal || 'No especificado'}</p>
-                      </div>
-                      <div>
-                        <span className="font-bold text-gray-700">País:</span>
-                        <p className="font-bold text-gray-900">{selectedRegistration?.data?.comunicaciones?.[0]?.personas?.[0]?.direccion?.pais || 'No especificado'}</p>
-                      </div>
-                      <div>
-                        <span className="font-bold text-gray-700">Nombre Municipio:</span>
-                        <p className="font-bold text-gray-900">{selectedRegistration?.data?.comunicaciones?.[0]?.personas?.[0]?.direccion?.nombreMunicipio || 'No especificado'}</p>
-                      </div>
-                      <div>
-                        <span className="font-bold text-gray-700">Código Municipio:</span>
-                        <p className="font-bold text-gray-900">{selectedRegistration?.data?.comunicaciones?.[0]?.personas?.[0]?.direccion?.codigoMunicipio || 'No especificado'}</p>
-                      </div>
-                    </div>
-                  </div>
+                  {(() => {
+                    const travelerData = getTravelerData(selectedRegistration);
+                    return (
+                      <>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                          <div>
+                            <span className="font-bold text-gray-700">Nombre:</span>
+                            <p className="font-bold text-gray-900">{travelerData.nombre || 'No especificado'}</p>
+                          </div>
+                          <div>
+                            <span className="font-bold text-gray-700">Apellido 1:</span>
+                            <p className="font-bold text-gray-900">{travelerData.apellido1 || 'No especificado'}</p>
+                          </div>
+                          <div>
+                            <span className="font-bold text-gray-700">Apellido 2:</span>
+                            <p className="font-bold text-gray-900">{travelerData.apellido2 || 'No especificado'}</p>
+                          </div>
+                          <div>
+                            <span className="font-bold text-gray-700">Tipo Documento:</span>
+                            <p className="font-bold text-gray-900">{travelerData.tipoDocumento || 'No especificado'}</p>
+                          </div>
+                          <div>
+                            <span className="font-bold text-gray-700">Número Documento:</span>
+                            <p className="font-bold text-gray-900">{travelerData.numeroDocumento || 'No especificado'}</p>
+                          </div>
+                          <div>
+                            <span className="font-bold text-gray-700">Nacionalidad:</span>
+                            <p className="font-bold text-gray-900">{travelerData.nacionalidad || 'No especificado'}</p>
+                          </div>
+                          <div>
+                            <span className="font-bold text-gray-700">Teléfono:</span>
+                            <p className="font-bold text-gray-900">{travelerData.telefono || 'No especificado'}</p>
+                          </div>
+                          <div>
+                            <span className="font-bold text-gray-700">Correo:</span>
+                            <p className="font-bold text-gray-900">{travelerData.correo || 'No especificado'}</p>
+                          </div>
+                          <div>
+                            <span className="font-bold text-gray-700">Fecha Nacimiento:</span>
+                            <p className="font-bold text-gray-900">{travelerData.fechaNacimiento || 'No especificado'}</p>
+                          </div>
+                        </div>
+                        
+                        {/* Dirección */}
+                        <div className="mt-4 pt-4 border-t border-blue-300">
+                          <h6 className="font-bold text-blue-900 mb-2">📍 Dirección</h6>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                            <div>
+                              <span className="font-bold text-gray-700">Dirección:</span>
+                              <p className="font-bold text-gray-900">{travelerData.direccion?.direccion || 'No especificado'}</p>
+                            </div>
+                            <div>
+                              <span className="font-bold text-gray-700">Código Postal:</span>
+                              <p className="font-bold text-gray-900">{travelerData.direccion?.codigoPostal || 'No especificado'}</p>
+                            </div>
+                            <div>
+                              <span className="font-bold text-gray-700">País:</span>
+                              <p className="font-bold text-gray-900">{travelerData.direccion?.pais || 'No especificado'}</p>
+                            </div>
+                            <div>
+                              <span className="font-bold text-gray-700">Nombre Municipio:</span>
+                              <p className="font-bold text-gray-900">{travelerData.direccion?.nombreMunicipio || 'No especificado'}</p>
+                            </div>
+                            <div>
+                              <span className="font-bold text-gray-700">Código Municipio:</span>
+                              <p className="font-bold text-gray-900">{travelerData.direccion?.codigoMunicipio || 'No especificado'}</p>
+                            </div>
+                          </div>
+                        </div>
+                      </>
+                    );
+                  })()}
                 </div>
 
                 {/* Formulario de edición */}
@@ -886,107 +918,112 @@ export default function GuestRegistrationsDashboard() {
                   <h5 className="font-semibold text-gray-900 mb-3 flex items-center">
                     ✏️ Editar Información del Viajero
                   </h5>
-                  <form className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm" onSubmit={async (e) => {
-                    e.preventDefault();
-                    if (!selectedRegistration) return;
-                    try {
-                      const updated = { ...selectedRegistration.data };
-                      const p = (updated.comunicaciones?.[0]?.personas?.[0]) || {};
-                      p.nombre = (document.getElementById('edit_nombre') as HTMLInputElement).value || p.nombre;
-                      p.apellido1 = (document.getElementById('edit_apellido1') as HTMLInputElement).value || p.apellido1;
-                      p.fechaNacimiento = (document.getElementById('edit_fechaNacimiento') as HTMLInputElement).value || p.fechaNacimiento;
-                      p.tipoDocumento = (document.getElementById('edit_tipoDocumento') as HTMLInputElement).value || p.tipoDocumento;
-                      p.numeroDocumento = (document.getElementById('edit_numeroDocumento') as HTMLInputElement).value || p.numeroDocumento;
-                      p.nacionalidad = (document.getElementById('edit_nacionalidad') as HTMLInputElement)?.value || p.nacionalidad;
-                      p.telefono = (document.getElementById('edit_telefono') as HTMLInputElement)?.value || p.telefono;
-                      p.correo = (document.getElementById('edit_correo') as HTMLInputElement)?.value || p.correo;
-                      // Dirección
-                      p.direccion = p.direccion || {};
-                      p.direccion.direccion = (document.getElementById('edit_direccion') as HTMLInputElement)?.value || p.direccion.direccion;
-                      p.direccion.codigoPostal = (document.getElementById('edit_codigoPostal') as HTMLInputElement)?.value || p.direccion.codigoPostal;
-                      p.direccion.pais = (document.getElementById('edit_pais') as HTMLInputElement)?.value || p.direccion.pais;
-                      p.direccion.nombreMunicipio = (document.getElementById('edit_nombreMunicipio') as HTMLInputElement)?.value || p.direccion.nombreMunicipio;
-                      p.direccion.codigoMunicipio = (document.getElementById('edit_codigoMunicipio') as HTMLInputElement)?.value || p.direccion.codigoMunicipio;
-                      if (!updated.comunicaciones) updated.comunicaciones = [{ contrato: {}, personas: [p] }];
-                      else {
-                        if (!updated.comunicaciones[0]) updated.comunicaciones[0] = { contrato: {}, personas: [p] } as any;
-                        if (!updated.comunicaciones[0].personas) updated.comunicaciones[0].personas = [p];
-                        else updated.comunicaciones[0].personas[0] = p;
-                      }
-                      const res = await fetch('/api/guest-registrations', {
-                        method: 'PUT', headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ id: selectedRegistration.id, data: updated })
-                      });
-                      const json = await res.json();
-                      if (!res.ok || !json.ok) throw new Error(json.error || 'Error al guardar cambios');
-                      alert('Cambios guardados');
-                      setSelectedRegistration({ ...selectedRegistration, data: json.item.data } as any);
-                      await loadRegistrations();
-                    } catch (err: any) {
-                      alert(err.message || 'Error');
-                    }
-                  }}>
-                    <div>
-                      <label className="block text-gray-600 mb-1">Nombre</label>
-                      <input id="edit_nombre" defaultValue={selectedRegistration.viajero.nombre} className="border rounded px-2 py-1 w-full text-gray-900 font-medium" />
-                    </div>
-                    <div>
-                      <label className="block text-gray-600 mb-1">Apellido 1</label>
-                      <input id="edit_apellido1" defaultValue={selectedRegistration.viajero.apellido1} className="border rounded px-2 py-1 w-full text-gray-900 font-medium" />
-                    </div>
-                    <div>
-                      <label className="block text-gray-600 mb-1">Fecha nacimiento (AAAA-MM-DD)</label>
-                      <input id="edit_fechaNacimiento" type="date" defaultValue={selectedRegistration?.data?.comunicaciones?.[0]?.personas?.[0]?.fechaNacimiento || ''} className="border rounded px-2 py-1 w-full text-gray-900 font-medium" />
-                    </div>
-                    <div>
-                      <label className="block text-gray-600 mb-1">Tipo documento</label>
-                      <input id="edit_tipoDocumento" defaultValue={selectedRegistration.viajero.tipoDocumento} className="border rounded px-2 py-1 w-full text-gray-900 font-medium" />
-                    </div>
-                    <div>
-                      <label className="block text-gray-600 mb-1">Número documento</label>
-                      <input id="edit_numeroDocumento" defaultValue={selectedRegistration.viajero.numeroDocumento} className="border rounded px-2 py-1 w-full text-gray-900 font-medium" />
-                    </div>
-                    <div>
-                      <label className="block text-gray-600 mb-1">Nacionalidad (ISO-3 o nombre)</label>
-                      <input id="edit_nacionalidad" defaultValue={selectedRegistration?.data?.comunicaciones?.[0]?.personas?.[0]?.nacionalidad || ''} className="border rounded px-2 py-1 w-full text-gray-900 font-medium" />
-                    </div>
-                    <div>
-                      <label className="block text-gray-600 mb-1">Teléfono</label>
-                      <input id="edit_telefono" defaultValue={selectedRegistration?.data?.comunicaciones?.[0]?.personas?.[0]?.telefono || ''} className="border rounded px-2 py-1 w-full text-gray-900 font-medium" />
-                    </div>
-                    <div>
-                      <label className="block text-gray-600 mb-1">Correo</label>
-                      <input id="edit_correo" defaultValue={selectedRegistration?.data?.comunicaciones?.[0]?.personas?.[0]?.correo || ''} className="border rounded px-2 py-1 w-full text-gray-900 font-medium" />
-                    </div>
-                    <div className="md:col-span-3 pt-2">
-                      <h5 className="font-medium text-gray-700 mb-2">Dirección</h5>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {(() => {
+                    const travelerData = getTravelerData(selectedRegistration);
+                    return (
+                      <form className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm" onSubmit={async (e) => {
+                        e.preventDefault();
+                        if (!selectedRegistration) return;
+                        try {
+                          const updated = { ...selectedRegistration.data };
+                          const p = (updated.comunicaciones?.[0]?.personas?.[0]) || {};
+                          p.nombre = (document.getElementById('edit_nombre') as HTMLInputElement).value || p.nombre;
+                          p.apellido1 = (document.getElementById('edit_apellido1') as HTMLInputElement).value || p.apellido1;
+                          p.fechaNacimiento = (document.getElementById('edit_fechaNacimiento') as HTMLInputElement).value || p.fechaNacimiento;
+                          p.tipoDocumento = (document.getElementById('edit_tipoDocumento') as HTMLInputElement).value || p.tipoDocumento;
+                          p.numeroDocumento = (document.getElementById('edit_numeroDocumento') as HTMLInputElement).value || p.numeroDocumento;
+                          p.nacionalidad = (document.getElementById('edit_nacionalidad') as HTMLInputElement)?.value || p.nacionalidad;
+                          p.telefono = (document.getElementById('edit_telefono') as HTMLInputElement)?.value || p.telefono;
+                          p.correo = (document.getElementById('edit_correo') as HTMLInputElement)?.value || p.correo;
+                          // Dirección
+                          p.direccion = p.direccion || {};
+                          p.direccion.direccion = (document.getElementById('edit_direccion') as HTMLInputElement)?.value || p.direccion.direccion;
+                          p.direccion.codigoPostal = (document.getElementById('edit_codigoPostal') as HTMLInputElement)?.value || p.direccion.codigoPostal;
+                          p.direccion.pais = (document.getElementById('edit_pais') as HTMLInputElement)?.value || p.direccion.pais;
+                          p.direccion.nombreMunicipio = (document.getElementById('edit_nombreMunicipio') as HTMLInputElement)?.value || p.direccion.nombreMunicipio;
+                          p.direccion.codigoMunicipio = (document.getElementById('edit_codigoMunicipio') as HTMLInputElement)?.value || p.direccion.codigoMunicipio;
+                          if (!updated.comunicaciones) updated.comunicaciones = [{ contrato: {}, personas: [p] }];
+                          else {
+                            if (!updated.comunicaciones[0]) updated.comunicaciones[0] = { contrato: {}, personas: [p] } as any;
+                            if (!updated.comunicaciones[0].personas) updated.comunicaciones[0].personas = [p];
+                            else updated.comunicaciones[0].personas[0] = p;
+                          }
+                          const res = await fetch('/api/guest-registrations', {
+                            method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ id: selectedRegistration.id, data: updated })
+                          });
+                          const json = await res.json();
+                          if (!res.ok || !json.ok) throw new Error(json.error || 'Error al guardar cambios');
+                          alert('Cambios guardados');
+                          setSelectedRegistration({ ...selectedRegistration, data: json.item.data } as any);
+                          await loadRegistrations();
+                        } catch (err: any) {
+                          alert(err.message || 'Error');
+                        }
+                      }}>
                         <div>
-                          <label className="block text-gray-600 mb-1">Dirección</label>
-                          <input id="edit_direccion" defaultValue={selectedRegistration?.data?.comunicaciones?.[0]?.personas?.[0]?.direccion?.direccion || ''} className="border rounded px-2 py-1 w-full text-gray-900 font-medium" />
+                          <label className="block text-gray-600 mb-1">Nombre</label>
+                          <input id="edit_nombre" defaultValue={travelerData.nombre} className="border rounded px-2 py-1 w-full text-gray-900 font-medium" />
                         </div>
                         <div>
-                          <label className="block text-gray-600 mb-1">Código Postal</label>
-                          <input id="edit_codigoPostal" defaultValue={selectedRegistration?.data?.comunicaciones?.[0]?.personas?.[0]?.direccion?.codigoPostal || ''} className="border rounded px-2 py-1 w-full text-gray-900 font-medium" />
+                          <label className="block text-gray-600 mb-1">Apellido 1</label>
+                          <input id="edit_apellido1" defaultValue={travelerData.apellido1} className="border rounded px-2 py-1 w-full text-gray-900 font-medium" />
                         </div>
                         <div>
-                          <label className="block text-gray-600 mb-1">País (ISO-3 o nombre)</label>
-                          <input id="edit_pais" defaultValue={selectedRegistration?.data?.comunicaciones?.[0]?.personas?.[0]?.direccion?.pais || ''} className="border rounded px-2 py-1 w-full text-gray-900 font-medium" />
+                          <label className="block text-gray-600 mb-1">Fecha nacimiento (AAAA-MM-DD)</label>
+                          <input id="edit_fechaNacimiento" type="date" defaultValue={travelerData.fechaNacimiento} className="border rounded px-2 py-1 w-full text-gray-900 font-medium" />
                         </div>
                         <div>
-                          <label className="block text-gray-600 mb-1">Nombre Municipio</label>
-                          <input id="edit_nombreMunicipio" defaultValue={selectedRegistration?.data?.comunicaciones?.[0]?.personas?.[0]?.direccion?.nombreMunicipio || ''} className="border rounded px-2 py-1 w-full text-gray-900 font-medium" />
+                          <label className="block text-gray-600 mb-1">Tipo documento</label>
+                          <input id="edit_tipoDocumento" defaultValue={travelerData.tipoDocumento} className="border rounded px-2 py-1 w-full text-gray-900 font-medium" />
                         </div>
                         <div>
-                          <label className="block text-gray-600 mb-1">Código Municipio (INE 5 dígitos)</label>
-                          <input id="edit_codigoMunicipio" defaultValue={selectedRegistration?.data?.comunicaciones?.[0]?.personas?.[0]?.direccion?.codigoMunicipio || ''} className="border rounded px-2 py-1 w-full text-gray-900 font-medium" />
+                          <label className="block text-gray-600 mb-1">Número documento</label>
+                          <input id="edit_numeroDocumento" defaultValue={travelerData.numeroDocumento} className="border rounded px-2 py-1 w-full text-gray-900 font-medium" />
                         </div>
-                      </div>
-                    </div>
-                    <div className="md:col-span-3 flex justify-end">
-                      <button type="submit" className="px-3 py-2 bg-blue-600 text-white rounded">Guardar cambios</button>
-                    </div>
-                  </form>
+                        <div>
+                          <label className="block text-gray-600 mb-1">Nacionalidad (ISO-3 o nombre)</label>
+                          <input id="edit_nacionalidad" defaultValue={travelerData.nacionalidad} className="border rounded px-2 py-1 w-full text-gray-900 font-medium" />
+                        </div>
+                        <div>
+                          <label className="block text-gray-600 mb-1">Teléfono</label>
+                          <input id="edit_telefono" defaultValue={travelerData.telefono} className="border rounded px-2 py-1 w-full text-gray-900 font-medium" />
+                        </div>
+                        <div>
+                          <label className="block text-gray-600 mb-1">Correo</label>
+                          <input id="edit_correo" defaultValue={travelerData.correo} className="border rounded px-2 py-1 w-full text-gray-900 font-medium" />
+                        </div>
+                        <div className="md:col-span-3 pt-2">
+                          <h5 className="font-medium text-gray-700 mb-2">Dirección</h5>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                              <label className="block text-gray-600 mb-1">Dirección</label>
+                              <input id="edit_direccion" defaultValue={travelerData.direccion?.direccion || ''} className="border rounded px-2 py-1 w-full text-gray-900 font-medium" />
+                            </div>
+                            <div>
+                              <label className="block text-gray-600 mb-1">Código Postal</label>
+                              <input id="edit_codigoPostal" defaultValue={travelerData.direccion?.codigoPostal || ''} className="border rounded px-2 py-1 w-full text-gray-900 font-medium" />
+                            </div>
+                            <div>
+                              <label className="block text-gray-600 mb-1">País (ISO-3 o nombre)</label>
+                              <input id="edit_pais" defaultValue={travelerData.direccion?.pais || ''} className="border rounded px-2 py-1 w-full text-gray-900 font-medium" />
+                            </div>
+                            <div>
+                              <label className="block text-gray-600 mb-1">Nombre Municipio</label>
+                              <input id="edit_nombreMunicipio" defaultValue={travelerData.direccion?.nombreMunicipio || ''} className="border rounded px-2 py-1 w-full text-gray-900 font-medium" />
+                            </div>
+                            <div>
+                              <label className="block text-gray-600 mb-1">Código Municipio (INE 5 dígitos)</label>
+                              <input id="edit_codigoMunicipio" defaultValue={travelerData.direccion?.codigoMunicipio || ''} className="border rounded px-2 py-1 w-full text-gray-900 font-medium" />
+                            </div>
+                          </div>
+                        </div>
+                        <div className="md:col-span-3 flex justify-end">
+                          <button type="submit" className="px-3 py-2 bg-blue-600 text-white rounded">Guardar cambios</button>
+                        </div>
+                      </form>
+                    );
+                  })()}
                 </div>
               </div>
             </div>
