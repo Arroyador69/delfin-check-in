@@ -152,7 +152,11 @@ const normalize = (body: any) => {
       email: String(viajero.email || '').trim().toLowerCase(),
       direccion: String(viajero.direccion || '').trim(),
       cp: String(viajero.cp || '').padStart(5, '0'),
-      ine: String(viajero.ine || '').padStart(5, '0'),
+      ine: (() => {
+        const ineValue = String(viajero.ine || '').trim();
+        return ineValue ? ineValue.padStart(5, '0') : '';
+      })(),
+      nombreMunicipio: String(viajero.nombreMunicipio || '').trim(),
       paisResidencia: iso3to2(viajero.paisResidencia || viajero.pais || 'ES'),
     });
     
