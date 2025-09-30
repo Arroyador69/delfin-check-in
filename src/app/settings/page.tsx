@@ -16,6 +16,12 @@ export default function SettingsPage() {
     confirmPassword: '',
     recoveryEmail: ''
   });
+
+  // Estados para identificación XML MIR
+  const [mirData, setMirData] = useState({
+    personalId: '',
+    accommodationId: ''
+  });
   const [passwordChangeLoading, setPasswordChangeLoading] = useState(false);
   const [recoveryLoading, setRecoveryLoading] = useState(false);
   const [recoveryCode, setRecoveryCode] = useState('');
@@ -47,11 +53,19 @@ export default function SettingsPage() {
         // Cargar datos desde localStorage o API
         const savedUsername = localStorage.getItem('admin_username') || 'admin';
         const savedRecoveryEmail = localStorage.getItem('recovery_email') || '';
+        const savedPersonalId = localStorage.getItem('mir_personal_id') || '';
+        const savedAccommodationId = localStorage.getItem('mir_accommodation_id') || '';
         
         setAccountData(prev => ({
           ...prev,
           username: savedUsername,
           recoveryEmail: savedRecoveryEmail
+        }));
+
+        setMirData(prev => ({
+          ...prev,
+          personalId: savedPersonalId,
+          accommodationId: savedAccommodationId
         }));
       } catch (error) {
         console.error('Error cargando datos de cuenta:', error);
@@ -191,6 +205,31 @@ export default function SettingsPage() {
     }
   };
 
+  // Función para guardar datos MIR
+  const handleMirDataChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setMessage({ type: '', text: '' });
+
+    try {
+      if (!mirData.personalId.trim() || !mirData.accommodationId.trim()) {
+        setMessage({ type: 'error', text: 'Ambos campos son obligatorios' });
+        return;
+      }
+
+      // Guardar datos MIR en localStorage
+      localStorage.setItem('mir_personal_id', mirData.personalId.trim());
+      localStorage.setItem('mir_accommodation_id', mirData.accommodationId.trim());
+      
+      setMessage({ type: 'success', text: 'Datos de identificación MIR guardados exitosamente' });
+
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Error al guardar los datos MIR' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header compacto */}
@@ -236,6 +275,69 @@ export default function SettingsPage() {
             {activeTab === 'general' && (
               <div className="space-y-6">
                 <h3 className="text-lg font-medium text-gray-900">Configuración General</h3>
+                
+                {/* Mensaje de estado */}
+                {message.text && (
+                  <div className={`p-4 rounded-md ${
+                    message.type === 'success' 
+                      ? 'bg-green-50 border border-green-200 text-green-800' 
+                      : 'bg-red-50 border border-red-200 text-red-800'
+                  }`}>
+                    {message.text}
+                  </div>
+                )}
+
+                {/* Identificación XML MIR */}
+                <div className="bg-white border border-gray-200 rounded-lg p-6">
+                  <h4 className="text-md font-medium text-gray-900 mb-4">🔐 Identificación para XML MIR</h4>
+                  <p className="text-sm text-gray-600 mb-4">
+                    Configura tu número único personal y el de tu alojamiento del sistema de hospedaje del Ministerio del Interior para la exportación XML MIR.
+                  </p>
+                  <form onSubmit={handleMirDataChange} className="space-y-4">
+                    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">
+                          Número Único Personal
+                        </label>
+                        <input
+                          type="text"
+                          value={mirData.personalId}
+                          onChange={(e) => setMirData(prev => ({ ...prev, personalId: e.target.value }))}
+                          className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                          placeholder="123456789"
+                          required
+                        />
+                        <p className="mt-1 text-xs text-gray-500">
+                          Tu número único del sistema de hospedaje del Ministerio del Interior
+                        </p>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">
+                          Número Único del Alojamiento
+                        </label>
+                        <input
+                          type="text"
+                          value={mirData.accommodationId}
+                          onChange={(e) => setMirData(prev => ({ ...prev, accommodationId: e.target.value }))}
+                          className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                          placeholder="987654321"
+                          required
+                        />
+                        <p className="mt-1 text-xs text-gray-500">
+                          Número único de tu casa, hotel o alojamiento en el sistema MIR
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {loading ? 'Guardando...' : 'Guardar Identificación MIR'}
+                    </button>
+                  </form>
+                </div>
+
                 <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                   <div>
                     <label className="block text-sm font-medium text-gray-700">
