@@ -4,6 +4,7 @@ export async function POST(req: NextRequest) {
   try {
     console.log('🔬 DEBUG FORM DATA: Analizando datos del formulario...');
     
+    const headers = corsHeaders(req);
     const json = await req.json().catch(() => undefined);
     
     if (!json) {
@@ -11,7 +12,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({
         ok: false,
         error: 'No se recibieron datos JSON'
-      }, { status: 400 });
+      }, { status: 400, headers });
     }
     
     console.log('📋 Datos recibidos del formulario:', JSON.stringify(json, null, 2));
@@ -96,24 +97,46 @@ export async function POST(req: NextRequest) {
           };
         })
       }
-    });
+    }, { headers });
     
   } catch (error) {
     console.error('❌ Error en debug form data:', error);
+    const headers = corsHeaders(req);
     return NextResponse.json({
       ok: false,
       error: error instanceof Error ? error.message : 'Error desconocido'
-    }, { status: 500 });
+    }, { status: 500, headers });
   }
 }
 
+const corsHeaders = (req: NextRequest) => {
+  const origin = req.headers.get('origin') || '';
+  const allowedOrigins = [
+    'https://form.delfincheckin.com',
+    'https://admin.delfincheckin.com',
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'http://127.0.0.1:3000',
+    'http://127.0.0.1:3001'
+  ];
+  
+  const isAllowed = allowedOrigins.includes(origin) || 
+                   origin.startsWith('http://localhost:') || 
+                   origin.startsWith('http://127.0.0.1:');
+  
+  return {
+    'Access-Control-Allow-Origin': isAllowed ? origin : 'https://form.delfincheckin.com',
+    'Vary': 'Origin',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Accept',
+    'Access-Control-Max-Age': '86400'
+  };
+};
+
 export async function OPTIONS(req: NextRequest) {
+  const headers = corsHeaders(req);
   return new NextResponse(null, {
     status: 200,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
-    },
+    headers
   });
 }
