@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { sql } from '@/lib/db';
 
 const corsHeaders = (req: NextRequest) => {
   const origin = req.headers.get('origin') || '';
@@ -39,11 +39,11 @@ export async function GET(req: NextRequest) {
     const headers = corsHeaders(req);
     
     // Obtener todos los registros de guest_registrations usando el cliente existente
-    const registrations = await db.query(`
+    const registrations = await sql`
       SELECT id, created_at, viajero, data 
       FROM guest_registrations 
       ORDER BY created_at DESC
-    `);
+    `;
     
     console.log(`📊 Total de registros encontrados: ${registrations.rows?.length || 0}`);
     

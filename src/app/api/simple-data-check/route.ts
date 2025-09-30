@@ -1,17 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { sql } from '@/lib/db';
 
 export async function GET(req: NextRequest) {
   try {
     console.log('🔍 VERIFICACIÓN SIMPLE: Iniciando...');
     
     // Obtener todos los registros
-    const registrations = await db.query(`
+    const registrations = await sql`
       SELECT id, created_at, viajero, data 
       FROM guest_registrations 
       ORDER BY created_at DESC
       LIMIT 10
-    `);
+    `;
     
     console.log(`📊 Registros encontrados: ${registrations.rows?.length || 0}`);
     
