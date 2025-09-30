@@ -863,6 +863,7 @@ export default function GuestRegistrationsDashboard() {
                   </h5>
                   {(() => {
                     const travelerData = getTravelerData(selectedRegistration);
+                    console.log('🎯 Modal - Datos del viajero extraídos:', JSON.stringify(travelerData, null, 2));
                     return (
                       <>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
