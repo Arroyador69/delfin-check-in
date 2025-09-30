@@ -324,7 +324,7 @@ export default function HomePage() {
             <div className="mt-4 pt-4 border-t border-gray-200">
               <div className="flex flex-col sm:flex-row gap-4">
                 <div className="flex-1">
-                  <label className="block text-sm font-bold text-gray-700 mb-1">
+                  <label className="block text-sm font-bold text-gray-900 mb-1">
                     📅 Fecha desde
                   </label>
                   <input
@@ -335,7 +335,7 @@ export default function HomePage() {
                   />
                 </div>
                 <div className="flex-1">
-                  <label className="block text-sm font-bold text-gray-700 mb-1">
+                  <label className="block text-sm font-bold text-gray-900 mb-1">
                     📅 Fecha hasta
                   </label>
                   <input
