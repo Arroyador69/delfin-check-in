@@ -5,18 +5,47 @@ export async function GET(req: NextRequest) {
   try {
     console.log('🔍 Debug: Verificando datos de dirección...');
     
-    // Obtener algunos registros de ejemplo
+    // Obtener TODOS los registros para análisis completo
     const registros = await sql`
       SELECT id, reserva_ref, data, created_at 
       FROM guest_registrations 
-      ORDER BY created_at DESC 
-      LIMIT 3
+      ORDER BY created_at DESC
     `;
     
     console.log(`📊 Encontrados ${registros.length} registros`);
     
     const debugInfo = registros.map((registro, index) => {
       const data = registro.data;
+      
+      // Análisis completo de la estructura de datos
+      const estructura = {
+        tieneComunicaciones: !!data?.comunicaciones,
+        tienePersonas: !!data?.comunicaciones?.[0]?.personas,
+        tieneViajeros: !!data?.comunicaciones?.[0]?.viajeros,
+        tienePersonasDirectas: !!data?.personas,
+        tieneViajerosDirectos: !!data?.viajeros,
+        estructuraCompleta: data
+      };
+      
+      // Intentar todas las rutas posibles para encontrar datos
+      const rutas = [
+        'data.comunicaciones[0].personas[0]',
+        'data.comunicaciones[0].viajeros[0]',
+        'data.personas[0]',
+        'data.viajeros[0]'
+      ];
+      
+      const datosEncontrados = {};
+      rutas.forEach(ruta => {
+        try {
+          const valor = eval(`data.${ruta.split('.').slice(1).join('.')}`);
+          if (valor) {
+            datosEncontrados[ruta] = valor;
+          }
+        } catch (e) {
+          // Ignorar errores de eval
+        }
+      });
       
       // Función helper para extraer datos del viajero (igual que en el dashboard)
       const personas = data?.comunicaciones?.[0]?.personas?.[0] || 
@@ -31,6 +60,8 @@ export async function GET(req: NextRequest) {
         registroId: registro.id,
         fechaCreacion: registro.created_at,
         referencia: registro.reserva_ref,
+        estructura,
+        datosEncontrados,
         datosPersona: {
           nombre: personas.nombre || 'N/A',
           apellido1: personas.apellido1 || 'N/A',
@@ -44,7 +75,8 @@ export async function GET(req: NextRequest) {
             codigoMunicipio: direccionData.codigoMunicipio || 'N/A'
           }
         },
-        estructuraCompleta: data
+        personaCompleta: personas,
+        direccionCompleta: direccionData
       };
     });
     
@@ -52,7 +84,7 @@ export async function GET(req: NextRequest) {
       ok: true,
       totalRegistros: registros.length,
       debugInfo: debugInfo,
-      mensaje: 'Datos de debug obtenidos correctamente'
+      mensaje: 'Análisis completo de datos realizado'
     });
     
   } catch (error) {

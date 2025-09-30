@@ -72,45 +72,97 @@ interface GuestRegistration {
   data: ComunicacionPayload;
 }
 
-// Función helper para extraer datos del viajero de cualquier estructura
+// Función helper para extraer datos del viajero de cualquier estructura - VERSIÓN ROBUSTA
 const getTravelerData = (registration: GuestRegistration) => {
   const data = registration.data;
   
   // Debug: mostrar la estructura completa de datos
   console.log('🔍 Debug - Estructura completa de datos:', JSON.stringify(data, null, 2));
   
-  // Intentar diferentes ubicaciones donde pueden estar los datos
-  const personas = data?.comunicaciones?.[0]?.personas?.[0] || 
-                  data?.comunicaciones?.[0]?.viajeros?.[0] ||
-                  data?.personas?.[0] ||
-                  data?.viajeros?.[0] ||
-                  {};
+  // Función para buscar datos en múltiples ubicaciones
+  const buscarEnEstructura = (paths: string[]) => {
+    for (const path of paths) {
+      try {
+        const value = path.split('.').reduce((obj, key) => {
+          if (key.includes('[') && key.includes(']')) {
+            const arrayKey = key.split('[')[0];
+            const index = parseInt(key.split('[')[1].split(']')[0]);
+            return obj?.[arrayKey]?.[index];
+          }
+          return obj?.[key];
+        }, data);
+        
+        if (value !== undefined && value !== null && value !== '') {
+          console.log(`✅ Encontrado en ruta: ${path}`, value);
+          return value;
+        }
+      } catch (e) {
+        // Continuar con la siguiente ruta
+      }
+    }
+    return null;
+  };
   
+  // Rutas posibles para encontrar datos de persona
+  const rutasPersona = [
+    'comunicaciones.0.personas.0',
+    'comunicaciones.0.viajeros.0',
+    'personas.0',
+    'viajeros.0'
+  ];
+  
+  const personas = buscarEnEstructura(rutasPersona) || {};
   console.log('🔍 Debug - Datos de personas encontrados:', JSON.stringify(personas, null, 2));
   
   // Extraer datos de contacto (pueden estar en contacto.telefono o directamente en telefono)
   const contacto = personas.contacto || {};
   
-  // Extraer datos de dirección correctamente
-  const direccionData = personas.direccion || {};
+  // Extraer datos de dirección con múltiples rutas posibles
+  const rutasDireccion = [
+    'direccion',
+    'contacto.direccion',
+    'domicilio',
+    'address'
+  ];
+  
+  let direccionData = {};
+  for (const ruta of rutasDireccion) {
+    const dirData = buscarEnEstructura([ruta]);
+    if (dirData) {
+      direccionData = dirData;
+      console.log(`✅ Dirección encontrada en: ${ruta}`, dirData);
+      break;
+    }
+  }
+  
   console.log('🔍 Debug - Datos de dirección encontrados:', JSON.stringify(direccionData, null, 2));
   
+  // Función para extraer campo con múltiples nombres posibles
+  const extraerCampo = (nombres: string[], obj: any) => {
+    for (const nombre of nombres) {
+      if (obj?.[nombre] !== undefined && obj?.[nombre] !== null && obj?.[nombre] !== '') {
+        return obj[nombre];
+      }
+    }
+    return '';
+  };
+  
   const result = {
-    nombre: personas.nombre || registration.viajero?.nombre || '',
-    apellido1: personas.apellido1 || registration.viajero?.apellido1 || '',
-    apellido2: personas.apellido2 || registration.viajero?.apellido2 || '',
-    tipoDocumento: personas.tipoDocumento || registration.viajero?.tipoDocumento || '',
-    numeroDocumento: personas.numeroDocumento || registration.viajero?.numeroDocumento || '',
-    nacionalidad: personas.nacionalidad || registration.viajero?.nacionalidad || '',
-    telefono: personas.telefono || contacto.telefono || '',
-    correo: personas.correo || contacto.correo || '',
-    fechaNacimiento: personas.fechaNacimiento || '',
+    nombre: extraerCampo(['nombre', 'name'], personas) || registration.viajero?.nombre || '',
+    apellido1: extraerCampo(['apellido1', 'primerApellido', 'apellido', 'surname'], personas) || registration.viajero?.apellido1 || '',
+    apellido2: extraerCampo(['apellido2', 'segundoApellido'], personas) || registration.viajero?.apellido2 || '',
+    tipoDocumento: extraerCampo(['tipoDocumento', 'documentType', 'tipo_documento'], personas) || registration.viajero?.tipoDocumento || '',
+    numeroDocumento: extraerCampo(['numeroDocumento', 'documentNumber', 'numero_documento'], personas) || registration.viajero?.numeroDocumento || '',
+    nacionalidad: extraerCampo(['nacionalidad', 'nationality'], personas) || registration.viajero?.nacionalidad || '',
+    telefono: extraerCampo(['telefono', 'phone', 'telefono2'], personas) || contacto.telefono || '',
+    correo: extraerCampo(['correo', 'email', 'mail'], personas) || contacto.correo || '',
+    fechaNacimiento: extraerCampo(['fechaNacimiento', 'birthDate', 'fecha_nacimiento'], personas) || '',
     direccion: {
-      direccion: direccionData.direccion || '',
-      codigoPostal: direccionData.codigoPostal || '',
-      pais: direccionData.pais || '',
-      nombreMunicipio: direccionData.nombreMunicipio || '', // Este campo puede no existir en datos antiguos
-      codigoMunicipio: direccionData.codigoMunicipio || ''
+      direccion: extraerCampo(['direccion', 'address', 'street', 'calle'], direccionData) || '',
+      codigoPostal: extraerCampo(['codigoPostal', 'cp', 'postalCode', 'codigo_postal'], direccionData) || '',
+      pais: extraerCampo(['pais', 'country', 'paisResidencia'], direccionData) || '',
+      nombreMunicipio: extraerCampo(['nombreMunicipio', 'municipio', 'city', 'municipality'], direccionData) || '',
+      codigoMunicipio: extraerCampo(['codigoMunicipio', 'ine', 'municipioCode', 'codigo_municipio'], direccionData) || ''
     }
   };
   
