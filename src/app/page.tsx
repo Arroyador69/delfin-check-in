@@ -251,7 +251,7 @@ export default function HomePage() {
             <div>
               <h2 className="text-lg font-semibold text-black mb-2">📊 Filtros de Período</h2>
               <p className="text-sm text-black">
-                Mostrando datos para: <span className="font-semibold text-blue-600">{getPeriodLabel()}</span>
+                Mostrando datos para: <span className="font-bold text-black">{getPeriodLabel()}</span>
               </p>
             </div>
             
