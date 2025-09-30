@@ -216,6 +216,20 @@ export async function POST(req: NextRequest) {
     }
 
     console.log('✅ Datos normalizados:', JSON.stringify(normalized, null, 2));
+    
+    // Debug específico para datos de dirección
+    if (normalized.viajeros && normalized.viajeros.length > 0) {
+      console.log('🔍 Debug - Datos de dirección en viajeros:');
+      normalized.viajeros.forEach((viajero, index) => {
+        console.log(`  Viajero ${index + 1}:`, {
+          nombre: viajero.nombre,
+          direccion: viajero.direccion,
+          cp: viajero.cp,
+          ine: viajero.ine,
+          paisResidencia: viajero.paisResidencia
+        });
+      });
+    }
 
     // Validaciones mínimas con mensajes claros
     const issues: any[] = [];
@@ -276,7 +290,8 @@ export async function POST(req: NextRequest) {
         direccion: v.direccion,
         codigoPostal: v.cp,
         pais: v.paisResidencia,
-        codigoMunicipio: v.ine
+        codigoMunicipio: v.ine,
+        nombreMunicipio: v.nombreMunicipio || '' // Añadir campo nombreMunicipio
       }
     }));
     
@@ -304,6 +319,7 @@ export async function POST(req: NextRequest) {
     };
 
     console.log('💾 Guardando en base de datos...');
+    console.log('🔍 Debug - Datos finales que se van a guardar:', JSON.stringify(dbData, null, 2));
     
     // Guardar en base de datos
     const id = await insertGuestRegistration({
