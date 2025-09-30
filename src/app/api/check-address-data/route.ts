@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { db } from '@/lib/db';
 
 const corsHeaders = (req: NextRequest) => {
   const origin = req.headers.get('origin') || '';
@@ -38,37 +38,17 @@ export async function GET(req: NextRequest) {
     
     const headers = corsHeaders(req);
     
-    // Crear cliente de Supabase
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    // Obtener todos los registros de guest_registrations usando el cliente existente
+    const registrations = await db.query(`
+      SELECT id, created_at, viajero, data 
+      FROM guest_registrations 
+      ORDER BY created_at DESC
+    `);
     
-    if (!supabaseUrl || !supabaseKey) {
-      console.error('❌ Variables de entorno de Supabase no configuradas');
-      return NextResponse.json({
-        error: 'Variables de entorno de Supabase no configuradas'
-      }, { status: 500, headers });
-    }
-    
-    const supabase = createClient(supabaseUrl, supabaseKey);
-    
-    // Obtener todos los registros de guest_registrations
-    const { data: registrations, error } = await supabase
-      .from('guest_registrations')
-      .select('*')
-      .order('created_at', { ascending: false });
-    
-    if (error) {
-      console.error('❌ Error al obtener registros:', error);
-      return NextResponse.json({
-        error: 'Error al obtener registros de la base de datos',
-        details: error.message
-      }, { status: 500, headers });
-    }
-    
-    console.log(`📊 Total de registros encontrados: ${registrations?.length || 0}`);
+    console.log(`📊 Total de registros encontrados: ${registrations.rows?.length || 0}`);
     
     // Analizar cada registro
-    const analysis = registrations?.map((registration, index) => {
+    const analysis = registrations.rows?.map((registration, index) => {
       const data = registration.data;
       console.log(`\n🔍 ANÁLISIS REGISTRO ${index + 1} (ID: ${registration.id}):`);
       console.log('📅 Fecha de creación:', registration.created_at);
@@ -130,7 +110,7 @@ export async function GET(req: NextRequest) {
     
     // Resumen
     const resumen = {
-      totalRegistros: registrations?.length || 0,
+      totalRegistros: registrations.rows?.length || 0,
       registrosConDireccion: analysis.filter(a => a.tieneDireccion).length,
       registrosConDatosCompletos: analysis.filter(a => a.tieneDatosCompletos).length,
       registrosSinDireccion: analysis.filter(a => !a.tieneDireccion).length
@@ -154,7 +134,8 @@ export async function GET(req: NextRequest) {
     const headers = corsHeaders(req);
     return NextResponse.json({
       error: 'Error interno del servidor',
-      details: error.message
+      details: error.message,
+      stack: error.stack
     }, { status: 500, headers });
   }
 }
