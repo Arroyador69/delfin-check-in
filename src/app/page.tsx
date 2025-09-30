@@ -174,7 +174,10 @@ export default function HomePage() {
   const getPeriodLabel = () => {
     const dateRange = getDateRange(filterPeriod);
     const formatDate = (dateStr: string) => {
-      return new Date(dateStr).toLocaleDateString('es-ES', { 
+      if (!dateStr) return 'Fecha no seleccionada';
+      const date = new Date(dateStr);
+      if (isNaN(date.getTime())) return 'Fecha inválida';
+      return date.toLocaleDateString('es-ES', { 
         day: '2-digit', 
         month: '2-digit', 
         year: 'numeric' 
@@ -193,6 +196,9 @@ export default function HomePage() {
       case 'last30Days':
         return 'Últimos 30 días';
       case 'custom':
+        if (!customDateRange.from || !customDateRange.to) {
+          return 'Selecciona un rango de fechas';
+        }
         return `${formatDate(dateRange.from)} - ${formatDate(dateRange.to)}`;
       default:
         return 'Este mes';
