@@ -708,7 +708,6 @@
               <th style="padding:10px 8px; border-bottom:1px solid rgba(255,255,255,.08)" data-es="Canal" data-en="Channel">Canal</th>
               <th style="padding:10px 8px; border-bottom:1px solid rgba(255,255,255,.08)" data-es="Teléfono" data-en="Phone">Teléfono</th>
               <th style="padding:10px 8px; border-bottom:1px solid rgba(255,255,255,.08)" data-es="Email" data-en="Email">Email</th>
-              <th style="padding:10px 8px; border-bottom:1px solid rgba(255,255,255,.08)" data-es="Acciones" data-en="Actions">Acciones</th>
             </tr>
           </thead>
           <tbody id="res-tbody"></tbody>
@@ -2606,22 +2605,6 @@
             <td style="padding:10px 8px; border-bottom:1px solid var(--border)"><span class="badge" style="background:#f1f5f9">${channel}</span></td>
             <td style="padding:10px 8px; border-bottom:1px solid var(--border)">${phone}</td>
             <td style="padding:10px 8px; border-bottom:1px solid var(--border)">${email}</td>
-            <td style="padding:10px 8px; border-bottom:1px solid var(--border)">
-              <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                <button class="btn" onclick="sendReservationWA('${phone}','${guest}','${arrival}')" 
-                        style="background: #25d366; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s ease;"
-                        onmouseover="this.style.background='#128c7e'; this.style.transform='translateY(-1px)'"
-                        onmouseout="this.style.background='#25d366'; this.style.transform='translateY(0)'">
-                  WhatsApp
-                </button>
-                <button class="btn" onclick="sendReservationMail('${email}','${guest}','${arrival}')" 
-                        style="background: #2563eb; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s ease;"
-                        onmouseover="this.style.background='#1d4ed8'; this.style.transform='translateY(-1px)'"
-                        onmouseout="this.style.background='#2563eb'; this.style.transform='translateY(0)'">
-                  Email
-                </button>
-              </div>
-            </td>
           </tr>`;
       }).join('');
       tbody.innerHTML = rows;
