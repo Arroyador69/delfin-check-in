@@ -72,100 +72,76 @@ interface GuestRegistration {
   data: ComunicacionPayload;
 }
 
-// Función helper para extraer datos del viajero - VERSIÓN DE EMERGENCIA QUE SÍ FUNCIONA
+// Función helper para extraer datos del viajero - VERSIÓN CORRECTA BASADA EN ANÁLISIS PROFUNDO
 const getTravelerData = (registration: GuestRegistration) => {
   const data = registration.data;
   
-  console.log('🚨 EMERGENCIA - Analizando datos:', JSON.stringify(data, null, 2));
+  console.log('🔬 ANÁLISIS PROFUNDO - Estructura de datos:', JSON.stringify(data, null, 2));
   
-  // Función ULTRA SIMPLE que busca en TODAS las ubicaciones posibles
-  const buscarPersona = () => {
-    // Buscar en comunicaciones[0].personas[0]
-    if (data?.comunicaciones?.[0]?.personas?.[0]) {
-      console.log('✅ Encontrado en comunicaciones[0].personas[0]');
-      return data.comunicaciones[0].personas[0];
-    }
-    
-    // Buscar en comunicaciones[0].viajeros[0]
-    if (data?.comunicaciones?.[0]?.viajeros?.[0]) {
-      console.log('✅ Encontrado en comunicaciones[0].viajeros[0]');
-      return data.comunicaciones[0].viajeros[0];
-    }
-    
-    // Buscar en personas[0]
-    if (data?.personas?.[0]) {
-      console.log('✅ Encontrado en personas[0]');
-      return data.personas[0];
-    }
-    
-    // Buscar en viajeros[0]
-    if (data?.viajeros?.[0]) {
-      console.log('✅ Encontrado en viajeros[0]');
-      return data.viajeros[0];
-    }
-    
-    console.log('❌ No se encontró persona en ninguna ubicación');
-    return {};
-  };
+  // ANÁLISIS PROFUNDO: Los datos de dirección están en data.comunicaciones[0].personas[0].direccion
+  const persona = data?.comunicaciones?.[0]?.personas?.[0];
   
-  const persona = buscarPersona();
-  console.log('🔍 Datos de persona encontrados:', JSON.stringify(persona, null, 2));
-  
-  // Función para extraer dirección de MÚLTIPLES formas
-  const extraerDireccion = () => {
-    const direccion = {
-      direccion: '',
-      codigoPostal: '',
-      pais: '',
-      nombreMunicipio: '',
-      codigoMunicipio: ''
+  if (!persona) {
+    console.log('❌ CRÍTICO: No se encontró persona en data.comunicaciones[0].personas[0]');
+    console.log('🔍 Estructura disponible:', JSON.stringify(data, null, 2));
+    
+    // Fallback: intentar con registration.viajero (sin datos de dirección)
+    return {
+      nombre: registration.viajero?.nombre || '',
+      apellido1: registration.viajero?.apellido1 || '',
+      apellido2: registration.viajero?.apellido2 || '',
+      tipoDocumento: registration.viajero?.tipoDocumento || '',
+      numeroDocumento: registration.viajero?.numeroDocumento || '',
+      nacionalidad: registration.viajero?.nacionalidad || '',
+      telefono: '',
+      correo: '',
+      fechaNacimiento: '',
+      direccion: {
+        direccion: 'DATOS NO ENCONTRADOS',
+        codigoPostal: 'DATOS NO ENCONTRADOS',
+        pais: 'DATOS NO ENCONTRADOS',
+        nombreMunicipio: 'DATOS NO ENCONTRADOS',
+        codigoMunicipio: 'DATOS NO ENCONTRADOS'
+      }
     };
-    
-    // Método 1: Si hay un objeto direccion anidado
-    if (persona.direccion && typeof persona.direccion === 'object') {
-      console.log('✅ Usando objeto direccion anidado');
-      direccion.direccion = persona.direccion.direccion || '';
-      direccion.codigoPostal = persona.direccion.codigoPostal || '';
-      direccion.pais = persona.direccion.pais || '';
-      direccion.nombreMunicipio = persona.direccion.nombreMunicipio || '';
-      direccion.codigoMunicipio = persona.direccion.codigoMunicipio || '';
-    }
-    
-    // Método 2: Si los campos están directamente en persona
-    if (!direccion.direccion) direccion.direccion = persona.direccion || '';
-    if (!direccion.codigoPostal) direccion.codigoPostal = persona.codigoPostal || persona.cp || '';
-    if (!direccion.pais) direccion.pais = persona.pais || persona.paisResidencia || '';
-    if (!direccion.nombreMunicipio) direccion.nombreMunicipio = persona.nombreMunicipio || persona.municipio || '';
-    if (!direccion.codigoMunicipio) direccion.codigoMunicipio = persona.codigoMunicipio || persona.ine || '';
-    
-    console.log('📍 Dirección extraída:', JSON.stringify(direccion, null, 2));
-    return direccion;
-  };
+  }
   
-  const direccionExtraida = extraerDireccion();
+  console.log('✅ ÉXITO: Persona encontrada en data.comunicaciones[0].personas[0]');
+  console.log('🔍 Datos de persona:', JSON.stringify(persona, null, 2));
+  
+  // Extraer datos de dirección del objeto direccion anidado
+  const direccion = persona.direccion || {};
+  
+  console.log('📍 Datos de dirección encontrados:', JSON.stringify(direccion, null, 2));
   
   const result = {
-    nombre: persona.nombre || registration.viajero?.nombre || '',
-    apellido1: persona.apellido1 || registration.viajero?.apellido1 || '',
-    apellido2: persona.apellido2 || registration.viajero?.apellido2 || '',
-    tipoDocumento: persona.tipoDocumento || registration.viajero?.tipoDocumento || '',
-    numeroDocumento: persona.numeroDocumento || registration.viajero?.numeroDocumento || '',
-    nacionalidad: persona.nacionalidad || registration.viajero?.nacionalidad || '',
+    nombre: persona.nombre || '',
+    apellido1: persona.apellido1 || '',
+    apellido2: persona.apellido2 || '',
+    tipoDocumento: persona.tipoDocumento || '',
+    numeroDocumento: persona.numeroDocumento || '',
+    nacionalidad: persona.nacionalidad || '',
     telefono: persona.telefono || '',
     correo: persona.correo || '',
     fechaNacimiento: persona.fechaNacimiento || '',
-    direccion: direccionExtraida
+    direccion: {
+      direccion: direccion.direccion || '',
+      codigoPostal: direccion.codigoPostal || '',
+      pais: direccion.pais || '',
+      nombreMunicipio: direccion.nombreMunicipio || '',
+      codigoMunicipio: direccion.codigoMunicipio || ''
+    }
   };
   
-  console.log('🎯 RESULTADO FINAL:', JSON.stringify(result, null, 2));
+  console.log('🎯 RESULTADO FINAL CORRECTO:', JSON.stringify(result, null, 2));
   
   // Verificar si se encontraron datos de dirección
   const tieneDireccion = result.direccion.direccion || result.direccion.codigoPostal || result.direccion.pais || result.direccion.codigoMunicipio;
   if (tieneDireccion) {
-    console.log('✅ ÉXITO: Datos de dirección encontrados');
+    console.log('✅ ÉXITO TOTAL: Datos de dirección encontrados correctamente');
   } else {
-    console.log('❌ FALLO: No se encontraron datos de dirección');
-    console.log('🔍 Estructura completa para debug:', JSON.stringify(data, null, 2));
+    console.log('⚠️ ADVERTENCIA: No se encontraron datos de dirección en el objeto direccion');
+    console.log('🔍 Objeto direccion completo:', JSON.stringify(direccion, null, 2));
   }
   
   return result;
