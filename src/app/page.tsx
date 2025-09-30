@@ -249,8 +249,8 @@ export default function HomePage() {
         <div className="card mb-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div>
-              <h2 className="text-lg font-semibold text-gray-900 mb-2">📊 Filtros de Período</h2>
-              <p className="text-sm text-gray-600">
+              <h2 className="text-lg font-semibold text-black mb-2">📊 Filtros de Período</h2>
+              <p className="text-sm text-black">
                 Mostrando datos para: <span className="font-semibold text-blue-600">{getPeriodLabel()}</span>
               </p>
             </div>
@@ -262,7 +262,7 @@ export default function HomePage() {
                 className={`px-3 py-2 text-sm rounded-lg border transition-colors ${
                   filterPeriod === 'today' 
                     ? 'bg-blue-600 text-white border-blue-600' 
-                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                    : 'bg-white text-black border-gray-300 hover:bg-gray-50'
                 }`}
               >
                 📅 Hoy
@@ -273,7 +273,7 @@ export default function HomePage() {
                 className={`px-3 py-2 text-sm rounded-lg border transition-colors ${
                   filterPeriod === 'thisWeek' 
                     ? 'bg-blue-600 text-white border-blue-600' 
-                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                    : 'bg-white text-black border-gray-300 hover:bg-gray-50'
                 }`}
               >
                 📆 Esta semana
@@ -284,7 +284,7 @@ export default function HomePage() {
                 className={`px-3 py-2 text-sm rounded-lg border transition-colors ${
                   filterPeriod === 'last7Days' 
                     ? 'bg-blue-600 text-white border-blue-600' 
-                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                    : 'bg-white text-black border-gray-300 hover:bg-gray-50'
                 }`}
               >
                 ⏰ Últimos 7 días
@@ -295,7 +295,7 @@ export default function HomePage() {
                 className={`px-3 py-2 text-sm rounded-lg border transition-colors ${
                   filterPeriod === 'thisMonth' 
                     ? 'bg-blue-600 text-white border-blue-600' 
-                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                    : 'bg-white text-black border-gray-300 hover:bg-gray-50'
                 }`}
               >
                 🗓️ Este mes
@@ -306,7 +306,7 @@ export default function HomePage() {
                 className={`px-3 py-2 text-sm rounded-lg border transition-colors ${
                   filterPeriod === 'last30Days' 
                     ? 'bg-blue-600 text-white border-blue-600' 
-                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                    : 'bg-white text-black border-gray-300 hover:bg-gray-50'
                 }`}
               >
                 📈 Últimos 30 días
@@ -317,7 +317,7 @@ export default function HomePage() {
                 className={`px-3 py-2 text-sm rounded-lg border transition-colors ${
                   filterPeriod === 'custom' 
                     ? 'bg-blue-600 text-white border-blue-600' 
-                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                    : 'bg-white text-black border-gray-300 hover:bg-gray-50'
                 }`}
               >
                 🎯 Personalizado
@@ -357,7 +357,7 @@ export default function HomePage() {
                       const today = new Date().toISOString().split('T')[0];
                       setCustomDateRange({ from: today, to: today });
                     }}
-                    className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                    className="px-4 py-2 bg-gray-100 text-black rounded-lg hover:bg-gray-200 transition-colors"
                   >
                     🔄 Reset
                   </button>
