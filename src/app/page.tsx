@@ -5,10 +5,17 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import AdminLayout from '@/components/AdminLayout';
 
+type FilterPeriod = 'today' | 'thisWeek' | 'last7Days' | 'thisMonth' | 'last30Days' | 'custom';
+
 export default function HomePage() {
   const [rooms, setRooms] = useState<any[]>([]);
   const [reservations, setReservations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filterPeriod, setFilterPeriod] = useState<FilterPeriod>('thisMonth');
+  const [customDateRange, setCustomDateRange] = useState<{from: string, to: string}>({
+    from: '',
+    to: ''
+  });
   const router = useRouter();
 
   useEffect(() => {
@@ -36,6 +43,77 @@ export default function HomePage() {
     }
   };
 
+  // Función para obtener el rango de fechas según el filtro
+  const getDateRange = (period: FilterPeriod) => {
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0];
+    
+    switch (period) {
+      case 'today':
+        return { from: todayStr, to: todayStr };
+      
+      case 'thisWeek':
+        const startOfWeek = new Date(today);
+        startOfWeek.setDate(today.getDate() - today.getDay());
+        const endOfWeek = new Date(startOfWeek);
+        endOfWeek.setDate(startOfWeek.getDate() + 6);
+        return { 
+          from: startOfWeek.toISOString().split('T')[0], 
+          to: endOfWeek.toISOString().split('T')[0] 
+        };
+      
+      case 'last7Days':
+        const last7Days = new Date(today);
+        last7Days.setDate(today.getDate() - 7);
+        return { 
+          from: last7Days.toISOString().split('T')[0], 
+          to: todayStr 
+        };
+      
+      case 'thisMonth':
+        const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+        const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+        return { 
+          from: startOfMonth.toISOString().split('T')[0], 
+          to: endOfMonth.toISOString().split('T')[0] 
+        };
+      
+      case 'last30Days':
+        const last30Days = new Date(today);
+        last30Days.setDate(today.getDate() - 30);
+        return { 
+          from: last30Days.toISOString().split('T')[0], 
+          to: todayStr 
+        };
+      
+      case 'custom':
+        return customDateRange;
+      
+      default:
+        return { from: todayStr, to: todayStr };
+    }
+  };
+
+  // Filtrar reservas según el período seleccionado
+  const getFilteredReservations = () => {
+    if (filterPeriod === 'custom' && (!customDateRange.from || !customDateRange.to)) {
+      return reservations;
+    }
+    
+    const dateRange = getDateRange(filterPeriod);
+    return reservations.filter(reservation => {
+      const checkIn = new Date(reservation.check_in);
+      const checkOut = new Date(reservation.check_out);
+      const fromDate = new Date(dateRange.from);
+      const toDate = new Date(dateRange.to);
+      
+      // Incluir reservas que se solapan con el rango de fechas
+      return (checkIn <= toDate && checkOut >= fromDate);
+    });
+  };
+
+  const filteredReservations = getFilteredReservations();
+
   const handleLogout = async () => {
     try {
       // Llamar a la API de logout
@@ -53,18 +131,33 @@ export default function HomePage() {
     }
   };
 
-  // Calcular estadísticas
-  // Mostrar un valor fijo de habitaciones en el dashboard (MVP)
+  // Calcular estadísticas basadas en reservas filtradas
   const totalRooms = 6;
-  const totalReservations = reservations.length;
-  const confirmedReservations = reservations.filter(r => r.status === 'confirmed').length;
+  const totalReservations = filteredReservations.length;
+  const confirmedReservations = filteredReservations.filter(r => r.status === 'confirmed').length;
   const today = new Date().toISOString().split('T')[0];
-  const guestsToday = reservations.filter(r => 
+  const guestsToday = filteredReservations.filter(r => 
     r.check_in <= today && r.check_out >= today && r.status === 'confirmed'
   ).length;
 
-  // Calcular ocupación
-  const occupancyRate = totalRooms > 0 ? Math.round((confirmedReservations / (totalRooms * 30)) * 100) : 0;
+  // Calcular ocupación basada en el período filtrado
+  const dateRange = getDateRange(filterPeriod);
+  const daysInPeriod = Math.ceil((new Date(dateRange.to).getTime() - new Date(dateRange.from).getTime()) / (1000 * 60 * 60 * 24)) + 1;
+  const totalRoomDays = totalRooms * daysInPeriod;
+  const occupiedRoomDays = filteredReservations.filter(r => r.status === 'confirmed').reduce((sum, r) => {
+    const checkIn = new Date(r.check_in);
+    const checkOut = new Date(r.check_out);
+    const fromDate = new Date(dateRange.from);
+    const toDate = new Date(dateRange.to);
+    
+    // Calcular días ocupados en el período
+    const start = checkIn > fromDate ? checkIn : fromDate;
+    const end = checkOut < toDate ? checkOut : toDate;
+    const days = Math.max(0, Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)));
+    return sum + days;
+  }, 0);
+  
+  const occupancyRate = totalRoomDays > 0 ? Math.round((occupiedRoomDays / totalRoomDays) * 100) : 0;
 
   // Calcular datos financieros con validación segura
   const safeNumber = (value: any) => {
@@ -73,9 +166,38 @@ export default function HomePage() {
     return isNaN(num) ? 0 : num;
   };
 
-  const totalRevenue = reservations.reduce((sum, r) => sum + safeNumber(r.guest_paid), 0);
-  const totalCommissions = reservations.reduce((sum, r) => sum + safeNumber(r.platform_commission), 0);
-  const totalNetIncome = reservations.reduce((sum, r) => sum + safeNumber(r.net_income), 0);
+  const totalRevenue = filteredReservations.reduce((sum, r) => sum + safeNumber(r.guest_paid), 0);
+  const totalCommissions = filteredReservations.reduce((sum, r) => sum + safeNumber(r.platform_commission), 0);
+  const totalNetIncome = filteredReservations.reduce((sum, r) => sum + safeNumber(r.net_income), 0);
+
+  // Función para formatear el período seleccionado
+  const getPeriodLabel = () => {
+    const dateRange = getDateRange(filterPeriod);
+    const formatDate = (dateStr: string) => {
+      return new Date(dateStr).toLocaleDateString('es-ES', { 
+        day: '2-digit', 
+        month: '2-digit', 
+        year: 'numeric' 
+      });
+    };
+    
+    switch (filterPeriod) {
+      case 'today':
+        return 'Hoy';
+      case 'thisWeek':
+        return 'Esta semana';
+      case 'last7Days':
+        return 'Últimos 7 días';
+      case 'thisMonth':
+        return 'Este mes';
+      case 'last30Days':
+        return 'Últimos 30 días';
+      case 'custom':
+        return `${formatDate(dateRange.from)} - ${formatDate(dateRange.to)}`;
+      default:
+        return 'Este mes';
+    }
+  };
 
   if (loading) {
     return (
@@ -116,6 +238,128 @@ export default function HomePage() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+        {/* Filtros de Período */}
+        <div className="card mb-8">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900 mb-2">📊 Filtros de Período</h2>
+              <p className="text-sm text-gray-600">
+                Mostrando datos para: <span className="font-semibold text-blue-600">{getPeriodLabel()}</span>
+              </p>
+            </div>
+            
+            <div className="flex flex-wrap gap-2">
+              {/* Botones de períodos predefinidos */}
+              <button
+                onClick={() => setFilterPeriod('today')}
+                className={`px-3 py-2 text-sm rounded-lg border transition-colors ${
+                  filterPeriod === 'today' 
+                    ? 'bg-blue-600 text-white border-blue-600' 
+                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                📅 Hoy
+              </button>
+              
+              <button
+                onClick={() => setFilterPeriod('thisWeek')}
+                className={`px-3 py-2 text-sm rounded-lg border transition-colors ${
+                  filterPeriod === 'thisWeek' 
+                    ? 'bg-blue-600 text-white border-blue-600' 
+                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                📆 Esta semana
+              </button>
+              
+              <button
+                onClick={() => setFilterPeriod('last7Days')}
+                className={`px-3 py-2 text-sm rounded-lg border transition-colors ${
+                  filterPeriod === 'last7Days' 
+                    ? 'bg-blue-600 text-white border-blue-600' 
+                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                ⏰ Últimos 7 días
+              </button>
+              
+              <button
+                onClick={() => setFilterPeriod('thisMonth')}
+                className={`px-3 py-2 text-sm rounded-lg border transition-colors ${
+                  filterPeriod === 'thisMonth' 
+                    ? 'bg-blue-600 text-white border-blue-600' 
+                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                🗓️ Este mes
+              </button>
+              
+              <button
+                onClick={() => setFilterPeriod('last30Days')}
+                className={`px-3 py-2 text-sm rounded-lg border transition-colors ${
+                  filterPeriod === 'last30Days' 
+                    ? 'bg-blue-600 text-white border-blue-600' 
+                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                📈 Últimos 30 días
+              </button>
+              
+              <button
+                onClick={() => setFilterPeriod('custom')}
+                className={`px-3 py-2 text-sm rounded-lg border transition-colors ${
+                  filterPeriod === 'custom' 
+                    ? 'bg-blue-600 text-white border-blue-600' 
+                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                🎯 Personalizado
+              </button>
+            </div>
+          </div>
+          
+          {/* Selector de fechas personalizado */}
+          {filterPeriod === 'custom' && (
+            <div className="mt-4 pt-4 border-t border-gray-200">
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="flex-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    📅 Fecha desde
+                  </label>
+                  <input
+                    type="date"
+                    value={customDateRange.from}
+                    onChange={(e) => setCustomDateRange(prev => ({ ...prev, from: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div className="flex-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    📅 Fecha hasta
+                  </label>
+                  <input
+                    type="date"
+                    value={customDateRange.to}
+                    onChange={(e) => setCustomDateRange(prev => ({ ...prev, to: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div className="flex items-end">
+                  <button
+                    onClick={() => {
+                      const today = new Date().toISOString().split('T')[0];
+                      setCustomDateRange({ from: today, to: today });
+                    }}
+                    className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                  >
+                    🔄 Reset
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Stats Cards */}
         <div className="kpis">
@@ -242,14 +486,23 @@ export default function HomePage() {
             <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
               <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
               Reservas Actuales
+              <span className="ml-2 text-sm font-normal text-gray-500">
+                ({filteredReservations.filter(r => {
+                  const checkIn = new Date(r.check_in);
+                  const checkOut = new Date(r.check_out);
+                  const today = new Date();
+                  today.setHours(0, 0, 0, 0);
+                  return checkIn <= today && checkOut > today && r.status === 'confirmed';
+                }).length})
+              </span>
             </h3>
-            {reservations.length === 0 ? (
+            {filteredReservations.length === 0 ? (
               <div className="text-center py-6">
-                <p className="text-gray-500">No hay reservas actuales</p>
+                <p className="text-gray-500">No hay reservas en el período seleccionado</p>
               </div>
             ) : (
               <div className="space-y-3">
-                {reservations
+                {filteredReservations
                   .filter(r => {
                     const checkIn = new Date(r.check_in);
                     const checkOut = new Date(r.check_out);
@@ -273,7 +526,7 @@ export default function HomePage() {
                       </div>
                     </div>
                   ))}
-                {reservations.filter(r => {
+                {filteredReservations.filter(r => {
                   const checkIn = new Date(r.check_in);
                   const checkOut = new Date(r.check_out);
                   const today = new Date();
@@ -281,7 +534,7 @@ export default function HomePage() {
                   return checkIn <= today && checkOut > today && r.status === 'confirmed';
                 }).length === 0 && (
                   <div className="text-center py-6">
-                    <p className="text-gray-500">No hay huéspedes actuales</p>
+                    <p className="text-gray-500">No hay huéspedes actuales en el período seleccionado</p>
                   </div>
                 )}
               </div>
@@ -293,14 +546,22 @@ export default function HomePage() {
             <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
               <div className="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
               Próximas Reservas
+              <span className="ml-2 text-sm font-normal text-gray-500">
+                ({filteredReservations.filter(r => {
+                  const checkIn = new Date(r.check_in);
+                  const today = new Date();
+                  today.setHours(0, 0, 0, 0);
+                  return checkIn > today && r.status === 'confirmed';
+                }).length})
+              </span>
             </h3>
-            {reservations.length === 0 ? (
+            {filteredReservations.length === 0 ? (
               <div className="text-center py-6">
-                <p className="text-gray-500">No hay reservas próximas</p>
+                <p className="text-gray-500">No hay reservas en el período seleccionado</p>
               </div>
             ) : (
               <div className="space-y-3">
-                {reservations
+                {filteredReservations
                   .filter(r => {
                     const checkIn = new Date(r.check_in);
                     const today = new Date();
@@ -332,14 +593,14 @@ export default function HomePage() {
                       </div>
                     </div>
                   ))}
-                {reservations.filter(r => {
+                {filteredReservations.filter(r => {
                   const checkIn = new Date(r.check_in);
                   const today = new Date();
                   today.setHours(0, 0, 0, 0);
                   return checkIn > today && r.status === 'confirmed';
                 }).length === 0 && (
                   <div className="text-center py-6">
-                    <p className="text-gray-500">No hay reservas próximas</p>
+                    <p className="text-gray-500">No hay reservas próximas en el período seleccionado</p>
                   </div>
                 )}
               </div>
