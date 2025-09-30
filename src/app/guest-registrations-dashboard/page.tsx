@@ -72,7 +72,7 @@ interface GuestRegistration {
   data: ComunicacionPayload;
 }
 
-// Función helper para extraer datos del viajero de cualquier estructura - VERSIÓN ROBUSTA
+// Función helper para extraer datos del viajero de cualquier estructura - VERSIÓN ULTRA ROBUSTA
 const getTravelerData = (registration: GuestRegistration) => {
   const data = registration.data;
   
@@ -117,36 +117,56 @@ const getTravelerData = (registration: GuestRegistration) => {
   // Extraer datos de contacto (pueden estar en contacto.telefono o directamente en telefono)
   const contacto = personas.contacto || {};
   
-  // Extraer datos de dirección con múltiples rutas posibles
-  const rutasDireccion = [
+  // EXTRAER DATOS DE DIRECCIÓN - VERSIÓN ULTRA ROBUSTA
+  // Buscar tanto en objeto anidado como en campos planos
+  let direccionData = {};
+  let direccionPlana = {};
+  
+  // 1. Buscar en objeto direccion anidado
+  const rutasDireccionAnidada = [
     'direccion',
     'contacto.direccion',
     'domicilio',
     'address'
   ];
   
-  let direccionData = {};
-  for (const ruta of rutasDireccion) {
+  for (const ruta of rutasDireccionAnidada) {
     const dirData = buscarEnEstructura([ruta]);
-    if (dirData) {
+    if (dirData && typeof dirData === 'object') {
       direccionData = dirData;
-      console.log(`✅ Dirección encontrada en: ${ruta}`, dirData);
+      console.log(`✅ Dirección anidada encontrada en: ${ruta}`, dirData);
       break;
     }
   }
   
-  console.log('🔍 Debug - Datos de dirección encontrados:', JSON.stringify(direccionData, null, 2));
+  // 2. Buscar campos de dirección directamente en la persona (datos planos)
+  const camposDireccionPlana = ['direccion', 'codigoPostal', 'cp', 'pais', 'codigoMunicipio', 'ine', 'nombreMunicipio', 'municipio'];
+  camposDireccionPlana.forEach(campo => {
+    if (personas[campo] !== undefined && personas[campo] !== null && personas[campo] !== '') {
+      direccionPlana[campo] = personas[campo];
+    }
+  });
+  
+  if (Object.keys(direccionPlana).length > 0) {
+    console.log('✅ Dirección plana encontrada en persona:', direccionPlana);
+  }
+  
+  console.log('🔍 Debug - Datos de dirección anidada:', JSON.stringify(direccionData, null, 2));
+  console.log('🔍 Debug - Datos de dirección plana:', JSON.stringify(direccionPlana, null, 2));
   
   // Función para extraer campo con múltiples nombres posibles
-  const extraerCampo = (nombres: string[], obj: any) => {
+  const extraerCampo = (nombres: string[], ...objs: any[]) => {
     for (const nombre of nombres) {
-      if (obj?.[nombre] !== undefined && obj?.[nombre] !== null && obj?.[nombre] !== '') {
-        return obj[nombre];
+      for (const obj of objs) {
+        if (obj && obj[nombre] !== undefined && obj[nombre] !== null && obj[nombre] !== '') {
+          return obj[nombre];
+        }
       }
     }
     return '';
   };
   
+  // Extraer datos de dirección combinando ambas fuentes
   const result = {
     nombre: extraerCampo(['nombre', 'name'], personas) || registration.viajero?.nombre || '',
     apellido1: extraerCampo(['apellido1', 'primerApellido', 'apellido', 'surname'], personas) || registration.viajero?.apellido1 || '',
@@ -154,19 +174,29 @@ const getTravelerData = (registration: GuestRegistration) => {
     tipoDocumento: extraerCampo(['tipoDocumento', 'documentType', 'tipo_documento'], personas) || registration.viajero?.tipoDocumento || '',
     numeroDocumento: extraerCampo(['numeroDocumento', 'documentNumber', 'numero_documento'], personas) || registration.viajero?.numeroDocumento || '',
     nacionalidad: extraerCampo(['nacionalidad', 'nationality'], personas) || registration.viajero?.nacionalidad || '',
-    telefono: extraerCampo(['telefono', 'phone', 'telefono2'], personas) || contacto.telefono || '',
-    correo: extraerCampo(['correo', 'email', 'mail'], personas) || contacto.correo || '',
+    telefono: extraerCampo(['telefono', 'phone', 'telefono2'], personas, contacto) || '',
+    correo: extraerCampo(['correo', 'email', 'mail'], personas, contacto) || '',
     fechaNacimiento: extraerCampo(['fechaNacimiento', 'birthDate', 'fecha_nacimiento'], personas) || '',
     direccion: {
-      direccion: extraerCampo(['direccion', 'address', 'street', 'calle'], direccionData) || '',
-      codigoPostal: extraerCampo(['codigoPostal', 'cp', 'postalCode', 'codigo_postal'], direccionData) || '',
-      pais: extraerCampo(['pais', 'country', 'paisResidencia'], direccionData) || '',
-      nombreMunicipio: extraerCampo(['nombreMunicipio', 'municipio', 'city', 'municipality'], direccionData) || '',
-      codigoMunicipio: extraerCampo(['codigoMunicipio', 'ine', 'municipioCode', 'codigo_municipio'], direccionData) || ''
+      // Buscar en objeto anidado PRIMERO, luego en campos planos
+      direccion: extraerCampo(['direccion', 'address', 'street', 'calle'], direccionData, direccionPlana, personas) || '',
+      codigoPostal: extraerCampo(['codigoPostal', 'cp', 'postalCode', 'codigo_postal'], direccionData, direccionPlana, personas) || '',
+      pais: extraerCampo(['pais', 'country', 'paisResidencia'], direccionData, direccionPlana, personas) || '',
+      nombreMunicipio: extraerCampo(['nombreMunicipio', 'municipio', 'city', 'municipality'], direccionData, direccionPlana, personas) || '',
+      codigoMunicipio: extraerCampo(['codigoMunicipio', 'ine', 'municipioCode', 'codigo_municipio'], direccionData, direccionPlana, personas) || ''
     }
   };
   
   console.log('🔍 Debug - Resultado final con dirección:', JSON.stringify(result, null, 2));
+  
+  // Verificar si se encontraron datos de dirección
+  const tieneDireccion = result.direccion.direccion || result.direccion.codigoPostal || result.direccion.pais || result.direccion.codigoMunicipio;
+  if (!tieneDireccion) {
+    console.log('⚠️ ADVERTENCIA: No se encontraron datos de dirección en ninguna estructura');
+    console.log('🔍 Estructura completa para debug:', JSON.stringify(data, null, 2));
+  } else {
+    console.log('✅ Datos de dirección encontrados exitosamente');
+  }
   
   return result;
 };
