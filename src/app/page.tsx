@@ -112,15 +112,31 @@ export default function HomePage() {
     }
     
     const dateRange = getDateRange(filterPeriod);
-    return reservations.filter(reservation => {
+    
+    // Debug: Mostrar información del filtro
+    console.log(`🔍 Filtro: ${filterPeriod}`);
+    console.log(`📅 Rango: ${dateRange.from} - ${dateRange.to}`);
+    console.log(`📊 Total reservas: ${reservations.length}`);
+    
+    const filtered = reservations.filter(reservation => {
       const checkIn = new Date(reservation.check_in);
       const checkOut = new Date(reservation.check_out);
       const fromDate = new Date(dateRange.from);
       const toDate = new Date(dateRange.to);
       
       // Incluir reservas que se solapan con el rango de fechas
-      return (checkIn <= toDate && checkOut >= fromDate);
+      const overlaps = (checkIn <= toDate && checkOut >= fromDate);
+      
+      // Debug para Total
+      if (filterPeriod === 'total' && !overlaps) {
+        console.log(`❌ Reserva excluida: ${reservation.guest_name} (${reservation.check_in} - ${reservation.check_out})`);
+      }
+      
+      return overlaps;
     });
+    
+    console.log(`✅ Reservas filtradas: ${filtered.length}`);
+    return filtered;
   };
 
   const filteredReservations = getFilteredReservations();
@@ -409,7 +425,7 @@ export default function HomePage() {
                     onChange={(e) => setCustomDateRange(prev => ({ ...prev, to: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
-                </div>
+              </div>
                 <div className="flex items-end">
                   <button
                     onClick={() => {
@@ -654,10 +670,10 @@ export default function HomePage() {
                             month: 'long', 
                             day: 'numeric' 
                           })}
-                        </p>
-                      </div>
+                      </p>
                     </div>
-                  ))}
+                  </div>
+                ))}
                 {reservations.filter(r => {
                   const checkIn = new Date(r.check_in);
                   const today = new Date();
