@@ -107,6 +107,13 @@ export default function HomePage() {
 
   // Filtrar reservas según el período seleccionado
   const getFilteredReservations = () => {
+    // Para "Total", mostrar TODAS las reservas sin filtrar
+    if (filterPeriod === 'total') {
+      console.log(`🔍 Filtro: ${filterPeriod} - MOSTRANDO TODAS LAS RESERVAS`);
+      console.log(`📊 Total reservas: ${reservations.length}`);
+      return reservations;
+    }
+    
     if (filterPeriod === 'custom' && (!customDateRange.from || !customDateRange.to)) {
       return reservations;
     }
@@ -125,14 +132,7 @@ export default function HomePage() {
       const toDate = new Date(dateRange.to);
       
       // Incluir reservas que se solapan con el rango de fechas
-      const overlaps = (checkIn <= toDate && checkOut >= fromDate);
-      
-      // Debug para Total
-      if (filterPeriod === 'total' && !overlaps) {
-        console.log(`❌ Reserva excluida: ${reservation.guest_name} (${reservation.check_in} - ${reservation.check_out})`);
-      }
-      
-      return overlaps;
+      return (checkIn <= toDate && checkOut >= fromDate);
     });
     
     console.log(`✅ Reservas filtradas: ${filtered.length}`);
@@ -171,25 +171,23 @@ export default function HomePage() {
   const dateRange = getDateRange(filterPeriod);
   const daysInPeriod = Math.ceil((new Date(dateRange.to).getTime() - new Date(dateRange.from).getTime()) / (1000 * 60 * 60 * 24)) + 1;
   
-  // Para períodos muy largos (como Total), usar un cálculo más realista
+  // Calcular ocupación basada en el período filtrado
   let occupancyRate;
   if (filterPeriod === 'total') {
-    // Para Total, calcular ocupación promedio anual
+    // Para Total, calcular ocupación promedio anual (más realista)
     const yearsInPeriod = Math.max(1, Math.ceil(daysInPeriod / 365));
-    const avgOccupiedDaysPerYear = filteredReservations.filter(r => r.status === 'confirmed').reduce((sum, r) => {
+    const totalOccupiedDays = filteredReservations.filter(r => r.status === 'confirmed').reduce((sum, r) => {
       const checkIn = new Date(r.check_in);
       const checkOut = new Date(r.check_out);
-      const fromDate = new Date(dateRange.from);
-      const toDate = new Date(dateRange.to);
-      
-      const start = checkIn > fromDate ? checkIn : fromDate;
-      const end = checkOut < toDate ? checkOut : toDate;
-      const days = Math.max(0, Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)));
+      const days = Math.max(0, Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24)));
       return sum + days;
-    }, 0) / yearsInPeriod;
+    }, 0);
     
+    const avgOccupiedDaysPerYear = totalOccupiedDays / yearsInPeriod;
     const totalRoomDaysPerYear = totalRooms * 365;
     occupancyRate = totalRoomDaysPerYear > 0 ? Math.round((avgOccupiedDaysPerYear / totalRoomDaysPerYear) * 100) : 0;
+    
+    console.log(`📊 Total - Años: ${yearsInPeriod}, Días ocupados total: ${totalOccupiedDays}, Promedio anual: ${avgOccupiedDaysPerYear}, Ocupación: ${occupancyRate}%`);
   } else {
     // Para otros períodos, usar el cálculo normal
     const totalRoomDays = totalRooms * daysInPeriod;
@@ -206,6 +204,7 @@ export default function HomePage() {
     }, 0);
     
     occupancyRate = totalRoomDays > 0 ? Math.round((occupiedRoomDays / totalRoomDays) * 100) : 0;
+    console.log(`📊 ${filterPeriod} - Días período: ${daysInPeriod}, Días ocupados: ${occupiedRoomDays}, Ocupación: ${occupancyRate}%`);
   }
 
   // Calcular datos financieros con validación segura
