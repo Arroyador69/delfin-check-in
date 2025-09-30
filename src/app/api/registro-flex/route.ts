@@ -209,6 +209,22 @@ export async function POST(req: NextRequest) {
     }
 
     console.log('📋 Datos recibidos:', JSON.stringify(json, null, 2));
+    
+    // 🔬 DEBUG: Análisis detallado de los datos
+    console.log('🔬 DEBUG INICIAL - Estructura completa:', {
+      tieneContrato: !!json.contrato,
+      tieneTitular: !!json.titular,
+      tieneViajeros: !!json.viajeros,
+      numeroViajeros: json.viajeros?.length || 0,
+      viajeros: json.viajeros?.map((v: any, i: number) => ({
+        index: i,
+        nombre: v.nombre,
+        paisResidencia: v.paisResidencia,
+        ine: v.ine,
+        nombreMunicipio: v.nombreMunicipio,
+        todosLosCampos: Object.keys(v)
+      }))
+    });
 
     const normalized = normalize(json);
     if (!normalized) {
@@ -249,33 +265,44 @@ export async function POST(req: NextRequest) {
     if (!viajeros.length) {
       issues.push({ path: 'viajeros', message: 'Se requiere al menos un viajero' });
     } else {
-      // Validar cada viajero
-      viajeros.forEach((v: any, index: number) => {
-        const prefix = `viajeros[${index}]`;
-        if (!v.nombre) issues.push({ path: `${prefix}.nombre`, message: 'Requerido' });
-        if (!v.primerApellido) issues.push({ path: `${prefix}.primerApellido`, message: 'Requerido' });
-        if (!v.fechaNacimiento) issues.push({ path: `${prefix}.fechaNacimiento`, message: 'Requerido (YYYY-MM-DD)' });
-        if (!v.tipoDocumento) issues.push({ path: `${prefix}.tipoDocumento`, message: 'Requerido' });
-        if (!v.numeroDocumento) issues.push({ path: `${prefix}.numeroDocumento`, message: 'Requerido' });
-        if (!v.direccion) issues.push({ path: `${prefix}.direccion`, message: 'Requerido' });
-        if (!v.cp || !/^\d{5}$/.test(v.cp)) issues.push({ path: `${prefix}.cp`, message: 'Debe ser 5 dígitos' });
-        
-        // Validación condicional de INE: solo para españoles
-        const esEspana = v.paisResidencia === 'ES';
-        if (esEspana) {
-          if (!v.ine || !/^\d{5}$/.test(v.ine)) {
-            issues.push({ path: `${prefix}.ine`, message: 'Para españoles: debe ser 5 dígitos' });
-          }
-        } else {
-          // Para extranjeros, INE debe estar vacío y nombreMunicipio es requerido
-          if (v.ine && v.ine.trim() !== '') {
-            issues.push({ path: `${prefix}.ine`, message: 'Para extranjeros: debe estar vacío' });
-          }
-          if (!v.nombreMunicipio || v.nombreMunicipio.trim() === '') {
-            issues.push({ path: `${prefix}.nombreMunicipio`, message: 'Para extranjeros: requerido' });
-          }
+    // Validar cada viajero
+    viajeros.forEach((v: any, index: number) => {
+      const prefix = `viajeros[${index}]`;
+      
+      // 🔬 DEBUG: Log datos del viajero
+      console.log(`🔬 DEBUG VALIDACIÓN - Viajero ${index + 1}:`, JSON.stringify(v, null, 2));
+      console.log(`🔬 DEBUG VALIDACIÓN - Campo 'ine':`, `"${v.ine}"`, `(tipo: ${typeof v.ine})`);
+      console.log(`🔬 DEBUG VALIDACIÓN - Campo 'paisResidencia':`, `"${v.paisResidencia}"`);
+      console.log(`🔬 DEBUG VALIDACIÓN - Campo 'nombreMunicipio':`, `"${v.nombreMunicipio}"`);
+      
+      if (!v.nombre) issues.push({ path: `${prefix}.nombre`, message: 'Requerido' });
+      if (!v.primerApellido) issues.push({ path: `${prefix}.primerApellido`, message: 'Requerido' });
+      if (!v.fechaNacimiento) issues.push({ path: `${prefix}.fechaNacimiento`, message: 'Requerido (YYYY-MM-DD)' });
+      if (!v.tipoDocumento) issues.push({ path: `${prefix}.tipoDocumento`, message: 'Requerido' });
+      if (!v.numeroDocumento) issues.push({ path: `${prefix}.numeroDocumento`, message: 'Requerido' });
+      if (!v.direccion) issues.push({ path: `${prefix}.direccion`, message: 'Requerido' });
+      if (!v.cp || !/^\d{5}$/.test(v.cp)) issues.push({ path: `${prefix}.cp`, message: 'Debe ser 5 dígitos' });
+      
+      // Validación condicional de INE: solo para españoles
+      const esEspana = v.paisResidencia === 'ES';
+      console.log(`🔬 DEBUG VALIDACIÓN - Es España:`, esEspana);
+      
+      if (esEspana) {
+        if (!v.ine || !/^\d{5}$/.test(v.ine)) {
+          issues.push({ path: `${prefix}.ine`, message: 'Para españoles: debe ser 5 dígitos' });
         }
-      });
+      } else {
+        // Para extranjeros, INE debe estar vacío y nombreMunicipio es requerido
+        console.log(`🔬 DEBUG VALIDACIÓN - Verificando INE para extranjero:`, `"${v.ine}"`, `(vacío: ${!v.ine || v.ine.trim() === ''})`);
+        if (v.ine && v.ine.trim() !== '') {
+          console.log(`❌ ERROR: INE no está vacío para extranjero:`, `"${v.ine}"`);
+          issues.push({ path: `${prefix}.ine`, message: 'Para extranjeros: debe estar vacío' });
+        }
+        if (!v.nombreMunicipio || v.nombreMunicipio.trim() === '') {
+          issues.push({ path: `${prefix}.nombreMunicipio`, message: 'Para extranjeros: requerido' });
+        }
+      }
+    });
     }
 
     if (issues.length) {
