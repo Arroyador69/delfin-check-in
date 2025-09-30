@@ -109,7 +109,7 @@ const getTravelerData = (registration: GuestRegistration) => {
       direccion: direccionData.direccion || '',
       codigoPostal: direccionData.codigoPostal || '',
       pais: direccionData.pais || '',
-      nombreMunicipio: direccionData.nombreMunicipio || '',
+      nombreMunicipio: direccionData.nombreMunicipio || '', // Este campo puede no existir en datos antiguos
       codigoMunicipio: direccionData.codigoMunicipio || ''
     }
   };
