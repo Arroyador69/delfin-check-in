@@ -91,6 +91,10 @@ const getTravelerData = (registration: GuestRegistration) => {
   // Extraer datos de contacto (pueden estar en contacto.telefono o directamente en telefono)
   const contacto = personas.contacto || {};
   
+  // Extraer datos de dirección correctamente
+  const direccionData = personas.direccion || {};
+  console.log('🔍 Debug - Datos de dirección encontrados:', JSON.stringify(direccionData, null, 2));
+  
   const result = {
     nombre: personas.nombre || registration.viajero?.nombre || '',
     apellido1: personas.apellido1 || registration.viajero?.apellido1 || '',
@@ -101,10 +105,16 @@ const getTravelerData = (registration: GuestRegistration) => {
     telefono: personas.telefono || contacto.telefono || '',
     correo: personas.correo || contacto.correo || '',
     fechaNacimiento: personas.fechaNacimiento || '',
-    direccion: personas.direccion || {}
+    direccion: {
+      direccion: direccionData.direccion || '',
+      codigoPostal: direccionData.codigoPostal || '',
+      pais: direccionData.pais || '',
+      nombreMunicipio: direccionData.nombreMunicipio || '',
+      codigoMunicipio: direccionData.codigoMunicipio || ''
+    }
   };
   
-  console.log('🔍 Debug - Resultado final:', JSON.stringify(result, null, 2));
+  console.log('🔍 Debug - Resultado final con dirección:', JSON.stringify(result, null, 2));
   
   return result;
 };
