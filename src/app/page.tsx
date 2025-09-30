@@ -5,13 +5,13 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import AdminLayout from '@/components/AdminLayout';
 
-type FilterPeriod = 'today' | 'thisWeek' | 'last7Days' | 'thisMonth' | 'last30Days' | 'custom';
+type FilterPeriod = 'total' | 'annual' | 'today' | 'thisWeek' | 'last7Days' | 'thisMonth' | 'last30Days' | 'custom';
 
 export default function HomePage() {
   const [rooms, setRooms] = useState<any[]>([]);
   const [reservations, setReservations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filterPeriod, setFilterPeriod] = useState<FilterPeriod>('thisMonth');
+  const [filterPeriod, setFilterPeriod] = useState<FilterPeriod>('total');
   const [customDateRange, setCustomDateRange] = useState<{from: string, to: string}>({
     from: '',
     to: ''
@@ -49,6 +49,17 @@ export default function HomePage() {
     const todayStr = today.toISOString().split('T')[0];
     
     switch (period) {
+      case 'total':
+        return { from: '2020-01-01', to: todayStr }; // Desde el inicio hasta hoy
+      
+      case 'annual':
+        const startOfYear = new Date(today.getFullYear(), 0, 1);
+        const endOfYear = new Date(today.getFullYear(), 11, 31);
+        return { 
+          from: startOfYear.toISOString().split('T')[0], 
+          to: endOfYear.toISOString().split('T')[0] 
+        };
+      
       case 'today':
         return { from: todayStr, to: todayStr };
       
@@ -90,7 +101,7 @@ export default function HomePage() {
         return customDateRange;
       
       default:
-        return { from: todayStr, to: todayStr };
+        return { from: '2020-01-01', to: todayStr };
     }
   };
 
@@ -185,6 +196,10 @@ export default function HomePage() {
     };
     
     switch (filterPeriod) {
+      case 'total':
+        return 'Total (desde 2020)';
+      case 'annual':
+        return 'Año actual';
       case 'today':
         return 'Hoy';
       case 'thisWeek':
@@ -201,7 +216,7 @@ export default function HomePage() {
         }
         return `${formatDate(dateRange.from)} - ${formatDate(dateRange.to)}`;
       default:
-        return 'Este mes';
+        return 'Total (desde 2020)';
     }
   };
 
@@ -257,6 +272,28 @@ export default function HomePage() {
             
             <div className="flex flex-wrap gap-2">
               {/* Botones de períodos predefinidos */}
+              <button
+                onClick={() => setFilterPeriod('total')}
+                className={`px-3 py-2 text-sm rounded-lg border transition-colors ${
+                  filterPeriod === 'total' 
+                    ? 'bg-blue-600 text-white border-blue-600' 
+                    : 'bg-white text-black border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                📊 Total
+              </button>
+              
+              <button
+                onClick={() => setFilterPeriod('annual')}
+                className={`px-3 py-2 text-sm rounded-lg border transition-colors ${
+                  filterPeriod === 'annual' 
+                    ? 'bg-blue-600 text-white border-blue-600' 
+                    : 'bg-white text-black border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                📅 Anual
+              </button>
+              
               <button
                 onClick={() => setFilterPeriod('today')}
                 className={`px-3 py-2 text-sm rounded-lg border transition-colors ${
@@ -485,7 +522,7 @@ export default function HomePage() {
           </Link>
         </div>
 
-        {/* Reservas Actuales y Próximas */}
+        {/* Reservas Actuales y Próximas - SIEMPRE muestran datos de hoy */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
           {/* Reservas Actuales */}
           <div className="card">
@@ -493,7 +530,7 @@ export default function HomePage() {
               <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
               Reservas Actuales
               <span className="ml-2 text-sm font-normal text-gray-500">
-                ({filteredReservations.filter(r => {
+                ({reservations.filter(r => {
                   const checkIn = new Date(r.check_in);
                   const checkOut = new Date(r.check_out);
                   const today = new Date();
@@ -502,13 +539,13 @@ export default function HomePage() {
                 }).length})
               </span>
             </h3>
-            {filteredReservations.length === 0 ? (
+            {reservations.length === 0 ? (
               <div className="text-center py-6">
-                <p className="text-gray-500">No hay reservas en el período seleccionado</p>
+                <p className="text-gray-500">No hay reservas</p>
               </div>
             ) : (
               <div className="space-y-3">
-                {filteredReservations
+                {reservations
                   .filter(r => {
                     const checkIn = new Date(r.check_in);
                     const checkOut = new Date(r.check_out);
@@ -532,7 +569,7 @@ export default function HomePage() {
                       </div>
                     </div>
                   ))}
-                {filteredReservations.filter(r => {
+                {reservations.filter(r => {
                   const checkIn = new Date(r.check_in);
                   const checkOut = new Date(r.check_out);
                   const today = new Date();
@@ -540,7 +577,7 @@ export default function HomePage() {
                   return checkIn <= today && checkOut > today && r.status === 'confirmed';
                 }).length === 0 && (
                   <div className="text-center py-6">
-                    <p className="text-gray-500">No hay huéspedes actuales en el período seleccionado</p>
+                    <p className="text-gray-500">No hay huéspedes actuales</p>
                   </div>
                 )}
               </div>
@@ -553,7 +590,7 @@ export default function HomePage() {
               <div className="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
               Próximas Reservas
               <span className="ml-2 text-sm font-normal text-gray-500">
-                ({filteredReservations.filter(r => {
+                ({reservations.filter(r => {
                   const checkIn = new Date(r.check_in);
                   const today = new Date();
                   today.setHours(0, 0, 0, 0);
@@ -561,13 +598,13 @@ export default function HomePage() {
                 }).length})
               </span>
             </h3>
-            {filteredReservations.length === 0 ? (
+            {reservations.length === 0 ? (
               <div className="text-center py-6">
-                <p className="text-gray-500">No hay reservas en el período seleccionado</p>
+                <p className="text-gray-500">No hay reservas</p>
               </div>
             ) : (
               <div className="space-y-3">
-                {filteredReservations
+                {reservations
                   .filter(r => {
                     const checkIn = new Date(r.check_in);
                     const today = new Date();
@@ -599,14 +636,14 @@ export default function HomePage() {
                       </div>
                     </div>
                   ))}
-                {filteredReservations.filter(r => {
+                {reservations.filter(r => {
                   const checkIn = new Date(r.check_in);
                   const today = new Date();
                   today.setHours(0, 0, 0, 0);
                   return checkIn > today && r.status === 'confirmed';
                 }).length === 0 && (
                   <div className="text-center py-6">
-                    <p className="text-gray-500">No hay reservas próximas en el período seleccionado</p>
+                    <p className="text-gray-500">No hay reservas próximas</p>
                   </div>
                 )}
               </div>
