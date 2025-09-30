@@ -259,7 +259,22 @@ export async function POST(req: NextRequest) {
         if (!v.numeroDocumento) issues.push({ path: `${prefix}.numeroDocumento`, message: 'Requerido' });
         if (!v.direccion) issues.push({ path: `${prefix}.direccion`, message: 'Requerido' });
         if (!v.cp || !/^\d{5}$/.test(v.cp)) issues.push({ path: `${prefix}.cp`, message: 'Debe ser 5 dígitos' });
-        if (!v.ine || !/^\d{5}$/.test(v.ine)) issues.push({ path: `${prefix}.ine`, message: 'Debe ser 5 dígitos' });
+        
+        // Validación condicional de INE: solo para españoles
+        const esEspana = v.paisResidencia === 'ES';
+        if (esEspana) {
+          if (!v.ine || !/^\d{5}$/.test(v.ine)) {
+            issues.push({ path: `${prefix}.ine`, message: 'Para españoles: debe ser 5 dígitos' });
+          }
+        } else {
+          // Para extranjeros, INE debe estar vacío y nombreMunicipio es requerido
+          if (v.ine && v.ine.trim() !== '') {
+            issues.push({ path: `${prefix}.ine`, message: 'Para extranjeros: debe estar vacío' });
+          }
+          if (!v.nombreMunicipio || v.nombreMunicipio.trim() === '') {
+            issues.push({ path: `${prefix}.nombreMunicipio`, message: 'Para extranjeros: requerido' });
+          }
+        }
       });
     }
 
