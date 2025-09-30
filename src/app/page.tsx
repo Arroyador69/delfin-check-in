@@ -154,21 +154,43 @@ export default function HomePage() {
   // Calcular ocupación basada en el período filtrado
   const dateRange = getDateRange(filterPeriod);
   const daysInPeriod = Math.ceil((new Date(dateRange.to).getTime() - new Date(dateRange.from).getTime()) / (1000 * 60 * 60 * 24)) + 1;
-  const totalRoomDays = totalRooms * daysInPeriod;
-  const occupiedRoomDays = filteredReservations.filter(r => r.status === 'confirmed').reduce((sum, r) => {
-    const checkIn = new Date(r.check_in);
-    const checkOut = new Date(r.check_out);
-    const fromDate = new Date(dateRange.from);
-    const toDate = new Date(dateRange.to);
-    
-    // Calcular días ocupados en el período
-    const start = checkIn > fromDate ? checkIn : fromDate;
-    const end = checkOut < toDate ? checkOut : toDate;
-    const days = Math.max(0, Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)));
-    return sum + days;
-  }, 0);
   
-  const occupancyRate = totalRoomDays > 0 ? Math.round((occupiedRoomDays / totalRoomDays) * 100) : 0;
+  // Para períodos muy largos (como Total), usar un cálculo más realista
+  let occupancyRate;
+  if (filterPeriod === 'total') {
+    // Para Total, calcular ocupación promedio anual
+    const yearsInPeriod = Math.max(1, Math.ceil(daysInPeriod / 365));
+    const avgOccupiedDaysPerYear = filteredReservations.filter(r => r.status === 'confirmed').reduce((sum, r) => {
+      const checkIn = new Date(r.check_in);
+      const checkOut = new Date(r.check_out);
+      const fromDate = new Date(dateRange.from);
+      const toDate = new Date(dateRange.to);
+      
+      const start = checkIn > fromDate ? checkIn : fromDate;
+      const end = checkOut < toDate ? checkOut : toDate;
+      const days = Math.max(0, Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)));
+      return sum + days;
+    }, 0) / yearsInPeriod;
+    
+    const totalRoomDaysPerYear = totalRooms * 365;
+    occupancyRate = totalRoomDaysPerYear > 0 ? Math.round((avgOccupiedDaysPerYear / totalRoomDaysPerYear) * 100) : 0;
+  } else {
+    // Para otros períodos, usar el cálculo normal
+    const totalRoomDays = totalRooms * daysInPeriod;
+    const occupiedRoomDays = filteredReservations.filter(r => r.status === 'confirmed').reduce((sum, r) => {
+      const checkIn = new Date(r.check_in);
+      const checkOut = new Date(r.check_out);
+      const fromDate = new Date(dateRange.from);
+      const toDate = new Date(dateRange.to);
+      
+      const start = checkIn > fromDate ? checkIn : fromDate;
+      const end = checkOut < toDate ? checkOut : toDate;
+      const days = Math.max(0, Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)));
+      return sum + days;
+    }, 0);
+    
+    occupancyRate = totalRoomDays > 0 ? Math.round((occupiedRoomDays / totalRoomDays) * 100) : 0;
+  }
 
   // Calcular datos financieros con validación segura
   const safeNumber = (value: any) => {
@@ -398,10 +420,10 @@ export default function HomePage() {
                   >
                     🔄 Reset
                   </button>
-                </div>
               </div>
             </div>
-          )}
+          </div>
+        )}
         </div>
 
         {/* Stats Cards */}
@@ -469,28 +491,28 @@ export default function HomePage() {
         {/* Acciones rápidas (MVP) */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Link href="/reservations" className="card group">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
-                  Reservas
-                </h3>
-                <p className="text-sm text-gray-600 mt-1">
-                  Gestionar reservas y calendario
-                </p>
-              </div>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+                    Reservas
+                  </h3>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Gestionar reservas y calendario
+                  </p>
+                </div>
               <div className="text-2xl">📅</div>
             </div>
           </Link>
           <Link href="/guest-registrations-dashboard" className="card group">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
-                  Registros de formularios
-                </h3>
-                <p className="text-sm text-gray-600 mt-1">
-                  Ver registros y generar XML
-                </p>
-              </div>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+                    Registros de formularios
+                  </h3>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Ver registros y generar XML
+                  </p>
+                </div>
               <div className="text-2xl">🇪🇸</div>
             </div>
           </Link>
@@ -505,7 +527,7 @@ export default function HomePage() {
                 </p>
               </div>
               <div className="text-2xl">🧮</div>
-            </div>
+                </div>
           </Link>
           <Link href="/aeat" className="card group">
             <div className="flex items-center justify-between">
@@ -616,7 +638,7 @@ export default function HomePage() {
                   .map((reservation) => (
                     <div key={reservation.id} className="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg">
                       <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                      <div className="flex-1">
+                    <div className="flex-1">
                         <p className="text-sm font-medium text-gray-900">
                           {reservation.guest_name}
                         </p>
