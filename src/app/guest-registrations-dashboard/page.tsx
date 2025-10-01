@@ -164,6 +164,9 @@ export default function GuestRegistrationsDashboard() {
     ids: string[];
     names: string[];
   } | null>(null);
+  const [filterCheckIn, setFilterCheckIn] = useState("");
+  const [filterCheckOut, setFilterCheckOut] = useState("");
+  const [filterRoom, setFilterRoom] = useState("");
 
   // Abrir bitácora en nueva pestaña (usa hash persistido o calculado al vuelo)
   const openAuditFor = async (reg: any) => {
@@ -438,7 +441,13 @@ export default function GuestRegistrationsDashboard() {
                          reg.viajero.apellido1.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesEstablishment = !filterEstablishment || 
                                 reg.contrato.codigoEstablecimiento === filterEstablishment;
-    return matchesSearch && matchesEstablishment;
+    const matchesCheckIn = !filterCheckIn || 
+                          reg.fecha_entrada.split('T')[0] === filterCheckIn;
+    const matchesCheckOut = !filterCheckOut || 
+                           reg.fecha_salida.split('T')[0] === filterCheckOut;
+    const matchesRoom = !filterRoom || 
+                       reg.contrato.numHabitaciones.toString() === filterRoom;
+    return matchesSearch && matchesEstablishment && matchesCheckIn && matchesCheckOut && matchesRoom;
   });
 
   const uniqueEstablishments = [...new Set(registrations.map(r => r.contrato.codigoEstablecimiento))];
@@ -481,7 +490,7 @@ export default function GuestRegistrationsDashboard() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Filtros y búsqueda */}
         <div className="bg-white rounded-lg shadow p-6 mb-8">
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
             <div className="flex items-center space-x-2">
               <input
                 type="checkbox"
@@ -527,6 +536,36 @@ export default function GuestRegistrationsDashboard() {
                   className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Fecha Check-in</label>
+              <input
+                type="date"
+                value={filterCheckIn}
+                onChange={(e) => setFilterCheckIn(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Fecha Check-out</label>
+              <input
+                type="date"
+                value={filterCheckOut}
+                onChange={(e) => setFilterCheckOut(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Habitación</label>
+              <input
+                type="number"
+                value={filterRoom}
+                onChange={(e) => setFilterRoom(e.target.value)}
+                placeholder="Nº de habitación"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
             </div>
             <div className="flex items-end">
               <button
@@ -690,12 +729,15 @@ export default function GuestRegistrationsDashboard() {
                           </h4>
                           <p className="text-sm text-gray-600">
                             Establecimiento: {registration.contrato.codigoEstablecimiento} | 
-                            Fecha: {new Date(registration.created_at).toLocaleDateString('es-ES')}
+                            Habitación: {registration.contrato.numHabitaciones} | 
+                            Fecha registro: {new Date(registration.created_at).toLocaleDateString('es-ES')}
                           </p>
                           <p className="text-sm text-gray-500">
-                            Viajero: {registration.viajero.nombre} {registration.viajero.apellido1} | 
-                            Entrada: {new Date(registration.fecha_entrada).toLocaleDateString('es-ES')} | 
-                            Salida: {new Date(registration.fecha_salida).toLocaleDateString('es-ES')}
+                            Viajero: {registration.viajero.nombre} {registration.viajero.apellido1}
+                          </p>
+                          <p className="text-sm text-gray-500">
+                            Check-in: {new Date(registration.fecha_entrada).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })} | 
+                            Check-out: {new Date(registration.fecha_salida).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                           </p>
                         </div>
                       </div>
@@ -707,24 +749,11 @@ export default function GuestRegistrationsDashboard() {
                           <Eye className="h-4 w-4 inline mr-1" />
                           Ver
                         </button>
-                        <button
-                          onClick={() => openAuditFor(registration)}
-                          className="px-3 py-2 bg-white border text-gray-700 rounded-md hover:bg-gray-50"
-                        >
-                          Ver bitácora
-                        </button>
                         <ExportButton
                           solicitud={prepareSolicitudData(registration)}
                           onSuccess={() => alert("XML generado y descargado correctamente")}
                           onError={(error) => alert(`Error al generar XML:\n${error}`)}
                         />
-                        <a
-                          href={`/api/export/aeat?from=${new Date().toISOString().slice(0,10)}&to=${new Date().toISOString().slice(0,10)}&vat=21&format=csv`}
-                          target="_blank"
-                          className="px-3 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700"
-                        >
-                          Exportar AEAT CSV
-                        </a>
                         <button
                           onClick={() => deleteRegistration(registration.id)}
                           disabled={deleting}
