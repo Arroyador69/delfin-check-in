@@ -7,6 +7,7 @@ type Row = {
   id: string;
   external_id: string;
   room_id: string;
+  guest_name: string;
   check_in: string;
   check_out: string;
   channel: string;
@@ -105,7 +106,7 @@ export async function GET(request: NextRequest) {
     if (channels.length) { where.push(`channel = ANY($${params.length + 1}::text[])`); params.push(channels); }
 
     const sqlText = `
-      SELECT id, external_id, room_id, check_in, check_out, channel,
+      SELECT id, external_id, room_id, guest_name, check_in, check_out, channel,
              COALESCE(total_price,0)::float AS total_price,
              COALESCE(guest_paid,0)::float AS guest_paid,
              COALESCE(platform_commission,0)::float AS platform_commission,
@@ -123,16 +124,15 @@ export async function GET(request: NextRequest) {
       const total = base + cuota;
       return {
         fecha: new Date(r.check_out).toISOString().slice(0, 10),
-        referencia: r.external_id || r.id,
-        propiedad: r.room_id,
-        reserva: r.id,
-        base: base.toFixed(2),
-        tipo_iva: vat,
-        cuota_iva: cuota.toFixed(2),
-        total: total.toFixed(2),
+        nombre_cliente: r.guest_name || 'N/A',
+        habitacion: r.room_id,
+        referencia_reserva: r.external_id || r.id,
         metodo_pago: r.channel,
-        comision_ota: Number(r.platform_commission).toFixed(2),
-        moneda: r.currency || 'EUR',
+        total_euro: total.toFixed(2),
+        comision_ota_euro: Number(r.platform_commission).toFixed(2),
+        tipo_iva_porcentaje: vat,
+        cuota_iva_euro: cuota.toFixed(2),
+        base_euro: base.toFixed(2),
       };
     });
 
@@ -149,20 +149,20 @@ export async function GET(request: NextRequest) {
       } catch {}
 
       const totals = exportRows.reduce((acc, r) => {
-        acc.base += Number(r.base);
-        acc.cuota_iva += Number(r.cuota_iva);
-        acc.total += Number(r.total);
-        acc.comision_ota += Number(r.comision_ota);
+        acc.base += Number(r.base_euro);
+        acc.cuota_iva += Number(r.cuota_iva_euro);
+        acc.total += Number(r.total_euro);
+        acc.comision_ota += Number(r.comision_ota_euro);
         return acc;
       }, { base: 0, cuota_iva: 0, total: 0, comision_ota: 0 });
 
       const totalsByChannel = exportRows.reduce((acc: any, r) => {
         const ch = String(r.metodo_pago || '').toLowerCase();
         if (!acc[ch]) acc[ch] = { base: 0, cuota_iva: 0, total: 0, comision_ota: 0, count: 0 };
-        acc[ch].base += Number(r.base);
-        acc[ch].cuota_iva += Number(r.cuota_iva);
-        acc[ch].total += Number(r.total);
-        acc[ch].comision_ota += Number(r.comision_ota);
+        acc[ch].base += Number(r.base_euro);
+        acc[ch].cuota_iva += Number(r.cuota_iva_euro);
+        acc[ch].total += Number(r.total_euro);
+        acc[ch].comision_ota += Number(r.comision_ota_euro);
         acc[ch].count += 1;
         return acc;
       }, {} as Record<string, any>);
