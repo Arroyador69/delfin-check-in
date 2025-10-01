@@ -47,9 +47,24 @@ export function middleware(req: NextRequest) {
       url.pathname.startsWith('/api/rooms') ||
       url.pathname.startsWith('/api/setup-rooms') ||
       url.pathname.startsWith('/api/ical') ||
+      url.pathname.startsWith('/api/guest-registrations') ||
+      url.pathname.startsWith('/api/export') ||
+      url.pathname.startsWith('/api/audit') ||
+      url.pathname.startsWith('/api/sync') ||
+      url.pathname.startsWith('/api/messages') ||
+      url.pathname.startsWith('/api/pricing') ||
       url.pathname.startsWith('/public') ||
       url.pathname === '/reservations' ||
       url.pathname.startsWith('/reservations/') ||
+      url.pathname === '/guest-registrations-dashboard' ||
+      url.pathname === '/cost-calculator' ||
+      url.pathname === '/aeat' ||
+      url.pathname === '/calendar-sync' ||
+      url.pathname === '/offline-queue' ||
+      url.pathname === '/audit' ||
+      url.pathname === '/settings' ||
+      url.pathname === '/pricing' ||
+      url.pathname === '/messages' ||
       url.pathname === '/admin-login') {
     return NextResponse.next()
   }
