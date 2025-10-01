@@ -22,6 +22,14 @@ export default function SettingsPage() {
     personalId: '',
     accommodationId: ''
   });
+
+  // Estados para configuración de precios por habitación
+  const [roomsConfig, setRoomsConfig] = useState([
+    { id: 1, name: 'Habitación 1', price: 50 },
+    { id: 2, name: 'Habitación 2', price: 60 },
+    { id: 3, name: 'Apartamento 1', price: 80 },
+    { id: 4, name: 'Apartamento 2', price: 90 }
+  ]);
   const [passwordChangeLoading, setPasswordChangeLoading] = useState(false);
   const [recoveryLoading, setRecoveryLoading] = useState(false);
   const [recoveryCode, setRecoveryCode] = useState('');
@@ -31,10 +39,6 @@ export default function SettingsPage() {
   const tabs = [
     { id: 'general', name: 'General', icon: Settings },
     { id: 'account', name: 'Cuenta', icon: User },
-    { id: 'database', name: 'Base de Datos', icon: Database },
-    { id: 'telegram', name: 'Telegram Bot', icon: Bot },
-    { id: 'notifications', name: 'Notificaciones', icon: Bell },
-    { id: 'security', name: 'Seguridad', icon: Shield },
     { id: 'integrations', name: 'Integraciones', icon: Globe },
   ];
 
@@ -338,6 +342,47 @@ export default function SettingsPage() {
                   </form>
                 </div>
 
+                {/* Configuración de precios por habitación */}
+                <div className="bg-white border border-gray-200 rounded-lg p-6">
+                  <h4 className="text-md font-medium text-gray-900 mb-4">💰 Precios por Habitación/Apartamento</h4>
+                  <p className="text-sm text-gray-600 mb-4">
+                    Configura el precio que paga el cliente por cada habitación o apartamento, independientemente del número de unidades.
+                  </p>
+                  <div className="space-y-4">
+                    {roomsConfig.map((room) => (
+                      <div key={room.id} className="flex items-center space-x-4">
+                        <div className="flex-1">
+                          <label className="block text-sm font-medium text-gray-700">
+                            {room.name}
+                          </label>
+                          <input
+                            type="number"
+                            value={room.price}
+                            onChange={(e) => setRoomsConfig(prev => 
+                              prev.map(r => r.id === room.id ? { ...r, price: Number(e.target.value) } : r)
+                            )}
+                            className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                            min="0"
+                            step="0.01"
+                          />
+                        </div>
+                        <div className="text-sm text-gray-500 mt-6">
+                          €/noche
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <button
+                    onClick={() => {
+                      const newId = Math.max(...roomsConfig.map(r => r.id)) + 1;
+                      setRoomsConfig([...roomsConfig, { id: newId, name: `Habitación ${newId}`, price: 50 }]);
+                    }}
+                    className="mt-4 bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700"
+                  >
+                    + Añadir Habitación
+                  </button>
+                </div>
+
                 <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                   <div>
                     <label className="block text-sm font-medium text-gray-700">
@@ -567,210 +612,149 @@ export default function SettingsPage() {
               </div>
             )}
 
-            {activeTab === 'database' && (
+            {activeTab === 'integrations' && (
               <div className="space-y-6">
-                <h3 className="text-lg font-medium text-gray-900">Configuración de Base de Datos</h3>
-                <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-medium text-gray-900">Integraciones iCal</h3>
+                  <button
+                    onClick={() => {
+                      // Función para sincronizar calendarios
+                      alert('Sincronizando calendarios...');
+                    }}
+                    className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 flex items-center space-x-2"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                    <span>Sincronizar</span>
+                  </button>
+                </div>
+                
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                   <div className="flex">
                     <div className="flex-shrink-0">
-                      <Database className="h-5 w-5 text-blue-400" />
+                      <Globe className="h-5 w-5 text-blue-400" />
                     </div>
                     <div className="ml-3">
                       <h3 className="text-sm font-medium text-blue-800">
-                        Base de Datos PostgreSQL
+                        Gestión de Calendarios iCal
                       </h3>
                       <div className="mt-2 text-sm text-blue-700">
-                        <p>Estado: <span className="font-medium text-green-600">Conectado</span></p>
-                        <p>Proveedor: Supabase</p>
-                        <p>Región: Europa Occidental</p>
+                        <p>Configura calendarios iCal para cada habitación/apartamento</p>
+                        <p>Cada habitación puede tener múltiples calendarios de diferentes OTAs</p>
                       </div>
                     </div>
                   </div>
                 </div>
-                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      URL de Supabase
-                    </label>
-                    <input
-                      type="text"
-                      className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="https://your-project.supabase.co"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Clave Anónima
-                    </label>
-                    <input
-                      type="password"
-                      className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="tu-clave-anonima"
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
 
-            {activeTab === 'telegram' && (
-              <div className="space-y-6">
-                <h3 className="text-lg font-medium text-gray-900">Configuración de Telegram Bot</h3>
-                <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4">
+                <div className="space-y-6">
+                  {roomsConfig.map((room) => (
+                    <div key={room.id} className="border border-gray-200 rounded-lg p-6">
+                      <div className="flex items-center justify-between mb-4">
+                        <h4 className="text-lg font-medium text-gray-900">{room.name}</h4>
+                        <div className="text-sm text-gray-500">€{room.price}/noche</div>
+                      </div>
+                      
+                      {/* URL iCal generada automáticamente */}
+                      <div className="mb-4">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          URL iCal de tu Dashboard
+                        </label>
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="text"
+                            value={`https://admin.delfincheckin.com/api/ical/rooms/${room.id}`}
+                            readOnly
+                            className="flex-1 px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-sm font-mono"
+                          />
+                          <button
+                            onClick={() => {
+                              navigator.clipboard.writeText(`https://admin.delfincheckin.com/api/ical/rooms/${room.id}`);
+                              alert('URL copiada al portapapeles');
+                            }}
+                            className="px-3 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
+                          >
+                            Copiar
+                          </button>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Esta URL se actualiza automáticamente con la información del dashboard
+                        </p>
+                      </div>
+
+                      {/* Calendarios externos de OTAs */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Calendarios Externos de OTAs
+                        </label>
+                        <div className="space-y-3">
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                            <div>
+                              <label className="block text-xs font-medium text-gray-600 mb-1">
+                                Nombre OTA
+                              </label>
+                              <input
+                                type="text"
+                                placeholder="Airbnb, Booking, etc."
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-gray-600 mb-1">
+                                URL iCal
+                              </label>
+                              <input
+                                type="url"
+                                placeholder="https://..."
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                              />
+                            </div>
+                            <div className="flex items-end">
+                              <button className="w-full px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm">
+                                Añadir
+                              </button>
+                            </div>
+                          </div>
+                          
+                          {/* Lista de calendarios añadidos */}
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
+                              <div>
+                                <span className="text-sm font-medium text-gray-900">Airbnb</span>
+                                <p className="text-xs text-gray-500">https://calendar.airbnb.com/ical/123456</p>
+                              </div>
+                              <button className="text-red-600 hover:text-red-800 text-sm">
+                                Eliminar
+                              </button>
+                            </div>
+                            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
+                              <div>
+                                <span className="text-sm font-medium text-gray-900">Booking.com</span>
+                                <p className="text-xs text-gray-500">https://admin.booking.com/ical/789012</p>
+                              </div>
+                              <button className="text-red-600 hover:text-red-800 text-sm">
+                                Eliminar
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                   <div className="flex">
                     <div className="flex-shrink-0">
-                      <Bot className="h-5 w-5 text-yellow-400" />
+                      <AlertCircle className="h-5 w-5 text-yellow-400" />
                     </div>
                     <div className="ml-3">
                       <h3 className="text-sm font-medium text-yellow-800">
-                        Bot de Telegram
+                        Información Importante
                       </h3>
                       <div className="mt-2 text-sm text-yellow-700">
-                        <p>Estado: <span className="font-medium text-red-600">No configurado</span></p>
-                        <p>Configura tu bot para recibir notificaciones automáticas</p>
+                        <p>• Cada habitación puede tener múltiples calendarios de diferentes OTAs</p>
+                        <p>• Los calendarios se sincronizan automáticamente cada 15 minutos</p>
+                        <p>• Usa el botón "Sincronizar" para forzar una actualización inmediata</p>
                       </div>
-                    </div>
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Token del Bot
-                    </label>
-                    <input
-                      type="password"
-                      className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="1234567890:ABCdefGHIjklMNOpqrsTUVwxyz"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Chat ID
-                    </label>
-                    <input
-                      type="text"
-                      className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="123456789"
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'notifications' && (
-              <div className="space-y-6">
-                <h3 className="text-lg font-medium text-gray-900">Configuración de Notificaciones</h3>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="text-sm font-medium text-gray-900">Nuevas reservas</h4>
-                      <p className="text-sm text-gray-500">Recibe notificaciones cuando se confirme una nueva reserva</p>
-                    </div>
-                    <button className="bg-blue-600 text-white px-3 py-1 rounded-md text-sm">
-                      Activado
-                    </button>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="text-sm font-medium text-gray-900">Check-ins pendientes</h4>
-                      <p className="text-sm text-gray-500">Notificaciones 24h antes del check-in</p>
-                    </div>
-                    <button className="bg-gray-200 text-gray-700 px-3 py-1 rounded-md text-sm">
-                      Desactivado
-                    </button>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="text-sm font-medium text-gray-900">Limpieza</h4>
-                      <p className="text-sm text-gray-500">Notificaciones sobre tareas de limpieza</p>
-                    </div>
-                    <button className="bg-blue-600 text-white px-3 py-1 rounded-md text-sm">
-                      Activado
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'security' && (
-              <div className="space-y-6">
-                <h3 className="text-lg font-medium text-gray-900">Configuración de Seguridad</h3>
-                <div className="bg-green-50 border border-green-200 rounded-md p-4">
-                  <div className="flex">
-                    <div className="flex-shrink-0">
-                      <Shield className="h-5 w-5 text-green-400" />
-                    </div>
-                    <div className="ml-3">
-                      <h3 className="text-sm font-medium text-green-800">
-                        Seguridad
-                      </h3>
-                      <div className="mt-2 text-sm text-green-700">
-                        <p>Estado: <span className="font-medium text-green-600">Seguro</span></p>
-                        <p>Todas las conexiones están cifradas con SSL/TLS</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="text-sm font-medium text-gray-900">Autenticación de dos factores</h4>
-                      <p className="text-sm text-gray-500">Añade una capa extra de seguridad</p>
-                    </div>
-                    <button className="bg-gray-200 text-gray-700 px-3 py-1 rounded-md text-sm">
-                      Configurar
-                    </button>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="text-sm font-medium text-gray-900">Sesiones activas</h4>
-                      <p className="text-sm text-gray-500">Gestiona las sesiones abiertas</p>
-                    </div>
-                    <button className="bg-blue-600 text-white px-3 py-1 rounded-md text-sm">
-                      Ver sesiones
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'integrations' && (
-              <div className="space-y-6">
-                <h3 className="text-lg font-medium text-gray-900">Integraciones</h3>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <div className="border border-gray-200 rounded-lg p-4">
-                    <div className="flex items-center">
-                      <div className="flex-shrink-0">
-                        <div className="w-8 h-8 bg-pink-100 rounded-full flex items-center justify-center">
-                          <span className="text-pink-600 font-bold">A</span>
-                        </div>
-                      </div>
-                      <div className="ml-3">
-                        <h4 className="text-sm font-medium text-gray-900">Airbnb</h4>
-                        <p className="text-sm text-gray-500">Sincronización de calendarios</p>
-                      </div>
-                    </div>
-                    <div className="mt-3">
-                      <button className="bg-green-600 text-white px-3 py-1 rounded-md text-sm">
-                        Conectado
-                      </button>
-                    </div>
-                  </div>
-                  <div className="border border-gray-200 rounded-lg p-4">
-                    <div className="flex items-center">
-                      <div className="flex-shrink-0">
-                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                          <span className="text-blue-600 font-bold">B</span>
-                        </div>
-                      </div>
-                      <div className="ml-3">
-                        <h4 className="text-sm font-medium text-gray-900">Booking.com</h4>
-                        <p className="text-sm text-gray-500">Sincronización de calendarios</p>
-                      </div>
-                    </div>
-                    <div className="mt-3">
-                      <button className="bg-gray-200 text-gray-700 px-3 py-1 rounded-md text-sm">
-                        Conectar
-                      </button>
                     </div>
                   </div>
                 </div>
