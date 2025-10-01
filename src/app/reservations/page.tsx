@@ -49,6 +49,7 @@ export default function ReservationsPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [reservationToDelete, setReservationToDelete] = useState<Reservation | null>(null);
   const [reservationToEdit, setReservationToEdit] = useState<Reservation | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const [formData, setFormData] = useState({
     room_id: '',
     guest_name: '',
@@ -308,6 +309,7 @@ export default function ReservationsPage() {
       setReservations(prev => prev.filter(r => r.id !== reservationToDelete.id));
       setShowDeleteModal(false);
       setReservationToDelete(null);
+      setConfirmDelete(false);
       alert('Reserva eliminada exitosamente');
     } catch (error: any) {
       console.error('Error deleting reservation:', error);
@@ -320,6 +322,7 @@ export default function ReservationsPage() {
   const handleDeleteCancel = () => {
     setShowDeleteModal(false);
     setReservationToDelete(null);
+    setConfirmDelete(false);
   };
 
   const formatDate = (date: string) => {
@@ -1302,6 +1305,24 @@ export default function ReservationsPage() {
                   </div>
                 </div>
               </div>
+              
+              {/* Checkbox de confirmación doble */}
+              <div className="mb-4">
+                <label className="flex items-start space-x-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={confirmDelete}
+                    onChange={(e) => setConfirmDelete(e.target.checked)}
+                    className="mt-1 h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded"
+                  />
+                  <span className="text-sm text-gray-700">
+                    <span className="font-medium text-red-600">Confirmo que quiero eliminar esta reserva</span>
+                    <span className="block text-gray-500 mt-1">
+                      Marca esta casilla para habilitar el botón de eliminación
+                    </span>
+                  </span>
+                </label>
+              </div>
             </div>
 
             <div className="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
@@ -1314,8 +1335,8 @@ export default function ReservationsPage() {
               </button>
               <button
                 onClick={handleDeleteConfirm}
-                disabled={deleting === reservationToDelete.id}
-                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 flex items-center"
+                disabled={deleting === reservationToDelete.id || !confirmDelete}
+                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
               >
                 {deleting === reservationToDelete.id ? (
                   <>
