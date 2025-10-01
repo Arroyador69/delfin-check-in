@@ -74,8 +74,8 @@ export default function AdminLoginPage() {
         // Disparar evento personalizado para notificar el login
         window.dispatchEvent(new CustomEvent('authChanged', { detail: { authenticated: true } }))
         
-        // Redirigir inmediatamente sin delay
-        router.push('/')
+        // Usar window.location.href para forzar redirección completa con cookies
+        window.location.href = '/'
         
       } else {
         setError('Usuario o contraseña incorrectos')
