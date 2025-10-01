@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Settings, Database, Bot, Bell, Shield, Globe, User } from 'lucide-react';
+import { Settings, User, Shield } from 'lucide-react';
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState('general');
@@ -41,7 +41,6 @@ export default function SettingsPage() {
   const tabs = [
     { id: 'general', name: 'General', icon: Settings },
     { id: 'account', name: 'Cuenta', icon: User },
-    { id: 'integrations', name: 'Integraciones', icon: Globe },
   ];
 
   const handleSaveSettings = async () => {
@@ -255,12 +254,12 @@ export default function SettingsPage() {
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
 
         <div className="bg-white rounded-lg shadow">
           {/* Tabs */}
           <div className="border-b border-gray-200">
-            <nav className="-mb-px flex space-x-8 px-6">
+            <nav className="-mb-px flex justify-center space-x-8 px-6">
               {tabs.map((tab) => {
                 const Icon = tab.icon;
                 return (
@@ -642,154 +641,6 @@ export default function SettingsPage() {
                         <p>• Las contraseñas se almacenan de forma segura</p>
                         <p>• El email de recuperación te permitirá restablecer tu contraseña</p>
                         <p>• Mantén tu información de contacto actualizada</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'integrations' && (
-              <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-medium text-gray-900">Integraciones iCal</h3>
-                  <button
-                    onClick={() => {
-                      // Función para sincronizar calendarios
-                      alert('Sincronizando calendarios...');
-                    }}
-                    className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 flex items-center space-x-2"
-                  >
-                    <RefreshCw className="w-4 h-4" />
-                    <span>Sincronizar</span>
-                  </button>
-                </div>
-                
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <div className="flex">
-                    <div className="flex-shrink-0">
-                      <Globe className="h-5 w-5 text-blue-400" />
-                    </div>
-                    <div className="ml-3">
-                      <h3 className="text-sm font-medium text-blue-800">
-                        Gestión de Calendarios iCal
-                      </h3>
-                      <div className="mt-2 text-sm text-blue-700">
-                        <p>Configura calendarios iCal para cada habitación/apartamento</p>
-                        <p>Cada habitación puede tener múltiples calendarios de diferentes OTAs</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-6">
-                  {roomsConfig.map((room) => (
-                    <div key={room.id} className="border border-gray-200 rounded-lg p-6">
-                      <div className="flex items-center mb-4">
-                        <h4 className="text-lg font-medium text-gray-900">{room.name}</h4>
-                      </div>
-                      
-                      {/* URL iCal generada automáticamente */}
-                      <div className="mb-4">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          URL iCal de tu Dashboard
-                        </label>
-                        <div className="flex items-center space-x-2">
-                          <input
-                            type="text"
-                            value={`https://admin.delfincheckin.com/api/ical/rooms/${room.id}`}
-                            readOnly
-                            className="flex-1 px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-sm font-mono"
-                          />
-                          <button
-                            onClick={() => {
-                              navigator.clipboard.writeText(`https://admin.delfincheckin.com/api/ical/rooms/${room.id}`);
-                              alert('URL copiada al portapapeles');
-                            }}
-                            className="px-3 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
-                          >
-                            Copiar
-                          </button>
-                        </div>
-                        <p className="text-xs text-gray-500 mt-1">
-                          Esta URL se actualiza automáticamente con la información del dashboard
-                        </p>
-                      </div>
-
-                      {/* Calendarios externos de OTAs */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Calendarios Externos de OTAs
-                        </label>
-                        <div className="space-y-3">
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                            <div>
-                              <label className="block text-xs font-medium text-gray-600 mb-1">
-                                Nombre OTA
-                              </label>
-                              <input
-                                type="text"
-                                placeholder="Airbnb, Booking, etc."
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-xs font-medium text-gray-600 mb-1">
-                                URL iCal
-                              </label>
-                              <input
-                                type="url"
-                                placeholder="https://..."
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-                              />
-                            </div>
-                            <div className="flex items-end">
-                              <button className="w-full px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm">
-                                Añadir
-                              </button>
-                            </div>
-                          </div>
-                          
-                          {/* Lista de calendarios añadidos */}
-                          <div className="space-y-2">
-                            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
-                              <div>
-                                <span className="text-sm font-medium text-gray-900">Airbnb</span>
-                                <p className="text-xs text-gray-500">https://calendar.airbnb.com/ical/123456</p>
-                              </div>
-                              <button className="text-red-600 hover:text-red-800 text-sm">
-                                Eliminar
-                              </button>
-                            </div>
-                            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
-                              <div>
-                                <span className="text-sm font-medium text-gray-900">Booking.com</span>
-                                <p className="text-xs text-gray-500">https://admin.booking.com/ical/789012</p>
-                              </div>
-                              <button className="text-red-600 hover:text-red-800 text-sm">
-                                Eliminar
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                  <div className="flex">
-                    <div className="flex-shrink-0">
-                      <AlertCircle className="h-5 w-5 text-yellow-400" />
-                    </div>
-                    <div className="ml-3">
-                      <h3 className="text-sm font-medium text-yellow-800">
-                        Información Importante
-                      </h3>
-                      <div className="mt-2 text-sm text-yellow-700">
-                        <p>• Cada habitación puede tener múltiples calendarios de diferentes OTAs</p>
-                        <p>• Los calendarios se sincronizan automáticamente cada 15 minutos</p>
-                        <p>• Usa el botón "Sincronizar" para forzar una actualización inmediata</p>
                       </div>
                     </div>
                   </div>
