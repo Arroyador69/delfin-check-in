@@ -6,13 +6,7 @@ import { Copy, RefreshCw, Smartphone, Calendar, AlertCircle, CheckCircle } from 
 export default function CalendarSyncPage() {
   const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
 
-  const calendarUrls = {
-    all: 'https://admin.delfincheckin.com/api/ical/reservations',
-    room1: 'https://admin.delfincheckin.com/api/ical/rooms/room-001',
-    room2: 'https://admin.delfincheckin.com/api/ical/rooms/room-002',
-    room3: 'https://admin.delfincheckin.com/api/ical/rooms/room-003',
-    room4: 'https://admin.delfincheckin.com/api/ical/rooms/room-004',
-  };
+  const calendarUrl = 'https://admin.delfincheckin.com/api/ical/reservations';
 
   const copyToClipboard = async (url: string, label: string) => {
     try {
@@ -43,61 +37,41 @@ export default function CalendarSyncPage() {
             </p>
           </div>
 
-          {/* URLs de Calendarios */}
+          {/* URL de Calendario */}
           <div className="mb-8">
             <h2 className="text-2xl font-semibold text-gray-900 mb-4 flex items-center">
               <Calendar className="w-6 h-6 mr-2" />
-              URLs de Calendarios iCal
+              URL del Calendario iCal
             </h2>
             
-            <div className="space-y-4">
-              <div className="border rounded-lg p-4">
-                <h3 className="font-medium text-gray-900 mb-2">📊 Todas las Reservas</h3>
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="text"
-                    value={calendarUrls.all}
-                    readOnly
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-sm"
-                  />
-                  <button
-                    onClick={() => copyToClipboard(calendarUrls.all, 'all')}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center space-x-2"
-                  >
-                    {copiedUrl === 'all' ? (
-                      <CheckCircle className="w-4 h-4" />
-                    ) : (
-                      <Copy className="w-4 h-4" />
-                    )}
-                    <span>{copiedUrl === 'all' ? 'Copiado' : 'Copiar'}</span>
-                  </button>
-                </div>
-              </div>
-
-              <div className="border rounded-lg p-4">
-                <h3 className="font-medium text-gray-900 mb-2">🏨 Por Habitaciones</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {Object.entries(calendarUrls).filter(([key]) => key.startsWith('room')).map(([key, url]) => {
-                    const roomNumber = key.replace('room', '');
-                    return (
-                      <div key={key} className="flex items-center space-x-2">
-                        <span className="text-sm font-bold text-gray-800 w-24">Habitación {roomNumber}:</span>
-                        <input
-                          type="text"
-                          value={url}
-                          readOnly
-                          className="flex-1 px-2 py-1 border border-gray-300 rounded text-xs bg-gray-50"
-                        />
-                        <button
-                          onClick={() => copyToClipboard(url, key)}
-                          className="px-2 py-1 bg-gray-600 text-white rounded text-xs hover:bg-gray-700"
-                        >
-                          {copiedUrl === key ? '✓' : <Copy className="w-3 h-3" />}
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
+            <div className="border rounded-lg p-6 bg-gradient-to-r from-blue-50 to-indigo-50">
+              <h3 className="font-medium text-gray-900 mb-3 text-lg">📊 Todas las Reservas y Habitaciones</h3>
+              <p className="text-sm text-gray-600 mb-4">
+                Este calendario incluye toda la información de las habitaciones del dashboard
+              </p>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="text"
+                  value={calendarUrl}
+                  readOnly
+                  className="flex-1 px-4 py-3 border-2 border-blue-300 rounded-lg bg-white text-sm font-mono"
+                />
+                <button
+                  onClick={() => copyToClipboard(calendarUrl, 'calendar')}
+                  className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center space-x-2 transition-colors"
+                >
+                  {copiedUrl === 'calendar' ? (
+                    <>
+                      <CheckCircle className="w-5 h-5" />
+                      <span className="font-medium">¡Copiado!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-5 h-5" />
+                      <span className="font-medium">Copiar URL</span>
+                    </>
+                  )}
+                </button>
               </div>
             </div>
           </div>
