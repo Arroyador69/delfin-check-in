@@ -119,7 +119,7 @@ export default function AEATPage() {
   // Mostrar pantalla de autenticación si no está autenticado
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Verificando autenticación...</p>
@@ -172,12 +172,15 @@ export default function AEATPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       {/* Header compacto */}
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
-            <h1 className="text-2xl font-bold text-gray-900">Exportar AEAT</h1>
+            <div className="flex items-center">
+              <span className="text-3xl mr-3">🏛️</span>
+              <h1 className="text-2xl font-bold text-gray-900">Exportar AEAT</h1>
+            </div>
           </div>
         </div>
       </header>

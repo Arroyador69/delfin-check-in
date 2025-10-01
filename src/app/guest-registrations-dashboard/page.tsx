@@ -455,7 +455,7 @@ export default function GuestRegistrationsDashboard() {
   if (loading) {
     return (
       <AdminLayout>
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
           <div className="text-center">
             <div className="text-6xl mb-4">🐬</div>
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
@@ -469,7 +469,7 @@ export default function GuestRegistrationsDashboard() {
 
   return (
     <AdminLayout showHeader={false}>
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       {/* Header compacto */}
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -478,8 +478,8 @@ export default function GuestRegistrationsDashboard() {
               <div className="text-2xl mr-2">🐬</div>
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">Delfín Check-in</h1>
-                <p className="text-sm text-gray-600">Registros de formularios</p>
-                <p className="text-xs text-gray-500">Gestión y generación de XML para Ministerio del Interior</p>
+                <p className="text-sm text-gray-600">📋 Registros de formularios</p>
+                <p className="text-xs text-gray-500">🏛️ Gestión y generación de XML para Ministerio del Interior</p>
               </div>
             </div>
             {/* Sin botón de cerrar sesión aquí */}

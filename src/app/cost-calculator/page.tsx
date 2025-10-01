@@ -229,9 +229,9 @@ export default function CostCalculator() {
           <div className="bg-white rounded-lg shadow-sm border p-6 mb-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center">
-                <Calculator className="h-8 w-8 text-blue-600 mr-3" />
+                <div className="text-4xl mr-3">🧮</div>
                 <div>
-                  <h1 className="text-2xl font-bold text-gray-900">Calculadora de Costes</h1>
+                  <h1 className="text-2xl font-bold text-gray-900">💰 Calculadora de Costes</h1>
                   <p className="text-gray-600">Calcula el coste real por huésped en tu alojamiento</p>
                 </div>
               </div>

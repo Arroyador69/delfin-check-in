@@ -379,7 +379,7 @@ export default function ReservationsPage() {
   // Mostrar pantalla de autenticación si no está autenticado
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Verificando autenticación...</p>
@@ -433,9 +433,12 @@ export default function ReservationsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 p-8">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-8">
         <div className="max-w-7xl mx-auto">
-          <h1 className="text-3xl font-bold text-gray-900 mb-8">Reservas</h1>
+          <div className="flex items-center mb-8">
+            <span className="text-3xl mr-3">📅</span>
+            <h1 className="text-3xl font-bold text-gray-900">Reservas</h1>
+          </div>
           <div className="animate-pulse">
             <div className="bg-white rounded-lg shadow p-6">
               <div className="h-4 bg-gray-200 rounded w-1/4 mb-4"></div>
@@ -453,9 +456,12 @@ export default function ReservationsPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 p-8">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-8">
         <div className="max-w-7xl mx-auto">
-          <h1 className="text-3xl font-bold text-gray-900 mb-8">Reservas</h1>
+          <div className="flex items-center mb-8">
+            <span className="text-3xl mr-3">📅</span>
+            <h1 className="text-3xl font-bold text-gray-900">Reservas</h1>
+          </div>
           <div className="bg-red-50 border border-red-200 rounded-lg p-6">
             <div className="flex">
               <div className="flex-shrink-0">
@@ -464,7 +470,7 @@ export default function ReservationsPage() {
                 </svg>
               </div>
               <div className="ml-3">
-                <h3 className="text-sm font-medium text-red-800">Error al cargar las reservas</h3>
+                <h3 className="text-sm font-medium text-red-800">❌ Error al cargar las reservas</h3>
                 <div className="mt-2 text-sm text-red-700">
                   <p>{error}</p>
                   <p className="mt-2">
@@ -472,7 +478,7 @@ export default function ReservationsPage() {
                       onClick={fetchReservations}
                       className="underline hover:no-underline"
                     >
-                      Intentar de nuevo
+                      🔄 Intentar de nuevo
                     </button>
                   </p>
                 </div>
@@ -485,13 +491,13 @@ export default function ReservationsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       {/* Encabezado compacto con el título visible bajo la barra fija */}
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center">
-              <Calendar className="h-6 w-6 text-blue-600 mr-2" />
+              <span className="text-3xl mr-2">📅</span>
               <h1 className="text-2xl font-bold text-gray-900">Reservas</h1>
             </div>
           </div>
