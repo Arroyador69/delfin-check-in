@@ -489,7 +489,7 @@ export default function GuestRegistrationsDashboard() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Filtros y búsqueda */}
-        <div className="bg-white rounded-lg shadow p-6 mb-8">
+        <div className="bg-white rounded-lg shadow p-6 mb-8 transition-all duration-300 hover:transform hover:-translate-y-1 hover:shadow-2xl">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
             <div className="flex items-center space-x-2">
               <input
@@ -581,7 +581,7 @@ export default function GuestRegistrationsDashboard() {
 
         {/* Estadísticas */}
         <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-white rounded-lg shadow p-6 transition-all duration-300 hover:transform hover:-translate-y-1 hover:shadow-2xl">
             <div className="flex items-center">
               <div className="p-2 bg-blue-100 rounded-lg">
                 <FileText className="h-6 w-6 text-blue-600" />
@@ -592,7 +592,7 @@ export default function GuestRegistrationsDashboard() {
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-white rounded-lg shadow p-6 transition-all duration-300 hover:transform hover:-translate-y-1 hover:shadow-2xl">
             <div className="flex items-center">
               <div className="p-2 bg-green-100 rounded-lg">
                 <Users className="h-6 w-6 text-green-600" />
@@ -605,7 +605,7 @@ export default function GuestRegistrationsDashboard() {
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-white rounded-lg shadow p-6 transition-all duration-300 hover:transform hover:-translate-y-1 hover:shadow-2xl">
             <div className="flex items-center">
               <div className="p-2 bg-yellow-100 rounded-lg">
                 <Calendar className="h-6 w-6 text-yellow-600" />
@@ -616,7 +616,7 @@ export default function GuestRegistrationsDashboard() {
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-white rounded-lg shadow p-6 transition-all duration-300 hover:transform hover:-translate-y-1 hover:shadow-2xl">
             <div className="flex items-center">
               <div className="p-2 bg-purple-100 rounded-lg">
                 <Download className="h-6 w-6 text-purple-600" />
@@ -627,7 +627,7 @@ export default function GuestRegistrationsDashboard() {
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-white rounded-lg shadow p-6 transition-all duration-300 hover:transform hover:-translate-y-1 hover:shadow-2xl">
             <div className="flex items-center">
               <div className="p-2 bg-indigo-100 rounded-lg">
                 <CheckSquare className="h-6 w-6 text-indigo-600" />

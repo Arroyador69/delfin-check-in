@@ -63,7 +63,7 @@ export default function AuditPage() {
         <button onClick={fetchData} disabled={loading} className="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50">{loading ? 'Cargando...' : 'Filtrar'}</button>
       </div>
 
-      <div className="overflow-x-auto bg-white rounded shadow">
+      <div className="overflow-x-auto bg-white rounded shadow transition-all duration-300 hover:transform hover:-translate-y-1 hover:shadow-2xl">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>

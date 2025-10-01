@@ -140,7 +140,7 @@ export default function AEATPage() {
           </div>
 
           {/* Mensaje de acceso requerido */}
-          <div className="bg-white rounded-lg shadow-lg p-8">
+          <div className="bg-white rounded-lg shadow-lg p-8 transition-all duration-300 hover:transform hover:-translate-y-1 hover:shadow-2xl">
             <div className="text-center">
               <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
                 <svg className="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">

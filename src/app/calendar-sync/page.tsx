@@ -30,7 +30,7 @@ export default function CalendarSyncPage() {
       </header>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="bg-white rounded-lg shadow-lg p-6">
+        <div className="bg-white rounded-lg shadow-lg p-6 transition-all duration-300 hover:transform hover:-translate-y-1 hover:shadow-2xl">
           <div className="mb-6">
             <p className="text-gray-600">
               Mantén tus calendarios móviles actualizados con las reservas en tiempo real

@@ -226,7 +226,7 @@ export default function CostCalculator() {
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Header */}
-          <div className="bg-white rounded-lg shadow-sm border p-6 mb-6">
+          <div className="bg-white rounded-lg shadow-sm border p-6 mb-6 transition-all duration-300 hover:transform hover:-translate-y-1 hover:shadow-2xl">
             <div className="flex items-center justify-between">
               <div className="flex items-center">
                 <div className="text-4xl mr-3">🧮</div>
@@ -248,7 +248,7 @@ export default function CostCalculator() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Configuración */}
             <div className="lg:col-span-1">
-              <div className="bg-white rounded-lg shadow-sm border p-6">
+              <div className="bg-white rounded-lg shadow-sm border p-6 transition-all duration-300 hover:transform hover:-translate-y-1 hover:shadow-2xl">
                 <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                   <Settings className="h-5 w-5 mr-2" />
                   Configuración
@@ -314,7 +314,7 @@ export default function CostCalculator() {
 
             {/* Gastos */}
             <div className="lg:col-span-2">
-              <div className="bg-white rounded-lg shadow-sm border p-6">
+              <div className="bg-white rounded-lg shadow-sm border p-6 transition-all duration-300 hover:transform hover:-translate-y-1 hover:shadow-2xl">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-lg font-semibold text-gray-900 flex items-center">
                     <Euro className="h-5 w-5 mr-2" />
@@ -416,7 +416,7 @@ export default function CostCalculator() {
 
           {/* Resultados */}
           {calculationResult && (
-            <div className="mt-6 bg-white rounded-lg shadow-sm border p-6">
+            <div className="mt-6 bg-white rounded-lg shadow-sm border p-6 transition-all duration-300 hover:transform hover:-translate-y-1 hover:shadow-2xl">
               <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                 <Calculator className="h-5 w-5 mr-2" />
                 Resultados del Cálculo
