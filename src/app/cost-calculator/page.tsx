@@ -25,6 +25,13 @@ interface CalculationResult {
   };
 }
 
+interface Settings {
+  totalRooms: number;
+  guestsPerRoom: number;
+  monthlyOccupancy: number;
+  averageRoomPrice: number;
+}
+
 export default function CostCalculator() {
   const [expenses, setExpenses] = useState<Expense[]>([
     {
@@ -83,6 +90,7 @@ export default function CostCalculator() {
   const [totalRooms, setTotalRooms] = useState(6);
   const [guestsPerRoom, setGuestsPerRoom] = useState(2);
   const [monthlyOccupancy, setMonthlyOccupancy] = useState(80); // Porcentaje
+  const [averageRoomPrice, setAverageRoomPrice] = useState(50); // Precio medio por habitación
   const [calculationResult, setCalculationResult] = useState<CalculationResult | null>(null);
 
   // Cargar datos guardados al montar el componente
@@ -99,6 +107,7 @@ export default function CostCalculator() {
       setTotalRooms(settings.totalRooms || 6);
       setGuestsPerRoom(settings.guestsPerRoom || 2);
       setMonthlyOccupancy(settings.monthlyOccupancy || 80);
+      setAverageRoomPrice(settings.averageRoomPrice || 50);
     }
   }, []);
 
@@ -111,9 +120,10 @@ export default function CostCalculator() {
     localStorage.setItem('cost-calculator-settings', JSON.stringify({
       totalRooms,
       guestsPerRoom,
-      monthlyOccupancy
+      monthlyOccupancy,
+      averageRoomPrice
     }));
-  }, [totalRooms, guestsPerRoom, monthlyOccupancy]);
+  }, [totalRooms, guestsPerRoom, monthlyOccupancy, averageRoomPrice]);
 
   const addExpense = () => {
     const newExpense: Expense = {
@@ -149,11 +159,11 @@ export default function CostCalculator() {
       
       if (expense.isPercentage && expense.percentage) {
         // Para porcentajes, asumimos que se aplican sobre ingresos estimados
-        const estimatedMonthlyRevenue = totalRooms * 30 * (monthlyOccupancy / 100) * 50; // 50€ por noche estimado
+        const estimatedMonthlyRevenue = totalRooms * 30 * (monthlyOccupancy / 100) * averageRoomPrice;
         monthlyAmount = (estimatedMonthlyRevenue * expense.percentage) / 100;
         percentageCosts += monthlyAmount;
       } else {
-        // Convertir a costos mensuales
+        // Convertir a costes mensuales
         switch (expense.frequency) {
           case 'monthly':
             monthlyAmount = expense.amount;
@@ -183,7 +193,7 @@ export default function CostCalculator() {
       totalMonthlyCosts += monthlyAmount;
     });
 
-    // Calcular costos por habitación y por huésped
+    // Calcular costes por habitación y por huésped
     const costPerRoom = totalMonthlyCosts / totalRooms;
     const monthlyGuests = totalRooms * (monthlyOccupancy / 100) * 30 * guestsPerRoom;
     const costPerGuest = monthlyGuests > 0 ? totalMonthlyCosts / monthlyGuests : 0;
@@ -221,8 +231,8 @@ export default function CostCalculator() {
               <div className="flex items-center">
                 <Calculator className="h-8 w-8 text-blue-600 mr-3" />
                 <div>
-                  <h1 className="text-2xl font-bold text-gray-900">Calculadora de Costos</h1>
-                  <p className="text-gray-600">Calcula el costo real por huésped en tu alojamiento</p>
+                  <h1 className="text-2xl font-bold text-gray-900">Calculadora de Costes</h1>
+                  <p className="text-gray-600">Calcula el coste real por huésped en tu alojamiento</p>
                 </div>
               </div>
               <button
@@ -282,6 +292,20 @@ export default function CostCalculator() {
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       min="0"
                       max="100"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Precio medio por habitación (€/noche)
+                    </label>
+                    <input
+                      type="number"
+                      value={averageRoomPrice}
+                      onChange={(e) => setAverageRoomPrice(Number(e.target.value))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      min="0"
+                      step="0.01"
                     />
                   </div>
                 </div>
@@ -403,7 +427,7 @@ export default function CostCalculator() {
                   <div className="flex items-center">
                     <Euro className="h-8 w-8 text-blue-600 mr-3" />
                     <div>
-                      <p className="text-sm text-gray-600">Costo Total Mensual</p>
+                      <p className="text-sm text-gray-600">Coste Total Mensual</p>
                       <p className="text-2xl font-bold text-blue-600">
                         €{calculationResult.totalMonthlyCosts.toFixed(2)}
                       </p>
@@ -415,7 +439,7 @@ export default function CostCalculator() {
                   <div className="flex items-center">
                     <Home className="h-8 w-8 text-green-600 mr-3" />
                     <div>
-                      <p className="text-sm text-gray-600">Costo por Habitación</p>
+                      <p className="text-sm text-gray-600">Coste por Habitación</p>
                       <p className="text-2xl font-bold text-green-600">
                         €{calculationResult.costPerRoom.toFixed(2)}
                       </p>
@@ -427,7 +451,7 @@ export default function CostCalculator() {
                   <div className="flex items-center">
                     <Users className="h-8 w-8 text-purple-600 mr-3" />
                     <div>
-                      <p className="text-sm text-gray-600">Costo por Huésped</p>
+                      <p className="text-sm text-gray-600">Coste por Huésped</p>
                       <p className="text-2xl font-bold text-purple-600">
                         €{calculationResult.costPerGuest.toFixed(2)}
                       </p>
@@ -439,7 +463,7 @@ export default function CostCalculator() {
                   <div className="flex items-center">
                     <Calendar className="h-8 w-8 text-orange-600 mr-3" />
                     <div>
-                      <p className="text-sm text-gray-600">Costo por Noche</p>
+                      <p className="text-sm text-gray-600">Coste por Noche</p>
                       <p className="text-2xl font-bold text-orange-600">
                         €{(calculationResult.costPerGuest / 30).toFixed(2)}
                       </p>
@@ -450,22 +474,22 @@ export default function CostCalculator() {
 
               {/* Desglose detallado */}
               <div className="mt-6">
-                <h3 className="text-md font-semibold text-gray-900 mb-3">Desglose de Costos</h3>
+                <h3 className="text-md font-semibold text-gray-900 mb-3">Desglose de Costes</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="bg-gray-50 rounded-lg p-4">
-                    <p className="text-sm text-gray-600">Costos Fijos</p>
+                    <p className="text-sm text-gray-600">Costes Fijos</p>
                     <p className="text-lg font-semibold text-gray-900">
                       €{calculationResult.breakdown.fixed.toFixed(2)}
                     </p>
                   </div>
                   <div className="bg-gray-50 rounded-lg p-4">
-                    <p className="text-sm text-gray-600">Costos Variables</p>
+                    <p className="text-sm text-gray-600">Costes Variables</p>
                     <p className="text-lg font-semibold text-gray-900">
                       €{calculationResult.breakdown.variable.toFixed(2)}
                     </p>
                   </div>
                   <div className="bg-gray-50 rounded-lg p-4">
-                    <p className="text-sm text-gray-600">Costos por Porcentaje</p>
+                    <p className="text-sm text-gray-600">Costes por Porcentaje</p>
                     <p className="text-lg font-semibold text-gray-900">
                       €{calculationResult.breakdown.percentage.toFixed(2)}
                     </p>
@@ -478,8 +502,8 @@ export default function CostCalculator() {
                 <h4 className="font-semibold text-yellow-800 mb-2">💡 Información Importante</h4>
                 <ul className="text-sm text-yellow-700 space-y-1">
                   <li>• El cálculo se basa en una ocupación del {monthlyOccupancy}% mensual</li>
-                  <li>• Se asume un precio promedio de €50 por noche para cálculos de porcentajes</li>
-                  <li>• Los costos por huésped se calculan dividiendo entre el total de huéspedes mensuales</li>
+                  <li>• Se utiliza un precio medio de €{averageRoomPrice} por noche para cálculos de porcentajes</li>
+                  <li>• Los costes por huésped se calculan dividiendo entre el total de huéspedes mensuales</li>
                   <li>• Los datos se guardan automáticamente en tu navegador</li>
                 </ul>
               </div>
