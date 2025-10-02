@@ -87,7 +87,7 @@ export default function EstadoEnviosMIR() {
 
   if (loading && !estado) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
@@ -100,7 +100,7 @@ export default function EstadoEnviosMIR() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="bg-red-50 border border-red-200 rounded-md p-4">
             <div className="flex">
@@ -140,14 +140,14 @@ export default function EstadoEnviosMIR() {
   const comunicacionesActivas = estado?.comunicaciones[tabActiva] || [];
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Estado de Envíos al MIR</h1>
-              <p className="mt-2 text-gray-600">Seguimiento de comunicaciones al Ministerio del Interior</p>
+              <h1 className="text-3xl font-bold text-gray-900">📊 Estado de Envíos al MIR</h1>
+              <p className="mt-2 text-gray-600">🏛️ Seguimiento de comunicaciones al Ministerio del Interior</p>
             </div>
             <div className="flex items-center space-x-4">
               <button
@@ -166,11 +166,11 @@ export default function EstadoEnviosMIR() {
 
         {/* Estadísticas */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-white rounded-lg shadow p-6 transition-all duration-300 hover:transform hover:-translate-y-1 hover:shadow-2xl">
             <div className="flex items-center">
               <div className="flex-shrink-0">
                 <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-                  <span className="text-gray-600 font-semibold">{estado?.estadisticas.total || 0}</span>
+                  <span className="text-gray-600 font-semibold">📊</span>
                 </div>
               </div>
               <div className="ml-4">
@@ -180,11 +180,11 @@ export default function EstadoEnviosMIR() {
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-white rounded-lg shadow p-6 transition-all duration-300 hover:transform hover:-translate-y-1 hover:shadow-2xl">
             <div className="flex items-center">
               <div className="flex-shrink-0">
                 <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
-                  <span className="text-yellow-600 font-semibold">{estado?.estadisticas.pendientes || 0}</span>
+                  <span className="text-yellow-600 font-semibold">⏳</span>
                 </div>
               </div>
               <div className="ml-4">
@@ -194,11 +194,11 @@ export default function EstadoEnviosMIR() {
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-white rounded-lg shadow p-6 transition-all duration-300 hover:transform hover:-translate-y-1 hover:shadow-2xl">
             <div className="flex items-center">
               <div className="flex-shrink-0">
                 <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                  <span className="text-green-600 font-semibold">{estado?.estadisticas.confirmados || 0}</span>
+                  <span className="text-green-600 font-semibold">✅</span>
                 </div>
               </div>
               <div className="ml-4">
@@ -208,11 +208,11 @@ export default function EstadoEnviosMIR() {
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-white rounded-lg shadow p-6 transition-all duration-300 hover:transform hover:-translate-y-1 hover:shadow-2xl">
             <div className="flex items-center">
               <div className="flex-shrink-0">
                 <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
-                  <span className="text-red-600 font-semibold">{estado?.estadisticas.errores || 0}</span>
+                  <span className="text-red-600 font-semibold">❌</span>
                 </div>
               </div>
               <div className="ml-4">
@@ -224,21 +224,21 @@ export default function EstadoEnviosMIR() {
         </div>
 
         {/* Tabs */}
-        <div className="bg-white rounded-lg shadow">
+        <div className="bg-white rounded-lg shadow transition-all duration-300 hover:transform hover:-translate-y-1 hover:shadow-2xl">
           <div className="border-b border-gray-200">
             <nav className="-mb-px flex space-x-8 px-6">
               {tabs.map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => setTabActiva(tab.id)}
-                  className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                  className={`py-4 px-1 border-b-2 font-medium text-sm transition-all duration-200 ${
                     tabActiva === tab.id
                       ? 'border-blue-500 text-blue-600'
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                   }`}
                 >
                   {tab.label}
-                  <span className={`ml-2 py-0.5 px-2 rounded-full text-xs ${
+                  <span className={`ml-2 py-0.5 px-2 rounded-full text-xs transition-all duration-200 ${
                     tabActiva === tab.id
                       ? 'bg-blue-100 text-blue-600'
                       : 'bg-gray-100 text-gray-600'
@@ -263,7 +263,7 @@ export default function EstadoEnviosMIR() {
             ) : (
               <div className="space-y-4">
                 {comunicacionesActivas.map((comunicacion) => (
-                  <div key={comunicacion.id} className="border border-gray-200 rounded-lg p-4">
+                  <div key={comunicacion.id} className="border border-gray-200 rounded-lg p-4 transition-all duration-300 hover:transform hover:-translate-y-1 hover:shadow-lg">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-4">
                         <div className={`px-3 py-1 rounded-full text-sm font-medium ${getEstadoColor(comunicacion.estado)}`}>
