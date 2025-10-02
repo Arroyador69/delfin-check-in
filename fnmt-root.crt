@@ -1,0 +1,5323 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
+		
+			<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<style>
+
+
+	.header-section::after {
+		background-color:#efefef;
+	}
+
+	.principal-bg {
+		background-color:#ffffff;
+	}
+	.principal-color {
+		color:#ffffff;
+	}
+
+	.principal-color a {
+		color:#ffffff;
+	}
+
+	div#wrapper #navigation .principal-color > a {
+		color:#ffffff !important;
+	}
+
+	body div#wrapper #navigation ul.child-menu li a,body div#wrapper #navigation ul li a {
+		color:#ffffff;
+	}
+
+
+
+	
+
+	body div#wrapper #navigation ul.child-menu a.has-child .ch1,body div#wrapper #navigation ul.child-menu a.has-child .ch2 {
+		background-color:#ffffff;
+	}
+
+
+
+	body div#wrapper header#banner .navigation-content.alineacion-derecha ul li a, body div#wrapper header#banner .navigation-content.alineacion-centrado ul li a {
+		color:#000000;
+	}
+
+	body div#wrapper header#banner .navigation-content.alineacion-derecha ul li a, body div#wrapper header#banner .navigation-content.alineacion-centrado ul li a,body .recursivas , body .recursivas li#idioma .actual-lang ,.recursivas .search-button button {
+		color:#000000;
+	}
+
+	div#wrapper .recursivas ul li.idioma .actual-lang::after , div#wrapper .recursivas ul li.separacion-li::before , div#wrapper .recursivas ul li.separacion-li::after {
+		border-color:#000000 !important;
+	}
+
+	div#wrapper .recursivas ul li img {
+		filter:inherit;
+	}
+	
+	div#wrapper div#heading .hamburguer .ham,div#wrapper header#banner .navigation-content.alineacion-derecha ul li.selected a::after, 
+	div#wrapper header#banner .navigation-content.alineacion-centrado ul li.selected a::after,div#wrapper header#banner .navigation-content.alineacion-derecha ul li a:hover::after, div#wrapper header#banner .navigation-content.alineacion-centrado ul li a:hover::after,div#wrapper #navigation > ul > li.selected > a::after {
+		background-color:#ffffff;
+	}
+
+	.no-site-menu div#wrapper div#heading .hamburguer .ham{
+		background-color:#1a3b88;
+	}
+
+	div#wrapper #navigation > ul > li.selected > a {
+		color:#ffffff;
+	}
+
+
+	.menu-poca-transparencia div#wrapper #navigation {
+		background-color:#507a9beb;
+		border-right:1px solid #ffffff;
+	}
+
+	.menu-media-transparencia div#wrapper #navigation {
+		background-color:#507a9b9c;
+		border-right:1px solid #ffffff;
+	}
+
+	.menu-alta-transparencia div#wrapper #navigation {
+		background-color:#507a9b5c;
+		border-right:1px solid #ffffff;
+	}
+
+	div#wrapper #navigation {
+		background-color:#507a9b;
+		border-right:1px solid #ffffff;
+	}
+
+	.cabecera-transparente-color-solido div#wrapper header#banner {
+		background-color:#ffffff;
+	}
+	
+	.cabecera-transparente-poca-transparencia div#wrapper header#banner{
+		background-color:#ffffffeb;
+	}
+	
+	.cabecera-transparente-media-transparencia div#wrapper header#banner{
+		background-color:#ffffff9c;
+	}
+
+	.cabecera-transparente-alta-transparencia div#wrapper header#banner{
+		background-color:#ffffff5c;
+	}
+
+	.scrolled.cabecera-transparente-poca-transparencia div#wrapper header#banner,.scrolled.cabecera-transparente-media-transparencia div#wrapper header#banner,.scrolled.cabecera-transparente-alta-transparencia div#wrapper header#banner{
+		background-color:#ffffff;
+	}
+
+
+
+	div#wrapper #navigation ul.grandchild-menu::after {
+		background-color:#ffffff;
+	}
+
+	html div#wrapper #navigation .principal-color > a {
+		color:#ffffff !important;
+	}
+
+
+	html div#wrapper #navigation ul.grandchild-menu::after {
+
+		background-color: #ffffff;
+	}
+
+	.grandchild-menu2 li::marker {
+		color:#ffffff;
+	}
+
+
+
+
+html div#wrapper div#heading .hamburguer a#menu-hamburguer:focus,
+html div#wrapper header#banner .navigation-content.alineacion-derecha ul li a:focus, 
+html div#wrapper header#banner .navigation-content.alineacion-centrado ul li a:focus ,
+html div#wrapper .recursivas ul li.search-element .search-button button:focus,
+html div#wrapper .recursivas ul li.idioma>div>button:focus::after,
+html div#wrapper a.logo.custom-logo:focus {
+	border-color:#000000;
+}
+
+
+html div#wrapper #navigation>ul>li>a:focus , 
+html div#wrapper #navigation ul.child-menu>li>a:focus , 
+html div#wrapper #navigation ul.grandchild-menu>li>a:focus,
+html div#wrapper #navigation ul.grandchild-menu2>li>a:focus {
+	border-color:#ffffff;
+}
+div#wrapper #navigation .grandchild-menu2 li a:focus {
+	outline:1px dashed #ffffff !important;
+}
+
+html div#wrapper .columns-2 .list-menu a.selected {
+	color:#ffffff;
+
+}
+
+#main-content .portlet-body a {
+	color:#000000;
+}
+
+#main-content .portlet-body h2 {
+	color:#212529;
+	font-size:2rem;
+	position: relative;
+    padding-top: 20px;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+#main-content .portlet-body h2 a{
+	color:#212529;
+}
+
+#main-content .portlet-body h2::after {
+    content: "";
+    width: 100%;
+    height: 1px;
+    background-color: #d6d6d6;
+    position: absolute;
+    left: 0;
+    bottom: 0;
+}
+
+#main-content .portlet-body h3 {
+	color:#212529;
+	font-size:1.7rem;
+}
+#main-content .portlet-body h3 a{
+	color:#212529;
+}
+
+
+body div#wrapper #navigation ul.child-menu li.selected > a {
+	color:#ffffff !important;
+}
+
+
+
+</style>
+
+<html class="ltr site-CERES sitename-ceres no-site-menu" dir="ltr" lang="es-ES">
+
+<head>
+
+	
+	<title>Estado - CERES</title>
+
+	<meta content="initial-scale=1.0, width=device-width" name="viewport" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<meta content="text/html; charset=UTF-8" http-equiv="content-type" />
+
+
+
+
+
+
+
+
+
+<meta content="Web CERES" lang="es-ES" name="description" />
+
+
+<script data-senna-track="permanent" src="/combo?browserId=other&minifierType=js&languageId=es_ES&t=1752838149667&/o/frontend-js-jquery-web/jquery/jquery.min.js&/o/frontend-js-jquery-web/jquery/bootstrap.bundle.min.js&/o/frontend-js-jquery-web/jquery/collapsible_search.js&/o/frontend-js-jquery-web/jquery/fm.js&/o/frontend-js-jquery-web/jquery/form.js&/o/frontend-js-jquery-web/jquery/popper.min.js&/o/frontend-js-jquery-web/jquery/side_navigation.js" type="text/javascript"></script>
+<link data-senna-track="permanent" href="/o/frontend-theme-font-awesome-web/css/main.css" rel="stylesheet" type="text/css" />
+
+
+<link href="https://www.cert.fnmt.es/o/fnmt-theme/images/favicon.ico" rel="icon" />
+
+
+
+
+
+	
+
+		
+			
+				<link data-senna-track="temporary" href="https://www.cert.fnmt.es" rel="canonical" />
+			
+		
+
+	
+
+		
+			
+				<link data-senna-track="temporary" href="https://www.cert.fnmt.es" hreflang="es-ES" rel="alternate" />
+			
+			
+
+	
+
+		
+			
+				<link data-senna-track="temporary" href="https://www.cert.fnmt.es/gl/" hreflang="gl-ES" rel="alternate" />
+			
+			
+
+	
+
+		
+			
+				<link data-senna-track="temporary" href="https://www.cert.fnmt.es/ca/" hreflang="ca-ES" rel="alternate" />
+			
+			
+
+	
+
+		
+			
+				<link data-senna-track="temporary" href="https://www.cert.fnmt.es/eu/" hreflang="eu-ES" rel="alternate" />
+			
+			
+
+	
+
+		
+			
+				<link data-senna-track="temporary" href="https://www.cert.fnmt.es/en/" hreflang="en-GB" rel="alternate" />
+			
+			
+
+	
+
+		
+			
+				<link data-senna-track="temporary" href="https://www.cert.fnmt.es" hreflang="x-default" rel="alternate" />
+			
+			
+
+	
+
+
+
+
+
+<link class="lfr-css-file" data-senna-track="temporary" href="https://www.cert.fnmt.es/o/fnmt-theme/css/clay.css?browserId=other&amp;themeId=FNMT_WAR_fnmttheme&amp;minifierType=css&amp;languageId=es_ES&amp;t=1752838174000" id="liferayAUICSS" rel="stylesheet" type="text/css" />
+
+
+
+<link data-senna-track="temporary" href="/o/frontend-css-web/main.css?browserId=other&amp;themeId=FNMT_WAR_fnmttheme&amp;minifierType=css&amp;languageId=es_ES&amp;t=1752838129424" id="liferayPortalCSS" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+
+
+	
+
+	
+
+
+
+
+
+	
+
+
+
+	
+
+		<link data-senna-track="temporary" href="/combo?browserId=other&amp;minifierType=&amp;themeId=FNMT_WAR_fnmttheme&amp;languageId=es_ES&amp;com_liferay_journal_content_web_portlet_JournalContentPortlet_INSTANCE_avisoheader:%2Fcss%2Fmain.css&amp;com_liferay_portal_search_web_search_bar_portlet_SearchBarPortlet_INSTANCE_templateSearch:%2Fcss%2Fmain.css&amp;com_liferay_product_navigation_product_menu_web_portlet_ProductMenuPortlet:%2Fcss%2Fmain.css&amp;com_liferay_segments_experiment_web_internal_portlet_SegmentsExperimentPortlet:%2Fcss%2Fmain.css&amp;com_liferay_site_navigation_menu_web_portlet_SiteNavigationMenuPortlet_INSTANCE_siteprefooter:%2Fcss%2Fmain.css&amp;t=1752838174000" id="accdd455" rel="stylesheet" type="text/css" />
+
+	
+
+
+
+
+
+
+
+<script data-senna-track="temporary" type="text/javascript">
+	// <![CDATA[
+		var Liferay = Liferay || {};
+
+		Liferay.Browser = {
+			acceptsGzip: function() {
+				return false;
+			},
+
+			
+
+			getMajorVersion: function() {
+				return 0;
+			},
+
+			getRevision: function() {
+				return '';
+			},
+			getVersion: function() {
+				return '';
+			},
+
+			
+
+			isAir: function() {
+				return false;
+			},
+			isChrome: function() {
+				return false;
+			},
+			isEdge: function() {
+				return false;
+			},
+			isFirefox: function() {
+				return false;
+			},
+			isGecko: function() {
+				return false;
+			},
+			isIe: function() {
+				return false;
+			},
+			isIphone: function() {
+				return false;
+			},
+			isLinux: function() {
+				return false;
+			},
+			isMac: function() {
+				return false;
+			},
+			isMobile: function() {
+				return false;
+			},
+			isMozilla: function() {
+				return false;
+			},
+			isOpera: function() {
+				return false;
+			},
+			isRtf: function() {
+				return false;
+			},
+			isSafari: function() {
+				return false;
+			},
+			isSun: function() {
+				return false;
+			},
+			isWebKit: function() {
+				return false;
+			},
+			isWindows: function() {
+				return false;
+			}
+		};
+
+		Liferay.Data = Liferay.Data || {};
+
+		Liferay.Data.ICONS_INLINE_SVG = true;
+
+		Liferay.Data.NAV_SELECTOR = '#navigation';
+
+		Liferay.Data.NAV_SELECTOR_MOBILE = '#navigationCollapse';
+
+		Liferay.Data.isCustomizationView = function() {
+			return false;
+		};
+
+		Liferay.Data.notices = [
+			null
+
+			
+
+			
+		];
+
+		Liferay.PortletKeys = {
+			DOCUMENT_LIBRARY: 'com_liferay_document_library_web_portlet_DLPortlet',
+			DYNAMIC_DATA_MAPPING: 'com_liferay_dynamic_data_mapping_web_portlet_DDMPortlet',
+			ITEM_SELECTOR: 'com_liferay_item_selector_web_portlet_ItemSelectorPortlet'
+		};
+
+		Liferay.PropsValues = {
+			JAVASCRIPT_SINGLE_PAGE_APPLICATION_TIMEOUT: 0,
+			NTLM_AUTH_ENABLED: false,
+			UPLOAD_SERVLET_REQUEST_IMPL_MAX_SIZE: 3221225472
+		};
+
+		Liferay.ThemeDisplay = {
+
+			
+
+			
+				getLayoutId: function() {
+					return '131';
+				},
+
+				
+
+				getLayoutRelativeControlPanelURL: function() {
+					return '/group/ceres/~/control_panel/manage';
+				},
+
+				getLayoutRelativeURL: function() {
+					return '/inicio';
+				},
+				getLayoutURL: function() {
+					return 'https://www.cert.fnmt.es/inicio';
+				},
+				getParentLayoutId: function() {
+					return '0';
+				},
+				isControlPanel: function() {
+					return false;
+				},
+				isPrivateLayout: function() {
+					return 'false';
+				},
+				isVirtualLayout: function() {
+					return false;
+				},
+			
+
+			getBCP47LanguageId: function() {
+				return 'es-ES';
+			},
+			getCanonicalURL: function() {
+
+				
+
+				return 'https\x3a\x2f\x2fwww\x2ecert\x2efnmt\x2ees';
+			},
+			getCDNBaseURL: function() {
+				return 'https://www.cert.fnmt.es';
+			},
+			getCDNDynamicResourcesHost: function() {
+				return '';
+			},
+			getCDNHost: function() {
+				return '';
+			},
+			getCompanyGroupId: function() {
+				return '10445912';
+			},
+			getCompanyId: function() {
+				return '10445874';
+			},
+			getDefaultLanguageId: function() {
+				return 'es_ES';
+			},
+			getDoAsUserIdEncoded: function() {
+				return '';
+			},
+			getLanguageId: function() {
+				return 'es_ES';
+			},
+			getParentGroupId: function() {
+				return '10446703';
+			},
+			getPathContext: function() {
+				return '';
+			},
+			getPathImage: function() {
+				return '/image';
+			},
+			getPathJavaScript: function() {
+				return '/o/frontend-js-web';
+			},
+			getPathMain: function() {
+				return '/c';
+			},
+			getPathThemeImages: function() {
+				return 'https://www.cert.fnmt.es/o/fnmt-theme/images';
+			},
+			getPathThemeRoot: function() {
+				return '/o/fnmt-theme';
+			},
+			getPlid: function() {
+				return '10930570';
+			},
+			getPortalURL: function() {
+				return 'https://www.cert.fnmt.es';
+			},
+			getRealUserId: function() {
+				return '10445877';
+			},
+			getScopeGroupId: function() {
+				return '10446703';
+			},
+			getScopeGroupIdOrLiveGroupId: function() {
+				return '10446703';
+			},
+			getSessionId: function() {
+				return '';
+			},
+			getSiteAdminURL: function() {
+				return 'https://www.cert.fnmt.es/group/ceres/~/control_panel/manage?p_p_lifecycle=0&p_p_state=maximized&p_p_mode=view';
+			},
+			getSiteGroupId: function() {
+				return '10446703';
+			},
+			getURLControlPanel: function() {
+				return '/group/control_panel?refererPlid=10930570';
+			},
+			getURLHome: function() {
+				return 'https\x3a\x2f\x2fwww\x2ecert\x2efnmt\x2ees\x2fweb\x2fsede';
+			},
+			getUserEmailAddress: function() {
+				return '';
+			},
+			getUserId: function() {
+				return '10445877';
+			},
+			getUserName: function() {
+				return '';
+			},
+			isAddSessionIdToURL: function() {
+				return false;
+			},
+			isImpersonated: function() {
+				return false;
+			},
+			isSignedIn: function() {
+				return false;
+			},
+
+			isStagedPortlet: function() {
+				
+					
+						return false;
+					
+				
+			},
+
+			isStateExclusive: function() {
+				return false;
+			},
+			isStateMaximized: function() {
+				return false;
+			},
+			isStatePopUp: function() {
+				return false;
+			}
+		};
+
+		var themeDisplay = Liferay.ThemeDisplay;
+
+		Liferay.AUI = {
+
+			
+
+			getAvailableLangPath: function() {
+				return 'available_languages.jsp?browserId=other&themeId=FNMT_WAR_fnmttheme&colorSchemeId=01&minifierType=js&languageId=es_ES&t=1752838342129';
+			},
+			getCombine: function() {
+				return true;
+			},
+			getComboPath: function() {
+				return '/combo/?browserId=other&minifierType=&languageId=es_ES&t=1752838130692&';
+			},
+			getDateFormat: function() {
+				return '%d/%m/%Y';
+			},
+			getEditorCKEditorPath: function() {
+				return '/o/frontend-editor-ckeditor-web';
+			},
+			getFilter: function() {
+				var filter = 'raw';
+
+				
+					
+						filter = 'min';
+					
+					
+
+				return filter;
+			},
+			getFilterConfig: function() {
+				var instance = this;
+
+				var filterConfig = null;
+
+				if (!instance.getCombine()) {
+					filterConfig = {
+						replaceStr: '.js' + instance.getStaticResourceURLParams(),
+						searchExp: '\\.js$'
+					};
+				}
+
+				return filterConfig;
+			},
+			getJavaScriptRootPath: function() {
+				return '/o/frontend-js-web';
+			},
+			getLangPath: function() {
+				return 'aui_lang.jsp?browserId=other&themeId=FNMT_WAR_fnmttheme&colorSchemeId=01&minifierType=js&languageId=es_ES&t=1752838130692';
+			},
+			getPortletRootPath: function() {
+				return '/html/portlet';
+			},
+			getStaticResourceURLParams: function() {
+				return '?browserId=other&minifierType=&languageId=es_ES&t=1752838130692';
+			}
+		};
+
+		Liferay.authToken = 'HzMTbPBP';
+
+		
+
+		Liferay.currentURL = '\x2fcertificados\x2fraizfnmtcer\x2ecrt';
+		Liferay.currentURLEncoded = '\x252Fcertificados\x252Fraizfnmtcer\x2ecrt';
+	// ]]>
+</script>
+
+<script src="/o/js_loader_config?t=1752838149592" type="text/javascript"></script>
+<script data-senna-track="permanent" src="/combo?browserId=other&minifierType=js&languageId=es_ES&t=1752838130692&/o/frontend-js-web/loader/config.js&/o/frontend-js-web/loader/loader.js&/o/frontend-js-web/aui/aui/aui.js&/o/frontend-js-web/aui/aui-base-html5-shiv/aui-base-html5-shiv.js&/o/frontend-js-web/liferay/browser_selectors.js&/o/frontend-js-web/liferay/modules.js&/o/frontend-js-web/liferay/aui_sandbox.js&/o/frontend-js-web/misc/svg4everybody.js&/o/frontend-js-web/aui/arraylist-add/arraylist-add.js&/o/frontend-js-web/aui/arraylist-filter/arraylist-filter.js&/o/frontend-js-web/aui/arraylist/arraylist.js&/o/frontend-js-web/aui/array-extras/array-extras.js&/o/frontend-js-web/aui/array-invoke/array-invoke.js&/o/frontend-js-web/aui/attribute-base/attribute-base.js&/o/frontend-js-web/aui/attribute-complex/attribute-complex.js&/o/frontend-js-web/aui/attribute-core/attribute-core.js&/o/frontend-js-web/aui/attribute-observable/attribute-observable.js&/o/frontend-js-web/aui/attribute-extras/attribute-extras.js&/o/frontend-js-web/aui/base-base/base-base.js&/o/frontend-js-web/aui/base-pluginhost/base-pluginhost.js&/o/frontend-js-web/aui/classnamemanager/classnamemanager.js&/o/frontend-js-web/aui/datatype-xml-format/datatype-xml-format.js&/o/frontend-js-web/aui/datatype-xml-parse/datatype-xml-parse.js&/o/frontend-js-web/aui/dom-base/dom-base.js&/o/frontend-js-web/aui/dom-core/dom-core.js&/o/frontend-js-web/aui/dom-screen/dom-screen.js&/o/frontend-js-web/aui/dom-style/dom-style.js&/o/frontend-js-web/aui/event-base/event-base.js&/o/frontend-js-web/aui/event-custom-base/event-custom-base.js&/o/frontend-js-web/aui/event-custom-complex/event-custom-complex.js&/o/frontend-js-web/aui/event-delegate/event-delegate.js&/o/frontend-js-web/aui/event-focus/event-focus.js&/o/frontend-js-web/aui/event-hover/event-hover.js&/o/frontend-js-web/aui/event-key/event-key.js&/o/frontend-js-web/aui/event-mouseenter/event-mouseenter.js&/o/frontend-js-web/aui/event-mousewheel/event-mousewheel.js" type="text/javascript"></script>
+<script data-senna-track="permanent" src="/combo?browserId=other&minifierType=js&languageId=es_ES&t=1752838130692&/o/frontend-js-web/aui/event-outside/event-outside.js&/o/frontend-js-web/aui/event-resize/event-resize.js&/o/frontend-js-web/aui/event-simulate/event-simulate.js&/o/frontend-js-web/aui/event-synthetic/event-synthetic.js&/o/frontend-js-web/aui/intl/intl.js&/o/frontend-js-web/aui/io-base/io-base.js&/o/frontend-js-web/aui/io-form/io-form.js&/o/frontend-js-web/aui/io-queue/io-queue.js&/o/frontend-js-web/aui/io-upload-iframe/io-upload-iframe.js&/o/frontend-js-web/aui/io-xdr/io-xdr.js&/o/frontend-js-web/aui/json-parse/json-parse.js&/o/frontend-js-web/aui/json-stringify/json-stringify.js&/o/frontend-js-web/aui/node-base/node-base.js&/o/frontend-js-web/aui/node-core/node-core.js&/o/frontend-js-web/aui/node-event-delegate/node-event-delegate.js&/o/frontend-js-web/aui/node-event-simulate/node-event-simulate.js&/o/frontend-js-web/aui/node-focusmanager/node-focusmanager.js&/o/frontend-js-web/aui/node-pluginhost/node-pluginhost.js&/o/frontend-js-web/aui/node-screen/node-screen.js&/o/frontend-js-web/aui/node-style/node-style.js&/o/frontend-js-web/aui/oop/oop.js&/o/frontend-js-web/aui/plugin/plugin.js&/o/frontend-js-web/aui/pluginhost-base/pluginhost-base.js&/o/frontend-js-web/aui/pluginhost-config/pluginhost-config.js&/o/frontend-js-web/aui/querystring-stringify-simple/querystring-stringify-simple.js&/o/frontend-js-web/aui/queue-promote/queue-promote.js&/o/frontend-js-web/aui/selector-css2/selector-css2.js&/o/frontend-js-web/aui/selector-css3/selector-css3.js&/o/frontend-js-web/aui/selector-native/selector-native.js&/o/frontend-js-web/aui/selector/selector.js&/o/frontend-js-web/aui/widget-base/widget-base.js&/o/frontend-js-web/aui/widget-htmlparser/widget-htmlparser.js&/o/frontend-js-web/aui/widget-skin/widget-skin.js&/o/frontend-js-web/aui/widget-uievents/widget-uievents.js&/o/frontend-js-web/aui/yui-throttle/yui-throttle.js&/o/frontend-js-web/aui/aui-base-core/aui-base-core.js" type="text/javascript"></script>
+<script data-senna-track="permanent" src="/combo?browserId=other&minifierType=js&languageId=es_ES&t=1752838130692&/o/frontend-js-web/aui/aui-base-lang/aui-base-lang.js&/o/frontend-js-web/aui/aui-classnamemanager/aui-classnamemanager.js&/o/frontend-js-web/aui/aui-component/aui-component.js&/o/frontend-js-web/aui/aui-debounce/aui-debounce.js&/o/frontend-js-web/aui/aui-delayed-task-deprecated/aui-delayed-task-deprecated.js&/o/frontend-js-web/aui/aui-event-base/aui-event-base.js&/o/frontend-js-web/aui/aui-event-input/aui-event-input.js&/o/frontend-js-web/aui/aui-form-validator/aui-form-validator.js&/o/frontend-js-web/aui/aui-node-base/aui-node-base.js&/o/frontend-js-web/aui/aui-node-html5/aui-node-html5.js&/o/frontend-js-web/aui/aui-selector/aui-selector.js&/o/frontend-js-web/aui/aui-timer/aui-timer.js&/o/frontend-js-web/liferay/dependency.js&/o/frontend-js-web/liferay/dom_task_runner.js&/o/frontend-js-web/liferay/events.js&/o/frontend-js-web/liferay/language.js&/o/frontend-js-web/liferay/lazy_load.js&/o/frontend-js-web/liferay/liferay.js&/o/frontend-js-web/liferay/util.js&/o/frontend-js-web/liferay/global.bundle.js&/o/frontend-js-web/liferay/portal.js&/o/frontend-js-web/liferay/portlet.js&/o/frontend-js-web/liferay/workflow.js&/o/frontend-js-web/liferay/form.js&/o/frontend-js-web/liferay/form_placeholders.js&/o/frontend-js-web/liferay/icon.js&/o/frontend-js-web/liferay/menu.js&/o/frontend-js-web/liferay/notice.js&/o/frontend-js-web/liferay/poller.js" type="text/javascript"></script>
+
+
+
+
+	
+
+	<script data-senna-track="temporary" src="/o/js_bundle_config?t=1752838159441" type="text/javascript"></script>
+
+
+<script data-senna-track="temporary" type="text/javascript">
+	// <![CDATA[
+		
+			
+				
+		
+
+		
+
+		
+	// ]]>
+</script>
+
+
+
+
+
+	
+		
+
+			
+
+			
+				<script data-senna-track="permanent" id="googleAnalyticsScript" type="text/javascript">
+					(function(i, s, o, g, r, a, m) {
+						i['GoogleAnalyticsObject'] = r;
+
+						i[r] = i[r] || function() {
+							var arrayValue = i[r].q || [];
+
+							i[r].q = arrayValue;
+
+							(i[r].q).push(arguments);
+						};
+
+						i[r].l = 1 * new Date();
+
+						a = s.createElement(o);
+						m = s.getElementsByTagName(o)[0];
+						a.async = 1;
+						a.src = g;
+						m.parentNode.insertBefore(a, m);
+					})(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+
+					
+
+					
+						
+							ga('create', 'UA-33313063-1', 'auto');
+						
+					
+
+					
+
+					
+
+					ga('send', 'pageview');
+
+					
+				</script>
+			
+		
+		
+
+
+
+	
+		
+
+			
+
+			
+		
+	
+
+
+
+
+
+
+
+
+
+
+
+
+	
+
+	
+
+
+
+
+
+	
+
+
+
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link class="lfr-css-file" data-senna-track="temporary" href="https://www.cert.fnmt.es/o/fnmt-theme/css/main.css?browserId=other&amp;themeId=FNMT_WAR_fnmttheme&amp;minifierType=css&amp;languageId=es_ES&amp;t=1752838174000" id="liferayThemeCSS" rel="stylesheet" type="text/css" />
+
+
+
+
+	<style data-senna-track="temporary" type="text/css">
+		div#wrapper div#heading .hamburguer .ham {
+    background-color: #1a3b88 !important;
+}
+	</style>
+
+
+
+
+
+	<style data-senna-track="temporary" type="text/css">
+
+		
+
+			
+
+		
+
+			
+
+		
+
+			
+
+		
+
+			
+
+		
+
+			
+
+		
+
+			
+
+		
+
+			
+
+		
+
+			
+
+		
+
+			
+
+		
+
+			
+
+		
+
+			
+
+		
+
+			
+
+		
+
+	</style>
+
+
+<link data-senna-track="permanent" href="https://www.cert.fnmt.es/combo?browserId=other&minifierType=css&languageId=es_ES&t=1752838135896&/o/change-tracking-change-lists-indicator-theme-contributor/change_tracking_change_lists_indicator.css" rel="stylesheet" type = "text/css" />
+<script type="text/javascript">
+// <![CDATA[
+Liferay.on(
+	'ddmFieldBlur', function(event) {
+		if (window.Analytics) {
+			Analytics.send(
+				'fieldBlurred',
+				'Form',
+				{
+					fieldName: event.fieldName,
+					focusDuration: event.focusDuration,
+					formId: event.formId,
+					page: event.page
+				}
+			);
+		}
+	}
+);
+
+Liferay.on(
+	'ddmFieldFocus', function(event) {
+		if (window.Analytics) {
+			Analytics.send(
+				'fieldFocused',
+				'Form',
+				{
+					fieldName: event.fieldName,
+					formId: event.formId,
+					page: event.page
+				}
+			);
+		}
+	}
+);
+
+Liferay.on(
+	'ddmFormPageShow', function(event) {
+		if (window.Analytics) {
+			Analytics.send(
+				'pageViewed',
+				'Form',
+				{
+					formId: event.formId,
+					page: event.page,
+					title: event.title
+				}
+			);
+		}
+	}
+);
+
+Liferay.on(
+	'ddmFormSubmit', function(event) {
+		if (window.Analytics) {
+			Analytics.send(
+				'formSubmitted',
+				'Form',
+				{
+					formId: event.formId
+				}
+			);
+		}
+	}
+);
+
+Liferay.on(
+	'ddmFormView', function(event) {
+		if (window.Analytics) {
+			Analytics.send(
+				'formViewed',
+				'Form',
+				{
+					formId: event.formId,
+					title: event.title
+				}
+			);
+		}
+	}
+);
+// ]]>
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script data-senna-track="temporary" type="text/javascript">
+	if (window.Analytics) {
+		window._com_liferay_document_library_analytics_isViewFileEntry = false;
+	}
+</script>
+
+
+
+
+	<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+	<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+
+	<body class=" controls-visible  yui3-skin-sam signed-out public-page site cabecera-transparente-color-solido menu-color-solido menu-fijo-true page-type-content footer-col-3">
+
+<script type="text/javascript">
+	var menuStatus= localStorage.getItem('menuStatus'); 
+	if(menuStatus=="hide") { document.body.className += ' hideMenu';}
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="container-fluid" id="wrapper">
+
+<div id="aviso-header">
+</div>
+<header id="banner" role="banner">
+
+	<section class="header-section">
+		<div id="heading">
+			<div class="hamburguer">
+				<a id="menu-hamburguer" href="javascript:void(0)">
+					<div class="ham c1"></div>
+					<div class="ham c2"></div>
+					<div class="ham c3"></div>
+					<span>Navegación</span>
+				</a>
+			</div>
+			<div aria-level="1" class="site-title" role="heading">
+					<a class="logo custom-logo" href="https://www.cert.fnmt.es" title="Ir a CERES">
+						<img alt="CERES"  src="/image/layout_set_logo?img_id=11256424&amp;t=1752838342121"  />
+					</a>
+
+
+			</div>
+		</div>
+
+		<div class="sites-logos">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
+
+	<div class="portlet-boundary portlet-boundary_com_liferay_journal_content_web_portlet_JournalContentPortlet_  portlet-static portlet-static-end portlet-barebone portlet-journal-content " id="p_p_id_com_liferay_journal_content_web_portlet_JournalContentPortlet_INSTANCE_sitenavigation_">
+		<span id="p_com_liferay_journal_content_web_portlet_JournalContentPortlet_INSTANCE_sitenavigation"></span>
+
+
+
+
+	
+
+	
+		
+			
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
+		
+<section class="portlet" id="portlet_com_liferay_journal_content_web_portlet_JournalContentPortlet_INSTANCE_sitenavigation">
+
+
+	<div class="portlet-content">
+
+
+
+
+
+		<div class="autofit-float autofit-row portlet-header">
+
+			<div class="autofit-col autofit-col-end">
+				<div class="autofit-section">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="visible-interaction">
+	
+		
+
+		
+
+		
+
+		
+	
+</div>				</div>
+			</div>
+		</div>
+
+		
+			<div class=" portlet-content-container">
+				
+
+
+	<div class="portlet-body">
+
+
+
+	
+		
+			
+				
+					
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+				
+
+				
+					
+						
+
+
+	
+
+		
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
+	
+		
+			
+			
+				
+					
+					
+					
+
+						
+
+						<div class="" data-fragments-editor-item-id="10108-11168494" data-fragments-editor-item-type="fragments-editor-mapped-item" >
+							
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
+	
+		<div class="journal-content-article " data-analytics-asset-id="10907907" data-analytics-asset-title="Menu iconos cabecera" data-analytics-asset-type="web-content">
+			
+
+			<div class="mobile-sites" style="display:none;">
+    <div class="saquare1"></div>
+    <div class="saquare2"></div>
+    <div class="saquare3"></div>
+</div>
+<div class="alineacion-centrado navigation-content">
+    <ul>
+        	
+        	   	<li class="">
+        	        <a data-senna-off="true" target="_blank" title="FNMT" href="http://www.fnmt.es">
+        	      
+        	         
+        	      
+                             <div class="image-ico">	<img alt="Ir a fnmt" data-fileentryid="11167111" src="/documents/10446703/11167044/icon_fnmt.svg/720cb7e1-6485-3a50-bc94-c714c7558c19?t=1645605470048" /> </div>
+            		     
+            		      
+            		 
+        		      
+                		 <span>FNMT</span>
+        		        </a>
+        		   </li>
+        	
+        	   	<li class="selected">
+        	        <a data-senna-off="true" target="_blank" title="Ceres" href="http://www.cert.fnmt.es">
+        	      
+        	         
+        	      
+                             <div class="image-ico">	<img alt="Ir a Ceres" data-fileentryid="11167116" src="/documents/10446703/11167044/fnmt_ceres.svg/d17ff40d-5a34-2dd3-e328-b0275777a8e0?t=1645605477577" /> </div>
+            		     
+            		      
+            		 
+        		      
+                		 <span>Ceres</span>
+        		        </a>
+        		   </li>
+        	
+        	   	<li class="">
+        	        <a data-senna-off="true" target="_blank" title="Sede Electrónica" href="http://www.sede.fnmt.gob.es">
+        	      
+        	         
+        	      
+                             <div class="image-ico">	<img alt="Ir a Sede Electrónica" data-fileentryid="11167111" src="/documents/10446703/11167044/icon_fnmt.svg/720cb7e1-6485-3a50-bc94-c714c7558c19?t=1645605470048" /> </div>
+            		     
+            		      
+            		 
+        		      
+                		 <span>Sede Electrónica</span>
+        		        </a>
+        		   </li>
+        	
+        	   	<li class="">
+        	        <a data-senna-off="true" target="_blank" title="Museo Casa de la Moneda" href="http://www.museocasadelamoneda.es">
+        	      
+        	         
+        	      
+                             <div class="image-ico">	<img alt="Ir a Museo Casa de la Moneda" data-fileentryid="11167126" src="/documents/10446703/11167044/fnmt_moneda.svg/ed82b3d7-87b5-6c49-d315-6f78512754e8?t=1645605485604" /> </div>
+            		     
+            		      
+            		 
+        		      
+                		 <span>Museo Casa de la Moneda</span>
+        		        </a>
+        		   </li>
+        	
+        	   	<li class="">
+        	        <a data-senna-off="true" target="_blank" title="SIAEN" href="http://www.siaen.org">
+        	      
+        	         
+        	      
+                             <div class="image-ico">	<img alt="Ir a siaen" data-fileentryid="11167131" src="/documents/10446703/11167044/fnmt_siaen.svg/2a83307e-7ebd-fa5d-0dc6-3ba8a48b55fa?t=1645605492952" /> </div>
+            		     
+            		      
+            		 
+        		      
+                		 <span>SIAEN</span>
+        		        </a>
+        		   </li>
+        	
+        	   	<li class="">
+        	        <a data-senna-off="true" target="_blank" title="Escuela de Grabado" href="http://www.escueladegrabadofnmt.org">
+        	      
+        	         
+        	      
+                             <div class="image-ico">	<img alt="Ir a escuela de grabado" data-fileentryid="11167121" src="/documents/10446703/11167044/fnmt_escuela.svg/be969e87-0788-64b0-2f42-5a45addcdc9e?t=1645605501782" /> </div>
+            		     
+            		      
+            		 
+        		      
+                		 <span>Escuela de Grabado</span>
+        		        </a>
+        		   </li>
+        	
+        	   	<li class="">
+        	        <a data-senna-off="true" target="_blank" title="Tienda Virtual" href="https://tienda.fnmt.es/fnmttv">
+        	      
+        	         
+        	      
+                             <div class="image-ico">	<img alt="Ir a Tienda virtual" data-fileentryid="11240835" src="/documents/10446703/11167044/icon_tienda_M_negro.svg/ff6aaef9-515c-9fc3-87c8-374f41c5be7c?t=1664976676404" /> </div>
+            		     
+            		      
+            		 
+        		      
+                		 <span>Tienda Virtual</span>
+        		        </a>
+        		   </li>
+    </ul>
+</div>
+		</div>
+
+		
+
+	
+
+
+
+
+							
+						</div>
+					
+				
+			
+		
+	
+
+
+
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+
+
+
+	
+	
+					
+				
+			
+		
+	
+	
+
+
+	</div>
+
+			</div>
+		
+	</div>
+</section>
+	
+
+		
+		
+
+
+
+
+
+
+
+	</div>
+
+
+
+
+
+
+		</div>
+
+
+		<div class="recursivas">
+		<div class="mobile-show-sites"></div>
+		<div class="mobile-show-sites-separacion"></div>
+			<ul>
+				<li class="search-element">
+
+					<div class="search-button">
+						<button aria-label="Buscar"><svg class="lexicon-icon lexicon-icon-search" focusable="false" id="ckhr" role="presentation"><use xlink:href="https://www.cert.fnmt.es/o/fnmt-theme/images/clay/icons.svg#search"/></svg></button>
+					</div>
+
+				</li>
+				<li class="separacion-li"></li>
+				<li class="fecha">
+					<div>
+						
+						<img alt="icono calendario para la fecha" itemprop="calendario" itemscope="itemscope" class="ico-calendar" src="https://www.cert.fnmt.es/o/fnmt-theme/images/icons/calendar.svg" aria-hidden="true">
+<span>02/10/2025</span>
+					</div>
+				</li>
+				<li class="hora">
+					
+<script  language="javascript" type="text/javascript" data-senna-track="temporary">
+
+
+	var hourMillisHeader = Number(1759400245308);
+	var serverhour = new Date(hourMillisHeader+0);
+
+	
+
+	function pageTimer(){
+
+		function padlength(what){
+			var output=(what.toString().length==1)? "0"+what : what
+			return output
+		}
+		function displaytime(){
+			serverhour.setSeconds(serverhour.getSeconds()+1);
+			var timestring=padlength(serverhour.getHours())+"h : "+padlength(serverhour.getMinutes())+"m : "+padlength(serverhour.getSeconds())+"s ";
+			document.getElementById("hora").innerHTML=timestring;
+		}
+
+		window.timerFlag2=displaytime();
+	}
+		
+	if ( !window.timerFlag) {
+
+		window.timerFlag=setInterval('pageTimer()', 1000);
+	}
+
+
+</script>					
+					<div>
+						<img alt="icono reloj para la hora" itemprop="reloj" itemscope="itemscope" class="ico-clock" src="https://www.cert.fnmt.es/o/fnmt-theme/images/icons/clock.svg" aria-hidden="true">
+						<span id="hora">&nbsp;</span>
+					</div>
+				</li>
+				<li class="separacion-li"></li>
+				<li id="idioma" class="idioma" >
+					<div>
+						<img alt="icono idioma para la hora" itemprop="language" itemscope="itemscope" class="ico-language" src="https://www.cert.fnmt.es/o/fnmt-theme/images/icons/language.svg" aria-hidden="true">
+						<button type="button" aria-expanded="false">
+							<div class="actual-lang">
+								
+									es
+							
+							</div>
+						</button>
+					</div>
+					<div class="language-selection" style="display: none;">
+						<div class="language-panel-popup">
+							<button class="lang-1" aria-label="lang-1"><span style="opacity: 0;">&nbsp;</span></button>
+							<h2>Seleccionar&nbsp;<span>Lenguaje</span> :</h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
+
+	<div class="portlet-boundary portlet-boundary_com_liferay_site_navigation_language_web_portlet_SiteNavigationLanguagePortlet_  portlet-static portlet-static-end portlet-barebone portlet-language " id="p_p_id_com_liferay_site_navigation_language_web_portlet_SiteNavigationLanguagePortlet_">
+		<span id="p_com_liferay_site_navigation_language_web_portlet_SiteNavigationLanguagePortlet"></span>
+
+
+
+
+	
+
+	
+		
+			
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
+		
+<section class="portlet" id="portlet_com_liferay_site_navigation_language_web_portlet_SiteNavigationLanguagePortlet">
+
+
+	<div class="portlet-content">
+
+
+
+
+
+		<div class="autofit-float autofit-row portlet-header">
+
+			<div class="autofit-col autofit-col-end">
+				<div class="autofit-section">
+				</div>
+			</div>
+		</div>
+
+		
+			<div class=" portlet-content-container">
+				
+
+
+	<div class="portlet-body">
+
+
+
+	
+		
+			
+				
+					
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+				
+
+				
+					
+						
+
+
+	
+
+		
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
+
+	<div class="desplegable-language">
+    <span class="current-language language-entry-short-text"  id="qfkd____"><svg aria-hidden="true" class="lexicon-icon lexicon-icon-es-es" focusable="false" message="español" lang="es-es" ><use data-href="https://www.cert.fnmt.es/o/fnmt-theme/images/lexicon/icons.svg#es-es"></use></svg><span class="taglib-icon-label">Bienvenido</span></span><a href="/c/portal/update_language?p_l_id=10930570&amp;redirect=%2Fcertificados%2Fraizfnmtcer.crt&amp;languageId=ca_ES" class="current-language language-entry-short-text" id="_com_liferay_site_navigation_language_web_portlet_SiteNavigationLanguagePortlet_jbfs____" ><svg aria-hidden="true" class="lexicon-icon lexicon-icon-ca-es" focusable="false" message="català" lang="ca-es" ><use data-href="https://www.cert.fnmt.es/o/fnmt-theme/images/lexicon/icons.svg#ca-es"></use></svg><span class="taglib-icon-label">Benvinguda</span></a><a href="/c/portal/update_language?p_l_id=10930570&amp;redirect=%2Fcertificados%2Fraizfnmtcer.crt&amp;languageId=gl_ES" class="current-language language-entry-short-text" id="_com_liferay_site_navigation_language_web_portlet_SiteNavigationLanguagePortlet_uvlz____" ><svg aria-hidden="true" class="lexicon-icon lexicon-icon-gl-es" focusable="false" message="galego [beta]" lang="gl-es" ><use data-href="https://www.cert.fnmt.es/o/fnmt-theme/images/lexicon/icons.svg#gl-es"></use></svg><span class="taglib-icon-label">Benvido</span></a><a href="/c/portal/update_language?p_l_id=10930570&amp;redirect=%2Fcertificados%2Fraizfnmtcer.crt&amp;languageId=eu_ES" class="current-language language-entry-short-text" id="_com_liferay_site_navigation_language_web_portlet_SiteNavigationLanguagePortlet_ored____" ><svg aria-hidden="true" class="lexicon-icon lexicon-icon-eu-es" focusable="false" message="euskara [beta]" lang="eu-es" ><use data-href="https://www.cert.fnmt.es/o/fnmt-theme/images/lexicon/icons.svg#eu-es"></use></svg><span class="taglib-icon-label">Ongi etorri</span></a><a href="/c/portal/update_language?p_l_id=10930570&amp;redirect=%2Fcertificados%2Fraizfnmtcer.crt&amp;languageId=en_GB" class="current-language language-entry-short-text" id="_com_liferay_site_navigation_language_web_portlet_SiteNavigationLanguagePortlet_fehs____" ><svg aria-hidden="true" class="lexicon-icon lexicon-icon-en-gb" focusable="false" message="english [beta]" lang="en-gb" ><use data-href="https://www.cert.fnmt.es/o/fnmt-theme/images/lexicon/icons.svg#en-gb"></use></svg><span class="taglib-icon-label">Welcome</span></a></div>
+
+
+	
+	
+					
+				
+			
+		
+	
+	
+
+
+	</div>
+
+			</div>
+		
+	</div>
+</section>
+	
+
+		
+		
+
+
+
+
+
+
+
+	</div>
+
+
+
+
+
+
+							<div class="close-popup">
+								<button aria-expanded="false"><span>x</span></button>
+							</div>
+							<button class="lang-2" aria-label="lang-2"><span style="opacity: 0;">&nbsp;</span></button>
+						</div>
+					</div>
+				</li>
+			</ul>
+		</div>
+
+		<div class="search-bar-fnmt" style="display: none;">
+			<div class="search-panel-popup">
+				<button class="search-1" aria-label="search-1"><span style="opacity: 0;">&nbsp;</span></button>
+				<h2>Buscar :</h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
+
+	<div class="portlet-boundary portlet-boundary_com_liferay_portal_search_web_search_bar_portlet_SearchBarPortlet_  portlet-static portlet-static-end portlet-barebone portlet-search-bar " id="p_p_id_com_liferay_portal_search_web_search_bar_portlet_SearchBarPortlet_INSTANCE_templateSearch_">
+		<span id="p_com_liferay_portal_search_web_search_bar_portlet_SearchBarPortlet_INSTANCE_templateSearch"></span>
+
+
+
+
+	
+
+	
+		
+			
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
+		
+<section class="portlet" id="portlet_com_liferay_portal_search_web_search_bar_portlet_SearchBarPortlet_INSTANCE_templateSearch">
+
+
+	<div class="portlet-content">
+
+
+
+
+
+		<div class="autofit-float autofit-row portlet-header">
+
+			<div class="autofit-col autofit-col-end">
+				<div class="autofit-section">
+				</div>
+			</div>
+		</div>
+
+		
+			<div class=" portlet-content-container">
+				
+
+
+	<div class="portlet-body">
+
+
+
+	
+		
+			
+				
+					
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+				
+
+				
+					
+						
+
+
+	
+
+		
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
+		
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<form action="https://www.cert.fnmt.es/search" class="form  " data-fm-namespace="_com_liferay_portal_search_web_search_bar_portlet_SearchBarPortlet_INSTANCE_templateSearch_" id="_com_liferay_portal_search_web_search_bar_portlet_SearchBarPortlet_INSTANCE_templateSearch_fm" method="get" name="_com_liferay_portal_search_web_search_bar_portlet_SearchBarPortlet_INSTANCE_templateSearch_fm" >
+	
+
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
+
+		
+
+		
+			
+				<input  class="field form-control"  id="_com_liferay_portal_search_web_search_bar_portlet_SearchBarPortlet_INSTANCE_templateSearch_formDate"    name="_com_liferay_portal_search_web_search_bar_portlet_SearchBarPortlet_INSTANCE_templateSearch_formDate"     type="hidden" value="1759400245313"   />
+			
+		
+
+		
+	
+
+
+
+
+
+
+
+
+
+			
+
+			<div class="search-bar">
+				
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
+
+		
+
+		
+			
+				<input  class="field search-bar-empty-search-input form-control"  id="_com_liferay_portal_search_web_search_bar_portlet_SearchBarPortlet_INSTANCE_templateSearch_emptySearchEnabled"    name="_com_liferay_portal_search_web_search_bar_portlet_SearchBarPortlet_INSTANCE_templateSearch_emptySearchEnabled"     type="hidden" value="false"   />
+			
+		
+
+		
+	
+
+
+
+
+
+
+
+
+
+
+				<div class="input-group search-bar-simple">
+					
+						
+							<div class="input-group-item search-bar-keywords-input-wrapper">
+								<input class="form-control input-group-inset input-group-inset-after search-bar-keywords-input" data-qa-id="searchInput" id="dkrk___q" name="q" placeholder="Búsqueda…" title="Buscar" type="text" value="" />
+
+								
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
+
+		
+
+		
+			
+				<input  class="field form-control"  id="_com_liferay_portal_search_web_search_bar_portlet_SearchBarPortlet_INSTANCE_templateSearch_scope"    name="_com_liferay_portal_search_web_search_bar_portlet_SearchBarPortlet_INSTANCE_templateSearch_scope"     type="hidden" value=""   />
+			
+		
+
+		
+	
+
+
+
+
+
+
+
+
+
+
+								<div class="input-group-inset-item input-group-inset-item-after">
+									<button class="btn btn-unstyled" aria-label="Enviar" id="icrk" type="submit"><svg class="lexicon-icon lexicon-icon-search" focusable="false" role="presentation"><use xlink:href="https://www.cert.fnmt.es/o/fnmt-theme/images/clay/icons.svg#search"/></svg></button>
+								</div>
+							</div>
+						
+					
+				</div>
+			</div>
+		
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
+
+	
+</form>
+
+
+
+<script type="text/javascript">
+// <![CDATA[
+AUI().use('liferay-form', function(A) {(function() {var $ = AUI.$;var _ = AUI._;
+	Liferay.Form.register(
+		{
+			id: '_com_liferay_portal_search_web_search_bar_portlet_SearchBarPortlet_INSTANCE_templateSearch_fm'
+
+			
+				, fieldRules: [
+
+					
+
+				]
+			
+
+			
+
+			, validateOnBlur: true
+		}
+	);
+
+	var onDestroyPortlet = function(event) {
+		if (event.portletId === 'com_liferay_portal_search_web_search_bar_portlet_SearchBarPortlet_INSTANCE_templateSearch') {
+			delete Liferay.Form._INSTANCES['_com_liferay_portal_search_web_search_bar_portlet_SearchBarPortlet_INSTANCE_templateSearch_fm'];
+		}
+	};
+
+	Liferay.on('destroyPortlet', onDestroyPortlet);
+
+	
+
+	Liferay.fire(
+		'_com_liferay_portal_search_web_search_bar_portlet_SearchBarPortlet_INSTANCE_templateSearch_formReady',
+		{
+			formName: '_com_liferay_portal_search_web_search_bar_portlet_SearchBarPortlet_INSTANCE_templateSearch_fm'
+		}
+	);
+})();});
+// ]]>
+</script>
+
+		<script type="text/javascript">
+// <![CDATA[
+AUI().use('liferay-search-bar', function(A) {(function() {var $ = AUI.$;var _ = AUI._;
+			new Liferay.Search.SearchBar(A.one('#_com_liferay_portal_search_web_search_bar_portlet_SearchBarPortlet_INSTANCE_templateSearch_fm'));
+		})();});
+// ]]>
+</script>
+	
+
+
+	
+	
+					
+				
+			
+		
+	
+	
+
+
+	</div>
+
+			</div>
+		
+	</div>
+</section>
+	
+
+		
+		
+
+
+
+
+
+
+
+	</div>
+
+
+
+
+
+
+
+
+				
+				<div class="close-popup">
+					<button aria-expanded="false"><span>x</span></button>
+				</div>
+				<button class="search-2" aria-label="search-2"><span style="opacity: 0;">&nbsp;</span></button>
+			</div>
+		</div>
+
+	</section>
+
+</header>
+
+
+
+
+<nav class="sort-pages modify-pages" id="navigation" role="navigation">
+	<ul aria-label="Páginas del sitio web" role="menubar">
+			
+			
+
+			
+			
+			<li class="" id="layout_131" role="presentation">
+				<a aria-labelledby="layout_131"  href="https://www.cert.fnmt.es/inicio"  role="menuitem">
+					
+						
+
+					
+					<span>
+						
+						Inicio
+					</span>
+				</a>
+
+					<ul class="child-menu" role="menu">
+
+
+
+
+
+							
+							<li class=" sin-iconos" id="layout_4" role="presentation">
+								<a aria-labelledby="layout_4" href="https://www.cert.fnmt.es/que-es-ceres"  role="menuitem">
+
+							
+							
+		
+								<span>
+									Qué es CERES
+								</span>
+								</a>
+
+										<a  data-toggle="collapse" href="#collapseMenu0" role="button" aria-expanded="false" aria-controls="collapseMenu0" class="has-child">
+											<div class="ch1"></div>
+											<div class="ch2"></div>
+											<span>Mostrar/Ocultar</span>
+										</a>
+
+											<ul id="collapseMenu0" class="grandchild-menu collapse " role="menu">
+										
+
+
+												<li class="" id="layout_26" role="presentation">
+													<a class="" aria-labelledby="layout_26" href="https://www.cert.fnmt.es/que-es-ceres/informacion-general"  role="menuitem">
+													
+														<span>Información general</span>
+													
+													</a>
+
+
+												</li>
+
+
+												<li class="" id="layout_27" role="presentation">
+													<a class="" aria-labelledby="layout_27" href="https://www.cert.fnmt.es/que-es-ceres/calidad"  role="menuitem">
+													
+														<span>Calidad</span>
+													
+													</a>
+
+
+
+
+														<a  data-toggle="collapse" href="#collapseMenu201" role="button" aria-expanded="false" aria-controls="collapseMenu201" class="has-child">
+															<div class="ch1"></div>
+															<div class="ch2"></div>
+															<span>Mostrar/Ocultar</span>
+														</a>
+
+															<ul id="collapseMenu201" class="grandchild-menu2 collapse" role="menu">
+										
+
+
+															<li class="" id="layout_34" role="presentation">
+																<a aria-labelledby="layout_34" href="https://www.cert.fnmt.es/que-es-ceres/calidad/certificaciones"  role="menuitem">
+																
+																<span>Certificaciones</span>
+																
+																</a>
+															</li>
+
+
+															<li class="" id="layout_121" role="presentation">
+																<a aria-labelledby="layout_121" href="https://www.cert.fnmt.es/que-es-ceres/calidad/caa-record"  role="menuitem">
+																
+																<span>CAA Record</span>
+																
+																</a>
+															</li>
+														</ul>
+												</li>
+
+
+												<li class="" id="layout_28" role="presentation">
+													<a class="" aria-labelledby="layout_28" href="https://www.cert.fnmt.es/que-es-ceres/premios"  role="menuitem">
+													
+														<span>Premios</span>
+													
+													</a>
+
+
+												</li>
+
+
+												<li class="" id="layout_29" role="presentation">
+													<a class="" aria-labelledby="layout_29" href="https://www.cert.fnmt.es/que-es-ceres/prestadores-de-servicios-de-certificacion"  role="menuitem">
+													
+														<span>Prestadores de Servicios de Certificación</span>
+													
+													</a>
+
+
+												</li>
+
+
+												<li class="" id="layout_32" role="presentation">
+													<a class="" aria-labelledby="layout_32" href="https://www.cert.fnmt.es/que-es-ceres/donde-puedo-usar-mi-certificado"  role="menuitem">
+													
+														<span>Dónde puedo usar mi certificado</span>
+													
+													</a>
+
+
+
+
+														<a  data-toggle="collapse" href="#collapseMenu204" role="button" aria-expanded="false" aria-controls="collapseMenu204" class="has-child">
+															<div class="ch1"></div>
+															<div class="ch2"></div>
+															<span>Mostrar/Ocultar</span>
+														</a>
+
+															<ul id="collapseMenu204" class="grandchild-menu2 collapse" role="menu">
+										
+
+
+															<li class="" id="layout_66" role="presentation">
+																<a aria-labelledby="layout_66" href="https://www.cert.fnmt.es/que-es-ceres/donde-puedo-usar-mi-certificado/administracion-central"  role="menuitem">
+																
+																<span>Administración Central</span>
+																
+																</a>
+															</li>
+
+
+															<li class="" id="layout_67" role="presentation">
+																<a aria-labelledby="layout_67" href="https://www.cert.fnmt.es/que-es-ceres/donde-puedo-usar-mi-certificado/administracion-autonomica"  role="menuitem">
+																
+																<span>Administración Autonómica</span>
+																
+																</a>
+															</li>
+
+
+															<li class="" id="layout_68" role="presentation">
+																<a aria-labelledby="layout_68" href="https://www.cert.fnmt.es/que-es-ceres/donde-puedo-usar-mi-certificado/administracion-local"  role="menuitem">
+																
+																<span>Administración Local</span>
+																
+																</a>
+															</li>
+
+
+															<li class="" id="layout_69" role="presentation">
+																<a aria-labelledby="layout_69" href="https://www.cert.fnmt.es/que-es-ceres/donde-puedo-usar-mi-certificado/otros"  role="menuitem">
+																
+																<span>Otras entidades</span>
+																
+																</a>
+															</li>
+														</ul>
+												</li>
+										</ul>
+							</li>
+
+
+
+
+
+							
+							<li class=" sin-iconos" id="layout_6" role="presentation">
+								<a aria-labelledby="layout_6" href="https://www.cert.fnmt.es/catalogo-de-servicios"  role="menuitem">
+
+							
+							
+		
+								<span>
+									Catálogo de Servicios
+								</span>
+								</a>
+
+										<a  data-toggle="collapse" href="#collapseMenu1" role="button" aria-expanded="false" aria-controls="collapseMenu1" class="has-child">
+											<div class="ch1"></div>
+											<div class="ch2"></div>
+											<span>Mostrar/Ocultar</span>
+										</a>
+
+											<ul id="collapseMenu1" class="grandchild-menu collapse " role="menu">
+										
+
+
+												<li class="" id="layout_42" role="presentation">
+													<a class="" aria-labelledby="layout_42" href="https://www.cert.fnmt.es/catalogo-de-servicios/validacion-de-certificados"  role="menuitem">
+													
+														<span>Validación de certificados</span>
+													
+													</a>
+
+
+
+
+														<a  data-toggle="collapse" href="#collapseMenu210" role="button" aria-expanded="false" aria-controls="collapseMenu210" class="has-child">
+															<div class="ch1"></div>
+															<div class="ch2"></div>
+															<span>Mostrar/Ocultar</span>
+														</a>
+
+															<ul id="collapseMenu210" class="grandchild-menu2 collapse" role="menu">
+										
+
+
+															<li class="" id="layout_53" role="presentation">
+																<a aria-labelledby="layout_53" href="https://www.cert.fnmt.es/catalogo-de-servicios/validacion-de-certificados/ocsp"  role="menuitem">
+																
+																<span>OCSP</span>
+																
+																</a>
+															</li>
+
+
+															<li class="" id="layout_54" role="presentation">
+																<a aria-labelledby="layout_54" href="https://www.cert.fnmt.es/catalogo-de-servicios/validacion-de-certificados/ldap-crls"  role="menuitem">
+																
+																<span>Descarga de CRLs mediante protocolo LDAP</span>
+																
+																</a>
+															</li>
+
+
+															<li class="" id="layout_55" role="presentation">
+																<a aria-labelledby="layout_55" href="https://www.cert.fnmt.es/catalogo-de-servicios/validacion-de-certificados/url"  role="menuitem">
+																
+																<span>Descarga de CRLs protocolo http</span>
+																
+																</a>
+															</li>
+														</ul>
+												</li>
+
+
+												<li class="" id="layout_43" role="presentation">
+													<a class="" aria-labelledby="layout_43" href="https://www.cert.fnmt.es/catalogo-de-servicios/sellado-de-tiempo"  role="menuitem">
+													
+														<span>Sellado de tiempo Cualificado</span>
+													
+													</a>
+
+
+
+
+														<a  data-toggle="collapse" href="#collapseMenu211" role="button" aria-expanded="false" aria-controls="collapseMenu211" class="has-child">
+															<div class="ch1"></div>
+															<div class="ch2"></div>
+															<span>Mostrar/Ocultar</span>
+														</a>
+
+															<ul id="collapseMenu211" class="grandchild-menu2 collapse" role="menu">
+										
+
+
+															<li class="" id="layout_57" role="presentation">
+																<a aria-labelledby="layout_57" href="https://www.cert.fnmt.es/catalogo-de-servicios/sellado-de-tiempo/informacion-sobre-sellado-de-tiempo"  role="menuitem">
+																
+																<span>Información sobre Sellado de tiempo</span>
+																
+																</a>
+															</li>
+
+
+															<li class="" id="layout_58" role="presentation">
+																<a aria-labelledby="layout_58" href="https://www.cert.fnmt.es/catalogo-de-servicios/sellado-de-tiempo/certificados-de-sincronizacion"  role="menuitem">
+																
+																<span>Certificados de sincronización</span>
+																
+																</a>
+															</li>
+
+
+															<li class="" id="layout_59" role="presentation">
+																<a aria-labelledby="layout_59" href="https://www.cert.fnmt.es/catalogo-de-servicios/sellado-de-tiempo/canal-mayorista"  role="menuitem">
+																
+																<span>Canal Mayorista</span>
+																
+																</a>
+															</li>
+														</ul>
+												</li>
+
+
+												<li class="" id="layout_44" role="presentation">
+													<a class="" aria-labelledby="layout_44" href="https://www.cert.fnmt.es/catalogo-de-servicios/hosting"  role="menuitem">
+													
+														<span>Hosting</span>
+													
+													</a>
+
+
+												</li>
+
+
+												<li class="" id="layout_45" role="presentation">
+													<a class="" aria-labelledby="layout_45" href="https://www.cert.fnmt.es/catalogo-de-servicios/tarjetas-criptograficas"  role="menuitem">
+													
+														<span>Tarjetas criptográficas</span>
+													
+													</a>
+
+
+
+
+														<a  data-toggle="collapse" href="#collapseMenu213" role="button" aria-expanded="false" aria-controls="collapseMenu213" class="has-child">
+															<div class="ch1"></div>
+															<div class="ch2"></div>
+															<span>Mostrar/Ocultar</span>
+														</a>
+
+															<ul id="collapseMenu213" class="grandchild-menu2 collapse" role="menu">
+										
+
+
+															<li class="" id="layout_60" role="presentation">
+																<a aria-labelledby="layout_60" href="https://www.cert.fnmt.es/catalogo-de-servicios/tarjetas-criptograficas/lectores-de-tarjetas"  role="menuitem">
+																
+																<span>Lectores de tarjetas</span>
+																
+																</a>
+															</li>
+
+
+															<li class="" id="layout_61" role="presentation">
+																<a aria-labelledby="layout_61" href="https://www.cert.fnmt.es/catalogo-de-servicios/tarjetas-criptograficas/adquirir-lectores"  role="menuitem">
+																
+																<span>Kit lector - tarjeta criptográfica</span>
+																
+																</a>
+															</li>
+														</ul>
+												</li>
+
+
+												<li class="" id="layout_46" role="presentation">
+													<a class="" aria-labelledby="layout_46" href="https://www.cert.fnmt.es/catalogo-de-servicios/replica-de-directorio"  role="menuitem">
+													
+														<span>Réplica de directorio</span>
+													
+													</a>
+
+
+												</li>
+
+
+												<li class="" id="layout_47" role="presentation">
+													<a class="" aria-labelledby="layout_47" href="https://www.cert.fnmt.es/catalogo-de-servicios/firma-larga-duracion"  role="menuitem">
+													
+														<span>Firma de larga duración</span>
+													
+													</a>
+
+
+												</li>
+										</ul>
+							</li>
+
+
+
+
+
+							
+							<li class=" sin-iconos" id="layout_152" role="presentation">
+								<a aria-labelledby="layout_152" href="https://www.sede.fnmt.gob.es/certificados/persona-fisica"  role="menuitem">
+
+							
+							
+		
+								<span>
+									Cert. Electrónico Ciudadano
+								</span>
+								</a>
+
+							</li>
+
+
+
+
+
+							
+							<li class=" sin-iconos" id="layout_153" role="presentation">
+								<a aria-labelledby="layout_153" href="https://www.sede.fnmt.gob.es/certificados/certificado-de-representante"  role="menuitem">
+
+							
+							
+		
+								<span>
+									Cert. Electrónico Empresa
+								</span>
+								</a>
+
+							</li>
+
+
+
+
+
+							
+							<li class=" sin-iconos" id="layout_154" role="presentation">
+								<a aria-labelledby="layout_154" href="https://www.sede.fnmt.gob.es/certificados/administracion-publica"  role="menuitem">
+
+							
+							
+		
+								<span>
+									Cert. Electrónico Sector Público
+								</span>
+								</a>
+
+							</li>
+
+
+
+
+
+							
+							<li class=" sin-iconos" id="layout_41" role="presentation">
+								<a aria-labelledby="layout_41" href="https://www.cert.fnmt.es/componente"  role="menuitem">
+
+							
+							
+		
+								<span>
+									Cert. Electrónico Componente
+								</span>
+								</a>
+
+										<a  data-toggle="collapse" href="#collapseMenu5" role="button" aria-expanded="false" aria-controls="collapseMenu5" class="has-child">
+											<div class="ch1"></div>
+											<div class="ch2"></div>
+											<span>Mostrar/Ocultar</span>
+										</a>
+
+											<ul id="collapseMenu5" class="grandchild-menu collapse " role="menu">
+										
+
+
+												<li class="" id="layout_49" role="presentation">
+													<a class="" aria-labelledby="layout_49" href="https://www.cert.fnmt.es/componente/certificado-servidor"  role="menuitem">
+													
+														<span>Servidor SSL/TLS</span>
+													
+													</a>
+
+
+												</li>
+
+
+												<li class="" id="layout_50" role="presentation">
+													<a class="" aria-labelledby="layout_50" href="https://www.cert.fnmt.es/componente/sello-entidad"  role="menuitem">
+													
+														<span>Sello de Entidad</span>
+													
+													</a>
+
+
+												</li>
+										</ul>
+							</li>
+					</ul>
+			</li>
+	</ul>
+</nav>
+<div class="navigation-overlay"></div>	<div class="content-section-center">
+		<section id="content">
+			<h2 class="hide-accessible" role="heading" aria-level="1">Estado</h2>
+
+
+				
+
+				
+
+
+<section class="portlet" id="portlet_status">
+
+	<div class="portlet-content">
+
+
+
+
+
+		<div class="autofit-float autofit-row portlet-header">
+
+			<div class="autofit-col autofit-col-end">
+				<div class="autofit-section">
+				</div>
+			</div>
+		</div>
+
+		
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
+		<h3 class="alert alert-danger">
+			No encontrado
+		</h3>
+
+		El recurso solicitado no ha sido encontrado.
+
+		<br /><br />
+
+		<code class="lfr-url-error">https://www.cert.fnmt.es/certificados/raizfnmtcer.crt</code>
+	
+	
+
+<div class="separator"><!-- --></div>
+
+<a href="javascript:history.go(-1);">&laquo; Atrás</a>
+
+
+	</div>
+</section>		</section>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
+
+	<div class="portlet-boundary portlet-boundary_com_liferay_site_navigation_menu_web_portlet_SiteNavigationMenuPortlet_  portlet-static portlet-static-end portlet-barebone portlet-navigation " id="p_p_id_com_liferay_site_navigation_menu_web_portlet_SiteNavigationMenuPortlet_INSTANCE_siteprefooter_">
+		<span id="p_com_liferay_site_navigation_menu_web_portlet_SiteNavigationMenuPortlet_INSTANCE_siteprefooter"></span>
+
+
+
+
+	
+
+	
+		
+			
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
+		
+<section class="portlet" id="portlet_com_liferay_site_navigation_menu_web_portlet_SiteNavigationMenuPortlet_INSTANCE_siteprefooter">
+
+
+	<div class="portlet-content">
+
+
+
+
+
+		<div class="autofit-float autofit-row portlet-header">
+
+			<div class="autofit-col autofit-col-end">
+				<div class="autofit-section">
+				</div>
+			</div>
+		</div>
+
+		
+			<div class=" portlet-content-container">
+				
+
+
+	<div class="portlet-body">
+
+
+
+	
+		
+			
+				
+					
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+				
+
+				
+					
+						
+
+
+	
+
+		
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
+
+		
+
+		
+			
+				<div class="footer-menu">
+    <div class="content-center">
+        
+
+
+	<div id="navbar_com_liferay_site_navigation_menu_web_portlet_SiteNavigationMenuPortlet_INSTANCE_siteprefooter">
+		<ul aria-label="Páginas del sitio web" class="navbar-blank navbar-nav navbar-site" role="menubar">
+
+
+
+
+
+
+
+
+					<li class="lfr-nav-item nav-item dropdown" id="layout_com_liferay_site_navigation_menu_web_portlet_SiteNavigationMenuPortlet_INSTANCE_siteprefooter_11165261" role="presentation">
+					   
+					   
+						<a aria-labelledby="layout_com_liferay_site_navigation_menu_web_portlet_SiteNavigationMenuPortlet_INSTANCE_siteprefooter_11165261" aria-haspopup='true' class="nav-link text-truncate dropdown-toggle" href='https://www.cert.fnmt.esjavascript:void(0)'  role="menuitem">
+							<span class="text-truncate"> Soporte técnico</span>
+						</a>
+
+							<ul aria-expanded="false" class="child-menu dropdown-menu" role="menu">
+
+
+									<li class="" id="layout_com_liferay_site_navigation_menu_web_portlet_SiteNavigationMenuPortlet_INSTANCE_siteprefooter_11165262" role="presentation">
+										<a aria-labelledby="layout_com_liferay_site_navigation_menu_web_portlet_SiteNavigationMenuPortlet_INSTANCE_siteprefooter_11165262" class="dropdown-item" href="https://www.sede.fnmt.gob.es/soporte-tecnico/atencion-a-usuarios"  role="menuitem">Atención a usuarios</a>
+									</li>
+
+
+									<li class="" id="layout_com_liferay_site_navigation_menu_web_portlet_SiteNavigationMenuPortlet_INSTANCE_siteprefooter_11165263" role="presentation">
+										<a aria-labelledby="layout_com_liferay_site_navigation_menu_web_portlet_SiteNavigationMenuPortlet_INSTANCE_siteprefooter_11165263" class="dropdown-item" href="https://www.sede.fnmt.gob.es/descargas/descarga-software"  role="menuitem">Descarga de Software</a>
+									</li>
+
+
+									<li class="" id="layout_com_liferay_site_navigation_menu_web_portlet_SiteNavigationMenuPortlet_INSTANCE_siteprefooter_11165264" role="presentation">
+										<a aria-labelledby="layout_com_liferay_site_navigation_menu_web_portlet_SiteNavigationMenuPortlet_INSTANCE_siteprefooter_11165264" class="dropdown-item" href="https://www.cert.fnmt.es/catalogo-de-servicios/tarjetas-criptograficas/lectores-de-tarjetas"  role="menuitem">Lectores de tarjetas</a>
+									</li>
+
+
+									<li class="" id="layout_com_liferay_site_navigation_menu_web_portlet_SiteNavigationMenuPortlet_INSTANCE_siteprefooter_11165265" role="presentation">
+										<a aria-labelledby="layout_com_liferay_site_navigation_menu_web_portlet_SiteNavigationMenuPortlet_INSTANCE_siteprefooter_11165265" class="dropdown-item" href="https://www.cert.fnmt.es/catalogo-de-servicios/tarjetas-criptograficas"  role="menuitem">Tarjetas criptográficas</a>
+									</li>
+							</ul>
+					</li>
+
+
+
+
+
+
+
+					<li class="lfr-nav-item nav-item dropdown" id="layout_com_liferay_site_navigation_menu_web_portlet_SiteNavigationMenuPortlet_INSTANCE_siteprefooter_11165266" role="presentation">
+					   
+					   
+						<a aria-labelledby="layout_com_liferay_site_navigation_menu_web_portlet_SiteNavigationMenuPortlet_INSTANCE_siteprefooter_11165266" aria-haspopup='true' class="nav-link text-truncate dropdown-toggle" href='https://www.cert.fnmt.esjavascript:void(0)'  role="menuitem">
+							<span class="text-truncate"> ¿Dónde usar el certificado?</span>
+						</a>
+
+							<ul aria-expanded="false" class="child-menu dropdown-menu" role="menu">
+
+
+									<li class="" id="layout_com_liferay_site_navigation_menu_web_portlet_SiteNavigationMenuPortlet_INSTANCE_siteprefooter_11165267" role="presentation">
+										<a aria-labelledby="layout_com_liferay_site_navigation_menu_web_portlet_SiteNavigationMenuPortlet_INSTANCE_siteprefooter_11165267" class="dropdown-item" href="https://www.cert.fnmt.es/que-es-ceres/donde-puedo-usar-mi-certificado/administracion-central"  role="menuitem">Administración Central</a>
+									</li>
+
+
+									<li class="" id="layout_com_liferay_site_navigation_menu_web_portlet_SiteNavigationMenuPortlet_INSTANCE_siteprefooter_11165268" role="presentation">
+										<a aria-labelledby="layout_com_liferay_site_navigation_menu_web_portlet_SiteNavigationMenuPortlet_INSTANCE_siteprefooter_11165268" class="dropdown-item" href="https://www.cert.fnmt.es/que-es-ceres/donde-puedo-usar-mi-certificado/administracion-autonomica"  role="menuitem">Administración Autonómica</a>
+									</li>
+
+
+									<li class="" id="layout_com_liferay_site_navigation_menu_web_portlet_SiteNavigationMenuPortlet_INSTANCE_siteprefooter_11165269" role="presentation">
+										<a aria-labelledby="layout_com_liferay_site_navigation_menu_web_portlet_SiteNavigationMenuPortlet_INSTANCE_siteprefooter_11165269" class="dropdown-item" href="https://www.cert.fnmt.es/que-es-ceres/donde-puedo-usar-mi-certificado/administracion-local"  role="menuitem">Administración Local</a>
+									</li>
+
+
+									<li class="" id="layout_com_liferay_site_navigation_menu_web_portlet_SiteNavigationMenuPortlet_INSTANCE_siteprefooter_11165270" role="presentation">
+										<a aria-labelledby="layout_com_liferay_site_navigation_menu_web_portlet_SiteNavigationMenuPortlet_INSTANCE_siteprefooter_11165270" class="dropdown-item" href="https://www.cert.fnmt.es/que-es-ceres/donde-puedo-usar-mi-certificado/otros"  role="menuitem">Otros</a>
+									</li>
+							</ul>
+					</li>
+
+
+
+
+
+
+
+					<li class="lfr-nav-item nav-item dropdown" id="layout_com_liferay_site_navigation_menu_web_portlet_SiteNavigationMenuPortlet_INSTANCE_siteprefooter_11165271" role="presentation">
+					   
+					   
+						<a aria-labelledby="layout_com_liferay_site_navigation_menu_web_portlet_SiteNavigationMenuPortlet_INSTANCE_siteprefooter_11165271" aria-haspopup='true' class="nav-link text-truncate dropdown-toggle" href='https://www.cert.fnmt.esjavascript:void(0)'  role="menuitem">
+							<span class="text-truncate"> Normativa</span>
+						</a>
+
+							<ul aria-expanded="false" class="child-menu dropdown-menu" role="menu">
+
+
+									<li class="" id="layout_com_liferay_site_navigation_menu_web_portlet_SiteNavigationMenuPortlet_INSTANCE_siteprefooter_11165272" role="presentation">
+										<a aria-labelledby="layout_com_liferay_site_navigation_menu_web_portlet_SiteNavigationMenuPortlet_INSTANCE_siteprefooter_11165272" class="dropdown-item" href="https://www.sede.fnmt.gob.es/normativa"  role="menuitem">Legislación de Administración Electrónica</a>
+									</li>
+
+
+									<li class="" id="layout_com_liferay_site_navigation_menu_web_portlet_SiteNavigationMenuPortlet_INSTANCE_siteprefooter_11165273" role="presentation">
+										<a aria-labelledby="layout_com_liferay_site_navigation_menu_web_portlet_SiteNavigationMenuPortlet_INSTANCE_siteprefooter_11165273" class="dropdown-item" href="https://www.sede.fnmt.gob.es/normativa/declaracion-de-practicas-de-certificacion"  role="menuitem">Declaración de Prácticas de Certificación</a>
+									</li>
+
+
+									<li class="" id="layout_com_liferay_site_navigation_menu_web_portlet_SiteNavigationMenuPortlet_INSTANCE_siteprefooter_11165274" role="presentation">
+										<a aria-labelledby="layout_com_liferay_site_navigation_menu_web_portlet_SiteNavigationMenuPortlet_INSTANCE_siteprefooter_11165274" class="dropdown-item" href="https://www.fnmt.es/politica-privacidad"  role="menuitem">Reglamento General de Protección de Datos</a>
+									</li>
+							</ul>
+					</li>
+
+
+
+
+
+					<li class="lfr-nav-item nav-item" id="layout_com_liferay_site_navigation_menu_web_portlet_SiteNavigationMenuPortlet_INSTANCE_siteprefooter_11271883" role="presentation">
+					   
+					   
+						<a aria-labelledby="layout_com_liferay_site_navigation_menu_web_portlet_SiteNavigationMenuPortlet_INSTANCE_siteprefooter_11271883"  class="nav-link text-truncate" href='https://www.cert.fnmt.es/componente/generacion-claves'  role="menuitem">
+							<span class="text-truncate"> Redirección Generación Claves</span>
+						</a>
+
+					</li>
+		</ul>
+	</div>
+
+<script type="text/javascript">
+// <![CDATA[
+AUI().use('liferay-navigation-interaction', function(A) {(function() {var $ = AUI.$;var _ = AUI._;		var navigation = A.one('#navbar_com_liferay_site_navigation_menu_web_portlet_SiteNavigationMenuPortlet_INSTANCE_siteprefooter');
+
+		Liferay.Data.NAV_INTERACTION_LIST_SELECTOR = '.navbar-site';
+		Liferay.Data.NAV_LIST_SELECTOR = '.navbar-site';
+
+		if (navigation) {
+			navigation.plug(Liferay.NavigationInteraction);
+		}
+})();});
+// ]]>
+</script>
+    </div>
+</div>
+			
+			
+		
+	
+	
+	
+	
+
+
+	
+	
+					
+				
+			
+		
+	
+	
+
+
+	</div>
+
+			</div>
+		
+	</div>
+</section>
+	
+
+		
+		
+
+
+
+
+
+
+
+	</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
+
+	<div class="portlet-boundary portlet-boundary_com_liferay_journal_content_web_portlet_JournalContentPortlet_  portlet-static portlet-static-end portlet-barebone portlet-journal-content " id="p_p_id_com_liferay_journal_content_web_portlet_JournalContentPortlet_INSTANCE_sitefooter_">
+		<span id="p_com_liferay_journal_content_web_portlet_JournalContentPortlet_INSTANCE_sitefooter"></span>
+
+
+
+
+	
+
+	
+		
+			
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
+		
+<section class="portlet" id="portlet_com_liferay_journal_content_web_portlet_JournalContentPortlet_INSTANCE_sitefooter">
+
+
+	<div class="portlet-content">
+
+
+
+
+
+		<div class="autofit-float autofit-row portlet-header">
+
+			<div class="autofit-col autofit-col-end">
+				<div class="autofit-section">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="visible-interaction">
+	
+		
+
+		
+
+		
+
+		
+	
+</div>				</div>
+			</div>
+		</div>
+
+		
+			<div class=" portlet-content-container">
+				
+
+
+	<div class="portlet-body">
+
+
+
+	
+		
+			
+				
+					
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+				
+
+				
+					
+						
+
+
+	
+
+		
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
+	
+		
+			
+			
+				
+					
+					
+					
+
+						
+
+						<div class="" data-fragments-editor-item-id="10108-11169356" data-fragments-editor-item-type="fragments-editor-mapped-item" >
+							
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
+	
+		<div class="journal-content-article " data-analytics-asset-id="11031345" data-analytics-asset-title="Footer Ceres" data-analytics-asset-type="web-content">
+			
+
+			<footer class="footer">
+
+    <div class="content-center">
+    <div class="col-md-12">
+     <ul class="footer-first-links">
+                	   
+        		<li><a title="Preguntas Frecuentes" taget="_self" href="/preguntas-frecuentes">
+        		    Preguntas Frecuentes
+        		</a></li>
+        		
+        	   
+        		<li><a title="Contacto" taget="_self" href="/contacto">
+        		    Contacto
+        		</a></li>
+        		
+        	   
+        		<li><a title="Accesibilidad" taget="_self" href="/accesibilidad">
+        		    Accesibilidad
+        		</a></li>
+        		
+        	   
+        		<li><a title="Aviso legal" taget="_self" href="/aviso-legal">
+        		    Aviso legal
+        		</a></li>
+        		
+        	   
+        		<li><a title="Mapa Web" taget="_self" href="/mapa-web">
+        		    Mapa Web
+        		</a></li>
+        		
+       
+        
+        	<li class="redes-sociales">
+        		<a rel="noreferrer" target="_blank" title="Facebook" href="https://www.facebook.com/CERES.fnmt">
+ 
+ 
+                	<img alt="" data-fileentryid="11167089" src="/documents/10446703/11167044/facebook.svg/b5da5160-c142-2abb-5d26-0fb2c4a7b7de?t=1645611316189" />
+                <span>Facebook</span>
+                </a></li>
+        	<li class="redes-sociales">
+        		<a rel="noreferrer" target="_blank" title="Twitter" href="https://twitter.com/CERESfnmt">
+ 
+ 
+                	<img alt="" data-fileentryid="11167079" src="/documents/10446703/11167044/twitter.svg/cc924fd4-6f6c-87d5-27f4-f1234be62cd2?t=1696922394798" />
+                <span>Twitter</span>
+                </a></li>
+        	<li class="redes-sociales">
+        		<a rel="noreferrer" target="_blank" title="YouTube" href="https://www.youtube.com/user/CertificadosCERES">
+ 
+ 
+                	<img alt="" data-fileentryid="11167084" src="/documents/10446703/11167044/youtube.svg/5a585f6c-87b6-8abb-3d98-d78fed38e4c8?t=1645611322940" />
+                <span>YouTube</span>
+                </a></li>
+        	<li class="redes-sociales">
+        		<a rel="noreferrer" target="_blank" title="Blog" href="http://tucertificadodigital.es/">
+ 
+ 
+                	<img alt="" data-fileentryid="11167074" src="/documents/10446703/11167044/blogger.svg/69344b60-454c-9341-05e7-58a40d79edb7?t=1646040199740" />
+                <span>Blog</span>
+                </a></li>
+        	<li class="redes-sociales">
+        		<a rel="noreferrer" target="_blank" title="Linkedin" href="https://es.linkedin.com/company/fnmt">
+ 
+ 
+                	<img alt="" data-fileentryid="11167099" src="/documents/10446703/11167044/linkedin.svg/bc14ecec-91e5-f137-e36c-a7cdebf78b84?t=1645611300270" />
+                <span>Linkedin</span>
+                </a></li>
+         </ul>
+        </div>
+        <div class="footer-separator"></div>
+        <div class="col-md-12">
+            <ul class="footer-logos">
+            	<li>	<a rel="noreferrer" href="https://www.hacienda.gob.es/es-es/Paginas/Home.aspx" title="Ministerio" target="_blank">
+            			<picture data-fileentryid="11167204"><source media="(max-width:128px)" srcset="/o/adaptive-media/image/11167204/Thumbnail-128x128/Logotipo_del_Ministerio_de_Hacienda.png.jpg?t=1704187596782" /><source media="(max-width:1000px) and (min-width:128px)" srcset="/o/adaptive-media/image/11167204/Preview-1000x0/Logotipo_del_Ministerio_de_Hacienda.png.jpg?t=1704187596782" /><img alt="Ministerio" data-fileentryid="11167204" src="/documents/10446703/11167044/Logotipo_del_Ministerio_de_Hacienda.png.jpg/ece9da04-350c-2cce-8dc2-3c450e1329dd?t=1704187596782" /></picture>
+            			
+            			</a></li>
+            </ul>
+        </div>
+        
+    </div>
+    
+</footer>
+
+<style>
+
+.footer {background-color:#507A9B;color:#FFFFFF; }
+.footer a { color:#FFFFFF;}
+li.redes-sociales img {
+    max-width: 25px;
+    display: inline-block;
+    max-height: 25px;
+}
+/*
+.site div#wrapper .footer ul.footer-logos li img {
+    width: auto;
+}*/
+</style>
+		</div>
+
+		
+
+	
+
+
+
+
+							
+						</div>
+					
+				
+			
+		
+	
+
+
+
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+
+
+
+	
+	
+					
+				
+			
+		
+	
+	
+
+
+	</div>
+
+			</div>
+		
+	</div>
+</section>
+	
+
+		
+		
+
+
+
+
+
+
+
+	</div>
+
+
+
+
+
+
+
+			
+	</div>
+
+	<section class="footer-cookies">
+		<div class="wrapper-cookies">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
+
+	<div class="portlet-boundary portlet-boundary_com_liferay_journal_content_web_portlet_JournalContentPortlet_  portlet-static portlet-static-end portlet-barebone portlet-journal-content " id="p_p_id_com_liferay_journal_content_web_portlet_JournalContentPortlet_INSTANCE_sitecookies_">
+		<span id="p_com_liferay_journal_content_web_portlet_JournalContentPortlet_INSTANCE_sitecookies"></span>
+
+
+
+
+	
+
+	
+		
+			
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
+		
+<section class="portlet" id="portlet_com_liferay_journal_content_web_portlet_JournalContentPortlet_INSTANCE_sitecookies">
+
+
+	<div class="portlet-content">
+
+
+
+
+
+		<div class="autofit-float autofit-row portlet-header">
+
+			<div class="autofit-col autofit-col-end">
+				<div class="autofit-section">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="visible-interaction">
+	
+		
+
+		
+
+		
+
+		
+	
+</div>				</div>
+			</div>
+		</div>
+
+		
+			<div class=" portlet-content-container">
+				
+
+
+	<div class="portlet-body">
+
+
+
+	
+		
+			
+				
+					
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+				
+
+				
+					
+						
+
+
+	
+
+		
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
+	
+		
+			
+			
+				
+					
+					
+					
+
+						
+
+						<div class="" data-fragments-editor-item-id="10108-10508170" data-fragments-editor-item-type="fragments-editor-mapped-item" >
+							
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
+	
+		<div class="journal-content-article " data-analytics-asset-id="10508168" data-analytics-asset-title="FNMT_CERES_portales" data-analytics-asset-type="web-content">
+			
+
+			<div class="avisoCookies" style="display:none;" id="avisocookies"><div class="avisoCookies100"><p class="tituloAvisoCookies">INFORMACIÓN SOBRE COOKIES</p><p>La página Web de la FNMT-RCM utiliza cookies propias y de terceros para facilitar la navegación por la página web así como almacenar las preferencias seleccionadas por el usuario durante su navegación. No empleamos las cookies para almacenar o tratar datos de carácter personal. Si continúa navegando, consideramos que acepta su uso <a class="botonAceptarCookie" title="Aceptar la política de cookies." href="javascript:void(0);" onclick="PonerCookie();">ACEPTO</a>.<a class="botonMasInfoCookie" target="_blank" title="Más información sobre la política de cookies. Abre en ventana nueva" href="https://www.sede.fnmt.gob.es/aviso-cookies/">Más Información</a>.</p></div></div><script>
+   function QuitarAviso(){
+     document.getElementById('avisocookies').parentElement.style.display="none"
+   }
+function getCookie(c_name){
+ var c_value = document.cookie;
+ var c_start = c_value.indexOf(" " + c_name + "=");
+ if (c_start == -1){
+  c_start = c_value.indexOf(c_name + "=");
+ }
+ if (c_start == -1){
+  c_value = null;
+ }else{
+  c_start = c_value.indexOf("=", c_start) + 1;
+  var c_end = c_value.indexOf(";", c_start);
+  if (c_end == -1){
+   c_end = c_value.length;
+  }
+  c_value = unescape(c_value.substring(c_start,c_end));
+ }
+ return c_value;
+}
+function setCookie(c_name,value,exdays){
+ var exdate=new Date();
+ exdate.setDate(exdate.getDate() + exdays);
+ var c_value=escape(value) + ((exdays==null) ? "" : "; expires="+exdate.toUTCString());
+ document.cookie=c_name + "=" + c_value;
+}
+if(getCookie('aviso')!="1"){
+ document.getElementById("avisocookies").style.display="block";
+}
+function PonerCookie(){
+ setCookie('aviso','1',365);
+ document.getElementById('avisocookies').parentElement.style.display="none"
+}
+</script>
+		</div>
+
+		
+
+	
+
+
+
+
+							
+						</div>
+					
+				
+			
+		
+	
+
+
+
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+
+
+
+	
+	
+					
+				
+			
+		
+	
+	
+
+
+	</div>
+
+			</div>
+		
+	</div>
+</section>
+	
+
+		
+		
+
+
+
+
+
+
+
+	</div>
+
+
+
+
+
+
+		</div>
+	</section>
+
+	<div class="scrollTop"></div>
+
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
+
+	
+
+
+
+
+
+	
+
+
+
+	
+
+
+
+
+
+
+
+
+
+	
+
+	
+
+
+
+
+
+	
+
+
+
+	
+
+
+
+
+
+
+
+
+
+
+
+<script type="text/javascript">
+// <![CDATA[
+
+	
+		
+
+			
+
+			
+		
+	
+
+	Liferay.BrowserSelectors.run();
+
+// ]]>
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script type="text/javascript">
+	// <![CDATA[
+
+		
+
+		Liferay.currentURL = '\x2fcertificados\x2fraizfnmtcer\x2ecrt';
+		Liferay.currentURLEncoded = '\x252Fcertificados\x252Fraizfnmtcer\x2ecrt';
+
+	// ]]>
+</script>
+
+
+
+	
+
+	
+
+	<script type="text/javascript">
+		// <![CDATA[
+			
+				
+
+				
+			
+		// ]]>
+	</script>
+
+
+
+
+
+
+
+
+
+
+
+
+	
+
+	
+
+		
+
+		
+	
+
+
+<script type="text/javascript">
+// <![CDATA[
+(function() {var $ = AUI.$;var _ = AUI._;
+	var onVote = function(event) {
+		if (window.Analytics) {
+			Analytics.send('VOTE', 'Ratings', {
+				className: event.className,
+				classPK: event.classPK,
+				ratingType: event.ratingType,
+				score: event.score
+			});
+		}
+	};
+
+	var onDestroyPortlet = function() {
+		Liferay.detach('ratings:vote', onVote);
+		Liferay.detach('destroyPortlet', onDestroyPortlet);
+	};
+
+	Liferay.on('ratings:vote', onVote);
+	Liferay.on('destroyPortlet', onDestroyPortlet);
+})();(function() {var $ = AUI.$;var _ = AUI._;
+	var onDestroyPortlet = function() {
+		Liferay.detach('messagePosted', onMessagePosted);
+		Liferay.detach('destroyPortlet', onDestroyPortlet);
+	};
+
+	Liferay.on('destroyPortlet', onDestroyPortlet);
+
+	var onMessagePosted = function(event) {
+		if (window.Analytics) {
+			Analytics.send('posted', 'Comment', {
+				className: event.className,
+				classPK: event.classPK,
+				commentId: event.commentId,
+				text: event.text
+			});
+		}
+	};
+
+	Liferay.on('messagePosted', onMessagePosted);
+})();(function() {var $ = AUI.$;var _ = AUI._;
+	var onShare = function(data) {
+		if (window.Analytics) {
+			Analytics.send('shared', 'SocialBookmarks', {
+				className: data.className,
+				classPK: data.classPK,
+				type: data.type,
+				url: data.url
+			});
+		}
+	};
+
+	var onDestroyPortlet = function() {
+		Liferay.detach('socialBookmarks:share', onShare);
+		Liferay.detach('destroyPortlet', onDestroyPortlet);
+	};
+
+	Liferay.on('socialBookmarks:share', onShare);
+	Liferay.on('destroyPortlet', onDestroyPortlet);
+})();(function() {var $ = AUI.$;var _ = AUI._;
+	var pathnameRegexp = /\/documents\/(\d+)\/(\d+)\/(.+?)\/([^&]+)/;
+
+	function handleDownloadClick(event) {
+		if (event.target.nodeName.toLowerCase() === 'a' && window.Analytics) {
+			var anchor = event.target;
+			var match = pathnameRegexp.exec(anchor.pathname);
+
+			var fileEntryId =
+				anchor.dataset.analyticsFileEntryId ||
+				(anchor.parentElement &&
+					anchor.parentElement.dataset.analyticsFileEntryId);
+
+			if (fileEntryId && match) {
+				var getParameterValue = function(parameterName) {
+					var result = null;
+
+					anchor.search
+						.substr(1)
+						.split('&')
+						.forEach(function(item) {
+							var tmp = item.split('=');
+
+							if (tmp[0] === parameterName) {
+								result = decodeURIComponent(tmp[1]);
+							}
+						});
+
+					return result;
+				};
+
+				Analytics.send('documentDownloaded', 'Document', {
+					groupId: match[1],
+					fileEntryId: fileEntryId,
+					preview: !!window._com_liferay_document_library_analytics_isViewFileEntry,
+					title: decodeURIComponent(match[3].replace(/\+/gi, ' ')),
+					version: getParameterValue('version')
+				});
+			}
+		}
+	}
+
+	var onDestroyPortlet = function() {
+		document.body.removeEventListener('click', handleDownloadClick);
+	};
+
+	Liferay.once('destroyPortlet', onDestroyPortlet);
+
+	var onPortletReady = function() {
+		document.body.addEventListener('click', handleDownloadClick);
+	};
+
+	Liferay.once('portletReady', onPortletReady);
+})();(function() {var $ = AUI.$;var _ = AUI._;
+	function showDialog(uri, title, namespace, refreshOnClose) {
+		Liferay.Util.openWindow({
+			dialog: {
+				centered: true,
+				constrain: true,
+				cssClass: 'sharing-dialog',
+				destroyOnHide: true,
+				modal: true,
+				height: 540,
+				width: 600,
+				on: {
+					visibleChange: function(event) {
+						if (refreshOnClose && !event.newVal) {
+							Liferay.Portlet.refresh('#p_p_id' + namespace);
+						}
+					}
+				}
+			},
+			id: 'sharingDialog',
+			title: Liferay.Util.escapeHTML(title),
+			uri: uri
+		});
+	}
+
+	var Sharing = {};
+
+	Liferay.provide(
+		Sharing,
+		'share',
+		function(classNameId, classPK, title, namespace, refreshOnClose) {
+			var sharingParameters = {
+				classNameId: classNameId,
+				classPK: classPK
+			};
+
+			var sharingURL = Liferay.Util.PortletURL.createPortletURL(
+				'https://www.cert.fnmt.es/group/ceres/~/control_panel/manage?p_p_id=com_liferay_sharing_web_portlet_SharingPortlet&p_p_lifecycle=0&p_p_state=pop_up&_com_liferay_sharing_web_portlet_SharingPortlet_mvcRenderCommandName=%2Fsharing%2Fshare&p_p_auth=NjVFQAMs',
+				sharingParameters
+			);
+
+			showDialog(sharingURL.toString(), title, namespace, refreshOnClose);
+		},
+		['liferay-util-window']
+	);
+
+	Liferay.provide(
+		Sharing,
+		'manageCollaborators',
+		function(classNameId, classPK, namespace, refreshOnClose) {
+			var manageCollaboratorsParameters = {
+				classNameId: classNameId,
+				classPK: classPK
+			};
+
+			var manageCollaboratorsURL = Liferay.Util.PortletURL.createPortletURL(
+				'https://www.cert.fnmt.es/group/ceres/~/control_panel/manage?p_p_id=com_liferay_sharing_web_portlet_ManageCollaboratorsPortlet&p_p_lifecycle=0&p_p_state=pop_up&_com_liferay_sharing_web_portlet_ManageCollaboratorsPortlet_mvcRenderCommandName=%2Fsharing%2Fmanage_collaborators&p_p_auth=7DhTkAR1',
+				manageCollaboratorsParameters
+			);
+
+			showDialog(
+				manageCollaboratorsURL.toString(),
+				'Administrar colaboradores',
+				namespace,
+				refreshOnClose
+			);
+		},
+		['liferay-util-window']
+	);
+
+	Liferay.Sharing = Sharing;
+})();
+	if (Liferay.Data.ICONS_INLINE_SVG) {
+		svg4everybody(
+			{
+				attributeName: 'data-href',
+				polyfill: true,
+				validate: function (src, svg, use) {
+					return !src || !src.startsWith('#');
+				}
+			}
+		);
+	}
+
+	
+		Liferay.Portlet.register('com_liferay_journal_content_web_portlet_JournalContentPortlet_INSTANCE_footericons');
+	
+
+	Liferay.Portlet.onLoad(
+		{
+			canEditTitle: false,
+			columnPos: 0,
+			isStatic: 'end',
+			namespacedId: 'p_p_id_com_liferay_journal_content_web_portlet_JournalContentPortlet_INSTANCE_footericons_',
+			portletId: 'com_liferay_journal_content_web_portlet_JournalContentPortlet_INSTANCE_footericons',
+			refreshURL: '\x2fc\x2fportal\x2frender_portlet\x3fp_l_id\x3d10930570\x26p_p_id\x3dcom_liferay_journal_content_web_portlet_JournalContentPortlet_INSTANCE_footericons\x26p_p_lifecycle\x3d0\x26p_t_lifecycle\x3d0\x26p_p_state\x3dnormal\x26p_p_mode\x3dview\x26p_p_col_id\x3dnull\x26p_p_col_pos\x3dnull\x26p_p_col_count\x3dnull\x26p_p_static\x3d1\x26p_p_isolated\x3d1\x26currentURL\x3d\x252Fcertificados\x252Fraizfnmtcer\x2ecrt',
+			refreshURLData: {}
+		}
+	);
+
+	
+		Liferay.Portlet.register('com_liferay_journal_content_web_portlet_JournalContentPortlet_INSTANCE_sitefooter');
+	
+
+	Liferay.Portlet.onLoad(
+		{
+			canEditTitle: false,
+			columnPos: 0,
+			isStatic: 'end',
+			namespacedId: 'p_p_id_com_liferay_journal_content_web_portlet_JournalContentPortlet_INSTANCE_sitefooter_',
+			portletId: 'com_liferay_journal_content_web_portlet_JournalContentPortlet_INSTANCE_sitefooter',
+			refreshURL: '\x2fc\x2fportal\x2frender_portlet\x3fp_l_id\x3d10930570\x26p_p_id\x3dcom_liferay_journal_content_web_portlet_JournalContentPortlet_INSTANCE_sitefooter\x26p_p_lifecycle\x3d0\x26p_t_lifecycle\x3d0\x26p_p_state\x3dnormal\x26p_p_mode\x3dview\x26p_p_col_id\x3dnull\x26p_p_col_pos\x3dnull\x26p_p_col_count\x3dnull\x26p_p_static\x3d1\x26p_p_isolated\x3d1\x26currentURL\x3d\x252Fcertificados\x252Fraizfnmtcer\x2ecrt',
+			refreshURLData: {}
+		}
+	);
+
+	
+		Liferay.Portlet.register('com_liferay_site_navigation_menu_web_portlet_SiteNavigationMenuPortlet_INSTANCE_siteprefooter');
+	
+
+	Liferay.Portlet.onLoad(
+		{
+			canEditTitle: false,
+			columnPos: 0,
+			isStatic: 'end',
+			namespacedId: 'p_p_id_com_liferay_site_navigation_menu_web_portlet_SiteNavigationMenuPortlet_INSTANCE_siteprefooter_',
+			portletId: 'com_liferay_site_navigation_menu_web_portlet_SiteNavigationMenuPortlet_INSTANCE_siteprefooter',
+			refreshURL: '\x2fc\x2fportal\x2frender_portlet\x3fp_l_id\x3d10930570\x26p_p_id\x3dcom_liferay_site_navigation_menu_web_portlet_SiteNavigationMenuPortlet_INSTANCE_siteprefooter\x26p_p_lifecycle\x3d0\x26p_t_lifecycle\x3d0\x26p_p_state\x3dnormal\x26p_p_mode\x3dview\x26p_p_col_id\x3dnull\x26p_p_col_pos\x3dnull\x26p_p_col_count\x3dnull\x26p_p_static\x3d1\x26p_p_isolated\x3d1\x26currentURL\x3d\x252Fcertificados\x252Fraizfnmtcer\x2ecrt',
+			refreshURLData: {}
+		}
+	);
+
+	
+		Liferay.Portlet.register('com_liferay_site_navigation_language_web_portlet_SiteNavigationLanguagePortlet');
+	
+
+	Liferay.Portlet.onLoad(
+		{
+			canEditTitle: false,
+			columnPos: 0,
+			isStatic: 'end',
+			namespacedId: 'p_p_id_com_liferay_site_navigation_language_web_portlet_SiteNavigationLanguagePortlet_',
+			portletId: 'com_liferay_site_navigation_language_web_portlet_SiteNavigationLanguagePortlet',
+			refreshURL: '\x2fc\x2fportal\x2frender_portlet\x3fp_l_id\x3d10930570\x26p_p_id\x3dcom_liferay_site_navigation_language_web_portlet_SiteNavigationLanguagePortlet\x26p_p_lifecycle\x3d0\x26p_t_lifecycle\x3d0\x26p_p_state\x3dnormal\x26p_p_mode\x3dview\x26p_p_col_id\x3dnull\x26p_p_col_pos\x3dnull\x26p_p_col_count\x3dnull\x26p_p_static\x3d1\x26p_p_isolated\x3d1\x26currentURL\x3d\x252Fcertificados\x252Fraizfnmtcer\x2ecrt',
+			refreshURLData: {}
+		}
+	);
+
+	
+		Liferay.Portlet.register('com_liferay_journal_content_web_portlet_JournalContentPortlet_INSTANCE_avisoheader');
+	
+
+	Liferay.Portlet.onLoad(
+		{
+			canEditTitle: false,
+			columnPos: 0,
+			isStatic: 'end',
+			namespacedId: 'p_p_id_com_liferay_journal_content_web_portlet_JournalContentPortlet_INSTANCE_avisoheader_',
+			portletId: 'com_liferay_journal_content_web_portlet_JournalContentPortlet_INSTANCE_avisoheader',
+			refreshURL: '\x2fc\x2fportal\x2frender_portlet\x3fp_l_id\x3d10930570\x26p_p_id\x3dcom_liferay_journal_content_web_portlet_JournalContentPortlet_INSTANCE_avisoheader\x26p_p_lifecycle\x3d0\x26p_t_lifecycle\x3d0\x26p_p_state\x3dnormal\x26p_p_mode\x3dview\x26p_p_col_id\x3dnull\x26p_p_col_pos\x3dnull\x26p_p_col_count\x3dnull\x26p_p_static\x3d1\x26p_p_isolated\x3d1\x26currentURL\x3d\x252Fcertificados\x252Fraizfnmtcer\x2ecrt',
+			refreshURLData: {}
+		}
+	);
+
+	
+		Liferay.Portlet.register('com_liferay_portal_search_web_search_bar_portlet_SearchBarPortlet_INSTANCE_templateSearch');
+	
+
+	Liferay.Portlet.onLoad(
+		{
+			canEditTitle: false,
+			columnPos: 0,
+			isStatic: 'end',
+			namespacedId: 'p_p_id_com_liferay_portal_search_web_search_bar_portlet_SearchBarPortlet_INSTANCE_templateSearch_',
+			portletId: 'com_liferay_portal_search_web_search_bar_portlet_SearchBarPortlet_INSTANCE_templateSearch',
+			refreshURL: '\x2fc\x2fportal\x2frender_portlet\x3fp_l_id\x3d10930570\x26p_p_id\x3dcom_liferay_portal_search_web_search_bar_portlet_SearchBarPortlet_INSTANCE_templateSearch\x26p_p_lifecycle\x3d0\x26p_t_lifecycle\x3d0\x26p_p_state\x3dnormal\x26p_p_mode\x3dview\x26p_p_col_id\x3dnull\x26p_p_col_pos\x3dnull\x26p_p_col_count\x3dnull\x26p_p_static\x3d1\x26p_p_isolated\x3d1\x26currentURL\x3d\x252Fcertificados\x252Fraizfnmtcer\x2ecrt',
+			refreshURLData: {}
+		}
+	);
+
+	
+		Liferay.Portlet.register('com_liferay_journal_content_web_portlet_JournalContentPortlet_INSTANCE_sitecookies');
+	
+
+	Liferay.Portlet.onLoad(
+		{
+			canEditTitle: false,
+			columnPos: 0,
+			isStatic: 'end',
+			namespacedId: 'p_p_id_com_liferay_journal_content_web_portlet_JournalContentPortlet_INSTANCE_sitecookies_',
+			portletId: 'com_liferay_journal_content_web_portlet_JournalContentPortlet_INSTANCE_sitecookies',
+			refreshURL: '\x2fc\x2fportal\x2frender_portlet\x3fp_l_id\x3d10930570\x26p_p_id\x3dcom_liferay_journal_content_web_portlet_JournalContentPortlet_INSTANCE_sitecookies\x26p_p_lifecycle\x3d0\x26p_t_lifecycle\x3d0\x26p_p_state\x3dnormal\x26p_p_mode\x3dview\x26p_p_col_id\x3dnull\x26p_p_col_pos\x3dnull\x26p_p_col_count\x3dnull\x26p_p_static\x3d1\x26p_p_isolated\x3d1\x26currentURL\x3d\x252Fcertificados\x252Fraizfnmtcer\x2ecrt',
+			refreshURLData: {}
+		}
+	);
+
+	
+		Liferay.Portlet.register('com_liferay_journal_content_web_portlet_JournalContentPortlet_INSTANCE_sitenavigation');
+	
+
+	Liferay.Portlet.onLoad(
+		{
+			canEditTitle: false,
+			columnPos: 0,
+			isStatic: 'end',
+			namespacedId: 'p_p_id_com_liferay_journal_content_web_portlet_JournalContentPortlet_INSTANCE_sitenavigation_',
+			portletId: 'com_liferay_journal_content_web_portlet_JournalContentPortlet_INSTANCE_sitenavigation',
+			refreshURL: '\x2fc\x2fportal\x2frender_portlet\x3fp_l_id\x3d10930570\x26p_p_id\x3dcom_liferay_journal_content_web_portlet_JournalContentPortlet_INSTANCE_sitenavigation\x26p_p_lifecycle\x3d0\x26p_t_lifecycle\x3d0\x26p_p_state\x3dnormal\x26p_p_mode\x3dview\x26p_p_col_id\x3dnull\x26p_p_col_pos\x3dnull\x26p_p_col_count\x3dnull\x26p_p_static\x3d1\x26p_p_isolated\x3d1\x26currentURL\x3d\x252Fcertificados\x252Fraizfnmtcer\x2ecrt',
+			refreshURLData: {}
+		}
+	);
+Liferay.Loader.require('metal-dom/src/all/dom', function(metalDomSrcAllDom) {
+(function(){
+var dom = metalDomSrcAllDom;
+(function() {var $ = AUI.$;var _ = AUI._;
+	var focusInPortletHandler = dom.delegate(
+		document,
+		'focusin',
+		'.portlet',
+		function(event) {
+			dom.addClasses(dom.closest(event.delegateTarget, '.portlet'), 'open');
+		}
+	);
+
+	var focusOutPortletHandler = dom.delegate(
+		document,
+		'focusout',
+		'.portlet',
+		function(event) {
+			dom.removeClasses(dom.closest(event.delegateTarget, '.portlet'), 'open');
+		}
+	);
+})();})();
+});AUI().use('liferay-menu', 'liferay-notice', 'aui-base', 'liferay-session', 'liferay-poller', function(A) {(function() {var $ = AUI.$;var _ = AUI._;
+	if (A.UA.mobile) {
+		Liferay.Util.addInputCancel();
+	}
+})();(function() {var $ = AUI.$;var _ = AUI._;
+	new Liferay.Menu();
+
+	var liferayNotices = Liferay.Data.notices;
+
+	for (var i = 1; i < liferayNotices.length; i++) {
+		new Liferay.Notice(liferayNotices[i]);
+	}
+
+	
+})();(function() {var $ = AUI.$;var _ = AUI._;
+			Liferay.Session = new Liferay.SessionBase(
+				{
+					autoExtend: true,
+					redirectOnExpire: false,
+					redirectUrl: 'https\x3a\x2f\x2fwww\x2ecert\x2efnmt\x2ees\x2fweb\x2fsede',
+					sessionLength: 900,
+					sessionTimeoutOffset: 70,
+					warningLength: 0
+				}
+			);
+
+			
+		})();});
+// ]]>
+</script>
+
+
+
+
+
+
+
+
+
+<script src="https://www.cert.fnmt.es/o/fnmt-theme/js/main.js?browserId=other&amp;minifierType=js&amp;languageId=es_ES&amp;t=1752838174000" type="text/javascript"></script>
+
+
+
+
+<script type="text/javascript">
+	// <![CDATA[
+		AUI().use(
+			'aui-base',
+			function(A) {
+				var frameElement = window.frameElement;
+
+				if (frameElement && frameElement.getAttribute('id') === 'simulationDeviceIframe') {
+					A.getBody().addClass('lfr-has-simulation-panel');
+				}
+			}
+		);
+	// ]]>
+</script><script type="text/javascript">
+// <![CDATA[
+Liferay.Loader.require('frontend-js-tooltip-support-web@2.0.5/index', function(frontendJsTooltipSupportWeb205Index) {
+(function(){
+var TooltipSupport = frontendJsTooltipSupportWeb205Index;
+(function() {
+try {
+TooltipSupport.default()
+}
+catch (err) {
+console.error(err);
+}
+})();})();
+});
+// ]]>
+</script>
+<script src="https://www.cert.fnmt.es/o/fnmt-theme/js/owl.js" defer></script>
+
+<script src="https://www.cert.fnmt.es/o/fnmt-theme/js/cookiemanager.min.js" defer></script>
+
+
+</body>
+
+</html>
+		
+	
+

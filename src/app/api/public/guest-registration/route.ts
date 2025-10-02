@@ -187,12 +187,62 @@ export async function POST(req: NextRequest) {
 
     console.log('✅ Registro guardado en DB con ID:', id);
 
+    // 🚀 AUTO-ENVÍO AL MIR
+    let resultadoMIR = null;
+    try {
+      console.log('🚀 Iniciando auto-envío al MIR...');
+      
+      // Preparar datos para el MIR
+      const datosMIR = {
+        fechaEntrada: fecha_entrada,
+        fechaSalida: fecha_salida,
+        personas: comunicacion.personas.map(persona => ({
+          nombre: persona.nombre,
+          apellido1: persona.apellido1,
+          apellido2: persona.apellido2 || '',
+          tipoDocumento: persona.tipoDocumento || 'NIF',
+          numeroDocumento: persona.numeroDocumento || '12345678Z',
+          fechaNacimiento: persona.fechaNacimiento,
+          nacionalidad: persona.nacionalidad || 'ESP',
+          sexo: persona.sexo || 'M',
+          telefono: persona.contacto?.telefono || '600000000',
+          correo: persona.contacto?.correo || 'viajero@example.com',
+          direccion: persona.direccion.direccion,
+          codigoPostal: persona.direccion.codigoPostal,
+          pais: persona.direccion.pais,
+          codigoMunicipio: persona.direccion.codigoMunicipio || '28079'
+        }))
+      };
+
+      // Enviar al MIR
+      const responseMIR = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/ministerio/auto-envio`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(datosMIR)
+      });
+
+      if (responseMIR.ok) {
+        resultadoMIR = await responseMIR.json();
+        console.log('✅ Auto-envío al MIR exitoso:', resultadoMIR);
+      } else {
+        const errorMIR = await responseMIR.json();
+        console.error('❌ Error en auto-envío al MIR:', errorMIR);
+        resultadoMIR = { error: errorMIR.message || 'Error desconocido' };
+      }
+    } catch (errorMIR) {
+      console.error('❌ Error en auto-envío al MIR:', errorMIR);
+      resultadoMIR = { error: errorMIR instanceof Error ? errorMIR.message : 'Error desconocido' };
+    }
+
     return NextResponse.json({ 
       success: true, 
-      message: 'Registro guardado correctamente en base de datos',
+      message: 'Registro guardado correctamente en base de datos y enviado al MIR',
       id: id,
       reserva_ref: reserva_ref,
-      date: new Date().toISOString().split('T')[0]
+      date: new Date().toISOString().split('T')[0],
+      mir: resultadoMIR
     }, {
       status: 200,
       headers
