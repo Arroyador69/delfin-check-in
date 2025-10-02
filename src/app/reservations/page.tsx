@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, X, Calendar, User, Bed, Euro, CreditCard, Download, Smartphone, Phone, Users, Globe, Edit } from 'lucide-react';
+import { Plus, X, Calendar, User, Bed, Euro, CreditCard, Download, Phone, Users, Globe, Edit } from 'lucide-react';
 // Removido: import { supabase } from '@/lib/supabase';
 // Removido: import { Reservation } from '@/lib/supabase';
 
@@ -505,50 +505,6 @@ export default function ReservationsPage() {
       </header>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="mb-6">
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <div className="flex items-start">
-              <Smartphone className="h-5 w-5 text-blue-600 mt-0.5 mr-3" />
-              <div>
-                <h3 className="text-sm font-medium text-blue-800 mb-1">
-                  📱 Para tus padres: Acceso móvil al calendario
-                </h3>
-                <p className="text-sm text-blue-700 mb-2">
-                  Comparte la URL del calendario con tus padres para que puedan ver todas las reservas en sus móviles:
-                </p>
-                <div className="flex items-center space-x-3">
-                  <div className="flex-1 bg-white p-3 rounded border text-xs font-mono text-gray-700 break-all">
-                    {typeof window !== 'undefined' ? `${window.location.origin}/api/ical/reservations` : 'Cargando...'}
-                  </div>
-                  <button
-                    onClick={() => {
-                      try {
-                        const url = `${window.location.origin}/api/ical/reservations`;
-                        const html = `<!doctype html><html><head><meta charset=\"utf-8\" /><title>Calendario de reservas</title><style>body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;padding:24px;color:#111} h1{font-size:20px;margin:0 0 12px} .box{border:1px solid #ddd;border-radius:8px;padding:12px;background:#fff;font-family:ui-monospace,Menlo,Consolas,monospace;word-break:break-all} p{margin:8px 0}</style></head><body><h1>Calendario de reservas</h1><p>URL para suscribirse al calendario en el móvil:</p><div class=\"box\">${url}</div><p>Instrucciones: Copia esta URL y añádela en Google Calendar, Apple Calendar u otra app de calendarios como suscripción por URL (solo lectura).</p></body></html>`;
-                        const win = window.open('', '_blank');
-                        if (win) {
-                          win.document.write(html);
-                          win.document.close();
-                          win.focus();
-                          win.print();
-                        }
-                      } catch (e) {
-                        alert('No se pudo generar el PDF. Prueba a imprimir esta página.');
-                      }
-                    }}
-                    className="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs"
-                    title="Descargar PDF con la URL"
-                  >
-                    Descargar PDF
-                  </button>
-                </div>
-                <p className="text-xs text-blue-600 mt-2">
-                  💡 <strong>Instrucciones:</strong> Copia esta URL y envíala por WhatsApp. Tus padres pueden suscribirse desde Google Calendar, Apple Calendar, o cualquier app de calendario.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
 
         <div className="bg-white rounded-lg shadow overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
