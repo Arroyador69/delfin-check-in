@@ -2,16 +2,8 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 export function middleware(req: NextRequest) {
-  // Solo proteger el host del admin (o URLs de Vercel para testing)
-  const host = req.headers.get('host') || ''
-  const isAdminDomain = host.startsWith('admin.')
-  const isVercelDomain = host.includes('vercel.app')
-  
   // Preflight CORS: dejar pasar siempre OPTIONS
   if (req.method === 'OPTIONS') return NextResponse.next();
-
-  // Para testing, permitir que funcione en ambos
-  if (!isAdminDomain && !isVercelDomain) return NextResponse.next()
 
   // Rutas que quieres dejar públicas (si alguna)
   const url = req.nextUrl
@@ -49,16 +41,40 @@ export function middleware(req: NextRequest) {
     return NextResponse.next()
   }
 
-  // Verificar autenticación por cookie
-  const authToken = req.cookies.get('auth_token')?.value
+  // Páginas que requieren autenticación (todas las páginas admin)
+  const protectedPages = [
+    '/', // Dashboard principal
+    '/reservations',
+    '/rooms', 
+    '/guest-registrations-dashboard',
+    '/cost-calculator',
+    '/aeat',
+    '/calendar-sync',
+    '/offline-queue',
+    '/audit',
+    '/settings',
+    '/pricing',
+    '/messages',
+    '/partes',
+    '/checkin',
+    '/estado-envios-mir'
+  ];
+
+  // Si es una página protegida, verificar autenticación
+  const isProtectedPage = protectedPages.some(page => url.pathname === page);
   
-  // Obtener credenciales personalizadas (en producción esto vendría de una base de datos)
-  const storedPassword = process.env.ADMIN_PASSWORD || 'Cuaderno2314'
-  
-  if (!authToken || authToken !== storedPassword) {
-    // Redirigir al login en lugar de mostrar error 401
-    const loginUrl = new URL('/admin-login', req.url)
-    return NextResponse.redirect(loginUrl)
+  if (isProtectedPage) {
+    // Verificar autenticación por cookie
+    const authToken = req.cookies.get('auth_token')?.value
+    
+    // Obtener credenciales personalizadas (en producción esto vendría de una base de datos)
+    const storedPassword = process.env.ADMIN_PASSWORD || 'Cuaderno2314'
+    
+    if (!authToken || authToken !== storedPassword) {
+      // Redirigir al login en lugar de mostrar error 401
+      const loginUrl = new URL('/admin-login', req.url)
+      return NextResponse.redirect(loginUrl)
+    }
   }
 
   return NextResponse.next()
