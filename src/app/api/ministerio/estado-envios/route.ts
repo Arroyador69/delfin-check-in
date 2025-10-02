@@ -5,25 +5,47 @@ export async function GET(req: NextRequest) {
   try {
     console.log('📊 Obteniendo estado de envíos al MIR...');
     
-    // Obtener estadísticas
-    const estadisticas = await getMirEstadisticas();
+    let estadisticas, estados;
     
-    // Obtener comunicaciones por estado
-    const [pendientes, enviados, confirmados, errores] = await Promise.all([
-      getMirComunicaciones('pendiente'),
-      getMirComunicaciones('enviado'),
-      getMirComunicaciones('confirmado'),
-      getMirComunicaciones('error')
-    ]);
-    
-    const estados = {
-      pendientes,
-      enviados,
-      confirmados,
-      errores
-    };
-    
-    console.log('📈 Estadísticas de envíos:', estadisticas);
+    try {
+      // Obtener estadísticas
+      estadisticas = await getMirEstadisticas();
+      
+      // Obtener comunicaciones por estado
+      const [pendientes, enviados, confirmados, errores] = await Promise.all([
+        getMirComunicaciones('pendiente'),
+        getMirComunicaciones('enviado'),
+        getMirComunicaciones('confirmado'),
+        getMirComunicaciones('error')
+      ]);
+      
+      estados = {
+        pendientes,
+        enviados,
+        confirmados,
+        errores
+      };
+      
+      console.log('📈 Estadísticas de envíos:', estadisticas);
+    } catch (dbError) {
+      console.log('⚠️ Tabla mir_comunicaciones no existe, usando datos vacíos');
+      
+      // Si la tabla no existe, devolver datos vacíos
+      estadisticas = {
+        total: 0,
+        pendientes: 0,
+        enviados: 0,
+        confirmados: 0,
+        errores: 0
+      };
+      
+      estados = {
+        pendientes: [],
+        enviados: [],
+        confirmados: [],
+        errores: []
+      };
+    }
     
     return NextResponse.json({
       success: true,

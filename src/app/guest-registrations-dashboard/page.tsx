@@ -482,7 +482,15 @@ export default function GuestRegistrationsDashboard() {
                 <p className="text-xs text-gray-500">🏛️ Gestión y generación de XML para Ministerio del Interior</p>
               </div>
             </div>
-            {/* Sin botón de cerrar sesión aquí */}
+            <div className="flex items-center space-x-4">
+              <a 
+                href="/estado-envios-mir" 
+                className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors flex items-center space-x-2"
+              >
+                <span>📤</span>
+                <span>Estado Envíos MIR</span>
+              </a>
+            </div>
           </div>
         </div>
       </header>
