@@ -1,7 +1,7 @@
 import re
 import time
 import urllib.parse
-from typing import Iterable, List, Set, Tuple
+from typing import Iterable, List, Set, Tuple, Optional
 
 import requests
 import tldextract
@@ -135,6 +135,87 @@ def candidate_contact_pages(links: List[str], base_domain: str) -> List[str]:
     same_domain_links = [u for u in links if same_domain(u, base_domain)]
     ranked = sorted(same_domain_links, key=lambda u: score_contact_url(u), reverse=True)
     return unique_preserve_order(ranked)
+
+
+# Heurísticas simples para España y CCAA
+SPAIN_KEYWORDS = [
+    "españa", "spain", "es-es", "+34", ".es", "es_ES",
+]
+
+CCAA_KEYWORDS = {
+    # Andalucía
+    "andalucía": "Andalucía", "sevilla": "Andalucía", "málaga": "Andalucía", "granada": "Andalucía",
+    "córdoba": "Andalucía", "cádiz": "Andalucía", "huelva": "Andalucía", "almería": "Andalucía", "jaén": "Andalucía",
+    # Aragón
+    "aragón": "Aragón", "zaragoza": "Aragón", "huesca": "Aragón", "teruel": "Aragón",
+    # Asturias
+    "asturias": "Principado de Asturias", "oviedo": "Principado de Asturias", "gijón": "Principado de Asturias",
+    # Illes Balears
+    "illes balears": "Illes Balears", "islas baleares": "Illes Balears", "mallorca": "Illes Balears",
+    "menorca": "Illes Balears", "ibiza": "Illes Balears", "eivissa": "Illes Balears",
+    # Canarias
+    "canarias": "Canarias", "tenerife": "Canarias", "gran canaria": "Canarias", "lanzarote": "Canarias", "fuerteventura": "Canarias",
+    # Cantabria
+    "cantabria": "Cantabria", "santander": "Cantabria",
+    # Castilla y León
+    "castilla y león": "Castilla y León", "castilla y leon": "Castilla y León", "valladolid": "Castilla y León",
+    "burgos": "Castilla y León", "león": "Castilla y León", "soria": "Castilla y León", "zamora": "Castilla y León",
+    "salamanca": "Castilla y León", "ávila": "Castilla y León", "palencia": "Castilla y León", "segovia": "Castilla y León",
+    # Castilla-La Mancha
+    "castilla-la mancha": "Castilla-La Mancha", "castilla la mancha": "Castilla-La Mancha",
+    "albacete": "Castilla-La Mancha", "ciudad real": "Castilla-La Mancha", "cuenca": "Castilla-La Mancha",
+    "guadalajara": "Castilla-La Mancha", "toledo": "Castilla-La Mancha",
+    # Cataluña (a excluir)
+    "cataluña": "Cataluña", "catalunya": "Cataluña", "barcelona": "Cataluña", "girona": "Cataluña",
+    "lleida": "Cataluña", "tarragona": "Cataluña",
+    # Comunidad Valenciana
+    "comunitat valenciana": "Comunitat Valenciana", "comunidad valenciana": "Comunitat Valenciana",
+    "valencia": "Comunitat Valenciana", "castellón": "Comunitat Valenciana", "castellon": "Comunitat Valenciana",
+    "alicante": "Comunitat Valenciana",
+    # Extremadura
+    "extremadura": "Extremadura", "cáceres": "Extremadura", "caceres": "Extremadura", "badajoz": "Extremadura",
+    # Galicia
+    "galicia": "Galicia", "a coruña": "Galicia", "lugo": "Galicia", "ourense": "Galicia", "pontevedra": "Galicia",
+    # La Rioja
+    "la rioja": "La Rioja", "logroño": "La Rioja", "logrono": "La Rioja",
+    # Comunidad de Madrid
+    "comunidad de madrid": "Comunidad de Madrid", "madrid": "Comunidad de Madrid",
+    # Región de Murcia
+    "región de murcia": "Región de Murcia", "region de murcia": "Región de Murcia", "murcia": "Región de Murcia",
+    # Navarra
+    "navarra": "Comunidad Foral de Navarra", "pamplona": "Comunidad Foral de Navarra",
+    # País Vasco (a excluir)
+    "país vasco": "País Vasco", "pais vasco": "País Vasco", "euskadi": "País Vasco", "bizkaia": "País Vasco",
+    "vizcaya": "País Vasco", "gipuzkoa": "País Vasco", "guipúzcoa": "País Vasco", "araba": "País Vasco", "álava": "País Vasco", "alava": "País Vasco",
+    # Ceuta y Melilla
+    "ceuta": "Ceuta", "melilla": "Melilla",
+}
+
+
+def detect_is_spain(url: str, html: str) -> bool:
+    url_l = url.lower()
+    html_l = (html or "").lower()
+    if any(k in url_l for k in SPAIN_KEYWORDS):
+        return True
+    if any(k in html_l for k in SPAIN_KEYWORDS):
+        return True
+    # dominio .es
+    ext = tldextract.extract(url)
+    if ext.suffix == "es":
+        return True
+    # presencia de prefijo +34 en teléfonos ya sugiere España
+    if "+34" in html_l:
+        return True
+    return False
+
+
+def detect_ccaa(html: str) -> Optional[str]:
+    html_l = (html or "").lower()
+    # Buscar por keywords de CCAA y provincias
+    for kw, ccaa in CCAA_KEYWORDS.items():
+        if kw in html_l:
+            return ccaa
+    return None
 
 
 

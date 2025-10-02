@@ -13,6 +13,8 @@ from typing import List, Set, Tuple
 from utils import (
     build_session,
     candidate_contact_pages,
+    detect_ccaa,
+    detect_is_spain,
     extract_contacts,
     fetch_url,
     get_domain,
@@ -80,6 +82,8 @@ def main():
     parser.add_argument("--max-pages", type=int, default=5, help="Máximo páginas por sitio (default: 5)")
     parser.add_argument("--delay", type=float, default=1.0, help="Delay entre requests en segundos (default: 1.0)")
     parser.add_argument("--max-sites", type=int, help="Máximo sitios a procesar")
+    parser.add_argument("--only-spain", action="store_true", help="Incluir solo sitios de España (heurístico)")
+    parser.add_argument("--exclude-ccaa", nargs="*", default=[], help="Excluir CCAA por nombre (p.ej.: Cataluña 'Cataluña', País Vasco 'País Vasco')")
     
     args = parser.parse_args()
     
@@ -122,7 +126,45 @@ def main():
         print(f"\n📍 [{i}/{len(urls)}] {url}")
         
         try:
-            emails, phones = scrape_site(session, url, args.max_pages, args.delay)
+            # Obtener HTML principal para heurísticas
+            status, ctype, html = fetch_url(session, normalize_url(url))
+            if status != 200:
+                print(f"❌ Error {status} en {url}")
+                emails, phones = set(), set()
+            else:
+                # Filtros geográficos
+                ccaa = detect_ccaa(html) or ""
+                is_spain = detect_is_spain(url, html)
+
+                if args.only_spain and not is_spain:
+                    print("⛔ Excluido: no parece España")
+                    emails, phones = set(), set()
+                elif ccaa and any(ex.lower() == ccaa.lower() for ex in args.exclude_ccaa):
+                    print(f"⛔ Excluido por CCAA: {ccaa}")
+                    emails, phones = set(), set()
+                else:
+                    # Si pasa filtros, hacer scrape completo (incluye páginas de contacto)
+                    emails, phones = extract_contacts(html)
+                    if emails or phones:
+                        print(f"✅ Encontrados en página principal: {len(emails)} emails, {len(phones)} teléfonos")
+                    # Buscar páginas de contacto
+                    domain = get_domain(normalize_url(url))
+                    links = parse_links(html, normalize_url(url))
+                    contact_pages = candidate_contact_pages(links, domain)[:args.max_pages-1]
+                    for j, contact_url in enumerate(contact_pages):
+                        if j >= args.max_pages - 1:
+                            break
+                        print(f"📄 Página de contacto {j+1}: {contact_url}")
+                        sleep_throttle(args.delay)
+                        st2, ct2, html2 = fetch_url(session, contact_url)
+                        if st2 == 200:
+                            e2, p2 = extract_contacts(html2)
+                            emails.update(e2)
+                            phones.update(p2)
+                            if e2 or p2:
+                                print(f"✅ Encontrados: {len(e2)} emails, {len(p2)} teléfonos")
+                        else:
+                            print(f"❌ Error {st2}")
             
             if emails or phones:
                 results.append({
