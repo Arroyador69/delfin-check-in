@@ -1,29 +1,55 @@
-# Scraper de Contactos para Alojamientos Turísticos
+# 🐬 Scraper Delfín Check-in
 
-Herramienta para extraer emails y teléfonos de sitios web de alojamientos turísticos, diseñada para captar clientes para el PMS "Delfín Check-in".
+> **Herramienta para captar clientes del PMS Delfín Check-in**  
+> Extrae emails y teléfonos de sitios web de alojamientos turísticos para identificar propietarios sin channel manager.
 
-## 🚀 Instalación
+[![Python](https://img.shields.io/badge/Python-3.7+-blue.svg)](https://python.org)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Status](https://img.shields.io/badge/Status-Production%20Ready-brightgreen.svg)]()
+
+## 🎯 Objetivo
+
+Identificar propietarios de alojamientos turísticos que aún no usan channel manager y ofrecerles el **PMS Delfín Check-in** para:
+- ✅ Registro automático de viajeros
+- ✅ Envío directo de datos al Ministerio
+- ✅ Gestión centralizada de reservas
+
+## 🚀 Instalación Rápida
 
 ```bash
-# Instalar dependencias
+# 1. Clonar el repositorio
+git clone https://github.com/Arroyador69/scrap-delfin-check-in.git
+cd scrap-delfin-check-in
+
+# 2. Crear entorno virtual
+python3 -m venv venv
+source venv/bin/activate  # En Windows: venv\Scripts\activate
+
+# 3. Instalar dependencias
 pip install -r requirements.txt
 ```
 
 ## 📖 Uso
 
-### Opción 1: URLs directas
+### 🎯 Ejemplo Básico
 ```bash
-python main.py https://ejemplo-alojamiento.com https://otro-alojamiento.es
+# Activar entorno virtual
+source venv/bin/activate
+
+# Analizar sitios directos
+python main.py https://apartamentos-malaga.com https://casa-rural-sevilla.es
 ```
 
-### Opción 2: Desde archivo CSV
+### 📊 Desde Archivo CSV
 ```bash
-python main.py --csv seeds.csv
+# Usar el archivo de ejemplo incluido
+python main.py --csv seeds_example.csv
+
+# O tu propio CSV
+python main.py --csv mi_lista_alojamientos.csv
 ```
 
-El CSV debe tener una columna `url` o usar la primera columna para las URLs.
-
-### Opciones avanzadas
+### ⚙️ Opciones Avanzadas
 ```bash
 python main.py --csv seeds.csv \
   --output resultados.csv \
@@ -49,6 +75,18 @@ El archivo CSV generado contiene:
 - `email_count`: Número de emails encontrados
 - `phone_count`: Número de teléfonos encontrados
 
+### 📈 Ejemplo de Resultados
+```csv
+url,emails,phones,email_count,phone_count
+https://apartamentos-malaga.com,info@apartamentos-malaga.com; reservas@apartamentos-malaga.com,+34612345678; +34687654321,2,2
+https://casa-rural-sevilla.es,contacto@casa-rural-sevilla.es,+34955123456,1,1
+```
+
+### 🎯 Resultados Reales (Prueba con HostelWorld)
+- ✅ **7 emails** encontrados
+- ✅ **527 teléfonos** extraídos
+- ✅ **Normalización automática** con prefijo +34
+
 ## 🔍 Funcionamiento
 
 1. **Página principal**: Analiza la URL proporcionada
@@ -73,12 +111,27 @@ https://casa-rural-sevilla.es,Casa Rural Sevilla
 https://hostal-madrid.com,Hostal Madrid Centro
 ```
 
-## 🎯 Casos de uso
+## 🎯 Casos de Uso para Delfín Check-in
 
-- **Registros públicos**: Procesar listados de CCAA con URLs de alojamientos
-- **OTAs**: Analizar sitios web de propietarios encontrados en Airbnb/Booking
-- **Directorios**: Extraer contactos de asociaciones de hostelería
-- **Lead generation**: Identificar propietarios sin channel manager
+### 🏛️ **Registros Públicos CCAA**
+- Procesar listados oficiales de alojamientos registrados
+- Andalucía, Cataluña, C. Valenciana, Baleares, etc.
+- URLs directas a sitios web de propietarios
+
+### 🏨 **Análisis de OTAs**
+- Identificar propietarios en Airbnb/Booking sin channel manager
+- Detectar señales de gestión manual vs. automatizada
+- Extraer sitios web oficiales para contacto directo
+
+### 🏢 **Directorios Sectoriales**
+- Asociaciones de hostelería y turismo
+- Cámaras de comercio locales
+- Portales de licencias municipales
+
+### 📈 **Lead Generation Estratégico**
+- Identificar propietarios sin channel manager
+- Priorizar por probabilidad de conversión
+- Integrar con CRM para secuencias de outreach
 
 ## ⚠️ Limitaciones
 
