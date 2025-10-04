@@ -1,0 +1,82 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("POSTGRES_PRISMA_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "node_modules/.prisma/client"
+}
+
+model Lodging {
+  id            String   @id @default(cuid())
+  slug          String   @unique
+  title         String
+  type          LodgingType
+  isOwned       Boolean  @default(false)
+  description   String
+  address       String?
+  city          String?
+  lat           Float?
+  lng           Float?
+  images        String[]
+  amenities     String[]
+  rating        Float?
+  reviewCount   Int?
+  affiliateLink String?
+  rooms         Room[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+enum LodgingType {
+  HOSTAL
+  HOTEL
+  APARTAMENTO
+}
+
+model Room {
+  id             String   @id @default(cuid())
+  lodgingId      String
+  lodging        Lodging  @relation(fields: [lodgingId], references: [id])
+  name           String
+  capacity       Int
+  basePriceCents Int
+  description    String?
+  images         String[]
+  bookings       Booking[]
+}
+
+model Activity {
+  id           String   @id @default(cuid())
+  slug         String   @unique
+  title        String
+  description  String
+  lat          Float?
+  lng          Float?
+  images       String[]
+  category     String?
+  externalLink String?
+}
+
+model Booking {
+  id              String        @id @default(cuid())
+  roomId          String
+  room            Room          @relation(fields: [roomId], references: [id])
+  checkIn         DateTime
+  checkOut        DateTime
+  guests          Int
+  amountCents     Int
+  currency        String        @default("EUR")
+  stripeSessionId String        @unique
+  status          BookingStatus @default(PENDING)
+  createdAt       DateTime      @default(now())
+
+  @@index([roomId])
+}
+
+enum BookingStatus {
+  PENDING
+  PAID
+  CANCELED
+}
