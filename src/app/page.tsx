@@ -22,6 +22,12 @@ export default function HomePage() {
     loadData();
   }, []);
 
+  // Recalcular cuando cambie el filtro
+  useEffect(() => {
+    // Forzar re-render cuando cambie el filtro
+    console.log(`🔄 Filtro cambiado a: ${filterPeriod}`);
+  }, [filterPeriod, customDateRange]);
+
   const loadData = async () => {
     try {
       setLoading(true);
@@ -115,6 +121,7 @@ export default function HomePage() {
     }
     
     if (filterPeriod === 'custom' && (!customDateRange.from || !customDateRange.to)) {
+      console.log(`🔍 Filtro: ${filterPeriod} - RANGO PERSONALIZADO VACÍO, MOSTRANDO TODAS`);
       return reservations;
     }
     
@@ -131,8 +138,20 @@ export default function HomePage() {
       const fromDate = new Date(dateRange.from);
       const toDate = new Date(dateRange.to);
       
+      // Ajustar fechas para comparación correcta (solo fecha, sin hora)
+      fromDate.setHours(0, 0, 0, 0);
+      toDate.setHours(23, 59, 59, 999);
+      checkIn.setHours(0, 0, 0, 0);
+      checkOut.setHours(23, 59, 59, 999);
+      
       // Incluir reservas que se solapan con el rango de fechas
-      return (checkIn <= toDate && checkOut >= fromDate);
+      const overlaps = checkIn <= toDate && checkOut >= fromDate;
+      
+      if (overlaps) {
+        console.log(`✅ Reserva incluida: ${reservation.guest_name} (${reservation.check_in} - ${reservation.check_out})`);
+      }
+      
+      return overlaps;
     });
     
     console.log(`✅ Reservas filtradas: ${filtered.length}`);
