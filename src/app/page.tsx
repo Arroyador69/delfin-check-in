@@ -182,9 +182,17 @@ export default function HomePage() {
   const totalReservations = filteredReservations.length;
   const confirmedReservations = filteredReservations.filter(r => r.status === 'confirmed').length;
   const today = new Date().toISOString().split('T')[0];
-  const guestsToday = filteredReservations.filter(r => 
-    r.check_in <= today && r.check_out >= today && r.status === 'confirmed'
-  ).length;
+  
+  // Para "Huéspedes Hoy" siempre mostrar los de hoy, independientemente del filtro
+  const guestsToday = reservations.filter(r => {
+    const checkIn = new Date(r.check_in);
+    const checkOut = new Date(r.check_out);
+    const todayDate = new Date(today);
+    todayDate.setHours(0, 0, 0, 0);
+    checkIn.setHours(0, 0, 0, 0);
+    checkOut.setHours(23, 59, 59, 999);
+    return checkIn <= todayDate && checkOut >= todayDate && r.status === 'confirmed';
+  }).length;
 
   // Calcular ocupación basada en el período filtrado
   const dateRange = getDateRange(filterPeriod);
@@ -215,6 +223,12 @@ export default function HomePage() {
       const checkOut = new Date(r.check_out);
       const fromDate = new Date(dateRange.from);
       const toDate = new Date(dateRange.to);
+      
+      // Ajustar fechas para comparación correcta
+      fromDate.setHours(0, 0, 0, 0);
+      toDate.setHours(23, 59, 59, 999);
+      checkIn.setHours(0, 0, 0, 0);
+      checkOut.setHours(23, 59, 59, 999);
       
       const start = checkIn > fromDate ? checkIn : fromDate;
       const end = checkOut < toDate ? checkOut : toDate;
