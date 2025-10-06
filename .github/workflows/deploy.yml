@@ -150,3 +150,18 @@ jobs:
           • Heroku: https://delfin-checkin.herokuapp.com
           
           📦 Docker: ${{ secrets.DOCKER_USERNAME }}/delfin-checkin:${{ github.sha }}
+
+  deploy-vercel-hook:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == refs/heads/main
+    steps:
+    - name: Trigger Vercel Deploy Hook
+      env:
+        HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
+      run: |
+        if [ -z "$HOOK" ]; then
+          echo "VERCEL_DEPLOY_HOOK_URL not set" >&2
+          exit 1
+        fi
+        curl -fsS -X POST "$HOOK"
