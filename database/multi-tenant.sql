@@ -119,3 +119,49 @@ COMMENT ON COLUMN tenant_users.password_hash IS 'Hash bcrypt de la contraseña d
 COMMENT ON COLUMN tenant_users.role IS 'Rol del usuario: owner (propietario), admin (administrador), staff (empleado)';
 COMMENT ON COLUMN tenant_users.reset_token IS 'Token para recuperación de contraseña';
 COMMENT ON COLUMN tenant_users.email_verified IS 'Si el email ha sido verificado';
+
+-- ========================================
+-- MIGRACIÓN: Añadir tenant_id a tablas existentes
+-- ========================================
+-- IMPORTANTE: Estas migraciones deben ejecutarse después de crear las tablas tenants y tenant_users
+-- y después de migrar los datos existentes a un tenant por defecto
+
+-- Añadir tenant_id a tabla rooms
+ALTER TABLE rooms 
+ADD COLUMN IF NOT EXISTS tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE;
+
+CREATE INDEX IF NOT EXISTS idx_rooms_tenant_id ON rooms(tenant_id);
+
+COMMENT ON COLUMN rooms.tenant_id IS 'ID del tenant (cliente) al que pertenece esta habitación';
+
+-- Añadir tenant_id a tabla reservations
+ALTER TABLE reservations 
+ADD COLUMN IF NOT EXISTS tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE;
+
+CREATE INDEX IF NOT EXISTS idx_reservations_tenant_id ON reservations(tenant_id);
+
+COMMENT ON COLUMN reservations.tenant_id IS 'ID del tenant (cliente) al que pertenece esta reserva';
+
+-- Añadir tenant_id a tabla guests
+ALTER TABLE guests 
+ADD COLUMN IF NOT EXISTS tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE;
+
+CREATE INDEX IF NOT EXISTS idx_guests_tenant_id ON guests(tenant_id);
+
+COMMENT ON COLUMN guests.tenant_id IS 'ID del tenant (cliente) al que pertenece este huésped';
+
+-- Añadir tenant_id a tabla guest_registrations
+ALTER TABLE guest_registrations 
+ADD COLUMN IF NOT EXISTS tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE;
+
+CREATE INDEX IF NOT EXISTS idx_guest_registrations_tenant_id ON guest_registrations(tenant_id);
+
+COMMENT ON COLUMN guest_registrations.tenant_id IS 'ID del tenant (cliente) al que pertenece este registro';
+
+-- Añadir tenant_id a tabla messages (si existe)
+ALTER TABLE messages 
+ADD COLUMN IF NOT EXISTS tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE;
+
+CREATE INDEX IF NOT EXISTS idx_messages_tenant_id ON messages(tenant_id);
+
+COMMENT ON COLUMN messages.tenant_id IS 'ID del tenant (cliente) al que pertenece este mensaje';
