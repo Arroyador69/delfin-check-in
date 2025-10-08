@@ -165,3 +165,102 @@ ADD COLUMN IF NOT EXISTS tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE
 CREATE INDEX IF NOT EXISTS idx_messages_tenant_id ON messages(tenant_id);
 
 COMMENT ON COLUMN messages.tenant_id IS 'ID del tenant (cliente) al que pertenece este mensaje';
+
+-- ========================================
+-- DOCUMENTACIÓN: Relaciones entre tablas
+-- ========================================
+
+/*
+ESTRUCTURA MULTI-TENANT:
+
+┌─────────────────┐
+│    TENANTS      │ (Clientes/Propietarios)
+│  - id (PK)      │
+│  - email        │
+│  - plan_id      │
+│  - max_rooms    │
+│  - stripe_*     │
+└────────┬────────┘
+         │
+         ├───────────────────────────────────────┐
+         │                                       │
+         ▼                                       ▼
+┌─────────────────┐                    ┌──────────────────┐
+│  TENANT_USERS   │                    │     ROOMS        │
+│  - id (PK)      │                    │  - id (PK)       │
+│  - tenant_id(FK)│                    │  - tenant_id(FK) │
+│  - email        │                    │  - name          │
+│  - password_hash│                    │  - ical_urls     │
+│  - role         │                    └────────┬─────────┘
+└─────────────────┘                             │
+                                                │
+                                                ▼
+                                       ┌──────────────────┐
+                                       │  RESERVATIONS    │
+                                       │  - id (PK)       │
+                                       │  - tenant_id(FK) │
+                                       │  - room_id (FK)  │
+                                       │  - guest_name    │
+                                       └────────┬─────────┘
+                                                │
+                                                ▼
+                                       ┌──────────────────┐
+                                       │     GUESTS       │
+                                       │  - id (PK)       │
+                                       │  - tenant_id(FK) │
+                                       │  - reservation_id│
+                                       │  - document_num  │
+                                       └──────────────────┘
+
+┌─────────────────────────────────────────────────────┐
+│  GUEST_REGISTRATIONS (Registros MIR)                │
+│  - id (PK)                                          │
+│  - tenant_id (FK)  ← IMPORTANTE para MIR por tenant│
+│  - reserva_ref                                      │
+│  - data (JSONB)                                     │
+└─────────────────────────────────────────────────────┘
+
+REGLAS DE AISLAMIENTO:
+======================
+
+1. QUERIES: Todas las consultas DEBEN filtrar por tenant_id
+   Ejemplo: SELECT * FROM rooms WHERE tenant_id = $current_tenant_id
+
+2. INSERTS: Todos los inserts DEBEN incluir tenant_id
+   Ejemplo: INSERT INTO rooms (name, tenant_id) VALUES ($name, $tenant_id)
+
+3. MIDDLEWARE: Verificar tenant_id en cada request
+   - Extraer tenant_id del JWT token
+   - Validar que el tenant existe y está activo
+   - Pasar tenant_id a todas las queries
+
+4. SEGURIDAD: Row Level Security (RLS) en Supabase
+   - Políticas para que usuarios solo vean datos de su tenant
+   - Prevenir acceso cruzado entre tenants
+
+FLUJO DE AUTENTICACIÓN MULTI-TENANT:
+====================================
+
+1. Usuario hace login → verifica credenciales en tenant_users
+2. Sistema genera JWT con { userId, tenantId }
+3. Middleware extrae tenantId del JWT
+4. Todas las queries usan WHERE tenant_id = $tenantId
+5. Usuario solo ve datos de su tenant
+
+MIGRACIÓN DE DATOS EXISTENTES:
+==============================
+
+Cuando se implemente, crear un tenant "default" para los datos actuales:
+
+INSERT INTO tenants (id, name, email, plan_id, max_rooms, status)
+VALUES (
+  gen_random_uuid(),
+  'Cliente Actual',
+  'actual@delfincheckin.com',
+  'premium',
+  6,
+  'active'
+);
+
+Luego actualizar todas las tablas existentes con ese tenant_id.
+*/
