@@ -69,3 +69,53 @@ COMMENT ON COLUMN tenants.max_rooms IS 'Número máximo de habitaciones según p
 COMMENT ON COLUMN tenants.current_rooms IS 'Número actual de habitaciones configuradas';
 COMMENT ON COLUMN tenants.status IS 'Estado de la cuenta: active, trial, suspended, cancelled';
 COMMENT ON COLUMN tenants.config IS 'Configuración personalizada del tenant en formato JSON';
+
+-- ========================================
+-- TABLA: tenant_users (Usuarios por tenant)
+-- ========================================
+CREATE TABLE IF NOT EXISTS tenant_users (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  
+  -- Relación con tenant
+  tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  
+  -- Credenciales
+  email VARCHAR(255) NOT NULL,
+  password_hash VARCHAR(255) NOT NULL, -- bcrypt hash de la contraseña
+  
+  -- Información adicional
+  full_name VARCHAR(255),
+  role VARCHAR(50) NOT NULL DEFAULT 'owner' CHECK (role IN ('owner', 'admin', 'staff')),
+  
+  -- Control de sesión
+  last_login TIMESTAMP WITH TIME ZONE,
+  reset_token VARCHAR(255),
+  reset_token_expires TIMESTAMP WITH TIME ZONE,
+  
+  -- Estado
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  email_verified BOOLEAN NOT NULL DEFAULT false,
+  
+  -- Auditoría
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  
+  -- Constraint: Un email único por tenant
+  UNIQUE(tenant_id, email)
+);
+
+-- Índices para búsquedas rápidas
+CREATE INDEX IF NOT EXISTS idx_tenant_users_tenant_id ON tenant_users(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_tenant_users_email ON tenant_users(email);
+CREATE INDEX IF NOT EXISTS idx_tenant_users_reset_token ON tenant_users(reset_token);
+
+-- Trigger para actualizar updated_at
+CREATE TRIGGER update_tenant_users_updated_at BEFORE UPDATE ON tenant_users
+FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- Comentarios para documentación
+COMMENT ON TABLE tenant_users IS 'Usuarios con acceso a cada tenant (cliente)';
+COMMENT ON COLUMN tenant_users.password_hash IS 'Hash bcrypt de la contraseña del usuario';
+COMMENT ON COLUMN tenant_users.role IS 'Rol del usuario: owner (propietario), admin (administrador), staff (empleado)';
+COMMENT ON COLUMN tenant_users.reset_token IS 'Token para recuperación de contraseña';
+COMMENT ON COLUMN tenant_users.email_verified IS 'Si el email ha sido verificado';
