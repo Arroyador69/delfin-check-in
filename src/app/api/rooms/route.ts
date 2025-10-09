@@ -53,6 +53,38 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Verificar límites del plan
+    const tenantResult = await sql`
+      SELECT max_rooms, (SELECT COUNT(*) FROM rooms WHERE tenant_id = ${tenantId}) as current_rooms
+      FROM tenants 
+      WHERE id = ${tenantId}
+    `;
+
+    if (tenantResult.rows.length === 0) {
+      return NextResponse.json(
+        { error: 'Tenant no encontrado' },
+        { status: 404 }
+      );
+    }
+
+    const tenant = tenantResult.rows[0];
+    const currentRooms = parseInt(tenant.current_rooms);
+    const maxRooms = tenant.max_rooms;
+
+    // Verificar si puede añadir más habitaciones
+    if (maxRooms !== -1 && currentRooms >= maxRooms) {
+      return NextResponse.json(
+        { 
+          error: 'Límite de habitaciones alcanzado',
+          message: `Tu plan actual permite máximo ${maxRooms} habitaciones. Upgrade tu plan para añadir más habitaciones.`,
+          current_rooms: currentRooms,
+          max_rooms: maxRooms,
+          upgrade_required: true
+        },
+        { status: 403 }
+      );
+    }
+
     // Insertar habitación en la base de datos con tenant_id
     const result = await sql`
       INSERT INTO rooms (

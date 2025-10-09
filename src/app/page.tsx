@@ -11,6 +11,7 @@ type FilterPeriod = 'total' | 'annual' | 'today' | 'thisWeek' | 'last7Days' | 't
 export default function HomePage() {
   const [rooms, setRooms] = useState<any[]>([]);
   const [reservations, setReservations] = useState<any[]>([]);
+  const [tenant, setTenant] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [filterPeriod, setFilterPeriod] = useState<FilterPeriod>('total');
   const [customDateRange, setCustomDateRange] = useState<{from: string, to: string}>({
@@ -32,6 +33,11 @@ export default function HomePage() {
   const loadData = async () => {
     try {
       setLoading(true);
+      
+      // Obtener información del tenant
+      const tenantResponse = await fetch('/api/tenant');
+      const tenantData = await tenantResponse.json();
+      setTenant(tenantData);
       
       // Obtener habitaciones
       const roomsResponse = await fetch('/api/rooms');
@@ -326,6 +332,50 @@ export default function HomePage() {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
+        {/* Información del Plan */}
+        {tenant && (
+          <div className="card mb-8 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+              <div className="flex items-center space-x-4">
+                <div className="text-3xl">🏢</div>
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900">
+                    {tenant.tenant.name} - Plan {tenant.tenant.plan_name}
+                  </h2>
+                  <p className="text-sm text-gray-600">
+                    €{tenant.tenant.plan_price}/mes • {tenant.tenant.plan_features.join(' • ')}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center space-x-4">
+                <div className="text-right">
+                  <div className="text-sm text-gray-600">Uso de habitaciones</div>
+                  <div className="text-lg font-bold text-gray-900">
+                    {tenant.stats.rooms_used}/{tenant.tenant.max_rooms === -1 ? '∞' : tenant.tenant.max_rooms}
+                  </div>
+                  {tenant.tenant.max_rooms !== -1 && (
+                    <div className="w-32 bg-gray-200 rounded-full h-2 mt-1">
+                      <div 
+                        className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                        style={{ width: `${tenant.limits.rooms_usage_percentage}%` }}
+                      ></div>
+                    </div>
+                  )}
+                </div>
+                {!tenant.limits.can_add_rooms && (
+                  <Link
+                    href="/upgrade-plan"
+                    className="px-4 py-2 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-md hover:from-orange-600 hover:to-red-600 transition-all duration-200 flex items-center space-x-2"
+                  >
+                    <ArrowUpCircle className="w-4 h-4" />
+                    <span className="text-sm font-medium">Upgrade</span>
+                  </Link>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Filtros de Período */}
         <div className="card mb-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
@@ -477,6 +527,14 @@ export default function HomePage() {
             <div>
               <div className="meta">Habitaciones</div>
               <div className="value">{totalRooms}</div>
+              {tenant && (
+                <div className="text-xs text-gray-600 mt-1">
+                  {tenant.limits.rooms_remaining === -1 
+                    ? 'Ilimitadas' 
+                    : `${tenant.limits.rooms_remaining} disponibles`
+                  }
+                </div>
+              )}
             </div>
           </div>
 
