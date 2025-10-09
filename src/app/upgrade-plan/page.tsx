@@ -1,9 +1,15 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { ArrowLeft, Check, Crown, Zap, Shield, TrendingUp } from 'lucide-react';
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { ArrowLeft, Check, Crown, Zap, Shield, TrendingUp, Loader2, CreditCard } from 'lucide-react';
 import Link from 'next/link';
+import AdminLayout from '@/components/AdminLayout';
+import { loadStripe } from '@stripe/stripe-js';
+import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
+
+// Inicializar Stripe
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '');
 
 // Tipos de planes
 type PlanId = 'basic' | 'standard' | 'premium' | 'enterprise';
@@ -93,286 +99,382 @@ const PLANS: Plan[] = [
   }
 ];
 
-export default function UpgradePlanPage() {
-  const router = useRouter();
-  const [currentPlan] = useState<PlanId>('basic'); // TODO: Obtener del tenant actual
-  const [selectedPlan, setSelectedPlan] = useState<PlanId | null>(null);
-  const [isUpgrading, setIsUpgrading] = useState(false);
+function CheckoutForm({ planId, onSuccess, onError }: { planId: PlanId; onSuccess: () => void; onError: (error: string) => void }) {
+  const stripe = useStripe();
+  const elements = useElements();
+  const [processing, setProcessing] = useState(false);
 
-  const handleUpgrade = async (planId: PlanId) => {
-    setIsUpgrading(true);
-    setSelectedPlan(planId);
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+
+    if (!stripe || !elements) {
+      return;
+    }
+
+    setProcessing(true);
 
     try {
-      // Obtener email del usuario actual (TODO: obtener del contexto de auth)
-      const email = prompt('Ingresa tu email para el pago:');
-      if (!email) {
-        setIsUpgrading(false);
-        setSelectedPlan(null);
-        return;
+      // Crear payment method con el CardElement
+      const cardElement = elements.getElement(CardElement);
+      
+      if (!cardElement) {
+        throw new Error('CardElement no encontrado');
       }
 
-      // Crear payment intent con Stripe
-      const response = await fetch('/api/create-payment-intent', {
+      const { error: methodError, paymentMethod } = await stripe.createPaymentMethod({
+        type: 'card',
+        card: cardElement,
+      });
+
+      if (methodError) {
+        throw new Error(methodError.message);
+      }
+
+      // Procesar el upgrade en el backend
+      const response = await fetch('/api/upgrade-plan', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           planId,
-          email,
-          name: email.split('@')[0] // Usar parte del email como nombre por defecto
+          paymentMethodId: paymentMethod.id,
         }),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Error al procesar el pago');
+        throw new Error(data.error || 'Error procesando el upgrade');
       }
 
-      const { client_secret } = await response.json();
-      
-      // TODO: Integrar con Stripe Elements para procesar el pago
-      // Por ahora mostramos el client_secret
-      console.log('Client Secret:', client_secret);
-      alert(`Upgrade a ${PLANS.find(p => p.id === planId)?.name} iniciado. Client Secret: ${client_secret.substring(0, 20)}...`);
-      
+      // Si hay client_secret, confirmar el pago
+      if (data.client_secret) {
+        const { error: confirmError } = await stripe.confirmCardPayment(data.client_secret);
+        
+        if (confirmError) {
+          throw new Error(confirmError.message);
+        }
+      }
+
+      onSuccess();
+
     } catch (error: any) {
-      console.error('Error en upgrade:', error);
-      alert(`Error: ${error.message}`);
+      onError(error.message);
     } finally {
-      setIsUpgrading(false);
-      setSelectedPlan(null);
+      setProcessing(false);
     }
   };
 
-  const getColorClasses = (color: string) => {
-    const colors: Record<string, any> = {
-      blue: {
-        bg: 'bg-blue-50',
-        border: 'border-blue-500',
-        text: 'text-blue-600',
-        button: 'bg-blue-600 hover:bg-blue-700',
-        badge: 'bg-blue-500'
-      },
-      green: {
-        bg: 'bg-green-50',
-        border: 'border-green-500',
-        text: 'text-green-600',
-        button: 'bg-green-600 hover:bg-green-700',
-        badge: 'bg-green-500'
-      },
-      purple: {
-        bg: 'bg-purple-50',
-        border: 'border-purple-500',
-        text: 'text-purple-600',
-        button: 'bg-purple-600 hover:bg-purple-700',
-        badge: 'bg-purple-500'
-      },
-      gold: {
-        bg: 'bg-yellow-50',
-        border: 'border-yellow-500',
-        text: 'text-yellow-600',
-        button: 'bg-yellow-600 hover:bg-yellow-700',
-        badge: 'bg-yellow-500'
+  return (
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Información de tarjeta
+        </label>
+        <div className="p-4 border border-gray-300 rounded-lg">
+          <CardElement
+            options={{
+              style: {
+                base: {
+                  fontSize: '16px',
+                  color: '#424770',
+                  '::placeholder': {
+                    color: '#aab7c4',
+                  },
+                },
+                invalid: {
+                  color: '#9e2146',
+                },
+              },
+            }}
+          />
+        </div>
+      </div>
+
+      <button
+        type="submit"
+        disabled={!stripe || processing}
+        className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {processing ? (
+          <>
+            <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+            Procesando...
+          </>
+        ) : (
+          <>
+            <CreditCard className="w-5 h-5 mr-2" />
+            Confirmar cambio de plan
+          </>
+        )}
+      </button>
+
+      <p className="text-xs text-gray-500 text-center">
+        Tus datos de pago están protegidos con encriptación SSL
+      </p>
+    </form>
+  );
+}
+
+function UpgradeContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [currentPlanId, setCurrentPlanId] = useState<PlanId>('basic');
+  const [selectedPlanId, setSelectedPlanId] = useState<PlanId | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
+  const [showCheckout, setShowCheckout] = useState(false);
+
+  useEffect(() => {
+    loadCurrentPlan();
+    
+    // Obtener plan de la URL si está presente
+    const urlPlan = searchParams.get('plan') as PlanId;
+    if (urlPlan && PLANS.find(p => p.id === urlPlan)) {
+      setSelectedPlanId(urlPlan);
+    }
+  }, [searchParams]);
+
+  const loadCurrentPlan = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/tenant');
+      const data = await response.json();
+      
+      if (response.ok && data.tenant) {
+        setCurrentPlanId(data.tenant.plan_id as PlanId);
       }
-    };
-    return colors[color] || colors.blue;
+    } catch (error) {
+      console.error('Error cargando plan actual:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
+  const handleSelectPlan = (planId: PlanId) => {
+    if (planId === currentPlanId) {
+      return;
+    }
+    setSelectedPlanId(planId);
+    setShowCheckout(true);
+  };
+
+  const handleUpgradeSuccess = () => {
+    setSuccess(true);
+    setShowCheckout(false);
+    
+    setTimeout(() => {
+      router.push('/settings/billing');
+    }, 2000);
+  };
+
+  const handleUpgradeError = (errorMessage: string) => {
+    setError(errorMessage);
+    setTimeout(() => setError(''), 5000);
+  };
+
+  const currentPlan = PLANS.find(p => p.id === currentPlanId);
+  const selectedPlan = selectedPlanId ? PLANS.find(p => p.id === selectedPlanId) : null;
+  const isUpgrade = selectedPlan && selectedPlan.price > (currentPlan?.price || 0);
+  const isDowngrade = selectedPlan && selectedPlan.price < (currentPlan?.price || 0);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <div className="loading mx-auto"></div>
+          <p className="mt-4 text-gray-600">Cargando planes...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between py-6">
-            <div className="flex items-center">
-              <Link
-                href="/"
-                className="mr-4 p-2 hover:bg-gray-100 rounded-full transition-colors"
-                title="Volver al dashboard"
+    <AdminLayout>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+        {/* Header */}
+        <div className="bg-white shadow-sm border-b">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center py-6">
+              <Link 
+                href="/settings/billing"
+                className="mr-4 p-2 hover:bg-gray-100 rounded-lg transition-colors"
               >
-                <ArrowLeft className="w-6 h-6 text-gray-600" />
+                <ArrowLeft className="w-5 h-5 text-gray-600" />
               </Link>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Mejorar Plan</h1>
-                <p className="text-sm text-gray-600">Elige el plan perfecto para tu negocio</p>
+                <h1 className="text-2xl font-bold text-gray-900">Cambiar de plan</h1>
+                <p className="text-sm text-gray-600">
+                  Plan actual: <span className="font-semibold">{currentPlan?.name}</span>
+                </p>
               </div>
-            </div>
-            <div className="text-sm text-gray-600">
-              Plan actual: <span className="font-bold text-blue-600">{PLANS.find(p => p.id === currentPlan)?.name}</span>
             </div>
           </div>
         </div>
-      </header>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        
-        {/* Título y descripción */}
-        <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold text-gray-900 mb-4">
-            Planes diseñados para crecer contigo
-          </h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Cambia de plan en cualquier momento. Sin permanencia. Cancela cuando quieras.
-          </p>
-        </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          
+          {/* Success Message */}
+          {success && (
+            <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center">
+              <Check className="w-5 h-5 text-green-600 mr-3" />
+              <p className="text-green-800">
+                ¡Plan actualizado correctamente! Redirigiendo...
+              </p>
+            </div>
+          )}
 
-        {/* Grid de planes */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
-          {PLANS.map((plan) => {
-            const Icon = plan.icon;
-            const colors = getColorClasses(plan.color);
-            const isCurrentPlan = plan.id === currentPlan;
-            const canUpgrade = PLANS.findIndex(p => p.id === currentPlan) < PLANS.findIndex(p => p.id === plan.id);
+          {/* Error Message */}
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-red-800">{error}</p>
+            </div>
+          )}
 
-            return (
-              <div
-                key={plan.id}
-                className={`relative bg-white rounded-xl shadow-lg overflow-hidden transition-all duration-300 hover:transform hover:-translate-y-2 hover:shadow-2xl ${
-                  plan.popular ? 'ring-2 ring-green-500 scale-105' : ''
-                } ${isCurrentPlan ? 'ring-2 ring-blue-500' : ''}`}
-              >
-                {/* Badge de popular */}
-                {plan.popular && (
-                  <div className="absolute top-0 right-0 bg-green-500 text-white px-4 py-1 text-xs font-bold rounded-bl-lg">
-                    MÁS POPULAR
-                  </div>
-                )}
+          {!showCheckout ? (
+            /* Plans Grid */
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {PLANS.map((plan) => {
+                const Icon = plan.icon;
+                const isCurrent = plan.id === currentPlanId;
+                const isSelected = plan.id === selectedPlanId;
 
-                {/* Badge de plan actual */}
-                {isCurrentPlan && (
-                  <div className="absolute top-0 left-0 bg-blue-500 text-white px-4 py-1 text-xs font-bold rounded-br-lg">
-                    PLAN ACTUAL
-                  </div>
-                )}
+                return (
+                  <div
+                    key={plan.id}
+                    className={`relative bg-white rounded-lg shadow-lg p-6 border-2 transition-all ${
+                      isCurrent
+                        ? 'border-blue-500'
+                        : isSelected
+                        ? 'border-green-500'
+                        : 'border-gray-200 hover:border-blue-300'
+                    }`}
+                  >
+                    {plan.popular && !isCurrent && (
+                      <div className="absolute top-0 right-0 bg-purple-600 text-white text-xs px-3 py-1 rounded-bl-lg rounded-tr-lg font-semibold">
+                        Popular
+                      </div>
+                    )}
 
-                <div className="p-8">
-                  {/* Icono y nombre */}
-                  <div className="text-center mb-6">
-                    <div className={`inline-flex p-4 rounded-full ${colors.bg} mb-4`}>
-                      <Icon className={`w-8 h-8 ${colors.text}`} />
+                    {isCurrent && (
+                      <div className="absolute top-0 right-0 bg-blue-600 text-white text-xs px-3 py-1 rounded-bl-lg rounded-tr-lg font-semibold">
+                        Plan actual
+                      </div>
+                    )}
+
+                    <div className="text-center mb-6">
+                      <Icon className={`w-12 h-12 mx-auto mb-4 text-${plan.color}-600`} />
+                      <h3 className="text-xl font-bold text-gray-900 mb-2">{plan.name}</h3>
+                      <p className="text-sm text-gray-600 mb-4">{plan.description}</p>
+                      
+                      <div className="text-4xl font-bold text-gray-900 mb-1">
+                        €{plan.price}
+                      </div>
+                      <p className="text-sm text-gray-500">por mes</p>
                     </div>
-                    <h3 className="text-2xl font-bold text-gray-900 mb-2">{plan.name}</h3>
-                    <p className="text-gray-600 text-sm">{plan.description}</p>
-                  </div>
 
-                  {/* Precio */}
-                  <div className="text-center mb-6">
-                    <div className="flex items-baseline justify-center">
-                      <span className="text-5xl font-extrabold text-gray-900">€{plan.price}</span>
-                      <span className="text-gray-500 ml-2">/mes</span>
+                    <ul className="space-y-3 mb-6">
+                      {plan.features.map((feature, index) => (
+                        <li key={index} className="flex items-start text-sm text-gray-700">
+                          <Check className="w-5 h-5 text-green-600 mr-2 flex-shrink-0" />
+                          {feature}
+                        </li>
+                      ))}
+                    </ul>
+
+                    <button
+                      onClick={() => handleSelectPlan(plan.id)}
+                      disabled={isCurrent}
+                      className={`w-full py-3 px-4 rounded-lg font-semibold transition-colors ${
+                        isCurrent
+                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                          : `bg-${plan.color}-600 text-white hover:bg-${plan.color}-700`
+                      }`}
+                    >
+                      {isCurrent ? 'Plan actual' : 'Seleccionar'}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            /* Checkout Form */
+            <div className="max-w-2xl mx-auto">
+              <div className="bg-white rounded-lg shadow-lg p-8">
+                <h2 className="text-2xl font-bold text-gray-900 mb-6">
+                  {isUpgrade ? 'Upgrade a' : 'Cambiar a'} {selectedPlan?.name}
+                </h2>
+
+                <div className="mb-8 p-4 bg-gray-50 rounded-lg">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-gray-600">Plan actual:</span>
+                    <span className="font-semibold">{currentPlan?.name} - €{currentPlan?.price}/mes</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">Nuevo plan:</span>
+                    <span className="font-semibold text-green-600">{selectedPlan?.name} - €{selectedPlan?.price}/mes</span>
+                  </div>
+                  <div className="mt-4 pt-4 border-t border-gray-200">
+                    <div className="flex justify-between items-center">
+                      <span className="font-semibold">
+                        {isUpgrade ? 'Costo adicional:' : 'Nuevo costo:'}
+                      </span>
+                      <span className="text-xl font-bold text-gray-900">
+                        €{selectedPlan?.price}/mes
+                      </span>
                     </div>
-                    <p className="text-sm text-gray-500 mt-2">
-                      {plan.maxRooms === -1 ? 'Habitaciones ilimitadas' : `Hasta ${plan.maxRooms} habitaciones`}
-                    </p>
                   </div>
-
-                  {/* Features */}
-                  <ul className="space-y-3 mb-8">
-                    {plan.features.map((feature, index) => (
-                      <li key={index} className="flex items-start">
-                        <Check className={`w-5 h-5 ${colors.text} flex-shrink-0 mt-0.5`} />
-                        <span className="ml-3 text-gray-700 text-sm">{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-
-                  {/* Botón */}
-                  {isCurrentPlan ? (
-                    <button
-                      disabled
-                      className="w-full py-3 px-6 rounded-lg font-semibold bg-gray-400 text-white cursor-not-allowed"
-                    >
-                      Plan Actual
-                    </button>
-                  ) : canUpgrade ? (
-                    <button
-                      onClick={() => handleUpgrade(plan.id)}
-                      disabled={isUpgrading}
-                      className={`w-full py-3 px-6 rounded-lg font-semibold text-white transition-colors ${colors.button} disabled:opacity-50`}
-                    >
-                      {isUpgrading && selectedPlan === plan.id ? 'Procesando...' : 'Mejorar a este plan'}
-                    </button>
-                  ) : (
-                    <button
-                      disabled
-                      className="w-full py-3 px-6 rounded-lg font-semibold bg-gray-300 text-gray-600 cursor-not-allowed"
-                    >
-                      Plan inferior
-                    </button>
-                  )}
                 </div>
-              </div>
-            );
-          })}
-        </div>
 
-        {/* Información adicional */}
-        <div className="bg-white rounded-lg shadow-md p-8">
-          <h3 className="text-xl font-bold text-gray-900 mb-4">¿Necesitas ayuda para elegir?</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="flex items-start space-x-3">
-              <div className="flex-shrink-0">
-                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                  <span className="text-2xl">💬</span>
+                <Elements stripe={stripePromise}>
+                  <CheckoutForm
+                    planId={selectedPlanId!}
+                    onSuccess={handleUpgradeSuccess}
+                    onError={handleUpgradeError}
+                  />
+                </Elements>
+
+                <div className="mt-6 text-center">
+                  <button
+                    onClick={() => setShowCheckout(false)}
+                    className="text-gray-600 hover:text-gray-800 text-sm"
+                  >
+                    Volver a planes
+                  </button>
                 </div>
-              </div>
-              <div>
-                <h4 className="font-semibold text-gray-900 mb-1">Soporte por chat</h4>
-                <p className="text-sm text-gray-600">Disponible de lunes a viernes de 9:00 a 18:00</p>
               </div>
             </div>
-            <div className="flex items-start space-x-3">
-              <div className="flex-shrink-0">
-                <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                  <span className="text-2xl">📧</span>
-                </div>
-              </div>
-              <div>
-                <h4 className="font-semibold text-gray-900 mb-1">Email</h4>
-                <p className="text-sm text-gray-600">soporte@delfincheckin.com</p>
-              </div>
-            </div>
-            <div className="flex items-start space-x-3">
-              <div className="flex-shrink-0">
-                <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
-                  <span className="text-2xl">📞</span>
-                </div>
-              </div>
-              <div>
-                <h4 className="font-semibold text-gray-900 mb-1">Teléfono</h4>
-                <p className="text-sm text-gray-600">Plan Enterprise: Soporte 24/7</p>
-              </div>
-            </div>
+          )}
+
+          {/* Info Card */}
+          <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
+            <h3 className="font-semibold text-blue-900 mb-3">💡 Información importante</h3>
+            <ul className="text-blue-800 text-sm space-y-2">
+              <li>• Los upgrades son efectivos inmediatamente</li>
+              <li>• Los downgrades se aplican al final del período de facturación actual</li>
+              <li>• Puedes cancelar en cualquier momento desde la configuración de facturación</li>
+              <li>• Todos los planes incluyen soporte técnico</li>
+            </ul>
           </div>
         </div>
+      </div>
+    </AdminLayout>
+  );
+}
 
-        {/* FAQ */}
-        <div className="mt-12 bg-white rounded-lg shadow-md p-8">
-          <h3 className="text-xl font-bold text-gray-900 mb-6">Preguntas frecuentes</h3>
-          <div className="space-y-4">
-            <div>
-              <h4 className="font-semibold text-gray-900 mb-2">¿Puedo cambiar de plan en cualquier momento?</h4>
-              <p className="text-sm text-gray-600">Sí, puedes mejorar o cambiar tu plan cuando quieras. Los cambios se aplican inmediatamente.</p>
-            </div>
-            <div>
-              <h4 className="font-semibold text-gray-900 mb-2">¿Qué pasa si supero el límite de habitaciones?</h4>
-              <p className="text-sm text-gray-600">Te notificaremos y podrás mejorar tu plan fácilmente. Mientras tanto, no podrás añadir más habitaciones.</p>
-            </div>
-            <div>
-              <h4 className="font-semibold text-gray-900 mb-2">¿Hay permanencia?</h4>
-              <p className="text-sm text-gray-600">No, puedes cancelar tu suscripción en cualquier momento sin penalización.</p>
-            </div>
-            <div>
-              <h4 className="font-semibold text-gray-900 mb-2">¿Qué métodos de pago aceptáis?</h4>
-              <p className="text-sm text-gray-600">Aceptamos todas las tarjetas de crédito y débito principales mediante Stripe (procesamiento seguro).</p>
-            </div>
-          </div>
+export default function UpgradePlanPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="loading mx-auto"></div>
+          <p className="mt-4 text-gray-600">Cargando...</p>
         </div>
-
-      </main>
-    </div>
+      </div>
+    }>
+      <UpgradeContent />
+    </Suspense>
   );
 }
