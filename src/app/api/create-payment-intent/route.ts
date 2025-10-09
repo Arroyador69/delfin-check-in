@@ -8,8 +8,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const plan = String(body.plan || '')
-    const properties = parseInt(body.properties, 10) || 1
+    const planId = String(body.planId || '') // basic, standard, premium, enterprise
     const email = String(body.email || '')
     const name = String(body.name || '')
 
@@ -17,29 +16,30 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Stripe no está configurado' }, { status: 500 })
     }
 
-    if (!plan || !['monthly', 'yearly'].includes(plan)) {
+    // Validar plan_id
+    if (!planId || !['basic', 'standard', 'premium', 'enterprise'].includes(planId)) {
       return NextResponse.json({ error: 'Plan no válido' }, { status: 400 })
     }
 
-    if (properties < 1 || properties > 50) {
-      return NextResponse.json({ error: 'Número de propiedades inválido' }, { status: 400 })
+    // Mapear plan_id a precio mensual (en céntimos)
+    const priceMap = {
+      basic: 2900,      // €29/mes
+      standard: 4900,   // €49/mes
+      premium: 7900,    // €79/mes
+      enterprise: 14900 // €149/mes
     }
 
-    let amount = 0
-    if (plan === 'monthly') {
-      amount = properties * 400 // 4€ en céntimos
-    } else if (plan === 'yearly') {
-      amount = properties * 4000 // 40€ en céntimos
-    }
+    const amount = priceMap[planId as keyof typeof priceMap]
 
     const paymentIntent = await stripe.paymentIntents.create({
       amount,
       currency: 'eur',
-      description: `Delfín Check-in - ${plan === 'monthly' ? 'Mensual' : 'Anual'} - ${properties} propiedades`,
+      description: `Delfín Check-in - Plan ${planId.charAt(0).toUpperCase() + planId.slice(1)}`,
       metadata: {
-        plan,
-        properties: String(properties),
+        planId,
         email,
+        name,
+        plan: 'monthly' // Por compatibilidad con webhook existente
       },
       receipt_email: email || undefined,
       automatic_payment_methods: { enabled: true },

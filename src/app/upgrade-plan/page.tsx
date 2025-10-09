@@ -103,13 +103,47 @@ export default function UpgradePlanPage() {
     setIsUpgrading(true);
     setSelectedPlan(planId);
 
-    // TODO: Integrar con Stripe para procesar el upgrade
-    // Por ahora solo simulamos el proceso
-    setTimeout(() => {
-      alert(`Upgrade a ${PLANS.find(p => p.id === planId)?.name} iniciado. Esta funcionalidad se completará con la integración de Stripe.`);
+    try {
+      // Obtener email del usuario actual (TODO: obtener del contexto de auth)
+      const email = prompt('Ingresa tu email para el pago:');
+      if (!email) {
+        setIsUpgrading(false);
+        setSelectedPlan(null);
+        return;
+      }
+
+      // Crear payment intent con Stripe
+      const response = await fetch('/api/create-payment-intent', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          planId,
+          email,
+          name: email.split('@')[0] // Usar parte del email como nombre por defecto
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Error al procesar el pago');
+      }
+
+      const { client_secret } = await response.json();
+      
+      // TODO: Integrar con Stripe Elements para procesar el pago
+      // Por ahora mostramos el client_secret
+      console.log('Client Secret:', client_secret);
+      alert(`Upgrade a ${PLANS.find(p => p.id === planId)?.name} iniciado. Client Secret: ${client_secret.substring(0, 20)}...`);
+      
+    } catch (error: any) {
+      console.error('Error en upgrade:', error);
+      alert(`Error: ${error.message}`);
+    } finally {
       setIsUpgrading(false);
       setSelectedPlan(null);
-    }, 2000);
+    }
   };
 
   const getColorClasses = (color: string) => {
