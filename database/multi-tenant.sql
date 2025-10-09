@@ -33,7 +33,15 @@ CREATE TABLE IF NOT EXISTS tenants (
     "propertyName": "",
     "timezone": "Europe/Madrid",
     "language": "es",
-    "currency": "EUR"
+    "currency": "EUR",
+    "mir": {
+      "enabled": true,
+      "codigoEstablecimiento": "",
+      "denominacion": "",
+      "direccionCompleta": "",
+      "autoSubmit": false,
+      "testMode": true
+    }
   }'::jsonb,
   
   -- Auditoría
