@@ -35,22 +35,50 @@ export default function HomePage() {
       setLoading(true);
       
       // Obtener información del tenant
-      const tenantResponse = await fetch('/api/tenant');
-      const tenantData = await tenantResponse.json();
-      setTenant(tenantData);
+      try {
+        const tenantResponse = await fetch('/api/tenant');
+        if (tenantResponse.ok) {
+          const tenantData = await tenantResponse.json();
+          setTenant(tenantData);
+        } else {
+          console.warn('Error obteniendo tenant:', tenantResponse.status);
+          setTenant(null);
+        }
+      } catch (error) {
+        console.warn('Error en API tenant:', error);
+        setTenant(null);
+      }
       
       // Obtener habitaciones
-      const roomsResponse = await fetch('/api/rooms');
-      const roomsData = await roomsResponse.json();
-      setRooms(roomsData);
+      try {
+        const roomsResponse = await fetch('/api/rooms');
+        if (roomsResponse.ok) {
+          const roomsData = await roomsResponse.json();
+          setRooms(roomsData);
+        } else {
+          setRooms([]);
+        }
+      } catch (error) {
+        console.warn('Error obteniendo habitaciones:', error);
+        setRooms([]);
+      }
       
       // Obtener reservas
-      const reservationsResponse = await fetch('/api/reservations');
-      const reservationsData = await reservationsResponse.json();
-      setReservations(reservationsData);
+      try {
+        const reservationsResponse = await fetch('/api/reservations');
+        if (reservationsResponse.ok) {
+          const reservationsData = await reservationsResponse.json();
+          setReservations(reservationsData);
+        } else {
+          setReservations([]);
+        }
+      } catch (error) {
+        console.warn('Error obteniendo reservas:', error);
+        setReservations([]);
+      }
       
     } catch (error) {
-      console.error('Error cargando datos:', error);
+      console.error('Error general cargando datos:', error);
     } finally {
       setLoading(false);
     }
@@ -333,17 +361,17 @@ export default function HomePage() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
         {/* Información del Plan */}
-        {tenant && (
+        {tenant && tenant.tenant && (
           <div className="card mb-8 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
               <div className="flex items-center space-x-4">
                 <div className="text-3xl">🏢</div>
                 <div>
                   <h2 className="text-lg font-semibold text-gray-900">
-                    {tenant.tenant.name} - Plan {tenant.tenant.plan_name}
+                    {tenant.tenant?.name || 'Admin Default'} - Plan {tenant.tenant?.plan_name || 'Básico'}
                   </h2>
                   <p className="text-sm text-gray-600">
-                    €{tenant.tenant.plan_price}/mes • {tenant.tenant.plan_features.join(' • ')}
+                    €{tenant.tenant?.plan_price || 29}/mes • {tenant.tenant?.plan_features?.join(' • ') || 'Características básicas'}
                   </p>
                 </div>
               </div>
@@ -351,18 +379,18 @@ export default function HomePage() {
                 <div className="text-right">
                   <div className="text-sm text-gray-600">Uso de habitaciones</div>
                   <div className="text-lg font-bold text-gray-900">
-                    {tenant.stats.rooms_used}/{tenant.tenant.max_rooms === -1 ? '∞' : tenant.tenant.max_rooms}
+                    {tenant.stats?.rooms_used || 0}/{tenant.tenant?.max_rooms === -1 ? '∞' : (tenant.tenant?.max_rooms || 2)}
                   </div>
-                  {tenant.tenant.max_rooms !== -1 && (
+                  {tenant.tenant?.max_rooms !== -1 && (
                     <div className="w-32 bg-gray-200 rounded-full h-2 mt-1">
                       <div 
                         className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                        style={{ width: `${tenant.limits.rooms_usage_percentage}%` }}
+                        style={{ width: `${tenant.limits?.rooms_usage_percentage || 0}%` }}
                       ></div>
                     </div>
                   )}
                 </div>
-                {!tenant.limits.can_add_rooms && (
+                {tenant.limits && !tenant.limits.can_add_rooms && (
                   <Link
                     href="/upgrade-plan"
                     className="px-4 py-2 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-md hover:from-orange-600 hover:to-red-600 transition-all duration-200 flex items-center space-x-2"
