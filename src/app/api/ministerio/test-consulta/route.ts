@@ -10,12 +10,12 @@ export async function POST(req: NextRequest) {
     
     console.log('📋 Consultando lotes:', lotes);
     
-    // Configuración hardcodeada para test
+    // Configuración para test (usa variables de entorno)
     const config = {
       baseUrl: 'https://hospedajes.pre-ses.mir.es/hospedajes-web/ws/v1/comunicacion',
-      username: '27380387Z',
-      password: 'Marazulado_',
-      codigoArrendador: '0000146962',
+      username: process.env.MIR_HTTP_USER || '',
+      password: process.env.MIR_HTTP_PASS || '',
+      codigoArrendador: process.env.MIR_CODIGO_ARRENDADOR || '',
       aplicacion: 'Delfin_Check_in',
       simulacion: true // Forzar modo simulación
     };

@@ -9,8 +9,8 @@ export async function GET(req: NextRequest) {
       message: 'Servidor funcionando correctamente',
       timestamp: new Date().toISOString(),
       config: {
-        usuario: '27380387Z',
-        codigoArrendador: '0000146962',
+        usuario: process.env.MIR_HTTP_USER ? '***' : 'No configurado',
+        codigoArrendador: process.env.MIR_CODIGO_ARRENDADOR ? '***' : 'No configurado',
         aplicacion: 'Delfin_Check_in',
         codigoEstablecimiento: '0000256653'
       }

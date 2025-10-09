@@ -16,9 +16,9 @@ export async function POST(req: NextRequest) {
     
     const config = {
       baseUrl: urls[entorno as keyof typeof urls] || urls.pruebas,
-      username: '27380387Z',
-      password: 'Marazulado_',
-      codigoArrendador: '0000146962',
+      username: process.env.MIR_HTTP_USER || '',
+      password: process.env.MIR_HTTP_PASS || '',
+      codigoArrendador: process.env.MIR_CODIGO_ARRENDADOR || '',
       aplicacion: 'Delfin_Check_in',
       simulacion: false // Envío real al MIR
     };
