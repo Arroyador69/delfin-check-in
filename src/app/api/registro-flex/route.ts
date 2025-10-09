@@ -314,9 +314,38 @@ export async function POST(req: NextRequest) {
       return sendError(req, 422, 'Validación fallida', issues);
     }
 
+    // Obtener configuración MIR del tenant (si está autenticado)
+    // Si no hay tenant_id, usar valores por defecto (formulario público)
+    const tenantId = req.headers.get('x-tenant-id');
+    let ESTABLISHMENT_CODE = "0000256653"; // Valor por defecto
+    let ESTABLISHMENT_REFERENCE = "0000146967"; // Valor por defecto
+    let ESTABLISHMENT_NAME = "Delfín Check-in"; // Valor por defecto
+    let ESTABLISHMENT_ADDRESS = "Fuengirola, Málaga, España"; // Valor por defecto
+    
+    if (tenantId) {
+      try {
+        const { sql: pgSql } = await import('@vercel/postgres');
+        const tenantResult = await pgSql`
+          SELECT config FROM tenants WHERE id = ${tenantId}
+        `;
+        
+        if (tenantResult.rows.length > 0) {
+          const config = tenantResult.rows[0].config || {};
+          const mirConfig = config.mir || {};
+          
+          if (mirConfig.enabled && mirConfig.codigoEstablecimiento) {
+            ESTABLISHMENT_CODE = mirConfig.codigoEstablecimiento;
+            ESTABLISHMENT_NAME = mirConfig.denominacion || ESTABLISHMENT_NAME;
+            ESTABLISHMENT_ADDRESS = mirConfig.direccionCompleta || ESTABLISHMENT_ADDRESS;
+            console.log(`✅ Usando configuración MIR del tenant ${tenantId}`);
+          }
+        }
+      } catch (error) {
+        console.log('⚠️ No se pudo cargar configuración MIR del tenant, usando valores por defecto');
+      }
+    }
+    
     // Convertir al formato esperado por la base de datos
-    const ESTABLISHMENT_CODE = "0000256653";
-    const ESTABLISHMENT_REFERENCE = "0000146967";
     
     // Convertir viajeros al formato de base de datos
     const personasDB = viajeros.map((v: any) => ({
