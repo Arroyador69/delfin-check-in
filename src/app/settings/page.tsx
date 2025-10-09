@@ -114,22 +114,36 @@ export default function SettingsPage() {
         return;
       }
 
-      if (accountData.newPassword.length < 6) {
-        setMessage({ type: 'error', text: 'La nueva contraseña debe tener al menos 6 caracteres' });
+      if (accountData.newPassword.length < 8) {
+        setMessage({ type: 'error', text: 'La nueva contraseña debe tener al menos 8 caracteres' });
         return;
       }
 
-      // Verificar contraseña actual (simulado)
-      const currentStoredPassword = localStorage.getItem('admin_password') || 'Cuaderno2314';
-      if (accountData.currentPassword !== currentStoredPassword) {
-        setMessage({ type: 'error', text: 'La contraseña actual es incorrecta' });
+      // Llamar a la API para cambiar la contraseña
+      const response = await fetch('/api/auth/change-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          currentPassword: accountData.currentPassword,
+          newPassword: accountData.newPassword,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setMessage({ type: 'error', text: data.message || 'Error al cambiar la contraseña' });
         return;
       }
 
-      // Guardar nueva contraseña
-      localStorage.setItem('admin_password', accountData.newPassword);
-      
-      setMessage({ type: 'success', text: 'Contraseña cambiada exitosamente' });
+      // Mostrar el nuevo hash al usuario para que lo copie al .env
+      setMessage({ 
+        type: 'success', 
+        text: `Hash generado: ${data.newHash}\n\nCopia este hash a tu archivo .env como ADMIN_SECRET_HASH y reinicia el servidor.` 
+      });
       
       // Limpiar formulario
       setAccountData(prev => ({

@@ -3,6 +3,16 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
+/**
+ * 🔒 GUARDIA DE AUTENTICACIÓN
+ * 
+ * Verifica que el usuario esté autenticado mediante JWT
+ * - No usa localStorage (más seguro)
+ * - Verifica tokens en el servidor
+ * - Redirige a login si no está autenticado
+ * - Intenta renovar token expirado automáticamente
+ */
+
 interface AuthGuardProps {
   children: React.ReactNode
 }
@@ -18,42 +28,79 @@ export default function AuthGuard({ children }: AuthGuardProps) {
 
   const checkAuth = async () => {
     try {
-      // Verificar si existe la cookie de autenticación
-      const cookies = document.cookie.split(';')
-      const authCookie = cookies.find(cookie => 
-        cookie.trim().startsWith('auth_token=')
-      )
+      // Verificar autenticación mediante API
+      const response = await fetch('/api/auth/verify', {
+        method: 'GET',
+        credentials: 'include', // Importante para enviar cookies
+      })
 
-      if (authCookie && authCookie.includes('Cuaderno2314')) {
+      if (response.ok) {
+        // Usuario autenticado
         setIsAuthenticated(true)
+      } else if (response.status === 401) {
+        // No autenticado o token expirado
+        const data = await response.json()
+        
+        if (data.expired) {
+          // Intentar renovar el token
+          const refreshed = await tryRefreshToken()
+          
+          if (refreshed) {
+            setIsAuthenticated(true)
+          } else {
+            // No se pudo renovar, redirigir a login
+            router.push('/admin-login')
+          }
+        } else {
+          // No hay sesión, redirigir a login
+          router.push('/admin-login')
+        }
       } else {
-        // Si no está autenticado, redirigir al login
-        window.location.href = '/admin-login.html'
-        return
+        // Error del servidor
+        console.error('Error al verificar autenticación')
+        router.push('/admin-login')
       }
     } catch (error) {
       console.error('Error checking auth:', error)
-      window.location.href = '/admin-login.html'
-      return
+      router.push('/admin-login')
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const tryRefreshToken = async (): Promise<boolean> => {
+    try {
+      const response = await fetch('/api/auth/refresh', {
+        method: 'POST',
+        credentials: 'include',
+      })
+
+      if (response.ok) {
+        console.log('Token renovado exitosamente')
+        return true
+      }
+      
+      return false
+    } catch (error) {
+      console.error('Error al renovar token:', error)
+      return false
     }
   }
 
   const handleLogout = async () => {
     try {
       // Llamar a la API de logout
-      await fetch('/api/auth/logout', { method: 'POST' })
-      
-      // Eliminar cookie manualmente
-      document.cookie = 'auth_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
+      await fetch('/api/auth/logout', { 
+        method: 'POST',
+        credentials: 'include'
+      })
       
       // Redirigir al login
-      window.location.href = '/admin-login.html'
+      router.push('/admin-login')
     } catch (error) {
       console.error('Error logging out:', error)
       // Redirigir de todas formas
-      window.location.href = '/admin-login.html'
+      router.push('/admin-login')
     }
   }
 

@@ -3,6 +3,16 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
+/**
+ * 🎨 LAYOUT ADMINISTRATIVO
+ * 
+ * Layout principal para páginas administrativas
+ * - Verifica autenticación JWT
+ * - Maneja refresh de tokens
+ * - Proporciona botón de logout
+ * - Sin uso de localStorage
+ */
+
 interface AdminLayoutProps {
   children: React.ReactNode
   showHeader?: boolean
@@ -16,59 +26,41 @@ export default function AdminLayout({ children, showHeader = true }: AdminLayout
   useEffect(() => {
     checkAuth()
     
-    // Listener para detectar cambios en localStorage (cambio de contraseña)
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'admin_password') {
-        // Si cambió la contraseña, verificar autenticación de nuevo
-        checkAuth()
-      }
-    }
-    
-    // Listener para detectar cambios en cookies (login/logout)
-    const handleCookieChange = () => {
+    // Configurar intervalo para verificar autenticación periódicamente
+    const interval = setInterval(() => {
       checkAuth()
-    }
-    
-    // Listener para eventos personalizados de autenticación
-    const handleAuthChange = () => {
-      checkAuth()
-    }
-    
-    // Añadir listeners
-    window.addEventListener('storage', handleStorageChange)
-    document.addEventListener('visibilitychange', handleCookieChange)
-    window.addEventListener('authChanged', handleAuthChange)
-    
-    // Cleanup
-    return () => {
-      window.removeEventListener('storage', handleStorageChange)
-      document.removeEventListener('visibilitychange', handleCookieChange)
-      window.removeEventListener('authChanged', handleAuthChange)
-    }
+    }, 5 * 60 * 1000) // Cada 5 minutos
+
+    return () => clearInterval(interval)
   }, [])
 
   const checkAuth = async () => {
     try {
-      // Verificar si existe la cookie de autenticación
-      const cookies = document.cookie.split(';')
-      const authCookie = cookies.find(cookie => 
-        cookie.trim().startsWith('auth_token=')
-      )
+      const response = await fetch('/api/auth/verify', {
+        method: 'GET',
+        credentials: 'include',
+      })
 
-      if (authCookie) {
-        // Obtener la contraseña actual del localStorage
-        const currentPassword = localStorage.getItem('admin_password') || 'Cuaderno2314'
-        const token = authCookie.split('=')[1]
+      if (response.ok) {
+        setIsAuthenticated(true)
+      } else if (response.status === 401) {
+        const data = await response.json()
         
-        if (token === currentPassword) {
-          setIsAuthenticated(true)
+        // Si el token expiró, intentar renovarlo
+        if (data.expired) {
+          const refreshed = await tryRefreshToken()
+          
+          if (refreshed) {
+            setIsAuthenticated(true)
+          } else {
+            router.push('/admin-login')
+            return
+          }
         } else {
-          // Token no coincide con la contraseña actual
           router.push('/admin-login')
           return
         }
       } else {
-        // Si no está autenticado, redirigir al login
         router.push('/admin-login')
         return
       }
@@ -81,19 +73,30 @@ export default function AdminLayout({ children, showHeader = true }: AdminLayout
     }
   }
 
+  const tryRefreshToken = async (): Promise<boolean> => {
+    try {
+      const response = await fetch('/api/auth/refresh', {
+        method: 'POST',
+        credentials: 'include',
+      })
+
+      return response.ok
+    } catch (error) {
+      console.error('Error refreshing token:', error)
+      return false
+    }
+  }
+
   const handleLogout = async () => {
     try {
-      // Llamar a la API de logout
-      await fetch('/api/auth/logout', { method: 'POST' })
+      await fetch('/api/auth/logout', { 
+        method: 'POST',
+        credentials: 'include'
+      })
       
-      // Eliminar cookie manualmente
-      document.cookie = 'auth_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
-      
-      // Redirigir al login
       router.push('/admin-login')
     } catch (error) {
       console.error('Error logging out:', error)
-      // Redirigir de todas formas
       router.push('/admin-login')
     }
   }
@@ -103,20 +106,58 @@ export default function AdminLayout({ children, showHeader = true }: AdminLayout
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Verificando autenticación...</p>
+          <p className="text-gray-600">Cargando...</p>
         </div>
       </div>
     )
   }
 
   if (!isAuthenticated) {
-    return null // No mostrar nada mientras redirige
+    return null
   }
 
   return (
-    <div>
-      {/* Contenido de la página */}
-      {children}
+    <div className="min-h-screen bg-gray-50">
+      {showHeader && (
+        <header className="bg-white shadow-sm border-b sticky top-0 z-10">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center py-4">
+              <div className="flex items-center space-x-3">
+                <div className="text-3xl">🐬</div>
+                <div>
+                  <h1 className="text-xl font-bold text-gray-900">Delfín Check-in</h1>
+                  <p className="text-sm text-gray-500">Panel de Administración</p>
+                </div>
+              </div>
+              
+              <div className="flex items-center space-x-4">
+                <div className="text-sm text-gray-600">
+                  <span className="inline-flex items-center">
+                    <svg className="w-4 h-4 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                      <circle cx="10" cy="10" r="4" />
+                    </svg>
+                    Conectado
+                  </span>
+                </div>
+                
+                <button
+                  onClick={handleLogout}
+                  className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors"
+                >
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                  </svg>
+                  Cerrar Sesión
+                </button>
+              </div>
+            </div>
+          </div>
+        </header>
+      )}
+      
+      <main>
+        {children}
+      </main>
     </div>
   )
 }

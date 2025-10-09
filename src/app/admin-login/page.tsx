@@ -1,88 +1,93 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
+/**
+ * 🔐 PÁGINA DE LOGIN SEGURA
+ * 
+ * Características:
+ * - Sin almacenamiento de contraseñas en localStorage
+ * - Autenticación basada en JWT
+ * - Validación de entrada
+ * - Manejo de errores de rate limiting
+ * - Interfaz de usuario mejorada
+ */
+
 export default function AdminLoginPage() {
-  const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [rateLimitInfo, setRateLimitInfo] = useState<{
+    remaining?: number;
+    retryAfter?: number;
+  } | null>(null)
+  
   const router = useRouter()
-
-  // Cargar credenciales personalizadas
-  const [adminCredentials, setAdminCredentials] = useState({
-    username: 'admin',
-    password: 'Cuaderno2314'
-  })
-
-  // Cargar credenciales personalizadas al montar el componente
-  useEffect(() => {
-    const loadCredentials = () => {
-      try {
-        const savedUsername = localStorage.getItem('admin_username') || 'admin'
-        const savedPassword = localStorage.getItem('admin_password') || 'Cuaderno2314'
-        
-        setAdminCredentials({
-          username: savedUsername,
-          password: savedPassword
-        })
-      } catch (error) {
-        console.error('Error cargando credenciales:', error)
-      }
-    }
-    
-    loadCredentials()
-  }, [])
-
-  // Verificar si ya está autenticado
-  useEffect(() => {
-    const cookies = document.cookie.split(';')
-    const authCookie = cookies.find(cookie => 
-      cookie.trim().startsWith('auth_token=')
-    )
-    
-    if (authCookie) {
-      // Verificar si el token coincide con la contraseña actual
-      const token = authCookie.split('=')[1]
-      const currentPassword = localStorage.getItem('admin_password') || 'Cuaderno2314'
-      
-      if (token === currentPassword) {
-        // Si ya está autenticado, redirigir al dashboard
-        router.push('/')
-      }
-    }
-  }, [router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
     setError('')
+    setRateLimitInfo(null)
+
+    // Validación básica
+    if (!password || password.trim().length === 0) {
+      setError('Por favor, ingresa una contraseña')
+      setIsLoading(false)
+      return
+    }
 
     try {
-      // Verificar credenciales con las credenciales personalizadas
-      if (username === adminCredentials.username && password === adminCredentials.password) {
-        // Credenciales correctas
+      // Llamar a la API de login
+      const response = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ password }),
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        // Login exitoso
         setSuccess(true)
+        setPassword('')
         
-        // Establecer cookie de autenticación con la contraseña actual
-        const expires = new Date()
-        expires.setTime(expires.getTime() + (24 * 60 * 60 * 1000)) // 24 horas
-        document.cookie = `auth_token=${adminCredentials.password}; expires=${expires.toUTCString()}; path=/; SameSite=Strict`
-        
-        // Disparar evento personalizado para notificar el login
-        window.dispatchEvent(new CustomEvent('authChanged', { detail: { authenticated: true } }))
-        
-        // Usar window.location.href para forzar redirección completa con cookies
-        window.location.href = '/'
+        // Redirigir al dashboard después de un breve delay
+        setTimeout(() => {
+          router.push('/')
+          router.refresh() // Forzar recarga para actualizar el estado de auth
+        }, 500)
         
       } else {
-        setError('Usuario o contraseña incorrectos')
+        // Manejar errores específicos
+        if (response.status === 429) {
+          // Rate limit excedido
+          setError(data.message || 'Demasiados intentos. Por favor, espera antes de intentar nuevamente.')
+          setRateLimitInfo({
+            retryAfter: data.retryAfter
+          })
+        } else if (response.status === 401) {
+          // Credenciales inválidas
+          setError(data.message || 'Contraseña incorrecta')
+          if (data.remaining !== undefined) {
+            setRateLimitInfo({
+              remaining: data.remaining
+            })
+          }
+        } else {
+          // Otros errores
+          setError(data.message || 'Error al iniciar sesión')
+        }
+        
         setPassword('')
       }
     } catch (error) {
-      setError('Error al procesar el login')
+      console.error('Error en login:', error)
+      setError('Error de conexión. Por favor, verifica tu conexión a internet.')
     } finally {
       setIsLoading(false)
     }
@@ -91,75 +96,124 @@ export default function AdminLoginPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        {/* Logo y Título */}
-        <div className="text-center mb-8">
-          <div className="text-6xl mb-4">🐬</div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Delfín Check-in</h1>
-          <p className="text-gray-600">Panel de Administración</p>
+        {/* Card de login */}
+        <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
+          {/* Header */}
+          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-8 py-6">
+            <div className="flex items-center justify-center mb-2">
+              <div className="text-5xl">🐬</div>
+            </div>
+            <h1 className="text-2xl font-bold text-white text-center">
+              Delfín Check-in
+            </h1>
+            <p className="text-blue-100 text-center mt-1 text-sm">
+              Panel de Administración
+            </p>
+          </div>
+
+          {/* Body */}
+          <div className="px-8 py-8">
+            {success ? (
+              <div className="text-center">
+                <div className="mb-4">
+                  <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                    <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                </div>
+                <h2 className="text-xl font-semibold text-gray-900 mb-2">
+                  ¡Bienvenido!
+                </h2>
+                <p className="text-gray-600">
+                  Redirigiendo al dashboard...
+                </p>
+                <div className="mt-4">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                </div>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Campo de contraseña */}
+                <div>
+                  <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                    Contraseña de Administrador
+                  </label>
+                  <input
+                    id="password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none"
+                    placeholder="Ingresa tu contraseña"
+                    disabled={isLoading}
+                    autoFocus
+                  />
+                </div>
+
+                {/* Mensajes de error */}
+                {error && (
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                    <div className="flex items-start">
+                      <svg className="w-5 h-5 text-red-600 mt-0.5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                      </svg>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-red-800">
+                          {error}
+                        </p>
+                        {rateLimitInfo && rateLimitInfo.remaining !== undefined && (
+                          <p className="text-xs text-red-600 mt-1">
+                            {rateLimitInfo.remaining === 0 
+                              ? 'Has agotado tus intentos. Espera antes de intentar nuevamente.'
+                              : `${rateLimitInfo.remaining} intento${rateLimitInfo.remaining !== 1 ? 's' : ''} restante${rateLimitInfo.remaining !== 1 ? 's' : ''}`
+                            }
+                          </p>
+                        )}
+                        {rateLimitInfo && rateLimitInfo.retryAfter && (
+                          <p className="text-xs text-red-600 mt-1">
+                            Podrás intentar nuevamente en {Math.ceil(rateLimitInfo.retryAfter / 60)} minuto{Math.ceil(rateLimitInfo.retryAfter / 60) !== 1 ? 's' : ''}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Botón de submit */}
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold py-3 px-4 rounded-lg hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl"
+                >
+                  {isLoading ? (
+                    <span className="flex items-center justify-center">
+                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Verificando...
+                    </span>
+                  ) : (
+                    'Iniciar Sesión'
+                  )}
+                </button>
+              </form>
+            )}
+          </div>
+
+          {/* Footer */}
+          <div className="bg-gray-50 px-8 py-4 border-t border-gray-100">
+            <p className="text-xs text-center text-gray-500">
+              🔒 Conexión segura con autenticación JWT
+            </p>
+          </div>
         </div>
 
-        {/* Formulario de Login */}
-        <div className="bg-white rounded-lg shadow-lg p-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">Iniciar Sesión</h2>
-          
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Usuario
-              </label>
-              <input
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="admin"
-                autoComplete="username"
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Contraseña
-              </label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="••••••••"
-                autoComplete="current-password"
-              />
-            </div>
-            
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isLoading ? 'Verificando...' : 'Acceder al Dashboard'}
-            </button>
-          </form>
-
-          {/* Mensajes de Estado */}
-          {error && (
-            <div className="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
-              {error}
-            </div>
-          )}
-
-          {success && (
-            <div className="mt-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded">
-              ¡Acceso correcto! Redirigiendo al dashboard...
-            </div>
-          )}
-        </div>
-
-        {/* Información de Seguridad */}
-        <div className="text-center mt-6">
-          <p className="text-sm text-gray-500">
-            🔒 Acceso restringido solo para administradores autorizados
+        {/* Información adicional */}
+        <div className="mt-6 text-center text-sm text-gray-600">
+          <p>
+            Sistema de gestión para establecimientos turísticos
           </p>
         </div>
       </div>

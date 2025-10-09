@@ -10,6 +10,12 @@ export async function GET() {
   try {
     console.log('📊 Obteniendo reservas desde PostgreSQL...');
     
+    // TEMPORAL: Si no hay base de datos, devolver datos mock
+    if (!process.env.POSTGRES_URL || process.env.POSTGRES_URL.includes('localhost')) {
+      console.log('🔧 Modo desarrollo: devolviendo datos mock');
+      return NextResponse.json([]);
+    }
+    
     // Verificar si la tabla rooms existe, si no, crearla
     try {
       await sql`SELECT 1 FROM rooms LIMIT 1`;
