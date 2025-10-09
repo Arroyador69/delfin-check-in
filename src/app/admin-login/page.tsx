@@ -56,11 +56,16 @@ export default function AdminLoginPage() {
         setSuccess(true)
         setPassword('')
         
-        // Redirigir al dashboard después de un breve delay
+        // Redirigir al dashboard (replace para evitar volver al login)
         setTimeout(() => {
-          router.push('/')
-          router.refresh() // Forzar recarga para actualizar el estado de auth
-        }, 500)
+          router.replace('/')
+        }, 300)
+        // Fallback duro por si el enrutador no navega en algunos navegadores
+        setTimeout(() => {
+          if (typeof window !== 'undefined' && window.location.pathname !== '/') {
+            window.location.replace('/')
+          }
+        }, 1200)
         
       } else {
         // Manejar errores específicos
