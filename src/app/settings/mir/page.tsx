@@ -295,26 +295,24 @@ export default function MIRSettingsPage() {
             </div>
           </form>
 
-          {/* Documentation Link */}
-          <div className="mt-6 card bg-gray-50">
-            <div className="flex items-center">
-              <FileText className="w-5 h-5 text-gray-600 mr-3" />
-              <div>
-                <h3 className="font-semibold text-gray-900">¿Necesitas ayuda?</h3>
-                <p className="text-sm text-gray-600">
-                  Consulta la{' '}
-                  <a 
-                    href="https://www.interior.gob.es/opencms/es/servicios-al-ciudadano/tramites-y-gestiones/hospedaje/partes-de-entrada-de-viajeros/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 hover:underline"
-                  >
-                    documentación oficial del Ministerio del Interior
-                  </a>
-                  {' '}para más información sobre el registro de viajeros.
-                </p>
-              </div>
-            </div>
+      {/* Documentation Link */}
+      <div className="mt-6 card bg-gray-50">
+        <div className="flex items-center">
+          <FileText className="w-5 h-5 text-gray-600 mr-3" />
+          <div>
+            <h3 className="font-semibold text-gray-900">¿Necesitas ayuda?</h3>
+            <p className="text-sm text-gray-600">
+              Consulta la{' '}
+              <a 
+                href="https://www.interior.gob.es/opencms/es/servicios-al-ciudadano/tramites-y-gestiones/hospedaje/partes-de-entrada-de-viajeros/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:underline"
+              >
+                documentación oficial del Ministerio del Interior
+              </a>
+              {' '}para más información sobre el registro de viajeros.
+            </p>
           </div>
         </div>
       </div>
