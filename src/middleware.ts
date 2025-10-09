@@ -44,25 +44,28 @@ export function middleware(req: NextRequest) {
   // PASO 3: RUTAS PÚBLICAS Y API ENDPOINTS PERMITIDOS
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   
-  const publicRoutes = [
-    '/api/registro-flex',
-    '/api/partes',
-    '/api/setup-db',
-    '/api/setup-whatsapp-db',
-    '/api/init-whatsapp-db',
-    '/api/check-db',
-    '/api/test-registro',
-    '/api/test-whatsapp',
-    '/api/upgrade-db-public',
-    '/api/database',
-    '/api/public',
-    '/api/ical',
-    '/api/admin/login', // Endpoint de login debe ser público
-    '/api/onboarding', // Endpoints de onboarding deben ser públicos
-    '/public',
-    '/admin-login',
-    '/onboarding'
-  ];
+      const publicRoutes = [
+        '/api/registro-flex',
+        '/api/partes',
+        '/api/setup-db',
+        '/api/setup-whatsapp-db',
+        '/api/init-whatsapp-db',
+        '/api/check-db',
+        '/api/test-registro',
+        '/api/test-whatsapp',
+        '/api/upgrade-db-public',
+        '/api/database',
+        '/api/public',
+        '/api/ical',
+        '/api/admin/login', // Endpoint de login debe ser público
+        '/api/onboarding', // Endpoints de onboarding deben ser públicos
+        '/api/public/form', // Endpoints de formularios públicos
+        '/api/public/form-redirect', // Redirección a formularios públicos
+        '/public',
+        '/admin-login',
+        '/onboarding',
+        '/form' // Páginas de formularios públicos
+      ];
 
   // Verificar si la ruta actual está en las rutas públicas
   const isPublicRoute = publicRoutes.some(route => url.pathname.startsWith(route));
