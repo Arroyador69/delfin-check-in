@@ -49,14 +49,29 @@ export async function POST(req: NextRequest) {
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     
     // Obtener hash bcrypt de la contraseña y secreto JWT
-    const adminSecretHash = process.env.ADMIN_SECRET_HASH;
+    const adminSecretHashBase64 = process.env.ADMIN_SECRET_HASH_BASE64;
     const jwtSecret = process.env.JWT_SECRET;
     
-    if (!adminSecretHash || !jwtSecret) {
+    if (!adminSecretHashBase64 || !jwtSecret) {
       console.error('❌ Variables de entorno no configuradas:');
-      console.error('  - ADMIN_SECRET_HASH:', adminSecretHash ? '✓' : '✗');
+      console.error('  - ADMIN_SECRET_HASH_BASE64:', adminSecretHashBase64 ? '✓' : '✗');
       console.error('  - JWT_SECRET:', jwtSecret ? '✓' : '✗');
       
+      return NextResponse.json(
+        { 
+          error: 'Error de configuración del servidor',
+          message: 'El servidor no está configurado correctamente. Contacta al administrador.'
+        },
+        { status: 500 }
+      );
+    }
+
+    // Decodificar el hash desde base64
+    let adminSecretHash: string;
+    try {
+      adminSecretHash = Buffer.from(adminSecretHashBase64, 'base64').toString('utf-8');
+    } catch (error) {
+      console.error('❌ Error decodificando hash base64:', error);
       return NextResponse.json(
         { 
           error: 'Error de configuración del servidor',
