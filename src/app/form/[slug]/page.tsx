@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { CheckCircle, Send, User, Mail, Phone, Calendar, Users, Home } from 'lucide-react';
+import { CheckCircle, Send, User, Mail, Phone, Calendar, Users, Home, FileText } from 'lucide-react';
 
 interface TenantFormConfig {
   tenant: {
@@ -21,20 +21,6 @@ interface TenantFormConfig {
       timezone: string;
     };
   };
-  formConfig: {
-    title: string;
-    description: string;
-    fields: Array<{
-      id: string;
-      type: 'text' | 'email' | 'tel' | 'date' | 'number' | 'select' | 'textarea';
-      label: string;
-      required: boolean;
-      placeholder?: string;
-      options?: string[];
-    }>;
-    submitButtonText: string;
-    successMessage: string;
-  };
 }
 
 export default function TenantFormPage() {
@@ -47,7 +33,55 @@ export default function TenantFormPage() {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
   
-  const [formData, setFormData] = useState<Record<string, any>>({});
+  const [formData, setFormData] = useState({
+    // Datos del contrato
+    fechaContrato: '',
+    fechaEntrada: '',
+    fechaSalida: '',
+    numHabitaciones: 1,
+    internet: false,
+    tipoPago: 'PLATF',
+    fechaPago: '',
+    medioPago: '',
+    titular: '',
+    caducidadTarjeta: '',
+    
+    // Datos del viajero 1
+    nombre: '',
+    apellido1: '',
+    apellido2: '',
+    fechaNacimiento: '',
+    tipoDocumento: 'PAS',
+    numeroDocumento: '',
+    nacionalidad: 'España',
+    sexo: 'H',
+    telefono: '',
+    correo: '',
+    direccion: '',
+    codigoPostal: '',
+    pais: 'España',
+    codigoMunicipio: '',
+    nombreMunicipio: '',
+    
+    // Datos del viajero 2 (opcional)
+    nombre2: '',
+    apellido1_2: '',
+    apellido2_2: '',
+    fechaNacimiento2: '',
+    tipoDocumento2: 'PAS',
+    numeroDocumento2: '',
+    nacionalidad2: 'España',
+    sexo2: 'H',
+    telefono2: '',
+    correo2: '',
+    direccion2: '',
+    codigoPostal2: '',
+    pais2: 'España',
+    codigoMunicipio2: '',
+    nombreMunicipio2: '',
+  });
+
+  const [showTraveler2, setShowTraveler2] = useState(false);
 
   useEffect(() => {
     if (slug) {
@@ -68,12 +102,16 @@ export default function TenantFormPage() {
       
       setConfig(data);
       
-      // Inicializar formData con valores vacíos
-      const initialData: Record<string, any> = {};
-      data.formConfig.fields.forEach((field: any) => {
-        initialData[field.id] = '';
-      });
-      setFormData(initialData);
+      // Pre-llenar algunos campos con la fecha actual
+      const today = new Date().toISOString().split('T')[0];
+      const now = new Date().toISOString().slice(0, 16);
+      
+      setFormData(prev => ({
+        ...prev,
+        fechaContrato: today,
+        fechaEntrada: now,
+        fechaSalida: now
+      }));
       
     } catch (error) {
       console.error('Error cargando configuración:', error);
@@ -115,60 +153,53 @@ export default function TenantFormPage() {
     }
   };
 
-  const handleInputChange = (fieldId: string, value: any) => {
+  const handleInputChange = (field: string, value: any) => {
     setFormData(prev => ({
       ...prev,
-      [fieldId]: value
+      [field]: value
     }));
   };
 
-  const renderField = (field: any) => {
-    const commonProps = {
-      id: field.id,
-      value: formData[field.id] || '',
-      onChange: (e: any) => handleInputChange(field.id, e.target.value),
-      placeholder: field.placeholder,
-      required: field.required,
-      className: "w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-    };
-
-    switch (field.type) {
-      case 'email':
-        return <input type="email" {...commonProps} />;
-      case 'tel':
-        return <input type="tel" {...commonProps} />;
-      case 'date':
-        return <input type="date" {...commonProps} />;
-      case 'number':
-        return <input type="number" {...commonProps} />;
-      case 'textarea':
-        return <textarea rows={4} {...commonProps} />;
-      case 'select':
-        return (
-          <select {...commonProps}>
-            <option value="">Selecciona una opción</option>
-            {field.options?.map((option: string) => (
-              <option key={option} value={option}>{option}</option>
-            ))}
-          </select>
-        );
-      default:
-        return <input type="text" {...commonProps} />;
-    }
-  };
-
-  const getFieldIcon = (field: any) => {
-    switch (field.type) {
-      case 'email':
-        return <Mail className="w-5 h-5" />;
-      case 'tel':
-        return <Phone className="w-5 h-5" />;
-      case 'date':
-        return <Calendar className="w-5 h-5" />;
-      case 'number':
-        return <Users className="w-5 h-5" />;
-      default:
-        return <User className="w-5 h-5" />;
+  const handleINEFields = (paisValue: string, travelerNum: number) => {
+    const isEspana = paisValue.toLowerCase().includes('españa') || 
+                     paisValue.toLowerCase().includes('spain') || 
+                     paisValue.toLowerCase() === 'es' || 
+                     paisValue.toLowerCase() === 'esp';
+    
+    if (isEspana) {
+      // Para españoles: requerir INE, no requerir nombre municipio
+      const ineInput = document.getElementById(`codigoMunicipio${travelerNum}`);
+      const ineRequired = document.getElementById(`ineRequired${travelerNum}`);
+      const municipioInput = document.getElementById(`nombreMunicipio${travelerNum}`);
+      const municipioRequired = document.getElementById(`municipioRequired${travelerNum}`);
+      
+      if (ineInput) ineInput.setAttribute('required', 'true');
+      if (ineRequired) {
+        ineRequired.classList.remove('hidden');
+        ineRequired.style.display = 'inline';
+      }
+      if (municipioInput) municipioInput.removeAttribute('required');
+      if (municipioRequired) {
+        municipioRequired.classList.add('hidden');
+        municipioRequired.style.display = 'none';
+      }
+    } else {
+      // Para extranjeros: no requerir INE, requerir nombre municipio
+      const ineInput = document.getElementById(`codigoMunicipio${travelerNum}`);
+      const ineRequired = document.getElementById(`ineRequired${travelerNum}`);
+      const municipioInput = document.getElementById(`nombreMunicipio${travelerNum}`);
+      const municipioRequired = document.getElementById(`municipioRequired${travelerNum}`);
+      
+      if (ineInput) ineInput.removeAttribute('required');
+      if (ineRequired) {
+        ineRequired.classList.add('hidden');
+        ineRequired.style.display = 'none';
+      }
+      if (municipioInput) municipioInput.setAttribute('required', 'true');
+      if (municipioRequired) {
+        municipioRequired.classList.remove('hidden');
+        municipioRequired.style.display = 'inline';
+      }
     }
   };
 
@@ -176,8 +207,8 @@ export default function TenantFormPage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
         <div className="text-center">
-          <div className="loading mx-auto"></div>
-          <p className="mt-4 text-gray-600">Cargando formulario...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Cargando formulario...</p>
         </div>
       </div>
     );
@@ -185,7 +216,7 @@ export default function TenantFormPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-red-50 to-red-100 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-red-50 to-red-100 flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
           <div className="text-red-500 text-6xl mb-4">❌</div>
           <h1 className="text-2xl font-bold text-gray-900 mb-4">Error</h1>
@@ -205,14 +236,14 @@ export default function TenantFormPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      {/* Header */}
+      {/* Header Simple - Sin menú de admin */}
       <div className="bg-white shadow-sm">
         <div className="max-w-4xl mx-auto px-4 py-6">
-          <div className="flex items-center">
+          <div className="flex items-center justify-center">
             <div className="text-3xl mr-3">🐬</div>
-            <div>
+            <div className="text-center">
               <h1 className="text-2xl font-bold text-gray-900">{config.tenant.config.propertyName}</h1>
-              <p className="text-sm text-gray-600">Formulario de contacto</p>
+              <p className="text-sm text-gray-600">Registro de viajero</p>
             </div>
           </div>
         </div>
@@ -220,30 +251,17 @@ export default function TenantFormPage() {
 
       {/* Main Content */}
       <div className="max-w-4xl mx-auto px-4 py-8">
-        <div className="bg-white rounded-lg shadow-lg p-8">
+        <div className="bg-white rounded-lg shadow-lg p-6 md:p-8">
           
-          {/* Form Header */}
-          <div className="text-center mb-8">
-            <div className="text-blue-600 text-4xl mb-4">
-              <Home className="w-12 h-12 mx-auto" />
-            </div>
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">
-              {config.formConfig.title}
-            </h2>
-            <p className="text-gray-600 text-lg">
-              {config.formConfig.description}
-            </p>
-          </div>
-
           {success ? (
             /* Success State */
             <div className="text-center">
               <div className="text-green-500 text-6xl mb-4">
                 <CheckCircle className="w-16 h-16 mx-auto" />
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">¡Mensaje enviado!</h3>
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">¡Registro enviado!</h3>
               <p className="text-gray-600 mb-6">
-                {config.formConfig.successMessage}
+                Gracias por completar el registro. {config.tenant.config.propertyName} se pondrá en contacto contigo pronto.
               </p>
               <div className="bg-green-50 p-6 rounded-lg">
                 <h4 className="font-semibold text-green-900 mb-2">Información de contacto</h4>
@@ -259,20 +277,628 @@ export default function TenantFormPage() {
             </div>
           ) : (
             /* Form */
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {config.formConfig.fields.map((field) => (
-                <div key={field.id}>
-                  <label htmlFor={field.id} className="block text-sm font-medium text-gray-700 mb-2">
-                    <div className="flex items-center">
-                      <span className="text-blue-600 mr-2">{getFieldIcon(field)}</span>
-                      {field.label}
-                      {field.required && <span className="text-red-500 ml-1">*</span>}
-                    </div>
-                  </label>
-                  {renderField(field)}
+            <form onSubmit={handleSubmit} className="space-y-8">
+              
+              {/* Sección Contrato */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                  <FileText className="w-5 h-5 mr-2 text-blue-600" />
+                  Contrato
+                </h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Fecha contrato (AAAA-MM-DD) *
+                    </label>
+                    <input
+                      type="date"
+                      value={formData.fechaContrato}
+                      onChange={(e) => handleInputChange('fechaContrato', e.target.value)}
+                      required
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Entrada Check-in (AAAA-MM-DDThh:mm:ss) *
+                    </label>
+                    <input
+                      type="datetime-local"
+                      value={formData.fechaEntrada}
+                      onChange={(e) => handleInputChange('fechaEntrada', e.target.value)}
+                      required
+                      step="1"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Salida Check-out (AAAA-MM-DDThh:mm:ss) *
+                    </label>
+                    <input
+                      type="datetime-local"
+                      value={formData.fechaSalida}
+                      onChange={(e) => handleInputChange('fechaSalida', e.target.value)}
+                      required
+                      step="1"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Número de habitación
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={formData.numHabitaciones}
+                      onChange={(e) => handleInputChange('numHabitaciones', parseInt(e.target.value))}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    />
+                  </div>
+                  
+                  <div className="flex items-center">
+                    <input
+                      type="checkbox"
+                      id="internet"
+                      checked={formData.internet}
+                      onChange={(e) => handleInputChange('internet', e.target.checked)}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    />
+                    <label htmlFor="internet" className="ml-2 block text-sm text-gray-900">
+                      Internet
+                    </label>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Tipo de pago *
+                    </label>
+                    <select
+                      value={formData.tipoPago}
+                      onChange={(e) => handleInputChange('tipoPago', e.target.value)}
+                      required
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    >
+                      <option value="EFECT">Efectivo</option>
+                      <option value="TARJT">Tarjeta</option>
+                      <option value="PLATF">Plataforma</option>
+                      <option value="TRANS">Transferencia</option>
+                      <option value="MOVIL">Móvil</option>
+                      <option value="TREG">Cheque</option>
+                      <option value="DESTI">Destino</option>
+                      <option value="OTRO">Otro</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Fecha de pago (AAAA-MM-DD)
+                    </label>
+                    <input
+                      type="date"
+                      value={formData.fechaPago}
+                      onChange={(e) => handleInputChange('fechaPago', e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Medio de pago
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.medioPago}
+                      onChange={(e) => handleInputChange('medioPago', e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Titular
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.titular}
+                      onChange={(e) => handleInputChange('titular', e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Caducidad (MM/AAAA)
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.caducidadTarjeta}
+                      onChange={(e) => handleInputChange('caducidadTarjeta', e.target.value)}
+                      placeholder="MM/AAAA"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      En caso de pago con tarjeta, indique la fecha de caducidad de la tarjeta utilizada
+                    </p>
+                  </div>
                 </div>
-              ))}
+              </div>
 
+              {/* Sección Viajeros */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                  <Users className="w-5 h-5 mr-2 text-blue-600" />
+                  Viajeros
+                </h3>
+                
+                {/* Viajero 1 */}
+                <div className="border rounded-lg p-6 mb-4 bg-gray-50">
+                  <h4 className="font-medium text-gray-900 mb-4">Viajero 1</h4>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Nombre *
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.nombre}
+                        onChange={(e) => handleInputChange('nombre', e.target.value)}
+                        required
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Primer apellido *
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.apellido1}
+                        onChange={(e) => handleInputChange('apellido1', e.target.value)}
+                        required
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Segundo apellido
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.apellido2}
+                        onChange={(e) => handleInputChange('apellido2', e.target.value)}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Fecha nacimiento (AAAA-MM-DD) *
+                      </label>
+                      <input
+                        type="date"
+                        value={formData.fechaNacimiento}
+                        onChange={(e) => handleInputChange('fechaNacimiento', e.target.value)}
+                        required
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Tipo documento
+                      </label>
+                      <select
+                        value={formData.tipoDocumento}
+                        onChange={(e) => handleInputChange('tipoDocumento', e.target.value)}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                      >
+                        <option value="NIF">DNI</option>
+                        <option value="NIE">NIE</option>
+                        <option value="PAS">Pasaporte</option>
+                        <option value="OTRO">Otro</option>
+                      </select>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Número documento
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.numeroDocumento}
+                        onChange={(e) => handleInputChange('numeroDocumento', e.target.value)}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Nacionalidad
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.nacionalidad}
+                        onChange={(e) => {
+                          handleInputChange('nacionalidad', e.target.value);
+                          handleINEFields(e.target.value, 1);
+                        }}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                        placeholder="Ej: España, Francia, Italia..."
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        Escriba el país en su idioma natural (ej: España, Francia). Se convertirá automáticamente al código ISO3.
+                      </p>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Sexo
+                      </label>
+                      <select
+                        value={formData.sexo}
+                        onChange={(e) => handleInputChange('sexo', e.target.value)}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                      >
+                        <option value="H">Hombre</option>
+                        <option value="M">Mujer</option>
+                        <option value="O">Otro</option>
+                      </select>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Teléfono
+                      </label>
+                      <input
+                        type="tel"
+                        value={formData.telefono}
+                        onChange={(e) => handleInputChange('telefono', e.target.value)}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Correo electrónico
+                      </label>
+                      <input
+                        type="email"
+                        value={formData.correo}
+                        onChange={(e) => handleInputChange('correo', e.target.value)}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Dirección *
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.direccion}
+                        onChange={(e) => handleInputChange('direccion', e.target.value)}
+                        required
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Código postal *
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.codigoPostal}
+                        onChange={(e) => handleInputChange('codigoPostal', e.target.value)}
+                        required
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        País *
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.pais}
+                        onChange={(e) => {
+                          handleInputChange('pais', e.target.value);
+                          handleINEFields(e.target.value, 1);
+                        }}
+                        required
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                        placeholder="Ej: España, Francia, Italia..."
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        Escriba el país en su idioma natural (ej: España, Francia). Se convertirá automáticamente al código ISO3.
+                      </p>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Código municipio INE (5) <span id="ineRequired1" className="text-red-500 hidden">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        id="codigoMunicipio1"
+                        value={formData.codigoMunicipio}
+                        onChange={(e) => handleInputChange('codigoMunicipio', e.target.value)}
+                        maxLength={5}
+                        placeholder="29042"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        <span id="ineHelp1">
+                          <strong>SOLO para españoles:</strong> Código INE del municipio (5 dígitos: 2 de provincia + 3 de municipio)<br/>
+                          Ejemplo: 29042 (Fuengirola), 29045 (Málaga), 28001 (Madrid), 08001 (Barcelona)<br/>
+                          <strong className="text-green-600">Para extranjeros:</strong> Dejar vacío y rellenar solo "Nombre del municipio" abajo
+                        </span>
+                      </p>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Nombre del municipio <span id="municipioRequired1" className="text-red-500 hidden">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        id="nombreMunicipio1"
+                        value={formData.nombreMunicipio}
+                        onChange={(e) => handleInputChange('nombreMunicipio', e.target.value)}
+                        placeholder="Helsinki, Paris, London..."
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        <strong className="text-green-600">Solo para extranjeros:</strong> Nombre de la ciudad/municipio donde resides
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Botón para añadir segundo viajero */}
+                {!showTraveler2 && (
+                  <div className="text-center mb-4">
+                    <button 
+                      type="button"
+                      onClick={() => setShowTraveler2(true)}
+                      className="inline-flex items-center px-4 py-2 border border-blue-300 rounded-md shadow-sm text-sm font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    >
+                      <Users className="w-5 h-5 mr-2" />
+                      Añadir segundo viajero
+                    </button>
+                  </div>
+                )}
+                
+                {/* Segundo Viajero (Opcional) */}
+                {showTraveler2 && (
+                  <div className="border rounded-lg p-6 mb-4 bg-gray-50">
+                    <div className="flex justify-between items-center mb-4">
+                      <h4 className="font-medium text-gray-900">Viajero 2 (Opcional)</h4>
+                      <button 
+                        type="button"
+                        onClick={() => setShowTraveler2(false)}
+                        className="text-red-600 hover:text-red-800 text-sm"
+                      >
+                        Eliminar
+                      </button>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Nombre
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.nombre2}
+                          onChange={(e) => handleInputChange('nombre2', e.target.value)}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Primer apellido
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.apellido1_2}
+                          onChange={(e) => handleInputChange('apellido1_2', e.target.value)}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Segundo apellido
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.apellido2_2}
+                          onChange={(e) => handleInputChange('apellido2_2', e.target.value)}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Fecha nacimiento (AAAA-MM-DD)
+                        </label>
+                        <input
+                          type="date"
+                          value={formData.fechaNacimiento2}
+                          onChange={(e) => handleInputChange('fechaNacimiento2', e.target.value)}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Tipo documento
+                        </label>
+                        <select
+                          value={formData.tipoDocumento2}
+                          onChange={(e) => handleInputChange('tipoDocumento2', e.target.value)}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                        >
+                          <option value="NIF">DNI</option>
+                          <option value="NIE">NIE</option>
+                          <option value="PAS">Pasaporte</option>
+                          <option value="OTRO">Otro</option>
+                        </select>
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Número documento
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.numeroDocumento2}
+                          onChange={(e) => handleInputChange('numeroDocumento2', e.target.value)}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Nacionalidad
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.nacionalidad2}
+                          onChange={(e) => {
+                            handleInputChange('nacionalidad2', e.target.value);
+                            handleINEFields(e.target.value, 2);
+                          }}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                          placeholder="Ej: España, Francia, Italia..."
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Sexo
+                        </label>
+                        <select
+                          value={formData.sexo2}
+                          onChange={(e) => handleInputChange('sexo2', e.target.value)}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                        >
+                          <option value="H">Hombre</option>
+                          <option value="M">Mujer</option>
+                          <option value="O">Otro</option>
+                        </select>
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Teléfono
+                        </label>
+                        <input
+                          type="tel"
+                          value={formData.telefono2}
+                          onChange={(e) => handleInputChange('telefono2', e.target.value)}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Correo electrónico
+                        </label>
+                        <input
+                          type="email"
+                          value={formData.correo2}
+                          onChange={(e) => handleInputChange('correo2', e.target.value)}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Dirección
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.direccion2}
+                          onChange={(e) => handleInputChange('direccion2', e.target.value)}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Código postal
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.codigoPostal2}
+                          onChange={(e) => handleInputChange('codigoPostal2', e.target.value)}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          País
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.pais2}
+                          onChange={(e) => {
+                            handleInputChange('pais2', e.target.value);
+                            handleINEFields(e.target.value, 2);
+                          }}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                          placeholder="Ej: España, Francia, Italia..."
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Código municipio INE (5) <span id="ineRequired2" className="text-red-500 hidden">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          id="codigoMunicipio2"
+                          value={formData.codigoMunicipio2}
+                          onChange={(e) => handleInputChange('codigoMunicipio2', e.target.value)}
+                          maxLength={5}
+                          placeholder="29042"
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Nombre del municipio <span id="municipioRequired2" className="text-red-500 hidden">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          id="nombreMunicipio2"
+                          value={formData.nombreMunicipio2}
+                          onChange={(e) => handleInputChange('nombreMunicipio2', e.target.value)}
+                          placeholder="Helsinki, Paris, London..."
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Botón de envío */}
               <div className="pt-6">
                 <button
                   type="submit"
@@ -281,13 +907,13 @@ export default function TenantFormPage() {
                 >
                   {submitting ? (
                     <>
-                      <div className="loading mr-3"></div>
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
                       Enviando...
                     </>
                   ) : (
                     <>
                       <Send className="w-5 h-5 mr-2" />
-                      {config.formConfig.submitButtonText}
+                      Enviar Registro
                     </>
                   )}
                 </button>
