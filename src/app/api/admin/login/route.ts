@@ -48,17 +48,9 @@ export async function POST(req: NextRequest) {
     // PASO 2: VERIFICAR CONFIGURACIÓN DEL SERVIDOR
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     
-    // Decodificar hash de Base64
-    const adminSecretHashBase64 = process.env.ADMIN_SECRET_HASH_BASE64;
-    const adminSecretHash = adminSecretHashBase64 
-      ? Buffer.from(adminSecretHashBase64, 'base64').toString('utf-8')
-      : undefined;
-    
+    // Obtener hash bcrypt de la contraseña y secreto JWT
+    const adminSecretHash = process.env.ADMIN_SECRET_HASH;
     const jwtSecret = process.env.JWT_SECRET;
-    
-    console.log('✅ Hash decodificado:', adminSecretHash);
-    console.log('✅ Hash length:', adminSecretHash?.length);
-    
     
     if (!adminSecretHash || !jwtSecret) {
       console.error('❌ Variables de entorno no configuradas:');
