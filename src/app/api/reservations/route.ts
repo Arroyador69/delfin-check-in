@@ -6,9 +6,19 @@ import { sendReservationConfirmation } from '@/lib/whatsapp';
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
     console.log('📊 Obteniendo reservas desde PostgreSQL...');
+    
+    // Obtener tenant_id del header (enviado por el middleware)
+    const tenantId = req.headers.get('x-tenant-id');
+    
+    if (!tenantId) {
+      return NextResponse.json(
+        { error: 'No se pudo identificar el tenant' },
+        { status: 400 }
+      );
+    }
     
     // TEMPORAL: Si no hay base de datos, devolver datos mock
     if (!process.env.POSTGRES_URL || process.env.POSTGRES_URL.includes('localhost')) {
@@ -94,11 +104,16 @@ export async function GET() {
       console.log('✅ Tabla reservations creada correctamente');
     }
     
-    // Obtener reservas desde la base de datos
-    const reservations = await getReservations();
-    console.log(`✅ Encontradas ${reservations.length} reservas`);
+    // Obtener reservas desde la base de datos filtradas por tenant_id
+    const result = await sql`
+      SELECT * FROM reservations 
+      WHERE tenant_id = ${tenantId}
+      ORDER BY check_in DESC
+    `;
     
-    return NextResponse.json(reservations);
+    console.log(`✅ Encontradas ${result.rows.length} reservas para tenant ${tenantId}`);
+    
+    return NextResponse.json(result.rows);
   } catch (error) {
     console.error('Error fetching reservations:', error);
     
@@ -121,6 +136,16 @@ export async function POST(request: NextRequest) {
     
     const body = await request.json();
     console.log('📋 Datos recibidos:', body);
+    
+    // Obtener tenant_id del header (enviado por el middleware)
+    const tenantId = request.headers.get('x-tenant-id');
+    
+    if (!tenantId) {
+      return NextResponse.json(
+        { error: 'No se pudo identificar el tenant' },
+        { status: 400 }
+      );
+    }
     
     // PRIMERO: Verificar si la tabla rooms existe, si no, crearla
     try {
@@ -236,10 +261,36 @@ export async function POST(request: NextRequest) {
       net_income,
       currency: body.currency || 'EUR',
       status: body.status || 'confirmed',
+      tenant_id: tenantId, // Añadir tenant_id
     };
 
-    // Insertar en PostgreSQL usando la función helper
-    const newReservation = await insertReservation(reservationData);
+    // Insertar en PostgreSQL directamente con tenant_id
+    const result = await sql`
+      INSERT INTO reservations (
+        external_id, room_id, guest_name, guest_email, guest_phone, 
+        guest_count, check_in, check_out, channel, total_price, 
+        guest_paid, platform_commission, net_income, currency, status, tenant_id
+      ) VALUES (
+        ${reservationData.external_id},
+        ${reservationData.room_id},
+        ${reservationData.guest_name},
+        ${reservationData.guest_email},
+        ${reservationData.guest_phone},
+        ${reservationData.guest_count},
+        ${reservationData.check_in}::timestamp,
+        ${reservationData.check_out}::timestamp,
+        ${reservationData.channel},
+        ${reservationData.total_price},
+        ${reservationData.guest_paid},
+        ${reservationData.platform_commission},
+        ${reservationData.net_income},
+        ${reservationData.currency},
+        ${reservationData.status},
+        ${reservationData.tenant_id}
+      ) RETURNING *
+    `;
+    
+    const newReservation = result.rows[0];
     console.log('✅ Reserva creada:', newReservation.id);
 
     // Enviar mensaje de confirmación por WhatsApp si hay teléfono

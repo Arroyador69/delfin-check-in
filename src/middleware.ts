@@ -149,10 +149,15 @@ export function middleware(req: NextRequest) {
       return response;
     }
 
-    // Token válido - agregar información del usuario al request
+    // Token válido - agregar información del usuario y tenant al request
     const requestHeaders = new Headers(req.headers);
     requestHeaders.set('x-user-id', payload.userId);
     requestHeaders.set('x-user-role', payload.role);
+    
+    // TODO: Extraer tenant_id del JWT cuando se implemente la autenticación multi-tenant
+    // Por ahora usamos el tenant por defecto
+    const defaultTenantId = '870e589f-d313-4a5a-901f-f25fd4e7240a';
+    requestHeaders.set('x-tenant-id', defaultTenantId);
 
     // Continuar con el request pero con headers actualizados
     const response = NextResponse.next({
