@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { AUTH_CONFIG } from '@/lib/auth'
 
 export async function POST() {
   try {
@@ -8,10 +9,19 @@ export async function POST() {
     })
     
     // Eliminar la cookie de autenticación
-    response.cookies.set('auth_token', '', {
+    response.cookies.set(AUTH_CONFIG.cookieName, '', {
       expires: new Date(0),
       path: '/',
-      httpOnly: false,
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict'
+    })
+    
+    // Eliminar también la cookie de refresh token
+    response.cookies.set(AUTH_CONFIG.refreshCookieName, '', {
+      expires: new Date(0),
+      path: '/api/auth',
+      httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict'
     })

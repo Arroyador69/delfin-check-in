@@ -15,8 +15,8 @@
 - **`/api/ministerio/test-envio-real`**: Test de envío real
 
 ### 3. ✅ Configuración para envío real
-- **Credenciales**: Usuario `27380387Z`, contraseña `Marazulado_`
-- **Código Arrendador**: `0000146962`
+- **Credenciales**: Configuradas en variables de entorno (MIR_HTTP_USER, MIR_HTTP_PASS)
+- **Código Arrendador**: Configurado en MIR_CODIGO_ARRENDADOR
 - **Aplicación**: `Delfin_Check_in`
 - **URL**: `https://hospedajes.pre-ses.mir.es/hospedajes-web/ws/v1/comunicacion`
 - **Simulación**: `false` (envío real)

@@ -245,9 +245,9 @@ JWT_SECRET=kz$d8L-C7n#(:#+<3feMOhO8l.3n5}F3DrGb-fF(yv<=i5xkSs5A.|ch7OVQqaCv
 
 # Ministerio del Interior
 MIR_BASE_URL=https://hospedajes.pre-ses.mir.es/hospedajes-web/ws/v1/comunicacion
-MIR_HTTP_USER=27380387Z
-MIR_HTTP_PASS=Marazulado_
-MIR_CODIGO_ARRENDADOR=0000146962
+MIR_HTTP_USER=tu_usuario_mir
+MIR_HTTP_PASS=tu_contraseña_mir
+MIR_CODIGO_ARRENDADOR=tu_codigo_arrendador
 
 # Supabase
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url

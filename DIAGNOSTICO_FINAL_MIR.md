@@ -39,9 +39,9 @@
 ## 📋 Información para el soporte MIR
 
 ### Datos de registro
-- **Usuario**: 27380387Z
-- **Contraseña**: Marazulado_
-- **Código Arrendador**: 0000146962
+- **Usuario**: Configurado en MIR_HTTP_USER
+- **Contraseña**: Configurada en MIR_HTTP_PASS
+- **Código Arrendador**: Configurado en MIR_CODIGO_ARRENDADOR
 - **Aplicación**: Delfin_Check_in
 - **Código Establecimiento**: 0000256653
 
@@ -67,8 +67,8 @@ Estimados,
 Tengo un problema de conectividad con el Servicio de Comunicación de Hospedajes.
 
 Datos del registro:
-- Usuario: 27380387Z
-- Código Arrendador: 0000146962
+- Usuario: [Tu usuario MIR]
+- Código Arrendador: [Tu código de arrendador]
 - Aplicación: Delfin_Check_in
 - Código Establecimiento: 0000256653
 

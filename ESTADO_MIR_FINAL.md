@@ -59,10 +59,10 @@
 ## 🔧 Configuración actual
 
 ```bash
-# Credenciales
-Usuario: 27380387Z
-Contraseña: Marazulado_
-Código Arrendador: 0000146962
+# Credenciales (configuradas en variables de entorno)
+MIR_HTTP_USER: ***
+MIR_HTTP_PASS: ***
+MIR_CODIGO_ARRENDADOR: ***
 Aplicación: Delfin_Check_in
 Código Establecimiento: 0000256653
 
@@ -81,7 +81,7 @@ Estado: Descargado y cargado
 ### Opción 1: Contactar soporte MIR
 - **Email**: [soporte técnico del MIR]
 - **Solicitud**: "Problema de conectividad SSL con certificado del servidor"
-- **Información**: Usuario 27380387Z, entorno de pruebas
+- **Información**: Usuario configurado en MIR_HTTP_USER, entorno de pruebas
 
 ### Opción 2: Verificar credenciales
 - Confirmar que las credenciales están activas

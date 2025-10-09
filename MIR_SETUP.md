@@ -1,9 +1,10 @@
 # Configuración MIR - Ministerio del Interior
 
 ## Credenciales configuradas
-- **Usuario**: 27380387Z
-- **Contraseña**: Marazulado_
-- **Código Arrendador**: 0000146962
+⚠️ **Las credenciales deben configurarse en variables de entorno:**
+- **MIR_HTTP_USER**: Usuario del MIR
+- **MIR_HTTP_PASS**: Contraseña del MIR
+- **MIR_CODIGO_ARRENDADOR**: Código de arrendador asignado
 - **Aplicación**: Delfin_Check_in
 - **Código Establecimiento**: 0000256653
 
@@ -31,7 +32,7 @@ Respuesta esperada:
   "message": "Test de envío MIR completado",
   "config": {
     "simulacion": true,
-    "codigoArrendador": "0000146962",
+    "codigoArrendador": "***",
     "aplicacion": "Delfin_Check_in"
   },
   "resultado": {

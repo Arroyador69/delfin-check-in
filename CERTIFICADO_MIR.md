@@ -11,8 +11,8 @@ El error `unable to verify the first certificate` indica que necesitamos el cert
 - **Solicitud**: "Necesito el certificado SSL para conectarme al Servicio de Comunicación de Hospedajes"
 
 ### 2. Información que debes proporcionar
-- **Usuario**: 27380387Z
-- **Código Arrendador**: 0000146962
+- **Usuario**: Configurado en MIR_HTTP_USER
+- **Código Arrendador**: Configurado en MIR_CODIGO_ARRENDADOR
 - **Aplicación**: Delfin_Check_in
 - **Entorno**: Pruebas (https://hospedajes.pre-ses.mir.es/hospedajes-web/ws/v1/comunicacion)
 
@@ -93,8 +93,8 @@ const res = await fetch(this.cfg.baseUrl, {
 - **Documentación**: [enlace a documentación técnica]
 
 ### Información de tu registro
-- **Usuario**: 27380387Z
-- **Código Arrendador**: 0000146962
+- **Usuario**: Configurado en MIR_HTTP_USER
+- **Código Arrendador**: Configurado en MIR_CODIGO_ARRENDADOR
 - **Aplicación**: Delfin_Check_in
 - **Código Establecimiento**: 0000256653
 
