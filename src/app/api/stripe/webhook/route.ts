@@ -100,9 +100,29 @@ async function createTenantFromPayment(pi: Stripe.PaymentIntent): Promise<void> 
 
     console.log('✅ Usuario creado:', user.id)
 
-    // TODO: Enviar email con credenciales temporales
-    // TODO: Generar magic link para onboarding
-    console.log('📧 Credenciales temporales:', { email, password: tempPassword })
+    // Generar token para onboarding (usar reset_token como token temporal)
+    const onboardingToken = Math.random().toString(36).slice(-32) + Math.random().toString(36).slice(-32);
+    const tokenExpiry = new Date();
+    tokenExpiry.setHours(tokenExpiry.getHours() + 24); // Token válido por 24 horas
+
+    // Actualizar usuario con token de onboarding
+    await sql`
+      UPDATE tenant_users 
+      SET 
+        reset_token = ${onboardingToken},
+        reset_token_expires = ${tokenExpiry.toISOString()},
+        email_verified = false
+      WHERE id = ${user.id}
+    `;
+
+    // Generar magic link para onboarding
+    const onboardingUrl = `${process.env.NEXT_PUBLIC_APP_URL}/onboarding?token=${onboardingToken}&email=${encodeURIComponent(email)}`;
+    
+    console.log('🔗 Magic link de onboarding:', onboardingUrl);
+    console.log('📧 Credenciales temporales:', { email, password: tempPassword });
+
+    // TODO: Enviar email con magic link y credenciales temporales
+    // await sendOnboardingEmail(email, onboardingUrl, tempPassword);
 
   } catch (error) {
     console.error('❌ Error creando tenant:', error)

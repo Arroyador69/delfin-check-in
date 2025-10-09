@@ -58,8 +58,10 @@ export function middleware(req: NextRequest) {
     '/api/public',
     '/api/ical',
     '/api/admin/login', // Endpoint de login debe ser público
+    '/api/onboarding', // Endpoints de onboarding deben ser públicos
     '/public',
-    '/admin-login'
+    '/admin-login',
+    '/onboarding'
   ];
 
   // Verificar si la ruta actual está en las rutas públicas
