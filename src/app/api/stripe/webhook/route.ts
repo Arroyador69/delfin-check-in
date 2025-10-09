@@ -1,5 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
+import bcrypt from 'bcryptjs'
+import { 
+  ensureTenantTables, 
+  createTenant, 
+  createTenantUser, 
+  findTenantByEmail,
+  findTenantByStripeCustomer,
+  updateTenantStripeInfo
+} from '@/lib/tenant'
 
 export const config = {
   api: {
@@ -12,8 +21,93 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
 })
 
 async function readRawBody(req: Request): Promise<Buffer> {
-  const arrayBuffer = await req.arrayBuffer()
+const arrayBuffer = await req.arrayBuffer()
   return Buffer.from(arrayBuffer)
+}
+
+/**
+ * Mapea los planes de pago a los IDs de plan del sistema
+ */
+function mapPaymentPlanToPlanId(amount: number): 'basic' | 'standard' | 'premium' | 'enterprise' {
+  // Mapear montos a planes (en céntimos)
+  if (amount <= 2900) return 'basic';      // €29
+  if (amount <= 4900) return 'standard';   // €49  
+  if (amount <= 7900) return 'premium';    // €79
+  return 'enterprise';                     // €149+
+}
+
+/**
+ * Genera una contraseña temporal segura
+ */
+function generateTempPassword(): string {
+  return Math.random().toString(36).slice(-12) + Math.random().toString(36).slice(-12);
+}
+
+/**
+ * Crea un tenant completo con usuario desde un pago de Stripe
+ */
+async function createTenantFromPayment(pi: Stripe.PaymentIntent): Promise<void> {
+  const email = String(pi.metadata?.email || pi.receipt_email || '')
+  const name = String(pi.metadata?.name || email.split('@')[0])
+  const plan_id = mapPaymentPlanToPlanId(pi.amount)
+  
+  console.log('🏢 Creando tenant desde pago:', { email, name, plan_id, amount: pi.amount })
+
+  // Verificar si ya existe un tenant con este email
+  const existingTenant = await findTenantByEmail(email)
+  if (existingTenant) {
+    console.log('⚠️ Tenant ya existe:', existingTenant.id)
+    // Actualizar información de Stripe si es necesario
+    if (pi.customer) {
+      await updateTenantStripeInfo(existingTenant.id, pi.id, 'active')
+    }
+    return
+  }
+
+  try {
+    // Asegurar que las tablas existen
+    await ensureTenantTables()
+
+    // Crear el tenant
+    const tenant = await createTenant({
+      name,
+      email,
+      plan_id,
+      stripe_customer_id: String(pi.customer || ''),
+      stripe_subscription_id: pi.id,
+      config: {
+        propertyName: name,
+        timezone: 'Europe/Madrid',
+        language: 'es',
+        currency: 'EUR'
+      }
+    })
+
+    console.log('✅ Tenant creado:', tenant.id)
+
+    // Generar contraseña temporal
+    const tempPassword = generateTempPassword()
+    const passwordHash = await bcrypt.hash(tempPassword, 12)
+
+    // Crear usuario owner para el tenant
+    const user = await createTenantUser({
+      tenant_id: tenant.id,
+      email,
+      password_hash: passwordHash,
+      full_name: name,
+      role: 'owner'
+    })
+
+    console.log('✅ Usuario creado:', user.id)
+
+    // TODO: Enviar email con credenciales temporales
+    // TODO: Generar magic link para onboarding
+    console.log('📧 Credenciales temporales:', { email, password: tempPassword })
+
+  } catch (error) {
+    console.error('❌ Error creando tenant:', error)
+    throw error
+  }
 }
 
 export async function POST(req: NextRequest) {
@@ -34,22 +128,47 @@ export async function POST(req: NextRequest) {
       return new NextResponse(`Firma inválida: ${err.message}`, { status: 400 })
     }
 
-    if (event.type === 'payment_intent.succeeded') {
-      const pi = event.data.object as Stripe.PaymentIntent
-      const plan = String(pi.metadata?.plan || '')
-      const properties = parseInt(String(pi.metadata?.properties || '1'), 10) || 1
-      const email = String(pi.metadata?.email || pi.receipt_email || '')
+    console.log('🔔 Webhook recibido:', event.type)
 
-      // TODO: Persistir cliente/tenant y generar magic link
-      // Aquí crearíamos el cliente (tenant), guardaríamos stripe_customer_id (si existe) y un token de acceso temporal
-      // En este MVP respondemos OK; la creación se puede completar con una cola o función separada
-      console.log('✅ payment_intent.succeeded', { plan, properties, email, id: pi.id })
+    // Manejar diferentes tipos de eventos
+    switch (event.type) {
+      case 'payment_intent.succeeded':
+        const pi = event.data.object as Stripe.PaymentIntent
+        console.log('✅ Pago exitoso:', { 
+          id: pi.id, 
+          amount: pi.amount, 
+          email: pi.metadata?.email || pi.receipt_email 
+        })
+        
+        // Crear tenant automáticamente
+        await createTenantFromPayment(pi)
+        break
+
+      case 'customer.subscription.created':
+        const subscription = event.data.object as Stripe.Subscription
+        console.log('🔄 Suscripción creada:', subscription.id)
+        // TODO: Manejar creación de suscripción
+        break
+
+      case 'customer.subscription.updated':
+        const updatedSub = event.data.object as Stripe.Subscription
+        console.log('🔄 Suscripción actualizada:', updatedSub.id)
+        // TODO: Manejar actualización de suscripción
+        break
+
+      case 'customer.subscription.deleted':
+        const deletedSub = event.data.object as Stripe.Subscription
+        console.log('❌ Suscripción cancelada:', deletedSub.id)
+        // TODO: Manejar cancelación de suscripción
+        break
+
+      default:
+        console.log('ℹ️ Evento no manejado:', event.type)
     }
 
     return new NextResponse('ok', { status: 200 })
   } catch (error: any) {
+    console.error('❌ Error en webhook:', error)
     return new NextResponse(error?.message || 'Error', { status: 500 })
   }
 }
-
-
