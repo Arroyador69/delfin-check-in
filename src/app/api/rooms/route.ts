@@ -6,40 +6,23 @@ export async function GET(req: NextRequest) {
     // Obtener tenant_id del header (enviado por el middleware)
     const tenantId = req.headers.get('x-tenant-id');
     
-    console.log('🔍 DEBUG /api/rooms: tenant_id recibido:', tenantId);
-    
     if (!tenantId) {
-      console.log('❌ DEBUG /api/rooms: No se pudo identificar el tenant');
       return NextResponse.json(
         { error: 'No se pudo identificar el tenant' },
         { status: 400 }
       );
     }
 
-    // Primero verificar si la tabla Room existe y obtener todas las habitaciones
-    try {
-      const allRooms = await sql`SELECT * FROM "Room" LIMIT 10`;
-      console.log('🔍 DEBUG /api/rooms: Todas las habitaciones en BD:', allRooms.rows);
-      
-      // Verificar los lodgingId únicos
-      const uniqueLodgingIds = await sql`SELECT DISTINCT "lodgingId" FROM "Room"`;
-      console.log('🔍 DEBUG /api/rooms: LodgingIds únicos en BD:', uniqueLodgingIds.rows);
-    } catch (error) {
-      console.log('❌ DEBUG /api/rooms: Error accediendo a tabla Room:', error);
-    }
-
     // Obtener habitaciones filtradas por tenant_id
-    // Nota: En la base de datos actual, Room tiene lodgingId que corresponde al tenant_id
+    // Hacer JOIN con la tabla Lodging para filtrar por tenantId
     const result = await sql`
-      SELECT * FROM "Room" 
-      WHERE "lodgingId" = ${tenantId}
-      ORDER BY id DESC
+      SELECT r.* FROM "Room" r
+      JOIN "Lodging" l ON r."lodgingId" = l.id
+      WHERE l."tenantId" = ${tenantId}
+      ORDER BY r."created_at" DESC
     `;
 
-    console.log(`🔍 DEBUG /api/rooms: Query ejecutada - tenantId: ${tenantId}`);
-    console.log(`🔍 DEBUG /api/rooms: Resultado filtrado:`, result.rows);
     console.log(`🏨 Obtenidas ${result.rows.length} habitaciones para tenant ${tenantId}`);
-    
     return NextResponse.json(result.rows);
   } catch (error) {
     console.error('Error fetching rooms:', error);
@@ -74,7 +57,7 @@ export async function POST(request: NextRequest) {
 
     // Verificar límites del plan
     const tenantResult = await sql`
-      SELECT max_rooms, (SELECT COUNT(*) FROM "Room" WHERE "lodgingId" = ${tenantId}) as current_rooms
+      SELECT max_rooms, (SELECT COUNT(*) FROM "Room" r JOIN "Lodging" l ON r."lodgingId" = l.id WHERE l."tenantId" = ${tenantId}) as current_rooms
       FROM tenants 
       WHERE id = ${tenantId}
     `;
@@ -105,6 +88,20 @@ export async function POST(request: NextRequest) {
     }
 
     // Insertar habitación en la base de datos con tenant_id
+    // Obtener el lodgingId correspondiente al tenantId
+    const lodgingResult = await sql`
+      SELECT id FROM "Lodging" WHERE "tenantId" = ${tenantId} LIMIT 1
+    `;
+    
+    if (lodgingResult.rows.length === 0) {
+      return NextResponse.json(
+        { error: 'No se encontró un alojamiento para este tenant' },
+        { status: 404 }
+      );
+    }
+    
+    const lodgingId = lodgingResult.rows[0].id;
+    
     const result = await sql`
       INSERT INTO "Room" (
         id, name, description, capacity, "basePrice", 
@@ -118,7 +115,7 @@ export async function POST(request: NextRequest) {
         ${body.ical_out_url || ''},
         ${body.ical_in_booking_url || ''},
         ${body.ical_in_airbnb_url || ''},
-        ${tenantId}
+        ${lodgingId}
       ) RETURNING *
     `;
 

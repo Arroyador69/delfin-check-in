@@ -80,7 +80,7 @@ export async function GET(req: NextRequest) {
     try {
       const statsResult = await sql`
         SELECT 
-          (SELECT COUNT(*) FROM "Room" WHERE "lodgingId" = ${tenantId}) as total_rooms,
+          (SELECT COUNT(*) FROM "Room" r JOIN "Lodging" l ON r."lodgingId" = l.id WHERE l."tenantId" = ${tenantId}) as total_rooms,
           (SELECT COUNT(*) FROM reservations WHERE tenant_id = ${tenantId}) as total_reservations,
           (SELECT COUNT(*) FROM guests WHERE tenant_id = ${tenantId}) as total_guests,
           (SELECT COUNT(*) FROM guest_registrations WHERE tenant_id = ${tenantId}) as total_registrations

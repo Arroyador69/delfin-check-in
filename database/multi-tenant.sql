@@ -232,10 +232,10 @@ REGLAS DE AISLAMIENTO:
 ======================
 
 1. QUERIES: Todas las consultas DEBEN filtrar por tenant_id
-   Ejemplo: SELECT * FROM rooms WHERE tenant_id = $current_tenant_id
+   Ejemplo: SELECT * FROM "Room" WHERE "lodgingId" = $current_tenant_id
 
 2. INSERTS: Todos los inserts DEBEN incluir tenant_id
-   Ejemplo: INSERT INTO rooms (name, tenant_id) VALUES ($name, $tenant_id)
+   Ejemplo: INSERT INTO "Room" (name, "lodgingId") VALUES ($name, $tenant_id)
 
 3. MIDDLEWARE: Verificar tenant_id en cada request
    - Extraer tenant_id del JWT token

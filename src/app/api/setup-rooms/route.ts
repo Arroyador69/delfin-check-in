@@ -26,7 +26,7 @@ export async function POST() {
       console.log('🏠 Insertando habitaciones de ejemplo...');
       
       await sql`
-        INSERT INTO rooms (id, name, base_price, description, capacity, amenities) VALUES
+        INSERT INTO "Room" (id, name, "basePrice", description, capacity, amenities) VALUES
         ('room-001', 'Habitación Doble Estándar', 80.00, 'Habitación doble con baño privado', 2, ARRAY['WiFi', 'TV', 'Aire acondicionado']),
         ('room-002', 'Habitación Individual', 60.00, 'Habitación individual con baño privado', 1, ARRAY['WiFi', 'TV', 'Aire acondicionado']),
         ('room-003', 'Suite Familiar', 120.00, 'Suite espaciosa para familias', 4, ARRAY['WiFi', 'TV', 'Aire acondicionado', 'Minibar', 'Balcón']),
