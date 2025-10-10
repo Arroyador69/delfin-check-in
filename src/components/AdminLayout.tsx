@@ -118,43 +118,6 @@ export default function AdminLayout({ children, showHeader = true }: AdminLayout
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {showHeader && (
-        <header className="bg-white shadow-sm border-b sticky top-0 z-10">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center py-4">
-              <div className="flex items-center space-x-3">
-                <div className="text-3xl">🐬</div>
-                <div>
-                  <h1 className="text-xl font-bold text-gray-900">Delfín Check-in</h1>
-                  <p className="text-sm text-gray-500">Panel de Administración</p>
-                </div>
-              </div>
-              
-              <div className="flex items-center space-x-4">
-                <div className="text-sm text-gray-600">
-                  <span className="inline-flex items-center">
-                    <svg className="w-4 h-4 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                      <circle cx="10" cy="10" r="4" />
-                    </svg>
-                    Conectado
-                  </span>
-                </div>
-                
-                <button
-                  onClick={handleLogout}
-                  className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors"
-                >
-                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                  </svg>
-                  Cerrar Sesión
-                </button>
-              </div>
-            </div>
-          </div>
-        </header>
-      )}
-      
       <main>
         {children}
       </main>

@@ -339,6 +339,14 @@ export default function HomePage() {
               </div>
             </div>
             <div className="flex items-center space-x-4">
+              <div className="text-sm text-gray-600">
+                <span className="inline-flex items-center">
+                  <svg className="w-4 h-4 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <circle cx="10" cy="10" r="4" />
+                  </svg>
+                  Conectado
+                </span>
+              </div>
               <Link
                 href="/upgrade-plan"
                 className="px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-md hover:from-purple-700 hover:to-blue-700 transition-all duration-200 flex items-center space-x-2 shadow-md hover:shadow-lg"

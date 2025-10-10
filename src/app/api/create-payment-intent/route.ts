@@ -24,6 +24,7 @@ export async function POST(req: NextRequest) {
     // Mapear plan_id a precio mensual (en céntimos)
     const priceMap = {
       basic: 1499,      // €14.99/mes (1 propiedad)
+      basic_yearly: 14990, // €149.90/año (1 propiedad)
       standard: 2698,   // €26.98/mes (2 propiedades)
       premium: 5096,    // €50.96/mes (4 propiedades)
       enterprise: 11240 // €112.40/mes (10+ propiedades)
