@@ -12,7 +12,7 @@ import { Elements, CardElement, useStripe, useElements } from '@stripe/react-str
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '');
 
 // Tipos de planes
-type PlanId = 'basic' | 'standard' | 'premium' | 'enterprise';
+type PlanId = 'basic' | 'basic_yearly' | 'standard' | 'premium' | 'enterprise';
 
 interface Plan {
   id: PlanId;
@@ -221,7 +221,6 @@ function UpgradeContent() {
   const searchParams = useSearchParams();
   const [currentPlanId, setCurrentPlanId] = useState<PlanId>('basic');
   const [selectedPlanId, setSelectedPlanId] = useState<PlanId | null>(null);
-  const [propertiesCount, setPropertiesCount] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
@@ -250,32 +249,6 @@ function UpgradeContent() {
       console.error('Error cargando plan actual:', error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  // Función para calcular precio según número de propiedades
-  const calculatePrice = (properties: number) => {
-    if (properties === 1) {
-      return { pricePerProperty: 14.99, discount: 0, total: 14.99 };
-    } else if (properties === 2) {
-      return { pricePerProperty: 13.49, discount: 10, total: 26.98 };
-    } else if (properties >= 3 && properties <= 4) {
-      return { pricePerProperty: 12.74, discount: 15, total: 50.96 };
-    } else if (properties >= 5 && properties <= 9) {
-      return { pricePerProperty: 11.99, discount: 20, total: 59.95 };
-    } else if (properties >= 10) {
-      return { pricePerProperty: 11.24, discount: 25, total: 112.40 };
-    } else {
-      // Fallback para números intermedios
-      if (properties < 3) {
-        return { pricePerProperty: 13.49, discount: 10, total: properties * 13.49 };
-      } else if (properties < 5) {
-        return { pricePerProperty: 12.74, discount: 15, total: properties * 12.74 };
-      } else if (properties < 10) {
-        return { pricePerProperty: 11.99, discount: 20, total: properties * 11.99 };
-      } else {
-        return { pricePerProperty: 11.24, discount: 25, total: properties * 11.24 };
-      }
     }
   };
 
@@ -360,127 +333,80 @@ function UpgradeContent() {
           )}
 
           {!showCheckout ? (
-            <>
-              {/* Selector de número de propiedades */}
-              <div className="mb-8 bg-white rounded-lg shadow-lg p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">🏠 Número de propiedades</h3>
-                <div className="flex items-center justify-center space-x-4">
-                  <button
-                    onClick={() => setPropertiesCount(Math.max(1, propertiesCount - 1))}
-                    className="w-10 h-10 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center transition-colors"
-                  >
-                    <span className="text-xl font-bold text-gray-600">-</span>
-                  </button>
-                  
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="number"
-                      min="1"
-                      max="50"
-                      value={propertiesCount}
-                      onChange={(e) => setPropertiesCount(Math.max(1, parseInt(e.target.value) || 1))}
-                      className="w-20 text-center text-2xl font-bold text-blue-600 border-2 border-blue-200 rounded-lg px-3 py-2 focus:border-blue-500 focus:outline-none"
-                    />
-                    <span className="text-gray-600 font-medium">
-                      {propertiesCount === 1 ? 'propiedad' : 'propiedades'}
-                    </span>
-                  </div>
-                  
-                  <button
-                    onClick={() => setPropertiesCount(Math.min(50, propertiesCount + 1))}
-                    className="w-10 h-10 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center transition-colors"
-                  >
-                    <span className="text-xl font-bold text-gray-600">+</span>
-                  </button>
+            /* Plans Grid */
+            <div className="grid md:grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Card 1: Plan mensual */}
+              <div className={`relative flex flex-col p-6 bg-white rounded-lg shadow-lg transition-all duration-300 ${currentPlanId === 'basic' ? 'border-4 border-blue-500' : 'border border-gray-200'} hover:shadow-xl hover:scale-[1.02]`}>
+                <h2 className="text-2xl font-bold text-gray-900 text-center mb-2">Plan mensual</h2>
+                <div className="text-center mb-6">
+                  <div className="text-4xl font-bold text-gray-900 mb-1">14,99€</div>
+                  <p className="text-sm text-gray-500">/ propiedad / mes</p>
                 </div>
-                
-                {/* Mostrar precio calculado */}
-                <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-                  <div className="text-center">
-                    <div className="text-3xl font-bold text-blue-600">
-                      €{calculatePrice(propertiesCount).total.toFixed(2)}/mes
-                    </div>
-                    <div className="text-sm text-gray-600">
-                      {calculatePrice(propertiesCount).pricePerProperty.toFixed(2)}€ por propiedad
-                      {calculatePrice(propertiesCount).discount > 0 && (
-                        <span className="ml-2 text-green-600 font-semibold">
-                          ({calculatePrice(propertiesCount).discount}% descuento)
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
+                <ul className="flex-grow space-y-3 mb-8">
+                  <li className="flex items-center text-gray-700"><CheckCircle className="w-5 h-5 text-green-500 mr-2 flex-shrink-0" /><span>Gestión manual de reservas</span></li>
+                  <li className="flex items-center text-gray-700"><CheckCircle className="w-5 h-5 text-green-500 mr-2 flex-shrink-0" /><span>Check-in online</span></li>
+                  <li className="flex items-center text-gray-700"><CheckCircle className="w-5 h-5 text-green-500 mr-2 flex-shrink-0" /><span>Gestión de habitaciones</span></li>
+                  <li className="flex items-center text-gray-700"><CheckCircle className="w-5 h-5 text-green-500 mr-2 flex-shrink-0" /><span>Registro de viajeros</span></li>
+                  <li className="flex items-center text-gray-700"><CheckCircle className="w-5 h-5 text-green-500 mr-2 flex-shrink-0" /><span>Soporte por email</span></li>
+                </ul>
+                <button
+                  onClick={() => handleSelectPlan('basic')}
+                  disabled={currentPlanId === 'basic'}
+                  className={`w-full py-3 rounded-md text-lg font-semibold transition-colors duration-200 ${currentPlanId === 'basic' ? 'bg-gray-300 text-gray-700 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700'}`}
+                >
+                  {currentPlanId === 'basic' ? 'Plan actual' : 'Contratar'}
+                </button>
+                <p className="text-xs text-gray-500 mt-4 text-center">Sin permanencia. Cancela cuando quieras.</p>
               </div>
 
-              {/* Plans Grid */}
-              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {PLANS.map((plan) => {
-                const Icon = plan.icon;
-                const isCurrent = plan.id === currentPlanId;
-                const isSelected = plan.id === selectedPlanId;
+              {/* Card 2: Plan anual - RECOMENDADO */}
+              <div className={`relative flex flex-col p-6 bg-white rounded-lg shadow-lg transition-all duration-300 ${currentPlanId === 'basic_yearly' ? 'border-4 border-blue-500' : 'border border-gray-200'} hover:shadow-xl hover:scale-[1.02]`}>
+                <span className="absolute top-0 right-0 bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-lg">Recomendado</span>
+                <h2 className="text-2xl font-bold text-gray-900 text-center mb-2">Plan anual</h2>
+                <div className="text-center mb-6">
+                  <div className="text-4xl font-bold text-gray-900 mb-1">149,90€</div>
+                  <p className="text-sm text-gray-500">/ propiedad / año</p>
+                </div>
+                <ul className="flex-grow space-y-3 mb-8">
+                  <li className="flex items-center text-gray-700"><CheckCircle className="w-5 h-5 text-green-500 mr-2 flex-shrink-0" /><span>Todo lo del mensual</span></li>
+                  <li className="flex items-center text-gray-700"><CheckCircle className="w-5 h-5 text-green-500 mr-2 flex-shrink-0" /><span>Descuento 16,7% por pago anual</span></li>
+                  <li className="flex items-center text-gray-700"><CheckCircle className="w-5 h-5 text-green-500 mr-2 flex-shrink-0" /><span>Soporte prioritario</span></li>
+                  <li className="flex items-center text-gray-700"><CheckCircle className="w-5 h-5 text-green-500 mr-2 flex-shrink-0" /><span>Onboarding asistido</span></li>
+                  <li className="flex items-center text-gray-700"><CheckCircle className="w-5 h-5 text-green-500 mr-2 flex-shrink-0" /><span>Equivale a 12,49€/mes</span></li>
+                </ul>
+                <button
+                  onClick={() => handleSelectPlan('basic_yearly')}
+                  disabled={currentPlanId === 'basic_yearly'}
+                  className={`w-full py-3 rounded-md text-lg font-semibold transition-colors duration-200 ${currentPlanId === 'basic_yearly' ? 'bg-gray-300 text-gray-700 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700'}`}
+                >
+                  {currentPlanId === 'basic_yearly' ? 'Plan actual' : 'Contratar'}
+                </button>
+                <p className="text-xs text-gray-500 mt-4 text-center">Ahorra 29,90€ al año por propiedad.</p>
+              </div>
 
-                return (
-                  <div
-                    key={plan.id}
-                    className={`relative bg-white rounded-lg shadow-lg p-6 border-2 transition-all ${
-                      isCurrent
-                        ? 'border-blue-500'
-                        : isSelected
-                        ? 'border-green-500'
-                        : 'border-gray-200 hover:border-blue-300'
-                    }`}
-                  >
-                    {plan.popular && !isCurrent && (
-                      <div className="absolute top-0 right-0 bg-purple-600 text-white text-xs px-3 py-1 rounded-bl-lg rounded-tr-lg font-semibold">
-                        Popular
-                      </div>
-                    )}
-
-                    {isCurrent && (
-                      <div className="absolute top-0 right-0 bg-blue-600 text-white text-xs px-3 py-1 rounded-bl-lg rounded-tr-lg font-semibold">
-                        Plan actual
-                      </div>
-                    )}
-
-                    <div className="text-center mb-6">
-                      <Icon className={`w-12 h-12 mx-auto mb-4 text-${plan.color}-600`} />
-                      <h3 className="text-xl font-bold text-gray-900 mb-2">{plan.name}</h3>
-                      <p className="text-sm text-gray-600 mb-4">{plan.description}</p>
-                      
-                      <div className="text-4xl font-bold text-gray-900 mb-1">
-                        €{plan.price}
-                      </div>
-                      <p className="text-sm text-gray-500">
-                        {plan.id === 'basic' ? 'por propiedad/mes' : 
-                         plan.id === 'standard' ? 'por 2 propiedades/mes' :
-                         plan.id === 'premium' ? 'por 4 propiedades/mes' :
-                         'por 10+ propiedades/mes'}
-                      </p>
-                    </div>
-
-                    <ul className="space-y-3 mb-6">
-                      {plan.features.map((feature, index) => (
-                        <li key={index} className="flex items-start text-sm text-gray-700">
-                          <Check className="w-5 h-5 text-green-600 mr-2 flex-shrink-0" />
-                          {feature}
-                        </li>
-                      ))}
-                    </ul>
-
-                    <button
-                      onClick={() => handleSelectPlan(plan.id)}
-                      disabled={isCurrent}
-                      className={`w-full py-3 px-4 rounded-lg font-semibold transition-colors ${
-                        isCurrent
-                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                          : `bg-${plan.color}-600 text-white hover:bg-${plan.color}-700`
-                      }`}
-                    >
-                      {isCurrent ? 'Plan actual' : 'Seleccionar'}
-                    </button>
-                  </div>
-                );
-              })}
+              {/* Card 3: Descuentos por volumen */}
+              <div className={`relative flex flex-col p-6 bg-white rounded-lg shadow-lg transition-all duration-300 ${['standard', 'premium', 'enterprise'].includes(currentPlanId) ? 'border-4 border-blue-500' : 'border border-gray-200'} hover:shadow-xl hover:scale-[1.02]`}>
+                <h2 className="text-2xl font-bold text-gray-900 text-center mb-2">Descuentos por volumen</h2>
+                <div className="text-center mb-6">
+                  <div className="text-4xl font-bold text-gray-900 mb-1">Hasta 25%</div>
+                  <p className="text-sm text-gray-500">descuento</p>
+                  <p className="text-lg font-semibold text-gray-700 mt-2">Desde 2 propiedades <span className="text-xs text-gray-500">(mejor precio)</span></p>
+                </div>
+                <ul className="flex-grow space-y-3 mb-8">
+                  <li className="flex items-center text-gray-700"><CheckCircle className="w-5 h-5 text-green-500 mr-2 flex-shrink-0" /><span>2 propiedades: 13,49€ cada una</span></li>
+                  <li className="flex items-center text-gray-700"><CheckCircle className="w-5 h-5 text-green-500 mr-2 flex-shrink-0" /><span>4 propiedades: 12,74€ cada una</span></li>
+                  <li className="flex items-center text-gray-700"><CheckCircle className="w-5 h-5 text-green-500 mr-2 flex-shrink-0" /><span>5-9 propiedades: 11,99€ cada una</span></li>
+                  <li className="flex items-center text-gray-700"><CheckCircle className="w-5 h-5 text-green-500 mr-2 flex-shrink-0" /><span>10+ propiedades: 11,24€ cada una</span></li>
+                </ul>
+                <button
+                  onClick={() => handleSelectPlan('standard')}
+                  disabled={['standard', 'premium', 'enterprise'].includes(currentPlanId)}
+                  className={`w-full py-3 rounded-md text-lg font-semibold transition-colors duration-200 ${['standard', 'premium', 'enterprise'].includes(currentPlanId) ? 'bg-gray-300 text-gray-700 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700'}`}
+                >
+                  {['standard', 'premium', 'enterprise'].includes(currentPlanId) ? 'Plan actual' : 'Contratar'}
+                </button>
+                <p className="text-xs text-gray-500 mt-4 text-center">Descuentos automáticos según volumen.</p>
+              </div>
               </div>
             </>
           ) : (
