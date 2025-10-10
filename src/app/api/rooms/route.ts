@@ -6,11 +6,26 @@ export async function GET(req: NextRequest) {
     // Obtener tenant_id del header (enviado por el middleware)
     const tenantId = req.headers.get('x-tenant-id');
     
+    console.log('🔍 DEBUG /api/rooms: tenant_id recibido:', tenantId);
+    
     if (!tenantId) {
+      console.log('❌ DEBUG /api/rooms: No se pudo identificar el tenant');
       return NextResponse.json(
         { error: 'No se pudo identificar el tenant' },
         { status: 400 }
       );
+    }
+
+    // Primero verificar si la tabla Room existe y obtener todas las habitaciones
+    try {
+      const allRooms = await sql`SELECT * FROM "Room" LIMIT 10`;
+      console.log('🔍 DEBUG /api/rooms: Todas las habitaciones en BD:', allRooms.rows);
+      
+      // Verificar los lodgingId únicos
+      const uniqueLodgingIds = await sql`SELECT DISTINCT "lodgingId" FROM "Room"`;
+      console.log('🔍 DEBUG /api/rooms: LodgingIds únicos en BD:', uniqueLodgingIds.rows);
+    } catch (error) {
+      console.log('❌ DEBUG /api/rooms: Error accediendo a tabla Room:', error);
     }
 
     // Obtener habitaciones filtradas por tenant_id
@@ -18,10 +33,13 @@ export async function GET(req: NextRequest) {
     const result = await sql`
       SELECT * FROM "Room" 
       WHERE "lodgingId" = ${tenantId}
-      ORDER BY "created_at" DESC
+      ORDER BY id DESC
     `;
 
+    console.log(`🔍 DEBUG /api/rooms: Query ejecutada - tenantId: ${tenantId}`);
+    console.log(`🔍 DEBUG /api/rooms: Resultado filtrado:`, result.rows);
     console.log(`🏨 Obtenidas ${result.rows.length} habitaciones para tenant ${tenantId}`);
+    
     return NextResponse.json(result.rows);
   } catch (error) {
     console.error('Error fetching rooms:', error);

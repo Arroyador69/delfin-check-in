@@ -160,9 +160,9 @@ export function middleware(req: NextRequest) {
     requestHeaders.set('x-user-role', payload.role);
     
     // TODO: Extraer tenant_id del JWT cuando se implemente la autenticación multi-tenant
-    // Por ahora usamos el tenant por defecto
-    const defaultTenantId = '870e589f-d313-4a5a-901f-f25fd4e7240a';
-    requestHeaders.set('x-tenant-id', defaultTenantId);
+    // Por ahora usamos el lodgingId de la tabla Room (basado en la imagen de la BD)
+    const defaultLodgingId = 'cmgck7m8j'; // LodgingId de las habitaciones en la BD actual
+    requestHeaders.set('x-tenant-id', defaultLodgingId);
 
     // Continuar con el request pero con headers actualizados
     const response = NextResponse.next({
