@@ -4,7 +4,7 @@ import { useState } from 'react';
 import AdminLayout from '@/components/AdminLayout';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Settings, FileText, CreditCard, User, Link } from 'lucide-react';
+import { Settings, FileText, CreditCard, User, LinkIcon } from 'lucide-react';
 
 export default function SettingsLayout({
   children,
@@ -41,7 +41,7 @@ export default function SettingsLayout({
     {
       id: 'integrations',
       name: 'Integraciones',
-      icon: Link,
+      icon: LinkIcon,
       href: '/settings/integrations',
     },
   ];
