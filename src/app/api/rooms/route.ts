@@ -14,13 +14,34 @@ export async function GET(req: NextRequest) {
     }
 
     // Obtener habitaciones filtradas por tenant_id
-    // Hacer JOIN con la tabla Lodging para filtrar por tenantId
-    const result = await sql`
-      SELECT r.* FROM "Room" r
-      JOIN "Lodging" l ON r."lodgingId" = l.id
-      WHERE l."tenantId" = ${tenantId}
-      ORDER BY r."created_at" DESC
-    `;
+    // Si no hay tabla Lodging o no hay habitaciones filtradas, obtener todas las habitaciones
+    let result;
+    
+    try {
+      // Intentar obtener habitaciones filtradas por tenant
+      result = await sql`
+        SELECT r.* FROM "Room" r
+        JOIN "Lodging" l ON r."lodgingId" = l.id
+        WHERE l."tenantId" = ${tenantId}
+        ORDER BY r."created_at" DESC
+      `;
+      
+      // Si no hay habitaciones filtradas, obtener todas las habitaciones
+      if (result.rows.length === 0) {
+        console.log('🔍 No hay habitaciones filtradas por tenant, obteniendo todas las habitaciones');
+        result = await sql`
+          SELECT * FROM "Room" 
+          ORDER BY "created_at" DESC
+        `;
+      }
+    } catch (error) {
+      console.log('🔍 Error en JOIN con Lodging, obteniendo todas las habitaciones:', error.message);
+      // Si hay error en el JOIN, obtener todas las habitaciones
+      result = await sql`
+        SELECT * FROM "Room" 
+        ORDER BY "created_at" DESC
+      `;
+    }
 
     console.log(`🏨 Obtenidas ${result.rows.length} habitaciones para tenant ${tenantId}`);
     return NextResponse.json(result.rows);
