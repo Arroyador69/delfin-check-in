@@ -20,7 +20,7 @@ export async function POST() {
     `;
     
     // Insertar habitaciones de ejemplo si no existen
-    const existingRooms = await sql`SELECT COUNT(*) as count FROM rooms`;
+    const existingRooms = await sql`SELECT COUNT(*) as count FROM "Room"`;
     
     if (existingRooms.rows[0].count === '0') {
       console.log('🏠 Insertando habitaciones de ejemplo...');

@@ -30,7 +30,7 @@ interface Reservation {
 interface Room {
   id: string;
   name: string;
-  base_price: number;
+  basePrice: number;
 }
 
 export default function ReservationsPage() {
@@ -613,7 +613,7 @@ export default function ReservationsPage() {
                     <option value="">Seleccionar habitación</option>
                     {rooms.map(room => (
                       <option key={room.id} value={room.id}>
-                        {room.name} - €{room.base_price}/noche
+                        {room.name} - €{room.basePrice}/noche
                       </option>
                     ))}
                   </select>
@@ -890,7 +890,7 @@ export default function ReservationsPage() {
                     <option value="">Seleccionar habitación</option>
                     {rooms.map(room => (
                       <option key={room.id} value={room.id}>
-                        {room.name} - €{room.base_price}/noche
+                        {room.name} - €{room.basePrice}/noche
                       </option>
                     ))}
                   </select>

@@ -8,7 +8,7 @@ export async function GET() {
   try {
     // Leer tablas principales
     const [rooms, reservations, guests, guestRegs, msgTemplates] = await Promise.all([
-      sql`SELECT * FROM rooms`.catch(() => ({ rows: [] } as any)),
+      sql`SELECT * FROM "Room"`.catch(() => ({ rows: [] } as any)),
       sql`SELECT * FROM reservations`.catch(() => ({ rows: [] } as any)),
       sql`SELECT * FROM guests`.catch(() => ({ rows: [] } as any)),
       sql`SELECT * FROM guest_registrations`.catch(() => ({ rows: [] } as any)),

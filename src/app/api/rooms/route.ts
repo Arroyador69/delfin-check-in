@@ -14,10 +14,11 @@ export async function GET(req: NextRequest) {
     }
 
     // Obtener habitaciones filtradas por tenant_id
+    // Nota: En la base de datos actual, Room tiene lodgingId que corresponde al tenant_id
     const result = await sql`
-      SELECT * FROM rooms 
-      WHERE tenant_id = ${tenantId}
-      ORDER BY created_at DESC
+      SELECT * FROM "Room" 
+      WHERE "lodgingId" = ${tenantId}
+      ORDER BY "created_at" DESC
     `;
 
     console.log(`🏨 Obtenidas ${result.rows.length} habitaciones para tenant ${tenantId}`);
@@ -55,7 +56,7 @@ export async function POST(request: NextRequest) {
 
     // Verificar límites del plan
     const tenantResult = await sql`
-      SELECT max_rooms, (SELECT COUNT(*) FROM rooms WHERE tenant_id = ${tenantId}) as current_rooms
+      SELECT max_rooms, (SELECT COUNT(*) FROM "Room" WHERE "lodgingId" = ${tenantId}) as current_rooms
       FROM tenants 
       WHERE id = ${tenantId}
     `;
@@ -87,9 +88,9 @@ export async function POST(request: NextRequest) {
 
     // Insertar habitación en la base de datos con tenant_id
     const result = await sql`
-      INSERT INTO rooms (
-        id, name, description, capacity, base_price, 
-        ical_out_url, ical_in_booking_url, ical_in_airbnb_url, tenant_id
+      INSERT INTO "Room" (
+        id, name, description, capacity, "basePrice", 
+        "icalOutUrl", "icalInBookingUrl", "icalInAirbnbUrl", "lodgingId"
       ) VALUES (
         ${Date.now().toString()},
         ${body.name},
