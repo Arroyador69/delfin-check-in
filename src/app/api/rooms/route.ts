@@ -6,7 +6,10 @@ export async function GET(req: NextRequest) {
     // Obtener tenant_id del header (enviado por el middleware)
     const tenantId = req.headers.get('x-tenant-id');
     
+    console.log('🔍 DEBUG /api/rooms: tenant_id recibido:', tenantId);
+    
     if (!tenantId) {
+      console.log('❌ DEBUG /api/rooms: No se pudo identificar el tenant');
       return NextResponse.json(
         { error: 'No se pudo identificar el tenant' },
         { status: 400 }
@@ -43,7 +46,9 @@ export async function GET(req: NextRequest) {
       `;
     }
 
+    console.log(`🔍 DEBUG /api/rooms: Resultado final:`, result.rows);
     console.log(`🏨 Obtenidas ${result.rows.length} habitaciones para tenant ${tenantId}`);
+    
     return NextResponse.json(result.rows);
   } catch (error) {
     console.error('Error fetching rooms:', error);

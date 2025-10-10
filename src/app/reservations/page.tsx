@@ -110,14 +110,20 @@ export default function ReservationsPage() {
 
   const fetchRooms = async () => {
     try {
+      console.log('🔍 DEBUG: Iniciando fetchRooms...');
       const response = await fetch('/api/rooms');
       const data = await response.json();
       
+      console.log('🔍 DEBUG: Respuesta de /api/rooms:', response.status, data);
+      
       if (response.ok) {
+        console.log('🔍 DEBUG: Habitaciones obtenidas:', data);
         setRooms(data || []);
+      } else {
+        console.error('❌ DEBUG: Error en respuesta:', data);
       }
     } catch (error) {
-      console.error('Error fetching rooms:', error);
+      console.error('❌ DEBUG: Error fetching rooms:', error);
     }
   };
 
