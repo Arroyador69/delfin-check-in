@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
     // Insertar con UPSERTs simples cuando sea posible
     for (const r of rooms) {
       await sql`
-        INSERT INTO rooms (id, name, base_price, description, capacity, amenities)
+        INSERT INTO "Room" (id, name, "basePrice", description, capacity, amenities)
         VALUES (${r.id}, ${r.name}, ${r.base_price || 0}, ${r.description || ''}, ${r.capacity || 2}, ${r.amenities || []})
         ON CONFLICT (id) DO UPDATE SET
           name = EXCLUDED.name,

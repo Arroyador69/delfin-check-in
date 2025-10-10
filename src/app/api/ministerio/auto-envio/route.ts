@@ -70,7 +70,8 @@ export async function POST(req: NextRequest) {
             direccion: json.direccion || "Calle Ejemplo 123",
             codigoPostal: json.codigoPostal || "28001",
             pais: json.pais || "ESP",
-            codigoMunicipio: json.codigoMunicipio || "28079"
+            codigoMunicipio: json.codigoMunicipio || "28079",
+            nombreMunicipio: json.nombreMunicipio || ""
           }
         }]
       }]

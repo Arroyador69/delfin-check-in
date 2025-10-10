@@ -22,7 +22,7 @@ export async function GET() {
   try {
     // Ejecutar consultas de conteo en paralelo
     const [rooms, reservations, guests, guestRegs, msgTemplates] = await Promise.all([
-      sql`SELECT COUNT(1) AS c FROM rooms` .catch(() => ({ rows: [{ c: 0 }] } as any)),
+      sql`SELECT COUNT(1) AS c FROM "Room"` .catch(() => ({ rows: [{ c: 0 }] } as any)),
       sql`SELECT COUNT(1) AS c FROM reservations` .catch(() => ({ rows: [{ c: 0 }] } as any)),
       sql`SELECT COUNT(1) AS c FROM guests` .catch(() => ({ rows: [{ c: 0 }] } as any)),
       sql`SELECT COUNT(1) AS c FROM guest_registrations` .catch(() => ({ rows: [{ c: 0 }] } as any)),

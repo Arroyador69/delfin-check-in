@@ -26,9 +26,9 @@ export async function GET(req: NextRequest) {
       return NextResponse.json([]);
     }
     
-    // Verificar si la tabla rooms existe, si no, crearla
+    // Verificar si la tabla Room existe, si no, crearla
     try {
-      await sql`SELECT 1 FROM rooms LIMIT 1`;
+      await sql`SELECT 1 FROM "Room" LIMIT 1`;
     } catch (error) {
       console.log('🔧 Tabla rooms no existe, creándola...');
       await sql`
@@ -46,7 +46,7 @@ export async function GET(req: NextRequest) {
       
       // Insertar habitaciones de ejemplo
       await sql`
-        INSERT INTO rooms (id, name, base_price, description, capacity, amenities) VALUES
+        INSERT INTO "Room" (id, name, "basePrice", description, capacity, amenities) VALUES
         ('room-001', 'Habitación Doble Estándar', 80.00, 'Habitación doble con baño privado', 2, ARRAY['WiFi', 'TV', 'Aire acondicionado']),
         ('room-002', 'Habitación Individual', 60.00, 'Habitación individual con baño privado', 1, ARRAY['WiFi', 'TV', 'Aire acondicionado']),
         ('room-003', 'Suite Familiar', 120.00, 'Suite espaciosa para familias', 4, ARRAY['WiFi', 'TV', 'Aire acondicionado', 'Minibar', 'Balcón']),
@@ -147,9 +147,9 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // PRIMERO: Verificar si la tabla rooms existe, si no, crearla
+    // PRIMERO: Verificar si la tabla Room existe, si no, crearla
     try {
-      await sql`SELECT 1 FROM rooms LIMIT 1`;
+      await sql`SELECT 1 FROM "Room" LIMIT 1`;
       console.log('✅ Tabla rooms existe');
     } catch (error) {
       console.log('🔧 Tabla rooms no existe, creándola...');
@@ -168,7 +168,7 @@ export async function POST(request: NextRequest) {
       
       // Insertar habitaciones de ejemplo
       await sql`
-        INSERT INTO rooms (id, name, base_price, description, capacity, amenities) VALUES
+        INSERT INTO "Room" (id, name, "basePrice", description, capacity, amenities) VALUES
         ('room-001', 'Habitación Doble Estándar', 80.00, 'Habitación doble con baño privado', 2, ARRAY['WiFi', 'TV', 'Aire acondicionado']),
         ('room-002', 'Habitación Individual', 60.00, 'Habitación individual con baño privado', 1, ARRAY['WiFi', 'TV', 'Aire acondicionado']),
         ('room-003', 'Suite Familiar', 120.00, 'Suite espaciosa para familias', 4, ARRAY['WiFi', 'TV', 'Aire acondicionado', 'Minibar', 'Balcón']),

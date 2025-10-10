@@ -1,5 +1,5 @@
 -- Habitaciones
-CREATE TABLE rooms (
+CREATE TABLE "Room" (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   name VARCHAR(255) NOT NULL,
   ical_in_airbnb_url TEXT,
@@ -160,7 +160,7 @@ INSERT INTO messages (trigger, channel, template, language, is_active) VALUES
 ('post_checkout', 'email', 'Hola {{guest_name}},\n\n¡Gracias por tu estancia!\n\nEsperamos que hayas disfrutado de tu tiempo con nosotros.\n\nSi te ha gustado tu experiencia, nos harías muy felices con una reseña:\n{{review_link}}\n\n¡Hasta la próxima!\n\nSaludos,\nEl equipo de {{app_name}}', 'es', true);
 
 -- Habitaciones de ejemplo (para tus 6 habitaciones)
-INSERT INTO rooms (name, base_price) VALUES
+INSERT INTO "Room" (name, "basePrice") VALUES
 ('Habitación 1', 80.00),
 ('Habitación 2', 85.00),
 ('Habitación 3', 90.00),
