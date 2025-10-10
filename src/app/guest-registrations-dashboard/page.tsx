@@ -1114,6 +1114,81 @@ export default function GuestRegistrationsDashboard() {
                   })()}
                 </div>
               </div>
+
+              {/* Status del envío al MIR */}
+              <div className="mb-6">
+                <h4 className="font-semibold text-gray-900 mb-3">Estado del Envío al MIR</h4>
+                <div className="bg-gray-50 border rounded-lg p-4">
+                  {(() => {
+                    const mirStatus = selectedRegistration?.data?.mir_status || {};
+                    const hasMirData = mirStatus.lote || mirStatus.error || mirStatus.codigoComunicacion;
+                    
+                    if (!hasMirData) {
+                      return (
+                        <div className="flex items-center text-gray-600">
+                          <div className="w-3 h-3 bg-gray-400 rounded-full mr-3"></div>
+                          <span>No se ha enviado al MIR</span>
+                        </div>
+                      );
+                    }
+
+                    if (mirStatus.error) {
+                      return (
+                        <div className="flex items-center text-red-600">
+                          <div className="w-3 h-3 bg-red-500 rounded-full mr-3"></div>
+                          <div>
+                            <span className="font-medium">Error en el envío</span>
+                            <p className="text-sm text-red-500 mt-1">{mirStatus.error}</p>
+                            {mirStatus.lote && (
+                              <p className="text-xs text-gray-500 mt-1">Lote: {mirStatus.lote}</p>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    if (mirStatus.codigoComunicacion) {
+                      return (
+                        <div className="flex items-center text-green-600">
+                          <div className="w-3 h-3 bg-green-500 rounded-full mr-3"></div>
+                          <div>
+                            <span className="font-medium">Enviado correctamente</span>
+                            <p className="text-sm text-green-600 mt-1">Código: {mirStatus.codigoComunicacion}</p>
+                            {mirStatus.lote && (
+                              <p className="text-xs text-gray-500 mt-1">Lote: {mirStatus.lote}</p>
+                            )}
+                            {mirStatus.fechaEnvio && (
+                              <p className="text-xs text-gray-500 mt-1">Enviado: {new Date(mirStatus.fechaEnvio).toLocaleString('es-ES')}</p>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    if (mirStatus.lote) {
+                      return (
+                        <div className="flex items-center text-yellow-600">
+                          <div className="w-3 h-3 bg-yellow-500 rounded-full mr-3"></div>
+                          <div>
+                            <span className="font-medium">Enviado - Pendiente de confirmación</span>
+                            <p className="text-sm text-yellow-600 mt-1">Lote: {mirStatus.lote}</p>
+                            {mirStatus.fechaEnvio && (
+                              <p className="text-xs text-gray-500 mt-1">Enviado: {new Date(mirStatus.fechaEnvio).toLocaleString('es-ES')}</p>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div className="flex items-center text-gray-600">
+                        <div className="w-3 h-3 bg-gray-400 rounded-full mr-3"></div>
+                        <span>Estado desconocido</span>
+                      </div>
+                    );
+                  })()}
+                </div>
+              </div>
             </div>
             <div className="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
               <button

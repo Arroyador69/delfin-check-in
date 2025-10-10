@@ -227,14 +227,69 @@ export async function POST(req: NextRequest) {
       if (responseMIR.ok) {
         resultadoMIR = await responseMIR.json();
         console.log('✅ Auto-envío al MIR exitoso:', resultadoMIR);
+        
+        // Actualizar el registro con el estado del MIR
+        const updatedData = {
+          ...dataWithDefaults,
+          mir_status: {
+            lote: resultadoMIR.lote || null,
+            codigoComunicacion: resultadoMIR.codigoComunicacion || null,
+            fechaEnvio: new Date().toISOString(),
+            estado: 'enviado'
+          }
+        };
+        
+        await sql`
+          UPDATE guest_registrations 
+          SET data = ${JSON.stringify(updatedData)}::jsonb
+          WHERE id = ${id}
+        `;
+        
+        console.log('✅ Estado MIR guardado en el registro');
       } else {
         const errorMIR = await responseMIR.json();
         console.error('❌ Error en auto-envío al MIR:', errorMIR);
         resultadoMIR = { error: errorMIR.message || 'Error desconocido' };
+        
+        // Actualizar el registro con el error del MIR
+        const updatedData = {
+          ...dataWithDefaults,
+          mir_status: {
+            error: errorMIR.message || 'Error desconocido',
+            fechaEnvio: new Date().toISOString(),
+            estado: 'error'
+          }
+        };
+        
+        await sql`
+          UPDATE guest_registrations 
+          SET data = ${JSON.stringify(updatedData)}::jsonb
+          WHERE id = ${id}
+        `;
+        
+        console.log('✅ Error MIR guardado en el registro');
       }
     } catch (errorMIR) {
       console.error('❌ Error en auto-envío al MIR:', errorMIR);
       resultadoMIR = { error: errorMIR instanceof Error ? errorMIR.message : 'Error desconocido' };
+      
+      // Actualizar el registro con el error del MIR
+      const updatedData = {
+        ...dataWithDefaults,
+        mir_status: {
+          error: errorMIR instanceof Error ? errorMIR.message : 'Error desconocido',
+          fechaEnvio: new Date().toISOString(),
+          estado: 'error'
+        }
+      };
+      
+      await sql`
+        UPDATE guest_registrations 
+        SET data = ${JSON.stringify(updatedData)}::jsonb
+        WHERE id = ${id}
+      `;
+      
+      console.log('✅ Error MIR guardado en el registro');
     }
 
     return NextResponse.json({ 
