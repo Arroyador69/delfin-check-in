@@ -31,6 +31,7 @@ const arrayBuffer = await req.arrayBuffer()
 function mapPaymentPlanToPlanId(amount: number): 'basic' | 'standard' | 'premium' | 'enterprise' {
   // Mapear montos a planes (en céntimos)
   if (amount <= 1499) return 'basic';      // €14.99 (1 propiedad)
+  if (amount <= 14990 && amount > 1499) return 'basic_yearly'; // €149.90 (1 propiedad anual)
   if (amount <= 2698) return 'standard';   // €26.98 (2 propiedades)  
   if (amount <= 5096) return 'premium';    // €50.96 (4 propiedades)
   return 'enterprise';                     // €149+

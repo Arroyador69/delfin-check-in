@@ -8,6 +8,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
 
 const PLAN_PRICES: Record<string, { amount: number; max_rooms: number }> = {
   basic: { amount: 1499, max_rooms: 1 },        // 14.99€ por 1 propiedad
+  basic_yearly: { amount: 14990, max_rooms: 1 }, // 149.90€ por 1 propiedad (anual)
   standard: { amount: 2698, max_rooms: 2 },     // 26.98€ por 2 propiedades (13.49€ cada una)
   premium: { amount: 5096, max_rooms: 4 },      // 50.96€ por 4 propiedades (12.74€ cada una)
   enterprise: { amount: 11240, max_rooms: 10 }  // 112.40€ por 10+ propiedades (11.24€ cada una)
