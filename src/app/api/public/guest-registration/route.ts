@@ -210,7 +210,8 @@ export async function POST(req: NextRequest) {
           direccion: persona.direccion.direccion,
           codigoPostal: persona.direccion.codigoPostal,
           pais: persona.direccion.pais,
-          codigoMunicipio: persona.direccion.codigoMunicipio || '28079'
+          codigoMunicipio: persona.direccion.codigoMunicipio || '28079',
+          nombreMunicipio: persona.direccion.nombreMunicipio || ''
         }))
       };
 
