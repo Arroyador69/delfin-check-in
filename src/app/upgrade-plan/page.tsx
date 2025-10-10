@@ -407,8 +407,7 @@ function UpgradeContent() {
                 </button>
                 <p className="text-xs text-gray-500 mt-4 text-center">Descuentos automáticos según volumen.</p>
               </div>
-              </div>
-            </>
+            </div>
           ) : (
             /* Checkout Form */
             <div className="max-w-2xl mx-auto">
