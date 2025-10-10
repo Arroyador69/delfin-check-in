@@ -33,39 +33,33 @@ interface BillingInfo {
   }>;
 }
 
+type PlanId = 'basic' | 'basic_yearly' | 'standard' | 'premium' | 'enterprise';
+
 const PLANS = [
   {
     id: 'basic',
-    name: 'Básico',
-    price: 29,
-    rooms: 2,
-    features: ['2 Habitaciones', 'Dashboard básico', 'Soporte por email'],
+    name: 'Plan mensual',
+    price: 14.99,
+    rooms: 1,
+    features: ['Gestión manual de reservas', 'Check-in online', 'Gestión de habitaciones', 'Registro de viajeros', 'Soporte por email'],
     color: 'blue'
   },
   {
-    id: 'standard',
-    name: 'Estándar',
-    price: 49,
-    rooms: 4,
-    features: ['4 Habitaciones', 'Dashboard completo', 'Soporte prioritario', 'Integraciones básicas'],
-    color: 'purple',
+    id: 'basic_yearly',
+    name: 'Plan anual',
+    price: 149.90,
+    rooms: 1,
+    features: ['Todo lo del mensual', 'Descuento 16,7% por pago anual', 'Soporte prioritario', 'Onboarding asistido', 'Equivale a 12,49€/mes'],
+    color: 'blue',
     popular: true
   },
   {
-    id: 'premium',
-    name: 'Premium',
-    price: 79,
-    rooms: 6,
-    features: ['6 Habitaciones', 'Dashboard avanzado', 'Soporte 24/7', 'Todas las integraciones', 'Reportes personalizados'],
+    id: 'standard',
+    name: 'Descuentos por volumen',
+    price: 26.98,
+    rooms: 2,
+    features: ['2 propiedades: 13,49€ cada una', '4 propiedades: 12,74€ cada una', '5-9 propiedades: 11,99€ cada una', '10+ propiedades: 11,24€ cada una'],
     color: 'green'
-  },
-  {
-    id: 'enterprise',
-    name: 'Enterprise',
-    price: 149,
-    rooms: -1,
-    features: ['Habitaciones ilimitadas', 'Dashboard personalizado', 'Soporte dedicado', 'API completa', 'Onboarding personalizado'],
-    color: 'orange'
   }
 ];
 
@@ -294,69 +288,85 @@ export default function BillingPage() {
           <TrendingUp className="w-6 h-6 text-blue-600" />
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {PLANS.map((plan) => {
-            const isCurrent = plan.id === billingInfo.tenant.plan_id;
-            const isUpgrade = plan.price > currentPlan.price;
-            const isDowngrade = plan.price < currentPlan.price;
+        <div className="grid md:grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Card 1: Plan mensual */}
+          <div className={`relative flex flex-col p-6 bg-white rounded-lg shadow-lg transition-all duration-300 ${billingInfo.tenant.plan_id === 'basic' ? 'border-4 border-blue-500' : 'border border-gray-200'} hover:shadow-xl hover:scale-[1.02]`}>
+            <h2 className="text-2xl font-bold text-gray-900 text-center mb-2">Plan mensual</h2>
+            <div className="text-center mb-6">
+              <div className="text-4xl font-bold text-gray-900 mb-1">14,99€</div>
+              <p className="text-sm text-gray-500">/ propiedad / mes</p>
+            </div>
+            <ul className="flex-grow space-y-3 mb-8">
+              <li className="flex items-center text-gray-700"><CheckCircle className="w-5 h-5 text-green-500 mr-2 flex-shrink-0" /><span>Gestión manual de reservas</span></li>
+              <li className="flex items-center text-gray-700"><CheckCircle className="w-5 h-5 text-green-500 mr-2 flex-shrink-0" /><span>Check-in online</span></li>
+              <li className="flex items-center text-gray-700"><CheckCircle className="w-5 h-5 text-green-500 mr-2 flex-shrink-0" /><span>Gestión de habitaciones</span></li>
+              <li className="flex items-center text-gray-700"><CheckCircle className="w-5 h-5 text-green-500 mr-2 flex-shrink-0" /><span>Registro de viajeros</span></li>
+              <li className="flex items-center text-gray-700"><CheckCircle className="w-5 h-5 text-green-500 mr-2 flex-shrink-0" /><span>Soporte por email</span></li>
+            </ul>
+            {billingInfo.tenant.plan_id === 'basic' ? (
+              <button disabled className="w-full py-3 rounded-md text-lg font-semibold transition-colors duration-200 bg-gray-300 text-gray-700 cursor-not-allowed">
+                Plan actual
+              </button>
+            ) : (
+              <Link href="/upgrade-plan?plan=basic" className="w-full py-3 rounded-md text-lg font-semibold transition-colors duration-200 bg-blue-600 text-white hover:bg-blue-700 text-center block">
+                Contratar
+              </Link>
+            )}
+            <p className="text-xs text-gray-500 mt-4 text-center">Sin permanencia. Cancela cuando quieras.</p>
+          </div>
 
-            return (
-              <div
-                key={plan.id}
-                className={`p-4 rounded-lg border-2 ${
-                  isCurrent 
-                    ? 'border-blue-500 bg-blue-50' 
-                    : 'border-gray-200 bg-white hover:border-blue-300'
-                } transition-colors relative`}
-              >
-                {plan.popular && !isCurrent && (
-                  <div className="absolute top-0 right-0 bg-purple-600 text-white text-xs px-2 py-1 rounded-bl-lg rounded-tr-lg">
-                    Popular
-                  </div>
-                )}
-                
-                <div className="text-center mb-4">
-                  <h3 className="font-bold text-gray-900 mb-1">{plan.name}</h3>
-                  <div className="text-2xl font-bold text-gray-900">
-                    {formatCurrency(plan.price)}
-                  </div>
-                  <p className="text-xs text-gray-500">por mes</p>
-                </div>
+          {/* Card 2: Plan anual - RECOMENDADO */}
+          <div className={`relative flex flex-col p-6 bg-white rounded-lg shadow-lg transition-all duration-300 ${billingInfo.tenant.plan_id === 'basic_yearly' ? 'border-4 border-blue-500' : 'border border-gray-200'} hover:shadow-xl hover:scale-[1.02]`}>
+            <span className="absolute top-0 right-0 bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-lg">Recomendado</span>
+            <h2 className="text-2xl font-bold text-gray-900 text-center mb-2">Plan anual</h2>
+            <div className="text-center mb-6">
+              <div className="text-4xl font-bold text-gray-900 mb-1">149,90€</div>
+              <p className="text-sm text-gray-500">/ propiedad / año</p>
+            </div>
+            <ul className="flex-grow space-y-3 mb-8">
+              <li className="flex items-center text-gray-700"><CheckCircle className="w-5 h-5 text-green-500 mr-2 flex-shrink-0" /><span>Todo lo del mensual</span></li>
+              <li className="flex items-center text-gray-700"><CheckCircle className="w-5 h-5 text-green-500 mr-2 flex-shrink-0" /><span>Descuento 16,7% por pago anual</span></li>
+              <li className="flex items-center text-gray-700"><CheckCircle className="w-5 h-5 text-green-500 mr-2 flex-shrink-0" /><span>Soporte prioritario</span></li>
+              <li className="flex items-center text-gray-700"><CheckCircle className="w-5 h-5 text-green-500 mr-2 flex-shrink-0" /><span>Onboarding asistido</span></li>
+              <li className="flex items-center text-gray-700"><CheckCircle className="w-5 h-5 text-green-500 mr-2 flex-shrink-0" /><span>Equivale a 12,49€/mes</span></li>
+            </ul>
+            {billingInfo.tenant.plan_id === 'basic_yearly' ? (
+              <button disabled className="w-full py-3 rounded-md text-lg font-semibold transition-colors duration-200 bg-gray-300 text-gray-700 cursor-not-allowed">
+                Plan actual
+              </button>
+            ) : (
+              <Link href="/upgrade-plan?plan=basic_yearly" className="w-full py-3 rounded-md text-lg font-semibold transition-colors duration-200 bg-blue-600 text-white hover:bg-blue-700 text-center block">
+                Contratar
+              </Link>
+            )}
+            <p className="text-xs text-gray-500 mt-4 text-center">Ahorra 29,90€ al año por propiedad.</p>
+          </div>
 
-                <ul className="space-y-1 mb-4">
-                  <li className="text-sm text-gray-700">
-                    • {plan.rooms === -1 ? '∞' : plan.rooms} habitaciones
-                  </li>
-                  <li className="text-sm text-gray-700">
-                    • {plan.features[1]}
-                  </li>
-                  <li className="text-sm text-gray-700">
-                    • {plan.features[2]}
-                  </li>
-                </ul>
-
-                {isCurrent ? (
-                  <button
-                    disabled
-                    className="w-full py-2 bg-blue-600 text-white rounded-lg font-medium opacity-50 cursor-not-allowed"
-                  >
-                    Plan actual
-                  </button>
-                ) : (
-                  <Link
-                    href={`/upgrade-plan?plan=${plan.id}&action=${isUpgrade ? 'upgrade' : 'downgrade'}`}
-                    className={`block w-full py-2 text-center rounded-lg font-medium transition-colors ${
-                      isUpgrade
-                        ? 'bg-green-600 text-white hover:bg-green-700'
-                        : 'bg-gray-600 text-white hover:bg-gray-700'
-                    }`}
-                  >
-                    {isUpgrade ? 'Upgrade' : 'Cambiar'}
-                  </Link>
-                )}
-              </div>
-            );
-          })}
+          {/* Card 3: Descuentos por volumen */}
+          <div className={`relative flex flex-col p-6 bg-white rounded-lg shadow-lg transition-all duration-300 ${['standard', 'premium', 'enterprise'].includes(billingInfo.tenant.plan_id) ? 'border-4 border-blue-500' : 'border border-gray-200'} hover:shadow-xl hover:scale-[1.02]`}>
+            <h2 className="text-2xl font-bold text-gray-900 text-center mb-2">Descuentos por volumen</h2>
+            <div className="text-center mb-6">
+              <div className="text-4xl font-bold text-gray-900 mb-1">Hasta 25%</div>
+              <p className="text-sm text-gray-500">descuento</p>
+              <p className="text-lg font-semibold text-gray-700 mt-2">Desde 2 propiedades <span className="text-xs text-gray-500">(mejor precio)</span></p>
+            </div>
+            <ul className="flex-grow space-y-3 mb-8">
+              <li className="flex items-center text-gray-700"><CheckCircle className="w-5 h-5 text-green-500 mr-2 flex-shrink-0" /><span>2 propiedades: 13,49€ cada una</span></li>
+              <li className="flex items-center text-gray-700"><CheckCircle className="w-5 h-5 text-green-500 mr-2 flex-shrink-0" /><span>4 propiedades: 12,74€ cada una</span></li>
+              <li className="flex items-center text-gray-700"><CheckCircle className="w-5 h-5 text-green-500 mr-2 flex-shrink-0" /><span>5-9 propiedades: 11,99€ cada una</span></li>
+              <li className="flex items-center text-gray-700"><CheckCircle className="w-5 h-5 text-green-500 mr-2 flex-shrink-0" /><span>10+ propiedades: 11,24€ cada una</span></li>
+            </ul>
+            {['standard', 'premium', 'enterprise'].includes(billingInfo.tenant.plan_id) ? (
+              <button disabled className="w-full py-3 rounded-md text-lg font-semibold transition-colors duration-200 bg-gray-300 text-gray-700 cursor-not-allowed">
+                Plan actual
+              </button>
+            ) : (
+              <Link href="/upgrade-plan?plan=standard" className="w-full py-3 rounded-md text-lg font-semibold transition-colors duration-200 bg-blue-600 text-white hover:bg-blue-700 text-center block">
+                Contratar
+              </Link>
+            )}
+            <p className="text-xs text-gray-500 mt-4 text-center">Descuentos automáticos según volumen.</p>
+          </div>
         </div>
       </div>
 
