@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ArrowLeft, Check, Crown, Zap, Shield, TrendingUp, Loader2, CreditCard } from 'lucide-react';
+import { ArrowLeft, Check, CheckCircle, Crown, Zap, Shield, TrendingUp, Loader2, CreditCard } from 'lucide-react';
 import Link from 'next/link';
 import AdminLayout from '@/components/AdminLayout';
 import { loadStripe } from '@stripe/stripe-js';
