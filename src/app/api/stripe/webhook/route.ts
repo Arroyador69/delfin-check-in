@@ -30,9 +30,9 @@ const arrayBuffer = await req.arrayBuffer()
  */
 function mapPaymentPlanToPlanId(amount: number): 'basic' | 'standard' | 'premium' | 'enterprise' {
   // Mapear montos a planes (en céntimos)
-  if (amount <= 2900) return 'basic';      // €29
-  if (amount <= 4900) return 'standard';   // €49  
-  if (amount <= 7900) return 'premium';    // €79
+  if (amount <= 1499) return 'basic';      // €14.99 (1 propiedad)
+  if (amount <= 2698) return 'standard';   // €26.98 (2 propiedades)  
+  if (amount <= 5096) return 'premium';    // €50.96 (4 propiedades)
   return 'enterprise';                     // €149+
 }
 

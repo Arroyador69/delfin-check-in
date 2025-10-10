@@ -31,12 +31,12 @@ const PLANS: Plan[] = [
     id: 'basic',
     name: 'Plan Básico',
     description: 'Perfecto para pequeños alojamientos',
-    price: 29,
-    maxRooms: 2,
+    price: 14.99,
+    maxRooms: 1,
     color: 'blue',
     icon: Shield,
     features: [
-      'Hasta 2 habitaciones',
+      '1 propiedad',
       'Dashboard completo',
       'Registro MIR automático',
       'Integraciones de calendario',
@@ -47,13 +47,31 @@ const PLANS: Plan[] = [
     id: 'standard',
     name: 'Plan Estándar',
     description: 'Ideal para alojamientos medianos',
-    price: 49,
-    maxRooms: 4,
+    price: 26.98,
+    maxRooms: 2,
     color: 'green',
     icon: Zap,
     popular: true,
     features: [
-      'Hasta 4 habitaciones',
+      '2 propiedades (13,49€ cada una)',
+      '10% descuento por volumen',
+      'Dashboard completo',
+      'Registro MIR automático',
+      'Integraciones de calendario',
+      'Soporte prioritario'
+    ]
+  },
+  {
+    id: 'premium',
+    name: 'Plan Premium',
+    description: 'Para alojamientos grandes',
+    price: 50.96,
+    maxRooms: 4,
+    color: 'purple',
+    icon: TrendingUp,
+    features: [
+      '4 propiedades (12,74€ cada una)',
+      '15% descuento por volumen',
       'Dashboard completo',
       'Registro MIR automático',
       'Integraciones de calendario',
@@ -62,39 +80,20 @@ const PLANS: Plan[] = [
     ]
   },
   {
-    id: 'premium',
-    name: 'Plan Premium',
-    description: 'Para alojamientos grandes',
-    price: 79,
-    maxRooms: 6,
-    color: 'purple',
-    icon: TrendingUp,
-    features: [
-      'Hasta 6 habitaciones',
-      'Dashboard completo',
-      'Registro MIR automático',
-      'Integraciones de calendario',
-      'Soporte prioritario',
-      'Backup automático',
-      'Análisis avanzados',
-      'API personalizada'
-    ]
-  },
-  {
     id: 'enterprise',
     name: 'Plan Empresarial',
     description: 'Para cadenas hoteleras',
-    price: 149,
-    maxRooms: -1,
+    price: 112.40,
+    maxRooms: 10,
     color: 'gold',
     icon: Crown,
     features: [
-      'Habitaciones ilimitadas',
+      '10+ propiedades (11,24€ cada una)',
+      '25% descuento por volumen',
       'Todo lo anterior',
       'Soporte 24/7',
       'Gestión multi-propiedad',
-      'Soporte telefónico',
-      'Consultoría personalizada'
+      'Soporte telefónico'
     ]
   }
 ];
@@ -372,7 +371,12 @@ function UpgradeContent() {
                       <div className="text-4xl font-bold text-gray-900 mb-1">
                         €{plan.price}
                       </div>
-                      <p className="text-sm text-gray-500">por mes</p>
+                      <p className="text-sm text-gray-500">
+                        {plan.id === 'basic' ? 'por propiedad/mes' : 
+                         plan.id === 'standard' ? 'por 2 propiedades/mes' :
+                         plan.id === 'premium' ? 'por 4 propiedades/mes' :
+                         'por 10+ propiedades/mes'}
+                      </p>
                     </div>
 
                     <ul className="space-y-3 mb-6">
