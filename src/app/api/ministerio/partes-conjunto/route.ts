@@ -92,8 +92,11 @@ function validateParte(parte: any): string[] {
       if (esEspana && !/^\d{5}$/.test(p.direccion.codigoMunicipio || '')) {
         errs.push(`persona[${i}].codigoMunicipio debe ser INE de 5 dígitos para España`);
       }
-      if (!esEspana && !p.direccion.nombreMunicipio) {
-        errs.push(`persona[${i}].nombreMunicipio requerido para países no españoles`);
+      // Para países no españoles, intentar usar nombreMunicipio si está disponible
+      // Si no está disponible, usar un valor por defecto para datos existentes
+      if (!esEspana && !p.direccion.nombreMunicipio && !p.direccion.codigoMunicipio) {
+        // Solo requerir si no hay ningún campo de municipio
+        errs.push(`persona[${i}].nombreMunicipio requerido para países no españoles (o codigoMunicipio como alternativa)`);
       }
     }
     
@@ -161,8 +164,10 @@ function personaToXML(p: z.infer<typeof PersonaSchema>) {
 
   if (p.direccion.pais === 'ESP' && p.direccion.codigoMunicipio) {
     persona.direccion.codigoMunicipio = p.direccion.codigoMunicipio;
-  } else if (p.direccion.pais !== 'ESP' && p.direccion.nombreMunicipio) {
-    persona.direccion.nombreMunicipio = p.direccion.nombreMunicipio;
+  } else if (p.direccion.pais !== 'ESP') {
+    // Para países no españoles, usar nombreMunicipio si está disponible, 
+    // o un valor por defecto para datos existentes
+    persona.direccion.nombreMunicipio = p.direccion.nombreMunicipio || 'N/A';
   }
 
   // Contacto - al menos uno obligatorio
