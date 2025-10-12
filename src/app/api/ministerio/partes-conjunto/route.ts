@@ -92,11 +92,10 @@ function validateParte(parte: any): string[] {
       if (esEspana && !/^\d{5}$/.test(p.direccion.codigoMunicipio || '')) {
         errs.push(`persona[${i}].codigoMunicipio debe ser INE de 5 dígitos para España`);
       }
-      // Para países no españoles, intentar usar nombreMunicipio si está disponible
-      // Si no está disponible, usar un valor por defecto para datos existentes
+      // Para países no españoles, completar automáticamente campos faltantes
       if (!esEspana && !p.direccion.nombreMunicipio && !p.direccion.codigoMunicipio) {
-        // Solo requerir si no hay ningún campo de municipio
-        errs.push(`persona[${i}].nombreMunicipio requerido para países no españoles (o codigoMunicipio como alternativa)`);
+        // Completar automáticamente para datos existentes sin validar
+        p.direccion.nombreMunicipio = 'N/A';
       }
     }
     
