@@ -65,7 +65,7 @@ export async function GET(req: NextRequest) {
                 direccion: {
                   direccion: "Calle Mayor 123",
                   codigoPostal: "28001",
-                  pais: "ES",
+                  pais: "ESP",
                   codigoMunicipio: "28079",
                   nombreMunicipio: "Madrid"
                 }

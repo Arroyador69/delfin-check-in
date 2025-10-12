@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
             direccion: {
               direccion: "calle orejas 34",
               codigoPostal: "29640",
-              pais: "ES",
+              pais: "ESP",
               codigoMunicipio: "29042"
             }
           }]

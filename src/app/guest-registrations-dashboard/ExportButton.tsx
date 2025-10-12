@@ -121,6 +121,18 @@ function extractDatesFromRegistration(registration: any) {
 }
 
 // Función para normalizar datos antes del envío
+// Función para normalizar códigos de país a ISO 3166-1 Alpha-3
+function normalizeToAlpha3(countryCode?: string): string {
+  const code = String(countryCode || '').toUpperCase();
+  const map: Record<string, string> = { 
+    'ES': 'ESP', 'FR': 'FRA', 'GB': 'GBR', 'IT': 'ITA', 'DE': 'DEU',
+    'PT': 'PRT', 'NL': 'NLD', 'BE': 'BEL', 'CH': 'CHE', 'AT': 'AUT',
+    'SPAIN': 'ESP', 'FRANCE': 'FRA', 'UNITED KINGDOM': 'GBR', 'ITALY': 'ITA', 'GERMANY': 'DEU',
+    'PORTUGAL': 'PRT', 'NETHERLANDS': 'NLD', 'BELGIUM': 'BEL', 'SWITZERLAND': 'CHE', 'AUSTRIA': 'AUT'
+  };
+  return code.length === 3 ? code : (map[code] || code);
+}
+
 export function normalizeData(rawData: any) {
   console.log('🔄 Normalizando datos para MIR:', JSON.stringify(rawData, null, 2));
   
@@ -165,7 +177,7 @@ export function normalizeData(rawData: any) {
         numeroDocumento: persona.numeroDocumento || persona.documento || persona.numero_documento,
         soporteDocumento: persona.soporteDocumento || persona.soporte_documento,
         fechaNacimiento: persona.fechaNacimiento || persona.fecha_nacimiento || '',
-        nacionalidad: persona.nacionalidad,
+        nacionalidad: normalizeToAlpha3(persona.nacionalidad),
         sexo: persona.sexo,
         // Asegurar que al menos un contacto esté presente
         // Manejar estructura de contacto anidado
@@ -176,17 +188,17 @@ export function normalizeData(rawData: any) {
           direccion: persona.direccion?.direccion || persona.direccion || '',
           direccionComplementaria: persona.direccion?.direccionComplementaria || persona.direccion_complementaria,
           codigoPostal: persona.direccion?.codigoPostal || persona.codigo_postal || '',
-          // País: si hay nacionalidad extranjera, forzar país = nacionalidad
+          // País: normalizar a ISO 3166-1 Alpha-3
           pais: (() => {
-            const nat = (persona.nacionalidad || '').toUpperCase();
-            const candidate = (persona.direccion?.pais || persona.pais || '').toUpperCase();
+            const nat = normalizeToAlpha3(persona.nacionalidad);
+            const candidate = normalizeToAlpha3(persona.direccion?.pais || persona.pais);
             if (nat && nat !== 'ESP') return nat;
             return candidate || 'ESP';
           })(),
           // INE solo si el país final es España
           codigoMunicipio: (() => {
-            const nat = (persona.nacionalidad || '').toUpperCase();
-            const candidatePais = (persona.direccion?.pais || persona.pais || '').toUpperCase();
+            const nat = normalizeToAlpha3(persona.nacionalidad);
+            const candidatePais = normalizeToAlpha3(persona.direccion?.pais || persona.pais);
             const finalPais = (nat && nat !== 'ESP') ? nat : (candidatePais || 'ESP');
             if (finalPais !== 'ESP') return undefined;
             return persona.direccion?.codigoMunicipio || persona.codigo_municipio;
