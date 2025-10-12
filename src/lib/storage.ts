@@ -119,7 +119,7 @@ export interface GuestRegistration {
   birth_date: string;
   birth_place: string;
   nationality: string;
-  document_type: 'dni' | 'passport' | 'nie' | 'other';
+  document_type: 'dni' | 'pas' | 'nie' | 'otro';
   document_number: string;
   document_issuing_country: string;
   document_expiry_date: string;

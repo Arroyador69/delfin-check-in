@@ -166,6 +166,23 @@ function formatDateTime(dateStr: string): string {
   return `${dateStr}T00:00:00`;
 }
 
+// Función para normalizar códigos de documento según especificación MIR (máx 5 caracteres)
+function normalizeDocumentType(docType: string): string {
+  const type = String(docType || '').toUpperCase();
+  
+  if (type.includes('PASSPORT') || type.includes('PASAPORTE') || type.includes('PAS')) {
+    return 'PAS';
+  }
+  if (type.includes('NIF') || type.includes('DNI')) {
+    return 'NIF';
+  }
+  if (type.includes('NIE')) {
+    return 'NIE';
+  }
+  
+  return 'OTRO';
+}
+
 // Función para construir XML manualmente (sin dependencias externas)
 function buildXML(data: z.infer<typeof PayloadSchema>): string {
   const esc = (s: any) => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -222,7 +239,7 @@ function buildXML(data: z.infer<typeof PayloadSchema>): string {
         xml += `        <apellido2>${esc(persona.apellido2)}</apellido2>\n`;
       }
       if (persona.tipoDocumento) {
-        xml += `        <tipoDocumento>${esc(persona.tipoDocumento)}</tipoDocumento>\n`;
+        xml += `        <tipoDocumento>${esc(normalizeDocumentType(persona.tipoDocumento))}</tipoDocumento>\n`;
       }
       if (persona.numeroDocumento) {
         xml += `        <numeroDocumento>${esc(persona.numeroDocumento)}</numeroDocumento>\n`;
@@ -362,8 +379,14 @@ function normalizePayload(data: any): any {
       // Sanitizar personas/dirección
       if (Array.isArray(com.personas)) {
         com.personas.forEach((p: any, i: number) => {
+          // Normalizar tipo de documento según especificación MIR
+          if (p.tipoDocumento) {
+            p.tipoDocumento = normalizeDocumentType(p.tipoDocumento);
+            cambiosRealizados = true;
+          }
+          
           // Si documento es pasaporte y nacionalidad no es española, forzar país = nacionalidad
-          const esPasaporte = String(p?.tipoDocumento || '').toUpperCase().includes('PASAP');
+          const esPasaporte = String(p?.tipoDocumento || '').toUpperCase().includes('PAS');
           const n = normalizeCountryString(p?.nacionalidad);
           const esNacionalidadEsp = isSpain(n);
           p.direccion = p.direccion && typeof p.direccion === 'object' ? p.direccion : {};

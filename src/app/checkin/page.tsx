@@ -349,9 +349,9 @@ export default function CheckinPage() {
                                   required
                                 >
                                   <option value="dni">DNI</option>
-                                  <option value="passport">Pasaporte</option>
+                                  <option value="pas">Pasaporte</option>
                                   <option value="nie">NIE</option>
-                                  <option value="other">Otro</option>
+                                  <option value="otro">Otro</option>
                                 </select>
                               </div>
                               
