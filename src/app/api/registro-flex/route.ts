@@ -316,7 +316,7 @@ export async function POST(req: NextRequest) {
       }
       
       // Validación condicional de INE: solo para españoles
-      const esEspana = v.paisResidencia === 'ES';
+      const esEspana = v.paisResidencia === 'ESP';
       console.log(`🔬 DEBUG VALIDACIÓN - Es España:`, esEspana);
       
       if (esEspana) {
@@ -384,7 +384,7 @@ export async function POST(req: NextRequest) {
       tipoDocumento: v.tipoDocumento,
       numeroDocumento: v.numeroDocumento,
       fechaNacimiento: v.fechaNacimiento,
-      nacionalidad: v.nacionalidadISO2,
+      nacionalidad: normalizeToAlpha3(v.nacionalidadISO2),
       sexo: v.sexo,
       telefono: v.telefono,
       telefono2: '', // Campo adicional vacío
@@ -392,7 +392,7 @@ export async function POST(req: NextRequest) {
       direccion: {
         direccion: v.direccion,
         codigoPostal: v.cp,
-        pais: v.paisResidencia,
+        pais: normalizeToAlpha3(v.paisResidencia),
         codigoMunicipio: v.ine,
         nombreMunicipio: v.nombreMunicipio || '' // Añadir campo nombreMunicipio
       }
