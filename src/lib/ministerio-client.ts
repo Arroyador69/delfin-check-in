@@ -69,7 +69,9 @@ function buildSoapEnvelopeComunicacionA(cfg: MinisterioConfig, solicitudZipB64: 
     </cabecera>`;
   const solicitud = `
     <solicitud>${solicitudZipB64}</solicitud>`;
-  return wrapSoapEnvelope(`<peticion>${cabecera}${solicitud}</peticion>`);
+  
+  // Agregar namespace al elemento peticion según la especificación MIR
+  return wrapSoapEnvelope(`<peticion xmlns="http://www.mir.es/hospedajes-web/ws/v1">${cabecera}${solicitud}</peticion>`);
 }
 
 function buildSoapEnvelopeConsultaLote(cfg: MinisterioConfig, lotes: string[]): string {
