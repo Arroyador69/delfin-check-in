@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { MinisterioClient } from '@/lib/ministerio-client';
+import { MinisterioClientVercel } from '@/lib/ministerio-client-vercel';
 
 /**
  * Test de conexión al MIR
@@ -60,8 +60,8 @@ export async function POST(req: NextRequest) {
       simulacion: config.simulacion
     });
 
-    // Crear cliente MIR
-    const client = new MinisterioClient(config);
+    // Crear cliente MIR (versión Vercel)
+    const client = new MinisterioClientVercel(config);
     
     // Intentar un envío de prueba simple
     const referencia = `TEST-CON-${Date.now()}`;

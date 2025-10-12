@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { MinisterioClient } from '@/lib/ministerio-client';
+import { MinisterioClientVercel } from '@/lib/ministerio-client-vercel';
 import { insertMirComunicacion, updateMirComunicacion, MirComunicacion } from '@/lib/mir-db';
 
 export async function POST(req: NextRequest) {
@@ -31,8 +31,8 @@ export async function POST(req: NextRequest) {
       simulacion: false // ENVÍO REAL AL MIR
     };
 
-    // Crear cliente MIR
-    const client = new MinisterioClient(config);
+    // Crear cliente MIR (versión Vercel)
+    const client = new MinisterioClientVercel(config);
     
     // Generar referencia única
     const referencia = `AUTO-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;

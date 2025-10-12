@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
-import { MinisterioClient } from '@/lib/ministerio-client';
+import { MinisterioClientVercel } from '@/lib/ministerio-client-vercel';
 
 /**
  * Procesa todos los registros pendientes de enviar al MIR
@@ -57,8 +57,8 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Crear cliente MIR
-    const client = new MinisterioClient(config);
+    // Crear cliente MIR (versión Vercel)
+    const client = new MinisterioClientVercel(config);
     
     let procesados = 0;
     let exitosos = 0;
