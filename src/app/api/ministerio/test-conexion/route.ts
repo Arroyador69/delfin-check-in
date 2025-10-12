@@ -5,6 +5,62 @@ import { MinisterioClientVercel } from '@/lib/ministerio-client-vercel';
  * Test de conexión al MIR
  * Verifica que las credenciales estén configuradas correctamente
  */
+
+function escapeXml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
+
+function generateTestXML(data: any): string {
+  const comunicacion = data.comunicaciones[0];
+  const persona = comunicacion.personas[0];
+  
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<peticion>
+  <solicitud>
+    <codigoEstablecimiento>${escapeXml(data.codigoEstablecimiento)}</codigoEstablecimiento>
+    <comunicacion>
+      <contrato>
+        <referencia>${escapeXml(comunicacion.contrato.referencia)}</referencia>
+        <fechaContrato>${comunicacion.contrato.fechaContrato}</fechaContrato>
+        <fechaEntrada>${comunicacion.contrato.fechaEntrada}</fechaEntrada>
+        <fechaSalida>${comunicacion.contrato.fechaSalida}</fechaSalida>
+        <numPersonas>${comunicacion.contrato.numPersonas}</numPersonas>
+        <numHabitaciones>${comunicacion.contrato.numHabitaciones}</numHabitaciones>
+        <internet>${comunicacion.contrato.internet}</internet>
+        <pago>
+          <tipoPago>${escapeXml(comunicacion.contrato.pago.tipoPago)}</tipoPago>
+          <fechaPago>${comunicacion.contrato.pago.fechaPago}</fechaPago>
+        </pago>
+      </contrato>
+      <persona>
+        <rol>${escapeXml(persona.rol)}</rol>
+        <nombre>${escapeXml(persona.nombre)}</nombre>
+        <apellido1>${escapeXml(persona.apellido1)}</apellido1>
+        <apellido2>${escapeXml(persona.apellido2)}</apellido2>
+        <tipoDocumento>${escapeXml(persona.tipoDocumento)}</tipoDocumento>
+        <numeroDocumento>${escapeXml(persona.numeroDocumento)}</numeroDocumento>
+        <fechaNacimiento>${persona.fechaNacimiento}</fechaNacimiento>
+        <nacionalidad>${escapeXml(persona.nacionalidad)}</nacionalidad>
+        <sexo>${escapeXml(persona.sexo)}</sexo>
+        <telefono>${escapeXml(persona.telefono)}</telefono>
+        <correo>${escapeXml(persona.correo)}</correo>
+        <direccion>
+          <direccion>${escapeXml(persona.direccion.direccion)}</direccion>
+          <codigoPostal>${escapeXml(persona.direccion.codigoPostal)}</codigoPostal>
+          <pais>${escapeXml(persona.direccion.pais)}</pais>
+          <codigoMunicipio>${escapeXml(persona.direccion.codigoMunicipio)}</codigoMunicipio>
+        </direccion>
+      </persona>
+    </comunicacion>
+  </solicitud>
+</peticion>`;
+}
+
 export async function POST(req: NextRequest) {
   try {
     console.log('🔍 Probando conexión con el MIR...');
@@ -104,9 +160,13 @@ export async function POST(req: NextRequest) {
       }]
     };
 
+    console.log('📤 Generando XML de prueba...');
+    const xmlAlta = generateTestXML(datosPrueba);
+    console.log('📝 XML generado (primeros 500 chars):', xmlAlta.substring(0, 500));
+    
     console.log('📤 Enviando datos de prueba al MIR...');
     
-    const resultado = await client.altaPV(datosPrueba);
+    const resultado = await client.altaPV({ xmlAlta });
     
     console.log('✅ Resultado del test de conexión:', resultado);
 
@@ -125,7 +185,7 @@ export async function POST(req: NextRequest) {
     } else {
       return NextResponse.json({
         success: false,
-        message: '❌ Conexión fallida: ' + (resultado.error || 'Error desconocido'),
+        message: '❌ Conexión fallida: ' + (resultado.descripcion || 'Error desconocido'),
         resultado: resultado,
         config: {
           baseUrl: config.baseUrl,
