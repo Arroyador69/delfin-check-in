@@ -44,11 +44,12 @@ function generateTestXML(data: any): string {
         <apellido2>${escapeXml(persona.apellido2)}</apellido2>
         <tipoDocumento>${escapeXml(persona.tipoDocumento)}</tipoDocumento>
         <numeroDocumento>${escapeXml(persona.numeroDocumento)}</numeroDocumento>
+        ${persona.soporteDocumento ? `<soporteDocumento>${escapeXml(persona.soporteDocumento)}</soporteDocumento>` : ''}
         <fechaNacimiento>${persona.fechaNacimiento}</fechaNacimiento>
         <nacionalidad>${escapeXml(persona.nacionalidad)}</nacionalidad>
         <sexo>${escapeXml(persona.sexo)}</sexo>
-        <telefono>${escapeXml(persona.telefono)}</telefono>
-        <correo>${escapeXml(persona.correo)}</correo>
+        ${persona.telefono ? `<telefono>${escapeXml(persona.telefono)}</telefono>` : ''}
+        ${persona.correo ? `<correo>${escapeXml(persona.correo)}</correo>` : ''}
         <direccion>
           <direccion>${escapeXml(persona.direccion.direccion)}</direccion>
           <codigoPostal>${escapeXml(persona.direccion.codigoPostal)}</codigoPostal>
@@ -144,17 +145,17 @@ export async function POST(req: NextRequest) {
           apellido2: "MIR",
           tipoDocumento: "NIF",
           numeroDocumento: "12345678Z",
+          soporteDocumento: "C", // C = Certificado, obligatorio para NIF/NIE
           fechaNacimiento: "1985-01-01",
           nacionalidad: "ESP",
-          sexo: "M",
+          sexo: "H", // H = Hombre, M = Mujer, O = Otro
           telefono: "600000000",
           correo: "test@example.com",
           direccion: {
             direccion: "Calle Test 123",
             codigoPostal: "28001",
             pais: "ESP",
-            codigoMunicipio: "28079",
-            nombreMunicipio: "Madrid"
+            codigoMunicipio: "28079"
           }
         }]
       }]
