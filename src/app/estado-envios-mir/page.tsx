@@ -33,6 +33,9 @@ export default function EstadoEnviosMIR() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [tabActiva, setTabActiva] = useState<'pendientes' | 'enviados' | 'confirmados' | 'errores'>('pendientes');
+  const [procesando, setProcesando] = useState(false);
+  const [testando, setTestando] = useState(false);
+  const [mensaje, setMensaje] = useState<{tipo: 'success' | 'error' | 'info', texto: string} | null>(null);
 
   useEffect(() => {
     cargarEstado();
@@ -83,6 +86,67 @@ export default function EstadoEnviosMIR() {
 
   const formatearFecha = (timestamp: string) => {
     return new Date(timestamp).toLocaleString('es-ES');
+  };
+
+  const testearConexion = async () => {
+    try {
+      setTestando(true);
+      setMensaje({ tipo: 'info', texto: '🔍 Probando conexión con el MIR...' });
+      
+      const response = await fetch('/api/ministerio/test-conexion', {
+        method: 'POST'
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        setMensaje({ tipo: 'success', texto: '✅ Conexión exitosa con el MIR!' });
+        setTimeout(() => setMensaje(null), 5000);
+      } else {
+        setMensaje({ tipo: 'error', texto: `❌ Error: ${data.message}` });
+      }
+    } catch (err) {
+      setMensaje({ tipo: 'error', texto: '❌ Error al probar conexión' });
+      console.error('Error testeando conexión:', err);
+    } finally {
+      setTestando(false);
+    }
+  };
+
+  const procesarPendientes = async () => {
+    if (!confirm(`¿Deseas procesar todos los ${estado?.estadisticas.pendientes || 0} registros pendientes?`)) {
+      return;
+    }
+
+    try {
+      setProcesando(true);
+      setMensaje({ tipo: 'info', texto: '🚀 Procesando registros pendientes...' });
+      
+      const response = await fetch('/api/ministerio/procesar-pendientes', {
+        method: 'POST'
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        setMensaje({ 
+          tipo: 'success', 
+          texto: `✅ ${data.exitosos} registros enviados exitosamente, ${data.errores} errores` 
+        });
+        // Recargar estado después de procesar
+        setTimeout(() => {
+          cargarEstado();
+          setMensaje(null);
+        }, 3000);
+      } else {
+        setMensaje({ tipo: 'error', texto: `❌ Error: ${data.message}` });
+      }
+    } catch (err) {
+      setMensaje({ tipo: 'error', texto: '❌ Error al procesar pendientes' });
+      console.error('Error procesando pendientes:', err);
+    } finally {
+      setProcesando(false);
+    }
   };
 
   if (loading && !estado) {
@@ -149,18 +213,51 @@ export default function EstadoEnviosMIR() {
               <h1 className="text-3xl font-bold text-gray-900">📊 Estado de Envíos al MIR</h1>
               <p className="mt-2 text-gray-600">🏛️ Seguimiento de comunicaciones al Ministerio del Interior</p>
             </div>
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-3">
+              <button
+                onClick={testearConexion}
+                disabled={testando || procesando}
+                className="bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 disabled:opacity-50 transition-all duration-200 flex items-center space-x-2"
+              >
+                <span>{testando ? '⏳' : '🔍'}</span>
+                <span>{testando ? 'Probando...' : 'Test Conexión'}</span>
+              </button>
+              <button
+                onClick={procesarPendientes}
+                disabled={procesando || testando || (estado?.estadisticas.pendientes || 0) === 0}
+                className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 disabled:opacity-50 transition-all duration-200 flex items-center space-x-2"
+              >
+                <span>{procesando ? '⏳' : '🚀'}</span>
+                <span>
+                  {procesando 
+                    ? 'Procesando...' 
+                    : `Procesar Pendientes (${estado?.estadisticas.pendientes || 0})`
+                  }
+                </span>
+              </button>
               <button
                 onClick={cargarEstado}
-                disabled={loading}
-                className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50"
+                disabled={loading || procesando || testando}
+                className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50 transition-all duration-200"
               >
-                {loading ? 'Actualizando...' : 'Actualizar'}
+                {loading ? 'Actualizando...' : '🔄 Actualizar'}
               </button>
-              <div className="text-sm text-gray-500">
-                Última actualización: {estado ? formatearFecha(estado.timestamp) : 'Nunca'}
-              </div>
             </div>
+          </div>
+          
+          {/* Mensaje de feedback */}
+          {mensaje && (
+            <div className={`mt-4 p-4 rounded-lg border ${
+              mensaje.tipo === 'success' ? 'bg-green-50 border-green-200 text-green-800' :
+              mensaje.tipo === 'error' ? 'bg-red-50 border-red-200 text-red-800' :
+              'bg-blue-50 border-blue-200 text-blue-800'
+            }`}>
+              <p className="font-medium">{mensaje.texto}</p>
+            </div>
+          )}
+          
+          <div className="mt-2 text-sm text-gray-500">
+            Última actualización: {estado ? formatearFecha(estado.timestamp) : 'Nunca'}
           </div>
         </div>
 
