@@ -48,14 +48,14 @@ function generateTestXML(data: any): string {
         <fechaNacimiento>${persona.fechaNacimiento}</fechaNacimiento>
         <nacionalidad>${escapeXml(persona.nacionalidad)}</nacionalidad>
         <sexo>${escapeXml(persona.sexo)}</sexo>
-        ${persona.telefono ? `<telefono>${escapeXml(persona.telefono)}</telefono>` : ''}
-        ${persona.correo ? `<correo>${escapeXml(persona.correo)}</correo>` : ''}
         <direccion>
           <direccion>${escapeXml(persona.direccion.direccion)}</direccion>
           <codigoPostal>${escapeXml(persona.direccion.codigoPostal)}</codigoPostal>
           <pais>${escapeXml(persona.direccion.pais)}</pais>
           <codigoMunicipio>${escapeXml(persona.direccion.codigoMunicipio)}</codigoMunicipio>
         </direccion>
+        ${persona.telefono ? `<telefono>${escapeXml(persona.telefono)}</telefono>` : ''}
+        ${persona.correo ? `<correo>${escapeXml(persona.correo)}</correo>` : ''}
       </persona>
     </comunicacion>
   </solicitud>

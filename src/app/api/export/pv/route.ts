@@ -254,17 +254,8 @@ function buildXML(data: z.infer<typeof PayloadSchema>): string {
       if (persona.sexo) {
         xml += `        <sexo>${esc(persona.sexo)}</sexo>\n`;
       }
-      if (persona.telefono) {
-        xml += `        <telefono>${esc(persona.telefono)}</telefono>\n`;
-      }
-      if (persona.telefono2) {
-        xml += `        <telefono2>${esc(persona.telefono2)}</telefono2>\n`;
-      }
-      if (persona.correo) {
-        xml += `        <correo>${esc(persona.correo)}</correo>\n`;
-      }
       
-      // Dirección
+      // Dirección (DEBE ir ANTES que los campos de contacto según especificación MIR)
       xml += '        <direccion>\n';
       if (persona.direccion.direccion) {
         xml += `          <direccion>${esc(persona.direccion.direccion)}</direccion>\n`;
@@ -282,6 +273,17 @@ function buildXML(data: z.infer<typeof PayloadSchema>): string {
         xml += `          <nombreMunicipio>${esc(persona.direccion.nombreMunicipio)}</nombreMunicipio>\n`;
       }
       xml += '        </direccion>\n';
+      
+      // Campos de contacto (DEBEN ir DESPUÉS del bloque direccion)
+      if (persona.telefono) {
+        xml += `        <telefono>${esc(persona.telefono)}</telefono>\n`;
+      }
+      if (persona.telefono2) {
+        xml += `        <telefono2>${esc(persona.telefono2)}</telefono2>\n`;
+      }
+      if (persona.correo) {
+        xml += `        <correo>${esc(persona.correo)}</correo>\n`;
+      }
       xml += '      </persona>\n';
     });
     

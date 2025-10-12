@@ -199,14 +199,14 @@ function generateTestXML(data: any): string {
         <fechaNacimiento>${data.comunicaciones[0].personas[0].fechaNacimiento}</fechaNacimiento>
         <nacionalidad>${data.comunicaciones[0].personas[0].nacionalidad}</nacionalidad>
         <sexo>${data.comunicaciones[0].personas[0].sexo}</sexo>
-        <telefono>${data.comunicaciones[0].personas[0].telefono}</telefono>
-        <correo>${data.comunicaciones[0].personas[0].correo}</correo>
         <direccion>
           <direccion>${data.comunicaciones[0].personas[0].direccion.direccion}</direccion>
           <codigoPostal>${data.comunicaciones[0].personas[0].direccion.codigoPostal}</codigoPostal>
           <pais>${data.comunicaciones[0].personas[0].direccion.pais}</pais>
           <codigoMunicipio>${data.comunicaciones[0].personas[0].direccion.codigoMunicipio}</codigoMunicipio>
         </direccion>
+        <telefono>${data.comunicaciones[0].personas[0].telefono}</telefono>
+        <correo>${data.comunicaciones[0].personas[0].correo}</correo>
       </persona>
     </comunicacion>
   </solicitud>
