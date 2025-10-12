@@ -263,15 +263,15 @@ function buildXML(data: z.infer<typeof PayloadSchema>): string {
       if (persona.direccion.direccionComplementaria) {
         xml += `          <direccionComplementaria>${esc(persona.direccion.direccionComplementaria)}</direccionComplementaria>\n`;
       }
-      if (persona.direccion.codigoPostal) {
-        xml += `          <codigoPostal>${esc(persona.direccion.codigoPostal)}</codigoPostal>\n`;
-      }
-      xml += `          <pais>${esc(persona.direccion.pais)}</pais>\n`;
       if (persona.direccion.pais === 'ESP' && persona.direccion.codigoMunicipio) {
         xml += `          <codigoMunicipio>${esc(persona.direccion.codigoMunicipio)}</codigoMunicipio>\n`;
       } else if (persona.direccion.pais !== 'ESP' && persona.direccion.nombreMunicipio) {
         xml += `          <nombreMunicipio>${esc(persona.direccion.nombreMunicipio)}</nombreMunicipio>\n`;
       }
+      if (persona.direccion.codigoPostal) {
+        xml += `          <codigoPostal>${esc(persona.direccion.codigoPostal)}</codigoPostal>\n`;
+      }
+      xml += `          <pais>${esc(persona.direccion.pais)}</pais>\n`;
       xml += '        </direccion>\n';
       
       // Campos de contacto (DEBEN ir DESPUÉS del bloque direccion)
