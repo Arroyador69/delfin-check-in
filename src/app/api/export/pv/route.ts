@@ -153,7 +153,7 @@ function buildXML(data: z.infer<typeof PayloadSchema>): string {
   const esc = (s: any) => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 
   let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
-  xml += '<peticion>\n';
+  xml += '<alt:peticion xmlns:alt="http://www.neg.hospedajes.mir.es/altaParteHospedaje">\n';
   xml += '  <solicitud>\n';
   xml += `    <codigoEstablecimiento>${esc(data.codigoEstablecimiento)}</codigoEstablecimiento>\n`;
 
@@ -254,7 +254,7 @@ function buildXML(data: z.infer<typeof PayloadSchema>): string {
   });
 
   xml += '  </solicitud>\n';
-  xml += '</peticion>\n';
+  xml += '</alt:peticion>\n';
   
   return xml;
 }

@@ -20,7 +20,7 @@ function generateTestXML(data: any): string {
   const persona = comunicacion.personas[0];
   
   return `<?xml version="1.0" encoding="UTF-8"?>
-<peticion>
+<alt:peticion xmlns:alt="http://www.neg.hospedajes.mir.es/altaParteHospedaje">
   <solicitud>
     <codigoEstablecimiento>${escapeXml(data.codigoEstablecimiento)}</codigoEstablecimiento>
     <comunicacion>
@@ -59,7 +59,7 @@ function generateTestXML(data: any): string {
       </persona>
     </comunicacion>
   </solicitud>
-</peticion>`;
+</alt:peticion>`;
 }
 
 export async function POST(req: NextRequest) {
