@@ -69,6 +69,8 @@ export function middleware(req: NextRequest) {
       '/api/ministerio/auto-envio', // Auto-envío MIR (temporal para pruebas)
       '/api/ministerio/test-consulta', // Test consulta MIR (temporal para pruebas)
       '/api/ministerio/test-simulacion', // Test simulación MIR (temporal para pruebas)
+      '/api/test-xml-corregido', // Test XML corregido (temporal para pruebas)
+      '/api/export/pv', // Exportación XML MIR (temporal sin auth para testing)
         '/public',
         '/admin-login',
         '/onboarding',
