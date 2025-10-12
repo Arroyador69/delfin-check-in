@@ -151,7 +151,12 @@ const normalize = (body: any) => {
       telefono: String(viajero.telefono || '').replace(/\s+/g, ''),
       email: String(viajero.email || '').trim().toLowerCase(),
       direccion: String(viajero.direccion || '').trim(),
-      cp: String(viajero.cp || '').padStart(5, '0'),
+      cp: (() => {
+        const cpValue = String(viajero.cp || '').trim();
+        const pais = iso3to2(viajero.paisResidencia || viajero.pais || 'ES');
+        // Solo aplicar padding para España
+        return pais === 'ES' ? cpValue.padStart(5, '0') : cpValue;
+      })(),
       ine: (() => {
         const ineValue = String(viajero.ine || '').trim();
         return ineValue ? ineValue.padStart(5, '0') : '';
@@ -285,7 +290,17 @@ export async function POST(req: NextRequest) {
       if (!v.tipoDocumento) issues.push({ path: `${prefix}.tipoDocumento`, message: 'Requerido' });
       if (!v.numeroDocumento) issues.push({ path: `${prefix}.numeroDocumento`, message: 'Requerido' });
       if (!v.direccion) issues.push({ path: `${prefix}.direccion`, message: 'Requerido' });
-      if (!v.cp || !/^\d{5}$/.test(v.cp)) issues.push({ path: `${prefix}.cp`, message: 'Debe ser 5 dígitos' });
+      
+      // Validación flexible de código postal según el país
+      if (!v.cp) {
+        issues.push({ path: `${prefix}.cp`, message: 'Requerido' });
+      } else {
+        const esEspana = v.paisResidencia === 'ES';
+        if (esEspana && !/^\d{5}$/.test(v.cp)) {
+          issues.push({ path: `${prefix}.cp`, message: 'Para España debe ser 5 dígitos' });
+        }
+        // Para otros países, solo verificar que no esté vacío
+      }
       
       // Validación condicional de INE: solo para españoles
       const esEspana = v.paisResidencia === 'ES';
