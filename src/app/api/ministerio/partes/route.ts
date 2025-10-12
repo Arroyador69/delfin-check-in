@@ -89,13 +89,14 @@ function validateParte(parte: any): string[] {
       const paisNormalizado = p.direccion.pais?.toUpperCase();
       const esEspana = paisNormalizado === 'ESP';
       
-      if (esEspana && !/^\d{5}$/.test(p.direccion.codigoMunicipio || '')) {
-        errs.push(`persona[${i}].codigoMunicipio debe ser INE de 5 dígitos para España`);
-      }
-      // Para países no españoles, completar automáticamente campos faltantes
+      // COMPLETAR AUTOMÁTICAMENTE ANTES DE VALIDAR
       if (!esEspana && !p.direccion.nombreMunicipio && !p.direccion.codigoMunicipio) {
         // Completar automáticamente para datos existentes sin validar
         p.direccion.nombreMunicipio = 'N/A';
+      }
+      
+      if (esEspana && !/^\d{5}$/.test(p.direccion.codigoMunicipio || '')) {
+        errs.push(`persona[${i}].codigoMunicipio debe ser INE de 5 dígitos para España`);
       }
     }
     
