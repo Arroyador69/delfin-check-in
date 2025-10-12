@@ -104,17 +104,32 @@ export class MinisterioClientVercel {
         bodyLength: soapXml.length
       });
 
-      const res = await fetch(this.cfg.baseUrl, {
-        method: 'POST',
-        headers: {
-          'Authorization': buildBasicAuthHeader(this.cfg.username, this.cfg.password),
-          'Content-Type': 'text/xml; charset=utf-8',
-          'User-Agent': 'Delfin_Check_in/1.0',
-          'Accept': 'text/xml, application/xml, */*'
-        },
-        body: soapXml,
-        signal: AbortSignal.timeout(30000) // 30 segundos timeout
-      });
+      // NOTA: Vercel no soporta https.Agent, pero podemos usar la variable NODE_TLS_REJECT_UNAUTHORIZED
+      // Esta es la única forma de deshabilitar la verificación de certificados en Vercel
+      const originalRejectUnauthorized = process.env.NODE_TLS_REJECT_UNAUTHORIZED;
+      process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'; // Deshabilitar verificación SSL temporalmente
+      
+      let res: Response;
+      try {
+        res = await fetch(this.cfg.baseUrl, {
+          method: 'POST',
+          headers: {
+            'Authorization': buildBasicAuthHeader(this.cfg.username, this.cfg.password),
+            'Content-Type': 'text/xml; charset=utf-8',
+            'User-Agent': 'Delfin_Check_in/1.0',
+            'Accept': 'text/xml, application/xml, */*'
+          },
+          body: soapXml,
+          signal: AbortSignal.timeout(30000) // 30 segundos timeout
+        });
+      } finally {
+        // Siempre restaurar configuración original
+        if (originalRejectUnauthorized !== undefined) {
+          process.env.NODE_TLS_REJECT_UNAUTHORIZED = originalRejectUnauthorized;
+        } else {
+          delete process.env.NODE_TLS_REJECT_UNAUTHORIZED;
+        }
+      }
 
       console.log('📊 Respuesta del MIR:', {
         status: res.status,
