@@ -180,15 +180,15 @@ export function normalizeData(rawData: any) {
           pais: (() => {
             const nat = (persona.nacionalidad || '').toUpperCase();
             const candidate = (persona.direccion?.pais || persona.pais || '').toUpperCase();
-            if (nat && nat !== 'ESP' && nat !== 'ES') return nat;
+            if (nat && nat !== 'ESP') return nat;
             return candidate || 'ESP';
           })(),
           // INE solo si el país final es España
           codigoMunicipio: (() => {
             const nat = (persona.nacionalidad || '').toUpperCase();
             const candidatePais = (persona.direccion?.pais || persona.pais || '').toUpperCase();
-            const finalPais = (nat && nat !== 'ESP' && nat !== 'ES') ? nat : (candidatePais || 'ESP');
-            if (finalPais !== 'ESP' && finalPais !== 'ES') return undefined;
+            const finalPais = (nat && nat !== 'ESP') ? nat : (candidatePais || 'ESP');
+            if (finalPais !== 'ESP') return undefined;
             return persona.direccion?.codigoMunicipio || persona.codigo_municipio;
           })(),
           nombreMunicipio: persona.direccion?.nombreMunicipio || persona.nombre_municipio

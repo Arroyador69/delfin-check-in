@@ -67,6 +67,19 @@ const mapDocTypeIn = (x?: string) => {
   return 'OTRO'; // Corregido: máximo 5 caracteres según especificación MIR
 };
 
+// Función para mantener códigos ISO 3166-1 Alfa-3 (MIR requiere Alfa-3)
+const normalizeToAlpha3 = (x?: string) => {
+  const t = String(x || '').toUpperCase();
+  const map: Record<string, string> = { 
+    'ES': 'ESP', 'FR': 'FRA', 'GB': 'GBR', 'IT': 'ITA', 'DE': 'DEU',
+    'PT': 'PRT', 'NL': 'NLD', 'BE': 'BEL', 'CH': 'CHE', 'AT': 'AUT',
+    'SPAIN': 'ESP', 'FRANCE': 'FRA', 'UNITED KINGDOM': 'GBR', 'ITALY': 'ITA', 'GERMANY': 'DEU',
+    'PORTUGAL': 'PRT', 'NETHERLANDS': 'NLD', 'BELGIUM': 'BEL', 'SWITZERLAND': 'CHE', 'AUSTRIA': 'AUT'
+  };
+  return t.length === 3 ? t : (map[t] || t);
+};
+
+// Función legacy para compatibilidad (mantiene Alfa-2 para validaciones locales)
 const iso3to2 = (x?: string) => {
   const t = String(x || '').toUpperCase();
   const map: Record<string, string> = { 
@@ -153,8 +166,8 @@ const normalize = (body: any) => {
       direccion: String(viajero.direccion || '').trim(),
       cp: (() => {
         const cpValue = String(viajero.cp || '').trim();
-        const pais = iso3to2(viajero.paisResidencia || viajero.pais || 'ES');
-        // Solo aplicar padding para España
+        const pais = iso3to2(viajero.paisResidencia || viajero.pais || 'ESP');
+        // Solo aplicar padding para España (usar Alfa-2 para validación local)
         return pais === 'ES' ? cpValue.padStart(5, '0') : cpValue;
       })(),
       ine: (() => {
@@ -162,7 +175,7 @@ const normalize = (body: any) => {
         return ineValue ? ineValue.padStart(5, '0') : '';
       })(),
       nombreMunicipio: String(viajero.nombreMunicipio || '').trim(),
-      paisResidencia: iso3to2(viajero.paisResidencia || viajero.pais || 'ES'),
+      paisResidencia: normalizeToAlpha3(viajero.paisResidencia || viajero.pais || 'ESP'),
     });
     
     // Normalizar todos los viajeros
@@ -295,7 +308,7 @@ export async function POST(req: NextRequest) {
       if (!v.cp) {
         issues.push({ path: `${prefix}.cp`, message: 'Requerido' });
       } else {
-        const esEspana = v.paisResidencia === 'ES';
+        const esEspana = v.paisResidencia === 'ESP';
         if (esEspana && !/^\d{5}$/.test(v.cp)) {
           issues.push({ path: `${prefix}.cp`, message: 'Para España debe ser 5 dígitos' });
         }

@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
         if (!v.cp || !/^\d{5}$/.test(v.cp)) issues.push({ path: `${prefix}.cp`, message: 'Debe ser 5 dígitos' });
         
         // Validación condicional de INE: solo para españoles
-        const esEspana = v.paisResidencia === 'ES';
+        const esEspana = v.paisResidencia === 'ESP';
         if (esEspana) {
           if (!v.ine || !/^\d{5}$/.test(v.ine)) {
             issues.push({ path: `${prefix}.ine`, message: 'Para españoles: debe ser 5 dígitos' });
@@ -66,7 +66,7 @@ export async function POST(req: NextRequest) {
           index: index + 1,
           nombre: v.nombre,
           pais: v.paisResidencia,
-          esEspana: v.paisResidencia === 'ES',
+          esEspana: v.paisResidencia === 'ESP',
           tieneIne: !!v.ine,
           tieneNombreMunicipio: !!v.nombreMunicipio,
           camposDireccion: {

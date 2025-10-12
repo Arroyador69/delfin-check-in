@@ -87,7 +87,7 @@ function validateParte(parte: any): string[] {
       }
       // Normalizar país para manejar tanto ISO-2 como ISO-3
       const paisNormalizado = p.direccion.pais?.toUpperCase();
-      const esEspana = paisNormalizado === 'ESP' || paisNormalizado === 'ES';
+      const esEspana = paisNormalizado === 'ESP';
       
       if (esEspana && !/^\d{5}$/.test(p.direccion.codigoMunicipio || '')) {
         errs.push(`persona[${i}].codigoMunicipio debe ser INE de 5 dígitos para España`);

@@ -18,7 +18,7 @@ function normalizeCountryString(value?: string): string {
 
 function isSpain(value?: string): boolean {
   const v = normalizeCountryString(value);
-  return v === 'ESP' || v === 'ES' || v === 'SPAIN' || v === 'ESPANA' || v === 'ESPAÑA';
+  return v === 'ESP' || v === 'SPAIN' || v === 'ESPANA' || v === 'ESPAÑA';
 }
 
 // Esquemas Zod actualizados según MIR v1.1.1
