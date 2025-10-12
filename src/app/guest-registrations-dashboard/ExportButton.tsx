@@ -133,6 +133,15 @@ function normalizeToAlpha3(countryCode?: string): string {
   return code.length === 3 ? code : (map[code] || code);
 }
 
+// Función para normalizar códigos de sexo según MIR
+function normalizeSexo(sexo?: string): string {
+  const k = String(sexo || '').toUpperCase();
+  if (['M', 'HOMBRE', 'H'].includes(k)) return 'H'; // MIR: H=Hombre
+  if (['F', 'MUJER'].includes(k)) return 'M'; // MIR: M=Mujer
+  if (['X'].includes(k)) return 'O'; // MIR: O=Otro (corregir X)
+  return 'O'; // MIR: O=Otro (valor por defecto válido)
+}
+
 export function normalizeData(rawData: any) {
   console.log('🔄 Normalizando datos para MIR:', JSON.stringify(rawData, null, 2));
   
@@ -178,7 +187,7 @@ export function normalizeData(rawData: any) {
         soporteDocumento: persona.soporteDocumento || persona.soporte_documento,
         fechaNacimiento: persona.fechaNacimiento || persona.fecha_nacimiento || '',
         nacionalidad: normalizeToAlpha3(persona.nacionalidad),
-        sexo: persona.sexo,
+        sexo: normalizeSexo(persona.sexo),
         // Asegurar que al menos un contacto esté presente
         // Manejar estructura de contacto anidado
         telefono: persona.telefono || persona.contacto?.telefono || persona.telefono2 || '000000000',
