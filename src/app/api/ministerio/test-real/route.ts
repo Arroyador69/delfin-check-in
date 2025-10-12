@@ -141,7 +141,8 @@ function generateTestXML(data: any): string {
           <direccion>${data.comunicaciones[0].personas[0].direccion.direccion}</direccion>
           <codigoPostal>${data.comunicaciones[0].personas[0].direccion.codigoPostal}</codigoPostal>
           <pais>${data.comunicaciones[0].personas[0].direccion.pais}</pais>
-          <codigoMunicipio>${data.comunicaciones[0].personas[0].direccion.codigoMunicipio}</codigoMunicipio>
+          ${data.comunicaciones[0].personas[0].direccion.pais === 'ESP' ? `<codigoMunicipio>${data.comunicaciones[0].personas[0].direccion.codigoMunicipio}</codigoMunicipio>` : ''}
+          ${data.comunicaciones[0].personas[0].direccion.pais !== 'ESP' && data.comunicaciones[0].personas[0].direccion.nombreMunicipio ? `<nombreMunicipio>${data.comunicaciones[0].personas[0].direccion.nombreMunicipio}</nombreMunicipio>` : ''}
         </direccion>
         <telefono>${data.comunicaciones[0].personas[0].telefono}</telefono>
         <correo>${data.comunicaciones[0].personas[0].correo}</correo>

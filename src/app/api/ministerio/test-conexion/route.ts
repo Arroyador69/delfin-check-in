@@ -52,7 +52,8 @@ function generateTestXML(data: any): string {
           <direccion>${escapeXml(persona.direccion.direccion)}</direccion>
           <codigoPostal>${escapeXml(persona.direccion.codigoPostal)}</codigoPostal>
           <pais>${escapeXml(persona.direccion.pais)}</pais>
-          <codigoMunicipio>${escapeXml(persona.direccion.codigoMunicipio)}</codigoMunicipio>
+          ${persona.direccion.pais === 'ESP' ? `<codigoMunicipio>${escapeXml(persona.direccion.codigoMunicipio)}</codigoMunicipio>` : ''}
+          ${persona.direccion.pais !== 'ESP' && persona.direccion.nombreMunicipio ? `<nombreMunicipio>${escapeXml(persona.direccion.nombreMunicipio)}</nombreMunicipio>` : ''}
         </direccion>
         ${persona.telefono ? `<telefono>${escapeXml(persona.telefono)}</telefono>` : ''}
         ${persona.correo ? `<correo>${escapeXml(persona.correo)}</correo>` : ''}
