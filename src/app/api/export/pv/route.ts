@@ -245,8 +245,10 @@ function buildXML(data: z.infer<typeof PayloadSchema>): string {
       if (persona.numeroDocumento) {
         xml += `        <numeroDocumento>${esc(persona.numeroDocumento)}</numeroDocumento>\n`;
       }
-      if (persona.soporteDocumento) {
-        xml += `        <soporteDocumento>${esc(persona.soporteDocumento)}</soporteDocumento>\n`;
+      // soporteDocumento es obligatorio para NIF/NIE según MIR
+      const tipoDoc = normalizeDocumentType(persona.tipoDocumento);
+      if (tipoDoc === 'NIF' || tipoDoc === 'NIE') {
+        xml += `        <soporteDocumento>${esc(persona.soporteDocumento || 'C')}</soporteDocumento>\n`;
       }
       xml += `        <fechaNacimiento>${esc(formatDateOnly(persona.fechaNacimiento))}</fechaNacimiento>\n`;
       if (persona.nacionalidad) {

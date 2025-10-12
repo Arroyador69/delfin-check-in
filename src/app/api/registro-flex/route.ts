@@ -54,9 +54,9 @@ const mapPagoIn = (x?: string) => {
 
 const mapSexoIn = (x?: string) => {
   const k = String(x || '').toUpperCase();
-  if (['M', 'HOMBRE', 'H'].includes(k)) return 'M';
-  if (['F', 'MUJER'].includes(k)) return 'F';
-  return 'X';
+  if (['M', 'HOMBRE', 'H'].includes(k)) return 'H'; // MIR: H=Hombre
+  if (['F', 'MUJER'].includes(k)) return 'M'; // MIR: M=Mujer
+  return 'O'; // MIR: O=Otro (valor por defecto válido)
 };
 
 const mapDocTypeIn = (x?: string) => {

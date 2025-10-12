@@ -144,7 +144,13 @@ function personaToXML(p: z.infer<typeof PersonaSchema>) {
   if (p.apellido2) persona.apellido2 = p.apellido2;
   if (p.tipoDocumento) persona.tipoDocumento = p.tipoDocumento;
   if (p.numeroDocumento) persona.numeroDocumento = p.numeroDocumento; // Etiqueta correcta v1.1.1
-  if (p.soporteDocumento) persona.soporteDocumento = p.soporteDocumento;
+  // soporteDocumento es obligatorio para NIF/NIE según MIR
+  const tipoDoc = p.tipoDocumento?.toUpperCase();
+  if (tipoDoc === 'NIF' || tipoDoc === 'NIE') {
+    persona.soporteDocumento = p.soporteDocumento || 'C';
+  } else if (p.soporteDocumento) {
+    persona.soporteDocumento = p.soporteDocumento;
+  }
   if (p.nacionalidad) persona.nacionalidad = p.nacionalidad;
   if (p.sexo) persona.sexo = p.sexo;
 

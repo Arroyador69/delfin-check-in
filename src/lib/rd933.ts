@@ -11,7 +11,7 @@ export const viajeroSchema = z.object({
   nombre: z.string().min(1),
   primerApellido: z.string().min(1),
   segundoApellido: z.string().optional(),
-  sexo: z.enum(['M', 'F', 'X']).optional(),
+  sexo: z.enum(['H', 'M', 'O']).optional(), // MIR: H=Hombre, M=Mujer, O=Otro
   documento: documentoSchema,
   nacionalidad: z.string().regex(/^[A-Z]{3}$/), // ISO-3166 alpha-3
   fechaNacimiento: z.string().date().or(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)),
