@@ -222,7 +222,8 @@ export async function POST(req: NextRequest) {
     for (const comunicacion of comunicaciones) {
       // Crear estructura esperada por validateParte
       const parteParaValidar = {
-        comunicaciones: [comunicacion]
+        contrato: comunicacion.contrato,
+        personas: comunicacion.personas
       };
       
       const validationErrors = validateParte(parteParaValidar);
