@@ -153,12 +153,27 @@ export class MinisterioClientVercel {
 }
 
 export function getMinisterioConfigFromEnv(): MinisterioConfig {
+  // Si falta alguna configuración crítica, activar simulación automáticamente
+  const hasRequiredVars = !!(
+    process.env.MIR_BASE_URL &&
+    process.env.MIR_HTTP_USER &&
+    process.env.MIR_HTTP_PASS &&
+    process.env.MIR_CODIGO_ARRENDADOR
+  );
+  
+  // Modo simulación: true si se configura explícitamente o si faltan variables
+  const simulacion = process.env.MIR_SIMULACION === 'true' || !hasRequiredVars;
+  
+  if (simulacion && !hasRequiredVars) {
+    console.warn('⚠️ Variables de entorno MIR no configuradas completamente. Usando modo SIMULACIÓN.');
+  }
+  
   return {
-    baseUrl: process.env.MIR_BASE_URL || '',
-    username: process.env.MIR_HTTP_USER || '',
-    password: process.env.MIR_HTTP_PASS || '',
-    codigoArrendador: process.env.MIR_CODIGO_ARRENDADOR || '',
+    baseUrl: process.env.MIR_BASE_URL || 'https://hospedajes.pre-ses.mir.es/hospedajes-web/ws/v1/comunicacion',
+    username: process.env.MIR_HTTP_USER || 'DEMO',
+    password: process.env.MIR_HTTP_PASS || 'DEMO',
+    codigoArrendador: process.env.MIR_CODIGO_ARRENDADOR || '0000000000',
     aplicacion: process.env.MIR_APLICACION || 'Delfin_Check_in',
-    simulacion: process.env.MIR_SIMULACION === 'true'
+    simulacion
   };
 }
