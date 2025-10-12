@@ -122,31 +122,31 @@ export async function POST(req: NextRequest) {
     
     // Intentar un envío de prueba simple
     const referencia = `TEST-CON-${Date.now()}`;
-    const datosPrueba = {
-      codigoEstablecimiento: "0000256653",
-      comunicaciones: [{
-        contrato: {
-          referencia: referencia,
-          fechaContrato: new Date().toISOString().split('T')[0],
-          fechaEntrada: new Date().toISOString(),
-          fechaSalida: new Date(Date.now() + 24*60*60*1000).toISOString(),
-          numPersonas: 1,
-          numHabitaciones: 1,
-          internet: false,
-          pago: {
-            tipoPago: "EFECT",
-            fechaPago: new Date().toISOString().split('T')[0]
-          }
-        },
-        personas: [{
-          rol: "VI",
-          nombre: "TEST",
-          apellido1: "CONEXION",
-          apellido2: "MIR",
-          tipoDocumento: "NIF",
-          numeroDocumento: "12345678Z",
-          soporteDocumento: "C", // C = Certificado, obligatorio para NIF/NIE
-          fechaNacimiento: "1985-01-01",
+        const datosPrueba = {
+          codigoEstablecimiento: "0000256653",
+          comunicaciones: [{
+            contrato: {
+              referencia: referencia,
+              fechaContrato: new Date().toISOString().split('T')[0], // Solo fecha: AAAA-MM-DD
+              fechaEntrada: new Date().toISOString(), // Fecha+hora: AAAA-MM-DDThh:mm:ss
+              fechaSalida: new Date(Date.now() + 24*60*60*1000).toISOString(), // Fecha+hora: AAAA-MM-DDThh:mm:ss
+              numPersonas: 1,
+              numHabitaciones: 1,
+              internet: false,
+              pago: {
+                tipoPago: "EFECT",
+                fechaPago: new Date().toISOString().split('T')[0] // Solo fecha: AAAA-MM-DD
+              }
+            },
+            personas: [{
+              rol: "VI",
+              nombre: "TEST",
+              apellido1: "CONEXION",
+              apellido2: "MIR",
+              tipoDocumento: "NIF",
+              numeroDocumento: "12345678Z",
+              soporteDocumento: "C", // C = Certificado, obligatorio para NIF/NIE
+              fechaNacimiento: "1985-01-01", // Solo fecha: AAAA-MM-DD
           nacionalidad: "ESP",
           sexo: "H", // H = Hombre, M = Mujer, O = Otro
           telefono: "600000000",

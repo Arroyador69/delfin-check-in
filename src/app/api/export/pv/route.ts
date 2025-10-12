@@ -148,6 +148,24 @@ function validateBusinessRules(data: z.infer<typeof PayloadSchema>): string[] {
   return details;
 }
 
+// Funciones auxiliares para formatear fechas según especificación MIR
+function formatDateOnly(dateStr: string): string {
+  // Convierte fecha+hora a solo fecha (AAAA-MM-DD)
+  if (dateStr.includes('T')) {
+    return dateStr.split('T')[0];
+  }
+  return dateStr;
+}
+
+function formatDateTime(dateStr: string): string {
+  // Asegura formato fecha+hora (AAAA-MM-DDThh:mm:ss)
+  if (dateStr.includes('T')) {
+    return dateStr;
+  }
+  // Si solo tiene fecha, agrega hora 00:00:00
+  return `${dateStr}T00:00:00`;
+}
+
 // Función para construir XML manualmente (sin dependencias externas)
 function buildXML(data: z.infer<typeof PayloadSchema>): string {
   const esc = (s: any) => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -163,9 +181,9 @@ function buildXML(data: z.infer<typeof PayloadSchema>): string {
     // Contrato
     xml += '      <contrato>\n';
     xml += `        <referencia>${esc(comunicacion.contrato.referencia)}</referencia>\n`;
-    xml += `        <fechaContrato>${esc(comunicacion.contrato.fechaContrato)}</fechaContrato>\n`;
-    xml += `        <fechaEntrada>${esc(comunicacion.contrato.fechaEntrada)}</fechaEntrada>\n`;
-    xml += `        <fechaSalida>${esc(comunicacion.contrato.fechaSalida)}</fechaSalida>\n`;
+    xml += `        <fechaContrato>${esc(formatDateOnly(comunicacion.contrato.fechaContrato))}</fechaContrato>\n`;
+    xml += `        <fechaEntrada>${esc(formatDateTime(comunicacion.contrato.fechaEntrada))}</fechaEntrada>\n`;
+    xml += `        <fechaSalida>${esc(formatDateTime(comunicacion.contrato.fechaSalida))}</fechaSalida>\n`;
     xml += `        <numPersonas>${comunicacion.contrato.numPersonas}</numPersonas>\n`;
     
     if (comunicacion.contrato.numHabitaciones) {
@@ -180,7 +198,7 @@ function buildXML(data: z.infer<typeof PayloadSchema>): string {
     xml += '        <pago>\n';
     xml += `          <tipoPago>${esc(comunicacion.contrato.pago.tipoPago)}</tipoPago>\n`;
     if (comunicacion.contrato.pago.fechaPago) {
-      xml += `          <fechaPago>${esc(comunicacion.contrato.pago.fechaPago)}</fechaPago>\n`;
+      xml += `          <fechaPago>${esc(formatDateOnly(comunicacion.contrato.pago.fechaPago))}</fechaPago>\n`;
     }
     if (comunicacion.contrato.pago.medioPago) {
       xml += `          <medioPago>${esc(comunicacion.contrato.pago.medioPago)}</medioPago>\n`;
@@ -212,7 +230,7 @@ function buildXML(data: z.infer<typeof PayloadSchema>): string {
       if (persona.soporteDocumento) {
         xml += `        <soporteDocumento>${esc(persona.soporteDocumento)}</soporteDocumento>\n`;
       }
-      xml += `        <fechaNacimiento>${esc(persona.fechaNacimiento)}</fechaNacimiento>\n`;
+      xml += `        <fechaNacimiento>${esc(formatDateOnly(persona.fechaNacimiento))}</fechaNacimiento>\n`;
       if (persona.nacionalidad) {
         xml += `        <nacionalidad>${esc(persona.nacionalidad)}</nacionalidad>\n`;
       }
