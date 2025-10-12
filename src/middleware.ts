@@ -64,6 +64,7 @@ export function middleware(req: NextRequest) {
         '/api/ministerio/test-conexion', // Test de conexión MIR (debe ser público)
         '/api/ministerio/procesar-pendientes', // Procesar pendientes MIR (debe ser público)
         '/api/ministerio/debug-env', // Debug variables de entorno (temporal)
+        '/api/ministerio/test-basic', // Test básico de conectividad MIR
         '/public',
         '/admin-login',
         '/onboarding',
