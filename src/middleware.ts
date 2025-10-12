@@ -63,6 +63,7 @@ export function middleware(req: NextRequest) {
         '/api/public/form-redirect', // Redirección a formularios públicos
         '/api/ministerio/test-conexion', // Test de conexión MIR (debe ser público)
         '/api/ministerio/procesar-pendientes', // Procesar pendientes MIR (debe ser público)
+        '/api/ministerio/debug-env', // Debug variables de entorno (temporal)
         '/public',
         '/admin-login',
         '/onboarding',
