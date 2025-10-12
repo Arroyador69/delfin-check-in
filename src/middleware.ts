@@ -61,10 +61,11 @@ export function middleware(req: NextRequest) {
         '/api/onboarding', // Endpoints de onboarding deben ser públicos
         '/api/public/form', // Endpoints de formularios públicos
         '/api/public/form-redirect', // Redirección a formularios públicos
-        '/api/ministerio/test-conexion', // Test de conexión MIR (debe ser público)
-        '/api/ministerio/procesar-pendientes', // Procesar pendientes MIR (debe ser público)
-        '/api/ministerio/debug-env', // Debug variables de entorno (temporal)
-        '/api/ministerio/test-basic', // Test básico de conectividad MIR
+      '/api/ministerio/test-conexion', // Test de conexión MIR (debe ser público)
+      '/api/ministerio/procesar-pendientes', // Procesar pendientes MIR (debe ser público)
+      '/api/ministerio/debug-env', // Debug variables de entorno (temporal)
+      '/api/ministerio/test-basic', // Test básico de conectividad MIR
+      '/api/ministerio/test-simple', // Test simple de conectividad MIR
         '/public',
         '/admin-login',
         '/onboarding',
