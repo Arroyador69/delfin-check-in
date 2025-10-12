@@ -127,12 +127,12 @@ export class SpainMinistryService {
    */
   private mapDocumentType(type: string): string {
     const mapping: Record<string, string> = {
-      'passport': 'PASSPORT',
-      'dni': 'DNI',
+      'passport': 'PAS', // Corregido: máximo 5 caracteres según especificación MIR
+      'dni': 'NIF', // Corregido: código oficial MIR
       'nie': 'NIE',
-      'other': 'OTHER'
+      'other': 'OTRO' // Corregido: máximo 5 caracteres según especificación MIR
     };
-    return mapping[type] || 'OTHER';
+    return mapping[type] || 'OTRO';
   }
 
   /**
@@ -140,12 +140,12 @@ export class SpainMinistryService {
    */
   private mapTravelPurpose(purpose: string): string {
     const mapping: Record<string, string> = {
-      'tourism': 'TOURISM',
-      'business': 'BUSINESS',
-      'family': 'FAMILY',
-      'other': 'OTHER'
+      'tourism': 'TURISMO', // Corregido: usar código en español
+      'business': 'NEGOCIO', // Corregido: usar código en español
+      'family': 'FAMILIA', // Corregido: usar código en español
+      'other': 'OTRO' // Corregido: máximo 5 caracteres según especificación MIR
     };
-    return mapping[purpose] || 'OTHER';
+    return mapping[purpose] || 'OTRO'; // Corregido: máximo 5 caracteres según especificación MIR
   }
 
   /**

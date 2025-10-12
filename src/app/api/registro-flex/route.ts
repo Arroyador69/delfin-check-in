@@ -63,8 +63,8 @@ const mapDocTypeIn = (x?: string) => {
   const k = String(x || '').toLowerCase();
   if (k.includes('dni') || k.includes('nif')) return 'NIF';
   if (k.includes('nie')) return 'NIE';
-  if (k.includes('pas')) return 'PASSPORT';
-  return 'OTHER';
+  if (k.includes('pas')) return 'PAS'; // Corregido: máximo 5 caracteres según especificación MIR
+  return 'OTRO'; // Corregido: máximo 5 caracteres según especificación MIR
 };
 
 const iso3to2 = (x?: string) => {

@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
             nombre: "Alberto",
             apellido1: "Juan",
             apellido2: "emilio",
-            tipoDocumento: "PASSPORT",
+            tipoDocumento: "PAS",
             numeroDocumento: "ABC123456",
             fechaNacimiento: "1996-01-11",
             nacionalidad: "ES",
