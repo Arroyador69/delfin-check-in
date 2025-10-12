@@ -114,9 +114,10 @@ function validateBusinessRules(data: z.infer<typeof PayloadSchema>): string[] {
         if (esPaisEspana && esNacionalidadEsp && !esPasaporte && !/^\d{5}$/.test(p.direccion.codigoMunicipio || '')) {
           details.push(`comunicaciones[${idx}].personas[${i}].codigoMunicipio debe ser INE de 5 dígitos para España`);
         }
-        // Para no España o documentación de pasaporte (posible extranjero), exigir nombreMunicipio como alternativa
+        // Para no España o documentación de pasaporte (posible extranjero), completar automáticamente
         if ((!esPaisEspana || !esNacionalidadEsp || esPasaporte) && !p.direccion.nombreMunicipio && !p.direccion.codigoMunicipio) {
-          details.push(`comunicaciones[${idx}].personas[${i}].nombreMunicipio requerido para países no españoles (o codigoMunicipio como alternativa)`);
+          // Completar automáticamente para datos existentes sin validar
+          p.direccion.nombreMunicipio = 'N/A';
         }
       }
       
