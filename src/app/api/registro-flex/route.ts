@@ -387,15 +387,12 @@ export async function POST(req: NextRequest) {
       
       if (esEspana) {
         if (!v.ine || !/^\d{5}$/.test(v.ine)) {
-          console.error(`❌ ERROR VALIDACIÓN - Viajero ${index}: INE inválido para español:`, {
+          console.warn(`⚠️ AVISO VALIDACIÓN - Viajero ${index}: INE ausente o inválido para español. Se permite guardar y revisar más tarde.`, {
             ine: v.ine,
             esperado: '5 dígitos numéricos',
             recibido: `"${v.ine}" (${v.ine?.length || 0} caracteres)`
           });
-          issues.push({ 
-            path: `${prefix}.ine`, 
-            message: `CÓDIGO INE OBLIGATORIO: Para residentes en España es obligatorio el código INE del municipio (exactamente 5 dígitos). Recibido: "${v.ine || 'vacío'}". Busca "código INE + tu ciudad" en Google.` 
-          });
+          // No bloqueamos el flujo. Se podrá corregir antes de envío al MIR.
         }
       } else {
         // Para extranjeros, INE debe estar vacío y nombreMunicipio es requerido
