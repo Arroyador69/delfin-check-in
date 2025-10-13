@@ -26,6 +26,13 @@ export async function POST(
   try {
     const slug = params.slug;
     const body = await req.json();
+    
+    // Debug: Log del payload recibido
+    console.log('🔍 Endpoint /api/public/form/[slug]/submit recibido:');
+    console.log('Slug:', slug);
+    console.log('Body keys:', Object.keys(body));
+    console.log('Body type:', typeof body);
+    console.log('Body sample:', JSON.stringify(body, null, 2).slice(0, 500) + '...');
 
     // Verificar que el tenant existe y está activo
     const tenantResult = await sql`
@@ -50,7 +57,14 @@ export async function POST(
     const tenant = tenantResult.rows[0];
     
     // Si el body contiene datos del MIR (contrato, viajeros), redirigir al endpoint correcto
+    console.log('🔍 Verificando si son datos MIR:');
+    console.log('Tiene contrato:', !!body.contrato);
+    console.log('Tiene viajeros:', !!body.viajeros);
+    console.log('Tiene tenantId:', !!body.tenantId);
+    console.log('Tiene formData:', !!body.formData);
+    
     if (body.contrato && body.viajeros) {
+      console.log('✅ Datos MIR detectados, redirigiendo a /api/registro-flex');
       // Crear una nueva request para el endpoint de registro-flex
       const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://admin.delfincheckin.com';
       const registroFlexUrl = `${baseUrl}/api/registro-flex`;
@@ -87,6 +101,7 @@ export async function POST(
     }
 
     // Si llegamos aquí, es un formulario simple (no MIR)
+    console.log('❌ NO son datos MIR, procesando como formulario simple');
     const { tenantId, formData } = body;
 
     if (!tenantId || !formData) {
