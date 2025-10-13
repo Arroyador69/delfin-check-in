@@ -147,7 +147,7 @@ const normalize = (body: any) => {
       entrada: normalizeDateTime(contrato.entrada || b?.ejecucionContrato?.fechaHoraEntrada),
       salida: normalizeDateTime(contrato.salida || b?.ejecucionContrato?.fechaHoraSalida),
       nHabitaciones: Number(contrato.nHabitaciones || b?.numHabitaciones || 1),
-      internet: !!(contracto?.internet ?? b?.internet ?? contrato.internet),
+      internet: !!(contrato?.internet ?? b?.internet ?? contrato.internet),
       fechaPago: (contrato.fechaPago || b?.pago?.fechaPago) ? normalizeDate(contrato.fechaPago || b?.pago?.fechaPago) : null,
       tipoPago: mapPagoIn(contrato.tipoPagoCode || contrato.tipoPagoLabel || contrato.tipoPago || b?.pago?.tipo),
       medioPago: contrato.medioPago || b?.pago?.identificacion || null,
