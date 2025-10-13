@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { CheckCircle, Send, User, Mail, Phone, Calendar, Users, Home, FileText } from 'lucide-react';
+import MunicipioSelector from '@/components/MunicipioSelector';
 
 interface TenantFormConfig {
   tenant: {
@@ -624,27 +625,26 @@ export default function TenantFormPage() {
                       </p>
                     </div>
                     
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Código municipio INE (5) <span id="ineRequired1" className="text-red-500 hidden">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        id="codigoMunicipio1"
-                        value={formData.codigoMunicipio}
-                        onChange={(e) => handleInputChange('codigoMunicipio', e.target.value)}
-                        maxLength={5}
-                        placeholder="29042"
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                      />
-                      <p className="text-xs text-gray-500 mt-1">
-                        <span id="ineHelp1">
-                          <strong>SOLO para españoles:</strong> Código INE del municipio (5 dígitos: 2 de provincia + 3 de municipio)<br/>
-                          Ejemplo: 29042 (Fuengirola), 29045 (Málaga), 28001 (Madrid), 08001 (Barcelona)<br/>
-                          <strong className="text-green-600">Para extranjeros:</strong> Dejar vacío y rellenar solo "Nombre del municipio" abajo
-                        </span>
-                      </p>
-                    </div>
+                    {formData.pais && (formData.pais.toLowerCase().includes('españa') || formData.pais.toLowerCase().includes('spain') || formData.pais.toLowerCase() === 'es') ? (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Municipio <span className="text-red-500">*</span>
+                        </label>
+                        <MunicipioSelector
+                          value={formData.codigoMunicipio}
+                          onChange={(codigo, nombre) => {
+                            handleInputChange('codigoMunicipio', codigo);
+                            handleInputChange('nombreMunicipio', nombre);
+                          }}
+                          placeholder="Busca tu municipio (ej: Fuengirola, Málaga...)"
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                          required
+                        />
+                        <p className="text-xs text-blue-600 mt-1">
+                          💡 Escribe para buscar tu municipio. El código INE se asignará automáticamente.
+                        </p>
+                      </div>
+                    ) : null}
                     
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
