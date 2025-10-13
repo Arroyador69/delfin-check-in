@@ -12,14 +12,6 @@ export async function POST(
   try {
     const slug = params.slug;
     const body = await req.json();
-    const { tenantId, formData } = body;
-
-    if (!slug || !tenantId || !formData) {
-      return NextResponse.json(
-        { error: 'Datos requeridos faltantes' },
-        { status: 400 }
-      );
-    }
 
     // Verificar que el tenant existe y está activo
     const tenantResult = await sql`
@@ -30,7 +22,7 @@ export async function POST(
         t.config,
         t.status
       FROM tenants t
-      WHERE t.id = ${tenantId}
+      WHERE t.id = ${slug}
         AND t.status = 'active'
     `;
 
@@ -42,8 +34,55 @@ export async function POST(
     }
 
     const tenant = tenantResult.rows[0];
+    
+    // Si el body contiene datos del MIR (contrato, viajeros), redirigir al endpoint correcto
+    if (body.contrato && body.viajeros) {
+      // Crear una nueva request para el endpoint de registro-flex
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://admin.delfincheckin.com';
+      const registroFlexUrl = `${baseUrl}/api/registro-flex`;
+      
+      // Reenviar la request al endpoint correcto
+      const response = await fetch(registroFlexUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-Tenant-ID': tenant.id,
+          'X-Tenant-Name': tenant.name,
+        },
+        body: JSON.stringify(body),
+      });
 
-    // Validar datos requeridos
+      if (!response.ok) {
+        const errorText = await response.text();
+        return NextResponse.json(
+          { error: `Error en registro-flex: ${errorText}` },
+          { status: response.status }
+        );
+      }
+
+      const result = await response.json();
+      
+      // Log del envío para el tenant
+      console.log(`📝 Formulario MIR enviado para tenant ${tenant.id}:`, {
+        tenantName: tenant.name,
+        timestamp: new Date().toISOString()
+      });
+
+      return NextResponse.json(result);
+    }
+
+    // Si llegamos aquí, es un formulario simple (no MIR)
+    const { tenantId, formData } = body;
+
+    if (!tenantId || !formData) {
+      return NextResponse.json(
+        { error: 'Datos requeridos faltantes' },
+        { status: 400 }
+      );
+    }
+
+    // Validar datos requeridos para formularios simples
     if (!formData.name || !formData.email) {
       return NextResponse.json(
         { error: 'Nombre y email son requeridos' },
