@@ -1469,15 +1469,44 @@
                 if (!input || !datalist || !hidden) return;
                 
                 input.addEventListener('input', function() {
-                    const resultados = buscarMunicipio(this.value);
-                    datalist.innerHTML = '';
-                    resultados.forEach(m => {
-                        const option = document.createElement('option');
-                        option.value = m.n;
-                        option.setAttribute('data-code', m.c);
-                        option.textContent = `${m.n} (${m.p}) - INE: ${m.c}`;
-                        datalist.appendChild(option);
-                    });
+                    const query = this.value.trim();
+                    if (query.length < 2) {
+                        datalist.innerHTML = '';
+                        return;
+                    }
+                    
+                    // Debounce: esperar 300ms después de la última tecla
+                    clearTimeout(this.searchTimeout);
+                    this.searchTimeout = setTimeout(async () => {
+                        try {
+                            const response = await fetch(`/api/municipios/buscar?q=${encodeURIComponent(query)}`);
+                            const data = await response.json();
+                            
+                            datalist.innerHTML = '';
+                            if (data.municipios && Array.isArray(data.municipios)) {
+                                data.municipios.forEach(m => {
+                                    const option = document.createElement('option');
+                                    option.value = m.n;
+                                    option.setAttribute('data-code', m.c);
+                                    option.textContent = `${m.n} (${m.p}) - INE: ${m.c}`;
+                                    datalist.appendChild(option);
+                                });
+                                console.log(`🔍 Municipios encontrados (${data.fuente}):`, data.municipios.length);
+                            }
+                        } catch (error) {
+                            console.error('Error buscando municipios:', error);
+                            // Fallback a búsqueda local
+                            const resultados = buscarMunicipio(query);
+                            datalist.innerHTML = '';
+                            resultados.forEach(m => {
+                                const option = document.createElement('option');
+                                option.value = m.n;
+                                option.setAttribute('data-code', m.c);
+                                option.textContent = `${m.n} (${m.p}) - INE: ${m.c}`;
+                                datalist.appendChild(option);
+                            });
+                        }
+                    }, 300);
                 });
                 
                 input.addEventListener('change', function() {
