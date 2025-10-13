@@ -63,7 +63,11 @@ export async function POST(
     console.log('Tiene tenantId:', !!body.tenantId);
     console.log('Tiene formData:', !!body.formData);
     
-    if (body.contrato && body.viajeros) {
+    // Detectar si es un formulario MIR (tiene contrato y viajeros) o un formulario simple
+    const isMIRForm = body.contrato && body.viajeros;
+    const isSimpleForm = body.tenantId && body.formData;
+    
+    if (isMIRForm) {
       console.log('✅ Datos MIR detectados, redirigiendo a /api/registro-flex');
       // Crear una nueva request para el endpoint de registro-flex
       const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://admin.delfincheckin.com';
@@ -102,9 +106,22 @@ export async function POST(
 
     // Si llegamos aquí, es un formulario simple (no MIR)
     console.log('❌ NO son datos MIR, procesando como formulario simple');
+    
+    // Si no es MIR ni formulario simple, es un error
+    if (!isSimpleForm && !isMIRForm) {
+      console.log('❌ Error: No se detectó ni formulario MIR ni formulario simple');
+      console.log('Body recibido:', JSON.stringify(body, null, 2));
+      return NextResponse.json(
+        { error: 'Formato de datos no reconocido' },
+        { status: 400, headers: corsHeaders }
+      );
+    }
+    
+    // Procesar formulario simple
     const { tenantId, formData } = body;
 
     if (!tenantId || !formData) {
+      console.log('❌ Error: Faltan tenantId o formData en formulario simple');
       return NextResponse.json(
         { error: 'Datos requeridos faltantes' },
         { status: 400, headers: corsHeaders }
