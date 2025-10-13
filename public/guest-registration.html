@@ -1201,10 +1201,31 @@
         function getApiUrl() {
           try {
             const u = new URL(window.location.href);
+            
+            // Prioridad 1: Parámetro api_endpoint del tenant (si está disponible)
+            const tenantApiEndpoint = u.searchParams.get('api_endpoint');
+            if (tenantApiEndpoint) {
+              return tenantApiEndpoint;
+            }
+            
+            // Prioridad 2: Parámetro api personalizado
             const fromQuery = u.searchParams.get('api');
-            if (fromQuery) { localStorage.setItem('apiUrl', fromQuery); return fromQuery; }
-            return localStorage.getItem('apiUrl') || DEFAULT_API;
-          } catch { return DEFAULT_API; }
+            if (fromQuery) { 
+              localStorage.setItem('apiUrl', fromQuery); 
+              return fromQuery; 
+            }
+            
+            // Prioridad 3: localStorage
+            const fromStorage = localStorage.getItem('apiUrl');
+            if (fromStorage) {
+              return fromStorage;
+            }
+            
+            // Prioridad 4: Endpoint por defecto
+            return DEFAULT_API;
+          } catch { 
+            return DEFAULT_API; 
+          }
         }
 
         async function testConnectivity() {
@@ -1358,12 +1379,19 @@
             const esEspana = paisValue === 'españa' || paisValue === 'spain' || paisValue === 'es' || paisValue === 'esp' || paisValue === 'espana' || paisValue.startsWith('españa') || paisValue.startsWith('spain');
             console.log(`País detectado: "${paisValue}" - Es España: ${esEspana}`);
             
+            // Verificar si el contenedor del viajero está visible
+            const travelerSection = ineInput.closest('[id*="traveler"], .traveler-section');
+            const isTravelerVisible = !travelerSection || !travelerSection.classList.contains('hidden');
+            
             // También mostrar/ocultar visualmente los campos
             const ineContainer = ineInput.closest('div');
             const municipioContainer = municipioInput.closest('div');
             
             if (esEspana) {
-                ineInput.required = true;
+                // Solo aplicar required si el viajero está visible
+                if (isTravelerVisible) {
+                    ineInput.required = true;
+                }
                 if (ineRequired) { ineRequired.classList && ineRequired.classList.remove('hidden'); ineRequired.style && (ineRequired.style.display = 'inline'); }
                 municipioInput.required = false;
                 if (municipioRequired) { municipioRequired.classList && municipioRequired.classList.add('hidden'); municipioRequired.style && (municipioRequired.style.display = 'none'); }
@@ -1374,7 +1402,10 @@
             } else {
                 ineInput.required = false;
                 if (ineRequired) { ineRequired.classList && ineRequired.classList.add('hidden'); ineRequired.style && (ineRequired.style.display = 'none'); }
-                municipioInput.required = true;
+                // Solo aplicar required si el viajero está visible
+                if (isTravelerVisible) {
+                    municipioInput.required = true;
+                }
                 if (municipioRequired) { municipioRequired.classList && municipioRequired.classList.remove('hidden'); municipioRequired.style && (municipioRequired.style.display = 'inline'); }
                 
                 // Ocultar campo INE, mostrar nombre municipio
