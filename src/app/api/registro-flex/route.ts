@@ -167,7 +167,15 @@ const normalize = (body: any) => {
       const res = viajero.residencia || {};
       const paisEntrada = viajero.paisResidencia || viajero.pais || res.pais;
       const cpEntrada = viajero.cp || viajero.codigoPostal || res.codigoPostal;
-  const ineEntrada = viajero.ine || viajero.codigoMunicipio || res.codigoMunicipio;
+      // Aceptar múltiples alias de INE y normalizar a 5 dígitos
+      const ineEntradaRaw =
+        viajero.ine ||
+        viajero.codigoMunicipio ||
+        viajero.codigoMunicipioINE ||
+        viajero.municipioINE ||
+        res.codigoMunicipio ||
+        res.codigoMunicipioINE ||
+        res.municipioINE;
 
       return {
         nombre: String(viajero.nombre || '').trim(),
@@ -187,8 +195,8 @@ const normalize = (body: any) => {
           return pais === 'ES' ? cpValue.padStart(5, '0') : cpValue;
         })(),
         ine: (() => {
-          const ineValue = String(ineEntrada || '').trim();
-          return ineValue ? ineValue.padStart(5, '0') : '';
+          const digits = String(ineEntradaRaw || '').replace(/\D/g, '');
+          return digits ? digits.padStart(5, '0').slice(-5) : '';
         })(),
         nombreMunicipio: String(viajero.nombreMunicipio || res.localidad || '').trim(),
         paisResidencia: normalizeToAlpha3(paisEntrada || 'ESP'),
