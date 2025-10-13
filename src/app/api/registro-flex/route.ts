@@ -258,27 +258,58 @@ export async function POST(req: NextRequest) {
     console.log('📋 Datos recibidos:', JSON.stringify(json, null, 2));
     
     // 🔬 DEBUG: Análisis detallado de los datos
-    console.log('🔬 DEBUG INICIAL - Estructura completa:', {
+    console.log('═══════════════════════════════════════════════════════════');
+    console.log('🔬 DEBUG INICIAL - PAYLOAD RECIBIDO:');
+    console.log('═══════════════════════════════════════════════════════════');
+    console.log('📦 Estructura completa:', {
       tieneContrato: !!json.contrato,
       tieneTitular: !!json.titular,
       tieneViajeros: !!json.viajeros,
+      tieneEjecucionContrato: !!json.ejecucionContrato,
+      tienePago: !!json.pago,
       numeroViajeros: json.viajeros?.length || 0,
-      viajeros: json.viajeros?.map((v: any, i: number) => ({
-        index: i,
+    });
+    
+    console.log('👥 Análisis de viajeros ANTES de normalizar:');
+    json.viajeros?.forEach((v: any, i: number) => {
+      console.log(`  Viajero ${i}:`, {
         nombre: v.nombre,
         paisResidencia: v.paisResidencia,
+        pais: v.pais,
+        'residencia.pais': v.residencia?.pais,
         ine: v.ine,
+        codigoMunicipio: v.codigoMunicipio,
+        'residencia.codigoMunicipio': v.residencia?.codigoMunicipio,
         nombreMunicipio: v.nombreMunicipio,
+        'residencia.localidad': v.residencia?.localidad,
         todosLosCampos: Object.keys(v)
-      }))
+      });
     });
+    console.log('═══════════════════════════════════════════════════════════');
 
     const normalized = normalize(json);
     if (!normalized) {
       return sendError(req, 400, 'JSON inválido o no parseable');
     }
 
-    console.log('✅ Datos normalizados:', JSON.stringify(normalized, null, 2));
+    console.log('═══════════════════════════════════════════════════════════');
+    console.log('✅ DATOS NORMALIZADOS:');
+    console.log('═══════════════════════════════════════════════════════════');
+    console.log(JSON.stringify(normalized, null, 2));
+    
+    console.log('👥 Análisis de viajeros DESPUÉS de normalizar:');
+    normalized.viajeros?.forEach((v: any, i: number) => {
+      console.log(`  Viajero ${i}:`, {
+        nombre: v.nombre,
+        paisResidencia: v.paisResidencia,
+        ine: `"${v.ine}"`,
+        ineLength: v.ine?.length,
+        ineEsValido: /^\d{5}$/.test(v.ine || ''),
+        nombreMunicipio: v.nombreMunicipio,
+        cp: v.cp
+      });
+    });
+    console.log('═══════════════════════════════════════════════════════════');
     
     // Debug específico para datos de dirección
     if (normalized.viajeros && normalized.viajeros.length > 0) {
@@ -342,28 +373,68 @@ export async function POST(req: NextRequest) {
       
       // Validación condicional de INE: solo para españoles
       const esEspana = v.paisResidencia === 'ESP';
-      console.log(`🔬 DEBUG VALIDACIÓN - Es España:`, esEspana);
+      console.log(`🔬 DEBUG VALIDACIÓN - Viajero ${index}:`, {
+        esEspana,
+        paisResidencia: v.paisResidencia,
+        paisISO2,
+        ine: `"${v.ine}"`,
+        ineLength: v.ine?.length,
+        ineValido: /^\d{5}$/.test(v.ine || ''),
+        nombreMunicipio: `"${v.nombreMunicipio}"`
+      });
       
       if (esEspana) {
         if (!v.ine || !/^\d{5}$/.test(v.ine)) {
-          issues.push({ path: `${prefix}.ine`, message: 'Para españoles: debe ser 5 dígitos' });
+          console.error(`❌ ERROR VALIDACIÓN - Viajero ${index}: INE inválido para español:`, {
+            ine: v.ine,
+            esperado: '5 dígitos numéricos',
+            recibido: `"${v.ine}" (${v.ine?.length || 0} caracteres)`
+          });
+          issues.push({ 
+            path: `${prefix}.ine`, 
+            message: `CÓDIGO INE OBLIGATORIO: Para residentes en España es obligatorio el código INE del municipio (exactamente 5 dígitos). Recibido: "${v.ine || 'vacío'}". Busca "código INE + tu ciudad" en Google.` 
+          });
         }
       } else {
         // Para extranjeros, INE debe estar vacío y nombreMunicipio es requerido
-        console.log(`🔬 DEBUG VALIDACIÓN - Verificando INE para extranjero:`, `"${v.ine}"`, `(vacío: ${!v.ine || v.ine.trim() === ''})`);
+        console.log(`🔬 DEBUG VALIDACIÓN - Verificando campos para extranjero:`, {
+          ine: `"${v.ine}"`, 
+          ineVacio: !v.ine || v.ine.trim() === '',
+          nombreMunicipio: `"${v.nombreMunicipio}"`,
+          nombreMunicipioVacio: !v.nombreMunicipio || v.nombreMunicipio.trim() === ''
+        });
+        
         if (v.ine && v.ine.trim() !== '') {
-          console.log(`❌ ERROR: INE no está vacío para extranjero:`, `"${v.ine}"`);
-          issues.push({ path: `${prefix}.ine`, message: 'Para extranjeros: debe estar vacío' });
+          console.error(`❌ ERROR VALIDACIÓN - Viajero ${index}: INE debe estar vacío para extranjero:`, `"${v.ine}"`);
+          issues.push({ 
+            path: `${prefix}.ine`, 
+            message: `Para extranjeros el campo INE debe estar vacío. Recibido: "${v.ine}". Solo rellena el campo "Nombre del municipio".` 
+          });
         }
         if (!v.nombreMunicipio || v.nombreMunicipio.trim() === '') {
-          issues.push({ path: `${prefix}.nombreMunicipio`, message: 'Para extranjeros: requerido' });
+          console.error(`❌ ERROR VALIDACIÓN - Viajero ${index}: Falta nombre del municipio para extranjero`);
+          issues.push({ 
+            path: `${prefix}.nombreMunicipio`, 
+            message: 'Para extranjeros es OBLIGATORIO el nombre del municipio/ciudad donde resides' 
+          });
         }
       }
     });
     }
 
     if (issues.length) {
-      console.error('❌ Errores de validación:', issues);
+      console.error('═══════════════════════════════════════════════════════════');
+      console.error('❌ ERRORES DE VALIDACIÓN:');
+      console.error('═══════════════════════════════════════════════════════════');
+      issues.forEach((issue, idx) => {
+        console.error(`  Error ${idx + 1}: ${issue.path} - ${issue.message}`);
+      });
+      console.error('═══════════════════════════════════════════════════════════');
+      console.error('💡 SOLUCIÓN:');
+      console.error('   1. Si el viajero reside en España: Debe rellenar el campo "Código municipio INE" con 5 dígitos');
+      console.error('   2. Si el viajero es extranjero: Debe dejar vacío el campo "Código INE" y rellenar "Nombre municipio"');
+      console.error('   3. Busca en Google: "código INE + nombre de tu ciudad" para encontrar el código correcto');
+      console.error('═══════════════════════════════════════════════════════════');
       return sendError(req, 422, 'Validación fallida', issues);
     }
 

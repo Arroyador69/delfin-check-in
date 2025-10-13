@@ -474,24 +474,31 @@
                                 </p>
                             </div>
                             
-                            <div>
+                            <div id="ineContainer1" style="display: block;">
                                 <label class="block text-sm font-medium text-gray-700 mb-2" data-i18n="travelers.municipalityCode">
-                                    Código municipio INE (5) <span id="ineRequired1" class="text-red-500">*</span>
+                                    Código municipio INE (5 dígitos) <span id="ineRequired1" class="text-red-500">*</span>
                                 </label>
                                 <input
                                     type="text"
                                     name="codigoMunicipio"
                                     id="codigoMunicipio1"
-                                    class="form-input"
+                                    class="form-input border-2 border-blue-300"
                                     maxlength="5"
-                                    placeholder="29042"
+                                    pattern="\d{5}"
+                                    title="Debe ser exactamente 5 dígitos"
+                                    placeholder="29042 (Código INE de tu municipio)"
+                                    required
                                 />
-                                <p class="text-xs text-gray-500 mt-1" data-i18n="travelers.municipalityHelp">
+                                <p class="text-xs text-blue-600 mt-1 font-medium" data-i18n="travelers.municipalityHelp">
                                     <span id="ineHelp1">
-                                        <strong>SOLO para españoles:</strong> Código INE del municipio (5 dígitos: 2 de provincia + 3 de municipio)<br>
-                                        Ejemplo: 29042 (Fuengirola), 29045 (Málaga), 28001 (Madrid), 08001 (Barcelona)<br>
-                                        <strong class="text-green-600">Para extranjeros:</strong> Dejar vacío y rellenar solo "Nombre del municipio" abajo
+                                        <strong>⚠️ OBLIGATORIO para residentes en España:</strong><br>
+                                        Código INE del municipio donde resides (5 dígitos: 2 de provincia + 3 de municipio)<br>
+                                        <strong>Ejemplos:</strong> 29042 (Fuengirola), 29067 (Málaga), 28079 (Madrid), 08019 (Barcelona)<br>
+                                        <strong class="text-green-600">¿Eres extranjero?</strong> Este campo se ocultará automáticamente al seleccionar tu país
                                     </span>
+                                </p>
+                                <p class="text-xs text-gray-600 mt-1">
+                                    💡 <strong>¿No conoces tu código INE?</strong> Busca "<em>código INE + nombre de tu ciudad</em>" en Google
                                 </p>
                             </div>
                             
@@ -687,22 +694,28 @@
                             
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2" data-i18n="travelers.municipalityCode">
-                                    Código municipio INE (5) <span id="ineRequired2" class="text-red-500">*</span>
+                                    Código municipio INE (5 dígitos) <span id="ineRequired2" class="text-red-500">*</span>
                                 </label>
                                 <input
                                     type="text"
                                     name="codigoMunicipio2"
                                     id="codigoMunicipio2"
-                                    class="form-input"
+                                    class="form-input border-2 border-blue-300"
                                     maxlength="5"
-                                    placeholder="29042"
+                                    pattern="\d{5}"
+                                    title="Debe ser exactamente 5 dígitos"
+                                    placeholder="29042 (Código INE de tu municipio)"
                                 />
-                                <p class="text-xs text-gray-500 mt-1" data-i18n="travelers.municipalityHelp">
+                                <p class="text-xs text-blue-600 mt-1 font-medium" data-i18n="travelers.municipalityHelp">
                                     <span id="ineHelp2">
-                                        <strong>SOLO para españoles:</strong> Código INE del municipio (5 dígitos: 2 de provincia + 3 de municipio)<br>
-                                        Ejemplo: 29042 (Fuengirola), 29045 (Málaga), 28001 (Madrid), 08001 (Barcelona)<br>
-                                        <strong class="text-green-600">Para extranjeros:</strong> Dejar vacío y rellenar solo "Nombre del municipio" abajo
+                                        <strong>⚠️ OBLIGATORIO para residentes en España:</strong><br>
+                                        Código INE del municipio donde resides (5 dígitos: 2 de provincia + 3 de municipio)<br>
+                                        <strong>Ejemplos:</strong> 29042 (Fuengirola), 29067 (Málaga), 28079 (Madrid), 08019 (Barcelona)<br>
+                                        <strong class="text-green-600">¿Eres extranjero?</strong> Este campo se ocultará automáticamente al seleccionar tu país
                                     </span>
+                                </p>
+                                <p class="text-xs text-gray-600 mt-1">
+                                    💡 <strong>¿No conoces tu código INE?</strong> Busca "<em>código INE + nombre de tu ciudad</em>" en Google
                                 </p>
                             </div>
                             
@@ -2201,23 +2214,38 @@
       const cp = String((parte.viajeros[0].residencia && parte.viajeros[0].residencia.codigoPostal) || '').trim();
       const localidad = String((parte.viajeros[0].residencia && parte.viajeros[0].residencia.localidad) || '').trim();
 
+      console.log('🔍 VALIDACIÓN MIR - País:', parte.viajeros[0].residencia.pais, '- Es España:', isSpain);
+      console.log('🔍 VALIDACIÓN MIR - INE:', `"${ine}"`, '- Válido:', /^\d{5}$/.test(ine));
+      console.log('🔍 VALIDACIÓN MIR - CP:', `"${cp}"`);
+      console.log('🔍 VALIDACIÓN MIR - Localidad:', `"${localidad}"`);
+
       if (isSpain) {
-        if (!/^\d{5}$/.test(ine)) {
-          errors.push('Código INE (5 dígitos) requerido para residentes en España');
+        if (!ine || !/^\d{5}$/.test(ine)) {
+          errors.push('⚠️ CÓDIGO INE OBLIGATORIO: Para residentes en España es obligatorio el código INE del municipio (5 dígitos). Busca en Google "código INE + tu ciudad"');
         }
         if (ine && cp && ine === cp) {
-          errors.push('El INE no es el código postal. Debe ser el código INE de municipio (5 dígitos)');
+          errors.push('❌ ERROR: El INE NO es el código postal. El INE es el código de municipio (5 dígitos diferentes). Ejemplo: 29042 para Fuengirola, no 29640');
+        }
+        // Validación adicional: verificar que realmente sean 5 dígitos numéricos
+        if (ine && ine.length !== 5) {
+          errors.push(`❌ ERROR: El código INE debe tener exactamente 5 dígitos, tienes ${ine.length}`);
+        }
+        if (ine && !/^\d+$/.test(ine)) {
+          errors.push('❌ ERROR: El código INE solo puede contener números (0-9)');
         }
       } else {
         // Extranjero: INE debe ir vacío y localidad obligatoria
         if (ine) {
-          errors.push('Para extranjeros, deje el INE vacío');
+          errors.push('Para extranjeros, deje el campo "Código municipio INE" vacío');
         }
         if (!localidad) {
-          errors.push('Para extranjeros, indique la ciudad/municipio de residencia');
+          errors.push('⚠️ Para extranjeros es OBLIGATORIO el nombre del municipio/ciudad donde resides');
         }
       }
-    } catch {}
+    } catch (e) {
+      console.error('Error validando municipio:', e);
+      errors.push('Error técnico al validar municipio. Por favor contacta con soporte.');
+    }
     return errors;
   }
 
@@ -2294,3 +2322,4 @@
 })();
 </script>
 </html>
+
