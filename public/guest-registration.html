@@ -1295,6 +1295,35 @@
         function showTraveler2() {
             document.getElementById('traveler2Section').classList.remove('hidden');
             document.getElementById('addTraveler2').style.display = 'none';
+            
+            // Restaurar required en campos del segundo viajero cuando se muestra
+            setTimeout(() => {
+                const form = document.getElementById('guestRegistrationForm');
+                const nombre2 = form.querySelector('[name="nombre2"]');
+                const apellido1_2 = form.querySelector('[name="apellido1_2"]');
+                const fechaNacimiento2 = form.querySelector('[name="fechaNacimiento2"]');
+                const tipoDocumento2 = form.querySelector('[name="tipoDocumento2"]');
+                const numeroDocumento2 = form.querySelector('[name="numeroDocumento2"]');
+                const sexo2 = form.querySelector('[name="sexo2"]');
+                const direccion2 = form.querySelector('[name="direccion2"]');
+                const codigoPostal2 = form.querySelector('[name="codigoPostal2"]');
+                
+                // Aplicar required a campos básicos del segundo viajero
+                if (nombre2) nombre2.setAttribute('required', 'required');
+                if (apellido1_2) apellido1_2.setAttribute('required', 'required');
+                if (fechaNacimiento2) fechaNacimiento2.setAttribute('required', 'required');
+                if (tipoDocumento2) tipoDocumento2.setAttribute('required', 'required');
+                if (numeroDocumento2) numeroDocumento2.setAttribute('required', 'required');
+                if (sexo2) sexo2.setAttribute('required', 'required');
+                if (direccion2) direccion2.setAttribute('required', 'required');
+                if (codigoPostal2) codigoPostal2.setAttribute('required', 'required');
+                
+                // Actualizar campos INE/municipio según el país del segundo viajero
+                const pais2 = form.querySelector('[name="pais2"]');
+                if (pais2) {
+                    updateFields(pais2, document.getElementById('codigoMunicipio2'), document.getElementById('ineRequired2'), document.getElementById('nombreMunicipio2'), document.getElementById('municipioRequired2'));
+                }
+            }, 100);
         }
 
         function hideTraveler2() {
@@ -1304,6 +1333,9 @@
             const form = document.getElementById('guestRegistrationForm');
             const traveler2Fields = form.querySelectorAll('[name*="2"]');
             traveler2Fields.forEach(field => {
+                // Quitar required cuando se oculta el segundo viajero
+                field.removeAttribute('required');
+                
                 if (field.type === 'checkbox') {
                     field.checked = false;
                 } else if (field.tagName === 'SELECT') {
