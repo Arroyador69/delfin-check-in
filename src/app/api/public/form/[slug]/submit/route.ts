@@ -1,6 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
 
+// CORS headers para permitir peticiones desde el formulario público
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Tenant-ID, X-Tenant-Name',
+};
+
+/**
+ * Manejar preflight OPTIONS request
+ */
+export async function OPTIONS(req: NextRequest) {
+  return NextResponse.json({}, { status: 200, headers: corsHeaders });
+}
+
 /**
  * API pública para enviar datos del formulario de un tenant
  * URL: /api/public/form/[slug]/submit
@@ -29,7 +43,7 @@ export async function POST(
     if (tenantResult.rows.length === 0) {
       return NextResponse.json(
         { error: 'Tenant no encontrado o inactivo' },
-        { status: 404 }
+        { status: 404, headers: corsHeaders }
       );
     }
 
@@ -57,7 +71,7 @@ export async function POST(
         const errorText = await response.text();
         return NextResponse.json(
           { error: `Error en registro-flex: ${errorText}` },
-          { status: response.status }
+          { status: response.status, headers: corsHeaders }
         );
       }
 
@@ -69,7 +83,7 @@ export async function POST(
         timestamp: new Date().toISOString()
       });
 
-      return NextResponse.json(result);
+      return NextResponse.json(result, { headers: corsHeaders });
     }
 
     // Si llegamos aquí, es un formulario simple (no MIR)
@@ -78,7 +92,7 @@ export async function POST(
     if (!tenantId || !formData) {
       return NextResponse.json(
         { error: 'Datos requeridos faltantes' },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       );
     }
 
@@ -86,7 +100,7 @@ export async function POST(
     if (!formData.name || !formData.email) {
       return NextResponse.json(
         { error: 'Nombre y email son requeridos' },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       );
     }
 
@@ -95,7 +109,7 @@ export async function POST(
     if (!emailRegex.test(formData.email)) {
       return NextResponse.json(
         { error: 'Formato de email inválido' },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       );
     }
 
@@ -198,13 +212,13 @@ export async function POST(
       message: 'Formulario enviado correctamente',
       submissionId: submission.id,
       submittedAt: submission.created_at
-    });
+    }, { headers: corsHeaders });
 
   } catch (error) {
     console.error('Error enviando formulario:', error);
     return NextResponse.json(
       { error: 'Error interno del servidor' },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     );
   }
 }
