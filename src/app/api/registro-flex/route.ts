@@ -140,7 +140,7 @@ const normalize = (body: any) => {
     const viajeros = b?.viajeros || [];
     
     // Normalizar contrato
-    const contratoNormalizado = {
+  const contratoNormalizado = {
       // Permitir fechaContrato a nivel raíz (formato antiguo "parte")
       fechaContrato: normalizeDate(contrato.fechaContrato || b?.fechaContrato),
       // Permitir leer de ejecucionContrato si faltan
@@ -151,7 +151,14 @@ const normalize = (body: any) => {
       fechaPago: (contrato.fechaPago || b?.pago?.fechaPago) ? normalizeDate(contrato.fechaPago || b?.pago?.fechaPago) : null,
       tipoPago: mapPagoIn(contrato.tipoPagoCode || contrato.tipoPagoLabel || contrato.tipoPago || b?.pago?.tipo),
       medioPago: contrato.medioPago || b?.pago?.identificacion || null,
-    } as any;
+  } as any;
+
+  // Fallback robusto: si falta fechaContrato, derivarla de la entrada (solo fecha)
+  if (!contratoNormalizado.fechaContrato && contratoNormalizado.entrada) {
+    try {
+      contratoNormalizado.fechaContrato = String(contratoNormalizado.entrada).split('T')[0];
+    } catch {}
+  }
     
     // Función para normalizar un viajero
     const normalizeViajero = (viajero: any) => {
@@ -160,7 +167,7 @@ const normalize = (body: any) => {
       const res = viajero.residencia || {};
       const paisEntrada = viajero.paisResidencia || viajero.pais || res.pais;
       const cpEntrada = viajero.cp || viajero.codigoPostal || res.codigoPostal;
-      const ineEntrada = viajero.ine || viajero.codigoMunicipio;
+  const ineEntrada = viajero.ine || viajero.codigoMunicipio || res.codigoMunicipio;
 
       return {
         nombre: String(viajero.nombre || '').trim(),
