@@ -135,48 +135,58 @@ const normalize = (body: any) => {
   try {
     const b = typeof body === 'string' ? JSON.parse(body) : body;
     
-    // Acepta tanto el formato nuevo como el antiguo
+    // Acepta tanto el formato nuevo (contrato/viajeros) como el formato "parte" (ejecucionContrato/pago/viajeros.documento)
     const contrato = b?.contrato || {};
     const viajeros = b?.viajeros || [];
     
     // Normalizar contrato
     const contratoNormalizado = {
-      fechaContrato: normalizeDate(contrato.fechaContrato),
-      entrada: normalizeDateTime(contrato.entrada),
-      salida: normalizeDateTime(contrato.salida),
-      nHabitaciones: Number(contrato.nHabitaciones || 1),
-      internet: !!contrato.internet,
-      fechaPago: contrato.fechaPago ? normalizeDate(contrato.fechaPago) : null,
-      tipoPago: mapPagoIn(contrato.tipoPagoCode || contrato.tipoPagoLabel || contrato.tipoPago),
-      medioPago: contrato.medioPago || null,
-    };
+      // Permitir fechaContrato a nivel raíz (formato antiguo "parte")
+      fechaContrato: normalizeDate(contrato.fechaContrato || b?.fechaContrato),
+      // Permitir leer de ejecucionContrato si faltan
+      entrada: normalizeDateTime(contrato.entrada || b?.ejecucionContrato?.fechaHoraEntrada),
+      salida: normalizeDateTime(contrato.salida || b?.ejecucionContrato?.fechaHoraSalida),
+      nHabitaciones: Number(contrato.nHabitaciones || b?.numHabitaciones || 1),
+      internet: !!(contracto?.internet ?? b?.internet ?? contrato.internet),
+      fechaPago: (contrato.fechaPago || b?.pago?.fechaPago) ? normalizeDate(contrato.fechaPago || b?.pago?.fechaPago) : null,
+      tipoPago: mapPagoIn(contrato.tipoPagoCode || contrato.tipoPagoLabel || contrato.tipoPago || b?.pago?.tipo),
+      medioPago: contrato.medioPago || b?.pago?.identificacion || null,
+    } as any;
     
     // Función para normalizar un viajero
-    const normalizeViajero = (viajero: any) => ({
-      nombre: String(viajero.nombre || '').trim(),
-      primerApellido: String(viajero.primerApellido || '').trim(),
-      segundoApellido: String(viajero.segundoApellido || '').trim() || null,
-      fechaNacimiento: normalizeDate(viajero.fechaNacimiento),
-      tipoDocumento: mapDocTypeIn(viajero.tipoDocumento),
-      numeroDocumento: String(viajero.numeroDocumento || '').toUpperCase().replace(/\s+/g, ''),
-      sexo: mapSexoIn(viajero.sexo),
-      nacionalidadISO2: iso3to2(viajero.nacionalidadISO2 || viajero.nacionalidad || viajero.nacionalidadISO3),
-      telefono: String(viajero.telefono || '').replace(/\s+/g, ''),
-      email: String(viajero.email || '').trim().toLowerCase(),
-      direccion: String(viajero.direccion || '').trim(),
-      cp: (() => {
-        const cpValue = String(viajero.cp || '').trim();
-        const pais = iso3to2(viajero.paisResidencia || viajero.pais || 'ESP');
-        // Solo aplicar padding para España (usar Alfa-2 para validación local)
-        return pais === 'ES' ? cpValue.padStart(5, '0') : cpValue;
-      })(),
-      ine: (() => {
-        const ineValue = String(viajero.ine || '').trim();
-        return ineValue ? ineValue.padStart(5, '0') : '';
-      })(),
-      nombreMunicipio: String(viajero.nombreMunicipio || '').trim(),
-      paisResidencia: normalizeToAlpha3(viajero.paisResidencia || viajero.pais || 'ESP'),
-    });
+    const normalizeViajero = (viajero: any) => {
+      // Soportar formato antiguo { documento:{tipo,numero}, residencia:{direccion,localidad,pais} }
+      const doc = viajero.documento || {};
+      const res = viajero.residencia || {};
+      const paisEntrada = viajero.paisResidencia || viajero.pais || res.pais;
+      const cpEntrada = viajero.cp || viajero.codigoPostal || res.codigoPostal;
+      const ineEntrada = viajero.ine || viajero.codigoMunicipio;
+
+      return {
+        nombre: String(viajero.nombre || '').trim(),
+        primerApellido: String(viajero.primerApellido || '').trim(),
+        segundoApellido: String(viajero.segundoApellido || '').trim() || null,
+        fechaNacimiento: normalizeDate(viajero.fechaNacimiento),
+        tipoDocumento: mapDocTypeIn(viajero.tipoDocumento || doc.tipo),
+        numeroDocumento: String(viajero.numeroDocumento || doc.numero || '').toUpperCase().replace(/\s+/g, ''),
+        sexo: mapSexoIn(viajero.sexo),
+        nacionalidadISO2: iso3to2(viajero.nacionalidadISO2 || viajero.nacionalidad || viajero.nacionalidadISO3),
+        telefono: String(viajero.telefono || '').replace(/\s+/g, ''),
+        email: String(viajero.email || '').trim().toLowerCase(),
+        direccion: String(viajero.direccion || res.direccion || '').trim(),
+        cp: (() => {
+          const cpValue = String(cpEntrada || '').trim();
+          const pais = iso3to2(paisEntrada || 'ESP');
+          return pais === 'ES' ? cpValue.padStart(5, '0') : cpValue;
+        })(),
+        ine: (() => {
+          const ineValue = String(ineEntrada || '').trim();
+          return ineValue ? ineValue.padStart(5, '0') : '';
+        })(),
+        nombreMunicipio: String(viajero.nombreMunicipio || res.localidad || '').trim(),
+        paisResidencia: normalizeToAlpha3(paisEntrada || 'ESP'),
+      };
+    };
     
     // Normalizar todos los viajeros
     const viajerosNormalizados = viajeros.length > 0 
