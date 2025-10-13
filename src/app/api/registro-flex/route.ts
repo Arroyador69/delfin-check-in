@@ -373,6 +373,8 @@ export async function POST(req: NextRequest) {
       
       // Validación condicional de INE: solo para españoles
       const esEspana = v.paisResidencia === 'ESP';
+      // Convertir país de residencia a ISO2 para debugging legible y evitar referencias no definidas
+      const paisISO2 = iso3to2(v.paisResidencia || 'ESP');
       console.log(`🔬 DEBUG VALIDACIÓN - Viajero ${index}:`, {
         esEspana,
         paisResidencia: v.paisResidencia,
