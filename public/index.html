@@ -2156,10 +2156,15 @@
           residencia: {
             direccion: fd.get('direccion') || '',
             localidad: fd.get('nombreMunicipio') || '',
-            pais: toISO3(fd.get('pais')) || 'ESP'
-          }
+            pais: toISO3(fd.get('pais')) || 'ESP',
+            codigoPostal: fd.get('codigoPostal') || ''
+          },
+          // Para compatibilidad con backend: enviar código INE explícitamente
+          codigoMunicipio: fd.get('codigoMunicipio') || ''
         }
       ],
+      // Para compatibilidad con backend: enviar fechaContrato a nivel raíz
+      fechaContrato: fd.get('fechaContrato') || '',
       ejecucionContrato: {
         fechaHoraEntrada: fd.get('fechaEntrada') ? new Date(fd.get('fechaEntrada')).toISOString() : '',
         fechaHoraSalida: fd.get('fechaSalida') ? new Date(fd.get('fechaSalida')).toISOString() : ''
