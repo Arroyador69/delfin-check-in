@@ -2193,6 +2193,31 @@
     if(!parte.ejecucionContrato.fechaHoraEntrada) errors.push('Entrada requerida');
     if(!parte.ejecucionContrato.fechaHoraSalida) errors.push('Salida requerida');
     if(new Date(parte.ejecucionContrato.fechaHoraEntrada) > new Date(parte.ejecucionContrato.fechaHoraSalida)) errors.push('Entrada no puede ser posterior a salida');
+
+    // Reglas MIR específicas de municipio (España)
+    try {
+      const isSpain = String(parte.viajeros[0].residencia.pais || '').toUpperCase() === 'ESP';
+      const ine = String(parte.viajeros[0].codigoMunicipio || '').trim();
+      const cp = String((parte.viajeros[0].residencia && parte.viajeros[0].residencia.codigoPostal) || '').trim();
+      const localidad = String((parte.viajeros[0].residencia && parte.viajeros[0].residencia.localidad) || '').trim();
+
+      if (isSpain) {
+        if (!/^\d{5}$/.test(ine)) {
+          errors.push('Código INE (5 dígitos) requerido para residentes en España');
+        }
+        if (ine && cp && ine === cp) {
+          errors.push('El INE no es el código postal. Debe ser el código INE de municipio (5 dígitos)');
+        }
+      } else {
+        // Extranjero: INE debe ir vacío y localidad obligatoria
+        if (ine) {
+          errors.push('Para extranjeros, deje el INE vacío');
+        }
+        if (!localidad) {
+          errors.push('Para extranjeros, indique la ciudad/municipio de residencia');
+        }
+      }
+    } catch {}
     return errors;
   }
 
