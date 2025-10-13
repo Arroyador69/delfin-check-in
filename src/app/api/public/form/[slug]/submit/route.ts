@@ -104,6 +104,36 @@ export async function POST(
       return NextResponse.json(result, { headers: corsHeaders });
     }
 
+    // Fallback: si no se detecta formato simple pero el payload podría ser MIR, intentarlo como MIR
+    if (!isSimpleForm) {
+      console.log('⚠️ Formato no reconocido explícitamente. Intentando reenviar como MIR (fallback).');
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://admin.delfincheckin.com';
+      const registroFlexUrl = `${baseUrl}/api/registro-flex`;
+      const response = await fetch(registroFlexUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-Tenant-ID': tenant.id,
+          'X-Tenant-Name': tenant.name,
+        },
+        body: JSON.stringify(body),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.log('❌ Fallback MIR falló:', errorText);
+        return NextResponse.json(
+          { error: `Error en registro-flex (fallback): ${errorText}` },
+          { status: response.status, headers: corsHeaders }
+        );
+      }
+
+      const result = await response.json();
+      console.log('✅ Fallback MIR tuvo éxito');
+      return NextResponse.json(result, { headers: corsHeaders });
+    }
+
     // Si llegamos aquí, es un formulario simple (no MIR)
     console.log('❌ NO son datos MIR, procesando como formulario simple');
     
