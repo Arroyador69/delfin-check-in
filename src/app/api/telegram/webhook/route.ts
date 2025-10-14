@@ -188,6 +188,22 @@ export async function POST(request: NextRequest) {
     
     console.log(`💬 Mensaje de ${userName} (${chatId}): ${userText}`);
     
+    // Política: Bot SOLO LECTURA (no crear/editar/borrar datos)
+    const textLower = (userText || '').toLowerCase();
+    const writeIntents = [
+      'crear', 'añadir', 'agregar', 'insertar', 'modificar', 'editar', 'actualizar', 'borrar', 'eliminar',
+      'registra', 'registrar', 'apuntar', 'dar de alta', 'crear reserva', 'crear registro', 'alta'
+    ];
+    if (writeIntents.some(w => textLower.includes(w))) {
+      await sendTelegramMessage(
+        chatId,
+        '🔒 Por seguridad, el asistente de Telegram es de solo lectura.\n' +
+        'Para crear o modificar reservas o registros, usa el panel de administración.\n' +
+        'Si necesitas, puedo indicarte dónde hacerlo en el dashboard.'
+      );
+      return NextResponse.json({ ok: true, note: 'read-only policy enforced' });
+    }
+
     // Comandos especiales
     if (userText === '/start') {
       await sendTelegramMessage(
