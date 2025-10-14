@@ -111,8 +111,23 @@ async function updateTokenUsage(tenantId: string, tokensUsed: number) {
 }
 
 // Función para generar contexto de datos para GPT
+// Helpers de fecha en zona horaria de España
+function toISODateInMadrid(d: Date) {
+  // Formato ISO YYYY-MM-DD en zona horaria Europe/Madrid
+  return d
+    .toLocaleDateString('sv-SE', { timeZone: 'Europe/Madrid' }) // sv-SE => 2025-10-14
+}
+
+function parseToISOInMadrid(input: string | Date | null | undefined) {
+  if (!input) return '';
+  const d = typeof input === 'string' ? new Date(input) : input;
+  return toISODateInMadrid(d);
+}
+
 function generateContext(registrations: any[], reservations: any[]) {
-  let context = '**DATOS DEL SISTEMA:**\n\n';
+  const todayIso = toISODateInMadrid(new Date());
+  let context = `**FECHA DE HOY (España):** ${todayIso}\n\n`;
+  context += '**DATOS DEL SISTEMA:**\n\n';
   
   // Información de registros de viajeros
   if (registrations.length > 0) {
@@ -130,9 +145,22 @@ function generateContext(registrations: any[], reservations: any[]) {
   
   // Información de reservas
   if (reservations.length > 0) {
+    // Listas útiles para "hoy"
+    const mapped = reservations.map((res: any) => ({
+      ...res,
+      checkInIso: parseToISOInMadrid(res.check_in),
+      checkOutIso: parseToISOInMadrid(res.check_out),
+    }));
+    const arrivalsToday = mapped.filter(r => r.checkInIso === todayIso);
+    const departuresToday = mapped.filter(r => r.checkOutIso === todayIso);
+
+    context += `**Resumen de Hoy (${todayIso}):**\n`;
+    context += `- Llegadas hoy: ${arrivalsToday.length}\n`;
+    context += `- Salidas hoy: ${departuresToday.length}\n\n`;
+
     context += `**Reservas Recientes (${reservations.length}):**\n`;
-    reservations.slice(0, 10).forEach((res, i) => {
-      context += `${i + 1}. ${res.guest_name} - Habitación ${res.room_id} (${res.check_in} → ${res.check_out}) - Estado: ${res.status}\n`;
+    mapped.slice(0, 10).forEach((res, i) => {
+      context += `${i + 1}. ${res.guest_name} - Habitación ${res.room_id} (${res.checkInIso} → ${res.checkOutIso}) - Estado: ${res.status}\n`;
     });
     context += '\n';
   } else {
@@ -278,7 +306,7 @@ IMPORTANTE:
             },
             {
               role: 'user',
-              content: `${userText}\n\n${context}`,
+              content: `Hoy es ${toISODateInMadrid(new Date())} (zona horaria: Europe/Madrid). Responde teniendo en cuenta esta fecha.\n\nPregunta del usuario: ${userText}\n\nContexto:\n${context}`,
             },
           ],
           temperature: 0.7,
