@@ -114,11 +114,21 @@ export async function POST(req: NextRequest) {
     
     const userResult = await sql.query(userQuery, [email.toLowerCase()]);
     
+    console.log(`🔍 Búsqueda de usuario para email: ${email.toLowerCase()}`);
+    console.log(`🔍 Resultados encontrados: ${userResult.rows.length}`);
+    
     if (userResult.rows.length === 0) {
       // Registrar intento fallido
       const rateLimitStatus = recordFailedAttempt(clientIP, RATE_LIMIT_CONFIGS.login);
       
       console.warn(`⚠️ Usuario no encontrado: ${email} desde IP: ${clientIP} (${rateLimitStatus.remaining} intentos restantes)`);
+      
+      // Debug: Verificar si existe el email en la tabla sin JOIN
+      const debugResult = await sql.query('SELECT email FROM tenant_users WHERE email = $1', [email.toLowerCase()]);
+      console.log(`🔍 Debug - Emails encontrados sin JOIN: ${debugResult.rows.length}`);
+      if (debugResult.rows.length > 0) {
+        console.log(`🔍 Debug - Email encontrado: ${debugResult.rows[0].email}`);
+      }
       
       return NextResponse.json(
         { 
@@ -149,7 +159,13 @@ export async function POST(req: NextRequest) {
     // PASO 4: VERIFICAR CONTRASEÑA CON BCRYPT
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     
+    console.log(`🔍 Verificando contraseña para usuario: ${user.email}`);
+    console.log(`🔍 Tenant: ${user.tenant_name} (${user.tenant_status})`);
+    console.log(`🔍 Usuario activo: ${user.is_active}`);
+    
     const isPasswordValid = await verifyPassword(password, user.password_hash);
+    
+    console.log(`🔍 Resultado verificación contraseña: ${isPasswordValid}`);
     
     if (!isPasswordValid) {
       // Registrar intento fallido
