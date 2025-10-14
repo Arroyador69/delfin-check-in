@@ -56,9 +56,15 @@ export function middleware(req: NextRequest) {
     url.pathname.startsWith('/form')
   );
   
+  // Debug: Log para verificar qué rutas están siendo procesadas
+  console.log(`🔍 Middleware processing: ${url.pathname} - isPublic: ${isPublicRoute}`);
+  
   if (isPublicRoute) {
+    console.log(`✅ Allowing public route: ${url.pathname}`);
     return NextResponse.next();
   }
+  
+  console.log(`🔒 Protecting route: ${url.pathname}`);
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   // PASO 4: TODAS LAS DEMÁS RUTAS REQUIEREN AUTENTICACIÓN
@@ -147,15 +153,9 @@ export function middleware(req: NextRequest) {
 export const config = {
   matcher: [
     /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - api/public (public APIs)
-     * - api/telegram/webhook (telegram webhook)
-     * - admin-login (login page)
-     * - form (public forms)
+     * Match all request paths except for static files
+     * This ensures ALL pages are processed by middleware
      */
-    '/((?!_next/static|_next/image|favicon.ico|api/admin/login|api/auth/logout|api/auth/refresh|api/public|api/telegram/webhook|admin-login|form).*)',
+    '/((?!_next/static|_next/image|favicon.ico).*)',
   ],
 }
