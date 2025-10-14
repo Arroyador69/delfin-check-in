@@ -14,11 +14,15 @@ import { verifyToken, AUTH_CONFIG } from '@/lib/auth'
 export function middleware(req: NextRequest) {
   const url = req.nextUrl
   
+  // 🔥 DEBUG: FORZAR LOG EN TODAS LAS REQUEST
+  console.log(`🔥 MIDDLEWARE EJECUTÁNDOSE: ${url.pathname} - Method: ${req.method}`);
+  
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   // PASO 1: PREFLIGHT CORS
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   
   if (req.method === 'OPTIONS') {
+    console.log(`✅ OPTIONS request allowed: ${url.pathname}`);
     return NextResponse.next();
   }
 
@@ -44,21 +48,20 @@ export function middleware(req: NextRequest) {
   // PASO 3: VERIFICAR SI ES RUTA PÚBLICA (MÍNIMO ABSOLUTO)
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   
-  // SOLO estas rutas son públicas - TODO LO DEMÁS REQUIERE AUTENTICACIÓN
+  // 🔥 BLOQUEAR TODO EXCEPTO LO MÍNIMO ABSOLUTO
   const isPublicRoute = (
-    // Página de login
+    // SOLO la página de login
     url.pathname === '/admin-login' ||
-    // API de login
-    url.pathname.startsWith('/api/admin/login') ||
-    // APIs de autenticación
-    url.pathname.startsWith('/api/auth/logout') ||
-    url.pathname.startsWith('/api/auth/refresh') ||
-    // Formularios públicos (para huéspedes)
+    // SOLO la API de login
+    url.pathname === '/api/admin/login' ||
+    // SOLO APIs de autenticación básicas
+    url.pathname === '/api/auth/logout' ||
+    url.pathname === '/api/auth/refresh' ||
+    // SOLO formularios públicos esenciales
     url.pathname.startsWith('/api/public/form') ||
-    url.pathname.startsWith('/api/public/form-redirect') ||
     url.pathname.startsWith('/form') ||
-    // Webhook de Telegram (debe ser público)
-    url.pathname.startsWith('/api/telegram/webhook')
+    // SOLO webhook de Telegram
+    url.pathname === '/api/telegram/webhook'
   );
   
   // Debug: Log para verificar qué rutas están siendo procesadas
@@ -69,10 +72,10 @@ export function middleware(req: NextRequest) {
     return NextResponse.next();
   }
   
-  // TODAS las demás rutas requieren autenticación
+  // 🔥 BLOQUEAR TODAS LAS DEMÁS RUTAS
   // Esto incluye: /telegram-assistant, /aeat, /calendar-sync, /offline-queue, /audit
   // Y TODAS las demás páginas del sistema
-  console.log(`🔒 PROTECTING route: ${url.pathname} - Authentication required`);
+  console.log(`🔥🔥🔥 BLOQUEANDO ACCESO A: ${url.pathname} - SIN AUTENTICACIÓN 🔥🔥🔥`);
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   // PASO 4: TODAS LAS DEMÁS RUTAS REQUIEREN AUTENTICACIÓN
