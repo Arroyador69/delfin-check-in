@@ -41,19 +41,24 @@ export function middleware(req: NextRequest) {
   }
   
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  // PASO 3: VERIFICAR SI ES RUTA PÚBLICA
+  // PASO 3: VERIFICAR SI ES RUTA PÚBLICA (MÍNIMO ABSOLUTO)
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   
-  // Solo estas rutas son públicas - TODAS LAS DEMÁS REQUIEREN AUTENTICACIÓN
+  // SOLO estas rutas son públicas - TODO LO DEMÁS REQUIERE AUTENTICACIÓN
   const isPublicRoute = (
+    // Página de login
     url.pathname === '/admin-login' ||
+    // API de login
     url.pathname.startsWith('/api/admin/login') ||
+    // APIs de autenticación
     url.pathname.startsWith('/api/auth/logout') ||
     url.pathname.startsWith('/api/auth/refresh') ||
+    // Formularios públicos (para huéspedes)
     url.pathname.startsWith('/api/public/form') ||
     url.pathname.startsWith('/api/public/form-redirect') ||
-    url.pathname.startsWith('/api/telegram/webhook') ||
-    url.pathname.startsWith('/form')
+    url.pathname.startsWith('/form') ||
+    // Webhook de Telegram (debe ser público)
+    url.pathname.startsWith('/api/telegram/webhook')
   );
   
   // Debug: Log para verificar qué rutas están siendo procesadas
@@ -64,7 +69,10 @@ export function middleware(req: NextRequest) {
     return NextResponse.next();
   }
   
-  console.log(`🔒 Protecting route: ${url.pathname}`);
+  // TODAS las demás rutas requieren autenticación
+  // Esto incluye: /telegram-assistant, /aeat, /calendar-sync, /offline-queue, /audit
+  // Y TODAS las demás páginas del sistema
+  console.log(`🔒 PROTECTING route: ${url.pathname} - Authentication required`);
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   // PASO 4: TODAS LAS DEMÁS RUTAS REQUIEREN AUTENTICACIÓN
