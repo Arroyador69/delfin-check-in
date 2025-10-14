@@ -45,7 +45,7 @@ export default function MunicipioSelector({
     let timeoutId: NodeJS.Timeout;
     
     const buscarMunicipios = async () => {
-      if (busqueda.length >= 2) {
+    if (busqueda.length >= 2) {
         console.log(`🔍 Buscando municipios para: "${busqueda}"`);
         
         let resultados: Municipio[] = [];
@@ -225,14 +225,14 @@ export default function MunicipioSelector({
         
         console.log(`📊 Fuente utilizada: ${fuenteUsada} - ${resultados.length} resultados`);
         setResultados(resultados);
-        setMostrarResultados(true);
-      } else if (busqueda.length === 0) {
+      setMostrarResultados(true);
+    } else if (busqueda.length === 0) {
         setResultados([]);
-        setMostrarResultados(false);
-      } else {
-        setResultados([]);
-        setMostrarResultados(false);
-      }
+      setMostrarResultados(false);
+    } else {
+      setResultados([]);
+      setMostrarResultados(false);
+    }
     };
 
     // Debounce: esperar 300ms después de la última tecla
