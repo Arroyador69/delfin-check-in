@@ -18,6 +18,37 @@ export async function executeQuery<T = any>(
   }
 }
 
+// Función helper para extraer el número de habitación del room_id
+export function getRoomNumber(roomId: string | null | undefined): string {
+  if (!roomId) return 'N/A';
+  
+  // Si es un número simple, devolverlo tal como está
+  if (/^\d+$/.test(roomId)) {
+    return roomId;
+  }
+  
+  // Si es un UUID, intentar extraer el número de habitación
+  // Los UUIDs pueden contener el número de habitación al final
+  if (roomId.includes('room-')) {
+    const match = roomId.match(/room-(\d+)/);
+    if (match) {
+      return match[1];
+    }
+  }
+  
+  // Si es un UUID largo, intentar extraer números del final
+  const numbers = roomId.match(/\d+/g);
+  if (numbers && numbers.length > 0) {
+    // Tomar el último número encontrado (probablemente el número de habitación)
+    const lastNumber = numbers[numbers.length - 1];
+    // Si el número es muy largo, tomar solo los últimos dígitos
+    return lastNumber.length > 2 ? lastNumber.slice(-2) : lastNumber;
+  }
+  
+  // Si no se puede extraer un número, devolver el ID truncado
+  return roomId.length > 8 ? roomId.slice(0, 8) + '...' : roomId;
+}
+
 // Función helper para insertar un registro
 export async function insertGuestRegistration(data: {
   reserva_ref?: string;

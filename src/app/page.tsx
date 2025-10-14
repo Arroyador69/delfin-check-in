@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import AdminLayout from '@/components/AdminLayout';
 import { ArrowUpCircle } from 'lucide-react';
+import { getRoomNumber } from '@/lib/db';
 
 type FilterPeriod = 'total' | 'annual' | 'today' | 'thisWeek' | 'last7Days' | 'thisMonth' | 'last30Days' | 'custom';
 
@@ -723,7 +724,7 @@ export default function HomePage() {
                         </p>
                         <div className="flex items-center space-x-4 text-xs text-gray-600 mt-1">
                           <span>👥 {reservation.guest_count || 'N/A'} personas</span>
-                          <span>🏨 Hab. {reservation.room_id || 'N/A'}</span>
+                          <span>🏨 Hab. {getRoomNumber(reservation.room_id)}</span>
                           <span>🚪 Check-out: 12:00</span>
                         </div>
                       </div>
@@ -782,7 +783,7 @@ export default function HomePage() {
                         </p>
                         <div className="flex items-center space-x-4 text-xs text-gray-600 mt-1">
                           <span>👥 {reservation.guest_count || 'N/A'} personas</span>
-                          <span>🏨 Hab. {reservation.room_id || 'N/A'}</span>
+                          <span>🏨 Hab. {getRoomNumber(reservation.room_id)}</span>
                           <span>🚪 Check-in: 16:00</span>
                         </div>
                         <p className="text-xs text-gray-500 mt-1">

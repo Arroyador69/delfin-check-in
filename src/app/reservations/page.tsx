@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Plus, X, Calendar, User, Bed, Euro, CreditCard, Download, Phone, Users, Globe, Edit } from 'lucide-react';
+import { getRoomNumber } from '@/lib/db';
 // Removido: import { supabase } from '@/lib/supabase';
 // Removido: import { Reservation } from '@/lib/supabase';
 
@@ -493,7 +494,7 @@ export default function ReservationsPage() {
                   reservations.map((reservation) => (
                   <tr key={reservation.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {rooms.find(r => r.id === reservation.room_id)?.name || reservation.room_id || 'Sin habitación'}
+                      {rooms.find(r => r.id === reservation.room_id)?.name || `Habitación ${getRoomNumber(reservation.room_id)}`}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       <div>
