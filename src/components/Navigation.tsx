@@ -18,6 +18,7 @@ export default function Navigation() {
     { name: 'Registros de formularios', href: '/guest-registrations-dashboard', icon: Users },
     { name: 'Formularios de Contacto', href: '/forms', icon: MessageSquare },
     { name: 'Estado Envíos MIR', href: '/estado-envios-mir', icon: Send },
+    { name: 'Asistente IA (Telegram)', href: '/telegram-assistant', icon: MessageSquare },
     { name: 'Calculadora de Costos', href: '/cost-calculator', icon: Calculator },
     { name: 'Exportar AEAT', href: '/aeat', icon: FileText },
     { name: 'Sincronizar Calendarios', href: '/calendar-sync', icon: Smartphone },
