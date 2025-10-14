@@ -254,13 +254,18 @@ export async function POST(request: NextRequest) {
       }),
     });
     
-    // Llamar a GPT-4o-mini
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [
-        {
-          role: 'system',
-          content: `Eres un asistente inteligente de Delfín Check-in, un sistema de gestión hotelera.
+    // Llamar a GPT-4o-mini con timeout de seguridad
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 20000); // 20s
+    let response = 'Lo siento, no pude generar una respuesta.';
+    let tokensConsumed = 0;
+    try {
+      const completion = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: `Eres un asistente inteligente de Delfín Check-in, un sistema de gestión hotelera.
 Tu trabajo es ayudar al propietario ${tenant.name} a consultar información sobre sus registros de viajeros y reservas.
 
 IMPORTANTE:
@@ -270,18 +275,24 @@ IMPORTANTE:
 - Sugiere alternativas cuando sea apropiado
 - Mantén un tono profesional pero cercano
 - Si te preguntan por un nombre específico, busca en los datos proporcionados`,
-        },
-        {
-          role: 'user',
-          content: `${userText}\n\n${context}`,
-        },
-      ],
-      temperature: 0.7,
-      max_tokens: 500,
-    });
-    
-    const response = completion.choices[0].message.content || 'Lo siento, no pude generar una respuesta.';
-    const tokensConsumed = completion.usage?.total_tokens || 0;
+          },
+          {
+            role: 'user',
+            content: `${userText}\n\n${context}`,
+          },
+        ],
+        temperature: 0.7,
+        max_tokens: 500,
+        signal: controller.signal as any,
+      });
+      response = completion.choices[0].message.content || response;
+      tokensConsumed = completion.usage?.total_tokens || 0;
+    } catch (err: any) {
+      console.error('OpenAI error/timeout:', err?.message || err);
+      response = '⚠️ Estoy teniendo problemas para pensar la respuesta ahora mismo. Inténtalo de nuevo en unos segundos.';
+    } finally {
+      clearTimeout(timeoutId);
+    }
     
     console.log(`🤖 Respuesta generada (${tokensConsumed} tokens)`);
     
