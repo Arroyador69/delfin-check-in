@@ -205,9 +205,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ok: true });
     }
     
-    // Verificar límite de tokens
-    const tokensUsed = tenant.ai_tokens_used || 0;
-    const tokenLimit = tenant.ai_token_limit || 100000;
+    // Verificar límite de tokens (forzar tipos numéricos por seguridad)
+    const tokensUsed = Number(tenant.ai_tokens_used || 0);
+    const tokenLimit = Number(tenant.ai_token_limit || 100000);
     
     if (userText === '/stats') {
       const percentage = (tokensUsed / tokenLimit * 100).toFixed(2);
