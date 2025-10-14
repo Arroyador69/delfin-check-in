@@ -9,6 +9,7 @@ import {
   findTenantByStripeCustomer,
   updateTenantStripeInfo
 } from '@/lib/tenant'
+import { sendOnboardingEmail } from '@/lib/mailer'
 
 export const config = {
   api: {
@@ -120,10 +121,14 @@ async function createTenantFromPayment(pi: Stripe.PaymentIntent): Promise<void> 
     const onboardingUrl = `${process.env.NEXT_PUBLIC_APP_URL}/onboarding?token=${onboardingToken}&email=${encodeURIComponent(email)}`;
     
     console.log('🔗 Magic link de onboarding:', onboardingUrl);
-    console.log('📧 Credenciales temporales:', { email, password: tempPassword });
+    console.log('📧 Enviando email de onboarding a:', email);
 
-    // TODO: Enviar email con magic link y credenciales temporales
-    // await sendOnboardingEmail(email, onboardingUrl, tempPassword);
+    // Enviar email real de onboarding (Brevo/SMTP)
+    try {
+      await sendOnboardingEmail({ to: email, onboardingUrl, tempPassword });
+    } catch (mailErr) {
+      console.error('✉️ Error enviando email de onboarding:', mailErr);
+    }
 
   } catch (error) {
     console.error('❌ Error creando tenant:', error)
