@@ -16,7 +16,6 @@ export default function Navigation() {
     { name: 'Dashboard', href: '/', icon: Home },
     { name: 'Reservas', href: '/reservations', icon: Calendar },
     { name: 'Registros de formularios', href: '/guest-registrations-dashboard', icon: Users },
-    { name: 'Formularios de Contacto', href: '/forms', icon: MessageSquare },
     { name: 'Estado Envíos MIR', href: '/estado-envios-mir', icon: Send },
     { name: 'Asistente IA (Telegram)', href: '/telegram-assistant', icon: MessageSquare },
     { name: 'Calculadora de Costos', href: '/cost-calculator', icon: Calculator },

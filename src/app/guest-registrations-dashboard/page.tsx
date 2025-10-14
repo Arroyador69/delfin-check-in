@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Download, Eye, Users, FileText, Calendar, Search, Filter, CheckSquare, Square, Trash2, AlertTriangle } from 'lucide-react';
+import { Download, Eye, Users, FileText, Calendar, Search, Filter, CheckSquare, Square, Trash2, AlertTriangle, Copy, ExternalLink } from 'lucide-react';
 import AdminLayout from '@/components/AdminLayout';
 import ExportButton, { normalizeData } from './ExportButton';
 
@@ -167,6 +167,17 @@ export default function GuestRegistrationsDashboard() {
   const [filterCheckIn, setFilterCheckIn] = useState("");
   const [filterCheckOut, setFilterCheckOut] = useState("");
   const [filterRoom, setFilterRoom] = useState("");
+  const [tenant, setTenant] = useState<any>(null);
+  const [formUrl, setFormUrl] = useState('');
+
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      alert('URL copiada al portapapeles');
+    } catch (error) {
+      console.error('Error copiando:', error);
+    }
+  };
 
   // Abrir bitácora en nueva pestaña (usa hash persistido o calculado al vuelo)
   const openAuditFor = async (reg: any) => {
@@ -195,6 +206,20 @@ export default function GuestRegistrationsDashboard() {
   const loadRegistrations = async () => {
     try {
       setLoading(true);
+      
+      // Obtener información del tenant
+      const tenantResponse = await fetch('/api/tenant');
+      const tenantData = await tenantResponse.json();
+      setTenant(tenantData);
+      
+      // Generar URL del formulario (redirección al formulario existente)
+      if (tenantData?.tenant?.id) {
+        const baseUrl = process.env.NODE_ENV === 'development' 
+          ? 'http://localhost:3000' 
+          : 'https://admin.delfincheckin.com';
+        setFormUrl(`${baseUrl}/api/public/form-redirect/${tenantData.tenant.id}`);
+      }
+      
       const url = showAllRegistrations 
         ? '/api/guest-registrations' 
         : `/api/guest-registrations?date=${selectedDate}`;
@@ -496,6 +521,47 @@ export default function GuestRegistrationsDashboard() {
       </header>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {/* Form URL Section */}
+        <div className="bg-white rounded-lg shadow p-6 mb-8">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <div className="flex items-center space-x-4">
+              <div className="text-3xl">🔗</div>
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900">URL de tu formulario</h2>
+                <p className="text-sm text-gray-600">
+                  Comparte este enlace con tus clientes para que puedan contactarte
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-3">
+              <div className="flex-1 min-w-0">
+                <input
+                  type="text"
+                  value={formUrl}
+                  readOnly
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-sm font-mono"
+                />
+              </div>
+              <button
+                onClick={() => copyToClipboard(formUrl)}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center space-x-2"
+              >
+                <Copy className="w-4 h-4" />
+                <span>Copiar</span>
+              </button>
+              <a
+                href={formUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors flex items-center space-x-2"
+              >
+                <ExternalLink className="w-4 h-4" />
+                <span>Ver</span>
+              </a>
+            </div>
+          </div>
+        </div>
+
         {/* Filtros y búsqueda */}
         <div className="bg-white rounded-lg shadow p-6 mb-8 transition-all duration-300 hover:transform hover:-translate-y-1 hover:shadow-2xl">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
@@ -1209,6 +1275,39 @@ export default function GuestRegistrationsDashboard() {
           </div>
         </div>
       )}
+
+      {/* Instructions */}
+      <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
+        <h3 className="text-lg font-semibold text-blue-900 mb-4">💡 Cómo usar tu formulario</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <h4 className="font-medium text-blue-800 mb-2">1. Comparte la URL</h4>
+            <p className="text-sm text-blue-700 mb-4">
+              Copia y comparte la URL de tu formulario con tus clientes. Puedes añadirla a tu sitio web, 
+              enviarla por email o compartirla en redes sociales.
+            </p>
+            
+            <h4 className="font-medium text-blue-800 mb-2">2. Personaliza el formulario</h4>
+            <p className="text-sm text-blue-700">
+              El formulario se adapta automáticamente a la información de tu propiedad. 
+              Los clientes verán el nombre de tu establecimiento y tus datos de contacto.
+            </p>
+          </div>
+          <div>
+            <h4 className="font-medium text-blue-800 mb-2">3. Recibe consultas</h4>
+            <p className="text-sm text-blue-700 mb-4">
+              Todas las consultas aparecerán en esta página. Puedes ver los datos de contacto, 
+              fechas de interés y mensajes de tus clientes.
+            </p>
+            
+            <h4 className="font-medium text-blue-800 mb-2">4. Responde a tus clientes</h4>
+            <p className="text-sm text-blue-700">
+              Usa la información de contacto para responder directamente a tus clientes 
+              y convertir las consultas en reservas.
+            </p>
+          </div>
+        </div>
+      </div>
       </div>
     </AdminLayout>
   );
