@@ -74,7 +74,8 @@ export function middleware(req: NextRequest) {
         '/public',
         '/admin-login',
         '/onboarding',
-        '/form' // Páginas de formularios públicos
+        '/form', // Páginas de formularios públicos
+        '/api/telegram/webhook' // Webhook de Telegram debe ser público (sin auth)
       ];
 
   // Verificar si la ruta actual está en las rutas públicas
