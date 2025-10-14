@@ -11,11 +11,12 @@ export default function TelegramAssistantPage() {
   const [message, setMessage] = useState<string>("");
 
   useEffect(() => {
-    // Intentar obtener estado del tenant si hay cabeceras x-tenant-id
+    // Obtener info del tenant actual (x-tenant-id la inyecta el middleware)
     const fetchInfo = async () => {
       try {
-        const res = await fetch("/api/telegram/setup", { cache: "no-store" });
+        const res = await fetch("/api/tenants/me", { cache: "no-store" });
         const data = await res.json();
+        if (data?.tenant?.id) setTenantId(data.tenant.id);
         setInfo(data);
       } catch (e) {
         // ignorar
@@ -71,7 +72,7 @@ export default function TelegramAssistantPage() {
       <div className="bg-white border rounded p-4 mb-6">
         <h2 className="text-lg font-semibold mb-3">Activación</h2>
         <div className="grid grid-cols-1 gap-3">
-          <input className="border rounded p-2" placeholder="Tenant ID" value={tenantId} onChange={e=>setTenantId(e.target.value)} />
+          <input className="border rounded p-2 bg-gray-100" placeholder="Tenant ID" value={tenantId} readOnly />
           <input className="border rounded p-2" placeholder="Chat ID de Telegram" value={chatId} onChange={e=>setChatId(e.target.value)} />
           <div>
             <label className="block text-sm text-gray-600 mb-1">Límite mensual de tokens</label>
