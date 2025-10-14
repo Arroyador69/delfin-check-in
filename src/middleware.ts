@@ -61,6 +61,7 @@ export function middleware(req: NextRequest) {
         '/api/onboarding', // Endpoints de onboarding deben ser públicos
         '/api/public/form', // Endpoints de formularios públicos
         '/api/public/form-redirect', // Redirección a formularios públicos
+      '/api/email', // Endpoints de prueba/envío de email
       '/api/ministerio/test-conexion', // Test de conexión MIR (debe ser público)
       '/api/ministerio/procesar-pendientes', // Procesar pendientes MIR (debe ser público)
       '/api/ministerio/debug-env', // Debug variables de entorno (temporal)
