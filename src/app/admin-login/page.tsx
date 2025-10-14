@@ -4,17 +4,19 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
 /**
- * 🔐 PÁGINA DE LOGIN SEGURA
+ * 🔐 PÁGINA DE LOGIN MULTI-TENANT
  * 
  * Características:
+ * - Autenticación por email y contraseña por tenant
  * - Sin almacenamiento de contraseñas en localStorage
- * - Autenticación basada en JWT
- * - Validación de entrada
+ * - Autenticación basada en JWT con tenant_id
+ * - Validación de entrada (email + contraseña)
  * - Manejo de errores de rate limiting
  * - Interfaz de usuario mejorada
  */
 
 export default function AdminLoginPage() {
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
@@ -33,8 +35,22 @@ export default function AdminLoginPage() {
     setRateLimitInfo(null)
 
     // Validación básica
+    if (!email || email.trim().length === 0) {
+      setError('Por favor, ingresa tu email')
+      setIsLoading(false)
+      return
+    }
+    
     if (!password || password.trim().length === 0) {
-      setError('Por favor, ingresa una contraseña')
+      setError('Por favor, ingresa tu contraseña')
+      setIsLoading(false)
+      return
+    }
+    
+    // Validar formato de email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) {
+      setError('Por favor, ingresa un email válido')
       setIsLoading(false)
       return
     }
@@ -46,7 +62,7 @@ export default function AdminLoginPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ password }),
+        body: JSON.stringify({ email, password }),
       })
 
       const data = await response.json()
@@ -54,6 +70,7 @@ export default function AdminLoginPage() {
       if (response.ok) {
         // Login exitoso
         setSuccess(true)
+        setEmail('')
         setPassword('')
         
         // Redirigir al dashboard (replace para evitar volver al login)
@@ -88,6 +105,7 @@ export default function AdminLoginPage() {
           setError(data.message || 'Error al iniciar sesión')
         }
         
+        setEmail('')
         setPassword('')
       }
     } catch (error) {
@@ -112,7 +130,7 @@ export default function AdminLoginPage() {
               Delfín Check-in
             </h1>
             <p className="text-blue-100 text-center mt-1 text-sm">
-              Panel de Administración
+              Iniciar Sesión
             </p>
           </div>
 
@@ -139,10 +157,27 @@ export default function AdminLoginPage() {
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Campo de email */}
+                <div>
+                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                    Email
+                  </label>
+                  <input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none"
+                    placeholder="tu@email.com"
+                    disabled={isLoading}
+                    autoFocus
+                  />
+                </div>
+
                 {/* Campo de contraseña */}
                 <div>
                   <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                    Contraseña de Administrador
+                    Contraseña
                   </label>
                   <input
                     id="password"
@@ -152,7 +187,6 @@ export default function AdminLoginPage() {
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none"
                     placeholder="Ingresa tu contraseña"
                     disabled={isLoading}
-                    autoFocus
                   />
                 </div>
 

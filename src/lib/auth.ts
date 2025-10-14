@@ -25,7 +25,11 @@ const REFRESH_TOKEN_EXPIRATION = '7d'; // Refresh tokens expiran en 7 días
 
 export interface JWTPayload {
   userId: string;
-  role: 'admin';
+  tenantId: string;
+  email: string;
+  role: 'owner' | 'admin' | 'staff';
+  tenantName?: string;
+  planId?: string;
   iat?: number;
   exp?: number;
 }
@@ -131,13 +135,24 @@ export function generateRefreshToken(payload: JWTPayload): string {
 
 /**
  * Genera un par de tokens (access + refresh)
- * @param userId - ID del usuario
+ * @param userData - Datos del usuario para incluir en el token
  * @returns Par de tokens
  */
-export function generateTokenPair(userId: string = 'admin'): TokenPair {
+export function generateTokenPair(userData: {
+  userId: string;
+  tenantId: string;
+  email: string;
+  role: 'owner' | 'admin' | 'staff';
+  tenantName?: string;
+  planId?: string;
+}): TokenPair {
   const payload: JWTPayload = {
-    userId,
-    role: 'admin'
+    userId: userData.userId,
+    tenantId: userData.tenantId,
+    email: userData.email,
+    role: userData.role,
+    tenantName: userData.tenantName,
+    planId: userData.planId
   };
 
   return {
