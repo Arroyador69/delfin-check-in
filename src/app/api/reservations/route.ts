@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getReservations, insertReservation, sql } from '@/lib/db';
+import { getReservations, insertReservation, sql, normalizeRoomId } from '@/lib/db';
 import { sendReservationConfirmation } from '@/lib/whatsapp';
 
 // Configuración para evitar caché
@@ -244,10 +244,14 @@ export async function POST(request: NextRequest) {
     // Generar external_id único
     const external_id = body.external_id || `manual_${Date.now()}`;
 
+    // Normalizar room_id a número simple (1-6)
+    const normalizedRoomId = normalizeRoomId(body.room_id);
+    console.log(`🏠 Normalizando room_id: ${body.room_id} → ${normalizedRoomId}`);
+
     // Preparar datos para insertar
     const reservationData = {
       external_id,
-      room_id: body.room_id,
+      room_id: normalizedRoomId,
       guest_name: body.guest_name,
       guest_email: body.guest_email,
       guest_phone: body.guest_phone,
@@ -345,6 +349,10 @@ export async function PUT(request: NextRequest) {
       );
     }
 
+    // Normalizar room_id a número simple (1-6)
+    const normalizedRoomId = normalizeRoomId(body.room_id);
+    console.log(`🏠 Normalizando room_id en actualización: ${body.room_id} → ${normalizedRoomId}`);
+
     // Calcular datos financieros
     const total_price = parseFloat(body.total_price) || 0;
     const guest_paid = parseFloat(body.guest_paid) || total_price;
@@ -355,7 +363,7 @@ export async function PUT(request: NextRequest) {
     const result = await sql`
       UPDATE reservations 
       SET 
-        room_id = ${body.room_id},
+        room_id = ${normalizedRoomId},
         guest_name = ${body.guest_name},
         guest_email = ${body.guest_email || ''},
         guest_phone = ${body.guest_phone || ''},

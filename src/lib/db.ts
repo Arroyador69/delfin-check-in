@@ -49,6 +49,50 @@ export function getRoomNumber(roomId: string | null | undefined): string {
   return roomId.length > 8 ? roomId.slice(0, 8) + '...' : roomId;
 }
 
+// Función para normalizar room_id a números simples (1-6)
+export function normalizeRoomId(roomId: string | null | undefined): string {
+  if (!roomId) return '1'; // Default a habitación 1
+  
+  // Si ya es un número simple válido (1-6), devolverlo
+  if (/^[1-6]$/.test(roomId)) {
+    return roomId;
+  }
+  
+  // Si es un número pero fuera del rango, normalizar
+  if (/^\d+$/.test(roomId)) {
+    const num = parseInt(roomId);
+    if (num >= 1 && num <= 6) {
+      return roomId;
+    }
+    // Si está fuera del rango, usar módulo para obtener 1-6
+    return ((num - 1) % 6 + 1).toString();
+  }
+  
+  // Si contiene "room-" seguido de número
+  if (roomId.includes('room-')) {
+    const match = roomId.match(/room-(\d+)/);
+    if (match) {
+      const num = parseInt(match[1]);
+      return ((num - 1) % 6 + 1).toString();
+    }
+  }
+  
+  // Si es un UUID o string complejo, extraer números y normalizar
+  const numbers = roomId.match(/\d+/g);
+  if (numbers && numbers.length > 0) {
+    const lastNumber = numbers[numbers.length - 1];
+    const num = parseInt(lastNumber);
+    return ((num - 1) % 6 + 1).toString();
+  }
+  
+  // Si no se puede extraer nada, usar hash del string para obtener 1-6
+  let hash = 0;
+  for (let i = 0; i < roomId.length; i++) {
+    hash = ((hash << 5) - hash + roomId.charCodeAt(i)) & 0xffffffff;
+  }
+  return (Math.abs(hash) % 6 + 1).toString();
+}
+
 // Función helper para insertar un registro
 export async function insertGuestRegistration(data: {
   reserva_ref?: string;

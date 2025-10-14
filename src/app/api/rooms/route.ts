@@ -114,12 +114,35 @@ export async function POST(request: NextRequest) {
     
     const lodgingId = lodgingResult.rows[0].id;
     
+    // Obtener el siguiente número de habitación disponible (1-6)
+    const existingRooms = await sql`
+      SELECT id FROM "Room" WHERE "lodgingId" = ${lodgingId} ORDER BY id
+    `;
+    
+    // Encontrar el siguiente número disponible del 1 al 6
+    let nextRoomNumber = 1;
+    const existingNumbers = existingRooms.rows
+      .map(room => {
+        const match = room.id.match(/^(\d+)$/);
+        return match ? parseInt(match[1]) : null;
+      })
+      .filter(num => num !== null && num >= 1 && num <= 6);
+    
+    for (let i = 1; i <= 6; i++) {
+      if (!existingNumbers.includes(i)) {
+        nextRoomNumber = i;
+        break;
+      }
+    }
+    
+    console.log(`🏠 Creando habitación con número: ${nextRoomNumber}`);
+
     const result = await sql`
       INSERT INTO "Room" (
         id, name, description, capacity, "basePrice", 
         "icalOutUrl", "icalInBookingUrl", "icalInAirbnbUrl", "lodgingId"
       ) VALUES (
-        ${Date.now().toString()},
+        ${nextRoomNumber.toString()},
         ${body.name},
         ${body.description || ''},
         ${body.capacity || 2},
