@@ -41,22 +41,20 @@ export function middleware(req: NextRequest) {
   }
   
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  // PASO 3: RUTAS PÚBLICAS Y API ENDPOINTS PERMITIDOS
+  // PASO 3: VERIFICAR SI ES RUTA PÚBLICA
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   
-      const publicRoutes = [
-        '/api/admin/login', // Endpoint de login debe ser público
-        '/api/auth/logout', // Endpoint de logout debe ser público
-        '/api/auth/refresh', // Endpoint de refresh debe ser público
-        '/api/public/form', // Endpoints de formularios públicos
-        '/api/public/form-redirect', // Redirección a formularios públicos
-        '/api/telegram/webhook', // Webhook de Telegram debe ser público (sin auth)
-        '/admin-login', // Página de login debe ser pública
-        '/form' // Páginas de formularios públicos
-      ];
-
-  // Verificar si la ruta actual está en las rutas públicas
-  const isPublicRoute = publicRoutes.some(route => url.pathname.startsWith(route));
+  // Solo estas rutas son públicas - TODAS LAS DEMÁS REQUIEREN AUTENTICACIÓN
+  const isPublicRoute = (
+    url.pathname === '/admin-login' ||
+    url.pathname.startsWith('/api/admin/login') ||
+    url.pathname.startsWith('/api/auth/logout') ||
+    url.pathname.startsWith('/api/auth/refresh') ||
+    url.pathname.startsWith('/api/public/form') ||
+    url.pathname.startsWith('/api/public/form-redirect') ||
+    url.pathname.startsWith('/api/telegram/webhook') ||
+    url.pathname.startsWith('/form')
+  );
   
   if (isPublicRoute) {
     return NextResponse.next();
@@ -66,8 +64,8 @@ export function middleware(req: NextRequest) {
   // PASO 4: TODAS LAS DEMÁS RUTAS REQUIEREN AUTENTICACIÓN
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   
-  // Si no es una ruta pública, requiere autenticación
-  const requiresAuth = !isPublicRoute;
+  // Si llegamos aquí, la ruta requiere autenticación
+  const requiresAuth = true;
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   // PASO 5: VERIFICAR JWT TOKEN
@@ -153,7 +151,11 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
+     * - api/public (public APIs)
+     * - api/telegram/webhook (telegram webhook)
+     * - admin-login (login page)
+     * - form (public forms)
      */
-    '/((?!_next/static|_next/image|favicon.ico).*)',
+    '/((?!_next/static|_next/image|favicon.ico|api/admin/login|api/auth/logout|api/auth/refresh|api/public|api/telegram/webhook|admin-login|form).*)',
   ],
 }
