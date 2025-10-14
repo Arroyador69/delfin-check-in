@@ -45,37 +45,14 @@ export function middleware(req: NextRequest) {
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   
       const publicRoutes = [
-        '/api/registro-flex',
-        '/api/partes',
-        '/api/setup-db',
-        '/api/setup-whatsapp-db',
-        '/api/init-whatsapp-db',
-        '/api/check-db',
-        '/api/test-registro',
-        '/api/test-whatsapp',
-        '/api/upgrade-db-public',
-        '/api/database',
-        '/api/public',
-        '/api/ical',
         '/api/admin/login', // Endpoint de login debe ser público
-        '/api/onboarding', // Endpoints de onboarding deben ser públicos
+        '/api/auth/logout', // Endpoint de logout debe ser público
+        '/api/auth/refresh', // Endpoint de refresh debe ser público
         '/api/public/form', // Endpoints de formularios públicos
         '/api/public/form-redirect', // Redirección a formularios públicos
-      '/api/ministerio/test-conexion', // Test de conexión MIR (debe ser público)
-      '/api/ministerio/procesar-pendientes', // Procesar pendientes MIR (debe ser público)
-      '/api/ministerio/debug-env', // Debug variables de entorno (temporal)
-      '/api/ministerio/test-basic', // Test básico de conectividad MIR
-      '/api/ministerio/test-simple', // Test simple de conectividad MIR
-      '/api/ministerio/auto-envio', // Auto-envío MIR (temporal para pruebas)
-      '/api/ministerio/test-consulta', // Test consulta MIR (temporal para pruebas)
-      '/api/ministerio/test-simulacion', // Test simulación MIR (temporal para pruebas)
-      '/api/test-xml-corregido', // Test XML corregido (temporal para pruebas)
-      '/api/export/pv', // Exportación XML MIR (temporal sin auth para testing)
-        '/public',
-        '/admin-login',
-        '/onboarding',
-        '/form', // Páginas de formularios públicos
-        '/api/telegram/webhook' // Webhook de Telegram debe ser público (sin auth)
+        '/api/telegram/webhook', // Webhook de Telegram debe ser público (sin auth)
+        '/admin-login', // Página de login debe ser pública
+        '/form' // Páginas de formularios públicos
       ];
 
   // Verificar si la ruta actual está en las rutas públicas
@@ -86,39 +63,17 @@ export function middleware(req: NextRequest) {
   }
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  // PASO 4: PÁGINAS PROTEGIDAS (requieren autenticación)
+  // PASO 4: TODAS LAS DEMÁS RUTAS REQUIEREN AUTENTICACIÓN
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   
-  const protectedPages = [
-    '/', // Dashboard principal
-    '/reservations',
-    '/rooms', 
-    '/guest-registrations-dashboard',
-    '/cost-calculator',
-    '/aeat',
-    '/calendar-sync',
-    '/offline-queue',
-    '/audit',
-    '/settings',
-    '/pricing',
-    '/messages',
-    '/partes',
-    '/checkin',
-    '/estado-envios-mir',
-    '/database-manager'
-  ];
-
-  const isProtectedPage = protectedPages.some(page => url.pathname === page);
-  
-  // Proteger todas las rutas API de admin excepto login
-  const isProtectedAPI = url.pathname.startsWith('/api/') && 
-                         !publicRoutes.some(route => url.pathname.startsWith(route));
+  // Si no es una ruta pública, requiere autenticación
+  const requiresAuth = !isPublicRoute;
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   // PASO 5: VERIFICAR JWT TOKEN
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   
-  if (isProtectedPage || isProtectedAPI) {
+  if (requiresAuth) {
     // Obtener token de la cookie
     const authToken = req.cookies.get(AUTH_CONFIG.cookieName)?.value;
     
@@ -126,7 +81,7 @@ export function middleware(req: NextRequest) {
       console.warn(`🔒 Acceso denegado a ${url.pathname} - No hay token`);
       
       // Si es API, retornar 401
-      if (isProtectedAPI) {
+      if (url.pathname.startsWith('/api/')) {
         return NextResponse.json(
           { 
             error: 'No autenticado',
@@ -148,7 +103,7 @@ export function middleware(req: NextRequest) {
       console.warn(`🔒 Acceso denegado a ${url.pathname} - Token inválido o expirado`);
       
       // Token inválido o expirado - eliminar cookie y redirigir
-      const response = isProtectedAPI 
+      const response = url.pathname.startsWith('/api/')
         ? NextResponse.json(
             { 
               error: 'Token inválido',
@@ -169,11 +124,8 @@ export function middleware(req: NextRequest) {
     const requestHeaders = new Headers(req.headers);
     requestHeaders.set('x-user-id', payload.userId);
     requestHeaders.set('x-user-role', payload.role);
-    
-    // TODO: Extraer tenant_id del JWT cuando se implemente la autenticación multi-tenant
-    // Por ahora usamos el tenant por defecto
-    const defaultTenantId = '870e589f-d313-4a5a-901f-f25fd4e7240a';
-    requestHeaders.set('x-tenant-id', defaultTenantId);
+    requestHeaders.set('x-tenant-id', payload.tenantId);
+    requestHeaders.set('x-user-email', payload.email);
 
     // Continuar con el request pero con headers actualizados
     const response = NextResponse.next({
@@ -186,10 +138,12 @@ export function middleware(req: NextRequest) {
   }
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  // PASO 6: PERMITIR OTRAS RUTAS
+  // PASO 6: ESTO NO DEBERÍA LLEGAR AQUÍ - TODAS LAS RUTAS ESTÁN PROTEGIDAS
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   
-  return NextResponse.next();
+  // Si llegamos aquí, algo está mal - redirigir al login
+  console.warn(`🔒 Ruta no manejada: ${url.pathname} - Redirigiendo al login`);
+  return NextResponse.redirect(new URL('/admin-login', req.url));
 }
 
 export const config = {
