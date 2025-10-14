@@ -87,9 +87,51 @@ export async function POST(req: NextRequest) {
     }
 
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    // PASO 3: BUSCAR USUARIO EN LA BASE DE DATOS
+    // PASO 3: BUSCAR TENANT POR EMAIL Y LUEGO USUARIO
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     
+    console.log(`🔍 Búsqueda de tenant para email: ${email.toLowerCase()}`);
+    
+    // Primero buscar el tenant por email
+    const tenantQuery = `
+      SELECT 
+        id,
+        name,
+        email,
+        status,
+        plan_id,
+        max_rooms,
+        current_rooms
+      FROM tenants 
+      WHERE email = $1
+      LIMIT 1
+    `;
+    
+    const tenantResult = await sql.query(tenantQuery, [email.toLowerCase()]);
+    
+    console.log(`🔍 Tenants encontrados: ${tenantResult.rows.length}`);
+    
+    if (tenantResult.rows.length === 0) {
+      // Registrar intento fallido
+      const rateLimitStatus = recordFailedAttempt(clientIP, RATE_LIMIT_CONFIGS.login);
+      
+      console.warn(`⚠️ Tenant no encontrado: ${email} desde IP: ${clientIP} (${rateLimitStatus.remaining} intentos restantes)`);
+      
+      return NextResponse.json(
+        { 
+          error: 'Credenciales inválidas',
+          message: 'Email o contraseña incorrectos',
+          remaining: rateLimitStatus.remaining
+        },
+        { status: 401 }
+      );
+    }
+    
+    const tenant = tenantResult.rows[0];
+    
+    console.log(`🔍 Tenant encontrado: ${tenant.name} (${tenant.email}) - Estado: ${tenant.status}`);
+    
+    // Ahora buscar el usuario que pertenece a este tenant
     const userQuery = `
       SELECT 
         tu.id as user_id,
@@ -99,36 +141,21 @@ export async function POST(req: NextRequest) {
         tu.role,
         tu.is_active,
         tu.email_verified,
-        tu.last_login,
-        t.id as tenant_id,
-        t.name as tenant_name,
-        t.status as tenant_status,
-        t.plan_id,
-        t.max_rooms,
-        t.current_rooms
+        tu.last_login
       FROM tenant_users tu
-      JOIN tenants t ON tu.tenant_id = t.id
-      WHERE tu.email = $1 AND tu.is_active = true
+      WHERE tu.tenant_id = $1 AND tu.is_active = true
       LIMIT 1
     `;
     
-    const userResult = await sql.query(userQuery, [email.toLowerCase()]);
+    const userResult = await sql.query(userQuery, [tenant.id]);
     
-    console.log(`🔍 Búsqueda de usuario para email: ${email.toLowerCase()}`);
-    console.log(`🔍 Resultados encontrados: ${userResult.rows.length}`);
+    console.log(`🔍 Usuarios encontrados para tenant: ${userResult.rows.length}`);
     
     if (userResult.rows.length === 0) {
       // Registrar intento fallido
       const rateLimitStatus = recordFailedAttempt(clientIP, RATE_LIMIT_CONFIGS.login);
       
-      console.warn(`⚠️ Usuario no encontrado: ${email} desde IP: ${clientIP} (${rateLimitStatus.remaining} intentos restantes)`);
-      
-      // Debug: Verificar si existe el email en la tabla sin JOIN
-      const debugResult = await sql.query('SELECT email FROM tenant_users WHERE email = $1', [email.toLowerCase()]);
-      console.log(`🔍 Debug - Emails encontrados sin JOIN: ${debugResult.rows.length}`);
-      if (debugResult.rows.length > 0) {
-        console.log(`🔍 Debug - Email encontrado: ${debugResult.rows[0].email}`);
-      }
+      console.warn(`⚠️ Usuario no encontrado para tenant ${tenant.name} desde IP: ${clientIP} (${rateLimitStatus.remaining} intentos restantes)`);
       
       return NextResponse.json(
         { 
@@ -143,8 +170,8 @@ export async function POST(req: NextRequest) {
     const user = userResult.rows[0];
     
     // Verificar que el tenant esté activo
-    if (user.tenant_status !== 'active' && user.tenant_status !== 'trial') {
-      console.warn(`⚠️ Tenant inactivo: ${user.tenant_name} (${user.tenant_status}) para usuario: ${email}`);
+    if (tenant.status !== 'active' && tenant.status !== 'trial') {
+      console.warn(`⚠️ Tenant inactivo: ${tenant.name} (${tenant.status}) para email: ${email}`);
       
       return NextResponse.json(
         { 
@@ -160,7 +187,7 @@ export async function POST(req: NextRequest) {
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     
     console.log(`🔍 Verificando contraseña para usuario: ${user.email}`);
-    console.log(`🔍 Tenant: ${user.tenant_name} (${user.tenant_status})`);
+    console.log(`🔍 Tenant: ${tenant.name} (${tenant.status})`);
     console.log(`🔍 Usuario activo: ${user.is_active}`);
     
     const isPasswordValid = await verifyPassword(password, user.password_hash);
@@ -198,11 +225,11 @@ export async function POST(req: NextRequest) {
     
     const tokenPayload = {
       userId: user.user_id,
-      tenantId: user.tenant_id,
+      tenantId: tenant.id,
       email: user.email,
       role: user.role,
-      tenantName: user.tenant_name,
-      planId: user.plan_id
+      tenantName: tenant.name,
+      planId: tenant.plan_id
     };
     
     const { accessToken, refreshToken } = generateTokenPair(tokenPayload);
@@ -223,12 +250,12 @@ export async function POST(req: NextRequest) {
         fullName: user.full_name,
         role: user.role,
         tenant: {
-          id: user.tenant_id,
-          name: user.tenant_name,
-          status: user.tenant_status,
-          planId: user.plan_id,
-          maxRooms: user.max_rooms,
-          currentRooms: user.current_rooms
+          id: tenant.id,
+          name: tenant.name,
+          status: tenant.status,
+          planId: tenant.plan_id,
+          maxRooms: tenant.max_rooms,
+          currentRooms: tenant.current_rooms
         }
       }
     });
@@ -259,7 +286,7 @@ export async function POST(req: NextRequest) {
     clearRateLimit(clientIP);
     
     const duration = Date.now() - startTime;
-    console.log(`✅ Login exitoso: ${user.email} (${user.tenant_name}) desde IP: ${clientIP} (${duration}ms)`);
+    console.log(`✅ Login exitoso: ${user.email} (${tenant.name}) desde IP: ${clientIP} (${duration}ms)`);
     
     return response;
     
