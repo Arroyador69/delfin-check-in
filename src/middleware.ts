@@ -64,6 +64,8 @@ export function middleware(req: NextRequest) {
     url.pathname.startsWith('/form') ||
     // Endpoint de registro flexible (usado por formularios públicos)
     url.pathname === '/api/registro-flex' ||
+    // Endpoint de create-payment-intent (usado por landing page)
+    url.pathname === '/api/create-payment-intent' ||
     // Webhook de Telegram (debe ser público)
     url.pathname.startsWith('/api/telegram/webhook')
   );
