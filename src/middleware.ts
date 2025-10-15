@@ -56,6 +56,8 @@ export function middleware(req: NextRequest) {
     // APIs de autenticación
     url.pathname.startsWith('/api/auth/logout') ||
     url.pathname.startsWith('/api/auth/refresh') ||
+    // Webhook de Stripe (debe ser público)
+    url.pathname.startsWith('/api/stripe/webhook') ||
     // Formularios públicos (para huéspedes)
     url.pathname.startsWith('/api/public/form') ||
     url.pathname.startsWith('/api/public/form-redirect') ||
