@@ -69,39 +69,51 @@ export async function POST(
     
     if (isMIRForm) {
       console.log('✅ Datos MIR detectados, redirigiendo a /api/registro-flex');
-      // Crear una nueva request para el endpoint de registro-flex
-      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://admin.delfincheckin.com';
-      const registroFlexUrl = `${baseUrl}/api/registro-flex`;
       
-      // Reenviar la request al endpoint correcto
-      const response = await fetch(registroFlexUrl, {
+      // Llamar directamente al endpoint interno en lugar de hacer fetch externo
+      const { POST: registroFlexHandler } = await import('@/app/api/registro-flex/route');
+      
+      // Crear una nueva request interna para el endpoint de registro-flex
+      const internalReq = new NextRequest(req.url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
           'X-Tenant-ID': tenant.id,
           'X-Tenant-Name': tenant.name,
+          ...req.headers,
         },
         body: JSON.stringify(body),
       });
 
-      if (!response.ok) {
-        const errorText = await response.text();
+      try {
+        const result = await registroFlexHandler(internalReq);
+        
+        if (!result.ok) {
+          const errorText = await result.text();
+          return NextResponse.json(
+            { error: `Error en registro-flex: ${errorText}` },
+            { status: result.status, headers: corsHeaders }
+          );
+        }
+
+        const resultData = await result.json();
+        
+        // Log del envío para el tenant
+        console.log(`📝 Formulario MIR enviado para tenant ${tenant.id}:`, {
+          tenantName: tenant.name,
+          timestamp: new Date().toISOString()
+        });
+
+        return NextResponse.json(resultData, { headers: corsHeaders });
+        
+      } catch (error) {
+        console.error('❌ Error llamando al endpoint registro-flex:', error);
         return NextResponse.json(
-          { error: `Error en registro-flex: ${errorText}` },
-          { status: response.status, headers: corsHeaders }
+          { error: `Error interno en registro-flex: ${error instanceof Error ? error.message : 'Error desconocido'}` },
+          { status: 500, headers: corsHeaders }
         );
       }
-
-      const result = await response.json();
-      
-      // Log del envío para el tenant
-      console.log(`📝 Formulario MIR enviado para tenant ${tenant.id}:`, {
-        tenantName: tenant.name,
-        timestamp: new Date().toISOString()
-      });
-
-      return NextResponse.json(result, { headers: corsHeaders });
     }
 
     // Fallback: si no se detecta formato simple pero el payload podría ser MIR, intentarlo como MIR
