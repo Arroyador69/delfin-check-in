@@ -101,17 +101,31 @@ export async function ensureTenantTables(): Promise<void> {
     $$ language 'plpgsql'
   `;
 
-  // Crear triggers
+  // Crear triggers (compatibilidad: CREATE TRIGGER no soporta IF NOT EXISTS en algunas versiones)
   await sql`
-    CREATE TRIGGER IF NOT EXISTS update_tenants_updated_at 
-    BEFORE UPDATE ON tenants
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column()
+    DO $$
+    BEGIN
+      IF NOT EXISTS (
+        SELECT 1 FROM pg_trigger WHERE tgname = 'update_tenants_updated_at'
+      ) THEN
+        CREATE TRIGGER update_tenants_updated_at
+        BEFORE UPDATE ON tenants
+        FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+      END IF;
+    END$$;
   `;
 
   await sql`
-    CREATE TRIGGER IF NOT EXISTS update_tenant_users_updated_at 
-    BEFORE UPDATE ON tenant_users
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column()
+    DO $$
+    BEGIN
+      IF NOT EXISTS (
+        SELECT 1 FROM pg_trigger WHERE tgname = 'update_tenant_users_updated_at'
+      ) THEN
+        CREATE TRIGGER update_tenant_users_updated_at
+        BEFORE UPDATE ON tenant_users
+        FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+      END IF;
+    END$$;
   `;
 }
 
