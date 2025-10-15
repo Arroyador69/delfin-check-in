@@ -20,10 +20,10 @@ cp env.example.template .env.local
 ### Variables que debes compartir (por WhatsApp/privado):
 
 ```bash
-# Base de datos (LAS MISMAS que usas tú)
-POSTGRES_URL="postgresql://default:ABC123@ep-xyz.vercel-storage.com:5432/verceldb"
-POSTGRES_PRISMA_URL="postgresql://default:ABC123@ep-xyz.vercel-storage.com:5432/verceldb?pgbouncer=true&connect_timeout=15"
-POSTGRES_URL_NON_POOLING="postgresql://default:ABC123@ep-xyz.vercel-storage.com:5432/verceldb"
+# Base de datos Neon (LAS MISMAS que usas tú)
+POSTGRES_URL="postgresql://usuario:password@ep-xxxxx.neon.tech/database"
+POSTGRES_PRISMA_URL="postgresql://usuario:password@ep-xxxxx.neon.tech/database?pgbouncer=true&connect_timeout=15"
+POSTGRES_URL_NON_POOLING="postgresql://usuario:password@ep-xxxxx.neon.tech/database"
 
 # Cache/Sesiones (LAS MISMAS que usas tú)
 KV_URL="redis://default:ABC123@abc-xyz.kv.vercel-storage.com:6379"

@@ -28,7 +28,7 @@ export default function CheckinPage() {
 
   const fetchReservations = async () => {
     try {
-      // Usar storage local en lugar de Supabase
+      // Usar storage local (Neon PostgreSQL para producción)
       const data = getReservations().filter(reservation => 
         reservation.status === 'confirmed' && 
         new Date(reservation.check_in) >= new Date()

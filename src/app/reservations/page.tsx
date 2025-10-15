@@ -4,8 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Plus, X, Calendar, User, Bed, Euro, CreditCard, Download, Phone, Users, Globe, Edit } from 'lucide-react';
 import { getRoomNumber } from '@/lib/db';
-// Removido: import { supabase } from '@/lib/supabase';
-// Removido: import { Reservation } from '@/lib/supabase';
+// Base de datos: Neon PostgreSQL
 
 interface Reservation {
   id: string;

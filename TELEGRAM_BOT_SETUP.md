@@ -74,7 +74,7 @@ OPENAI_API_KEY=sk-xxxxxxxxxxxxxxxxxxxxx
 # Telegram Bot
 TELEGRAM_TOKEN=1234567890:ABCDefGhIjKlMnOpQrStUvWxYz
 
-# Database (ya deberías tenerlo)
+# Database Neon (ya deberías tenerlo)
 POSTGRES_URL=postgresql://user:password@ep-xxxxx.neon.tech/delfin_checkin
 ```
 
@@ -87,8 +87,8 @@ OPENAI_API_KEY=sk-xxxxxxxxxxxxxxxxxxxxx
 # Telegram
 TELEGRAM_TOKEN=1234567890:ABCDefGhIjKlMnOpQrStUvWxYz
 
-# Database
-POSTGRES_URL=postgresql://user:password@localhost:5432/delfin_checkin
+# Database Neon
+POSTGRES_URL=postgresql://user:password@ep-xxxxx.neon.tech/delfin_checkin
 ```
 
 ---
