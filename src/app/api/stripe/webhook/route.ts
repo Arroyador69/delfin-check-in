@@ -33,7 +33,6 @@ const arrayBuffer = await req.arrayBuffer()
 function mapPaymentPlanToPlanId(amount: number): 'basic' | 'standard' | 'premium' | 'enterprise' {
   // Mapear montos a planes (en céntimos)
   if (amount <= 1499) return 'basic';      // €14.99 (1 propiedad)
-  if (amount <= 14990 && amount > 1499) return 'basic_yearly'; // €149.90 (1 propiedad anual)
   if (amount <= 2698) return 'standard';   // €26.98 (2 propiedades)  
   if (amount <= 5096) return 'premium';    // €50.96 (4 propiedades)
   return 'enterprise';                     // €149+
@@ -49,12 +48,42 @@ function generateTempPassword(): string {
 /**
  * Crea un tenant completo con usuario desde un pago de Stripe
  */
+async function resolveEmailFromPaymentIntent(pi: Stripe.PaymentIntent): Promise<string> {
+  // 1) Preferir metadata o receipt_email
+  let candidate = String(pi.metadata?.email || pi.receipt_email || '')
+  if (candidate) return candidate
+
+  // 2) Intentar desde el cargo asociado
+  try {
+    const expanded = await stripe.paymentIntents.retrieve(pi.id, { expand: ['charges.data.billing_details'] })
+    const chargeEmail = expanded.charges?.data?.[0]?.billing_details?.email
+    if (chargeEmail) return String(chargeEmail)
+  } catch {}
+
+  // 3) Intentar desde el customer
+  if (pi.customer) {
+    try {
+      const customer = await stripe.customers.retrieve(String(pi.customer))
+      // @ts-ignore - Stripe types
+      if (customer && 'email' in customer && customer.email) {
+        return String((customer as any).email)
+      }
+    } catch {}
+  }
+  return ''
+}
+
 async function createTenantFromPayment(pi: Stripe.PaymentIntent): Promise<void> {
-  const email = String(pi.metadata?.email || pi.receipt_email || '')
-  const name = String(pi.metadata?.name || email.split('@')[0])
+  const email = await resolveEmailFromPaymentIntent(pi)
+  const name = String(pi.metadata?.name || (email ? email.split('@')[0] : ''))
   const plan_id = mapPaymentPlanToPlanId(pi.amount)
   
   console.log('🏢 Creando tenant desde pago:', { email, name, plan_id, amount: pi.amount })
+
+  if (!email) {
+    console.error('⚠️ No se pudo resolver email del comprador. Abortando envío de onboarding.')
+    return
+  }
 
   // Verificar si ya existe un tenant con este email
   const existingTenant = await findTenantByEmail(email)
