@@ -222,16 +222,14 @@ export async function POST(req: NextRequest) {
       case 'invoice.payment_succeeded':
         try {
           const invoice = event.data.object as Stripe.Invoice
-          const customerId = invoice.customer as string | undefined
-          let customerEmail = ''
-          if (customerId) {
-            const customer = await stripe.customers.retrieve(String(customerId))
-            // @ts-ignore
-            customerEmail = customer && 'email' in customer ? String(customer.email || '') : ''
-          }
-          if (invoice.payment_intent) {
+          // Usar directamente customer_email del invoice (ya viene en el payload)
+          const customerEmail = String(invoice.customer_email || '')
+          console.log('📧 Email desde invoice:', customerEmail)
+          if (invoice.payment_intent && customerEmail) {
             const piObj = await stripe.paymentIntents.retrieve(String(invoice.payment_intent))
-            await createTenantFromPayment(piObj, customerEmail || undefined)
+            await createTenantFromPayment(piObj, customerEmail)
+          } else {
+            console.log('ℹ️ invoice.payment_succeeded sin payment_intent o email')
           }
         } catch (e) {
           console.error('❌ Error procesando invoice.payment_succeeded:', e)
