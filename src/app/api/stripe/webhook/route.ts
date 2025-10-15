@@ -204,6 +204,18 @@ export async function POST(req: NextRequest) {
         try {
           const session = event.data.object as Stripe.Checkout.Session
           const sessionEmail = (session.customer_details?.email || (session.customer_email as string) || '')
+          if (session.invoice) {
+            // Preferir el invoice de la sesión y expandir su payment_intent
+            try {
+              const inv = await stripe.invoices.retrieve(String(session.invoice), { expand: ['payment_intent'] })
+              const piFromInv = (inv.payment_intent as unknown) as Stripe.PaymentIntent | undefined
+              if (piFromInv) {
+                await createTenantFromPayment(piFromInv, sessionEmail || undefined)
+                break
+              }
+            } catch {}
+          }
+
           if (session.subscription) {
             // Recuperar el PaymentIntent desde la última invoice de la suscripción
             const sub = await stripe.subscriptions.retrieve(String(session.subscription), { expand: ['latest_invoice.payment_intent'] })
@@ -230,11 +242,23 @@ export async function POST(req: NextRequest) {
           // Usar directamente customer_email del invoice (ya viene en el payload)
           const customerEmail = String(invoice.customer_email || '')
           console.log('📧 Email desde invoice:', customerEmail)
-          if (invoice.payment_intent && customerEmail) {
-            const piObj = await stripe.paymentIntents.retrieve(String(invoice.payment_intent))
-            await createTenantFromPayment(piObj, customerEmail)
+          let paymentIntentId = (invoice as any).payment_intent as string | undefined
+          if (!paymentIntentId) {
+            // Rehidratar invoice con expand para traer el payment_intent
+            try {
+              const inv = await stripe.invoices.retrieve(String(invoice.id), { expand: ['payment_intent'] })
+              const piExpanded = inv.payment_intent as unknown as Stripe.PaymentIntent | undefined
+              if (piExpanded) {
+                await createTenantFromPayment(piExpanded, customerEmail || undefined)
+                break
+              }
+            } catch {}
+          }
+          if (paymentIntentId) {
+            const piObj = await stripe.paymentIntents.retrieve(String(paymentIntentId))
+            await createTenantFromPayment(piObj, customerEmail || undefined)
           } else {
-            console.log('ℹ️ invoice.payment_succeeded sin payment_intent o email')
+            console.log('ℹ️ invoice.payment_succeeded sin payment_intent incluso tras expand')
           }
         } catch (e) {
           console.error('❌ Error procesando invoice.payment_succeeded:', e)
