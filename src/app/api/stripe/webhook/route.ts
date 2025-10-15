@@ -204,15 +204,20 @@ export async function POST(req: NextRequest) {
         try {
           const session = event.data.object as Stripe.Checkout.Session
           const sessionEmail = (session.customer_details?.email || (session.customer_email as string) || '')
-          let piFromSession: Stripe.PaymentIntent | null = null
+          if (session.subscription) {
+            // Recuperar el PaymentIntent desde la última invoice de la suscripción
+            const sub = await stripe.subscriptions.retrieve(String(session.subscription), { expand: ['latest_invoice.payment_intent'] })
+            const piFromSub = (sub.latest_invoice as any)?.payment_intent as Stripe.PaymentIntent | undefined
+            if (piFromSub) {
+              await createTenantFromPayment(piFromSub, sessionEmail || undefined)
+              break
+            }
+          }
           if (session.payment_intent) {
             const piObj = await stripe.paymentIntents.retrieve(String(session.payment_intent))
-            piFromSession = piObj
-          }
-          if (piFromSession) {
-            await createTenantFromPayment(piFromSession, sessionEmail || undefined)
+            await createTenantFromPayment(piObj, sessionEmail || undefined)
           } else {
-            console.log('ℹ️ checkout.session.completed sin payment_intent expandible')
+            console.log('ℹ️ checkout.session.completed sin payment_intent ni latest_invoice')
           }
         } catch (e) {
           console.error('❌ Error procesando checkout.session.completed:', e)
