@@ -275,83 +275,25 @@ export async function POST(req: NextRequest) {
     // Manejar diferentes tipos de eventos
     switch (event.type) {
       case 'payment_intent.succeeded':
+        // No usamos el email del PaymentIntent porque no llega fiable en tu flujo.
+        // El onboarding lo disparamos exclusivamente desde invoice.payment_succeeded.
         const pi = event.data.object as Stripe.PaymentIntent
-        console.log('✅ Pago exitoso:', { 
-          id: pi.id, 
-          amount: pi.amount, 
-          email: pi.metadata?.email || pi.receipt_email 
-        })
-        
-        // Crear tenant automáticamente
-        await createTenantFromPayment(pi)
+        console.log('✅ Pago exitoso (PI recibido, sin onboarding aquí):', { id: pi.id, amount: pi.amount })
         break
 
       case 'checkout.session.completed':
-        try {
-          const session = event.data.object as Stripe.Checkout.Session
-          const sessionEmail = (session.customer_details?.email || (session.customer_email as string) || '')
-          if (session.invoice) {
-            // Preferir el invoice de la sesión y expandir su payment_intent
-            try {
-              const inv = await stripe.invoices.retrieve(String(session.invoice), { expand: ['payment_intent'] })
-              const piFromInv = (inv.payment_intent as unknown) as Stripe.PaymentIntent | undefined
-              if (piFromInv) {
-                await createTenantFromPayment(piFromInv, sessionEmail || undefined)
-                break
-              }
-              // Si el invoice no trae PI, crear desde invoice directamente
-              await createTenantFromInvoice(inv, sessionEmail || '')
-              break
-            } catch {}
-          }
-
-          if (session.subscription) {
-            // Recuperar el PaymentIntent desde la última invoice de la suscripción
-            const sub = await stripe.subscriptions.retrieve(String(session.subscription), { expand: ['latest_invoice.payment_intent'] })
-            const piFromSub = (sub.latest_invoice as any)?.payment_intent as Stripe.PaymentIntent | undefined
-            if (piFromSub) {
-              await createTenantFromPayment(piFromSub, sessionEmail || undefined)
-              break
-            }
-          }
-          if (session.payment_intent) {
-            const piObj = await stripe.paymentIntents.retrieve(String(session.payment_intent))
-            await createTenantFromPayment(piObj, sessionEmail || undefined)
-          } else {
-            console.log('ℹ️ checkout.session.completed sin payment_intent ni latest_invoice')
-          }
-        } catch (e) {
-          console.error('❌ Error procesando checkout.session.completed:', e)
-        }
+        // No disparamos onboarding aquí para evitar ambigüedad.
+        // El email fiable vendrá en invoice.payment_succeeded.
+        console.log('ℹ️ checkout.session.completed recibido (sin onboarding, esperando invoice)')
         break
 
       case 'invoice.payment_succeeded':
         try {
           const invoice = event.data.object as Stripe.Invoice
-          // Usar directamente customer_email del invoice (ya viene en el payload)
           const customerEmail = String(invoice.customer_email || '')
           console.log('📧 Email desde invoice:', customerEmail)
-          let paymentIntentId = (invoice as any).payment_intent as string | undefined
-          if (!paymentIntentId) {
-            // Rehidratar invoice con expand para traer el payment_intent
-            try {
-              const inv = await stripe.invoices.retrieve(String(invoice.id), { expand: ['payment_intent'] })
-              const piExpanded = inv.payment_intent as unknown as Stripe.PaymentIntent | undefined
-              if (piExpanded) {
-                await createTenantFromPayment(piExpanded, customerEmail || undefined)
-                break
-              }
-              // Si no hay PI ni expandido, crear desde el invoice directamente
-              await createTenantFromInvoice(inv, customerEmail || '')
-              break
-            } catch {}
-          }
-          if (paymentIntentId) {
-            const piObj = await stripe.paymentIntents.retrieve(String(paymentIntentId))
-            await createTenantFromPayment(piObj, customerEmail || undefined)
-          } else {
-            console.log('ℹ️ invoice.payment_succeeded sin payment_intent incluso tras expand')
-          }
+          // Disparar SIEMPRE onboarding desde el invoice, sin depender del PI
+          await createTenantFromInvoice(invoice, customerEmail)
         } catch (e) {
           console.error('❌ Error procesando invoice.payment_succeeded:', e)
         }
