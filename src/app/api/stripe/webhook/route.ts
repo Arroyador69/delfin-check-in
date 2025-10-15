@@ -166,6 +166,92 @@ async function createTenantFromPayment(pi: Stripe.PaymentIntent, overrideEmail?:
   }
 }
 
+// Crear tenant usando solo datos del Invoice cuando no hay PaymentIntent accesible
+async function createTenantFromInvoice(inv: Stripe.Invoice, email: string): Promise<void> {
+  const amount = Number(inv.amount_paid || inv.total || 0)
+  const plan_id = mapPaymentPlanToPlanId(amount)
+  const name = String((inv.customer_name as string) || (email ? email.split('@')[0] : ''))
+
+  console.log('🏢 Creando tenant desde invoice:', { email, name, plan_id, amount })
+  if (!email) {
+    console.error('⚠️ Invoice sin email. Abortando envío de onboarding.')
+    return
+  }
+
+  // Verificar si ya existe un tenant con este email
+  const existingTenant = await findTenantByEmail(email)
+  if (existingTenant) {
+    console.log('⚠️ Tenant ya existe (invoice path):', existingTenant.id)
+    return
+  }
+
+  // Intentar obtener subscription_id del invoice
+  let subscriptionId: string | undefined
+  try {
+    // @ts-ignore - distintos lugares donde Stripe lo incluye
+    subscriptionId = (inv.subscription as string) || (inv.parent?.subscription_details?.subscription as string) || (inv.lines?.data?.[0]?.parent?.subscription_item_details?.subscription as string)
+  } catch {}
+
+  try {
+    await ensureTenantTables()
+
+    const tenant = await createTenant({
+      name,
+      email,
+      plan_id,
+      stripe_customer_id: String(inv.customer || ''),
+      stripe_subscription_id: String(subscriptionId || ''),
+      config: {
+        propertyName: name,
+        timezone: 'Europe/Madrid',
+        language: 'es',
+        currency: 'EUR'
+      }
+    })
+
+    console.log('✅ Tenant creado (invoice):', tenant.id)
+
+    const tempPassword = generateTempPassword()
+    const passwordHash = await bcrypt.hash(tempPassword, 12)
+
+    const user = await createTenantUser({
+      tenant_id: tenant.id,
+      email,
+      password_hash: passwordHash,
+      full_name: name,
+      role: 'owner'
+    })
+
+    console.log('✅ Usuario creado (invoice):', user.id)
+
+    const onboardingToken = Math.random().toString(36).slice(-32) + Math.random().toString(36).slice(-32)
+    const tokenExpiry = new Date()
+    tokenExpiry.setHours(tokenExpiry.getHours() + 24)
+
+    await sql`
+      UPDATE tenant_users 
+      SET 
+        reset_token = ${onboardingToken},
+        reset_token_expires = ${tokenExpiry.toISOString()},
+        email_verified = false
+      WHERE id = ${user.id}
+    `
+
+    const onboardingUrl = `${process.env.NEXT_PUBLIC_APP_URL}/onboarding?token=${onboardingToken}&email=${encodeURIComponent(email)}`
+    console.log('🔗 Magic link de onboarding (invoice):', onboardingUrl)
+    console.log('📧 Enviando email de onboarding a:', email)
+    try {
+      await sendOnboardingEmail({ to: email, onboardingUrl, tempPassword })
+    } catch (mailErr) {
+      console.error('✉️ Error enviando email de onboarding (invoice):', mailErr)
+    }
+
+  } catch (error) {
+    console.error('❌ Error creando tenant desde invoice:', error)
+    throw error
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const sig = req.headers.get('stripe-signature') || ''
@@ -213,6 +299,9 @@ export async function POST(req: NextRequest) {
                 await createTenantFromPayment(piFromInv, sessionEmail || undefined)
                 break
               }
+              // Si el invoice no trae PI, crear desde invoice directamente
+              await createTenantFromInvoice(inv, sessionEmail || '')
+              break
             } catch {}
           }
 
@@ -252,6 +341,9 @@ export async function POST(req: NextRequest) {
                 await createTenantFromPayment(piExpanded, customerEmail || undefined)
                 break
               }
+              // Si no hay PI ni expandido, crear desde el invoice directamente
+              await createTenantFromInvoice(inv, customerEmail || '')
+              break
             } catch {}
           }
           if (paymentIntentId) {
