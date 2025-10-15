@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { sql } from '@vercel/postgres'
 import Stripe from 'stripe'
 import bcrypt from 'bcryptjs'
 import { 
