@@ -22,7 +22,8 @@ export async function OPTIONS(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const planId = String(body.planId || '') // basic, standard, premium, enterprise
+    const planId = String(body.planId || '') // basic, basic_yearly, standard
+    const properties = parseInt(String(body.properties || 1))
     const email = String(body.email || '')
     const name = String(body.name || '')
 
@@ -31,20 +32,37 @@ export async function POST(req: NextRequest) {
     }
 
     // Validar plan_id
-    if (!planId || !['basic', 'standard', 'premium', 'enterprise'].includes(planId)) {
+    if (!planId || !['basic', 'basic_yearly', 'standard'].includes(planId)) {
       return NextResponse.json({ error: 'Plan no válido' }, { status: 400 })
     }
 
-    // Mapear plan_id a precio mensual (en céntimos)
-    const priceMap = {
-      basic: 1499,      // €14.99/mes (1 propiedad)
-      basic_yearly: 14990, // €149.90/año (1 propiedad)
-      standard: 2698,   // €26.98/mes (2 propiedades)
-      premium: 5096,    // €50.96/mes (4 propiedades)
-      enterprise: 11240 // €112.40/mes (10+ propiedades)
+    // Función para calcular precios por volumen (igual que en el frontend)
+    function getVolumePrice(properties: number): number {
+      if (properties === 1) return 14.99;
+      if (properties === 2) return 13.49;
+      if (properties >= 3 && properties <= 4) return 12.74;
+      if (properties >= 5 && properties <= 9) return 11.99;
+      if (properties >= 10) return 11.24;
+      return 14.99; // Default
     }
 
-    const amount = priceMap[planId as keyof typeof priceMap]
+    // Calcular precio total según plan y propiedades
+    function calculateTotalPrice(properties: number, isYearly: boolean = false): number {
+      const pricePerProperty = getVolumePrice(properties);
+      let total: number;
+      
+      if (isYearly) {
+        const yearlyPrice = pricePerProperty * 12;
+        const annualDiscount = yearlyPrice * 0.167; // 16.7% descuento anual
+        total = (yearlyPrice - annualDiscount) * properties;
+      } else {
+        total = pricePerProperty * properties;
+      }
+      
+      return Math.round(total * 100); // Convertir a céntimos
+    }
+
+    const amount = calculateTotalPrice(properties, planId === 'basic_yearly')
 
     const paymentIntent = await stripe.paymentIntents.create({
       amount,
@@ -52,9 +70,10 @@ export async function POST(req: NextRequest) {
       description: `Delfín Check-in - Plan ${planId.charAt(0).toUpperCase() + planId.slice(1)}`,
       metadata: {
         planId,
+        properties: properties.toString(),
         email,
         name,
-        plan: 'monthly' // Por compatibilidad con webhook existente
+        plan: planId === 'basic_yearly' ? 'yearly' : 'monthly' // Por compatibilidad con webhook existente
       },
       receipt_email: email || undefined,
       automatic_payment_methods: { enabled: true },
