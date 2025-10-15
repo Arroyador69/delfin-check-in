@@ -219,9 +219,14 @@ export default function HomePage() {
   const confirmedReservations = filteredReservations.filter(r => r.status === 'confirmed').length;
   const today = new Date().toISOString().split('T')[0];
   
-  const guestsToday = filteredReservations.filter(r => 
-    r.check_in <= today && r.check_out >= today && r.status === 'confirmed'
-  ).length;
+  const guestsToday = filteredReservations.filter(r => {
+    const checkIn = new Date(r.check_in);
+    const checkOut = new Date(r.check_out);
+    const now = new Date();
+    
+    // Huéspedes actuales: check-in ya pasó Y check-out es después de ahora
+    return checkIn <= now && checkOut > now && r.status === 'confirmed';
+  }).length;
 
   // Calcular ocupación basada en el período filtrado
   const dateRange = getDateRange(filterPeriod);
@@ -694,9 +699,10 @@ export default function HomePage() {
                 ({reservations.filter(r => {
                   const checkIn = new Date(r.check_in);
                   const checkOut = new Date(r.check_out);
-                  const today = new Date();
-                  today.setHours(0, 0, 0, 0);
-                  return checkIn <= today && checkOut > today && r.status === 'confirmed';
+                  const now = new Date();
+                  
+                  // Reserva activa: check-in ya pasó Y check-out es después de ahora
+                  return checkIn <= now && checkOut > now && r.status === 'confirmed';
                 }).length})
               </span>
             </h3>
@@ -710,9 +716,10 @@ export default function HomePage() {
                   .filter(r => {
                     const checkIn = new Date(r.check_in);
                     const checkOut = new Date(r.check_out);
-                    const today = new Date();
-                    today.setHours(0, 0, 0, 0);
-                    return checkIn <= today && checkOut > today && r.status === 'confirmed';
+                    const now = new Date();
+                    
+                    // Reserva activa: check-in ya pasó Y check-out es después de ahora
+                    return checkIn <= now && checkOut > now && r.status === 'confirmed';
                   })
                   .slice(0, 5)
                   .map((reservation) => (
@@ -733,9 +740,10 @@ export default function HomePage() {
                 {reservations.filter(r => {
                   const checkIn = new Date(r.check_in);
                   const checkOut = new Date(r.check_out);
-                  const today = new Date();
-                  today.setHours(0, 0, 0, 0);
-                  return checkIn <= today && checkOut > today && r.status === 'confirmed';
+                  const now = new Date();
+                  
+                  // Reserva activa: check-in ya pasó Y check-out es después de ahora
+                  return checkIn <= now && checkOut > now && r.status === 'confirmed';
                 }).length === 0 && (
                   <div className="text-center py-6">
                     <p className="text-gray-500">No hay huéspedes actuales</p>
@@ -753,9 +761,10 @@ export default function HomePage() {
               <span className="ml-2 text-sm font-normal text-gray-500">
                 ({reservations.filter(r => {
                   const checkIn = new Date(r.check_in);
-                  const today = new Date();
-                  today.setHours(0, 0, 0, 0);
-                  return checkIn > today && r.status === 'confirmed';
+                  const now = new Date();
+                  
+                  // Reserva futura: check-in es después de ahora
+                  return checkIn > now && r.status === 'confirmed';
                 }).length})
               </span>
             </h3>
@@ -768,9 +777,10 @@ export default function HomePage() {
                 {reservations
                   .filter(r => {
                     const checkIn = new Date(r.check_in);
-                    const today = new Date();
-                    today.setHours(0, 0, 0, 0);
-                    return checkIn > today && r.status === 'confirmed';
+                    const now = new Date();
+                    
+                    // Reserva futura: check-in es después de ahora
+                    return checkIn > now && r.status === 'confirmed';
                   })
                   .sort((a, b) => new Date(a.check_in).getTime() - new Date(b.check_in).getTime())
                   .slice(0, 5)
@@ -799,9 +809,10 @@ export default function HomePage() {
                 ))}
                 {reservations.filter(r => {
                   const checkIn = new Date(r.check_in);
-                  const today = new Date();
-                  today.setHours(0, 0, 0, 0);
-                  return checkIn > today && r.status === 'confirmed';
+                  const now = new Date();
+                  
+                  // Reserva futura: check-in es después de ahora
+                  return checkIn > now && r.status === 'confirmed';
                 }).length === 0 && (
                   <div className="text-center py-6">
                     <p className="text-gray-500">No hay reservas próximas</p>

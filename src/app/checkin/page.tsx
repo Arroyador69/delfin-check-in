@@ -29,10 +29,14 @@ export default function CheckinPage() {
   const fetchReservations = async () => {
     try {
       // Usar storage local (Neon PostgreSQL para producción)
-      const data = getReservations().filter(reservation => 
-        reservation.status === 'confirmed' && 
-        new Date(reservation.check_in) >= new Date()
-      );
+      const data = getReservations().filter(reservation => {
+        const checkIn = new Date(reservation.check_in);
+        const checkOut = new Date(reservation.check_out);
+        const now = new Date();
+        
+        // Reserva activa: check-in ya pasó Y check-out es después de ahora
+        return reservation.status === 'confirmed' && checkIn <= now && checkOut > now;
+      });
       setReservations(data || []);
     } catch (error) {
       console.error('Error fetching reservations:', error);
