@@ -73,8 +73,8 @@ async function resolveEmailFromPaymentIntent(pi: Stripe.PaymentIntent): Promise<
   return ''
 }
 
-async function createTenantFromPayment(pi: Stripe.PaymentIntent): Promise<void> {
-  const email = await resolveEmailFromPaymentIntent(pi)
+async function createTenantFromPayment(pi: Stripe.PaymentIntent, overrideEmail?: string): Promise<void> {
+  const email = overrideEmail || (await resolveEmailFromPaymentIntent(pi))
   const name = String(pi.metadata?.name || (email ? email.split('@')[0] : ''))
   const plan_id = mapPaymentPlanToPlanId(pi.amount)
   
@@ -198,6 +198,44 @@ export async function POST(req: NextRequest) {
         
         // Crear tenant automáticamente
         await createTenantFromPayment(pi)
+        break
+
+      case 'checkout.session.completed':
+        try {
+          const session = event.data.object as Stripe.Checkout.Session
+          const sessionEmail = (session.customer_details?.email || (session.customer_email as string) || '')
+          let piFromSession: Stripe.PaymentIntent | null = null
+          if (session.payment_intent) {
+            const piObj = await stripe.paymentIntents.retrieve(String(session.payment_intent))
+            piFromSession = piObj
+          }
+          if (piFromSession) {
+            await createTenantFromPayment(piFromSession, sessionEmail || undefined)
+          } else {
+            console.log('ℹ️ checkout.session.completed sin payment_intent expandible')
+          }
+        } catch (e) {
+          console.error('❌ Error procesando checkout.session.completed:', e)
+        }
+        break
+
+      case 'invoice.payment_succeeded':
+        try {
+          const invoice = event.data.object as Stripe.Invoice
+          const customerId = invoice.customer as string | undefined
+          let customerEmail = ''
+          if (customerId) {
+            const customer = await stripe.customers.retrieve(String(customerId))
+            // @ts-ignore
+            customerEmail = customer && 'email' in customer ? String(customer.email || '') : ''
+          }
+          if (invoice.payment_intent) {
+            const piObj = await stripe.paymentIntents.retrieve(String(invoice.payment_intent))
+            await createTenantFromPayment(piObj, customerEmail || undefined)
+          }
+        } catch (e) {
+          console.error('❌ Error procesando invoice.payment_succeeded:', e)
+        }
         break
 
       case 'customer.subscription.created':
