@@ -196,4 +196,4 @@ Este proyecto es propietario y está protegido por derechos de autor.
 
 ---
 
-**🐬 Desarrollado con ❤️ para la industria hotelera española**
+**🐬 Desarrollado con ❤️ para la industria hotelera española**# Force deploy Wed Oct 15 13:36:05 CEST 2025
