@@ -5,6 +5,20 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
   apiVersion: '2023-10-16',
 })
 
+// Manejar CORS preflight
+export async function OPTIONS(req: NextRequest) {
+  const allowedOrigin = process.env.ALLOWED_LANDING_ORIGIN || 'https://delfincheckin.com'
+  return new NextResponse(null, {
+    status: 200,
+    headers: {
+      'Access-Control-Allow-Origin': allowedOrigin,
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+      'Access-Control-Allow-Credentials': 'true',
+    },
+  })
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
@@ -49,23 +63,18 @@ export async function POST(req: NextRequest) {
     const allowedOrigin = process.env.ALLOWED_LANDING_ORIGIN || 'https://delfincheckin.com'
     const res = NextResponse.json({ client_secret: paymentIntent.client_secret })
     res.headers.set('Access-Control-Allow-Origin', allowedOrigin)
+    res.headers.set('Access-Control-Allow-Methods', 'POST, OPTIONS')
+    res.headers.set('Access-Control-Allow-Headers', 'Content-Type')
     res.headers.set('Access-Control-Allow-Credentials', 'true')
     res.headers.set('Vary', 'Origin')
     return res
   } catch (error: any) {
-    return NextResponse.json({ error: error?.message || 'Error interno' }, { status: 500 })
+    const allowedOrigin = process.env.ALLOWED_LANDING_ORIGIN || 'https://delfincheckin.com'
+    const res = NextResponse.json({ error: error?.message || 'Error interno' }, { status: 500 })
+    res.headers.set('Access-Control-Allow-Origin', allowedOrigin)
+    res.headers.set('Access-Control-Allow-Methods', 'POST, OPTIONS')
+    res.headers.set('Access-Control-Allow-Headers', 'Content-Type')
+    res.headers.set('Access-Control-Allow-Credentials', 'true')
+    return res
   }
 }
-
-export async function OPTIONS() {
-  const allowedOrigin = process.env.ALLOWED_LANDING_ORIGIN || 'https://delfincheckin.com'
-  const res = new NextResponse(null, { status: 204 })
-  res.headers.set('Access-Control-Allow-Origin', allowedOrigin)
-  res.headers.set('Access-Control-Allow-Methods', 'POST, OPTIONS')
-  res.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization')
-  res.headers.set('Access-Control-Allow-Credentials', 'true')
-  res.headers.set('Vary', 'Origin')
-  return res
-}
-
-
