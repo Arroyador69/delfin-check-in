@@ -102,11 +102,18 @@ function CheckoutForm({ planId, onSuccess, onError }: { planId: PlanId; onSucces
   const stripe = useStripe();
   const elements = useElements();
   const [processing, setProcessing] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [showTerms, setShowTerms] = useState(false);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
 
     if (!stripe || !elements) {
+      return;
+    }
+
+    if (!termsAccepted) {
+      onError('Debes aceptar los términos y condiciones para continuar');
       return;
     }
 
@@ -191,9 +198,61 @@ function CheckoutForm({ planId, onSuccess, onError }: { planId: PlanId; onSucces
         </div>
       </div>
 
+      {/* Términos y Condiciones */}
+      <div className="space-y-4">
+        <div className="flex items-start space-x-3">
+          <input
+            type="checkbox"
+            id="terms-acceptance"
+            checked={termsAccepted}
+            onChange={(e) => setTermsAccepted(e.target.checked)}
+            className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+          />
+          <label htmlFor="terms-acceptance" className="text-sm text-gray-700 cursor-pointer">
+            ☐ Declaro haber leído y aceptado los Términos y Condiciones, la Política de Privacidad y los Supuestos de Uso del servicio Delfín Check-in, y consiento el tratamiento de mis datos conforme a lo dispuesto en la normativa vigente de protección de datos.
+          </label>
+        </div>
+
+        {/* Botón para mostrar/ocultar términos detallados */}
+        <button
+          type="button"
+          onClick={() => setShowTerms(!showTerms)}
+          className="text-sm text-blue-600 hover:text-blue-800 underline"
+        >
+          {showTerms ? 'Ocultar términos detallados' : 'Ver términos detallados'}
+        </button>
+
+        {/* Términos detallados desplegables */}
+        {showTerms && (
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-4 text-sm text-gray-700">
+            <p className="font-semibold">Al aceptar, confirmo que:</p>
+            
+            <div className="space-y-3">
+              <p>• Comprendo que Delfín Check-in es una herramienta de gestión que facilita la creación, almacenamiento y exportación de ficheros de registro de viajeros conforme al Real Decreto 933/2021, pero que no realiza el envío automático al MIR ni sustituye las obligaciones legales del titular del alojamiento.</p>
+              
+              <p>• Soy responsable de la veracidad, exactitud y conservación de los datos introducidos en los formularios de registro.</p>
+              
+              <p>• Entiendo que la IA y las funciones disponibles (por ejemplo, chatbot en Telegram o WhatsApp) actúan como asistencia complementaria y no como servicio oficial de verificación, firma o presentación telemática ante las autoridades.</p>
+              
+              <p>• Acepto que los datos procesados se almacenarán de forma segura durante el tiempo necesario para cumplir con las finalidades del servicio y la normativa aplicable.</p>
+              
+              <p>• Reconozco que el servicio requiere una suscripción activa (mensual o anual), cuyo pago otorga acceso al software y sus funcionalidades, sin implicar custodia ni certificación oficial de registros.</p>
+              
+              <p>• Comprendo que pueden producirse interrupciones temporales por mantenimiento, actualizaciones o causas técnicas ajenas a la plataforma, y que estas no darán lugar a compensaciones salvo en casos de incidencia prolongada.</p>
+              
+              <p>• Acepto que los precios, condiciones y funcionalidades del servicio podrán actualizarse, comunicándose siempre por medios electrónicos con antelación razonable.</p>
+              
+              <p>• He revisado las políticas aplicables en <a href="https://delfincheckin.com/terminos-servicio.html" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 underline">Términos de Servicio</a> y <a href="https://delfincheckin.com/politica-privacidad.html" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 underline">Política de Privacidad</a> y las acepto expresamente antes de realizar el pago.</p>
+            </div>
+
+            <p className="font-semibold mt-4">Al continuar, confirmo mi conformidad y doy consentimiento informado para la prestación del servicio.</p>
+          </div>
+        )}
+      </div>
+
       <button
         type="submit"
-        disabled={!stripe || processing}
+        disabled={!stripe || processing || !termsAccepted}
         className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {processing ? (
