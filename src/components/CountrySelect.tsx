@@ -25,13 +25,15 @@ export default function CountrySelect({
   const [countries, setCountries] = useState<Array<{iso3: string, name: string}>>([]);
 
   useEffect(() => {
+    console.log('CountrySelect: Loading countries for language:', language);
     try {
       const sortedCountries = getCountriesSorted(language);
+      console.log('CountrySelect: Loaded countries:', sortedCountries.length);
       setCountries(sortedCountries);
     } catch (error) {
       console.error('Error loading countries:', error);
       // Fallback con algunos países básicos
-      setCountries([
+      const fallbackCountries = [
         { iso3: 'ESP', name: 'España' },
         { iso3: 'FRA', name: 'Francia' },
         { iso3: 'GBR', name: 'Reino Unido' },
@@ -42,13 +44,17 @@ export default function CountrySelect({
         { iso3: 'ARG', name: 'Argentina' },
         { iso3: 'BRA', name: 'Brasil' },
         { iso3: 'CHN', name: 'China' }
-      ]);
+      ];
+      console.log('CountrySelect: Using fallback countries:', fallbackCountries.length);
+      setCountries(fallbackCountries);
     }
   }, [language]);
 
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     onChange(e.target.value);
   };
+
+  console.log('CountrySelect: Rendering with', countries.length, 'countries, value:', value);
 
   return (
     <select
