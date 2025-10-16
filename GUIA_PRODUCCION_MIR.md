@@ -256,3 +256,5 @@ Una vez configurado correctamente:
 5. **Estados** → Transición automática: Pendiente → Enviado → Confirmado
 
 **¡El sistema está 100% preparado para producción!** 🚀
+
+

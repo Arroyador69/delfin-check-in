@@ -2,48 +2,40 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {
   try {
-    console.log('🚀 Test conexión MIR PRODUCCIÓN iniciado...');
+    console.log('🚀 Test final MIR con autenticación corregida...');
     
-    const json = await req.json().catch(() => ({}));
-    
-    // Configuración específica para PRODUCCIÓN usando las credenciales actuales
-    const configProduccion = {
-      baseUrl: 'https://hospedajes.ses.mir.es/hospedajes-web/ws/v1/comunicacion',
+    const config = {
+      baseUrl: process.env.MIR_BASE_URL || '',
       username: process.env.MIR_HTTP_USER || '',
       password: process.env.MIR_HTTP_PASS || '',
       codigoArrendador: process.env.MIR_CODIGO_ARRENDADOR || '',
       aplicacion: 'Delfin_Check_in',
-      simulacion: false // SIEMPRE FALSE para producción
+      simulacion: false
     };
 
-    console.log('📋 Configuración PRODUCCIÓN:', {
-      baseUrl: configProduccion.baseUrl,
-      username: configProduccion.username,
-      codigoArrendador: configProduccion.codigoArrendador,
-      aplicacion: configProduccion.aplicacion,
-      simulacion: configProduccion.simulacion
+    console.log('📋 Configuración MIR:', {
+      baseUrl: config.baseUrl,
+      username: config.username,
+      codigoArrendador: config.codigoArrendador,
+      aplicacion: config.aplicacion,
+      simulacion: config.simulacion
     });
 
     // Verificar que tenemos las credenciales
-    if (!configProduccion.username || !configProduccion.password || !configProduccion.codigoArrendador) {
+    if (!config.username || !config.password || !config.codigoArrendador) {
       return NextResponse.json({
         success: false,
         error: 'Credenciales incompletas',
-        message: 'Faltan username, password o codigoArrendador en variables de entorno',
-        configuracion: {
-          username: configProduccion.username ? '***CONFIGURADO***' : 'NO CONFIGURADO',
-          password: configProduccion.password ? '***CONFIGURADO***' : 'NO CONFIGURADO',
-          codigoArrendador: configProduccion.codigoArrendador || 'NO CONFIGURADO'
-        }
+        message: 'Faltan username, password o codigoArrendador en variables de entorno'
       }, { status: 400 });
     }
 
-    // Datos de prueba mínimos pero válidos
+    // Datos de prueba válidos según MIR v1.1.1
     const testData = {
-      codigoEstablecimiento: configProduccion.codigoArrendador,
+      codigoEstablecimiento: config.codigoArrendador,
       comunicaciones: [{
         contrato: {
-          referencia: `TEST-PROD-${Date.now()}`,
+          referencia: `TEST-FINAL-${Date.now()}`,
           fechaContrato: new Date().toISOString().split('T')[0],
           fechaEntrada: new Date().toISOString(),
           fechaSalida: new Date(Date.now() + 24*60*60*1000).toISOString(),
@@ -58,7 +50,7 @@ export async function POST(req: NextRequest) {
         personas: [{
           rol: "VI",
           nombre: "Test",
-          apellido1: "Produccion",
+          apellido1: "Final",
           apellido2: "MIR",
           tipoDocumento: "NIF",
           numeroDocumento: "12345678Z",
@@ -78,11 +70,11 @@ export async function POST(req: NextRequest) {
       }]
     };
     
-    console.log('📤 Enviando test a MIR PRODUCCIÓN...');
+    console.log('📤 Enviando test final al MIR...');
     
-    // Importar y usar el cliente MIR
-    const { MinisterioClientVercel } = await import('@/lib/ministerio-client-vercel');
-    const client = new MinisterioClientVercel(configProduccion);
+    // Importar cliente MIR corregido
+    const { MinisterioClientFixed } = await import('@/lib/ministerio-client-fixed');
+    const client = new MinisterioClientFixed(config);
     
     // Generar XML para el test
     const { create } = await import('xmlbuilder2');
@@ -131,20 +123,23 @@ export async function POST(req: NextRequest) {
     const doc = create({ version: '1.0', encoding: 'UTF-8' }).ele(root);
     const xmlContent = doc.end({ prettyPrint: false });
     
-    // Intentar envío al MIR
+    console.log('📄 XML generado:', xmlContent.substring(0, 500) + '...');
+    
+    // Intentar envío al MIR con cliente corregido
     const resultado = await client.altaPV({ xmlAlta: xmlContent });
     
-    console.log('✅ Resultado MIR PRODUCCIÓN:', resultado);
+    console.log('✅ Resultado MIR con cliente corregido:', resultado);
     
     return NextResponse.json({
       success: true,
-      message: 'Test conexión MIR PRODUCCIÓN completado',
+      message: 'Test final MIR con autenticación corregida completado',
+      entorno: 'PRODUCCIÓN ONLINE',
       configuracion: {
-        baseUrl: configProduccion.baseUrl,
-        username: configProduccion.username,
-        codigoArrendador: configProduccion.codigoArrendador,
-        aplicacion: configProduccion.aplicacion,
-        simulacion: configProduccion.simulacion
+        baseUrl: config.baseUrl,
+        username: config.username,
+        codigoArrendador: config.codigoArrendador,
+        aplicacion: config.aplicacion,
+        simulacion: config.simulacion
       },
       resultado: resultado,
       referencia: testData.comunicaciones[0].contrato.referencia,
@@ -156,8 +151,12 @@ export async function POST(req: NextRequest) {
         descripcion: resultado.descripcion,
         lote: resultado.lote ? `Lote asignado: ${resultado.lote}` : 'Sin lote asignado',
         recomendacion: resultado.ok ? 
-          '✅ Conexión exitosa - Sistema listo para producción' :
-          '⚠️ Revisar configuración - Error en la conexión'
+          '🎉 ¡ÉXITO! Sistema funcionando correctamente en producción' :
+          resultado.codigo === 'TIMEOUT' ?
+          '⚠️ Timeout - El MIR puede estar lento, reintentar' :
+          resultado.codigo === 'NETWORK_ERROR' ?
+          '⚠️ Error de red - Verificar conectividad' :
+          '⚠️ Error del MIR - Revisar configuración'
       }
     }, {
       status: 200,
@@ -165,11 +164,11 @@ export async function POST(req: NextRequest) {
     });
     
   } catch (error) {
-    console.error('❌ Error en test MIR PRODUCCIÓN:', error);
+    console.error('❌ Error en test final MIR:', error);
     
     return NextResponse.json({
       success: false,
-      error: 'Error en test MIR PRODUCCIÓN',
+      error: 'Error en test final MIR',
       message: error instanceof Error ? error.message : 'Error desconocido',
       stack: error instanceof Error ? error.stack : undefined,
       diagnostico: {
@@ -184,5 +183,3 @@ export async function POST(req: NextRequest) {
     });
   }
 }
-
-

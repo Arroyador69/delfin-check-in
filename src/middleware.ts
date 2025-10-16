@@ -90,7 +90,11 @@ export function middleware(req: NextRequest) {
     // Endpoint de debug MIR (público para verificación)
     url.pathname.startsWith('/api/test-mir-debug') ||
     // Endpoint de test endpoints MIR (público para verificación)
-    url.pathname.startsWith('/api/test-mir-endpoints')
+    url.pathname.startsWith('/api/test-mir-endpoints') ||
+    // Endpoint de test autenticación MIR (público para verificación)
+    url.pathname.startsWith('/api/test-mir-auth') ||
+    // Endpoint de test final MIR (público para verificación)
+    url.pathname.startsWith('/api/test-mir-final')
   );
   
   // Debug: Log para verificar qué rutas están siendo procesadas
