@@ -127,3 +127,4 @@ Si hay problemas con el flujo:
 - **Email**: contacto@delfincheckin.com
 - **Logs**: Revisar Vercel Dashboard
 - **Stripe**: Revisar Stripe Dashboard > Webhooks
+
