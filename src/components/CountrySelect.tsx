@@ -3,8 +3,8 @@
 import React, { useState, useEffect } from 'react';
 
 interface CountrySelectProps {
-  value: string;
-  onChange: (value: string) => void;
+  value?: string;
+  onChange?: (value: string) => void;
   placeholder?: string;
   required?: boolean;
   className?: string;
@@ -13,8 +13,8 @@ interface CountrySelectProps {
 }
 
 export default function CountrySelect({
-  value,
-  onChange,
+  value = '',
+  onChange = () => {},
   placeholder = 'Seleccione país',
   required = false,
   className = '',
@@ -96,11 +96,17 @@ export default function CountrySelect({
     placeholder
   });
 
+  // Validar que onChange sea una función
+  if (typeof onChange !== 'function') {
+    console.error('❌ CountrySelect: onChange no es una función:', typeof onChange);
+    return <div className="text-red-500">Error: onChange no es una función</div>;
+  }
+
   return (
     <div className="relative">
       <select
         name={name}
-        value={value}
+        value={value || ''}
         onChange={handleChange}
         required={required}
         className={className}
