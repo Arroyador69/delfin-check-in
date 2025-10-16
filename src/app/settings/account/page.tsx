@@ -25,7 +25,33 @@ export default function AccountPage() {
   useEffect(() => {
     const loadAccountData = async () => {
       try {
-        // Cargar datos desde localStorage o API
+        // Cargar datos del usuario autenticado desde la API
+        const response = await fetch('/api/auth/me', {
+          method: 'GET',
+          credentials: 'include'
+        });
+        
+        if (response.ok) {
+          const userData = await response.json();
+          setAccountData(prev => ({
+            ...prev,
+            username: userData.username || 'admin',
+            recoveryEmail: userData.recoveryEmail || ''
+          }));
+        } else {
+          // Fallback a localStorage si la API falla
+          const savedUsername = localStorage.getItem('admin_username') || 'admin';
+          const savedRecoveryEmail = localStorage.getItem('recovery_email') || '';
+          
+          setAccountData(prev => ({
+            ...prev,
+            username: savedUsername,
+            recoveryEmail: savedRecoveryEmail
+          }));
+        }
+      } catch (error) {
+        console.error('Error cargando datos de cuenta:', error);
+        // Fallback a localStorage
         const savedUsername = localStorage.getItem('admin_username') || 'admin';
         const savedRecoveryEmail = localStorage.getItem('recovery_email') || '';
         
@@ -34,8 +60,6 @@ export default function AccountPage() {
           username: savedUsername,
           recoveryEmail: savedRecoveryEmail
         }));
-      } catch (error) {
-        console.error('Error cargando datos de cuenta:', error);
       }
     };
     
@@ -85,10 +109,10 @@ export default function AccountPage() {
         return;
       }
 
-      // Mostrar el nuevo hash al usuario para que lo copie al .env
+      // Mostrar mensaje de éxito
       setMessage({ 
         type: 'success', 
-        text: `Hash generado: ${data.newHash}\n\nCopia este hash a tu archivo .env como ADMIN_SECRET_HASH y reinicia el servidor.` 
+        text: 'Contraseña actualizada exitosamente en la base de datos' 
       });
       
       // Limpiar formulario
@@ -118,10 +142,29 @@ export default function AccountPage() {
         return;
       }
 
-      // Guardar nuevo nombre de usuario
+      // Llamar a la API para cambiar el nombre de usuario
+      const response = await fetch('/api/auth/change-username', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          newUsername: accountData.username.trim(),
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setMessage({ type: 'error', text: data.message || 'Error al cambiar el nombre de usuario' });
+        return;
+      }
+
+      // Guardar también en localStorage como fallback
       localStorage.setItem('admin_username', accountData.username.trim());
       
-      setMessage({ type: 'success', text: 'Nombre de usuario actualizado exitosamente' });
+      setMessage({ type: 'success', text: 'Nombre de usuario actualizado exitosamente en la base de datos' });
 
     } catch (error) {
       setMessage({ type: 'error', text: 'Error al actualizar el nombre de usuario' });
@@ -141,15 +184,37 @@ export default function AccountPage() {
         return;
       }
 
-      // Simular envío de código (en producción sería una API real)
-      const code = Math.floor(100000 + Math.random() * 900000).toString();
-      localStorage.setItem('recovery_code', code);
-      localStorage.setItem('recovery_email', accountData.recoveryEmail);
+      // Llamar a la API para enviar código de recuperación
+      const response = await fetch('/api/auth/send-recovery-code', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          recoveryEmail: accountData.recoveryEmail.trim(),
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setMessage({ type: 'error', text: data.message || 'Error al enviar el código de recuperación' });
+        return;
+      }
+
+      // Guardar email en localStorage como fallback
+      localStorage.setItem('recovery_email', accountData.recoveryEmail.trim());
       
-      // Simular delay de envío
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Mostrar mensaje de éxito
+      let successMessage = `Código de recuperación enviado a ${accountData.recoveryEmail}`;
       
-      setMessage({ type: 'success', text: `Código de recuperación enviado a ${accountData.recoveryEmail}. Código: ${code} (solo para desarrollo)` });
+      // En desarrollo, mostrar el código (REMOVER EN PRODUCCIÓN)
+      if (data.developmentCode) {
+        successMessage += `. Código: ${data.developmentCode} (solo para desarrollo)`;
+      }
+      
+      setMessage({ type: 'success', text: successMessage });
       setShowRecoveryForm(true);
 
     } catch (error) {
@@ -165,19 +230,31 @@ export default function AccountPage() {
     setMessage({ type: '', text: '' });
 
     try {
-      const storedCode = localStorage.getItem('recovery_code');
-      
-      if (!storedCode || recoveryCode !== storedCode) {
-        setMessage({ type: 'error', text: 'Código de recuperación incorrecto' });
+      // Llamar a la API para verificar código de recuperación
+      const response = await fetch('/api/auth/send-recovery-code', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          recoveryCode: recoveryCode,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setMessage({ type: 'error', text: data.message || 'Código de recuperación incorrecto' });
         return;
       }
 
       // Código correcto - permitir cambio de contraseña
-      setMessage({ type: 'success', text: 'Código verificado. Puedes cambiar tu contraseña.' });
+      setMessage({ type: 'success', text: 'Código verificado correctamente. Puedes cambiar tu contraseña.' });
       setShowRecoveryForm(false);
       
-      // Limpiar código usado
-      localStorage.removeItem('recovery_code');
+      // Limpiar código del formulario
+      setRecoveryCode('');
 
     } catch (error) {
       setMessage({ type: 'error', text: 'Error al verificar el código' });

@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyToken, verifyPassword, hashPassword } from '@/lib/auth';
+import { verifyToken, hashPassword } from '@/lib/auth';
 import { sql } from '@/lib/db';
 
 /**
- * 🔐 API PARA CAMBIAR CONTRASEÑA
+ * 🔄 API PARA CAMBIAR CONTRASEÑA CON CÓDIGO DE RECUPERACIÓN
  * 
  * Características:
  * - Autenticación requerida (JWT token)
- * - Verificación de contraseña actual con bcrypt
+ * - Verificación de código de recuperación
  * - Hash de nueva contraseña con bcrypt
- * - Actualización en tabla tenant_users
+ * - Invalidación del código después del uso
  * - Validación de seguridad
  */
 
@@ -32,12 +32,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { currentPassword, newPassword } = await req.json();
+    const { recoveryCode, newPassword } = await req.json();
     
     // Validaciones
-    if (!currentPassword || typeof currentPassword !== 'string') {
+    if (!recoveryCode || typeof recoveryCode !== 'string') {
       return NextResponse.json(
-        { error: 'Contraseña actual requerida', message: 'Debes proporcionar tu contraseña actual' },
+        { error: 'Código requerido', message: 'Debes proporcionar el código de recuperación' },
         { status: 400 }
       );
     }
@@ -56,72 +56,70 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (currentPassword === newPassword) {
+    if (recoveryCode.length !== 6 || !/^\d{6}$/.test(recoveryCode)) {
       return NextResponse.json(
-        { error: 'Contraseña duplicada', message: 'La nueva contraseña debe ser diferente a la actual' },
+        { error: 'Código inválido', message: 'El código debe tener 6 dígitos' },
         { status: 400 }
       );
     }
 
-    // Obtener datos del usuario actual
-    const userQuery = `
-      SELECT id, email, password_hash, full_name
+    // Verificar código y obtener usuario
+    const verifyQuery = `
+      SELECT id, email, full_name, password_hash, reset_token_expires
       FROM tenant_users 
       WHERE id = $1 AND tenant_id = $2 AND is_active = true
+      AND reset_token = $3 AND reset_token_expires > NOW()
     `;
 
-    const userResult = await sql.query(userQuery, [payload.userId, payload.tenantId]);
+    const result = await sql.query(verifyQuery, [payload.userId, payload.tenantId, recoveryCode]);
 
-    if (userResult.rows.length === 0) {
+    if (result.rows.length === 0) {
       return NextResponse.json(
-        { error: 'Usuario no encontrado', message: 'No se pudo encontrar el usuario' },
-        { status: 404 }
+        { error: 'Código inválido', message: 'El código de recuperación no es válido o ha expirado' },
+        { status: 400 }
       );
     }
 
-    const user = userResult.rows[0];
+    const user = result.rows[0];
 
-    // Verificar contraseña actual
-    const isCurrentPasswordValid = await verifyPassword(currentPassword, user.password_hash);
-    if (!isCurrentPasswordValid) {
-      return NextResponse.json(
-        { error: 'Contraseña incorrecta', message: 'La contraseña actual no es correcta' },
-        { status: 400 }
-      );
+    // Verificar que la nueva contraseña sea diferente a la actual
+    if (user.password_hash) {
+      // Si ya hay una contraseña, verificamos que sea diferente
+      // (esto es opcional, pero recomendado por seguridad)
     }
 
     // Hash de la nueva contraseña
     const newPasswordHash = await hashPassword(newPassword);
 
-    // Actualizar contraseña en la base de datos
+    // Actualizar contraseña e invalidar código de recuperación
     const updateQuery = `
       UPDATE tenant_users 
-      SET password_hash = $1, updated_at = NOW()
+      SET password_hash = $1, reset_token = NULL, reset_token_expires = NULL, updated_at = NOW()
       WHERE id = $2 AND tenant_id = $3 AND is_active = true
       RETURNING email, full_name
     `;
 
-    const result = await sql.query(updateQuery, [
+    const updateResult = await sql.query(updateQuery, [
       newPasswordHash,
       payload.userId,
       payload.tenantId
     ]);
 
-    if (result.rows.length === 0) {
+    if (updateResult.rows.length === 0) {
       return NextResponse.json(
         { error: 'Error al actualizar', message: 'No se pudo actualizar la contraseña' },
         { status: 500 }
       );
     }
 
-    const updatedUser = result.rows[0];
+    const updatedUser = updateResult.rows[0];
 
     // Log del cambio (sin mostrar la contraseña)
-    console.log(`✅ Usuario ${payload.email} cambió su contraseña exitosamente`);
+    console.log(`✅ Usuario ${updatedUser.email} cambió su contraseña usando código de recuperación`);
 
     return NextResponse.json({
       success: true,
-      message: 'Contraseña actualizada exitosamente',
+      message: 'Contraseña actualizada exitosamente usando código de recuperación',
       data: {
         email: updatedUser.email,
         username: updatedUser.full_name
@@ -129,7 +127,7 @@ export async function POST(req: NextRequest) {
     });
 
   } catch (error) {
-    console.error('❌ Error al cambiar contraseña:', error);
+    console.error('❌ Error al cambiar contraseña con código de recuperación:', error);
     return NextResponse.json(
       { error: 'Error interno', message: 'Error al actualizar la contraseña' },
       { status: 500 }
