@@ -275,10 +275,14 @@ export async function POST(req: NextRequest) {
     // Manejar diferentes tipos de eventos
     switch (event.type) {
       case 'payment_intent.succeeded':
-        // No usamos el email del PaymentIntent porque no llega fiable en tu flujo.
-        // El onboarding lo disparamos exclusivamente desde invoice.payment_succeeded.
-        const pi = event.data.object as Stripe.PaymentIntent
-        console.log('✅ Pago exitoso (PI recibido, sin onboarding aquí):', { id: pi.id, amount: pi.amount })
+        try {
+          const pi = event.data.object as Stripe.PaymentIntent
+          console.log('✅ Pago exitoso (PI):', { id: pi.id, amount: pi.amount, email: pi.metadata?.email || pi.receipt_email })
+          // Disparar onboarding directamente desde el Payment Intent usando metadatos/email
+          await createTenantFromPayment(pi)
+        } catch (e) {
+          console.error('❌ Error procesando payment_intent.succeeded:', e)
+        }
         break
 
       case 'checkout.session.completed':
