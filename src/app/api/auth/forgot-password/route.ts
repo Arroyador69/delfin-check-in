@@ -15,7 +15,9 @@ import crypto from 'crypto';
 
 export async function POST(req: NextRequest) {
   try {
+    console.log('🔍 Iniciando forgot-password para:', req.url);
     const { email } = await req.json();
+    console.log('📧 Email recibido:', email);
     
     // Validar entrada
     if (!email || typeof email !== 'string' || email.trim().length === 0) {
@@ -40,7 +42,7 @@ export async function POST(req: NextRequest) {
         tu.id,
         tu.email,
         tu.full_name,
-        tu.recovery_email,
+        COALESCE(tu.recovery_email, tu.email) as recovery_email,
         tu.tenant_id,
         t.name as tenant_name
       FROM tenant_users tu
@@ -48,7 +50,10 @@ export async function POST(req: NextRequest) {
       WHERE tu.email = ${email.toLowerCase()} AND tu.is_active = true
     `;
 
+    console.log('👤 Usuarios encontrados:', userResult.rows.length);
+    
     if (userResult.rows.length === 0) {
+      console.log('❌ No se encontró usuario para email:', email);
       // Por seguridad, no revelar si el email existe o no
       return NextResponse.json({
         success: true,
@@ -57,6 +62,7 @@ export async function POST(req: NextRequest) {
     }
 
     const user = userResult.rows[0];
+    console.log('✅ Usuario encontrado:', user.email);
 
     // Generar código de recuperación
     const recoveryCode = crypto.randomInt(100000, 999999).toString();
@@ -74,17 +80,19 @@ export async function POST(req: NextRequest) {
 
     // Determinar email de destino (recovery_email si existe, sino el email principal)
     const destinationEmail = user.recovery_email || user.email;
+    console.log('📬 Email de destino:', destinationEmail);
 
     // Enviar email de recuperación
     try {
-      await sendRecoveryEmail({
+      console.log('📤 Enviando email de recuperación...');
+      const emailResult = await sendRecoveryEmail({
         to: destinationEmail,
         userName: user.full_name || user.email,
         recoveryCode: recoveryCode,
         tenantName: user.tenant_name
       });
 
-      console.log(`✅ Email de recuperación enviado a ${destinationEmail} para usuario ${user.email}`);
+      console.log('✅ Email de recuperación enviado:', emailResult);
     } catch (emailError) {
       console.error('❌ Error enviando email de recuperación:', emailError);
       // No fallar la operación si el email no se puede enviar
