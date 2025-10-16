@@ -246,12 +246,37 @@ export const COUNTRIES_DATA: CountryData[] = [
 
 // Función para obtener países ordenados por nombre en el idioma seleccionado
 export function getCountriesSorted(language: string = 'es'): Array<{iso3: string, name: string}> {
-  return COUNTRIES_DATA
-    .sort((a, b) => a.name[language as keyof typeof a.name].localeCompare(b.name[language as keyof typeof b.name], language === 'ru' ? 'ru' : 'es'))
-    .map(country => ({
-      iso3: country.iso3,
-      name: country.name[language as keyof typeof country.name] || country.name.es
-    }));
+  try {
+    // Validar que el idioma sea válido
+    const validLanguages = ['es', 'en', 'fr', 'ru'];
+    const lang = validLanguages.includes(language) ? language : 'es';
+    
+    return COUNTRIES_DATA
+      .sort((a, b) => {
+        const nameA = a.name[lang as keyof typeof a.name] || a.name.es;
+        const nameB = b.name[lang as keyof typeof b.name] || b.name.es;
+        return nameA.localeCompare(nameB, lang === 'ru' ? 'ru' : 'es');
+      })
+      .map(country => ({
+        iso3: country.iso3,
+        name: country.name[lang as keyof typeof country.name] || country.name.es
+      }));
+  } catch (error) {
+    console.error('Error in getCountriesSorted:', error);
+    // Fallback con países básicos
+    return [
+      { iso3: 'ESP', name: 'España' },
+      { iso3: 'FRA', name: 'Francia' },
+      { iso3: 'GBR', name: 'Reino Unido' },
+      { iso3: 'DEU', name: 'Alemania' },
+      { iso3: 'ITA', name: 'Italia' },
+      { iso3: 'USA', name: 'Estados Unidos' },
+      { iso3: 'MEX', name: 'México' },
+      { iso3: 'ARG', name: 'Argentina' },
+      { iso3: 'BRA', name: 'Brasil' },
+      { iso3: 'CHN', name: 'China' }
+    ];
+  }
 }
 
 // Función para obtener el código ISO3 por nombre del país
