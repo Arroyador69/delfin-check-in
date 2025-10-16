@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { COUNTRIES_DATA, getCountriesSorted, getCountryName } from '@/lib/countries-data';
+import { COUNTRIES_DATA, getCountriesSorted } from '@/lib/countries-data';
 
 interface CountrySelectProps {
   value: string;
@@ -23,42 +23,40 @@ export default function CountrySelect({
   language = 'es'
 }: CountrySelectProps) {
   const [countries, setCountries] = useState<Array<{iso3: string, name: string}>>([]);
-  const [currentLanguage, setCurrentLanguage] = useState(language);
 
   useEffect(() => {
-    setCountries(getCountriesSorted(currentLanguage));
-  }, [currentLanguage]);
-
-  useEffect(() => {
-    setCurrentLanguage(language);
+    try {
+      const sortedCountries = getCountriesSorted(language);
+      setCountries(sortedCountries);
+    } catch (error) {
+      console.error('Error loading countries:', error);
+      // Fallback con algunos países básicos
+      setCountries([
+        { iso3: 'ESP', name: 'España' },
+        { iso3: 'FRA', name: 'Francia' },
+        { iso3: 'GBR', name: 'Reino Unido' },
+        { iso3: 'DEU', name: 'Alemania' },
+        { iso3: 'ITA', name: 'Italia' },
+        { iso3: 'USA', name: 'Estados Unidos' },
+        { iso3: 'MEX', name: 'México' },
+        { iso3: 'ARG', name: 'Argentina' },
+        { iso3: 'BRA', name: 'Brasil' },
+        { iso3: 'CHN', name: 'China' }
+      ]);
+    }
   }, [language]);
 
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     onChange(e.target.value);
   };
 
-  const getDisplayValue = () => {
-    if (!value) return '';
-    // Si el valor ya es un código ISO3, devolverlo tal como está
-    if (value.length === 3 && /^[A-Z]{3}$/.test(value)) {
-      return value;
-    }
-    // Si es un nombre de país, intentar convertirlo a ISO3
-    const country = COUNTRIES_DATA.find(c => 
-      Object.values(c.name).some(name => 
-        name.toLowerCase() === value.toLowerCase()
-      )
-    );
-    return country ? country.iso3 : value;
-  };
-
   return (
     <select
       name={name}
-      value={getDisplayValue()}
+      value={value}
       onChange={handleChange}
       required={required}
-      className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${className}`}
+      className={className}
     >
       <option value="">{placeholder}</option>
       {countries.map((country) => (
