@@ -51,8 +51,14 @@ export function middleware(req: NextRequest) {
   const isPublicRoute = (
     // Página de login
     url.pathname === '/admin-login' ||
+    // Página de recuperación de contraseña
+    url.pathname === '/forgot-password' ||
     // API de login
     url.pathname.startsWith('/api/admin/login') ||
+    // APIs de recuperación de contraseña (para usuarios sin sesión)
+    url.pathname.startsWith('/api/auth/forgot-password') ||
+    url.pathname.startsWith('/api/auth/verify-recovery-code') ||
+    url.pathname.startsWith('/api/auth/reset-password') ||
     // APIs de autenticación
     url.pathname.startsWith('/api/auth/logout') ||
     url.pathname.startsWith('/api/auth/refresh') ||

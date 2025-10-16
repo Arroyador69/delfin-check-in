@@ -40,6 +40,7 @@ export async function GET(req: NextRequest) {
         tu.is_active,
         tu.email_verified,
         tu.last_login,
+        tu.recovery_email,
         t.name as tenant_name,
         t.plan_id
       FROM tenant_users tu
@@ -71,7 +72,7 @@ export async function GET(req: NextRequest) {
         lastLogin: user.last_login,
         tenantName: user.tenant_name,
         planId: user.plan_id,
-        recoveryEmail: user.email // Por ahora usar el email principal como recovery
+        recoveryEmail: user.recovery_email || user.email // Usar recovery_email si existe, sino el email principal
       }
     });
 

@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 
 /**
  * 🔐 PÁGINA DE LOGIN MULTI-TENANT
@@ -237,6 +238,16 @@ export default function AdminLoginPage() {
                     'Iniciar Sesión'
                   )}
                 </button>
+
+                {/* Enlace de recuperación de contraseña */}
+                <div className="text-center mt-4">
+                  <Link 
+                    href="/forgot-password" 
+                    className="text-sm text-blue-600 hover:text-blue-800 hover:underline transition-colors"
+                  >
+                    ¿Has olvidado tu contraseña?
+                  </Link>
+                </div>
               </form>
             )}
           </div>

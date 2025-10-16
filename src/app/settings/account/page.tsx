@@ -16,9 +16,6 @@ export default function AccountPage() {
   });
 
   const [passwordChangeLoading, setPasswordChangeLoading] = useState(false);
-  const [recoveryLoading, setRecoveryLoading] = useState(false);
-  const [recoveryCode, setRecoveryCode] = useState('');
-  const [showRecoveryForm, setShowRecoveryForm] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
 
   // Cargar datos de cuenta al montar el componente
@@ -173,9 +170,9 @@ export default function AccountPage() {
     }
   };
 
-  // Función para enviar código de recuperación
-  const handleSendRecoveryCode = async () => {
-    setRecoveryLoading(true);
+  // Función para guardar email de recuperación
+  const handleSaveRecoveryEmail = async () => {
+    setLoading(true);
     setMessage({ type: '', text: '' });
 
     try {
@@ -184,8 +181,8 @@ export default function AccountPage() {
         return;
       }
 
-      // Llamar a la API para enviar código de recuperación
-      const response = await fetch('/api/auth/send-recovery-code', {
+      // Llamar a la API para actualizar el email de recuperación
+      const response = await fetch('/api/auth/update-recovery-email', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -199,67 +196,19 @@ export default function AccountPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        setMessage({ type: 'error', text: data.message || 'Error al enviar el código de recuperación' });
+        setMessage({ type: 'error', text: data.message || 'Error al actualizar el email de recuperación' });
         return;
       }
 
-      // Guardar email en localStorage como fallback
+      // Guardar también en localStorage como fallback
       localStorage.setItem('recovery_email', accountData.recoveryEmail.trim());
       
-      // Mostrar mensaje de éxito
-      let successMessage = `Código de recuperación enviado a ${accountData.recoveryEmail}`;
-      
-      // En desarrollo, mostrar el código (REMOVER EN PRODUCCIÓN)
-      if (data.developmentCode) {
-        successMessage += `. Código: ${data.developmentCode} (solo para desarrollo)`;
-      }
-      
-      setMessage({ type: 'success', text: successMessage });
-      setShowRecoveryForm(true);
+      setMessage({ type: 'success', text: 'Email de recuperación actualizado exitosamente' });
 
     } catch (error) {
-      setMessage({ type: 'error', text: 'Error al enviar el código de recuperación' });
+      setMessage({ type: 'error', text: 'Error al actualizar el email de recuperación' });
     } finally {
-      setRecoveryLoading(false);
-    }
-  };
-
-  // Función para verificar código de recuperación
-  const handleVerifyRecoveryCode = async () => {
-    setRecoveryLoading(true);
-    setMessage({ type: '', text: '' });
-
-    try {
-      // Llamar a la API para verificar código de recuperación
-      const response = await fetch('/api/auth/send-recovery-code', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          recoveryCode: recoveryCode,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        setMessage({ type: 'error', text: data.message || 'Código de recuperación incorrecto' });
-        return;
-      }
-
-      // Código correcto - permitir cambio de contraseña
-      setMessage({ type: 'success', text: 'Código verificado correctamente. Puedes cambiar tu contraseña.' });
-      setShowRecoveryForm(false);
-      
-      // Limpiar código del formulario
-      setRecoveryCode('');
-
-    } catch (error) {
-      setMessage({ type: 'error', text: 'Error al verificar el código' });
-    } finally {
-      setRecoveryLoading(false);
+      setLoading(false);
     }
   };
 
@@ -375,58 +324,19 @@ export default function AccountPage() {
               placeholder="tu@email.com"
             />
             <p className="mt-1 text-sm text-gray-500">
-              Usa este email para recuperar tu cuenta si olvidas la contraseña
+              Este email se usará para enviarte códigos de recuperación cuando olvides tu contraseña
             </p>
           </div>
           <button
-            onClick={handleSendRecoveryCode}
-            disabled={recoveryLoading || !accountData.recoveryEmail.trim()}
-            className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={handleSaveRecoveryEmail}
+            disabled={loading || !accountData.recoveryEmail.trim()}
+            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {recoveryLoading ? 'Enviando...' : 'Enviar Código de Recuperación'}
+            {loading ? 'Guardando...' : 'Guardar Email de Recuperación'}
           </button>
         </div>
       </div>
 
-      {/* Formulario de verificación de código */}
-      {showRecoveryForm && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
-          <h4 className="text-md font-medium text-yellow-800 mb-4">Verificar Código de Recuperación</h4>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-yellow-700">
-                Código de Verificación
-              </label>
-              <input
-                type="text"
-                value={recoveryCode}
-                onChange={(e) => setRecoveryCode(e.target.value)}
-                className="mt-1 block w-full border-yellow-300 rounded-md shadow-sm focus:ring-yellow-500 focus:border-yellow-500"
-                placeholder="123456"
-                maxLength={6}
-              />
-              <p className="mt-1 text-sm text-yellow-600">
-                Ingresa el código de 6 dígitos que se envió a tu email
-              </p>
-            </div>
-            <div className="flex space-x-3">
-              <button
-                onClick={handleVerifyRecoveryCode}
-                disabled={recoveryLoading || recoveryCode.length !== 6}
-                className="bg-yellow-600 text-white px-4 py-2 rounded-md hover:bg-yellow-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {recoveryLoading ? 'Verificando...' : 'Verificar Código'}
-              </button>
-              <button
-                onClick={() => setShowRecoveryForm(false)}
-                className="bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400"
-              >
-                Cancelar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Información de seguridad */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">

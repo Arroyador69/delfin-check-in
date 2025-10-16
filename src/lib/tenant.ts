@@ -84,6 +84,20 @@ export async function ensureTenantTables(): Promise<void> {
     )
   `;
 
+  // Agregar campo recovery_email si no existe
+  await sql`
+    DO $$ 
+    BEGIN
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'tenant_users' 
+        AND column_name = 'recovery_email'
+      ) THEN
+        ALTER TABLE tenant_users ADD COLUMN recovery_email VARCHAR(255);
+      END IF;
+    END $$;
+  `;
+
   // Crear índices
   await sql`CREATE INDEX IF NOT EXISTS idx_tenants_email ON tenants(email)`;
   await sql`CREATE INDEX IF NOT EXISTS idx_tenants_stripe_customer ON tenants(stripe_customer_id)`;
