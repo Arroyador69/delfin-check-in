@@ -84,7 +84,9 @@ export function middleware(req: NextRequest) {
     // Endpoint de test configuración MIR (público para verificación)
     url.pathname.startsWith('/api/test-mir-config') ||
     // Endpoint de test conexión MIR (público para verificación)
-    url.pathname.startsWith('/api/test-mir-connection')
+    url.pathname.startsWith('/api/test-mir-connection') ||
+    // Endpoint de test registros MIR (público para verificación)
+    url.pathname.startsWith('/api/test-mir-registros')
   );
   
   // Debug: Log para verificar qué rutas están siendo procesadas
