@@ -26,9 +26,18 @@ interface RecoveryEmailData {
 // Configuración de Zoho Mail
 const ZOHO_CONFIG = {
   apiUrl: process.env.ZOHO_MAIL_API_URL || 'https://mail.zoho.com/api/accounts',
-  apiKey: process.env.ZOHO_MAIL_API_KEY || '',
-  fromEmail: process.env.ZOHO_FROM_EMAIL || 'noreply@delfincheckin.com',
-  fromName: process.env.ZOHO_FROM_NAME || 'Delfin Check-in'
+  apiKey: process.env.ZOHO_MAIL_API_KEY || process.env.ZOHO_API_KEY || '',
+  fromEmail: process.env.ZOHO_FROM_EMAIL || process.env.SMTP_FROM_EMAIL || 'noreply@delfincheckin.com',
+  fromName: process.env.ZOHO_FROM_NAME || process.env.SMTP_FROM_NAME || 'Delfin Check-in'
+};
+
+// Configuración SMTP alternativa
+const SMTP_CONFIG = {
+  host: process.env.SMTP_HOST || '',
+  port: process.env.SMTP_PORT || '587',
+  user: process.env.SMTP_USER || '',
+  password: process.env.SMTP_PASSWORD || '',
+  from: process.env.SMTP_FROM || ZOHO_CONFIG.fromEmail
 };
 
 /**
@@ -39,7 +48,12 @@ async function sendEmail(config: EmailConfig): Promise<{ success: boolean; messa
     console.log('📧 Configurando envío de email...', {
       to: config.to,
       subject: config.subject,
-      hasApiKey: !!ZOHO_CONFIG.apiKey
+      hasZohoApiKey: !!ZOHO_CONFIG.apiKey,
+      hasResendKey: !!process.env.RESEND_API_KEY,
+      hasSmtpConfig: !!(SMTP_CONFIG.host && SMTP_CONFIG.user && SMTP_CONFIG.password),
+      availableEnvVars: Object.keys(process.env).filter(key => 
+        key.includes('SMTP') || key.includes('ZOHO') || key.includes('RESEND') || key.includes('MAIL')
+      )
     });
 
     // Método 1: Intentar con Zoho Mail si está configurado
@@ -113,7 +127,41 @@ async function sendEmail(config: EmailConfig): Promise<{ success: boolean; messa
       }
     }
 
-    // Método 3: Log detallado para desarrollo
+    // Método 3: Intentar con SMTP directo
+    if (SMTP_CONFIG.host && SMTP_CONFIG.user && SMTP_CONFIG.password) {
+      try {
+        console.log('🔵 Intentando envío con SMTP directo...');
+        
+        const nodemailer = await import('nodemailer');
+        const transporter = nodemailer.createTransporter({
+          host: SMTP_CONFIG.host,
+          port: parseInt(SMTP_CONFIG.port),
+          secure: SMTP_CONFIG.port === '465',
+          auth: {
+            user: SMTP_CONFIG.user,
+            pass: SMTP_CONFIG.password
+          }
+        });
+
+        const info = await transporter.sendMail({
+          from: SMTP_CONFIG.from,
+          to: config.to,
+          subject: config.subject,
+          html: config.html,
+          text: config.text
+        });
+
+        console.log(`✅ Email enviado exitosamente con SMTP a ${config.to}:`, info.messageId);
+        return {
+          success: true,
+          messageId: info.messageId
+        };
+      } catch (smtpError) {
+        console.log('⚠️ Error con SMTP:', smtpError.message);
+      }
+    }
+
+    // Método 4: Log detallado para desarrollo
     console.log('📧 Email simulado (ningún servicio configurado):', {
       to: config.to,
       subject: config.subject,
