@@ -23,77 +23,84 @@ export default function CountrySelect({
   language = 'es'
 }: CountrySelectProps) {
   const [countries, setCountries] = useState<Array<{iso3: string, name: string}>>([]);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    console.log('🌍 CountrySelect: Iniciando carga de países para idioma:', language);
-    setLoading(true);
+    console.log('🌍 CountrySelect: Cargando países para idioma:', language);
     
-    try {
-      const sortedCountries = getCountriesSorted(language);
-      console.log('✅ CountrySelect: Países cargados exitosamente:', sortedCountries.length);
-      console.log('📋 Primeros 5 países:', sortedCountries.slice(0, 5));
-      setCountries(sortedCountries);
-    } catch (error) {
-      console.error('❌ Error cargando países:', error);
-      // Fallback con países básicos
-      const fallbackCountries = [
-        { iso3: 'ESP', name: 'España' },
-        { iso3: 'FRA', name: 'Francia' },
-        { iso3: 'GBR', name: 'Reino Unido' },
-        { iso3: 'DEU', name: 'Alemania' },
-        { iso3: 'ITA', name: 'Italia' },
-        { iso3: 'USA', name: 'Estados Unidos' },
-        { iso3: 'MEX', name: 'México' },
-        { iso3: 'ARG', name: 'Argentina' },
-        { iso3: 'BRA', name: 'Brasil' },
-        { iso3: 'CHN', name: 'China' }
-      ];
-      console.log('🔄 CountrySelect: Usando países de fallback:', fallbackCountries.length);
-      setCountries(fallbackCountries);
-    } finally {
-      setLoading(false);
-    }
+    // Cargar países directamente
+    const loadCountries = () => {
+      try {
+        const sortedCountries = getCountriesSorted(language);
+        console.log('✅ CountrySelect: Países cargados:', sortedCountries.length);
+        setCountries(sortedCountries);
+      } catch (error) {
+        console.error('❌ Error cargando países:', error);
+        // Fallback inmediato
+        setCountries([
+          { iso3: 'ESP', name: 'España' },
+          { iso3: 'FRA', name: 'Francia' },
+          { iso3: 'GBR', name: 'Reino Unido' },
+          { iso3: 'DEU', name: 'Alemania' },
+          { iso3: 'ITA', name: 'Italia' },
+          { iso3: 'USA', name: 'Estados Unidos' },
+          { iso3: 'MEX', name: 'México' },
+          { iso3: 'ARG', name: 'Argentina' },
+          { iso3: 'BRA', name: 'Brasil' },
+          { iso3: 'CHN', name: 'China' }
+        ]);
+      }
+    };
+
+    // Cargar inmediatamente
+    loadCountries();
   }, [language]);
 
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    console.log('🔄 CountrySelect: País seleccionado:', e.target.value);
+    console.log('🔄 País seleccionado:', e.target.value);
     onChange(e.target.value);
   };
 
-  console.log('🎨 CountrySelect: Renderizando con', countries.length, 'países, valor actual:', value, 'cargando:', loading);
-
-  if (loading) {
-    return (
-      <select
-        name={name}
-        disabled
-        className={className}
-      >
-        <option value="">Cargando países...</option>
-      </select>
-    );
-  }
+  console.log('🎨 CountrySelect renderizando:', {
+    countriesCount: countries.length,
+    value,
+    name,
+    language
+  });
 
   return (
-    <select
-      name={name}
-      value={value}
-      onChange={handleChange}
-      required={required}
-      className={className}
-    >
-      <option value="">{placeholder}</option>
-      {countries.map((country) => (
-        <option key={country.iso3} value={country.iso3}>
-          {country.name}
-        </option>
-      ))}
-    </select>
+    <div className="relative">
+      <select
+        name={name}
+        value={value}
+        onChange={handleChange}
+        required={required}
+        className={className}
+        style={{ 
+          width: '100%',
+          padding: '12px 16px',
+          border: '1px solid #d1d5db',
+          borderRadius: '8px',
+          fontSize: '16px',
+          backgroundColor: 'white'
+        }}
+      >
+        <option value="">{placeholder}</option>
+        {countries.map((country) => (
+          <option key={country.iso3} value={country.iso3}>
+            {country.name}
+          </option>
+        ))}
+      </select>
+      {countries.length === 0 && (
+        <div className="text-red-500 text-sm mt-1">
+          ⚠️ Error cargando países
+        </div>
+      )}
+    </div>
   );
 }
 
-// Componente para nacionalidad (mismo que país pero con placeholder diferente)
+// Componente para nacionalidad
 export function NationalitySelect(props: Omit<CountrySelectProps, 'placeholder'>) {
   return (
     <CountrySelect
