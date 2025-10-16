@@ -72,7 +72,15 @@ export function middleware(req: NextRequest) {
     // Endpoint de create-payment-intent (usado por landing page)
     url.pathname === '/api/create-payment-intent' ||
     // Webhook de Telegram (debe ser público)
-    url.pathname.startsWith('/api/telegram/webhook')
+    url.pathname.startsWith('/api/telegram/webhook') ||
+    // Endpoint de verificación MIR (público para pruebas)
+    url.pathname.startsWith('/api/public/verificar-mir') ||
+    // Endpoint de test producción MIR (público para pruebas)
+    url.pathname.startsWith('/api/public/test-produccion') ||
+    // Endpoint de test pruebas MIR (público para pruebas)
+    url.pathname.startsWith('/api/public/test-pruebas') ||
+    // Endpoint de estado envíos MIR (público para verificación)
+    url.pathname.startsWith('/api/public/estado-envios')
   );
   
   // Debug: Log para verificar qué rutas están siendo procesadas
