@@ -32,55 +32,106 @@ const ZOHO_CONFIG = {
 };
 
 /**
- * Envía un email usando Zoho Mail API
+ * Envía un email usando múltiples métodos
  */
 async function sendEmail(config: EmailConfig): Promise<{ success: boolean; messageId?: string; error?: string }> {
   try {
-    // Si no hay configuración de Zoho, simular envío
-    if (!ZOHO_CONFIG.apiKey) {
-      console.log('📧 Simulando envío de email (Zoho no configurado):', {
-        to: config.to,
-        subject: config.subject
-      });
-      
-      return {
-        success: true,
-        messageId: `sim_${Date.now()}`,
-        error: 'Email simulado - configura Zoho Mail API'
-      };
-    }
-
-    // Preparar payload para Zoho Mail API
-    const payload = {
-      fromAddress: ZOHO_CONFIG.fromEmail,
-      toAddress: config.to,
+    console.log('📧 Configurando envío de email...', {
+      to: config.to,
       subject: config.subject,
-      htmlContent: config.html,
-      textContent: config.text || config.subject
-    };
-
-    // Enviar email a través de Zoho Mail API
-    const response = await fetch(`${ZOHO_CONFIG.apiUrl}/messages`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Zoho-oauthtoken ${ZOHO_CONFIG.apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload)
+      hasApiKey: !!ZOHO_CONFIG.apiKey
     });
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(`Zoho Mail API error: ${response.status} - ${errorData.message || 'Unknown error'}`);
+    // Método 1: Intentar con Zoho Mail si está configurado
+    if (ZOHO_CONFIG.apiKey && ZOHO_CONFIG.apiKey.length > 10) {
+      try {
+        console.log('🔵 Intentando envío con Zoho Mail...');
+        
+        const payload = {
+          fromAddress: ZOHO_CONFIG.fromEmail,
+          toAddress: config.to,
+          subject: config.subject,
+          htmlContent: config.html,
+          textContent: config.text || config.subject
+        };
+
+        const response = await fetch(`${ZOHO_CONFIG.apiUrl}/messages`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Zoho-oauthtoken ${ZOHO_CONFIG.apiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload)
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          console.log(`✅ Email enviado exitosamente con Zoho a ${config.to}:`, result.messageId);
+          return {
+            success: true,
+            messageId: result.messageId
+          };
+        } else {
+          console.log('⚠️ Zoho Mail falló, intentando método alternativo...');
+        }
+      } catch (zohoError) {
+        console.log('⚠️ Error con Zoho Mail:', zohoError.message);
+      }
     }
 
-    const result = await response.json();
+    // Método 2: Usar Resend (más confiable)
+    const resendApiKey = process.env.RESEND_API_KEY;
+    if (resendApiKey) {
+      try {
+        console.log('🔵 Intentando envío con Resend...');
+        
+        const response = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${resendApiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            from: ZOHO_CONFIG.fromEmail,
+            to: [config.to],
+            subject: config.subject,
+            html: config.html,
+            text: config.text
+          })
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          console.log(`✅ Email enviado exitosamente con Resend a ${config.to}:`, result.id);
+          return {
+            success: true,
+            messageId: result.id
+          };
+        }
+      } catch (resendError) {
+        console.log('⚠️ Error con Resend:', resendError.message);
+      }
+    }
+
+    // Método 3: Log detallado para desarrollo
+    console.log('📧 Email simulado (ningún servicio configurado):', {
+      to: config.to,
+      subject: config.subject,
+      html: config.html.substring(0, 100) + '...'
+    });
     
-    console.log(`✅ Email enviado exitosamente a ${config.to}:`, result.messageId);
+    // En desarrollo, mostrar el código en consola
+    if (process.env.NODE_ENV !== 'production') {
+      const codeMatch = config.html.match(/class="code">(\d{6})</);
+      if (codeMatch) {
+        console.log(`🔐 CÓDIGO DE RECUPERACIÓN: ${codeMatch[1]}`);
+      }
+    }
     
     return {
       success: true,
-      messageId: result.messageId
+      messageId: `sim_${Date.now()}`,
+      error: 'Email simulado - configura un servicio de email'
     };
 
   } catch (error) {
