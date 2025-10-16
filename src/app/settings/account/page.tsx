@@ -11,8 +11,7 @@ export default function AccountPage() {
     username: '',
     currentPassword: '',
     newPassword: '',
-    confirmPassword: '',
-    recoveryEmail: ''
+    confirmPassword: ''
   });
 
   const [passwordChangeLoading, setPasswordChangeLoading] = useState(false);
@@ -32,30 +31,25 @@ export default function AccountPage() {
           const userData = await response.json();
           setAccountData(prev => ({
             ...prev,
-            username: userData.username || 'admin',
-            recoveryEmail: userData.recoveryEmail || ''
+            username: userData.username || 'admin'
           }));
         } else {
           // Fallback a localStorage si la API falla
           const savedUsername = localStorage.getItem('admin_username') || 'admin';
-          const savedRecoveryEmail = localStorage.getItem('recovery_email') || '';
           
           setAccountData(prev => ({
             ...prev,
-            username: savedUsername,
-            recoveryEmail: savedRecoveryEmail
+            username: savedUsername
           }));
         }
       } catch (error) {
         console.error('Error cargando datos de cuenta:', error);
         // Fallback a localStorage
         const savedUsername = localStorage.getItem('admin_username') || 'admin';
-        const savedRecoveryEmail = localStorage.getItem('recovery_email') || '';
         
         setAccountData(prev => ({
           ...prev,
-          username: savedUsername,
-          recoveryEmail: savedRecoveryEmail
+          username: savedUsername
         }));
       }
     };
@@ -170,47 +164,6 @@ export default function AccountPage() {
     }
   };
 
-  // Función para guardar email de recuperación
-  const handleSaveRecoveryEmail = async () => {
-    setLoading(true);
-    setMessage({ type: '', text: '' });
-
-    try {
-      if (!accountData.recoveryEmail.trim()) {
-        setMessage({ type: 'error', text: 'Por favor, introduce un email de recuperación' });
-        return;
-      }
-
-      // Llamar a la API para actualizar el email de recuperación
-      const response = await fetch('/api/auth/update-recovery-email', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          recoveryEmail: accountData.recoveryEmail.trim(),
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        setMessage({ type: 'error', text: data.message || 'Error al actualizar el email de recuperación' });
-        return;
-      }
-
-      // Guardar también en localStorage como fallback
-      localStorage.setItem('recovery_email', accountData.recoveryEmail.trim());
-      
-      setMessage({ type: 'success', text: 'Email de recuperación actualizado exitosamente' });
-
-    } catch (error) {
-      setMessage({ type: 'error', text: 'Error al actualizar el email de recuperación' });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <div className="space-y-6">
@@ -308,34 +261,6 @@ export default function AccountPage() {
         </form>
       </div>
 
-      {/* Email de recuperación */}
-      <div className="bg-white border border-gray-200 rounded-lg p-6">
-        <h4 className="text-md font-medium text-gray-900 mb-4">Email de Recuperación</h4>
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Email de Recuperación
-            </label>
-            <input
-              type="email"
-              value={accountData.recoveryEmail}
-              onChange={(e) => setAccountData(prev => ({ ...prev, recoveryEmail: e.target.value }))}
-              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-              placeholder="tu@email.com"
-            />
-            <p className="mt-1 text-sm text-gray-500">
-              Este email se usará para enviarte códigos de recuperación cuando olvides tu contraseña
-            </p>
-          </div>
-          <button
-            onClick={handleSaveRecoveryEmail}
-            disabled={loading || !accountData.recoveryEmail.trim()}
-            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? 'Guardando...' : 'Guardar Email de Recuperación'}
-          </button>
-        </div>
-      </div>
 
 
       {/* Información de seguridad */}
