@@ -67,7 +67,6 @@ export function middleware(req: NextRequest) {
     // Formularios públicos (para huéspedes)
     url.pathname.startsWith('/api/public/form') ||
     url.pathname.startsWith('/api/public/form-redirect') ||
-    url.pathname.startsWith('/form') ||
     // Endpoint de registro flexible (usado por formularios públicos)
     url.pathname === '/api/registro-flex' ||
     // Endpoint de create-payment-intent (usado por landing page)
