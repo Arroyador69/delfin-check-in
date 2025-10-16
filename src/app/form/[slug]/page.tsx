@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { CheckCircle, Send, User, Mail, Phone, Calendar, Users, Home, FileText } from 'lucide-react';
 import MunicipioSelector from '@/components/MunicipioSelector';
+import { CountrySelect, NationalitySelect } from '@/components/CountrySelect';
 
 interface TenantFormConfig {
   tenant: {
@@ -54,13 +55,13 @@ export default function TenantFormPage() {
     fechaNacimiento: '',
     tipoDocumento: 'PAS',
     numeroDocumento: '',
-    nacionalidad: 'España',
+    nacionalidad: 'ESP',
     sexo: 'H',
     telefono: '',
     correo: '',
     direccion: '',
     codigoPostal: '',
-    pais: 'España',
+    pais: 'ESP',
     codigoMunicipio: '',
     nombreMunicipio: '',
     
@@ -71,13 +72,13 @@ export default function TenantFormPage() {
     fechaNacimiento2: '',
     tipoDocumento2: 'PAS',
     numeroDocumento2: '',
-    nacionalidad2: 'España',
+    nacionalidad2: 'ESP',
     sexo2: 'H',
     telefono2: '',
     correo2: '',
     direccion2: '',
     codigoPostal2: '',
-    pais2: 'España',
+    pais2: 'ESP',
     codigoMunicipio2: '',
     nombreMunicipio2: '',
   });
@@ -162,7 +163,8 @@ export default function TenantFormPage() {
   };
 
   const handleINEFields = (paisValue: string, travelerNum: number) => {
-    const isEspana = paisValue.toLowerCase().includes('españa') || 
+    const isEspana = paisValue === 'ESP' || 
+                     paisValue.toLowerCase().includes('españa') || 
                      paisValue.toLowerCase().includes('spain') || 
                      paisValue.toLowerCase() === 'es' || 
                      paisValue.toLowerCase() === 'esp';
@@ -525,18 +527,18 @@ export default function TenantFormPage() {
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Nacionalidad
                       </label>
-                      <input
-                        type="text"
+                      <NationalitySelect
+                        name="nacionalidad"
                         value={formData.nacionalidad}
-                        onChange={(e) => {
-                          handleInputChange('nacionalidad', e.target.value);
-                          handleINEFields(e.target.value, 1);
+                        onChange={(value) => {
+                          handleInputChange('nacionalidad', value);
+                          handleINEFields(value, 1);
                         }}
+                        language={config?.tenant?.config?.language || 'es'}
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                        placeholder="Ej: España, Francia, Italia..."
                       />
                       <p className="text-xs text-gray-500 mt-1">
-                        Escriba el país en su idioma natural (ej: España, Francia). Se convertirá automáticamente al código ISO3.
+                        Seleccione la nacionalidad del viajero. Se usará el código ISO3 estándar para el registro MIR.
                       </p>
                     </div>
                     
@@ -609,23 +611,23 @@ export default function TenantFormPage() {
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         País *
                       </label>
-                      <input
-                        type="text"
+                      <CountrySelect
+                        name="pais"
                         value={formData.pais}
-                        onChange={(e) => {
-                          handleInputChange('pais', e.target.value);
-                          handleINEFields(e.target.value, 1);
+                        onChange={(value) => {
+                          handleInputChange('pais', value);
+                          handleINEFields(value, 1);
                         }}
                         required
+                        language={config?.tenant?.config?.language || 'es'}
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                        placeholder="Ej: España, Francia, Italia..."
                       />
                       <p className="text-xs text-gray-500 mt-1">
-                        Escriba el país en su idioma natural (ej: España, Francia). Se convertirá automáticamente al código ISO3.
+                        Seleccione el país de residencia del viajero. Se usará el código ISO3 estándar para el registro MIR.
                       </p>
                     </div>
                     
-                    {formData.pais && (formData.pais.toLowerCase().includes('españa') || formData.pais.toLowerCase().includes('spain') || formData.pais.toLowerCase() === 'es') ? (
+                    {formData.pais === 'ESP' ? (
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                           Municipio <span className="text-red-500">*</span>
@@ -774,15 +776,15 @@ export default function TenantFormPage() {
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                           Nacionalidad
                         </label>
-                        <input
-                          type="text"
+                        <NationalitySelect
+                          name="nacionalidad2"
                           value={formData.nacionalidad2}
-                          onChange={(e) => {
-                            handleInputChange('nacionalidad2', e.target.value);
-                            handleINEFields(e.target.value, 2);
+                          onChange={(value) => {
+                            handleInputChange('nacionalidad2', value);
+                            handleINEFields(value, 2);
                           }}
+                          language={config?.tenant?.config?.language || 'es'}
                           className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                          placeholder="Ej: España, Francia, Italia..."
                         />
                       </div>
                       
@@ -853,15 +855,15 @@ export default function TenantFormPage() {
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                           País
                         </label>
-                        <input
-                          type="text"
+                        <CountrySelect
+                          name="pais2"
                           value={formData.pais2}
-                          onChange={(e) => {
-                            handleInputChange('pais2', e.target.value);
-                            handleINEFields(e.target.value, 2);
+                          onChange={(value) => {
+                            handleInputChange('pais2', value);
+                            handleINEFields(value, 2);
                           }}
+                          language={config?.tenant?.config?.language || 'es'}
                           className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                          placeholder="Ej: España, Francia, Italia..."
                         />
                       </div>
                       

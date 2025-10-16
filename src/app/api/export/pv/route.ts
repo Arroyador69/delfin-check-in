@@ -3,6 +3,7 @@ import { z } from 'zod';
 import crypto from 'crypto';
 import { logAudit } from '@/lib/audit';
 import { obtenerINEPorNombre } from '@/lib/municipios-ine-top';
+import { isSpain } from '@/lib/countries-data';
 
 // Utilidades de normalización/detección de país
 function normalizeCountryString(value?: string): string {
@@ -17,10 +18,7 @@ function normalizeCountryString(value?: string): string {
     .replace(/Ñ/g, 'N');
 }
 
-function isSpain(value?: string): boolean {
-  const v = normalizeCountryString(value);
-  return v === 'ESP' || v === 'SPAIN' || v === 'ESPANA' || v === 'ESPAÑA';
-}
+// Usar la función isSpain importada de countries-data.ts
 
 // Esquemas Zod actualizados según MIR v1.1.1
 const DireccionSchema = z.object({
