@@ -80,7 +80,11 @@ export function middleware(req: NextRequest) {
     // Endpoint de test pruebas MIR (público para pruebas)
     url.pathname.startsWith('/api/public/test-pruebas') ||
     // Endpoint de estado envíos MIR (público para verificación)
-    url.pathname.startsWith('/api/public/estado-envios')
+    url.pathname.startsWith('/api/public/estado-envios') ||
+    // Endpoint de test configuración MIR (público para verificación)
+    url.pathname.startsWith('/api/test-mir-config') ||
+    // Endpoint de test conexión MIR (público para verificación)
+    url.pathname.startsWith('/api/test-mir-connection')
   );
   
   // Debug: Log para verificar qué rutas están siendo procesadas
