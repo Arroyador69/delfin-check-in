@@ -100,7 +100,9 @@ export function middleware(req: NextRequest) {
     // Endpoint de test MIR working (público para verificación)
     url.pathname.startsWith('/api/test-mir-working') ||
     // Endpoint de test MIR pruebas (público para verificación)
-    url.pathname.startsWith('/api/test-mir-pruebas')
+    url.pathname.startsWith('/api/test-mir-pruebas') ||
+    // Endpoint de configuración MIR pruebas (público para verificación)
+    url.pathname.startsWith('/api/config-mir-pruebas')
   );
   
   // Debug: Log para verificar qué rutas están siendo procesadas
