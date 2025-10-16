@@ -16,7 +16,7 @@ import { sql } from '@/lib/db';
 export async function POST(req: NextRequest) {
   try {
     // Verificar autenticación
-    const authToken = req.cookies.get('auth-token')?.value;
+    const authToken = req.cookies.get('auth_token')?.value;
     if (!authToken) {
       return NextResponse.json(
         { error: 'No autorizado', message: 'Token de autenticación requerido' },
