@@ -94,7 +94,9 @@ export function middleware(req: NextRequest) {
     // Endpoint de test autenticación MIR (público para verificación)
     url.pathname.startsWith('/api/test-mir-auth') ||
     // Endpoint de test final MIR (público para verificación)
-    url.pathname.startsWith('/api/test-mir-final')
+    url.pathname.startsWith('/api/test-mir-final') ||
+    // Endpoint de test endpoint correcto MIR (público para verificación)
+    url.pathname.startsWith('/api/test-mir-endpoint-correct')
   );
   
   // Debug: Log para verificar qué rutas están siendo procesadas
