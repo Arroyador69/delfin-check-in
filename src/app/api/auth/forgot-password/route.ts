@@ -36,19 +36,26 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Buscar usuario por email
-    const userResult = await sql`
-      SELECT 
-        tu.id,
-        tu.email,
-        tu.full_name,
-        COALESCE(tu.recovery_email, tu.email) as recovery_email,
-        tu.tenant_id,
-        t.name as tenant_name
-      FROM tenant_users tu
-      JOIN tenants t ON tu.tenant_id = t.id
-      WHERE tu.email = ${email.toLowerCase()} AND tu.is_active = true
-    `;
+    // Buscar usuario por email (consulta simplificada)
+    let userResult;
+    try {
+      console.log('🔍 Ejecutando consulta SQL...');
+      userResult = await sql`
+        SELECT 
+          tu.id,
+          tu.email,
+          tu.full_name,
+          tu.tenant_id,
+          t.name as tenant_name
+        FROM tenant_users tu
+        JOIN tenants t ON tu.tenant_id = t.id
+        WHERE tu.email = ${email.toLowerCase()} AND tu.is_active = true
+      `;
+      console.log('✅ Consulta SQL exitosa');
+    } catch (sqlError) {
+      console.error('❌ Error en consulta SQL:', sqlError);
+      throw new Error(`Error de base de datos: ${sqlError.message}`);
+    }
 
     console.log('👤 Usuarios encontrados:', userResult.rows.length);
     
@@ -69,17 +76,24 @@ export async function POST(req: NextRequest) {
     const recoveryTokenExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutos
 
     // Guardar código en la base de datos
-    await sql`
-      UPDATE tenant_users
-      SET 
-        reset_token = ${recoveryCode}, 
-        reset_token_expires = ${recoveryTokenExpires.toISOString()}, 
-        updated_at = NOW()
-      WHERE id = ${user.id}
-    `;
+    try {
+      console.log('💾 Guardando código de recuperación...');
+      await sql`
+        UPDATE tenant_users
+        SET 
+          reset_token = ${recoveryCode}, 
+          reset_token_expires = ${recoveryTokenExpires.toISOString()}, 
+          updated_at = NOW()
+        WHERE id = ${user.id}
+      `;
+      console.log('✅ Código guardado exitosamente');
+    } catch (updateError) {
+      console.error('❌ Error guardando código:', updateError);
+      throw new Error(`Error actualizando usuario: ${updateError.message}`);
+    }
 
-    // Determinar email de destino (recovery_email si existe, sino el email principal)
-    const destinationEmail = user.recovery_email || user.email;
+    // Usar el email principal como destino (por ahora)
+    const destinationEmail = user.email;
     console.log('📬 Email de destino:', destinationEmail);
 
     // Enviar email de recuperación
