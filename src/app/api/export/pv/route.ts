@@ -109,7 +109,9 @@ function validateBusinessRules(data: z.infer<typeof PayloadSchema>): string[] {
         // Normalizar país para manejar tanto ISO-2 como ISO-3 y textos
         const esPaisEspana = isSpain(p.direccion.pais);
         const esNacionalidadEsp = isSpain(p.nacionalidad);
-        const esPasaporte = String(p.tipoDocumento || '').toUpperCase().includes('PASAP');
+        // Normalizar tipo de documento para detección fiable
+        const tipoDocNorm = normalizeDocumentType(String(p.tipoDocumento || ''));
+        const esPasaporte = tipoDocNorm === 'PAS';
         
         // Regla: INE obligatorio solo si PAIS y NACIONALIDAD son España, y no es un pasaporte extranjero
         if (esPaisEspana && esNacionalidadEsp && !esPasaporte && !/^\d{5}$/.test(p.direccion.codigoMunicipio || '')) {
@@ -434,8 +436,9 @@ function normalizePayload(data: any): any {
                   console.log(`[NORMALIZE] Comunicación ${idx} persona ${i}: nombreMunicipio "${nombreMun}" → INE ${ine}`);
                 } else {
                   // Heurística: si parece municipio extranjero (ej. London, Bath) o CP no español, ajustar país a ENG
-                  const cp = String(p?.direccion?.codigoPostal || '');
-                  const isSpanishCP = /^\d{5}$/.test(cp);
+                  const cp = String(p?.direccion?.codigoPostal || '').trim();
+                  // CP válido español: 5 dígitos y no "00000"
+                  const isSpanishCP = /^\d{5}$/.test(cp) && cp !== '00000';
                   const nombreLower = nombreMun.toLowerCase();
                   const foreignUk = ['london','bath','manchester','birmingham','liverpool'];
                   if (!isSpanishCP && foreignUk.some(x => nombreLower.includes(x))) {
