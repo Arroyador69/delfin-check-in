@@ -372,17 +372,19 @@ export default function MirComunicacionesPage() {
                     return (
                       <Card key={com.id} className="p-4 bg-blue-50 border-blue-200">
                         <div className="flex items-center justify-between">
-                          <div className="space-y-2">
+                          <div className="space-y-3">
+                            {/* Nombre del huésped en la parte superior */}
                             <div className="flex items-center gap-2">
                               {getEstadoIcon(com.estado)}
-                              <span className="font-bold text-gray-900 text-lg">{nombreCompleto}</span>
+                              <span className="font-bold text-gray-900 text-xl">{nombreCompleto}</span>
                               {getEstadoBadge(com.estado)}
                             </div>
+                            
+                            {/* Información de la comunicación */}
                             <div className="text-sm text-gray-700 font-medium">
                               <div className="flex items-center gap-4">
                                 <span>🏨 Habitación: <strong>{habitacion}</strong></span>
                                 <span>📋 Tipo: <strong>{com.tipo}</strong></span>
-                                <span>🆔 Ref: <strong>{com.referencia}</strong></span>
                               </div>
                               <div className="mt-1">
                                 📅 Creado: <strong>{new Date(com.created_at).toLocaleString('es-ES')}</strong>
@@ -392,16 +394,49 @@ export default function MirComunicacionesPage() {
                                 <div className="text-red-600 font-semibold mt-2">❌ Error: {com.error}</div>
                               )}
                             </div>
+                            
+                            {/* Referencia en la parte inferior */}
+                            <div className="text-xs text-gray-500 font-mono bg-gray-100 px-2 py-1 rounded">
+                              🆔 Referencia: {com.referencia}
+                            </div>
                           </div>
                           <div className="flex gap-2">
                             {com.xml_enviado && (
-                              <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white font-semibold">
+                              <Button 
+                                size="sm" 
+                                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold"
+                                onClick={() => {
+                                  const blob = new Blob([com.xml_enviado], { type: 'application/xml' });
+                                  const url = URL.createObjectURL(blob);
+                                  const a = document.createElement('a');
+                                  a.href = url;
+                                  a.download = `xml-enviado-${com.referencia}.xml`;
+                                  document.body.appendChild(a);
+                                  a.click();
+                                  document.body.removeChild(a);
+                                  URL.revokeObjectURL(url);
+                                }}
+                              >
                                 <Download className="h-4 w-4 mr-1" />
                                 XML
                               </Button>
                             )}
                             {com.xml_respuesta && (
-                              <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white font-semibold">
+                              <Button 
+                                size="sm" 
+                                className="bg-green-600 hover:bg-green-700 text-white font-semibold"
+                                onClick={() => {
+                                  const blob = new Blob([com.xml_respuesta], { type: 'application/xml' });
+                                  const url = URL.createObjectURL(blob);
+                                  const a = document.createElement('a');
+                                  a.href = url;
+                                  a.download = `xml-respuesta-${com.referencia}.xml`;
+                                  document.body.appendChild(a);
+                                  a.click();
+                                  document.body.removeChild(a);
+                                  URL.revokeObjectURL(url);
+                                }}
+                              >
                                 <Eye className="h-4 w-4 mr-1" />
                                 Respuesta
                               </Button>
