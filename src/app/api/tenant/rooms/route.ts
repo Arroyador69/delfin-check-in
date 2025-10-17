@@ -47,9 +47,9 @@ export async function POST(req: NextRequest) {
       }, { status: 400 });
     }
 
-    // Obtener límites del tenant
+    // Obtener información del tenant (límites y lodging_id)
     const tenantResult = await sql`
-      SELECT plan_limits
+      SELECT plan_limits, lodging_id
       FROM tenants
       WHERE id = ${tenantId}
     `;
@@ -63,6 +63,7 @@ export async function POST(req: NextRequest) {
 
     const limits = tenantResult.rows[0].plan_limits || {};
     const maxRooms = limits.max_rooms || 6;
+    const lodgingId = tenantResult.rows[0].lodging_id;
 
     // Validar que no exceda el límite
     if (rooms.length > maxRooms) {
@@ -71,22 +72,6 @@ export async function POST(req: NextRequest) {
         message: `No puedes tener más de ${maxRooms} habitaciones según tu plan`
       }, { status: 400 });
     }
-
-    // Obtener lodging_id del tenant
-    const tenantResult = await sql`
-      SELECT lodging_id
-      FROM tenants
-      WHERE id = ${tenantId}
-    `;
-
-    if (tenantResult.rows.length === 0) {
-      return NextResponse.json({
-        success: false,
-        message: 'Tenant no encontrado'
-      }, { status: 404 });
-    }
-
-    const lodgingId = tenantResult.rows[0].lodging_id;
 
     // Actualizar nombres de habitaciones existentes
     for (let i = 0; i < rooms.length; i++) {
