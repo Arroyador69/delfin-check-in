@@ -509,8 +509,8 @@ export default function GuestRegistrationsDashboard() {
             </div>
             <div className="flex items-center space-x-4">
               <a 
-                href="/estado-envios-mir" 
-                className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors flex items-center space-x-2"
+                href="/admin/mir-comunicaciones" 
+                className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors flex items-center space-x-2 font-semibold"
               >
                 <span>📤</span>
                 <span>Estado Envíos MIR</span>

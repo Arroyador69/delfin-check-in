@@ -283,14 +283,18 @@ export default function MirComunicacionesPage() {
               <div className="flex items-center">
                 <div className="text-3xl mr-3">🏛️</div>
                 <div>
-                  <h1 className="text-2xl font-bold text-gray-900">Sistema MIR</h1>
+                  <h1 className="text-2xl font-bold text-gray-900">Estado Envíos MIR</h1>
                   <p className="text-sm text-gray-600">Gestión de comunicaciones con el Ministerio del Interior</p>
                   <p className="text-xs text-gray-500">Envío, consulta y anulación de comunicaciones oficiales</p>
                 </div>
               </div>
               <div className="flex items-center space-x-4">
-                <Button onClick={cargarComunicaciones} disabled={loading} variant="outline">
-                  <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                <Button 
+                  onClick={cargarComunicaciones} 
+                  disabled={loading} 
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 shadow-lg"
+                >
+                  <RefreshCw className={`h-5 w-5 mr-2 ${loading ? 'animate-spin' : ''}`} />
                   Actualizar
                 </Button>
               </div>
@@ -343,40 +347,56 @@ export default function MirComunicacionesPage() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {comunicaciones.map((com) => (
-                    <Card key={com.id} className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2">
-                            {getEstadoIcon(com.estado)}
-                            <span className="font-medium">{com.referencia}</span>
-                            {getEstadoBadge(com.estado)}
+                  {comunicaciones.map((com) => {
+                    // Extraer datos del huésped desde el XML enviado
+                    const xmlData = com.xml_enviado ? JSON.parse(com.xml_enviado) : null;
+                    const nombreCompleto = xmlData?.personas?.[0] ? 
+                      `${xmlData.personas[0].nombre} ${xmlData.personas[0].apellido1} ${xmlData.personas[0].apellido2 || ''}`.trim() : 
+                      'Datos no disponibles';
+                    const habitacion = xmlData?.habitacion || 'N/A';
+                    
+                    return (
+                      <Card key={com.id} className="p-4 bg-blue-50 border-blue-200">
+                        <div className="flex items-center justify-between">
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2">
+                              {getEstadoIcon(com.estado)}
+                              <span className="font-bold text-gray-900 text-lg">{nombreCompleto}</span>
+                              {getEstadoBadge(com.estado)}
+                            </div>
+                            <div className="text-sm text-gray-700 font-medium">
+                              <div className="flex items-center gap-4">
+                                <span>🏨 Habitación: <strong>{habitacion}</strong></span>
+                                <span>📋 Tipo: <strong>{com.tipo}</strong></span>
+                                <span>🆔 Ref: <strong>{com.referencia}</strong></span>
+                              </div>
+                              <div className="mt-1">
+                                📅 Creado: <strong>{new Date(com.created_at).toLocaleString('es-ES')}</strong>
+                                {com.lote && <span className="ml-4">📦 Lote: <strong>{com.lote}</strong></span>}
+                              </div>
+                              {com.error && (
+                                <div className="text-red-600 font-semibold mt-2">❌ Error: {com.error}</div>
+                              )}
+                            </div>
                           </div>
-                          <div className="text-sm text-muted-foreground">
-                            <div>Tipo: {com.tipo} | Lote: {com.lote || 'N/A'}</div>
-                            <div>Creado: {new Date(com.created_at).toLocaleString()}</div>
-                            {com.error && (
-                              <div className="text-red-600">Error: {com.error}</div>
+                          <div className="flex gap-2">
+                            {com.xml_enviado && (
+                              <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white font-semibold">
+                                <Download className="h-4 w-4 mr-1" />
+                                XML
+                              </Button>
+                            )}
+                            {com.xml_respuesta && (
+                              <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white font-semibold">
+                                <Eye className="h-4 w-4 mr-1" />
+                                Respuesta
+                              </Button>
                             )}
                           </div>
                         </div>
-                        <div className="flex gap-2">
-                          {com.xml_enviado && (
-                            <Button size="sm" variant="outline">
-                              <Download className="h-4 w-4 mr-1" />
-                              XML
-                            </Button>
-                          )}
-                          {com.xml_respuesta && (
-                            <Button size="sm" variant="outline">
-                              <Eye className="h-4 w-4 mr-1" />
-                              Respuesta
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    </Card>
-                  ))}
+                      </Card>
+                    );
+                  })}
                 </div>
               )}
             </CardContent>
