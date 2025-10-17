@@ -63,6 +63,7 @@ export async function GET(req: NextRequest) {
         usuario: process.env.MIR_HTTP_USER || '',
         contraseña: process.env.MIR_HTTP_PASS || '',
         codigoArrendador: process.env.MIR_CODIGO_ARRENDADOR || '',
+        codigoEstablecimiento: process.env.MIR_CODIGO_ESTABLECIMIENTO || '',
         baseUrl: process.env.MIR_BASE_URL || 'https://hospedajes.ses.mir.es/hospedajes-web/ws/v1/comunicacion',
         aplicacion: process.env.MIR_APLICACION || 'Delfin_Check_in',
         simulacion: process.env.MIR_SIMULACION === 'true',
@@ -103,6 +104,7 @@ export async function GET(req: NextRequest) {
         usuario: config.usuario,
         contraseña: config.contraseña, // Devolver la contraseña real para el formulario
         codigoArrendador: config.codigoArrendador,
+        codigoEstablecimiento: config.codigoEstablecimiento,
         baseUrl: config.baseUrl,
         aplicacion: config.aplicacion,
         simulacion: config.simulacion,

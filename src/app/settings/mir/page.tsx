@@ -63,6 +63,7 @@ export default function MirSettingsPage() {
           usuario: data.config.usuario || '',
           contraseña: data.config.contraseña || '',
           codigoArrendador: data.config.codigoArrendador || '',
+          codigoEstablecimiento: data.config.codigoEstablecimiento || '',
           baseUrl: data.config.baseUrl || 'https://hospedajes.ses.mir.es/hospedajes-web/ws/v1/comunicacion',
           aplicacion: data.config.aplicacion || 'Delfin_Check_in',
           simulacion: data.config.simulacion || false,
