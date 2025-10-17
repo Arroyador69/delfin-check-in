@@ -217,13 +217,13 @@ export default function MirSettingsPage() {
               <Label htmlFor="usuario" className="text-gray-800 font-semibold">Usuario MIR *</Label>
               <Input
                 id="usuario"
-                placeholder="TU_CIF---WS"
+                placeholder="27380387ZWS"
                 value={config.usuario}
                 onChange={(e) => setConfig({...config, usuario: e.target.value})}
                 className="text-gray-900"
               />
               <p className="text-xs text-gray-600 font-medium">
-                Formato: CIF/NIF/NIE seguido de '---WS' o 'ZWS'
+                Formato: DNI/CIF + letra + WS (ejemplo: 27380387ZWS, 12345678TWS)
               </p>
             </div>
             

@@ -35,12 +35,13 @@ export async function POST(req: NextRequest) {
       }, { status: 400 });
     }
 
-    // Validar formato del usuario (acepta tanto ---WS como ZWS)
-    if (!usuario.includes('---WS') && !usuario.endsWith('ZWS')) {
+    // Validar formato del usuario (DNI/CIF + letra + WS)
+    const usuarioPattern = /^[0-9]+[A-Z]WS$/;
+    if (!usuarioPattern.test(usuario)) {
       return NextResponse.json({
         success: false,
         error: 'Formato de usuario incorrecto',
-        message: 'El usuario debe terminar en ---WS o ZWS (ejemplo: TU_CIF---WS o TU_CIFZWS)'
+        message: 'El usuario debe seguir el formato: DNI/CIF + letra + WS (ejemplo: 27380387ZWS, 12345678TWS)'
       }, { status: 400 });
     }
 
