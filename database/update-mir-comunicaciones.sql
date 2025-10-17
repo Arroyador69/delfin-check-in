@@ -77,3 +77,4 @@ COMMENT ON COLUMN mir_comunicaciones.xml_respuesta IS 'XML de respuesta del MIR'
 -- Verificar que la tabla se creó correctamente
 SELECT 'Tabla mir_comunicaciones actualizada exitosamente' as resultado;
 SELECT COUNT(*) as total_tablas FROM information_schema.tables WHERE table_name = 'mir_comunicaciones';
+

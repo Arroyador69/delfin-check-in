@@ -198,3 +198,4 @@ Una vez completada la configuración, el sistema está listo para:
 5. ✅ **Cumplir normativas** oficiales del MIR
 
 **¡El sistema MIR está completamente integrado con Neon Database y listo para uso en producción!** 🎉
+

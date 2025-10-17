@@ -276,3 +276,4 @@ Problemas comunes y soluciones:
 ---
 
 **Nota**: Este sistema está diseñado para ser completamente multitenant, permitiendo que múltiples propietarios utilicen la misma plataforma con total aislamiento de datos y configuraciones.
+

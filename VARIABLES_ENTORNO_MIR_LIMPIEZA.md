@@ -104,3 +104,4 @@ Si implementas el sistema multitenant, cada propietario tendrá sus propias cred
 - Configuración global del sistema
 - Credenciales de administrador
 - URLs base del servicio MIR
+

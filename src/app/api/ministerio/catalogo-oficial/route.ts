@@ -154,3 +154,4 @@ function getElementoInterpretacion(catalogo: string, codigo: string): string {
   
   return interpretaciones[catalogo]?.[codigo] || `Código: ${codigo}`;
 }
+

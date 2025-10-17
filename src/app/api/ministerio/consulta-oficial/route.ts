@@ -136,3 +136,4 @@ function getEstadoDescripcion(estado: string): string {
   };
   return estados[estado] || `Estado desconocido: ${estado}`;
 }
+

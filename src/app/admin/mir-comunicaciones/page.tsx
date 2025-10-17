@@ -300,31 +300,31 @@ export default function MirComunicacionesPage() {
           {error && (
             <Alert variant="destructive">
               <AlertTriangle className="h-4 w-4" />
-              <AlertDescription>{error}</AlertDescription>
+              <AlertDescription className="text-red-800 font-semibold">{error}</AlertDescription>
             </Alert>
           )}
 
           {success && (
             <Alert>
               <CheckCircle className="h-4 w-4" />
-              <AlertDescription>{success}</AlertDescription>
+              <AlertDescription className="text-green-800 font-semibold">{success}</AlertDescription>
             </Alert>
           )}
 
       <Tabs defaultValue="comunicaciones" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="comunicaciones">Comunicaciones</TabsTrigger>
-          <TabsTrigger value="envio">Envío de Prueba</TabsTrigger>
-          <TabsTrigger value="consulta">Consulta</TabsTrigger>
-          <TabsTrigger value="catalogo">Catálogos</TabsTrigger>
-          <TabsTrigger value="anulacion">Anulación</TabsTrigger>
+        <TabsList className="bg-gray-100">
+          <TabsTrigger value="comunicaciones" className="text-gray-800 font-semibold data-[state=active]:bg-blue-600 data-[state=active]:text-white">Comunicaciones</TabsTrigger>
+          <TabsTrigger value="envio" className="text-gray-800 font-semibold data-[state=active]:bg-blue-600 data-[state=active]:text-white">Envío de Prueba</TabsTrigger>
+          <TabsTrigger value="consulta" className="text-gray-800 font-semibold data-[state=active]:bg-blue-600 data-[state=active]:text-white">Consulta</TabsTrigger>
+          <TabsTrigger value="catalogo" className="text-gray-800 font-semibold data-[state=active]:bg-blue-600 data-[state=active]:text-white">Catálogos</TabsTrigger>
+          <TabsTrigger value="anulacion" className="text-gray-800 font-semibold data-[state=active]:bg-blue-600 data-[state=active]:text-white">Anulación</TabsTrigger>
         </TabsList>
 
         <TabsContent value="comunicaciones" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Comunicaciones Enviadas</CardTitle>
-              <CardDescription>
+              <CardTitle className="text-gray-900 font-bold text-xl">Comunicaciones Enviadas</CardTitle>
+              <CardDescription className="text-gray-700 font-medium">
                 Lista de todas las comunicaciones enviadas al MIR
               </CardDescription>
             </CardHeader>
@@ -335,7 +335,7 @@ export default function MirComunicacionesPage() {
                   Cargando comunicaciones...
                 </div>
               ) : comunicaciones.length === 0 ? (
-                <div className="text-center p-8 text-muted-foreground">
+                <div className="text-center p-8 text-gray-600 font-semibold">
                   No hay comunicaciones registradas
                 </div>
               ) : (

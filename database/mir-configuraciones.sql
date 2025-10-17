@@ -130,3 +130,4 @@ BEGIN
     RETURN config_count > 0;
 END;
 $$ LANGUAGE plpgsql;
+

@@ -144,17 +144,17 @@ export default function MirSettingsPage() {
       {/* Header */}
       <div>
         <h2 className="text-2xl font-bold text-gray-900">Configuración MIR</h2>
-        <p className="text-gray-600">Configura las credenciales para el envío de comunicaciones al Ministerio del Interior</p>
+        <p className="text-gray-700 font-medium">Configura las credenciales para el envío de comunicaciones al Ministerio del Interior</p>
       </div>
 
       {/* Estado de configuración */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center justify-between">
+          <CardTitle className="flex items-center justify-between text-gray-900 font-bold">
             Estado de Configuración
             <Badge variant={status.variant}>{status.status}</Badge>
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="text-gray-700 font-medium">
             Verifica que todas las credenciales estén configuradas correctamente
           </CardDescription>
         </CardHeader>
@@ -166,7 +166,7 @@ export default function MirSettingsPage() {
               ) : (
                 <XCircle className="h-5 w-5 text-red-500" />
               )}
-              <span className="text-sm">Usuario MIR</span>
+              <span className="text-sm font-semibold text-gray-800">Usuario MIR</span>
             </div>
             <div className="flex items-center space-x-2">
               {config.contraseña ? (
@@ -174,7 +174,7 @@ export default function MirSettingsPage() {
               ) : (
                 <XCircle className="h-5 w-5 text-red-500" />
               )}
-              <span className="text-sm">Contraseña MIR</span>
+              <span className="text-sm font-semibold text-gray-800">Contraseña MIR</span>
             </div>
             <div className="flex items-center space-x-2">
               {config.codigoArrendador ? (
@@ -182,7 +182,7 @@ export default function MirSettingsPage() {
               ) : (
                 <XCircle className="h-5 w-5 text-red-500" />
               )}
-              <span className="text-sm">Código Arrendador</span>
+              <span className="text-sm font-semibold text-gray-800">Código Arrendador</span>
             </div>
           </div>
         </CardContent>
@@ -192,42 +192,42 @@ export default function MirSettingsPage() {
       {error && (
         <Alert variant="destructive">
           <AlertTriangle className="h-4 w-4" />
-          <AlertDescription>{error}</AlertDescription>
+          <AlertDescription className="text-red-800 font-semibold">{error}</AlertDescription>
         </Alert>
       )}
 
       {success && (
         <Alert>
           <CheckCircle className="h-4 w-4" />
-          <AlertDescription>{success}</AlertDescription>
+          <AlertDescription className="text-green-800 font-semibold">{success}</AlertDescription>
         </Alert>
       )}
 
       {/* Formulario de configuración */}
       <Card>
         <CardHeader>
-          <CardTitle>Credenciales MIR</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-gray-900 font-bold">Credenciales MIR</CardTitle>
+          <CardDescription className="text-gray-700 font-medium">
             Introduce las credenciales proporcionadas por el Ministerio del Interior
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="usuario">Usuario MIR *</Label>
+              <Label htmlFor="usuario" className="text-gray-800 font-semibold">Usuario MIR *</Label>
               <Input
                 id="usuario"
                 placeholder="TU_CIF---WS"
                 value={config.usuario}
                 onChange={(e) => setConfig({...config, usuario: e.target.value})}
               />
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-gray-600 font-medium">
                 Formato: CIF/NIF/NIE seguido de '---WS'
               </p>
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="contraseña">Contraseña MIR *</Label>
+              <Label htmlFor="contraseña" className="text-gray-800 font-semibold">Contraseña MIR *</Label>
               <div className="relative">
                 <Input
                   id="contraseña"
