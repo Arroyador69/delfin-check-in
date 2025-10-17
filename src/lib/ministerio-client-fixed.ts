@@ -26,8 +26,8 @@ export interface AltaPVResult {
 }
 
 function buildBasicAuthHeader(username: string, password: string): string {
-  // Codificación estándar: usuario:contraseña
-  const credentials = `${username}:${password}`;
+  // Codificación mejorada: usuario:contraseña con trim y encoding UTF-8
+  const credentials = `${username.trim()}:${password.trim()}`;
   const token = Buffer.from(credentials, 'utf8').toString('base64');
   return `Basic ${token}`;
 }
@@ -221,3 +221,5 @@ export function getMinisterioConfigFromEnv(): MinisterioConfig {
     simulacion
   };
 }
+
+
