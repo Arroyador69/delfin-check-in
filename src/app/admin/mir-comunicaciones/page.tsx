@@ -77,17 +77,18 @@ export default function MirComunicacionesPage() {
     setError(null);
     
     try {
-      const response = await fetch('/api/ministerio/comunicaciones');
+      const response = await fetch('/api/ministerio/registros-completos');
       const data = await response.json();
       
       if (data.success) {
-        setComunicaciones(data.comunicaciones || []);
+        setComunicaciones(data.registros || []);
+        setSuccess(`Consulta realizada correctamente. Encontrados ${data.registros?.length || 0} registros (${data.estadisticas?.pendientes || 0} pendientes, ${data.estadisticas?.enviados || 0} enviados)`);
       } else {
-        setError(data.message || 'Error cargando comunicaciones');
+        setError(data.message || 'Error cargando registros');
       }
     } catch (err) {
       setError('Error de conexión');
-      console.error('Error cargando comunicaciones:', err);
+      console.error('Error cargando registros:', err);
     } finally {
       setLoading(false);
     }
@@ -350,107 +351,111 @@ export default function MirComunicacionesPage() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {comunicaciones.map((com) => {
-                    // Extraer datos del huésped desde el XML enviado
-                    let xmlData = null;
-                    let nombreCompleto = 'Datos no disponibles';
-                    let habitacion = 'N/A';
-                    
-                    try {
-                      // Intentar parsear como JSON primero
-                      if (com.xml_enviado) {
-                        xmlData = JSON.parse(com.xml_enviado);
-                        nombreCompleto = xmlData?.personas?.[0] ? 
-                          `${xmlData.personas[0].nombre} ${xmlData.personas[0].apellido1} ${xmlData.personas[0].apellido2 || ''}`.trim() : 
-                          'Datos no disponibles';
-                        habitacion = xmlData?.habitacion || 'N/A';
-                      }
-                    } catch (error) {
-                      // Si no es JSON válido, intentar extraer del XML como texto
-                      console.log('XML no es JSON válido, intentando extraer nombre del XML');
-                      if (com.xml_enviado && typeof com.xml_enviado === 'string') {
-                        // Buscar patrones de nombre en el XML
-                        const nombreMatch = com.xml_enviado.match(/<nombre>([^<]+)<\/nombre>/i);
-                        const apellido1Match = com.xml_enviado.match(/<apellido1>([^<]+)<\/apellido1>/i);
-                        const apellido2Match = com.xml_enviado.match(/<apellido2>([^<]+)<\/apellido2>/i);
-                        
-                        if (nombreMatch && apellido1Match) {
-                          const nombre = nombreMatch[1];
-                          const apellido1 = apellido1Match[1];
-                          const apellido2 = apellido2Match ? apellido2Match[1] : '';
-                          nombreCompleto = `${nombre} ${apellido1} ${apellido2}`.trim();
-                        } else {
-                          nombreCompleto = 'Huésped Registrado';
-                        }
-                      } else {
-                        nombreCompleto = 'Huésped Registrado';
-                      }
-                      habitacion = 'N/A';
-                    }
+                  {comunicaciones.map((registro) => {
+                    // Los datos ya vienen procesados del nuevo endpoint
+                    const nombreCompleto = registro.nombreCompleto || 'Datos no disponibles';
+                    const habitacion = registro.habitacion || 'N/A';
+                    const yaEnviado = registro.ya_enviado;
+                    const estado = registro.estado;
                     
                     return (
-                      <Card key={com.id} className="p-4 bg-blue-50 border-blue-200">
+                      <Card key={registro.id} className="p-4 bg-blue-50 border-blue-200">
                         <div className="flex items-center justify-between">
                           <div className="space-y-2">
                             {/* Nombre del huésped al lado del tick verde */}
                             <div className="flex items-center gap-2">
-                              {getEstadoIcon(com.estado)}
+                              {getEstadoIcon(estado)}
                               <span className="font-bold text-gray-900 text-lg">{nombreCompleto}</span>
-                              {getEstadoBadge(com.estado)}
+                              {getEstadoBadge(estado)}
                             </div>
                             
-                            {/* Información de la comunicación organizada */}
+                            {/* Información del registro organizada */}
                             <div className="text-sm text-gray-700 font-medium">
                               <div className="flex items-center gap-4">
                                 <span>🏨 Habitación: <strong>{habitacion}</strong></span>
-                                <span>📋 Tipo: <strong>{com.tipo}</strong></span>
-                                <span>🆔 Ref: <strong>{com.referencia}</strong></span>
+                                <span>📋 Tipo: <strong>PV</strong></span>
+                                <span>🆔 Ref: <strong>{registro.reserva_ref}</strong></span>
                               </div>
                               <div className="mt-1">
-                                📅 Creado: <strong>{new Date(com.created_at).toLocaleString('es-ES')}</strong>
-                                {com.lote && <span className="ml-4">📦 Lote: <strong>{com.lote}</strong></span>}
+                                📅 Registrado: <strong>{new Date(registro.created_at).toLocaleString('es-ES')}</strong>
+                                {registro.comunicacion_mir?.lote && <span className="ml-4">📦 Lote: <strong>{registro.comunicacion_mir.lote}</strong></span>}
                               </div>
-                              {com.error && (
-                                <div className="text-red-600 font-semibold mt-2">❌ Error: {com.error}</div>
+                              {registro.comunicacion_mir?.error && (
+                                <div className="text-red-600 font-semibold mt-2">❌ Error: {registro.comunicacion_mir.error}</div>
                               )}
                             </div>
                           </div>
                           <div className="flex gap-2">
-                            {com.xml_enviado && (
+                            {yaEnviado ? (
+                              <>
+                                {registro.comunicacion_mir?.xml_enviado && (
+                                  <Button 
+                                    size="sm" 
+                                    className="bg-blue-600 hover:bg-blue-700 text-white font-semibold"
+                                    onClick={() => {
+                                      const blob = new Blob([registro.comunicacion_mir.xml_enviado], { type: 'application/xml' });
+                                      const url = URL.createObjectURL(blob);
+                                      const a = document.createElement('a');
+                                      a.href = url;
+                                      a.download = `xml-enviado-${registro.reserva_ref}.xml`;
+                                      document.body.appendChild(a);
+                                      a.click();
+                                      document.body.removeChild(a);
+                                      URL.revokeObjectURL(url);
+                                    }}
+                                  >
+                                    <Download className="h-4 w-4 mr-1" />
+                                    XML
+                                  </Button>
+                                )}
+                                {registro.comunicacion_mir?.xml_respuesta && (
+                                  <Button 
+                                    size="sm" 
+                                    className="bg-green-600 hover:bg-green-700 text-white font-semibold"
+                                    onClick={() => {
+                                      const responseText = registro.comunicacion_mir.xml_respuesta.length > 500 
+                                        ? registro.comunicacion_mir.xml_respuesta.substring(0, 500) + '...' 
+                                        : registro.comunicacion_mir.xml_respuesta;
+                                      
+                                      alert(`Respuesta del MIR:\n\n${responseText}`);
+                                    }}
+                                  >
+                                    <Eye className="h-4 w-4 mr-1" />
+                                    Ver Respuesta
+                                  </Button>
+                                )}
+                              </>
+                            ) : (
                               <Button 
                                 size="sm" 
-                                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold"
-                                onClick={() => {
-                                  const blob = new Blob([com.xml_enviado], { type: 'application/xml' });
-                                  const url = URL.createObjectURL(blob);
-                                  const a = document.createElement('a');
-                                  a.href = url;
-                                  a.download = `xml-enviado-${com.referencia}.xml`;
-                                  document.body.appendChild(a);
-                                  a.click();
-                                  document.body.removeChild(a);
-                                  URL.revokeObjectURL(url);
+                                className="bg-orange-600 hover:bg-orange-700 text-white font-semibold"
+                                onClick={async () => {
+                                  try {
+                                    const response = await fetch('/api/ministerio/auto-envio', {
+                                      method: 'POST',
+                                      headers: { 'Content-Type': 'application/json' },
+                                      body: JSON.stringify({
+                                        id: registro.id,
+                                        fechaEntrada: registro.fecha_entrada,
+                                        fechaSalida: registro.fecha_salida,
+                                        personas: registro.data?.comunicaciones?.[0]?.personas || []
+                                      })
+                                    });
+                                    
+                                    const result = await response.json();
+                                    if (result.success) {
+                                      alert('✅ Registro enviado al MIR correctamente');
+                                      cargarComunicaciones(); // Recargar lista
+                                    } else {
+                                      alert(`❌ Error: ${result.message}`);
+                                    }
+                                  } catch (error) {
+                                    alert('❌ Error enviando al MIR');
+                                  }
                                 }}
                               >
-                                <Download className="h-4 w-4 mr-1" />
-                                XML
-                              </Button>
-                            )}
-                            {com.xml_respuesta && (
-                              <Button 
-                                size="sm" 
-                                className="bg-green-600 hover:bg-green-700 text-white font-semibold"
-                                onClick={() => {
-                                  // Mostrar la respuesta en un modal/alert
-                                  const responseText = com.xml_respuesta.length > 500 
-                                    ? com.xml_respuesta.substring(0, 500) + '...' 
-                                    : com.xml_respuesta;
-                                  
-                                  alert(`Respuesta del MIR:\n\n${responseText}`);
-                                }}
-                              >
-                                <Eye className="h-4 w-4 mr-1" />
-                                Ver Respuesta
+                                <Send className="h-4 w-4 mr-1" />
+                                Enviar al MIR
                               </Button>
                             )}
                           </div>
