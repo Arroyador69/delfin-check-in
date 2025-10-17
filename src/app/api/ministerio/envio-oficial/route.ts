@@ -5,7 +5,7 @@ import { insertMirComunicacion, updateMirComunicacion, MirComunicacion } from '@
 
 export async function POST(req: NextRequest) {
   try {
-    console.log('🚀 Auto-envío al MIR iniciado...');
+    console.log('🚀 Envío oficial al MIR iniciado...');
     
     const json = await req.json().catch(() => undefined);
     
@@ -19,24 +19,40 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    console.log('📋 Datos recibidos para auto-envío:', JSON.stringify(json, null, 2));
+    console.log('📋 Datos recibidos para envío oficial:', JSON.stringify(json, null, 2));
 
-    // Configuración del MIR - ENVÍO REAL con credenciales correctas
-    // Las credenciales DEBEN estar en variables de entorno (Vercel/local .env)
+    // Verificar credenciales MIR
+    if (!process.env.MIR_HTTP_USER || !process.env.MIR_HTTP_PASS || !process.env.MIR_CODIGO_ARRENDADOR) {
+      return NextResponse.json({
+        success: false,
+        error: 'Credenciales MIR no configuradas',
+        message: 'Falta configurar MIR_HTTP_USER, MIR_HTTP_PASS o MIR_CODIGO_ARRENDADOR'
+      }, { status: 400 });
+    }
+
+    // Configuración del MIR con credenciales correctas
     const config = {
       baseUrl: process.env.MIR_BASE_URL || 'https://hospedajes.ses.mir.es/hospedajes-web/ws/v1/comunicacion',
-      username: process.env.MIR_HTTP_USER || '',
-      password: process.env.MIR_HTTP_PASS || '',
-      codigoArrendador: process.env.MIR_CODIGO_ARRENDADOR || '',
+      username: process.env.MIR_HTTP_USER,
+      password: process.env.MIR_HTTP_PASS,
+      codigoArrendador: process.env.MIR_CODIGO_ARRENDADOR,
       aplicacion: process.env.MIR_APLICACION || 'Delfin_Check_in',
-      simulacion: false // ENVÍO REAL AL MIR
+      simulacion: process.env.MIR_SIMULACION === 'true'
     };
+
+    console.log('📋 Configuración MIR oficial:', {
+      baseUrl: config.baseUrl,
+      username: config.username,
+      codigoArrendador: config.codigoArrendador,
+      aplicacion: config.aplicacion,
+      simulacion: config.simulacion
+    });
 
     // Crear cliente MIR oficial
     const client = new MinisterioClientOfficial(config);
     
     // Generar referencia única
-    const referencia = `AUTO-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const referencia = `OFICIAL-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     
     // Preparar datos para el MIR según esquemas oficiales
     const datosMIR: PvSolicitud = {
@@ -92,7 +108,7 @@ export async function POST(req: NextRequest) {
     // Enviar al MIR usando cliente oficial
     const resultado = await client.altaPV({ xmlAlta: xmlContent });
     
-    console.log('✅ Resultado del envío al MIR:', resultado);
+    console.log('✅ Resultado del envío oficial al MIR:', resultado);
 
     // Guardar comunicación en base de datos
     const comunicacion: Omit<MirComunicacion, 'id' | 'created_at' | 'updated_at'> = {
@@ -106,51 +122,49 @@ export async function POST(req: NextRequest) {
       xml_respuesta: resultado.rawResponse
     };
 
-    const id = await insertMirComunicacion(comunicacion);
-    console.log('✅ Comunicación guardada en BD con ID:', id);
+    const comunicacionId = await insertMirComunicacion(comunicacion);
+    console.log('💾 Comunicación guardada con ID:', comunicacionId);
 
     return NextResponse.json({
       success: true,
-      message: 'Auto-envío al MIR completado',
-      referencia: referencia,
-      resultado: resultado,
-      estado: resultado.ok ? 'enviado' : 'error',
-      lote: resultado.lote || null
-    }, {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' }
+      message: 'Envío oficial al MIR completado',
+      comunicacionId,
+      referencia,
+      resultado: {
+        exito: resultado.ok,
+        codigo: resultado.codigo,
+        descripcion: resultado.descripcion,
+        lote: resultado.lote,
+        codigoComunicacion: resultado.codigoComunicacion
+      },
+      interpretacion: {
+        exito: resultado.ok,
+        mensaje: resultado.ok ? 
+          `✅ Comunicación enviada correctamente. Lote: ${resultado.lote || 'N/A'}` : 
+          `❌ Error en el envío: ${resultado.descripcion}`,
+        codigo: resultado.codigo,
+        lote: resultado.lote ? `Lote asignado: ${resultado.lote}` : 'Sin lote asignado'
+      },
+      debug: {
+        xmlLength: xmlContent.length,
+        soapDebug: resultado.debugSoap ? 'Disponible' : 'No disponible',
+        config: {
+          baseUrl: config.baseUrl,
+          username: config.username,
+          codigoArrendador: config.codigoArrendador,
+          simulacion: config.simulacion
+        }
+      }
     });
-    
+
   } catch (error) {
-    console.error('❌ Error en auto-envío al MIR:', error);
+    console.error('❌ Error en envío oficial al MIR:', error);
     
-    // Guardar error en base de datos
-    const referencia = `ERROR-${Date.now()}`;
-    const comunicacion: Omit<MirComunicacion, 'id' | 'created_at' | 'updated_at'> = {
-      referencia: referencia,
-      timestamp: new Date().toISOString(),
-      datos: json || {},
-      resultado: null,
-      estado: 'error',
-      lote: null,
-      error: error instanceof Error ? error.message : 'Error desconocido',
-      codigo_establecimiento: "0000256653",
-      fecha_entrada: json?.fechaEntrada || new Date().toISOString(),
-      fecha_salida: json?.fechaSalida || new Date(Date.now() + 24*60*60*1000).toISOString(),
-      num_personas: json?.personas?.length || 1
-    };
-
-    try {
-      await insertMirComunicacion(comunicacion);
-    } catch (saveError) {
-      console.error('❌ Error guardando comunicación de error:', saveError);
-    }
-
     return NextResponse.json({
       success: false,
-      error: 'Error en auto-envío al MIR',
+      error: 'Error en envío oficial al MIR',
       message: error instanceof Error ? error.message : 'Error desconocido',
-      referencia: referencia
+      stack: error instanceof Error ? error.stack : undefined
     }, {
       status: 500,
       headers: { 'Content-Type': 'application/json' }

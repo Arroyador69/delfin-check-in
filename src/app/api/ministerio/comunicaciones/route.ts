@@ -1,119 +1,121 @@
-import { NextRequest } from 'next/server';
-import { z } from 'zod';
-import { saveComunicacion } from '@/lib/kv';
+import { NextRequest, NextResponse } from 'next/server';
+import { sql } from '@vercel/postgres';
 
-const PayloadSchema = z.object({
-  codigoEstablecimiento: z.string().min(1).max(10),
-  comunicaciones: z.array(z.object({
-    contrato: z.object({
-      referencia: z.string().min(1),
-      fechaContrato: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-      fechaEntrada: z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/),
-      fechaSalida: z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/),
-      numPersonas: z.number().int().positive(),
-      numHabitaciones: z.number().int().positive().optional(),
-      internet: z.boolean().optional(),
-      pago: z.object({
-        tipoPago: z.string().min(1), // Aceptamos cualquier string para mayor flexibilidad
-        fechaPago: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-        medioPago: z.string().optional(),
-        titular: z.string().optional(),
-        caducidadTarjeta: z.string().optional(),
-      })
-    }),
-    personas: z.array(z.object({
-      rol: z.string().optional(),
-      nombre: z.string().min(1),
-      apellido1: z.string().min(1),
-      apellido2: z.string().optional(),
-      tipoDocumento: z.string().optional(),
-      numeroDocumento: z.string().optional(),
-      soporteDocumento: z.string().optional(),
-      fechaNacimiento: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-      nacionalidad: z.string().optional(),
-      sexo: z.string().optional(),
-      contacto: z.object({
-        telefono: z.string().optional(),
-        telefono2: z.string().optional(),
-        correo: z.string().email().optional(),
-      }).optional(),
-      direccion: z.object({
-        direccion: z.string().min(1),
-        direccionComplementaria: z.string().optional(),
-        codigoPostal: z.string().min(1),
-        pais: z.string().min(1),
-        codigoMunicipio: z.string().min(1),
-        nombreMunicipio: z.string().optional(),
-      }),
-    })).min(1),
-  })).min(1),
-});
-
-export async function POST(req: NextRequest) {
+export async function GET(req: NextRequest) {
   try {
-    const json = await req.json().catch(() => undefined);
+    console.log('📋 Obteniendo comunicaciones MIR...');
     
-    if (!json) {
-      return new Response(JSON.stringify({ 
-        error: 'Datos JSON inválidos o vacíos' 
-      }), { 
-        status: 400, 
-        headers: { 'Content-Type': 'application/json' } 
-      });
-    }
+    // Obtener comunicaciones de la base de datos
+    const result = await sql`
+      SELECT 
+        id,
+        referencia,
+        tipo,
+        estado,
+        lote,
+        resultado,
+        error,
+        xml_enviado,
+        xml_respuesta,
+        created_at,
+        updated_at
+      FROM mir_comunicaciones 
+      ORDER BY created_at DESC
+      LIMIT 100
+    `;
 
-    console.log('📨 Datos recibidos del formulario:', JSON.stringify(json, null, 2));
+    console.log(`📊 Encontradas ${result.rows.length} comunicaciones`);
 
-    const parsed = PayloadSchema.safeParse(json);
-    
-    if (!parsed.success) {
-      console.error('❌ Error de validación:', parsed.error.flatten());
-      return new Response(JSON.stringify({ 
-        error: 'Datos del formulario inválidos',
-        details: parsed.error.flatten() 
-      }), { 
-        status: 400, 
-        headers: { 'Content-Type': 'application/json' } 
-      });
-    }
-
-    // Extraer la primera comunicación (el formulario solo envía una)
-    const comunicacion = parsed.data.comunicaciones[0];
-    
-    // Crear el formato que espera saveComunicacion
-    const dataToSave = {
-      codigoEstablecimiento: parsed.data.codigoEstablecimiento,
-      contrato: comunicacion.contrato,
-      personas: comunicacion.personas,
-    };
-
-    console.log('💾 Guardando datos:', JSON.stringify(dataToSave, null, 2));
-
-    const today = new Date().toISOString().slice(0, 10);
-    await saveComunicacion(today, dataToSave);
-
-    console.log('✅ Datos guardados exitosamente para la fecha:', today);
-
-    return new Response(JSON.stringify({ 
-      success: true, 
-      message: 'Registro guardado correctamente',
-      date: today 
-    }), { 
-      status: 200, 
-      headers: { 'Content-Type': 'application/json' } 
+    return NextResponse.json({
+      success: true,
+      message: 'Comunicaciones obtenidas correctamente',
+      comunicaciones: result.rows,
+      total: result.rows.length
     });
 
   } catch (error) {
-    console.error('💥 Error interno del servidor:', error);
+    console.error('❌ Error obteniendo comunicaciones:', error);
     
-    return new Response(JSON.stringify({ 
-      error: 'Error interno del servidor',
-      message: error instanceof Error ? error.message : 'Error desconocido'
-    }), { 
-      status: 500, 
-      headers: { 'Content-Type': 'application/json' } 
+    return NextResponse.json({
+      success: false,
+      error: 'Error obteniendo comunicaciones',
+      message: error instanceof Error ? error.message : 'Error desconocido',
+      comunicaciones: [],
+      total: 0
+    }, {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
     });
   }
 }
 
+export async function POST(req: NextRequest) {
+  try {
+    console.log('📋 Obteniendo comunicaciones MIR con filtros...');
+    
+    const json = await req.json().catch(() => ({}));
+    const { estado, tipo, limit = 100, offset = 0 } = json;
+    
+    // Construir consulta con filtros opcionales
+    let query = `
+      SELECT 
+        id,
+        referencia,
+        tipo,
+        estado,
+        lote,
+        resultado,
+        error,
+        xml_enviado,
+        xml_respuesta,
+        created_at,
+        updated_at
+      FROM mir_comunicaciones 
+      WHERE 1=1
+    `;
+    
+    const params: any[] = [];
+    let paramIndex = 1;
+    
+    if (estado) {
+      query += ` AND estado = $${paramIndex}`;
+      params.push(estado);
+      paramIndex++;
+    }
+    
+    if (tipo) {
+      query += ` AND tipo = $${paramIndex}`;
+      params.push(tipo);
+      paramIndex++;
+    }
+    
+    query += ` ORDER BY created_at DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
+    params.push(limit, offset);
+    
+    const result = await sql.query(query, params);
 
+    console.log(`📊 Encontradas ${result.rows.length} comunicaciones con filtros`);
+
+    return NextResponse.json({
+      success: true,
+      message: 'Comunicaciones obtenidas correctamente',
+      comunicaciones: result.rows,
+      total: result.rows.length,
+      filtros: { estado, tipo, limit, offset }
+    });
+
+  } catch (error) {
+    console.error('❌ Error obteniendo comunicaciones con filtros:', error);
+    
+    return NextResponse.json({
+      success: false,
+      error: 'Error obteniendo comunicaciones',
+      message: error instanceof Error ? error.message : 'Error desconocido',
+      comunicaciones: [],
+      total: 0
+    }, {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+}
