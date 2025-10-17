@@ -44,14 +44,47 @@ export async function POST(req: NextRequest) {
       throw new Error('No se encontraron datos de personas en el registro');
     }
 
+    // Formatear fechas correctamente según normas MIR
+    const formatearFechaEntrada = (fecha: string): string => {
+      try {
+        const fechaObj = new Date(fecha);
+        if (isNaN(fechaObj.getTime())) {
+          throw new Error('Fecha inválida');
+        }
+        return fechaObj.toISOString().replace(/\.\d{3}Z$/, ''); // YYYY-MM-DDTHH:mm:ss
+      } catch (error) {
+        console.error('Error formateando fecha entrada:', error);
+        return new Date().toISOString().replace(/\.\d{3}Z$/, '');
+      }
+    };
+
+    const formatearFechaSalida = (fecha: string): string => {
+      try {
+        const fechaObj = new Date(fecha);
+        if (isNaN(fechaObj.getTime())) {
+          throw new Error('Fecha inválida');
+        }
+        return fechaObj.toISOString().replace(/\.\d{3}Z$/, ''); // YYYY-MM-DDTHH:mm:ss
+      } catch (error) {
+        console.error('Error formateando fecha salida:', error);
+        return new Date(Date.now() + 24*60*60*1000).toISOString().replace(/\.\d{3}Z$/, '');
+      }
+    };
+
+    console.log('🔍 Debug fechas recibidas:');
+    console.log('fechaEntrada original:', json.fechaEntrada);
+    console.log('fechaSalida original:', json.fechaSalida);
+    console.log('fechaEntrada formateada:', formatearFechaEntrada(json.fechaEntrada));
+    console.log('fechaSalida formateada:', formatearFechaSalida(json.fechaSalida));
+
     // Preparar datos para el MIR según esquemas oficiales
     const datosMIR: PvSolicitud = {
       codigoEstablecimiento: process.env.MIR_CODIGO_ARRENDADOR || "0000256653",
       contrato: {
         referencia: referencia,
         fechaContrato: new Date().toISOString().split('T')[0], // xsd:date (YYYY-MM-DD)
-        fechaEntrada: json.fechaEntrada || new Date().toISOString().replace(/\.\d{3}Z$/, ''), // xsd:dateTime (YYYY-MM-DDTHH:mm:ss)
-        fechaSalida: json.fechaSalida || new Date(Date.now() + 24*60*60*1000).toISOString().replace(/\.\d{3}Z$/, ''), // xsd:dateTime (YYYY-MM-DDTHH:mm:ss)
+        fechaEntrada: formatearFechaEntrada(json.fechaEntrada), // xsd:dateTime (YYYY-MM-DDTHH:mm:ss)
+        fechaSalida: formatearFechaSalida(json.fechaSalida), // xsd:dateTime (YYYY-MM-DDTHH:mm:ss)
         numPersonas: personas.length,
         numHabitaciones: 1,
         internet: false,
