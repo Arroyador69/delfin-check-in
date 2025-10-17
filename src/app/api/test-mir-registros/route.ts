@@ -124,8 +124,8 @@ export async function POST(req: NextRequest) {
         contrato: {
           referencia: `REENVIO-${row.id}-${Date.now()}`,
           fechaContrato: new Date().toISOString().split('T')[0], // YYYY-MM-DD
-          fechaEntrada: (row.fecha_entrada || new Date().toISOString()).replace('Z', ''), // YYYY-MM-DDTHH:mm:ss
-          fechaSalida: (row.fecha_salida || new Date(Date.now() + 24*60*60*1000).toISOString()).replace('Z', ''), // YYYY-MM-DDTHH:mm:ss
+          fechaEntrada: (row.fecha_entrada ? new Date(row.fecha_entrada).toISOString() : new Date().toISOString()).replace('Z', ''), // YYYY-MM-DDTHH:mm:ss
+          fechaSalida: (row.fecha_salida ? new Date(row.fecha_salida).toISOString() : new Date(Date.now() + 24*60*60*1000).toISOString()).replace('Z', ''), // YYYY-MM-DDTHH:mm:ss
           numPersonas: 1,
           pago: {
             tipoPago: "EFECT"
