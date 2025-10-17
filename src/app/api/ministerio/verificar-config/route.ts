@@ -2,96 +2,81 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(req: NextRequest) {
   try {
-    console.log('🔍 Verificando configuración MIR para producción...');
-    
-    // Verificar variables de entorno del MIR
+    console.log('🔍 Verificando configuración MIR...');
+
+    // Verificar variables de entorno
     const config = {
-      MIR_BASE_URL: process.env.MIR_BASE_URL || 'NO CONFIGURADO',
-      MIR_HTTP_USER: process.env.MIR_HTTP_USER ? '***CONFIGURADO***' : 'NO CONFIGURADO',
-      MIR_HTTP_PASS: process.env.MIR_HTTP_PASS ? '***CONFIGURADO***' : 'NO CONFIGURADO',
-      MIR_CODIGO_ARRENDADOR: process.env.MIR_CODIGO_ARRENDADOR || 'NO CONFIGURADO',
-      MIR_APLICACION: process.env.MIR_APLICACION || 'Delfin_Check_in',
-      MIR_SIMULACION: process.env.MIR_SIMULACION || 'false'
+      usuario: process.env.MIR_HTTP_USER || '',
+      contraseña: process.env.MIR_HTTP_PASS || '',
+      codigoArrendador: process.env.MIR_CODIGO_ARRENDADOR || '',
+      baseUrl: process.env.MIR_BASE_URL || 'https://hospedajes.ses.mir.es/hospedajes-web/ws/v1/comunicacion',
+      aplicacion: process.env.MIR_APLICACION || 'Delfin_Check_in',
+      simulacion: process.env.MIR_SIMULACION === 'true',
+      activo: true
     };
-    
+
     // Verificar si las credenciales están configuradas
-    const credencialesConfiguradas = !!(
-      process.env.MIR_HTTP_USER && 
-      process.env.MIR_HTTP_PASS && 
-      process.env.MIR_CODIGO_ARRENDADOR
+    const hasRequiredVars = !!(
+      config.usuario &&
+      config.contraseña &&
+      config.codigoArrendador
     );
-    
-    // Verificar URL base
-    const urlValida = config.MIR_BASE_URL.includes('mir.es');
-    const esProduccion = config.MIR_BASE_URL.includes('hospedajes.ses.mir.es');
-    const esPruebas = config.MIR_BASE_URL.includes('hospedajes.pre-ses.mir.es');
-    
-    // Verificar si está en modo simulación
-    const modoSimulacion = config.MIR_SIMULACION === 'true';
-    
-    // Análisis de la configuración
-    const analisis = {
-      configuracionCompleta: credencialesConfiguradas && urlValida,
-      credencialesConfiguradas,
-      urlValida,
-      esProduccion,
-      esPruebas,
-      modoSimulacion,
-      entorno: esProduccion ? 'PRODUCCIÓN' : esPruebas ? 'PRUEBAS' : 'NO CONFIGURADO',
-      listoParaProduccion: esProduccion && !modoSimulacion && credencialesConfiguradas,
-      problemas: []
+
+    const status = {
+      configurado: hasRequiredVars,
+      credenciales: {
+        usuario: !!config.usuario,
+        contraseña: !!config.contraseña,
+        codigoArrendador: !!config.codigoArrendador
+      },
+      configuracion: {
+        baseUrl: config.baseUrl,
+        aplicacion: config.aplicacion,
+        simulacion: config.simulacion,
+        activo: config.activo
+      }
     };
-    
-    if (!credencialesConfiguradas) {
-      analisis.problemas.push('Faltan credenciales del MIR (MIR_HTTP_USER, MIR_HTTP_PASS, MIR_CODIGO_ARRENDADOR)');
-    }
-    
-    if (!urlValida) {
-      analisis.problemas.push('URL del MIR no válida o no configurada');
-    }
-    
-    if (!esProduccion && !esPruebas) {
-      analisis.problemas.push('URL no es ni de producción ni de pruebas del MIR');
-    }
-    
-    if (modoSimulacion) {
-      analisis.problemas.push('Sistema en modo simulación - no se envían datos reales al MIR');
-    }
-    
+
+    console.log('📋 Estado de configuración MIR:', status);
+
     return NextResponse.json({
       success: true,
-      timestamp: new Date().toISOString(),
-      configuracion: config,
-      analisis,
-      estado: analisis.listoParaProduccion ? 'LISTO PARA PRODUCCIÓN' : 'REQUIERE CONFIGURACIÓN',
-      recomendaciones: [
-        analisis.listoParaProduccion ? 
-          '✅ Sistema listo para envíos reales al MIR' :
-          '⚠️ Configurar credenciales y cambiar a URL de producción',
-        modoSimulacion ? 
-          '⚠️ Sistema en modo simulación - no se envían datos reales' :
-          '✅ Sistema configurado para envíos reales',
-        !analisis.credencialesConfiguradas ? 
-          '⚠️ Faltan credenciales del MIR' :
-          '✅ Credenciales configuradas',
-        !esProduccion ? 
-          '⚠️ URL no es de producción del MIR' :
-          '✅ URL de producción configurada'
-      ]
+      message: hasRequiredVars ? 
+        'Configuración MIR completa' : 
+        'Configuración MIR incompleta - faltan credenciales',
+      config: {
+        usuario: config.usuario,
+        contraseña: config.contraseña ? '***' : '', // No mostrar la contraseña real
+        codigoArrendador: config.codigoArrendador,
+        baseUrl: config.baseUrl,
+        aplicacion: config.aplicacion,
+        simulacion: config.simulacion,
+        activo: config.activo
+      },
+      status,
+      interpretacion: {
+        configurado: hasRequiredVars,
+        mensaje: hasRequiredVars ? 
+          '✅ Configuración MIR completa y lista para usar' : 
+          '❌ Configuración MIR incompleta - configura las credenciales en las variables de entorno',
+        credencialesFaltantes: [
+          !config.usuario && 'Usuario MIR (MIR_HTTP_USER)',
+          !config.contraseña && 'Contraseña MIR (MIR_HTTP_PASS)',
+          !config.codigoArrendador && 'Código Arrendador (MIR_CODIGO_ARRENDADOR)'
+        ].filter(Boolean)
+      }
     });
-    
+
   } catch (error) {
     console.error('❌ Error verificando configuración MIR:', error);
     
     return NextResponse.json({
       success: false,
-      error: 'Error verificando configuración',
-      message: error instanceof Error ? error.message : 'Error desconocido',
-      timestamp: new Date().toISOString()
-    }, { status: 500 });
+      error: 'Error verificando configuración MIR',
+      message: error instanceof Error ? error.message : 'Error desconocido'
+    }, {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
 }
-
-
-
-

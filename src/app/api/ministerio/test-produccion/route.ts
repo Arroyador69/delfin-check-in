@@ -1,131 +1,119 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { MinisterioClientVercel } from '@/lib/ministerio-client-vercel';
+import { MinisterioClientOfficial } from '@/lib/ministerio-client-official';
 
 export async function POST(req: NextRequest) {
   try {
-    console.log('🚀 Test conexión MIR PRODUCCIÓN iniciado...');
+    console.log('🧪 Probando conexión MIR...');
     
-    const json = await req.json().catch(() => ({}));
+    const json = await req.json().catch(() => undefined);
     
-    // Configuración específica para PRODUCCIÓN
-    const configProduccion = {
-      baseUrl: 'https://hospedajes.ses.mir.es/hospedajes-web/ws/v1/comunicacion',
-      username: json.username || process.env.MIR_HTTP_USER || '',
-      password: json.password || process.env.MIR_HTTP_PASS || '',
-      codigoArrendador: json.codigoArrendador || process.env.MIR_CODIGO_ARRENDADOR || '',
-      aplicacion: 'Delfin_Check_in',
-      simulacion: false // SIEMPRE FALSE para producción
-    };
+    if (!json) {
+      console.error('❌ Datos JSON inválidos o vacíos');
+      return NextResponse.json({ 
+        error: 'Datos JSON inválidos o vacíos' 
+      }, { 
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
 
-    console.log('📋 Configuración PRODUCCIÓN:', {
-      baseUrl: configProduccion.baseUrl,
-      username: configProduccion.username,
-      codigoArrendador: configProduccion.codigoArrendador,
-      aplicacion: configProduccion.aplicacion,
-      simulacion: configProduccion.simulacion
-    });
+    const {
+      usuario,
+      contraseña,
+      codigoArrendador,
+      baseUrl = 'https://hospedajes.ses.mir.es/hospedajes-web/ws/v1/comunicacion',
+      aplicacion = 'Delfin_Check_in',
+      simulacion = false
+    } = json;
 
-    // Verificar que tenemos las credenciales
-    if (!configProduccion.username || !configProduccion.password || !configProduccion.codigoArrendador) {
+    // Validaciones
+    if (!usuario || !contraseña || !codigoArrendador) {
       return NextResponse.json({
         success: false,
         error: 'Credenciales incompletas',
-        message: 'Faltan username, password o codigoArrendador',
-        configuracion: {
-          username: configProduccion.username ? '***CONFIGURADO***' : 'NO CONFIGURADO',
-          password: configProduccion.password ? '***CONFIGURADO***' : 'NO CONFIGURADO',
-          codigoArrendador: configProduccion.codigoArrendador || 'NO CONFIGURADO'
-        }
+        message: 'Usuario, contraseña y código de arrendador son obligatorios'
       }, { status: 400 });
     }
 
-    // Crear cliente MIR para producción
-    const client = new MinisterioClientVercel(configProduccion);
-    
-    // Datos de prueba mínimos pero válidos
-    const testData = {
-      codigoEstablecimiento: configProduccion.codigoArrendador, // Usar el código de arrendador como código de establecimiento
-      comunicaciones: [{
-        contrato: {
-          referencia: `TEST-PROD-${Date.now()}`,
-          fechaContrato: new Date().toISOString().split('T')[0],
-          fechaEntrada: new Date().toISOString(),
-          fechaSalida: new Date(Date.now() + 24*60*60*1000).toISOString(),
-          numPersonas: 1,
-          numHabitaciones: 1,
-          internet: false,
-          pago: {
-            tipoPago: "EFECT",
-            fechaPago: new Date().toISOString().split('T')[0]
-          }
-        },
-        personas: [{
-          rol: "VI",
-          nombre: "Test",
-          apellido1: "Produccion",
-          apellido2: "MIR",
-          tipoDocumento: "NIF",
-          numeroDocumento: "12345678Z",
-          fechaNacimiento: "1985-01-01",
-          nacionalidad: "ESP",
-          sexo: "M",
-          telefono: "600000000",
-          correo: "test@delfincheckin.com",
-          direccion: {
-            direccion: "Calle Test 123",
-            codigoPostal: "28001",
-            pais: "ESP",
-            codigoMunicipio: "28079"
-          }
-        }]
-      }]
+    console.log('📋 Probando conexión con credenciales:', {
+      usuario,
+      codigoArrendador,
+      baseUrl,
+      simulacion
+    });
+
+    // Configuración del MIR
+    const config = {
+      baseUrl,
+      username: usuario,
+      password: contraseña,
+      codigoArrendador,
+      aplicacion,
+      simulacion
     };
+
+    // Crear cliente MIR oficial
+    const client = new MinisterioClientOfficial(config);
     
-    console.log('📤 Enviando test a MIR PRODUCCIÓN...');
+    // Probar conexión consultando un catálogo
+    const resultado = await client.consultaCatalogo({ catalogo: 'TIPOS_DOCUMENTO' });
     
-    // Intentar envío al MIR
-    const resultado = await client.altaPV(testData);
-    
-    console.log('✅ Resultado MIR PRODUCCIÓN:', resultado);
-    
+    console.log('✅ Resultado de la prueba de conexión:', resultado);
+
     return NextResponse.json({
       success: true,
-      message: 'Test conexión MIR PRODUCCIÓN completado',
-      configuracion: {
-        baseUrl: configProduccion.baseUrl,
-        username: configProduccion.username,
-        codigoArrendador: configProduccion.codigoArrendador,
-        aplicacion: configProduccion.aplicacion,
-        simulacion: configProduccion.simulacion
-      },
-      resultado: resultado,
-      referencia: testData.comunicaciones[0].contrato.referencia,
-      lote: resultado.lote || null,
-      estado: resultado.ok ? 'enviado' : 'error',
-      interpretacion: {
+      message: 'Prueba de conexión completada',
+      resultado: {
         exito: resultado.ok,
         codigo: resultado.codigo,
         descripcion: resultado.descripcion,
-        lote: resultado.lote ? `Lote asignado: ${resultado.lote}` : 'Sin lote asignado'
+        elementos: resultado.elementos?.length || 0
+      },
+      interpretacion: {
+        exito: resultado.ok,
+        mensaje: resultado.ok ? 
+          `✅ Conexión exitosa con el MIR. Catálogo consultado correctamente. Encontrados ${resultado.elementos?.length || 0} elementos` : 
+          `❌ Error en la conexión: ${resultado.descripcion}`,
+        codigo: resultado.codigo,
+        detalles: {
+          configuracion: {
+            baseUrl: config.baseUrl,
+            usuario: config.username,
+            codigoArrendador: config.codigoArrendador,
+            simulacion: config.simulacion
+          },
+          respuesta: {
+            codigo: resultado.codigo,
+            descripcion: resultado.descripcion,
+            elementosEncontrados: resultado.elementos?.length || 0
+          }
+        }
+      },
+      debug: {
+        configuracion: {
+          baseUrl: config.baseUrl,
+          usuario: config.username,
+          codigoArrendador: config.codigoArrendador,
+          simulacion: config.simulacion
+        },
+        respuesta: resultado
       }
-    }, {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' }
     });
-    
+
   } catch (error) {
-    console.error('❌ Error en test MIR PRODUCCIÓN:', error);
+    console.error('❌ Error en prueba de conexión MIR:', error);
     
     return NextResponse.json({
       success: false,
-      error: 'Error en test MIR PRODUCCIÓN',
+      error: 'Error en prueba de conexión MIR',
       message: error instanceof Error ? error.message : 'Error desconocido',
-      stack: error instanceof Error ? error.stack : undefined,
-      diagnostico: {
-        tipoError: error instanceof Error ? error.constructor.name : 'Unknown',
-        posibleCausa: error instanceof Error && error.message.includes('fetch') ? 
-          'Error de conexión - verificar credenciales o certificado SSL' : 
-          'Error interno del sistema'
+      interpretacion: {
+        exito: false,
+        mensaje: `❌ Error de conexión: ${error instanceof Error ? error.message : 'Error desconocido'}`,
+        detalles: {
+          error: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : undefined
+        }
       }
     }, {
       status: 500,
@@ -133,7 +121,3 @@ export async function POST(req: NextRequest) {
     });
   }
 }
-
-
-
-

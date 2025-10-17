@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import AdminLayout from '@/components/AdminLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -270,19 +271,31 @@ export default function MirComunicacionesPage() {
   };
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Gestión MIR - Comunicaciones</h1>
-          <p className="text-muted-foreground">
-            Panel de administración para gestionar comunicaciones con el Ministerio del Interior
-          </p>
-        </div>
-        <Button onClick={cargarComunicaciones} disabled={loading} variant="outline">
-          <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-          Actualizar
-        </Button>
-      </div>
+    <AdminLayout>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+        {/* Header */}
+        <header className="bg-white shadow-sm border-b">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center py-6">
+              <div className="flex items-center">
+                <div className="text-3xl mr-3">🏛️</div>
+                <div>
+                  <h1 className="text-2xl font-bold text-gray-900">Sistema MIR</h1>
+                  <p className="text-sm text-gray-600">Gestión de comunicaciones con el Ministerio del Interior</p>
+                  <p className="text-xs text-gray-500">Envío, consulta y anulación de comunicaciones oficiales</p>
+                </div>
+              </div>
+              <div className="flex items-center space-x-4">
+                <Button onClick={cargarComunicaciones} disabled={loading} variant="outline">
+                  <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                  Actualizar
+                </Button>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
 
       {error && (
         <Alert variant="destructive">
@@ -547,6 +560,8 @@ export default function MirComunicacionesPage() {
           </Card>
         </TabsContent>
       </Tabs>
-    </div>
+        </div>
+      </div>
+    </AdminLayout>
   );
 }
