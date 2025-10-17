@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { sql } from '@vercel/postgres';
 
 export async function POST(req: NextRequest) {
   try {
@@ -50,8 +51,48 @@ export async function POST(req: NextRequest) {
       simulacion
     });
 
-    // En un entorno real, aquí se guardarían las credenciales en variables de entorno
-    // o en una base de datos segura. Por ahora, solo validamos y confirmamos.
+    // Obtener tenant_id del header
+    const tenantId = req.headers.get('x-tenant-id') || 'default';
+
+    // Guardar en la base de datos
+    try {
+      // Primero intentar actualizar
+      const updateResult = await sql`
+        UPDATE mir_configuraciones 
+        SET 
+          usuario = ${usuario},
+          contraseña = ${contraseña},
+          codigo_arrendador = ${codigoArrendador},
+          base_url = ${baseUrl},
+          aplicacion = ${aplicacion},
+          simulacion = ${simulacion},
+          activo = true,
+          updated_at = NOW()
+        WHERE tenant_id = ${tenantId}
+      `;
+
+      // Si no se actualizó ninguna fila, insertar nueva
+      if (updateResult.rowCount === 0) {
+        await sql`
+          INSERT INTO mir_configuraciones (
+            tenant_id, usuario, contraseña, codigo_arrendador, 
+            base_url, aplicacion, simulacion, activo, created_at, updated_at
+          ) VALUES (
+            ${tenantId}, ${usuario}, ${contraseña}, ${codigoArrendador},
+            ${baseUrl}, ${aplicacion}, ${simulacion}, true, NOW(), NOW()
+          )
+        `;
+      }
+
+      console.log('✅ Configuración MIR guardada en base de datos correctamente');
+    } catch (dbError) {
+      console.error('❌ Error guardando en base de datos:', dbError);
+      return NextResponse.json({
+        success: false,
+        error: 'Error guardando configuración',
+        message: 'No se pudo guardar la configuración en la base de datos'
+      }, { status: 500 });
+    }
     
     const configuracion = {
       usuario,
@@ -63,7 +104,7 @@ export async function POST(req: NextRequest) {
       activo: true
     };
 
-    console.log('✅ Configuración MIR validada correctamente');
+    console.log('✅ Configuración MIR validada y guardada correctamente');
 
     return NextResponse.json({
       success: true,

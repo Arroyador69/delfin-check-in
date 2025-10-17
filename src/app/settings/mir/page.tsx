@@ -220,6 +220,7 @@ export default function MirSettingsPage() {
                 placeholder="TU_CIF---WS"
                 value={config.usuario}
                 onChange={(e) => setConfig({...config, usuario: e.target.value})}
+                className="text-gray-900"
               />
               <p className="text-xs text-gray-600 font-medium">
                 Formato: CIF/NIF/NIE seguido de '---WS'
@@ -235,6 +236,7 @@ export default function MirSettingsPage() {
                   placeholder="Tu contraseña del MIR"
                   value={config.contraseña}
                   onChange={(e) => setConfig({...config, contraseña: e.target.value})}
+                  className="text-gray-900"
                 />
                 <Button
                   type="button"
@@ -260,6 +262,7 @@ export default function MirSettingsPage() {
               placeholder="0000256653"
               value={config.codigoArrendador}
               onChange={(e) => setConfig({...config, codigoArrendador: e.target.value})}
+              className="text-gray-900"
             />
             <p className="text-xs text-gray-600 font-medium">
               Código único asignado por el MIR a tu establecimiento
@@ -272,6 +275,7 @@ export default function MirSettingsPage() {
               id="baseUrl"
               value={config.baseUrl}
               onChange={(e) => setConfig({...config, baseUrl: e.target.value})}
+              className="text-gray-900"
             />
             <p className="text-xs text-gray-600 font-medium">
               URL oficial del servicio de comunicaciones MIR
@@ -284,6 +288,7 @@ export default function MirSettingsPage() {
               id="aplicacion"
               value={config.aplicacion}
               onChange={(e) => setConfig({...config, aplicacion: e.target.value})}
+              className="text-gray-900"
             />
           </div>
 
