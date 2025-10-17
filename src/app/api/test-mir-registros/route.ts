@@ -117,42 +117,35 @@ export async function POST(req: NextRequest) {
       simulacion: false
     };
     
-    // Preparar datos para el MIR
+    // Preparar datos para el MIR con formato correcto para alt:peticion
     const datosMIR = {
       codigoEstablecimiento: config.codigoArrendador,
       comunicaciones: [{
         contrato: {
           referencia: `REENVIO-${row.id}-${Date.now()}`,
-          fechaContrato: new Date().toISOString().split('T')[0],
-          fechaEntrada: row.fecha_entrada || new Date().toISOString(),
-          fechaSalida: row.fecha_salida || new Date(Date.now() + 24*60*60*1000).toISOString(),
+          fechaContrato: new Date().toISOString().split('T')[0], // YYYY-MM-DD
+          fechaEntrada: (row.fecha_entrada || new Date().toISOString()).replace('Z', ''), // YYYY-MM-DDTHH:mm:ss
+          fechaSalida: (row.fecha_salida || new Date(Date.now() + 24*60*60*1000).toISOString()).replace('Z', ''), // YYYY-MM-DDTHH:mm:ss
           numPersonas: 1,
-          numHabitaciones: 1,
-          internet: false,
           pago: {
-            tipoPago: "EFECT",
-            fechaPago: new Date().toISOString().split('T')[0]
+            tipoPago: "EFECT"
           }
         },
         personas: [{
-          rol: "VI",
-          nombre: data.nombre || "Viajero",
-          apellido1: data.apellido1 || "Apellido1",
-          apellido2: data.apellido2 || "",
+          rol: "VI", // Viajero
+          nombre: (data.nombre || "Viajero").trim().toUpperCase(),
+          apellido1: (data.apellido1 || "Apellido1").trim().toUpperCase(),
+          apellido2: (data.apellido2 || "Apellido2").trim().toUpperCase(), // Obligatorio para NIF
           tipoDocumento: data.tipoDocumento || "NIF",
-          numeroDocumento: data.numeroDocumento || "12345678Z",
-          soporteDocumento: data.soporteDocumento || "C",
-          fechaNacimiento: data.fechaNacimiento || "1985-01-01",
-          nacionalidad: data.nacionalidad || "ESP",
-          sexo: data.sexo || "M",
-          telefono: data.telefono || "600000000",
-          correo: data.email || "viajero@example.com",
+          numeroDocumento: (data.numeroDocumento || "12345678Z").trim().toUpperCase(),
+          fechaNacimiento: data.fechaNacimiento || "1985-01-01", // YYYY-MM-DD
           direccion: {
-            direccion: data.direccion || "Calle Ejemplo 123",
-            codigoPostal: data.codigoPostal || "28001",
-            pais: data.pais || "ESP",
-            codigoMunicipio: data.codigoMunicipio || "28079"
-          }
+            direccion: (data.direccion || "Calle Ejemplo 123").trim(),
+            codigoPostal: (data.codigoPostal || "28001").trim(),
+            pais: (data.pais || "ESP").trim().toUpperCase(), // ISO3
+            codigoMunicipio: data.codigoMunicipio || "28079" // INE si país=ESP
+          },
+          correo: data.email || "viajero@example.com" // Al menos uno: teléfono, teléfono2 o correo
         }]
       }]
     };
@@ -163,56 +156,16 @@ export async function POST(req: NextRequest) {
       nombre: data.nombre
     });
     
-    // Importar y usar el cliente MIR
-    const { MinisterioClientVercel } = await import('@/lib/ministerio-client-vercel');
-    const client = new MinisterioClientVercel(config);
+    // Importar y usar el cliente MIR con el generador PV correcto
+    const { MinisterioClientFixed } = await import('@/lib/ministerio-client-fixed');
+    const { buildAltaPVXml } = await import('@/lib/mir-xml-pv');
+    const { getMinisterioConfigFromEnv } = await import('@/lib/ministerio-client-fixed');
     
-    // Generar XML
-    const { create } = await import('xmlbuilder2');
+    const mirConfig = getMinisterioConfigFromEnv();
+    const client = new MinisterioClientFixed(mirConfig);
     
-    const root = {
-      solicitud: {
-        codigoEstablecimiento: datosMIR.codigoEstablecimiento,
-        comunicacion: datosMIR.comunicaciones.map((c) => ({
-          contrato: {
-            referencia: c.contrato.referencia,
-            fechaContrato: c.contrato.fechaContrato,
-            fechaEntrada: c.contrato.fechaEntrada,
-            fechaSalida: c.contrato.fechaSalida,
-            numPersonas: String(c.contrato.numPersonas),
-            numHabitaciones: String(c.contrato.numHabitaciones),
-            internet: c.contrato.internet ? 'true' : 'false',
-            pago: {
-              tipoPago: c.contrato.pago.tipoPago,
-              fechaPago: c.contrato.pago.fechaPago
-            }
-          },
-          persona: c.personas.map((p) => ({
-            rol: p.rol,
-            nombre: p.nombre,
-            apellido1: p.apellido1,
-            apellido2: p.apellido2,
-            tipoDocumento: p.tipoDocumento,
-            numeroDocumento: p.numeroDocumento,
-            soporteDocumento: p.soporteDocumento,
-            fechaNacimiento: p.fechaNacimiento,
-            nacionalidad: p.nacionalidad,
-            sexo: p.sexo,
-            telefono: p.telefono,
-            correo: p.correo,
-            direccion: {
-              direccion: p.direccion.direccion,
-              codigoPostal: p.direccion.codigoPostal,
-              pais: p.direccion.pais,
-              codigoMunicipio: p.direccion.codigoMunicipio
-            }
-          }))
-        }))
-      }
-    };
-    
-    const doc = create({ version: '1.0', encoding: 'UTF-8' }).ele(root);
-    const xmlContent = doc.end({ prettyPrint: false });
+    // Generar XML usando el generador PV correcto (alt:peticion)
+    const xmlContent = buildAltaPVXml(datosMIR);
     
     // Enviar al MIR
     const resultado = await client.altaPV({ xmlAlta: xmlContent });
@@ -265,5 +218,7 @@ export async function POST(req: NextRequest) {
     });
   }
 }
+
+
 
 
