@@ -80,15 +80,15 @@ function buildSoapEnvelopeComunicacionA(cfg: MinisterioConfig, solicitudZipB64: 
 function buildSoapEnvelopeComunicacionAlt(cfg: MinisterioConfig, solicitudZipB64: string): string {
   const ns = cfg.soapNamespace || 'http://www.soap.servicios.hospedajes.mir.es/comunicacion';
   const cabecera = `
-    <com:cabecera>
-      <com:codigoArrendador>${escapeXml(cfg.codigoArrendador)}</com:codigoArrendador>
-      <com:aplicacion>${escapeXml(cfg.aplicacion).slice(0, 50)}</com:aplicacion>
-      <com:tipoOperacion>A</com:tipoOperacion>
-      <com:tipoComunicacion>PV</com:tipoComunicacion>
-    </com:cabecera>`;
+    <cabecera>
+      <codigoArrendador>${escapeXml(cfg.codigoArrendador)}</codigoArrendador>
+      <aplicacion>${escapeXml(cfg.aplicacion).slice(0, 50)}</aplicacion>
+      <tipoOperacion>A</tipoOperacion>
+      <tipoComunicacion>PV</tipoComunicacion>
+    </cabecera>`;
   const solicitud = `
-    <com:solicitud>${solicitudZipB64}</com:solicitud>`;
-  const body = `<com:comunicacionRequest xmlns:com="${ns}">${cabecera}${solicitud}</com:comunicacionRequest>`;
+    <solicitud>${solicitudZipB64}</solicitud>`;
+  const body = `<com:comunicacionRequest xmlns:com="${ns}"><peticion>${cabecera}${solicitud}</peticion></com:comunicacionRequest>`;
   return wrapSoapEnvelope(body);
 }
 
