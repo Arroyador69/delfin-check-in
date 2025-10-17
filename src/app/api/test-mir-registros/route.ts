@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
 import { MinisterioClientFixed, getMinisterioConfigFromEnv } from '@/lib/ministerio-client-fixed';
-import { buildAltaPVXml } from '@/lib/mir-xml-pv';
+import { buildPvXml } from '@/lib/mir-xml-pv';
 
 export async function GET(req: NextRequest) {
   try {
@@ -126,42 +126,38 @@ export async function POST(req: NextRequest) {
       simulacion: false
     };
     
-    // Preparar datos para el MIR con formato correcto para alt:peticion
+    // Preparar datos para el MIR con formato correcto para buildPvXml
     const datosMIR = {
       codigoEstablecimiento: config.codigoArrendador,
-      comunicaciones: [{
-        contrato: {
-          referencia: `REENVIO-${row.id}-${Date.now()}`,
-          fechaContrato: new Date().toISOString().split('T')[0], // YYYY-MM-DD
-          fechaEntrada: (row.fecha_entrada ? new Date(row.fecha_entrada).toISOString() : new Date().toISOString()).replace('Z', ''), // YYYY-MM-DDTHH:mm:ss
-          fechaSalida: (row.fecha_salida ? new Date(row.fecha_salida).toISOString() : new Date(Date.now() + 24*60*60*1000).toISOString()).replace('Z', ''), // YYYY-MM-DDTHH:mm:ss
-          numPersonas: 1,
-          pago: {
-            tipoPago: "EFECT"
-          }
+      contrato: {
+        referencia: `REENVIO-${row.id}-${Date.now()}`,
+        fechaContrato: new Date().toISOString().split('T')[0], // YYYY-MM-DD
+        fechaEntrada: (row.fecha_entrada ? new Date(row.fecha_entrada).toISOString() : new Date().toISOString()).replace('Z', ''), // YYYY-MM-DDTHH:mm:ss
+        fechaSalida: (row.fecha_salida ? new Date(row.fecha_salida).toISOString() : new Date(Date.now() + 24*60*60*1000).toISOString()).replace('Z', ''), // YYYY-MM-DDTHH:mm:ss
+        numPersonas: 1,
+        tipoPago: "EFECT"
+      },
+      personas: [{
+        nombre: (persona.nombre || "Viajero").trim().toUpperCase(),
+        apellido1: (persona.apellido1 || "Apellido1").trim().toUpperCase(),
+        apellido2: (persona.apellido2 || "Apellido2").trim().toUpperCase(), // Obligatorio para NIF
+        tipoDocumento: (persona.tipoDocumento || "NIF") as 'NIF' | 'NIE' | 'PAS',
+        numeroDocumento: (persona.numeroDocumento || "12345678Z").trim().toUpperCase(),
+        fechaNacimiento: persona.fechaNacimiento || "1985-01-01", // YYYY-MM-DD
+        direccion: {
+          direccion: (persona.direccion?.direccion || "Calle Ejemplo 123").trim(),
+          codigoPostal: (persona.direccion?.codigoPostal || "28001").trim(),
+          pais: (persona.direccion?.pais || "ESP").trim().toUpperCase(), // ISO3
+          codigoMunicipio: persona.direccion?.codigoMunicipio || "28079" // INE si país=ESP
         },
-        personas: [{
-          rol: "VI", // Viajero
-          nombre: (persona.nombre || "Viajero").trim().toUpperCase(),
-          apellido1: (persona.apellido1 || "Apellido1").trim().toUpperCase(),
-          apellido2: (persona.apellido2 || "Apellido2").trim().toUpperCase(), // Obligatorio para NIF
-          tipoDocumento: persona.tipoDocumento || "NIF",
-          numeroDocumento: (persona.numeroDocumento || "12345678Z").trim().toUpperCase(),
-          fechaNacimiento: persona.fechaNacimiento || "1985-01-01", // YYYY-MM-DD
-          direccion: {
-            direccion: (persona.direccion?.direccion || "Calle Ejemplo 123").trim(),
-            codigoPostal: (persona.direccion?.codigoPostal || "28001").trim(),
-            pais: (persona.direccion?.pais || "ESP").trim().toUpperCase(), // ISO3
-            codigoMunicipio: persona.direccion?.codigoMunicipio || "28079" // INE si país=ESP
-          },
-          correo: persona.correo || persona.contacto?.correo || "viajero@example.com" // Al menos uno: teléfono, teléfono2 o correo
-        }]
+        correo: persona.correo || persona.contacto?.correo || "viajero@example.com", // Al menos uno: teléfono, teléfono2 o correo
+        telefono: persona.telefono || persona.contacto?.telefono
       }]
     };
     
     console.log('📤 Reenviando registro al MIR:', {
       registroId,
-      referencia: datosMIR.comunicaciones[0].contrato.referencia,
+      referencia: datosMIR.contrato.referencia,
       nombre: persona.nombre
     });
     
@@ -170,7 +166,7 @@ export async function POST(req: NextRequest) {
     const client = new MinisterioClientFixed(mirConfig);
     
     // Generar XML usando el generador PV correcto (alt:peticion)
-    const xmlContent = buildAltaPVXml(datosMIR);
+    const xmlContent = buildPvXml(datosMIR);
     
     // Enviar al MIR
     const resultado = await client.altaPV({ xmlAlta: xmlContent });
@@ -197,7 +193,7 @@ export async function POST(req: NextRequest) {
       success: true,
       message: 'Registro reenviado al MIR',
       registroId,
-      referencia: datosMIR.comunicaciones[0].contrato.referencia,
+      referencia: datosMIR.contrato.referencia,
       resultado: resultado,
       lote: resultado.lote || null,
       estado: resultado.ok ? 'enviado' : 'error',
