@@ -7,15 +7,8 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(false);
   
   // Estados para configuración de habitaciones/apartamentos
-  const [roomsConfig, setRoomsConfig] = useState([
-    { id: 1, name: 'Habitación 1' },
-    { id: 2, name: 'Habitación 2' },
-    { id: 3, name: 'Habitación 3' },
-    { id: 4, name: 'Habitación 4' },
-    { id: 5, name: 'Habitación 5' },
-    { id: 6, name: 'Habitación 6' }
-  ]);
-
+  const [roomsConfig, setRoomsConfig] = useState<Array<{id: number, name: string}>>([]);
+  const [tenantLimits, setTenantLimits] = useState({ maxRooms: 6 });
   const [message, setMessage] = useState({ type: '', text: '' });
 
   const handleSaveSettings = async () => {
@@ -30,13 +23,26 @@ export default function SettingsPage() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const savedRoomsConfig = localStorage.getItem('rooms_config');
-        
-        if (savedRoomsConfig) {
-          setRoomsConfig(JSON.parse(savedRoomsConfig));
+        // Cargar límites del tenant
+        const limitsResponse = await fetch('/api/tenant/limits');
+        if (limitsResponse.ok) {
+          const limitsData = await limitsResponse.json();
+          if (limitsData.success) {
+            setTenantLimits(limitsData.tenant.limits);
+            setRoomsConfig(limitsData.currentRooms);
+          }
         }
       } catch (error) {
         console.error('Error cargando datos:', error);
+        // Fallback a configuración por defecto
+        setRoomsConfig([
+          { id: 1, name: 'Habitación 1' },
+          { id: 2, name: 'Habitación 2' },
+          { id: 3, name: 'Habitación 3' },
+          { id: 4, name: 'Habitación 4' },
+          { id: 5, name: 'Habitación 5' },
+          { id: 6, name: 'Habitación 6' }
+        ]);
       }
     };
     
@@ -98,33 +104,61 @@ export default function SettingsPage() {
         <div className="mt-4 flex space-x-3">
           <button
             onClick={() => {
-              const newId = Math.max(...roomsConfig.map(r => r.id), 0) + 1;
-              setRoomsConfig([...roomsConfig, { id: newId, name: `Habitación ${newId}` }]);
+              if (roomsConfig.length < tenantLimits.maxRooms) {
+                const newId = Math.max(...roomsConfig.map(r => r.id), 0) + 1;
+                setRoomsConfig([...roomsConfig, { id: newId, name: `Habitación ${newId}` }]);
+              } else {
+                setMessage({ type: 'error', text: `Has alcanzado el límite máximo de ${tenantLimits.maxRooms} habitaciones según tu plan` });
+                setTimeout(() => setMessage({ type: '', text: '' }), 5000);
+              }
             }}
-            className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 flex items-center space-x-2"
+            disabled={roomsConfig.length >= tenantLimits.maxRooms}
+            className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center space-x-2"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
-            <span>Añadir Habitación</span>
+            <span>Añadir</span>
           </button>
           <button
-            onClick={() => {
-              localStorage.setItem('rooms_config', JSON.stringify(roomsConfig));
-              setMessage({ type: 'success', text: 'Configuración de habitaciones guardada exitosamente' });
-              setTimeout(() => setMessage({ type: '', text: '' }), 3000);
+            onClick={async () => {
+              setLoading(true);
+              try {
+                const response = await fetch('/api/tenant/rooms', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ rooms: roomsConfig })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                  setMessage({ type: 'success', text: 'Configuración de habitaciones guardada exitosamente' });
+                } else {
+                  setMessage({ type: 'error', text: data.message || 'Error guardando configuración' });
+                }
+              } catch (error) {
+                setMessage({ type: 'error', text: 'Error de conexión' });
+              } finally {
+                setLoading(false);
+                setTimeout(() => setMessage({ type: '', text: '' }), 5000);
+              }
             }}
-            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 flex items-center space-x-2"
+            disabled={loading}
+            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center space-x-2"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
-            <span>Guardar Configuración</span>
+            <span>{loading ? 'Guardando...' : 'Guardar Configuración'}</span>
           </button>
         </div>
         <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-3">
           <p className="text-xs text-blue-700">
             💡 <strong>Nota:</strong> Los nombres que configures aquí aparecerán en todo el sistema: dashboard, creación de reservas, calendarios, etc.
+          </p>
+          <p className="text-xs text-blue-700 mt-1">
+            📊 <strong>Límite de tu plan:</strong> Puedes configurar hasta {tenantLimits.maxRooms} habitaciones/apartamentos.
           </p>
         </div>
       </div>
