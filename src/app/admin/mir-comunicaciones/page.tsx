@@ -65,6 +65,7 @@ export default function MirComunicacionesPage() {
   // Estados para catálogo
   const [catalogoConsulta, setCatalogoConsulta] = useState('');
   const [resultadosCatalogo, setResultadosCatalogo] = useState<Array<{codigo: string; descripcion: string}>>([]);
+  const [resultadoCatalogoCompleto, setResultadoCatalogoCompleto] = useState<any>(null);
 
   // Cargar comunicaciones al montar el componente
   useEffect(() => {
@@ -233,9 +234,11 @@ export default function MirComunicacionesPage() {
       
       if (data.success) {
         setResultadosCatalogo(data.catalogo.elementos || []);
+        setResultadoCatalogoCompleto(data);
         setSuccess(`✅ ${data.interpretacion.mensaje}`);
       } else {
         setError(`❌ ${data.message || 'Error en la consulta de catálogo'}`);
+        setResultadoCatalogoCompleto(null);
       }
     } catch (err) {
       setError('Error de conexión');
@@ -486,23 +489,73 @@ export default function MirComunicacionesPage() {
                 {loading ? 'Consultando...' : 'Consultar Catálogo'}
               </Button>
 
-              {resultadosCatalogo.length > 0 && (
-                <div className="space-y-2">
-                  <h4 className="font-medium">Resultados del Catálogo</h4>
-                  <div className="grid gap-2 max-h-96 overflow-y-auto">
-                    {resultadosCatalogo.map((elemento, index) => (
-                      <Card key={index} className="p-3">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <span className="font-medium">{elemento.codigo}</span>
-                            <p className="text-sm text-muted-foreground">{elemento.descripcion}</p>
-                          </div>
-                          <Badge variant="outline">{elemento.codigo}</Badge>
+              {/* Resultado completo del catálogo */}
+              {resultadoCatalogoCompleto && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-gray-900 font-bold text-lg">Resultado de la Consulta</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {/* Mensaje claro de éxito/error */}
+                    <div className={`p-4 rounded-lg border ${
+                      resultadoCatalogoCompleto.success 
+                        ? 'bg-green-50 border-green-200' 
+                        : 'bg-red-50 border-red-200'
+                    }`}>
+                      <div className="flex items-center space-x-2">
+                        {resultadoCatalogoCompleto.success ? (
+                          <CheckCircle className="h-5 w-5 text-green-600" />
+                        ) : (
+                          <XCircle className="h-5 w-5 text-red-600" />
+                        )}
+                        <div>
+                          <p className={`font-semibold ${
+                            resultadoCatalogoCompleto.success ? 'text-green-800' : 'text-red-800'
+                          }`}>
+                            {resultadoCatalogoCompleto.success ? '✅ Conexión Exitosa' : '❌ Error en la Conexión'}
+                          </p>
+                          <p className={`text-sm ${
+                            resultadoCatalogoCompleto.success ? 'text-green-700' : 'text-red-700'
+                          }`}>
+                            {resultadoCatalogoCompleto.interpretacion?.mensaje || resultadoCatalogoCompleto.message}
+                          </p>
                         </div>
-                      </Card>
-                    ))}
-                  </div>
-                </div>
+                      </div>
+                    </div>
+
+                    {/* Elementos del catálogo si los hay */}
+                    {resultadosCatalogo.length > 0 && (
+                      <div className="space-y-2">
+                        <h4 className="font-medium text-gray-900">Elementos del Catálogo ({resultadosCatalogo.length})</h4>
+                        <div className="grid gap-2 max-h-96 overflow-y-auto">
+                          {resultadosCatalogo.map((elemento, index) => (
+                            <Card key={index} className="p-3">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <span className="font-medium text-gray-900">{elemento.codigo}</span>
+                                  <p className="text-sm text-gray-600">{elemento.descripcion}</p>
+                                </div>
+                                <Badge variant="outline">{elemento.codigo}</Badge>
+                              </div>
+                            </Card>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* JSON técnico expandible */}
+                    <details className="group">
+                      <summary className="cursor-pointer text-sm font-medium text-gray-700 hover:text-gray-900">
+                        📋 Ver detalles técnicos (JSON)
+                      </summary>
+                      <div className="mt-2 p-4 bg-gray-50 rounded-lg">
+                        <pre className="text-xs text-gray-900 font-mono overflow-auto max-h-96">
+                          {JSON.stringify(resultadoCatalogoCompleto, null, 2)}
+                        </pre>
+                      </div>
+                    </details>
+                  </CardContent>
+                </Card>
               )}
             </CardContent>
           </Card>
