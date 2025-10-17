@@ -3,16 +3,13 @@ import { sql } from '@vercel/postgres';
 export interface MirComunicacion {
   id?: number;
   referencia: string;
-  timestamp: string;
-  datos: any;
-  resultado?: any;
-  estado: 'pendiente' | 'enviado' | 'confirmado' | 'error';
+  tipo: 'PV' | 'RH' | 'AV' | 'RV';
+  estado: 'pendiente' | 'enviado' | 'confirmado' | 'error' | 'anulado';
   lote?: string;
+  resultado?: string;
   error?: string;
-  codigo_establecimiento: string;
-  fecha_entrada: string;
-  fecha_salida: string;
-  num_personas: number;
+  xml_enviado?: string;
+  xml_respuesta?: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -21,20 +18,16 @@ export async function insertMirComunicacion(comunicacion: Omit<MirComunicacion, 
   try {
     const result = await sql`
       INSERT INTO mir_comunicaciones (
-        referencia, timestamp, datos, resultado, estado, lote, error,
-        codigo_establecimiento, fecha_entrada, fecha_salida, num_personas
+        referencia, tipo, estado, lote, resultado, error, xml_enviado, xml_respuesta
       ) VALUES (
         ${comunicacion.referencia},
-        ${comunicacion.timestamp},
-        ${JSON.stringify(comunicacion.datos)},
-        ${comunicacion.resultado ? JSON.stringify(comunicacion.resultado) : null},
+        ${comunicacion.tipo},
         ${comunicacion.estado},
         ${comunicacion.lote || null},
+        ${comunicacion.resultado || null},
         ${comunicacion.error || null},
-        ${comunicacion.codigo_establecimiento},
-        ${comunicacion.fecha_entrada},
-        ${comunicacion.fecha_salida},
-        ${comunicacion.num_personas}
+        ${comunicacion.xml_enviado || null},
+        ${comunicacion.xml_respuesta || null}
       ) RETURNING id
     `;
     
@@ -47,7 +40,7 @@ export async function insertMirComunicacion(comunicacion: Omit<MirComunicacion, 
 
 export async function updateMirComunicacion(
   referencia: string, 
-  updates: Partial<Pick<MirComunicacion, 'resultado' | 'estado' | 'lote' | 'error'>>
+  updates: Partial<Pick<MirComunicacion, 'resultado' | 'estado' | 'lote' | 'error' | 'xml_respuesta'>>
 ): Promise<void> {
   try {
     const setClause = [];
@@ -56,7 +49,7 @@ export async function updateMirComunicacion(
 
     if (updates.resultado !== undefined) {
       setClause.push(`resultado = $${paramIndex}`);
-      values.push(JSON.stringify(updates.resultado));
+      values.push(updates.resultado);
       paramIndex++;
     }
     
@@ -75,6 +68,12 @@ export async function updateMirComunicacion(
     if (updates.error !== undefined) {
       setClause.push(`error = $${paramIndex}`);
       values.push(updates.error);
+      paramIndex++;
+    }
+
+    if (updates.xml_respuesta !== undefined) {
+      setClause.push(`xml_respuesta = $${paramIndex}`);
+      values.push(updates.xml_respuesta);
       paramIndex++;
     }
 
@@ -105,23 +104,20 @@ export async function getMirComunicaciones(estado?: string): Promise<MirComunica
       params.push(estado);
     }
     
-    query += ' ORDER BY timestamp DESC';
+    query += ' ORDER BY created_at DESC';
     
     const result = await sql.unsafe(query, params);
     
     return result.rows.map(row => ({
       id: row.id,
       referencia: row.referencia,
-      timestamp: row.timestamp,
-      datos: row.datos,
-      resultado: row.resultado,
+      tipo: row.tipo,
       estado: row.estado,
       lote: row.lote,
+      resultado: row.resultado,
       error: row.error,
-      codigo_establecimiento: row.codigo_establecimiento,
-      fecha_entrada: row.fecha_entrada,
-      fecha_salida: row.fecha_salida,
-      num_personas: row.num_personas,
+      xml_enviado: row.xml_enviado,
+      xml_respuesta: row.xml_respuesta,
       created_at: row.created_at,
       updated_at: row.updated_at
     }));
@@ -147,16 +143,13 @@ export async function getMirComunicacionByReferencia(referencia: string): Promis
     return {
       id: row.id,
       referencia: row.referencia,
-      timestamp: row.timestamp,
-      datos: row.datos,
-      resultado: row.resultado,
+      tipo: row.tipo,
       estado: row.estado,
       lote: row.lote,
+      resultado: row.resultado,
       error: row.error,
-      codigo_establecimiento: row.codigo_establecimiento,
-      fecha_entrada: row.fecha_entrada,
-      fecha_salida: row.fecha_salida,
-      num_personas: row.num_personas,
+      xml_enviado: row.xml_enviado,
+      xml_respuesta: row.xml_respuesta,
       created_at: row.created_at,
       updated_at: row.updated_at
     };
@@ -172,6 +165,7 @@ export async function getMirEstadisticas(): Promise<{
   enviados: number;
   confirmados: number;
   errores: number;
+  anulados: number;
 }> {
   try {
     const result = await sql`
@@ -180,7 +174,8 @@ export async function getMirEstadisticas(): Promise<{
         COUNT(*) FILTER (WHERE estado = 'pendiente') as pendientes,
         COUNT(*) FILTER (WHERE estado = 'enviado') as enviados,
         COUNT(*) FILTER (WHERE estado = 'confirmado') as confirmados,
-        COUNT(*) FILTER (WHERE estado = 'error') as errores
+        COUNT(*) FILTER (WHERE estado = 'error') as errores,
+        COUNT(*) FILTER (WHERE estado = 'anulado') as anulados
       FROM mir_comunicaciones
     `;
     
@@ -190,7 +185,8 @@ export async function getMirEstadisticas(): Promise<{
       pendientes: parseInt(row.pendientes),
       enviados: parseInt(row.enviados),
       confirmados: parseInt(row.confirmados),
-      errores: parseInt(row.errores)
+      errores: parseInt(row.errores),
+      anulados: parseInt(row.anulados)
     };
   } catch (error) {
     console.error('Error obteniendo estadísticas MIR:', error);
