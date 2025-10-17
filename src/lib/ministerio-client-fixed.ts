@@ -11,6 +11,8 @@ export interface MinisterioConfig {
   aplicacion: string;
   simulacion?: boolean;
   soapAction?: string; // opcional: algunos servidores requieren el literal del método
+  soapStyle?: 'mir' | 'com'; // 'mir' = actual, 'com' = comunicacionRequest con namespace externo
+  soapNamespace?: string; // namespace para estilo 'com'
 }
 
 export interface AltaPVParams {
@@ -74,6 +76,22 @@ function buildSoapEnvelopeComunicacionA(cfg: MinisterioConfig, solicitudZipB64: 
   return wrapSoapEnvelope(`<peticion xmlns="http://www.mir.es/hospedajes-web/ws/v1">${cabecera}${solicitud}</peticion>`);
 }
 
+// Variante alternativa segun WSDL externo: com:comunicacionRequest en namespace dedicado
+function buildSoapEnvelopeComunicacionAlt(cfg: MinisterioConfig, solicitudZipB64: string): string {
+  const ns = cfg.soapNamespace || 'http://www.soap.servicios.hospedajes.mir.es/comunicacion';
+  const cabecera = `
+    <com:cabecera>
+      <com:codigoArrendador>${escapeXml(cfg.codigoArrendador)}</com:codigoArrendador>
+      <com:aplicacion>${escapeXml(cfg.aplicacion).slice(0, 50)}</com:aplicacion>
+      <com:tipoOperacion>A</com:tipoOperacion>
+      <com:tipoComunicacion>PV</com:tipoComunicacion>
+    </com:cabecera>`;
+  const solicitud = `
+    <com:solicitud>${solicitudZipB64}</com:solicitud>`;
+  const body = `<com:comunicacionRequest xmlns:com="${ns}">${cabecera}${solicitud}</com:comunicacionRequest>`;
+  return wrapSoapEnvelope(body);
+}
+
 function parseAltaResponse(xml: string): { ok: boolean; codigo: string; descripcion: string; lote?: string; codigoComunicacion?: string } {
   const codigo = matchTag(xml, 'codigo') || '';
   const descripcion = matchTag(xml, 'descripcion') || '';
@@ -100,7 +118,9 @@ export class MinisterioClientFixed {
 
     try {
       const solicitudZipB64 = await zipAndBase64(params.xmlAlta);
-      const soapXml = buildSoapEnvelopeComunicacionA(this.cfg, solicitudZipB64);
+      const soapXml = (this.cfg.soapStyle === 'com')
+        ? buildSoapEnvelopeComunicacionAlt(this.cfg, solicitudZipB64)
+        : buildSoapEnvelopeComunicacionA(this.cfg, solicitudZipB64);
 
       console.log('📤 Enviando SOAP al MIR con autenticación corregida:', {
         url: this.cfg.baseUrl,
@@ -225,7 +245,9 @@ export function getMinisterioConfigFromEnv(): MinisterioConfig {
     codigoArrendador: process.env.MIR_CODIGO_ARRENDADOR || '0000000000',
     aplicacion: process.env.MIR_APLICACION || 'Delfin_Check_in',
     simulacion,
-    soapAction: process.env.MIR_SOAP_ACTION
+    soapAction: process.env.MIR_SOAP_ACTION,
+    soapStyle: (process.env.MIR_SOAP_STYLE === 'com' ? 'com' : 'mir'),
+    soapNamespace: process.env.MIR_SOAP_NAMESPACE || 'http://www.soap.servicios.hospedajes.mir.es/comunicacion'
   };
 }
 
