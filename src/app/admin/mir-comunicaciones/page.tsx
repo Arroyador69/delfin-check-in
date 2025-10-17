@@ -461,18 +461,37 @@ export default function MirComunicacionesPage() {
                                 <Button 
                                   size="sm" 
                                   className="bg-blue-600 hover:bg-blue-700 text-white font-semibold"
-                                  onClick={() => {
-                                    // Mostrar datos del registro en formato XML
-                                    const xmlData = JSON.stringify(registro.data, null, 2);
-                                    const blob = new Blob([xmlData], { type: 'application/json' });
-                                    const url = URL.createObjectURL(blob);
-                                    const a = document.createElement('a');
-                                    a.href = url;
-                                    a.download = `registro-${registro.reserva_ref}.json`;
-                                    document.body.appendChild(a);
-                                    a.click();
-                                    document.body.removeChild(a);
-                                    URL.revokeObjectURL(url);
+                                  onClick={async () => {
+                                    try {
+                                      // Generar XML real según normas MIR
+                                      const response = await fetch('/api/ministerio/generar-xml', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({
+                                          id: registro.id,
+                                          fechaEntrada: registro.fecha_entrada,
+                                          fechaSalida: registro.fecha_salida,
+                                          personas: registro.personas || []
+                                        })
+                                      });
+                                      
+                                      const result = await response.json();
+                                      if (result.success && result.xml) {
+                                        const blob = new Blob([result.xml], { type: 'application/xml' });
+                                        const url = URL.createObjectURL(blob);
+                                        const a = document.createElement('a');
+                                        a.href = url;
+                                        a.download = `xml-mir-${registro.reserva_ref}.xml`;
+                                        document.body.appendChild(a);
+                                        a.click();
+                                        document.body.removeChild(a);
+                                        URL.revokeObjectURL(url);
+                                      } else {
+                                        alert(`❌ Error generando XML: ${result.message}`);
+                                      }
+                                    } catch (error) {
+                                      alert('❌ Error generando XML');
+                                    }
                                   }}
                                 >
                                   <Download className="h-4 w-4 mr-1" />

@@ -1,17 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { MinisterioClientOfficial } from '@/lib/ministerio-client-official';
 import { buildPvXml, PvSolicitud } from '@/lib/mir-xml-official';
-import { insertMirComunicacion, updateMirComunicacion, MirComunicacion } from '@/lib/mir-db';
 
 export async function POST(req: NextRequest) {
   try {
-    console.log('🚀 Auto-envío al MIR iniciado...');
+    console.log('📄 Generando XML MIR...');
     
     const json = await req.json().catch(() => undefined);
     
     if (!json) {
       console.error('❌ Datos JSON inválidos o vacíos');
       return NextResponse.json({ 
+        success: false,
         error: 'Datos JSON inválidos o vacíos' 
       }, { 
         status: 400,
@@ -19,30 +18,16 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    console.log('📋 Datos recibidos para auto-envío:', JSON.stringify(json, null, 2));
+    console.log('📋 Datos recibidos para generar XML:', JSON.stringify(json, null, 2));
 
-    // Configuración del MIR - ENVÍO REAL con credenciales correctas
-    // Las credenciales DEBEN estar en variables de entorno (Vercel/local .env)
-    const config = {
-      baseUrl: process.env.MIR_BASE_URL || 'https://hospedajes.ses.mir.es/hospedajes-web/ws/v1/comunicacion',
-      username: process.env.MIR_HTTP_USER || '',
-      password: process.env.MIR_HTTP_PASS || '',
-      codigoArrendador: process.env.MIR_CODIGO_ARRENDADOR || '',
-      aplicacion: process.env.MIR_APLICACION || 'Delfin_Check_in',
-      simulacion: false // ENVÍO REAL AL MIR
-    };
-
-    // Crear cliente MIR oficial
-    const client = new MinisterioClientOfficial(config);
-    
-    // Generar referencia única
-    const referencia = `AUTO-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    
-    // Extraer datos del registro de huésped
+    // Extraer datos del registro
     const personas = json.personas || [];
     if (personas.length === 0) {
       throw new Error('No se encontraron datos de personas en el registro');
     }
+
+    // Generar referencia única
+    const referencia = `XML-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
     // Preparar datos para el MIR según esquemas oficiales
     const datosMIR: PvSolicitud = {
@@ -82,71 +67,30 @@ export async function POST(req: NextRequest) {
       }))
     };
 
-    console.log('📤 Preparando datos MIR oficiales:', JSON.stringify(datosMIR, null, 2));
+    console.log('📤 Preparando datos MIR oficiales para XML:', JSON.stringify(datosMIR, null, 2));
 
     // Generar XML según esquemas oficiales
     const xmlContent = buildPvXml(datosMIR);
     console.log('📄 XML generado (primeros 1000 chars):', xmlContent.substring(0, 1000));
 
-    // Enviar al MIR usando cliente oficial
-    const resultado = await client.altaPV({ xmlAlta: xmlContent });
-    
-    console.log('✅ Resultado del envío al MIR:', resultado);
-
-    // Guardar comunicación en base de datos
-    const comunicacion: Omit<MirComunicacion, 'id' | 'created_at' | 'updated_at'> = {
-      referencia: referencia,
-      tipo: 'PV',
-      estado: resultado.ok ? 'enviado' : 'error',
-      lote: resultado.lote || null,
-      resultado: JSON.stringify(resultado),
-      error: resultado.ok ? null : resultado.descripcion,
-      xml_enviado: xmlContent,
-      xml_respuesta: resultado.rawResponse
-    };
-
-    const id = await insertMirComunicacion(comunicacion);
-    console.log('✅ Comunicación guardada en BD con ID:', id);
-
     return NextResponse.json({
       success: true,
-      message: 'Auto-envío al MIR completado',
+      message: 'XML generado correctamente según normas MIR',
+      xml: xmlContent,
       referencia: referencia,
-      resultado: resultado,
-      estado: resultado.ok ? 'enviado' : 'error',
-      lote: resultado.lote || null
+      datos: datosMIR
     }, {
       status: 200,
       headers: { 'Content-Type': 'application/json' }
     });
     
   } catch (error) {
-    console.error('❌ Error en auto-envío al MIR:', error);
+    console.error('❌ Error generando XML MIR:', error);
     
-    // Guardar error en base de datos
-    const referencia = `ERROR-${Date.now()}`;
-    const comunicacion: Omit<MirComunicacion, 'id' | 'created_at' | 'updated_at'> = {
-      referencia: referencia,
-      tipo: 'PV',
-      estado: 'error',
-      lote: null,
-      resultado: null,
-      error: error instanceof Error ? error.message : 'Error desconocido',
-      xml_enviado: null,
-      xml_respuesta: null
-    };
-
-    try {
-      await insertMirComunicacion(comunicacion);
-    } catch (saveError) {
-      console.error('❌ Error guardando comunicación de error:', saveError);
-    }
-
     return NextResponse.json({
       success: false,
-      error: 'Error en auto-envío al MIR',
-      message: error instanceof Error ? error.message : 'Error desconocido',
-      referencia: referencia
+      error: 'Error generando XML MIR',
+      message: error instanceof Error ? error.message : 'Error desconocido'
     }, {
       status: 500,
       headers: { 'Content-Type': 'application/json' }
