@@ -149,6 +149,29 @@ export default function EstadoEnviosMIR() {
     }
   };
 
+  const enviarAhora = async (registroId: string) => {
+    try {
+      setMensaje({ tipo: 'info', texto: '🚀 Enviando registro al MIR...' });
+      const res = await fetch('/api/test-mir-registros', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ registroId })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setMensaje({ tipo: 'success', texto: '✅ Registro enviado. Actualizando estado...' });
+        setTimeout(() => {
+          cargarEstado();
+          setMensaje(null);
+        }, 2000);
+      } else {
+        setMensaje({ tipo: 'error', texto: `❌ ${data.message || 'Fallo enviando el registro'}` });
+      }
+    } catch (e) {
+      setMensaje({ tipo: 'error', texto: '❌ Error de red enviando el registro' });
+    }
+  };
+
   if (loading && !estado) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8">
@@ -378,6 +401,14 @@ export default function EstadoEnviosMIR() {
                         {comunicacion.error && (
                           <p className="text-sm text-red-600">Error: {comunicacion.error}</p>
                         )}
+                        {(comunicacion.estado === 'pendiente' || comunicacion.estado === 'error') && (
+                          <button
+                            onClick={() => enviarAhora(comunicacion.id)}
+                            className="mt-2 inline-flex items-center px-3 py-1.5 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700"
+                          >
+                            🚀 Enviar ahora
+                          </button>
+                        )}
                       </div>
                     </div>
                     
@@ -390,6 +421,21 @@ export default function EstadoEnviosMIR() {
                       <div>
                         <p className="font-medium text-gray-700">Viajeros:</p>
                         <p className="text-gray-600">{comunicacion.datos?.comunicaciones?.[0]?.personas?.length || 0}</p>
+                      </div>
+                      <div className="md:col-span-2">
+                        <p className="font-medium text-gray-700">Personas registradas:</p>
+                        <ul className="mt-1 text-gray-700 list-disc list-inside space-y-1">
+                          {(comunicacion.datos?.comunicaciones?.[0]?.personas || []).slice(0, 3).map((p: any, idx: number) => (
+                            <li key={idx} className="text-sm">
+                              {p?.nombre || ''} {p?.apellido1 || ''} {p?.apellido2 || ''}
+                              {p?.documento?.numero ? ` — ${p.documento.numero}` : ''}
+                              {p?.fechaNacimiento ? ` — Nac.: ${new Date(p.fechaNacimiento).toLocaleDateString('es-ES')}` : ''}
+                            </li>
+                          ))}
+                          {((comunicacion.datos?.comunicaciones?.[0]?.personas || []).length || 0) > 3 && (
+                            <li className="text-xs text-gray-500">… y más viajeros</li>
+                          )}
+                        </ul>
                       </div>
                       <div>
                         <p className="font-medium text-gray-700">Fecha Entrada:</p>
