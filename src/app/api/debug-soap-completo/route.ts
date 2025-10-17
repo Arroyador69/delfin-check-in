@@ -90,8 +90,11 @@ export async function POST(req: NextRequest) {
     const client = new MinisterioClientFixed(mirConfig);
     
     // Simular el proceso de ZIP y Base64 (sin enviar)
-    const { zipAndBase64 } = await import('@/lib/ministerio-client-fixed');
-    const solicitudZipB64 = await zipAndBase64(xmlContent);
+    const JSZip = (await import('jszip')).default;
+    const zip = new JSZip();
+    zip.file('solicitud.xml', xmlContent);
+    const zipBuffer = await zip.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE' });
+    const solicitudZipB64 = zipBuffer.toString('base64');
     
     // Generar SOAP envelope
     const soapStyle = mirConfig.soapStyle || 'mir';
