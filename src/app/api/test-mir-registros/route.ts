@@ -26,16 +26,19 @@ export async function GET(req: NextRequest) {
       const data = row.data || {};
       const mirStatus = data.mir_status || {};
       
+      // Extraer datos de la persona desde la estructura correcta
+      const persona = data.comunicaciones?.[0]?.personas?.[0] || {};
+      
       return {
         id: row.id,
         timestamp: row.created_at,
         fecha_entrada: row.fecha_entrada,
         fecha_salida: row.fecha_salida,
         reserva_ref: row.reserva_ref,
-        nombre: data.nombre || 'N/A',
-        apellido1: data.apellido1 || 'N/A',
-        telefono: data.telefono || 'N/A',
-        email: data.email || 'N/A',
+        nombre: persona.nombre || 'N/A',
+        apellido1: persona.apellido1 || 'N/A',
+        telefono: persona.telefono || persona.contacto?.telefono || 'N/A',
+        email: persona.correo || persona.contacto?.correo || 'N/A',
         mir_status: mirStatus,
         estado_mir: mirStatus.error ? 'error' : 
                     mirStatus.codigoComunicacion ? 'confirmado' :
@@ -107,6 +110,10 @@ export async function POST(req: NextRequest) {
     const row = result.rows[0];
     const data = row.data || {};
     
+    // Extraer datos de la persona desde la estructura correcta
+    const persona = data.comunicaciones?.[0]?.personas?.[0] || {};
+    const contrato = data.comunicaciones?.[0]?.contrato || {};
+    
     // Configuración MIR
     const config = {
       baseUrl: process.env.MIR_BASE_URL || '',
@@ -133,19 +140,19 @@ export async function POST(req: NextRequest) {
         },
         personas: [{
           rol: "VI", // Viajero
-          nombre: (data.nombre || "Viajero").trim().toUpperCase(),
-          apellido1: (data.apellido1 || "Apellido1").trim().toUpperCase(),
-          apellido2: (data.apellido2 || "Apellido2").trim().toUpperCase(), // Obligatorio para NIF
-          tipoDocumento: data.tipoDocumento || "NIF",
-          numeroDocumento: (data.numeroDocumento || "12345678Z").trim().toUpperCase(),
-          fechaNacimiento: data.fechaNacimiento || "1985-01-01", // YYYY-MM-DD
+          nombre: (persona.nombre || "Viajero").trim().toUpperCase(),
+          apellido1: (persona.apellido1 || "Apellido1").trim().toUpperCase(),
+          apellido2: (persona.apellido2 || "Apellido2").trim().toUpperCase(), // Obligatorio para NIF
+          tipoDocumento: persona.tipoDocumento || "NIF",
+          numeroDocumento: (persona.numeroDocumento || "12345678Z").trim().toUpperCase(),
+          fechaNacimiento: persona.fechaNacimiento || "1985-01-01", // YYYY-MM-DD
           direccion: {
-            direccion: (data.direccion || "Calle Ejemplo 123").trim(),
-            codigoPostal: (data.codigoPostal || "28001").trim(),
-            pais: (data.pais || "ESP").trim().toUpperCase(), // ISO3
-            codigoMunicipio: data.codigoMunicipio || "28079" // INE si país=ESP
+            direccion: (persona.direccion?.direccion || "Calle Ejemplo 123").trim(),
+            codigoPostal: (persona.direccion?.codigoPostal || "28001").trim(),
+            pais: (persona.direccion?.pais || "ESP").trim().toUpperCase(), // ISO3
+            codigoMunicipio: persona.direccion?.codigoMunicipio || "28079" // INE si país=ESP
           },
-          correo: data.email || "viajero@example.com" // Al menos uno: teléfono, teléfono2 o correo
+          correo: persona.correo || persona.contacto?.correo || "viajero@example.com" // Al menos uno: teléfono, teléfono2 o correo
         }]
       }]
     };
@@ -153,7 +160,7 @@ export async function POST(req: NextRequest) {
     console.log('📤 Reenviando registro al MIR:', {
       registroId,
       referencia: datosMIR.comunicaciones[0].contrato.referencia,
-      nombre: data.nombre
+      nombre: persona.nombre
     });
     
     // Importar y usar el cliente MIR con el generador PV correcto
