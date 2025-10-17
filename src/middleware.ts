@@ -104,8 +104,10 @@ export function middleware(req: NextRequest) {
     // Endpoint de configuración MIR pruebas (público para verificación)
     url.pathname.startsWith('/api/config-mir-pruebas') ||
     // Endpoint de test MIR raw (público para verificación)
-    url.pathname.startsWith('/api/test-mir-raw')
-    || url.pathname.startsWith('/api/public/ministerio/')
+    url.pathname.startsWith('/api/test-mir-raw') ||
+    // Endpoint de debug registro data (público para verificación)
+    url.pathname.startsWith('/api/debug-registro-data') ||
+    url.pathname.startsWith('/api/public/ministerio/')
   );
   
   // Debug: Log para verificar qué rutas están siendo procesadas
