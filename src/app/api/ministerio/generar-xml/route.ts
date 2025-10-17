@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
 
     // Preparar datos para el MIR según esquemas oficiales
     const datosMIR: PvSolicitud = {
-      codigoEstablecimiento: process.env.MIR_CODIGO_ARRENDADOR || "0000256653",
+      codigoEstablecimiento: process.env.MIR_CODIGO_ESTABLECIMIENTO || "0000256653",
       contrato: {
         referencia: referencia,
         fechaContrato: new Date().toISOString().split('T')[0], // xsd:date (YYYY-MM-DD)

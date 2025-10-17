@@ -21,17 +21,18 @@ export async function POST(req: NextRequest) {
       usuario,
       contraseña,
       codigoArrendador,
+      codigoEstablecimiento,
       baseUrl = 'https://hospedajes.ses.mir.es/hospedajes-web/ws/v1/comunicacion',
       aplicacion = 'Delfin_Check_in',
       simulacion = false
     } = json;
 
     // Validaciones
-    if (!usuario || !contraseña || !codigoArrendador) {
+    if (!usuario || !contraseña || !codigoArrendador || !codigoEstablecimiento) {
       return NextResponse.json({
         success: false,
         error: 'Credenciales incompletas',
-        message: 'Usuario, contraseña y código de arrendador son obligatorios'
+        message: 'Usuario, contraseña, código de arrendador y código de establecimiento son obligatorios'
       }, { status: 400 });
     }
 
@@ -64,6 +65,7 @@ export async function POST(req: NextRequest) {
           usuario = ${usuario},
           contraseña = ${contraseña},
           codigo_arrendador = ${codigoArrendador},
+          codigo_establecimiento = ${codigoEstablecimiento},
           base_url = ${baseUrl},
           aplicacion = ${aplicacion},
           simulacion = ${simulacion},
@@ -76,10 +78,10 @@ export async function POST(req: NextRequest) {
       if (updateResult.rowCount === 0) {
         await sql`
           INSERT INTO mir_configuraciones (
-            tenant_id, usuario, contraseña, codigo_arrendador, 
+            tenant_id, usuario, contraseña, codigo_arrendador, codigo_establecimiento,
             base_url, aplicacion, simulacion, activo, created_at, updated_at
           ) VALUES (
-            ${tenantId}, ${usuario}, ${contraseña}, ${codigoArrendador},
+            ${tenantId}, ${usuario}, ${contraseña}, ${codigoArrendador}, ${codigoEstablecimiento},
             ${baseUrl}, ${aplicacion}, ${simulacion}, true, NOW(), NOW()
           )
         `;
@@ -99,6 +101,7 @@ export async function POST(req: NextRequest) {
       usuario,
       contraseña: '***', // No devolver la contraseña real
       codigoArrendador,
+      codigoEstablecimiento,
       baseUrl,
       aplicacion,
       simulacion,

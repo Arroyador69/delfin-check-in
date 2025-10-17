@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
 
     // Crear datos de prueba
     const datosMIR: PvSolicitud = {
-      codigoEstablecimiento: "0000256653",
+      codigoEstablecimiento: process.env.MIR_CODIGO_ESTABLECIMIENTO || "0000256653",
       contrato: {
         referencia: "TEST-" + Date.now(),
         fechaContrato: new Date().toISOString().split('T')[0],

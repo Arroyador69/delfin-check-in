@@ -13,6 +13,7 @@ export async function GET(req: NextRequest) {
       usuario: '',
       contraseña: '',
       codigoArrendador: '',
+      codigoEstablecimiento: '',
       baseUrl: 'https://hospedajes.ses.mir.es/hospedajes-web/ws/v1/comunicacion',
       aplicacion: 'Delfin_Check_in',
       simulacion: false,
@@ -21,7 +22,7 @@ export async function GET(req: NextRequest) {
 
     try {
       const result = await sql`
-        SELECT usuario, contraseña, codigo_arrendador, base_url, aplicacion, simulacion, activo
+        SELECT usuario, contraseña, codigo_arrendador, codigo_establecimiento, base_url, aplicacion, simulacion, activo
         FROM mir_configuraciones 
         WHERE tenant_id = ${tenantId}
         ORDER BY updated_at DESC
@@ -34,6 +35,7 @@ export async function GET(req: NextRequest) {
           usuario: dbConfig.usuario || '',
           contraseña: dbConfig.contraseña || '',
           codigoArrendador: dbConfig.codigo_arrendador || '',
+          codigoEstablecimiento: dbConfig.codigo_establecimiento || '',
           baseUrl: dbConfig.base_url || 'https://hospedajes.ses.mir.es/hospedajes-web/ws/v1/comunicacion',
           aplicacion: dbConfig.aplicacion || 'Delfin_Check_in',
           simulacion: dbConfig.simulacion || false,
@@ -47,6 +49,7 @@ export async function GET(req: NextRequest) {
           usuario: process.env.MIR_HTTP_USER || '',
           contraseña: process.env.MIR_HTTP_PASS || '',
           codigoArrendador: process.env.MIR_CODIGO_ARRENDADOR || '',
+          codigoEstablecimiento: process.env.MIR_CODIGO_ESTABLECIMIENTO || '',
           baseUrl: process.env.MIR_BASE_URL || 'https://hospedajes.ses.mir.es/hospedajes-web/ws/v1/comunicacion',
           aplicacion: process.env.MIR_APLICACION || 'Delfin_Check_in',
           simulacion: process.env.MIR_SIMULACION === 'true',

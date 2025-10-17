@@ -23,6 +23,7 @@ interface MirConfig {
   usuario: string;
   contraseña: string;
   codigoArrendador: string;
+  codigoEstablecimiento: string;
   baseUrl: string;
   aplicacion: string;
   simulacion: boolean;
@@ -34,6 +35,7 @@ export default function MirSettingsPage() {
     usuario: '',
     contraseña: '',
     codigoArrendador: '',
+    codigoEstablecimiento: '',
     baseUrl: 'https://hospedajes.ses.mir.es/hospedajes-web/ws/v1/comunicacion',
     aplicacion: 'Delfin_Check_in',
     simulacion: false,
@@ -265,7 +267,21 @@ export default function MirSettingsPage() {
               className="text-gray-900"
             />
             <p className="text-xs text-gray-600 font-medium">
-              Código único asignado por el MIR a tu establecimiento
+              Código único asignado por el MIR para autenticación
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="codigoEstablecimiento" className="text-gray-800 font-semibold">Código de Establecimiento *</Label>
+            <Input
+              id="codigoEstablecimiento"
+              placeholder="0000256653"
+              value={config.codigoEstablecimiento}
+              onChange={(e) => setConfig({...config, codigoEstablecimiento: e.target.value})}
+              className="text-gray-900"
+            />
+            <p className="text-xs text-gray-600 font-medium">
+              Código específico del establecimiento para las comunicaciones MIR
             </p>
           </div>
 
