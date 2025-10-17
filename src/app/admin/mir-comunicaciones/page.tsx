@@ -432,6 +432,23 @@ export default function MirComunicacionesPage() {
                                   className="bg-green-600 hover:bg-green-700 text-white font-semibold"
                                   onClick={async () => {
                                     try {
+                                      // Primero probar las fechas
+                                      const testResponse = await fetch('/api/ministerio/test-fechas', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({
+                                          fechaEntrada: registro.fecha_entrada,
+                                          fechaSalida: registro.fecha_salida
+                                        })
+                                      });
+                                      
+                                      const testResult = await testResponse.json();
+                                      if (!testResult.success) {
+                                        alert(`❌ Error en fechas: ${testResult.message}`);
+                                        return;
+                                      }
+                                      
+                                      // Si las fechas están bien, proceder con el envío
                                       const response = await fetch('/api/ministerio/auto-envio', {
                                         method: 'POST',
                                         headers: { 'Content-Type': 'application/json' },
@@ -463,7 +480,23 @@ export default function MirComunicacionesPage() {
                                   className="bg-blue-600 hover:bg-blue-700 text-white font-semibold"
                                   onClick={async () => {
                                     try {
-                                      // Generar XML real según normas MIR
+                                      // Primero probar las fechas
+                                      const testResponse = await fetch('/api/ministerio/test-fechas', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({
+                                          fechaEntrada: registro.fecha_entrada,
+                                          fechaSalida: registro.fecha_salida
+                                        })
+                                      });
+                                      
+                                      const testResult = await testResponse.json();
+                                      if (!testResult.success) {
+                                        alert(`❌ Error en fechas: ${testResult.message}`);
+                                        return;
+                                      }
+                                      
+                                      // Si las fechas están bien, generar XML
                                       const response = await fetch('/api/ministerio/generar-xml', {
                                         method: 'POST',
                                         headers: { 'Content-Type': 'application/json' },
