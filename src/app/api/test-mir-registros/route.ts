@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
+import { MinisterioClientFixed, getMinisterioConfigFromEnv } from '@/lib/ministerio-client-fixed';
+import { buildAltaPVXml } from '@/lib/mir-xml-pv';
 
 export async function GET(req: NextRequest) {
   try {
@@ -163,11 +165,7 @@ export async function POST(req: NextRequest) {
       nombre: persona.nombre
     });
     
-    // Importar y usar el cliente MIR con el generador PV correcto
-    const { MinisterioClientFixed } = await import('@/lib/ministerio-client-fixed');
-    const { buildAltaPVXml } = await import('@/lib/mir-xml-pv');
-    const { getMinisterioConfigFromEnv } = await import('@/lib/ministerio-client-fixed');
-    
+    // Usar el cliente MIR con el generador PV correcto
     const mirConfig = getMinisterioConfigFromEnv();
     const client = new MinisterioClientFixed(mirConfig);
     
