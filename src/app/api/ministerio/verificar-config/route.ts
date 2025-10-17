@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
       const result = await sql`
         SELECT usuario, contraseña, codigo_arrendador, codigo_establecimiento, base_url, aplicacion, simulacion, activo
         FROM mir_configuraciones 
-        WHERE tenant_id = ${tenantId}
+        WHERE propietario_id = ${tenantId}
         ORDER BY updated_at DESC
         LIMIT 1
       `;

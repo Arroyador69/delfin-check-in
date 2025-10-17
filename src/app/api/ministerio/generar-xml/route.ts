@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { buildPvXml, PvSolicitud } from '@/lib/mir-xml-official';
+import { sql } from '@vercel/postgres';
 
 export async function POST(req: NextRequest) {
   try {
@@ -62,9 +63,29 @@ export async function POST(req: NextRequest) {
     console.log('fechaEntrada formateada:', formatearFechaEntrada(json.fechaEntrada));
     console.log('fechaSalida formateada:', formatearFechaSalida(json.fechaSalida));
 
+    // Obtener tenant_id del header
+    const tenantId = req.headers.get('x-tenant-id') || 'default';
+
+    // Obtener código de establecimiento desde la configuración
+    let codigoEstablecimiento = "0000256653"; // Fallback
+    try {
+      const establecimientoResult = await sql`
+        SELECT codigo_establecimiento
+        FROM mir_configuraciones 
+        WHERE propietario_id = ${tenantId}
+        ORDER BY updated_at DESC
+        LIMIT 1
+      `;
+      if (establecimientoResult.rows.length > 0 && establecimientoResult.rows[0].codigo_establecimiento) {
+        codigoEstablecimiento = establecimientoResult.rows[0].codigo_establecimiento;
+      }
+    } catch (error) {
+      console.log('⚠️ Usando código de establecimiento por defecto');
+    }
+
     // Preparar datos para el MIR según esquemas oficiales
     const datosMIR: PvSolicitud = {
-      codigoEstablecimiento: process.env.MIR_CODIGO_ESTABLECIMIENTO || "0000256653",
+      codigoEstablecimiento: codigoEstablecimiento,
       contrato: {
         referencia: referencia,
         fechaContrato: new Date().toISOString().split('T')[0], // xsd:date (YYYY-MM-DD)

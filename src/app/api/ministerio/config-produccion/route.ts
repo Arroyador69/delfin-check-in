@@ -71,14 +71,14 @@ export async function POST(req: NextRequest) {
           simulacion = ${simulacion},
           activo = true,
           updated_at = NOW()
-        WHERE tenant_id = ${tenantId}
+        WHERE propietario_id = ${tenantId}
       `;
 
       // Si no se actualizó ninguna fila, insertar nueva
       if (updateResult.rowCount === 0) {
         await sql`
           INSERT INTO mir_configuraciones (
-            tenant_id, usuario, contraseña, codigo_arrendador, codigo_establecimiento,
+            propietario_id, usuario, contraseña, codigo_arrendador, codigo_establecimiento,
             base_url, aplicacion, simulacion, activo, created_at, updated_at
           ) VALUES (
             ${tenantId}, ${usuario}, ${contraseña}, ${codigoArrendador}, ${codigoEstablecimiento},

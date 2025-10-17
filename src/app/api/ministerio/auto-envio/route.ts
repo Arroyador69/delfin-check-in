@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { MinisterioClientOfficial } from '@/lib/ministerio-client-official';
 import { buildPvXml, PvSolicitud } from '@/lib/mir-xml-official';
 import { insertMirComunicacion, updateMirComunicacion, MirComunicacion } from '@/lib/mir-db';
+import { sql } from '@vercel/postgres';
 
 export async function POST(req: NextRequest) {
   try {
@@ -21,16 +22,63 @@ export async function POST(req: NextRequest) {
 
     console.log('📋 Datos recibidos para auto-envío:', JSON.stringify(json, null, 2));
 
-    // Configuración del MIR - ENVÍO REAL con credenciales correctas
-    // Las credenciales DEBEN estar en variables de entorno (Vercel/local .env)
-    const config = {
-      baseUrl: process.env.MIR_BASE_URL || 'https://hospedajes.ses.mir.es/hospedajes-web/ws/v1/comunicacion',
-      username: process.env.MIR_HTTP_USER || '',
-      password: process.env.MIR_HTTP_PASS || '',
-      codigoArrendador: process.env.MIR_CODIGO_ARRENDADOR || '',
-      aplicacion: process.env.MIR_APLICACION || 'Delfin_Check_in',
-      simulacion: false // ENVÍO REAL AL MIR
+    // Obtener tenant_id del header
+    const tenantId = req.headers.get('x-tenant-id') || 'default';
+
+    // Cargar configuración MIR desde la base de datos
+    let config = {
+      baseUrl: 'https://hospedajes.ses.mir.es/hospedajes-web/ws/v1/comunicacion',
+      username: '',
+      password: '',
+      codigoArrendador: '',
+      aplicacion: 'Delfin_Check_in',
+      simulacion: false
     };
+
+    try {
+      const result = await sql`
+        SELECT usuario, contraseña, codigo_arrendador, codigo_establecimiento, base_url, aplicacion, simulacion, activo
+        FROM mir_configuraciones 
+        WHERE propietario_id = ${tenantId}
+        ORDER BY updated_at DESC
+        LIMIT 1
+      `;
+
+      if (result.rows.length > 0 && result.rows[0].activo) {
+        const dbConfig = result.rows[0];
+        config = {
+          baseUrl: dbConfig.base_url || 'https://hospedajes.ses.mir.es/hospedajes-web/ws/v1/comunicacion',
+          username: dbConfig.usuario || '',
+          password: dbConfig.contraseña || '',
+          codigoArrendador: dbConfig.codigo_arrendador || '',
+          aplicacion: dbConfig.aplicacion || 'Delfin_Check_in',
+          simulacion: dbConfig.simulacion || false
+        };
+        console.log('📋 Configuración MIR cargada desde base de datos');
+      } else {
+        console.log('📋 No hay configuración activa en BD, usando variables de entorno');
+        // Fallback a variables de entorno
+        config = {
+          baseUrl: process.env.MIR_BASE_URL || 'https://hospedajes.ses.mir.es/hospedajes-web/ws/v1/comunicacion',
+          username: process.env.MIR_HTTP_USER || '',
+          password: process.env.MIR_HTTP_PASS || '',
+          codigoArrendador: process.env.MIR_CODIGO_ARRENDADOR || '',
+          aplicacion: process.env.MIR_APLICACION || 'Delfin_Check_in',
+          simulacion: false
+        };
+      }
+    } catch (dbError) {
+      console.error('❌ Error cargando configuración desde BD, usando variables de entorno:', dbError);
+      // Fallback a variables de entorno
+      config = {
+        baseUrl: process.env.MIR_BASE_URL || 'https://hospedajes.ses.mir.es/hospedajes-web/ws/v1/comunicacion',
+        username: process.env.MIR_HTTP_USER || '',
+        password: process.env.MIR_HTTP_PASS || '',
+        codigoArrendador: process.env.MIR_CODIGO_ARRENDADOR || '',
+        aplicacion: process.env.MIR_APLICACION || 'Delfin_Check_in',
+        simulacion: false
+      };
+    }
 
     // Crear cliente MIR oficial
     const client = new MinisterioClientOfficial(config);
@@ -77,9 +125,26 @@ export async function POST(req: NextRequest) {
     console.log('fechaEntrada formateada:', formatearFechaEntrada(json.fechaEntrada));
     console.log('fechaSalida formateada:', formatearFechaSalida(json.fechaSalida));
 
+    // Obtener código de establecimiento desde la configuración
+    let codigoEstablecimiento = "0000256653"; // Fallback
+    try {
+      const establecimientoResult = await sql`
+        SELECT codigo_establecimiento
+        FROM mir_configuraciones 
+        WHERE propietario_id = ${tenantId}
+        ORDER BY updated_at DESC
+        LIMIT 1
+      `;
+      if (establecimientoResult.rows.length > 0 && establecimientoResult.rows[0].codigo_establecimiento) {
+        codigoEstablecimiento = establecimientoResult.rows[0].codigo_establecimiento;
+      }
+    } catch (error) {
+      console.log('⚠️ Usando código de establecimiento por defecto');
+    }
+
     // Preparar datos para el MIR según esquemas oficiales
     const datosMIR: PvSolicitud = {
-      codigoEstablecimiento: process.env.MIR_CODIGO_ESTABLECIMIENTO || "0000256653",
+      codigoEstablecimiento: codigoEstablecimiento,
       contrato: {
         referencia: referencia,
         fechaContrato: new Date().toISOString().split('T')[0], // xsd:date (YYYY-MM-DD)
