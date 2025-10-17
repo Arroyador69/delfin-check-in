@@ -267,7 +267,10 @@ export default function MirComunicacionesPage() {
     };
     
     return (
-      <Badge variant={variants[estado] || 'outline'}>
+      <Badge 
+        variant={variants[estado] || 'outline'}
+        className="font-bold text-gray-900 bg-green-100 border-green-300"
+      >
         {estado.toUpperCase()}
       </Badge>
     );
@@ -372,19 +375,20 @@ export default function MirComunicacionesPage() {
                     return (
                       <Card key={com.id} className="p-4 bg-blue-50 border-blue-200">
                         <div className="flex items-center justify-between">
-                          <div className="space-y-3">
-                            {/* Nombre del huésped en la parte superior */}
+                          <div className="space-y-2">
+                            {/* Nombre del huésped al lado del tick verde */}
                             <div className="flex items-center gap-2">
                               {getEstadoIcon(com.estado)}
-                              <span className="font-bold text-gray-900 text-xl">{nombreCompleto}</span>
+                              <span className="font-bold text-gray-900 text-lg">{nombreCompleto}</span>
                               {getEstadoBadge(com.estado)}
                             </div>
                             
-                            {/* Información de la comunicación */}
+                            {/* Información de la comunicación organizada */}
                             <div className="text-sm text-gray-700 font-medium">
                               <div className="flex items-center gap-4">
                                 <span>🏨 Habitación: <strong>{habitacion}</strong></span>
                                 <span>📋 Tipo: <strong>{com.tipo}</strong></span>
+                                <span>🆔 Ref: <strong>{com.referencia}</strong></span>
                               </div>
                               <div className="mt-1">
                                 📅 Creado: <strong>{new Date(com.created_at).toLocaleString('es-ES')}</strong>
@@ -393,11 +397,6 @@ export default function MirComunicacionesPage() {
                               {com.error && (
                                 <div className="text-red-600 font-semibold mt-2">❌ Error: {com.error}</div>
                               )}
-                            </div>
-                            
-                            {/* Referencia en la parte inferior */}
-                            <div className="text-xs text-gray-500 font-mono bg-gray-100 px-2 py-1 rounded">
-                              🆔 Referencia: {com.referencia}
                             </div>
                           </div>
                           <div className="flex gap-2">
