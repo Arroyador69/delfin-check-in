@@ -52,12 +52,14 @@ export async function GET(req: NextRequest) {
       // Extraer datos del huésped
       let nombreCompleto = 'Datos no disponibles';
       let habitacion = 'N/A';
+      let personas = [];
       
       try {
         if (registro.data?.comunicaciones?.[0]?.personas?.[0]) {
           const persona = registro.data.comunicaciones[0].personas[0];
           nombreCompleto = `${persona.nombre || ''} ${persona.apellido1 || ''} ${persona.apellido2 || ''}`.trim();
           habitacion = persona.habitacion || 'N/A';
+          personas = registro.data.comunicaciones[0].personas;
         }
       } catch (error) {
         console.log('Error extrayendo datos del huésped:', error);
@@ -73,6 +75,8 @@ export async function GET(req: NextRequest) {
         reserva_ref: registro.reserva_ref,
         created_at: registro.created_at,
         updated_at: registro.updated_at,
+        data: registro.data, // Incluir datos completos para el envío
+        personas: personas, // Incluir personas para el envío
         // Datos de comunicación MIR si existe
         comunicacion_mir: comunicacion ? {
           id: comunicacion.id,

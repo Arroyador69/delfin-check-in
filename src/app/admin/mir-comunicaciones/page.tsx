@@ -388,6 +388,22 @@ export default function MirComunicacionesPage() {
                           <div className="flex gap-2">
                             {yaEnviado ? (
                               <>
+                                {registro.comunicacion_mir?.xml_respuesta && (
+                                  <Button 
+                                    size="sm" 
+                                    className="bg-green-600 hover:bg-green-700 text-white font-semibold"
+                                    onClick={() => {
+                                      const responseText = registro.comunicacion_mir.xml_respuesta.length > 500 
+                                        ? registro.comunicacion_mir.xml_respuesta.substring(0, 500) + '...' 
+                                        : registro.comunicacion_mir.xml_respuesta;
+                                      
+                                      alert(`Respuesta del MIR:\n\n${responseText}`);
+                                    }}
+                                  >
+                                    <Eye className="h-4 w-4 mr-1" />
+                                    Ver Respuesta
+                                  </Button>
+                                )}
                                 {registro.comunicacion_mir?.xml_enviado && (
                                   <Button 
                                     size="sm" 
@@ -408,55 +424,61 @@ export default function MirComunicacionesPage() {
                                     XML
                                   </Button>
                                 )}
-                                {registro.comunicacion_mir?.xml_respuesta && (
-                                  <Button 
-                                    size="sm" 
-                                    className="bg-green-600 hover:bg-green-700 text-white font-semibold"
-                                    onClick={() => {
-                                      const responseText = registro.comunicacion_mir.xml_respuesta.length > 500 
-                                        ? registro.comunicacion_mir.xml_respuesta.substring(0, 500) + '...' 
-                                        : registro.comunicacion_mir.xml_respuesta;
-                                      
-                                      alert(`Respuesta del MIR:\n\n${responseText}`);
-                                    }}
-                                  >
-                                    <Eye className="h-4 w-4 mr-1" />
-                                    Ver Respuesta
-                                  </Button>
-                                )}
                               </>
                             ) : (
-                              <Button 
-                                size="sm" 
-                                className="bg-orange-600 hover:bg-orange-700 text-white font-semibold"
-                                onClick={async () => {
-                                  try {
-                                    const response = await fetch('/api/ministerio/auto-envio', {
-                                      method: 'POST',
-                                      headers: { 'Content-Type': 'application/json' },
-                                      body: JSON.stringify({
-                                        id: registro.id,
-                                        fechaEntrada: registro.fecha_entrada,
-                                        fechaSalida: registro.fecha_salida,
-                                        personas: registro.data?.comunicaciones?.[0]?.personas || []
-                                      })
-                                    });
-                                    
-                                    const result = await response.json();
-                                    if (result.success) {
-                                      alert('✅ Registro enviado al MIR correctamente');
-                                      cargarComunicaciones(); // Recargar lista
-                                    } else {
-                                      alert(`❌ Error: ${result.message}`);
+                              <>
+                                <Button 
+                                  size="sm" 
+                                  className="bg-green-600 hover:bg-green-700 text-white font-semibold"
+                                  onClick={async () => {
+                                    try {
+                                      const response = await fetch('/api/ministerio/auto-envio', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({
+                                          id: registro.id,
+                                          fechaEntrada: registro.fecha_entrada,
+                                          fechaSalida: registro.fecha_salida,
+                                          personas: registro.data?.comunicaciones?.[0]?.personas || []
+                                        })
+                                      });
+                                      
+                                      const result = await response.json();
+                                      if (result.success) {
+                                        alert('✅ Registro enviado al MIR correctamente');
+                                        cargarComunicaciones(); // Recargar lista
+                                      } else {
+                                        alert(`❌ Error: ${result.message}`);
+                                      }
+                                    } catch (error) {
+                                      alert('❌ Error enviando al MIR');
                                     }
-                                  } catch (error) {
-                                    alert('❌ Error enviando al MIR');
-                                  }
-                                }}
-                              >
-                                <Send className="h-4 w-4 mr-1" />
-                                Enviar al MIR
-                              </Button>
+                                  }}
+                                >
+                                  <Send className="h-4 w-4 mr-1" />
+                                  Enviar al MIR
+                                </Button>
+                                <Button 
+                                  size="sm" 
+                                  className="bg-blue-600 hover:bg-blue-700 text-white font-semibold"
+                                  onClick={() => {
+                                    // Mostrar datos del registro en formato XML
+                                    const xmlData = JSON.stringify(registro.data, null, 2);
+                                    const blob = new Blob([xmlData], { type: 'application/json' });
+                                    const url = URL.createObjectURL(blob);
+                                    const a = document.createElement('a');
+                                    a.href = url;
+                                    a.download = `registro-${registro.reserva_ref}.json`;
+                                    document.body.appendChild(a);
+                                    a.click();
+                                    document.body.removeChild(a);
+                                    URL.revokeObjectURL(url);
+                                  }}
+                                >
+                                  <Download className="h-4 w-4 mr-1" />
+                                  XML
+                                </Button>
+                              </>
                             )}
                           </div>
                         </div>
