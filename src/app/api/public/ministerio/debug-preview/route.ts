@@ -1,3 +1,3 @@
-export { POST } from '../../../../ministerio/debug-preview/route';
+export { POST } from '../../../ministerio/debug-preview/route';
 
 
