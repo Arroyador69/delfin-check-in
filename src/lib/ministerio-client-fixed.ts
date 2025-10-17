@@ -13,6 +13,7 @@ export interface MinisterioConfig {
   soapAction?: string; // opcional: algunos servidores requieren el literal del método
   soapStyle?: 'mir' | 'com'; // 'mir' = actual, 'com' = comunicacionRequest con namespace externo
   soapNamespace?: string; // namespace para estilo 'com'
+  soapOperation?: string; // nombre de operación (por ej. 'comunicacion' o 'altaComunicacion')
 }
 
 export interface AltaPVParams {
@@ -56,7 +57,6 @@ function escapeXml(value: string): string {
 function wrapSoapEnvelope(innerXml: string): string {
   return `<?xml version="1.0" encoding="UTF-8"?>
 <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">
-  <soapenv:Header/>
   <soapenv:Body>
     ${innerXml}
   </soapenv:Body>
@@ -81,6 +81,8 @@ function buildSoapEnvelopeComunicacionA(cfg: MinisterioConfig, solicitudZipB64: 
 // Variante alternativa segun WSDL externo: com:comunicacionRequest en namespace dedicado
 function buildSoapEnvelopeComunicacionAlt(cfg: MinisterioConfig, solicitudZipB64: string): string {
   const ns = cfg.soapNamespace || 'http://www.soap.servicios.hospedajes.mir.es/comunicacion';
+  const op = (cfg.soapOperation || 'comunicacion').replace(/[^A-Za-z0-9_]/g, '');
+  const root = `${op}Request`;
   const cabecera = `
     <cabecera>
       <codigoArrendador>${escapeXml(cfg.codigoArrendador)}</codigoArrendador>
@@ -90,7 +92,7 @@ function buildSoapEnvelopeComunicacionAlt(cfg: MinisterioConfig, solicitudZipB64
     </cabecera>`;
   const solicitud = `
     <solicitud>${solicitudZipB64}</solicitud>`;
-  const body = `<com:comunicacionRequest xmlns:com="${ns}"><peticion>${cabecera}${solicitud}</peticion></com:comunicacionRequest>`;
+  const body = `<com:${root} xmlns:com="${ns}"><peticion>${cabecera}${solicitud}</peticion></com:${root}>`;
   return wrapSoapEnvelope(body);
 }
 
@@ -257,7 +259,8 @@ export function getMinisterioConfigFromEnv(): MinisterioConfig {
     // Sanitizar posibles comillas añadidas en variables de entorno
     soapAction: (process.env.MIR_SOAP_ACTION || '').replace(/^['"]|['"]$/g, '') || undefined,
     soapStyle: (process.env.MIR_SOAP_STYLE === 'com' ? 'com' : 'mir'),
-    soapNamespace: (process.env.MIR_SOAP_NAMESPACE || 'http://www.soap.servicios.hospedajes.mir.es/comunicacion').replace(/^['"]|['"]$/g, '')
+    soapNamespace: (process.env.MIR_SOAP_NAMESPACE || 'http://www.soap.servicios.hospedajes.mir.es/comunicacion').replace(/^['"]|['"]$/g, ''),
+    soapOperation: (process.env.MIR_SOAP_OPERATION || 'comunicacion').replace(/^['"]|['"]$/g, '')
   };
 }
 
