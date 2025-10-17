@@ -99,13 +99,82 @@ export function normalizeRoomId(roomId: string | null | undefined): string {
   return roomId;
 }
 
-// Función helper para insertar un registro
+// Función helper para insertar un registro con prevención de duplicados
 export async function insertGuestRegistration(data: {
   reserva_ref?: string;
   fecha_entrada: string;
   fecha_salida: string;
   data: any;
 }): Promise<string> {
+  // Extraer documento de identidad para detectar duplicados
+  const documento = data.data?.comunicaciones?.[0]?.personas?.[0]?.numeroDocumento;
+  const nombre = data.data?.comunicaciones?.[0]?.personas?.[0]?.nombre;
+  const apellido1 = data.data?.comunicaciones?.[0]?.personas?.[0]?.apellido1;
+  
+  if (documento && nombre && apellido1) {
+    console.log('🔍 Verificando duplicados para documento:', documento);
+    
+    // Buscar registros existentes con el mismo documento en las últimas 24 horas
+    const existingRegistrations = await sql`
+      SELECT id, data, created_at
+      FROM guest_registrations 
+      WHERE data->'comunicaciones'->0->'personas'->0->>'numeroDocumento' = ${documento}
+        AND created_at > NOW() - INTERVAL '24 hours'
+      ORDER BY created_at DESC
+    `;
+    
+    if (existingRegistrations.rows.length > 0) {
+      console.log(`⚠️ Encontrados ${existingRegistrations.rows.length} registros duplicados para documento ${documento}`);
+      
+      // Verificar si alguno de los registros existentes tiene datos completos
+      let registroCompleto = null;
+      let registrosIncompletos = [];
+      
+      for (const registro of existingRegistrations.rows) {
+        const codigoPostal = registro.data?.comunicaciones?.[0]?.personas?.[0]?.direccion?.codigoPostal;
+        const telefono = registro.data?.comunicaciones?.[0]?.personas?.[0]?.contacto?.telefono;
+        
+        // Considerar completo si tiene código postal válido (no "00000") y teléfono
+        if (codigoPostal && codigoPostal !== "00000" && telefono && telefono !== "600000000") {
+          registroCompleto = registro;
+        } else {
+          registrosIncompletos.push(registro);
+        }
+      }
+      
+      // Si hay un registro completo, eliminar los incompletos y devolver el completo
+      if (registroCompleto) {
+        console.log('✅ Registro completo encontrado, eliminando duplicados incompletos');
+        
+        // Eliminar registros incompletos
+        for (const registro of registrosIncompletos) {
+          await sql`DELETE FROM guest_registrations WHERE id = ${registro.id}`;
+          console.log(`🗑️ Eliminado registro incompleto: ${registro.id}`);
+        }
+        
+        return registroCompleto.id;
+      }
+      
+      // Si no hay registro completo, verificar si el nuevo registro es más completo
+      const nuevoCodigoPostal = data.data?.comunicaciones?.[0]?.personas?.[0]?.direccion?.codigoPostal;
+      const nuevoTelefono = data.data?.comunicaciones?.[0]?.personas?.[0]?.contacto?.telefono;
+      
+      if (nuevoCodigoPostal && nuevoCodigoPostal !== "00000" && nuevoTelefono && nuevoTelefono !== "600000000") {
+        console.log('✅ Nuevo registro es más completo, eliminando duplicados anteriores');
+        
+        // Eliminar todos los registros existentes
+        for (const registro of existingRegistrations.rows) {
+          await sql`DELETE FROM guest_registrations WHERE id = ${registro.id}`;
+          console.log(`🗑️ Eliminado registro anterior: ${registro.id}`);
+        }
+      } else {
+        console.log('⚠️ Nuevo registro también es incompleto, manteniendo el más reciente');
+        return existingRegistrations.rows[0].id;
+      }
+    }
+  }
+  
+  // Insertar nuevo registro
   const result = await sql`
     INSERT INTO guest_registrations (reserva_ref, fecha_entrada, fecha_salida, data)
     VALUES (${data.reserva_ref}, ${data.fecha_entrada}, ${data.fecha_salida}, ${JSON.stringify(data.data)}::jsonb)
@@ -116,6 +185,7 @@ export async function insertGuestRegistration(data: {
     throw new Error('Failed to insert guest registration');
   }
   
+  console.log('✅ Nuevo registro insertado:', result.rows[0].id);
   return result.rows[0].id;
 }
 
