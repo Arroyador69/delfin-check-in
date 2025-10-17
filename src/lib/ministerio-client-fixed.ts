@@ -10,6 +10,7 @@ export interface MinisterioConfig {
   codigoArrendador: string;
   aplicacion: string;
   simulacion?: boolean;
+  soapAction?: string; // opcional: algunos servidores requieren el literal del método
 }
 
 export interface AltaPVParams {
@@ -118,7 +119,7 @@ export class MinisterioClientFixed {
           'Authorization': buildBasicAuthHeader(this.cfg.username, this.cfg.password),
           'Content-Type': 'text/xml; charset=utf-8',
           'Content-Length': contentLength.toString(),
-          'SOAPAction': '""',
+          'SOAPAction': this.cfg.soapAction ?? '""',
           'User-Agent': 'Delfin_Check_in/1.0',
           'Accept': 'text/xml, application/xml, */*',
           'Cache-Control': 'no-cache',
@@ -223,7 +224,8 @@ export function getMinisterioConfigFromEnv(): MinisterioConfig {
     password: process.env.MIR_HTTP_PASS || 'DEMO',
     codigoArrendador: process.env.MIR_CODIGO_ARRENDADOR || '0000000000',
     aplicacion: process.env.MIR_APLICACION || 'Delfin_Check_in',
-    simulacion
+    simulacion,
+    soapAction: process.env.MIR_SOAP_ACTION
   };
 }
 
