@@ -254,32 +254,32 @@ export default function MirSettingsPage() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="codigoArrendador">Código de Arrendador *</Label>
+            <Label htmlFor="codigoArrendador" className="text-gray-800 font-semibold">Código de Arrendador *</Label>
             <Input
               id="codigoArrendador"
               placeholder="0000256653"
               value={config.codigoArrendador}
               onChange={(e) => setConfig({...config, codigoArrendador: e.target.value})}
             />
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-gray-600 font-medium">
               Código único asignado por el MIR a tu establecimiento
             </p>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="baseUrl">URL del Servicio MIR</Label>
+            <Label htmlFor="baseUrl" className="text-gray-800 font-semibold">URL del Servicio MIR</Label>
             <Input
               id="baseUrl"
               value={config.baseUrl}
               onChange={(e) => setConfig({...config, baseUrl: e.target.value})}
             />
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-gray-600 font-medium">
               URL oficial del servicio de comunicaciones MIR
             </p>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="aplicacion">Nombre de la Aplicación</Label>
+            <Label htmlFor="aplicacion" className="text-gray-800 font-semibold">Nombre de la Aplicación</Label>
             <Input
               id="aplicacion"
               value={config.aplicacion}
@@ -295,7 +295,7 @@ export default function MirSettingsPage() {
               onChange={(e) => setConfig({...config, simulacion: e.target.checked})}
               className="rounded"
             />
-            <Label htmlFor="simulacion">Modo simulación (solo para pruebas)</Label>
+            <Label htmlFor="simulacion" className="text-gray-800 font-semibold">Modo simulación (solo para pruebas)</Label>
           </div>
         </CardContent>
       </Card>
@@ -303,7 +303,7 @@ export default function MirSettingsPage() {
       {/* Información importante */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center">
+          <CardTitle className="flex items-center text-gray-900 font-bold">
             <Info className="h-5 w-5 mr-2" />
             Información Importante
           </CardTitle>
@@ -333,7 +333,7 @@ export default function MirSettingsPage() {
         <Button 
           onClick={guardarConfiguracion} 
           disabled={loading || !status.hasRequired}
-          className="flex-1"
+          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold"
         >
           <Save className="h-4 w-4 mr-2" />
           {loading ? 'Guardando...' : 'Guardar Configuración'}
@@ -343,7 +343,7 @@ export default function MirSettingsPage() {
           onClick={probarConexion} 
           disabled={loading || !status.hasRequired}
           variant="outline"
-          className="flex-1"
+          className="flex-1 border-blue-600 text-blue-600 hover:bg-blue-50 font-semibold"
         >
           <TestTube className="h-4 w-4 mr-2" />
           {loading ? 'Probando...' : 'Probar Conexión'}
@@ -352,7 +352,7 @@ export default function MirSettingsPage() {
         <Button 
           onClick={() => window.open('/admin/mir-comunicaciones', '_blank')}
           variant="outline"
-          className="flex-1"
+          className="flex-1 border-green-600 text-green-600 hover:bg-green-50 font-semibold"
         >
           <ExternalLink className="h-4 w-4 mr-2" />
           Ir al Panel MIR
@@ -362,9 +362,9 @@ export default function MirSettingsPage() {
       {/* Resultado de la prueba */}
       {testResult && (
         <Card>
-          <CardHeader>
-            <CardTitle>Resultado de la Prueba</CardTitle>
-          </CardHeader>
+        <CardHeader>
+          <CardTitle className="text-gray-900 font-bold">Resultado de la Prueba</CardTitle>
+        </CardHeader>
           <CardContent>
             <pre className="bg-gray-100 p-4 rounded-md text-sm overflow-auto">
               {JSON.stringify(testResult, null, 2)}

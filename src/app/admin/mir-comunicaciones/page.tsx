@@ -383,20 +383,20 @@ export default function MirComunicacionesPage() {
         <TabsContent value="envio" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Enviar Comunicación de Prueba</CardTitle>
-              <CardDescription>
+              <CardTitle className="text-gray-900 font-bold text-xl">Enviar Comunicación de Prueba</CardTitle>
+              <CardDescription className="text-gray-700 font-medium">
                 Envía una comunicación de prueba al MIR usando las credenciales oficiales
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <Alert>
                 <AlertTriangle className="h-4 w-4" />
-                <AlertDescription>
+                <AlertDescription className="text-gray-800 font-semibold">
                   Esta función enviará una comunicación real al MIR. Asegúrate de que las credenciales estén configuradas correctamente.
                 </AlertDescription>
               </Alert>
               
-              <Button onClick={enviarPrueba} disabled={loading} className="w-full">
+              <Button onClick={enviarPrueba} disabled={loading} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold">
                 <Send className="h-4 w-4 mr-2" />
                 {loading ? 'Enviando...' : 'Enviar Comunicación de Prueba'}
               </Button>
@@ -407,26 +407,26 @@ export default function MirComunicacionesPage() {
         <TabsContent value="consulta" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Consultar Comunicaciones</CardTitle>
-              <CardDescription>
+              <CardTitle className="text-gray-900 font-bold text-xl">Consultar Comunicaciones</CardTitle>
+              <CardDescription className="text-gray-700 font-medium">
                 Consulta el estado de comunicaciones específicas en el MIR
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="codigos">Códigos de Comunicación</Label>
+                <Label htmlFor="codigos" className="text-gray-800 font-semibold">Códigos de Comunicación</Label>
                 <Input
                   id="codigos"
                   placeholder="Código1, Código2, Código3..."
                   value={codigosConsulta}
                   onChange={(e) => setCodigosConsulta(e.target.value)}
                 />
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-gray-600 font-medium">
                   Separa múltiples códigos con comas
                 </p>
               </div>
               
-              <Button onClick={consultarComunicaciones} disabled={loading || !codigosConsulta.trim()}>
+              <Button onClick={consultarComunicaciones} disabled={loading || !codigosConsulta.trim()} className="bg-blue-600 hover:bg-blue-700 text-white font-semibold">
                 <Search className="h-4 w-4 mr-2" />
                 {loading ? 'Consultando...' : 'Consultar'}
               </Button>
@@ -462,26 +462,26 @@ export default function MirComunicacionesPage() {
         <TabsContent value="catalogo" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Consultar Catálogos MIR</CardTitle>
-              <CardDescription>
+              <CardTitle className="text-gray-900 font-bold text-xl">Consultar Catálogos MIR</CardTitle>
+              <CardDescription className="text-gray-700 font-medium">
                 Consulta las tablas maestras del MIR (tipos de documento, tipos de pago, etc.)
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="catalogo">Nombre del Catálogo</Label>
+                <Label htmlFor="catalogo" className="text-gray-800 font-semibold">Nombre del Catálogo</Label>
                 <Input
                   id="catalogo"
                   placeholder="TIPOS_DOCUMENTO, TIPOS_PAGO, PAISES, etc."
                   value={catalogoConsulta}
                   onChange={(e) => setCatalogoConsulta(e.target.value)}
                 />
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-gray-600 font-medium">
                   Catálogos disponibles: TIPOS_DOCUMENTO, TIPOS_PAGO, PAISES, MUNICIPIOS, TIPOS_VEHICULO, COLORES_VEHICULO, CATEGORIAS_VEHICULO, ROLES_PERSONA
                 </p>
               </div>
               
-              <Button onClick={consultarCatalogo} disabled={loading || !catalogoConsulta.trim()}>
+              <Button onClick={consultarCatalogo} disabled={loading || !catalogoConsulta.trim()} className="bg-blue-600 hover:bg-blue-700 text-white font-semibold">
                 <Search className="h-4 w-4 mr-2" />
                 {loading ? 'Consultando...' : 'Consultar Catálogo'}
               </Button>
@@ -511,21 +511,21 @@ export default function MirComunicacionesPage() {
         <TabsContent value="anulacion" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Anular Lote</CardTitle>
-              <CardDescription>
+              <CardTitle className="text-gray-900 font-bold text-xl">Anular Lote</CardTitle>
+              <CardDescription className="text-gray-700 font-medium">
                 Anula un lote completo de comunicaciones en el MIR
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <Alert variant="destructive">
                 <AlertTriangle className="h-4 w-4" />
-                <AlertDescription>
+                <AlertDescription className="text-red-800 font-semibold">
                   ⚠️ Esta acción anulará permanentemente el lote en el MIR. Esta operación no se puede deshacer.
                 </AlertDescription>
               </Alert>
               
               <div className="space-y-2">
-                <Label htmlFor="lote">Código de Lote</Label>
+                <Label htmlFor="lote" className="text-gray-800 font-semibold">Código de Lote</Label>
                 <Input
                   id="lote"
                   placeholder="Código del lote a anular"
@@ -535,14 +535,14 @@ export default function MirComunicacionesPage() {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="referencia">Referencia (Opcional)</Label>
+                <Label htmlFor="referencia" className="text-gray-800 font-semibold">Referencia (Opcional)</Label>
                 <Input
                   id="referencia"
                   placeholder="Referencia para actualizar en BD"
                   value={referenciaAnulacion}
                   onChange={(e) => setReferenciaAnulacion(e.target.value)}
                 />
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-gray-600 font-medium">
                   Si se proporciona, se actualizará el estado en la base de datos local
                 </p>
               </div>
@@ -551,7 +551,7 @@ export default function MirComunicacionesPage() {
                 onClick={anularLote} 
                 disabled={loading || !loteAnulacion.trim()} 
                 variant="destructive"
-                className="w-full"
+                className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold"
               >
                 <X className="h-4 w-4 mr-2" />
                 {loading ? 'Anulando...' : 'Anular Lote'}
