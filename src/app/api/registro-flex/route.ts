@@ -529,10 +529,36 @@ export async function POST(req: NextRequest) {
 
     console.log('✅ Registro guardado con ID:', id);
 
+    // Enviar automáticamente al MIR
+    try {
+      console.log('📤 Enviando automáticamente al MIR...');
+      
+      const mirResponse = await fetch(`${req.nextUrl.origin}/api/ministerio/auto-envio`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Tenant-ID': tenantId || 'default'
+        },
+        body: JSON.stringify({
+          ...dbData,
+          id: id
+        })
+      });
+      
+      if (mirResponse.ok) {
+        const mirResult = await mirResponse.json();
+        console.log('✅ Envío al MIR exitoso:', mirResult);
+      } else {
+        console.log('⚠️ Error en envío al MIR, pero registro guardado correctamente');
+      }
+    } catch (mirError) {
+      console.log('⚠️ Error en envío al MIR, pero registro guardado correctamente:', mirError);
+    }
+
     const headers = cors(req);
     return NextResponse.json({ 
       success: true, 
-      message: 'Registro guardado correctamente',
+      message: 'Registro guardado y enviado al MIR correctamente',
       id: id,
       reserva_ref: ESTABLISHMENT_REFERENCE,
       date: new Date().toISOString().split('T')[0]
