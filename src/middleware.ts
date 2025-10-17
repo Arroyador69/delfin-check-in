@@ -109,6 +109,8 @@ export function middleware(req: NextRequest) {
     url.pathname.startsWith('/api/debug-registro-data') ||
     // Endpoint de test simple MIR (público para verificación)
     url.pathname.startsWith('/api/test-simple-mir') ||
+    // Endpoint de debug SOAP completo (público para verificación)
+    url.pathname.startsWith('/api/debug-soap-completo') ||
     url.pathname.startsWith('/api/public/ministerio/')
   );
   
