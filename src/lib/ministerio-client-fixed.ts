@@ -254,9 +254,10 @@ export function getMinisterioConfigFromEnv(): MinisterioConfig {
     codigoArrendador: process.env.MIR_CODIGO_ARRENDADOR || '0000000000',
     aplicacion: process.env.MIR_APLICACION || 'Delfin_Check_in',
     simulacion,
-    soapAction: process.env.MIR_SOAP_ACTION,
+    // Sanitizar posibles comillas añadidas en variables de entorno
+    soapAction: (process.env.MIR_SOAP_ACTION || '').replace(/^['"]|['"]$/g, '') || undefined,
     soapStyle: (process.env.MIR_SOAP_STYLE === 'com' ? 'com' : 'mir'),
-    soapNamespace: process.env.MIR_SOAP_NAMESPACE || 'http://www.soap.servicios.hospedajes.mir.es/comunicacion'
+    soapNamespace: (process.env.MIR_SOAP_NAMESPACE || 'http://www.soap.servicios.hospedajes.mir.es/comunicacion').replace(/^['"]|['"]$/g, '')
   };
 }
 
