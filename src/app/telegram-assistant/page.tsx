@@ -54,8 +54,7 @@ export default function TelegramAssistantPage() {
       <div className="bg-white border rounded p-4 mb-6">
         <h2 className="text-lg font-semibold mb-2 text-gray-900">¿Qué es?</h2>
         <p className="text-gray-700">
-          Conecta tu propiedad con el bot de Telegram para consultar reservas y
-          registros en lenguaje natural con IA (GPT-4o-mini).
+          Conecta tu propiedad con la Inteligencia Artificial de Delfín Check in de Telegram para consultar reservas y registros en lenguaje natural.
         </p>
       </div>
 
