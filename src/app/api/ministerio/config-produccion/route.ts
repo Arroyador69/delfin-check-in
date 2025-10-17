@@ -35,12 +35,12 @@ export async function POST(req: NextRequest) {
       }, { status: 400 });
     }
 
-    // Validar formato del usuario
-    if (!usuario.includes('---WS')) {
+    // Validar formato del usuario (acepta tanto ---WS como ZWS)
+    if (!usuario.includes('---WS') && !usuario.endsWith('ZWS')) {
       return NextResponse.json({
         success: false,
         error: 'Formato de usuario incorrecto',
-        message: 'El usuario debe terminar en ---WS (ejemplo: TU_CIF---WS)'
+        message: 'El usuario debe terminar en ---WS o ZWS (ejemplo: TU_CIF---WS o TU_CIFZWS)'
       }, { status: 400 });
     }
 

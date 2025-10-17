@@ -223,7 +223,7 @@ export default function MirSettingsPage() {
                 className="text-gray-900"
               />
               <p className="text-xs text-gray-600 font-medium">
-                Formato: CIF/NIF/NIE seguido de '---WS'
+                Formato: CIF/NIF/NIE seguido de '---WS' o 'ZWS'
               </p>
             </div>
             
@@ -274,11 +274,11 @@ export default function MirSettingsPage() {
             <Input
               id="baseUrl"
               value={config.baseUrl}
-              onChange={(e) => setConfig({...config, baseUrl: e.target.value})}
-              className="text-gray-900"
+              readOnly
+              className="text-gray-900 bg-gray-50"
             />
             <p className="text-xs text-gray-600 font-medium">
-              URL oficial del servicio de comunicaciones MIR
+              URL oficial del servicio de comunicaciones MIR (no editable)
             </p>
           </div>
 
@@ -287,9 +287,12 @@ export default function MirSettingsPage() {
             <Input
               id="aplicacion"
               value={config.aplicacion}
-              onChange={(e) => setConfig({...config, aplicacion: e.target.value})}
-              className="text-gray-900"
+              readOnly
+              className="text-gray-900 bg-gray-50"
             />
+            <p className="text-xs text-gray-600 font-medium">
+              Nombre fijo de la aplicación (no editable)
+            </p>
           </div>
 
           <div className="flex items-center space-x-2">
