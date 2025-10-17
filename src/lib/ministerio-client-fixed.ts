@@ -110,15 +110,20 @@ export class MinisterioClientFixed {
       });
 
       // Configuración de fetch optimizada para Vercel
+      const contentLength = Buffer.byteLength(soapXml, 'utf8');
+
       const fetchOptions: RequestInit = {
         method: 'POST',
         headers: {
           'Authorization': buildBasicAuthHeader(this.cfg.username, this.cfg.password),
           'Content-Type': 'text/xml; charset=utf-8',
+          'Content-Length': contentLength.toString(),
+          'SOAPAction': '""',
           'User-Agent': 'Delfin_Check_in/1.0',
           'Accept': 'text/xml, application/xml, */*',
           'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache'
+          'Pragma': 'no-cache',
+          'Connection': 'close'
         },
         body: soapXml,
         signal: AbortSignal.timeout(60000), // 60 segundos timeout
