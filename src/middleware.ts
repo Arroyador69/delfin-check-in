@@ -107,6 +107,7 @@ export function middleware(req: NextRequest) {
     url.pathname.startsWith('/api/test-mir-raw')
     || url.pathname.startsWith('/api/public/ministerio/debug-preview')
     || url.pathname.startsWith('/api/public/ministerio/debug-download-zip')
+    || url.pathname.startsWith('/api/public/ministerio/ultimo-soap')
   );
   
   // Debug: Log para verificar qué rutas están siendo procesadas

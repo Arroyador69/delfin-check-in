@@ -26,6 +26,8 @@ export interface AltaPVResult {
   lote?: string;
   codigoComunicacion?: string;
   rawResponse: string;
+  debugSoap?: string; // opcional: SOAP enviado (para soporte)
+  solicitudZipB64Sample?: string; // muestra de la solicitud zip base64
 }
 
 function buildBasicAuthHeader(username: string, password: string): string {
@@ -185,14 +187,21 @@ export class MinisterioClientFixed {
           ok: false,
           codigo: res.status.toString(),
           descripcion: `HTTP ${res.status}: ${res.statusText}`,
-          rawResponse: text
+          rawResponse: text,
+          debugSoap: process.env.MIR_DEBUG_SOAP === 'true' ? soapXml : undefined,
+          solicitudZipB64Sample: process.env.MIR_DEBUG_SOAP === 'true' ? solicitudZipB64.substring(0, 120) + '...' : undefined
         };
       }
 
       const parsed = parseAltaResponse(text);
       console.log('✅ Respuesta parseada:', parsed);
 
-      return { ...parsed, rawResponse: text };
+      return { 
+        ...parsed, 
+        rawResponse: text,
+        debugSoap: process.env.MIR_DEBUG_SOAP === 'true' ? soapXml : undefined,
+        solicitudZipB64Sample: process.env.MIR_DEBUG_SOAP === 'true' ? solicitudZipB64.substring(0, 120) + '...' : undefined
+      };
 
     } catch (error) {
       console.error('❌ Error en altaPV:', error);
