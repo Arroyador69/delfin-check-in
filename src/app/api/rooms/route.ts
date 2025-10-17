@@ -20,10 +20,7 @@ export async function GET(req: NextRequest) {
       value: row.name
     }));
 
-    return NextResponse.json({
-      success: true,
-      rooms: rooms
-    });
+    return NextResponse.json(rooms);
 
   } catch (error) {
     console.error('Error obteniendo habitaciones:', error);
@@ -38,9 +35,6 @@ export async function GET(req: NextRequest) {
       { id: 6, name: 'Habitación 6', value: 'Habitación 6' }
     ];
     
-    return NextResponse.json({
-      success: true,
-      rooms: defaultRooms
-    });
+    return NextResponse.json(defaultRooms);
   }
 }
