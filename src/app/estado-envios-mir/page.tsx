@@ -172,6 +172,29 @@ export default function EstadoEnviosMIR() {
     }
   };
 
+  const normalizarPendientes = async () => {
+    try {
+      setMensaje({ tipo: 'info', texto: '🧹 Normalizando datos de pendientes...' });
+      const res = await fetch('/api/ministerio/normalizar-pendientes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ limit: 50 })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setMensaje({ tipo: 'success', texto: `✅ Normalizados ${data.updated} registros. Actualizando...` });
+        setTimeout(() => {
+          cargarEstado();
+          setMensaje(null);
+        }, 1500);
+      } else {
+        setMensaje({ tipo: 'error', texto: `❌ ${data.message || 'No se pudo normalizar'}` });
+      }
+    } catch (e) {
+      setMensaje({ tipo: 'error', texto: '❌ Error de red normalizando' });
+    }
+  };
+
   if (loading && !estado) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8">
@@ -237,6 +260,14 @@ export default function EstadoEnviosMIR() {
               <p className="mt-2 text-gray-600">🏛️ Seguimiento de comunicaciones al Ministerio del Interior</p>
             </div>
             <div className="flex items-center space-x-3">
+              <button
+                onClick={normalizarPendientes}
+                disabled={testando || procesando}
+                className="bg-amber-600 text-white px-4 py-2 rounded-md hover:bg-amber-700 disabled:opacity-50 transition-all duration-200 flex items-center space-x-2"
+              >
+                <span>🧹</span>
+                <span>Normalizar pendientes</span>
+              </button>
               <button
                 onClick={testearConexion}
                 disabled={testando || procesando}
