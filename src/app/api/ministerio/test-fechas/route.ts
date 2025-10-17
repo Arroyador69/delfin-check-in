@@ -69,6 +69,7 @@ export async function POST(req: NextRequest) {
         apellido2: "",
         tipoDocumento: "NIF",
         numeroDocumento: "12345678Z",
+        soporteDocumento: "12345678Z", // Número de soporte del documento
         fechaNacimiento: "1985-01-01",
         nacionalidad: "ESP",
         sexo: "M",

@@ -100,6 +100,7 @@ export async function POST(req: NextRequest) {
         apellido2: persona.apellido2 || "",
         tipoDocumento: persona.tipoDocumento || "NIF",
         numeroDocumento: persona.numeroDocumento || "12345678Z",
+        soporteDocumento: persona.soporteDocumento || persona.numeroDocumento || "12345678Z", // Número de soporte del documento
         fechaNacimiento: persona.fechaNacimiento || "1985-01-01",
         nacionalidad: persona.nacionalidad || "ESP",
         sexo: persona.sexo || "M",
