@@ -1,3 +1,3 @@
-export { POST } from '../../../ministerio/debug-download-zip/route';
+export { POST } from '../../../../ministerio/debug-download-zip/route';
 
 
