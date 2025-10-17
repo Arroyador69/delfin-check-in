@@ -366,7 +366,7 @@ export default function MirSettingsPage() {
           <CardTitle className="text-gray-900 font-bold">Resultado de la Prueba</CardTitle>
         </CardHeader>
           <CardContent>
-            <pre className="bg-gray-100 p-4 rounded-md text-sm overflow-auto">
+            <pre className="bg-gray-100 p-4 rounded-md text-sm overflow-auto text-gray-900 font-mono">
               {JSON.stringify(testResult, null, 2)}
             </pre>
           </CardContent>
