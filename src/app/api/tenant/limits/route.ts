@@ -29,17 +29,19 @@ export async function GET(req: NextRequest) {
     const tenant = result.rows[0];
     const limits = tenant.plan_limits || {};
 
-    // Obtener configuración actual de habitaciones
+    // Obtener configuración actual de habitaciones desde tabla Room existente
     const roomsResult = await sql`
-      SELECT room_name, room_order
-      FROM tenant_room_configs
-      WHERE tenant_id = ${tenantId}
-      ORDER BY room_order ASC
+      SELECT id, name
+      FROM "Room"
+      WHERE "lodgingId" = (
+        SELECT lodging_id FROM tenants WHERE id = ${tenantId}
+      )
+      ORDER BY id ASC
     `;
 
     const currentRooms = roomsResult.rows.map(row => ({
-      id: row.room_order,
-      name: row.room_name
+      id: parseInt(row.id),
+      name: row.name
     }));
 
     return NextResponse.json({

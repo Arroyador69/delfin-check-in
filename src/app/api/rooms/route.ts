@@ -6,16 +6,18 @@ export async function GET(req: NextRequest) {
     const tenantId = req.headers.get('x-tenant-id') || 'default';
 
     const result = await sql`
-      SELECT room_name, room_order
-      FROM tenant_room_configs
-      WHERE tenant_id = ${tenantId}
-      ORDER BY room_order ASC
+      SELECT id, name
+      FROM "Room"
+      WHERE "lodgingId" = (
+        SELECT lodging_id FROM tenants WHERE id = ${tenantId}
+      )
+      ORDER BY id ASC
     `;
 
     const rooms = result.rows.map(row => ({
-      id: row.room_order,
-      name: row.room_name,
-      value: row.room_name
+      id: parseInt(row.id),
+      name: row.name,
+      value: row.name
     }));
 
     return NextResponse.json({

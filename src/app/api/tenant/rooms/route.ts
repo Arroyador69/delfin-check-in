@@ -6,15 +6,17 @@ export async function GET(req: NextRequest) {
     const tenantId = req.headers.get('x-tenant-id') || 'default';
 
     const result = await sql`
-      SELECT room_name, room_order
-      FROM tenant_room_configs
-      WHERE tenant_id = ${tenantId}
-      ORDER BY room_order ASC
+      SELECT id, name
+      FROM "Room"
+      WHERE "lodgingId" = (
+        SELECT lodging_id FROM tenants WHERE id = ${tenantId}
+      )
+      ORDER BY id ASC
     `;
 
     const rooms = result.rows.map(row => ({
-      id: row.room_order,
-      name: row.room_name
+      id: parseInt(row.id),
+      name: row.name
     }));
 
     return NextResponse.json({
@@ -70,21 +72,38 @@ export async function POST(req: NextRequest) {
       }, { status: 400 });
     }
 
-    // Eliminar configuración anterior
-    await sql`
-      DELETE FROM tenant_room_configs
-      WHERE tenant_id = ${tenantId}
+    // Obtener lodging_id del tenant
+    const tenantResult = await sql`
+      SELECT lodging_id
+      FROM tenants
+      WHERE id = ${tenantId}
     `;
 
-    // Insertar nueva configuración
-    if (rooms.length > 0) {
-      const values = rooms.map((room, index) => 
-        `('${tenantId}', '${room.name.replace(/'/g, "''")}', ${index + 1})`
-      ).join(', ');
+    if (tenantResult.rows.length === 0) {
+      return NextResponse.json({
+        success: false,
+        message: 'Tenant no encontrado'
+      }, { status: 404 });
+    }
 
+    const lodgingId = tenantResult.rows[0].lodging_id;
+
+    // Actualizar nombres de habitaciones existentes
+    for (let i = 0; i < rooms.length; i++) {
+      const room = rooms[i];
       await sql`
-        INSERT INTO tenant_room_configs (tenant_id, room_name, room_order)
-        VALUES ${sql.unsafe(values)}
+        UPDATE "Room"
+        SET name = ${room.name}
+        WHERE id = ${room.id.toString()} AND "lodgingId" = ${lodgingId}
+      `;
+    }
+
+    // Eliminar habitaciones que excedan el límite (si es necesario)
+    if (rooms.length < maxRooms) {
+      await sql`
+        DELETE FROM "Room"
+        WHERE "lodgingId" = ${lodgingId}
+        AND id > ${rooms.length}
       `;
     }
 
