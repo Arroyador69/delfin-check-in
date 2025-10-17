@@ -349,11 +349,25 @@ export default function MirComunicacionesPage() {
                 <div className="space-y-4">
                   {comunicaciones.map((com) => {
                     // Extraer datos del huésped desde el XML enviado
-                    const xmlData = com.xml_enviado ? JSON.parse(com.xml_enviado) : null;
-                    const nombreCompleto = xmlData?.personas?.[0] ? 
-                      `${xmlData.personas[0].nombre} ${xmlData.personas[0].apellido1} ${xmlData.personas[0].apellido2 || ''}`.trim() : 
-                      'Datos no disponibles';
-                    const habitacion = xmlData?.habitacion || 'N/A';
+                    let xmlData = null;
+                    let nombreCompleto = 'Datos no disponibles';
+                    let habitacion = 'N/A';
+                    
+                    try {
+                      // Intentar parsear como JSON primero
+                      if (com.xml_enviado) {
+                        xmlData = JSON.parse(com.xml_enviado);
+                        nombreCompleto = xmlData?.personas?.[0] ? 
+                          `${xmlData.personas[0].nombre} ${xmlData.personas[0].apellido1} ${xmlData.personas[0].apellido2 || ''}`.trim() : 
+                          'Datos no disponibles';
+                        habitacion = xmlData?.habitacion || 'N/A';
+                      }
+                    } catch (error) {
+                      // Si no es JSON válido, usar datos por defecto
+                      console.log('XML no es JSON válido, usando datos por defecto');
+                      nombreCompleto = com.referencia || 'Comunicación MIR';
+                      habitacion = 'N/A';
+                    }
                     
                     return (
                       <Card key={com.id} className="p-4 bg-blue-50 border-blue-200">
