@@ -23,4 +23,9 @@ export async function POST(req: NextRequest) {
   }
 }
 
+// Soporte GET para facilitar pruebas desde navegador
+export async function GET(req: NextRequest) {
+  return POST(req);
+}
+
 
