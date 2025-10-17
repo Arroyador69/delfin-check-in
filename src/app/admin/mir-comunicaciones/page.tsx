@@ -366,9 +366,25 @@ export default function MirComunicacionesPage() {
                         habitacion = xmlData?.habitacion || 'N/A';
                       }
                     } catch (error) {
-                      // Si no es JSON válido, usar datos por defecto
-                      console.log('XML no es JSON válido, usando datos por defecto');
-                      nombreCompleto = com.referencia || 'Comunicación MIR';
+                      // Si no es JSON válido, intentar extraer del XML como texto
+                      console.log('XML no es JSON válido, intentando extraer nombre del XML');
+                      if (com.xml_enviado && typeof com.xml_enviado === 'string') {
+                        // Buscar patrones de nombre en el XML
+                        const nombreMatch = com.xml_enviado.match(/<nombre>([^<]+)<\/nombre>/i);
+                        const apellido1Match = com.xml_enviado.match(/<apellido1>([^<]+)<\/apellido1>/i);
+                        const apellido2Match = com.xml_enviado.match(/<apellido2>([^<]+)<\/apellido2>/i);
+                        
+                        if (nombreMatch && apellido1Match) {
+                          const nombre = nombreMatch[1];
+                          const apellido1 = apellido1Match[1];
+                          const apellido2 = apellido2Match ? apellido2Match[1] : '';
+                          nombreCompleto = `${nombre} ${apellido1} ${apellido2}`.trim();
+                        } else {
+                          nombreCompleto = 'Huésped Registrado';
+                        }
+                      } else {
+                        nombreCompleto = 'Huésped Registrado';
+                      }
                       habitacion = 'N/A';
                     }
                     
@@ -425,19 +441,16 @@ export default function MirComunicacionesPage() {
                                 size="sm" 
                                 className="bg-green-600 hover:bg-green-700 text-white font-semibold"
                                 onClick={() => {
-                                  const blob = new Blob([com.xml_respuesta], { type: 'application/xml' });
-                                  const url = URL.createObjectURL(blob);
-                                  const a = document.createElement('a');
-                                  a.href = url;
-                                  a.download = `xml-respuesta-${com.referencia}.xml`;
-                                  document.body.appendChild(a);
-                                  a.click();
-                                  document.body.removeChild(a);
-                                  URL.revokeObjectURL(url);
+                                  // Mostrar la respuesta en un modal/alert
+                                  const responseText = com.xml_respuesta.length > 500 
+                                    ? com.xml_respuesta.substring(0, 500) + '...' 
+                                    : com.xml_respuesta;
+                                  
+                                  alert(`Respuesta del MIR:\n\n${responseText}`);
                                 }}
                               >
                                 <Eye className="h-4 w-4 mr-1" />
-                                Respuesta
+                                Ver Respuesta
                               </Button>
                             )}
                           </div>
