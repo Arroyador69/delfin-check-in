@@ -463,17 +463,29 @@ export async function POST(request: NextRequest) {
 REGLAS CRÍTICAS:
 - SIEMPRE incluye las fechas de entrada y salida en cada respuesta
 - Usa EXACTAMENTE el número de personas del contexto
-- Distingue claramente entre llegadas y salidas
 - Hoy es 18 de octubre de 2025 a las 22:22
 
-FORMATO OBLIGATORIO:
-- Para llegadas: "Nombre (Habitación X) - X personas - Entrada: DD/MM/YYYY - Salida: DD/MM/YYYY"
-- Para salidas: "Nombre (Habitación X) - X personas - Entrada: DD/MM/YYYY - Salida: DD/MM/YYYY"
+ANÁLISIS DE FECHAS ESPECÍFICAS:
+Cuando pregunten por una fecha específica (ej: "¿Qué reservas hay el martes 21?"), categoriza así:
 
-EJEMPLOS:
-- "¿Quién llega hoy?" → "Hoy (18/10/2025) llega Nacho Madrigal (Habitación 2) - 2 personas - Entrada: 18/10/2025 - Salida: 19/10/2025"
-- "¿Quién se va mañana?" → "Mañana (19/10/2025) se va Nacho Madrigal (Habitación 2) - 2 personas - Entrada: 18/10/2025 - Salida: 19/10/2025"
-- "¿Quién llega el 20 de octubre?" → "El 20/10/2025 llega Hussain Emame (Habitación 2) - 2 personas - Entrada: 20/10/2025 - Salida: 22/10/2025"`,
+🏠 ESTÁN ALOJADOS: Reservas donde fecha_entrada < fecha_pregunta < fecha_salida
+⬅️ SALEN ESE DÍA: Reservas donde fecha_salida = fecha_pregunta  
+➡️ ENTRAN ESE DÍA: Reservas donde fecha_entrada = fecha_pregunta
+
+FORMATO PARA ANÁLISIS DE FECHA:
+"Para el [fecha] tengo lo siguiente 👇
+
+🏠 Están alojados:
+• Nombre | Hab. X | X pers. | entra DD/MM | sale DD/MM
+
+⬅️ Salen ese día:
+• Nombre | Hab. X | X pers. | entra DD/MM | sale DD/MM
+
+➡️ Entran ese día:
+• Nombre | Hab. X | X pers. | entra DD/MM | sale DD/MM"
+
+EJEMPLOS SIMPLES:
+- "¿Quién llega hoy?" → "Hoy (18/10/2025) llega Nacho Madrigal (Habitación 2) - 2 personas - Entrada: 18/10/2025 - Salida: 19/10/2025"`,
         },
             {
               role: 'user',
@@ -482,8 +494,8 @@ EJEMPLOS:
 ⚠️ INSTRUCCIONES CRÍTICAS:
 1. SIEMPRE incluye fechas de entrada y salida en cada respuesta
 2. Usa EXACTAMENTE el número de personas del contexto
-3. Distingue claramente entre llegadas y salidas
-4. Formato: "Nombre (Habitación X) - X personas - Entrada: DD/MM/YYYY - Salida: DD/MM/YYYY"
+3. Para preguntas de fecha específica, categoriza en: 🏠 Están alojados, ⬅️ Salen ese día, ➡️ Entran ese día
+4. Formato: "Nombre | Hab. X | X pers. | entra DD/MM | sale DD/MM"
 
 Pregunta del usuario: ${userText}
 
