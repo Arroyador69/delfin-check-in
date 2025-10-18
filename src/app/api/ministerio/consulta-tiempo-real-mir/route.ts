@@ -11,50 +11,29 @@ export async function POST(req: NextRequest) {
       username: process.env.MIR_HTTP_USER,
       password: process.env.MIR_HTTP_PASS,
       codigoArrendador: process.env.MIR_CODIGO_ARRENDADOR,
-      aplicacion: process.env.MIR_APLICACION || 'Delfin_Check_in',
-      simulacion: process.env.MIR_SIMULACION === 'true' || !process.env.MIR_BASE_URL
+      aplicacion: process.env.MIR_APLICACION || 'Delfin_Check_in'
     };
 
     console.log('🔧 Configuración MIR:', {
       baseUrl: config.baseUrl ? 'CONFIGURADO' : 'NO_CONFIGURADO',
-      simulacion: config.simulacion,
       username: config.username ? 'CONFIGURADO' : 'NO_CONFIGURADO',
       codigoArrendador: config.codigoArrendador ? 'CONFIGURADO' : 'NO_CONFIGURADO'
     });
 
-    // Si está en modo simulación o no hay configuración, simular respuesta
-    if (config.simulacion || !config.baseUrl) {
-      console.log('⚠️ Modo simulación activado - simulando consulta MIR');
-      
-      const lotesSimulados = [
-        { lote: 'LOTE-SIM-001', codigoEstado: '1', descripcion: 'Confirmado por el MIR' },
-        { lote: 'LOTE-SIM-002', codigoEstado: '4', descripcion: 'Pendiente de procesamiento' }
-      ];
-
+    // Si no hay configuración, devolver error
+    if (!config.baseUrl || !config.username || !config.password || !config.codigoArrendador) {
       return NextResponse.json({
-        success: true,
-        mensaje: `Consulta simulada completada - ${lotesSimulados.length} lotes consultados, ${lotesSimulados.length} actualizados`,
-        lotesConsultados: lotesSimulados.length,
-        actualizados: lotesSimulados.length,
-        detalles: lotesSimulados,
-        timestamp: new Date().toISOString(),
-        simulacion: true
-      });
+        success: false,
+        error: 'Configuración MIR incompleta',
+        message: 'Faltan variables de entorno: MIR_BASE_URL, MIR_HTTP_USER, MIR_HTTP_PASS, MIR_CODIGO_ARRENDADOR'
+      }, { status: 400 });
     }
 
-    // Crear cliente MIR simplificado para Vercel
-    const cliente = new SimpleMinisterioClient(config);
-
-    // Obtener todos los lotes que necesitan verificación
+    // Obtener lotes de la base de datos
     const result = await sql`
-      SELECT 
-        mc.id,
-        mc.referencia,
-        mc.lote,
-        mc.estado as mir_estado,
-        mc.created_at as fecha_envio
+      SELECT DISTINCT mc.lote
       FROM mir_comunicaciones mc
-      WHERE mc.lote IS NOT NULL AND mc.lote != ''
+      WHERE mc.lote IS NOT NULL AND mc.lote != '' AND mc.lote != 'SIM-'
       ORDER BY mc.created_at DESC
       LIMIT 10
     `;
@@ -70,133 +49,107 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Obtener lotes únicos para consultar
-    const lotesUnicos = [...new Set(result.rows.map(r => r.lote).filter(Boolean))];
-    
-    if (lotesUnicos.length === 0) {
-      return NextResponse.json({
-        success: true,
-        message: 'No hay lotes válidos para consultar',
-        consultados: 0,
-        actualizados: 0
-      });
-    }
+    const lotes = result.rows.map(r => r.lote).filter(Boolean);
+    console.log(`🔍 Consultando ${lotes.length} lotes al MIR:`, lotes);
 
-    console.log(`🔍 Consultando ${lotesUnicos.length} lotes únicos al MIR en tiempo real:`, lotesUnicos);
-
-    // Consultar lotes al MIR usando el servicio oficial consultaLote
-    const resultado = await cliente.consultaLote({ lotes: lotesUnicos });
-    
-    console.log('📊 Resultado consulta MIR en tiempo real:', resultado);
-
-    if (!resultado.ok) {
-      console.error('❌ Error en consulta MIR:', resultado.descripcion);
-      return NextResponse.json({
-        success: false,
-        error: `Error del MIR: ${resultado.descripcion}`,
-        codigo: resultado.codigo,
-        descripcion: resultado.descripcion
-      }, { status: 500 });
-    }
-
-    // Procesar resultados y actualizar base de datos en tiempo real
+    // Consultar cada lote individualmente al MIR
     const actualizados = [];
     let totalActualizados = 0;
 
-    if (resultado.resultados && resultado.resultados.length > 0) {
-      for (const loteResult of resultado.resultados) {
-        // Determinar el nuevo estado según el código MIR oficial
-        let nuevoEstado = 'enviado';
-        let descripcionEstado = 'Enviado al MIR';
+    for (const lote of lotes) {
+      try {
+        const resultado = await consultarLoteMIR(config, lote);
+        console.log(`📊 Resultado para lote ${lote}:`, resultado);
 
-        switch (loteResult.codigoEstado) {
-          case '1': // Procesado correctamente
-            nuevoEstado = 'confirmado';
-            descripcionEstado = 'Confirmado por el MIR - Procesado correctamente';
-            break;
-          case '4': // Pendiente de procesamiento
-            nuevoEstado = 'enviado';
-            descripcionEstado = 'Pendiente de procesamiento por el MIR';
-            break;
-          case '5': // Error en procesamiento
-            nuevoEstado = 'error';
-            descripcionEstado = 'Error en procesamiento por el MIR';
-            break;
-          case '6': // Anulado
-            nuevoEstado = 'error';
-            descripcionEstado = 'Comunicación anulada por el MIR';
-            break;
+        if (resultado.ok && resultado.codigoEstado) {
+          let nuevoEstado = 'enviado';
+          let descripcionEstado = 'Enviado al MIR';
+
+          switch (resultado.codigoEstado) {
+            case 1: // Procesado correctamente
+              nuevoEstado = 'confirmado';
+              descripcionEstado = 'Confirmado por el MIR - Procesado correctamente';
+              break;
+            case 4: // Pendiente de procesamiento
+              nuevoEstado = 'enviado';
+              descripcionEstado = 'Pendiente de procesamiento por el MIR';
+              break;
+            case 5: // Error en procesamiento
+              nuevoEstado = 'error';
+              descripcionEstado = 'Error en procesamiento por el MIR';
+              break;
+            case 6: // Anulado
+              nuevoEstado = 'error';
+              descripcionEstado = 'Comunicación anulada por el MIR';
+              break;
+          }
+
+          // Actualizar mir_comunicaciones
+          await sql`
+            UPDATE mir_comunicaciones 
+            SET 
+              estado = ${nuevoEstado},
+              resultado = jsonb_set(
+                COALESCE(resultado, '{}'::jsonb),
+                '{codigoEstado}', 
+                ${resultado.codigoEstado}::jsonb
+              ),
+              resultado = jsonb_set(
+                resultado,
+                '{descEstado}', 
+                ${descripcionEstado}::jsonb
+              ),
+              resultado = jsonb_set(
+                resultado,
+                '{ultimaConsulta}', 
+                ${new Date().toISOString()}::jsonb
+              )
+            WHERE lote = ${lote}
+          `;
+
+          // Actualizar guest_registrations
+          await sql`
+            UPDATE guest_registrations 
+            SET data = jsonb_set(
+              COALESCE(data, '{}'::jsonb),
+              '{mir_status}',
+              jsonb_build_object(
+                'estado', ${nuevoEstado},
+                'lote', ${lote},
+                'codigoEstado', ${resultado.codigoEstado},
+                'descEstado', ${descripcionEstado},
+                'ultimaConsulta', ${new Date().toISOString()}
+              )
+            )
+            WHERE reserva_ref IN (
+              SELECT referencia FROM mir_comunicaciones WHERE lote = ${lote}
+            )
+          `;
+
+          actualizados.push({
+            lote,
+            codigoEstado: resultado.codigoEstado,
+            nuevoEstado,
+            descripcion: descripcionEstado
+          });
+
+          totalActualizados++;
+          console.log(`✅ Actualizado lote ${lote}: ${nuevoEstado} (${resultado.codigoEstado})`);
         }
-
-        // Actualizar la tabla mir_comunicaciones con estado en tiempo real
-        await sql`
-          UPDATE mir_comunicaciones 
-          SET 
-            estado = ${nuevoEstado},
-            resultado = jsonb_set(
-              COALESCE(resultado, '{}'::jsonb),
-              '{codigoEstado}', 
-              ${loteResult.codigoEstado}::jsonb
-            ),
-            resultado = jsonb_set(
-              resultado,
-              '{descEstado}', 
-              ${descripcionEstado}::jsonb
-            ),
-            resultado = jsonb_set(
-              resultado,
-              '{ultimaConsulta}', 
-              ${new Date().toISOString()}::jsonb
-            )
-          WHERE lote = ${loteResult.lote}
-        `;
-
-        // Actualizar también guest_registrations para sincronización completa
-        await sql`
-          UPDATE guest_registrations 
-          SET data = jsonb_set(
-            COALESCE(data, '{}'::jsonb),
-            '{mir_status}',
-            jsonb_build_object(
-              'estado', ${nuevoEstado},
-              'lote', ${loteResult.lote},
-              'codigoEstado', ${loteResult.codigoEstado},
-              'descEstado', ${descripcionEstado},
-              'ultimaConsulta', ${new Date().toISOString()}
-            )
-          )
-          WHERE reserva_ref IN (
-            SELECT referencia FROM mir_comunicaciones WHERE lote = ${loteResult.lote}
-          )
-        `;
-
-        actualizados.push({
-          lote: loteResult.lote,
-          codigoEstado: loteResult.codigoEstado,
-          nuevoEstado,
-          descripcion: descripcionEstado
-        });
-
-        totalActualizados++;
-        console.log(`✅ Actualizado lote ${loteResult.lote}: ${nuevoEstado} (${loteResult.codigoEstado})`);
+      } catch (error) {
+        console.error(`❌ Error consultando lote ${lote}:`, error);
       }
-    } else {
-      console.log('⚠️ No se encontraron resultados en la respuesta del MIR');
     }
 
     console.log(`📝 Se actualizaron ${totalActualizados} comunicaciones en tiempo real`);
 
     return NextResponse.json({
       success: true,
-      mensaje: `Consulta en tiempo real realizada correctamente - ${lotesUnicos.length} lotes consultados, ${totalActualizados} actualizados`,
-      lotesConsultados: lotesUnicos.length,
+      mensaje: `Consulta en tiempo real realizada correctamente - ${lotes.length} lotes consultados, ${totalActualizados} actualizados`,
+      lotesConsultados: lotes.length,
       actualizados: totalActualizados,
       detalles: actualizados,
-      timestamp: new Date().toISOString(),
-      consultaTiempoReal: true
-    }, {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' }
+      timestamp: new Date().toISOString()
     });
 
   } catch (error) {
@@ -205,109 +158,76 @@ export async function POST(req: NextRequest) {
       success: false,
       error: 'Error interno consultando MIR en tiempo real',
       message: error instanceof Error ? error.message : 'Error desconocido'
-    }, {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    }, { status: 500 });
   }
 }
 
-// Cliente MIR simplificado para Vercel
-class SimpleMinisterioClient {
-  constructor(private config: any) {}
-
-  async consultaLote(params: { lotes: string[] }): Promise<any> {
-    console.log('🔍 Consultando lotes MIR:', params.lotes);
-    
-    // Construir SOAP request según especificación MIR
-    const soapXml = this.buildConsultaLoteSoap(params.lotes);
-    
-    try {
-      const response = await fetch(this.config.baseUrl, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Basic ${Buffer.from(`${this.config.username}:${this.config.password}`).toString('base64')}`,
-          'Content-Type': 'text/xml; charset=utf-8',
-          'User-Agent': 'Delfin_Check_in/1.0'
-        },
-        body: soapXml,
-        signal: AbortSignal.timeout(30000)
-      });
-
-      const responseText = await response.text();
-      console.log('📊 Respuesta MIR:', responseText);
-      
-      return this.parseConsultaLoteResponse(responseText);
-    } catch (error) {
-      console.error('❌ Error consultando MIR:', error);
-      return {
-        ok: false,
-        codigo: '999',
-        descripcion: `Error de conexión: ${error instanceof Error ? error.message : 'Error desconocido'}`
-      };
-    }
-  }
-
-  private buildConsultaLoteSoap(lotes: string[]): string {
-    const lotesXml = lotes.map(lote => `<lote>${lote}</lote>`).join('');
-    
-    return `<?xml version="1.0" encoding="UTF-8"?>
+// Función para consultar un lote específico al MIR
+async function consultarLoteMIR(config: any, lote: string): Promise<any> {
+  try {
+    // Construir SOAP request según especificación oficial MIR
+    const soapXml = `<?xml version="1.0" encoding="UTF-8"?>
 <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:com="http://www.soap.servicios.hospedajes.mir.es/comunicacion">
   <soapenv:Header/>
   <soapenv:Body>
     <com:consultaLoteRequest>
       <com:codigosLote>
-        ${lotesXml}
+        <com:lote>${lote}</com:lote>
       </com:codigosLote>
     </com:consultaLoteRequest>
   </soapenv:Body>
 </soapenv:Envelope>`;
-  }
 
-  private parseConsultaLoteResponse(xml: string): any {
-    try {
-      const codigo = this.matchTag(xml, 'codigo') || '999';
-      const descripcion = this.matchTag(xml, 'descripcion') || 'Error desconocido';
-      
-      const resultados = [];
-      
-      // Parsear resultados según estructura MIR
-      const resultadoMatches = [...xml.matchAll(/<resultado>([\s\S]*?)<\/resultado>/g)];
-      
-      for (const match of resultadoMatches) {
-        const resultadoXml = match[1];
-        const lote = this.matchTag(resultadoXml, 'lote');
-        const codigoEstado = this.matchTag(resultadoXml, 'codigoEstado') || '4';
-        const descEstado = this.matchTag(resultadoXml, 'descEstado') || '';
-        
-        if (lote) {
-          resultados.push({
-            lote,
-            codigoEstado,
-            descEstado
-          });
-        }
-      }
-      
-      return {
-        ok: codigo === '0',
-        codigo,
-        descripcion,
-        resultados
-      };
-    } catch (error) {
-      console.error('❌ Error parseando respuesta MIR:', error);
-      return {
-        ok: false,
-        codigo: '999',
-        descripcion: 'Error parseando respuesta del MIR'
-      };
+    console.log(`🔍 Enviando consulta para lote ${lote} al MIR`);
+
+    const response = await fetch(config.baseUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Basic ${Buffer.from(`${config.username}:${config.password}`).toString('base64')}`,
+        'Content-Type': 'text/xml; charset=utf-8',
+        'User-Agent': 'Delfin_Check_in/1.0',
+        'SOAPAction': ''
+      },
+      body: soapXml,
+      signal: AbortSignal.timeout(30000)
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
-  }
 
-  private matchTag(xml: string, tag: string): string | null {
-    const regex = new RegExp(`<${tag}>([\\s\\S]*?)<\\/${tag}>`);
-    const match = xml.match(regex);
-    return match ? match[1].trim() : null;
+    const responseText = await response.text();
+    console.log(`📊 Respuesta MIR para lote ${lote}:`, responseText);
+
+    // Parsear respuesta XML
+    const codigo = extractXmlTag(responseText, 'codigo');
+    const descripcion = extractXmlTag(responseText, 'descripcion');
+    const codigoEstado = extractXmlTag(responseText, 'codigoEstado');
+    const descEstado = extractXmlTag(responseText, 'descEstado');
+
+    return {
+      ok: codigo === '0',
+      codigo,
+      descripcion,
+      codigoEstado: codigoEstado ? parseInt(codigoEstado) : null,
+      descEstado
+    };
+
+  } catch (error) {
+    console.error(`❌ Error consultando lote ${lote}:`, error);
+    return {
+      ok: false,
+      codigo: '999',
+      descripcion: `Error de conexión: ${error instanceof Error ? error.message : 'Error desconocido'}`,
+      codigoEstado: null,
+      descEstado: ''
+    };
   }
+}
+
+// Función para extraer tags XML
+function extractXmlTag(xml: string, tag: string): string | null {
+  const regex = new RegExp(`<${tag}>([\\s\\S]*?)<\\/${tag}>`);
+  const match = xml.match(regex);
+  return match ? match[1].trim() : null;
 }
