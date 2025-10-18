@@ -6,6 +6,16 @@ export async function POST(req: NextRequest) {
   try {
     console.log('🔍 Consulta en tiempo real con el MIR...');
 
+    // Configurar cliente MIR
+    const config = getMinisterioConfigFromEnv();
+    console.log('🔧 Configuración MIR:', {
+      baseUrl: config.baseUrl,
+      simulacion: config.simulacion,
+      username: config.username ? '***' : 'NO_CONFIGURADO'
+    });
+
+    const cliente = new MinisterioClient(config);
+
     // Obtener todos los lotes que necesitan verificación
     const result = await sql`
       SELECT 
@@ -13,14 +23,11 @@ export async function POST(req: NextRequest) {
         mc.referencia,
         mc.lote,
         mc.estado as mir_estado,
-        mc.created_at as fecha_envio,
-        gr.id as registro_id,
-        gr.data,
-        gr.reserva_ref
+        mc.created_at as fecha_envio
       FROM mir_comunicaciones mc
-      LEFT JOIN guest_registrations gr ON mc.referencia = gr.reserva_ref
-      WHERE mc.lote IS NOT NULL
+      WHERE mc.lote IS NOT NULL AND mc.lote != ''
       ORDER BY mc.created_at DESC
+      LIMIT 10
     `;
 
     console.log(`📋 Encontrados ${result.rows.length} lotes para consultar`);
@@ -34,10 +41,6 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Configurar cliente MIR
-    const config = getMinisterioConfigFromEnv();
-    const cliente = new MinisterioClient(config);
-
     // Obtener lotes únicos para consultar
     const lotesUnicos = [...new Set(result.rows.map(r => r.lote).filter(Boolean))];
     
@@ -50,7 +53,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    console.log(`🔍 Consultando ${lotesUnicos.length} lotes únicos al MIR en tiempo real`);
+    console.log(`🔍 Consultando ${lotesUnicos.length} lotes únicos al MIR en tiempo real:`, lotesUnicos);
 
     // Consultar lotes al MIR usando el servicio oficial consultaLote
     const resultado = await cliente.consultaLote({ lotes: lotesUnicos });
@@ -71,7 +74,7 @@ export async function POST(req: NextRequest) {
     const actualizados = [];
     let totalActualizados = 0;
 
-    if (resultado.resultados) {
+    if (resultado.resultados && resultado.resultados.length > 0) {
       for (const loteResult of resultado.resultados) {
         // Determinar el nuevo estado según el código MIR oficial
         let nuevoEstado = 'enviado';
@@ -115,11 +118,6 @@ export async function POST(req: NextRequest) {
               resultado,
               '{ultimaConsulta}', 
               ${new Date().toISOString()}::jsonb
-            ),
-            resultado = jsonb_set(
-              resultado,
-              '{consultaTiempoReal}', 
-              'true'::jsonb
             )
           WHERE lote = ${loteResult.lote}
         `;
@@ -135,8 +133,7 @@ export async function POST(req: NextRequest) {
               'lote', ${loteResult.lote},
               'codigoEstado', ${loteResult.codigoEstado},
               'descEstado', ${descripcionEstado},
-              'ultimaConsulta', ${new Date().toISOString()},
-              'consultaTiempoReal', true
+              'ultimaConsulta', ${new Date().toISOString()}
             )
           )
           WHERE reserva_ref IN (
@@ -148,13 +145,14 @@ export async function POST(req: NextRequest) {
           lote: loteResult.lote,
           codigoEstado: loteResult.codigoEstado,
           nuevoEstado,
-          descripcion: descripcionEstado,
-          referencia: result.rows.find(r => r.lote === loteResult.lote)?.referencia
+          descripcion: descripcionEstado
         });
 
         totalActualizados++;
         console.log(`✅ Actualizado lote ${loteResult.lote}: ${nuevoEstado} (${loteResult.codigoEstado})`);
       }
+    } else {
+      console.log('⚠️ No se encontraron resultados en la respuesta del MIR');
     }
 
     console.log(`📝 Se actualizaron ${totalActualizados} comunicaciones en tiempo real`);

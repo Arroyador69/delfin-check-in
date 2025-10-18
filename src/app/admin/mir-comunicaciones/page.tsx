@@ -270,19 +270,38 @@ export default function MirComunicacionesPage() {
                   onClick={async () => {
                     try {
                       setLoading(true);
+                      setError(null);
+                      setSuccess(null);
+                      
+                      console.log('🔄 Iniciando consulta en tiempo real con MIR...');
+                      
                       const response = await fetch('/api/ministerio/consulta-tiempo-real-mir', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' }
+                        headers: { 
+                          'Content-Type': 'application/json',
+                          'Cache-Control': 'no-cache'
+                        }
                       });
+                      
+                      if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                      }
+                      
                       const result = await response.json();
+                      
                       if (result.success) {
                         setSuccess(`✅ Consulta en tiempo real completada - ${result.lotesConsultados} lotes consultados, ${result.actualizados} actualizados según MIR oficial`);
-                        cargarComunicaciones();
+                        
+                        // Recargar datos después de la actualización
+                        setTimeout(() => {
+                          cargarComunicaciones();
+                        }, 1000);
                       } else {
-                        setError(`❌ Error: ${result.message || result.error}`);
+                        setError(`❌ Error: ${result.message || result.error || 'Error desconocido'}`);
                       }
                     } catch (error) {
-                      setError('❌ Error consultando MIR en tiempo real');
+                      console.error('❌ Error en consulta tiempo real:', error);
+                      setError(`❌ Error consultando MIR: ${error instanceof Error ? error.message : 'Error de conexión'}`);
                     } finally {
                       setLoading(false);
                     }
@@ -292,15 +311,6 @@ export default function MirComunicacionesPage() {
                 >
                   <RefreshCw className={`h-5 w-5 mr-2 ${loading ? 'animate-spin' : ''}`} />
                   Consulta Tiempo Real MIR
-                </Button>
-                
-                <Button 
-                  onClick={cargarComunicaciones} 
-                  disabled={loading} 
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 shadow-lg"
-                >
-                  <RefreshCw className={`h-5 w-5 mr-2 ${loading ? 'animate-spin' : ''}`} />
-                  Actualizar
                 </Button>
               </div>
             </div>
