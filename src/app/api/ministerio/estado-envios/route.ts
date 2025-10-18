@@ -5,17 +5,25 @@ export async function GET(req: NextRequest) {
   try {
     console.log('📊 Obteniendo estado de envíos al MIR...');
     
-    // Obtener todos los registros de guest_registrations
+    // Obtener todos los registros de guest_registrations CON sus comunicaciones MIR
     const result = await sql`
       SELECT 
-        id,
-        created_at,
-        fecha_entrada,
-        fecha_salida,
-        data,
-        reserva_ref
-      FROM guest_registrations 
-      ORDER BY created_at DESC
+        gr.id,
+        gr.created_at,
+        gr.fecha_entrada,
+        gr.fecha_salida,
+        gr.data,
+        gr.reserva_ref,
+        mc.id as mir_id,
+        mc.estado as mir_estado,
+        mc.lote as mir_lote,
+        mc.resultado as mir_resultado,
+        mc.error as mir_error,
+        mc.created_at as mir_created_at,
+        mc.xml_respuesta as mir_xml_respuesta
+      FROM guest_registrations gr
+      LEFT JOIN mir_comunicaciones mc ON gr.reserva_ref = mc.referencia
+      ORDER BY gr.created_at DESC
     `;
     
     console.log(`📋 Encontrados ${result.rows.length} registros`);
@@ -37,52 +45,79 @@ export async function GET(req: NextRequest) {
     };
     
     result.rows.forEach(registro => {
-      const mirStatus = registro.data?.mir_status || {};
-      const hasMirData = mirStatus.lote || mirStatus.error || mirStatus.codigoComunicacion;
+      // Usar datos reales de la tabla mir_comunicaciones
+      const hasMirComunicacion = registro.mir_id !== null;
+      const mirEstado = registro.mir_estado;
+      const mirLote = registro.mir_lote;
+      const mirError = registro.mir_error;
+      
+      // Extraer nombre del huésped
+      let nombreCompleto = 'Datos no disponibles';
+      try {
+        if (registro.data?.comunicaciones?.[0]?.personas?.[0]) {
+          const persona = registro.data.comunicaciones[0].personas[0];
+          nombreCompleto = `${persona.nombre || ''} ${persona.apellido1 || ''} ${persona.apellido2 || ''}`.trim();
+        }
+      } catch (error) {
+        console.log('Error extrayendo nombre del huésped:', error);
+      }
       
       // Crear objeto base de comunicación
       const comunicacion = {
         id: registro.id,
         timestamp: registro.created_at,
         datos: registro.data,
-        resultado: mirStatus,
-        lote: mirStatus.lote || null,
-        error: mirStatus.error || null,
+        nombreCompleto: nombreCompleto,
         referencia: registro.reserva_ref,
-        codigoEstado: mirStatus.codigoEstado || null,
-        descEstado: mirStatus.descEstado || null,
-        codigoComunicacion: mirStatus.codigoComunicacion || null,
-        ultimaConsulta: mirStatus.ultimaConsulta || null
+        lote: mirLote,
+        error: mirError,
+        fechaEnvio: registro.mir_created_at,
+        estado: mirEstado || 'pendiente'
       };
       
-      if (!hasMirData) {
+      if (!hasMirComunicacion) {
         // No se ha enviado al MIR
         comunicaciones.pendientes.push({
           ...comunicacion,
           estado: 'pendiente'
         });
         estadisticas.pendientes++;
-      } else if (mirStatus.error || mirStatus.codigoEstado === '5' || mirStatus.codigoEstado === '6') {
-        // Error en el envío o estado de error/anulado del MIR
+      } else if (mirEstado === 'error' || mirError) {
+        // Error en el envío
         comunicaciones.errores.push({
           ...comunicacion,
           estado: 'error'
         });
         estadisticas.errores++;
-      } else if (mirStatus.codigoComunicacion || mirStatus.codigoEstado === '1') {
-        // Enviado y confirmado por el MIR
+      } else if (mirEstado === 'confirmado') {
+        // Confirmado por el MIR
         comunicaciones.confirmados.push({
           ...comunicacion,
           estado: 'confirmado'
         });
         estadisticas.confirmados++;
-      } else if (mirStatus.lote || mirStatus.codigoEstado === '4') {
+      } else if (mirEstado === 'enviado') {
         // Enviado pero pendiente de confirmación
         comunicaciones.enviados.push({
           ...comunicacion,
           estado: 'enviado'
         });
         estadisticas.enviados++;
+      } else {
+        // Estado desconocido, poner como enviado por defecto si tiene lote
+        if (mirLote) {
+          comunicaciones.enviados.push({
+            ...comunicacion,
+            estado: 'enviado'
+          });
+          estadisticas.enviados++;
+        } else {
+          comunicaciones.pendientes.push({
+            ...comunicacion,
+            estado: 'pendiente'
+          });
+          estadisticas.pendientes++;
+        }
       }
     });
     

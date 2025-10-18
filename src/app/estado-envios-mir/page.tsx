@@ -28,10 +28,12 @@ interface ComunicacionMIR {
   lote: string | null;
   error: string | null;
   referencia: string;
+  nombreCompleto?: string;
   codigoEstado?: string;
   descEstado?: string;
   codigoComunicacion?: string;
   ultimaConsulta?: string;
+  fechaEnvio?: string;
 }
 
 interface Estadisticas {
@@ -109,19 +111,11 @@ export default function EstadoEnviosMIRPage() {
     setError(null);
 
     try {
-      // Obtener todos los lotes pendientes de confirmación
-      const lotesPendientes = estadoEnvio?.comunicaciones.enviados.map(c => c.lote).filter(Boolean) || [];
-      
-      if (lotesPendientes.length === 0) {
-        setSuccess('No hay lotes pendientes de consulta');
-        setConsultandoLotes(false);
-        return;
-      }
+      console.log('🔍 Consultando estado real con el MIR...');
 
-      const response = await fetch('/api/ministerio/consulta-lotes', {
+      const response = await fetch('/api/ministerio/consultar-estado-real-mir', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ lotes: lotesPendientes })
+        headers: { 'Content-Type': 'application/json' }
       });
 
       const data = await response.json();
@@ -131,17 +125,17 @@ export default function EstadoEnviosMIRPage() {
         await cargarEstadoEnvios();
         
         // Log de cambios realizados
-        if (data.cambios && data.cambios.length > 0) {
-          console.log('📝 Cambios realizados:', data.cambios);
+        if (data.detalles && data.detalles.length > 0) {
+          console.log('📝 Cambios realizados:', data.detalles);
         }
 
-        setSuccess(`Consulta realizada correctamente - ${data.resultados?.length || 0} lotes consultados`);
+        setSuccess(`Consulta realizada correctamente - ${data.lotesConsultados || 0} lotes consultados, ${data.actualizados || 0} actualizados`);
       } else {
-        setError(data.message || 'Error consultando lotes');
+        setError(data.message || 'Error consultando estado MIR');
       }
     } catch (err) {
-      setError('Error de conexión al consultar lotes');
-      console.error('Error consultando lotes:', err);
+      setError('Error de conexión al consultar estado MIR');
+      console.error('Error consultando estado MIR:', err);
     } finally {
       setConsultandoLotes(false);
     }
@@ -199,19 +193,24 @@ export default function EstadoEnviosMIRPage() {
           <Card key={com.id} className="border-l-4 border-l-blue-500">
             <CardContent className="p-4">
               <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center space-x-3">
-                  <div className="text-sm font-mono text-gray-600">
-                    #{com.id.slice(-8)}
-                  </div>
-                  <div className="text-sm text-gray-500">
-                    {formatearFecha(com.timestamp)}
-                  </div>
-                  {com.referencia && (
-                    <div className="text-xs bg-gray-100 px-2 py-1 rounded">
-                      Ref: {com.referencia}
-                    </div>
-                  )}
+              <div className="flex items-center space-x-3">
+                <div className="text-sm font-mono text-gray-600">
+                  #{com.id.slice(-8)}
                 </div>
+                <div className="text-sm text-gray-500">
+                  {formatearFecha(com.timestamp)}
+                </div>
+                {com.referencia && (
+                  <div className="text-xs bg-gray-100 px-2 py-1 rounded">
+                    Ref: {com.referencia}
+                  </div>
+                )}
+                {com.nombreCompleto && (
+                  <div className="text-sm font-medium text-gray-800">
+                    👤 {com.nombreCompleto}
+                  </div>
+                )}
+              </div>
                 <div className="flex items-center space-x-2">
                   {getEstadoBadge(com.estado, com.codigoEstado)}
                   <Button size="sm" variant="outline">
@@ -222,17 +221,17 @@ export default function EstadoEnviosMIRPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                 <div>
-                  <span className="font-medium text-gray-700">Lote:</span>
+                  <span className="font-medium text-gray-700">Lote MIR:</span>
                   <div className="font-mono text-blue-600">
-                    {com.lote || 'N/A'}
+                    {com.lote || 'Sin lote asignado'}
                   </div>
                 </div>
                 
-                {com.codigoComunicacion && (
+                {com.fechaEnvio && (
                   <div>
-                    <span className="font-medium text-gray-700">Código Comunicación:</span>
-                    <div className="font-mono text-green-600">
-                      {com.codigoComunicacion}
+                    <span className="font-medium text-gray-700">Fecha Envío:</span>
+                    <div className="text-gray-600">
+                      {formatearFecha(com.fechaEnvio)}
                     </div>
                   </div>
                 )}
@@ -301,11 +300,11 @@ export default function EstadoEnviosMIRPage() {
 
               <Button 
                 onClick={() => consultarLotesMIR()} 
-                disabled={consultandoLotes || !estadoEnvio?.comunicaciones.enviados.length}
+                disabled={consultandoLotes}
                 className="bg-green-600 hover:bg-green-700 text-white font-semibold"
               >
                 <Activity className={`w-4 h-4 mr-2 ${consultandoLotes ? 'animate-spin' : ''}`} />
-                Consultar Lotes MIR
+                {consultandoLotes ? 'Consultando MIR...' : 'Consultar Estado Real MIR'}
               </Button>
               
               <Button 
