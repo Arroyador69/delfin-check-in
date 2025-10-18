@@ -489,8 +489,30 @@ export default function MirComunicacionesPage() {
                                     alert(`Registro: ${registro.referencia}\nEstado: ${estado}\nID: ${registro.id}`);
                                   }}
                                 >
-                                  <Download className="h-4 w-4 mr-1" />
+                                  <Eye className="h-4 w-4 mr-1" />
                                   Info
+                                </Button>
+                                <Button 
+                                  size="sm" 
+                                  className="bg-purple-600 hover:bg-purple-700 text-white font-semibold"
+                                  onClick={() => {
+                                    if (registro.xml_enviado) {
+                                      const blob = new Blob([registro.xml_enviado], { type: 'application/xml' });
+                                      const url = URL.createObjectURL(blob);
+                                      const a = document.createElement('a');
+                                      a.href = url;
+                                      a.download = `comunicacion_${registro.referencia}.xml`;
+                                      document.body.appendChild(a);
+                                      a.click();
+                                      document.body.removeChild(a);
+                                      URL.revokeObjectURL(url);
+                                    } else {
+                                      alert('No hay XML disponible para descargar');
+                                    }
+                                  }}
+                                >
+                                  <Download className="h-4 w-4 mr-1" />
+                                  XML
                                 </Button>
                               </>
                             )}

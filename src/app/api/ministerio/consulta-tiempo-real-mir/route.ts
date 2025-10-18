@@ -20,15 +20,6 @@ export async function POST(req: NextRequest) {
       codigoArrendador: config.codigoArrendador ? 'CONFIGURADO' : 'NO_CONFIGURADO'
     });
 
-    // Si no hay configuración, devolver error
-    if (!config.baseUrl || !config.username || !config.password || !config.codigoArrendador) {
-      return NextResponse.json({
-        success: false,
-        error: 'Configuración MIR incompleta',
-        message: 'Faltan variables de entorno: MIR_BASE_URL, MIR_HTTP_USER, MIR_HTTP_PASS, MIR_CODIGO_ARRENDADOR'
-      }, { status: 400 });
-    }
-
     // Obtener lotes de la base de datos
     const result = await sql`
       SELECT DISTINCT mc.lote
