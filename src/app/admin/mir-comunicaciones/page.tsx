@@ -77,12 +77,20 @@ export default function MirComunicacionesPage() {
     setError(null);
     
     try {
-      const response = await fetch('/api/ministerio/registros-completos');
+      const response = await fetch('/api/ministerio/estado-envios');
       const data = await response.json();
       
       if (data.success) {
-        setComunicaciones(data.registros || []);
-        setSuccess(`Consulta realizada correctamente. Encontrados ${data.registros?.length || 0} registros (${data.estadisticas?.pendientes || 0} pendientes, ${data.estadisticas?.enviados || 0} enviados)`);
+        // Convertir datos del nuevo formato al formato esperado
+        const todosRegistros = [
+          ...data.comunicaciones.pendientes,
+          ...data.comunicaciones.enviados,
+          ...data.comunicaciones.confirmados,
+          ...data.comunicaciones.errores
+        ];
+        
+        setComunicaciones(todosRegistros);
+        setSuccess(`Consulta realizada correctamente. Encontrados ${data.estadisticas.total} registros (${data.estadisticas.pendientes} pendientes, ${data.estadisticas.enviados} enviados, ${data.estadisticas.confirmados} confirmados, ${data.estadisticas.errores} errores)`);
       } else {
         setError(data.message || 'Error cargando registros');
       }
@@ -94,52 +102,6 @@ export default function MirComunicacionesPage() {
     }
   };
 
-  const enviarPrueba = async () => {
-    setLoading(true);
-    setError(null);
-    setSuccess(null);
-    
-    try {
-      const response = await fetch('/api/ministerio/envio-oficial', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          nombre: 'Juan',
-          apellido1: 'Pérez',
-          apellido2: 'García',
-          tipoDocumento: 'NIF',
-          numeroDocumento: '12345678Z',
-          fechaNacimiento: '1985-01-01',
-          nacionalidad: 'ESP',
-          sexo: 'M',
-          direccion: 'Calle Ejemplo 123',
-          codigoPostal: '28001',
-          pais: 'ESP',
-          codigoMunicipio: '28079',
-          nombreMunicipio: 'Madrid',
-          telefono: '600000000',
-          correo: 'juan.perez@example.com',
-          fechaEntrada: new Date().toISOString().replace(/\.\d{3}Z$/, ''),
-          fechaSalida: new Date(Date.now() + 24*60*60*1000).toISOString().replace(/\.\d{3}Z$/, ''),
-          tipoPago: 'EFECT'
-        })
-      });
-      
-      const data = await response.json();
-      
-      if (data.success) {
-        setSuccess(`✅ ${data.interpretacion.mensaje}`);
-        cargarComunicaciones(); // Recargar lista
-      } else {
-        setError(`❌ ${data.message || 'Error en el envío'}`);
-      }
-    } catch (err) {
-      setError('Error de conexión');
-      console.error('Error enviando prueba:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const consultarComunicaciones = async () => {
     if (!codigosConsulta.trim()) {
@@ -251,7 +213,8 @@ export default function MirComunicacionesPage() {
 
   const getEstadoIcon = (estado: string) => {
     switch (estado) {
-      case 'enviado': return <CheckCircle className="h-4 w-4 text-green-500" />;
+      case 'confirmado': return <CheckCircle className="h-4 w-4 text-green-600" />;
+      case 'enviado': return <Send className="h-4 w-4 text-blue-500" />;
       case 'error': return <XCircle className="h-4 w-4 text-red-500" />;
       case 'anulado': return <X className="h-4 w-4 text-gray-500" />;
       case 'pendiente': return <Clock className="h-4 w-4 text-yellow-500" />;
@@ -260,17 +223,27 @@ export default function MirComunicacionesPage() {
   };
 
   const getEstadoBadge = (estado: string) => {
-    const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-      'enviado': 'default',
-      'error': 'destructive',
-      'anulado': 'secondary',
-      'pendiente': 'outline'
+    const getEstadoConfig = (estado: string) => {
+      switch (estado) {
+        case 'confirmado':
+          return { variant: 'default' as const, className: 'font-bold text-white bg-green-600 border-green-600' };
+        case 'enviado':
+          return { variant: 'default' as const, className: 'font-bold text-white bg-blue-600 border-blue-600' };
+        case 'error':
+          return { variant: 'destructive' as const, className: 'font-bold text-white bg-red-600 border-red-600' };
+        case 'pendiente':
+          return { variant: 'outline' as const, className: 'font-bold text-yellow-800 bg-yellow-100 border-yellow-300' };
+        default:
+          return { variant: 'outline' as const, className: 'font-bold text-gray-800 bg-gray-100 border-gray-300' };
+      }
     };
+    
+    const config = getEstadoConfig(estado);
     
     return (
       <Badge 
-        variant={variants[estado] || 'outline'}
-        className="font-bold text-gray-900 bg-green-100 border-green-300"
+        variant={config.variant}
+        className={config.className}
       >
         {estado.toUpperCase()}
       </Badge>
@@ -325,7 +298,6 @@ export default function MirComunicacionesPage() {
       <Tabs defaultValue="comunicaciones" className="space-y-4">
         <TabsList className="bg-gray-100">
           <TabsTrigger value="comunicaciones" className="text-gray-800 font-semibold data-[state=active]:bg-blue-600 data-[state=active]:text-white">Comunicaciones</TabsTrigger>
-          <TabsTrigger value="envio" className="text-gray-800 font-semibold data-[state=active]:bg-blue-600 data-[state=active]:text-white">Envío de Prueba</TabsTrigger>
           <TabsTrigger value="consulta" className="text-gray-800 font-semibold data-[state=active]:bg-blue-600 data-[state=active]:text-white">Consulta</TabsTrigger>
           <TabsTrigger value="catalogo" className="text-gray-800 font-semibold data-[state=active]:bg-blue-600 data-[state=active]:text-white">Catálogos</TabsTrigger>
           <TabsTrigger value="anulacion" className="text-gray-800 font-semibold data-[state=active]:bg-blue-600 data-[state=active]:text-white">Anulación</TabsTrigger>
@@ -352,10 +324,10 @@ export default function MirComunicacionesPage() {
               ) : (
                 <div className="space-y-4">
                   {comunicaciones.map((registro) => {
-                    // Los datos ya vienen procesados del nuevo endpoint
+                    // Los datos vienen del nuevo endpoint estado-envios
                     const nombreCompleto = registro.nombreCompleto || 'Datos no disponibles';
-                    const habitacion = registro.habitacion || 'N/A';
-                    const yaEnviado = registro.ya_enviado;
+                    const habitacion = 'N/A'; // Se puede extraer de registro.datos si es necesario
+                    const yaEnviado = registro.estado !== 'pendiente';
                     const estado = registro.estado;
                     
                     return (
@@ -374,56 +346,55 @@ export default function MirComunicacionesPage() {
                               <div className="flex items-center gap-4">
                                 <span>🏨 Habitación: <strong>{habitacion}</strong></span>
                                 <span>📋 Tipo: <strong>PV</strong></span>
-                                <span>🆔 Ref: <strong>{registro.reserva_ref}</strong></span>
+                                <span>🆔 Ref: <strong>{registro.referencia}</strong></span>
                               </div>
                               <div className="mt-1">
-                                📅 Registrado: <strong>{new Date(registro.created_at).toLocaleString('es-ES')}</strong>
-                                {registro.comunicacion_mir?.lote && <span className="ml-4">📦 Lote: <strong>{registro.comunicacion_mir.lote}</strong></span>}
+                                📅 Registrado: <strong>{new Date(registro.timestamp).toLocaleString('es-ES')}</strong>
+                                {registro.lote && <span className="ml-4">📦 Lote: <strong>{registro.lote}</strong></span>}
+                                {registro.fechaEnvio && <span className="ml-4">📤 Enviado: <strong>{new Date(registro.fechaEnvio).toLocaleString('es-ES')}</strong></span>}
                               </div>
-                              {registro.comunicacion_mir?.error && (
-                                <div className="text-red-600 font-semibold mt-2">❌ Error: {registro.comunicacion_mir.error}</div>
+                              {registro.error && (
+                                <div className="text-red-600 font-semibold mt-2">❌ Error: {registro.error}</div>
                               )}
                             </div>
                           </div>
                           <div className="flex gap-2">
                             {yaEnviado ? (
                               <>
-                                {registro.comunicacion_mir?.xml_respuesta && (
-                                  <Button 
-                                    size="sm" 
-                                    className="bg-green-600 hover:bg-green-700 text-white font-semibold"
-                                    onClick={() => {
-                                      const responseText = registro.comunicacion_mir.xml_respuesta.length > 500 
-                                        ? registro.comunicacion_mir.xml_respuesta.substring(0, 500) + '...' 
-                                        : registro.comunicacion_mir.xml_respuesta;
-                                      
-                                      alert(`Respuesta del MIR:\n\n${responseText}`);
-                                    }}
-                                  >
-                                    <Eye className="h-4 w-4 mr-1" />
-                                    Ver Respuesta
-                                  </Button>
-                                )}
-                                {registro.comunicacion_mir?.xml_enviado && (
-                                  <Button 
-                                    size="sm" 
-                                    className="bg-blue-600 hover:bg-blue-700 text-white font-semibold"
-                                    onClick={() => {
-                                      const blob = new Blob([registro.comunicacion_mir.xml_enviado], { type: 'application/xml' });
-                                      const url = URL.createObjectURL(blob);
-                                      const a = document.createElement('a');
-                                      a.href = url;
-                                      a.download = `xml-enviado-${registro.reserva_ref}.xml`;
-                                      document.body.appendChild(a);
-                                      a.click();
-                                      document.body.removeChild(a);
-                                      URL.revokeObjectURL(url);
-                                    }}
-                                  >
-                                    <Download className="h-4 w-4 mr-1" />
-                                    XML
-                                  </Button>
-                                )}
+                                <Button 
+                                  size="sm" 
+                                  className="bg-green-600 hover:bg-green-700 text-white font-semibold"
+                                  onClick={() => {
+                                    alert(`Estado: ${estado}\nLote: ${registro.lote || 'N/A'}\nReferencia: ${registro.referencia}`);
+                                  }}
+                                >
+                                  <Eye className="h-4 w-4 mr-1" />
+                                  Ver Estado
+                                </Button>
+                                <Button 
+                                  size="sm" 
+                                  className="bg-blue-600 hover:bg-blue-700 text-white font-semibold"
+                                  onClick={async () => {
+                                    try {
+                                      const response = await fetch('/api/ministerio/consultar-estado-real-mir', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' }
+                                      });
+                                      const result = await response.json();
+                                      if (result.success) {
+                                        alert('✅ Estado actualizado correctamente');
+                                        cargarComunicaciones();
+                                      } else {
+                                        alert(`❌ Error: ${result.message}`);
+                                      }
+                                    } catch (error) {
+                                      alert('❌ Error consultando estado MIR');
+                                    }
+                                  }}
+                                >
+                                  <RefreshCw className="h-4 w-4 mr-1" />
+                                  Consultar MIR
+                                </Button>
                               </>
                             ) : (
                               <>
@@ -432,31 +403,12 @@ export default function MirComunicacionesPage() {
                                   className="bg-green-600 hover:bg-green-700 text-white font-semibold"
                                   onClick={async () => {
                                     try {
-                                      // Primero probar las fechas
-                                      const testResponse = await fetch('/api/ministerio/test-fechas', {
-                                        method: 'POST',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({
-                                          fechaEntrada: registro.fecha_entrada,
-                                          fechaSalida: registro.fecha_salida
-                                        })
-                                      });
-                                      
-                                      const testResult = await testResponse.json();
-                                      if (!testResult.success) {
-                                        alert(`❌ Error en fechas: ${testResult.message}`);
-                                        return;
-                                      }
-                                      
-                                      // Si las fechas están bien, proceder con el envío
                                       const response = await fetch('/api/ministerio/auto-envio', {
                                         method: 'POST',
                                         headers: { 'Content-Type': 'application/json' },
                                         body: JSON.stringify({
                                           id: registro.id,
-                                          fechaEntrada: registro.fecha_entrada,
-                                          fechaSalida: registro.fecha_salida,
-                                          personas: registro.data?.comunicaciones?.[0]?.personas || []
+                                          referencia: registro.referencia
                                         })
                                       });
                                       
@@ -478,57 +430,12 @@ export default function MirComunicacionesPage() {
                                 <Button 
                                   size="sm" 
                                   className="bg-blue-600 hover:bg-blue-700 text-white font-semibold"
-                                  onClick={async () => {
-                                    try {
-                                      // Primero probar las fechas
-                                      const testResponse = await fetch('/api/ministerio/test-fechas', {
-                                        method: 'POST',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({
-                                          fechaEntrada: registro.fecha_entrada,
-                                          fechaSalida: registro.fecha_salida
-                                        })
-                                      });
-                                      
-                                      const testResult = await testResponse.json();
-                                      if (!testResult.success) {
-                                        alert(`❌ Error en fechas: ${testResult.message}`);
-                                        return;
-                                      }
-                                      
-                                      // Si las fechas están bien, generar XML
-                                      const response = await fetch('/api/ministerio/generar-xml', {
-                                        method: 'POST',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({
-                                          id: registro.id,
-                                          fechaEntrada: registro.fecha_entrada,
-                                          fechaSalida: registro.fecha_salida,
-                                          personas: registro.personas || []
-                                        })
-                                      });
-                                      
-                                      const result = await response.json();
-                                      if (result.success && result.xml) {
-                                        const blob = new Blob([result.xml], { type: 'application/xml' });
-                                        const url = URL.createObjectURL(blob);
-                                        const a = document.createElement('a');
-                                        a.href = url;
-                                        a.download = `xml-mir-${registro.reserva_ref}.xml`;
-                                        document.body.appendChild(a);
-                                        a.click();
-                                        document.body.removeChild(a);
-                                        URL.revokeObjectURL(url);
-                                      } else {
-                                        alert(`❌ Error generando XML: ${result.message}`);
-                                      }
-                                    } catch (error) {
-                                      alert('❌ Error generando XML');
-                                    }
+                                  onClick={() => {
+                                    alert(`Registro: ${registro.referencia}\nEstado: ${estado}\nID: ${registro.id}`);
                                   }}
                                 >
                                   <Download className="h-4 w-4 mr-1" />
-                                  XML
+                                  Info
                                 </Button>
                               </>
                             )}
@@ -543,29 +450,6 @@ export default function MirComunicacionesPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="envio" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-gray-900 font-bold text-xl">Enviar Comunicación de Prueba</CardTitle>
-              <CardDescription className="text-gray-700 font-medium">
-                Envía una comunicación de prueba al MIR usando las credenciales oficiales
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Alert>
-                <AlertTriangle className="h-4 w-4" />
-                <AlertDescription className="text-gray-800 font-semibold">
-                  Esta función enviará una comunicación real al MIR. Asegúrate de que las credenciales estén configuradas correctamente.
-                </AlertDescription>
-              </Alert>
-              
-              <Button onClick={enviarPrueba} disabled={loading} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold">
-                <Send className="h-4 w-4 mr-2" />
-                {loading ? 'Enviando...' : 'Enviar Comunicación de Prueba'}
-              </Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
 
         <TabsContent value="consulta" className="space-y-4">
           <Card>
