@@ -143,7 +143,7 @@ function generateContext(registrations: any[], reservations: any[]) {
   const todayIso = toISODateInMadrid(new Date());
   const tomorrowIso = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0];
   
-  let context = `Hoy: ${todayIso}\n`;
+  let context = `Datos del hostal:\n`;
   
   if (reservations.length > 0) {
     const mapped = reservations.map((res: any) => ({
@@ -166,7 +166,7 @@ function generateContext(registrations: any[], reservations: any[]) {
       context += `\nLlegadas hoy:\n`;
       arrivalsToday.forEach((res, i) => {
         const numPersons = res.guest_count || 1;
-        context += `${res.guest_name} - ${numPersons} persona(s)\n`;
+        context += `${res.guest_name} - Entrada: ${res.checkInIso} - Salida: ${res.checkOutIso} - ${numPersons} persona(s)\n`;
       });
     }
 
@@ -175,7 +175,7 @@ function generateContext(registrations: any[], reservations: any[]) {
       context += `\nSalidas hoy:\n`;
       departuresToday.forEach((res, i) => {
         const numPersons = res.guest_count || 1;
-        context += `${res.guest_name} - ${numPersons} persona(s)\n`;
+        context += `${res.guest_name} - Entrada: ${res.checkInIso} - Salida: ${res.checkOutIso} - ${numPersons} persona(s)\n`;
       });
     }
 
@@ -184,7 +184,7 @@ function generateContext(registrations: any[], reservations: any[]) {
       context += `\nLlegadas mañana:\n`;
       arrivalsTomorrow.forEach((res, i) => {
         const numPersons = res.guest_count || 1;
-        context += `${res.guest_name} - ${numPersons} persona(s)\n`;
+        context += `${res.guest_name} - Entrada: ${res.checkInIso} - Salida: ${res.checkOutIso} - ${numPersons} persona(s)\n`;
       });
     }
 
@@ -193,7 +193,7 @@ function generateContext(registrations: any[], reservations: any[]) {
       context += `\nSalidas mañana:\n`;
       departuresTomorrow.forEach((res, i) => {
         const numPersons = res.guest_count || 1;
-        context += `${res.guest_name} - ${numPersons} persona(s)\n`;
+        context += `${res.guest_name} - Entrada: ${res.checkInIso} - Salida: ${res.checkOutIso} - ${numPersons} persona(s)\n`;
       });
     }
   }
@@ -491,19 +491,17 @@ export async function POST(request: NextRequest) {
           messages: [
         {
           role: 'system',
-          content: `Eres el asistente del hostal ${tenant.name}. Responde de forma breve y clara.
+          content: `Eres el asistente del hostal ${tenant.name}.
 
-REGLAS CRÍTICAS:
-1. Si el contexto dice "2 persona(s)" → responde "2 personas"
-2. Si el contexto dice "1 persona(s)" → responde "1 persona"
-3. NO asumas que es 1 persona
-4. Usa exactamente el número que aparece en el contexto
+INSTRUCCIONES:
+- Usa EXACTAMENTE el número de personas que aparece en el contexto
+- Si dice "2 persona(s)" → responde "2 personas"
+- Si dice "1 persona(s)" → responde "1 persona"
+- Incluye: nombre, fecha entrada, fecha salida, número personas
 
-EJEMPLOS:
-- Contexto: "Nacho Madrigal - 2 persona(s)" → Respuesta: "Nacho Madrigal - 2 personas"
-- Contexto: "Adil Rahali - 1 persona(s)" → Respuesta: "Adil Rahali - 1 persona"
-
-Responde solo con la información solicitada.`,
+EJEMPLO:
+Contexto: "Nacho Madrigal - Entrada: 2025-10-18 - Salida: 2025-10-19 - 2 persona(s)"
+Respuesta: "Nacho Madrigal - Entrada: 18/10/2025 - Salida: 19/10/2025 - 2 personas"`,
         },
             {
               role: 'user',
