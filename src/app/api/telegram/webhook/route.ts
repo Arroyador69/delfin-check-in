@@ -169,6 +169,8 @@ function generateContext(registrations: any[], reservations: any[]) {
         const matchingReg = findMatchingRegistration(registrations, res);
         const hasRegistration = matchingReg ? '✅ Registrado' : '⚠️ Sin registro';
         
+        console.log(`🔍 RESERVA ${res.guest_name}: guest_count = ${res.guest_count}, numPersons = ${numPersons}`);
+        
         context += `${i + 1}. ${res.guest_name} - ${numPersons} persona(s) - Habitación ${res.room_id || 'N/A'} - Estado: ${res.status} - ${hasRegistration}\n`;
       });
     } else {
@@ -457,10 +459,16 @@ export async function POST(request: NextRequest) {
       console.log(`📊 EJEMPLO RESERVA:`, {
         guest_name: ejemploReserva.guest_name,
         guest_count: ejemploReserva.guest_count,
+        guest_count_type: typeof ejemploReserva.guest_count,
+        guest_count_null: ejemploReserva.guest_count === null,
+        guest_count_undefined: ejemploReserva.guest_count === undefined,
         guest_email: ejemploReserva.guest_email,
         check_in: ejemploReserva.check_in,
         check_out: ejemploReserva.check_out
       });
+      
+      // DEBUG: Mostrar todas las columnas disponibles
+      console.log(`📊 COLUMNAS DISPONIBLES:`, Object.keys(ejemploReserva));
     }
     
     // DEBUG: Mostrar datos completos de un registro de ejemplo
@@ -486,6 +494,19 @@ export async function POST(request: NextRequest) {
     console.log(`📝 Contexto generado (${context.length} caracteres)`);
     console.log(`📝 Contexto completo:`, context);
     console.log(`🚀 VERSIÓN ACTUALIZADA - ${new Date().toISOString()}`);
+    
+    // TEST: Verificar si guest_count existe en la base de datos
+    try {
+      const testResult = await sql`
+        SELECT column_name, data_type 
+        FROM information_schema.columns 
+        WHERE table_name = 'reservations' 
+        AND column_name = 'guest_count'
+      `;
+      console.log(`🔍 TEST guest_count column:`, testResult.rows);
+    } catch (error) {
+      console.log(`❌ ERROR verificando guest_count:`, error);
+    }
     
     // Indicar que está escribiendo
     await fetch(`${TELEGRAM_API}/sendChatAction`, {
