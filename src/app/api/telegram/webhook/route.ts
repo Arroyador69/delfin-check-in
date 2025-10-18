@@ -240,24 +240,57 @@ function generateContext(registrations: any[], reservations: any[]) {
 function findMatchingRegistration(registrations: any[], reservation: any) {
   const reservationName = reservation.guest_name?.toLowerCase() || '';
   const reservationEmail = reservation.guest_email?.toLowerCase() || '';
+  const reservationCheckIn = parseToISOInMadrid(reservation.check_in);
+  
+  console.log(`🔍 Buscando matching para: ${reservation.guest_name} (${reservationCheckIn})`);
   
   return registrations.find(reg => {
     const data = reg.data || {};
     const viajeros = data.viajeros || [];
+    const regFechaEntrada = reg.fecha_entrada;
+    
+    console.log(`🔍 Comparando con registro: ${reg.reserva_ref} (${regFechaEntrada}) - ${viajeros.length} viajeros`);
     
     // Buscar por email (más confiable)
     if (reservationEmail && viajeros.some((v: any) => 
       v.email?.toLowerCase() === reservationEmail
     )) {
+      console.log(`✅ Match por email encontrado`);
       return true;
     }
     
-    // Buscar por nombre (fuzzy matching)
-    return viajeros.some((v: any) => {
+    // Buscar por fecha de entrada (muy importante)
+    if (regFechaEntrada && reservationCheckIn && regFechaEntrada === reservationCheckIn) {
+      console.log(`✅ Match por fecha de entrada encontrado`);
+      return true;
+    }
+    
+    // Buscar por nombre (fuzzy matching mejorado)
+    const match = viajeros.some((v: any) => {
       const regName = v.nombre?.toLowerCase() || '';
-      return regName.includes(reservationName.split(' ')[0]) || 
-             reservationName.includes(regName.split(' ')[0]);
+      const regFirstName = regName.split(' ')[0];
+      const resFirstName = reservationName.split(' ')[0];
+      
+      // Coincidencia exacta del primer nombre
+      if (regFirstName === resFirstName) {
+        console.log(`✅ Match por primer nombre: ${regFirstName} = ${resFirstName}`);
+        return true;
+      }
+      
+      // Coincidencia parcial
+      if (regFirstName.includes(resFirstName) || resFirstName.includes(regFirstName)) {
+        console.log(`✅ Match parcial por nombre: ${regFirstName} ~ ${resFirstName}`);
+        return true;
+      }
+      
+      return false;
     });
+    
+    if (match) {
+      console.log(`✅ Match por nombre encontrado`);
+    }
+    
+    return match;
   });
 }
 
@@ -265,6 +298,7 @@ function findMatchingRegistration(registrations: any[], reservation: any) {
 function getNumberOfPersons(registration: any) {
   const data = registration.data || {};
   const viajeros = data.viajeros || [];
+  console.log(`📊 Registro ${registration.reserva_ref}: ${viajeros.length} viajeros encontrados`);
   return viajeros.length;
 }
 
@@ -389,6 +423,18 @@ export async function POST(request: NextRequest) {
       check_in: r.check_in,
       check_out: r.check_out
     })));
+    
+    // DEBUG: Mostrar datos de registrations
+    console.log(`📊 Primeros 3 registros:`, registrations.slice(0, 3).map(reg => {
+      const data = reg.data || {};
+      const viajeros = data.viajeros || [];
+      return {
+        reserva_ref: reg.reserva_ref,
+        fecha_entrada: reg.fecha_entrada,
+        num_viajeros: viajeros.length,
+        nombres: viajeros.map((v: any) => v.nombre || 'Sin nombre')
+      };
+    }));
     
     // Generar contexto
     const context = generateContext(registrations, reservations);
