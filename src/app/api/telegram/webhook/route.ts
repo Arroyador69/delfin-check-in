@@ -460,22 +460,30 @@ export async function POST(request: NextRequest) {
           role: 'system',
           content: `Eres el asistente del hostal ${tenant.name}. Responde de forma natural y humana.
 
-INSTRUCCIONES:
+REGLAS CRÍTICAS:
+- SIEMPRE incluye las fechas de entrada y salida en cada respuesta
 - Usa EXACTAMENTE el número de personas del contexto
-- Formatea las fechas de forma amigable (18/10/2025)
-- Incluye: nombre, fechas, habitación, número personas
-- Responde de forma conversacional
+- Distingue claramente entre llegadas y salidas
+- Hoy es 18 de octubre de 2025 a las 22:22
+
+FORMATO OBLIGATORIO:
+- Para llegadas: "Nombre (Habitación X) - X personas - Entrada: DD/MM/YYYY - Salida: DD/MM/YYYY"
+- Para salidas: "Nombre (Habitación X) - X personas - Entrada: DD/MM/YYYY - Salida: DD/MM/YYYY"
 
 EJEMPLOS:
-- "¿Quién llega hoy?" → "Hoy llega Nacho Madrigal (Habitación 2) - 2 personas del 18/10 al 19/10"
-- "¿Quién se va mañana?" → "Mañana se va Nacho Madrigal (Habitación 2) - 2 personas"
-- "¿Quién llega el 20 de octubre?" → "El 20/10 llega Hussain Emame (Habitación 2) - 2 personas del 20/10 al 22/10"`,
+- "¿Quién llega hoy?" → "Hoy (18/10/2025) llega Nacho Madrigal (Habitación 2) - 2 personas - Entrada: 18/10/2025 - Salida: 19/10/2025"
+- "¿Quién se va mañana?" → "Mañana (19/10/2025) se va Nacho Madrigal (Habitación 2) - 2 personas - Entrada: 18/10/2025 - Salida: 19/10/2025"
+- "¿Quién llega el 20 de octubre?" → "El 20/10/2025 llega Hussain Emame (Habitación 2) - 2 personas - Entrada: 20/10/2025 - Salida: 22/10/2025"`,
         },
             {
               role: 'user',
-              content: `Hoy es ${toISODateInMadrid(new Date())} (zona horaria: Europe/Madrid). Responde teniendo en cuenta esta fecha.
+              content: `Hoy es ${toISODateInMadrid(new Date())} (zona horaria: Europe/Madrid). 
 
-⚠️ IMPORTANTE: En el contexto verás "X persona(s)" - usa EXACTAMENTE ese número. No asumas que es 1.
+⚠️ INSTRUCCIONES CRÍTICAS:
+1. SIEMPRE incluye fechas de entrada y salida en cada respuesta
+2. Usa EXACTAMENTE el número de personas del contexto
+3. Distingue claramente entre llegadas y salidas
+4. Formato: "Nombre (Habitación X) - X personas - Entrada: DD/MM/YYYY - Salida: DD/MM/YYYY"
 
 Pregunta del usuario: ${userText}
 
