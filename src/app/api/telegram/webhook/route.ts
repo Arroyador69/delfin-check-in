@@ -475,11 +475,21 @@ export async function POST(request: NextRequest) {
 - Si no hay datos para una fecha, di: "No hay reservas para esa fecha"
 
 ANÁLISIS DE FECHAS ESPECÍFICAS:
-Cuando pregunten por una fecha específica, categoriza SOLO las reservas del contexto:
+Cuando pregunten por una fecha específica (ej: "21 de octubre"), categoriza SOLO las reservas del contexto:
 
-🏠 ESTÁN ALOJADOS: Reservas donde fecha_entrada < fecha_pregunta < fecha_salida
-⬅️ SALEN ESE DÍA: Reservas donde fecha_salida = fecha_pregunta  
-➡️ ENTRAN ESE DÍA: Reservas donde fecha_entrada = fecha_pregunta
+🏠 ESTÁN ALOJADOS: Reservas donde fecha_entrada < 21/10 Y fecha_salida > 21/10
+   (Ya llegaron ANTES del 21 y se van DESPUÉS del 21)
+
+⬅️ SALEN ESE DÍA: Reservas donde fecha_salida = 21/10
+   (Se van EXACTAMENTE el 21 de octubre)
+
+➡️ ENTRAN ESE DÍA: Reservas donde fecha_entrada = 21/10
+   (Llegan EXACTAMENTE el 21 de octubre)
+
+EJEMPLO PRÁCTICO para el 21/10/2025:
+- Si una reserva tiene: entra 11/10, sale 21/10 → va en "⬅️ SALEN ESE DÍA"
+- Si una reserva tiene: entra 21/10, sale 22/10 → va en "➡️ ENTRAN ESE DÍA"
+- Si una reserva tiene: entra 18/10, sale 25/10 → va en "🏠 ESTÁN ALOJADOS"
 
 FORMATO OBLIGATORIO:
 "Para el [fecha] tengo lo siguiente 👇
@@ -503,9 +513,14 @@ RECUERDA: Solo usa datos reales del contexto, nunca inventes nada.`,
 1. NUNCA inventes datos - solo usa las reservas del contexto de abajo
 2. SIEMPRE incluye fechas de entrada y salida en cada respuesta
 3. Usa EXACTAMENTE el número de personas del contexto
-4. Para preguntas de fecha específica, categoriza en: 🏠 Están alojados, ⬅️ Salen ese día, ➡️ Entran ese día
+4. Para preguntas de fecha específica, categoriza CORRECTAMENTE:
+   - 🏠 ESTÁN ALOJADOS: fecha_entrada < fecha_pregunta < fecha_salida
+   - ⬅️ SALEN ESE DÍA: fecha_salida = fecha_pregunta
+   - ➡️ ENTRAN ESE DÍA: fecha_entrada = fecha_pregunta
 5. Si no hay datos para una fecha, di: "No hay reservas para esa fecha"
 6. Formato: "Nombre | Hab. X | X pers. | entra DD/MM | sale DD/MM"
+
+⚠️ IMPORTANTE: Analiza cada reserva individualmente y colócala en la categoría correcta según sus fechas.
 
 Pregunta del usuario: ${userText}
 
@@ -514,7 +529,7 @@ ${context}`,
             },
           ],
           temperature: 0.3,
-          max_tokens: 500,
+          max_tokens: 800,
         }),
         new Promise((_, reject) => setTimeout(() => reject(new Error('OpenAI timeout')), timeoutMs))
       ]) as any;
