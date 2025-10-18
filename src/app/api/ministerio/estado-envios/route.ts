@@ -40,56 +40,47 @@ export async function GET(req: NextRequest) {
       const mirStatus = registro.data?.mir_status || {};
       const hasMirData = mirStatus.lote || mirStatus.error || mirStatus.codigoComunicacion;
       
+      // Crear objeto base de comunicación
+      const comunicacion = {
+        id: registro.id,
+        timestamp: registro.created_at,
+        datos: registro.data,
+        resultado: mirStatus,
+        lote: mirStatus.lote || null,
+        error: mirStatus.error || null,
+        referencia: registro.reserva_ref,
+        codigoEstado: mirStatus.codigoEstado || null,
+        descEstado: mirStatus.descEstado || null,
+        codigoComunicacion: mirStatus.codigoComunicacion || null,
+        ultimaConsulta: mirStatus.ultimaConsulta || null
+      };
+      
       if (!hasMirData) {
         // No se ha enviado al MIR
         comunicaciones.pendientes.push({
-          id: registro.id,
-          timestamp: registro.created_at,
-          datos: registro.data,
-          resultado: null,
-          estado: 'pendiente',
-          lote: null,
-          error: null,
-          referencia: registro.reserva_ref
+          ...comunicacion,
+          estado: 'pendiente'
         });
         estadisticas.pendientes++;
-      } else if (mirStatus.error) {
-        // Error en el envío
+      } else if (mirStatus.error || mirStatus.codigoEstado === '5' || mirStatus.codigoEstado === '6') {
+        // Error en el envío o estado de error/anulado del MIR
         comunicaciones.errores.push({
-          id: registro.id,
-          timestamp: registro.created_at,
-          datos: registro.data,
-          resultado: mirStatus,
-          estado: 'error',
-          lote: mirStatus.lote,
-          error: mirStatus.error,
-          referencia: registro.reserva_ref
+          ...comunicacion,
+          estado: 'error'
         });
         estadisticas.errores++;
-      } else if (mirStatus.codigoComunicacion) {
-        // Enviado y confirmado
+      } else if (mirStatus.codigoComunicacion || mirStatus.codigoEstado === '1') {
+        // Enviado y confirmado por el MIR
         comunicaciones.confirmados.push({
-          id: registro.id,
-          timestamp: registro.created_at,
-          datos: registro.data,
-          resultado: mirStatus,
-          estado: 'confirmado',
-          lote: mirStatus.lote,
-          error: null,
-          referencia: registro.reserva_ref
+          ...comunicacion,
+          estado: 'confirmado'
         });
         estadisticas.confirmados++;
-      } else if (mirStatus.lote) {
+      } else if (mirStatus.lote || mirStatus.codigoEstado === '4') {
         // Enviado pero pendiente de confirmación
         comunicaciones.enviados.push({
-          id: registro.id,
-          timestamp: registro.created_at,
-          datos: registro.data,
-          resultado: mirStatus,
-          estado: 'enviado',
-          lote: mirStatus.lote,
-          error: null,
-          referencia: registro.reserva_ref
+          ...comunicacion,
+          estado: 'enviado'
         });
         estadisticas.enviados++;
       }

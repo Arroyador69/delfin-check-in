@@ -207,6 +207,46 @@ export async function POST(req: NextRequest) {
     const id = await insertMirComunicacion(comunicacion);
     console.log('✅ Comunicación guardada en BD con ID:', id);
 
+    // ACTUALIZAR EL REGISTRO ORIGINAL EN guest_registrations
+    try {
+      // Buscar el registro original por reserva_ref
+      const registroOriginal = await sql`
+        SELECT id, data FROM guest_registrations 
+        WHERE reserva_ref = ${referencia}
+        ORDER BY created_at DESC 
+        LIMIT 1
+      `;
+
+      if (registroOriginal.rows.length > 0) {
+        const registro = registroOriginal.rows[0];
+        const datosActualizados = {
+          ...registro.data,
+          mir_status: {
+            lote: resultado.lote || null,
+            codigoComunicacion: resultado.codigoComunicacion || null,
+            fechaEnvio: new Date().toISOString(),
+            estado: resultado.ok ? 'enviado' : 'error',
+            referencia: referencia,
+            error: resultado.ok ? null : resultado.descripcion,
+            ultimaActualizacion: new Date().toISOString()
+          }
+        };
+
+        await sql`
+          UPDATE guest_registrations 
+          SET data = ${JSON.stringify(datosActualizados)}::jsonb
+          WHERE id = ${registro.id}
+        `;
+
+        console.log('✅ Registro original actualizado con mir_status:', registro.id);
+      } else {
+        console.warn('⚠️ No se encontró el registro original para actualizar:', referencia);
+      }
+    } catch (updateError) {
+      console.error('❌ Error actualizando registro original:', updateError);
+    }
+
+
     return NextResponse.json({
       success: true,
       message: 'Auto-envío al MIR completado',
@@ -240,6 +280,7 @@ export async function POST(req: NextRequest) {
     } catch (saveError) {
       console.error('❌ Error guardando comunicación de error:', saveError);
     }
+
 
     return NextResponse.json({
       success: false,

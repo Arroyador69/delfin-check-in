@@ -37,6 +37,7 @@ export interface ConsultaLoteResult {
   resultados?: Array<{
     lote: string;
     codigoEstado: string; // 1,4,5,6...
+    descEstado?: string; // descripción del estado
     resultadoComunicaciones?: Array<{
       indice: number; // orden de envío (1..n)
       codigoComunicacion?: string; // presente si correcta
@@ -195,10 +196,53 @@ function parseConsultaLoteResponse(xml: string): {
 } {
   const codigo = matchTag(xml, 'codigo') || '';
   const descripcion = matchTag(xml, 'descripcion') || '';
-  // Para simplificar, devolvemos sólo códigoEstado global si aparece
+  
   const lotes: ConsultaLoteResult['resultados'] = [];
-  const loteMatches = [...xml.matchAll(/<lote>(.*?)<\/lote>/g)];
-  if (loteMatches.length) {
+  
+  // Parsear resultados según la estructura oficial MIR
+  // Buscar todos los elementos <resultado> que contienen información de lotes
+  const resultadoMatches = [...xml.matchAll(/<resultado>([\s\S]*?)<\/resultado>/g)];
+  
+  for (const match of resultadoMatches) {
+    const resultadoXml = match[1];
+    
+    // Extraer información del lote
+    const lote = matchTag(resultadoXml, 'lote') || '';
+    const codigoEstado = matchTag(resultadoXml, 'codigoEstado') || '4';
+    const descEstado = matchTag(resultadoXml, 'descEstado') || '';
+    
+    if (lote) {
+      // Extraer resultado de comunicaciones si está disponible
+      const resultadoComunicaciones = [];
+      const comunicacionMatches = [...resultadoXml.matchAll(/<resultadoComunicacion>([\s\S]*?)<\/resultadoComunicacion>/g)];
+      
+      for (const comMatch of comunicacionMatches) {
+        const comXml = comMatch[1];
+        const orden = parseInt(matchTag(comXml, 'orden') || '1');
+        const codigoComunicacion = matchTag(comXml, 'codigoComunicacion');
+        const tipoError = matchTag(comXml, 'tipoError');
+        const error = matchTag(comXml, 'error');
+        
+        resultadoComunicaciones.push({
+          indice: orden,
+          codigoComunicacion,
+          tipoError,
+          error
+        });
+      }
+      
+      lotes.push({ 
+        lote, 
+        codigoEstado,
+        descEstado,
+        resultadoComunicaciones: resultadoComunicaciones.length > 0 ? resultadoComunicaciones : undefined
+      });
+    }
+  }
+  
+  // Si no encontramos resultados estructurados, intentar método simple
+  if (lotes.length === 0) {
+    const loteMatches = [...xml.matchAll(/<lote>(.*?)<\/lote>/g)];
     for (const m of loteMatches) {
       const loteId = m[1];
       // Intentar extraer codigoEstado dentro del bloque de ese lote
@@ -208,6 +252,7 @@ function parseConsultaLoteResponse(xml: string): {
       lotes.push({ lote: loteId, codigoEstado });
     }
   }
+  
   const ok = codigo === '0';
   return { ok, codigo, descripcion, resultados: lotes };
 }
