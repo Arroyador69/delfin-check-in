@@ -141,9 +141,8 @@ function parseToISOInMadrid(input: string | Date | null | undefined) {
 
 function generateContext(registrations: any[], reservations: any[]) {
   const todayIso = toISODateInMadrid(new Date());
-  const tomorrowIso = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0];
   
-  let context = `Datos del hostal:\n`;
+  let context = `Todas las reservas del hostal:\n`;
   
   if (reservations.length > 0) {
     const mapped = reservations.map((res: any) => ({
@@ -152,49 +151,17 @@ function generateContext(registrations: any[], reservations: any[]) {
       checkOutIso: parseToISOInMadrid(res.check_out),
     }));
     
-    // Llegadas de hoy
-    const arrivalsToday = mapped.filter(r => r.checkInIso === todayIso);
-    // Salidas de hoy
-    const departuresToday = mapped.filter(r => r.checkOutIso === todayIso);
-    // Llegadas de mañana
-    const arrivalsTomorrow = mapped.filter(r => r.checkInIso === tomorrowIso);
-    // Salidas de mañana
-    const departuresTomorrow = mapped.filter(r => r.checkOutIso === tomorrowIso);
-
-    // LLEGADAS DE HOY
-    if (arrivalsToday.length > 0) {
-      context += `\nLlegadas hoy:\n`;
-      arrivalsToday.forEach((res, i) => {
-        const numPersons = res.guest_count || 1;
-        context += `${res.guest_name} - Entrada: ${res.checkInIso} - Salida: ${res.checkOutIso} - ${numPersons} persona(s)\n`;
-      });
-    }
-
-    // SALIDAS DE HOY
-    if (departuresToday.length > 0) {
-      context += `\nSalidas hoy:\n`;
-      departuresToday.forEach((res, i) => {
-        const numPersons = res.guest_count || 1;
-        context += `${res.guest_name} - Entrada: ${res.checkInIso} - Salida: ${res.checkOutIso} - ${numPersons} persona(s)\n`;
-      });
-    }
-
-    // LLEGADAS DE MAÑANA
-    if (arrivalsTomorrow.length > 0) {
-      context += `\nLlegadas mañana:\n`;
-      arrivalsTomorrow.forEach((res, i) => {
-        const numPersons = res.guest_count || 1;
-        context += `${res.guest_name} - Entrada: ${res.checkInIso} - Salida: ${res.checkOutIso} - ${numPersons} persona(s)\n`;
-      });
-    }
-
-    // SALIDAS DE MAÑANA
-    if (departuresTomorrow.length > 0) {
-      context += `\nSalidas mañana:\n`;
-      departuresTomorrow.forEach((res, i) => {
-        const numPersons = res.guest_count || 1;
-        context += `${res.guest_name} - Entrada: ${res.checkInIso} - Salida: ${res.checkOutIso} - ${numPersons} persona(s)\n`;
-      });
+    // Ordenar por fecha de entrada
+    const sortedReservations = mapped.sort((a, b) => a.checkInIso.localeCompare(b.checkInIso));
+    
+    // Mostrar todas las reservas (máximo 50 para no saturar)
+    sortedReservations.slice(0, 50).forEach((res, i) => {
+      const numPersons = res.guest_count || 1;
+      context += `${res.guest_name} - Entrada: ${res.checkInIso} - Salida: ${res.checkOutIso} - Habitación: ${res.room_id || 'N/A'} - ${numPersons} persona(s)\n`;
+    });
+    
+    if (sortedReservations.length > 50) {
+      context += `\n... y ${sortedReservations.length - 50} reservas más`;
     }
   }
   
@@ -491,17 +458,18 @@ export async function POST(request: NextRequest) {
           messages: [
         {
           role: 'system',
-          content: `Eres el asistente del hostal ${tenant.name}.
+          content: `Eres el asistente del hostal ${tenant.name}. Responde de forma natural y humana.
 
 INSTRUCCIONES:
-- Usa EXACTAMENTE el número de personas que aparece en el contexto
-- Si dice "2 persona(s)" → responde "2 personas"
-- Si dice "1 persona(s)" → responde "1 persona"
-- Incluye: nombre, fecha entrada, fecha salida, número personas
+- Usa EXACTAMENTE el número de personas del contexto
+- Formatea las fechas de forma amigable (18/10/2025)
+- Incluye: nombre, fechas, habitación, número personas
+- Responde de forma conversacional
 
-EJEMPLO:
-Contexto: "Nacho Madrigal - Entrada: 2025-10-18 - Salida: 2025-10-19 - 2 persona(s)"
-Respuesta: "Nacho Madrigal - Entrada: 18/10/2025 - Salida: 19/10/2025 - 2 personas"`,
+EJEMPLOS:
+- "¿Quién llega hoy?" → "Hoy llega Nacho Madrigal (Habitación 2) - 2 personas del 18/10 al 19/10"
+- "¿Quién se va mañana?" → "Mañana se va Nacho Madrigal (Habitación 2) - 2 personas"
+- "¿Quién llega el 20 de octubre?" → "El 20/10 llega Hussain Emame (Habitación 2) - 2 personas del 20/10 al 22/10"`,
         },
             {
               role: 'user',
