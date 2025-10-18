@@ -275,6 +275,20 @@ export default function MirComunicacionesPage() {
                       
                       console.log('🔄 Iniciando consulta en tiempo real con MIR...');
                       
+                      // Primero probar la conexión
+                      const testResponse = await fetch('/api/ministerio/test-mir-connection', {
+                        method: 'GET',
+                        headers: { 'Content-Type': 'application/json' }
+                      });
+                      
+                      if (!testResponse.ok) {
+                        throw new Error(`Error en test de conexión: HTTP ${testResponse.status}`);
+                      }
+                      
+                      const testResult = await testResponse.json();
+                      console.log('📊 Test de conexión:', testResult);
+                      
+                      // Ahora hacer la consulta en tiempo real
                       const response = await fetch('/api/ministerio/consulta-tiempo-real-mir', {
                         method: 'POST',
                         headers: { 
@@ -290,7 +304,8 @@ export default function MirComunicacionesPage() {
                       const result = await response.json();
                       
                       if (result.success) {
-                        setSuccess(`✅ Consulta en tiempo real completada - ${result.lotesConsultados} lotes consultados, ${result.actualizados} actualizados según MIR oficial`);
+                        const modoSimulacion = result.simulacion ? ' (MODO SIMULACIÓN)' : '';
+                        setSuccess(`✅ Consulta en tiempo real completada${modoSimulacion} - ${result.lotesConsultados} lotes consultados, ${result.actualizados} actualizados según MIR oficial`);
                         
                         // Recargar datos después de la actualización
                         setTimeout(() => {

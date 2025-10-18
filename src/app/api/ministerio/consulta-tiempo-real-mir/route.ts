@@ -1,19 +1,49 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
-import { MinisterioClient, getMinisterioConfigFromEnv } from '@/lib/ministerio-client';
 
 export async function POST(req: NextRequest) {
   try {
     console.log('🔍 Consulta en tiempo real con el MIR...');
 
-    // Configurar cliente MIR
-    const config = getMinisterioConfigFromEnv();
+    // Verificar configuración MIR
+    const config = {
+      baseUrl: process.env.MIR_BASE_URL,
+      username: process.env.MIR_HTTP_USER,
+      password: process.env.MIR_HTTP_PASS,
+      codigoArrendador: process.env.MIR_CODIGO_ARRENDADOR,
+      aplicacion: process.env.MIR_APLICACION || 'Delfin_Check_in',
+      simulacion: process.env.MIR_SIMULACION === 'true' || !process.env.MIR_BASE_URL
+    };
+
     console.log('🔧 Configuración MIR:', {
-      baseUrl: config.baseUrl,
+      baseUrl: config.baseUrl ? 'CONFIGURADO' : 'NO_CONFIGURADO',
       simulacion: config.simulacion,
-      username: config.username ? '***' : 'NO_CONFIGURADO'
+      username: config.username ? 'CONFIGURADO' : 'NO_CONFIGURADO',
+      codigoArrendador: config.codigoArrendador ? 'CONFIGURADO' : 'NO_CONFIGURADO'
     });
 
+    // Si está en modo simulación o no hay configuración, simular respuesta
+    if (config.simulacion || !config.baseUrl) {
+      console.log('⚠️ Modo simulación activado - simulando consulta MIR');
+      
+      const lotesSimulados = [
+        { lote: 'LOTE-SIM-001', codigoEstado: '1', descripcion: 'Confirmado por el MIR' },
+        { lote: 'LOTE-SIM-002', codigoEstado: '4', descripcion: 'Pendiente de procesamiento' }
+      ];
+
+      return NextResponse.json({
+        success: true,
+        mensaje: `Consulta simulada completada - ${lotesSimulados.length} lotes consultados, ${lotesSimulados.length} actualizados`,
+        lotesConsultados: lotesSimulados.length,
+        actualizados: lotesSimulados.length,
+        detalles: lotesSimulados,
+        timestamp: new Date().toISOString(),
+        simulacion: true
+      });
+    }
+
+    // Importar cliente MIR solo si no está en simulación
+    const { MinisterioClient } = await import('@/lib/ministerio-client');
     const cliente = new MinisterioClient(config);
 
     // Obtener todos los lotes que necesitan verificación
