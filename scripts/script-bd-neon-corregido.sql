@@ -111,3 +111,4 @@ FROM guest_registrations gr
 LEFT JOIN mir_comunicaciones mc ON gr.reserva_ref = mc.referencia
 ORDER BY gr.created_at DESC
 LIMIT 10;
+

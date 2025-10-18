@@ -57,3 +57,4 @@ Sincronizar los estados MIR entre las tablas `guest_registrations` y `mir_comuni
 
 ### 💡 **Nota importante:**
 Este script solo sincroniza los datos existentes. Para consultas en tiempo real con el MIR, usa el botón "Consultar Estado Real MIR" en el dashboard.
+

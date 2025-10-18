@@ -82,3 +82,4 @@ ORDER BY gr.created_at DESC;
 
 -- 7. Mensaje final
 SELECT 'Script ejecutado correctamente. Los estados MIR están sincronizados.' as resultado;
+

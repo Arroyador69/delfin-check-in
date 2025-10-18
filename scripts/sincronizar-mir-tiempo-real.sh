@@ -93,3 +93,4 @@ echo "   👤 Estados fiables según MIR oficial"
 
 echo -e "\n${GREEN}🚀 El dashboard ahora muestra el estado real en tiempo real según el MIR${NC}"
 echo -e "${YELLOW}💡 Los registros de Adil y otros se mostrarán con el estado correcto según el MIR oficial${NC}"
+

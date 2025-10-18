@@ -47,17 +47,24 @@ async function getTenantByChatId(chatId: string) {
 // Función para obtener registros de huéspedes del tenant
 async function getGuestRegistrations(tenantId: string, limit: number = 50) {
   try {
+    // Obtener fecha actual correcta
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0]; // YYYY-MM-DD
+    
     const result = await sql`
       SELECT 
-        id,
-        reserva_ref,
-        fecha_entrada,
-        fecha_salida,
-        data,
-        created_at
-      FROM guest_registrations
-      WHERE tenant_id = ${tenantId}
-      ORDER BY created_at DESC
+        gr.id,
+        gr.reserva_ref,
+        gr.fecha_entrada,
+        gr.fecha_salida,
+        gr.data,
+        gr.created_at
+      FROM guest_registrations gr
+      JOIN tenants t ON gr.tenant_id = t.id
+      WHERE t.lodging_id = (SELECT lodging_id FROM tenants WHERE id = ${tenantId})
+        AND gr.fecha_salida >= ${todayStr}::date - INTERVAL '7 days'  -- Últimos 7 días y futuras
+        AND gr.fecha_entrada <= ${todayStr}::date + INTERVAL '60 days' -- Próximos 60 días
+      ORDER BY gr.fecha_entrada ASC
       LIMIT ${limit}
     `;
     return result.rows;
@@ -70,22 +77,29 @@ async function getGuestRegistrations(tenantId: string, limit: number = 50) {
 // Función para obtener reservas del tenant
 async function getReservations(tenantId: string, limit: number = 50) {
   try {
+    // Obtener fecha actual correcta
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0]; // YYYY-MM-DD
+    
     const result = await sql`
       SELECT 
-        id,
-        external_id,
-        room_id,
-        guest_name,
-        guest_email,
-        guest_phone,
-        check_in,
-        check_out,
-        channel,
-        status,
-        created_at
-      FROM reservations
-      WHERE tenant_id = ${tenantId}
-      ORDER BY check_in DESC
+        r.id,
+        r.external_id,
+        r.room_id,
+        r.guest_name,
+        r.guest_email,
+        r.guest_phone,
+        r.check_in,
+        r.check_out,
+        r.channel,
+        r.status,
+        r.created_at
+      FROM reservations r
+      JOIN tenants t ON r.tenant_id = t.id
+      WHERE t.lodging_id = (SELECT lodging_id FROM tenants WHERE id = ${tenantId})
+        AND r.check_out >= ${todayStr}::date - INTERVAL '7 days'  -- Últimos 7 días y futuras
+        AND r.check_in <= ${todayStr}::date + INTERVAL '60 days'   -- Próximos 60 días
+      ORDER BY r.check_in ASC
       LIMIT ${limit}
     `;
     return result.rows;
@@ -126,12 +140,68 @@ function parseToISOInMadrid(input: string | Date | null | undefined) {
 
 function generateContext(registrations: any[], reservations: any[]) {
   const todayIso = toISODateInMadrid(new Date());
-  let context = `**FECHA DE HOY (España):** ${todayIso}\n\n`;
-  context += '**DATOS DEL SISTEMA:**\n\n';
+  let context = `**INFORMACIÓN DEL HOSTAL - ${todayIso}**\n\n`;
+  
+  // Información de reservas
+  if (reservations.length > 0) {
+    const mapped = reservations.map((res: any) => ({
+      ...res,
+      checkInIso: parseToISOInMadrid(res.check_in),
+      checkOutIso: parseToISOInMadrid(res.check_out),
+    }));
+    
+    // Llegadas de hoy
+    const arrivalsToday = mapped.filter(r => r.checkInIso === todayIso);
+    const departuresToday = mapped.filter(r => r.checkOutIso === todayIso);
+    
+    // Próximas llegadas (próximos 7 días)
+    const upcomingArrivals = mapped.filter(r => 
+      r.checkInIso > todayIso && 
+      new Date(r.checkInIso) <= new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+    ).sort((a, b) => a.checkInIso.localeCompare(b.checkInIso));
+
+    context += `**LLEGADAS DE HOY (${todayIso}):**\n`;
+    if (arrivalsToday.length > 0) {
+      arrivalsToday.forEach((res, i) => {
+        context += `${i + 1}. ${res.guest_name} - Habitación ${res.room_id || 'N/A'} - Estado: ${res.status}\n`;
+      });
+    } else {
+      context += `No hay llegadas programadas para hoy.\n`;
+    }
+    context += '\n';
+
+    context += `**SALIDAS DE HOY (${todayIso}):**\n`;
+    if (departuresToday.length > 0) {
+      departuresToday.forEach((res, i) => {
+        context += `${i + 1}. ${res.guest_name} - Habitación ${res.room_id || 'N/A'} - Estado: ${res.status}\n`;
+      });
+    } else {
+      context += `No hay salidas programadas para hoy.\n`;
+    }
+    context += '\n';
+
+    context += `**PRÓXIMAS LLEGADAS (próximos 7 días):**\n`;
+    if (upcomingArrivals.length > 0) {
+      upcomingArrivals.slice(0, 10).forEach((res, i) => {
+        context += `${i + 1}. ${res.guest_name} - ${res.checkInIso} - Habitación ${res.room_id || 'N/A'} - Estado: ${res.status}\n`;
+      });
+    } else {
+      context += `No hay llegadas programadas en los próximos 7 días.\n`;
+    }
+    context += '\n';
+
+    context += `**TODAS LAS RESERVAS ACTIVAS:**\n`;
+    mapped.slice(0, 20).forEach((res, i) => {
+      context += `${i + 1}. ${res.guest_name} - Llegada: ${res.checkInIso}, Salida: ${res.checkOutIso} - Habitación ${res.room_id || 'N/A'} - Estado: ${res.status}\n`;
+    });
+    context += '\n';
+  } else {
+    context += '**No hay reservas disponibles en el sistema.**\n\n';
+  }
   
   // Información de registros de viajeros
   if (registrations.length > 0) {
-    context += `**Registros de Viajeros Recientes (${registrations.length}):**\n`;
+    context += `**REGISTROS DE VIAJEROS (${registrations.length}):**\n`;
     registrations.slice(0, 10).forEach((reg, i) => {
       const data = reg.data || {};
       const viajeros = data.viajeros || [];
@@ -139,32 +209,6 @@ function generateContext(registrations: any[], reservations: any[]) {
       context += `${i + 1}. Reserva ${reg.reserva_ref || 'N/A'}: ${nombres} (Entrada: ${reg.fecha_entrada}, Salida: ${reg.fecha_salida})\n`;
     });
     context += '\n';
-  } else {
-    context += '**Registros de Viajeros:** No hay registros recientes.\n\n';
-  }
-  
-  // Información de reservas
-  if (reservations.length > 0) {
-    // Listas útiles para "hoy"
-    const mapped = reservations.map((res: any) => ({
-      ...res,
-      checkInIso: parseToISOInMadrid(res.check_in),
-      checkOutIso: parseToISOInMadrid(res.check_out),
-    }));
-    const arrivalsToday = mapped.filter(r => r.checkInIso === todayIso);
-    const departuresToday = mapped.filter(r => r.checkOutIso === todayIso);
-
-    context += `**Resumen de Hoy (${todayIso}):**\n`;
-    context += `- Llegadas hoy: ${arrivalsToday.length}\n`;
-    context += `- Salidas hoy: ${departuresToday.length}\n\n`;
-
-    context += `**Reservas Recientes (${reservations.length}):**\n`;
-    mapped.slice(0, 10).forEach((res, i) => {
-      context += `${i + 1}. ${res.guest_name} - Habitación ${res.room_id} (${res.checkInIso} → ${res.checkOutIso}) - Estado: ${res.status}\n`;
-    });
-    context += '\n';
-  } else {
-    context += '**Reservas:** No hay reservas recientes.\n\n';
   }
   
   return context;
@@ -283,10 +327,20 @@ export async function POST(request: NextRequest) {
       getReservations(tenant.id),
     ]);
     
+    // DEBUG: Mostrar qué datos está recibiendo el bot
+    console.log(`📊 Registros encontrados: ${registrations.length}`);
+    console.log(`📊 Reservas encontradas: ${reservations.length}`);
+    console.log(`📊 Primeras 3 reservas:`, reservations.slice(0, 3).map(r => ({
+      guest: r.guest_name,
+      check_in: r.check_in,
+      check_out: r.check_out
+    })));
+    
     // Generar contexto
     const context = generateContext(registrations, reservations);
     
     console.log(`📝 Contexto generado (${context.length} caracteres)`);
+    console.log(`📝 Contexto completo:`, context);
     
     // Indicar que está escribiendo
     await fetch(`${TELEGRAM_API}/sendChatAction`, {
@@ -309,16 +363,41 @@ export async function POST(request: NextRequest) {
           messages: [
             {
               role: 'system',
-              content: `Eres un asistente inteligente de Delfín Check-in, un sistema de gestión hotelera.
-Tu trabajo es ayudar al propietario ${tenant.name} a consultar información sobre sus registros de viajeros y reservas.
+              content: `🤖 ERES EL ASISTENTE IA DEL PROPIETARIO - Delfín Check-in
 
-IMPORTANTE:
-- Responde en español de forma clara y concisa
-- Usa emojis para hacer las respuestas más amigables
-- Si no encuentras la información exacta, dilo claramente
-- Sugiere alternativas cuando sea apropiado
-- Mantén un tono profesional pero cercano
-- Si te preguntan por un nombre específico, busca en los datos proporcionados`,
+🧩 ROL GENERAL:
+Eres la IA asistente del propietario ${tenant.name} en el sistema Delfín Check-in, un PMS para alojamientos turísticos en España.
+Tienes acceso a la base de datos del establecimiento, incluyendo reservas, huéspedes, check-ins, check-outs, y estado de los envíos MIR.
+
+🎯 OBJETIVO:
+Ayudar al propietario a consultar rápidamente:
+• Llegadas y salidas del día o fechas concretas
+• Cuántas personas están alojadas actualmente
+• Estado de los partes de viajeros (MIR)
+• Resúmenes rápidos del día ("quién llega hoy", "quién se va mañana")
+
+🧠 COMPORTAMIENTO:
+• Responde de forma breve, clara y orientada a la acción
+• Si no hay datos para una fecha, di: "No hay llegadas/salidas registradas para esa fecha"
+• Usa emojis para hacer las respuestas más amigables
+• Si detectas reservas sin parte MIR, alértalo: "⚠️ Falta el parte de viajeros para [nombre]"
+• Mantén un tono profesional pero cercano
+
+💬 EJEMPLOS DE RESPUESTAS IDEALES:
+
+Pregunta: "¿Quién llega hoy?"
+Respuesta: "Hoy (18/10/2025) llega 1 huésped:
+🏠 Nacho Madrigal - Habitación N/A - Estado: confirmed"
+
+Pregunta: "¿Quién se va mañana?"
+Respuesta: "Mañana (19/10/2025) se va 1 huésped:
+🏠 Nacho Madrigal - Habitación N/A"
+
+Pregunta: "¿Cuántas personas llegan el 20 de octubre?"
+Respuesta: "El 20 de octubre llega 1 huésped:
+🏠 Hussain Emame - Habitación N/A - Estado: confirmed"
+
+IMPORTANTE: Solo puedes CONSULTAR datos, NO puedes crear, modificar o eliminar registros.`,
             },
             {
               role: 'user',

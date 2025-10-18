@@ -80,3 +80,4 @@ echo "   👤 Nombres de huéspedes mostrados"
 
 echo -e "\n${GREEN}🚀 El dashboard ahora muestra el estado real según las normas MIR${NC}"
 echo -e "${YELLOW}💡 Los registros de Adil y otros se mostrarán correctamente como 'enviado' o 'confirmado'${NC}"
+
