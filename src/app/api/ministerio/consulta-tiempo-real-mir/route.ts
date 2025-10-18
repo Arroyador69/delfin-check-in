@@ -42,9 +42,8 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Importar cliente MIR solo si no está en simulación
-    const { MinisterioClient } = await import('@/lib/ministerio-client');
-    const cliente = new MinisterioClient(config);
+    // Crear cliente MIR simplificado para Vercel
+    const cliente = new SimpleMinisterioClient(config);
 
     // Obtener todos los lotes que necesitan verificación
     const result = await sql`
@@ -210,5 +209,105 @@ export async function POST(req: NextRequest) {
       status: 500,
       headers: { 'Content-Type': 'application/json' }
     });
+  }
+}
+
+// Cliente MIR simplificado para Vercel
+class SimpleMinisterioClient {
+  constructor(private config: any) {}
+
+  async consultaLote(params: { lotes: string[] }): Promise<any> {
+    console.log('🔍 Consultando lotes MIR:', params.lotes);
+    
+    // Construir SOAP request según especificación MIR
+    const soapXml = this.buildConsultaLoteSoap(params.lotes);
+    
+    try {
+      const response = await fetch(this.config.baseUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Basic ${Buffer.from(`${this.config.username}:${this.config.password}`).toString('base64')}`,
+          'Content-Type': 'text/xml; charset=utf-8',
+          'User-Agent': 'Delfin_Check_in/1.0'
+        },
+        body: soapXml,
+        signal: AbortSignal.timeout(30000)
+      });
+
+      const responseText = await response.text();
+      console.log('📊 Respuesta MIR:', responseText);
+      
+      return this.parseConsultaLoteResponse(responseText);
+    } catch (error) {
+      console.error('❌ Error consultando MIR:', error);
+      return {
+        ok: false,
+        codigo: '999',
+        descripcion: `Error de conexión: ${error instanceof Error ? error.message : 'Error desconocido'}`
+      };
+    }
+  }
+
+  private buildConsultaLoteSoap(lotes: string[]): string {
+    const lotesXml = lotes.map(lote => `<lote>${lote}</lote>`).join('');
+    
+    return `<?xml version="1.0" encoding="UTF-8"?>
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:com="http://www.soap.servicios.hospedajes.mir.es/comunicacion">
+  <soapenv:Header/>
+  <soapenv:Body>
+    <com:consultaLoteRequest>
+      <com:codigosLote>
+        ${lotesXml}
+      </com:codigosLote>
+    </com:consultaLoteRequest>
+  </soapenv:Body>
+</soapenv:Envelope>`;
+  }
+
+  private parseConsultaLoteResponse(xml: string): any {
+    try {
+      const codigo = this.matchTag(xml, 'codigo') || '999';
+      const descripcion = this.matchTag(xml, 'descripcion') || 'Error desconocido';
+      
+      const resultados = [];
+      
+      // Parsear resultados según estructura MIR
+      const resultadoMatches = [...xml.matchAll(/<resultado>([\s\S]*?)<\/resultado>/g)];
+      
+      for (const match of resultadoMatches) {
+        const resultadoXml = match[1];
+        const lote = this.matchTag(resultadoXml, 'lote');
+        const codigoEstado = this.matchTag(resultadoXml, 'codigoEstado') || '4';
+        const descEstado = this.matchTag(resultadoXml, 'descEstado') || '';
+        
+        if (lote) {
+          resultados.push({
+            lote,
+            codigoEstado,
+            descEstado
+          });
+        }
+      }
+      
+      return {
+        ok: codigo === '0',
+        codigo,
+        descripcion,
+        resultados
+      };
+    } catch (error) {
+      console.error('❌ Error parseando respuesta MIR:', error);
+      return {
+        ok: false,
+        codigo: '999',
+        descripcion: 'Error parseando respuesta del MIR'
+      };
+    }
+  }
+
+  private matchTag(xml: string, tag: string): string | null {
+    const regex = new RegExp(`<${tag}>([\\s\\S]*?)<\\/${tag}>`);
+    const match = xml.match(regex);
+    return match ? match[1].trim() : null;
   }
 }
