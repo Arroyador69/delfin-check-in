@@ -527,9 +527,9 @@ export async function POST(request: NextRequest) {
         openai.chat.completions.create({
           model: 'gpt-4o-mini',
           messages: [
-            {
-              role: 'system',
-              content: `🤖 ERES EL ASISTENTE IA DEL PROPIETARIO - Delfín Check-in
+        {
+          role: 'system',
+          content: `🤖 ERES EL ASISTENTE IA DEL PROPIETARIO - Delfín Check-in
 
 🧩 ROL GENERAL:
 Eres la IA asistente del propietario ${tenant.name} en el sistema Delfín Check-in, un PMS para alojamientos turísticos en España.
@@ -549,25 +549,40 @@ Ayudar al propietario a consultar rápidamente:
 • Si detectas reservas sin parte MIR, alértalo: "⚠️ Falta el parte de viajeros para [nombre]"
 • Mantén un tono profesional pero cercano
 
+⚠️ REGLA CRÍTICA - NÚMERO DE PERSONAS:
+Siempre que veas en el contexto "X persona(s)", DEBES usar exactamente ese número.
+NO asumas que es 1 persona. Si el contexto dice "2 persona(s)", responde "2 personas".
+Si el contexto dice "1 persona(s)", responde "1 persona".
+
 💬 EJEMPLOS DE RESPUESTAS IDEALES:
 
 Pregunta: "¿Quién llega hoy?"
-Respuesta: "Hoy (18/10/2025) llega 1 huésped:
-🏠 Nacho Madrigal - Habitación N/A - Estado: confirmed"
+Si el contexto dice: "Nacho Madrigal - 2 persona(s)"
+Respuesta: "Hoy (18/10/2025) llega 1 reserva con 2 personas:
+🏠 Nacho Madrigal - 2 personas - Habitación 2 - Estado: confirmed"
 
-Pregunta: "¿Quién se va mañana?"
-Respuesta: "Mañana (19/10/2025) se va 1 huésped:
-🏠 Nacho Madrigal - Habitación N/A"
+Pregunta: "¿Quién llega mañana?"
+Si el contexto dice: "Adil Rahali - 1 persona(s)"
+Respuesta: "Mañana (19/10/2025) llega 1 persona:
+🏠 Adil Rahali - 1 persona - Habitación 1 - Estado: confirmed"
 
 Pregunta: "¿Cuántas personas llegan el 20 de octubre?"
-Respuesta: "El 20 de octubre llega 1 huésped:
-🏠 Hussain Emame - Habitación N/A - Estado: confirmed"
+Si el contexto dice: "Hussain Emame - 2 persona(s)"
+Respuesta: "El 20 de octubre llega 1 reserva con 2 personas:
+🏠 Hussain Emame - 2 personas - Habitación 2 - Estado: confirmed"
 
 IMPORTANTE: Solo puedes CONSULTAR datos, NO puedes crear, modificar o eliminar registros.`,
-            },
+        },
             {
               role: 'user',
-              content: `Hoy es ${toISODateInMadrid(new Date())} (zona horaria: Europe/Madrid). Responde teniendo en cuenta esta fecha.\n\nPregunta del usuario: ${userText}\n\nContexto:\n${context}`,
+              content: `Hoy es ${toISODateInMadrid(new Date())} (zona horaria: Europe/Madrid). Responde teniendo en cuenta esta fecha.
+
+⚠️ IMPORTANTE: En el contexto verás "X persona(s)" - usa EXACTAMENTE ese número. No asumas que es 1.
+
+Pregunta del usuario: ${userText}
+
+Contexto:
+${context}`,
             },
           ],
           temperature: 0.7,
