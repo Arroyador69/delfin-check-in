@@ -239,7 +239,6 @@ function generateContext(registrations: any[], reservations: any[]) {
 // Función para encontrar matching entre reservation y registration
 function findMatchingRegistration(registrations: any[], reservation: any) {
   const reservationName = reservation.guest_name?.toLowerCase() || '';
-  const reservationEmail = reservation.guest_email?.toLowerCase() || '';
   const reservationCheckIn = parseToISOInMadrid(reservation.check_in);
   
   console.log(`🔍 Buscando matching para: ${reservation.guest_name} (${reservationCheckIn})`);
@@ -251,21 +250,46 @@ function findMatchingRegistration(registrations: any[], reservation: any) {
     
     console.log(`🔍 Comparando con registro: ${reg.reserva_ref} (${regFechaEntrada}) - ${viajeros.length} viajeros`);
     
-    // Buscar por email (más confiable)
-    if (reservationEmail && viajeros.some((v: any) => 
-      v.email?.toLowerCase() === reservationEmail
-    )) {
-      console.log(`✅ Match por email encontrado`);
-      return true;
-    }
-    
-    // Buscar por fecha de entrada (muy importante)
+    // PRIORIDAD 1: Buscar por fecha de entrada (más confiable)
     if (regFechaEntrada && reservationCheckIn && regFechaEntrada === reservationCheckIn) {
       console.log(`✅ Match por fecha de entrada encontrado`);
       return true;
     }
     
-    // Buscar por nombre (fuzzy matching mejorado)
+    // PRIORIDAD 2: Buscar por nombre + fecha similar (dentro de 1 día)
+    if (regFechaEntrada && reservationCheckIn) {
+      const regDate = new Date(regFechaEntrada);
+      const resDate = new Date(reservationCheckIn);
+      const diffDays = Math.abs(regDate.getTime() - resDate.getTime()) / (1000 * 60 * 60 * 24);
+      
+      if (diffDays <= 1) { // Dentro de 1 día
+        const match = viajeros.some((v: any) => {
+          const regName = v.nombre?.toLowerCase() || '';
+          const regFirstName = regName.split(' ')[0];
+          const resFirstName = reservationName.split(' ')[0];
+          
+          // Coincidencia exacta del primer nombre
+          if (regFirstName === resFirstName) {
+            console.log(`✅ Match por nombre + fecha similar: ${regFirstName} = ${resFirstName} (${diffDays} días diferencia)`);
+            return true;
+          }
+          
+          // Coincidencia parcial del primer nombre
+          if (regFirstName.includes(resFirstName) || resFirstName.includes(regFirstName)) {
+            console.log(`✅ Match parcial por nombre + fecha: ${regFirstName} ~ ${resFirstName} (${diffDays} días diferencia)`);
+            return true;
+          }
+          
+          return false;
+        });
+        
+        if (match) {
+          return true;
+        }
+      }
+    }
+    
+    // PRIORIDAD 3: Solo por nombre (menos confiable)
     const match = viajeros.some((v: any) => {
       const regName = v.nombre?.toLowerCase() || '';
       const regFirstName = regName.split(' ')[0];
@@ -273,22 +297,12 @@ function findMatchingRegistration(registrations: any[], reservation: any) {
       
       // Coincidencia exacta del primer nombre
       if (regFirstName === resFirstName) {
-        console.log(`✅ Match por primer nombre: ${regFirstName} = ${resFirstName}`);
-        return true;
-      }
-      
-      // Coincidencia parcial
-      if (regFirstName.includes(resFirstName) || resFirstName.includes(regFirstName)) {
-        console.log(`✅ Match parcial por nombre: ${regFirstName} ~ ${resFirstName}`);
+        console.log(`✅ Match solo por nombre: ${regFirstName} = ${resFirstName}`);
         return true;
       }
       
       return false;
     });
-    
-    if (match) {
-      console.log(`✅ Match por nombre encontrado`);
-    }
     
     return match;
   });
@@ -435,6 +449,34 @@ export async function POST(request: NextRequest) {
         nombres: viajeros.map((v: any) => v.nombre || 'Sin nombre')
       };
     }));
+    
+    // DEBUG: Mostrar datos completos de una reserva de ejemplo
+    if (reservations.length > 0) {
+      const ejemploReserva = reservations[0];
+      console.log(`📊 EJEMPLO RESERVA:`, {
+        guest_name: ejemploReserva.guest_name,
+        guest_email: ejemploReserva.guest_email,
+        check_in: ejemploReserva.check_in,
+        check_out: ejemploReserva.check_out
+      });
+    }
+    
+    // DEBUG: Mostrar datos completos de un registro de ejemplo
+    if (registrations.length > 0) {
+      const ejemploRegistro = registrations[0];
+      const data = ejemploRegistro.data || {};
+      const viajeros = data.viajeros || [];
+      console.log(`📊 EJEMPLO REGISTRO:`, {
+        reserva_ref: ejemploRegistro.reserva_ref,
+        fecha_entrada: ejemploRegistro.fecha_entrada,
+        fecha_salida: ejemploRegistro.fecha_salida,
+        num_viajeros: viajeros.length,
+        viajeros: viajeros.map((v: any) => ({
+          nombre: v.nombre,
+          email: v.email
+        }))
+      });
+    }
     
     // Generar contexto
     const context = generateContext(registrations, reservations);
