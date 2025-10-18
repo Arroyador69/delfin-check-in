@@ -163,7 +163,12 @@ function generateContext(registrations: any[], reservations: any[]) {
     context += `**LLEGADAS DE HOY (${todayIso}):**\n`;
     if (arrivalsToday.length > 0) {
       arrivalsToday.forEach((res, i) => {
-        context += `${i + 1}. ${res.guest_name} - Habitación ${res.room_id || 'N/A'} - Estado: ${res.status}\n`;
+        // Buscar matching en registrations para obtener número de personas
+        const matchingReg = findMatchingRegistration(registrations, res);
+        const numPersons = matchingReg ? getNumberOfPersons(matchingReg) : 'N/A';
+        const hasRegistration = matchingReg ? '✅ Registrado' : '⚠️ Sin registro';
+        
+        context += `${i + 1}. ${res.guest_name} - ${numPersons} persona(s) - Habitación ${res.room_id || 'N/A'} - Estado: ${res.status} - ${hasRegistration}\n`;
       });
     } else {
       context += `No hay llegadas programadas para hoy.\n`;
@@ -173,7 +178,11 @@ function generateContext(registrations: any[], reservations: any[]) {
     context += `**SALIDAS DE HOY (${todayIso}):**\n`;
     if (departuresToday.length > 0) {
       departuresToday.forEach((res, i) => {
-        context += `${i + 1}. ${res.guest_name} - Habitación ${res.room_id || 'N/A'} - Estado: ${res.status}\n`;
+        const matchingReg = findMatchingRegistration(registrations, res);
+        const numPersons = matchingReg ? getNumberOfPersons(matchingReg) : 'N/A';
+        const hasRegistration = matchingReg ? '✅ Registrado' : '⚠️ Sin registro';
+        
+        context += `${i + 1}. ${res.guest_name} - ${numPersons} persona(s) - Habitación ${res.room_id || 'N/A'} - Estado: ${res.status} - ${hasRegistration}\n`;
       });
     } else {
       context += `No hay salidas programadas para hoy.\n`;
@@ -183,7 +192,11 @@ function generateContext(registrations: any[], reservations: any[]) {
     context += `**PRÓXIMAS LLEGADAS (próximos 7 días):**\n`;
     if (upcomingArrivals.length > 0) {
       upcomingArrivals.slice(0, 10).forEach((res, i) => {
-        context += `${i + 1}. ${res.guest_name} - ${res.checkInIso} - Habitación ${res.room_id || 'N/A'} - Estado: ${res.status}\n`;
+        const matchingReg = findMatchingRegistration(registrations, res);
+        const numPersons = matchingReg ? getNumberOfPersons(matchingReg) : 'N/A';
+        const hasRegistration = matchingReg ? '✅ Registrado' : '⚠️ Sin registro';
+        
+        context += `${i + 1}. ${res.guest_name} - ${numPersons} persona(s) - ${res.checkInIso} - Habitación ${res.room_id || 'N/A'} - Estado: ${res.status} - ${hasRegistration}\n`;
       });
     } else {
       context += `No hay llegadas programadas en los próximos 7 días.\n`;
@@ -192,26 +205,67 @@ function generateContext(registrations: any[], reservations: any[]) {
 
     context += `**TODAS LAS RESERVAS ACTIVAS:**\n`;
     mapped.slice(0, 20).forEach((res, i) => {
-      context += `${i + 1}. ${res.guest_name} - Llegada: ${res.checkInIso}, Salida: ${res.checkOutIso} - Habitación ${res.room_id || 'N/A'} - Estado: ${res.status}\n`;
+      const matchingReg = findMatchingRegistration(registrations, res);
+      const numPersons = matchingReg ? getNumberOfPersons(matchingReg) : 'N/A';
+      const hasRegistration = matchingReg ? '✅ Registrado' : '⚠️ Sin registro';
+      
+      context += `${i + 1}. ${res.guest_name} - ${numPersons} persona(s) - Llegada: ${res.checkInIso}, Salida: ${res.checkOutIso} - Habitación ${res.room_id || 'N/A'} - Estado: ${res.status} - ${hasRegistration}\n`;
     });
     context += '\n';
   } else {
     context += '**No hay reservas disponibles en el sistema.**\n\n';
   }
   
-  // Información de registros de viajeros
+  // Información detallada de registros de viajeros
   if (registrations.length > 0) {
-    context += `**REGISTROS DE VIAJEROS (${registrations.length}):**\n`;
-    registrations.slice(0, 10).forEach((reg, i) => {
+    context += `**DETALLES DE REGISTROS DE VIAJEROS (${registrations.length}):**\n`;
+    registrations.slice(0, 15).forEach((reg, i) => {
       const data = reg.data || {};
       const viajeros = data.viajeros || [];
+      const numViajeros = viajeros.length;
       const nombres = viajeros.map((v: any) => v.nombre || 'Sin nombre').join(', ');
-      context += `${i + 1}. Reserva ${reg.reserva_ref || 'N/A'}: ${nombres} (Entrada: ${reg.fecha_entrada}, Salida: ${reg.fecha_salida})\n`;
+      const emails = viajeros.map((v: any) => v.email || 'Sin email').join(', ');
+      
+      context += `${i + 1}. Reserva ${reg.reserva_ref || 'N/A'}: ${numViajeros} viajero(s)\n`;
+      context += `   Nombres: ${nombres}\n`;
+      context += `   Emails: ${emails}\n`;
+      context += `   Fechas: ${reg.fecha_entrada} → ${reg.fecha_salida}\n\n`;
     });
-    context += '\n';
   }
   
   return context;
+}
+
+// Función para encontrar matching entre reservation y registration
+function findMatchingRegistration(registrations: any[], reservation: any) {
+  const reservationName = reservation.guest_name?.toLowerCase() || '';
+  const reservationEmail = reservation.guest_email?.toLowerCase() || '';
+  
+  return registrations.find(reg => {
+    const data = reg.data || {};
+    const viajeros = data.viajeros || [];
+    
+    // Buscar por email (más confiable)
+    if (reservationEmail && viajeros.some((v: any) => 
+      v.email?.toLowerCase() === reservationEmail
+    )) {
+      return true;
+    }
+    
+    // Buscar por nombre (fuzzy matching)
+    return viajeros.some((v: any) => {
+      const regName = v.nombre?.toLowerCase() || '';
+      return regName.includes(reservationName.split(' ')[0]) || 
+             reservationName.includes(regName.split(' ')[0]);
+    });
+  });
+}
+
+// Función para obtener número de personas del registro
+function getNumberOfPersons(registration: any) {
+  const data = registration.data || {};
+  const viajeros = data.viajeros || [];
+  return viajeros.length;
 }
 
 // Handler principal del webhook
