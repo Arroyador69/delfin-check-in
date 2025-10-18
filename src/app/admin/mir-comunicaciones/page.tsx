@@ -267,6 +267,34 @@ export default function MirComunicacionesPage() {
               </div>
               <div className="flex items-center space-x-4">
                 <Button 
+                  onClick={async () => {
+                    try {
+                      setLoading(true);
+                      const response = await fetch('/api/ministerio/consulta-tiempo-real-mir', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' }
+                      });
+                      const result = await response.json();
+                      if (result.success) {
+                        setSuccess(`✅ Consulta en tiempo real completada - ${result.lotesConsultados} lotes consultados, ${result.actualizados} actualizados según MIR oficial`);
+                        cargarComunicaciones();
+                      } else {
+                        setError(`❌ Error: ${result.message || result.error}`);
+                      }
+                    } catch (error) {
+                      setError('❌ Error consultando MIR en tiempo real');
+                    } finally {
+                      setLoading(false);
+                    }
+                  }}
+                  disabled={loading} 
+                  className="bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-3 shadow-lg"
+                >
+                  <RefreshCw className={`h-5 w-5 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                  Consulta Tiempo Real MIR
+                </Button>
+                
+                <Button 
                   onClick={cargarComunicaciones} 
                   disabled={loading} 
                   className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 shadow-lg"
@@ -376,24 +404,27 @@ export default function MirComunicacionesPage() {
                                   className="bg-blue-600 hover:bg-blue-700 text-white font-semibold"
                                   onClick={async () => {
                                     try {
-                                      const response = await fetch('/api/ministerio/consultar-estado-real-mir', {
+                                      setLoading(true);
+                                      const response = await fetch('/api/ministerio/consulta-tiempo-real-mir', {
                                         method: 'POST',
                                         headers: { 'Content-Type': 'application/json' }
                                       });
                                       const result = await response.json();
                                       if (result.success) {
-                                        alert('✅ Estado actualizado correctamente');
+                                        alert(`✅ Consulta en tiempo real completada\n\nLotes consultados: ${result.lotesConsultados}\nActualizados: ${result.actualizados}\n\nEstado actualizado según MIR oficial`);
                                         cargarComunicaciones();
                                       } else {
-                                        alert(`❌ Error: ${result.message}`);
+                                        alert(`❌ Error: ${result.message || result.error}`);
                                       }
                                     } catch (error) {
-                                      alert('❌ Error consultando estado MIR');
+                                      alert('❌ Error consultando MIR en tiempo real');
+                                    } finally {
+                                      setLoading(false);
                                     }
                                   }}
                                 >
                                   <RefreshCw className="h-4 w-4 mr-1" />
-                                  Consultar MIR
+                                  Consulta Tiempo Real MIR
                                 </Button>
                               </>
                             ) : (
