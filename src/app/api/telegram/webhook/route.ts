@@ -460,19 +460,28 @@ export async function POST(request: NextRequest) {
           role: 'system',
           content: `Eres el asistente del hostal ${tenant.name}. Responde de forma natural y humana.
 
-REGLAS CRÍTICAS:
+⚠️ REGLAS CRÍTICAS ABSOLUTAS:
+- NUNCA inventes datos que no estén en el contexto
+- SOLO usa reservas que aparezcan exactamente en el contexto proporcionado
 - SIEMPRE incluye las fechas de entrada y salida en cada respuesta
 - Usa EXACTAMENTE el número de personas del contexto
 - Hoy es 18 de octubre de 2025 a las 22:22
 
+🚫 PROHIBIDO:
+- Inventar nombres de huéspedes
+- Inventar fechas de entrada/salida
+- Inventar números de habitación
+- Inventar número de personas
+- Si no hay datos para una fecha, di: "No hay reservas para esa fecha"
+
 ANÁLISIS DE FECHAS ESPECÍFICAS:
-Cuando pregunten por una fecha específica (ej: "¿Qué reservas hay el martes 21?"), categoriza así:
+Cuando pregunten por una fecha específica, categoriza SOLO las reservas del contexto:
 
 🏠 ESTÁN ALOJADOS: Reservas donde fecha_entrada < fecha_pregunta < fecha_salida
 ⬅️ SALEN ESE DÍA: Reservas donde fecha_salida = fecha_pregunta  
 ➡️ ENTRAN ESE DÍA: Reservas donde fecha_entrada = fecha_pregunta
 
-FORMATO PARA ANÁLISIS DE FECHA:
+FORMATO OBLIGATORIO:
 "Para el [fecha] tengo lo siguiente 👇
 
 🏠 Están alojados:
@@ -484,26 +493,27 @@ FORMATO PARA ANÁLISIS DE FECHA:
 ➡️ Entran ese día:
 • Nombre | Hab. X | X pers. | entra DD/MM | sale DD/MM"
 
-EJEMPLOS SIMPLES:
-- "¿Quién llega hoy?" → "Hoy (18/10/2025) llega Nacho Madrigal (Habitación 2) - 2 personas - Entrada: 18/10/2025 - Salida: 19/10/2025"`,
+RECUERDA: Solo usa datos reales del contexto, nunca inventes nada.`,
         },
             {
               role: 'user',
               content: `Hoy es ${toISODateInMadrid(new Date())} (zona horaria: Europe/Madrid). 
 
-⚠️ INSTRUCCIONES CRÍTICAS:
-1. SIEMPRE incluye fechas de entrada y salida en cada respuesta
-2. Usa EXACTAMENTE el número de personas del contexto
-3. Para preguntas de fecha específica, categoriza en: 🏠 Están alojados, ⬅️ Salen ese día, ➡️ Entran ese día
-4. Formato: "Nombre | Hab. X | X pers. | entra DD/MM | sale DD/MM"
+🚨 INSTRUCCIONES CRÍTICAS:
+1. NUNCA inventes datos - solo usa las reservas del contexto de abajo
+2. SIEMPRE incluye fechas de entrada y salida en cada respuesta
+3. Usa EXACTAMENTE el número de personas del contexto
+4. Para preguntas de fecha específica, categoriza en: 🏠 Están alojados, ⬅️ Salen ese día, ➡️ Entran ese día
+5. Si no hay datos para una fecha, di: "No hay reservas para esa fecha"
+6. Formato: "Nombre | Hab. X | X pers. | entra DD/MM | sale DD/MM"
 
 Pregunta del usuario: ${userText}
 
-Contexto:
+CONTEXTO CON DATOS REALES:
 ${context}`,
             },
           ],
-          temperature: 0.7,
+          temperature: 0.3,
           max_tokens: 500,
         }),
         new Promise((_, reject) => setTimeout(() => reject(new Error('OpenAI timeout')), timeoutMs))
