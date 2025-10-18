@@ -483,6 +483,7 @@ export async function POST(request: NextRequest) {
     
     console.log(`📝 Contexto generado (${context.length} caracteres)`);
     console.log(`📝 Contexto completo:`, context);
+    console.log(`🚀 VERSIÓN ACTUALIZADA - ${new Date().toISOString()}`);
     
     // Indicar que está escribiendo
     await fetch(`${TELEGRAM_API}/sendChatAction`, {
