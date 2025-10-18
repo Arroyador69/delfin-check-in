@@ -89,6 +89,7 @@ async function getReservations(tenantId: string, limit: number = 50) {
         r.guest_name,
         r.guest_email,
         r.guest_phone,
+        r.guest_count,
         r.check_in,
         r.check_out,
         r.channel,
@@ -163,9 +164,9 @@ function generateContext(registrations: any[], reservations: any[]) {
     context += `**LLEGADAS DE HOY (${todayIso}):**\n`;
     if (arrivalsToday.length > 0) {
       arrivalsToday.forEach((res, i) => {
-        // Buscar matching en registrations para obtener número de personas
+        // Usar guest_count directamente de reservations
+        const numPersons = res.guest_count || 1;
         const matchingReg = findMatchingRegistration(registrations, res);
-        const numPersons = matchingReg ? getNumberOfPersons(matchingReg) : 'N/A';
         const hasRegistration = matchingReg ? '✅ Registrado' : '⚠️ Sin registro';
         
         context += `${i + 1}. ${res.guest_name} - ${numPersons} persona(s) - Habitación ${res.room_id || 'N/A'} - Estado: ${res.status} - ${hasRegistration}\n`;
@@ -178,8 +179,8 @@ function generateContext(registrations: any[], reservations: any[]) {
     context += `**SALIDAS DE HOY (${todayIso}):**\n`;
     if (departuresToday.length > 0) {
       departuresToday.forEach((res, i) => {
+        const numPersons = res.guest_count || 1;
         const matchingReg = findMatchingRegistration(registrations, res);
-        const numPersons = matchingReg ? getNumberOfPersons(matchingReg) : 'N/A';
         const hasRegistration = matchingReg ? '✅ Registrado' : '⚠️ Sin registro';
         
         context += `${i + 1}. ${res.guest_name} - ${numPersons} persona(s) - Habitación ${res.room_id || 'N/A'} - Estado: ${res.status} - ${hasRegistration}\n`;
@@ -192,8 +193,8 @@ function generateContext(registrations: any[], reservations: any[]) {
     context += `**PRÓXIMAS LLEGADAS (próximos 7 días):**\n`;
     if (upcomingArrivals.length > 0) {
       upcomingArrivals.slice(0, 10).forEach((res, i) => {
+        const numPersons = res.guest_count || 1;
         const matchingReg = findMatchingRegistration(registrations, res);
-        const numPersons = matchingReg ? getNumberOfPersons(matchingReg) : 'N/A';
         const hasRegistration = matchingReg ? '✅ Registrado' : '⚠️ Sin registro';
         
         context += `${i + 1}. ${res.guest_name} - ${numPersons} persona(s) - ${res.checkInIso} - Habitación ${res.room_id || 'N/A'} - Estado: ${res.status} - ${hasRegistration}\n`;
@@ -205,8 +206,8 @@ function generateContext(registrations: any[], reservations: any[]) {
 
     context += `**TODAS LAS RESERVAS ACTIVAS:**\n`;
     mapped.slice(0, 20).forEach((res, i) => {
+      const numPersons = res.guest_count || 1;
       const matchingReg = findMatchingRegistration(registrations, res);
-      const numPersons = matchingReg ? getNumberOfPersons(matchingReg) : 'N/A';
       const hasRegistration = matchingReg ? '✅ Registrado' : '⚠️ Sin registro';
       
       context += `${i + 1}. ${res.guest_name} - ${numPersons} persona(s) - Llegada: ${res.checkInIso}, Salida: ${res.checkOutIso} - Habitación ${res.room_id || 'N/A'} - Estado: ${res.status} - ${hasRegistration}\n`;
@@ -455,6 +456,7 @@ export async function POST(request: NextRequest) {
       const ejemploReserva = reservations[0];
       console.log(`📊 EJEMPLO RESERVA:`, {
         guest_name: ejemploReserva.guest_name,
+        guest_count: ejemploReserva.guest_count,
         guest_email: ejemploReserva.guest_email,
         check_in: ejemploReserva.check_in,
         check_out: ejemploReserva.check_out
