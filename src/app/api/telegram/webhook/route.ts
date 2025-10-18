@@ -141,9 +141,10 @@ function parseToISOInMadrid(input: string | Date | null | undefined) {
 
 function generateContext(registrations: any[], reservations: any[]) {
   const todayIso = toISODateInMadrid(new Date());
-  let context = `**INFORMACIÓN DEL HOSTAL - ${todayIso}**\n\n`;
+  const tomorrowIso = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0];
   
-  // Información de reservas
+  let context = `Hoy: ${todayIso}\n`;
+  
   if (reservations.length > 0) {
     const mapped = reservations.map((res: any) => ({
       ...res,
@@ -153,87 +154,48 @@ function generateContext(registrations: any[], reservations: any[]) {
     
     // Llegadas de hoy
     const arrivalsToday = mapped.filter(r => r.checkInIso === todayIso);
+    // Salidas de hoy
     const departuresToday = mapped.filter(r => r.checkOutIso === todayIso);
-    
-    // Próximas llegadas (próximos 7 días)
-    const upcomingArrivals = mapped.filter(r => 
-      r.checkInIso > todayIso && 
-      new Date(r.checkInIso) <= new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-    ).sort((a, b) => a.checkInIso.localeCompare(b.checkInIso));
+    // Llegadas de mañana
+    const arrivalsTomorrow = mapped.filter(r => r.checkInIso === tomorrowIso);
+    // Salidas de mañana
+    const departuresTomorrow = mapped.filter(r => r.checkOutIso === tomorrowIso);
 
-    context += `**LLEGADAS DE HOY (${todayIso}):**\n`;
+    // LLEGADAS DE HOY
     if (arrivalsToday.length > 0) {
+      context += `\nLlegadas hoy:\n`;
       arrivalsToday.forEach((res, i) => {
-        // Usar guest_count directamente de reservations
         const numPersons = res.guest_count || 1;
-        const matchingReg = findMatchingRegistration(registrations, res);
-        const hasRegistration = matchingReg ? '✅ Registrado' : '⚠️ Sin registro';
-        
-        console.log(`🔍 RESERVA ${res.guest_name}: guest_count = ${res.guest_count}, numPersons = ${numPersons}`);
-        
-        context += `${i + 1}. ${res.guest_name} - ${numPersons} persona(s) - Habitación ${res.room_id || 'N/A'} - Estado: ${res.status} - ${hasRegistration}\n`;
+        context += `${res.guest_name} - ${numPersons} persona(s)\n`;
       });
-    } else {
-      context += `No hay llegadas programadas para hoy.\n`;
     }
-    context += '\n';
 
-    context += `**SALIDAS DE HOY (${todayIso}):**\n`;
+    // SALIDAS DE HOY
     if (departuresToday.length > 0) {
+      context += `\nSalidas hoy:\n`;
       departuresToday.forEach((res, i) => {
         const numPersons = res.guest_count || 1;
-        const matchingReg = findMatchingRegistration(registrations, res);
-        const hasRegistration = matchingReg ? '✅ Registrado' : '⚠️ Sin registro';
-        
-        context += `${i + 1}. ${res.guest_name} - ${numPersons} persona(s) - Habitación ${res.room_id || 'N/A'} - Estado: ${res.status} - ${hasRegistration}\n`;
+        context += `${res.guest_name} - ${numPersons} persona(s)\n`;
       });
-    } else {
-      context += `No hay salidas programadas para hoy.\n`;
     }
-    context += '\n';
 
-    context += `**PRÓXIMAS LLEGADAS (próximos 7 días):**\n`;
-    if (upcomingArrivals.length > 0) {
-      upcomingArrivals.slice(0, 10).forEach((res, i) => {
+    // LLEGADAS DE MAÑANA
+    if (arrivalsTomorrow.length > 0) {
+      context += `\nLlegadas mañana:\n`;
+      arrivalsTomorrow.forEach((res, i) => {
         const numPersons = res.guest_count || 1;
-        const matchingReg = findMatchingRegistration(registrations, res);
-        const hasRegistration = matchingReg ? '✅ Registrado' : '⚠️ Sin registro';
-        
-        context += `${i + 1}. ${res.guest_name} - ${numPersons} persona(s) - ${res.checkInIso} - Habitación ${res.room_id || 'N/A'} - Estado: ${res.status} - ${hasRegistration}\n`;
+        context += `${res.guest_name} - ${numPersons} persona(s)\n`;
       });
-    } else {
-      context += `No hay llegadas programadas en los próximos 7 días.\n`;
     }
-    context += '\n';
 
-    context += `**TODAS LAS RESERVAS ACTIVAS:**\n`;
-    mapped.slice(0, 20).forEach((res, i) => {
-      const numPersons = res.guest_count || 1;
-      const matchingReg = findMatchingRegistration(registrations, res);
-      const hasRegistration = matchingReg ? '✅ Registrado' : '⚠️ Sin registro';
-      
-      context += `${i + 1}. ${res.guest_name} - ${numPersons} persona(s) - Llegada: ${res.checkInIso}, Salida: ${res.checkOutIso} - Habitación ${res.room_id || 'N/A'} - Estado: ${res.status} - ${hasRegistration}\n`;
-    });
-    context += '\n';
-  } else {
-    context += '**No hay reservas disponibles en el sistema.**\n\n';
-  }
-  
-  // Información detallada de registros de viajeros
-  if (registrations.length > 0) {
-    context += `**DETALLES DE REGISTROS DE VIAJEROS (${registrations.length}):**\n`;
-    registrations.slice(0, 15).forEach((reg, i) => {
-      const data = reg.data || {};
-      const viajeros = data.viajeros || [];
-      const numViajeros = viajeros.length;
-      const nombres = viajeros.map((v: any) => v.nombre || 'Sin nombre').join(', ');
-      const emails = viajeros.map((v: any) => v.email || 'Sin email').join(', ');
-      
-      context += `${i + 1}. Reserva ${reg.reserva_ref || 'N/A'}: ${numViajeros} viajero(s)\n`;
-      context += `   Nombres: ${nombres}\n`;
-      context += `   Emails: ${emails}\n`;
-      context += `   Fechas: ${reg.fecha_entrada} → ${reg.fecha_salida}\n\n`;
-    });
+    // SALIDAS DE MAÑANA
+    if (departuresTomorrow.length > 0) {
+      context += `\nSalidas mañana:\n`;
+      departuresTomorrow.forEach((res, i) => {
+        const numPersons = res.guest_count || 1;
+        context += `${res.guest_name} - ${numPersons} persona(s)\n`;
+      });
+    }
   }
   
   return context;
@@ -529,49 +491,19 @@ export async function POST(request: NextRequest) {
           messages: [
         {
           role: 'system',
-          content: `🤖 ERES EL ASISTENTE IA DEL PROPIETARIO - Delfín Check-in
+          content: `Eres el asistente del hostal ${tenant.name}. Responde de forma breve y clara.
 
-🧩 ROL GENERAL:
-Eres la IA asistente del propietario ${tenant.name} en el sistema Delfín Check-in, un PMS para alojamientos turísticos en España.
-Tienes acceso a la base de datos del establecimiento, incluyendo reservas, huéspedes, check-ins, check-outs, y estado de los envíos MIR.
+REGLAS CRÍTICAS:
+1. Si el contexto dice "2 persona(s)" → responde "2 personas"
+2. Si el contexto dice "1 persona(s)" → responde "1 persona"
+3. NO asumas que es 1 persona
+4. Usa exactamente el número que aparece en el contexto
 
-🎯 OBJETIVO:
-Ayudar al propietario a consultar rápidamente:
-• Llegadas y salidas del día o fechas concretas
-• Cuántas personas están alojadas actualmente
-• Estado de los partes de viajeros (MIR)
-• Resúmenes rápidos del día ("quién llega hoy", "quién se va mañana")
+EJEMPLOS:
+- Contexto: "Nacho Madrigal - 2 persona(s)" → Respuesta: "Nacho Madrigal - 2 personas"
+- Contexto: "Adil Rahali - 1 persona(s)" → Respuesta: "Adil Rahali - 1 persona"
 
-🧠 COMPORTAMIENTO:
-• Responde de forma breve, clara y orientada a la acción
-• Si no hay datos para una fecha, di: "No hay llegadas/salidas registradas para esa fecha"
-• Usa emojis para hacer las respuestas más amigables
-• Si detectas reservas sin parte MIR, alértalo: "⚠️ Falta el parte de viajeros para [nombre]"
-• Mantén un tono profesional pero cercano
-
-⚠️ REGLA CRÍTICA - NÚMERO DE PERSONAS:
-Siempre que veas en el contexto "X persona(s)", DEBES usar exactamente ese número.
-NO asumas que es 1 persona. Si el contexto dice "2 persona(s)", responde "2 personas".
-Si el contexto dice "1 persona(s)", responde "1 persona".
-
-💬 EJEMPLOS DE RESPUESTAS IDEALES:
-
-Pregunta: "¿Quién llega hoy?"
-Si el contexto dice: "Nacho Madrigal - 2 persona(s)"
-Respuesta: "Hoy (18/10/2025) llega 1 reserva con 2 personas:
-🏠 Nacho Madrigal - 2 personas - Habitación 2 - Estado: confirmed"
-
-Pregunta: "¿Quién llega mañana?"
-Si el contexto dice: "Adil Rahali - 1 persona(s)"
-Respuesta: "Mañana (19/10/2025) llega 1 persona:
-🏠 Adil Rahali - 1 persona - Habitación 1 - Estado: confirmed"
-
-Pregunta: "¿Cuántas personas llegan el 20 de octubre?"
-Si el contexto dice: "Hussain Emame - 2 persona(s)"
-Respuesta: "El 20 de octubre llega 1 reserva con 2 personas:
-🏠 Hussain Emame - 2 personas - Habitación 2 - Estado: confirmed"
-
-IMPORTANTE: Solo puedes CONSULTAR datos, NO puedes crear, modificar o eliminar registros.`,
+Responde solo con la información solicitada.`,
         },
             {
               role: 'user',
