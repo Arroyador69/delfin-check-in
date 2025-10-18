@@ -495,19 +495,34 @@ export default function MirComunicacionesPage() {
                                 <Button 
                                   size="sm" 
                                   className="bg-purple-600 hover:bg-purple-700 text-white font-semibold"
-                                  onClick={() => {
-                                    if (registro.xml_enviado) {
-                                      const blob = new Blob([registro.xml_enviado], { type: 'application/xml' });
-                                      const url = URL.createObjectURL(blob);
-                                      const a = document.createElement('a');
-                                      a.href = url;
-                                      a.download = `comunicacion_${registro.referencia}.xml`;
-                                      document.body.appendChild(a);
-                                      a.click();
-                                      document.body.removeChild(a);
-                                      URL.revokeObjectURL(url);
-                                    } else {
-                                      alert('No hay XML disponible para descargar');
+                                  onClick={async () => {
+                                    try {
+                                      // Obtener el XML de la base de datos
+                                      const response = await fetch(`/api/ministerio/get-xml/${registro.id}`, {
+                                        method: 'GET',
+                                        headers: { 'Content-Type': 'application/json' }
+                                      });
+                                      
+                                      if (response.ok) {
+                                        const result = await response.json();
+                                        if (result.xml) {
+                                          const blob = new Blob([result.xml], { type: 'application/xml' });
+                                          const url = URL.createObjectURL(blob);
+                                          const a = document.createElement('a');
+                                          a.href = url;
+                                          a.download = `comunicacion_${registro.referencia}.xml`;
+                                          document.body.appendChild(a);
+                                          a.click();
+                                          document.body.removeChild(a);
+                                          URL.revokeObjectURL(url);
+                                        } else {
+                                          alert('No hay XML disponible para descargar');
+                                        }
+                                      } else {
+                                        alert('Error obteniendo el XML');
+                                      }
+                                    } catch (error) {
+                                      alert('Error descargando XML');
                                     }
                                   }}
                                 >
