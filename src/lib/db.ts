@@ -168,8 +168,8 @@ export async function insertGuestRegistration(data: {
           console.log(`🗑️ Eliminado registro anterior: ${registro.id}`);
         }
       } else {
-        console.log('⚠️ Nuevo registro también es incompleto, manteniendo el más reciente');
-        return existingRegistrations.rows[0].id;
+        console.log('⚠️ Nuevo registro también es incompleto, rechazando envío');
+        throw new Error('No se puede enviar un registro incompleto cuando ya existe uno similar. Complete todos los campos obligatorios.');
       }
     }
   }

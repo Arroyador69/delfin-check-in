@@ -192,7 +192,7 @@ export async function POST(req: NextRequest) {
     try {
       console.log('🚀 Iniciando auto-envío al MIR...');
       
-      // Preparar datos para el MIR
+      // Preparar datos para el MIR con estructura correcta
       const datosMIR = {
         fechaEntrada: fecha_entrada,
         fechaSalida: fecha_salida,
@@ -205,13 +205,17 @@ export async function POST(req: NextRequest) {
           fechaNacimiento: persona.fechaNacimiento,
           nacionalidad: persona.nacionalidad || 'ESP',
           sexo: persona.sexo || 'M',
-          telefono: persona.contacto?.telefono || '600000000',
-          correo: persona.contacto?.correo || 'viajero@example.com',
-          direccion: persona.direccion.direccion,
-          codigoPostal: persona.direccion.codigoPostal,
-          pais: persona.direccion.pais,
-          codigoMunicipio: persona.direccion.codigoMunicipio || '28079',
-          nombreMunicipio: persona.direccion.nombreMunicipio || ''
+          contacto: {
+            telefono: persona.contacto?.telefono || '',
+            correo: persona.contacto?.correo || ''
+          },
+          direccion: {
+            direccion: persona.direccion.direccion,
+            codigoPostal: persona.direccion.codigoPostal,
+            pais: persona.direccion.pais,
+            codigoMunicipio: persona.direccion.codigoMunicipio || '',
+            nombreMunicipio: persona.direccion.nombreMunicipio || ''
+          }
         }))
       };
 

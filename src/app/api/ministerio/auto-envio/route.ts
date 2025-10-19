@@ -86,11 +86,27 @@ export async function POST(req: NextRequest) {
     // Generar referencia única
     const referencia = `AUTO-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     
-    // Extraer datos del registro de huésped
-    const personas = json.personas || [];
+    // Extraer datos del registro de huésped - manejar diferentes formatos
+    let personas = [];
+    
+    if (json.personas && Array.isArray(json.personas)) {
+      // Formato directo: { personas: [...] }
+      personas = json.personas;
+    } else if (json.comunicaciones && Array.isArray(json.comunicaciones) && json.comunicaciones[0]?.personas) {
+      // Formato de base de datos: { comunicaciones: [{ personas: [...] }] }
+      personas = json.comunicaciones[0].personas;
+    } else if (json.data?.comunicaciones && Array.isArray(json.data.comunicaciones) && json.data.comunicaciones[0]?.personas) {
+      // Formato anidado: { data: { comunicaciones: [{ personas: [...] }] } }
+      personas = json.data.comunicaciones[0].personas;
+    }
+    
     if (personas.length === 0) {
+      console.error('❌ No se encontraron datos de personas en el registro');
+      console.error('📋 Estructura recibida:', JSON.stringify(json, null, 2));
       throw new Error('No se encontraron datos de personas en el registro');
     }
+    
+    console.log('✅ Personas encontradas:', personas.length);
 
     // Formatear fechas correctamente según normas MIR
     const formatearFechaEntrada = (fecha: string): string => {
@@ -158,26 +174,29 @@ export async function POST(req: NextRequest) {
           fechaPago: new Date().toISOString().split('T')[0] // xsd:date (YYYY-MM-DD)
         }
       },
-      personas: personas.map((persona: any) => ({
-        rol: "VI",
+      personas: personas.map((persona: any, index: number) => ({
+        rol: index === 0 ? "VI" : "AC", // Primer viajero es VI (Viajero), resto AC (Acompañante)
         nombre: persona.nombre || "Viajero",
         apellido1: persona.apellido1 || "Apellido1",
         apellido2: persona.apellido2 || "",
         tipoDocumento: persona.tipoDocumento || "NIF",
         numeroDocumento: persona.numeroDocumento || "12345678Z",
-        soporteDocumento: persona.soporteDocumento || persona.numeroDocumento || "12345678Z", // Número de soporte del documento
+        soporteDocumento: persona.soporteDocumento || persona.numeroDocumento || "12345678Z",
         fechaNacimiento: persona.fechaNacimiento || "1985-01-01",
         nacionalidad: persona.nacionalidad || "ESP",
         sexo: persona.sexo || "M",
         direccion: {
           direccion: persona.direccion?.direccion || "Calle Ejemplo 123",
+          direccionComplementaria: persona.direccion?.direccionComplementaria || "",
+          codigoMunicipio: persona.direccion?.codigoMunicipio || "",
+          nombreMunicipio: persona.direccion?.nombreMunicipio || "",
           codigoPostal: persona.direccion?.codigoPostal || "28001",
-          pais: persona.direccion?.pais || "ESP",
-          codigoMunicipio: persona.direccion?.codigoMunicipio || "28079",
-          nombreMunicipio: persona.direccion?.nombreMunicipio || "Madrid"
+          pais: persona.direccion?.pais || "ESP"
         },
-        telefono: persona.contacto?.telefono || "600000000",
-        correo: persona.contacto?.correo || "viajero@example.com"
+        telefono: persona.contacto?.telefono || persona.telefono || "",
+        telefono2: persona.contacto?.telefono2 || persona.telefono2 || "",
+        correo: persona.contacto?.correo || persona.correo || "",
+        parentesco: persona.parentesco || ""
       }))
     };
 
