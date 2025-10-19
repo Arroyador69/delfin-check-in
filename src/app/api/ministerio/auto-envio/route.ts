@@ -88,6 +88,8 @@ export async function POST(req: NextRequest) {
     
     // Extraer datos del registro de huésped - manejar diferentes formatos
     let personas = [];
+    let fechaEntrada = json.fechaEntrada;
+    let fechaSalida = json.fechaSalida;
     
     if (json.personas && Array.isArray(json.personas)) {
       // Formato directo: { personas: [...] }
@@ -98,6 +100,45 @@ export async function POST(req: NextRequest) {
     } else if (json.data?.comunicaciones && Array.isArray(json.data.comunicaciones) && json.data.comunicaciones[0]?.personas) {
       // Formato anidado: { data: { comunicaciones: [{ personas: [...] }] } }
       personas = json.data.comunicaciones[0].personas;
+    } else if (json.id) {
+      // Formato desde dashboard: solo ID, necesitamos buscar en BD
+      console.log('🔍 Buscando datos en BD para ID:', json.id);
+      
+      try {
+        const result = await sql`
+          SELECT data, fecha_entrada, fecha_salida 
+          FROM guest_registrations 
+          WHERE id = ${json.id}
+        `;
+        
+        if (result.rows.length === 0) {
+          throw new Error(`Registro no encontrado con ID: ${json.id}`);
+        }
+        
+        const registro = result.rows[0];
+        const data = registro.data;
+        
+        // Extraer fechas
+        fechaEntrada = fechaEntrada || registro.fecha_entrada;
+        fechaSalida = fechaSalida || registro.fecha_salida;
+        
+        // Extraer personas de la estructura de BD
+        if (data?.comunicaciones && Array.isArray(data.comunicaciones) && data.comunicaciones[0]?.personas) {
+          personas = data.comunicaciones[0].personas;
+        } else if (data?.personas && Array.isArray(data.personas)) {
+          personas = data.personas;
+        }
+        
+        console.log('✅ Datos encontrados en BD:', {
+          id: json.id,
+          personas: personas.length,
+          fechaEntrada,
+          fechaSalida
+        });
+      } catch (dbError) {
+        console.error('❌ Error consultando BD:', dbError);
+        throw new Error(`Error consultando registro en BD: ${dbError.message}`);
+      }
     }
     
     if (personas.length === 0) {
@@ -136,10 +177,10 @@ export async function POST(req: NextRequest) {
     };
 
     console.log('🔍 Debug fechas recibidas:');
-    console.log('fechaEntrada original:', json.fechaEntrada);
-    console.log('fechaSalida original:', json.fechaSalida);
-    console.log('fechaEntrada formateada:', formatearFechaEntrada(json.fechaEntrada));
-    console.log('fechaSalida formateada:', formatearFechaSalida(json.fechaSalida));
+    console.log('fechaEntrada original:', fechaEntrada);
+    console.log('fechaSalida original:', fechaSalida);
+    console.log('fechaEntrada formateada:', formatearFechaEntrada(fechaEntrada));
+    console.log('fechaSalida formateada:', formatearFechaSalida(fechaSalida));
 
     // Obtener código de establecimiento desde la configuración
     let codigoEstablecimiento = "0000256653"; // Fallback
@@ -164,8 +205,8 @@ export async function POST(req: NextRequest) {
       contrato: {
         referencia: referencia,
         fechaContrato: new Date().toISOString().split('T')[0], // xsd:date (YYYY-MM-DD)
-        fechaEntrada: formatearFechaEntrada(json.fechaEntrada), // xsd:dateTime (YYYY-MM-DDTHH:mm:ss)
-        fechaSalida: formatearFechaSalida(json.fechaSalida), // xsd:dateTime (YYYY-MM-DDTHH:mm:ss)
+        fechaEntrada: formatearFechaEntrada(fechaEntrada), // xsd:dateTime (YYYY-MM-DDTHH:mm:ss)
+        fechaSalida: formatearFechaSalida(fechaSalida), // xsd:dateTime (YYYY-MM-DDTHH:mm:ss)
         numPersonas: personas.length,
         numHabitaciones: 1,
         internet: false,
