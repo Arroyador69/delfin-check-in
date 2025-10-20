@@ -16,6 +16,11 @@ export function middleware(req: NextRequest) {
   
   // Debug: Log para verificar qué rutas están siendo procesadas
   console.log(`🔍 Middleware processing: ${url.pathname} - Method: ${req.method}`);
+
+  // EXCLUSIÓN TOTAL DE API DURANTE INCIDENTE: no procesar ninguna ruta /api/**
+  if (url.pathname.startsWith('/api/')) {
+    return NextResponse.next();
+  }
   
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   // PASO 1: PREFLIGHT CORS
@@ -212,11 +217,21 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
+  // Limitar a páginas del panel; excluir explícitamente /api/** y activos estáticos
   matcher: [
-    /*
-     * Match all request paths except for static files
-     * This ensures ALL pages are processed by middleware
-     */
-    '/((?!_next/static|_next/image|favicon.ico).*)',
+    '/',
+    '/reservations',
+    '/rooms',
+    '/settings',
+    '/settings/:path*',
+    '/guest-registrations-dashboard',
+    '/aeat',
+    '/calendar-sync',
+    '/offline-queue',
+    '/audit',
+    '/pricing',
+    '/messages',
+    '/estado-envios-mir',
+    '/onboarding'
   ],
 }
