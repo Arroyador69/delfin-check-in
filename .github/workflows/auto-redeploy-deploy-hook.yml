@@ -1,0 +1,32 @@
+name: Auto redeploy (status + deploy hook)
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+    - cron: "2-59/5 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: auto-redeploy-deploy-hook
+  cancel-in-progress: true
+
+jobs:
+  ping-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Vercel status
+        run: |
+          sudo apt-get update -y >/dev/null 2>&1 || true
+          sudo apt-get install -y jq >/dev/null 2>&1 || true
+          STATUS=$(curl -s https://www.vercel-status.com/api/v2/summary.json | jq -r '.status.indicator')
+          echo "Vercel status: $STATUS"
+          if [ "$STATUS" != "none" ]; then
+            echo "Vercel no operativo. No se dispara deploy hook."; exit 0
+          fi
+      - name: Trigger Vercel Deploy Hook
+        env:
+          HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -z "$HOOK" ]; then echo "Falta VERCEL_DEPLOY_HOOK_URL"; exit 1; fi
+          curl -fsS -X POST "$HOOK" -H 'Accept: application/json' -d '{}' && echo "Deploy Hook enviado"
+
