@@ -353,12 +353,31 @@ export async function POST(req: NextRequest) {
       console.log(`🔬 DEBUG VALIDACIÓN - Campo 'paisResidencia':`, `"${v.paisResidencia}"`);
       console.log(`🔬 DEBUG VALIDACIÓN - Campo 'nombreMunicipio':`, `"${v.nombreMunicipio}"`);
       
+      // Validaciones obligatorias para todos los viajeros
       if (!v.nombre) issues.push({ path: `${prefix}.nombre`, message: 'Requerido' });
       if (!v.primerApellido) issues.push({ path: `${prefix}.primerApellido`, message: 'Requerido' });
       if (!v.fechaNacimiento) issues.push({ path: `${prefix}.fechaNacimiento`, message: 'Requerido (YYYY-MM-DD)' });
       if (!v.tipoDocumento) issues.push({ path: `${prefix}.tipoDocumento`, message: 'Requerido' });
       if (!v.numeroDocumento) issues.push({ path: `${prefix}.numeroDocumento`, message: 'Requerido' });
       if (!v.direccion) issues.push({ path: `${prefix}.direccion`, message: 'Requerido' });
+      if (!v.nacionalidad) issues.push({ path: `${prefix}.nacionalidad`, message: 'Requerido' });
+      if (!v.sexo) issues.push({ path: `${prefix}.sexo`, message: 'Requerido' });
+      
+      // Teléfono y email obligatorios solo para el primer viajero
+      if (index === 0) {
+        if (!v.telefono) issues.push({ path: `${prefix}.telefono`, message: 'Teléfono requerido para el primer viajero' });
+        if (!v.correo) {
+          issues.push({ path: `${prefix}.correo`, message: 'Email requerido para el primer viajero' });
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.correo)) {
+          issues.push({ path: `${prefix}.correo`, message: 'Email no válido' });
+        }
+      }
+      
+      // Segundo apellido obligatorio solo para españoles
+      const esEspana = v.nacionalidad === 'ESP';
+      if (esEspana && !v.segundoApellido) {
+        issues.push({ path: `${prefix}.segundoApellido`, message: 'Segundo apellido requerido para españoles' });
+      }
       
       // Validación flexible de código postal según el país
       if (!v.cp) {
@@ -372,11 +391,11 @@ export async function POST(req: NextRequest) {
       }
       
       // Validación condicional de INE: solo para españoles
-      const esEspana = v.paisResidencia === 'ESP';
+      const esEspanaResidencia = v.paisResidencia === 'ESP';
       // Convertir país de residencia a ISO2 para debugging legible y evitar referencias no definidas
       const paisISO2 = iso3to2(v.paisResidencia || 'ESP');
       console.log(`🔬 DEBUG VALIDACIÓN - Viajero ${index}:`, {
-        esEspana,
+        esEspanaResidencia,
         paisResidencia: v.paisResidencia,
         paisISO2,
         ine: `"${v.ine}"`,
@@ -385,7 +404,7 @@ export async function POST(req: NextRequest) {
         nombreMunicipio: `"${v.nombreMunicipio}"`
       });
       
-      if (esEspana) {
+      if (esEspanaResidencia) {
         if (!v.ine || !/^\d{5}$/.test(v.ine)) {
           console.warn(`⚠️ AVISO VALIDACIÓN - Viajero ${index}: INE ausente o inválido para español. Se permite guardar y revisar más tarde.`, {
             ine: v.ine,

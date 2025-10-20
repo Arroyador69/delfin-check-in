@@ -30,3 +30,4 @@ jobs:
           if [ -z "$HOOK" ]; then echo "Falta VERCEL_DEPLOY_HOOK_URL"; exit 1; fi
           curl -fsS -X POST "$HOOK" -H 'Accept: application/json' -d '{}' && echo "Deploy Hook enviado"
 
+
