@@ -732,8 +732,13 @@ export default function HomePage() {
                         <div className="flex items-center space-x-4 text-xs text-gray-600 mt-1">
                           <span>👥 {reservation.guest_count || 'N/A'} personas</span>
                           <span>🏨 Hab. {getRoomNumber(reservation.room_id)}</span>
-                          <span>🚪 Check-out: 12:00</span>
                         </div>
+                        <p className="text-xs text-gray-500 mt-1">
+                          🟢 Check-in: {new Date(reservation.check_in).toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          🔴 Check-out: {new Date(reservation.check_out).toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                        </p>
                       </div>
                     </div>
                   ))}
@@ -804,6 +809,14 @@ export default function HomePage() {
                             day: 'numeric' 
                           })}
                       </p>
+                        <p className="text-xs text-gray-500">
+                          🔴 Check-out: {new Date(reservation.check_out).toLocaleDateString('es-ES', { 
+                            weekday: 'long', 
+                            year: 'numeric', 
+                            month: 'long', 
+                            day: 'numeric' 
+                          })}
+                        </p>
                     </div>
                   </div>
                 ))}
