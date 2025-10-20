@@ -1,4 +1,11 @@
 {
+  "functions": {
+    "api/**": {
+      "runtime": "nodejs18.x"
+    }
+  }
+}
+{
   "headers": [
     {
       "source": "/api/registro-flex",
