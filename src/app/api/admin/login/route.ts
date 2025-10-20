@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyPassword, generateTokenPair, AUTH_CONFIG } from '@/lib/auth';
 import { getClientIP, rateLimitMiddleware, recordFailedAttempt, clearRateLimit, RATE_LIMIT_CONFIGS } from '@/lib/rate-limit';
 import { sql } from '@/lib/db';
+export const runtime = 'nodejs';
 
 /**
  * 🔐 API DE LOGIN MULTI-TENANT

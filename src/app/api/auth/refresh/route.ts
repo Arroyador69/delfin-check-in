@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken, generateAccessToken, AUTH_CONFIG } from '@/lib/auth';
+export const runtime = 'nodejs';
 
 /**
  * 🔄 API DE REFRESH TOKEN

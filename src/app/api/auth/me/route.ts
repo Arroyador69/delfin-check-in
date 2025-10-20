@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/auth';
 import { sql } from '@/lib/db';
+export const runtime = 'nodejs';
 
 /**
  * 👤 API PARA OBTENER DATOS DEL USUARIO AUTENTICADO
