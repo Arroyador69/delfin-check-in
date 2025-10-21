@@ -7,7 +7,6 @@ export default function TelegramAssistantPage() {
   const [info, setInfo] = useState<any>(null);
   const [tenantId, setTenantId] = useState("");
   const [chatId, setChatId] = useState("");
-  const [tokenLimit, setTokenLimit] = useState<number>(100000);
   const [message, setMessage] = useState<string>("");
 
   useEffect(() => {
@@ -32,7 +31,7 @@ export default function TelegramAssistantPage() {
       const res = await fetch("/api/telegram/setup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tenantId, chatId, tokenLimit }),
+        body: JSON.stringify({ tenantId, chatId }),
       });
       const data = await res.json();
       if (res.ok) {
@@ -73,10 +72,6 @@ export default function TelegramAssistantPage() {
         <div className="grid grid-cols-1 gap-3">
           <input className="border rounded p-2 bg-gray-100 text-gray-900" placeholder="Tenant ID" value={tenantId} readOnly />
           <input className="border rounded p-2 text-gray-900" placeholder="Chat ID de Telegram" value={chatId} onChange={e=>setChatId(e.target.value)} />
-          <div>
-            <label className="block text-sm text-gray-800 font-semibold mb-1">Límite mensual de tokens</label>
-            <input type="number" className="border rounded p-2 w-full text-gray-900" value={tokenLimit} onChange={e=>setTokenLimit(Number(e.target.value||0))} />
-          </div>
           <button onClick={activar} disabled={loading} className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50 font-semibold">
             {loading ? 'Activando...' : 'Activar Telegram'}
           </button>
