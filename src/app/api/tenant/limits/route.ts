@@ -4,7 +4,14 @@ import { sql } from '@vercel/postgres';
 export async function GET(req: NextRequest) {
   try {
     // Obtener tenant_id del header
-    const tenantId = req.headers.get('x-tenant-id') || 'default';
+    const tenantId = req.headers.get('x-tenant-id');
+    
+    if (!tenantId || tenantId === 'default') {
+      return NextResponse.json({
+        success: false,
+        error: 'No se pudo identificar el tenant'
+      }, { status: 400 });
+    }
 
     // Obtener información del tenant y sus límites
     const result = await sql`

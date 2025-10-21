@@ -3,7 +3,14 @@ import { sql } from '@vercel/postgres';
 
 export async function GET(req: NextRequest) {
   try {
-    const tenantId = req.headers.get('x-tenant-id') || 'default';
+    const tenantId = req.headers.get('x-tenant-id');
+    
+    if (!tenantId || tenantId === 'default') {
+      return NextResponse.json({
+        success: false,
+        error: 'No se pudo identificar el tenant'
+      }, { status: 400 });
+    }
 
     const result = await sql`
       SELECT id, name
@@ -37,7 +44,14 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const tenantId = req.headers.get('x-tenant-id') || 'default';
+    const tenantId = req.headers.get('x-tenant-id');
+    
+    if (!tenantId || tenantId === 'default') {
+      return NextResponse.json({
+        success: false,
+        error: 'No se pudo identificar el tenant'
+      }, { status: 400 });
+    }
     const { rooms } = await req.json();
 
     if (!Array.isArray(rooms)) {
