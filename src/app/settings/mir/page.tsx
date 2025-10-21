@@ -143,25 +143,26 @@ export default function MirSettingsPage() {
   const status = getConfigStatus();
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h2 className="text-2xl font-bold text-gray-900">Configuración MIR</h2>
-        <p className="text-gray-700 font-medium">Configura las credenciales para el envío de comunicaciones al Ministerio del Interior</p>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-6">
+      <div className="max-w-6xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-8 transition-all duration-500 hover:shadow-2xl hover:scale-[1.02]">
+          <h2 className="text-3xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">🏛️ Configuración MIR</h2>
+          <p className="text-gray-700 font-medium text-lg">Configura las credenciales para el envío de comunicaciones al Ministerio del Interior</p>
+        </div>
 
-      {/* Estado de configuración */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between text-gray-900 font-bold">
-            Estado de Configuración
-            <Badge variant={status.variant}>{status.status}</Badge>
-          </CardTitle>
-          <CardDescription className="text-gray-700 font-medium">
-            Verifica que todas las credenciales estén configuradas correctamente
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+        {/* Estado de configuración */}
+        <Card className="bg-white/90 backdrop-blur-sm border-white/30 shadow-xl transition-all duration-500 hover:shadow-2xl hover:scale-[1.02]">
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between text-gray-900 font-bold">
+              📊 Estado de Configuración
+              <Badge variant={status.variant}>{status.status}</Badge>
+            </CardTitle>
+            <CardDescription className="text-gray-700 font-medium">
+              Verifica que todas las credenciales estén configuradas correctamente
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="flex items-center space-x-2">
               {config.usuario ? (
@@ -206,15 +207,17 @@ export default function MirSettingsPage() {
         </Alert>
       )}
 
-      {/* Formulario de configuración */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-gray-900 font-bold">Credenciales MIR</CardTitle>
-          <CardDescription className="text-gray-700 font-medium">
-            Introduce las credenciales proporcionadas por el Ministerio del Interior
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
+        {/* Formulario de configuración */}
+        <Card className="bg-white/90 backdrop-blur-sm border-white/30 shadow-xl transition-all duration-500 hover:shadow-2xl hover:scale-[1.02]">
+          <CardHeader>
+            <CardTitle className="text-gray-900 font-bold flex items-center">
+              🔐 Credenciales MIR
+            </CardTitle>
+            <CardDescription className="text-gray-700 font-medium">
+              Introduce las credenciales proporcionadas por el Ministerio del Interior
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="usuario" className="text-gray-800 font-semibold">Usuario MIR *</Label>
@@ -325,15 +328,15 @@ export default function MirSettingsPage() {
         </CardContent>
       </Card>
 
-      {/* Información importante */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center text-gray-900 font-bold">
-            <Info className="h-5 w-5 mr-2" />
-            Información Importante
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
+        {/* Información importante */}
+        <Card className="bg-white/90 backdrop-blur-sm border-white/30 shadow-xl transition-all duration-500 hover:shadow-2xl hover:scale-[1.02]">
+          <CardHeader>
+            <CardTitle className="flex items-center text-gray-900 font-bold">
+              <Info className="h-5 w-5 mr-2" />
+              ℹ️ Información Importante
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
           <div className="text-sm text-gray-600">
             <p><strong>¿Cómo obtener las credenciales?</strong></p>
             <ol className="list-decimal list-inside space-y-1 mt-2">
@@ -353,50 +356,53 @@ export default function MirSettingsPage() {
         </CardContent>
       </Card>
 
-      {/* Botones de acción */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <Button 
-          onClick={guardarConfiguracion} 
-          disabled={loading || !status.hasRequired}
-          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold"
-        >
-          <Save className="h-4 w-4 mr-2" />
-          {loading ? 'Guardando...' : 'Guardar Configuración'}
-        </Button>
-        
-        <Button 
-          onClick={probarConexion} 
-          disabled={loading || !status.hasRequired}
-          variant="outline"
-          className="flex-1 border-blue-600 text-blue-600 hover:bg-blue-50 font-semibold"
-        >
-          <TestTube className="h-4 w-4 mr-2" />
-          {loading ? 'Probando...' : 'Probar Conexión'}
-        </Button>
-        
-        <Button 
-          onClick={() => window.open('/admin/mir-comunicaciones', '_blank')}
-          variant="outline"
-          className="flex-1 border-green-600 text-green-600 hover:bg-green-50 font-semibold"
-        >
-          <ExternalLink className="h-4 w-4 mr-2" />
-          Ir al Panel MIR
-        </Button>
-      </div>
+        {/* Botones de acción */}
+        <div className="flex flex-col sm:flex-row gap-4">
+          <Button 
+            onClick={guardarConfiguracion} 
+            disabled={loading || !status.hasRequired}
+            className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold px-8 py-4 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg"
+          >
+            <Save className="h-5 w-5 mr-2" />
+            {loading ? '⏳ Guardando...' : '💾 Guardar Configuración'}
+          </Button>
+          
+          <Button 
+            onClick={probarConexion} 
+            disabled={loading || !status.hasRequired}
+            variant="outline"
+            className="flex-1 border-2 border-blue-600 text-blue-600 hover:bg-blue-50 font-semibold px-8 py-4 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg"
+          >
+            <TestTube className="h-5 w-5 mr-2" />
+            {loading ? '⏳ Probando...' : '🧪 Probar Conexión'}
+          </Button>
+          
+          <Button 
+            onClick={() => window.open('/admin/mir-comunicaciones', '_blank')}
+            variant="outline"
+            className="flex-1 border-2 border-green-600 text-green-600 hover:bg-green-50 font-semibold px-8 py-4 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg"
+          >
+            <ExternalLink className="h-5 w-5 mr-2" />
+            🌐 Ir al Panel MIR
+          </Button>
+        </div>
 
-      {/* Resultado de la prueba */}
-      {testResult && (
-        <Card>
-        <CardHeader>
-          <CardTitle className="text-gray-900 font-bold">Resultado de la Prueba</CardTitle>
-        </CardHeader>
-          <CardContent>
-            <pre className="bg-gray-100 p-4 rounded-md text-sm overflow-auto text-gray-900 font-mono">
-              {JSON.stringify(testResult, null, 2)}
-            </pre>
-          </CardContent>
-        </Card>
-      )}
+        {/* Resultado de la prueba */}
+        {testResult && (
+          <Card className="bg-white/90 backdrop-blur-sm border-white/30 shadow-xl transition-all duration-500 hover:shadow-2xl hover:scale-[1.02]">
+            <CardHeader>
+              <CardTitle className="text-gray-900 font-bold flex items-center">
+                📋 Resultado de la Prueba
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <pre className="bg-gray-100 p-4 rounded-md text-sm overflow-auto text-gray-900 font-mono">
+                {JSON.stringify(testResult, null, 2)}
+              </pre>
+            </CardContent>
+          </Card>
+        )}
+      </div>
     </div>
   );
 }
