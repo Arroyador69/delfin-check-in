@@ -91,7 +91,7 @@ export async function POST(req: NextRequest) {
         
         // Preparar personas para el MIR
         const personas = viajeros.map((viajero: any, index: number) => ({
-          rol: index === 0 ? "VI" : "AC", // Primer viajero es VI, resto AC
+          rol: "VI", // Todos los viajeros son VI según normas MIR
           nombre: viajero.nombre || viajero.name || "Desconocido",
           apellido1: viajero.apellido1 || viajero.apellidos?.split(' ')[0] || "Desconocido",
           apellido2: viajero.apellido2 || viajero.apellidos?.split(' ')[1] || "",

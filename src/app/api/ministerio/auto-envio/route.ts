@@ -216,7 +216,7 @@ export async function POST(req: NextRequest) {
         }
       },
       personas: personas.map((persona: any, index: number) => ({
-        rol: index === 0 ? "VI" : "AC", // Primer viajero es VI (Viajero), resto AC (Acompañante)
+        rol: "VI", // Todos los viajeros son VI según normas MIR
         nombre: persona.nombre || "Viajero",
         apellido1: persona.apellido1 || "Apellido1",
         apellido2: persona.apellido2 || "",
