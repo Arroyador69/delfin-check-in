@@ -20,11 +20,16 @@ export async function GET(req: NextRequest) {
       );
     }
     
-    // TEMPORAL: Si no hay base de datos, devolver datos mock
-    if (!process.env.POSTGRES_URL || process.env.POSTGRES_URL.includes('localhost')) {
-      console.log('🔧 Modo desarrollo: devolviendo datos mock');
-      return NextResponse.json([]);
+    // Verificar que tenemos conexión a Neon DB
+    if (!process.env.POSTGRES_URL) {
+      console.log('❌ No hay POSTGRES_URL configurado');
+      return NextResponse.json(
+        { error: 'Base de datos no configurada' },
+        { status: 500 }
+      );
     }
+    
+    console.log('✅ Usando Neon DB (Vercel Postgres)');
     
     // Verificar si la tabla Room existe (solo verificar, no crear)
     try {
