@@ -51,8 +51,8 @@ export default function TelegramAssistantPage() {
       <div className="max-w-4xl mx-auto">
         <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-8 mb-6 transition-all duration-500 hover:shadow-2xl hover:scale-[1.02]">
           <h1 className="text-3xl font-bold mb-6 text-center">
-            <span className="text-4xl">🤖</span>
-            <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent ml-3">Asistente IA (Telegram)</span>
+            <span className="text-4xl mr-3" style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>🤖</span>
+            <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Asistente IA (Telegram)</span>
           </h1>
         </div>
 

@@ -148,8 +148,8 @@ export default function MirSettingsPage() {
         {/* Header */}
         <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-8 transition-all duration-500 hover:shadow-2xl hover:scale-[1.02]">
           <h2 className="text-3xl font-bold mb-4 text-center">
-            <span className="text-4xl">🏛️</span>
-            <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent ml-3">Configuración MIR</span>
+            <span className="text-4xl mr-3" style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>🏛️</span>
+            <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Configuración MIR</span>
           </h2>
           <p className="text-gray-700 font-medium text-lg">Configura las credenciales para el envío de comunicaciones al Ministerio del Interior</p>
         </div>
