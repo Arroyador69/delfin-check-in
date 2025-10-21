@@ -28,35 +28,50 @@ export default function CookiesPolicyPage() {
               <h2 className="text-2xl font-bold text-blue-600 mb-4">2. Tipos de cookies que utilizamos</h2>
               
               <div className="overflow-x-auto">
-                <table className="w-full border-collapse border border-gray-300 rounded-lg overflow-hidden">
+                <table className="w-full border-collapse border-2 border-blue-200 rounded-xl overflow-hidden shadow-lg">
                   <thead>
-                    <tr className="bg-gray-50">
-                      <th className="border border-gray-300 p-4 text-left font-semibold">Tipo</th>
-                      <th className="border border-gray-300 p-4 text-left font-semibold">Finalidad</th>
-                      <th className="border border-gray-300 p-4 text-left font-semibold">Duración</th>
+                    <tr className="bg-gradient-to-r from-blue-100 to-indigo-100">
+                      <th className="border-2 border-blue-200 p-4 text-left font-bold text-blue-800 text-lg">Tipo</th>
+                      <th className="border-2 border-blue-200 p-4 text-left font-bold text-blue-800 text-lg">Finalidad</th>
+                      <th className="border-2 border-blue-200 p-4 text-left font-bold text-blue-800 text-lg">Duración</th>
                     </tr>
                   </thead>
                   <tbody>
-                    <tr>
-                      <td className="border border-gray-300 p-4">
-                        <span className="font-semibold text-blue-600">Cookies Técnicas</span>
+                    <tr className="hover:bg-blue-50 transition-colors duration-200">
+                      <td className="border-2 border-blue-200 p-4 bg-white">
+                        <div className="flex items-center space-x-2">
+                          <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-bold">🔧</span>
+                          <span className="font-bold text-blue-700 text-lg">Cookies Técnicas</span>
+                        </div>
                       </td>
-                      <td className="border border-gray-300 p-4">Funcionamiento básico del sitio web</td>
-                      <td className="border border-gray-300 p-4">Sesión</td>
+                      <td className="border-2 border-blue-200 p-4 bg-white text-gray-800 font-medium">Funcionamiento básico del sitio web</td>
+                      <td className="border-2 border-blue-200 p-4 bg-white">
+                        <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-bold">Sesión</span>
+                      </td>
                     </tr>
-                    <tr className="bg-gray-50">
-                      <td className="border border-gray-300 p-4">
-                        <span className="font-semibold text-green-600">Cookies de Autenticación</span>
+                    <tr className="hover:bg-green-50 transition-colors duration-200">
+                      <td className="border-2 border-blue-200 p-4 bg-gray-50">
+                        <div className="flex items-center space-x-2">
+                          <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold">🔐</span>
+                          <span className="font-bold text-green-700 text-lg">Cookies de Autenticación</span>
+                        </div>
                       </td>
-                      <td className="border border-gray-300 p-4">Mantener la sesión del usuario</td>
-                      <td className="border border-gray-300 p-4">30 días</td>
+                      <td className="border-2 border-blue-200 p-4 bg-gray-50 text-gray-800 font-medium">Mantener la sesión del usuario</td>
+                      <td className="border-2 border-blue-200 p-4 bg-gray-50">
+                        <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-bold">30 días</span>
+                      </td>
                     </tr>
-                    <tr>
-                      <td className="border border-gray-300 p-4">
-                        <span className="font-semibold text-purple-600">Cookies de Análisis</span>
+                    <tr className="hover:bg-purple-50 transition-colors duration-200">
+                      <td className="border-2 border-blue-200 p-4 bg-white">
+                        <div className="flex items-center space-x-2">
+                          <span className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-xs font-bold">📊</span>
+                          <span className="font-bold text-purple-700 text-lg">Cookies de Análisis</span>
+                        </div>
                       </td>
-                      <td className="border border-gray-300 p-4">Estadísticas de uso y rendimiento</td>
-                      <td className="border border-gray-300 p-4">2 años</td>
+                      <td className="border-2 border-blue-200 p-4 bg-white text-gray-800 font-medium">Estadísticas de uso y rendimiento</td>
+                      <td className="border-2 border-blue-200 p-4 bg-white">
+                        <span className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm font-bold">2 años</span>
+                      </td>
                     </tr>
                   </tbody>
                 </table>
