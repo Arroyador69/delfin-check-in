@@ -498,15 +498,15 @@ export async function POST(req: NextRequest) {
       tipoDocumento: v.tipoDocumento,
       numeroDocumento: v.numeroDocumento,
       fechaNacimiento: v.fechaNacimiento,
-      nacionalidad: normalizeToAlpha3(v.nacionalidadISO2),
+      nacionalidad: v.nacionalidad, // Ya viene en ISO3 desde el frontend
       sexo: v.sexo,
       telefono: v.telefono,
       telefono2: '', // Campo adicional vacío
-      correo: v.email,
+      correo: v.correo,
       direccion: {
         direccion: v.direccion,
         codigoPostal: v.cp,
-        pais: normalizeToAlpha3(v.paisResidencia),
+        pais: v.paisResidencia, // Ya viene en ISO3 desde el frontend
         codigoMunicipio: v.ine,
         nombreMunicipio: v.nombreMunicipio || '' // Añadir campo nombreMunicipio
       }
