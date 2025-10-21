@@ -26,16 +26,27 @@ export function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // Rutas públicas
+  // Rutas públicas que no necesitan tenant ID
   const isPublicRoute = (
     url.pathname === '/admin-login' ||
     url.pathname === '/forgot-password' ||
-    url.pathname.startsWith('/api/') ||
     url.pathname.startsWith('/api/public/')
   );
   if (isPublicRoute) return NextResponse.next();
 
-  // Autenticación requerida
+  // Para rutas de API, inyectar tenant ID por defecto si no hay autenticación
+  if (url.pathname.startsWith('/api/')) {
+    const requestHeaders = new Headers(req.headers);
+    
+    // Si no hay tenant ID en el header, usar el tenant por defecto
+    if (!requestHeaders.get('x-tenant-id')) {
+      requestHeaders.set('x-tenant-id', '870e589f-d313-4a5a-901f-f25fd4e7240a');
+    }
+    
+    return NextResponse.next({ request: { headers: requestHeaders } });
+  }
+
+  // Autenticación requerida para rutas no-API
   const authToken = req.cookies.get(AUTH_CONFIG.cookieName)?.value;
   if (!authToken) {
     const loginUrl = new URL('/admin-login', req.url);
