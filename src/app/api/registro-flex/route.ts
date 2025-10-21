@@ -185,9 +185,10 @@ const normalize = (body: any) => {
         tipoDocumento: mapDocTypeIn(viajero.tipoDocumento || doc.tipo),
         numeroDocumento: String(viajero.numeroDocumento || doc.numero || '').toUpperCase().replace(/\s+/g, ''),
         sexo: mapSexoIn(viajero.sexo),
-        nacionalidadISO2: iso3to2(viajero.nacionalidadISO2 || viajero.nacionalidad || viajero.nacionalidadISO3),
+        nacionalidad: viajero.nacionalidad || viajero.nacionalidadISO3, // Ya viene en ISO3 desde el frontend
+        nacionalidadISO2: iso3to2(viajero.nacionalidad || viajero.nacionalidadISO3), // Convertir ISO3 a ISO2 para compatibilidad
         telefono: String(viajero.telefono || '').replace(/\s+/g, ''),
-        email: String(viajero.email || '').trim().toLowerCase(),
+        correo: String(viajero.correo || viajero.email || '').trim().toLowerCase(),
         direccion: String(viajero.direccion || res.direccion || '').trim(),
         cp: (() => {
           const cpValue = String(cpEntrada || '').trim();
@@ -502,7 +503,7 @@ export async function POST(req: NextRequest) {
       sexo: v.sexo,
       telefono: v.telefono,
       telefono2: '', // Campo adicional vacío
-      correo: v.correo,
+      correo: v.correo, // Ya viene como 'correo' desde el frontend
       direccion: {
         direccion: v.direccion,
         codigoPostal: v.cp,
