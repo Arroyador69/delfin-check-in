@@ -18,12 +18,45 @@ export default function LegalNoticePage() {
           <div className="space-y-8">
             <section>
               <h2 className="text-2xl font-bold text-blue-600 mb-4">1. Datos Identificativos</h2>
-              <div className="bg-blue-50 p-6 rounded-xl border border-blue-200">
-                <p><strong>Denominación social:</strong> Delfín Check-in<br/>
-                <strong>Actividad:</strong> Desarrollo de software y servicios de gestión hotelera<br/>
-                <strong>Email:</strong> contacto@delfincheckin.com<br/>
-                <strong>Dirección:</strong> Málaga, España<br/>
-                <strong>Sitio web:</strong> https://admin.delfincheckin.com</p>
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-200 shadow-sm">
+                <div className="flex items-start space-x-3">
+                  <div className="bg-blue-100 p-2 rounded-lg">
+                    <span className="text-blue-600 text-lg">🏢</span>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-blue-800 mb-3">Información Corporativa</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div className="flex items-center space-x-2">
+                        <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-medium">🏷️</span>
+                        <div>
+                          <p className="text-xs text-gray-500">Denominación social</p>
+                          <p className="text-sm font-medium text-gray-700">Delfín Check-in</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-medium">💼</span>
+                        <div>
+                          <p className="text-xs text-gray-500">Actividad</p>
+                          <p className="text-sm font-medium text-gray-700">Desarrollo de software</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <span className="bg-purple-100 text-purple-700 px-2 py-1 rounded-full text-xs font-medium">📧</span>
+                        <div>
+                          <p className="text-xs text-gray-500">Email</p>
+                          <p className="text-sm font-medium text-gray-700">contacto@delfincheckin.com</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <span className="bg-orange-100 text-orange-700 px-2 py-1 rounded-full text-xs font-medium">📍</span>
+                        <div>
+                          <p className="text-xs text-gray-500">Dirección</p>
+                          <p className="text-sm font-medium text-gray-700">Málaga, España</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </section>
 
@@ -73,15 +106,35 @@ export default function LegalNoticePage() {
 
             <section>
               <h2 className="text-2xl font-bold text-blue-600 mb-4">5. Exclusión de Garantías y Responsabilidad</h2>
-              <div className="bg-yellow-50 p-6 rounded-lg border border-yellow-200">
-                <p className="text-gray-700 mb-4">
-                  <strong>Exclusión de garantías:</strong> Delfín Check-in no garantiza la disponibilidad 
-                  continua del sitio web ni la ausencia de errores en el mismo.
-                </p>
-                <p className="text-gray-700">
-                  <strong>Limitación de responsabilidad:</strong> En ningún caso Delfín Check-in será 
-                  responsable de los daños que puedan derivarse del uso del sitio web.
-                </p>
+              <div className="bg-gradient-to-r from-yellow-50 to-orange-50 p-6 rounded-xl border border-yellow-200 shadow-sm">
+                <div className="flex items-start space-x-3">
+                  <div className="bg-yellow-200 p-2 rounded-lg">
+                    <span className="text-yellow-700 text-lg">⚠️</span>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-yellow-800 mb-3">Información Importante</h3>
+                    <div className="space-y-4">
+                      <div className="bg-white/50 p-4 rounded-lg border border-yellow-200">
+                        <h4 className="font-semibold text-yellow-700 mb-2 flex items-center">
+                          <span className="mr-2">🚫</span> Exclusión de garantías
+                        </h4>
+                        <p className="text-gray-700 text-sm">
+                          Delfín Check-in no garantiza la disponibilidad continua del sitio web 
+                          ni la ausencia de errores en el mismo.
+                        </p>
+                      </div>
+                      <div className="bg-white/50 p-4 rounded-lg border border-yellow-200">
+                        <h4 className="font-semibold text-yellow-700 mb-2 flex items-center">
+                          <span className="mr-2">🛡️</span> Limitación de responsabilidad
+                        </h4>
+                        <p className="text-gray-700 text-sm">
+                          En ningún caso Delfín Check-in será responsable de los daños que 
+                          puedan derivarse del uso del sitio web.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </section>
 

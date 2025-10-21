@@ -18,10 +18,17 @@ export default function PrivacyPolicyPage() {
           <div className="space-y-8">
             <section>
               <h2 className="text-2xl font-bold text-blue-600 mb-4">1. Información del Responsable</h2>
-              <div className="bg-blue-50 p-6 rounded-xl border border-blue-200">
-                <p><strong>Delfín Check-in</strong><br/>
-                Email: contacto@delfincheckin.com<br/>
-                Dirección: Málaga, España</p>
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-200 shadow-sm">
+                <div className="flex items-start space-x-3">
+                  <div className="bg-blue-100 p-2 rounded-lg">
+                    <span className="text-blue-600 text-lg">🏢</span>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-blue-800 mb-2">Delfín Check-in</h3>
+                    <p className="text-gray-700 text-sm">📧 contacto@delfincheckin.com</p>
+                    <p className="text-gray-700 text-sm">📍 Málaga, España</p>
+                  </div>
+                </div>
               </div>
             </section>
 
@@ -102,11 +109,20 @@ export default function PrivacyPolicyPage() {
 
             <section>
               <h2 className="text-2xl font-bold text-blue-600 mb-4">8. Contacto</h2>
-              <div className="bg-green-50 p-6 rounded-xl border border-green-200">
-                <p className="text-gray-700">
-                  Para ejercer tus derechos o resolver cualquier duda sobre el tratamiento de datos, 
-                  puedes contactarnos en: <strong>contacto@delfincheckin.com</strong>
-                </p>
+              <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-6 rounded-xl border border-green-200 shadow-sm">
+                <div className="flex items-start space-x-3">
+                  <div className="bg-green-100 p-2 rounded-lg">
+                    <span className="text-green-600 text-lg">📞</span>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-green-800 mb-2">Contacto</h3>
+                    <p className="text-gray-700 text-sm">
+                      Para ejercer tus derechos o resolver cualquier duda sobre el tratamiento de datos, 
+                      puedes contactarnos en:
+                    </p>
+                    <p className="text-green-700 font-semibold mt-2">📧 contacto@delfincheckin.com</p>
+                  </div>
+                </div>
               </div>
             </section>
           </div>
