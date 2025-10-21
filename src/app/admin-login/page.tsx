@@ -254,9 +254,15 @@ export default function AdminLoginPage() {
 
           {/* Footer */}
           <div className="bg-gray-50 px-8 py-4 border-t border-gray-100">
-            <p className="text-xs text-center text-gray-500">
+            <p className="text-xs text-center text-gray-500 mb-2">
               🔒 Conexión segura con autenticación JWT
             </p>
+            <div className="flex justify-center space-x-4 text-xs">
+              <a href="/legal/privacy" className="text-blue-600 hover:text-blue-800 transition-colors">Privacidad</a>
+              <a href="/legal/cookies" className="text-blue-600 hover:text-blue-800 transition-colors">Cookies</a>
+              <a href="/legal/terms" className="text-blue-600 hover:text-blue-800 transition-colors">Términos</a>
+              <a href="/legal/notice" className="text-blue-600 hover:text-blue-800 transition-colors">Legal</a>
+            </div>
           </div>
         </div>
 
