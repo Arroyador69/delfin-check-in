@@ -166,117 +166,137 @@ export default function AccountPage() {
 
 
   return (
-    <div className="space-y-6">
-      <h3 className="text-lg font-medium text-gray-900">Gestión de Cuenta</h3>
-      
-      {/* Mensaje de estado */}
-      {message.text && (
-        <div className={`p-4 rounded-md ${
-          message.type === 'success' 
-            ? 'bg-green-50 border border-green-200 text-green-800' 
-            : 'bg-red-50 border border-red-200 text-red-800'
-        }`}>
-          {message.text}
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-6">
+      <div className="max-w-4xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-8 transition-all duration-500 hover:shadow-2xl hover:scale-[1.02]">
+          <h3 className="text-3xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent flex items-center">
+            <User className="mr-3 h-8 w-8 text-blue-600" />
+            Gestión de Cuenta
+          </h3>
         </div>
-      )}
-
-      {/* Cambio de nombre de usuario */}
-      <div className="bg-white border border-gray-200 rounded-lg p-6">
-        <h4 className="text-md font-medium text-gray-900 mb-4">Cambiar Nombre de Usuario</h4>
-        <form onSubmit={handleUsernameChange} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Nombre de Usuario
-            </label>
-            <input
-              type="text"
-              value={accountData.username}
-              onChange={(e) => setAccountData(prev => ({ ...prev, username: e.target.value }))}
-              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-              placeholder="admin"
-              required
-            />
+        
+        {/* Mensaje de estado */}
+        {message.text && (
+          <div className={`p-4 rounded-xl shadow-lg transition-all duration-300 ${
+            message.type === 'success' 
+              ? 'bg-green-50 border border-green-200 text-green-800' 
+              : 'bg-red-50 border border-red-200 text-red-800'
+          }`}>
+            {message.text}
           </div>
-          <button
-            type="submit"
-            disabled={loading}
-            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? 'Guardando...' : 'Actualizar Usuario'}
-          </button>
-        </form>
-      </div>
+        )}
 
-      {/* Cambio de contraseña */}
-      <div className="bg-white border border-gray-200 rounded-lg p-6">
-        <h4 className="text-md font-medium text-gray-900 mb-4">Cambiar Contraseña</h4>
-        <form onSubmit={handlePasswordChange} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Contraseña Actual
-            </label>
-            <input
-              type="password"
-              value={accountData.currentPassword}
-              onChange={(e) => setAccountData(prev => ({ ...prev, currentPassword: e.target.value }))}
-              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-              placeholder="Contraseña actual"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Nueva Contraseña
-            </label>
-            <input
-              type="password"
-              value={accountData.newPassword}
-              onChange={(e) => setAccountData(prev => ({ ...prev, newPassword: e.target.value }))}
-              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-              placeholder="Nueva contraseña (mín. 6 caracteres)"
-              required
-              minLength={6}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Confirmar Nueva Contraseña
-            </label>
-            <input
-              type="password"
-              value={accountData.confirmPassword}
-              onChange={(e) => setAccountData(prev => ({ ...prev, confirmPassword: e.target.value }))}
-              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-              placeholder="Confirmar nueva contraseña"
-              required
-            />
-          </div>
-          <button
-            type="submit"
-            disabled={passwordChangeLoading}
-            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {passwordChangeLoading ? 'Cambiando...' : 'Cambiar Contraseña'}
-          </button>
-        </form>
-      </div>
+        {/* Cambio de nombre de usuario */}
+        <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-white/30 p-6 transition-all duration-500 hover:shadow-2xl hover:scale-[1.02]">
+          <h4 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+            <User className="mr-3 h-6 w-6 text-blue-600" />
+            Cambiar Nombre de Usuario
+          </h4>
+          <form onSubmit={handleUsernameChange} className="space-y-6">
+            <div>
+              <label className="block text-sm font-semibold text-gray-800 mb-2">
+                Nombre de Usuario
+              </label>
+              <input
+                type="text"
+                value={accountData.username}
+                onChange={(e) => setAccountData(prev => ({ ...prev, username: e.target.value }))}
+                className="mt-1 block w-full border-2 border-gray-200 rounded-xl p-4 shadow-sm focus:ring-blue-500 focus:border-blue-500 transition-all duration-300"
+                placeholder="admin"
+                required
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={loading}
+              className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-4 rounded-xl hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed font-semibold text-lg transition-all duration-300 hover:scale-105 hover:shadow-lg"
+            >
+              {loading ? '⏳ Guardando...' : '💾 Actualizar Usuario'}
+            </button>
+          </form>
+        </div>
+
+        {/* Cambio de contraseña */}
+        <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-white/30 p-6 transition-all duration-500 hover:shadow-2xl hover:scale-[1.02]">
+          <h4 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+            <Shield className="mr-3 h-6 w-6 text-blue-600" />
+            Cambiar Contraseña
+          </h4>
+          <form onSubmit={handlePasswordChange} className="space-y-6">
+            <div>
+              <label className="block text-sm font-semibold text-gray-800 mb-2">
+                Contraseña Actual
+              </label>
+              <input
+                type="password"
+                value={accountData.currentPassword}
+                onChange={(e) => setAccountData(prev => ({ ...prev, currentPassword: e.target.value }))}
+                className="mt-1 block w-full border-2 border-gray-200 rounded-xl p-4 shadow-sm focus:ring-blue-500 focus:border-blue-500 transition-all duration-300"
+                placeholder="Contraseña actual"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-800 mb-2">
+                Nueva Contraseña
+              </label>
+              <input
+                type="password"
+                value={accountData.newPassword}
+                onChange={(e) => setAccountData(prev => ({ ...prev, newPassword: e.target.value }))}
+                className="mt-1 block w-full border-2 border-gray-200 rounded-xl p-4 shadow-sm focus:ring-blue-500 focus:border-blue-500 transition-all duration-300"
+                placeholder="Nueva contraseña (mín. 6 caracteres)"
+                required
+                minLength={6}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-800 mb-2">
+                Confirmar Nueva Contraseña
+              </label>
+              <input
+                type="password"
+                value={accountData.confirmPassword}
+                onChange={(e) => setAccountData(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                className="mt-1 block w-full border-2 border-gray-200 rounded-xl p-4 shadow-sm focus:ring-blue-500 focus:border-blue-500 transition-all duration-300"
+                placeholder="Confirmar nueva contraseña"
+                required
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={passwordChangeLoading}
+              className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-4 rounded-xl hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed font-semibold text-lg transition-all duration-300 hover:scale-105 hover:shadow-lg"
+            >
+              {passwordChangeLoading ? '⏳ Cambiando...' : '🔐 Cambiar Contraseña'}
+            </button>
+          </form>
+        </div>
 
 
 
-      {/* Información de seguridad */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <div className="flex">
-          <div className="flex-shrink-0">
-            <Shield className="h-5 w-5 text-blue-400" />
-          </div>
-          <div className="ml-3">
-            <h3 className="text-sm font-medium text-blue-800">
-              Información de Seguridad
-            </h3>
-            <div className="mt-2 text-sm text-blue-700">
-              <p>• Las contraseñas se almacenan de forma segura</p>
-              <p>• El email de recuperación te permitirá restablecer tu contraseña</p>
-              <p>• Mantén tu información de contacto actualizada</p>
+        {/* Información de seguridad */}
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-6 shadow-lg transition-all duration-500 hover:shadow-xl hover:scale-[1.02]">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <Shield className="h-6 w-6 text-blue-600" />
+            </div>
+            <div className="ml-4">
+              <h3 className="text-lg font-semibold text-blue-800 mb-3">
+                🔒 Información de Seguridad
+              </h3>
+              <div className="text-sm text-blue-700 space-y-2">
+                <p className="flex items-center">
+                  <span className="mr-2">✅</span> Las contraseñas se almacenan de forma segura
+                </p>
+                <p className="flex items-center">
+                  <span className="mr-2">✅</span> El email de recuperación te permitirá restablecer tu contraseña
+                </p>
+                <p className="flex items-center">
+                  <span className="mr-2">✅</span> Mantén tu información de contacto actualizada
+                </p>
+              </div>
             </div>
           </div>
         </div>

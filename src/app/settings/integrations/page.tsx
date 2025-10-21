@@ -114,53 +114,60 @@ export default function IntegrationsPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <h3 className="text-lg font-medium text-gray-900">Integraciones de Calendario</h3>
-      
-      {/* Mensaje de estado */}
-      {message.text && (
-        <div className={`p-4 rounded-md ${
-          message.type === 'success' 
-            ? 'bg-green-50 border border-green-200 text-green-800' 
-            : 'bg-red-50 border border-red-200 text-red-800'
-        }`}>
-          {message.text}
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-6">
+      <div className="max-w-6xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-8 transition-all duration-500 hover:shadow-2xl hover:scale-[1.02]">
+          <h3 className="text-3xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent flex items-center">
+            <Calendar className="mr-3 h-8 w-8 text-blue-600" />
+            Integraciones de Calendario
+          </h3>
         </div>
-      )}
-
-      {/* Botón de sincronización */}
-      <div className="bg-white border border-gray-200 rounded-lg p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h4 className="text-md font-medium text-gray-900 flex items-center">
-              <RefreshCw className="w-5 h-5 mr-2 text-blue-600" />
-              Sincronización de Calendarios
-            </h4>
-            <p className="text-sm text-gray-600 mt-1">
-              Sincroniza todos los calendarios externos con tu sistema
-            </p>
+        
+        {/* Mensaje de estado */}
+        {message.text && (
+          <div className={`p-4 rounded-xl shadow-lg transition-all duration-300 ${
+            message.type === 'success' 
+              ? 'bg-green-50 border border-green-200 text-green-800' 
+              : 'bg-red-50 border border-red-200 text-red-800'
+          }`}>
+            {message.text}
           </div>
-          <button
-            onClick={handleSync}
-            disabled={syncLoading}
-            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
-          >
-            <RefreshCw className={`w-4 h-4 ${syncLoading ? 'animate-spin' : ''}`} />
-            <span>{syncLoading ? 'Sincronizando...' : 'Sincronizar'}</span>
-          </button>
-        </div>
-      </div>
+        )}
 
-      {/* iCals por habitación */}
-      <div className="bg-white border border-gray-200 rounded-lg p-6">
-        <h4 className="text-md font-medium text-gray-900 mb-4 flex items-center">
-          <Calendar className="w-5 h-5 mr-2 text-green-600" />
-          iCals por Habitación
-        </h4>
-        <p className="text-sm text-gray-600 mb-6">
-          Cada habitación genera automáticamente un iCal que se actualiza con la información del dashboard. 
-          Puedes copiar estas URLs y pegarlas en las OTAs (Airbnb, Booking.com, etc.).
-        </p>
+        {/* Botón de sincronización */}
+        <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-white/30 p-6 transition-all duration-500 hover:shadow-2xl hover:scale-[1.02]">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h4 className="text-xl font-semibold text-gray-900 flex items-center">
+                <RefreshCw className="w-6 h-6 mr-3 text-blue-600" />
+                🔄 Sincronización de Calendarios
+              </h4>
+              <p className="text-gray-600 mt-2">
+                Sincroniza todos los calendarios externos con tu sistema
+              </p>
+            </div>
+            <button
+              onClick={handleSync}
+              disabled={syncLoading}
+              className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-4 rounded-xl hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2 font-semibold text-lg transition-all duration-300 hover:scale-105 hover:shadow-lg"
+            >
+              <RefreshCw className={`w-5 h-5 ${syncLoading ? 'animate-spin' : ''}`} />
+              <span>{syncLoading ? '⏳ Sincronizando...' : '🚀 Sincronizar'}</span>
+            </button>
+          </div>
+        </div>
+
+        {/* iCals por habitación */}
+        <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-white/30 p-6 transition-all duration-500 hover:shadow-2xl hover:scale-[1.02]">
+          <h4 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+            <Calendar className="w-6 h-6 mr-3 text-green-600" />
+            📅 iCals por Habitación
+          </h4>
+          <p className="text-gray-600 mb-6 leading-relaxed">
+            Cada habitación genera automáticamente un iCal que se actualiza con la información del dashboard. 
+            Puedes copiar estas URLs y pegarlas en las OTAs (Airbnb, Booking.com, etc.).
+          </p>
         
         <div className="space-y-4">
           {roomsConfig.map((room) => {
@@ -276,21 +283,30 @@ export default function IntegrationsPage() {
         </div>
       </div>
 
-      {/* Información adicional */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <div className="flex">
-          <div className="flex-shrink-0">
-            <Calendar className="h-5 w-5 text-blue-400" />
-          </div>
-          <div className="ml-3">
-            <h3 className="text-sm font-medium text-blue-800">
-              Información sobre Integraciones
-            </h3>
-            <div className="mt-2 text-sm text-blue-700">
-              <p>• Los iCals se actualizan automáticamente cada 15 minutos</p>
-              <p>• Puedes tener múltiples calendarios externos por habitación</p>
-              <p>• Las OTAs sincronizarán automáticamente con estos calendarios</p>
-              <p>• Usa el botón "Sincronizar" para forzar una actualización inmediata</p>
+        {/* Información adicional */}
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-6 shadow-lg transition-all duration-500 hover:shadow-xl hover:scale-[1.02]">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <Calendar className="h-6 w-6 text-blue-600" />
+            </div>
+            <div className="ml-4">
+              <h3 className="text-lg font-semibold text-blue-800 mb-3">
+                ℹ️ Información sobre Integraciones
+              </h3>
+              <div className="text-sm text-blue-700 space-y-2">
+                <p className="flex items-center">
+                  <span className="mr-2">🔄</span> Los iCals se actualizan automáticamente cada 15 minutos
+                </p>
+                <p className="flex items-center">
+                  <span className="mr-2">📊</span> Puedes tener múltiples calendarios externos por habitación
+                </p>
+                <p className="flex items-center">
+                  <span className="mr-2">🔗</span> Las OTAs sincronizarán automáticamente con estos calendarios
+                </p>
+                <p className="flex items-center">
+                  <span className="mr-2">⚡</span> Usa el botón "Sincronizar" para forzar una actualización inmediata
+                </p>
+              </div>
             </div>
           </div>
         </div>
