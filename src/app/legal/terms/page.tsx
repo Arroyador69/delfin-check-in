@@ -23,11 +23,29 @@ export default function TermsOfServicePage() {
                 una plataforma de gestión hotelera y auto check-in para hostales y apartamentos turísticos.
               </p>
               
-              <div className="bg-blue-50 p-6 rounded-xl border border-blue-200">
-                <p><strong>Datos del prestador:</strong><br/>
-                Delfín Check-in<br/>
-                Email: contacto@delfincheckin.com<br/>
-                Dirección: Málaga, España</p>
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-200 shadow-sm">
+                <div className="flex items-start space-x-3">
+                  <div className="bg-blue-100 p-2 rounded-lg">
+                    <span className="text-blue-600 text-lg">🏢</span>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-blue-800 mb-3">Datos del prestador</h3>
+                    <div className="space-y-2">
+                      <p className="text-gray-700 text-sm flex items-center">
+                        <span className="mr-2">🏷️</span>
+                        <strong>Delfín Check-in</strong>
+                      </p>
+                      <p className="text-gray-700 text-sm flex items-center">
+                        <span className="mr-2">📧</span>
+                        contacto@delfincheckin.com
+                      </p>
+                      <p className="text-gray-700 text-sm flex items-center">
+                        <span className="mr-2">📍</span>
+                        Málaga, España
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </section>
 
@@ -84,13 +102,33 @@ export default function TermsOfServicePage() {
 
             <section>
               <h2 className="text-2xl font-bold text-blue-600 mb-4">6. Facturación y Pagos</h2>
-              <div className="bg-yellow-50 p-6 rounded-lg border border-yellow-200">
-                <ul className="list-disc pl-6 space-y-2 text-gray-700">
-                  <li>Los precios se establecen según el plan contratado</li>
-                  <li>Los pagos se realizan por adelantado</li>
-                  <li>Las facturas se envían por correo electrónico</li>
-                  <li>Se pueden aplicar descuentos por volumen o anualidad</li>
-                </ul>
+              <div className="bg-gradient-to-r from-yellow-50 to-orange-50 p-6 rounded-xl border border-yellow-200 shadow-sm">
+                <div className="flex items-start space-x-3">
+                  <div className="bg-yellow-200 p-2 rounded-lg">
+                    <span className="text-yellow-700 text-lg">💰</span>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-yellow-800 mb-3">Información de Facturación</h3>
+                    <div className="space-y-3">
+                      <div className="flex items-start space-x-2">
+                        <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-medium mt-0.5">📋</span>
+                        <span className="text-gray-700 text-sm">Los precios se establecen según el plan contratado</span>
+                      </div>
+                      <div className="flex items-start space-x-2">
+                        <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-medium mt-0.5">💳</span>
+                        <span className="text-gray-700 text-sm">Los pagos se realizan por adelantado</span>
+                      </div>
+                      <div className="flex items-start space-x-2">
+                        <span className="bg-purple-100 text-purple-700 px-2 py-1 rounded-full text-xs font-medium mt-0.5">📧</span>
+                        <span className="text-gray-700 text-sm">Las facturas se envían por correo electrónico</span>
+                      </div>
+                      <div className="flex items-start space-x-2">
+                        <span className="bg-orange-100 text-orange-700 px-2 py-1 rounded-full text-xs font-medium mt-0.5">🎯</span>
+                        <span className="text-gray-700 text-sm">Se pueden aplicar descuentos por volumen o anualidad</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </section>
 

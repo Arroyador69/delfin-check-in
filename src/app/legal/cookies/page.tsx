@@ -67,22 +67,52 @@ export default function CookiesPolicyPage() {
               <h2 className="text-2xl font-bold text-blue-600 mb-4">3. Cookies específicas que utilizamos</h2>
               
               <div className="space-y-4">
-                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                  <h3 className="font-semibold text-blue-800 mb-2">auth_token</h3>
-                  <p className="text-sm text-gray-700">Cookie de autenticación para mantener la sesión del usuario logueado</p>
-                  <p className="text-xs text-gray-600 mt-1">Duración: 30 días | Tipo: Técnica necesaria</p>
+                <div className="bg-gradient-to-r from-blue-50 to-blue-100 p-6 rounded-xl border border-blue-200 shadow-sm">
+                  <div className="flex items-start space-x-3">
+                    <div className="bg-blue-200 p-2 rounded-lg">
+                      <span className="text-blue-700 text-lg">🔐</span>
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-bold text-blue-800 mb-2">auth_token</h3>
+                      <p className="text-sm text-gray-700 mb-2">Cookie de autenticación para mantener la sesión del usuario logueado</p>
+                      <div className="flex flex-wrap gap-2">
+                        <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-medium">Duración: 30 días</span>
+                        <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-medium">Tipo: Técnica necesaria</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-                  <h3 className="font-semibold text-green-800 mb-2">user_preferences</h3>
-                  <p className="text-sm text-gray-700">Almacena preferencias del usuario como tema, idioma, etc.</p>
-                  <p className="text-xs text-gray-600 mt-1">Duración: 1 año | Tipo: Funcional</p>
+                <div className="bg-gradient-to-r from-green-50 to-green-100 p-6 rounded-xl border border-green-200 shadow-sm">
+                  <div className="flex items-start space-x-3">
+                    <div className="bg-green-200 p-2 rounded-lg">
+                      <span className="text-green-700 text-lg">⚙️</span>
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-bold text-green-800 mb-2">user_preferences</h3>
+                      <p className="text-sm text-gray-700 mb-2">Almacena preferencias del usuario como tema, idioma, etc.</p>
+                      <div className="flex flex-wrap gap-2">
+                        <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-medium">Duración: 1 año</span>
+                        <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-medium">Tipo: Funcional</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
-                  <h3 className="font-semibold text-purple-800 mb-2">analytics_session</h3>
-                  <p className="text-sm text-gray-700">Recopila información anónima sobre el uso del sitio web</p>
-                  <p className="text-xs text-gray-600 mt-1">Duración: Sesión | Tipo: Análisis</p>
+                <div className="bg-gradient-to-r from-purple-50 to-purple-100 p-6 rounded-xl border border-purple-200 shadow-sm">
+                  <div className="flex items-start space-x-3">
+                    <div className="bg-purple-200 p-2 rounded-lg">
+                      <span className="text-purple-700 text-lg">📊</span>
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-bold text-purple-800 mb-2">analytics_session</h3>
+                      <p className="text-sm text-gray-700 mb-2">Recopila información anónima sobre el uso del sitio web</p>
+                      <div className="flex flex-wrap gap-2">
+                        <span className="bg-purple-100 text-purple-700 px-2 py-1 rounded-full text-xs font-medium">Duración: Sesión</span>
+                        <span className="bg-purple-100 text-purple-700 px-2 py-1 rounded-full text-xs font-medium">Tipo: Análisis</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </section>
@@ -101,18 +131,33 @@ export default function CookiesPolicyPage() {
 
             <section>
               <h2 className="text-2xl font-bold text-blue-600 mb-4">5. Cookies de terceros</h2>
-              <div className="bg-yellow-50 p-6 rounded-lg border border-yellow-200">
-                <p className="text-gray-700 mb-2">
-                  <strong>Importante:</strong> Nuestro sitio web puede contener cookies de terceros como:
-                </p>
-                <ul className="list-disc pl-6 text-gray-700">
-                  <li>Google Analytics (análisis web)</li>
-                  <li>Stripe (procesamiento de pagos)</li>
-                  <li>Redes sociales (botones de compartir)</li>
-                </ul>
-                <p className="text-sm text-gray-600 mt-2">
-                  Estas cookies están sujetas a las políticas de privacidad de sus respectivos proveedores.
-                </p>
+              <div className="bg-gradient-to-r from-yellow-50 to-orange-50 p-6 rounded-xl border border-yellow-200 shadow-sm">
+                <div className="flex items-start space-x-3">
+                  <div className="bg-yellow-200 p-2 rounded-lg">
+                    <span className="text-yellow-700 text-lg">⚠️</span>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-yellow-800 mb-2">Importante</h3>
+                    <p className="text-gray-700 mb-3">Nuestro sitio web puede contener cookies de terceros como:</p>
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-medium">📊</span>
+                        <span className="text-gray-700 text-sm">Google Analytics (análisis web)</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <span className="bg-purple-100 text-purple-700 px-2 py-1 rounded-full text-xs font-medium">💳</span>
+                        <span className="text-gray-700 text-sm">Stripe (procesamiento de pagos)</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-medium">📱</span>
+                        <span className="text-gray-700 text-sm">Redes sociales (botones de compartir)</span>
+                      </div>
+                    </div>
+                    <p className="text-sm text-gray-600 mt-3 p-2 bg-gray-50 rounded-lg">
+                      Estas cookies están sujetas a las políticas de privacidad de sus respectivos proveedores.
+                    </p>
+                  </div>
+                </div>
               </div>
             </section>
 
