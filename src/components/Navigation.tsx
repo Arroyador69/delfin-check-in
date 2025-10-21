@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Bed, Calendar, Users, Settings, Menu, X, Smartphone, TrendingUp, FileText, Download, Shield, Calculator, Send, MessageSquare, Scale } from 'lucide-react';
+import { Home, Bed, Calendar, Users, Settings, Menu, X, Smartphone, TrendingUp, FileText, Download, Shield, Calculator, Send, MessageSquare } from 'lucide-react';
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
 
@@ -24,7 +24,6 @@ export default function Navigation() {
     { name: 'Cola offline', href: '/offline-queue', icon: Download },
     { name: 'Bitácora', href: '/audit', icon: Shield },
     { name: 'Configuración', href: '/settings', icon: Settings },
-    { name: 'Información Legal', href: '/legal', icon: Scale },
   ];
 
   return (
