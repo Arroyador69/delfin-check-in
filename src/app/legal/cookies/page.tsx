@@ -1,13 +1,16 @@
 'use client';
 
+import { Cookie, Shield, BarChart3, Wrench } from 'lucide-react';
+
 export default function CookiesPolicyPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-6">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-8 mb-6 transition-all duration-500 hover:shadow-2xl hover:scale-[1.02]">
-          <h1 className="text-3xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent text-center">
-            🍪 Política de Cookies
+          <h1 className="text-3xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent text-center flex items-center justify-center">
+            <Cookie className="mr-3 h-8 w-8 text-blue-600" />
+            Política de Cookies
           </h1>
         </div>
 
@@ -40,7 +43,9 @@ export default function CookiesPolicyPage() {
                     <tr className="hover:bg-blue-50 transition-colors duration-200">
                       <td className="border-2 border-blue-200 p-4 bg-white">
                         <div className="flex items-center space-x-2">
-                          <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-bold">🔧</span>
+                          <div className="bg-blue-100 p-1 rounded-full">
+                            <Wrench className="h-4 w-4 text-blue-700" />
+                          </div>
                           <span className="font-bold text-blue-700 text-lg">Cookies Técnicas</span>
                         </div>
                       </td>
@@ -52,7 +57,9 @@ export default function CookiesPolicyPage() {
                     <tr className="hover:bg-green-50 transition-colors duration-200">
                       <td className="border-2 border-blue-200 p-4 bg-gray-50">
                         <div className="flex items-center space-x-2">
-                          <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold">🔐</span>
+                          <div className="bg-green-100 p-1 rounded-full">
+                            <Shield className="h-4 w-4 text-green-700" />
+                          </div>
                           <span className="font-bold text-green-700 text-lg">Cookies de Autenticación</span>
                         </div>
                       </td>
@@ -64,7 +71,9 @@ export default function CookiesPolicyPage() {
                     <tr className="hover:bg-purple-50 transition-colors duration-200">
                       <td className="border-2 border-blue-200 p-4 bg-white">
                         <div className="flex items-center space-x-2">
-                          <span className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-xs font-bold">📊</span>
+                          <div className="bg-purple-100 p-1 rounded-full">
+                            <BarChart3 className="h-4 w-4 text-purple-700" />
+                          </div>
                           <span className="font-bold text-purple-700 text-lg">Cookies de Análisis</span>
                         </div>
                       </td>
@@ -85,7 +94,7 @@ export default function CookiesPolicyPage() {
                 <div className="bg-gradient-to-r from-blue-50 to-blue-100 p-6 rounded-xl border border-blue-200 shadow-sm">
                   <div className="flex items-start space-x-3">
                     <div className="bg-blue-200 p-2 rounded-lg">
-                      <span className="text-blue-700 text-lg">🔐</span>
+                      <Shield className="h-6 w-6 text-blue-700" />
                     </div>
                     <div className="flex-1">
                       <h3 className="font-bold text-blue-800 mb-2">auth_token</h3>
@@ -101,7 +110,7 @@ export default function CookiesPolicyPage() {
                 <div className="bg-gradient-to-r from-green-50 to-green-100 p-6 rounded-xl border border-green-200 shadow-sm">
                   <div className="flex items-start space-x-3">
                     <div className="bg-green-200 p-2 rounded-lg">
-                      <span className="text-green-700 text-lg">⚙️</span>
+                      <Wrench className="h-6 w-6 text-green-700" />
                     </div>
                     <div className="flex-1">
                       <h3 className="font-bold text-green-800 mb-2">user_preferences</h3>
@@ -117,7 +126,7 @@ export default function CookiesPolicyPage() {
                 <div className="bg-gradient-to-r from-purple-50 to-purple-100 p-6 rounded-xl border border-purple-200 shadow-sm">
                   <div className="flex items-start space-x-3">
                     <div className="bg-purple-200 p-2 rounded-lg">
-                      <span className="text-purple-700 text-lg">📊</span>
+                      <BarChart3 className="h-6 w-6 text-purple-700" />
                     </div>
                     <div className="flex-1">
                       <h3 className="font-bold text-purple-800 mb-2">analytics_session</h3>
@@ -149,22 +158,28 @@ export default function CookiesPolicyPage() {
               <div className="bg-gradient-to-r from-yellow-50 to-orange-50 p-6 rounded-xl border border-yellow-200 shadow-sm">
                 <div className="flex items-start space-x-3">
                   <div className="bg-yellow-200 p-2 rounded-lg">
-                    <span className="text-yellow-700 text-lg">⚠️</span>
+                    <Shield className="h-6 w-6 text-yellow-700" />
                   </div>
                   <div>
                     <h3 className="font-semibold text-yellow-800 mb-2">Importante</h3>
                     <p className="text-gray-700 mb-3">Nuestro sitio web puede contener cookies de terceros como:</p>
                     <div className="space-y-2">
                       <div className="flex items-center space-x-2">
-                        <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-medium">📊</span>
+                        <div className="bg-blue-100 p-1 rounded-full">
+                          <BarChart3 className="h-4 w-4 text-blue-700" />
+                        </div>
                         <span className="text-gray-700 text-sm">Google Analytics (análisis web)</span>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <span className="bg-purple-100 text-purple-700 px-2 py-1 rounded-full text-xs font-medium">💳</span>
+                        <div className="bg-purple-100 p-1 rounded-full">
+                          <Shield className="h-4 w-4 text-purple-700" />
+                        </div>
                         <span className="text-gray-700 text-sm">Stripe (procesamiento de pagos)</span>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-medium">📱</span>
+                        <div className="bg-green-100 p-1 rounded-full">
+                          <Wrench className="h-4 w-4 text-green-700" />
+                        </div>
                         <span className="text-gray-700 text-sm">Redes sociales (botones de compartir)</span>
                       </div>
                     </div>
