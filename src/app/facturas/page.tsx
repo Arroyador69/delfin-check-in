@@ -500,26 +500,26 @@ export default function FacturasPage() {
                       <div className="flex-1">
                         <div className="flex items-center space-x-4">
                           <div>
-                            <h3 className="font-medium text-gray-900">
+                            <h3 className="font-semibold text-gray-800">
                               {factura.numero_factura}
                             </h3>
-                            <p className="text-sm text-gray-600">
+                            <p className="text-sm text-gray-700 font-medium">
                               {factura.cliente_nombre}
                             </p>
                           </div>
-                          <div className="text-sm text-gray-500">
+                          <div className="text-sm text-gray-600">
                             <div className="flex items-center">
-                              <Calendar className="w-4 h-4 mr-1" />
+                              <Calendar className="w-4 h-4 mr-1 text-blue-600" />
                               {new Date(factura.fecha_emision).toLocaleDateString('es-ES')}
                             </div>
                           </div>
                           <div className="text-sm">
-                            <span className="font-medium text-gray-900">
+                            <span className="font-bold text-blue-600 text-lg">
                               {parseFloat(factura.total || 0).toFixed(2)} €
                             </span>
                           </div>
                         </div>
-                        <p className="text-sm text-gray-600 mt-1">
+                        <p className="text-sm text-gray-700 mt-1 font-medium">
                           {factura.concepto}
                         </p>
                       </div>
@@ -528,6 +528,7 @@ export default function FacturasPage() {
                           size="sm"
                           variant="outline"
                           onClick={() => descargarPdf(factura)}
+                          className="bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100 hover:border-blue-300"
                         >
                           <Download className="w-4 h-4 mr-1" />
                           PDF
@@ -536,7 +537,7 @@ export default function FacturasPage() {
                           size="sm"
                           variant="outline"
                           onClick={() => eliminarFactura(factura.id)}
-                          className="text-red-600 hover:text-red-700"
+                          className="bg-red-50 border-red-200 text-red-700 hover:bg-red-100 hover:border-red-300"
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
