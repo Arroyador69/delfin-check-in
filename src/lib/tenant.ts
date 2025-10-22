@@ -1,4 +1,6 @@
 import { sql } from '@vercel/postgres';
+import { NextRequest } from 'next/server';
+import { verifyToken } from '@/lib/auth';
 
 export interface Tenant {
   id: string;
@@ -257,4 +259,30 @@ export async function updateTenantStripeInfo(
         updated_at = NOW() 
     WHERE id = ${tenant_id}
   `;
+}
+
+/**
+ * Obtiene el tenant ID del usuario autenticado desde el JWT token
+ */
+export async function getTenantId(request: NextRequest): Promise<string | null> {
+  try {
+    // Obtener el token de autenticación de las cookies
+    const authToken = request.cookies.get('auth_token')?.value;
+    
+    if (!authToken) {
+      return null;
+    }
+    
+    // Verificar el token JWT
+    const payload = verifyToken(authToken);
+    
+    if (!payload || !payload.tenantId) {
+      return null;
+    }
+    
+    return payload.tenantId;
+  } catch (error) {
+    console.error('Error al obtener tenant ID:', error);
+    return null;
+  }
 }

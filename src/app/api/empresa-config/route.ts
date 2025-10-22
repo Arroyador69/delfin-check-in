@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getEmpresaConfig, upsertEmpresaConfig } from '@/lib/db';
+import { getEmpresaConfig, upsertEmpresaConfig, ensureFacturasTables } from '@/lib/db';
 import { getTenantId } from '@/lib/tenant';
 
 export async function GET(request: NextRequest) {
@@ -8,6 +8,9 @@ export async function GET(request: NextRequest) {
     if (!tenantId) {
       return NextResponse.json({ error: 'Tenant ID no encontrado' }, { status: 401 });
     }
+
+    // Asegurar que las tablas existan
+    await ensureFacturasTables();
 
     const config = await getEmpresaConfig(tenantId);
     
@@ -27,6 +30,9 @@ export async function POST(request: NextRequest) {
     if (!tenantId) {
       return NextResponse.json({ error: 'Tenant ID no encontrado' }, { status: 401 });
     }
+
+    // Asegurar que las tablas existan
+    await ensureFacturasTables();
 
     const body = await request.json();
     
