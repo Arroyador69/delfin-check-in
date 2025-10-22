@@ -39,6 +39,9 @@ export default function EmpresaConfigPage() {
     logo_url: '',
   });
   
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string>('');
+  
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -54,6 +57,9 @@ export default function EmpresaConfigPage() {
       
       if (response.ok && data.config) {
         setConfig(data.config);
+        if (data.config.logo_url) {
+          setLogoPreview(data.config.logo_url);
+        }
       }
     } catch (error) {
       console.error('Error al cargar configuración:', error);
@@ -68,12 +74,39 @@ export default function EmpresaConfigPage() {
     setMessage(null);
 
     try {
+      let logoUrl = config.logo_url;
+
+      // Si hay un archivo de logo, subirlo primero
+      if (logoFile) {
+        const formData = new FormData();
+        formData.append('logo', logoFile);
+
+        const uploadResponse = await fetch('/api/upload-logo', {
+          method: 'POST',
+          body: formData,
+        });
+
+        const uploadData = await uploadResponse.json();
+
+        if (uploadResponse.ok) {
+          logoUrl = uploadData.logoUrl;
+        } else {
+          setMessage({ type: 'error', text: uploadData.error || 'Error al subir el logo' });
+          setSaving(false);
+          return;
+        }
+      }
+
+      // Guardar configuración con el logo
       const response = await fetch('/api/empresa-config', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(config),
+        body: JSON.stringify({
+          ...config,
+          logo_url: logoUrl,
+        }),
       });
 
       const data = await response.json();
@@ -81,6 +114,7 @@ export default function EmpresaConfigPage() {
       if (response.ok) {
         setMessage({ type: 'success', text: 'Configuración guardada correctamente' });
         setConfig(data.config);
+        setLogoFile(null); // Limpiar archivo después de guardar
       } else {
         setMessage({ type: 'error', text: data.error || 'Error al guardar la configuración' });
       }
@@ -94,6 +128,32 @@ export default function EmpresaConfigPage() {
 
   const handleInputChange = (field: keyof EmpresaConfig, value: string) => {
     setConfig(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Validar tipo de archivo
+      if (!file.type.startsWith('image/')) {
+        setMessage({ type: 'error', text: 'Por favor selecciona un archivo de imagen válido' });
+        return;
+      }
+      
+      // Validar tamaño (máximo 2MB)
+      if (file.size > 2 * 1024 * 1024) {
+        setMessage({ type: 'error', text: 'El archivo debe ser menor a 2MB' });
+        return;
+      }
+      
+      setLogoFile(file);
+      
+      // Crear preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setLogoPreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   if (loading) {
@@ -140,6 +200,7 @@ export default function EmpresaConfigPage() {
                   value={config.nombre_empresa}
                   onChange={(e) => handleInputChange('nombre_empresa', e.target.value)}
                   placeholder="Ej: Hotel Delfín"
+                  className="text-gray-900 placeholder:text-gray-400"
                   required
                 />
               </div>
@@ -150,6 +211,7 @@ export default function EmpresaConfigPage() {
                   value={config.nif_empresa}
                   onChange={(e) => handleInputChange('nif_empresa', e.target.value)}
                   placeholder="Ej: B12345678"
+                  className="text-gray-900 placeholder:text-gray-400"
                   required
                 />
               </div>
@@ -166,6 +228,7 @@ export default function EmpresaConfigPage() {
                   value={config.direccion_empresa}
                   onChange={(e) => handleInputChange('direccion_empresa', e.target.value)}
                   placeholder="Calle, número, piso, puerta"
+                  className="text-gray-900 placeholder:text-gray-400"
                   required
                 />
               </div>
@@ -177,6 +240,7 @@ export default function EmpresaConfigPage() {
                     value={config.codigo_postal}
                     onChange={(e) => handleInputChange('codigo_postal', e.target.value)}
                     placeholder="29640"
+                    className="text-gray-900 placeholder:text-gray-400"
                   />
                 </div>
                 <div>
@@ -186,6 +250,7 @@ export default function EmpresaConfigPage() {
                     value={config.ciudad}
                     onChange={(e) => handleInputChange('ciudad', e.target.value)}
                     placeholder="Fuengirola"
+                    className="text-gray-900 placeholder:text-gray-400"
                   />
                 </div>
                 <div>
@@ -195,6 +260,7 @@ export default function EmpresaConfigPage() {
                     value={config.provincia}
                     onChange={(e) => handleInputChange('provincia', e.target.value)}
                     placeholder="Málaga"
+                    className="text-gray-900 placeholder:text-gray-400"
                   />
                 </div>
               </div>
@@ -205,6 +271,7 @@ export default function EmpresaConfigPage() {
                   value={config.pais}
                   onChange={(e) => handleInputChange('pais', e.target.value)}
                   placeholder="España"
+                  className="text-gray-900 placeholder:text-gray-400"
                 />
               </div>
             </div>
@@ -215,22 +282,24 @@ export default function EmpresaConfigPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="telefono">Teléfono</Label>
-                <Input
-                  id="telefono"
-                  value={config.telefono}
-                  onChange={(e) => handleInputChange('telefono', e.target.value)}
-                  placeholder="+34 952 123 456"
-                />
+                  <Input
+                    id="telefono"
+                    value={config.telefono}
+                    onChange={(e) => handleInputChange('telefono', e.target.value)}
+                    placeholder="+34 952 123 456"
+                    className="text-gray-900 placeholder:text-gray-400"
+                  />
               </div>
               <div>
                 <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={config.email}
-                  onChange={(e) => handleInputChange('email', e.target.value)}
-                  placeholder="info@hoteldelfin.com"
-                />
+                  <Input
+                    id="email"
+                    type="email"
+                    value={config.email}
+                    onChange={(e) => handleInputChange('email', e.target.value)}
+                    placeholder="info@hoteldelfin.com"
+                    className="text-gray-900 placeholder:text-gray-400"
+                  />
               </div>
             </div>
             <div className="mt-4">
@@ -240,23 +309,54 @@ export default function EmpresaConfigPage() {
                 value={config.web}
                 onChange={(e) => handleInputChange('web', e.target.value)}
                 placeholder="https://www.hoteldelfin.com"
+                className="text-gray-900 placeholder:text-gray-400"
               />
             </div>
           </div>
 
           <div>
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Logo</h2>
-            <div>
-              <Label htmlFor="logo_url">URL del Logo</Label>
-              <Input
-                id="logo_url"
-                value={config.logo_url}
-                onChange={(e) => handleInputChange('logo_url', e.target.value)}
-                placeholder="https://ejemplo.com/logo.png"
-              />
-              <p className="text-sm text-gray-500 mt-1">
-                URL de la imagen del logo que aparecerá en las facturas
-              </p>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="logo_file">Subir Logo</Label>
+                <Input
+                  id="logo_file"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleLogoUpload}
+                  className="text-gray-900"
+                />
+                <p className="text-sm text-gray-500 mt-1">
+                  Formatos recomendados: PNG, JPG, SVG. Tamaño máximo: 2MB. Dimensiones recomendadas: 200x100px
+                </p>
+              </div>
+              
+              {logoPreview && (
+                <div>
+                  <Label>Vista previa del logo:</Label>
+                  <div className="mt-2 p-4 border rounded-lg bg-gray-50">
+                    <img 
+                      src={logoPreview} 
+                      alt="Preview del logo" 
+                      className="max-h-20 max-w-40 object-contain"
+                    />
+                  </div>
+                </div>
+              )}
+              
+              <div>
+                <Label htmlFor="logo_url">O URL del Logo (alternativa)</Label>
+                <Input
+                  id="logo_url"
+                  value={config.logo_url}
+                  onChange={(e) => handleInputChange('logo_url', e.target.value)}
+                  placeholder="https://ejemplo.com/logo.png"
+                  className="text-gray-900 placeholder:text-gray-400"
+                />
+                <p className="text-sm text-gray-500 mt-1">
+                  Si prefieres usar una URL en lugar de subir un archivo
+                </p>
+              </div>
             </div>
           </div>
 
