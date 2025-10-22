@@ -1,13 +1,16 @@
 'use client';
 
+import { Scale, Building2, Mail, MapPin, FileCheck, AlertTriangle } from 'lucide-react';
+
 export default function LegalNoticePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-6">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-8 mb-6 transition-all duration-500 hover:shadow-2xl hover:scale-[1.02]">
-          <h1 className="text-3xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent text-center">
-            ⚖️ Aviso Legal
+          <h1 className="text-3xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent text-center flex items-center justify-center">
+            <Scale className="mr-3 h-8 w-8 text-blue-600" />
+            Aviso Legal
           </h1>
         </div>
 
@@ -21,34 +24,42 @@ export default function LegalNoticePage() {
               <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-200 shadow-sm">
                 <div className="flex items-start space-x-3">
                   <div className="bg-blue-100 p-2 rounded-lg">
-                    <span className="text-blue-600 text-lg">🏢</span>
+                    <Building2 className="h-6 w-6 text-blue-600" />
                   </div>
                   <div>
                     <h3 className="font-semibold text-blue-800 mb-3">Información Corporativa</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       <div className="flex items-center space-x-2">
-                        <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-medium">🏷️</span>
+                        <div className="bg-blue-100 p-1 rounded-full">
+                          <FileCheck className="h-4 w-4 text-blue-700" />
+                        </div>
                         <div>
                           <p className="text-xs text-gray-500">Denominación social</p>
                           <p className="text-sm font-medium text-gray-700">Delfín Check-in</p>
                         </div>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-medium">💼</span>
+                        <div className="bg-green-100 p-1 rounded-full">
+                          <Building2 className="h-4 w-4 text-green-700" />
+                        </div>
                         <div>
                           <p className="text-xs text-gray-500">Actividad</p>
                           <p className="text-sm font-medium text-gray-700">Desarrollo de software</p>
                         </div>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <span className="bg-purple-100 text-purple-700 px-2 py-1 rounded-full text-xs font-medium">📧</span>
+                        <div className="bg-purple-100 p-1 rounded-full">
+                          <Mail className="h-4 w-4 text-purple-700" />
+                        </div>
                         <div>
                           <p className="text-xs text-gray-500">Email</p>
                           <p className="text-sm font-medium text-gray-700">contacto@delfincheckin.com</p>
                         </div>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <span className="bg-orange-100 text-orange-700 px-2 py-1 rounded-full text-xs font-medium">📍</span>
+                        <div className="bg-orange-100 p-1 rounded-full">
+                          <MapPin className="h-4 w-4 text-orange-700" />
+                        </div>
                         <div>
                           <p className="text-xs text-gray-500">Dirección</p>
                           <p className="text-sm font-medium text-gray-700">Málaga, España</p>
@@ -109,7 +120,7 @@ export default function LegalNoticePage() {
               <div className="bg-gradient-to-r from-yellow-50 to-orange-50 p-6 rounded-xl border border-yellow-200 shadow-sm">
                 <div className="flex items-start space-x-3">
                   <div className="bg-yellow-200 p-2 rounded-lg">
-                    <span className="text-yellow-700 text-lg">⚠️</span>
+                    <AlertTriangle className="h-6 w-6 text-yellow-700" />
                   </div>
                   <div>
                     <h3 className="font-semibold text-yellow-800 mb-3">Información Importante</h3>

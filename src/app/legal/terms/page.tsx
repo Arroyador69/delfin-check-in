@@ -1,13 +1,16 @@
 'use client';
 
+import { FileText, Building2, Mail, MapPin, DollarSign, FileCheck } from 'lucide-react';
+
 export default function TermsOfServicePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-6">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-8 mb-6 transition-all duration-500 hover:shadow-2xl hover:scale-[1.02]">
-          <h1 className="text-3xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent text-center">
-            📋 Términos de Servicio
+          <h1 className="text-3xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent text-center flex items-center justify-center">
+            <FileText className="mr-3 h-8 w-8 text-blue-600" />
+            Términos de Servicio
           </h1>
         </div>
 
@@ -26,23 +29,23 @@ export default function TermsOfServicePage() {
               <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-200 shadow-sm">
                 <div className="flex items-start space-x-3">
                   <div className="bg-blue-100 p-2 rounded-lg">
-                    <span className="text-blue-600 text-lg">🏢</span>
+                    <Building2 className="h-6 w-6 text-blue-600" />
                   </div>
                   <div>
                     <h3 className="font-semibold text-blue-800 mb-3">Datos del prestador</h3>
                     <div className="space-y-2">
-                      <p className="text-gray-700 text-sm flex items-center">
-                        <span className="mr-2">🏷️</span>
+                      <div className="flex items-center text-gray-700 text-sm">
+                        <FileCheck className="h-4 w-4 mr-2 text-blue-600" />
                         <strong>Delfín Check-in</strong>
-                      </p>
-                      <p className="text-gray-700 text-sm flex items-center">
-                        <span className="mr-2">📧</span>
+                      </div>
+                      <div className="flex items-center text-gray-700 text-sm">
+                        <Mail className="h-4 w-4 mr-2 text-blue-600" />
                         contacto@delfincheckin.com
-                      </p>
-                      <p className="text-gray-700 text-sm flex items-center">
-                        <span className="mr-2">📍</span>
+                      </div>
+                      <div className="flex items-center text-gray-700 text-sm">
+                        <MapPin className="h-4 w-4 mr-2 text-blue-600" />
                         Málaga, España
-                      </p>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -105,7 +108,7 @@ export default function TermsOfServicePage() {
               <div className="bg-gradient-to-r from-yellow-50 to-orange-50 p-6 rounded-xl border border-yellow-200 shadow-sm">
                 <div className="flex items-start space-x-3">
                   <div className="bg-yellow-200 p-2 rounded-lg">
-                    <span className="text-yellow-700 text-lg">💰</span>
+                    <DollarSign className="h-6 w-6 text-yellow-700" />
                   </div>
                   <div>
                     <h3 className="font-semibold text-yellow-800 mb-3">Información de Facturación</h3>

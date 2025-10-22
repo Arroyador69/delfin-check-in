@@ -1,13 +1,16 @@
 'use client';
 
+import { Shield, Building2, Mail, MapPin, Phone } from 'lucide-react';
+
 export default function PrivacyPolicyPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-6">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-8 mb-6 transition-all duration-500 hover:shadow-2xl hover:scale-[1.02]">
-          <h1 className="text-3xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent text-center">
-            🔒 Política de Privacidad
+          <h1 className="text-3xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent text-center flex items-center justify-center">
+            <Shield className="mr-3 h-8 w-8 text-blue-600" />
+            Política de Privacidad
           </h1>
         </div>
 
@@ -21,12 +24,18 @@ export default function PrivacyPolicyPage() {
               <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-200 shadow-sm">
                 <div className="flex items-start space-x-3">
                   <div className="bg-blue-100 p-2 rounded-lg">
-                    <span className="text-blue-600 text-lg">🏢</span>
+                    <Building2 className="h-6 w-6 text-blue-600" />
                   </div>
                   <div>
                     <h3 className="font-semibold text-blue-800 mb-2">Delfín Check-in</h3>
-                    <p className="text-gray-700 text-sm">📧 contacto@delfincheckin.com</p>
-                    <p className="text-gray-700 text-sm">📍 Málaga, España</p>
+                    <div className="flex items-center text-gray-700 text-sm mb-1">
+                      <Mail className="h-4 w-4 mr-2 text-blue-600" />
+                      contacto@delfincheckin.com
+                    </div>
+                    <div className="flex items-center text-gray-700 text-sm">
+                      <MapPin className="h-4 w-4 mr-2 text-blue-600" />
+                      Málaga, España
+                    </div>
                   </div>
                 </div>
               </div>
@@ -112,7 +121,7 @@ export default function PrivacyPolicyPage() {
               <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-6 rounded-xl border border-green-200 shadow-sm">
                 <div className="flex items-start space-x-3">
                   <div className="bg-green-100 p-2 rounded-lg">
-                    <span className="text-green-600 text-lg">📞</span>
+                    <Phone className="h-6 w-6 text-green-600" />
                   </div>
                   <div>
                     <h3 className="font-semibold text-green-800 mb-2">Contacto</h3>
@@ -120,7 +129,10 @@ export default function PrivacyPolicyPage() {
                       Para ejercer tus derechos o resolver cualquier duda sobre el tratamiento de datos, 
                       puedes contactarnos en:
                     </p>
-                    <p className="text-green-700 font-semibold mt-2">📧 contacto@delfincheckin.com</p>
+                    <div className="flex items-center text-green-700 font-semibold mt-2">
+                      <Mail className="h-4 w-4 mr-2" />
+                      contacto@delfincheckin.com
+                    </div>
                   </div>
                 </div>
               </div>
