@@ -201,17 +201,19 @@ export default function EmpresaConfigPage() {
                   onChange={(e) => handleInputChange('nombre_empresa', e.target.value)}
                   placeholder="Ej: Hotel Delfín"
                   className="text-gray-900 placeholder:text-gray-400"
+                  style={{ color: '#111827' }}
                   required
                 />
               </div>
               <div>
-                <Label htmlFor="nif_empresa">NIF/CIF *</Label>
+                <Label htmlFor="nif_empresa">NIF/CIF (DNI, NIE, CIF) *</Label>
                 <Input
                   id="nif_empresa"
                   value={config.nif_empresa}
                   onChange={(e) => handleInputChange('nif_empresa', e.target.value)}
                   placeholder="Ej: B12345678"
                   className="text-gray-900 placeholder:text-gray-400"
+                  style={{ color: '#111827' }}
                   required
                 />
               </div>
@@ -229,6 +231,7 @@ export default function EmpresaConfigPage() {
                   onChange={(e) => handleInputChange('direccion_empresa', e.target.value)}
                   placeholder="Calle, número, piso, puerta"
                   className="text-gray-900 placeholder:text-gray-400"
+                  style={{ color: '#111827' }}
                   required
                 />
               </div>
@@ -241,6 +244,7 @@ export default function EmpresaConfigPage() {
                     onChange={(e) => handleInputChange('codigo_postal', e.target.value)}
                     placeholder="29640"
                     className="text-gray-900 placeholder:text-gray-400"
+                  style={{ color: '#111827' }}
                   />
                 </div>
                 <div>
@@ -251,6 +255,7 @@ export default function EmpresaConfigPage() {
                     onChange={(e) => handleInputChange('ciudad', e.target.value)}
                     placeholder="Fuengirola"
                     className="text-gray-900 placeholder:text-gray-400"
+                  style={{ color: '#111827' }}
                   />
                 </div>
                 <div>
@@ -261,6 +266,7 @@ export default function EmpresaConfigPage() {
                     onChange={(e) => handleInputChange('provincia', e.target.value)}
                     placeholder="Málaga"
                     className="text-gray-900 placeholder:text-gray-400"
+                  style={{ color: '#111827' }}
                   />
                 </div>
               </div>
@@ -272,6 +278,7 @@ export default function EmpresaConfigPage() {
                   onChange={(e) => handleInputChange('pais', e.target.value)}
                   placeholder="España"
                   className="text-gray-900 placeholder:text-gray-400"
+                  style={{ color: '#111827' }}
                 />
               </div>
             </div>
@@ -288,6 +295,7 @@ export default function EmpresaConfigPage() {
                     onChange={(e) => handleInputChange('telefono', e.target.value)}
                     placeholder="+34 952 123 456"
                     className="text-gray-900 placeholder:text-gray-400"
+                  style={{ color: '#111827' }}
                   />
               </div>
               <div>
@@ -299,6 +307,7 @@ export default function EmpresaConfigPage() {
                     onChange={(e) => handleInputChange('email', e.target.value)}
                     placeholder="info@hoteldelfin.com"
                     className="text-gray-900 placeholder:text-gray-400"
+                  style={{ color: '#111827' }}
                   />
               </div>
             </div>
@@ -325,6 +334,7 @@ export default function EmpresaConfigPage() {
                   accept="image/*"
                   onChange={handleLogoUpload}
                   className="text-gray-900"
+                  style={{ color: '#111827' }}
                 />
                 <p className="text-sm text-gray-500 mt-1">
                   Formatos recomendados: PNG, JPG, SVG. Tamaño máximo: 2MB. Dimensiones recomendadas: 200x100px
@@ -352,6 +362,7 @@ export default function EmpresaConfigPage() {
                   onChange={(e) => handleInputChange('logo_url', e.target.value)}
                   placeholder="https://ejemplo.com/logo.png"
                   className="text-gray-900 placeholder:text-gray-400"
+                  style={{ color: '#111827' }}
                 />
                 <p className="text-sm text-gray-500 mt-1">
                   Si prefieres usar una URL en lugar de subir un archivo
@@ -360,11 +371,16 @@ export default function EmpresaConfigPage() {
             </div>
           </div>
 
-          <div className="pt-4 border-t">
+          <div className="pt-6 border-t border-gray-200">
+            <div className="mb-4">
+              <p className="text-sm text-gray-600">
+                Completa los campos obligatorios (*) y haz clic en "Guardar Configuración" para guardar los datos en la base de datos.
+              </p>
+            </div>
             <Button 
               onClick={guardarConfiguracion} 
               disabled={saving || !config.nombre_empresa || !config.nif_empresa || !config.direccion_empresa}
-              className="w-full md:w-auto"
+              className="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 text-base font-medium"
             >
               {saving ? (
                 <>
