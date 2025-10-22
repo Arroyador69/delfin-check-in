@@ -86,7 +86,15 @@ export default function FacturasPage() {
       const configData = await configResponse.json();
 
       if (facturasResponse.ok) {
-        setFacturas(facturasData.facturas || []);
+        // Asegurar que los campos numéricos sean números
+        const facturasProcesadas = (facturasData.facturas || []).map((factura: any) => ({
+          ...factura,
+          precio_base: parseFloat(factura.precio_base || 0),
+          iva_importe: parseFloat(factura.iva_importe || 0),
+          total: parseFloat(factura.total || 0),
+          iva_porcentaje: parseFloat(factura.iva_porcentaje || 21)
+        }));
+        setFacturas(facturasProcesadas);
       }
 
       if (configResponse.ok && configData.config) {
@@ -141,7 +149,10 @@ export default function FacturasPage() {
           iva_porcentaje: 21,
           forma_pago: '',
         });
-        cargarDatos(); // Recargar la lista
+        // Recargar la lista después de un pequeño delay
+        setTimeout(() => {
+          cargarDatos();
+        }, 500);
       } else {
         setMessage({ type: 'error', text: data.error || 'Error al crear la factura' });
       }
@@ -504,7 +515,7 @@ export default function FacturasPage() {
                           </div>
                           <div className="text-sm">
                             <span className="font-medium text-gray-900">
-                              {factura.total.toFixed(2)} €
+                              {parseFloat(factura.total || 0).toFixed(2)} €
                             </span>
                           </div>
                         </div>
