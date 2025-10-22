@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getFacturaById, getEmpresaConfig, actualizarPdfFactura } from '@/lib/db';
+import { getFacturaById, getEmpresaConfig, actualizarPdfFactura, ensureFacturasTables } from '@/lib/db';
 import { getTenantId } from '@/lib/tenant';
 import jsPDF from 'jspdf';
 
@@ -13,6 +13,9 @@ export async function GET(
       return NextResponse.json({ error: 'Tenant ID no encontrado' }, { status: 401 });
     }
 
+    // Asegurar que las tablas existan
+    await ensureFacturasTables();
+
     const id = parseInt(params.id);
     if (isNaN(id)) {
       return NextResponse.json({ error: 'ID de factura inválido' }, { status: 400 });
@@ -23,6 +26,14 @@ export async function GET(
       getFacturaById(id, tenantId),
       getEmpresaConfig(tenantId)
     ]);
+
+    // Asegurar que los campos numéricos sean números
+    if (factura) {
+      factura.precio_base = parseFloat(factura.precio_base || 0);
+      factura.iva_importe = parseFloat(factura.iva_importe || 0);
+      factura.total = parseFloat(factura.total || 0);
+      factura.iva_porcentaje = parseFloat(factura.iva_porcentaje || 21);
+    }
 
     if (!factura) {
       return NextResponse.json({ error: 'Factura no encontrada' }, { status: 404 });
@@ -164,13 +175,13 @@ function generarPdfFactura(factura: any, empresaConfig: any): jsPDF {
   doc.text(factura.concepto, 22, dataY + 7);
   
   // Precio base
-  doc.text(`${factura.precio_base.toFixed(2)} €`, 120, dataY + 7);
+  doc.text(`${parseFloat(factura.precio_base || 0).toFixed(2)} €`, 120, dataY + 7);
   
   // IVA
-  doc.text(`${factura.iva_importe.toFixed(2)} €`, 150, dataY + 7);
+  doc.text(`${parseFloat(factura.iva_importe || 0).toFixed(2)} €`, 150, dataY + 7);
   
   // Total
-  doc.text(`${factura.total.toFixed(2)} €`, 170, dataY + 7);
+  doc.text(`${parseFloat(factura.total || 0).toFixed(2)} €`, 170, dataY + 7);
 
   // Descripción si existe
   if (factura.descripcion) {
@@ -185,16 +196,16 @@ function generarPdfFactura(factura: any, empresaConfig: any): jsPDF {
   doc.setTextColor(0, 0, 0);
   
   doc.text('Subtotal:', 120, totalY);
-  doc.text(`${factura.precio_base.toFixed(2)} €`, 170, totalY);
+  doc.text(`${parseFloat(factura.precio_base || 0).toFixed(2)} €`, 170, totalY);
   
-  doc.text(`IVA (${factura.iva_porcentaje}%):`, 120, totalY + 10);
-  doc.text(`${factura.iva_importe.toFixed(2)} €`, 170, totalY + 10);
+  doc.text(`IVA (${parseFloat(factura.iva_porcentaje || 21)}%):`, 120, totalY + 10);
+  doc.text(`${parseFloat(factura.iva_importe || 0).toFixed(2)} €`, 170, totalY + 10);
   
   // Total final
   doc.setFontSize(fontSize.subtitle);
   doc.setTextColor(...primaryColor);
   doc.text('TOTAL:', 120, totalY + 25);
-  doc.text(`${factura.total.toFixed(2)} €`, 170, totalY + 25);
+  doc.text(`${parseFloat(factura.total || 0).toFixed(2)} €`, 170, totalY + 25);
 
   // Línea separadora
   doc.setDrawColor(...lightGrayColor);
