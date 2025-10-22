@@ -94,7 +94,7 @@ export default function OfflineQueuePage() {
   };
 
   return (
-    <div className="min-h-full bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col">
       {/* Header compacto */}
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -104,7 +104,7 @@ export default function OfflineQueuePage() {
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1">
       <div className="flex items-center justify-between mb-4">
         <h1 className="sr-only">Cola offline</h1>
         <div className="flex gap-2">
