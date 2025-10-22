@@ -271,66 +271,78 @@ export default function FacturasPage() {
               <div className="space-y-6">
                 {/* Datos del Cliente */}
                 <div>
-                  <h3 className="text-md font-medium text-gray-900 mb-4 flex items-center">
-                    <User className="w-4 h-4 mr-2" />
+                  <h3 className="text-md font-semibold text-gray-800 mb-4 flex items-center">
+                    <User className="w-4 h-4 mr-2 text-blue-600" />
                     Datos del Cliente
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="cliente_nombre">Nombre Completo *</Label>
-                      <Input
-                        id="cliente_nombre"
-                        value={nuevaFactura.cliente_nombre}
-                        onChange={(e) => setNuevaFactura(prev => ({ ...prev, cliente_nombre: e.target.value }))}
-                        placeholder="Juan Pérez"
-                        required
-                      />
+                      <Label htmlFor="cliente_nombre" className="text-gray-700 font-medium">Nombre Completo *</Label>
+                        <Input
+                          id="cliente_nombre"
+                          value={nuevaFactura.cliente_nombre}
+                          onChange={(e) => setNuevaFactura(prev => ({ ...prev, cliente_nombre: e.target.value }))}
+                          placeholder="Juan Pérez"
+                          className="text-gray-900 placeholder:text-gray-400"
+                          style={{ color: '#111827' }}
+                          required
+                        />
                     </div>
                     <div>
-                      <Label htmlFor="cliente_nif">NIF/DNI</Label>
+                      <Label htmlFor="cliente_nif" className="text-gray-700 font-medium">NIF/DNI</Label>
                       <Input
                         id="cliente_nif"
                         value={nuevaFactura.cliente_nif}
                         onChange={(e) => setNuevaFactura(prev => ({ ...prev, cliente_nif: e.target.value }))}
                         placeholder="12345678A"
+                        className="text-gray-900 placeholder:text-gray-400"
+                        style={{ color: '#111827' }}
                       />
                     </div>
                   </div>
                   <div className="mt-4">
-                    <Label htmlFor="cliente_direccion">Dirección</Label>
+                    <Label htmlFor="cliente_direccion" className="text-gray-700 font-medium">Dirección</Label>
                     <Input
                       id="cliente_direccion"
                       value={nuevaFactura.cliente_direccion}
                       onChange={(e) => setNuevaFactura(prev => ({ ...prev, cliente_direccion: e.target.value }))}
                       placeholder="Calle Mayor, 123"
+                      className="text-gray-900 placeholder:text-gray-400"
+                      style={{ color: '#111827' }}
                     />
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
                     <div>
-                      <Label htmlFor="cliente_codigo_postal">Código Postal</Label>
+                      <Label htmlFor="cliente_codigo_postal" className="text-gray-700 font-medium">Código Postal</Label>
                       <Input
                         id="cliente_codigo_postal"
                         value={nuevaFactura.cliente_codigo_postal}
                         onChange={(e) => setNuevaFactura(prev => ({ ...prev, cliente_codigo_postal: e.target.value }))}
                         placeholder="29640"
+                        className="text-gray-900 placeholder:text-gray-400"
+                        style={{ color: '#111827' }}
                       />
                     </div>
                     <div>
-                      <Label htmlFor="cliente_ciudad">Ciudad</Label>
+                      <Label htmlFor="cliente_ciudad" className="text-gray-700 font-medium">Ciudad</Label>
                       <Input
                         id="cliente_ciudad"
                         value={nuevaFactura.cliente_ciudad}
                         onChange={(e) => setNuevaFactura(prev => ({ ...prev, cliente_ciudad: e.target.value }))}
                         placeholder="Fuengirola"
+                        className="text-gray-900 placeholder:text-gray-400"
+                        style={{ color: '#111827' }}
                       />
                     </div>
                     <div>
-                      <Label htmlFor="cliente_provincia">Provincia</Label>
+                      <Label htmlFor="cliente_provincia" className="text-gray-700 font-medium">Provincia</Label>
                       <Input
                         id="cliente_provincia"
                         value={nuevaFactura.cliente_provincia}
                         onChange={(e) => setNuevaFactura(prev => ({ ...prev, cliente_provincia: e.target.value }))}
                         placeholder="Málaga"
+                        className="text-gray-900 placeholder:text-gray-400"
+                        style={{ color: '#111827' }}
                       />
                     </div>
                   </div>
@@ -338,23 +350,25 @@ export default function FacturasPage() {
 
                 {/* Concepto y Precio */}
                 <div>
-                  <h3 className="text-md font-medium text-gray-900 mb-4 flex items-center">
-                    <Euro className="w-4 h-4 mr-2" />
+                  <h3 className="text-md font-semibold text-gray-800 mb-4 flex items-center">
+                    <Euro className="w-4 h-4 mr-2 text-blue-600" />
                     Concepto y Precio
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="concepto">Concepto *</Label>
+                      <Label htmlFor="concepto" className="text-gray-700 font-medium">Concepto *</Label>
                       <Input
                         id="concepto"
                         value={nuevaFactura.concepto}
                         onChange={(e) => setNuevaFactura(prev => ({ ...prev, concepto: e.target.value }))}
                         placeholder="Alojamiento"
+                        className="text-gray-900 placeholder:text-gray-400"
+                        style={{ color: '#111827' }}
                         required
                       />
                     </div>
                     <div>
-                      <Label htmlFor="precio_base">Precio Base (€) *</Label>
+                      <Label htmlFor="precio_base" className="text-gray-700 font-medium">Precio Base (€) *</Label>
                       <Input
                         id="precio_base"
                         type="number"
@@ -363,22 +377,26 @@ export default function FacturasPage() {
                         value={nuevaFactura.precio_base}
                         onChange={(e) => setNuevaFactura(prev => ({ ...prev, precio_base: parseFloat(e.target.value) || 0 }))}
                         placeholder="100.00"
+                        className="text-gray-900 placeholder:text-gray-400"
+                        style={{ color: '#111827' }}
                         required
                       />
                     </div>
                   </div>
                   <div className="mt-4">
-                    <Label htmlFor="descripcion">Descripción</Label>
+                    <Label htmlFor="descripcion" className="text-gray-700 font-medium">Descripción</Label>
                     <Input
                       id="descripcion"
                       value={nuevaFactura.descripcion}
                       onChange={(e) => setNuevaFactura(prev => ({ ...prev, descripcion: e.target.value }))}
                       placeholder="Estancia de 3 noches en habitación doble"
+                      className="text-gray-900 placeholder:text-gray-400"
+                      style={{ color: '#111827' }}
                     />
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                     <div>
-                      <Label htmlFor="iva_porcentaje">IVA (%)</Label>
+                      <Label htmlFor="iva_porcentaje" className="text-gray-700 font-medium">IVA (%)</Label>
                       <Input
                         id="iva_porcentaje"
                         type="number"
@@ -388,35 +406,39 @@ export default function FacturasPage() {
                         value={nuevaFactura.iva_porcentaje}
                         onChange={(e) => setNuevaFactura(prev => ({ ...prev, iva_porcentaje: parseFloat(e.target.value) || 0 }))}
                         placeholder="21"
+                        className="text-gray-900 placeholder:text-gray-400"
+                        style={{ color: '#111827' }}
                       />
                     </div>
                     <div>
-                      <Label htmlFor="forma_pago">Forma de Pago</Label>
+                      <Label htmlFor="forma_pago" className="text-gray-700 font-medium">Forma de Pago</Label>
                       <Input
                         id="forma_pago"
                         value={nuevaFactura.forma_pago}
                         onChange={(e) => setNuevaFactura(prev => ({ ...prev, forma_pago: e.target.value }))}
                         placeholder="Transferencia bancaria"
+                        className="text-gray-900 placeholder:text-gray-400"
+                        style={{ color: '#111827' }}
                       />
                     </div>
                   </div>
                 </div>
 
                 {/* Resumen */}
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h4 className="font-medium text-gray-900 mb-2">Resumen de la Factura</h4>
-                  <div className="space-y-1 text-sm">
+                <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                  <h4 className="font-semibold text-gray-800 mb-3">Resumen de la Factura</h4>
+                  <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
-                      <span>Precio base:</span>
-                      <span>{nuevaFactura.precio_base.toFixed(2)} €</span>
+                      <span className="text-gray-700">Precio base:</span>
+                      <span className="text-gray-900 font-medium">{nuevaFactura.precio_base.toFixed(2)} €</span>
                     </div>
                     <div className="flex justify-between">
-                      <span>IVA ({nuevaFactura.iva_porcentaje}%):</span>
-                      <span>{((nuevaFactura.precio_base * nuevaFactura.iva_porcentaje) / 100).toFixed(2)} €</span>
+                      <span className="text-gray-700">IVA ({nuevaFactura.iva_porcentaje}%):</span>
+                      <span className="text-gray-900 font-medium">{((nuevaFactura.precio_base * nuevaFactura.iva_porcentaje) / 100).toFixed(2)} €</span>
                     </div>
-                    <div className="flex justify-between font-semibold border-t pt-1">
-                      <span>Total:</span>
-                      <span>{calcularTotal().toFixed(2)} €</span>
+                    <div className="flex justify-between font-bold border-t border-gray-300 pt-2">
+                      <span className="text-gray-800">Total:</span>
+                      <span className="text-blue-600 text-lg">{calcularTotal().toFixed(2)} €</span>
                     </div>
                   </div>
                 </div>
@@ -424,7 +446,7 @@ export default function FacturasPage() {
                 <Button 
                   onClick={crearFactura} 
                   disabled={saving || !nuevaFactura.cliente_nombre || !nuevaFactura.concepto || nuevaFactura.precio_base <= 0}
-                  className="w-full"
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6"
                 >
                   {saving ? (
                     <>
