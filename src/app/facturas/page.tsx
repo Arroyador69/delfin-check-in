@@ -237,12 +237,18 @@ export default function FacturasPage() {
       )}
 
       <Tabs defaultValue="nueva" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="nueva" className="flex items-center space-x-2">
+        <TabsList className="grid w-full grid-cols-2 bg-gray-100 border border-gray-300">
+          <TabsTrigger 
+            value="nueva" 
+            className="flex items-center space-x-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white text-gray-700 font-medium"
+          >
             <Plus className="w-4 h-4" />
             <span>Nueva Factura</span>
           </TabsTrigger>
-          <TabsTrigger value="historial" className="flex items-center space-x-2">
+          <TabsTrigger 
+            value="historial" 
+            className="flex items-center space-x-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white text-gray-700 font-medium"
+          >
             <FileText className="w-4 h-4" />
             <span>Historial ({facturas.length})</span>
           </TabsTrigger>
@@ -471,9 +477,9 @@ export default function FacturasPage() {
             
             {facturas.length === 0 ? (
               <div className="text-center py-8">
-                <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No hay facturas</h3>
-                <p className="text-gray-600">Crea tu primera factura usando la pestaña "Nueva Factura"</p>
+                <FileText className="w-12 h-12 text-gray-500 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-gray-800 mb-2">No hay facturas</h3>
+                <p className="text-gray-700">Crea tu primera factura usando la pestaña "Nueva Factura"</p>
               </div>
             ) : (
               <div className="space-y-4">
