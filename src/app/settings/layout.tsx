@@ -21,6 +21,12 @@ export default function SettingsLayout({
       href: '/settings',
     },
     {
+      id: 'empresa',
+      name: 'Datos Empresa',
+      icon: FileText,
+      href: '/settings/empresa',
+    },
+    {
       id: 'mir',
       name: 'Configuración MIR',
       icon: FileText,

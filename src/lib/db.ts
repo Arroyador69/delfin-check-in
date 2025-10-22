@@ -480,3 +480,167 @@ export async function deleteReservationById(id: string): Promise<boolean> {
   
   return result.rows.length > 0;
 }
+
+// ========================================
+// FUNCIONES PARA CONFIGURACIÓN DE EMPRESA
+// ========================================
+
+// Función para obtener configuración de empresa por tenant
+export async function getEmpresaConfig(tenantId: string): Promise<any | null> {
+  const result = await sql`
+    SELECT * FROM empresa_config 
+    WHERE tenant_id = ${tenantId}
+    LIMIT 1
+  `;
+  return result.rows[0] || null;
+}
+
+// Función para crear o actualizar configuración de empresa
+export async function upsertEmpresaConfig(data: {
+  tenant_id: string;
+  nombre_empresa: string;
+  nif_empresa: string;
+  direccion_empresa: string;
+  codigo_postal?: string;
+  ciudad?: string;
+  provincia?: string;
+  pais?: string;
+  telefono?: string;
+  email?: string;
+  web?: string;
+  logo_url?: string;
+}): Promise<any> {
+  const result = await sql`
+    INSERT INTO empresa_config (
+      tenant_id, nombre_empresa, nif_empresa, direccion_empresa, 
+      codigo_postal, ciudad, provincia, pais, telefono, email, web, logo_url
+    )
+    VALUES (
+      ${data.tenant_id}, ${data.nombre_empresa}, ${data.nif_empresa}, ${data.direccion_empresa},
+      ${data.codigo_postal || ''}, ${data.ciudad || ''}, ${data.provincia || ''}, 
+      ${data.pais || 'España'}, ${data.telefono || ''}, ${data.email || ''}, 
+      ${data.web || ''}, ${data.logo_url || ''}
+    )
+    ON CONFLICT (tenant_id) 
+    DO UPDATE SET
+      nombre_empresa = EXCLUDED.nombre_empresa,
+      nif_empresa = EXCLUDED.nif_empresa,
+      direccion_empresa = EXCLUDED.direccion_empresa,
+      codigo_postal = EXCLUDED.codigo_postal,
+      ciudad = EXCLUDED.ciudad,
+      provincia = EXCLUDED.provincia,
+      pais = EXCLUDED.pais,
+      telefono = EXCLUDED.telefono,
+      email = EXCLUDED.email,
+      web = EXCLUDED.web,
+      logo_url = EXCLUDED.logo_url,
+      updated_at = CURRENT_TIMESTAMP
+    RETURNING *;
+  `;
+  return result.rows[0];
+}
+
+// ========================================
+// FUNCIONES PARA FACTURAS
+// ========================================
+
+// Función para generar número de factura automático
+export async function generarNumeroFactura(tenantId: string): Promise<string> {
+  const result = await sql`
+    SELECT generar_numero_factura(${tenantId}) as numero_factura;
+  `;
+  return result.rows[0].numero_factura;
+}
+
+// Función para crear una nueva factura
+export async function crearFactura(data: {
+  tenant_id: string;
+  cliente_nombre: string;
+  cliente_nif?: string;
+  cliente_direccion?: string;
+  cliente_codigo_postal?: string;
+  cliente_ciudad?: string;
+  cliente_provincia?: string;
+  cliente_pais?: string;
+  concepto: string;
+  descripcion?: string;
+  precio_base: number;
+  iva_porcentaje?: number;
+  forma_pago?: string;
+}): Promise<any> {
+  // Calcular IVA y total
+  const ivaPorcentaje = data.iva_porcentaje || 21.00;
+  const ivaImporte = (data.precio_base * ivaPorcentaje) / 100;
+  const total = data.precio_base + ivaImporte;
+
+  // Generar número de factura
+  const numeroFactura = await generarNumeroFactura(data.tenant_id);
+
+  const result = await sql`
+    INSERT INTO facturas (
+      tenant_id, numero_factura, fecha_emision,
+      cliente_nombre, cliente_nif, cliente_direccion, cliente_codigo_postal,
+      cliente_ciudad, cliente_provincia, cliente_pais,
+      concepto, descripcion, precio_base, iva_porcentaje, iva_importe, total,
+      forma_pago
+    )
+    VALUES (
+      ${data.tenant_id}, ${numeroFactura}, CURRENT_DATE,
+      ${data.cliente_nombre}, ${data.cliente_nif || ''}, ${data.cliente_direccion || ''}, 
+      ${data.cliente_codigo_postal || ''}, ${data.cliente_ciudad || ''}, 
+      ${data.cliente_provincia || ''}, ${data.cliente_pais || 'España'},
+      ${data.concepto}, ${data.descripcion || ''}, ${data.precio_base}, 
+      ${ivaPorcentaje}, ${ivaImporte}, ${total},
+      ${data.forma_pago || ''}
+    )
+    RETURNING *;
+  `;
+  return result.rows[0];
+}
+
+// Función para obtener facturas por tenant
+export async function getFacturas(tenantId: string, limit: number = 50): Promise<any[]> {
+  const result = await sql`
+    SELECT * FROM facturas 
+    WHERE tenant_id = ${tenantId}
+    ORDER BY fecha_emision DESC, numero_factura DESC
+    LIMIT ${limit}
+  `;
+  return result.rows;
+}
+
+// Función para obtener factura por ID
+export async function getFacturaById(id: number, tenantId: string): Promise<any | null> {
+  const result = await sql`
+    SELECT * FROM facturas 
+    WHERE id = ${id} AND tenant_id = ${tenantId}
+    LIMIT 1
+  `;
+  return result.rows[0] || null;
+}
+
+// Función para actualizar URL del PDF de una factura
+export async function actualizarPdfFactura(
+  id: number, 
+  tenantId: string, 
+  pdfUrl: string, 
+  pdfFilename: string
+): Promise<any> {
+  const result = await sql`
+    UPDATE facturas 
+    SET pdf_url = ${pdfUrl}, pdf_filename = ${pdfFilename}, updated_at = CURRENT_TIMESTAMP
+    WHERE id = ${id} AND tenant_id = ${tenantId}
+    RETURNING *;
+  `;
+  return result.rows[0];
+}
+
+// Función para eliminar factura
+export async function eliminarFactura(id: number, tenantId: string): Promise<boolean> {
+  const result = await sql`
+    DELETE FROM facturas 
+    WHERE id = ${id} AND tenant_id = ${tenantId}
+    RETURNING id;
+  `;
+  return result.rows.length > 0;
+}
