@@ -224,6 +224,6 @@ export default function CalendarSyncPage() {
           </div>
         </div>
       </footer>
-      
-      );
-      }
+    </div>
+  );
+}

@@ -233,8 +233,8 @@ export default function AEATPage() {
           </div>
         </div>
       </footer>
-      
-      );
-      }
+    </div>
+  );
+}
 
 

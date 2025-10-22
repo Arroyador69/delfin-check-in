@@ -160,8 +160,8 @@ export default function AuditPage() {
           </div>
         </div>
       </footer>
-      
-      );
-      }
+    </div>
+  );
+}
 
 

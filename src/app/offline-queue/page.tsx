@@ -148,7 +148,6 @@ export default function OfflineQueuePage() {
         </div>
       )}
       </div>
-    </div>
 
       {/* Footer */}
       <footer className="bg-white border-t border-gray-200 mt-12">
@@ -219,6 +218,6 @@ export default function OfflineQueuePage() {
           </div>
         </div>
       </footer>
-      
-      );
-      }
+    </div>
+  );
+}
