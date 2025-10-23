@@ -86,7 +86,7 @@ export async function sendEmail(config: EmailConfig): Promise<{ success: boolean
     console.log('📧 Configurando envío de email...', {
       to: config.to,
       subject: config.subject,
-      hasZohoApiKey: !!ZOHO_CONFIG.apiKey,
+      hasZohoRefreshToken: !!ZOHO_CONFIG.refreshToken,
       hasResendKey: !!process.env.RESEND_API_KEY,
       hasSmtpConfig: !!(SMTP_CONFIG.host && SMTP_CONFIG.user && SMTP_CONFIG.password),
       availableEnvVars: Object.keys(process.env).filter(key => 
@@ -95,6 +95,12 @@ export async function sendEmail(config: EmailConfig): Promise<{ success: boolean
     });
 
     // Método 1: Intentar con Zoho Mail si está configurado
+    console.log('🔍 Verificando Zoho Mail:', {
+      hasRefreshToken: !!ZOHO_CONFIG.refreshToken,
+      refreshTokenLength: ZOHO_CONFIG.refreshToken?.length || 0,
+      condition: ZOHO_CONFIG.refreshToken && ZOHO_CONFIG.refreshToken.length > 10
+    });
+    
     if (ZOHO_CONFIG.refreshToken && ZOHO_CONFIG.refreshToken.length > 10) {
       try {
         console.log('🔵 Intentando envío con Zoho Mail...');
@@ -112,6 +118,12 @@ export async function sendEmail(config: EmailConfig): Promise<{ success: boolean
           htmlContent: config.html,
           textContent: config.text || config.subject
         };
+
+        console.log('📧 Enviando a Zoho Mail API:', {
+          url: `${ZOHO_CONFIG.apiUrl}/messages`,
+          payload: payload,
+          hasAccessToken: !!accessToken
+        });
 
         const response = await fetch(`${ZOHO_CONFIG.apiUrl}/messages`, {
           method: 'POST',
@@ -173,12 +185,21 @@ export async function sendEmail(config: EmailConfig): Promise<{ success: boolean
     }
 
     // Método 3: Intentar con SMTP directo (Zoho SMTP)
+    console.log('🔍 Verificando SMTP:', {
+      hasHost: !!SMTP_CONFIG.host,
+      hasUser: !!SMTP_CONFIG.user,
+      hasPassword: !!SMTP_CONFIG.password,
+      host: SMTP_CONFIG.host,
+      user: SMTP_CONFIG.user,
+      condition: SMTP_CONFIG.host && SMTP_CONFIG.user && SMTP_CONFIG.password
+    });
+    
     if (SMTP_CONFIG.host && SMTP_CONFIG.user && SMTP_CONFIG.password) {
       try {
         console.log('🔵 Intentando envío con SMTP directo (Zoho)...');
         
         const nodemailer = await import('nodemailer');
-        const transporter = nodemailer.createTransporter({
+        const transporter = nodemailer.default.createTransporter({
           host: SMTP_CONFIG.host,
           port: parseInt(SMTP_CONFIG.port),
           secure: SMTP_CONFIG.port === '465', // true para 465, false para otros puertos
@@ -213,25 +234,11 @@ export async function sendEmail(config: EmailConfig): Promise<{ success: boolean
       }
     }
 
-    // Método 4: Log detallado para desarrollo
-    console.log('📧 Email simulado (ningún servicio configurado):', {
-      to: config.to,
-      subject: config.subject,
-      html: config.html.substring(0, 100) + '...'
-    });
-    
-    // En desarrollo, mostrar el código en consola
-    if (process.env.NODE_ENV !== 'production') {
-      const codeMatch = config.html.match(/class="code">(\d{6})</);
-      if (codeMatch) {
-        console.log(`🔐 CÓDIGO DE RECUPERACIÓN: ${codeMatch[1]}`);
-      }
-    }
-    
+    // Si llegamos aquí, ningún método funcionó
+    console.log('❌ Todos los métodos de envío fallaron');
     return {
-      success: true,
-      messageId: `sim_${Date.now()}`,
-      error: 'Email simulado - configura un servicio de email'
+      success: false,
+      error: 'No se pudo enviar el email con ningún método disponible'
     };
 
   } catch (error) {
@@ -349,8 +356,8 @@ Equipo de ${data.tenantName}
 export function checkEmailConfig(): { configured: boolean; issues: string[] } {
   const issues: string[] = [];
   
-  if (!ZOHO_CONFIG.apiKey) {
-    issues.push('ZOHO_MAIL_API_KEY no configurado');
+  if (!ZOHO_CONFIG.refreshToken) {
+    issues.push('ZOHO_REFRESH_TOKEN no configurado');
   }
   
   if (!ZOHO_CONFIG.fromEmail) {
