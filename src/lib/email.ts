@@ -26,7 +26,9 @@ interface RecoveryEmailData {
 // Configuración de Zoho Mail
 const ZOHO_CONFIG = {
   apiUrl: process.env.ZOHO_MAIL_API_URL || 'https://mail.zoho.com/api/accounts',
-  apiKey: process.env.ZOHO_MAIL_API_KEY || process.env.ZOHO_API_KEY || '',
+  clientId: process.env.ZOHO_CLIENT_ID || '',
+  clientSecret: process.env.ZOHO_CLIENT_SECRET || '',
+  refreshToken: process.env.ZOHO_REFRESH_TOKEN || process.env.ZOHO_MAIL_API_KEY || '',
   fromEmail: process.env.ZOHO_FROM_EMAIL || process.env.SMTP_FROM_EMAIL || 'noreply@delfincheckin.com',
   fromName: process.env.ZOHO_FROM_NAME || process.env.SMTP_FROM_NAME || 'Delfin Check-in'
 };
@@ -39,6 +41,42 @@ const SMTP_CONFIG = {
   password: process.env.SMTP_PASSWORD || '',
   from: process.env.SMTP_FROM || ZOHO_CONFIG.fromEmail
 };
+
+/**
+ * Obtiene un access token de Zoho usando el refresh token
+ */
+async function getZohoAccessToken(): Promise<string | null> {
+  if (!ZOHO_CONFIG.clientId || !ZOHO_CONFIG.clientSecret || !ZOHO_CONFIG.refreshToken) {
+    console.log('⚠️ Configuración de Zoho incompleta');
+    return null;
+  }
+
+  try {
+    const response = await fetch('https://accounts.zoho.com/oauth/v2/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        refresh_token: ZOHO_CONFIG.refreshToken,
+        client_id: ZOHO_CONFIG.clientId,
+        client_secret: ZOHO_CONFIG.clientSecret,
+        grant_type: 'refresh_token'
+      })
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      return data.access_token;
+    } else {
+      console.error('❌ Error obteniendo access token de Zoho:', response.status);
+      return null;
+    }
+  } catch (error) {
+    console.error('❌ Error en getZohoAccessToken:', error);
+    return null;
+  }
+}
 
 /**
  * Envía un email usando múltiples métodos
@@ -57,9 +95,15 @@ async function sendEmail(config: EmailConfig): Promise<{ success: boolean; messa
     });
 
     // Método 1: Intentar con Zoho Mail si está configurado
-    if (ZOHO_CONFIG.apiKey && ZOHO_CONFIG.apiKey.length > 10) {
+    if (ZOHO_CONFIG.refreshToken && ZOHO_CONFIG.refreshToken.length > 10) {
       try {
         console.log('🔵 Intentando envío con Zoho Mail...');
+        
+        // Obtener access token usando refresh token
+        const accessToken = await getZohoAccessToken();
+        if (!accessToken) {
+          throw new Error('No se pudo obtener access token de Zoho');
+        }
         
         const payload = {
           fromAddress: ZOHO_CONFIG.fromEmail,
@@ -72,7 +116,7 @@ async function sendEmail(config: EmailConfig): Promise<{ success: boolean; messa
         const response = await fetch(`${ZOHO_CONFIG.apiUrl}/messages`, {
           method: 'POST',
           headers: {
-            'Authorization': `Zoho-oauthtoken ${ZOHO_CONFIG.apiKey}`,
+            'Authorization': `Zoho-oauthtoken ${accessToken}`,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify(payload)
@@ -86,7 +130,8 @@ async function sendEmail(config: EmailConfig): Promise<{ success: boolean; messa
             messageId: result.messageId
           };
         } else {
-          console.log('⚠️ Zoho Mail falló, intentando método alternativo...');
+          const errorText = await response.text();
+          console.log('⚠️ Zoho Mail falló:', response.status, errorText);
         }
       } catch (zohoError) {
         console.log('⚠️ Error con Zoho Mail:', zohoError.message);
@@ -127,21 +172,28 @@ async function sendEmail(config: EmailConfig): Promise<{ success: boolean; messa
       }
     }
 
-    // Método 3: Intentar con SMTP directo
+    // Método 3: Intentar con SMTP directo (Zoho SMTP)
     if (SMTP_CONFIG.host && SMTP_CONFIG.user && SMTP_CONFIG.password) {
       try {
-        console.log('🔵 Intentando envío con SMTP directo...');
+        console.log('🔵 Intentando envío con SMTP directo (Zoho)...');
         
         const nodemailer = await import('nodemailer');
         const transporter = nodemailer.createTransporter({
           host: SMTP_CONFIG.host,
           port: parseInt(SMTP_CONFIG.port),
-          secure: SMTP_CONFIG.port === '465',
+          secure: SMTP_CONFIG.port === '465', // true para 465, false para otros puertos
           auth: {
             user: SMTP_CONFIG.user,
             pass: SMTP_CONFIG.password
+          },
+          tls: {
+            // No fallar en certificados inválidos
+            rejectUnauthorized: false
           }
         });
+
+        // Verificar conexión SMTP
+        await transporter.verify();
 
         const info = await transporter.sendMail({
           from: SMTP_CONFIG.from,
