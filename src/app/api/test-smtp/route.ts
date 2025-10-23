@@ -33,8 +33,8 @@ export async function POST(req: NextRequest) {
       user: smtpConfig.auth.user
     });
 
-    const { createTransporter } = await import('nodemailer');
-    const transporter = createTransporter(smtpConfig);
+    const nodemailer = await import('nodemailer');
+    const transporter = nodemailer.default.createTransporter(smtpConfig);
 
     // Verificar conexión SMTP
     console.log('🔍 Verificando conexión SMTP...');
