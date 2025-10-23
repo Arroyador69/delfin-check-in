@@ -38,7 +38,7 @@ const SMTP_CONFIG = {
   host: process.env.SMTP_HOST || '',
   port: process.env.SMTP_PORT || '587',
   user: process.env.SMTP_USER || '',
-  password: process.env.SMTP_PASSWORD || '',
+  password: process.env.SMTP_PASSWORD || process.env.SMTP_PASS || '',
   from: process.env.SMTP_FROM || ZOHO_CONFIG.fromEmail
 };
 

@@ -11,7 +11,7 @@ export async function GET(req: NextRequest) {
       ZOHO_FROM_NAME: process.env.ZOHO_FROM_NAME || '❌ No configurado',
       SMTP_HOST: process.env.SMTP_HOST || '❌ No configurado',
       SMTP_USER: process.env.SMTP_USER || '❌ No configurado',
-      SMTP_PASSWORD: process.env.SMTP_PASSWORD ? '✅ Configurado' : '❌ No configurado',
+      SMTP_PASSWORD: process.env.SMTP_PASSWORD || process.env.SMTP_PASS ? '✅ Configurado' : '❌ No configurado',
     };
 
     // Probar acceso a Zoho API
