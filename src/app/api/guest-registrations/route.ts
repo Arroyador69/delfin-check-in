@@ -202,9 +202,29 @@ export async function PUT(req: NextRequest) {
   try {
     const body = await req.json();
     const { id, data } = body || {};
+    
+    console.log('🔄 Actualizando registro de viajero...');
+    console.log('📋 ID:', id);
+    console.log('📊 Datos recibidos:', JSON.stringify(data, null, 2));
+    
     if (!id || !data) {
+      console.log('❌ Faltan parámetros requeridos');
       return NextResponse.json({ ok: false, error: 'Faltan id o data' }, { status: 400 });
     }
+
+    // Verificar que el registro existe antes de actualizar
+    const existing = await sql`
+      SELECT id, data, updated_at
+      FROM guest_registrations
+      WHERE id = ${id}
+    `;
+
+    if (existing.rows.length === 0) {
+      console.log('❌ Registro no encontrado:', id);
+      return NextResponse.json({ ok: false, error: 'Registro no encontrado' }, { status: 404 });
+    }
+
+    console.log('✅ Registro encontrado, procediendo con la actualización...');
 
     // Asegurar tabla
     await sql`CREATE TABLE IF NOT EXISTS guest_registrations (
@@ -226,11 +246,25 @@ export async function PUT(req: NextRequest) {
     `;
 
     if (updated.rows.length === 0) {
-      return NextResponse.json({ ok: false, error: 'Registro no encontrado' }, { status: 404 });
+      console.log('❌ Error al actualizar registro');
+      return NextResponse.json({ ok: false, error: 'Error al actualizar registro' }, { status: 500 });
     }
-    return NextResponse.json({ ok: true, item: updated.rows[0] });
+
+    console.log('✅ Registro actualizado exitosamente');
+    console.log('📊 Datos actualizados:', JSON.stringify(updated.rows[0], null, 2));
+
+    return NextResponse.json({ 
+      ok: true, 
+      item: updated.rows[0],
+      message: 'Registro actualizado exitosamente'
+    });
   } catch (error) {
+    console.error('❌ Error al actualizar registro:', error);
     const message = error instanceof Error ? error.message : String(error);
-    return NextResponse.json({ ok: false, error: message }, { status: 500 });
+    return NextResponse.json({ 
+      ok: false, 
+      error: message,
+      details: 'Error interno del servidor'
+    }, { status: 500 });
   }
 }

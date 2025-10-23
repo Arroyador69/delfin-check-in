@@ -1078,9 +1078,20 @@ export default function GuestRegistrationsDashboard() {
                       <form className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm" onSubmit={async (e) => {
                         e.preventDefault();
                         if (!selectedRegistration) return;
+                        const submitButton = e.currentTarget.querySelector('button[type="submit"]') as HTMLButtonElement;
+                        const originalText = submitButton.textContent;
+                        
                         try {
+                          // Mostrar estado de carga
+                          submitButton.disabled = true;
+                          submitButton.textContent = 'Guardando...';
+                          
+                          console.log('🔄 Iniciando actualización de registro:', selectedRegistration.id);
+                          
                           const updated = { ...selectedRegistration.data };
                           const p = (updated.comunicaciones?.[0]?.personas?.[0]) || {};
+                          
+                          // Recopilar datos del formulario
                           p.nombre = (document.getElementById('edit_nombre') as HTMLInputElement).value || p.nombre;
                           p.apellido1 = (document.getElementById('edit_apellido1') as HTMLInputElement).value || p.apellido1;
                           p.fechaNacimiento = (document.getElementById('edit_fechaNacimiento') as HTMLInputElement).value || p.fechaNacimiento;
@@ -1089,6 +1100,7 @@ export default function GuestRegistrationsDashboard() {
                           p.nacionalidad = (document.getElementById('edit_nacionalidad') as HTMLInputElement)?.value || p.nacionalidad;
                           p.telefono = (document.getElementById('edit_telefono') as HTMLInputElement)?.value || p.telefono;
                           p.correo = (document.getElementById('edit_correo') as HTMLInputElement)?.value || p.correo;
+                          
                           // Dirección
                           p.direccion = p.direccion || {};
                           p.direccion.direccion = (document.getElementById('edit_direccion') as HTMLInputElement)?.value || p.direccion.direccion;
@@ -1096,23 +1108,41 @@ export default function GuestRegistrationsDashboard() {
                           p.direccion.pais = (document.getElementById('edit_pais') as HTMLInputElement)?.value || p.direccion.pais;
                           p.direccion.nombreMunicipio = (document.getElementById('edit_nombreMunicipio') as HTMLInputElement)?.value || p.direccion.nombreMunicipio;
                           p.direccion.codigoMunicipio = (document.getElementById('edit_codigoMunicipio') as HTMLInputElement)?.value || p.direccion.codigoMunicipio;
+                          
+                          // Actualizar estructura de datos
                           if (!updated.comunicaciones) updated.comunicaciones = [{ contrato: {}, personas: [p] }];
                           else {
                             if (!updated.comunicaciones[0]) updated.comunicaciones[0] = { contrato: {}, personas: [p] } as any;
                             if (!updated.comunicaciones[0].personas) updated.comunicaciones[0].personas = [p];
                             else updated.comunicaciones[0].personas[0] = p;
                           }
+                          
+                          console.log('📊 Datos a enviar:', JSON.stringify(updated, null, 2));
+                          
                           const res = await fetch('/api/guest-registrations', {
-                            method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                            method: 'PUT', 
+                            headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ id: selectedRegistration.id, data: updated })
                           });
+                          
                           const json = await res.json();
-                          if (!res.ok || !json.ok) throw new Error(json.error || 'Error al guardar cambios');
-                          alert('Cambios guardados');
+                          console.log('📥 Respuesta del servidor:', json);
+                          
+                          if (!res.ok || !json.ok) {
+                            throw new Error(json.error || 'Error al guardar cambios');
+                          }
+                          
+                          alert('✅ Cambios guardados exitosamente');
                           setSelectedRegistration({ ...selectedRegistration, data: json.item.data } as any);
                           await loadRegistrations();
+                          
                         } catch (err: any) {
-                          alert(err.message || 'Error');
+                          console.error('❌ Error al guardar:', err);
+                          alert(`❌ Error al guardar: ${err.message || 'Error desconocido'}`);
+                        } finally {
+                          // Restaurar botón
+                          submitButton.disabled = false;
+                          submitButton.textContent = originalText;
                         }
                       }}>
                         <div>
