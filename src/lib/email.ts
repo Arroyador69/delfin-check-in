@@ -86,7 +86,7 @@ export async function sendEmail(config: EmailConfig): Promise<{ success: boolean
     console.log('📧 Configurando envío de email...', {
       to: config.to,
       subject: config.subject,
-      hasZohoApiKey: !!ZOHO_CONFIG.apiKey,
+      hasZohoRefreshToken: !!ZOHO_CONFIG.refreshToken,
       hasResendKey: !!process.env.RESEND_API_KEY,
       hasSmtpConfig: !!(SMTP_CONFIG.host && SMTP_CONFIG.user && SMTP_CONFIG.password),
       availableEnvVars: Object.keys(process.env).filter(key => 
@@ -349,8 +349,8 @@ Equipo de ${data.tenantName}
 export function checkEmailConfig(): { configured: boolean; issues: string[] } {
   const issues: string[] = [];
   
-  if (!ZOHO_CONFIG.apiKey) {
-    issues.push('ZOHO_MAIL_API_KEY no configurado');
+  if (!ZOHO_CONFIG.refreshToken) {
+    issues.push('ZOHO_REFRESH_TOKEN no configurado');
   }
   
   if (!ZOHO_CONFIG.fromEmail) {
