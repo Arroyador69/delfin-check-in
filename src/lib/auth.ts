@@ -175,15 +175,16 @@ export function verifyToken(token: string): JWTPayload | null {
   }
 
   try {
-    // Para Edge Runtime, usar solo decodificación sin verificación criptográfica
-    // La verificación real se hace en las rutas de API del servidor
-    const decoded = jwt.decode(token) as JWTPayload;
+    // Verificación completa del token con firma
+    const decoded = jwt.verify(token, jwtSecret, {
+      algorithms: ['HS256']
+    }) as JWTPayload;
     
     if (!decoded || !decoded.exp) {
       return null;
     }
 
-    // Verificar expiración
+    // Verificar expiración (doble verificación)
     const isExpired = decoded.exp * 1000 < Date.now();
     if (isExpired) {
       console.log('Token expirado');

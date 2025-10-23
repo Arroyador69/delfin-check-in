@@ -49,16 +49,21 @@ export function middleware(req: NextRequest) {
   // Autenticación requerida para rutas no-API
   const authToken = req.cookies.get(AUTH_CONFIG.cookieName)?.value;
   if (!authToken) {
+    console.log('🔒 No hay token de autenticación, redirigiendo al login');
     const loginUrl = new URL('/admin-login', req.url);
     return NextResponse.redirect(loginUrl);
   }
 
+  console.log('🔍 Verificando token de autenticación...');
   const payload = verifyToken(authToken);
   if (!payload) {
+    console.log('❌ Token inválido o expirado, redirigiendo al login');
     const resp = NextResponse.redirect(new URL('/admin-login', req.url));
     resp.cookies.delete(AUTH_CONFIG.cookieName);
     return resp;
   }
+
+  console.log('✅ Token válido, continuando...');
 
   const requestHeaders = new Headers(req.headers);
   requestHeaders.set('x-user-id', payload.userId);
