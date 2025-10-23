@@ -15,26 +15,16 @@ import { sql } from '@/lib/db';
 
 export async function POST(req: NextRequest) {
   try {
-    // Verificar autenticación
-    const authToken = req.cookies.get('auth_token')?.value;
-    if (!authToken) {
-      return NextResponse.json(
-        { error: 'No autorizado', message: 'Token de autenticación requerido' },
-        { status: 401 }
-      );
-    }
-
-    const payload = verifyToken(authToken);
-    if (!payload) {
-      return NextResponse.json(
-        { error: 'Token inválido', message: 'Token de autenticación expirado o inválido' },
-        { status: 401 }
-      );
-    }
-
-    const { recoveryCode, newPassword } = await req.json();
+    const { email, recoveryCode, newPassword } = await req.json();
     
     // Validaciones
+    if (!email || typeof email !== 'string') {
+      return NextResponse.json(
+        { error: 'Email requerido', message: 'Debes proporcionar el email' },
+        { status: 400 }
+      );
+    }
+
     if (!recoveryCode || typeof recoveryCode !== 'string') {
       return NextResponse.json(
         { error: 'Código requerido', message: 'Debes proporcionar el código de recuperación' },
@@ -65,13 +55,13 @@ export async function POST(req: NextRequest) {
 
     // Verificar código y obtener usuario
     const verifyQuery = `
-      SELECT id, email, full_name, password_hash, reset_token_expires
+      SELECT id, email, full_name, password_hash, reset_token_expires, tenant_id
       FROM tenant_users 
-      WHERE id = $1 AND tenant_id = $2 AND is_active = true
-      AND reset_token = $3 AND reset_token_expires > NOW()
+      WHERE email = $1 AND is_active = true
+      AND reset_token = $2 AND reset_token_expires > NOW()
     `;
 
-    const result = await sql.query(verifyQuery, [payload.userId, payload.tenantId, recoveryCode]);
+    const result = await sql.query(verifyQuery, [email, recoveryCode]);
 
     if (result.rows.length === 0) {
       return NextResponse.json(
@@ -95,14 +85,13 @@ export async function POST(req: NextRequest) {
     const updateQuery = `
       UPDATE tenant_users 
       SET password_hash = $1, reset_token = NULL, reset_token_expires = NULL, updated_at = NOW()
-      WHERE id = $2 AND tenant_id = $3 AND is_active = true
+      WHERE id = $2 AND is_active = true
       RETURNING email, full_name
     `;
 
     const updateResult = await sql.query(updateQuery, [
       newPasswordHash,
-      payload.userId,
-      payload.tenantId
+      user.id
     ]);
 
     if (updateResult.rows.length === 0) {
