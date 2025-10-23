@@ -95,6 +95,12 @@ export async function sendEmail(config: EmailConfig): Promise<{ success: boolean
     });
 
     // Método 1: Intentar con Zoho Mail si está configurado
+    console.log('🔍 Verificando Zoho Mail:', {
+      hasRefreshToken: !!ZOHO_CONFIG.refreshToken,
+      refreshTokenLength: ZOHO_CONFIG.refreshToken?.length || 0,
+      condition: ZOHO_CONFIG.refreshToken && ZOHO_CONFIG.refreshToken.length > 10
+    });
+    
     if (ZOHO_CONFIG.refreshToken && ZOHO_CONFIG.refreshToken.length > 10) {
       try {
         console.log('🔵 Intentando envío con Zoho Mail...');
@@ -179,6 +185,15 @@ export async function sendEmail(config: EmailConfig): Promise<{ success: boolean
     }
 
     // Método 3: Intentar con SMTP directo (Zoho SMTP)
+    console.log('🔍 Verificando SMTP:', {
+      hasHost: !!SMTP_CONFIG.host,
+      hasUser: !!SMTP_CONFIG.user,
+      hasPassword: !!SMTP_CONFIG.password,
+      host: SMTP_CONFIG.host,
+      user: SMTP_CONFIG.user,
+      condition: SMTP_CONFIG.host && SMTP_CONFIG.user && SMTP_CONFIG.password
+    });
+    
     if (SMTP_CONFIG.host && SMTP_CONFIG.user && SMTP_CONFIG.password) {
       try {
         console.log('🔵 Intentando envío con SMTP directo (Zoho)...');
@@ -219,25 +234,11 @@ export async function sendEmail(config: EmailConfig): Promise<{ success: boolean
       }
     }
 
-    // Método 4: Log detallado para desarrollo
-    console.log('📧 Email simulado (ningún servicio configurado):', {
-      to: config.to,
-      subject: config.subject,
-      html: config.html.substring(0, 100) + '...'
-    });
-    
-    // En desarrollo, mostrar el código en consola
-    if (process.env.NODE_ENV !== 'production') {
-      const codeMatch = config.html.match(/class="code">(\d{6})</);
-      if (codeMatch) {
-        console.log(`🔐 CÓDIGO DE RECUPERACIÓN: ${codeMatch[1]}`);
-      }
-    }
-    
+    // Si llegamos aquí, ningún método funcionó
+    console.log('❌ Todos los métodos de envío fallaron');
     return {
-      success: true,
-      messageId: `sim_${Date.now()}`,
-      error: 'Email simulado - configura un servicio de email'
+      success: false,
+      error: 'No se pudo enviar el email con ningún método disponible'
     };
 
   } catch (error) {
