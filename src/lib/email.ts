@@ -81,7 +81,7 @@ async function getZohoAccessToken(): Promise<string | null> {
 /**
  * Envía un email usando múltiples métodos
  */
-async function sendEmail(config: EmailConfig): Promise<{ success: boolean; messageId?: string; error?: string }> {
+export async function sendEmail(config: EmailConfig): Promise<{ success: boolean; messageId?: string; error?: string }> {
   try {
     console.log('📧 Configurando envío de email...', {
       to: config.to,
