@@ -3,8 +3,8 @@ const CACHE_NAME = 'delfin-checkin-v2';
 const urlsToCache = [
   '/',
   '/manifest.json',
-  '/icons/icon-192x192.png',
-  '/icons/icon-512x512.png'
+  '/next.svg',
+  '/vercel.svg'
 ];
 
 // Instalación del service worker
@@ -13,7 +13,21 @@ self.addEventListener('install', (event) => {
     caches.open(CACHE_NAME)
       .then((cache) => {
         console.log('Opened cache');
-        return cache.addAll(urlsToCache);
+        // Cachear recursos uno por uno para manejar errores individualmente
+        return Promise.allSettled(
+          urlsToCache.map(url => 
+            cache.add(url).catch(err => {
+              console.warn(`Failed to cache ${url}:`, err);
+              return null;
+            })
+          )
+        );
+      })
+      .then(() => {
+        console.log('Cache installation completed');
+      })
+      .catch(err => {
+        console.error('Cache installation failed:', err);
       })
   );
   // Activación inmediata de la nueva versión
@@ -235,8 +249,8 @@ async function flushOutbox() {
 self.addEventListener('push', (event) => {
   const options = {
     body: event.data ? event.data.text() : 'Nueva notificación de Delfín Check-in',
-    icon: '/icons/icon-192x192.png',
-    badge: '/icons/icon-72x72.png',
+    icon: '/next.svg',
+    badge: '/vercel.svg',
     vibrate: [100, 50, 100],
     data: {
       dateOfArrival: Date.now(),
@@ -246,12 +260,12 @@ self.addEventListener('push', (event) => {
       {
         action: 'explore',
         title: 'Ver detalles',
-        icon: '/icons/icon-192x192.png'
+        icon: '/next.svg'
       },
       {
         action: 'close',
         title: 'Cerrar',
-        icon: '/icons/icon-192x192.png'
+        icon: '/next.svg'
       }
     ]
   };
