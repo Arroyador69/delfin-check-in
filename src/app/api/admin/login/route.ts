@@ -135,7 +135,7 @@ export async function POST(req: NextRequest) {
     // Ahora buscar el usuario que pertenece a este tenant
     const userQuery = `
       SELECT 
-        tu.id as user_id,
+        tu.id,
         tu.email,
         tu.password_hash,
         tu.full_name,
@@ -217,7 +217,7 @@ export async function POST(req: NextRequest) {
     
     await sql.query(
       'UPDATE tenant_users SET last_login = NOW() WHERE id = $1',
-      [user.user_id]
+      [user.id]
     );
 
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -225,7 +225,7 @@ export async function POST(req: NextRequest) {
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     
     const tokenPayload = {
-      userId: user.user_id,
+      userId: user.id,
       tenantId: tenant.id,
       email: user.email,
       role: user.role,
@@ -246,7 +246,7 @@ export async function POST(req: NextRequest) {
       message: 'Autenticación exitosa',
       expiresIn: '2h', // Información para el cliente
       user: {
-        id: user.user_id,
+        id: user.id,
         email: user.email,
         fullName: user.full_name,
         role: user.role,
