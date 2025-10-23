@@ -198,8 +198,8 @@ export async function sendEmail(config: EmailConfig): Promise<{ success: boolean
       try {
         console.log('🔵 Intentando envío con SMTP directo (Zoho)...');
         
-        const nodemailer = await import('nodemailer');
-        const transporter = nodemailer.default.createTransporter({
+        const { createTransporter } = await import('nodemailer');
+        const transporter = createTransporter({
           host: SMTP_CONFIG.host,
           port: parseInt(SMTP_CONFIG.port),
           secure: SMTP_CONFIG.port === '465', // true para 465, false para otros puertos
