@@ -87,23 +87,55 @@ export async function POST(req: NextRequest) {
       }, { status: 400 });
     }
 
-    // Actualizar nombres de habitaciones existentes
+    // Obtener habitaciones existentes
+    const existingRooms = await sql`
+      SELECT id, name
+      FROM "Room"
+      WHERE "lodgingId" = ${lodgingId}
+      ORDER BY id ASC
+    `;
+
+    console.log('Habitaciones existentes:', existingRooms.rows);
+    console.log('Habitaciones a guardar:', rooms);
+
+    // Procesar cada habitación
     for (let i = 0; i < rooms.length; i++) {
       const room = rooms[i];
-      await sql`
-        UPDATE "Room"
-        SET name = ${room.name}
-        WHERE id = ${room.id.toString()} AND "lodgingId" = ${lodgingId}
-      `;
+      const roomId = room.id.toString();
+      
+      // Verificar si la habitación ya existe
+      const existingRoom = existingRooms.rows.find(r => r.id === roomId);
+      
+      if (existingRoom) {
+        // Actualizar habitación existente
+        await sql`
+          UPDATE "Room"
+          SET name = ${room.name}, updated_at = NOW()
+          WHERE id = ${roomId} AND "lodgingId" = ${lodgingId}
+        `;
+        console.log(`✅ Actualizada habitación ${roomId}: ${room.name}`);
+      } else {
+        // Crear nueva habitación
+        await sql`
+          INSERT INTO "Room" (id, name, "lodgingId", created_at, updated_at)
+          VALUES (${roomId}, ${room.name}, ${lodgingId}, NOW(), NOW())
+        `;
+        console.log(`✅ Creada nueva habitación ${roomId}: ${room.name}`);
+      }
     }
 
     // Eliminar habitaciones que excedan el límite (si es necesario)
     if (rooms.length < maxRooms) {
-      await sql`
+      const roomsToDelete = await sql`
         DELETE FROM "Room"
         WHERE "lodgingId" = ${lodgingId}
-        AND id > ${rooms.length}
+        AND id::integer > ${rooms.length}
+        RETURNING id, name
       `;
+      
+      if (roomsToDelete.rows.length > 0) {
+        console.log('🗑️ Habitaciones eliminadas:', roomsToDelete.rows);
+      }
     }
 
     return NextResponse.json({
