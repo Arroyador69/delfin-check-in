@@ -48,6 +48,9 @@ export default function ReservationsPage() {
   const [reservationToDelete, setReservationToDelete] = useState<Reservation | null>(null);
   const [reservationToEdit, setReservationToEdit] = useState<Reservation | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filteredReservations, setFilteredReservations] = useState<Reservation[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
   const [formData, setFormData] = useState({
     room_id: '',
     guest_name: '',
@@ -70,6 +73,60 @@ export default function ReservationsPage() {
     fetchReservations();
     fetchRooms();
   }, []);
+
+  // Limpiar búsqueda cuando se actualicen las reservas
+  useEffect(() => {
+    if (isSearching) {
+      handleSearch();
+    }
+  }, [reservations, rooms]);
+
+  // Función de búsqueda
+  const handleSearch = () => {
+    if (!searchTerm.trim()) {
+      setFilteredReservations([]);
+      setIsSearching(false);
+      return;
+    }
+
+    setIsSearching(true);
+    const term = searchTerm.toLowerCase().trim();
+    
+    const filtered = reservations.filter(reservation => {
+      // Buscar en nombre del huésped
+      if (reservation.guest_name?.toLowerCase().includes(term)) return true;
+      
+      // Buscar en teléfono
+      if (reservation.guest_phone?.toLowerCase().includes(term)) return true;
+      
+      // Buscar en email
+      if (reservation.guest_email?.toLowerCase().includes(term)) return true;
+      
+      // Buscar en ID externo (booking, airbnb)
+      if (reservation.external_id?.toLowerCase().includes(term)) return true;
+      
+      // Buscar en canal (booking, airbnb, manual)
+      if (reservation.channel?.toLowerCase().includes(term)) return true;
+      
+      // Buscar en nombre de habitación
+      const room = rooms.find(r => r.id === reservation.room_id);
+      if (room?.name?.toLowerCase().includes(term)) return true;
+      
+      return false;
+    });
+    
+    setFilteredReservations(filtered);
+  };
+
+  // Limpiar búsqueda
+  const clearSearch = () => {
+    setSearchTerm('');
+    setFilteredReservations([]);
+    setIsSearching(false);
+  };
+
+  // Obtener las reservas a mostrar (filtradas o todas)
+  const displayReservations = isSearching ? filteredReservations : reservations;
 
   const fetchReservations = async () => {
     try {
@@ -418,14 +475,65 @@ export default function ReservationsPage() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
 
+        {/* Barra de búsqueda */}
+        <div className="bg-white rounded-lg shadow mb-6 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">🔍 Buscar Reservas</h3>
+            {isSearching && (
+              <button
+                onClick={clearSearch}
+                className="text-sm text-blue-600 hover:text-blue-800 underline"
+              >
+                Limpiar búsqueda
+              </button>
+            )}
+          </div>
+          
+          <div className="flex gap-4 items-end">
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Buscar por nombre, teléfono, email, habitación, booking, airbnb...
+              </label>
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                placeholder="Ej: Juan, +34612345678, habitación 1, booking123..."
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+            
+            <button
+              onClick={handleSearch}
+              disabled={!searchTerm.trim()}
+              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              Buscar
+            </button>
+          </div>
+          
+          {isSearching && (
+            <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+              <p className="text-sm text-blue-800">
+                <strong>Búsqueda activa:</strong> "{searchTerm}" - {filteredReservations.length} resultado{filteredReservations.length !== 1 ? 's' : ''} encontrado{filteredReservations.length !== 1 ? 's' : ''}
+              </p>
+            </div>
+          )}
+        </div>
+
         <div className="bg-white rounded-lg shadow overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
             <div>
               <h2 className="text-lg font-semibold text-gray-900">Gestión de Reservas</h2>
               <p className="text-sm text-gray-600">Crear y gestionar reservas de clientes</p>
-              {reservations.length > 0 && (
+              {displayReservations.length > 0 && (
                 <p className="text-xs text-blue-600 mt-1">
-                  {reservations.length} reserva{reservations.length !== 1 ? 's' : ''} encontrada{reservations.length !== 1 ? 's' : ''}
+                  {displayReservations.length} reserva{displayReservations.length !== 1 ? 's' : ''} encontrada{displayReservations.length !== 1 ? 's' : ''}
+                  {isSearching && ` (de ${reservations.length} total)`}
                 </p>
               )}
             </div>
@@ -480,17 +588,32 @@ export default function ReservationsPage() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {reservations.length === 0 ? (
+                {displayReservations.length === 0 ? (
                   <tr>
                     <td colSpan={12} className="px-6 py-12 text-center">
                       <div className="text-gray-500">
-                        <div className="text-lg mb-2">No hay reservas disponibles</div>
-                        <div className="text-sm">Las reservas aparecerán aquí cuando las crees</div>
+                        {isSearching ? (
+                          <>
+                            <div className="text-lg mb-2">No se encontraron resultados</div>
+                            <div className="text-sm">No hay reservas que coincidan con "{searchTerm}"</div>
+                            <button
+                              onClick={clearSearch}
+                              className="mt-3 text-blue-600 hover:text-blue-800 underline"
+                            >
+                              Ver todas las reservas
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <div className="text-lg mb-2">No hay reservas disponibles</div>
+                            <div className="text-sm">Las reservas aparecerán aquí cuando las crees</div>
+                          </>
+                        )}
                       </div>
                     </td>
                   </tr>
                 ) : (
-                  reservations.map((reservation) => (
+                  displayReservations.map((reservation) => (
                   <tr key={reservation.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       {rooms.find(r => r.id === reservation.room_id)?.name || `Habitación ${getRoomNumber(reservation.room_id)}`}
@@ -567,7 +690,7 @@ export default function ReservationsPage() {
           </div>
         </div>
 
-        {reservations.length === 0 && !error && (
+        {displayReservations.length === 0 && !error && !isSearching && (
           <div className="text-center py-12 bg-white">
             <div className="text-black text-lg mb-4 font-medium">No hay reservas disponibles</div>
             <p className="text-black mb-6">Las reservas aparecerán aquí cuando se sincronicen desde Airbnb y Booking.com o las crees manualmente</p>
