@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
 
     // Buscar usuario
     const userResult = await sql`
-      SELECT user_id, email, full_name, role, password_hash, is_active
+      SELECT id, email, full_name, role, password_hash, is_active
       FROM tenant_users 
       WHERE email = ${email.toLowerCase()} 
         AND tenant_id = ${tenant.id}
@@ -72,7 +72,7 @@ export async function POST(req: NextRequest) {
 
     // Generar tokens
     const tokenPayload = {
-      userId: user.user_id,
+      userId: user.id,
       tenantId: tenant.id,
       email: user.email,
       role: user.role,
@@ -88,7 +88,7 @@ export async function POST(req: NextRequest) {
       success: true,
       message: 'Login exitoso',
       user: {
-        id: user.user_id,
+        id: user.id,
         email: user.email,
         fullName: user.full_name,
         role: user.role,
