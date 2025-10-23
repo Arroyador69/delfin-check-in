@@ -264,8 +264,8 @@ export async function POST(req: NextRequest) {
     // Cookie de access token (2 horas)
     response.cookies.set(AUTH_CONFIG.cookieName, accessToken, {
       httpOnly: true,
-      secure: isProduction,
-      sameSite: 'strict',
+      secure: false, // Temporalmente en false para debug
+      sameSite: 'lax', // Cambiar a 'lax' para mejor compatibilidad
       maxAge: 60 * 60 * 2, // 2 horas en segundos
       path: '/',
     });
@@ -273,8 +273,8 @@ export async function POST(req: NextRequest) {
     // Cookie de refresh token (7 días)
     response.cookies.set(AUTH_CONFIG.refreshCookieName, refreshToken, {
       httpOnly: true,
-      secure: isProduction,
-      sameSite: 'strict',
+      secure: false, // Temporalmente en false para debug
+      sameSite: 'lax', // Cambiar a 'lax' para mejor compatibilidad
       maxAge: 60 * 60 * 24 * 7, // 7 días en segundos
       path: '/api/auth', // Solo accesible en rutas de auth
     });

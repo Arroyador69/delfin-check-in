@@ -105,16 +105,16 @@ export async function POST(req: NextRequest) {
     
     response.cookies.set(AUTH_CONFIG.cookieName, accessToken, {
       httpOnly: true,
-      secure: isProduction,
-      sameSite: 'strict',
+      secure: false, // Temporalmente en false para debug
+      sameSite: 'lax', // Cambiar a 'lax' para mejor compatibilidad
       maxAge: 60 * 60 * 2, // 2 horas
       path: '/',
     });
 
     response.cookies.set(AUTH_CONFIG.refreshCookieName, refreshToken, {
       httpOnly: true,
-      secure: isProduction,
-      sameSite: 'strict',
+      secure: false, // Temporalmente en false para debug
+      sameSite: 'lax', // Cambiar a 'lax' para mejor compatibilidad
       maxAge: 60 * 60 * 24 * 7, // 7 días
       path: '/api/auth',
     });
