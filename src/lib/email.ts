@@ -25,7 +25,7 @@ interface RecoveryEmailData {
 
 // Configuración de Zoho Mail
 const ZOHO_CONFIG = {
-  apiUrl: process.env.ZOHO_MAIL_API_URL || 'https://mail.zoho.eu/api',
+  apiUrl: process.env.ZOHO_MAIL_API_URL || 'https://mail.zoho.eu/api/accounts',
   clientId: process.env.ZOHO_CLIENT_ID || '',
   clientSecret: process.env.ZOHO_CLIENT_SECRET || '',
   refreshToken: process.env.ZOHO_REFRESH_TOKEN || process.env.ZOHO_MAIL_API_KEY || '',
@@ -114,12 +114,12 @@ export async function sendEmail(config: EmailConfig): Promise<{ success: boolean
         };
 
         console.log('📧 Enviando a Zoho Mail API:', {
-          url: `${ZOHO_CONFIG.apiUrl}/accounts/messages`,
+          url: `${ZOHO_CONFIG.apiUrl}/messages`,
           payload: payload,
           hasAccessToken: !!accessToken
         });
 
-        const response = await fetch(`${ZOHO_CONFIG.apiUrl}/accounts/messages`, {
+        const response = await fetch(`${ZOHO_CONFIG.apiUrl}/messages`, {
           method: 'POST',
           headers: {
             'Authorization': `Zoho-oauthtoken ${accessToken}`,
