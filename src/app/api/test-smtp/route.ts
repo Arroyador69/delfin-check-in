@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
     });
 
     const nodemailer = await import('nodemailer');
-    const transporter = nodemailer.createTransporter(smtpConfig);
+    const transporter = nodemailer.default.createTransporter(smtpConfig);
 
     // Verificar conexión SMTP
     console.log('🔍 Verificando conexión SMTP...');
