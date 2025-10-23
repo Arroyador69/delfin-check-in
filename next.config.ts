@@ -11,10 +11,8 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  // Optimizar precarga de fuentes
-  optimizeFonts: true,
   experimental: {
-    optimizeCss: true,
+    optimizeCss: false, // Deshabilitado para evitar problemas con critters
   },
   // Excluir carpeta scripts de la compilación
   webpack: (config, { isServer }) => {
