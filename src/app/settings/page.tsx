@@ -14,8 +14,8 @@ export default function SettingsPage() {
     maxGuests: 50 
   });
   const [tenantInfo, setTenantInfo] = useState({ 
-    planId: 'basic', 
-    status: 'trial' 
+    name: 'Mi Hostal',
+    status: 'active' 
   });
   const [message, setMessage] = useState({ type: '', text: '' });
 
@@ -38,7 +38,7 @@ export default function SettingsPage() {
           if (limitsData.success) {
             setTenantLimits(limitsData.tenant.limits);
             setTenantInfo({
-              planId: limitsData.tenant.planId,
+              name: limitsData.tenant.name,
               status: limitsData.tenant.status
             });
             setRoomsConfig(limitsData.currentRooms);
@@ -170,7 +170,7 @@ export default function SettingsPage() {
             💡 <strong>Nota:</strong> Los nombres que configures aquí aparecerán en todo el sistema: dashboard, creación de reservas, calendarios, etc.
           </p>
           <p className="text-xs text-blue-700 mt-1">
-            📊 <strong>Límite de tu plan:</strong> Puedes configurar hasta {tenantLimits.maxRooms === -1 ? 'habitaciones ilimitadas' : `${tenantLimits.maxRooms} habitaciones/apartamentos`} (Plan {tenantInfo.planId}).
+            📊 <strong>Límite contratado:</strong> Puedes configurar hasta {tenantLimits.maxRooms === -1 ? 'habitaciones ilimitadas' : `${tenantLimits.maxRooms} habitaciones/apartamentos`} según tu contrato con Delfín Check-in.
           </p>
         </div>
       </div>

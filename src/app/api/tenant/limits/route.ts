@@ -18,7 +18,6 @@ export async function GET(req: NextRequest) {
       SELECT 
         t.id,
         t.name,
-        t.plan_id,
         t.max_rooms,
         t.status,
         t.created_at,
@@ -36,15 +35,12 @@ export async function GET(req: NextRequest) {
 
     const tenant = result.rows[0];
     
-    // Mapear plan_id a límites según Stripe
-    const planLimits = {
-      basic: { max_rooms: 2, max_reservations: 50, max_guests: 20 },
-      standard: { max_rooms: 4, max_reservations: 100, max_guests: 50 },
-      premium: { max_rooms: 6, max_reservations: 200, max_guests: 100 },
-      enterprise: { max_rooms: -1, max_reservations: -1, max_guests: -1 }
+    // Usar los límites personalizados que el cliente contrató
+    const limits = {
+      max_rooms: tenant.max_rooms || 6,
+      max_reservations: 1000, // Límite alto por defecto
+      max_guests: 500         // Límite alto por defecto
     };
-    
-    const limits = planLimits[tenant.plan_id as keyof typeof planLimits] || planLimits.basic;
 
     // Obtener configuración actual de habitaciones desde tabla Room existente
     const roomsResult = await sql`
@@ -66,7 +62,6 @@ export async function GET(req: NextRequest) {
       tenant: {
         id: tenant.id,
         name: tenant.name,
-        planId: tenant.plan_id,
         status: tenant.status,
         limits: {
           maxRooms: limits.max_rooms,
