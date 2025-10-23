@@ -172,6 +172,42 @@ export default function SettingsPage() {
           <p className="text-xs text-blue-700 mt-1">
             📊 <strong>Límite contratado:</strong> Puedes configurar hasta {tenantLimits.maxRooms === -1 ? 'habitaciones ilimitadas' : `${tenantLimits.maxRooms} habitaciones/apartamentos`} según tu contrato con Delfín Check-in.
           </p>
+          {tenantLimits.maxRooms < 6 && (
+            <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <p className="text-xs text-yellow-700 mb-2">
+                ⚠️ <strong>Problema detectado:</strong> Tu límite actual es de {tenantLimits.maxRooms} habitación(es), pero necesitas 6.
+              </p>
+              <button
+                onClick={async () => {
+                  setLoading(true);
+                  try {
+                    const response = await fetch('/api/fix-tenant-6-rooms', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' }
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                      setMessage({ type: 'success', text: '¡Arreglado! Tu tenant ahora tiene 6 habitaciones. Recarga la página.' });
+                      setTimeout(() => window.location.reload(), 3000);
+                    } else {
+                      setMessage({ type: 'error', text: data.message || 'Error arreglando tenant' });
+                    }
+                  } catch (error) {
+                    setMessage({ type: 'error', text: 'Error de conexión' });
+                  } finally {
+                    setLoading(false);
+                    setTimeout(() => setMessage({ type: '', text: '' }), 5000);
+                  }
+                }}
+                disabled={loading}
+                className="bg-yellow-600 text-white px-3 py-1 rounded text-xs hover:bg-yellow-700 disabled:opacity-50"
+              >
+                {loading ? 'Arreglando...' : '🔧 Arreglar para 6 habitaciones'}
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
