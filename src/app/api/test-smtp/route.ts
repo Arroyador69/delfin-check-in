@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import nodemailer from 'nodemailer';
 
 export async function POST(req: NextRequest) {
   try {
@@ -33,8 +34,7 @@ export async function POST(req: NextRequest) {
       user: smtpConfig.auth.user
     });
 
-    const nodemailer = await import('nodemailer');
-    const transporter = nodemailer.default.createTransporter(smtpConfig);
+    const transporter = nodemailer.createTransporter(smtpConfig);
 
     // Verificar conexión SMTP
     console.log('🔍 Verificando conexión SMTP...');
