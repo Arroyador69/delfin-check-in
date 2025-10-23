@@ -8,7 +8,15 @@ export default function SettingsPage() {
   
   // Estados para configuración de habitaciones/apartamentos
   const [roomsConfig, setRoomsConfig] = useState<Array<{id: number, name: string}>>([]);
-  const [tenantLimits, setTenantLimits] = useState({ maxRooms: 6 });
+  const [tenantLimits, setTenantLimits] = useState({ 
+    maxRooms: 6, 
+    maxReservations: 100, 
+    maxGuests: 50 
+  });
+  const [tenantInfo, setTenantInfo] = useState({ 
+    planId: 'basic', 
+    status: 'trial' 
+  });
   const [message, setMessage] = useState({ type: '', text: '' });
 
   const handleSaveSettings = async () => {
@@ -29,6 +37,10 @@ export default function SettingsPage() {
           const limitsData = await limitsResponse.json();
           if (limitsData.success) {
             setTenantLimits(limitsData.tenant.limits);
+            setTenantInfo({
+              planId: limitsData.tenant.planId,
+              status: limitsData.tenant.status
+            });
             setRoomsConfig(limitsData.currentRooms);
           }
         }
@@ -158,7 +170,7 @@ export default function SettingsPage() {
             💡 <strong>Nota:</strong> Los nombres que configures aquí aparecerán en todo el sistema: dashboard, creación de reservas, calendarios, etc.
           </p>
           <p className="text-xs text-blue-700 mt-1">
-            📊 <strong>Límite de tu plan:</strong> Puedes configurar hasta {tenantLimits.maxRooms} habitaciones/apartamentos.
+            📊 <strong>Límite de tu plan:</strong> Puedes configurar hasta {tenantLimits.maxRooms === -1 ? 'habitaciones ilimitadas' : `${tenantLimits.maxRooms} habitaciones/apartamentos`} (Plan {tenantInfo.planId}).
           </p>
         </div>
       </div>

@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
 
     // Obtener información del tenant (límites y lodging_id)
     const tenantResult = await sql`
-      SELECT plan_limits, lodging_id
+      SELECT plan_id, max_rooms, lodging_id, status
       FROM tenants
       WHERE id = ${tenantId}
     `;
@@ -75,15 +75,26 @@ export async function POST(req: NextRequest) {
       }, { status: 404 });
     }
 
-    const limits = tenantResult.rows[0].plan_limits || {};
-    const maxRooms = limits.max_rooms || 6;
-    const lodgingId = tenantResult.rows[0].lodging_id;
+    const tenant = tenantResult.rows[0];
+    const lodgingId = tenant.lodging_id;
+    
+    // Mapear plan_id a límites de habitaciones según Stripe
+    const planLimits = {
+      basic: 2,        // Plan básico: 2 habitaciones
+      standard: 4,     // Plan estándar: 4 habitaciones  
+      premium: 6,      // Plan premium: 6 habitaciones
+      enterprise: -1   // Plan empresa: ilimitado
+    };
+    
+    const maxRooms = planLimits[tenant.plan_id as keyof typeof planLimits] || tenant.max_rooms || 2;
+    
+    console.log(`🏢 Tenant ${tenantId}: Plan ${tenant.plan_id}, Límite: ${maxRooms} habitaciones`);
 
-    // Validar que no exceda el límite
-    if (rooms.length > maxRooms) {
+    // Validar que no exceda el límite (excepto para plan enterprise que es ilimitado)
+    if (maxRooms !== -1 && rooms.length > maxRooms) {
       return NextResponse.json({
         success: false,
-        message: `No puedes tener más de ${maxRooms} habitaciones según tu plan`
+        message: `No puedes tener más de ${maxRooms} habitaciones según tu plan ${tenant.plan_id}. Considera actualizar a un plan superior.`
       }, { status: 400 });
     }
 
