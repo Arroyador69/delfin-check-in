@@ -62,14 +62,14 @@ export default function SettingsPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-6">
-      <div className="max-w-6xl mx-auto space-y-6">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-4 sm:p-6">
+      <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6">
         <div className="text-center">
-          <h1 className="text-4xl font-bold mb-4">
-            <span className="text-5xl mr-3" style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>⚙️</span>
+          <h1 className="text-2xl sm:text-4xl font-bold mb-2 sm:mb-4">
+            <span className="text-3xl sm:text-5xl mr-2 sm:mr-3" style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>⚙️</span>
             <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Configuración General</span>
           </h1>
-          <p className="text-gray-600 text-lg">Gestiona la configuración de tu cuenta</p>
+          <p className="text-gray-600 text-sm sm:text-lg">Gestiona la configuración de tu cuenta</p>
         </div>
       
       {/* Mensaje de estado */}
@@ -85,15 +85,15 @@ export default function SettingsPage() {
       )}
 
       {/* Configuración de Habitaciones/Apartamentos */}
-      <div className="bg-white shadow-xl rounded-xl border border-blue-200 p-8">
-        <h4 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-          <span className="text-2xl mr-3" style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>🏨</span>
+      <div className="bg-white shadow-xl rounded-xl border border-blue-200 p-4 sm:p-8">
+        <h4 className="text-lg sm:text-xl font-semibold text-gray-800 mb-3 sm:mb-4 flex items-center">
+          <span className="text-xl sm:text-2xl mr-2 sm:mr-3" style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>🏨</span>
           Habitaciones/Apartamentos
         </h4>
-        <p className="text-sm text-gray-600 mb-4">
+        <p className="text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4">
           Configura los nombres de tus habitaciones o apartamentos. Estos nombres aparecerán en el dashboard y al crear nuevas reservas.
         </p>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
           {roomsConfig.map((room, index) => (
             <div key={room.id} className="flex items-center space-x-3">
               <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
@@ -124,7 +124,7 @@ export default function SettingsPage() {
             </div>
           ))}
         </div>
-        <div className="mt-4 flex space-x-3">
+        <div className="mt-3 sm:mt-4 flex flex-col sm:flex-row gap-2 sm:gap-3">
           <button
             onClick={() => {
               if (roomsConfig.length < tenantLimits.maxRooms) {
@@ -136,7 +136,7 @@ export default function SettingsPage() {
               }
             }}
             disabled={roomsConfig.length >= tenantLimits.maxRooms}
-            className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-6 py-3 rounded-xl shadow-lg transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center space-x-2"
+            className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-xl shadow-lg transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center space-x-2 text-sm sm:text-base"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
