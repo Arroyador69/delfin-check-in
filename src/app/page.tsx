@@ -336,36 +336,38 @@ export default function HomePage() {
         {/* Header */}
         <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center py-4 sm:py-6 gap-4">
             <div className="flex items-center">
-              <div className="text-3xl mr-3">🐬</div>
+              <div className="text-2xl sm:text-3xl mr-2 sm:mr-3">🐬</div>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Delfín Check-in</h1>
-                <p className="text-sm text-gray-600">Gestión inteligente de habitaciones</p>
+                <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Delfín Check-in</h1>
+                <p className="text-xs sm:text-sm text-gray-600">Gestión inteligente de habitaciones</p>
               </div>
             </div>
-            <div className="flex items-center space-x-4">
-              <div className="text-sm text-gray-600">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 w-full sm:w-auto">
+              <div className="text-xs sm:text-sm text-gray-600">
                 <span className="inline-flex items-center">
-                  <svg className="w-4 h-4 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                  <svg className="w-3 h-3 sm:w-4 sm:h-4 text-green-500 mr-1 sm:mr-2" fill="currentColor" viewBox="0 0 20 20">
                     <circle cx="10" cy="10" r="4" />
                   </svg>
                   Conectado
                 </span>
               </div>
-              <Link
-                href="/upgrade-plan"
-                className="px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-md hover:from-purple-700 hover:to-blue-700 transition-all duration-200 flex items-center space-x-2 shadow-md hover:shadow-lg"
-              >
-                <ArrowUpCircle className="w-5 h-5" />
-                <span className="font-medium">Mejorar Plan</span>
-              </Link>
-              <button
-                onClick={handleLogout}
-                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
-              >
-                Cerrar Sesión
-              </button>
+              <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                <Link
+                  href="/upgrade-plan"
+                  className="px-3 sm:px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-md hover:from-purple-700 hover:to-blue-700 transition-all duration-200 flex items-center justify-center space-x-2 shadow-md hover:shadow-lg text-sm sm:text-base"
+                >
+                  <ArrowUpCircle className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <span className="font-medium">Mejorar Plan</span>
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="px-3 sm:px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors text-sm sm:text-base"
+                >
+                  Cerrar Sesión
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -376,27 +378,27 @@ export default function HomePage() {
 
         {/* Información del Plan */}
         {tenant && tenant.tenant && (
-          <div className="card mb-8 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-              <div className="flex items-center space-x-4">
-                <div className="text-3xl">🏢</div>
-                <div>
-                  <h2 className="text-lg font-semibold text-gray-900">
+          <div className="card mb-6 sm:mb-8 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center space-x-3 sm:space-x-4">
+                <div className="text-2xl sm:text-3xl">🏢</div>
+                <div className="flex-1 min-w-0">
+                  <h2 className="text-base sm:text-lg font-semibold text-gray-900 truncate">
                     {tenant.tenant?.name || 'Admin Default'} - Plan {tenant.tenant?.plan_name || 'Básico'}
                   </h2>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-xs sm:text-sm text-gray-600 break-words">
                     €{tenant.tenant?.plan_price || 29}/mes • {tenant.tenant?.plan_features?.join(' • ') || 'Características básicas'}
                   </p>
                 </div>
               </div>
-              <div className="flex items-center space-x-4">
-                <div className="text-right">
-                  <div className="text-sm text-gray-600">Uso de habitaciones</div>
-                  <div className="text-lg font-bold text-gray-900">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="text-left sm:text-right">
+                  <div className="text-xs sm:text-sm text-gray-600">Uso de habitaciones</div>
+                  <div className="text-base sm:text-lg font-bold text-gray-900">
                     {tenant.stats?.rooms_used || 0}/{tenant.tenant?.max_rooms === -1 ? '∞' : (tenant.tenant?.max_rooms || 2)}
                   </div>
                   {tenant.tenant?.max_rooms !== -1 && (
-                    <div className="w-32 bg-gray-200 rounded-full h-2 mt-1">
+                    <div className="w-24 sm:w-32 bg-gray-200 rounded-full h-2 mt-1">
                       <div 
                         className="bg-blue-600 h-2 rounded-full transition-all duration-300"
                         style={{ width: `${tenant.limits?.rooms_usage_percentage || 0}%` }}
@@ -407,10 +409,10 @@ export default function HomePage() {
                 {tenant.limits && !tenant.limits.can_add_rooms && (
                   <Link
                     href="/upgrade-plan"
-                    className="px-4 py-2 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-md hover:from-orange-600 hover:to-red-600 transition-all duration-200 flex items-center space-x-2"
+                    className="px-3 sm:px-4 py-2 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-md hover:from-orange-600 hover:to-red-600 transition-all duration-200 flex items-center justify-center space-x-2 text-sm sm:text-base"
                   >
                     <ArrowUpCircle className="w-4 h-4" />
-                    <span className="text-sm font-medium">Upgrade</span>
+                    <span className="font-medium">Upgrade</span>
                   </Link>
                 )}
               </div>
@@ -419,11 +421,11 @@ export default function HomePage() {
         )}
 
         {/* Filtros de Período */}
-        <div className="card mb-8">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <div className="card mb-6 sm:mb-8">
+          <div className="flex flex-col gap-4">
             <div>
-              <h2 className="text-lg font-semibold text-black mb-2">📊 Filtros de Período</h2>
-              <p className="text-sm text-black">
+              <h2 className="text-base sm:text-lg font-semibold text-black mb-2">📊 Filtros de Período</h2>
+              <p className="text-xs sm:text-sm text-black">
                 Mostrando datos para: <span className="font-bold text-black">{getPeriodLabel()}</span>
               </p>
             </div>
@@ -432,7 +434,7 @@ export default function HomePage() {
               {/* Botones de períodos predefinidos */}
               <button
                 onClick={() => setFilterPeriod('total')}
-                className={`px-3 py-2 text-sm rounded-lg border transition-colors ${
+                className={`px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm rounded-lg border transition-colors ${
                   filterPeriod === 'total' 
                     ? 'bg-blue-600 text-white border-blue-600' 
                     : 'bg-white text-black border-gray-300 hover:bg-gray-50'
@@ -443,7 +445,7 @@ export default function HomePage() {
               
               <button
                 onClick={() => setFilterPeriod('annual')}
-                className={`px-3 py-2 text-sm rounded-lg border transition-colors ${
+                className={`px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm rounded-lg border transition-colors ${
                   filterPeriod === 'annual' 
                     ? 'bg-blue-600 text-white border-blue-600' 
                     : 'bg-white text-black border-gray-300 hover:bg-gray-50'
@@ -454,7 +456,7 @@ export default function HomePage() {
               
               <button
                 onClick={() => setFilterPeriod('today')}
-                className={`px-3 py-2 text-sm rounded-lg border transition-colors ${
+                className={`px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm rounded-lg border transition-colors ${
                   filterPeriod === 'today' 
                     ? 'bg-blue-600 text-white border-blue-600' 
                     : 'bg-white text-black border-gray-300 hover:bg-gray-50'
@@ -465,7 +467,7 @@ export default function HomePage() {
               
               <button
                 onClick={() => setFilterPeriod('thisWeek')}
-                className={`px-3 py-2 text-sm rounded-lg border transition-colors ${
+                className={`px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm rounded-lg border transition-colors ${
                   filterPeriod === 'thisWeek' 
                     ? 'bg-blue-600 text-white border-blue-600' 
                     : 'bg-white text-black border-gray-300 hover:bg-gray-50'
@@ -476,7 +478,7 @@ export default function HomePage() {
               
               <button
                 onClick={() => setFilterPeriod('last7Days')}
-                className={`px-3 py-2 text-sm rounded-lg border transition-colors ${
+                className={`px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm rounded-lg border transition-colors ${
                   filterPeriod === 'last7Days' 
                     ? 'bg-blue-600 text-white border-blue-600' 
                     : 'bg-white text-black border-gray-300 hover:bg-gray-50'
@@ -487,7 +489,7 @@ export default function HomePage() {
               
               <button
                 onClick={() => setFilterPeriod('thisMonth')}
-                className={`px-3 py-2 text-sm rounded-lg border transition-colors ${
+                className={`px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm rounded-lg border transition-colors ${
                   filterPeriod === 'thisMonth' 
                     ? 'bg-blue-600 text-white border-blue-600' 
                     : 'bg-white text-black border-gray-300 hover:bg-gray-50'
@@ -498,7 +500,7 @@ export default function HomePage() {
               
               <button
                 onClick={() => setFilterPeriod('last30Days')}
-                className={`px-3 py-2 text-sm rounded-lg border transition-colors ${
+                className={`px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm rounded-lg border transition-colors ${
                   filterPeriod === 'last30Days' 
                     ? 'bg-blue-600 text-white border-blue-600' 
                     : 'bg-white text-black border-gray-300 hover:bg-gray-50'
@@ -509,7 +511,7 @@ export default function HomePage() {
               
               <button
                 onClick={() => setFilterPeriod('custom')}
-                className={`px-3 py-2 text-sm rounded-lg border transition-colors ${
+                className={`px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm rounded-lg border transition-colors ${
                   filterPeriod === 'custom' 
                     ? 'bg-blue-600 text-white border-blue-600' 
                     : 'bg-white text-black border-gray-300 hover:bg-gray-50'
@@ -633,63 +635,63 @@ export default function HomePage() {
         </div>
 
         {/* Acciones rápidas (MVP) */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
           <Link href="/reservations" className="card group">
               <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
                     Reservas
                   </h3>
-                  <p className="text-sm text-gray-600 mt-1">
+                  <p className="text-xs sm:text-sm text-gray-600 mt-1">
                     Gestionar reservas y calendario
                   </p>
                 </div>
-              <div className="text-2xl">📅</div>
+              <div className="text-xl sm:text-2xl flex-shrink-0 ml-2">📅</div>
             </div>
           </Link>
           <Link href="/guest-registrations-dashboard" className="card group">
               <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
                     Registros de formularios
                   </h3>
-                  <p className="text-sm text-gray-600 mt-1">
+                  <p className="text-xs sm:text-sm text-gray-600 mt-1">
                     Ver registros y generar XML
                   </p>
                 </div>
-              <div className="text-2xl">🇪🇸</div>
+              <div className="text-xl sm:text-2xl flex-shrink-0 ml-2">🇪🇸</div>
             </div>
           </Link>
           <Link href="/cost-calculator" className="card group">
             <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+              <div className="flex-1 min-w-0">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
                   Calculadora de Costos
                 </h3>
-                <p className="text-sm text-gray-600 mt-1">
+                <p className="text-xs sm:text-sm text-gray-600 mt-1">
                   Calcular costos reales por huésped
                 </p>
               </div>
-              <div className="text-2xl">🧮</div>
+              <div className="text-xl sm:text-2xl flex-shrink-0 ml-2">🧮</div>
                 </div>
           </Link>
           <Link href="/aeat" className="card group">
             <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+              <div className="flex-1 min-w-0">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
                   Exportar AEAT
                 </h3>
-                <p className="text-sm text-gray-600 mt-1">
+                <p className="text-xs sm:text-sm text-gray-600 mt-1">
                   Generar archivos para Hacienda
                 </p>
               </div>
-              <div className="text-2xl">🏛️</div>
+              <div className="text-xl sm:text-2xl flex-shrink-0 ml-2">🏛️</div>
             </div>
           </Link>
         </div>
 
         {/* Reservas Actuales y Próximas - SIEMPRE muestran datos de hoy */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mt-6 sm:mt-8">
           {/* Reservas Actuales */}
           <div className="card">
             <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
