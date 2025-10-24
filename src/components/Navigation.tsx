@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Bed, Calendar, Users, Settings, Menu, X, Smartphone, TrendingUp, FileText, Download, Shield, Calculator, Send, MessageSquare, Scale, Receipt } from 'lucide-react';
+import { Home, Bed, Calendar, Users, Settings, Menu, X, TrendingUp, FileText, Download, Shield, Calculator, Send, MessageSquare, Receipt } from 'lucide-react';
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
 
@@ -21,11 +21,9 @@ export default function Navigation() {
     { name: 'Asistente IA (Telegram)', href: '/telegram-assistant', icon: MessageSquare },
     { name: 'Calculadora de Costos', href: '/cost-calculator', icon: Calculator },
     { name: 'Exportar AEAT', href: '/aeat', icon: FileText },
-    { name: 'Sincronizar Calendarios', href: '/calendar-sync', icon: Smartphone },
     { name: 'Cola offline', href: '/offline-queue', icon: Download },
     { name: 'Bitácora', href: '/audit', icon: Shield },
     { name: 'Configuración', href: '/settings', icon: Settings },
-    { name: 'Información Legal', href: '/legal', icon: Scale },
   ];
 
   return (
