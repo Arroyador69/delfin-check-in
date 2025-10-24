@@ -98,7 +98,7 @@ const PLANS: Plan[] = [
   }
 ];
 
-function CheckoutForm({ planId, onSuccess, onError }: { planId: PlanId; onSuccess: () => void; onError: (error: string) => void }) {
+function CheckoutForm({ planId, propertiesCount, onSuccess, onError }: { planId: PlanId; propertiesCount: number; onSuccess: () => void; onError: (error: string) => void }) {
   const stripe = useStripe();
   const elements = useElements();
   const [processing, setProcessing] = useState(false);
@@ -145,6 +145,7 @@ function CheckoutForm({ planId, onSuccess, onError }: { planId: PlanId; onSucces
         body: JSON.stringify({
           planId,
           paymentMethodId: paymentMethod.id,
+          propertiesCount,
         }),
       });
 
@@ -284,9 +285,14 @@ function UpgradeContent() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [showCheckout, setShowCheckout] = useState(false);
+  const [properties, setProperties] = useState<Array<{id: number, name: string}>>([]);
+  const [selectedProperties, setSelectedProperties] = useState<number>(1);
+  const [newPropertyName, setNewPropertyName] = useState('');
+  const [currentMaxRooms, setCurrentMaxRooms] = useState<number>(1);
 
   useEffect(() => {
     loadCurrentPlan();
+    loadProperties();
     
     // Obtener plan de la URL si está presente
     const urlPlan = searchParams.get('plan') as PlanId;
@@ -303,6 +309,7 @@ function UpgradeContent() {
       
       if (response.ok && data.tenant) {
         setCurrentPlanId(data.tenant.plan_id as PlanId);
+        setCurrentMaxRooms(data.tenant.max_rooms || 1);
       }
     } catch (error) {
       console.error('Error cargando plan actual:', error);
@@ -311,12 +318,66 @@ function UpgradeContent() {
     }
   };
 
+  const loadProperties = async () => {
+    try {
+      // Cargar propiedades desde localStorage o API
+      const savedProperties = localStorage.getItem('rooms_config');
+      if (savedProperties) {
+        const parsedProperties = JSON.parse(savedProperties);
+        setProperties(parsedProperties);
+        setSelectedProperties(parsedProperties.length);
+      } else {
+        // Propiedades por defecto
+        const defaultProperties = [
+          { id: 1, name: 'Habitación 1' },
+          { id: 2, name: 'Habitación 2' },
+          { id: 3, name: 'Habitación 3' },
+          { id: 4, name: 'Habitación 4' },
+          { id: 5, name: 'Habitación 5' },
+          { id: 6, name: 'Habitación 6' }
+        ];
+        setProperties(defaultProperties);
+        setSelectedProperties(1);
+      }
+    } catch (error) {
+      console.error('Error cargando propiedades:', error);
+    }
+  };
+
   const handleSelectPlan = (planId: PlanId) => {
     if (planId === currentPlanId) {
       return;
     }
     setSelectedPlanId(planId);
+    
+    // Si es un upgrade, permitir más propiedades
+    const selectedPlan = PLANS.find(p => p.id === planId);
+    if (selectedPlan && selectedPlan.maxRooms > currentMaxRooms) {
+      setSelectedProperties(Math.min(properties.length + 1, selectedPlan.maxRooms));
+    } else {
+      setSelectedProperties(Math.min(selectedProperties, selectedPlan?.maxRooms || 1));
+    }
+    
     setShowCheckout(true);
+  };
+
+  const addProperty = () => {
+    if (newPropertyName.trim() && properties.length < currentMaxRooms) {
+      const newId = Math.max(...properties.map(p => p.id), 0) + 1;
+      const newProperty = { id: newId, name: newPropertyName.trim() };
+      const updatedProperties = [...properties, newProperty];
+      setProperties(updatedProperties);
+      setSelectedProperties(updatedProperties.length);
+      setNewPropertyName('');
+      localStorage.setItem('rooms_config', JSON.stringify(updatedProperties));
+    }
+  };
+
+  const removeProperty = (propertyId: number) => {
+    const updatedProperties = properties.filter(p => p.id !== propertyId);
+    setProperties(updatedProperties);
+    setSelectedProperties(Math.min(selectedProperties, updatedProperties.length));
+    localStorage.setItem('rooms_config', JSON.stringify(updatedProperties));
   };
 
   const handleUpgradeSuccess = () => {
@@ -469,20 +530,102 @@ function UpgradeContent() {
             </div>
           ) : (
             /* Checkout Form */
-            <div className="max-w-2xl mx-auto">
+            <div className="max-w-4xl mx-auto">
               <div className="bg-white rounded-lg shadow-lg p-8">
                 <h2 className="text-2xl font-bold text-gray-900 mb-6">
                   {isUpgrade ? 'Upgrade a' : 'Cambiar a'} {selectedPlan?.name}
                 </h2>
+
+                {/* Selección de Propiedades */}
+                <div className="mb-8 p-6 bg-blue-50 rounded-lg border border-blue-200">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                    <span className="text-2xl mr-3" style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>🏠</span>
+                    Seleccionar Propiedades
+                  </h3>
+                  
+                  {/* Propiedades existentes */}
+                  <div className="mb-4">
+                    <h4 className="text-sm font-medium text-gray-700 mb-3">Propiedades disponibles:</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                      {properties.map((property) => (
+                        <div key={property.id} className="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-200">
+                          <div className="flex items-center">
+                            <span className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-sm mr-3">
+                              {property.id}
+                            </span>
+                            <span className="text-gray-900 font-medium">{property.name}</span>
+                          </div>
+                          <button
+                            onClick={() => removeProperty(property.id)}
+                            className="text-red-600 hover:text-red-800 text-sm font-medium"
+                          >
+                            Eliminar
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Añadir nueva propiedad */}
+                  <div className="mb-4">
+                    <h4 className="text-sm font-medium text-gray-700 mb-3">Añadir nueva propiedad:</h4>
+                    <div className="flex space-x-3">
+                      <input
+                        type="text"
+                        value={newPropertyName}
+                        onChange={(e) => setNewPropertyName(e.target.value)}
+                        placeholder="Nombre de la propiedad"
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                        onKeyPress={(e) => e.key === 'Enter' && addProperty()}
+                        disabled={properties.length >= currentMaxRooms}
+                      />
+                      <button
+                        onClick={addProperty}
+                        disabled={properties.length >= currentMaxRooms || !newPropertyName.trim()}
+                        className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                      >
+                        Añadir
+                      </button>
+                    </div>
+                    {properties.length >= currentMaxRooms && (
+                      <p className="text-xs text-orange-600 mt-2">
+                        ⚠️ Has alcanzado el límite de {currentMaxRooms} {currentMaxRooms === 1 ? 'propiedad' : 'propiedades'} de tu plan actual. 
+                        Necesitas hacer upgrade para añadir más propiedades.
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Selector de número de propiedades */}
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-700 mb-3">Número de propiedades a contratar:</h4>
+                    <select
+                      value={selectedProperties}
+                      onChange={(e) => setSelectedProperties(parseInt(e.target.value))}
+                      className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      {selectedPlan && Array.from({ length: selectedPlan.maxRooms }, (_, i) => i + 1).map(num => (
+                        <option key={num} value={num}>{num} {num === 1 ? 'propiedad' : 'propiedades'}</option>
+                      ))}
+                    </select>
+                    <p className="text-xs text-gray-500 mt-2">
+                      Tu plan actual permite hasta {currentMaxRooms} {currentMaxRooms === 1 ? 'propiedad' : 'propiedades'}. 
+                      {selectedPlan && ` El plan ${selectedPlan.name} permite hasta ${selectedPlan.maxRooms} ${selectedPlan.maxRooms === 1 ? 'propiedad' : 'propiedades'}.`}
+                    </p>
+                  </div>
+                </div>
 
                 <div className="mb-8 p-4 bg-gray-50 rounded-lg">
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-gray-600">Plan actual:</span>
                     <span className="font-semibold">{currentPlan?.name} - €{currentPlan?.price}/mes</span>
                   </div>
-                  <div className="flex justify-between items-center">
+                  <div className="flex justify-between items-center mb-2">
                     <span className="text-gray-600">Nuevo plan:</span>
-                    <span className="font-semibold text-green-600">{selectedPlan?.name} - €{selectedPlan?.price}/mes</span>
+                    <span className="font-semibold text-green-600">{selectedPlan?.name}</span>
+                  </div>
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-gray-600">Propiedades:</span>
+                    <span className="font-semibold">{selectedProperties} {selectedProperties === 1 ? 'propiedad' : 'propiedades'}</span>
                   </div>
                   <div className="mt-4 pt-4 border-t border-gray-200">
                     <div className="flex justify-between items-center">
@@ -490,7 +633,7 @@ function UpgradeContent() {
                         {isUpgrade ? 'Costo adicional:' : 'Nuevo costo:'}
                       </span>
                       <span className="text-xl font-bold text-gray-900">
-                        €{selectedPlan?.price}/mes
+                        €{selectedProperties * (selectedPlan?.price || 0)}/mes
                       </span>
                     </div>
                   </div>
@@ -499,6 +642,7 @@ function UpgradeContent() {
                 <Elements stripe={stripePromise}>
                   <CheckoutForm
                     planId={selectedPlanId!}
+                    propertiesCount={selectedProperties}
                     onSuccess={handleUpgradeSuccess}
                     onError={handleUpgradeError}
                   />

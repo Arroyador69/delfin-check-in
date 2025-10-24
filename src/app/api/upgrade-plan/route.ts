@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { planId, paymentMethodId } = body;
+    const { planId, paymentMethodId, propertiesCount = 1 } = body;
 
     if (!planId || !PLAN_PRICES[planId]) {
       return NextResponse.json(
@@ -106,12 +106,13 @@ export async function POST(req: NextRequest) {
       });
 
       // Crear price en Stripe (o usar price_id existente)
+      const totalAmount = newPlanInfo.amount * propertiesCount;
       const price = await stripe.prices.create({
-        unit_amount: newPlanInfo.amount,
+        unit_amount: totalAmount,
         currency: 'eur',
         recurring: { interval: 'month' },
         product_data: {
-          name: `Delfín Check-in - Plan ${planId.charAt(0).toUpperCase() + planId.slice(1)}`,
+          name: `Delfín Check-in - Plan ${planId.charAt(0).toUpperCase() + planId.slice(1)} (${propertiesCount} ${propertiesCount === 1 ? 'propiedad' : 'propiedades'})`,
         },
       });
 
@@ -130,7 +131,7 @@ export async function POST(req: NextRequest) {
         UPDATE tenants
         SET 
           plan_id = ${planId},
-          max_rooms = ${newPlanInfo.max_rooms},
+          max_rooms = ${propertiesCount},
           stripe_subscription_id = ${subscription.id},
           status = 'active',
           updated_at = NOW()
@@ -157,12 +158,13 @@ export async function POST(req: NextRequest) {
     }
 
     // Crear nuevo price
+    const totalAmount = newPlanInfo.amount * propertiesCount;
     const newPrice = await stripe.prices.create({
-      unit_amount: newPlanInfo.amount,
+      unit_amount: totalAmount,
       currency: 'eur',
       recurring: { interval: 'month' },
       product_data: {
-        name: `Delfín Check-in - Plan ${planId.charAt(0).toUpperCase() + planId.slice(1)}`,
+        name: `Delfín Check-in - Plan ${planId.charAt(0).toUpperCase() + planId.slice(1)} (${propertiesCount} ${propertiesCount === 1 ? 'propiedad' : 'propiedades'})`,
       },
     });
 
@@ -187,7 +189,7 @@ export async function POST(req: NextRequest) {
       UPDATE tenants
       SET 
         plan_id = ${planId},
-        max_rooms = ${newPlanInfo.max_rooms},
+        max_rooms = ${propertiesCount},
         status = 'active',
         updated_at = NOW()
       WHERE id = ${tenantId}
