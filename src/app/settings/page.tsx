@@ -62,23 +62,34 @@ export default function SettingsPage() {
   }, []);
 
   return (
-    <div className="space-y-6">
-      <h3 className="text-lg font-medium text-gray-900">Configuración General</h3>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-6">
+      <div className="max-w-6xl mx-auto space-y-6">
+        <div className="text-center">
+          <h1 className="text-4xl font-bold mb-4">
+            <span className="text-5xl mr-3" style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>⚙️</span>
+            <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Configuración General</span>
+          </h1>
+          <p className="text-gray-600 text-lg">Gestiona la configuración de tu cuenta</p>
+        </div>
       
       {/* Mensaje de estado */}
       {message.text && (
-        <div className={`p-4 rounded-md ${
+        <div className={`p-4 rounded-xl flex items-center space-x-2 shadow-lg animate-fade-in ${
           message.type === 'success' 
-            ? 'bg-green-50 border border-green-200 text-green-800' 
-            : 'bg-red-50 border border-red-200 text-red-800'
+            ? 'bg-gradient-to-r from-green-50 to-emerald-50 text-green-800 border border-green-200' 
+            : 'bg-gradient-to-r from-red-50 to-pink-50 text-red-800 border border-red-200'
         }`}>
-          {message.text}
+          <span className={`w-5 h-5 ${message.type === 'success' ? 'text-green-600' : 'text-red-600'}`}>🔔</span>
+          <span>{message.text}</span>
         </div>
       )}
 
       {/* Configuración de Habitaciones/Apartamentos */}
-      <div className="bg-white border border-gray-200 rounded-lg p-6">
-        <h4 className="text-md font-medium text-gray-900 mb-4">🏨 Habitaciones/Apartamentos</h4>
+      <div className="bg-white shadow-xl rounded-xl border border-blue-200 p-8">
+        <h4 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+          <span className="text-2xl mr-3" style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>🏨</span>
+          Habitaciones/Apartamentos
+        </h4>
         <p className="text-sm text-gray-600 mb-4">
           Configura los nombres de tus habitaciones o apartamentos. Estos nombres aparecerán en el dashboard y al crear nuevas reservas.
         </p>
@@ -125,7 +136,7 @@ export default function SettingsPage() {
               }
             }}
             disabled={roomsConfig.length >= tenantLimits.maxRooms}
-            className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center space-x-2"
+            className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-6 py-3 rounded-xl shadow-lg transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center space-x-2"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -157,7 +168,7 @@ export default function SettingsPage() {
               }
             }}
             disabled={loading}
-            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center space-x-2"
+            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 py-3 rounded-xl shadow-lg transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:transform-none flex items-center space-x-2"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -212,11 +223,14 @@ export default function SettingsPage() {
       </div>
 
       {/* Configuración general */}
-      <div className="bg-white border border-gray-200 rounded-lg p-6">
-        <h4 className="text-md font-medium text-gray-900 mb-4">⚙️ Configuración General</h4>
+      <div className="bg-white shadow-xl rounded-xl border border-blue-200 p-8">
+        <h4 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+          <span className="text-2xl mr-3" style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>⚙️</span>
+          Configuración General
+        </h4>
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-base font-semibold text-gray-700 mb-2">
               Nombre de la Propiedad
             </label>
             <input
@@ -226,7 +240,7 @@ export default function SettingsPage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-base font-semibold text-gray-700 mb-2">
               Zona Horaria
             </label>
             <select className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
@@ -236,7 +250,7 @@ export default function SettingsPage() {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-base font-semibold text-gray-700 mb-2">
               Idioma
             </label>
             <select className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
@@ -245,7 +259,7 @@ export default function SettingsPage() {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-base font-semibold text-gray-700 mb-2">
               Moneda
             </label>
             <select className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
@@ -261,81 +275,13 @@ export default function SettingsPage() {
         <button
           onClick={handleSaveSettings}
           disabled={loading}
-          className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-4 text-lg font-semibold rounded-xl shadow-lg transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
         >
           {loading ? 'Guardando...' : 'Guardar Configuración'}
         </button>
       </div>
 
-      {/* Footer */}
-      <footer className="bg-white border-t border-gray-200 mt-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Main Footer Content */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-6">
-            {/* Delfín Check-in */}
-            <div>
-              <h3 className="text-lg font-bold text-gray-900 mb-2">Delfín Check-in</h3>
-              <p className="text-sm text-gray-600 leading-relaxed">
-                Software de gestión hotelera y auto check-in para hostales y apartamentos.
-              </p>
-            </div>
-
-            {/* Contacto */}
-            <div>
-              <h3 className="text-lg font-bold text-gray-900 mb-2">Contacto</h3>
-              <div className="space-y-2">
-                <div className="flex items-center text-sm text-gray-600">
-                  <svg className="h-4 w-4 text-blue-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
-                    <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
-                  </svg>
-                  contacto@delfincheckin.com
-                </div>
-                <div className="flex items-center text-sm text-gray-600">
-                  <svg className="h-4 w-4 text-gray-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
-                  </svg>
-                  Lun-Dom: 9:00-22:00
-                </div>
-              </div>
-            </div>
-
-            {/* Legal */}
-            <div>
-              <h3 className="text-lg font-bold text-gray-900 mb-2">Legal</h3>
-              <div className="space-y-1">
-                <a href="/legal/privacy" className="block text-sm text-blue-600 hover:text-blue-800 underline">
-                  Política de Privacidad
-                </a>
-                <a href="/legal/cookies" className="block text-sm text-blue-600 hover:text-blue-800 underline">
-                  Política de Cookies
-                </a>
-                <a href="/legal/terms" className="block text-sm text-blue-600 hover:text-blue-800 underline">
-                  Términos de Servicio
-                </a>
-                <a href="/legal/notice" className="block text-sm text-blue-600 hover:text-blue-800 underline">
-                  Aviso Legal
-                </a>
-                <a href="/legal/cookies" className="block text-sm text-blue-600 hover:text-blue-800 underline">
-                  Gestionar Cookies
-                </a>
-              </div>
-            </div>
-          </div>
-
-          {/* Bottom Section */}
-          <div className="border-t border-gray-200 pt-4">
-            <div className="text-center">
-              <p className="text-sm text-gray-600">
-                © 2025 Delfín Check-in ·{' '}
-                <a href="https://delfincheckin.com" className="text-blue-600 hover:text-blue-800 underline">
-                  Ver precios
-                </a>
-              </p>
-            </div>
-          </div>
-        </div>
-      </footer>
+      </div>
     </div>
   );
 }
