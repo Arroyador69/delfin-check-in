@@ -129,27 +129,27 @@ export default function OnboardingPage() {
         </div>
 
         <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 mb-6 max-h-96 overflow-y-auto">
-          <h3 className="text-lg font-semibold mb-4">1. Partes</h3>
-          <p className="mb-4">
-            <strong>Responsable del Tratamiento (RDT):</strong> El usuario titular del alojamiento o empresa de gestión de hospedajes que utiliza la plataforma Delfín Check-in para el registro de viajeros conforme al RD 933/2021, en adelante "el Responsable".
+          <h3 className="text-lg font-semibold mb-4 text-gray-900">1. Partes</h3>
+          <p className="mb-4 text-gray-800">
+            <strong className="text-gray-900">Responsable del Tratamiento (RDT):</strong> El usuario titular del alojamiento o empresa de gestión de hospedajes que utiliza la plataforma Delfín Check-in para el registro de viajeros conforme al RD 933/2021, en adelante "el Responsable".
           </p>
-          <p className="mb-4">
-            <strong>Encargado del Tratamiento (EDT):</strong> Titular del sistema Delfín Check-in, con NIF 49128023T y correo de contacto contacto@delfincheckin.com, en adelante "el Encargado".
+          <p className="mb-4 text-gray-800">
+            <strong className="text-gray-900">Encargado del Tratamiento (EDT):</strong> Titular del sistema Delfín Check-in, con NIF 49128023T y correo de contacto contacto@delfincheckin.com, en adelante "el Encargado".
           </p>
 
-          <h3 className="text-lg font-semibold mb-4">2. Objeto del contrato</h3>
-          <p className="mb-4">
+          <h3 className="text-lg font-semibold mb-4 text-gray-900">2. Objeto del contrato</h3>
+          <p className="mb-4 text-gray-800">
             El Encargado tratará, por cuenta del Responsable, los datos personales de viajeros y reservas necesarios para cumplir con la obligación legal de registro documental y comunicación de hospedajes establecida por la Ley Orgánica 4/2015 y el Real Decreto 933/2021, mediante el envío telemático al Sistema de Hospedajes (SES-Hospedajes) del Ministerio del Interior.
           </p>
 
-          <h3 className="text-lg font-semibold mb-4">3. Naturaleza, finalidad y categorías de datos</h3>
-          <p className="mb-2"><strong>Finalidad del tratamiento:</strong></p>
-          <p className="mb-4">
+          <h3 className="text-lg font-semibold mb-4 text-gray-900">3. Naturaleza, finalidad y categorías de datos</h3>
+          <p className="mb-2 text-gray-800"><strong className="text-gray-900">Finalidad del tratamiento:</strong></p>
+          <p className="mb-4 text-gray-800">
             Recolección, validación, almacenamiento y comunicación inmediata o en un plazo no superior a 24 horas de los datos de huéspedes al MIR, para garantizar la seguridad ciudadana.
           </p>
           
-          <p className="mb-2"><strong>Categorías de datos tratados:</strong></p>
-          <ul className="list-disc list-inside mb-4 space-y-1">
+          <p className="mb-2 text-gray-800"><strong className="text-gray-900">Categorías de datos tratados:</strong></p>
+          <ul className="list-disc list-inside mb-4 space-y-1 text-gray-800">
             <li>Identificación personal: NIF/NIE/Pasaporte, nombre y apellidos</li>
             <li>Datos de contacto: teléfono y/o correo electrónico</li>
             <li>Datos contractuales: referencia, fechas de entrada y salida</li>
@@ -158,8 +158,8 @@ export default function OnboardingPage() {
             <li>Datos del alojamiento o propiedad que pone en el sistema</li>
           </ul>
 
-          <h3 className="text-lg font-semibold mb-4">4. Obligaciones del Encargado (Delfín Check-in)</h3>
-          <ul className="list-disc list-inside mb-4 space-y-1">
+          <h3 className="text-lg font-semibold mb-4 text-gray-900">4. Obligaciones del Encargado (Delfín Check-in)</h3>
+          <ul className="list-disc list-inside mb-4 space-y-1 text-gray-800">
             <li>Tratamiento por instrucciones: Tratar los datos solo siguiendo las instrucciones documentadas del Responsable</li>
             <li>Confidencialidad: Garantizar que el personal autorizado mantenga confidencialidad permanente</li>
             <li>Seguridad técnica: Utilizar túneles SSL/TLS y autenticación segura</li>
@@ -167,16 +167,16 @@ export default function OnboardingPage() {
             <li>Notificación de brechas: Informar al Responsable sin demora ante cualquier violación</li>
           </ul>
 
-          <h3 className="text-lg font-semibold mb-4">5. Obligaciones del Responsable (propietario/gestor)</h3>
-          <ul className="list-disc list-inside mb-4 space-y-1">
+          <h3 className="text-lg font-semibold mb-4 text-gray-900">5. Obligaciones del Responsable (propietario/gestor)</h3>
+          <ul className="list-disc list-inside mb-4 space-y-1 text-gray-800">
             <li>Base jurídica: Garantizar que el tratamiento se realiza bajo obligación legal (art. 6.1.c RGPD)</li>
             <li>Veracidad de los datos: Asegurar que los datos comunicados son exactos y completos</li>
             <li>Custodia de credenciales: Mantener bajo su responsabilidad las credenciales de acceso al SES-Hospedajes</li>
             <li>Información al viajero: Garantizar que los huéspedes son informados mediante la Parte de Viajero</li>
           </ul>
 
-          <h3 className="text-lg font-semibold mb-4">6. Medidas de seguridad aplicadas por Delfín Check-in</h3>
-          <ul className="list-disc list-inside mb-4 space-y-1">
+          <h3 className="text-lg font-semibold mb-4 text-gray-900">6. Medidas de seguridad aplicadas por Delfín Check-in</h3>
+          <ul className="list-disc list-inside mb-4 space-y-1 text-gray-800">
             <li>Transmisión cifrada (HTTPS TLS 1.2+)</li>
             <li>Cifrado de datos en reposo y backups seguros</li>
             <li>Control de accesos y autenticación multifactor</li>
@@ -184,13 +184,13 @@ export default function OnboardingPage() {
             <li>Segmentación por cliente (multi-tenant)</li>
           </ul>
 
-          <h3 className="text-lg font-semibold mb-4">7. Duración</h3>
-          <p className="mb-4">
+          <h3 className="text-lg font-semibold mb-4 text-gray-900">7. Duración</h3>
+          <p className="mb-4 text-gray-800">
             Este contrato entra en vigor desde el momento en que el Responsable activa su cuenta en Delfín Check-in y permanecerá vigente mientras utilice el servicio.
           </p>
 
-          <h3 className="text-lg font-semibold mb-4">8. Aceptación</h3>
-          <p className="mb-4">
+          <h3 className="text-lg font-semibold mb-4 text-gray-900">8. Aceptación</h3>
+          <p className="mb-4 text-gray-800">
             Mediante la activación y uso inicial del sistema, el Responsable declara haber leído y aceptar este Contrato de Encargado del Tratamiento, que pasa a formar parte integrante de las condiciones de uso de Delfín Check-in.
           </p>
         </div>
