@@ -5,7 +5,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "npm run prepare && next build",
     "start": "next start",
     "lint": "next lint",
     "lint:fix": "next lint --fix",
@@ -16,7 +16,7 @@
     "test:watch": "echo 'Test watch mode will be implemented soon'",
     "analyze": "ANALYZE=true next build",
     "clean": "rm -rf .next out dist",
-    "prepare": "husky install || echo 'Husky not installed yet'",
+    "prepare": "echo 'Skipping husky install in production'",
     "pre-commit": "lint-staged"
   },
   "lint-staged": {
