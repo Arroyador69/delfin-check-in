@@ -27,7 +27,7 @@ export async function onboardingMiddleware(request: NextRequest) {
     '/api/auth',
     '/api/onboarding',
     '/onboarding',
-    '/login',
+    '/admin-login',
     '/register',
     '/_next',
     '/favicon.ico'
@@ -49,7 +49,7 @@ export async function onboardingMiddleware(request: NextRequest) {
 
   if (!tenantId) {
     // Si no hay tenant_id, redirigir al login
-    return NextResponse.redirect(new URL('/login', request.url));
+    return NextResponse.redirect(new URL('/admin-login', request.url));
   }
 
   // Verificar estado del onboarding
