@@ -58,16 +58,20 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  console.log('🔍 Token encontrado, verificando onboarding...');
+  console.log('🔍 Token encontrado, permitiendo acceso...');
   
-  // Verificar estado del onboarding
-  try {
-    return await onboardingMiddleware(req);
-  } catch (error) {
-    console.error('Error en middleware de onboarding:', error);
-    // En caso de error, permitir acceso para evitar bloqueos
-    return NextResponse.next();
+  // Verificar estado del onboarding solo si no es la página principal
+  if (url.pathname !== '/') {
+    try {
+      return await onboardingMiddleware(req);
+    } catch (error) {
+      console.error('Error en middleware de onboarding:', error);
+      // En caso de error, permitir acceso para evitar bloqueos
+      return NextResponse.next();
+    }
   }
+
+  return NextResponse.next();
 }
 
 export const config = {
