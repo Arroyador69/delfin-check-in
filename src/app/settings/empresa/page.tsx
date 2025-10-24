@@ -168,33 +168,37 @@ export default function EmpresaConfigPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center space-x-3">
-        <Building2 className="w-8 h-8 text-blue-600" />
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Datos de la Empresa</h1>
-          <p className="text-gray-600">Configura los datos de tu empresa para generar facturas</p>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-6">
+      <div className="max-w-6xl mx-auto space-y-6">
+        <div className="text-center">
+          <h1 className="text-4xl font-bold mb-4">
+            <span className="text-5xl mr-3" style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>🏢</span>
+            <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Datos de la Empresa</span>
+          </h1>
+          <p className="text-gray-600 text-lg">Configura los datos de tu empresa para generar facturas</p>
         </div>
-      </div>
 
       {message && (
-        <div className={`p-4 rounded-lg flex items-center space-x-2 ${
+        <div className={`p-4 rounded-xl flex items-center space-x-2 shadow-lg animate-fade-in ${
           message.type === 'success' 
-            ? 'bg-green-50 text-green-800 border border-green-200' 
-            : 'bg-red-50 text-red-800 border border-red-200'
+            ? 'bg-gradient-to-r from-green-50 to-emerald-50 text-green-800 border border-green-200' 
+            : 'bg-gradient-to-r from-red-50 to-pink-50 text-red-800 border border-red-200'
         }`}>
-          <AlertCircle className="w-5 h-5" />
+          <AlertCircle className={`w-5 h-5 ${message.type === 'success' ? 'text-green-600' : 'text-red-600'}`} />
           <span>{message.text}</span>
         </div>
       )}
 
-      <Card className="p-6">
-        <div className="space-y-6">
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Información Básica</h2>
+      <Card className="p-8 bg-white shadow-xl rounded-xl border border-blue-200">
+        <div className="space-y-8">
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-200 shadow-sm">
+            <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+              <span className="text-2xl mr-3" style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>📋</span>
+              Información Básica
+            </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="nombre_empresa">Nombre de la Empresa *</Label>
+                <Label htmlFor="nombre_empresa" className="text-gray-700 font-semibold text-base mb-2 block">Nombre de la Empresa *</Label>
                 <Input
                   id="nombre_empresa"
                   value={config.nombre_empresa}
@@ -206,7 +210,7 @@ export default function EmpresaConfigPage() {
                 />
               </div>
               <div>
-                <Label htmlFor="nif_empresa">NIF/CIF (DNI, NIE, CIF) *</Label>
+                <Label htmlFor="nif_empresa" className="text-gray-700 font-semibold text-base mb-2 block">NIF/CIF (DNI, NIE, CIF) *</Label>
                 <Input
                   id="nif_empresa"
                   value={config.nif_empresa}
@@ -220,11 +224,14 @@ export default function EmpresaConfigPage() {
             </div>
           </div>
 
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Dirección</h2>
+          <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-6 rounded-xl border border-purple-200 shadow-sm">
+            <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+              <span className="text-2xl mr-3" style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>📍</span>
+              Dirección
+            </h2>
             <div className="space-y-4">
               <div>
-                <Label htmlFor="direccion_empresa">Dirección *</Label>
+                <Label htmlFor="direccion_empresa" className="text-gray-700 font-semibold text-base mb-2 block">Dirección *</Label>
                 <Input
                   id="direccion_empresa"
                   value={config.direccion_empresa}
@@ -237,7 +244,7 @@ export default function EmpresaConfigPage() {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <Label htmlFor="codigo_postal">Código Postal</Label>
+                  <Label htmlFor="codigo_postal" className="text-gray-700 font-semibold text-base mb-2 block">Código Postal</Label>
                   <Input
                     id="codigo_postal"
                     value={config.codigo_postal}
@@ -248,7 +255,7 @@ export default function EmpresaConfigPage() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="ciudad">Ciudad</Label>
+                  <Label htmlFor="ciudad" className="text-gray-700 font-semibold text-base mb-2 block">Ciudad</Label>
                   <Input
                     id="ciudad"
                     value={config.ciudad}
@@ -259,7 +266,7 @@ export default function EmpresaConfigPage() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="provincia">Provincia</Label>
+                  <Label htmlFor="provincia" className="text-gray-700 font-semibold text-base mb-2 block">Provincia</Label>
                   <Input
                     id="provincia"
                     value={config.provincia}
@@ -271,7 +278,7 @@ export default function EmpresaConfigPage() {
                 </div>
               </div>
               <div>
-                <Label htmlFor="pais">País</Label>
+                <Label htmlFor="pais" className="text-gray-700 font-semibold text-base mb-2 block">País</Label>
                 <Input
                   id="pais"
                   value={config.pais}
@@ -284,11 +291,14 @@ export default function EmpresaConfigPage() {
             </div>
           </div>
 
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Contacto</h2>
+          <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-6 rounded-xl border border-green-200 shadow-sm">
+            <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+              <span className="text-2xl mr-3" style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>📞</span>
+              Contacto
+            </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="telefono">Teléfono</Label>
+                <Label htmlFor="telefono" className="text-gray-700 font-semibold text-base mb-2 block">Teléfono</Label>
                   <Input
                     id="telefono"
                     value={config.telefono}
@@ -299,7 +309,7 @@ export default function EmpresaConfigPage() {
                   />
               </div>
               <div>
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email" className="text-gray-700 font-semibold text-base mb-2 block">Email</Label>
                   <Input
                     id="email"
                     type="email"
@@ -312,7 +322,7 @@ export default function EmpresaConfigPage() {
               </div>
             </div>
             <div className="mt-4">
-              <Label htmlFor="web">Sitio Web</Label>
+              <Label htmlFor="web" className="text-gray-700 font-semibold text-base mb-2 block">Sitio Web</Label>
               <Input
                 id="web"
                 value={config.web}
@@ -323,11 +333,14 @@ export default function EmpresaConfigPage() {
             </div>
           </div>
 
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Logo</h2>
+          <div className="bg-gradient-to-r from-orange-50 to-yellow-50 p-6 rounded-xl border border-orange-200 shadow-sm">
+            <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+              <span className="text-2xl mr-3" style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>🎨</span>
+              Logo
+            </h2>
             <div className="space-y-4">
               <div>
-                <Label htmlFor="logo_file">Subir Logo</Label>
+                <Label htmlFor="logo_file" className="text-gray-700 font-semibold text-base mb-2 block">Subir Logo</Label>
                 <Input
                   id="logo_file"
                   type="file"
@@ -343,7 +356,7 @@ export default function EmpresaConfigPage() {
               
               {logoPreview && (
                 <div>
-                  <Label>Vista previa del logo:</Label>
+                  <Label className="text-gray-700 font-semibold text-base mb-2 block">Vista previa del logo:</Label>
                   <div className="mt-2 p-4 border rounded-lg bg-gray-50">
                     <img 
                       src={logoPreview} 
@@ -355,7 +368,7 @@ export default function EmpresaConfigPage() {
               )}
               
               <div>
-                <Label htmlFor="logo_url">O URL del Logo (alternativa)</Label>
+                <Label htmlFor="logo_url" className="text-gray-700 font-semibold text-base mb-2 block">O URL del Logo (alternativa)</Label>
                 <Input
                   id="logo_url"
                   value={config.logo_url}
@@ -380,16 +393,16 @@ export default function EmpresaConfigPage() {
             <Button 
               onClick={guardarConfiguracion} 
               disabled={saving || !config.nombre_empresa || !config.nif_empresa || !config.direccion_empresa}
-              className="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 text-base font-medium"
+              className="w-full md:w-auto bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-4 text-lg font-semibold rounded-xl shadow-lg transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
             >
               {saving ? (
                 <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
                   Guardando...
                 </>
               ) : (
                 <>
-                  <Save className="w-4 h-4 mr-2" />
+                  <Save className="w-5 h-5 mr-2" />
                   Guardar Configuración
                 </>
               )}
@@ -397,6 +410,7 @@ export default function EmpresaConfigPage() {
           </div>
         </div>
       </Card>
+      </div>
     </div>
   );
 }
