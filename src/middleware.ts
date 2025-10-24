@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { onboardingMiddleware } from './middleware/onboarding'
 
 /**
- * 🔒 MIDDLEWARE DE AUTENTICACIÓN Y ONBOARDING
+ * 🔒 MIDDLEWARE DE AUTENTICACIÓN SIMPLIFICADO Y ROBUSTO
  */
 export async function middleware(req: NextRequest) {
   const url = req.nextUrl
@@ -11,7 +10,7 @@ export async function middleware(req: NextRequest) {
   // Preflight CORS
   if (req.method === 'OPTIONS') return NextResponse.next();
 
-  // Archivos estáticos
+  // Archivos estáticos - siempre permitir
   if (
     url.pathname.startsWith('/_next') ||
     url.pathname.startsWith('/static') ||
@@ -26,7 +25,7 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // Rutas públicas que no necesitan tenant ID
+  // Rutas completamente públicas - no requieren autenticación
   const isPublicRoute = (
     url.pathname === '/admin-login' ||
     url.pathname === '/forgot-password' ||
@@ -34,11 +33,15 @@ export async function middleware(req: NextRequest) {
     url.pathname.startsWith('/api/test-') ||
     url.pathname.startsWith('/api/debug-') ||
     url.pathname.startsWith('/api/check-') ||
-    url.pathname.startsWith('/api/onboarding/')
+    url.pathname.startsWith('/api/onboarding/') ||
+    url.pathname.startsWith('/api/admin/login')
   );
-  if (isPublicRoute) return NextResponse.next();
+  
+  if (isPublicRoute) {
+    return NextResponse.next();
+  }
 
-  // Para rutas de API, inyectar tenant ID por defecto si no hay autenticación
+  // Para rutas de API, inyectar tenant ID por defecto
   if (url.pathname.startsWith('/api/')) {
     const requestHeaders = new Headers(req.headers);
     
@@ -50,27 +53,22 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next({ request: { headers: requestHeaders } });
   }
 
-  // Autenticación requerida para rutas no-API
+  // Para rutas de páginas, verificar autenticación de manera más inteligente
   const authToken = req.cookies.get('auth_token')?.value;
-  if (!authToken) {
-    console.log('🔒 No hay token de autenticación, redirigiendo al login');
-    const loginUrl = new URL('/admin-login', req.url);
-    return NextResponse.redirect(loginUrl);
-  }
-
-  console.log('🔍 Token encontrado, permitiendo acceso...');
   
-  // Verificar estado del onboarding solo si no es la página principal
-  if (url.pathname !== '/') {
-    try {
-      return await onboardingMiddleware(req);
-    } catch (error) {
-      console.error('Error en middleware de onboarding:', error);
-      // En caso de error, permitir acceso para evitar bloqueos
-      return NextResponse.next();
+  // Si no hay token, redirigir al login SOLO si no está ya en una ruta pública
+  if (!authToken) {
+    // Solo redirigir si no está en una ruta pública
+    if (!url.pathname.startsWith('/admin-login') && 
+        !url.pathname.startsWith('/forgot-password')) {
+      console.log('🔒 No hay token de autenticación, redirigiendo al login');
+      const loginUrl = new URL('/admin-login', req.url);
+      return NextResponse.redirect(loginUrl);
     }
   }
 
+  // Si hay token, permitir acceso a todas las páginas
+  console.log('🔍 Token encontrado, permitiendo acceso...');
   return NextResponse.next();
 }
 
@@ -79,8 +77,3 @@ export const config = {
     '/((?!_next/static|_next/image|favicon.ico).*)',
   ],
 }
-
-
-
-
-
