@@ -137,7 +137,7 @@ export default function ForgotPasswordPage() {
       
       // Redirigir al login después de 2 segundos
       setTimeout(() => {
-        window.location.href = '/admin/login';
+        window.location.href = '/admin-login';
       }, 2000);
 
     } catch (error) {
@@ -180,7 +180,7 @@ export default function ForgotPasswordPage() {
           {/* Botón de volver */}
           <div className="mb-6">
             <Link 
-              href="/admin/login" 
+              href="/admin-login" 
               className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 transition-colors duration-200 hover:bg-gray-100 px-3 py-2 rounded-lg"
             >
               <ArrowLeft className="h-4 w-4 mr-1" />
@@ -344,7 +344,7 @@ export default function ForgotPasswordPage() {
 
             <div className="mt-6">
               <Link
-                href="/admin/login"
+                href="/admin-login"
                 className="w-full flex justify-center py-3 px-4 border border-gray-300 rounded-xl shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 hover:shadow-md"
               >
                 Volver al login
