@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { authOptions } from '@/lib/auth-nextauth';
 
 // GET - Obtener configuración MIR
 export async function GET(request: NextRequest) {

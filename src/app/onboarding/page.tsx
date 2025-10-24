@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/lib/auth';
+// import { useAuth } from '@/lib/auth';
 
 interface OnboardingData {
   // Datos del DPA
@@ -29,7 +29,8 @@ interface OnboardingData {
 
 export default function OnboardingPage() {
   const router = useRouter();
-  const { user, tenantId } = useAuth();
+  // const { user, tenantId } = useAuth();
+  const tenantId = '870e589f-d313-4a5a-901f-f25fd4e7240a'; // Temporal para testing
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<OnboardingData>({
