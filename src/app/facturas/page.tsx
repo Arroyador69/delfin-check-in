@@ -227,38 +227,39 @@ export default function FacturasPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center space-x-3">
-        <FileText className="w-8 h-8 text-blue-600" />
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Generador de Facturas</h1>
-          <p className="text-gray-600">Crea y gestiona las facturas de tu alojamiento</p>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-6">
+      <div className="max-w-6xl mx-auto space-y-6">
+        <div className="text-center">
+          <h1 className="text-4xl font-bold mb-4">
+            <span className="text-5xl mr-3" style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>🧾</span>
+            <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Generador de Facturas</span>
+          </h1>
+          <p className="text-gray-600 text-lg">Crea y gestiona las facturas de tu alojamiento</p>
         </div>
-      </div>
 
       {message && (
-        <div className={`p-4 rounded-lg flex items-center space-x-2 ${
+        <div className={`p-4 rounded-xl flex items-center space-x-2 shadow-lg animate-fade-in ${
           message.type === 'success' 
-            ? 'bg-green-50 text-green-800 border border-green-200' 
-            : 'bg-red-50 text-red-800 border border-red-200'
+            ? 'bg-gradient-to-r from-green-50 to-emerald-50 text-green-800 border border-green-200' 
+            : 'bg-gradient-to-r from-red-50 to-pink-50 text-red-800 border border-red-200'
         }`}>
-          <AlertCircle className="w-5 h-5" />
+          <AlertCircle className={`w-5 h-5 ${message.type === 'success' ? 'text-green-600' : 'text-red-600'}`} />
           <span>{message.text}</span>
         </div>
       )}
 
       <Tabs defaultValue="nueva" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2 bg-gray-100 border border-gray-300">
+        <TabsList className="grid w-full grid-cols-2 bg-gradient-to-r from-blue-100 to-purple-100 border border-blue-200 rounded-xl shadow-lg">
           <TabsTrigger 
             value="nueva" 
-            className="flex items-center space-x-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white text-gray-700 font-medium"
+            className="flex items-center space-x-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-purple-600 data-[state=active]:text-white text-gray-700 font-medium rounded-xl transition-all duration-200 hover:shadow-md"
           >
             <Plus className="w-4 h-4" />
             <span>Nueva Factura</span>
           </TabsTrigger>
           <TabsTrigger 
             value="historial" 
-            className="flex items-center space-x-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white text-gray-700 font-medium"
+            className="flex items-center space-x-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-purple-600 data-[state=active]:text-white text-gray-700 font-medium rounded-xl transition-all duration-200 hover:shadow-md"
           >
             <FileText className="w-4 h-4" />
             <span>Historial ({facturas.length})</span>
@@ -267,29 +268,34 @@ export default function FacturasPage() {
 
         <TabsContent value="nueva" className="space-y-6">
           {!empresaConfig ? (
-            <Card className="p-6">
+            <Card className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 shadow-xl rounded-xl">
               <div className="text-center">
-                <Building2 className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <div className="bg-gradient-to-r from-blue-100 to-purple-100 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                  <Building2 className="w-8 h-8 text-blue-600" />
+                </div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">
                   Configuración Requerida
                 </h3>
                 <p className="text-gray-600 mb-4">
                   Necesitas configurar los datos de tu empresa antes de generar facturas.
                 </p>
-                <Button onClick={() => window.location.href = '/settings/empresa'}>
+                <Button 
+                  onClick={() => window.location.href = '/settings/empresa'}
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-3 px-6 rounded-xl shadow-lg transition-all duration-200 transform hover:scale-105"
+                >
                   Ir a Configuración
                 </Button>
               </div>
             </Card>
           ) : (
-            <Card className="p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-6">Nueva Factura</h2>
+            <Card className="p-6 bg-white shadow-xl rounded-xl border border-blue-200">
+              <h2 className="text-xl font-semibold text-gray-900 mb-6 text-center bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Nueva Factura</h2>
               
               <div className="space-y-6">
                 {/* Datos del Cliente */}
-                <div>
-                  <h3 className="text-md font-semibold text-gray-800 mb-4 flex items-center">
-                    <User className="w-4 h-4 mr-2 text-blue-600" />
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-200 shadow-sm">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                    <User className="w-5 h-5 mr-2 text-blue-600" />
                     Datos del Cliente
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -366,9 +372,9 @@ export default function FacturasPage() {
                 </div>
 
                 {/* Concepto y Precio */}
-                <div>
-                  <h3 className="text-md font-semibold text-gray-800 mb-4 flex items-center">
-                    <Euro className="w-4 h-4 mr-2 text-blue-600" />
+                <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-6 rounded-xl border border-purple-200 shadow-sm">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                    <Euro className="w-5 h-5 mr-2 text-purple-600" />
                     Concepto y Precio
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -442,8 +448,8 @@ export default function FacturasPage() {
                 </div>
 
                 {/* Resumen */}
-                <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                  <h4 className="font-semibold text-gray-800 mb-3">Resumen de la Factura</h4>
+                <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-6 rounded-xl border border-green-200 shadow-lg">
+                  <h4 className="font-semibold text-gray-800 mb-4 text-center text-lg">Resumen de la Factura</h4>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
                       <span className="text-gray-700">Precio base:</span>
@@ -463,16 +469,16 @@ export default function FacturasPage() {
                 <Button 
                   onClick={crearFactura} 
                   disabled={saving || !nuevaFactura.cliente_nombre || !nuevaFactura.concepto || nuevaFactura.precio_base <= 0}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6"
+                  className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-4 px-6 rounded-xl shadow-lg transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                 >
                   {saving ? (
                     <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
                       Creando factura...
                     </>
                   ) : (
                     <>
-                      <Plus className="w-4 h-4 mr-2" />
+                      <Plus className="w-5 h-5 mr-2" />
                       Crear Factura
                     </>
                   )}
@@ -483,19 +489,21 @@ export default function FacturasPage() {
         </TabsContent>
 
         <TabsContent value="historial" className="space-y-6">
-          <Card className="p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-6">Historial de Facturas</h2>
+          <Card className="p-6 bg-white shadow-xl rounded-xl border border-blue-200">
+            <h2 className="text-xl font-semibold text-gray-900 mb-6 text-center bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Historial de Facturas</h2>
             
             {facturas.length === 0 ? (
-              <div className="text-center py-8">
-                <FileText className="w-12 h-12 text-gray-500 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-800 mb-2">No hay facturas</h3>
-                <p className="text-gray-700">Crea tu primera factura usando la pestaña "Nueva Factura"</p>
+              <div className="text-center py-12">
+                <div className="bg-gradient-to-r from-blue-100 to-purple-100 p-6 rounded-full w-20 h-20 mx-auto mb-6 flex items-center justify-center">
+                  <FileText className="w-10 h-10 text-blue-600" />
+                </div>
+                <h3 className="text-xl font-semibold text-gray-800 mb-2">No hay facturas</h3>
+                <p className="text-gray-600 text-lg">Crea tu primera factura usando la pestaña "Nueva Factura"</p>
               </div>
             ) : (
               <div className="space-y-4">
                 {facturas.map((factura) => (
-                  <div key={factura.id} className="border rounded-lg p-4 hover:bg-gray-50">
+                  <div key={factura.id} className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6 hover:shadow-lg transition-all duration-200 transform hover:scale-105">
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
                         <div className="flex items-center space-x-4">
@@ -528,7 +536,7 @@ export default function FacturasPage() {
                           size="sm"
                           variant="outline"
                           onClick={() => descargarPdf(factura)}
-                          className="bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100 hover:border-blue-300"
+                          className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 text-blue-700 hover:from-blue-100 hover:to-indigo-100 hover:border-blue-300 rounded-xl shadow-sm transition-all duration-200 hover:shadow-md"
                         >
                           <Download className="w-4 h-4 mr-1" />
                           PDF
@@ -537,7 +545,7 @@ export default function FacturasPage() {
                           size="sm"
                           variant="outline"
                           onClick={() => eliminarFactura(factura.id)}
-                          className="bg-red-50 border-red-200 text-red-700 hover:bg-red-100 hover:border-red-300"
+                          className="bg-gradient-to-r from-red-50 to-pink-50 border-red-200 text-red-700 hover:from-red-100 hover:to-pink-100 hover:border-red-300 rounded-xl shadow-sm transition-all duration-200 hover:shadow-md"
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
@@ -550,6 +558,7 @@ export default function FacturasPage() {
           </Card>
         </TabsContent>
       </Tabs>
+      </div>
     </div>
   );
 }
