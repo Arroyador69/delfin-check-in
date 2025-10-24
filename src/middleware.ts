@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { onboardingMiddleware } from './middleware/onboarding'
 
 /**
- * 🔒 MIDDLEWARE DE AUTENTICACIÓN (restaurado)
+ * 🔒 MIDDLEWARE DE AUTENTICACIÓN Y ONBOARDING
  */
-export function middleware(req: NextRequest) {
+export async function middleware(req: NextRequest) {
   const url = req.nextUrl
   
   // Preflight CORS
@@ -32,7 +33,8 @@ export function middleware(req: NextRequest) {
     url.pathname.startsWith('/api/public/') ||
     url.pathname.startsWith('/api/test-') ||
     url.pathname.startsWith('/api/debug-') ||
-    url.pathname.startsWith('/api/check-')
+    url.pathname.startsWith('/api/check-') ||
+    url.pathname.startsWith('/api/onboarding/')
   );
   if (isPublicRoute) return NextResponse.next();
 
@@ -56,15 +58,16 @@ export function middleware(req: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  console.log('🔍 Token encontrado, permitiendo acceso...');
+  console.log('🔍 Token encontrado, verificando onboarding...');
   
-  // Para evitar problemas con Edge Runtime, solo verificamos que existe el token
-  // La verificación real se hará en las rutas de API que sí soportan Node.js crypto
-  
-  const requestHeaders = new Headers(req.headers);
-  requestHeaders.set('x-tenant-id', '870e589f-d313-4a5a-901f-f25fd4e7240a');
-
-  return NextResponse.next({ request: { headers: requestHeaders } });
+  // Verificar estado del onboarding
+  try {
+    return await onboardingMiddleware(req);
+  } catch (error) {
+    console.error('Error en middleware de onboarding:', error);
+    // En caso de error, permitir acceso para evitar bloqueos
+    return NextResponse.next();
+  }
 }
 
 export const config = {

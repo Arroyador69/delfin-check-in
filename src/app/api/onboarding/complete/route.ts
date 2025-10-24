@@ -1,119 +1,214 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { sql } from '@/lib/db';
-import bcrypt from 'bcryptjs';
+import { sql } from '@vercel/postgres';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
-/**
- * API para completar el proceso de onboarding
- * Actualiza la configuración del tenant y marca el email como verificado
- */
-export async function POST(req: NextRequest) {
+interface OnboardingData {
+  dpaAceptado: boolean;
+  nombreEmpresa: string;
+  nifEmpresa: string;
+  direccionEmpresa: string;
+  codigoPostal: string;
+  ciudad: string;
+  provincia: string;
+  pais: string;
+  telefono: string;
+  email: string;
+  web: string;
+  usuarioMir: string;
+  contraseñaMir: string;
+  codigoArrendador: string;
+  codigoEstablecimiento: string;
+}
+
+export async function POST(request: NextRequest) {
   try {
-    const body = await req.json();
-    const { 
-      token, 
-      email, 
-      propertyName,
-      timezone,
-      language,
-      currency,
-      contactEmail,
-      contactPhone,
-      address,
-      city,
-      postalCode,
-      country
-    } = body;
+    const session = await getServerSession(authOptions);
+    
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
 
-    if (!token || !email) {
+    const tenantId = session.user.tenantId;
+    const data: OnboardingData = await request.json();
+
+    // Validar datos requeridos
+    if (!data.dpaAceptado || !data.nombreEmpresa || !data.nifEmpresa || 
+        !data.usuarioMir || !data.contraseñaMir || !data.codigoArrendador || 
+        !data.codigoEstablecimiento) {
       return NextResponse.json(
-        { error: 'Token y email son requeridos' },
+        { error: 'Faltan datos requeridos' },
         { status: 400 }
       );
     }
 
-    // Verificar que el token es válido
-    const verifyResult = await sql`
-      SELECT 
-        t.*,
-        tu.id as user_id,
-        tu.reset_token,
-        tu.reset_token_expires,
-        tu.email_verified
-      FROM tenants t
-      JOIN tenant_users tu ON t.id = tu.tenant_id
-      WHERE t.email = ${email} 
-        AND tu.reset_token = ${token}
-        AND tu.reset_token_expires > NOW()
-        AND tu.email_verified = false
-    `;
+    // Obtener IP del cliente
+    const ip = request.headers.get('x-forwarded-for') || 
+               request.headers.get('x-real-ip') || 
+               'unknown';
+    
+    const userAgent = request.headers.get('user-agent') || 'unknown';
 
-    if (verifyResult.rows.length === 0) {
-      return NextResponse.json(
-        { error: 'Token inválido, expirado o ya utilizado' },
-        { status: 404 }
-      );
+    // Iniciar transacción
+    await sql`BEGIN`;
+
+    try {
+      // 1. Insertar/actualizar aceptación del DPA
+      await sql`
+        INSERT INTO dpa_aceptaciones (
+          tenant_id,
+          version_dpa,
+          aceptado,
+          fecha_aceptacion,
+          ip_aceptacion,
+          user_agent,
+          datos_empresa_completados,
+          configuracion_mir_completada,
+          onboarding_completo
+        ) VALUES (
+          ${tenantId},
+          '1.0',
+          ${data.dpaAceptado},
+          NOW(),
+          ${ip},
+          ${userAgent},
+          true,
+          true,
+          true
+        )
+        ON CONFLICT (tenant_id, version_dpa) 
+        DO UPDATE SET
+          aceptado = ${data.dpaAceptado},
+          fecha_aceptacion = NOW(),
+          ip_aceptacion = ${ip},
+          user_agent = ${userAgent},
+          datos_empresa_completados = true,
+          configuracion_mir_completada = true,
+          onboarding_completo = true,
+          updated_at = NOW()
+      `;
+
+      // 2. Insertar/actualizar datos de empresa
+      await sql`
+        INSERT INTO empresa_config (
+          tenant_id,
+          nombre_empresa,
+          nif_empresa,
+          direccion_empresa,
+          codigo_postal,
+          ciudad,
+          provincia,
+          pais,
+          telefono,
+          email,
+          web
+        ) VALUES (
+          ${tenantId},
+          ${data.nombreEmpresa},
+          ${data.nifEmpresa},
+          ${data.direccionEmpresa},
+          ${data.codigoPostal},
+          ${data.ciudad},
+          ${data.provincia},
+          ${data.pais},
+          ${data.telefono},
+          ${data.email},
+          ${data.web || ''}
+        )
+        ON CONFLICT (tenant_id) 
+        DO UPDATE SET
+          nombre_empresa = ${data.nombreEmpresa},
+          nif_empresa = ${data.nifEmpresa},
+          direccion_empresa = ${data.direccionEmpresa},
+          codigo_postal = ${data.codigoPostal},
+          ciudad = ${data.ciudad},
+          provincia = ${data.provincia},
+          pais = ${data.pais},
+          telefono = ${data.telefono},
+          email = ${data.email},
+          web = ${data.web || ''},
+          updated_at = NOW()
+      `;
+
+      // 3. Insertar/actualizar configuración MIR
+      await sql`
+        INSERT INTO mir_configuraciones (
+          propietario_id,
+          usuario,
+          contraseña,
+          codigo_arrendador,
+          codigo_establecimiento,
+          base_url,
+          aplicacion,
+          simulacion,
+          activo
+        ) VALUES (
+          ${tenantId},
+          ${data.usuarioMir},
+          ${data.contraseñaMir},
+          ${data.codigoArrendador},
+          ${data.codigoEstablecimiento},
+          'https://hospedajes.ses.mir.es/hospedajes-web/ws/v1/comunicacion',
+          'Delfin_Check_in',
+          false,
+          true
+        )
+        ON CONFLICT (propietario_id) 
+        DO UPDATE SET
+          usuario = ${data.usuarioMir},
+          contraseña = ${data.contraseñaMir},
+          codigo_arrendador = ${data.codigoArrendador},
+          codigo_establecimiento = ${data.codigoEstablecimiento},
+          updated_at = NOW()
+      `;
+
+      // 4. Crear/actualizar tenant si no existe
+      await sql`
+        INSERT INTO tenants (
+          id,
+          name,
+          email,
+          phone,
+          address,
+          city,
+          country,
+          created_at,
+          updated_at
+        ) VALUES (
+          ${tenantId},
+          ${data.nombreEmpresa},
+          ${data.email},
+          ${data.telefono},
+          ${data.direccionEmpresa},
+          ${data.ciudad},
+          ${data.pais},
+          NOW(),
+          NOW()
+        )
+        ON CONFLICT (id) 
+        DO UPDATE SET
+          name = ${data.nombreEmpresa},
+          email = ${data.email},
+          phone = ${data.telefono},
+          address = ${data.direccionEmpresa},
+          city = ${data.ciudad},
+          country = ${data.pais},
+          updated_at = NOW()
+      `;
+
+      // Confirmar transacción
+      await sql`COMMIT`;
+
+      return NextResponse.json({
+        success: true,
+        message: 'Onboarding completado exitosamente'
+      });
+
+    } catch (error) {
+      // Revertir transacción en caso de error
+      await sql`ROLLBACK`;
+      throw error;
     }
-
-    const tenant = verifyResult.rows[0];
-
-    // Actualizar la configuración del tenant
-    const updatedConfig = {
-      propertyName: propertyName || tenant.config?.propertyName || '',
-      timezone: timezone || tenant.config?.timezone || 'Europe/Madrid',
-      language: language || tenant.config?.language || 'es',
-      currency: currency || tenant.config?.currency || 'EUR',
-      contactEmail: contactEmail || tenant.email,
-      contactPhone: contactPhone || '',
-      address: address || '',
-      city: city || '',
-      postalCode: postalCode || '',
-      country: country || 'España'
-    };
-
-    // Actualizar el tenant con la nueva configuración
-    await sql`
-      UPDATE tenants 
-      SET 
-        name = ${propertyName || tenant.name},
-        config = ${JSON.stringify(updatedConfig)},
-        status = 'active',
-        updated_at = NOW()
-      WHERE id = ${tenant.id}
-    `;
-
-    // Generar una nueva contraseña temporal
-    const tempPassword = Math.random().toString(36).slice(-12) + Math.random().toString(36).slice(-12);
-    const passwordHash = await bcrypt.hash(tempPassword, 12);
-
-    // Actualizar el usuario: marcar email como verificado y actualizar contraseña
-    await sql`
-      UPDATE tenant_users 
-      SET 
-        email_verified = true,
-        password_hash = ${passwordHash},
-        reset_token = NULL,
-        reset_token_expires = NULL,
-        updated_at = NOW()
-      WHERE id = ${tenant.user_id}
-    `;
-
-    // TODO: Enviar email con las credenciales temporales
-    console.log('📧 Credenciales temporales para', email, ':', tempPassword);
-
-    // Log de auditoría
-    console.log(`✅ Onboarding completado para tenant ${tenant.id} (${propertyName})`);
-
-    return NextResponse.json({
-      success: true,
-      message: 'Onboarding completado correctamente',
-      tenant: {
-        id: tenant.id,
-        name: propertyName || tenant.name,
-        email: tenant.email,
-        plan_id: tenant.plan_id,
-        status: 'active'
-      }
-    });
 
   } catch (error) {
     console.error('Error completando onboarding:', error);
