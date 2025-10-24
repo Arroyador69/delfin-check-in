@@ -464,10 +464,10 @@ export default function ReservationsPage() {
       {/* Encabezado compacto con el título visible bajo la barra fija */}
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
+          <div className="flex justify-between items-center py-3 sm:py-4">
             <div className="flex items-center">
-              <span className="text-3xl mr-2">📅</span>
-              <h1 className="text-2xl font-bold text-gray-900">Reservas</h1>
+              <span className="text-2xl sm:text-3xl mr-2">📅</span>
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Reservas</h1>
             </div>
           </div>
         </div>
@@ -476,22 +476,22 @@ export default function ReservationsPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
 
         {/* Barra de búsqueda */}
-        <div className="bg-white rounded-lg shadow mb-6 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">🔍 Buscar Reservas</h3>
+        <div className="bg-white rounded-lg shadow mb-4 sm:mb-6 p-4 sm:p-6">
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900">🔍 Buscar Reservas</h3>
             {isSearching && (
               <button
                 onClick={clearSearch}
-                className="text-sm text-blue-600 hover:text-blue-800 underline"
+                className="text-xs sm:text-sm text-blue-600 hover:text-blue-800 underline"
               >
                 Limpiar búsqueda
               </button>
             )}
           </div>
           
-          <div className="flex gap-4 items-end">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 sm:items-end">
             <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
                 Buscar por nombre, teléfono, email, habitación, booking, airbnb...
               </label>
               <input
@@ -500,14 +500,14 @@ export default function ReservationsPage() {
                 onChange={(e) => setSearchTerm(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
                 placeholder="Ej: Juan, +34612345678, habitación 1, booking123..."
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 sm:px-4 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
             
             <button
               onClick={handleSearch}
               disabled={!searchTerm.trim()}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center gap-2"
+              className="px-4 sm:px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center gap-2 text-sm sm:text-base"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
