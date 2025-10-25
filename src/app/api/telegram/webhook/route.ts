@@ -29,15 +29,17 @@ async function getTenantByChatId(chatId: string) {
   try {
     const result = await sql`
       SELECT 
-        id,
-        name,
-        email,
-        telegram_chat_id,
-        telegram_enabled,
-        ai_tokens_used,
-        ai_token_limit
-      FROM tenants
-      WHERE telegram_chat_id = ${chatId}
+        t.id,
+        t.name,
+        t.email,
+        t.telegram_chat_id,
+        t.telegram_enabled,
+        t.ai_tokens_used,
+        t.ai_token_limit,
+        tu.auth_token
+      FROM tenants t
+      LEFT JOIN tenant_users tu ON t.id = tu.tenant_id AND tu.role = 'owner'
+      WHERE t.telegram_chat_id = ${chatId}
       LIMIT 1
     `;
     return result.rows[0] || null;
@@ -169,18 +171,24 @@ export async function POST(request: NextRequest) {
       
       // Usar nuestro sistema estructurado
       try {
-        // Generar token temporal para el tenant
-        const tempToken = generateTokenPair({
-          userId: tenant.id, // Usar tenant.id como userId temporal
-          tenantId: tenant.id,
-          email: tenant.email,
-          role: 'owner'
-        });
+        // Usar token existente o generar uno temporal si no existe
+        let authToken = tenant.auth_token;
+        
+        if (!authToken) {
+          console.log(`⚠️ No hay token para tenant ${tenant.id}, generando temporal...`);
+          const tempToken = generateTokenPair({
+            userId: tenant.id,
+            tenantId: tenant.id,
+            email: tenant.email,
+            role: 'owner'
+          });
+          authToken = tempToken.accessToken;
+        }
         
         const baseUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000';
         const aiResponse = await fetch(`${baseUrl}/api/ai-reservas?fecha=${fecha}`, {
           headers: {
-            'Cookie': `auth_token=${tempToken.accessToken}`
+            'Cookie': `auth_token=${authToken}`
           }
         });
 
