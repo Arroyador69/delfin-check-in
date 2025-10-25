@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
-import { generateTokenPair } from '@/lib/auth';
+import OpenAI from 'openai';
+import { TELEGRAM_RESERVAS_SYSTEM_PROMPT } from '@/lib/telegram-prompt';
 
 const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN || '';
 const TELEGRAM_API = `https://api.telegram.org/bot${TELEGRAM_TOKEN}`;
@@ -171,38 +172,93 @@ export async function POST(request: NextRequest) {
       
       // Usar nuestro sistema estructurado
       try {
-        // Usar token existente o generar uno temporal si no existe
-        let authToken = tenant.auth_token;
+        // Ya no necesitamos token para llamadas HTTP externas
         
-        if (!authToken) {
-          console.log(`⚠️ No hay token para tenant ${tenant.id}, generando temporal...`);
-          const tempToken = generateTokenPair({
-            userId: tenant.id,
-            tenantId: tenant.id,
-            email: tenant.email,
-            role: 'owner'
-          });
-          authToken = tempToken.accessToken;
-        }
+        // Obtener datos estructurados directamente (evitar llamadas HTTP externas)
+        console.log(`🔍 Obteniendo datos estructurados para fecha ${fecha}...`);
         
-        const baseUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000';
-        const aiResponse = await fetch(`${baseUrl}/api/ai-reservas?fecha=${fecha}`, {
-          headers: {
-            'Cookie': `auth_token=${authToken}`
-          }
+        const alojadosResult = await sql`
+          SELECT 
+            guest_name as nombre, room_id as habitacion, guest_count as personas, 
+            check_in::date as check_in, check_out::date as check_out
+          FROM reservations
+          WHERE tenant_id = ${tenant.id} AND status = 'confirmed'
+            AND ${fecha}::date >= DATE(check_in) AND ${fecha}::date < DATE(check_out)
+          ORDER BY check_in
+        `;
+
+        const lleganResult = await sql`
+          SELECT 
+            guest_name as nombre, room_id as habitacion, guest_count as personas, 
+            check_in::date as check_in, check_out::date as check_out
+          FROM reservations
+          WHERE tenant_id = ${tenant.id} AND status = 'confirmed'
+            AND DATE(check_in) = ${fecha}::date
+          ORDER BY check_in
+        `;
+
+        const salenResult = await sql`
+          SELECT 
+            guest_name as nombre, room_id as habitacion, guest_count as personas, 
+            check_in::date as check_in, check_out::date as check_out
+          FROM reservations
+          WHERE tenant_id = ${tenant.id} AND status = 'confirmed'
+            AND DATE(check_out) = ${fecha}::date
+          ORDER BY check_in
+        `;
+
+        // Mapear resultados
+        const alojados = alojadosResult.rows.map(r => ({
+          nombre: r.nombre,
+          habitacion: r.habitacion,
+          personas: r.personas,
+          check_in: r.check_in,
+          check_out: r.check_out
+        }));
+
+        const llegan = lleganResult.rows.map(r => ({
+          nombre: r.nombre,
+          habitacion: r.habitacion,
+          personas: r.personas,
+          check_in: r.check_in,
+          check_out: r.check_out
+        }));
+
+        const salen = salenResult.rows.map(r => ({
+          nombre: r.nombre,
+          habitacion: r.habitacion,
+          personas: r.personas,
+          check_in: r.check_in,
+          check_out: r.check_out
+        }));
+
+        const datosEstructurados = {
+          fecha_consulta: fecha,
+          alojados,
+          llegan,
+          salen
+        };
+
+        console.log(`📊 Datos obtenidos: ${alojados.length} alojados, ${llegan.length} llegan, ${salen.length} salen`);
+
+        // Usar IA para formatear
+        const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+        
+        const completion = await openai.chat.completions.create({
+          model: "gpt-4o-mini",
+          temperature: 0,
+          max_tokens: 800,
+          messages: [
+            { role: "system", content: TELEGRAM_RESERVAS_SYSTEM_PROMPT },
+            { role: "user", content: JSON.stringify(datosEstructurados, null, 2) }
+          ]
         });
 
-        if (aiResponse.ok) {
-          const aiData = await aiResponse.json();
-          console.log(`✅ Respuesta estructurada obtenida`);
-          
-          await sendTelegramMessage(chatId, aiData.mensaje_formateado);
-          return NextResponse.json({ ok: true, method: 'structured' });
-        } else {
-          console.log(`❌ Error en sistema estructurado: ${aiResponse.status}`);
-          const errorText = await aiResponse.text();
-          console.log(`❌ Error details: ${errorText}`);
-        }
+        const mensajeFormateado = completion.choices[0].message.content;
+        
+        console.log(`✅ Respuesta estructurada generada`);
+        await sendTelegramMessage(chatId, mensajeFormateado);
+        return NextResponse.json({ ok: true, method: 'structured-direct' });
       } catch (error) {
         console.log(`❌ Error en sistema estructurado:`, error);
       }
