@@ -62,3 +62,7 @@ export async function onboardingMiddleware(request: NextRequest) {
 
   return NextResponse.next();
 }
+
+
+
+

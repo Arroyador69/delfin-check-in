@@ -134,3 +134,7 @@ SELECT
     'mir_configuraciones' as tabla,
     COUNT(*) as registros
 FROM mir_configuraciones;
+
+
+
+

@@ -26,6 +26,20 @@ export interface AltaPVResult {
   debugSoap?: string;
 }
 
+export interface AltaRHParams {
+  xmlAlta: string;
+}
+
+export interface AltaRHResult {
+  ok: boolean;
+  codigo: string;
+  descripcion: string;
+  lote?: string;
+  codigoComunicacion?: string;
+  rawResponse: string;
+  debugSoap?: string;
+}
+
 export interface ConsultaComunicacionParams {
   codigos: string[];
 }
@@ -118,13 +132,13 @@ function wrapSoapEnvelope(innerXml: string): string {
 
 // Construye el SOAP para comunicación según WSDL oficial
 // Basado en la documentación: XML comprimido en ZIP y codificado en Base64
-function buildSoapComunicacionRequest(cfg: MinisterioConfig, solicitudZipB64: string): string {
+function buildSoapComunicacionRequest(cfg: MinisterioConfig, solicitudZipB64: string, tipoComunicacion: string = 'PV'): string {
   const cabecera = `
     <cabecera>
       <codigoArrendador>${escapeXml(cfg.codigoArrendador)}</codigoArrendador>
       <aplicacion>${escapeXml(cfg.aplicacion).slice(0, 50)}</aplicacion>
       <tipoOperacion>A</tipoOperacion>
-      <tipoComunicacion>PV</tipoComunicacion>
+      <tipoComunicacion>${tipoComunicacion}</tipoComunicacion>
     </cabecera>`;
   
   // El contenido Base64 del ZIP se incluye en el campo <solicitud>
@@ -346,6 +360,83 @@ export class MinisterioClientOfficial {
 
     } catch (error) {
       console.error('❌ Error en altaPV:', error);
+      
+      if (error instanceof Error && error.name === 'AbortError') {
+        return {
+          ok: false,
+          codigo: 'TIMEOUT',
+          descripcion: 'Timeout en la conexión con el MIR',
+          rawResponse: ''
+        };
+      }
+      
+      if (error instanceof Error && error.message.includes('fetch failed')) {
+        return {
+          ok: false,
+          codigo: 'NETWORK_ERROR',
+          descripcion: 'Error de conectividad con el MIR',
+          rawResponse: ''
+        };
+      }
+      
+      throw error;
+    }
+  }
+
+  async altaRH(params: AltaRHParams): Promise<AltaRHResult> {
+    if (this.cfg.simulacion) {
+      const lote = `SIM-RH-${Date.now()}`;
+      const mock = `<comunicacionResponse><respuesta><codigo>0</codigo><descripcion>Ok</descripcion><lote>${lote}</lote></respuesta></comunicacionResponse>`;
+      return { ok: true, codigo: '0', descripcion: 'Ok', lote, rawResponse: mock };
+    }
+
+    try {
+      const solicitudZipB64 = await zipAndBase64(params.xmlAlta);
+      const soapXml = buildSoapComunicacionRequest(this.cfg, solicitudZipB64, 'RH');
+
+      console.log('📤 Enviando SOAP RH al MIR (oficial):', {
+        url: this.cfg.baseUrl,
+        username: this.cfg.username,
+        codigoArrendador: this.cfg.codigoArrendador,
+        operation: MIR_OPERATIONS.COMUNICACION,
+        tipoComunicacion: 'RH',
+        bodyLength: soapXml.length
+      });
+
+      const res = await makeSoapRequest(this.cfg, soapXml, MIR_OPERATIONS.COMUNICACION);
+
+      console.log('📊 Respuesta del MIR para RH:', {
+        status: res.status,
+        statusText: res.statusText,
+        headers: Object.fromEntries(res.headers.entries()),
+        ok: res.ok
+      });
+
+      const text = await res.text();
+      console.log('📋 Body de respuesta RH (primeros 1000 chars):', text.substring(0, 1000));
+
+      if (!res.ok) {
+        console.error('❌ Error HTTP en RH:', res.status, res.statusText);
+        return {
+          ok: false,
+          codigo: res.status.toString(),
+          descripcion: `HTTP ${res.status}: ${res.statusText}`,
+          rawResponse: text,
+          debugSoap: process.env.MIR_DEBUG_SOAP === 'true' ? soapXml : undefined
+        };
+      }
+
+      const parsed = parseAltaResponse(text);
+      console.log('✅ Respuesta RH parseada:', parsed);
+
+      return { 
+        ...parsed, 
+        rawResponse: text,
+        debugSoap: process.env.MIR_DEBUG_SOAP === 'true' ? soapXml : undefined
+      };
+
+    } catch (error) {
+      console.error('❌ Error en altaRH:', error);
       
       if (error instanceof Error && error.name === 'AbortError') {
         return {

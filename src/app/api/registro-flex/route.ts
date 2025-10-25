@@ -549,28 +549,58 @@ export async function POST(req: NextRequest) {
 
     console.log('✅ Registro guardado con ID:', id);
 
-    // Enviar automáticamente al MIR
+    // Enviar automáticamente al MIR (PV + RH)
     try {
-      console.log('📤 Enviando automáticamente al MIR...');
+      console.log('📤 Enviando automáticamente al MIR (PV + RH)...');
       
-      const mirResponse = await fetch(`${req.nextUrl.origin}/api/ministerio/auto-envio`, {
+      const payload = {
+        ...dbData,
+        id: id
+      };
+      
+      // Enviar PV (Partes de Viajeros)
+      console.log('📤 Enviando PV (Partes de Viajeros)...');
+      const pvResponse = await fetch(`${req.nextUrl.origin}/api/ministerio/auto-envio`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'X-Tenant-ID': tenantId || 'default'
         },
-        body: JSON.stringify({
-          ...dbData,
-          id: id
-        })
+        body: JSON.stringify(payload)
       });
       
-      if (mirResponse.ok) {
-        const mirResult = await mirResponse.json();
-        console.log('✅ Envío al MIR exitoso:', mirResult);
+      let pvResult = null;
+      if (pvResponse.ok) {
+        pvResult = await pvResponse.json();
+        console.log('✅ Envío PV al MIR exitoso:', pvResult);
       } else {
-        console.log('⚠️ Error en envío al MIR, pero registro guardado correctamente');
+        console.log('⚠️ Error en envío PV al MIR, pero registro guardado correctamente');
       }
+      
+      // Enviar RH (Reservas de Hospedaje)
+      console.log('📤 Enviando RH (Reservas de Hospedaje)...');
+      const rhResponse = await fetch(`${req.nextUrl.origin}/api/ministerio/auto-envio-rh`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Tenant-ID': tenantId || 'default'
+        },
+        body: JSON.stringify(payload)
+      });
+      
+      let rhResult = null;
+      if (rhResponse.ok) {
+        rhResult = await rhResponse.json();
+        console.log('✅ Envío RH al MIR exitoso:', rhResult);
+      } else {
+        console.log('⚠️ Error en envío RH al MIR, pero registro guardado correctamente');
+      }
+      
+      console.log('📊 Resumen de envíos MIR:', {
+        pv: pvResult ? { success: pvResult.success, codigo: pvResult.resultado?.codigo } : { success: false },
+        rh: rhResult ? { success: rhResult.success, codigo: rhResult.resultado?.codigo } : { success: false }
+      });
+      
     } catch (mirError) {
       console.log('⚠️ Error en envío al MIR, pero registro guardado correctamente:', mirError);
     }
@@ -578,10 +608,11 @@ export async function POST(req: NextRequest) {
     const headers = cors(req);
     return NextResponse.json({ 
       success: true, 
-      message: 'Registro guardado y enviado al MIR correctamente',
+      message: 'Registro guardado y enviado al MIR correctamente (PV + RH)',
       id: id,
       reserva_ref: ESTABLISHMENT_REFERENCE,
-      date: new Date().toISOString().split('T')[0]
+      date: new Date().toISOString().split('T')[0],
+      comunicaciones_enviadas: ['PV', 'RH']
     }, {
       status: 201,
       headers

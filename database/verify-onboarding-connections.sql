@@ -122,3 +122,7 @@ FROM pg_indexes
 WHERE indexname LIKE 'idx_%'
     AND tablename IN ('dpa_aceptaciones', 'empresa_config', 'mir_configuraciones')
 ORDER BY tablename, indexname;
+
+
+
+
