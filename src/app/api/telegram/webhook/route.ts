@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
+import { generateTokenPair } from '@/lib/auth';
 
 const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN || '';
 const TELEGRAM_API = `https://api.telegram.org/bot${TELEGRAM_TOKEN}`;
@@ -27,10 +28,16 @@ async function sendTelegramMessage(chatId: string, text: string) {
 async function getTenantByChatId(chatId: string) {
   try {
     const result = await sql`
-      SELECT t.*, tu.auth_token
-      FROM tenants t
-      LEFT JOIN tenant_users tu ON t.id = tu.tenant_id
-      WHERE t.telegram_chat_id = ${chatId}
+      SELECT 
+        id,
+        name,
+        email,
+        telegram_chat_id,
+        telegram_enabled,
+        ai_tokens_used,
+        ai_token_limit
+      FROM tenants
+      WHERE telegram_chat_id = ${chatId}
       LIMIT 1
     `;
     return result.rows[0] || null;
@@ -162,10 +169,18 @@ export async function POST(request: NextRequest) {
       
       // Usar nuestro sistema estructurado
       try {
+        // Generar token temporal para el tenant
+        const tempToken = generateTokenPair({
+          userId: tenant.id, // Usar tenant.id como userId temporal
+          tenantId: tenant.id,
+          email: tenant.email,
+          role: 'owner'
+        });
+        
         const baseUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000';
         const aiResponse = await fetch(`${baseUrl}/api/ai-reservas?fecha=${fecha}`, {
           headers: {
-            'Cookie': `auth_token=${tenant.auth_token || ''}`
+            'Cookie': `auth_token=${tempToken.accessToken}`
           }
         });
 
