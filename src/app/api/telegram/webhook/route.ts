@@ -285,6 +285,16 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ ok: true, method: 'structured-direct' });
       } catch (error) {
         console.log(`❌ Error en sistema estructurado:`, error);
+        
+        // Enviar mensaje de error como fallback
+        try {
+          await sendTelegramMessage(
+            chatId,
+            '❌ Error procesando la consulta. Por favor, inténtalo de nuevo.'
+          );
+        } catch (fallbackError) {
+          console.error('❌ Error en fallback:', fallbackError);
+        }
       }
     }
 
