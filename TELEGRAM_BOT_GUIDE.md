@@ -6,19 +6,21 @@ Garantizar que el bot de Telegram muestre datos de reservas de forma consistente
 ## 🏗️ Arquitectura
 
 ### 1. **Backend Estructurado** (`/api/telegram/reservas`)
-- Devuelve datos ya clasificados en 3 grupos fijos
-- Validación de campos esenciales
-- Formato JSON consistente
+- **Lógica SQL precisa** con 3 consultas separadas
+- **Filtrado exacto** por fechas (check_in, check_out)
+- **Validación de campos** esenciales
+- **Formato JSON consistente** sin ambigüedades
 
-### 2. **Prompt Determinista** (`/lib/telegram-prompt.ts`)
-- Formateo sin interpretación
-- Reglas estrictas contra alucinaciones
-- Configuración factual para OpenAI
+### 2. **IA Formateadora** (`/api/ai-reservas`)
+- **GPT-4o-mini** con temperature=0 (determinista)
+- **Prompt ultra-estricto** contra alucinaciones
+- **Solo formatea** datos ya estructurados
+- **No interpreta** ni inventa información
 
 ### 3. **Bot Endpoint** (`/api/telegram/bot`)
-- Procesa comandos de Telegram
-- Usa datos estructurados
-- Respuestas consistentes
+- **Procesa comandos** de Telegram
+- **Usa flujo completo** con IA
+- **Respuestas consistentes** y precisas
 
 ## 📊 Formato de Datos
 

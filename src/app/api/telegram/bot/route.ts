@@ -31,29 +31,27 @@ export async function POST(request: NextRequest) {
 
     // Procesar comando de reservas
     if (command === 'reservas' || command === 'estado') {
-      // Obtener datos estructurados
-      const reservasResponse = await fetch(`${request.nextUrl.origin}/api/telegram/reservas?fecha=${fecha}`, {
+      // Usar el nuevo flujo con IA para formateo preciso
+      const aiResponse = await fetch(`${request.nextUrl.origin}/api/ai-reservas?fecha=${fecha}`, {
         headers: {
           'Cookie': `auth_token=${authToken}`
         }
       });
 
-      if (!reservasResponse.ok) {
+      if (!aiResponse.ok) {
         return NextResponse.json({
           success: false,
-          message: 'Error al obtener reservas'
+          message: 'Error al obtener reservas formateadas'
         });
       }
 
-      const reservasData = await reservasResponse.json();
-
-      // Formatear usando función determinista (sin IA)
-      const mensaje = formatReservasForTelegram(reservasData);
+      const aiData = await aiResponse.json();
 
       return NextResponse.json({
         success: true,
-        message: mensaje,
-        data: reservasData
+        message: aiData.mensaje_formateado,
+        data: aiData.datos_estructurados,
+        metadata: aiData.metadata
       });
     }
 

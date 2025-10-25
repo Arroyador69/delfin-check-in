@@ -46,66 +46,96 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Obtener todas las reservas activas para la fecha
-    const reservas = await sql`
+    // 🔹 Alojados el día X (excluyendo los que salen ese día)
+    const alojadosResult = await sql`
       SELECT 
-        guest_name,
-        room_id,
-        guest_count,
-        check_in::date as check_in_date,
-        check_out::date as check_out_date,
-        check_in,
-        check_out,
-        status
-      FROM reservations 
+        guest_name as nombre,
+        room_id as habitacion,
+        guest_count as personas,
+        check_in::date as check_in,
+        check_out::date as check_out
+      FROM reservations
       WHERE tenant_id = ${tenantId}
         AND status = 'confirmed'
-        AND (
-          (check_in::date <= ${fecha} AND check_out::date > ${fecha}) OR  -- Alojados
-          (check_in::date = ${fecha}) OR  -- Llegan hoy
-          (check_out::date = ${fecha})    -- Salen hoy
-        )
+        AND ${fecha}::date >= DATE(check_in)
+        AND ${fecha}::date < DATE(check_out)
       ORDER BY check_in
     `;
 
-    console.log(`✅ Encontradas ${reservas.rows.length} reservas para procesar`);
+    // 🔹 Llegadas (Check-in ese día)
+    const lleganResult = await sql`
+      SELECT 
+        guest_name as nombre,
+        room_id as habitacion,
+        guest_count as personas,
+        check_in::date as check_in,
+        check_out::date as check_out
+      FROM reservations
+      WHERE tenant_id = ${tenantId}
+        AND status = 'confirmed'
+        AND DATE(check_in) = ${fecha}::date
+      ORDER BY check_in
+    `;
 
-    // Clasificar reservas en los 3 grupos
-    const alojados = [];
-    const llegan = [];
-    const salen = [];
+    // 🔹 Salidas (Check-out ese día)
+    const salenResult = await sql`
+      SELECT 
+        guest_name as nombre,
+        room_id as habitacion,
+        guest_count as personas,
+        check_in::date as check_in,
+        check_out::date as check_out
+      FROM reservations
+      WHERE tenant_id = ${tenantId}
+        AND status = 'confirmed'
+        AND DATE(check_out) = ${fecha}::date
+      ORDER BY check_in
+    `;
 
-    for (const reserva of reservas.rows) {
-      // Validar campos esenciales
-      if (!reserva.guest_name || !reserva.room_id || !reserva.check_in_date || !reserva.check_out_date) {
-        console.warn('⚠️ Reserva con datos incompletos:', reserva);
-        continue;
+    console.log(`✅ SQL directo: ${alojadosResult.rows.length} alojados, ${lleganResult.rows.length} llegan, ${salenResult.rows.length} salen`);
+
+    // Validar y formatear datos
+    const alojados = alojadosResult.rows.map(reserva => {
+      if (!reserva.nombre || !reserva.habitacion) {
+        console.warn('⚠️ Reserva alojada con datos incompletos:', reserva);
+        return null;
       }
-
-      const reservaFormateada = {
-        nombre: reserva.guest_name,
-        habitacion: reserva.room_id,
-        personas: reserva.guest_count || 1,
-        check_in: reserva.check_in_date,
-        check_out: reserva.check_out_date
+      return {
+        nombre: reserva.nombre,
+        habitacion: reserva.habitacion,
+        personas: reserva.personas || 1,
+        check_in: reserva.check_in,
+        check_out: reserva.check_out
       };
+    }).filter(Boolean);
 
-      // Clasificar según las fechas
-      if (reserva.check_in_date <= fecha && reserva.check_out_date > fecha) {
-        // Alojado actualmente
-        alojados.push(reservaFormateada);
+    const llegan = lleganResult.rows.map(reserva => {
+      if (!reserva.nombre || !reserva.habitacion) {
+        console.warn('⚠️ Reserva llegada con datos incompletos:', reserva);
+        return null;
       }
-      
-      if (reserva.check_in_date === fecha) {
-        // Llega hoy
-        llegan.push(reservaFormateada);
+      return {
+        nombre: reserva.nombre,
+        habitacion: reserva.habitacion,
+        personas: reserva.personas || 1,
+        check_in: reserva.check_in,
+        check_out: reserva.check_out
+      };
+    }).filter(Boolean);
+
+    const salen = salenResult.rows.map(reserva => {
+      if (!reserva.nombre || !reserva.habitacion) {
+        console.warn('⚠️ Reserva salida con datos incompletos:', reserva);
+        return null;
       }
-      
-      if (reserva.check_out_date === fecha) {
-        // Sale hoy
-        salen.push(reservaFormateada);
-      }
-    }
+      return {
+        nombre: reserva.nombre,
+        habitacion: reserva.habitacion,
+        personas: reserva.personas || 1,
+        check_in: reserva.check_in,
+        check_out: reserva.check_out
+      };
+    }).filter(Boolean);
 
     const respuesta = {
       fecha_consulta: fecha,
