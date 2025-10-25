@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
 import OpenAI from 'openai';
-import { TELEGRAM_RESERVAS_SYSTEM_PROMPT } from '@/lib/telegram-prompt';
+import { TELEGRAM_FACTUAL_PROMPT } from '@/lib/telegram-prompt';
 
 const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN || '';
 const TELEGRAM_API = `https://api.telegram.org/bot${TELEGRAM_TOKEN}`;
@@ -249,7 +249,7 @@ export async function POST(request: NextRequest) {
           temperature: 0,
           max_tokens: 800,
           messages: [
-            { role: "system", content: TELEGRAM_RESERVAS_SYSTEM_PROMPT },
+            { role: "system", content: TELEGRAM_FACTUAL_PROMPT },
             { role: "user", content: JSON.stringify(datosEstructurados, null, 2) }
           ]
         });
