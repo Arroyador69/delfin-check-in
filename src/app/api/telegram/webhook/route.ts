@@ -48,7 +48,41 @@ async function sendTelegramMessage(chatId: string, text: string) {
 // Función para obtener datos del tenant desde la base de datos
 async function getTenantByChatId(chatId: string) {
   try {
-    const result = await sql`
+    // Primero buscar en tenant_users (usuarios compartidos)
+    const userResult = await sql`
+      SELECT 
+        tu.tenant_id,
+        tu.role,
+        tu.telegram_chat_id,
+        t.name,
+        t.email,
+        t.telegram_enabled,
+        t.ai_tokens_used,
+        t.ai_token_limit,
+        tu.auth_token
+      FROM tenant_users tu
+      JOIN tenants t ON tu.tenant_id = t.id
+      WHERE tu.telegram_chat_id = ${chatId}
+      LIMIT 1
+    `;
+    
+    if (userResult.rows.length > 0) {
+      const user = userResult.rows[0];
+      return {
+        id: user.tenant_id,
+        name: user.name,
+        email: user.email,
+        telegram_chat_id: user.telegram_chat_id,
+        telegram_enabled: user.telegram_enabled,
+        ai_tokens_used: user.ai_tokens_used,
+        ai_token_limit: user.ai_token_limit,
+        auth_token: user.auth_token,
+        role: user.role
+      };
+    }
+    
+    // Si no se encuentra en tenant_users, buscar en tenants (propietarios)
+    const tenantResult = await sql`
       SELECT 
         t.id,
         t.name,
@@ -63,7 +97,16 @@ async function getTenantByChatId(chatId: string) {
       WHERE t.telegram_chat_id = ${chatId}
       LIMIT 1
     `;
-    return result.rows[0] || null;
+    
+    if (tenantResult.rows.length > 0) {
+      const tenant = tenantResult.rows[0];
+      return {
+        ...tenant,
+        role: 'owner'
+      };
+    }
+    
+    return null;
   } catch (error) {
     console.error('Error obteniendo tenant:', error);
     return null;
@@ -103,9 +146,10 @@ export async function POST(request: NextRequest) {
 
     // Comandos especiales
     if (userText === '/start') {
+      const roleText = tenant.role === 'staff' ? ' (Acceso Compartido)' : '';
       await sendTelegramMessage(
         chatId,
-        `🤖 *Bienvenido al asistente de ${tenant.name}*\n\n` +
+        `🤖 *Bienvenido al asistente de ${tenant.name}${roleText}*\n\n` +
         `Puedes preguntarme sobre:\n` +
         `• "Quién hay hoy?" - Ver huéspedes actuales\n` +
         `• "Quién llega mañana?" - Ver llegadas\n` +
@@ -179,17 +223,17 @@ export async function POST(request: NextRequest) {
       }
       
       console.log(`📅 Fecha de consulta: ${fecha}`);
-      
-      // Indicar que está escribiendo
-      await fetch(`${TELEGRAM_API}/sendChatAction`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          chat_id: chatId,
-          action: 'typing',
-        }),
-      });
-      
+    
+    // Indicar que está escribiendo
+    await fetch(`${TELEGRAM_API}/sendChatAction`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: chatId,
+        action: 'typing',
+      }),
+    });
+    
       // Usar nuestro sistema estructurado
       try {
         // Ya no necesitamos token para llamadas HTTP externas
@@ -197,12 +241,16 @@ export async function POST(request: NextRequest) {
         // Obtener datos estructurados directamente (evitar llamadas HTTP externas)
         console.log(`🔍 Obteniendo datos estructurados para fecha ${fecha}...`);
         
+        // Usar directamente el tenant_id del usuario (ya sea owner o shared_user)
+        console.log(`🔍 Consultando reservas para tenant: ${tenant.id} (rol: ${tenant.role})`);
+        const whereClause = `tenant_id = '${tenant.id}'`;
+        
         const alojadosResult = await sql`
           SELECT 
             guest_name as nombre, room_id as habitacion, guest_count as personas, 
             check_in::date as check_in, check_out::date as check_out
           FROM reservations
-          WHERE tenant_id = ${tenant.id} AND status = 'confirmed'
+          WHERE ${sql.unsafe(whereClause)} AND status = 'confirmed'
             AND ${fecha}::date >= DATE(check_in) AND ${fecha}::date < DATE(check_out)
           ORDER BY check_in
         `;
@@ -212,7 +260,7 @@ export async function POST(request: NextRequest) {
             guest_name as nombre, room_id as habitacion, guest_count as personas, 
             check_in::date as check_in, check_out::date as check_out
           FROM reservations
-          WHERE tenant_id = ${tenant.id} AND status = 'confirmed'
+          WHERE ${sql.unsafe(whereClause)} AND status = 'confirmed'
             AND DATE(check_in) = ${fecha}::date
           ORDER BY check_in
         `;
@@ -222,7 +270,7 @@ export async function POST(request: NextRequest) {
             guest_name as nombre, room_id as habitacion, guest_count as personas, 
             check_in::date as check_in, check_out::date as check_out
           FROM reservations
-          WHERE tenant_id = ${tenant.id} AND status = 'confirmed'
+          WHERE ${sql.unsafe(whereClause)} AND status = 'confirmed'
             AND DATE(check_out) = ${fecha}::date
           ORDER BY check_in
         `;
@@ -308,9 +356,9 @@ export async function POST(request: NextRequest) {
       '• "Quién llega mañana?"\n\n' +
       'Usa /help para ver todos los comandos disponibles.'
     );
-
+    
     return NextResponse.json({ ok: true });
-
+    
   } catch (error) {
     console.error('❌ Error en webhook de Telegram:', error);
     return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
