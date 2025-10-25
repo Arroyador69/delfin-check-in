@@ -97,8 +97,8 @@ export default function FacturasPage() {
         setFacturas(facturasProcesadas);
       }
 
-      if (configResponse.ok && configData.config) {
-        setEmpresaConfig(configData.config);
+      if (configResponse.ok && configData.empresa) {
+        setEmpresaConfig(configData.empresa);
       } else {
         setMessage({ 
           type: 'error', 

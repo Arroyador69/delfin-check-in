@@ -55,10 +55,10 @@ export default function EmpresaConfigPage() {
       const response = await fetch('/api/empresa-config');
       const data = await response.json();
       
-      if (response.ok && data.config) {
-        setConfig(data.config);
-        if (data.config.logo_url) {
-          setLogoPreview(data.config.logo_url);
+      if (response.ok && data.empresa) {
+        setConfig(data.empresa);
+        if (data.empresa.logo_url) {
+          setLogoPreview(data.empresa.logo_url);
         }
       }
     } catch (error) {
