@@ -39,10 +39,13 @@ export async function POST(request: NextRequest) {
           role: user.role
         });
         
+        // Usar solo el accessToken (más corto que refreshToken)
+        const shortToken = tokenPair.accessToken;
+        
         // Actualizar usuario con el token
         await sql`
           UPDATE tenant_users
-          SET auth_token = ${tokenPair.accessToken}
+          SET auth_token = ${shortToken}
           WHERE id = ${user.id}
         `;
         
