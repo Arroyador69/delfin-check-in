@@ -9,9 +9,9 @@ export async function POST(request: NextRequest) {
 
     const { tenantId, newChatId } = await request.json();
     
-    if (!tenantId || !newChatId) {
+    if (!tenantId) {
       return NextResponse.json(
-        { error: 'tenantId y newChatId son obligatorios' },
+        { error: 'tenantId es obligatorio' },
         { status: 400 }
       );
     }
