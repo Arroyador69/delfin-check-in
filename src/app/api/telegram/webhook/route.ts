@@ -251,14 +251,13 @@ export async function POST(request: NextRequest) {
         
         // Usar directamente el tenant_id del usuario (ya sea owner o shared_user)
         console.log(`🔍 Consultando reservas para tenant: ${tenant.id} (rol: ${tenant.role})`);
-        const whereClause = `tenant_id = '${tenant.id}'`;
         
         const alojadosResult = await sql`
           SELECT 
             guest_name as nombre, room_id as habitacion, guest_count as personas, 
             check_in::date as check_in, check_out::date as check_out
           FROM reservations
-          WHERE ${sql.unsafe(whereClause)} AND status = 'confirmed'
+          WHERE tenant_id = ${tenant.id} AND status = 'confirmed'
             AND ${fecha}::date >= DATE(check_in) AND ${fecha}::date < DATE(check_out)
           ORDER BY check_in
         `;
@@ -268,7 +267,7 @@ export async function POST(request: NextRequest) {
             guest_name as nombre, room_id as habitacion, guest_count as personas, 
             check_in::date as check_in, check_out::date as check_out
           FROM reservations
-          WHERE ${sql.unsafe(whereClause)} AND status = 'confirmed'
+          WHERE tenant_id = ${tenant.id} AND status = 'confirmed'
             AND DATE(check_in) = ${fecha}::date
           ORDER BY check_in
         `;
@@ -278,12 +277,17 @@ export async function POST(request: NextRequest) {
             guest_name as nombre, room_id as habitacion, guest_count as personas, 
             check_in::date as check_in, check_out::date as check_out
           FROM reservations
-          WHERE ${sql.unsafe(whereClause)} AND status = 'confirmed'
+          WHERE tenant_id = ${tenant.id} AND status = 'confirmed'
             AND DATE(check_out) = ${fecha}::date
           ORDER BY check_in
         `;
 
         // Mapear resultados
+        console.log(`📊 Resultados de consulta para ${fecha}:`);
+        console.log(`  - Alojados: ${alojadosResult.rows.length} registros`);
+        console.log(`  - Llegan: ${lleganResult.rows.length} registros`);
+        console.log(`  - Salen: ${salenResult.rows.length} registros`);
+        
         const alojados = alojadosResult.rows.map(r => ({
           nombre: r.nombre,
           habitacion: r.habitacion,
