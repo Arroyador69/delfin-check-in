@@ -129,6 +129,14 @@ export async function POST(request: NextRequest) {
     const userText = message.text;
     const userName = message.from?.first_name || 'Usuario';
     
+    // 🔍 LOG DETALLADO PARA OBTENER CHAT_ID
+    console.log('🔍 ===== INFORMACIÓN COMPLETA DEL USUARIO =====');
+    console.log('📱 Chat ID:', chatId);
+    console.log('👤 Usuario completo:', JSON.stringify(message.from, null, 2));
+    console.log('💬 Chat completo:', JSON.stringify(message.chat, null, 2));
+    console.log('📝 Texto:', userText);
+    console.log('🔍 ============================================');
+    
     console.log(`💬 Mensaje de ${userName} (${chatId}): ${userText}`);
     
     // Obtener tenant
