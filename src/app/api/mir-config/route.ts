@@ -1,18 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { sql } from '@vercel/postgres';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth-nextauth';
+import { sql } from '@/lib/db';
+import { verifyToken } from '@/lib/auth';
 
 // GET - Obtener configuración MIR
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    // Obtener el token de autenticación de las cookies
+    const authToken = request.cookies.get('auth_token')?.value;
     
-    if (!session?.user?.id) {
+    if (!authToken) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
-    const tenantId = session.user.tenantId;
+    // Verificar el token JWT
+    const payload = verifyToken(authToken);
+    
+    if (!payload || !payload.tenantId) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
+
+    const tenantId = payload.tenantId;
 
     const result = await sql`
       SELECT 
@@ -55,13 +62,21 @@ export async function GET(request: NextRequest) {
 // PUT - Actualizar configuración MIR
 export async function PUT(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    // Obtener el token de autenticación de las cookies
+    const authToken = request.cookies.get('auth_token')?.value;
     
-    if (!session?.user?.id) {
+    if (!authToken) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
-    const tenantId = session.user.tenantId;
+    // Verificar el token JWT
+    const payload = verifyToken(authToken);
+    
+    if (!payload || !payload.tenantId) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
+
+    const tenantId = payload.tenantId;
     const data = await request.json();
 
     // Validar datos requeridos
@@ -108,13 +123,21 @@ export async function PUT(request: NextRequest) {
 // POST - Probar conexión MIR
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    // Obtener el token de autenticación de las cookies
+    const authToken = request.cookies.get('auth_token')?.value;
     
-    if (!session?.user?.id) {
+    if (!authToken) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
-    const tenantId = session.user.tenantId;
+    // Verificar el token JWT
+    const payload = verifyToken(authToken);
+    
+    if (!payload || !payload.tenantId) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
+
+    const tenantId = payload.tenantId;
     const data = await request.json();
 
     // Obtener configuración MIR actual

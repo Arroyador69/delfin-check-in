@@ -1,17 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { sql } from '@vercel/postgres';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth-nextauth';
+import { sql } from '@/lib/db';
+import { verifyToken } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    // Obtener el token de autenticación de las cookies
+    const authToken = request.cookies.get('auth_token')?.value;
     
-    if (!session?.user?.id) {
+    if (!authToken) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
-    const tenantId = session.user.tenantId;
+    // Verificar el token JWT
+    const payload = verifyToken(authToken);
+    
+    if (!payload || !payload.tenantId) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
+
+    const tenantId = payload.tenantId;
 
     // Verificar si existe una aceptación del DPA
     const dpaResult = await sql`
