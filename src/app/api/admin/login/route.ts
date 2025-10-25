@@ -132,7 +132,7 @@ export async function POST(req: NextRequest) {
     
     console.log(`🔍 Tenant encontrado: ${tenant.name} (${tenant.email}) - Estado: ${tenant.status}`);
     
-    // Ahora buscar el usuario que pertenece a este tenant
+    // Ahora buscar el usuario específico que pertenece a este tenant
     const userQuery = `
       SELECT 
         tu.id,
@@ -144,13 +144,13 @@ export async function POST(req: NextRequest) {
         tu.email_verified,
         tu.last_login
       FROM tenant_users tu
-      WHERE tu.tenant_id = $1 AND tu.is_active = true
+      WHERE tu.tenant_id = $1 AND tu.email = $2 AND tu.is_active = true
       LIMIT 1
     `;
     
-    const userResult = await sql.query(userQuery, [tenant.id]);
+    const userResult = await sql.query(userQuery, [tenant.id, email.toLowerCase()]);
     
-    console.log(`🔍 Usuarios encontrados para tenant: ${userResult.rows.length}`);
+    console.log(`🔍 Usuario específico encontrado: ${userResult.rows.length > 0 ? userResult.rows[0].email : 'ninguno'}`);
     
     if (userResult.rows.length === 0) {
       // Registrar intento fallido
