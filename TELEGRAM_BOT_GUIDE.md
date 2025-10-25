@@ -17,9 +17,9 @@ Garantizar que el bot de Telegram muestre datos de reservas de forma consistente
 - **Solo formatea** datos ya estructurados
 - **No interpreta** ni inventa información
 
-### 3. **Bot Endpoint** (`/api/telegram/bot`)
-- **Procesa comandos** de Telegram
-- **Usa flujo completo** con IA
+### 3. **Webhook Principal** (`/api/telegram/webhook`)
+- **Procesa mensajes** de Telegram
+- **Usa flujo completo** con IA estructurada
 - **Respuestas consistentes** y precisas
 
 ## 📊 Formato de Datos
@@ -122,12 +122,11 @@ curl -X GET "https://admin.delfincheckin.com/api/telegram/reservas?fecha=2025-10
   -H "Cookie: auth_token=YOUR_TOKEN"
 ```
 
-### Probar bot:
+### Probar webhook (simular mensaje de Telegram):
 ```bash
-curl -X POST "https://admin.delfincheckin.com/api/telegram/bot" \
+curl -X POST "https://admin.delfincheckin.com/api/telegram/webhook" \
   -H "Content-Type: application/json" \
-  -H "Cookie: auth_token=YOUR_TOKEN" \
-  -d '{"command": "reservas", "fecha": "2025-10-24"}'
+  -d '{"message": {"chat": {"id": "123"}, "text": "Quién hay hoy?", "from": {"first_name": "Test"}}}'
 ```
 
 ## ✅ Beneficios
