@@ -6,9 +6,20 @@ import { TELEGRAM_FACTUAL_PROMPT } from '@/lib/telegram-prompt';
 const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN || '';
 const TELEGRAM_API = `https://api.telegram.org/bot${TELEGRAM_TOKEN}`;
 
+// Verificar token al inicio
+if (!TELEGRAM_TOKEN) {
+  console.error('❌ TELEGRAM_TOKEN no está configurado');
+} else {
+  console.log(`✅ TELEGRAM_TOKEN configurado: ${TELEGRAM_TOKEN.substring(0, 10)}...`);
+}
+
 // Función para enviar mensaje a Telegram
 async function sendTelegramMessage(chatId: string, text: string) {
   try {
+    console.log(`📤 Enviando a Telegram API: ${TELEGRAM_API}/sendMessage`);
+    console.log(`📤 Chat ID: ${chatId}`);
+    console.log(`📤 Texto: ${text.substring(0, 100)}...`);
+    
     const response = await fetch(`${TELEGRAM_API}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -18,9 +29,18 @@ async function sendTelegramMessage(chatId: string, text: string) {
         parse_mode: 'Markdown',
       }),
     });
-    return await response.json();
+    
+    const result = await response.json();
+    console.log(`📤 Status: ${response.status}`);
+    console.log(`📤 Response:`, result);
+    
+    if (!response.ok) {
+      throw new Error(`Telegram API error: ${response.status} - ${JSON.stringify(result)}`);
+    }
+    
+    return result;
   } catch (error) {
-    console.error('Error enviando mensaje a Telegram:', error);
+    console.error('❌ Error enviando mensaje a Telegram:', error);
     throw error;
   }
 }
@@ -256,8 +276,12 @@ export async function POST(request: NextRequest) {
 
         const mensajeFormateado = completion.choices[0].message.content;
         
-        console.log(`✅ Respuesta estructurada generada`);
-        await sendTelegramMessage(chatId, mensajeFormateado);
+        console.log(`✅ Respuesta estructurada generada:`, mensajeFormateado);
+        console.log(`📤 Enviando mensaje a chat ${chatId}...`);
+        
+        const telegramResponse = await sendTelegramMessage(chatId, mensajeFormateado);
+        console.log(`📤 Respuesta de Telegram:`, telegramResponse);
+        
         return NextResponse.json({ ok: true, method: 'structured-direct' });
       } catch (error) {
         console.log(`❌ Error en sistema estructurado:`, error);
