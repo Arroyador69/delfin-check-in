@@ -454,79 +454,18 @@ function UpgradeContent() {
           )}
 
           {!showCheckout ? (
-            <div className="grid md:grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Card 1: Plan mensual */}
-              <div className={`relative flex flex-col p-6 bg-white rounded-lg shadow-lg transition-all duration-300 ${currentPlanId === 'basic' ? 'border-4 border-blue-500' : 'border border-gray-200'} hover:shadow-xl hover:scale-[1.02]`}>
-                <h2 className="text-2xl font-bold text-gray-900 text-center mb-2">Plan mensual</h2>
-                <div className="text-center mb-6">
-                  <div className="text-4xl font-bold text-gray-900 mb-1">14,99€</div>
-                  <p className="text-sm text-gray-500">/ propiedad / mes</p>
-                </div>
-                <ul className="flex-grow space-y-3 mb-8">
-                  <li className="flex items-center text-gray-700"><CheckCircle className="w-5 h-5 text-green-500 mr-2 flex-shrink-0" /><span>Gestión manual de reservas</span></li>
-                  <li className="flex items-center text-gray-700"><CheckCircle className="w-5 h-5 text-green-500 mr-2 flex-shrink-0" /><span>Check-in online</span></li>
-                  <li className="flex items-center text-gray-700"><CheckCircle className="w-5 h-5 text-green-500 mr-2 flex-shrink-0" /><span>Gestión de habitaciones</span></li>
-                  <li className="flex items-center text-gray-700"><CheckCircle className="w-5 h-5 text-green-500 mr-2 flex-shrink-0" /><span>Registro de viajeros</span></li>
-                  <li className="flex items-center text-gray-700"><CheckCircle className="w-5 h-5 text-green-500 mr-2 flex-shrink-0" /><span>Soporte por email</span></li>
-                </ul>
-                <button
-                  onClick={() => handleSelectPlan('basic')}
-                  disabled={currentPlanId === 'basic'}
-                  className={`w-full py-3 rounded-md text-lg font-semibold transition-colors duration-200 ${currentPlanId === 'basic' ? 'bg-gray-300 text-gray-700 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700'}`}
-                >
-                  {currentPlanId === 'basic' ? 'Plan actual' : 'Contratar'}
-                </button>
-                <p className="text-xs text-gray-500 mt-4 text-center">Sin permanencia. Cancela cuando quieras.</p>
-              </div>
-
-              {/* Card 2: Plan anual - RECOMENDADO */}
-              <div className={`relative flex flex-col p-6 bg-white rounded-lg shadow-lg transition-all duration-300 ${currentPlanId === 'basic_yearly' ? 'border-4 border-blue-500' : 'border border-gray-200'} hover:shadow-xl hover:scale-[1.02]`}>
-                <span className="absolute top-0 right-0 bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-lg">Recomendado</span>
-                <h2 className="text-2xl font-bold text-gray-900 text-center mb-2">Plan anual</h2>
-                <div className="text-center mb-6">
-                  <div className="text-4xl font-bold text-gray-900 mb-1">149,90€</div>
-                  <p className="text-sm text-gray-500">/ propiedad / año</p>
-                </div>
-                <ul className="flex-grow space-y-3 mb-8">
-                  <li className="flex items-center text-gray-700"><CheckCircle className="w-5 h-5 text-green-500 mr-2 flex-shrink-0" /><span>Todo lo del mensual</span></li>
-                  <li className="flex items-center text-gray-700"><CheckCircle className="w-5 h-5 text-green-500 mr-2 flex-shrink-0" /><span>Descuento 16,7% por pago anual</span></li>
-                  <li className="flex items-center text-gray-700"><CheckCircle className="w-5 h-5 text-green-500 mr-2 flex-shrink-0" /><span>Soporte prioritario</span></li>
-                  <li className="flex items-center text-gray-700"><CheckCircle className="w-5 h-5 text-green-500 mr-2 flex-shrink-0" /><span>Onboarding asistido</span></li>
-                  <li className="flex items-center text-gray-700"><CheckCircle className="w-5 h-5 text-green-500 mr-2 flex-shrink-0" /><span>Equivale a 12,49€/mes</span></li>
-                </ul>
-                <button
-                  onClick={() => handleSelectPlan('basic_yearly')}
-                  disabled={currentPlanId === 'basic_yearly'}
-                  className={`w-full py-3 rounded-md text-lg font-semibold transition-colors duration-200 ${currentPlanId === 'basic_yearly' ? 'bg-gray-300 text-gray-700 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700'}`}
-                >
-                  {currentPlanId === 'basic_yearly' ? 'Plan actual' : 'Contratar'}
-                </button>
-                <p className="text-xs text-gray-500 mt-4 text-center">Ahorra 29,90€ al año por propiedad.</p>
-              </div>
-
-              {/* Card 3: Descuentos por volumen */}
-              <div className={`relative flex flex-col p-6 bg-white rounded-lg shadow-lg transition-all duration-300 ${['standard', 'premium', 'enterprise'].includes(currentPlanId) ? 'border-4 border-blue-500' : 'border border-gray-200'} hover:shadow-xl hover:scale-[1.02]`}>
-                <h2 className="text-2xl font-bold text-gray-900 text-center mb-2">Descuentos por volumen</h2>
-                <div className="text-center mb-6">
-                  <div className="text-4xl font-bold text-gray-900 mb-1">Hasta 25%</div>
-                  <p className="text-sm text-gray-500">descuento</p>
-                  <p className="text-lg font-semibold text-gray-700 mt-2">Desde 2 propiedades <span className="text-xs text-gray-500">(mejor precio)</span></p>
-                </div>
-                <ul className="flex-grow space-y-3 mb-8">
-                  <li className="flex items-center text-gray-700"><CheckCircle className="w-5 h-5 text-green-500 mr-2 flex-shrink-0" /><span>2 propiedades: 13,49€ cada una</span></li>
-                  <li className="flex items-center text-gray-700"><CheckCircle className="w-5 h-5 text-green-500 mr-2 flex-shrink-0" /><span>4 propiedades: 12,74€ cada una</span></li>
-                  <li className="flex items-center text-gray-700"><CheckCircle className="w-5 h-5 text-green-500 mr-2 flex-shrink-0" /><span>5-9 propiedades: 11,99€ cada una</span></li>
-                  <li className="flex items-center text-gray-700"><CheckCircle className="w-5 h-5 text-green-500 mr-2 flex-shrink-0" /><span>10+ propiedades: 11,24€ cada una</span></li>
-                </ul>
-                <button
-                  onClick={() => handleSelectPlan('standard')}
-                  disabled={['standard', 'premium', 'enterprise'].includes(currentPlanId)}
-                  className={`w-full py-3 rounded-md text-lg font-semibold transition-colors duration-200 ${['standard', 'premium', 'enterprise'].includes(currentPlanId) ? 'bg-gray-300 text-gray-700 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700'}`}
-                >
-                  {['standard', 'premium', 'enterprise'].includes(currentPlanId) ? 'Plan actual' : 'Contratar'}
-                </button>
-                <p className="text-xs text-gray-500 mt-4 text-center">Descuentos automáticos según volumen.</p>
-              </div>
+            <div className="max-w-2xl mx-auto">
+              <DynamicPriceCalculator
+                currentProperties={properties.length}
+                isYearly={false}
+                showUpgradeButton={true}
+                onCheckout={(rooms, isYearly, totalPrice) => {
+                  setSelectedProperties(rooms);
+                  setIsYearly(isYearly);
+                  setTotalPrice(totalPrice);
+                  setShowCheckout(true);
+                }}
+              />
             </div>
           ) : null}
 
