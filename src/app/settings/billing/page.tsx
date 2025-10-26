@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { CreditCard, TrendingUp, Calendar, AlertCircle, CheckCircle, ArrowUpCircle, Download, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
+import DynamicPriceCalculator from '@/components/DynamicPriceCalculator';
 
 interface BillingInfo {
   tenant: {
@@ -68,6 +69,9 @@ export default function BillingPage() {
   const [billingInfo, setBillingInfo] = useState<BillingInfo | null>(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [currentRooms, setCurrentRooms] = useState(1);
+  const [showCheckout, setShowCheckout] = useState(false);
+  const [checkoutData, setCheckoutData] = useState<{rooms: number; yearly: boolean; price: number} | null>(null);
 
   useEffect(() => {
     loadBillingInfo();
@@ -85,6 +89,19 @@ export default function BillingPage() {
       }
       
       setBillingInfo(data);
+
+      // Cargar número de habitaciones actual
+      try {
+        const roomsResponse = await fetch('/api/tenant/limits');
+        if (roomsResponse.ok) {
+          const roomsData = await roomsResponse.json();
+          if (roomsData.currentRooms && roomsData.currentRooms.length > 0) {
+            setCurrentRooms(roomsData.currentRooms.length);
+          }
+        }
+      } catch (err) {
+        console.error('Error cargando habitaciones:', err);
+      }
       
     } catch (error: any) {
       console.error('Error cargando facturación:', error);
@@ -155,6 +172,14 @@ export default function BillingPage() {
 
   const getCurrentPlan = () => {
     return PLANS.find(p => p.id === billingInfo?.tenant.plan_id) || PLANS[0];
+  };
+
+  const handleCheckout = async (rooms: number, isYearly: boolean, totalPrice: number) => {
+    console.log('💰 Iniciando checkout:', { rooms, isYearly, totalPrice });
+    setCheckoutData({ rooms, yearly: isYearly, price: totalPrice });
+    setShowCheckout(true);
+    // Redirigir a la página de checkout de habitaciones
+    window.location.href = `/checkout-rooms?rooms=${rooms}&yearly=${isYearly}`;
   };
 
   if (loading) {
@@ -280,6 +305,26 @@ export default function BillingPage() {
                   </button>
                 )}
               </div>
+            </div>
+          </div>
+
+          {/* Calculadora Dinámica de Precios */}
+          <div className="card">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">Calculadora de precios</h2>
+                <p className="text-sm text-gray-600">Descubre cuánto te costaría según tus necesidades</p>
+              </div>
+              <TrendingUp className="w-6 h-6 text-blue-600" />
+            </div>
+
+            <div className="max-w-2xl mx-auto">
+              <DynamicPriceCalculator
+                currentProperties={currentRooms}
+                isYearly={billingInfo?.tenant.plan_id === 'basic_yearly'}
+                showUpgradeButton={true}
+                onCheckout={handleCheckout}
+              />
             </div>
           </div>
 

@@ -7,6 +7,7 @@ import Link from 'next/link';
 import AdminLayout from '@/components/AdminLayout';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import DynamicPriceCalculator from '@/components/DynamicPriceCalculator';
 
 // Inicializar Stripe
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '');
@@ -528,7 +529,32 @@ function UpgradeContent() {
                 <p className="text-xs text-gray-500 mt-4 text-center">Descuentos automáticos según volumen.</p>
               </div>
             </div>
-          ) : (
+          )}
+
+          {/* Calculadora Dinámica de Precios */}
+          {!showCheckout && (
+            <div className="mt-8">
+              <div className="bg-white rounded-lg shadow-lg p-8 border border-gray-200">
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900">Calculadora de precios dinámica</h2>
+                    <p className="text-sm text-gray-600">Ajusta el número de propiedades y ve cómo cambia el precio</p>
+                  </div>
+                  <TrendingUp className="w-6 h-6 text-blue-600" />
+                </div>
+
+                <div className="max-w-2xl mx-auto">
+                  <DynamicPriceCalculator
+                    currentProperties={properties.length}
+                    isYearly={false}
+                    showUpgradeButton={false}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {showCheckout && (
             /* Checkout Form */
             <div className="max-w-4xl mx-auto">
               <div className="bg-white rounded-lg shadow-lg p-8">
