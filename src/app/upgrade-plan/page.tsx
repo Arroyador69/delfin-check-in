@@ -303,6 +303,30 @@ function UpgradeContent() {
     }
   }, [searchParams]);
 
+  // Actualizar precio cuando cambia el número de propiedades
+  useEffect(() => {
+    const pricePerProperty = getVolumePrice(selectedProperties);
+    let calculatedPrice = selectedProperties * pricePerProperty;
+    
+    if (isYearly) {
+      const yearlyPrice = calculatedPrice * 12;
+      const annualDiscount = yearlyPrice * 0.167; // 16.7% descuento anual
+      calculatedPrice = yearlyPrice - annualDiscount;
+    }
+    
+    setTotalPrice(calculatedPrice);
+  }, [selectedProperties, isYearly]);
+
+  // Función para obtener precio por propiedad según volumen (misma lógica que DynamicPriceCalculator)
+  const getVolumePrice = (propCount: number): number => {
+    if (propCount === 1) return 14.99;
+    if (propCount === 2) return 13.49;
+    if (propCount >= 3 && propCount <= 4) return 12.74;
+    if (propCount >= 5 && propCount <= 9) return 11.99;
+    if (propCount >= 10) return 11.24;
+    return 14.99;
+  };
+
   const loadCurrentPlan = async () => {
     try {
       setLoading(true);
@@ -364,7 +388,7 @@ function UpgradeContent() {
   };
 
   const addProperty = () => {
-    if (newPropertyName.trim() && properties.length < currentMaxRooms) {
+    if (newPropertyName.trim()) {
       const newId = Math.max(...properties.map(p => p.id), 0) + 1;
       const newProperty = { id: newId, name: newPropertyName.trim() };
       const updatedProperties = [...properties, newProperty];
@@ -518,39 +542,30 @@ function UpgradeContent() {
                         placeholder="Nombre de la propiedad"
                         className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
                         onKeyPress={(e) => e.key === 'Enter' && addProperty()}
-                        disabled={properties.length >= currentMaxRooms}
                       />
                       <button
                         onClick={addProperty}
-                        disabled={properties.length >= currentMaxRooms || !newPropertyName.trim()}
+                        disabled={!newPropertyName.trim()}
                         className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
                       >
                         Añadir
                       </button>
                     </div>
-                    {properties.length >= currentMaxRooms && (
-                      <p className="text-xs text-orange-600 mt-2">
-                        ⚠️ Has alcanzado el límite de {currentMaxRooms} {currentMaxRooms === 1 ? 'propiedad' : 'propiedades'} de tu plan actual. 
-                        Necesitas hacer upgrade para añadir más propiedades.
-                      </p>
-                    )}
                   </div>
 
                   {/* Selector de número de propiedades */}
                   <div>
                     <h4 className="text-sm font-medium text-gray-700 mb-3">Número de propiedades a contratar:</h4>
-                    <select
+                    <input
+                      type="number"
+                      min="1"
+                      max="100"
                       value={selectedProperties}
-                      onChange={(e) => setSelectedProperties(parseInt(e.target.value))}
+                      onChange={(e) => setSelectedProperties(parseInt(e.target.value) || 1)}
                       className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                    >
-                      {selectedPlan && Array.from({ length: selectedPlan.maxRooms }, (_, i) => i + 1).map(num => (
-                        <option key={num} value={num}>{num} {num === 1 ? 'propiedad' : 'propiedades'}</option>
-                      ))}
-                    </select>
+                    />
                     <p className="text-xs text-gray-500 mt-2">
-                      Tu plan actual permite hasta {currentMaxRooms} {currentMaxRooms === 1 ? 'propiedad' : 'propiedades'}. 
-                      {selectedPlan && ` El plan ${selectedPlan.name} permite hasta ${selectedPlan.maxRooms} ${selectedPlan.maxRooms === 1 ? 'propiedad' : 'propiedades'}.`}
+                      Puedes contratar desde 1 hasta 100 propiedades. El precio se calcula automáticamente con descuentos por volumen.
                     </p>
                   </div>
                 </div>
@@ -574,9 +589,14 @@ function UpgradeContent() {
                         {isUpgrade ? 'Costo adicional:' : 'Nuevo costo:'}
                       </span>
                       <span className="text-xl font-bold text-gray-900">
-                        €{selectedProperties * (selectedPlan?.price || 0)}/mes
+                        €{totalPrice.toFixed(2)}/{isYearly ? 'año' : 'mes'}
                       </span>
                     </div>
+                    {isYearly && (
+                      <div className="text-sm text-gray-600 mt-1">
+                        Equivale a €{(totalPrice / 12).toFixed(2)}/mes
+                      </div>
+                    )}
                   </div>
                 </div>
 
