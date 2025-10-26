@@ -162,6 +162,8 @@ export async function POST(request: NextRequest) {
         `• "Quién hay hoy?" - Ver huéspedes actuales\n` +
         `• "Quién llega mañana?" - Ver llegadas\n` +
         `• "Quién sale hoy?" - Ver salidas\n` +
+        `• "Reservas del 27" - Ver cualquier fecha\n` +
+        `• "Quién hay el 30 de octubre?" - Fecha específica\n` +
         `• "Estado de reservas" - Resumen completo\n\n` +
         `*Comandos:*\n` +
         `/help - Mostrar esta ayuda\n` +
@@ -178,6 +180,8 @@ export async function POST(request: NextRequest) {
         `• "Quién hay hoy?"\n` +
         `• "Quién llega mañana?"\n` +
         `• "Quién sale hoy?"\n` +
+        `• "Reservas del 27"\n` +
+        `• "Quién hay el 30 de octubre?"\n` +
         `• "Estado de reservas"\n\n` +
         `*Comandos:*\n` +
         `/start - Mensaje de bienvenida\n` +
@@ -185,7 +189,9 @@ export async function POST(request: NextRequest) {
         `/stats - Ver estadísticas de uso\n\n` +
         `*Ejemplos:*\n` +
         `"Quién hay hoy?"\n` +
-        `"Estado de reservas para mañana"`
+        `"Estado de reservas para mañana"\n` +
+        `"Reservas del 15"\n` +
+        `"Quién llega el 25 de octubre?"`
       );
       return NextResponse.json({ ok: true });
     }
@@ -215,22 +221,12 @@ export async function POST(request: NextRequest) {
     if (isReservasQuery) {
       console.log(`📅 Consulta de reservas detectada: "${userText}"`);
       
-      // Extraer fecha de la consulta (por defecto hoy)
-      const today = new Date().toISOString().split('T')[0];
-      let fecha = today;
+      // Usar el parser inteligente de fechas
+      const { parseDateFromText, formatDateForUser } = await import('@/lib/date-parser');
+      const fechaParseada = parseDateFromText(userText);
+      const fecha = fechaParseada.fecha;
       
-      // Detectar fechas específicas en el texto
-      if (userText.includes('mañana')) {
-        const tomorrow = new Date();
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        fecha = tomorrow.toISOString().split('T')[0];
-      } else if (userText.includes('ayer')) {
-        const yesterday = new Date();
-        yesterday.setDate(yesterday.getDate() - 1);
-        fecha = yesterday.toISOString().split('T')[0];
-      }
-      
-      console.log(`📅 Fecha de consulta: ${fecha}`);
+      console.log(`📅 Fecha extraída: ${fecha} (tipo: ${fechaParseada.tipo})`);
     
     // Indicar que está escribiendo
     await fetch(`${TELEGRAM_API}/sendChatAction`, {
@@ -321,6 +317,13 @@ export async function POST(request: NextRequest) {
 
         console.log(`📊 Datos obtenidos: ${alojados.length} alojados, ${llegan.length} llegan, ${salen.length} salen`);
 
+        // Formatear fecha para mostrar al usuario
+        const fechaFormateada = formatDateForUser(fecha);
+        const datosConFechaFormateada = {
+          ...datosEstructurados,
+          fecha_consulta_formateada: fechaFormateada
+        };
+
         // Usar IA para formatear
         const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
         
@@ -330,7 +333,7 @@ export async function POST(request: NextRequest) {
           max_tokens: 800,
           messages: [
             { role: "system", content: TELEGRAM_FACTUAL_PROMPT },
-            { role: "user", content: JSON.stringify(datosEstructurados, null, 2) }
+            { role: "user", content: JSON.stringify(datosConFechaFormateada, null, 2) }
           ]
         });
 
@@ -365,7 +368,9 @@ export async function POST(request: NextRequest) {
       'Puedes preguntarme sobre:\n' +
       '• "Quién hay hoy?"\n' +
       '• "Estado de reservas"\n' +
-      '• "Quién llega mañana?"\n\n' +
+      '• "Quién llega mañana?"\n' +
+      '• "Reservas del 27"\n' +
+      '• "Quién hay el 30 de octubre?"\n\n' +
       'Usa /help para ver todos los comandos disponibles.'
     );
     

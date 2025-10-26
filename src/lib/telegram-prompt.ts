@@ -12,7 +12,7 @@ No inventes ni mezcles grupos, no crees nuevos nombres ni reservas.
 
 Usa el formato exacto siguiente:
 
-📅 Estado de reservas para el {fecha_consulta}
+📅 Estado de reservas para el {fecha_consulta_formateada}
 
 🏠 Actualmente alojados:
 {lista_alojados}
@@ -29,6 +29,8 @@ FORMATO DE CADA ELEMENTO:
 Si una lista está vacía, indícalo con "—".
 
 EJEMPLO:
+📅 Estado de reservas para el 24 de octubre de 2025
+
 🏠 Actualmente alojados:
 - María Pérez (Hab. 101, 2 pers., Check-in 2025-10-22, Check-out 2025-10-27)
 
