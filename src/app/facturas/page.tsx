@@ -66,7 +66,7 @@ export default function FacturasPage() {
     cliente_pais: 'España',
     concepto: 'Alojamiento',
     descripcion: '',
-    precio_base: 0,
+    total_pagado: 0, // Cambio: ahora es el total que pagó el cliente
     iva_porcentaje: 21,
     forma_pago: '',
   });
@@ -114,7 +114,7 @@ export default function FacturasPage() {
   };
 
   const crearFactura = async () => {
-    if (!nuevaFactura.cliente_nombre || !nuevaFactura.concepto || nuevaFactura.precio_base <= 0) {
+    if (!nuevaFactura.cliente_nombre || !nuevaFactura.concepto || nuevaFactura.total_pagado <= 0) {
       setMessage({ type: 'error', text: 'Por favor completa todos los campos obligatorios' });
       return;
     }
@@ -123,12 +123,23 @@ export default function FacturasPage() {
     setMessage(null);
 
     try {
+      // Calcular precio base e IVA desde el total pagado
+      const precioBase = calcularPrecioBase();
+      const ivaImporte = calcularIVA();
+      
+      const datosFactura = {
+        ...nuevaFactura,
+        precio_base: precioBase,
+        total: nuevaFactura.total_pagado,
+        iva_importe: ivaImporte
+      };
+
       const response = await fetch('/api/facturas', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(nuevaFactura),
+        body: JSON.stringify(datosFactura),
       });
 
       const data = await response.json();
@@ -145,7 +156,7 @@ export default function FacturasPage() {
           cliente_pais: 'España',
           concepto: 'Alojamiento',
           descripcion: '',
-          precio_base: 0,
+          total_pagado: 0,
           iva_porcentaje: 21,
           forma_pago: '',
         });
@@ -210,9 +221,15 @@ export default function FacturasPage() {
     }
   };
 
-  const calcularTotal = () => {
-    const iva = (nuevaFactura.precio_base * nuevaFactura.iva_porcentaje) / 100;
-    return nuevaFactura.precio_base + iva;
+  // Nuevas funciones para calcular precio base e IVA desde el total
+  const calcularPrecioBase = () => {
+    // Fórmula: precio_base = total_pagado / (1 + iva_porcentaje/100)
+    return nuevaFactura.total_pagado / (1 + nuevaFactura.iva_porcentaje / 100);
+  };
+
+  const calcularIVA = () => {
+    const precioBase = calcularPrecioBase();
+    return nuevaFactura.total_pagado - precioBase;
   };
 
   if (loading) {
@@ -391,15 +408,15 @@ export default function FacturasPage() {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="precio_base" className="text-gray-700 font-medium">Precio Base (€) *</Label>
+                      <Label htmlFor="total_pagado" className="text-gray-700 font-medium">Total Pagado por el Cliente (€) *</Label>
                       <Input
-                        id="precio_base"
+                        id="total_pagado"
                         type="number"
                         step="0.01"
                         min="0"
-                        value={nuevaFactura.precio_base}
-                        onChange={(e) => setNuevaFactura(prev => ({ ...prev, precio_base: parseFloat(e.target.value) || 0 }))}
-                        placeholder="100.00"
+                        value={nuevaFactura.total_pagado}
+                        onChange={(e) => setNuevaFactura(prev => ({ ...prev, total_pagado: parseFloat(e.target.value) || 0 }))}
+                        placeholder="121.00"
                         className="text-gray-900 placeholder:text-gray-400"
                         style={{ color: '#111827' }}
                         required
@@ -453,22 +470,22 @@ export default function FacturasPage() {
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
                       <span className="text-gray-700">Precio base:</span>
-                      <span className="text-gray-900 font-medium">{nuevaFactura.precio_base.toFixed(2)} €</span>
+                      <span className="text-gray-900 font-medium">{calcularPrecioBase().toFixed(2)} €</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-700">IVA ({nuevaFactura.iva_porcentaje}%):</span>
-                      <span className="text-gray-900 font-medium">{((nuevaFactura.precio_base * nuevaFactura.iva_porcentaje) / 100).toFixed(2)} €</span>
+                      <span className="text-gray-900 font-medium">{calcularIVA().toFixed(2)} €</span>
                     </div>
                     <div className="flex justify-between font-bold border-t border-gray-300 pt-2">
                       <span className="text-gray-800">Total:</span>
-                      <span className="text-blue-600 text-lg">{calcularTotal().toFixed(2)} €</span>
+                      <span className="text-blue-600 text-lg">{nuevaFactura.total_pagado.toFixed(2)} €</span>
                     </div>
                   </div>
                 </div>
 
                 <Button 
                   onClick={crearFactura} 
-                  disabled={saving || !nuevaFactura.cliente_nombre || !nuevaFactura.concepto || nuevaFactura.precio_base <= 0}
+                  disabled={saving || !nuevaFactura.cliente_nombre || !nuevaFactura.concepto || nuevaFactura.total_pagado <= 0}
                   className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-4 px-6 rounded-xl shadow-lg transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                 >
                   {saving ? (

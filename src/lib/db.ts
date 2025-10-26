@@ -703,12 +703,14 @@ export async function crearFactura(data: {
   descripcion?: string;
   precio_base: number;
   iva_porcentaje?: number;
+  iva_importe?: number; // Nuevo campo para IVA calculado
+  total?: number; // Nuevo campo para total calculado
   forma_pago?: string;
 }): Promise<any> {
-  // Calcular IVA y total
+  // Usar los valores calculados del frontend o calcular si no están presentes
   const ivaPorcentaje = data.iva_porcentaje || 21.00;
-  const ivaImporte = (data.precio_base * ivaPorcentaje) / 100;
-  const total = data.precio_base + ivaImporte;
+  const ivaImporte = data.iva_importe || (data.precio_base * ivaPorcentaje) / 100;
+  const total = data.total || data.precio_base + ivaImporte;
 
   // Generar número de factura
   const numeroFactura = await generarNumeroFactura(data.tenant_id);
