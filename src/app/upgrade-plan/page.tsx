@@ -555,7 +555,6 @@ function UpgradeContent() {
           )}
 
           {showCheckout && (
-            /* Checkout Form */
             <div className="max-w-4xl mx-auto">
               <div className="bg-white rounded-lg shadow-lg p-8">
                 <h2 className="text-2xl font-bold text-gray-900 mb-6">
