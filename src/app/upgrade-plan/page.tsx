@@ -454,7 +454,6 @@ function UpgradeContent() {
           )}
 
           {!showCheckout ? (
-            /* Plans Grid */
             <div className="grid md:grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Card 1: Plan mensual */}
               <div className={`relative flex flex-col p-6 bg-white rounded-lg shadow-lg transition-all duration-300 ${currentPlanId === 'basic' ? 'border-4 border-blue-500' : 'border border-gray-200'} hover:shadow-xl hover:scale-[1.02]`}>
@@ -529,9 +528,9 @@ function UpgradeContent() {
                 <p className="text-xs text-gray-500 mt-4 text-center">Descuentos automáticos según volumen.</p>
               </div>
             </div>
-          )}
+          ) : null}
 
-          {showCheckout && (
+          {showCheckout ? (
             <div className="max-w-4xl mx-auto">
               <div className="bg-white rounded-lg shadow-lg p-8">
                 <h2 className="text-2xl font-bold text-gray-900 mb-6">
@@ -660,7 +659,7 @@ function UpgradeContent() {
                 </div>
               </div>
             </div>
-          )}
+          ) : null}
 
           {/* Info Card */}
           <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
