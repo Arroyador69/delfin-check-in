@@ -99,7 +99,14 @@ const PLANS: Plan[] = [
   }
 ];
 
-function CheckoutForm({ planId, propertiesCount, onSuccess, onError }: { planId: PlanId; propertiesCount: number; onSuccess: () => void; onError: (error: string) => void }) {
+function CheckoutForm({ planId, propertiesCount, isYearly, totalPrice, onSuccess, onError }: { 
+  planId: PlanId; 
+  propertiesCount: number; 
+  isYearly: boolean;
+  totalPrice: number;
+  onSuccess: () => void; 
+  onError: (error: string) => void 
+}) {
   const stripe = useStripe();
   const elements = useElements();
   const [processing, setProcessing] = useState(false);
@@ -137,16 +144,16 @@ function CheckoutForm({ planId, propertiesCount, onSuccess, onError }: { planId:
         throw new Error(methodError.message);
       }
 
-      // Procesar el upgrade en el backend
-      const response = await fetch('/api/upgrade-plan', {
+      // Procesar el upgrade en el backend usando la nueva API de suscripción por habitaciones
+      const response = await fetch('/api/create-room-subscription', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          planId,
+          roomCount: propertiesCount,
+          isYearly: isYearly,
           paymentMethodId: paymentMethod.id,
-          propertiesCount,
         }),
       });
 
@@ -156,15 +163,7 @@ function CheckoutForm({ planId, propertiesCount, onSuccess, onError }: { planId:
         throw new Error(data.error || 'Error procesando el upgrade');
       }
 
-      // Si hay client_secret, confirmar el pago
-      if (data.client_secret) {
-        const { error: confirmError } = await stripe.confirmCardPayment(data.client_secret);
-        
-        if (confirmError) {
-          throw new Error(confirmError.message);
-        }
-      }
-
+      // La nueva API maneja todo internamente, no necesitamos confirmar el pago
       onSuccess();
 
     } catch (error: any) {
@@ -290,6 +289,8 @@ function UpgradeContent() {
   const [selectedProperties, setSelectedProperties] = useState<number>(1);
   const [newPropertyName, setNewPropertyName] = useState('');
   const [currentMaxRooms, setCurrentMaxRooms] = useState<number>(1);
+  const [isYearly, setIsYearly] = useState<boolean>(false);
+  const [totalPrice, setTotalPrice] = useState<number>(0);
 
   useEffect(() => {
     loadCurrentPlan();
@@ -583,6 +584,8 @@ function UpgradeContent() {
                   <CheckoutForm
                     planId={selectedPlanId!}
                     propertiesCount={selectedProperties}
+                    isYearly={isYearly}
+                    totalPrice={totalPrice}
                     onSuccess={handleUpgradeSuccess}
                     onError={handleUpgradeError}
                   />
