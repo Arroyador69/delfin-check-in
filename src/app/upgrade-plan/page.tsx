@@ -531,29 +531,6 @@ function UpgradeContent() {
             </div>
           )}
 
-          {/* Calculadora Dinámica de Precios */}
-          {!showCheckout && (
-            <div className="mt-8">
-              <div className="bg-white rounded-lg shadow-lg p-8 border border-gray-200">
-                <div className="flex items-center justify-between mb-6">
-                  <div>
-                    <h2 className="text-2xl font-bold text-gray-900">Calculadora de precios dinámica</h2>
-                    <p className="text-sm text-gray-600">Ajusta el número de propiedades y ve cómo cambia el precio</p>
-                  </div>
-                  <TrendingUp className="w-6 h-6 text-blue-600" />
-                </div>
-
-                <div className="max-w-2xl mx-auto">
-                  <DynamicPriceCalculator
-                    currentProperties={properties.length}
-                    isYearly={false}
-                    showUpgradeButton={false}
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-
           {showCheckout && (
             <div className="max-w-4xl mx-auto">
               <div className="bg-white rounded-lg shadow-lg p-8">
