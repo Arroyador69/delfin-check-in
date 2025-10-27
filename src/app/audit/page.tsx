@@ -71,8 +71,8 @@ export default function AuditPage() {
           <p className="text-sm text-gray-600 mt-1">{items.length} registros encontrados</p>
         </div>
 
-        {/* Tabla con scroll vertical y horizontal independiente */}
-        <div className="overflow-auto" style={{ maxHeight: 'calc(100vh - 350px)' }}>
+                 {/* Tabla con scroll vertical y horizontal independiente */}
+         <div className="overflow-auto" style={{ maxHeight: 'calc(100vh - 250px)' }}>
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50 sticky top-0 z-10">
               <tr>
