@@ -244,14 +244,14 @@ export default function FacturasPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-6">
-      <div className="max-w-6xl mx-auto space-y-6">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-4 sm:p-6">
+      <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6">
         <div className="text-center">
-          <h1 className="text-4xl font-bold mb-4">
-            <span className="text-5xl mr-3" style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>🧾</span>
+          <h1 className="text-2xl sm:text-4xl font-bold mb-2 sm:mb-4">
+            <span className="text-3xl sm:text-5xl mr-2 sm:mr-3" style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>🧾</span>
             <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Generador de Facturas</span>
           </h1>
-          <p className="text-gray-600 text-lg">Crea y gestiona las facturas de tu alojamiento</p>
+          <p className="text-gray-600 text-sm sm:text-lg">Crea y gestiona las facturas de tu alojamiento</p>
         </div>
 
       {message && (
@@ -265,21 +265,23 @@ export default function FacturasPage() {
         </div>
       )}
 
-      <Tabs defaultValue="nueva" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2 bg-gradient-to-r from-blue-100 to-purple-100 border border-blue-200 rounded-xl shadow-lg">
+      <Tabs defaultValue="nueva" className="space-y-4 sm:space-y-6">
+        <TabsList className="grid w-full grid-cols-2 bg-gradient-to-r from-blue-100 to-purple-100 border border-blue-200 rounded-xl shadow-lg gap-2 p-1">
           <TabsTrigger 
             value="nueva" 
-            className="flex items-center space-x-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-purple-600 data-[state=active]:text-white text-gray-700 font-medium rounded-xl transition-all duration-200 hover:shadow-md"
+            className="flex items-center justify-center space-x-1 sm:space-x-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-purple-600 data-[state=active]:text-white text-gray-700 font-medium rounded-xl transition-all duration-200 hover:shadow-md text-xs sm:text-sm py-2"
           >
-            <Plus className="w-4 h-4" />
-            <span>Nueva Factura</span>
+            <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
+            <span className="hidden sm:inline">Nueva Factura</span>
+            <span className="sm:hidden">Nueva</span>
           </TabsTrigger>
           <TabsTrigger 
             value="historial" 
-            className="flex items-center space-x-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-purple-600 data-[state=active]:text-white text-gray-700 font-medium rounded-xl transition-all duration-200 hover:shadow-md"
+            className="flex items-center justify-center space-x-1 sm:space-x-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-purple-600 data-[state=active]:text-white text-gray-700 font-medium rounded-xl transition-all duration-200 hover:shadow-md text-xs sm:text-sm py-2"
           >
-            <FileText className="w-4 h-4" />
-            <span>Historial ({facturas.length})</span>
+            <FileText className="w-3 h-3 sm:w-4 sm:h-4" />
+            <span className="hidden sm:inline">Historial ({facturas.length})</span>
+            <span className="sm:hidden">Historial</span>
           </TabsTrigger>
         </TabsList>
 
@@ -305,16 +307,16 @@ export default function FacturasPage() {
               </div>
             </Card>
           ) : (
-            <Card className="p-6 bg-white shadow-xl rounded-xl border border-blue-200">
-              <h2 className="text-xl font-semibold text-gray-900 mb-6 text-center bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Nueva Factura</h2>
+            <Card className="p-4 sm:p-6 bg-white shadow-xl rounded-xl border border-blue-200">
+                              <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4 sm:mb-6 text-center bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Nueva Factura</h2>
               
-              <div className="space-y-6">
+                              <div className="space-y-4 sm:space-y-6">
                 {/* Datos del Cliente */}
-                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-200 shadow-sm">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                    <User className="w-5 h-5 mr-2 text-blue-600" />
-                    Datos del Cliente
-                  </h3>
+                                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 sm:p-6 rounded-xl border border-blue-200 shadow-sm">
+                                      <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-3 sm:mb-4 flex items-center">
+                      <User className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-blue-600" />
+                      Datos del Cliente
+                    </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="cliente_nombre" className="text-gray-700 font-medium">Nombre Completo *</Label>
