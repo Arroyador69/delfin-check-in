@@ -34,6 +34,8 @@ export async function POST(req: NextRequest) {
 
     for (const lote of lotes) {
       try {
+        console.log(`🔍 Procesando lote: ${lote}`);
+        
         // Simular respuesta del MIR
         const codigoEstado = Math.random() > 0.5 ? 1 : 4; // 1 = Confirmado, 4 = Pendiente
         
@@ -60,7 +62,7 @@ export async function POST(req: NextRequest) {
         }
 
         // Actualizar mir_comunicaciones
-        await sql`
+        const updateResult = await sql`
           UPDATE mir_comunicaciones 
           SET 
             estado = ${nuevoEstado},
@@ -81,9 +83,11 @@ export async function POST(req: NextRequest) {
             )
           WHERE lote = ${lote}
         `;
+        
+        console.log(`📝 Actualizadas ${updateResult.count} comunicaciones MIR para lote ${lote}`);
 
-        // Actualizar guest_registrations
-        await sql`
+        // Actualizar guest_registrations usando el código de arrendador del resultado
+        const guestUpdateResult = await sql`
           UPDATE guest_registrations 
           SET data = jsonb_set(
             COALESCE(data, '{}'::jsonb),
@@ -97,9 +101,14 @@ export async function POST(req: NextRequest) {
             )
           )
           WHERE reserva_ref IN (
-            SELECT referencia FROM mir_comunicaciones WHERE lote = ${lote}
+            SELECT resultado::jsonb->>'codigoArrendador' 
+            FROM mir_comunicaciones 
+            WHERE lote = ${lote}
+            AND resultado::jsonb->>'codigoArrendador' IS NOT NULL
           )
         `;
+        
+        console.log(`📝 Actualizados ${guestUpdateResult.count} registros de huéspedes para lote ${lote}`);
 
         actualizados.push({
           lote,
