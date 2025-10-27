@@ -575,22 +575,34 @@ export default function MirComunicacionesPage() {
 
               {resultadosConsulta.length > 0 && (
                 <div className="space-y-4 mt-4">
-                  <h4 className="font-bold text-lg text-gray-800">Resultados de la Consulta</h4>
+                  <h4 className="font-bold text-xl text-gray-900">Resultados de la Consulta</h4>
                   {resultadosConsulta.map((resultado, index) => (
-                    <Card key={index} className="p-4 border-2 border-blue-200 bg-blue-50">
-                      <div className="space-y-2">
+                    <Card key={index} className="p-6 border-2 border-green-300 bg-white shadow-lg">
+                      <div className="space-y-3">
                         <div className="flex items-center gap-3">
-                          <span className="font-bold text-lg">{resultado.codigo}</span>
-                          <Badge variant="outline" className="font-semibold">{resultado.tipo}</Badge>
-                          <Badge variant={resultado.estado === 'enviado' ? 'default' : 'secondary'} className="font-semibold">
+                          <span className="font-bold text-xl text-gray-900">{resultado.codigo}</span>
+                          <Badge variant="outline" className="font-semibold bg-gray-100 text-gray-800">{resultado.tipo}</Badge>
+                          <Badge variant="default" className="font-semibold bg-green-600 text-white">
                             {resultado.estado.toUpperCase()}
                           </Badge>
                         </div>
-                        <div className="text-sm text-gray-700 space-y-1">
-                          <div><strong>Tipo:</strong> {resultado.interpretacion.tipoDescripcion}</div>
-                          <div><strong>Estado:</strong> {resultado.interpretacion.estadoDescripcion}</div>
-                          <div><strong>Referencia:</strong> {resultado.referencia}</div>
-                          <div><strong>Fecha Alta:</strong> {new Date(resultado.fechaAlta).toLocaleString('es-ES')}</div>
+                        <div className="text-sm text-gray-800 space-y-2 bg-gray-50 p-4 rounded-lg">
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-gray-900">Tipo:</span>
+                            <span className="text-gray-700">{resultado.interpretacion.tipoDescripcion}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-gray-900">Estado:</span>
+                            <span className="text-gray-700">{resultado.interpretacion.estadoDescripcion}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-gray-900">Referencia:</span>
+                            <span className="text-gray-700 font-mono text-xs">{resultado.referencia}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-gray-900">Fecha Alta:</span>
+                            <span className="text-gray-700">{new Date(resultado.fechaAlta).toLocaleString('es-ES')}</span>
+                          </div>
                         </div>
                       </div>
                     </Card>
