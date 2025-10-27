@@ -21,35 +21,28 @@ export default function AccountPage() {
   useEffect(() => {
     const loadAccountData = async () => {
       try {
-        // Cargar datos del usuario autenticado desde la API
-        const response = await fetch('/api/auth/me', {
+        // Cargar datos del tenant desde la API
+        const response = await fetch('/api/tenant', {
           method: 'GET',
           credentials: 'include'
         });
         
         if (response.ok) {
-          const userData = await response.json();
-          setAccountData(prev => ({
-            ...prev,
-            username: userData.username || 'admin'
-          }));
-        } else {
-          // Fallback a localStorage si la API falla
-          const savedUsername = localStorage.getItem('admin_username') || 'admin';
-          
-          setAccountData(prev => ({
-            ...prev,
-            username: savedUsername
-          }));
+          const tenantData = await response.json();
+          // Cargar el nombre del tenant desde la base de datos
+          if (tenantData.tenant && tenantData.tenant.name) {
+            setAccountData(prev => ({
+              ...prev,
+              username: tenantData.tenant.name
+            }));
+          }
         }
       } catch (error) {
         console.error('Error cargando datos de cuenta:', error);
-        // Fallback a localStorage
-        const savedUsername = localStorage.getItem('admin_username') || 'admin';
-        
+        // Fallback si la API falla
         setAccountData(prev => ({
           ...prev,
-          username: savedUsername
+          username: 'admin'
         }));
       }
     };
@@ -129,37 +122,48 @@ export default function AccountPage() {
 
     try {
       if (!accountData.username.trim()) {
-        setMessage({ type: 'error', text: 'El nombre de usuario no puede estar vacío' });
+        setMessage({ type: 'error', text: 'El nombre no puede estar vacío' });
+        setLoading(false);
         return;
       }
 
-      // Llamar a la API para cambiar el nombre de usuario
-      const response = await fetch('/api/auth/change-username', {
+      // Llamar a la API para cambiar el nombre del tenant
+      const response = await fetch('/api/tenant/update-name', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         credentials: 'include',
         body: JSON.stringify({
-          newUsername: accountData.username.trim(),
+          newName: accountData.username.trim(),
         }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        setMessage({ type: 'error', text: data.message || 'Error al cambiar el nombre de usuario' });
+        // Si hay error 429, mostrar días restantes
+        if (response.status === 429 && data.daysRemaining) {
+          setMessage({ 
+            type: 'error', 
+            text: data.error || `Debes esperar ${data.daysRemaining} día(s) más` 
+          });
+        } else {
+          setMessage({ type: 'error', text: data.error || 'Error al cambiar el nombre' });
+        }
+        setLoading(false);
         return;
       }
 
-      // Guardar también en localStorage como fallback
-      localStorage.setItem('admin_username', accountData.username.trim());
-      
-      setMessage({ type: 'success', text: 'Nombre de usuario actualizado exitosamente en la base de datos' });
+      setMessage({ type: 'success', text: 'Nombre actualizado exitosamente en la base de datos' });
+
+      // Recargar los datos del tenant para mostrar el nuevo nombre
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
 
     } catch (error) {
-      setMessage({ type: 'error', text: 'Error al actualizar el nombre de usuario' });
-    } finally {
+      setMessage({ type: 'error', text: 'Error al actualizar el nombre' });
       setLoading(false);
     }
   };

@@ -404,83 +404,82 @@ export default function EstadoEnviosMIRPage() {
 
         {/* Tabs de comunicaciones */}
         {estadoEnvio && (
-          <Tabs defaultValue="pendientes" className="space-y-4">
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="pendientes" className="flex items-center space-x-2">
-                <Clock className="w-4 h-4" />
-                <span>Pendientes ({estadoEnvio.estadisticas.pendientes})</span>
-              </TabsTrigger>
-              <TabsTrigger value="enviados" className="flex items-center space-x-2">
-                <Send className="w-4 h-4" />
-                <span>Enviados ({estadoEnvio.estadisticas.enviados})</span>
-              </TabsTrigger>
-              <TabsTrigger value="confirmados" className="flex items-center space-x-2">
-                <CheckCircle className="w-4 h-4" />
-                <span>Confirmados ({estadoEnvio.estadisticas.confirmados})</span>
-              </TabsTrigger>
-              <TabsTrigger value="errores" className="flex items-center space-x-2">
-                <XCircle className="w-4 h-4" />
-                <span>Errores ({estadoEnvio.estadisticas.errores})</span>
-              </TabsTrigger>
-            </TabsList>
+          <div className="bg-white rounded-xl shadow-xl border border-blue-200">
+            <div className="p-6">
+              <Tabs defaultValue="pendientes" className="space-y-4">
+                <TabsList className="grid w-full grid-cols-4">
+                  <TabsTrigger value="pendientes" className="flex items-center space-x-2">
+                    <Clock className="w-4 h-4" />
+                    <span>Pendientes ({estadoEnvio.estadisticas.pendientes})</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="enviados" className="flex items-center space-x-2">
+                    <Send className="w-4 h-4" />
+                    <span>Enviados ({estadoEnvio.estadisticas.enviados})</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="confirmados" className="flex items-center space-x-2">
+                    <CheckCircle className="w-4 h-4" />
+                    <span>Confirmados ({estadoEnvio.estadisticas.confirmados})</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="errores" className="flex items-center space-x-2">
+                    <XCircle className="w-4 h-4" />
+                    <span>Errores ({estadoEnvio.estadisticas.errores})</span>
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
+            
+            {/* Contenedor con scroll */}
+            <div 
+              style={{ 
+                maxHeight: 'calc(100vh - 450px)',
+                overflowY: 'auto',
+                overflowX: 'auto'
+              }}
+              className="border-t border-gray-200"
+            >
+              <Tabs defaultValue="pendientes" className="w-full">
+                <TabsContent value="pendientes" className="m-0">
+                  <div className="p-6">
+                    <div className="flex items-center space-x-2 mb-4">
+                      <Clock className="w-5 h-5 text-yellow-600" />
+                      <h3 className="text-lg font-semibold text-gray-900">Comunicaciones Pendientes de Envío</h3>
+                    </div>
+                    {renderComunicaciones(estadoEnvio.comunicaciones.pendientes, 'pendientes')}
+                  </div>
+                </TabsContent>
 
-            <TabsContent value="pendientes">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <Clock className="w-5 h-5 text-yellow-600" />
-                    <span>Comunicaciones Pendientes de Envío</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {renderComunicaciones(estadoEnvio.comunicaciones.pendientes, 'pendientes')}
-                </CardContent>
-              </Card>
-            </TabsContent>
+                <TabsContent value="enviados" className="m-0">
+                  <div className="p-6">
+                    <div className="flex items-center space-x-2 mb-4">
+                      <Send className="w-5 h-5 text-orange-600" />
+                      <h3 className="text-lg font-semibold text-gray-900">Comunicaciones Enviadas al MIR</h3>
+                    </div>
+                    {renderComunicaciones(estadoEnvio.comunicaciones.enviados, 'enviadas')}
+                  </div>
+                </TabsContent>
 
-            <TabsContent value="enviados">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <Send className="w-5 h-5 text-orange-600" />
-                    <span>Comunicaciones Enviadas al MIR</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {renderComunicaciones(estadoEnvio.comunicaciones.enviados, 'enviadas')}
-                </CardContent>
-              </Card>
-            </TabsContent>
+                <TabsContent value="confirmados" className="m-0">
+                  <div className="p-6">
+                    <div className="flex items-center space-x-2 mb-4">
+                      <CheckCircle className="w-5 h-5 text-green-600" />
+                      <h3 className="text-lg font-semibold text-gray-900">Comunicaciones Confirmadas por el MIR</h3>
+                    </div>
+                    {renderComunicaciones(estadoEnvio.comunicaciones.confirmados, 'confirmadas')}
+                  </div>
+                </TabsContent>
 
-            <TabsContent value="confirmados">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <CheckCircle className="w-5 h-5 text-green-600" />
-                    <span>Comunicaciones Confirmadas por el MIR</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {renderComunicaciones(estadoEnvio.comunicaciones.confirmados, 'confirmadas')}
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="errores">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <XCircle className="w-5 h-5 text-red-600" />
-                    <span>Comunicaciones con Errores</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {renderComunicaciones(estadoEnvio.comunicaciones.errores, 'con errores')}
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-          </Tabs>
+                <TabsContent value="errores" className="m-0">
+                  <div className="p-6">
+                    <div className="flex items-center space-x-2 mb-4">
+                      <XCircle className="w-5 h-5 text-red-600" />
+                      <h3 className="text-lg font-semibold text-gray-900">Comunicaciones con Errores</h3>
+                    </div>
+                    {renderComunicaciones(estadoEnvio.comunicaciones.errores, 'con errores')}
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </div>
+          </div>
         )}
       </div>
 

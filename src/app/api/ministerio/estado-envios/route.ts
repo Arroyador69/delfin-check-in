@@ -6,8 +6,9 @@ export async function GET(req: NextRequest) {
     console.log('📊 Obteniendo estado de envíos al MIR...');
     
     // Obtener registros únicos de guest_registrations CON sus comunicaciones MIR
+    // Usar una subconsulta para evitar duplicados por JOIN múltiple
     const result = await sql`
-      SELECT DISTINCT ON (gr.id)
+      SELECT 
         gr.id,
         gr.created_at,
         gr.fecha_entrada,
@@ -24,8 +25,23 @@ export async function GET(req: NextRequest) {
         mc.created_at as mir_created_at,
         mc.xml_respuesta as mir_xml_respuesta
       FROM guest_registrations gr
-      LEFT JOIN mir_comunicaciones mc ON gr.reserva_ref = mc.resultado::jsonb->>'codigoArrendador'
-      ORDER BY gr.id, gr.created_at DESC
+      LEFT JOIN (
+        SELECT DISTINCT ON (resultado::jsonb->>'codigoArrendador')
+          id,
+          referencia,
+          tipo,
+          estado,
+          lote,
+          resultado,
+          error,
+          created_at,
+          xml_respuesta,
+          resultado::jsonb->>'codigoArrendador' as codigo_arrendador
+        FROM mir_comunicaciones
+        WHERE resultado::jsonb->>'codigoArrendador' IS NOT NULL
+        ORDER BY resultado::jsonb->>'codigoArrendador', created_at DESC
+      ) mc ON gr.data->>'codigoEstablecimiento' = mc.codigo_arrendador
+      ORDER BY gr.created_at DESC
     `;
     
     console.log(`📋 Encontrados ${result.rows.length} registros`);
