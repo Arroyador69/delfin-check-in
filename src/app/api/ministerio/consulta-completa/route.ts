@@ -137,3 +137,5 @@ function interpretarTipo(tipo: string): string {
   
   return tipos[tipo] || 'Tipo de comunicación desconocido';
 }
+
+

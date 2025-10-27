@@ -484,12 +484,14 @@ export default function MirComunicacionesPage() {
                                   className="bg-green-600 hover:bg-green-700 text-white font-semibold"
                                   onClick={async () => {
                                     try {
-                                      const response = await fetch('/api/ministerio/auto-envio', {
+                                      const response = await fetch('/api/ministerio/auto-envio-dual', {
                                         method: 'POST',
                                         headers: { 'Content-Type': 'application/json' },
                                         body: JSON.stringify({
-                                          id: registro.id,
-                                          referencia: registro.referencia
+                                          referencia: registro.referencia,
+                                          fechaEntrada: registro.fecha_entrada,
+                                          fechaSalida: registro.fecha_salida,
+                                          personas: registro.datos?.comunicaciones?.[0]?.personas || []
                                         })
                                       });
                                       

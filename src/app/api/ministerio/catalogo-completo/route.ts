@@ -120,3 +120,5 @@ function obtenerDescripcionCatalogo(nombreCatalogo: string): string {
   
   return descripciones[nombreCatalogo] || 'Catálogo del sistema MIR';
 }
+
+
