@@ -40,7 +40,7 @@ export async function GET(req: NextRequest) {
         FROM mir_comunicaciones
         WHERE resultado::jsonb->>'codigoArrendador' IS NOT NULL
         ORDER BY resultado::jsonb->>'codigoArrendador', created_at DESC
-      ) mc ON gr.data->>'codigoEstablecimiento' = mc.codigo_arrendador
+      ) mc ON gr.reserva_ref = mc.codigo_arrendador
       ORDER BY gr.created_at DESC
     `;
     
@@ -85,7 +85,7 @@ export async function GET(req: NextRequest) {
         console.log('Error extrayendo nombre del huésped:', error);
       }
       
-      // Crear objeto base de comunicación
+      // Crear objeto base de comunicación con datos consistentes
       const comunicacion = {
         id: registro.id,
         timestamp: registro.created_at,
@@ -96,7 +96,15 @@ export async function GET(req: NextRequest) {
         lote: mirLote || loteFromData, // Priorizar lote MIR si existe
         error: mirError,
         fechaEnvio: registro.mir_created_at,
-        estado: mirEstado || 'pendiente'
+        estado: mirEstado || 'pendiente',
+        // Información de vinculación para debugging
+        vinculacion: {
+          guest_registration_id: registro.id,
+          mir_comunicacion_id: registro.mir_id,
+          reserva_ref: registro.reserva_ref,
+          codigo_arrendador: registro.codigo_arrendador,
+          codigo_establecimiento: registro.data?.codigoEstablecimiento
+        }
       };
       
       // Determinar el estado real considerando tanto mir_comunicaciones como mir_status en datos
