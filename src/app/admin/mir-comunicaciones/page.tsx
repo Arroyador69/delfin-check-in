@@ -556,7 +556,7 @@ export default function MirComunicacionesPage() {
                 <Label htmlFor="codigos" className="text-gray-800 font-semibold">Códigos de Comunicación</Label>
                 <Input
                   id="codigos"
-                  placeholder="Código1, Código2, Código3..."
+                  placeholder="REF-e95a19f7-b576-4378-953a-95784fd33ce3-1761250365, REF-11bb82f6-8c65-4bc1..."
                   value={codigosConsulta}
                   onChange={(e) => setCodigosConsulta(e.target.value)}
                 />
