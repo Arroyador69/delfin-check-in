@@ -45,11 +45,16 @@ export async function GET(req: NextRequest) {
     };
     
     result.rows.forEach(registro => {
-      // Usar datos reales de la tabla mir_comunicaciones
+      // Usar datos reales de la tabla mir_comunicaciones Y del campo mir_status en guest_registrations
       const hasMirComunicacion = registro.mir_id !== null;
       const mirEstado = registro.mir_estado;
       const mirLote = registro.mir_lote;
       const mirError = registro.mir_error;
+      
+      // También verificar el campo mir_status dentro de los datos del registro
+      const mirStatusFromData = registro.data?.mir_status || {};
+      const estadoFromData = mirStatusFromData.estado;
+      const loteFromData = mirStatusFromData.lote;
       
       // Extraer nombre del huésped
       let nombreCompleto = 'Datos no disponibles';
@@ -75,59 +80,44 @@ export async function GET(req: NextRequest) {
         estado: mirEstado || 'pendiente'
       };
       
-      if (!hasMirComunicacion) {
-        // No se ha enviado al MIR
-        comunicaciones.pendientes.push({
-          ...comunicacion,
-          estado: 'pendiente'
-        });
-        estadisticas.pendientes++;
-      } else if (mirEstado === 'error' || mirError) {
-        // Error en el envío
-        comunicaciones.errores.push({
-          ...comunicacion,
-          estado: 'error'
-        });
+      // Determinar el estado real considerando tanto mir_comunicaciones como mir_status en datos
+      let estadoFinal = 'pendiente';
+      let loteFinal = mirLote || loteFromData;
+      
+      // Prioridad 1: Error (cualquier fuente)
+      if (mirEstado === 'error' || mirError || estadoFromData === 'error') {
+        estadoFinal = 'error';
+      }
+      // Prioridad 2: Confirmado (cualquier fuente)
+      else if (mirEstado === 'confirmado' || estadoFromData === 'confirmado') {
+        estadoFinal = 'confirmado';
+      }
+      // Prioridad 3: Enviado (cualquier fuente)
+      else if (mirEstado === 'enviado' || estadoFromData === 'enviado' || mirLote || loteFromData) {
+        estadoFinal = 'enviado';
+      }
+      // Prioridad 4: Si tiene comunicación MIR pero estado desconocido, considerar enviado
+      else if (hasMirComunicacion) {
+        estadoFinal = 'enviado';
+      }
+      
+      // Actualizar el objeto comunicación con el estado final
+      comunicacion.estado = estadoFinal;
+      comunicacion.lote = loteFinal;
+      
+      // Clasificar según el estado final
+      if (estadoFinal === 'error') {
+        comunicaciones.errores.push(comunicacion);
         estadisticas.errores++;
-      } else if (mirEstado === 'confirmado') {
-        // Confirmado por el MIR
-        comunicaciones.confirmados.push({
-          ...comunicacion,
-          estado: 'confirmado'
-        });
+      } else if (estadoFinal === 'confirmado') {
+        comunicaciones.confirmados.push(comunicacion);
         estadisticas.confirmados++;
-      } else if (mirEstado === 'enviado') {
-        // Enviado pero pendiente de confirmación
-        comunicaciones.enviados.push({
-          ...comunicacion,
-          estado: 'enviado'
-        });
+      } else if (estadoFinal === 'enviado') {
+        comunicaciones.enviados.push(comunicacion);
         estadisticas.enviados++;
       } else {
-        // Estado desconocido, verificar si se envió automáticamente
-        // Si tiene lote o si el estado es 'enviado', mostrar como enviado
-        if (mirLote || mirEstado === 'enviado' || mirEstado === 'ENVIADO') {
-          comunicaciones.enviados.push({
-            ...comunicacion,
-            estado: 'enviado'
-          });
-          estadisticas.enviados++;
-        } else {
-          // Si no tiene lote pero se envió automáticamente (tiene mir_id), mostrar como enviado
-          if (hasMirComunicacion) {
-            comunicaciones.enviados.push({
-              ...comunicacion,
-              estado: 'enviado'
-            });
-            estadisticas.enviados++;
-          } else {
-            comunicaciones.pendientes.push({
-              ...comunicacion,
-              estado: 'pendiente'
-            });
-            estadisticas.pendientes++;
-          }
-        }
+        comunicaciones.pendientes.push(comunicacion);
+        estadisticas.pendientes++;
       }
     });
     
