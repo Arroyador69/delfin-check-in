@@ -116,7 +116,7 @@ export default function MirComunicacionesPage() {
     try {
       const codigos = codigosConsulta.split(',').map(c => c.trim()).filter(c => c);
       
-      const response = await fetch('/api/ministerio/consulta-oficial', {
+      const response = await fetch('/api/ministerio/consulta-simple', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ codigos })
@@ -400,9 +400,13 @@ export default function MirComunicacionesPage() {
                                 <span>📋 Tipo: <strong>{registro.tipo || 'PV'}</strong></span>
                                 <span>🆔 Ref: <strong>{registro.referencia}</strong></span>
                               </div>
+                              {registro.lote && (
+                                <div className="mt-1 text-sm text-blue-600">
+                                  📦 Lote: <strong>{registro.lote}</strong>
+                                </div>
+                              )}
                               <div className="mt-1">
                                 📅 Registrado: <strong>{new Date(registro.timestamp).toLocaleString('es-ES')}</strong>
-                                {registro.lote && <span className="ml-4">📦 Lote: <strong>{registro.lote}</strong></span>}
                                 {registro.fechaEnvio && <span className="ml-4">📤 Enviado: <strong>{new Date(registro.fechaEnvio).toLocaleString('es-ES')}</strong></span>}
                               </div>
                               {registro.error && (
