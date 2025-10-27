@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
         mc.created_at as mir_created_at,
         mc.xml_respuesta as mir_xml_respuesta
       FROM guest_registrations gr
-      LEFT JOIN mir_comunicaciones mc ON gr.data->'comunicaciones'->0->>'codigoArrendador' = mc.resultado::jsonb->>'codigoArrendador'
+      LEFT JOIN mir_comunicaciones mc ON gr.data->'comunicaciones'->0->>'referencia' = mc.referencia
       ORDER BY gr.created_at DESC
     `;
     
