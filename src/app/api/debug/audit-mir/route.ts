@@ -5,7 +5,20 @@ export async function GET(req: NextRequest) {
   try {
     console.log('🔍 Iniciando auditoría exhaustiva de comunicaciones MIR...');
 
-    // 1. Obtener todas las comunicaciones de mir_comunicaciones
+    // 1. Obtener todos los registros de guest_registrations
+    const guestRegistrations = await sql`
+      SELECT 
+        id,
+        created_at,
+        reserva_ref,
+        data,
+        fecha_entrada,
+        fecha_salida
+      FROM guest_registrations 
+      ORDER BY created_at DESC
+    `;
+
+    // 2. Obtener todas las comunicaciones de mir_comunicaciones
     const mirComunicaciones = await sql`
       SELECT 
         id,
@@ -21,83 +34,35 @@ export async function GET(req: NextRequest) {
       ORDER BY created_at DESC
     `;
 
-    // 2. Obtener todos los registros de guest_registrations con mir_status
-    const guestRegistrations = await sql`
-      SELECT 
-        id,
-        created_at,
-        reserva_ref,
-        data,
-        fecha_entrada,
-        fecha_salida
-      FROM guest_registrations 
-      WHERE data->'mir_status' IS NOT NULL
-      ORDER BY created_at DESC
-    `;
-
     // 3. Procesar datos para auditoría
     const auditoria = {
       resumen: {
+        totalGuestRegistrations: guestRegistrations.rows.length,
         totalMirComunicaciones: mirComunicaciones.rows.length,
-        totalGuestRegistrationsConMirStatus: guestRegistrations.rows.length,
-        comunicacionesPorTipo: {},
-        comunicacionesPorEstado: {},
-        lotesUnicos: new Set(),
-        referenciasUnicas: new Set()
+        registrosConMirStatus: 0,
+        registrosSinMirStatus: 0,
+        comunicacionesEnviadas: 0,
+        comunicacionesPendientes: 0,
+        comunicacionesConError: 0
       },
       detalles: {
+        guestRegistrations: [],
         mirComunicaciones: [],
-        guestRegistrationsConMirStatus: [],
-        inconsistencias: [],
-        comunicacionesEnviadas: []
+        inconsistencias: []
       }
     };
 
-    // Procesar mir_comunicaciones
-    mirComunicaciones.rows.forEach(comunicacion => {
-      const tipo = comunicacion.tipo || 'desconocido';
-      const estado = comunicacion.estado || 'desconocido';
-      
-      // Contar por tipo
-      auditoria.resumen.comunicacionesPorTipo[tipo] = 
-        (auditoria.resumen.comunicacionesPorTipo[tipo] || 0) + 1;
-      
-      // Contar por estado
-      auditoria.resumen.comunicacionesPorEstado[estado] = 
-        (auditoria.resumen.comunicacionesPorEstado[estado] || 0) + 1;
-      
-      // Agregar lotes únicos
-      if (comunicacion.lote) {
-        auditoria.resumen.lotesUnicos.add(comunicacion.lote);
-      }
-      
-      // Agregar referencias únicas
-      auditoria.resumen.referenciasUnicas.add(comunicacion.referencia);
-      
-      const detalle = {
-        id: comunicacion.id,
-        referencia: comunicacion.referencia,
-        tipo: comunicacion.tipo,
-        estado: comunicacion.estado,
-        lote: comunicacion.lote,
-        error: comunicacion.error,
-        created_at: comunicacion.created_at,
-        updated_at: comunicacion.updated_at,
-        resultado: comunicacion.resultado ? JSON.parse(comunicacion.resultado) : null
-      };
-      
-      auditoria.detalles.mirComunicaciones.push(detalle);
-      
-      // Si está enviado, agregar a comunicaciones enviadas
-      if (comunicacion.estado === 'enviado' || comunicacion.lote) {
-        auditoria.detalles.comunicacionesEnviadas.push(detalle);
-      }
-    });
-
-    // Procesar guest_registrations con mir_status
+    // Procesar guest_registrations
     guestRegistrations.rows.forEach(registro => {
       const mirStatus = registro.data?.mir_status || {};
+      const tieneMirStatus = Object.keys(mirStatus).length > 0;
       
+      if (tieneMirStatus) {
+        auditoria.resumen.registrosConMirStatus++;
+      } else {
+        auditoria.resumen.registrosSinMirStatus++;
+      }
+
       // Extraer nombre del huésped
       let nombreCompleto = 'Datos no disponibles';
       try {
@@ -109,21 +74,46 @@ export async function GET(req: NextRequest) {
         console.log('Error extrayendo nombre del huésped:', error);
       }
 
-      const detalle = {
+      const registroDetalle = {
         id: registro.id,
         reserva_ref: registro.reserva_ref,
         nombreCompleto,
         created_at: registro.created_at,
         fecha_entrada: registro.fecha_entrada,
         fecha_salida: registro.fecha_salida,
+        tieneMirStatus,
         mirStatus: mirStatus,
         estado: mirStatus.estado || 'sin_estado',
         lote: mirStatus.lote || null,
-        error: mirStatus.error || null,
-        fechaEnvio: mirStatus.fechaEnvio || null
+        error: mirStatus.error || null
       };
 
-      auditoria.detalles.guestRegistrationsConMirStatus.push(detalle);
+      auditoria.detalles.guestRegistrations.push(registroDetalle);
+
+      // Clasificar por estado
+      if (mirStatus.estado === 'enviado' || mirStatus.lote) {
+        auditoria.resumen.comunicacionesEnviadas++;
+      } else if (mirStatus.estado === 'error') {
+        auditoria.resumen.comunicacionesConError++;
+      } else {
+        auditoria.resumen.comunicacionesPendientes++;
+      }
+    });
+
+    // Procesar mir_comunicaciones
+    mirComunicaciones.rows.forEach(comunicacion => {
+      const comunicacionDetalle = {
+        id: comunicacion.id,
+        referencia: comunicacion.referencia,
+        tipo: comunicacion.tipo,
+        estado: comunicacion.estado,
+        lote: comunicacion.lote,
+        error: comunicacion.error,
+        created_at: comunicacion.created_at,
+        updated_at: comunicacion.updated_at
+      };
+
+      auditoria.detalles.mirComunicaciones.push(comunicacionDetalle);
     });
 
     // Buscar inconsistencias
@@ -165,10 +155,6 @@ export async function GET(req: NextRequest) {
         });
       }
     });
-
-    // Convertir Sets a Arrays para JSON
-    auditoria.resumen.lotesUnicos = Array.from(auditoria.resumen.lotesUnicos);
-    auditoria.resumen.referenciasUnicas = Array.from(auditoria.resumen.referenciasUnicas);
 
     console.log('📊 Auditoría completada:', auditoria.resumen);
 
