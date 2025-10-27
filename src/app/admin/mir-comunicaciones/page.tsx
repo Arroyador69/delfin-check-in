@@ -574,23 +574,23 @@ export default function MirComunicacionesPage() {
               </Button>
 
               {resultadosConsulta.length > 0 && (
-                <div className="space-y-2">
-                  <h4 className="font-medium">Resultados de la Consulta</h4>
+                <div className="space-y-4 mt-4">
+                  <h4 className="font-bold text-lg text-gray-800">Resultados de la Consulta</h4>
                   {resultadosConsulta.map((resultado, index) => (
-                    <Card key={index} className="p-3">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium">{resultado.codigo}</span>
-                          <Badge variant="outline">{resultado.tipo}</Badge>
-                          <Badge variant={resultado.estado === 'ACTIVA' ? 'default' : 'secondary'}>
-                            {resultado.estado}
+                    <Card key={index} className="p-4 border-2 border-blue-200 bg-blue-50">
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-3">
+                          <span className="font-bold text-lg">{resultado.codigo}</span>
+                          <Badge variant="outline" className="font-semibold">{resultado.tipo}</Badge>
+                          <Badge variant={resultado.estado === 'enviado' ? 'default' : 'secondary'} className="font-semibold">
+                            {resultado.estado.toUpperCase()}
                           </Badge>
                         </div>
-                        <div className="text-sm text-muted-foreground">
-                          <div>{resultado.interpretacion.tipoDescripcion}</div>
-                          <div>{resultado.interpretacion.estadoDescripcion}</div>
-                          <div>Referencia: {resultado.referencia}</div>
-                          <div>Fecha Alta: {new Date(resultado.fechaAlta).toLocaleString()}</div>
+                        <div className="text-sm text-gray-700 space-y-1">
+                          <div><strong>Tipo:</strong> {resultado.interpretacion.tipoDescripcion}</div>
+                          <div><strong>Estado:</strong> {resultado.interpretacion.estadoDescripcion}</div>
+                          <div><strong>Referencia:</strong> {resultado.referencia}</div>
+                          <div><strong>Fecha Alta:</strong> {new Date(resultado.fechaAlta).toLocaleString('es-ES')}</div>
                         </div>
                       </div>
                     </Card>

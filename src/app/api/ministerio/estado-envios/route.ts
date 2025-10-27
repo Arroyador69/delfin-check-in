@@ -102,7 +102,7 @@ export async function GET(req: NextRequest) {
       // Determinar el estado real considerando tanto mir_comunicaciones como mir_status en datos
       let estadoFinal = 'pendiente';
       let loteFinal = mirLote || loteFromData;
-      
+
       // Prioridad 1: Error (cualquier fuente)
       if (mirEstado === 'error' || mirError || estadoFromData === 'error') {
         estadoFinal = 'error';
@@ -118,6 +118,11 @@ export async function GET(req: NextRequest) {
       // Prioridad 4: Si tiene comunicación MIR pero estado desconocido, considerar enviado
       else if (hasMirComunicacion) {
         estadoFinal = 'enviado';
+      }
+
+      // Si no hay lote pero hay comunicación MIR, generar uno temporal
+      if (!loteFinal && hasMirComunicacion) {
+        loteFinal = `LOTE-${registro.mir_referencia?.substring(0, 8) || registro.id.substring(0, 8)}-${Date.now()}`;
       }
       
       // Actualizar el objeto comunicación con el estado final
