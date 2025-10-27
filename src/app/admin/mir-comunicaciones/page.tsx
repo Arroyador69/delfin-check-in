@@ -187,7 +187,7 @@ export default function MirComunicacionesPage() {
     setSuccess(null);
     
     try {
-      const response = await fetch('/api/ministerio/catalogo-oficial', {
+      const response = await fetch('/api/ministerio/catalogo-simple', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ catalogo: catalogoConsulta.trim() })
@@ -400,11 +400,9 @@ export default function MirComunicacionesPage() {
                                 <span>📋 Tipo: <strong>{registro.tipo || 'PV'}</strong></span>
                                 <span>🆔 Ref: <strong>{registro.referencia}</strong></span>
                               </div>
-                              {registro.lote && (
-                                <div className="mt-1 text-sm text-blue-600">
-                                  📦 Lote: <strong>{registro.lote}</strong>
-                                </div>
-                              )}
+                              <div className="mt-1 text-sm text-blue-600">
+                                📦 Lote: <strong>{registro.lote || 'Sin lote asignado'}</strong>
+                              </div>
                               <div className="mt-1">
                                 📅 Registrado: <strong>{new Date(registro.timestamp).toLocaleString('es-ES')}</strong>
                                 {registro.fechaEnvio && <span className="ml-4">📤 Enviado: <strong>{new Date(registro.fechaEnvio).toLocaleString('es-ES')}</strong></span>}
@@ -563,6 +561,7 @@ export default function MirComunicacionesPage() {
                   placeholder="REF-e95a19f7-b576-4378-953a-95784fd33ce3-1761250365, REF-11bb82f6-8c65-4bc1..."
                   value={codigosConsulta}
                   onChange={(e) => setCodigosConsulta(e.target.value)}
+                  className="font-semibold text-gray-800"
                 />
                 <p className="text-sm text-gray-600 font-medium">
                   Separa múltiples códigos con comas
@@ -618,6 +617,7 @@ export default function MirComunicacionesPage() {
                   placeholder="TIPOS_DOCUMENTO, TIPOS_PAGO, PAISES, etc."
                   value={catalogoConsulta}
                   onChange={(e) => setCatalogoConsulta(e.target.value)}
+                  className="font-semibold text-gray-800"
                 />
                 <p className="text-sm text-gray-600 font-medium">
                   Catálogos disponibles: TIPOS_DOCUMENTO, TIPOS_PAGO, PAISES, MUNICIPIOS, TIPOS_VEHICULO, COLORES_VEHICULO, CATEGORIAS_VEHICULO, ROLES_PERSONA
@@ -724,6 +724,7 @@ export default function MirComunicacionesPage() {
                   placeholder="Código del lote a anular"
                   value={loteAnulacion}
                   onChange={(e) => setLoteAnulacion(e.target.value)}
+                  className="font-semibold text-gray-800"
                 />
               </div>
               
@@ -734,6 +735,7 @@ export default function MirComunicacionesPage() {
                   placeholder="Referencia para actualizar en BD"
                   value={referenciaAnulacion}
                   onChange={(e) => setReferenciaAnulacion(e.target.value)}
+                  className="font-semibold text-gray-800"
                 />
                 <p className="text-sm text-gray-600 font-medium">
                   Si se proporciona, se actualizará el estado en la base de datos local
