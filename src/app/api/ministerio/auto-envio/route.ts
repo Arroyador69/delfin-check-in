@@ -294,7 +294,9 @@ export async function POST(req: NextRequest) {
 
         await sql`
           UPDATE guest_registrations 
-          SET data = ${JSON.stringify(datosActualizados)}::jsonb
+          SET 
+            data = ${JSON.stringify(datosActualizados)}::jsonb,
+            comunicacion_id = ${referencia}
           WHERE id = ${registro.id}
         `;
 

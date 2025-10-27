@@ -156,6 +156,9 @@ export async function POST(req: NextRequest) {
     const ESTABLISHMENT_CODE = "0000256653"; // HABITACIONES EN CASA VACACIONAL FUENGIROLA
     const ESTABLISHMENT_REFERENCE = "0000146967"; // DOLORES MARIA ARROYO ZAMBRANO
     
+    // Generar referencia única para cada reserva
+    const reserva_ref = `REF-${crypto.randomUUID()}-${Date.now()}`;
+    
     // Asegurar que los valores automáticos estén incluidos
     const dataWithDefaults = {
       ...parsed.data,
@@ -164,13 +167,10 @@ export async function POST(req: NextRequest) {
         ...com,
         contrato: {
           ...com.contrato,
-          referencia: ESTABLISHMENT_REFERENCE
+          referencia: reserva_ref  // Usar la referencia única generada
         }
       }))
     };
-    
-    // Generar referencia única
-    const reserva_ref = ESTABLISHMENT_REFERENCE;
 
     console.log('💾 Guardando en base de datos Postgres...');
     console.log('📅 Fecha entrada:', fecha_entrada);
@@ -194,6 +194,7 @@ export async function POST(req: NextRequest) {
       
       // Preparar datos para el MIR con estructura correcta
       const datosMIR = {
+        referencia: reserva_ref,  // Incluir la referencia única
         fechaEntrada: fecha_entrada,
         fechaSalida: fecha_salida,
         personas: comunicacion.personas.map(persona => ({
@@ -219,8 +220,8 @@ export async function POST(req: NextRequest) {
         }))
       };
 
-      // Enviar al MIR
-      const responseMIR = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/ministerio/auto-envio`, {
+      // Enviar al MIR (PV + RH dual)
+      const responseMIR = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/ministerio/auto-envio-dual`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -232,20 +233,28 @@ export async function POST(req: NextRequest) {
         resultadoMIR = await responseMIR.json();
         console.log('✅ Auto-envío al MIR exitoso:', resultadoMIR);
         
-        // Actualizar el registro con el estado del MIR
+        // Actualizar el registro con el estado del MIR dual (PV + RH) y crear vinculación
         const updatedData = {
           ...dataWithDefaults,
           mir_status: {
-            lote: resultadoMIR.lote || null,
-            codigoComunicacion: resultadoMIR.codigoComunicacion || null,
+            lote: resultadoMIR.resultados?.pv?.lote || resultadoMIR.resultados?.rh?.lote || null,
+            codigoComunicacion: resultadoMIR.resultados?.pv?.codigoComunicacion || resultadoMIR.resultados?.rh?.codigoComunicacion || null,
             fechaEnvio: new Date().toISOString(),
-            estado: 'enviado'
+            estado: resultadoMIR.estado || 'enviado',
+            comunicaciones: resultadoMIR.comunicaciones || [],
+            resultados: {
+              pv: resultadoMIR.resultados?.pv || null,
+              rh: resultadoMIR.resultados?.rh || null
+            }
           }
         };
         
+        // Usar la referencia única como vinculación
         await sql`
           UPDATE guest_registrations 
-          SET data = ${JSON.stringify(updatedData)}::jsonb
+          SET 
+            data = ${JSON.stringify(updatedData)}::jsonb,
+            comunicacion_id = ${reserva_ref}
           WHERE id = ${id}
         `;
         

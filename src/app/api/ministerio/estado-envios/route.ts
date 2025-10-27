@@ -40,7 +40,7 @@ export async function GET(req: NextRequest) {
         FROM mir_comunicaciones
         WHERE resultado::jsonb->>'codigoArrendador' IS NOT NULL
         ORDER BY resultado::jsonb->>'codigoArrendador', created_at DESC
-      ) mc ON gr.reserva_ref = mc.codigo_arrendador
+      ) mc ON gr.comunicacion_id = mc.referencia
       ORDER BY gr.created_at DESC
     `;
     
