@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
       SELECT DISTINCT mc.lote
       FROM mir_comunicaciones mc
       WHERE mc.lote IS NOT NULL AND mc.lote != '' AND mc.lote != 'SIM-'
-      ORDER BY mc.created_at DESC
+      ORDER BY mc.lote DESC
       LIMIT 10
     `;
 
