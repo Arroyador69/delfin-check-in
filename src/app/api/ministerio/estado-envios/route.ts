@@ -104,19 +104,29 @@ export async function GET(req: NextRequest) {
         });
         estadisticas.enviados++;
       } else {
-        // Estado desconocido, poner como enviado por defecto si tiene lote
-        if (mirLote) {
+        // Estado desconocido, verificar si se envió automáticamente
+        // Si tiene lote o si el estado es 'enviado', mostrar como enviado
+        if (mirLote || mirEstado === 'enviado' || mirEstado === 'ENVIADO') {
           comunicaciones.enviados.push({
             ...comunicacion,
             estado: 'enviado'
           });
           estadisticas.enviados++;
         } else {
-          comunicaciones.pendientes.push({
-            ...comunicacion,
-            estado: 'pendiente'
-          });
-          estadisticas.pendientes++;
+          // Si no tiene lote pero se envió automáticamente (tiene mir_id), mostrar como enviado
+          if (hasMirComunicacion) {
+            comunicaciones.enviados.push({
+              ...comunicacion,
+              estado: 'enviado'
+            });
+            estadisticas.enviados++;
+          } else {
+            comunicaciones.pendientes.push({
+              ...comunicacion,
+              estado: 'pendiente'
+            });
+            estadisticas.pendientes++;
+          }
         }
       }
     });

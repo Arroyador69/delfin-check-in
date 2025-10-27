@@ -83,11 +83,13 @@ export async function updateMirComunicacion(
 
     values.push(referencia); // Para la condición WHERE
 
-    await sql`
+    const updateQuery = `
       UPDATE mir_comunicaciones 
-      SET ${sql.unsafe(setClause.join(', '))}
+      SET ${setClause.join(', ')}
       WHERE referencia = $${paramIndex}
     `;
+    
+    await sql.unsafe(updateQuery, values);
   } catch (error) {
     console.error('Error actualizando comunicación MIR:', error);
     throw error;
