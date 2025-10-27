@@ -5,9 +5,9 @@ export async function GET(req: NextRequest) {
   try {
     console.log('📊 Obteniendo estado de envíos al MIR...');
     
-    // Obtener todos los registros de guest_registrations CON sus comunicaciones MIR
+    // Obtener registros únicos de guest_registrations CON sus comunicaciones MIR
     const result = await sql`
-      SELECT 
+      SELECT DISTINCT ON (gr.id)
         gr.id,
         gr.created_at,
         gr.fecha_entrada,
@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
         mc.xml_respuesta as mir_xml_respuesta
       FROM guest_registrations gr
       LEFT JOIN mir_comunicaciones mc ON gr.reserva_ref = mc.resultado::jsonb->>'codigoArrendador'
-      ORDER BY gr.created_at DESC
+      ORDER BY gr.id, gr.created_at DESC
     `;
     
     console.log(`📋 Encontrados ${result.rows.length} registros`);
