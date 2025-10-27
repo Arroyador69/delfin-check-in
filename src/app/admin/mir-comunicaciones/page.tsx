@@ -397,7 +397,7 @@ export default function MirComunicacionesPage() {
                             <div className="text-sm text-gray-700 font-medium">
                               <div className="flex items-center gap-4">
                                 <span>🏨 Habitación: <strong>{habitacion}</strong></span>
-                                <span>📋 Tipo: <strong>PV</strong></span>
+                                <span>📋 Tipo: <strong>{registro.tipo || 'PV'}</strong></span>
                                 <span>🆔 Ref: <strong>{registro.referencia}</strong></span>
                               </div>
                               <div className="mt-1">

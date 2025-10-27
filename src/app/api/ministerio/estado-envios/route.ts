@@ -15,6 +15,8 @@ export async function GET(req: NextRequest) {
         gr.data,
         gr.reserva_ref,
         mc.id as mir_id,
+        mc.referencia as mir_referencia,
+        mc.tipo as mir_tipo,
         mc.estado as mir_estado,
         mc.lote as mir_lote,
         mc.resultado as mir_resultado,
@@ -22,7 +24,7 @@ export async function GET(req: NextRequest) {
         mc.created_at as mir_created_at,
         mc.xml_respuesta as mir_xml_respuesta
       FROM guest_registrations gr
-      LEFT JOIN mir_comunicaciones mc ON gr.reserva_ref = mc.referencia
+      LEFT JOIN mir_comunicaciones mc ON gr.data->>'mir_status'->>'referencia' = mc.referencia
       ORDER BY gr.created_at DESC
     `;
     
@@ -73,7 +75,8 @@ export async function GET(req: NextRequest) {
         timestamp: registro.created_at,
         datos: registro.data,
         nombreCompleto: nombreCompleto,
-        referencia: registro.reserva_ref,
+        referencia: registro.mir_referencia || registro.reserva_ref, // Usar referencia MIR si existe, sino reserva_ref
+        tipo: registro.mir_tipo || 'PV', // Usar tipo MIR si existe, sino PV por defecto
         lote: mirLote,
         error: mirError,
         fechaEnvio: registro.mir_created_at,
