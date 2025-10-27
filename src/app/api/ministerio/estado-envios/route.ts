@@ -91,9 +91,9 @@ export async function GET(req: NextRequest) {
         timestamp: registro.created_at,
         datos: registro.data,
         nombreCompleto: nombreCompleto,
-        referencia: registro.mir_referencia || registro.reserva_ref, // Usar referencia MIR si existe, sino reserva_ref
-        tipo: registro.mir_tipo || 'PV', // Usar tipo MIR si existe, sino PV por defecto
-        lote: mirLote,
+        referencia: registro.mir_referencia || registro.reserva_ref, // Priorizar referencia MIR si existe
+        tipo: registro.mir_tipo || 'PV', // Priorizar tipo MIR si existe
+        lote: mirLote || loteFromData, // Priorizar lote MIR si existe
         error: mirError,
         fechaEnvio: registro.mir_created_at,
         estado: mirEstado || 'pendiente'
