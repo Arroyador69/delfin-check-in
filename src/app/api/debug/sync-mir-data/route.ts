@@ -7,6 +7,7 @@ export async function POST(req: NextRequest) {
     console.log('🔄 Iniciando sincronización de datos MIR...');
 
     // 1. Obtener registros con mir_status pero sin entrada en mir_comunicaciones
+    // Buscar por ID del registro, no por código de arrendador
     const inconsistencias = await sql`
       SELECT 
         gr.id,
@@ -20,7 +21,8 @@ export async function POST(req: NextRequest) {
         AND gr.data->'mir_status'->>'estado' = 'enviado'
         AND NOT EXISTS (
           SELECT 1 FROM mir_comunicaciones mc 
-          WHERE mc.referencia = gr.reserva_ref
+          WHERE mc.resultado::jsonb->>'codigoArrendador' = gr.reserva_ref
+            AND mc.resultado::jsonb->>'sincronizado' = 'true'
         )
       ORDER BY gr.created_at DESC
     `;
@@ -61,9 +63,12 @@ export async function POST(req: NextRequest) {
           console.log('Error extrayendo nombre del huésped:', error);
         }
 
+        // Generar referencia única para cada huésped (no usar código de arrendador)
+        const referenciaUnica = `SYNC-${registro.id}-${Date.now()}`;
+        
         // Crear entrada en mir_comunicaciones
         const comunicacion = {
-          referencia: referencia,
+          referencia: referenciaUnica,
           tipo: tipoComunicacion as 'PV',
           estado: 'enviado',
           lote: mirStatus.lote || null,
@@ -73,7 +78,9 @@ export async function POST(req: NextRequest) {
             lote: mirStatus.lote,
             fechaEnvio: mirStatus.fechaEnvio,
             sincronizado: true,
-            nombreCompleto: nombreCompleto
+            nombreCompleto: nombreCompleto,
+            codigoArrendador: referencia, // Guardar el código de arrendador original
+            codigoEstablecimiento: registro.data?.codigoEstablecimiento || '0000256653'
           }),
           error: null,
           xml_enviado: null,
@@ -139,7 +146,8 @@ export async function GET(req: NextRequest) {
                          AND data->'mir_status'->>'estado' = 'enviado'
                          AND NOT EXISTS (
                            SELECT 1 FROM mir_comunicaciones mc 
-                           WHERE mc.referencia = reserva_ref
+                           WHERE mc.resultado::jsonb->>'codigoArrendador' = reserva_ref
+                             AND mc.resultado::jsonb->>'sincronizado' = 'true'
                          )) as inconsistencias
       FROM guest_registrations
     `;
