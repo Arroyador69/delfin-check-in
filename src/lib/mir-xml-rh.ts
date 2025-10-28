@@ -101,7 +101,7 @@ function buildPersonaXml(persona: RhPersona): string {
     xml += `\n        <sexo>${esc(persona.sexo)}</sexo>`;
   }
   
-  // Dirección
+  // Dirección (orden según tiposGenerales.xsd: direccion, direccionComplementaria?, codigoMunicipio?, nombreMunicipio?, codigoPostal, pais)
   if (persona.direccion) {
     xml += `\n        <direccion>`;
     
@@ -113,14 +113,6 @@ function buildPersonaXml(persona: RhPersona): string {
       xml += `\n          <direccionComplementaria>${esc(persona.direccion.direccionComplementaria)}</direccionComplementaria>`;
     }
     
-    if (persona.direccion.codigoPostal) {
-      xml += `\n          <codigoPostal>${esc(persona.direccion.codigoPostal)}</codigoPostal>`;
-    }
-    
-    if (persona.direccion.pais) {
-      xml += `\n          <pais>${esc(persona.direccion.pais)}</pais>`;
-    }
-    
     if (persona.direccion.codigoMunicipio) {
       xml += `\n          <codigoMunicipio>${esc(persona.direccion.codigoMunicipio)}</codigoMunicipio>`;
     }
@@ -129,26 +121,26 @@ function buildPersonaXml(persona: RhPersona): string {
       xml += `\n          <nombreMunicipio>${esc(persona.direccion.nombreMunicipio)}</nombreMunicipio>`;
     }
     
+    if (persona.direccion.codigoPostal) {
+      xml += `\n          <codigoPostal>${esc(persona.direccion.codigoPostal)}</codigoPostal>`;
+    }
+    
+    if (persona.direccion.pais) {
+      xml += `\n          <pais>${esc(persona.direccion.pais)}</pais>`;
+    }
+    
     xml += `\n        </direccion>`;
   }
   
-  // Contacto
-  if (persona.telefono || persona.telefono2 || persona.correo) {
-    xml += `\n        <contacto>`;
-    
-    if (persona.telefono) {
-      xml += `\n          <telefono>${esc(persona.telefono)}</telefono>`;
-    }
-    
-    if (persona.telefono2) {
-      xml += `\n          <telefono2>${esc(persona.telefono2)}</telefono2>`;
-    }
-    
-    if (persona.correo) {
-      xml += `\n          <correo>${esc(persona.correo)}</correo>`;
-    }
-    
-    xml += `\n        </contacto>`;
+  // Teléfonos y correo directamente bajo persona (sin contenedor <contacto>) según XSD
+  if (persona.telefono) {
+    xml += `\n        <telefono>${esc(persona.telefono)}</telefono>`;
+  }
+  if (persona.telefono2) {
+    xml += `\n        <telefono2>${esc(persona.telefono2)}</telefono2>`;
+  }
+  if (persona.correo) {
+    xml += `\n        <correo>${esc(persona.correo)}</correo>`;
   }
   
   if (persona.parentesco) {
@@ -236,8 +228,10 @@ export function buildRhXml(input: RhSolicitud): string {
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <alt:peticion xmlns:alt="http://www.neg.hospedajes.mir.es/altaReservaHospedaje">
   <solicitud>
-    <codigoEstablecimiento>${esc(input.codigoEstablecimiento)}</codigoEstablecimiento>
-    <comunicacion>${contratoXml}
+    <comunicacion>
+      <establecimiento>
+        <codigo>${esc(input.codigoEstablecimiento)}</codigo>
+      </establecimiento>${contratoXml}
       ${personasXml}
     </comunicacion>
   </solicitud>
@@ -310,6 +304,8 @@ export function createTestRhData(): RhSolicitud {
     ]
   };
 }
+
+
 
 
 

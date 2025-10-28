@@ -2,15 +2,22 @@ import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
 import Stripe from 'stripe';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
+const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: '2023-10-16',
-});
+}) : null;
 
 /**
  * API para obtener información de facturación del tenant
  */
 export async function GET(req: NextRequest) {
   try {
+    // Verificar que Stripe esté disponible
+    if (!stripe) {
+      return NextResponse.json({ 
+        error: 'Servicio de facturación no disponible - STRIPE_SECRET_KEY no configurada' 
+      }, { status: 503 });
+    }
+
     // Obtener tenant_id del header (enviado por el middleware)
     const tenantId = req.headers.get('x-tenant-id');
     

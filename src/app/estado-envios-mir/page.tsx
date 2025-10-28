@@ -210,6 +210,18 @@ export default function EstadoEnviosMIRPage() {
                     👤 {com.nombreCompleto}
                   </div>
                 )}
+                <div className={`px-2 py-1 rounded text-xs font-semibold ${
+                  com.tipo === 'PV' ? 'bg-blue-100 text-blue-800' : 
+                  com.tipo === 'RH' ? 'bg-green-100 text-green-800' : 
+                  'bg-gray-100 text-gray-800'
+                }`}>
+                  📋 {com.tipo || 'PV'}
+                </div>
+                {com.tenant_id && (
+                  <div className="text-xs text-purple-600 bg-purple-50 px-2 py-1 rounded">
+                    🏢 {com.tenant_id.substring(0, 8)}...
+                  </div>
+                )}
               </div>
                 <div className="flex items-center space-x-2">
                   {getEstadoBadge(com.estado, com.codigoEstado)}

@@ -37,28 +37,11 @@ class MockWorker {
 }
 
 // Colas principales (mock)
-export const icalSyncQueue = new MockQueue('ical-sync') as any;
 export const messageQueue = new MockQueue('messages') as any;
 export const pdfQueue = new MockQueue('pdf-generation') as any;
 export const telegramQueue = new MockQueue('telegram-notifications') as any;
 
 // Workers (mock)
-export const icalSyncWorker = new MockWorker('ical-sync', async (job: any) => {
-  const { roomId, icalUrl, source } = job.data;
-  
-  try {
-    // Aquí irá la lógica de sincronización iCal
-    console.log(`Sincronizando iCal para habitación ${roomId} desde ${source}`);
-    
-    // TODO: Implementar lógica de sincronización
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    return { success: true, roomId, source };
-  } catch (error) {
-    console.error('Error en sincronización iCal:', error);
-    throw error;
-  }
-}) as any;
 
 export const messageWorker = new MockWorker('messages', async (job: any) => {
   const { reservationId, trigger, channel } = job.data;

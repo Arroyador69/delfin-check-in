@@ -553,8 +553,8 @@ export async function POST(req: NextRequest) {
     try {
       console.log('📤 Enviando automáticamente al MIR (PV + RH dual)...');
       
-      // Generar referencia única para cada reserva
-      const reserva_ref = `REF-${crypto.randomUUID()}-${Date.now()}`;
+      // Generar referencia única para cada reserva (máximo 36 caracteres según normas MIR)
+      const reserva_ref = crypto.randomUUID(); // Solo UUID, sin prefijo REF- ni timestamp
       
       // Preparar datos para el envío dual
       const datosMIR = {

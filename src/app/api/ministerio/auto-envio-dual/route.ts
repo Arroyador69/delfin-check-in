@@ -23,8 +23,9 @@ export async function POST(req: NextRequest) {
 
     console.log('📋 Datos recibidos para envío dual:', JSON.stringify(json, null, 2));
 
-    // Obtener tenant_id del header
-    const tenantId = req.headers.get('x-tenant-id') || 'default';
+    // Obtener tenant_id del header o del body
+    const tenantId = req.headers.get('x-tenant-id') || json.tenant_id || 'default';
+    console.log('🏢 Tenant ID para envío dual:', tenantId);
 
     // Cargar configuración MIR desde la base de datos
     let config = {
@@ -32,12 +33,14 @@ export async function POST(req: NextRequest) {
       username: '',
       password: '',
       codigoArrendador: '',
+      codigoEstablecimiento: '',
       aplicacion: 'Delfin_Check_in',
       simulacion: false
     };
 
+    let dbResult = null;
     try {
-      const result = await sql`
+      dbResult = await sql`
         SELECT usuario, contraseña, codigo_arrendador, codigo_establecimiento, base_url, aplicacion, simulacion, activo
         FROM mir_configuraciones 
         WHERE propietario_id = ${tenantId}
@@ -45,13 +48,14 @@ export async function POST(req: NextRequest) {
         LIMIT 1
       `;
 
-      if (result.rows.length > 0 && result.rows[0].activo) {
-        const dbConfig = result.rows[0];
+      if (dbResult.rows.length > 0 && dbResult.rows[0].activo) {
+        const dbConfig = dbResult.rows[0];
         config = {
           baseUrl: dbConfig.base_url || 'https://hospedajes.ses.mir.es/hospedajes-web/ws/v1/comunicacion',
           username: dbConfig.usuario || '',
           password: dbConfig.contraseña || '',
           codigoArrendador: dbConfig.codigo_arrendador || '',
+          codigoEstablecimiento: dbConfig.codigo_establecimiento || '',
           aplicacion: dbConfig.aplicacion || 'Delfin_Check_in',
           simulacion: dbConfig.simulacion || false
         };
@@ -68,64 +72,31 @@ export async function POST(req: NextRequest) {
     // Extraer datos del JSON
     const { referencia, fechaEntrada, fechaSalida, personas } = json;
     
-    if (!referencia || !fechaEntrada || !fechaSalida || !personas) {
+    if (!referencia || !fechaEntrada || !fechaSalida || !personas || !Array.isArray(personas) || personas.length === 0) {
       return NextResponse.json({
         success: false,
-        error: 'Faltan datos obligatorios: referencia, fechaEntrada, fechaSalida, personas'
+        error: 'Faltan datos obligatorios: referencia, fechaEntrada, fechaSalida, personas (debe ser un array con al menos una persona)'
       }, { status: 400 });
     }
 
     console.log('📅 Fechas:', { fechaEntrada, fechaSalida });
     console.log('👥 Personas:', personas.length);
 
+    // Normalizaciones requeridas por XSD oficial
+    const referenciaNorm = String(referencia).slice(0, 50);
+    const asDateTime = (d: string) => (d && d.includes('T') ? d : `${d}T12:00:00`);
+    const fechaEntradaDT = asDateTime(fechaEntrada);
+    const fechaSalidaDT = asDateTime(fechaSalida);
+    const codigoEstablecimientoFinal = config.codigoEstablecimiento || config.codigoArrendador || '0000256653';
+
     // Preparar datos para PV (Parte de Hospedaje)
     const datosPV: PvSolicitud = {
-      codigoEstablecimiento: config.codigoArrendador || "0000256653",
-      comunicaciones: [{
-        contrato: {
-          referencia: referencia,
-          fechaContrato: new Date().toISOString().split('T')[0],
-          fechaEntrada: fechaEntrada,
-          fechaSalida: fechaSalida,
-          numPersonas: personas.length,
-          numHabitaciones: 1,
-          internet: false,
-          pago: {
-            tipoPago: "EFECT",
-            fechaPago: new Date().toISOString().split('T')[0]
-          }
-        },
-        personas: personas.map(persona => ({
-          rol: "VI",
-          nombre: persona.nombre,
-          apellido1: persona.apellido1,
-          apellido2: persona.apellido2 || '',
-          tipoDocumento: persona.tipoDocumento || 'NIF',
-          numeroDocumento: persona.numeroDocumento || '12345678Z',
-          fechaNacimiento: persona.fechaNacimiento,
-          nacionalidad: persona.nacionalidad || 'ESP',
-          sexo: persona.sexo || 'M',
-          direccion: {
-            direccion: persona.direccion?.direccion || 'Calle Ejemplo 123',
-            codigoPostal: persona.direccion?.codigoPostal || '28001',
-            pais: persona.direccion?.pais || 'ESP',
-            codigoMunicipio: persona.direccion?.codigoMunicipio || '28079',
-            nombreMunicipio: persona.direccion?.nombreMunicipio || 'Madrid'
-          },
-          telefono: persona.contacto?.telefono || '600000000',
-          correo: persona.contacto?.correo || 'viajero@example.com'
-        }))
-      }]
-    };
-
-    // Preparar datos para RH (Reserva de Hospedaje)
-    const datosRH: RhSolicitud = {
-      codigoEstablecimiento: config.codigoArrendador || "0000256653",
+      codigoEstablecimiento: codigoEstablecimientoFinal,
       contrato: {
-        referencia: referencia,
+        referencia: referenciaNorm,
         fechaContrato: new Date().toISOString().split('T')[0],
-        fechaEntrada: fechaEntrada,
-        fechaSalida: fechaSalida,
+        fechaEntrada: fechaEntradaDT,
+        fechaSalida: fechaSalidaDT,
         numPersonas: personas.length,
         numHabitaciones: 1,
         internet: false,
@@ -156,7 +127,45 @@ export async function POST(req: NextRequest) {
       }))
     };
 
-    console.log('📤 Preparando envío dual PV + RH al MIR...');
+    // Preparar datos para RH (Reserva de Hospedaje)
+    const datosRH: RhSolicitud = {
+      codigoEstablecimiento: codigoEstablecimientoFinal,
+      contrato: {
+        referencia: referenciaNorm,
+        fechaContrato: new Date().toISOString().split('T')[0],
+        fechaEntrada: fechaEntradaDT,
+        fechaSalida: fechaSalidaDT,
+        numPersonas: personas.length,
+        numHabitaciones: 1,
+        internet: false,
+        pago: {
+          tipoPago: "EFECT",
+          fechaPago: new Date().toISOString().split('T')[0]
+        }
+      },
+      personas: personas.map((persona, index) => ({
+        rol: index === 0 ? 'TI' : 'VI',
+        nombre: persona.nombre,
+        apellido1: persona.apellido1,
+        apellido2: persona.apellido2 || '',
+        tipoDocumento: persona.tipoDocumento || 'NIF',
+        numeroDocumento: persona.numeroDocumento || '12345678Z',
+        fechaNacimiento: persona.fechaNacimiento,
+        nacionalidad: persona.nacionalidad || 'ESP',
+        sexo: persona.sexo || 'M',
+        direccion: {
+          direccion: persona.direccion?.direccion || 'Calle Ejemplo 123',
+          codigoPostal: persona.direccion?.codigoPostal || '28001',
+          pais: persona.direccion?.pais || 'ESP',
+          codigoMunicipio: persona.direccion?.codigoMunicipio || '28079',
+          nombreMunicipio: persona.direccion?.nombreMunicipio || 'Madrid'
+        },
+        telefono: persona.contacto?.telefono || '600000000',
+        correo: persona.contacto?.correo || 'viajero@example.com'
+      }))
+    };
+
+    console.log('📤 Preparando envío dual PV + RH al MIR (dos peticiones separadas)...');
 
     // Generar XMLs según esquemas oficiales MIR
     const xmlPV = buildPvXml(datosPV);
@@ -165,14 +174,13 @@ export async function POST(req: NextRequest) {
     console.log('📄 XML PV generado (primeros 500 chars):', xmlPV.substring(0, 500));
     console.log('📄 XML RH generado (primeros 500 chars):', xmlRH.substring(0, 500));
 
-    // Enviar ambos al MIR usando cliente oficial
-    const resultados = {
+    // Enviar ambos al MIR usando cliente oficial (peticiones separadas)
+    const resultados: any = {
       pv: null,
       rh: null
     };
 
     try {
-      // Enviar PV (Parte de Hospedaje)
       console.log('📤 Enviando PV al MIR...');
       resultados.pv = await client.altaPV({ xmlAlta: xmlPV });
       console.log('✅ Resultado PV:', resultados.pv);
@@ -182,7 +190,6 @@ export async function POST(req: NextRequest) {
     }
 
     try {
-      // Enviar RH (Reserva de Hospedaje)
       console.log('📤 Enviando RH al MIR...');
       resultados.rh = await client.altaRH({ xmlAlta: xmlRH });
       console.log('✅ Resultado RH:', resultados.rh);
@@ -191,20 +198,20 @@ export async function POST(req: NextRequest) {
       resultados.rh = { ok: false, error: errorRH instanceof Error ? errorRH.message : 'Error desconocido' };
     }
 
-    // Guardar ambas comunicaciones en base de datos
-    const comunicacionesGuardadas = [];
+    // Guardar ambas comunicaciones en base de datos por separado
+    const comunicacionesGuardadas: any[] = [];
 
-    // Guardar comunicación PV
     if (resultados.pv) {
       const comunicacionPV: Omit<MirComunicacion, 'id' | 'created_at' | 'updated_at'> = {
-        referencia: `${referencia}-PV`,
+        referencia: `${referenciaNorm}-PV`,
         tipo: 'PV',
         estado: resultados.pv.ok ? 'enviado' : 'error',
         lote: resultados.pv.lote || null,
         resultado: JSON.stringify(resultados.pv),
         error: resultados.pv.ok ? null : resultados.pv.error,
         xml_enviado: xmlPV,
-        xml_respuesta: resultados.pv.rawResponse || null
+        xml_respuesta: resultados.pv.rawResponse || null,
+        tenant_id: tenantId
       };
 
       try {
@@ -216,17 +223,17 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Guardar comunicación RH
     if (resultados.rh) {
       const comunicacionRH: Omit<MirComunicacion, 'id' | 'created_at' | 'updated_at'> = {
-        referencia: `${referencia}-RH`,
+        referencia: `${referenciaNorm}-RH`,
         tipo: 'RH',
         estado: resultados.rh.ok ? 'enviado' : 'error',
         lote: resultados.rh.lote || null,
         resultado: JSON.stringify(resultados.rh),
         error: resultados.rh.ok ? null : resultados.rh.error,
         xml_enviado: xmlRH,
-        xml_respuesta: resultados.rh.rawResponse || null
+        xml_respuesta: resultados.rh.rawResponse || null,
+        tenant_id: tenantId
       };
 
       try {
@@ -238,7 +245,6 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Determinar estado general
     const pvExitoso = resultados.pv?.ok === true;
     const rhExitoso = resultados.rh?.ok === true;
     const estadoGeneral = (pvExitoso && rhExitoso) ? 'enviado' : 'parcial';
@@ -253,11 +259,8 @@ export async function POST(req: NextRequest) {
       success: true,
       estado: estadoGeneral,
       comunicaciones: comunicacionesGuardadas,
-      resultados: {
-        pv: resultados.pv,
-        rh: resultados.rh
-      },
-      referencia: referencia,
+      resultados,
+      referencia: referenciaNorm,
       timestamp: new Date().toISOString()
     });
 
@@ -270,5 +273,7 @@ export async function POST(req: NextRequest) {
     }, { status: 500 });
   }
 }
+
+
 
 

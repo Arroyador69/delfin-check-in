@@ -29,6 +29,24 @@ export async function POST(req: NextRequest) {
 
     console.log('📋 Consultando códigos:', codigos);
 
+    // Procesar códigos para cumplir con maxLength de 36 caracteres del MIR
+    const codigosProcesados = codigos.map(codigo => {
+      // Si el código tiene formato REF-UUID-timestamp, extraer solo el UUID
+      if (codigo.startsWith('REF-') && codigo.length > 36) {
+        const parts = codigo.split('-');
+        if (parts.length >= 5) {
+          // Extraer UUID: REF-UUID-timestamp -> UUID
+          const uuid = parts.slice(1, 5).join('-'); // UUID tiene 4 partes separadas por -
+          console.log(`🔧 Procesando código: ${codigo} -> ${uuid}`);
+          return uuid;
+        }
+      }
+      // Si ya es de 36 caracteres o menos, usar tal como está
+      return codigo.length <= 36 ? codigo : codigo.substring(0, 36);
+    });
+
+    console.log('📋 Códigos procesados para MIR:', codigosProcesados);
+
     // Verificar credenciales MIR
     if (!process.env.MIR_HTTP_USER || !process.env.MIR_HTTP_PASS || !process.env.MIR_CODIGO_ARRENDADOR) {
       return NextResponse.json({
@@ -58,10 +76,150 @@ export async function POST(req: NextRequest) {
     // Crear cliente MIR oficial
     const client = new MinisterioClientOfficial(config);
     
-    // Consultar comunicaciones
-    const resultado = await client.consultaComunicacion({ codigos });
+    // PRIMERO: Buscar el código de lote en BD local
+    console.log('🔍 Buscando código de lote en BD local...');
+    
+    let lotesParaConsultar = [];
+    try {
+      const { sql } = await import('@vercel/postgres');
+      
+      // Buscar lotes asociados a estos códigos
+      const loteResult = await sql`
+        SELECT DISTINCT mc.lote, mc.referencia, mc.tipo, mc.estado
+        FROM mir_comunicaciones mc
+        WHERE mc.referencia = ANY(${codigosProcesados}) OR mc.referencia LIKE ANY(${codigosProcesados.map(c => c + '%')})
+        AND mc.lote IS NOT NULL AND mc.lote != '' AND mc.lote != 'SIM-'
+        ORDER BY mc.created_at DESC
+      `;
+      
+      lotesParaConsultar = loteResult.rows.map(r => r.lote);
+      console.log('📋 Lotes encontrados en BD:', lotesParaConsultar);
+      
+      if (lotesParaConsultar.length === 0) {
+        console.log('⚠️ No se encontraron lotes en BD local, intentando consulta directa por código');
+        
+        // Si no hay lotes, intentar consulta directa por código de comunicación
+        const resultado = await client.consultaComunicacion({ codigos: codigosProcesados });
+        console.log('✅ Resultado de la consulta oficial:', resultado);
+        
+        return NextResponse.json({
+          success: true,
+          message: 'Consulta oficial completada (sin lotes en BD)',
+          resultado: {
+            exito: resultado.ok,
+            codigo: resultado.codigo,
+            descripcion: resultado.descripcion,
+            comunicaciones: resultado.comunicaciones
+          },
+          interpretacion: {
+            exito: resultado.ok,
+            mensaje: resultado.ok ? 
+              `✅ Consulta realizada correctamente. Encontradas ${resultado.comunicaciones.length} comunicaciones` : 
+              `❌ Error en la consulta: ${resultado.descripcion}`,
+            codigo: resultado.codigo,
+            totalComunicaciones: resultado.comunicaciones.length
+          },
+          comunicaciones: resultado.comunicaciones.map(com => ({
+            codigo: com.codigo,
+            tipo: com.tipo,
+            estado: com.estado,
+            fechaAlta: com.fechaAlta,
+            referencia: com.referencia,
+            interpretacion: {
+              tipoDescripcion: getTipoDescripcion(com.tipo),
+              estadoDescripcion: getEstadoDescripcion(com.estado)
+            }
+          })),
+          debug: {
+            codigosConsultados: codigos,
+            codigosProcesados: codigosProcesados,
+            lotesEncontrados: lotesParaConsultar,
+            metodo: 'consultaComunicacion_directa',
+            config: {
+              baseUrl: config.baseUrl,
+              username: config.username,
+              codigoArrendador: config.codigoArrendador,
+              simulacion: config.simulacion
+            }
+          }
+        });
+      }
+      
+    } catch (dbError) {
+      console.error('❌ Error buscando lotes en BD:', dbError);
+    }
+    
+    // SEGUNDO: Consultar por lotes (método correcto según normas MIR)
+    console.log('🔍 Consultando por lotes al MIR...');
+    const resultado = await client.consultaLote({ lotes: lotesParaConsultar });
     
     console.log('✅ Resultado de la consulta oficial:', resultado);
+
+    // Procesar resultado de consultaLote
+    let comunicaciones = [];
+    if (resultado.ok && resultado.resultados) {
+      // Convertir resultados de lote a formato de comunicaciones
+      for (const loteResult of resultado.resultados) {
+        if (loteResult.resultadoComunicaciones) {
+          for (const comResult of loteResult.resultadoComunicaciones) {
+            if (comResult.codigoComunicacion) {
+              comunicaciones.push({
+                codigo: comResult.codigoComunicacion,
+                tipo: loteResult.tipoComunicacion || 'PV',
+                estado: loteResult.codigoEstado === '1' ? 'confirmado' : 'pendiente',
+                fechaAlta: new Date().toISOString(),
+                referencia: loteResult.lote,
+                lote: loteResult.lote,
+                codigoEstado: loteResult.codigoEstado,
+                descEstado: loteResult.descEstado
+              });
+            }
+          }
+        }
+      }
+    }
+
+    // Si el MIR no encuentra comunicaciones, buscar en BD local
+    let informacionLocal = null;
+    if (resultado.ok && comunicaciones.length === 0) {
+      console.log('🔍 MIR no encontró comunicaciones, buscando en BD local...');
+      
+      try {
+        const { sql } = await import('@vercel/postgres');
+        
+        // Buscar en guest_registrations
+        const guestResult = await sql`
+          SELECT 
+            id, reserva_ref, fecha_entrada, fecha_salida, 
+            data, comunicacion_id, tenant_id, created_at
+          FROM guest_registrations 
+          WHERE reserva_ref = ANY(${codigosProcesados}) OR comunicacion_id = ANY(${codigosProcesados})
+          ORDER BY created_at DESC
+        `;
+
+        // Buscar en mir_comunicaciones
+        const mirResult = await sql`
+          SELECT 
+            id, referencia, tipo, estado, lote, 
+            resultado, error, xml_enviado, xml_respuesta,
+            tenant_id, created_at
+          FROM mir_comunicaciones 
+          WHERE referencia = ANY(${codigosProcesados}) OR referencia LIKE ANY(${codigosProcesados.map(c => c + '%')})
+          ORDER BY created_at DESC
+        `;
+
+        informacionLocal = {
+          guest_registrations: guestResult.rows,
+          mir_comunicaciones: mirResult.rows,
+          encontrado_en_bd: guestResult.rows.length > 0 || mirResult.rows.length > 0
+        };
+
+        console.log('📊 Información local encontrada:', informacionLocal);
+      } catch (dbError) {
+        console.error('❌ Error buscando en BD local:', dbError);
+        informacionLocal = { error: 'Error consultando BD local' };
+      }
+    }
 
     return NextResponse.json({
       success: true,
@@ -70,29 +228,38 @@ export async function POST(req: NextRequest) {
         exito: resultado.ok,
         codigo: resultado.codigo,
         descripcion: resultado.descripcion,
-        comunicaciones: resultado.comunicaciones
+        comunicaciones: comunicaciones,
+        lotes: resultado.resultados || []
       },
       interpretacion: {
         exito: resultado.ok,
         mensaje: resultado.ok ? 
-          `✅ Consulta realizada correctamente. Encontradas ${resultado.comunicaciones.length} comunicaciones` : 
+          `✅ Consulta realizada correctamente. Encontradas ${comunicaciones.length} comunicaciones` : 
           `❌ Error en la consulta: ${resultado.descripcion}`,
         codigo: resultado.codigo,
-        totalComunicaciones: resultado.comunicaciones.length
+        totalComunicaciones: comunicaciones.length,
+        totalLotes: resultado.resultados?.length || 0
       },
-      comunicaciones: resultado.comunicaciones.map(com => ({
+      comunicaciones: comunicaciones.map(com => ({
         codigo: com.codigo,
         tipo: com.tipo,
         estado: com.estado,
         fechaAlta: com.fechaAlta,
         referencia: com.referencia,
+        lote: com.lote,
+        codigoEstado: com.codigoEstado,
+        descEstado: com.descEstado,
         interpretacion: {
           tipoDescripcion: getTipoDescripcion(com.tipo),
           estadoDescripcion: getEstadoDescripcion(com.estado)
         }
       })),
+      informacion_local: informacionLocal,
       debug: {
         codigosConsultados: codigos,
+        codigosProcesados: codigosProcesados,
+        lotesEncontrados: lotesParaConsultar,
+        metodo: 'consultaLote',
         config: {
           baseUrl: config.baseUrl,
           username: config.username,
