@@ -44,12 +44,6 @@ export default function SettingsLayout({
       icon: User,
       href: '/settings/account',
     },
-    {
-      id: 'integrations',
-      name: 'Integraciones',
-      icon: LinkIcon,
-      href: '/settings/integrations',
-    },
   ];
 
   return (
