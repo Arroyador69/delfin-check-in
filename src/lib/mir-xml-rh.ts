@@ -236,8 +236,10 @@ export function buildRhXml(input: RhSolicitud): string {
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <alt:peticion xmlns:alt="http://www.neg.hospedajes.mir.es/altaReservaHospedaje">
   <solicitud>
-    <codigoEstablecimiento>${esc(input.codigoEstablecimiento)}</codigoEstablecimiento>
-    <comunicacion>${contratoXml}
+    <comunicacion>
+      <establecimiento>
+        <codigo>${esc(input.codigoEstablecimiento)}</codigo>
+      </establecimiento>${contratoXml}
       ${personasXml}
     </comunicacion>
   </solicitud>
