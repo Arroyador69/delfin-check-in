@@ -1,0 +1,97 @@
+steps:
+  # Construir la imagen Docker
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'gcr.io/$PROJECT_ID/delfin-checkin:$COMMIT_SHA', '.']
+  
+  # Subir la imagen a Container Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/delfin-checkin:$COMMIT_SHA']
+  
+  # Desplegar en Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'delfin-checkin'
+      - '--image'
+      - 'gcr.io/$PROJECT_ID/delfin-checkin:$COMMIT_SHA'
+      - '--region'
+      - 'us-central1'
+      - '--platform'
+      - 'managed'
+      - '--allow-unauthenticated'
+      - '--port'
+      - '3000'
+      - '--memory'
+      - '512Mi'
+      - '--cpu'
+      - '1'
+      - '--max-instances'
+      - '10'
+      - '--set-env-vars'
+      - 'NODE_ENV=production,PORT=3000'
+      - '--set-secrets'
+      - 'NEXT_PUBLIC_SUPABASE_URL=supabase-url:latest,NEXT_PUBLIC_SUPABASE_ANON_KEY=supabase-anon-key:latest,SUPABASE_SERVICE_ROLE_KEY=supabase-service-role-key:latest,TELEGRAM_BOT_TOKEN=telegram-bot-token:latest,TELEGRAM_CHAT_ID=telegram-chat-id:latest,REDIS_HOST=redis-host:latest,REDIS_PASSWORD=redis-password:latest'
+
+  # Desplegar worker en Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'delfin-checkin-worker'
+      - '--image'
+      - 'gcr.io/$PROJECT_ID/delfin-checkin:$COMMIT_SHA'
+      - '--region'
+      - 'us-central1'
+      - '--platform'
+      - 'managed'
+      - '--no-allow-unauthenticated'
+      - '--port'
+      - '3000'
+      - '--memory'
+      - '256Mi'
+      - '--cpu'
+      - '1'
+      - '--max-instances'
+      - '5'
+      - '--set-env-vars'
+      - 'NODE_ENV=production'
+      - '--set-secrets'
+      - 'NEXT_PUBLIC_SUPABASE_URL=supabase-url:latest,NEXT_PUBLIC_SUPABASE_ANON_KEY=supabase-anon-key:latest,SUPABASE_SERVICE_ROLE_KEY=supabase-service-role-key:latest,TELEGRAM_BOT_TOKEN=telegram-bot-token:latest,TELEGRAM_CHAT_ID=telegram-chat-id:latest,REDIS_HOST=redis-host:latest,REDIS_PASSWORD=redis-password:latest'
+      - '--command'
+      - 'node'
+      - '--args'
+      - 'worker.js'
+
+  # Configurar Cloud Scheduler para el worker
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'scheduler'
+      - 'jobs'
+      - 'create'
+      - 'http'
+      - 'delfin-checkin-worker-scheduler'
+      - '--schedule'
+      - '*/10 * * * *'
+      - '--uri'
+      - 'https://delfin-checkin-worker-xxxxxxxx-uc.a.run.app'
+      - '--http-method'
+      - 'POST'
+      - '--oidc-service-account-email'
+      - 'delfin-checkin@$PROJECT_ID.iam.gserviceaccount.com'
+      - '--oidc-token-audience'
+      - 'https://delfin-checkin-worker-xxxxxxxx-uc.a.run.app'
+
+images:
+  - 'gcr.io/$PROJECT_ID/delfin-checkin:$COMMIT_SHA'
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+  machineType: 'E2_HIGHCPU_8'
+
+substitutions:
+  _REGION: 'us-central1'
+  _SERVICE_NAME: 'delfin-checkin'

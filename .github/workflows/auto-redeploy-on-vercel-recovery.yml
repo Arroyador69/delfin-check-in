@@ -1,0 +1,35 @@
+name: Auto redeploy when Vercel recovers - DISABLED
+
+# TEMPORALMENTE DESACTIVADO PARA PRUEBAS DE DEPLOYMENT MANUAL
+# on:
+#   schedule:
+#     - cron: "*/5 * * * *"  # cada 5 minutos
+#   workflow_dispatch:
+
+jobs:
+  check-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Vercel status
+        id: status
+        run: |
+          STATUS=$(curl -s https://www.vercel-status.com/api/v2/summary.json | jq -r '.status.indicator')
+          echo "status=$STATUS" >> $GITHUB_OUTPUT
+      - name: Abort if not operational
+        if: steps.status.outputs.status != 'none'
+        run: |
+          echo "Vercel not operational (status=${{ steps.status.outputs.status }}). Exiting neutral." && exit 78
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install Vercel CLI
+        run: npm i -g vercel
+      - name: Deploy to Production
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: vercel deploy --prod --yes --token $VERCEL_TOKEN
+
+
+
+

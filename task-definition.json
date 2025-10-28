@@ -1,0 +1,127 @@
+{
+  "family": "delfin-checkin-task",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "256",
+  "memory": "512",
+  "executionRoleArn": "arn:aws:iam::123456789012:role/ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::123456789012:role/ecsTaskRole",
+  "containerDefinitions": [
+    {
+      "name": "delfin-checkin-app",
+      "image": "123456789012.dkr.ecr.us-east-1.amazonaws.com/delfin-checkin:latest",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 3000,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        {
+          "name": "NODE_ENV",
+          "value": "production"
+        },
+        {
+          "name": "PORT",
+          "value": "3000"
+        }
+      ],
+      "secrets": [
+        {
+          "name": "NEXT_PUBLIC_SUPABASE_URL",
+          "valueFrom": "arn:aws:ssm:us-east-1:123456789012:parameter/delfin-checkin/supabase-url"
+        },
+        {
+          "name": "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+          "valueFrom": "arn:aws:ssm:us-east-1:123456789012:parameter/delfin-checkin/supabase-anon-key"
+        },
+        {
+          "name": "SUPABASE_SERVICE_ROLE_KEY",
+          "valueFrom": "arn:aws:ssm:us-east-1:123456789012:parameter/delfin-checkin/supabase-service-role-key"
+        },
+        {
+          "name": "TELEGRAM_BOT_TOKEN",
+          "valueFrom": "arn:aws:ssm:us-east-1:123456789012:parameter/delfin-checkin/telegram-bot-token"
+        },
+        {
+          "name": "TELEGRAM_CHAT_ID",
+          "valueFrom": "arn:aws:ssm:us-east-1:123456789012:parameter/delfin-checkin/telegram-chat-id"
+        },
+        {
+          "name": "REDIS_HOST",
+          "valueFrom": "arn:aws:ssm:us-east-1:123456789012:parameter/delfin-checkin/redis-host"
+        },
+        {
+          "name": "REDIS_PASSWORD",
+          "valueFrom": "arn:aws:ssm:us-east-1:123456789012:parameter/delfin-checkin/redis-password"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/delfin-checkin",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "ecs"
+        }
+      },
+      "healthCheck": {
+        "command": ["CMD-SHELL", "curl -f http://localhost:3000/health || exit 1"],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 60
+      }
+    },
+    {
+      "name": "delfin-checkin-worker",
+      "image": "123456789012.dkr.ecr.us-east-1.amazonaws.com/delfin-checkin:latest",
+      "essential": true,
+      "command": ["node", "worker.js"],
+      "environment": [
+        {
+          "name": "NODE_ENV",
+          "value": "production"
+        }
+      ],
+      "secrets": [
+        {
+          "name": "NEXT_PUBLIC_SUPABASE_URL",
+          "valueFrom": "arn:aws:ssm:us-east-1:123456789012:parameter/delfin-checkin/supabase-url"
+        },
+        {
+          "name": "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+          "valueFrom": "arn:aws:ssm:us-east-1:123456789012:parameter/delfin-checkin/supabase-anon-key"
+        },
+        {
+          "name": "SUPABASE_SERVICE_ROLE_KEY",
+          "valueFrom": "arn:aws:ssm:us-east-1:123456789012:parameter/delfin-checkin/supabase-service-role-key"
+        },
+        {
+          "name": "TELEGRAM_BOT_TOKEN",
+          "valueFrom": "arn:aws:ssm:us-east-1:123456789012:parameter/delfin-checkin/telegram-bot-token"
+        },
+        {
+          "name": "TELEGRAM_CHAT_ID",
+          "valueFrom": "arn:aws:ssm:us-east-1:123456789012:parameter/delfin-checkin/telegram-chat-id"
+        },
+        {
+          "name": "REDIS_HOST",
+          "valueFrom": "arn:aws:ssm:us-east-1:123456789012:parameter/delfin-checkin/redis-host"
+        },
+        {
+          "name": "REDIS_PASSWORD",
+          "valueFrom": "arn:aws:ssm:us-east-1:123456789012:parameter/delfin-checkin/redis-password"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/delfin-checkin-worker",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "ecs"
+        }
+      }
+    }
+  ]
+}

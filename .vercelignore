@@ -1,0 +1,33 @@
+# Ignore Husky and development tools in Vercel deployment
+.husky/
+.husky/_
+.husky/commit-msg
+.husky/pre-commit
+.husky/pre-push
+
+# Ignore development files
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Ignore test files
+**/*.test.js
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.js
+**/*.spec.ts
+**/*.spec.tsx
+
+# Ignore documentation
+*.md
+docs/
+
+
+
+
+
+
+
+
+

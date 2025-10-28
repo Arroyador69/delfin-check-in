@@ -1,0 +1,634 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { insertGuestRegistration } from '@/lib/db';
+
+// ===== ADAPTADOR FLEXIBLE CON ERRORES DETALLADOS =====
+
+const cors = (req: NextRequest) => {
+  const origin = req.headers.get('origin') || '';
+  const allowedOrigins = [
+    'https://form.delfincheckin.com',
+    'https://admin.delfincheckin.com',
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'http://127.0.0.1:3000',
+    'http://127.0.0.1:3001'
+  ];
+  
+  const isAllowed = allowedOrigins.includes(origin) || 
+                   origin.startsWith('http://localhost:') || 
+                   origin.startsWith('http://127.0.0.1:');
+  
+  return {
+    'Access-Control-Allow-Origin': isAllowed ? origin : 'https://form.delfincheckin.com',
+    'Vary': 'Origin',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Accept, X-Dry-Run',
+    'Access-Control-Max-Age': '86400'
+  };
+};
+
+const sendError = (req: NextRequest, status: number, message: string, issues?: any[]) => {
+  const headers = cors(req);
+  return NextResponse.json({
+    code: 'VALIDATION_ERROR',
+    message,
+    issues: Array.isArray(issues) ? issues : undefined
+  }, { 
+    status,
+    headers
+  });
+};
+
+// Mapeadores flexibles - Usar códigos oficiales del Ministerio del Interior
+const mapPagoIn = (x?: string) => {
+  const k = String(x || '').toLowerCase();
+  if (k.includes('efect')) return 'EFECT';  // Efectivo
+  if (k.includes('tarj')) return 'TARJT';   // Tarjeta
+  if (k.includes('trans')) return 'TRANS';  // Transferencia
+  if (k.includes('plat')) return 'PLATF';   // Plataforma
+  if (k.includes('movil')) return 'MOVIL';  // Móvil
+  if (k.includes('cheq') || k.includes('treg')) return 'TREG';  // Cheque
+  if (k.includes('dest')) return 'DESTI';   // Destino
+  return 'OTRO';  // Otro
+};
+
+const mapSexoIn = (x?: string) => {
+  const k = String(x || '').toUpperCase();
+  if (['M', 'HOMBRE', 'H'].includes(k)) return 'H'; // MIR: H=Hombre
+  if (['F', 'MUJER'].includes(k)) return 'M'; // MIR: M=Mujer
+  return 'O'; // MIR: O=Otro (valor por defecto válido)
+};
+
+const mapDocTypeIn = (x?: string) => {
+  const k = String(x || '').toLowerCase();
+  if (k.includes('dni') || k.includes('nif')) return 'NIF';
+  if (k.includes('nie')) return 'NIE';
+  if (k.includes('pas')) return 'PAS'; // Corregido: máximo 5 caracteres según especificación MIR
+  return 'OTRO'; // Corregido: máximo 5 caracteres según especificación MIR
+};
+
+// Función para mantener códigos ISO 3166-1 Alfa-3 (MIR requiere Alfa-3)
+const normalizeToAlpha3 = (x?: string) => {
+  const t = String(x || '').toUpperCase();
+  const map: Record<string, string> = { 
+    'ES': 'ESP', 'FR': 'FRA', 'GB': 'GBR', 'IT': 'ITA', 'DE': 'DEU',
+    'PT': 'PRT', 'NL': 'NLD', 'BE': 'BEL', 'CH': 'CHE', 'AT': 'AUT',
+    'SPAIN': 'ESP', 'FRANCE': 'FRA', 'UNITED KINGDOM': 'GBR', 'ITALY': 'ITA', 'GERMANY': 'DEU',
+    'PORTUGAL': 'PRT', 'NETHERLANDS': 'NLD', 'BELGIUM': 'BEL', 'SWITZERLAND': 'CHE', 'AUSTRIA': 'AUT'
+  };
+  return t.length === 3 ? t : (map[t] || t);
+};
+
+// Función legacy para compatibilidad (mantiene Alfa-2 para validaciones locales)
+const iso3to2 = (x?: string) => {
+  const t = String(x || '').toUpperCase();
+  const map: Record<string, string> = { 
+    ESP: 'ES', FRA: 'FR', GBR: 'GB', ITA: 'IT', DEU: 'DE',
+    PRT: 'PT', NLD: 'NL', BEL: 'BE', CHE: 'CH', AUT: 'AT'
+  };
+  return t.length === 2 ? t : (map[t] || t);
+};
+
+// Normalizador de fechas
+const normalizeDate = (dateStr: string): string => {
+  if (!dateStr) return '';
+  
+  // Si ya está en formato ISO, devolverlo
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+    return dateStr;
+  }
+  
+  // Si está en formato DD/MM/AAAA, convertir a AAAA-MM-DD
+  if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(dateStr)) {
+    const [day, month, year] = dateStr.split('/');
+    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+  }
+  
+  // Si está en formato AAAA-MM-DDThh:mm:ss, extraer solo la fecha
+  if (/^\d{4}-\d{2}-\d{2}T/.test(dateStr)) {
+    return dateStr.split('T')[0];
+  }
+  
+  return dateStr;
+};
+
+const normalizeDateTime = (dateTimeStr: string): string => {
+  if (!dateTimeStr) return '';
+  
+  // Si ya está en formato ISO, devolverlo
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(dateTimeStr)) {
+    return dateTimeStr;
+  }
+  
+  // Si está en formato DD/MM/AAAA, HH:mm:ss, convertir
+  if (dateTimeStr.includes(',')) {
+    const [datePart, timePart] = dateTimeStr.split(',');
+    const normalizedDate = normalizeDate(datePart.trim());
+    const time = timePart ? timePart.trim() : '00:00:00';
+    return `${normalizedDate}T${time}`;
+  }
+  
+  return dateTimeStr;
+};
+
+const normalize = (body: any) => {
+  try {
+    const b = typeof body === 'string' ? JSON.parse(body) : body;
+    
+    // Acepta tanto el formato nuevo (contrato/viajeros) como el formato "parte" (ejecucionContrato/pago/viajeros.documento)
+    const contrato = b?.contrato || {};
+    const viajeros = b?.viajeros || [];
+    
+    // Normalizar contrato
+  const contratoNormalizado = {
+      // Permitir fechaContrato a nivel raíz (formato antiguo "parte")
+      fechaContrato: normalizeDate(contrato.fechaContrato || b?.fechaContrato),
+      // Permitir leer de ejecucionContrato si faltan
+      entrada: normalizeDateTime(contrato.entrada || b?.ejecucionContrato?.fechaHoraEntrada),
+      salida: normalizeDateTime(contrato.salida || b?.ejecucionContrato?.fechaHoraSalida),
+      nHabitaciones: Number(contrato.nHabitaciones || b?.numHabitaciones || 1),
+      internet: !!(contrato?.internet ?? b?.internet ?? contrato.internet),
+      fechaPago: (contrato.fechaPago || b?.pago?.fechaPago) ? normalizeDate(contrato.fechaPago || b?.pago?.fechaPago) : null,
+      tipoPago: mapPagoIn(contrato.tipoPagoCode || contrato.tipoPagoLabel || contrato.tipoPago || b?.pago?.tipo),
+      medioPago: contrato.medioPago || b?.pago?.identificacion || null,
+  } as any;
+
+  // Fallback robusto: si falta fechaContrato, derivarla de la entrada (solo fecha)
+  if (!contratoNormalizado.fechaContrato && contratoNormalizado.entrada) {
+    try {
+      contratoNormalizado.fechaContrato = String(contratoNormalizado.entrada).split('T')[0];
+    } catch {}
+  }
+    
+    // Función para normalizar un viajero
+    const normalizeViajero = (viajero: any) => {
+      // Soportar formato antiguo { documento:{tipo,numero}, residencia:{direccion,localidad,pais} }
+      const doc = viajero.documento || {};
+      const res = viajero.residencia || {};
+      const paisEntrada = viajero.paisResidencia || viajero.pais || res.pais;
+      const cpEntrada = viajero.cp || viajero.codigoPostal || res.codigoPostal;
+      // Aceptar múltiples alias de INE y normalizar a 5 dígitos
+      const ineEntradaRaw =
+        viajero.ine ||
+        viajero.codigoMunicipio ||
+        viajero.codigoMunicipioINE ||
+        viajero.municipioINE ||
+        res.codigoMunicipio ||
+        res.codigoMunicipioINE ||
+        res.municipioINE;
+
+      return {
+        nombre: String(viajero.nombre || '').trim(),
+        primerApellido: String(viajero.primerApellido || '').trim(),
+        segundoApellido: String(viajero.segundoApellido || '').trim() || null,
+        fechaNacimiento: normalizeDate(viajero.fechaNacimiento),
+        tipoDocumento: mapDocTypeIn(viajero.tipoDocumento || doc.tipo),
+        numeroDocumento: String(viajero.numeroDocumento || doc.numero || '').toUpperCase().replace(/\s+/g, ''),
+        sexo: mapSexoIn(viajero.sexo),
+        nacionalidad: viajero.nacionalidad || viajero.nacionalidadISO3, // Ya viene en ISO3 desde el frontend
+        nacionalidadISO2: iso3to2(viajero.nacionalidad || viajero.nacionalidadISO3), // Convertir ISO3 a ISO2 para compatibilidad
+        telefono: String(viajero.telefono || '').replace(/\s+/g, ''),
+        correo: String(viajero.correo || viajero.email || '').trim().toLowerCase(),
+        direccion: String(viajero.direccion || res.direccion || '').trim(),
+        cp: (() => {
+          const cpValue = String(cpEntrada || '').trim();
+          const pais = iso3to2(paisEntrada || 'ESP');
+          return pais === 'ES' ? cpValue.padStart(5, '0') : cpValue;
+        })(),
+        ine: (() => {
+          const digits = String(ineEntradaRaw || '').replace(/\D/g, '');
+          return digits ? digits.padStart(5, '0').slice(-5) : '';
+        })(),
+        nombreMunicipio: String(viajero.nombreMunicipio || res.localidad || '').trim(),
+        paisResidencia: normalizeToAlpha3(paisEntrada || 'ESP'),
+      };
+    };
+    
+    // Normalizar todos los viajeros
+    const viajerosNormalizados = viajeros.length > 0 
+      ? viajeros.map(normalizeViajero).filter((v: any) => v.nombre) // Solo viajeros con nombre
+      : [normalizeViajero({})]; // Al menos un viajero vacío si no hay ninguno
+    
+    return {
+      contrato: contratoNormalizado,
+      viajeros: viajerosNormalizados,
+      titular: b?.titular || {}
+    };
+  } catch (e: any) {
+    console.error('Error normalizando payload:', e);
+    return null;
+  }
+};
+
+// Manejar preflight OPTIONS
+export async function OPTIONS(req: NextRequest) {
+  const headers = cors(req);
+  return new NextResponse(null, { 
+    status: 200, 
+    headers 
+  });
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    console.log('🚀 Endpoint flexible recibiendo registro...');
+    
+    // Verificar si es un test de conectividad (dry-run)
+    const isDryRun = req.headers.get('X-Dry-Run') === '1';
+    if (isDryRun) {
+      console.log('🔍 Test de conectividad detectado');
+      const headers = cors(req);
+      return NextResponse.json({ 
+        status: 'ok',
+        message: 'Endpoint funcionando correctamente',
+        timestamp: new Date().toISOString(),
+        source: 'registro-flex-endpoint'
+      }, {
+        status: 200,
+        headers
+      });
+    }
+    
+    const json = await req.json().catch(() => undefined);
+    
+    if (!json) {
+      console.error('❌ Datos JSON inválidos o vacíos');
+      return sendError(req, 400, 'Datos JSON inválidos o vacíos');
+    }
+
+    console.log('📋 Datos recibidos:', JSON.stringify(json, null, 2));
+    
+    // 🔬 DEBUG: Análisis detallado de los datos
+    console.log('═══════════════════════════════════════════════════════════');
+    console.log('🔬 DEBUG INICIAL - PAYLOAD RECIBIDO:');
+    console.log('═══════════════════════════════════════════════════════════');
+    console.log('📦 Estructura completa:', {
+      tieneContrato: !!json.contrato,
+      tieneTitular: !!json.titular,
+      tieneViajeros: !!json.viajeros,
+      tieneEjecucionContrato: !!json.ejecucionContrato,
+      tienePago: !!json.pago,
+      numeroViajeros: json.viajeros?.length || 0,
+    });
+    
+    console.log('👥 Análisis de viajeros ANTES de normalizar:');
+    json.viajeros?.forEach((v: any, i: number) => {
+      console.log(`  Viajero ${i}:`, {
+        nombre: v.nombre,
+        paisResidencia: v.paisResidencia,
+        pais: v.pais,
+        'residencia.pais': v.residencia?.pais,
+        ine: v.ine,
+        codigoMunicipio: v.codigoMunicipio,
+        'residencia.codigoMunicipio': v.residencia?.codigoMunicipio,
+        nombreMunicipio: v.nombreMunicipio,
+        'residencia.localidad': v.residencia?.localidad,
+        todosLosCampos: Object.keys(v)
+      });
+    });
+    console.log('═══════════════════════════════════════════════════════════');
+
+    const normalized = normalize(json);
+    if (!normalized) {
+      return sendError(req, 400, 'JSON inválido o no parseable');
+    }
+
+    console.log('═══════════════════════════════════════════════════════════');
+    console.log('✅ DATOS NORMALIZADOS:');
+    console.log('═══════════════════════════════════════════════════════════');
+    console.log(JSON.stringify(normalized, null, 2));
+    
+    console.log('👥 Análisis de viajeros DESPUÉS de normalizar:');
+    normalized.viajeros?.forEach((v: any, i: number) => {
+      console.log(`  Viajero ${i}:`, {
+        nombre: v.nombre,
+        paisResidencia: v.paisResidencia,
+        ine: `"${v.ine}"`,
+        ineLength: v.ine?.length,
+        ineEsValido: /^\d{5}$/.test(v.ine || ''),
+        nombreMunicipio: v.nombreMunicipio,
+        cp: v.cp
+      });
+    });
+    console.log('═══════════════════════════════════════════════════════════');
+    
+    // Debug específico para datos de dirección
+    if (normalized.viajeros && normalized.viajeros.length > 0) {
+      console.log('🔍 Debug - Datos de dirección en viajeros:');
+      normalized.viajeros.forEach((viajero, index) => {
+        console.log(`  Viajero ${index + 1}:`, {
+          nombre: viajero.nombre,
+          direccion: viajero.direccion,
+          cp: viajero.cp,
+          ine: viajero.ine,
+          paisResidencia: viajero.paisResidencia
+        });
+      });
+    }
+
+    // Validaciones mínimas con mensajes claros
+    const issues: any[] = [];
+    const c = normalized.contrato || {};
+    const viajeros = normalized.viajeros || [];
+
+    // Validar contrato
+    if (!c.fechaContrato) issues.push({ path: 'contrato.fechaContrato', message: 'Requerido (YYYY-MM-DD)' });
+    if (!c.entrada) issues.push({ path: 'contrato.entrada', message: 'Requerido (YYYY-MM-DDTHH:mm:ss)' });
+    if (!c.salida) issues.push({ path: 'contrato.salida', message: 'Requerido (YYYY-MM-DDTHH:mm:ss)' });
+    if (c.entrada && c.salida && new Date(c.entrada) > new Date(c.salida)) {
+      issues.push({ path: 'contrato.entrada', message: 'Entrada no puede ser posterior a Salida' });
+    }
+    if (!c.tipoPago) issues.push({ path: 'contrato.tipoPago', message: 'Requerido' });
+
+    // Validar que haya al menos un viajero
+    if (!viajeros.length) {
+      issues.push({ path: 'viajeros', message: 'Se requiere al menos un viajero' });
+    } else {
+    // Validar cada viajero
+    viajeros.forEach((v: any, index: number) => {
+      const prefix = `viajeros[${index}]`;
+      
+      // 🔬 DEBUG: Log datos del viajero
+      console.log(`🔬 DEBUG VALIDACIÓN - Viajero ${index + 1}:`, JSON.stringify(v, null, 2));
+      console.log(`🔬 DEBUG VALIDACIÓN - Campo 'ine':`, `"${v.ine}"`, `(tipo: ${typeof v.ine})`);
+      console.log(`🔬 DEBUG VALIDACIÓN - Campo 'paisResidencia':`, `"${v.paisResidencia}"`);
+      console.log(`🔬 DEBUG VALIDACIÓN - Campo 'nombreMunicipio':`, `"${v.nombreMunicipio}"`);
+      
+      // Validaciones obligatorias para todos los viajeros
+      if (!v.nombre) issues.push({ path: `${prefix}.nombre`, message: 'Requerido' });
+      if (!v.primerApellido) issues.push({ path: `${prefix}.primerApellido`, message: 'Requerido' });
+      if (!v.fechaNacimiento) issues.push({ path: `${prefix}.fechaNacimiento`, message: 'Requerido (YYYY-MM-DD)' });
+      if (!v.tipoDocumento) issues.push({ path: `${prefix}.tipoDocumento`, message: 'Requerido' });
+      if (!v.numeroDocumento) issues.push({ path: `${prefix}.numeroDocumento`, message: 'Requerido' });
+      if (!v.direccion) issues.push({ path: `${prefix}.direccion`, message: 'Requerido' });
+      if (!v.nacionalidad) issues.push({ path: `${prefix}.nacionalidad`, message: 'Requerido' });
+      if (!v.sexo) issues.push({ path: `${prefix}.sexo`, message: 'Requerido' });
+      
+      // Teléfono y email obligatorios solo para el primer viajero
+      if (index === 0) {
+        if (!v.telefono) issues.push({ path: `${prefix}.telefono`, message: 'Teléfono requerido para el primer viajero' });
+        if (!v.correo) {
+          issues.push({ path: `${prefix}.correo`, message: 'Email requerido para el primer viajero' });
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.correo)) {
+          issues.push({ path: `${prefix}.correo`, message: 'Email no válido' });
+        }
+      }
+      
+      // Segundo apellido obligatorio solo para españoles
+      const esEspana = v.nacionalidad === 'ESP';
+      if (esEspana && !v.segundoApellido) {
+        issues.push({ path: `${prefix}.segundoApellido`, message: 'Segundo apellido requerido para españoles' });
+      }
+      
+      // Validación flexible de código postal según el país
+      if (!v.cp) {
+        issues.push({ path: `${prefix}.cp`, message: 'Requerido' });
+      } else {
+        const esEspana = v.paisResidencia === 'ESP';
+        if (esEspana && !/^\d{5}$/.test(v.cp)) {
+          issues.push({ path: `${prefix}.cp`, message: 'Para España debe ser 5 dígitos' });
+        }
+        // Para otros países, solo verificar que no esté vacío
+      }
+      
+      // Validación condicional de INE: solo para españoles
+      const esEspanaResidencia = v.paisResidencia === 'ESP';
+      // Convertir país de residencia a ISO2 para debugging legible y evitar referencias no definidas
+      const paisISO2 = iso3to2(v.paisResidencia || 'ESP');
+      console.log(`🔬 DEBUG VALIDACIÓN - Viajero ${index}:`, {
+        esEspanaResidencia,
+        paisResidencia: v.paisResidencia,
+        paisISO2,
+        ine: `"${v.ine}"`,
+        ineLength: v.ine?.length,
+        ineValido: /^\d{5}$/.test(v.ine || ''),
+        nombreMunicipio: `"${v.nombreMunicipio}"`
+      });
+      
+      if (esEspanaResidencia) {
+        if (!v.ine || !/^\d{5}$/.test(v.ine)) {
+          console.warn(`⚠️ AVISO VALIDACIÓN - Viajero ${index}: INE ausente o inválido para español. Se permite guardar y revisar más tarde.`, {
+            ine: v.ine,
+            esperado: '5 dígitos numéricos',
+            recibido: `"${v.ine}" (${v.ine?.length || 0} caracteres)`
+          });
+          // No bloqueamos el flujo. Se podrá corregir antes de envío al MIR.
+        }
+      } else {
+        // Para extranjeros, INE debe estar vacío y nombreMunicipio es requerido
+        console.log(`🔬 DEBUG VALIDACIÓN - Verificando campos para extranjero:`, {
+          ine: `"${v.ine}"`, 
+          ineVacio: !v.ine || v.ine.trim() === '',
+          nombreMunicipio: `"${v.nombreMunicipio}"`,
+          nombreMunicipioVacio: !v.nombreMunicipio || v.nombreMunicipio.trim() === ''
+        });
+        
+        if (v.ine && v.ine.trim() !== '') {
+          console.error(`❌ ERROR VALIDACIÓN - Viajero ${index}: INE debe estar vacío para extranjero:`, `"${v.ine}"`);
+          issues.push({ 
+            path: `${prefix}.ine`, 
+            message: `Para extranjeros el campo INE debe estar vacío. Recibido: "${v.ine}". Solo rellena el campo "Nombre del municipio".` 
+          });
+        }
+        if (!v.nombreMunicipio || v.nombreMunicipio.trim() === '') {
+          console.error(`❌ ERROR VALIDACIÓN - Viajero ${index}: Falta nombre del municipio para extranjero`);
+          issues.push({ 
+            path: `${prefix}.nombreMunicipio`, 
+            message: 'Para extranjeros es OBLIGATORIO el nombre del municipio/ciudad donde resides' 
+          });
+        }
+      }
+    });
+    }
+
+    if (issues.length) {
+      console.error('═══════════════════════════════════════════════════════════');
+      console.error('❌ ERRORES DE VALIDACIÓN:');
+      console.error('═══════════════════════════════════════════════════════════');
+      issues.forEach((issue, idx) => {
+        console.error(`  Error ${idx + 1}: ${issue.path} - ${issue.message}`);
+      });
+      console.error('═══════════════════════════════════════════════════════════');
+      console.error('💡 SOLUCIÓN:');
+      console.error('   1. Si el viajero reside en España: Debe rellenar el campo "Código municipio INE" con 5 dígitos');
+      console.error('   2. Si el viajero es extranjero: Debe dejar vacío el campo "Código INE" y rellenar "Nombre municipio"');
+      console.error('   3. Busca en Google: "código INE + nombre de tu ciudad" para encontrar el código correcto');
+      console.error('═══════════════════════════════════════════════════════════');
+      return sendError(req, 422, 'Validación fallida', issues);
+    }
+
+    // Obtener configuración MIR del tenant (si está autenticado)
+    // Si no hay tenant_id, usar valores por defecto (formulario público)
+    const tenantId = req.headers.get('x-tenant-id');
+    let ESTABLISHMENT_CODE = "0000256653"; // Valor por defecto
+    let ESTABLISHMENT_REFERENCE = "0000146967"; // Valor por defecto
+    let ESTABLISHMENT_NAME = "Delfín Check-in"; // Valor por defecto
+    let ESTABLISHMENT_ADDRESS = "Fuengirola, Málaga, España"; // Valor por defecto
+    
+    if (tenantId) {
+      try {
+        const { sql: pgSql } = await import('@vercel/postgres');
+        const tenantResult = await pgSql`
+          SELECT config FROM tenants WHERE id = ${tenantId}
+        `;
+        
+        if (tenantResult.rows.length > 0) {
+          const config = tenantResult.rows[0].config || {};
+          const mirConfig = config.mir || {};
+          
+          if (mirConfig.enabled && mirConfig.codigoEstablecimiento) {
+            ESTABLISHMENT_CODE = mirConfig.codigoEstablecimiento;
+            ESTABLISHMENT_NAME = mirConfig.denominacion || ESTABLISHMENT_NAME;
+            ESTABLISHMENT_ADDRESS = mirConfig.direccionCompleta || ESTABLISHMENT_ADDRESS;
+            console.log(`✅ Usando configuración MIR del tenant ${tenantId}`);
+          }
+        }
+      } catch (error) {
+        console.log('⚠️ No se pudo cargar configuración MIR del tenant, usando valores por defecto');
+      }
+    }
+    
+    // Convertir al formato esperado por la base de datos
+    
+    // Convertir viajeros al formato de base de datos
+    const personasDB = viajeros.map((v: any) => ({
+      rol: 'VI',
+      nombre: v.nombre,
+      apellido1: v.primerApellido,
+      apellido2: v.segundoApellido,
+      tipoDocumento: v.tipoDocumento,
+      numeroDocumento: v.numeroDocumento,
+      fechaNacimiento: v.fechaNacimiento,
+      nacionalidad: v.nacionalidad, // Ya viene en ISO3 desde el frontend
+      sexo: v.sexo,
+      telefono: v.telefono,
+      telefono2: '', // Campo adicional vacío
+      correo: v.correo, // Ya viene como 'correo' desde el frontend
+      direccion: {
+        direccion: v.direccion,
+        codigoPostal: v.cp,
+        pais: v.paisResidencia, // Ya viene en ISO3 desde el frontend
+        codigoMunicipio: v.ine,
+        nombreMunicipio: v.nombreMunicipio || '' // Añadir campo nombreMunicipio
+      }
+    }));
+    
+    const dbData = {
+      codigoEstablecimiento: ESTABLISHMENT_CODE,
+      comunicaciones: [{
+        contrato: {
+          referencia: ESTABLISHMENT_REFERENCE,
+          fechaContrato: c.fechaContrato,
+          fechaEntrada: c.entrada,
+          fechaSalida: c.salida,
+          numPersonas: viajeros.length,
+          numHabitaciones: c.nHabitaciones,
+          internet: c.internet,
+          pago: {
+            tipoPago: c.tipoPago,
+            fechaPago: c.fechaPago,
+            medioPago: c.medioPago,
+            titular: normalized.titular?.nombreCompleto,
+            caducidadTarjeta: normalized.titular?.tarjetaCaducidad
+          }
+        },
+        personas: personasDB
+      }]
+    };
+
+    console.log('💾 Guardando en base de datos...');
+    console.log('🔍 Debug - Datos finales que se van a guardar:', JSON.stringify(dbData, null, 2));
+    
+    // Guardar en base de datos
+    const id = await insertGuestRegistration({
+      reserva_ref: ESTABLISHMENT_REFERENCE,
+      fecha_entrada: c.entrada.split('T')[0],
+      fecha_salida: c.salida.split('T')[0],
+      data: dbData
+    });
+
+    console.log('✅ Registro guardado con ID:', id);
+
+    // Enviar automáticamente al MIR (PV + RH)
+    try {
+      console.log('📤 Enviando automáticamente al MIR (PV + RH)...');
+      
+      const payload = {
+        ...dbData,
+        id: id
+      };
+      
+      // Enviar PV (Partes de Viajeros)
+      console.log('📤 Enviando PV (Partes de Viajeros)...');
+      const pvResponse = await fetch(`${req.nextUrl.origin}/api/ministerio/auto-envio`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Tenant-ID': tenantId || 'default'
+        },
+        body: JSON.stringify(payload)
+      });
+      
+      let pvResult = null;
+      if (pvResponse.ok) {
+        pvResult = await pvResponse.json();
+        console.log('✅ Envío PV al MIR exitoso:', pvResult);
+      } else {
+        console.log('⚠️ Error en envío PV al MIR, pero registro guardado correctamente');
+      }
+      
+      // Enviar RH (Reservas de Hospedaje)
+      console.log('📤 Enviando RH (Reservas de Hospedaje)...');
+      const rhResponse = await fetch(`${req.nextUrl.origin}/api/ministerio/auto-envio-rh`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Tenant-ID': tenantId || 'default'
+        },
+        body: JSON.stringify(payload)
+      });
+      
+      let rhResult = null;
+      if (rhResponse.ok) {
+        rhResult = await rhResponse.json();
+        console.log('✅ Envío RH al MIR exitoso:', rhResult);
+      } else {
+        console.log('⚠️ Error en envío RH al MIR, pero registro guardado correctamente');
+      }
+      
+      console.log('📊 Resumen de envíos MIR:', {
+        pv: pvResult ? { success: pvResult.success, codigo: pvResult.resultado?.codigo } : { success: false },
+        rh: rhResult ? { success: rhResult.success, codigo: rhResult.resultado?.codigo } : { success: false }
+      });
+      
+    } catch (mirError) {
+      console.log('⚠️ Error en envío al MIR, pero registro guardado correctamente:', mirError);
+    }
+
+    const headers = cors(req);
+    return NextResponse.json({ 
+      success: true, 
+      message: 'Registro guardado y enviado al MIR correctamente (PV + RH)',
+      id: id,
+      reserva_ref: ESTABLISHMENT_REFERENCE,
+      date: new Date().toISOString().split('T')[0],
+      comunicaciones_enviadas: ['PV', 'RH']
+    }, {
+      status: 201,
+      headers
+    });
+
+  } catch (error) {
+    console.error('💥 Error interno del servidor:', error);
+    
+    const headers = cors(req);
+    return NextResponse.json({ 
+      code: 'INTERNAL_ERROR',
+      error: 'Error interno del servidor',
+      message: error instanceof Error ? error.message : 'Error desconocido'
+    }, { 
+      status: 500,
+      headers
+    });
+  }
+}

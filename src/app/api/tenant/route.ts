@@ -1,0 +1,145 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { sql } from '@/lib/db';
+
+/**
+ * API para obtener información del tenant actual
+ * Usado por el dashboard para mostrar límites y configuración del plan
+ */
+export async function GET(req: NextRequest) {
+  try {
+    // Obtener tenant_id del header (enviado por el middleware)
+    const tenantId = req.headers.get('x-tenant-id');
+    
+    if (!tenantId) {
+      return NextResponse.json(
+        { error: 'No se pudo identificar el tenant' },
+        { status: 400 }
+      );
+    }
+
+    // Asegurar que las tablas de tenant existen
+    try {
+      await sql`SELECT 1 FROM tenants LIMIT 1`;
+    } catch (error) {
+      console.log('🔧 Tabla tenants no existe, creándola...');
+      await sql`
+        CREATE TABLE IF NOT EXISTS tenants (
+          id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+          name VARCHAR(255) NOT NULL,
+          email VARCHAR(255) UNIQUE NOT NULL,
+          plan_id VARCHAR(50) NOT NULL CHECK (plan_id IN ('basic', 'standard', 'premium', 'enterprise')),
+          max_rooms INTEGER NOT NULL DEFAULT 2,
+          current_rooms INTEGER NOT NULL DEFAULT 0 CHECK (current_rooms >= 0),
+          stripe_customer_id VARCHAR(255) UNIQUE,
+          stripe_subscription_id VARCHAR(255),
+          status VARCHAR(50) NOT NULL DEFAULT 'trial' CHECK (status IN ('active', 'trial', 'suspended', 'cancelled')),
+          trial_ends_at TIMESTAMP WITH TIME ZONE,
+          config JSONB DEFAULT '{"propertyName": "", "timezone": "Europe/Madrid", "language": "es", "currency": "EUR"}'::jsonb,
+          created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+          updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+          CONSTRAINT valid_rooms_count CHECK (current_rooms <= max_rooms OR max_rooms = -1)
+        );
+      `;
+      
+      // Crear tenant por defecto si no existe
+      await sql`
+        INSERT INTO tenants (id, name, email, plan_id, max_rooms, status)
+        VALUES ('870e589f-d313-4a5a-901f-f25fd4e7240a', 'Admin Default', 'admin@delfincheckin.com', 'basic', 2, 'active')
+        ON CONFLICT (id) DO NOTHING;
+      `;
+      
+      console.log('✅ Tabla tenants creada correctamente');
+    }
+
+    // Obtener información del tenant
+    const tenantResult = await sql`
+      SELECT 
+        id, name, email, plan_id, max_rooms, current_rooms, 
+        status, config, created_at
+      FROM tenants 
+      WHERE id = ${tenantId}
+    `;
+
+    if (tenantResult.rows.length === 0) {
+      return NextResponse.json(
+        { error: 'Tenant no encontrado' },
+        { status: 404 }
+      );
+    }
+
+    const tenant = tenantResult.rows[0];
+
+    // Obtener estadísticas actuales del tenant (con manejo de tablas que pueden no existir)
+    let stats = {
+      total_rooms: 0,
+      total_reservations: 0,
+      total_guests: 0,
+      total_registrations: 0
+    };
+
+    try {
+      const statsResult = await sql`
+        SELECT 
+          (SELECT COUNT(*) FROM "Room" r WHERE r."lodgingId" = (SELECT lodging_id FROM tenants WHERE id = ${tenantId})) as total_rooms,
+          (SELECT COUNT(*) FROM reservations WHERE tenant_id = ${tenantId}) as total_reservations,
+          (SELECT COUNT(*) FROM guests WHERE tenant_id = ${tenantId}) as total_guests,
+          (SELECT COUNT(*) FROM guest_registrations WHERE tenant_id = ${tenantId}) as total_registrations
+      `;
+      
+      if (statsResult.rows.length > 0) {
+        stats = statsResult.rows[0];
+      }
+    } catch (error) {
+      console.log('⚠️ Algunas tablas no existen aún, usando valores por defecto');
+    }
+
+    // Información del plan
+    const planInfo = {
+      basic: { name: 'Básico', max_rooms: 2, price: 29, features: ['Hasta 2 habitaciones', 'Soporte básico'] },
+      standard: { name: 'Estándar', max_rooms: 4, price: 49, features: ['Hasta 4 habitaciones', 'Soporte prioritario'] },
+      premium: { name: 'Premium', max_rooms: 6, price: 79, features: ['Hasta 6 habitaciones', 'Soporte prioritario', 'Analytics avanzados'] },
+      enterprise: { name: 'Empresa', max_rooms: -1, price: 149, features: ['Habitaciones ilimitadas', 'Soporte 24/7', 'Analytics avanzados', 'API personalizada'] }
+    };
+
+    const currentPlan = planInfo[tenant.plan_id as keyof typeof planInfo];
+
+    const response = {
+      tenant: {
+        id: tenant.id,
+        name: tenant.name,
+        email: tenant.email,
+        plan_id: tenant.plan_id,
+        plan_name: currentPlan.name,
+        plan_price: currentPlan.price,
+        plan_features: currentPlan.features,
+        max_rooms: tenant.max_rooms,
+        current_rooms: parseInt(stats.total_rooms),
+        status: tenant.status,
+        config: tenant.config,
+        created_at: tenant.created_at
+      },
+      stats: {
+        total_rooms: parseInt(stats.total_rooms),
+        total_reservations: parseInt(stats.total_reservations),
+        total_guests: parseInt(stats.total_guests),
+        total_registrations: parseInt(stats.total_registrations),
+        rooms_used: parseInt(stats.total_rooms),
+        rooms_remaining: tenant.max_rooms === -1 ? -1 : Math.max(0, tenant.max_rooms - parseInt(stats.total_rooms))
+      },
+      limits: {
+        can_add_rooms: tenant.max_rooms === -1 || parseInt(stats.total_rooms) < tenant.max_rooms,
+        rooms_usage_percentage: tenant.max_rooms === -1 ? 0 : Math.round((parseInt(stats.total_rooms) / tenant.max_rooms) * 100)
+      }
+    };
+
+    console.log(`🏢 Información del tenant obtenida: ${tenant.name} (${tenant.plan_id})`);
+    return NextResponse.json(response);
+
+  } catch (error) {
+    console.error('Error fetching tenant info:', error);
+    return NextResponse.json(
+      { error: 'Error al obtener información del tenant' },
+      { status: 500 }
+    );
+  }
+}

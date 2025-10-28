@@ -1,0 +1,44 @@
+{
+  "name": "Delfín Check-in",
+  "description": "Sistema de gestión inteligente para habitaciones de Airbnb y Booking.com",
+  "repository": "https://github.com/your-username/delfin-checkin",
+  "logo": "https://raw.githubusercontent.com/your-username/delfin-checkin/main/public/icons/icon-512x512.png",
+  "keywords": ["node", "nextjs", "airbnb", "booking", "hotel", "management"],
+  "env": {
+    "NODE_ENV": {
+      "description": "Environment",
+      "value": "production"
+    },
+    "NEXTAUTH_SECRET": {
+      "description": "NextAuth secret",
+      "generator": "secret"
+    },
+    "NEXTAUTH_URL": {
+      "description": "NextAuth URL",
+      "value": "https://your-app-name.herokuapp.com"
+    }
+  },
+  "addons": [
+    {
+      "plan": "heroku-redis:hobby-dev"
+    },
+    {
+      "plan": "heroku-postgresql:hobby-dev"
+    }
+  ],
+  "buildpacks": [
+    {
+      "url": "heroku/nodejs"
+    }
+  ],
+  "formation": {
+    "web": {
+      "quantity": 1,
+      "size": "basic"
+    },
+    "worker": {
+      "quantity": 1,
+      "size": "basic"
+    }
+  }
+}

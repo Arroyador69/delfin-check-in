@@ -1,0 +1,70 @@
+name: delfin-checkin
+services:
+  - name: web
+    source_dir: /
+    github:
+      repo: your-username/delfin-checkin
+      branch: main
+    run_command: npm start
+    environment_slug: node-js
+    instance_count: 1
+    instance_size_slug: basic-xxs
+    routes:
+      - path: /
+    envs:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: NEXT_PUBLIC_SUPABASE_URL
+        value: ${NEXT_PUBLIC_SUPABASE_URL}
+      - key: NEXT_PUBLIC_SUPABASE_ANON_KEY
+        value: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        value: ${SUPABASE_SERVICE_ROLE_KEY}
+      - key: TELEGRAM_BOT_TOKEN
+        value: ${TELEGRAM_BOT_TOKEN}
+      - key: TELEGRAM_CHAT_ID
+        value: ${TELEGRAM_CHAT_ID}
+      - key: REDIS_HOST
+        value: ${REDIS_HOST}
+      - key: REDIS_PASSWORD
+        value: ${REDIS_PASSWORD}
+
+  - name: worker
+    source_dir: /
+    github:
+      repo: your-username/delfin-checkin
+      branch: main
+    run_command: node worker.js
+    environment_slug: node-js
+    instance_count: 1
+    instance_size_slug: basic-xxs
+    envs:
+      - key: NODE_ENV
+        value: production
+      - key: NEXT_PUBLIC_SUPABASE_URL
+        value: ${NEXT_PUBLIC_SUPABASE_URL}
+      - key: NEXT_PUBLIC_SUPABASE_ANON_KEY
+        value: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        value: ${SUPABASE_SERVICE_ROLE_KEY}
+      - key: TELEGRAM_BOT_TOKEN
+        value: ${TELEGRAM_BOT_TOKEN}
+      - key: TELEGRAM_CHAT_ID
+        value: ${TELEGRAM_CHAT_ID}
+      - key: REDIS_HOST
+        value: ${REDIS_HOST}
+      - key: REDIS_PASSWORD
+        value: ${REDIS_PASSWORD}
+
+databases:
+  - name: db
+    engine: PG
+    version: "12"
+    production: false
+
+  - name: redis
+    engine: REDIS
+    version: "6"
+    production: false

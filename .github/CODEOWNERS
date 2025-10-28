@@ -1,0 +1,54 @@
+# Archivo CODEOWNERS - Define quién debe revisar cada parte del código
+# Más info: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Propietarios globales - TÚ REVISAS TODO (control total)
+* @Arroyador69
+
+# Tu compañero puede contribuir pero SIEMPRE necesita tu aprobación
+
+# APIs y lógica de backend
+/src/app/api/ @Arroyador69
+/src/lib/ @Arroyador69
+
+# Base de datos y migraciones
+/database/ @Arroyador69
+*.sql @Arroyador69
+
+# Configuración de infraestructura
+/vercel.json @Arroyador69
+/next.config.ts @Arroyador69
+/package.json @Arroyador69
+/package-lock.json @Arroyador69
+
+# Workflows de CI/CD
+/.github/ @Arroyador69
+
+# Componentes críticos de seguridad
+/src/middleware.ts @Arroyador69
+/src/app/api/auth/ @Arroyador69
+/src/components/AuthGuard.tsx @Arroyador69
+
+# Formularios públicos (TÚ siempre revisas)
+/src/app/guest-registration/ @Arroyador69
+/delfin-formulario-publico/ @Arroyador69
+
+# Componentes de UI y dashboard (TÚ siempre revisas)
+/src/components/ @Arroyador69
+/src/app/guest-registrations-dashboard/ @Arroyador69
+
+# NOTA: Con la regla global (*), @andresarrroyoaa puede trabajar en cualquier área
+# pero TÚ (@Arroyador69) SIEMPRE debes aprobar sus PRs antes del merge
+
+# Exportación MIR (crítico para cumplimiento legal)
+/src/app/api/export/ @Arroyador69
+/src/app/api/ministerio/ @Arroyador69
+/src/lib/spain-ministry.ts @Arroyador69
+
+# Documentación
+*.md @Arroyador69
+/README.md @Arroyador69
+
+# CONFIGURACIÓN FINAL: Control total para @Arroyador69
+# - Tu compañero @andresarrroyoaa puede trabajar en cualquier archivo
+# - Pero TÚ SIEMPRE debes aprobar todos sus Pull Requests
+# - Tienes control total sobre todo el código que entra al repositorio

@@ -69,3 +69,7 @@ WHERE lote IS NOT NULL
 GROUP BY lote
 HAVING COUNT(*) > 1
 ORDER BY cantidad DESC;
+
+
+
+
