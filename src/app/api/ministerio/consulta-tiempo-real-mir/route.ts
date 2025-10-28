@@ -67,17 +67,15 @@ export async function POST(req: NextRequest) {
           SET 
             estado = ${nuevoEstado},
             resultado = jsonb_set(
-              COALESCE(resultado, '{}'::jsonb),
-              '{codigoEstado}', 
-              ${codigoEstado}::jsonb
-            ),
-            resultado = jsonb_set(
-              resultado,
-              '{descEstado}', 
-              ${descripcionEstado}::jsonb
-            ),
-            resultado = jsonb_set(
-              resultado,
+              jsonb_set(
+                jsonb_set(
+                  COALESCE(resultado, '{}'::jsonb),
+                  '{codigoEstado}', 
+                  ${codigoEstado}::jsonb
+                ),
+                '{descEstado}', 
+                ${descripcionEstado}::jsonb
+              ),
               '{ultimaConsulta}', 
               ${new Date().toISOString()}::jsonb
             )

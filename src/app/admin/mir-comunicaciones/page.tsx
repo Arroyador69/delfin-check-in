@@ -116,44 +116,41 @@ export default function MirComunicacionesPage() {
     try {
       const codigos = codigosConsulta.split(',').map(c => c.trim()).filter(c => c);
       
-      // Consultar cada código individualmente para obtener información completa
-      const resultados = [];
-      for (const codigo of codigos) {
-        const response = await fetch('/api/ministerio/consulta-completa', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ codigoReferencia: codigo })
-        });
-        
-        const data = await response.json();
-        
-        if (data.ok && data.resultados.length > 0) {
-          resultados.push(data.resultados[0]);
-        } else {
-          // Si no se encuentra, crear un resultado de error
-          resultados.push({
-            codigo: codigo,
-            tipo: 'N/A',
-            estado: 'no_encontrado',
-            referencia: codigo,
-            fechaAlta: 'N/A',
-            nombreReserva: 'No encontrado',
-            interpretacion: {
-              tipoDescripcion: 'Comunicación no encontrada',
-              estadoDescripcion: 'No existe en el sistema'
-            },
-            detalles: {
-              establecimiento: 'N/A',
-              fechaEntrada: 'N/A',
-              fechaSalida: 'N/A',
-              numPersonas: 0
-            }
-          });
-        }
-      }
+      // Consultar todos los códigos de una vez usando el endpoint correcto
+      const response = await fetch('/api/ministerio/consulta-oficial', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ codigos: codigos })
+      });
       
-      setResultadosConsulta(resultados);
-      setSuccess(`✅ Consulta completada. Encontrados ${resultados.length} resultados`);
+      const data = await response.json();
+      
+      if (data.success && data.resultados && data.resultados.length > 0) {
+        setResultadosConsulta(data.resultados);
+        setSuccess(`✅ Consulta completada. Encontrados ${data.resultados.length} resultados`);
+      } else {
+        // Si no se encuentran resultados, crear resultados de error para cada código
+        const resultadosError = codigos.map(codigo => ({
+          codigo: codigo,
+          tipo: 'N/A',
+          estado: 'no_encontrado',
+          referencia: codigo,
+          fechaAlta: 'N/A',
+          nombreReserva: 'No encontrado',
+          interpretacion: {
+            tipoDescripcion: 'Comunicación no encontrada',
+            estadoDescripcion: 'No existe en el sistema'
+          },
+          detalles: {
+            establecimiento: 'N/A',
+            fechaEntrada: 'N/A',
+            fechaSalida: 'N/A',
+            numPersonas: 0
+          }
+        }));
+        setResultadosConsulta(resultadosError);
+        setSuccess(`⚠️ Consulta completada. ${codigos.length} códigos procesados (no encontrados)`);
+      }
     } catch (err) {
       setError('Error de conexión');
       console.error('Error consultando:', err);
