@@ -132,23 +132,15 @@ function buildPersonaXml(persona: RhPersona): string {
     xml += `\n        </direccion>`;
   }
   
-  // Contacto
-  if (persona.telefono || persona.telefono2 || persona.correo) {
-    xml += `\n        <contacto>`;
-    
-    if (persona.telefono) {
-      xml += `\n          <telefono>${esc(persona.telefono)}</telefono>`;
-    }
-    
-    if (persona.telefono2) {
-      xml += `\n          <telefono2>${esc(persona.telefono2)}</telefono2>`;
-    }
-    
-    if (persona.correo) {
-      xml += `\n          <correo>${esc(persona.correo)}</correo>`;
-    }
-    
-    xml += `\n        </contacto>`;
+  // Teléfonos y correo directamente bajo persona (sin contenedor <contacto>) según XSD
+  if (persona.telefono) {
+    xml += `\n        <telefono>${esc(persona.telefono)}</telefono>`;
+  }
+  if (persona.telefono2) {
+    xml += `\n        <telefono2>${esc(persona.telefono2)}</telefono2>`;
+  }
+  if (persona.correo) {
+    xml += `\n        <correo>${esc(persona.correo)}</correo>`;
   }
   
   if (persona.parentesco) {
