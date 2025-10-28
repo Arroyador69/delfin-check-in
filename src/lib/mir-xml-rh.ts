@@ -101,7 +101,7 @@ function buildPersonaXml(persona: RhPersona): string {
     xml += `\n        <sexo>${esc(persona.sexo)}</sexo>`;
   }
   
-  // Dirección
+  // Dirección (orden según tiposGenerales.xsd: direccion, direccionComplementaria?, codigoMunicipio?, nombreMunicipio?, codigoPostal, pais)
   if (persona.direccion) {
     xml += `\n        <direccion>`;
     
@@ -113,20 +113,20 @@ function buildPersonaXml(persona: RhPersona): string {
       xml += `\n          <direccionComplementaria>${esc(persona.direccion.direccionComplementaria)}</direccionComplementaria>`;
     }
     
-    if (persona.direccion.codigoPostal) {
-      xml += `\n          <codigoPostal>${esc(persona.direccion.codigoPostal)}</codigoPostal>`;
-    }
-    
-    if (persona.direccion.pais) {
-      xml += `\n          <pais>${esc(persona.direccion.pais)}</pais>`;
-    }
-    
     if (persona.direccion.codigoMunicipio) {
       xml += `\n          <codigoMunicipio>${esc(persona.direccion.codigoMunicipio)}</codigoMunicipio>`;
     }
     
     if (persona.direccion.nombreMunicipio) {
       xml += `\n          <nombreMunicipio>${esc(persona.direccion.nombreMunicipio)}</nombreMunicipio>`;
+    }
+    
+    if (persona.direccion.codigoPostal) {
+      xml += `\n          <codigoPostal>${esc(persona.direccion.codigoPostal)}</codigoPostal>`;
+    }
+    
+    if (persona.direccion.pais) {
+      xml += `\n          <pais>${esc(persona.direccion.pais)}</pais>`;
     }
     
     xml += `\n        </direccion>`;
