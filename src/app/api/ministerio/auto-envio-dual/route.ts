@@ -81,41 +81,39 @@ export async function POST(req: NextRequest) {
     // Preparar datos para PV (Parte de Hospedaje)
     const datosPV: PvSolicitud = {
       codigoEstablecimiento: config.codigoArrendador || "0000256653",
-      comunicaciones: [{
-        contrato: {
-          referencia: referencia,
-          fechaContrato: new Date().toISOString().split('T')[0],
-          fechaEntrada: fechaEntrada,
-          fechaSalida: fechaSalida,
-          numPersonas: personas.length,
-          numHabitaciones: 1,
-          internet: false,
-          pago: {
-            tipoPago: "EFECT",
-            fechaPago: new Date().toISOString().split('T')[0]
-          }
+      contrato: {
+        referencia: referencia,
+        fechaContrato: new Date().toISOString().split('T')[0],
+        fechaEntrada: fechaEntrada,
+        fechaSalida: fechaSalida,
+        numPersonas: personas.length,
+        numHabitaciones: 1,
+        internet: false,
+        pago: {
+          tipoPago: "EFECT",
+          fechaPago: new Date().toISOString().split('T')[0]
+        }
+      },
+      personas: personas.map(persona => ({
+        rol: "VI",
+        nombre: persona.nombre,
+        apellido1: persona.apellido1,
+        apellido2: persona.apellido2 || '',
+        tipoDocumento: persona.tipoDocumento || 'NIF',
+        numeroDocumento: persona.numeroDocumento || '12345678Z',
+        fechaNacimiento: persona.fechaNacimiento,
+        nacionalidad: persona.nacionalidad || 'ESP',
+        sexo: persona.sexo || 'M',
+        direccion: {
+          direccion: persona.direccion?.direccion || 'Calle Ejemplo 123',
+          codigoPostal: persona.direccion?.codigoPostal || '28001',
+          pais: persona.direccion?.pais || 'ESP',
+          codigoMunicipio: persona.direccion?.codigoMunicipio || '28079',
+          nombreMunicipio: persona.direccion?.nombreMunicipio || 'Madrid'
         },
-        personas: personas.map(persona => ({
-          rol: "VI",
-          nombre: persona.nombre,
-          apellido1: persona.apellido1,
-          apellido2: persona.apellido2 || '',
-          tipoDocumento: persona.tipoDocumento || 'NIF',
-          numeroDocumento: persona.numeroDocumento || '12345678Z',
-          fechaNacimiento: persona.fechaNacimiento,
-          nacionalidad: persona.nacionalidad || 'ESP',
-          sexo: persona.sexo || 'M',
-          direccion: {
-            direccion: persona.direccion?.direccion || 'Calle Ejemplo 123',
-            codigoPostal: persona.direccion?.codigoPostal || '28001',
-            pais: persona.direccion?.pais || 'ESP',
-            codigoMunicipio: persona.direccion?.codigoMunicipio || '28079',
-            nombreMunicipio: persona.direccion?.nombreMunicipio || 'Madrid'
-          },
-          telefono: persona.contacto?.telefono || '600000000',
-          correo: persona.contacto?.correo || 'viajero@example.com'
-        }))
-      }]
+        telefono: persona.contacto?.telefono || '600000000',
+        correo: persona.contacto?.correo || 'viajero@example.com'
+      }))
     };
 
     // Preparar datos para RH (Reserva de Hospedaje)
