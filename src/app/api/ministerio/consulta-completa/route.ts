@@ -139,3 +139,5 @@ function interpretarTipo(tipo: string): string {
 }
 
 
+
+

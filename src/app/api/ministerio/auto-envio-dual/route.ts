@@ -68,10 +68,10 @@ export async function POST(req: NextRequest) {
     // Extraer datos del JSON
     const { referencia, fechaEntrada, fechaSalida, personas } = json;
     
-    if (!referencia || !fechaEntrada || !fechaSalida || !personas) {
+    if (!referencia || !fechaEntrada || !fechaSalida || !personas || !Array.isArray(personas) || personas.length === 0) {
       return NextResponse.json({
         success: false,
-        error: 'Faltan datos obligatorios: referencia, fechaEntrada, fechaSalida, personas'
+        error: 'Faltan datos obligatorios: referencia, fechaEntrada, fechaSalida, personas (debe ser un array con al menos una persona)'
       }, { status: 400 });
     }
 
@@ -270,5 +270,7 @@ export async function POST(req: NextRequest) {
     }, { status: 500 });
   }
 }
+
+
 
 
