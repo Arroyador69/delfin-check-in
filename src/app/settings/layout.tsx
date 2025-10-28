@@ -4,7 +4,7 @@ import { useState } from 'react';
 import AdminLayout from '@/components/AdminLayout';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Settings, FileText, CreditCard, User, LinkIcon, Home } from 'lucide-react';
+import { Settings, FileText, CreditCard, User, LinkIcon, Home, Calendar } from 'lucide-react';
 
 export default function SettingsLayout({
   children,
@@ -32,18 +32,24 @@ export default function SettingsLayout({
       icon: FileText,
       href: '/settings/mir',
     },
-    {
-      id: 'properties',
-      name: 'Propiedades',
-      icon: Home,
-      href: '/settings/properties',
-    },
-    {
-      id: 'billing',
-      name: 'Facturación',
-      icon: CreditCard,
-      href: '/settings/billing',
-    },
+          {
+            id: 'properties',
+            name: 'Propiedades',
+            icon: Home,
+            href: '/settings/properties',
+          },
+          {
+            id: 'integrations',
+            name: 'Integraciones',
+            icon: Calendar,
+            href: '/settings/integrations',
+          },
+          {
+            id: 'billing',
+            name: 'Facturación',
+            icon: CreditCard,
+            href: '/settings/billing',
+          },
     {
       id: 'account',
       name: 'Cuenta',

@@ -2,15 +2,13 @@
 // WEBHOOK DE STRIPE PARA RESERVAS DIRECTAS
 // =====================================================
 
-import { NextRequest, NextResponse } from 'next/server';
-import Stripe from 'stripe';
-import { sql } from '@vercel/postgres';
+import { sendReservationEmails } from '@/lib/email-notifications';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2024-06-20',
 });
 
-const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
+const webhookSecret = process.env.STRIPE_WEBHOOK_DIRECT_RESERVATIONS_SECRET!;
 
 export async function POST(req: NextRequest) {
   try {
@@ -42,7 +40,7 @@ export async function POST(req: NextRequest) {
       if (paymentIntent.metadata.reservation_id) {
         const reservationId = parseInt(paymentIntent.metadata.reservation_id);
         
-        await sql`
+        const updateResult = await sql`
           UPDATE direct_reservations 
           SET 
             payment_status = 'paid',
@@ -51,6 +49,7 @@ export async function POST(req: NextRequest) {
             confirmed_at = NOW(),
             updated_at = NOW()
           WHERE id = ${reservationId} AND stripe_payment_intent_id = ${paymentIntent.id}
+          RETURNING *
         `;
 
         // Crear transacción de comisión
@@ -75,6 +74,29 @@ export async function POST(req: NextRequest) {
               'completed', NOW()
             )
           `;
+        }
+
+        // Enviar emails de notificación si la actualización fue exitosa
+        if (updateResult.rows.length > 0) {
+          const updatedReservation = updateResult.rows[0];
+          
+          // Obtener información de la propiedad
+          const propertyResult = await sql`
+            SELECT * FROM tenant_properties WHERE id = ${updatedReservation.property_id}
+          `;
+          
+          if (propertyResult.rows.length > 0) {
+            const property = propertyResult.rows[0];
+            
+            // Enviar emails de notificación
+            try {
+              const emailResults = await sendReservationEmails(updatedReservation, property);
+              console.log('📧 Emails enviados:', emailResults);
+            } catch (emailError) {
+              console.error('❌ Error enviando emails:', emailError);
+              // No fallar el webhook por errores de email
+            }
+          }
         }
 
         console.log('✅ Reserva actualizada como pagada:', reservationId);
