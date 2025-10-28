@@ -32,12 +32,14 @@ export async function POST(req: NextRequest) {
       username: '',
       password: '',
       codigoArrendador: '',
+      codigoEstablecimiento: '',
       aplicacion: 'Delfin_Check_in',
       simulacion: false
     };
 
+    let dbResult = null;
     try {
-      const result = await sql`
+      dbResult = await sql`
         SELECT usuario, contraseña, codigo_arrendador, codigo_establecimiento, base_url, aplicacion, simulacion, activo
         FROM mir_configuraciones 
         WHERE propietario_id = ${tenantId}
@@ -45,13 +47,14 @@ export async function POST(req: NextRequest) {
         LIMIT 1
       `;
 
-      if (result.rows.length > 0 && result.rows[0].activo) {
-        const dbConfig = result.rows[0];
+      if (dbResult.rows.length > 0 && dbResult.rows[0].activo) {
+        const dbConfig = dbResult.rows[0];
         config = {
           baseUrl: dbConfig.base_url || 'https://hospedajes.ses.mir.es/hospedajes-web/ws/v1/comunicacion',
           username: dbConfig.usuario || '',
           password: dbConfig.contraseña || '',
           codigoArrendador: dbConfig.codigo_arrendador || '',
+          codigoEstablecimiento: dbConfig.codigo_establecimiento || '',
           aplicacion: dbConfig.aplicacion || 'Delfin_Check_in',
           simulacion: dbConfig.simulacion || false
         };
@@ -83,7 +86,7 @@ export async function POST(req: NextRequest) {
     const asDateTime = (d: string) => (d && d.includes('T') ? d : `${d}T12:00:00`);
     const fechaEntradaDT = asDateTime(fechaEntrada);
     const fechaSalidaDT = asDateTime(fechaSalida);
-    const codigoEstablecimientoFinal = (result?.rows?.[0]?.codigo_establecimiento || config.codigoArrendador || '0000256653') as string;
+    const codigoEstablecimientoFinal = config.codigoEstablecimiento || config.codigoArrendador || '0000256653';
 
     // Preparar datos para PV (Parte de Hospedaje)
     const datosPV: PvSolicitud = {
