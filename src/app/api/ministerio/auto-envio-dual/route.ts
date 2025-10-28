@@ -78,14 +78,21 @@ export async function POST(req: NextRequest) {
     console.log('📅 Fechas:', { fechaEntrada, fechaSalida });
     console.log('👥 Personas:', personas.length);
 
+    // Normalizaciones requeridas por XSD oficial
+    const referenciaNorm = String(referencia).slice(0, 50);
+    const asDateTime = (d: string) => (d && d.includes('T') ? d : `${d}T12:00:00`);
+    const fechaEntradaDT = asDateTime(fechaEntrada);
+    const fechaSalidaDT = asDateTime(fechaSalida);
+    const codigoEstablecimientoFinal = (result?.rows?.[0]?.codigo_establecimiento || config.codigoArrendador || '0000256653') as string;
+
     // Preparar datos para PV (Parte de Hospedaje)
     const datosPV: PvSolicitud = {
-      codigoEstablecimiento: config.codigoArrendador || "0000256653",
+      codigoEstablecimiento: codigoEstablecimientoFinal,
       contrato: {
-        referencia: referencia,
+        referencia: referenciaNorm,
         fechaContrato: new Date().toISOString().split('T')[0],
-        fechaEntrada: fechaEntrada,
-        fechaSalida: fechaSalida,
+        fechaEntrada: fechaEntradaDT,
+        fechaSalida: fechaSalidaDT,
         numPersonas: personas.length,
         numHabitaciones: 1,
         internet: false,
@@ -118,12 +125,12 @@ export async function POST(req: NextRequest) {
 
     // Preparar datos para RH (Reserva de Hospedaje)
     const datosRH: RhSolicitud = {
-      codigoEstablecimiento: config.codigoArrendador || "0000256653",
+      codigoEstablecimiento: codigoEstablecimientoFinal,
       contrato: {
-        referencia: referencia,
+        referencia: referenciaNorm,
         fechaContrato: new Date().toISOString().split('T')[0],
-        fechaEntrada: fechaEntrada,
-        fechaSalida: fechaSalida,
+        fechaEntrada: fechaEntradaDT,
+        fechaSalida: fechaSalidaDT,
         numPersonas: personas.length,
         numHabitaciones: 1,
         internet: false,
@@ -132,8 +139,8 @@ export async function POST(req: NextRequest) {
           fechaPago: new Date().toISOString().split('T')[0]
         }
       },
-      personas: personas.map(persona => ({
-        rol: "VI",
+      personas: personas.map((persona, index) => ({
+        rol: index === 0 ? 'TI' : 'VI',
         nombre: persona.nombre,
         apellido1: persona.apellido1,
         apellido2: persona.apellido2 || '',
@@ -195,7 +202,7 @@ export async function POST(req: NextRequest) {
     // Guardar comunicación PV
     if (resultados.pv) {
       const comunicacionPV: Omit<MirComunicacion, 'id' | 'created_at' | 'updated_at'> = {
-        referencia: `${referencia}-PV`,
+        referencia: `${referenciaNorm}-PV`,
         tipo: 'PV',
         estado: resultados.pv.ok ? 'enviado' : 'error',
         lote: resultados.pv.lote || null,
@@ -217,7 +224,7 @@ export async function POST(req: NextRequest) {
     // Guardar comunicación RH
     if (resultados.rh) {
       const comunicacionRH: Omit<MirComunicacion, 'id' | 'created_at' | 'updated_at'> = {
-        referencia: `${referencia}-RH`,
+        referencia: `${referenciaNorm}-RH`,
         tipo: 'RH',
         estado: resultados.rh.ok ? 'enviado' : 'error',
         lote: resultados.rh.lote || null,
@@ -255,7 +262,7 @@ export async function POST(req: NextRequest) {
         pv: resultados.pv,
         rh: resultados.rh
       },
-      referencia: referencia,
+      referencia: referenciaNorm,
       timestamp: new Date().toISOString()
     });
 
