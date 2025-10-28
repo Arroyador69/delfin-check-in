@@ -223,53 +223,6 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      {/* Configuración general */}
-      <div className="bg-white shadow-xl rounded-xl border border-blue-200 p-8">
-        <h4 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-          <span className="text-2xl mr-3" style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>⚙️</span>
-          Configuración General
-        </h4>
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-          <div>
-            <label className="block text-base font-semibold text-gray-700 mb-2">
-              Nombre de la Propiedad
-            </label>
-            <input
-              type="text"
-              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-              placeholder="Mi Casa"
-            />
-          </div>
-          <div>
-            <label className="block text-base font-semibold text-gray-700 mb-2">
-              Zona Horaria
-            </label>
-            <select className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
-              <option>Europe/Madrid</option>
-              <option>UTC</option>
-              <option>America/New_York</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-base font-semibold text-gray-700 mb-2">
-              Idioma
-            </label>
-            <select className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
-              <option>Español</option>
-              <option>English</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-base font-semibold text-gray-700 mb-2">
-              Moneda
-            </label>
-            <select className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
-              <option>EUR (€)</option>
-              <option>USD ($)</option>
-            </select>
-          </div>
-        </div>
-      </div>
 
       {/* Save button */}
       <div className="mt-8 pt-6 border-t border-gray-200">
