@@ -164,7 +164,7 @@ export async function POST(req: NextRequest) {
       }))
     };
 
-    console.log('📤 Preparando envío dual PV + RH al MIR...');
+    console.log('📤 Preparando envío dual PV + RH al MIR (dos peticiones separadas)...');
 
     // Generar XMLs según esquemas oficiales MIR
     const xmlPV = buildPvXml(datosPV);
@@ -173,14 +173,13 @@ export async function POST(req: NextRequest) {
     console.log('📄 XML PV generado (primeros 500 chars):', xmlPV.substring(0, 500));
     console.log('📄 XML RH generado (primeros 500 chars):', xmlRH.substring(0, 500));
 
-    // Enviar ambos al MIR usando cliente oficial
-    const resultados = {
+    // Enviar ambos al MIR usando cliente oficial (peticiones separadas)
+    const resultados: any = {
       pv: null,
       rh: null
     };
 
     try {
-      // Enviar PV (Parte de Hospedaje)
       console.log('📤 Enviando PV al MIR...');
       resultados.pv = await client.altaPV({ xmlAlta: xmlPV });
       console.log('✅ Resultado PV:', resultados.pv);
@@ -190,7 +189,6 @@ export async function POST(req: NextRequest) {
     }
 
     try {
-      // Enviar RH (Reserva de Hospedaje)
       console.log('📤 Enviando RH al MIR...');
       resultados.rh = await client.altaRH({ xmlAlta: xmlRH });
       console.log('✅ Resultado RH:', resultados.rh);
@@ -199,10 +197,9 @@ export async function POST(req: NextRequest) {
       resultados.rh = { ok: false, error: errorRH instanceof Error ? errorRH.message : 'Error desconocido' };
     }
 
-    // Guardar ambas comunicaciones en base de datos
-    const comunicacionesGuardadas = [];
+    // Guardar ambas comunicaciones en base de datos por separado
+    const comunicacionesGuardadas: any[] = [];
 
-    // Guardar comunicación PV
     if (resultados.pv) {
       const comunicacionPV: Omit<MirComunicacion, 'id' | 'created_at' | 'updated_at'> = {
         referencia: `${referenciaNorm}-PV`,
@@ -224,7 +221,6 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Guardar comunicación RH
     if (resultados.rh) {
       const comunicacionRH: Omit<MirComunicacion, 'id' | 'created_at' | 'updated_at'> = {
         referencia: `${referenciaNorm}-RH`,
@@ -246,7 +242,6 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Determinar estado general
     const pvExitoso = resultados.pv?.ok === true;
     const rhExitoso = resultados.rh?.ok === true;
     const estadoGeneral = (pvExitoso && rhExitoso) ? 'enviado' : 'parcial';
@@ -261,10 +256,7 @@ export async function POST(req: NextRequest) {
       success: true,
       estado: estadoGeneral,
       comunicaciones: comunicacionesGuardadas,
-      resultados: {
-        pv: resultados.pv,
-        rh: resultados.rh
-      },
+      resultados,
       referencia: referenciaNorm,
       timestamp: new Date().toISOString()
     });
