@@ -156,8 +156,8 @@ export async function POST(req: NextRequest) {
     const ESTABLISHMENT_CODE = "0000256653"; // HABITACIONES EN CASA VACACIONAL FUENGIROLA
     const ESTABLISHMENT_REFERENCE = "0000146967"; // DOLORES MARIA ARROYO ZAMBRANO
     
-    // Generar referencia única para cada reserva
-    const reserva_ref = `REF-${crypto.randomUUID()}-${Date.now()}`;
+    // Generar referencia única para cada reserva (máximo 36 caracteres según normas MIR)
+    const reserva_ref = crypto.randomUUID(); // Solo UUID, sin prefijo REF- ni timestamp
     
     // Asegurar que los valores automáticos estén incluidos
     const dataWithDefaults = {
