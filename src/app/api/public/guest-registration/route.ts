@@ -177,12 +177,19 @@ export async function POST(req: NextRequest) {
     console.log('📅 Fecha salida:', fecha_salida);
     console.log('🔖 Referencia:', reserva_ref);
 
-    // Guardar en base de datos Postgres
+    // Obtener tenant_id de los parámetros de la URL o del body
+    const urlParams = new URLSearchParams(req.url.split('?')[1] || '');
+    const tenantId = urlParams.get('tenant_id') || json.tenant_id || 'default';
+    
+    console.log('🏢 Tenant ID detectado:', tenantId);
+
+    // Guardar en base de datos Postgres con tenant_id
     const id = await insertGuestRegistration({
       reserva_ref,
       fecha_entrada,
       fecha_salida,
-      data: dataWithDefaults
+      data: dataWithDefaults,
+      tenant_id: tenantId
     });
 
     console.log('✅ Registro guardado en DB con ID:', id);
@@ -220,13 +227,17 @@ export async function POST(req: NextRequest) {
         }))
       };
 
-      // Enviar al MIR (PV + RH dual)
+      // Enviar al MIR (PV + RH dual) con tenant_id
       const responseMIR = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/ministerio/auto-envio-dual`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'x-tenant-id': tenantId
         },
-        body: JSON.stringify(datosMIR)
+        body: JSON.stringify({
+          ...datosMIR,
+          tenant_id: tenantId
+        })
       });
 
       if (responseMIR.ok) {

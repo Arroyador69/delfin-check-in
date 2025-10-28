@@ -5,8 +5,7 @@ export async function GET(req: NextRequest) {
   try {
     console.log('📊 Obteniendo estado de envíos al MIR...');
     
-    // Obtener registros únicos de guest_registrations CON sus comunicaciones MIR
-    // Usar una subconsulta para evitar duplicados por JOIN múltiple
+    // Obtener registros de guest_registrations CON TODAS sus comunicaciones MIR (PV y RH)
     const result = await sql`
       SELECT 
         gr.id,
@@ -15,6 +14,7 @@ export async function GET(req: NextRequest) {
         gr.fecha_salida,
         gr.data,
         gr.reserva_ref,
+        gr.tenant_id,
         mc.id as mir_id,
         mc.referencia as mir_referencia,
         mc.tipo as mir_tipo,
@@ -23,25 +23,15 @@ export async function GET(req: NextRequest) {
         mc.resultado as mir_resultado,
         mc.error as mir_error,
         mc.created_at as mir_created_at,
-        mc.xml_respuesta as mir_xml_respuesta
+        mc.xml_respuesta as mir_xml_respuesta,
+        mc.tenant_id as mir_tenant_id
       FROM guest_registrations gr
-      LEFT JOIN (
-        SELECT DISTINCT ON (resultado::jsonb->>'codigoArrendador')
-          id,
-          referencia,
-          tipo,
-          estado,
-          lote,
-          resultado,
-          error,
-          created_at,
-          xml_respuesta,
-          resultado::jsonb->>'codigoArrendador' as codigo_arrendador
-        FROM mir_comunicaciones
-        WHERE resultado::jsonb->>'codigoArrendador' IS NOT NULL
-        ORDER BY resultado::jsonb->>'codigoArrendador', created_at DESC
-      ) mc ON gr.comunicacion_id = mc.referencia
-      ORDER BY gr.created_at DESC
+      LEFT JOIN mir_comunicaciones mc ON (
+        gr.comunicacion_id = mc.referencia OR 
+        gr.reserva_ref = mc.referencia OR
+        mc.referencia LIKE gr.reserva_ref || '%'
+      )
+      ORDER BY gr.created_at DESC, mc.tipo ASC
     `;
     
     console.log(`📋 Encontrados ${result.rows.length} registros`);
@@ -62,17 +52,39 @@ export async function GET(req: NextRequest) {
       errores: 0
     };
     
+    // Agrupar registros por guest_registration_id para manejar múltiples comunicaciones
+    const registrosAgrupados = new Map();
+    
     result.rows.forEach(registro => {
-      // Usar datos reales de la tabla mir_comunicaciones Y del campo mir_status en guest_registrations
-      const hasMirComunicacion = registro.mir_id !== null;
-      const mirEstado = registro.mir_estado;
-      const mirLote = registro.mir_lote;
-      const mirError = registro.mir_error;
+      const guestId = registro.id;
       
-      // También verificar el campo mir_status dentro de los datos del registro
-      const mirStatusFromData = registro.data?.mir_status || {};
-      const estadoFromData = mirStatusFromData.estado;
-      const loteFromData = mirStatusFromData.lote;
+      if (!registrosAgrupados.has(guestId)) {
+        registrosAgrupados.set(guestId, {
+          guest_registration: registro,
+          comunicaciones_mir: []
+        });
+      }
+      
+      // Si hay comunicación MIR, añadirla al grupo
+      if (registro.mir_id) {
+        registrosAgrupados.get(guestId).comunicaciones_mir.push({
+          id: registro.mir_id,
+          referencia: registro.mir_referencia,
+          tipo: registro.mir_tipo,
+          estado: registro.mir_estado,
+          lote: registro.mir_lote,
+          resultado: registro.mir_resultado,
+          error: registro.mir_error,
+          created_at: registro.mir_created_at,
+          tenant_id: registro.mir_tenant_id
+        });
+      }
+    });
+    
+    // Procesar cada grupo de registros
+    registrosAgrupados.forEach((grupo, guestId) => {
+      const registro = grupo.guest_registration;
+      const comunicacionesMIR = grupo.comunicaciones_mir;
       
       // Extraer nombre del huésped
       let nombreCompleto = 'Datos no disponibles';
@@ -85,72 +97,102 @@ export async function GET(req: NextRequest) {
         console.log('Error extrayendo nombre del huésped:', error);
       }
       
-      // Crear objeto base de comunicación con datos consistentes
-      const comunicacion = {
-        id: registro.id,
-        timestamp: registro.created_at,
-        datos: registro.data,
-        nombreCompleto: nombreCompleto,
-        referencia: registro.mir_referencia || registro.reserva_ref, // Priorizar referencia MIR si existe
-        tipo: registro.mir_tipo || 'PV', // Priorizar tipo MIR si existe
-        lote: mirLote || loteFromData, // Priorizar lote MIR si existe
-        error: mirError,
-        fechaEnvio: registro.mir_created_at,
-        estado: mirEstado || 'pendiente',
-        // Información de vinculación para debugging
-        vinculacion: {
-          guest_registration_id: registro.id,
-          mir_comunicacion_id: registro.mir_id,
-          reserva_ref: registro.reserva_ref,
-          codigo_arrendador: registro.codigo_arrendador,
-          codigo_establecimiento: registro.data?.codigoEstablecimiento
+      // Verificar el campo mir_status dentro de los datos del registro
+      const mirStatusFromData = registro.data?.mir_status || {};
+      const estadoFromData = mirStatusFromData.estado;
+      const loteFromData = mirStatusFromData.lote;
+      
+      // Determinar estados de PV y RH por separado
+      const estadoPV = comunicacionesMIR.find(c => c.tipo === 'PV')?.estado || estadoFromData;
+      const estadoRH = comunicacionesMIR.find(c => c.tipo === 'RH')?.estado || estadoFromData;
+      const lotePV = comunicacionesMIR.find(c => c.tipo === 'PV')?.lote || loteFromData;
+      const loteRH = comunicacionesMIR.find(c => c.tipo === 'RH')?.lote || loteFromData;
+      
+      // Crear comunicaciones separadas para PV y RH si existen
+      const comunicacionesParaMostrar = [];
+      
+      // Comunicación PV
+      if (comunicacionesMIR.find(c => c.tipo === 'PV') || estadoFromData) {
+        comunicacionesParaMostrar.push({
+          id: `${registro.id}-PV`,
+          timestamp: registro.created_at,
+          datos: registro.data,
+          nombreCompleto: nombreCompleto,
+          referencia: registro.reserva_ref,
+          tipo: 'PV',
+          lote: lotePV,
+          error: comunicacionesMIR.find(c => c.tipo === 'PV')?.error,
+          fechaEnvio: comunicacionesMIR.find(c => c.tipo === 'PV')?.created_at,
+          estado: estadoPV === 'enviado' ? 'enviado' : estadoPV === 'error' ? 'error' : 'pendiente',
+          tenant_id: registro.tenant_id,
+          vinculacion: {
+            guest_registration_id: registro.id,
+            mir_comunicacion_id: comunicacionesMIR.find(c => c.tipo === 'PV')?.id,
+            reserva_ref: registro.reserva_ref
+          }
+        });
+      }
+      
+      // Comunicación RH
+      if (comunicacionesMIR.find(c => c.tipo === 'RH') || estadoFromData) {
+        comunicacionesParaMostrar.push({
+          id: `${registro.id}-RH`,
+          timestamp: registro.created_at,
+          datos: registro.data,
+          nombreCompleto: nombreCompleto,
+          referencia: registro.reserva_ref,
+          tipo: 'RH',
+          lote: loteRH,
+          error: comunicacionesMIR.find(c => c.tipo === 'RH')?.error,
+          fechaEnvio: comunicacionesMIR.find(c => c.tipo === 'RH')?.created_at,
+          estado: estadoRH === 'enviado' ? 'enviado' : estadoRH === 'error' ? 'error' : 'pendiente',
+          tenant_id: registro.tenant_id,
+          vinculacion: {
+            guest_registration_id: registro.id,
+            mir_comunicacion_id: comunicacionesMIR.find(c => c.tipo === 'RH')?.id,
+            reserva_ref: registro.reserva_ref
+          }
+        });
+      }
+      
+      // Si no hay comunicaciones MIR pero hay datos en mir_status, crear una comunicación general
+      if (comunicacionesParaMostrar.length === 0 && estadoFromData) {
+        comunicacionesParaMostrar.push({
+          id: registro.id,
+          timestamp: registro.created_at,
+          datos: registro.data,
+          nombreCompleto: nombreCompleto,
+          referencia: registro.reserva_ref,
+          tipo: 'PV', // Por defecto PV si no hay tipo específico
+          lote: loteFromData,
+          error: mirStatusFromData.error,
+          fechaEnvio: mirStatusFromData.fechaEnvio,
+          estado: estadoFromData,
+          tenant_id: registro.tenant_id,
+          vinculacion: {
+            guest_registration_id: registro.id,
+            mir_comunicacion_id: null,
+            reserva_ref: registro.reserva_ref
+          }
+        });
+      }
+      
+      // Clasificar cada comunicación según su estado
+      comunicacionesParaMostrar.forEach(comunicacion => {
+        if (comunicacion.estado === 'error') {
+          comunicaciones.errores.push(comunicacion);
+          estadisticas.errores++;
+        } else if (comunicacion.estado === 'confirmado') {
+          comunicaciones.confirmados.push(comunicacion);
+          estadisticas.confirmados++;
+        } else if (comunicacion.estado === 'enviado') {
+          comunicaciones.enviados.push(comunicacion);
+          estadisticas.enviados++;
+        } else {
+          comunicaciones.pendientes.push(comunicacion);
+          estadisticas.pendientes++;
         }
-      };
-      
-      // Determinar el estado real considerando tanto mir_comunicaciones como mir_status en datos
-      let estadoFinal = 'pendiente';
-      let loteFinal = mirLote || loteFromData;
-
-      // Prioridad 1: Error (cualquier fuente)
-      if (mirEstado === 'error' || mirError || estadoFromData === 'error') {
-        estadoFinal = 'error';
-      }
-      // Prioridad 2: Confirmado (cualquier fuente)
-      else if (mirEstado === 'confirmado' || estadoFromData === 'confirmado') {
-        estadoFinal = 'confirmado';
-      }
-      // Prioridad 3: Enviado (cualquier fuente)
-      else if (mirEstado === 'enviado' || estadoFromData === 'enviado' || mirLote || loteFromData) {
-        estadoFinal = 'enviado';
-      }
-      // Prioridad 4: Si tiene comunicación MIR pero estado desconocido, considerar enviado
-      else if (hasMirComunicacion) {
-        estadoFinal = 'enviado';
-      }
-
-      // Si no hay lote pero hay comunicación MIR, generar uno temporal
-      if (!loteFinal && hasMirComunicacion) {
-        loteFinal = `LOTE-${registro.mir_referencia?.substring(0, 8) || registro.id.substring(0, 8)}-${Date.now()}`;
-      }
-      
-      // Actualizar el objeto comunicación con el estado final
-      comunicacion.estado = estadoFinal;
-      comunicacion.lote = loteFinal;
-      
-      // Clasificar según el estado final
-      if (estadoFinal === 'error') {
-        comunicaciones.errores.push(comunicacion);
-        estadisticas.errores++;
-      } else if (estadoFinal === 'confirmado') {
-        comunicaciones.confirmados.push(comunicacion);
-        estadisticas.confirmados++;
-      } else if (estadoFinal === 'enviado') {
-        comunicaciones.enviados.push(comunicacion);
-        estadisticas.enviados++;
-      } else {
-        comunicaciones.pendientes.push(comunicacion);
-        estadisticas.pendientes++;
-      }
+      });
     });
     
     estadisticas.total = result.rows.length;

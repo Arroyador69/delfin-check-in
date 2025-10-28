@@ -23,8 +23,9 @@ export async function POST(req: NextRequest) {
 
     console.log('📋 Datos recibidos para envío dual:', JSON.stringify(json, null, 2));
 
-    // Obtener tenant_id del header
-    const tenantId = req.headers.get('x-tenant-id') || 'default';
+    // Obtener tenant_id del header o del body
+    const tenantId = req.headers.get('x-tenant-id') || json.tenant_id || 'default';
+    console.log('🏢 Tenant ID para envío dual:', tenantId);
 
     // Cargar configuración MIR desde la base de datos
     let config = {
@@ -209,7 +210,8 @@ export async function POST(req: NextRequest) {
         resultado: JSON.stringify(resultados.pv),
         error: resultados.pv.ok ? null : resultados.pv.error,
         xml_enviado: xmlPV,
-        xml_respuesta: resultados.pv.rawResponse || null
+        xml_respuesta: resultados.pv.rawResponse || null,
+        tenant_id: tenantId
       };
 
       try {
@@ -230,7 +232,8 @@ export async function POST(req: NextRequest) {
         resultado: JSON.stringify(resultados.rh),
         error: resultados.rh.ok ? null : resultados.rh.error,
         xml_enviado: xmlRH,
-        xml_respuesta: resultados.rh.rawResponse || null
+        xml_respuesta: resultados.rh.rawResponse || null,
+        tenant_id: tenantId
       };
 
       try {
