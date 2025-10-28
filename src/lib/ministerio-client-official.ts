@@ -40,6 +40,36 @@ export interface AltaRHResult {
   debugSoap?: string;
 }
 
+export interface ConsultaLoteParams {
+  lotes: string[];
+}
+
+export interface ConsultaLoteResult {
+  ok: boolean;
+  codigo: string;
+  descripcion: string;
+  resultados: Array<{
+    lote: string;
+    tipoComunicacion: string;
+    tipoOperacion: string;
+    fechaPeticion: string;
+    fechaProcesamiento: string;
+    codigoEstado: string;
+    descEstado: string;
+    identificadorUsuario: string;
+    nombreUsuario: string;
+    codigoArrendador: string;
+    aplicacion: string;
+    resultadoComunicaciones?: Array<{
+      indice: number;
+      codigoComunicacion?: string;
+      tipoError?: string;
+      error?: string;
+    }>;
+  }>;
+  rawResponse: string;
+}
+
 export interface ConsultaComunicacionParams {
   codigos: string[];
 }
@@ -510,6 +540,78 @@ export class MinisterioClientOfficial {
     }
   }
 
+  async consultaLote(params: ConsultaLoteParams): Promise<ConsultaLoteResult> {
+    if (this.cfg.simulacion) {
+      const resultados = params.lotes.map((lote) => ({
+        lote: lote,
+        tipoComunicacion: 'PV',
+        tipoOperacion: 'A',
+        fechaPeticion: new Date().toISOString(),
+        fechaProcesamiento: new Date().toISOString(),
+        codigoEstado: '1',
+        descEstado: 'Procesado correctamente',
+        identificadorUsuario: this.cfg.username,
+        nombreUsuario: this.cfg.username,
+        codigoArrendador: this.cfg.codigoArrendador,
+        aplicacion: this.cfg.aplicacion,
+        resultadoComunicaciones: [
+          {
+            indice: 1,
+            codigoComunicacion: `COM-${Date.now()}`,
+            tipoError: undefined,
+            error: undefined
+          }
+        ]
+      }));
+      
+      const mock = `<consultaLoteResponse><respuesta><codigo>0</codigo><descripcion>Ok</descripcion></respuesta></consultaLoteResponse>`;
+      return { 
+        ok: true, 
+        codigo: '0', 
+        descripcion: 'Ok', 
+        resultados,
+        rawResponse: mock 
+      };
+    }
+
+    try {
+      const soapXml = buildSoapConsultaLoteRequest(this.cfg, params.lotes);
+
+      console.log('📤 Consultando lotes al MIR:', {
+        url: this.cfg.baseUrl,
+        lotes: params.lotes,
+        operation: MIR_OPERATIONS.CONSULTA_LOTE
+      });
+
+      const res = await makeSoapRequest(this.cfg, soapXml, MIR_OPERATIONS.CONSULTA_LOTE);
+
+      const text = await res.text();
+      console.log('📋 Respuesta consulta lote (primeros 1000 chars):', text.substring(0, 1000));
+
+      if (!res.ok) {
+        return {
+          ok: false,
+          codigo: res.status.toString(),
+          descripcion: `HTTP ${res.status}: ${res.statusText}`,
+          resultados: [],
+          rawResponse: text
+        };
+      }
+
+      return parseConsultaLoteResponse(text);
+
+    } catch (error) {
+      console.error('❌ Error en consultaLote:', error);
+      return {
+        ok: false,
+        codigo: 'ERROR',
+        descripcion: error instanceof Error ? error.message : 'Error desconocido',
+        resultados: [],
+        rawResponse: ''
+      };
+    }
+  }
+
   async anulacionLote(params: AnulacionLoteParams): Promise<AnulacionLoteResult> {
     if (this.cfg.simulacion) {
       const mock = `<anulacionLoteResponse><codigo>0</codigo><descripcion>Lote anulado correctamente</descripcion></anulacionLoteResponse>`;
@@ -633,5 +735,91 @@ export function getMinisterioConfigFromEnv(): MinisterioConfig {
     codigoArrendador: process.env.MIR_CODIGO_ARRENDADOR || '0000000000',
     aplicacion: process.env.MIR_APLICACION || 'Delfin_Check_in',
     simulacion
+  };
+}
+
+function buildSoapConsultaLoteRequest(cfg: MinisterioConfig, lotes: string[]): string {
+  const lotesXml = lotes.map(lote => `<lote>${lote}</lote>`).join('');
+  
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" 
+               xmlns:com="http://www.soap.servicios.hospedajes.mir.es/comunicacion">
+  <soap:Header/>
+  <soap:Body>
+    <com:consultaLoteRequest>
+      <com:codigosLote>
+        ${lotesXml}
+      </com:codigosLote>
+    </com:consultaLoteRequest>
+  </soap:Body>
+</soap:Envelope>`;
+}
+
+function parseConsultaLoteResponse(xml: string): ConsultaLoteResult {
+  const codigo = matchTag(xml, 'codigo') || '';
+  const descripcion = matchTag(xml, 'descripcion') || '';
+  
+  const resultados: ConsultaLoteResult['resultados'] = [];
+  
+  // Parsear resultados según la estructura oficial MIR
+  const resultadoMatches = [...xml.matchAll(/<resultado>([\s\S]*?)<\/resultado>/g)];
+  
+  for (const match of resultadoMatches) {
+    const resultadoXml = match[1];
+    
+    const lote = matchTag(resultadoXml, 'lote') || '';
+    const tipoComunicacion = matchTag(resultadoXml, 'tipoComunicacion') || 'PV';
+    const tipoOperacion = matchTag(resultadoXml, 'tipoOperacion') || 'A';
+    const fechaPeticion = matchTag(resultadoXml, 'fechaPeticion') || '';
+    const fechaProcesamiento = matchTag(resultadoXml, 'fechaProcesamiento') || '';
+    const codigoEstado = matchTag(resultadoXml, 'codigoEstado') || '4';
+    const descEstado = matchTag(resultadoXml, 'descEstado') || '';
+    const identificadorUsuario = matchTag(resultadoXml, 'identificadorUsuario') || '';
+    const nombreUsuario = matchTag(resultadoXml, 'nombreUsuario') || '';
+    const codigoArrendador = matchTag(resultadoXml, 'codigoArrendador') || '';
+    const aplicacion = matchTag(resultadoXml, 'aplicacion') || '';
+    
+    if (lote) {
+      const resultadoComunicaciones = [];
+      const comunicacionMatches = [...resultadoXml.matchAll(/<resultadoComunicacion>([\s\S]*?)<\/resultadoComunicacion>/g)];
+      
+      for (const comMatch of comunicacionMatches) {
+        const comXml = comMatch[1];
+        const indice = parseInt(matchTag(comXml, 'orden') || '1');
+        const codigoComunicacion = matchTag(comXml, 'codigoComunicacion');
+        const tipoError = matchTag(comXml, 'tipoError');
+        const error = matchTag(comXml, 'error');
+        
+        resultadoComunicaciones.push({
+          indice,
+          codigoComunicacion,
+          tipoError,
+          error
+        });
+      }
+      
+      resultados.push({
+        lote,
+        tipoComunicacion,
+        tipoOperacion,
+        fechaPeticion,
+        fechaProcesamiento,
+        codigoEstado,
+        descEstado,
+        identificadorUsuario,
+        nombreUsuario,
+        codigoArrendador,
+        aplicacion,
+        resultadoComunicaciones: resultadoComunicaciones.length > 0 ? resultadoComunicaciones : undefined
+      });
+    }
+  }
+  
+  return {
+    ok: codigo === '0',
+    codigo,
+    descripcion,
+    resultados,
+    rawResponse: xml
   };
 }
