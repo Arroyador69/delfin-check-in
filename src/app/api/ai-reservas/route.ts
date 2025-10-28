@@ -9,12 +9,19 @@ import OpenAI from 'openai';
  * con configuración factual (temperature=0) para evitar alucinaciones
  */
 
-const openai = new OpenAI({ 
+const openai = process.env.OPENAI_API_KEY ? new OpenAI({ 
   apiKey: process.env.OPENAI_API_KEY 
-});
+}) : null;
 
 export async function POST(request: NextRequest) {
   try {
+    // Verificar que OpenAI esté disponible
+    if (!openai) {
+      return NextResponse.json({ 
+        error: 'Servicio de IA no disponible - OPENAI_API_KEY no configurada' 
+      }, { status: 503 });
+    }
+
     // Obtener el token de autenticación de las cookies
     const authToken = request.cookies.get('auth_token')?.value;
     
