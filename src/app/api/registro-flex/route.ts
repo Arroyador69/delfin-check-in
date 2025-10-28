@@ -549,60 +549,97 @@ export async function POST(req: NextRequest) {
 
     console.log('✅ Registro guardado con ID:', id);
 
-    // Enviar automáticamente al MIR (PV + RH)
+    // Enviar automáticamente al MIR (PV + RH dual)
     try {
-      console.log('📤 Enviando automáticamente al MIR (PV + RH)...');
+      console.log('📤 Enviando automáticamente al MIR (PV + RH dual)...');
       
-      const payload = {
-        ...dbData,
-        id: id
+      // Generar referencia única para cada reserva
+      const reserva_ref = `REF-${crypto.randomUUID()}-${Date.now()}`;
+      
+      // Preparar datos para el envío dual
+      const datosMIR = {
+        referencia: reserva_ref,
+        fechaEntrada: c.entrada.split('T')[0],
+        fechaSalida: c.salida.split('T')[0],
+        personas: personasDB.map(persona => ({
+          nombre: persona.nombre,
+          apellido1: persona.apellido1,
+          apellido2: persona.apellido2 || '',
+          tipoDocumento: persona.tipoDocumento,
+          numeroDocumento: persona.numeroDocumento,
+          fechaNacimiento: persona.fechaNacimiento,
+          nacionalidad: persona.nacionalidad,
+          sexo: persona.sexo,
+          contacto: {
+            telefono: persona.telefono || '',
+            correo: persona.correo || ''
+          },
+          direccion: {
+            direccion: persona.direccion.direccion,
+            codigoPostal: persona.direccion.codigoPostal,
+            pais: persona.direccion.pais,
+            codigoMunicipio: persona.direccion.codigoMunicipio || '',
+            nombreMunicipio: persona.direccion.nombreMunicipio || ''
+          }
+        }))
       };
       
-      // Enviar PV (Partes de Viajeros)
-      console.log('📤 Enviando PV (Partes de Viajeros)...');
-      const pvResponse = await fetch(`${req.nextUrl.origin}/api/ministerio/auto-envio`, {
+      // Enviar usando el endpoint dual (PV + RH en una sola llamada)
+      console.log('📤 Enviando PV + RH al MIR usando endpoint dual...');
+      const dualResponse = await fetch(`${req.nextUrl.origin}/api/ministerio/auto-envio-dual`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'X-Tenant-ID': tenantId || 'default'
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(datosMIR)
       });
       
-      let pvResult = null;
-      if (pvResponse.ok) {
-        pvResult = await pvResponse.json();
-        console.log('✅ Envío PV al MIR exitoso:', pvResult);
+      let dualResult = null;
+      if (dualResponse.ok) {
+        dualResult = await dualResponse.json();
+        console.log('✅ Envío dual PV + RH al MIR exitoso:', dualResult);
+        
+        // Actualizar el registro con el estado del MIR dual y crear vinculación
+        const updatedData = {
+          ...dbData,
+          mir_status: {
+            lote: dualResult.resultados?.pv?.lote || dualResult.resultados?.rh?.lote || null,
+            codigoComunicacion: dualResult.resultados?.pv?.codigoComunicacion || dualResult.resultados?.rh?.codigoComunicacion || null,
+            fechaEnvio: new Date().toISOString(),
+            estado: dualResult.estado || 'enviado',
+            comunicaciones: dualResult.comunicaciones || [],
+            resultados: {
+              pv: dualResult.resultados?.pv || null,
+              rh: dualResult.resultados?.rh || null
+            }
+          }
+        };
+        
+        // Actualizar el registro con la referencia única y el estado MIR
+        const { sql: pgSql } = await import('@vercel/postgres');
+        await pgSql`
+          UPDATE guest_registrations 
+          SET 
+            data = ${JSON.stringify(updatedData)}::jsonb,
+            reserva_ref = ${reserva_ref},
+            comunicacion_id = ${reserva_ref}
+          WHERE id = ${id}
+        `;
+        
+        console.log('✅ Estado MIR dual guardado en el registro');
       } else {
-        console.log('⚠️ Error en envío PV al MIR, pero registro guardado correctamente');
+        console.log('⚠️ Error en envío dual al MIR, pero registro guardado correctamente');
       }
       
-      // Enviar RH (Reservas de Hospedaje)
-      console.log('📤 Enviando RH (Reservas de Hospedaje)...');
-      const rhResponse = await fetch(`${req.nextUrl.origin}/api/ministerio/auto-envio-rh`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Tenant-ID': tenantId || 'default'
-        },
-        body: JSON.stringify(payload)
-      });
-      
-      let rhResult = null;
-      if (rhResponse.ok) {
-        rhResult = await rhResponse.json();
-        console.log('✅ Envío RH al MIR exitoso:', rhResult);
-      } else {
-        console.log('⚠️ Error en envío RH al MIR, pero registro guardado correctamente');
-      }
-      
-      console.log('📊 Resumen de envíos MIR:', {
-        pv: pvResult ? { success: pvResult.success, codigo: pvResult.resultado?.codigo } : { success: false },
-        rh: rhResult ? { success: rhResult.success, codigo: rhResult.resultado?.codigo } : { success: false }
+      console.log('📊 Resumen de envío dual MIR:', {
+        estado: dualResult?.estado || 'error',
+        pv: dualResult?.resultados?.pv ? { success: dualResult.resultados.pv.ok, lote: dualResult.resultados.pv.lote } : { success: false },
+        rh: dualResult?.resultados?.rh ? { success: dualResult.resultados.rh.ok, lote: dualResult.resultados.rh.lote } : { success: false }
       });
       
     } catch (mirError) {
-      console.log('⚠️ Error en envío al MIR, pero registro guardado correctamente:', mirError);
+      console.log('⚠️ Error en envío dual al MIR, pero registro guardado correctamente:', mirError);
     }
 
     const headers = cors(req);

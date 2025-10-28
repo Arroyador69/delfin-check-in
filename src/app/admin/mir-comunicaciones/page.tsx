@@ -116,20 +116,44 @@ export default function MirComunicacionesPage() {
     try {
       const codigos = codigosConsulta.split(',').map(c => c.trim()).filter(c => c);
       
-      const response = await fetch('/api/ministerio/consulta-simple', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ codigos })
-      });
-      
-      const data = await response.json();
-      
-      if (data.success) {
-        setResultadosConsulta(data.comunicaciones || []);
-        setSuccess(`✅ ${data.interpretacion.mensaje}`);
-      } else {
-        setError(`❌ ${data.message || 'Error en la consulta'}`);
+      // Consultar cada código individualmente para obtener información completa
+      const resultados = [];
+      for (const codigo of codigos) {
+        const response = await fetch('/api/ministerio/consulta-completa', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ codigoReferencia: codigo })
+        });
+        
+        const data = await response.json();
+        
+        if (data.ok && data.resultados.length > 0) {
+          resultados.push(data.resultados[0]);
+        } else {
+          // Si no se encuentra, crear un resultado de error
+          resultados.push({
+            codigo: codigo,
+            tipo: 'N/A',
+            estado: 'no_encontrado',
+            referencia: codigo,
+            fechaAlta: 'N/A',
+            nombreReserva: 'No encontrado',
+            interpretacion: {
+              tipoDescripcion: 'Comunicación no encontrada',
+              estadoDescripcion: 'No existe en el sistema'
+            },
+            detalles: {
+              establecimiento: 'N/A',
+              fechaEntrada: 'N/A',
+              fechaSalida: 'N/A',
+              numPersonas: 0
+            }
+          });
+        }
       }
+      
+      setResultadosConsulta(resultados);
+      setSuccess(`✅ Consulta completada. Encontrados ${resultados.length} resultados`);
     } catch (err) {
       setError('Error de conexión');
       console.error('Error consultando:', err);
@@ -187,20 +211,20 @@ export default function MirComunicacionesPage() {
     setSuccess(null);
     
     try {
-      const response = await fetch('/api/ministerio/catalogo-simple', {
+      const response = await fetch('/api/ministerio/catalogo-completo', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ catalogo: catalogoConsulta.trim() })
+        body: JSON.stringify({ nombreCatalogo: catalogoConsulta.trim() })
       });
       
       const data = await response.json();
       
-      if (data.success) {
+      if (data.ok) {
         setResultadosCatalogo(data.catalogo.elementos || []);
         setResultadoCatalogoCompleto(data);
-        setSuccess(`✅ ${data.interpretacion.mensaje}`);
+        setSuccess(`✅ Catálogo '${data.catalogo.nombre}' consultado correctamente. Encontrados ${data.catalogo.totalElementos} elementos`);
       } else {
-        setError(`❌ ${data.message || 'Error en la consulta de catálogo'}`);
+        setError(`❌ ${data.error || 'Error en la consulta de catálogo'}`);
         setResultadoCatalogoCompleto(null);
       }
     } catch (err) {
@@ -460,12 +484,14 @@ export default function MirComunicacionesPage() {
                                   className="bg-green-600 hover:bg-green-700 text-white font-semibold"
                                   onClick={async () => {
                                     try {
-                                      const response = await fetch('/api/ministerio/auto-envio', {
+                                      const response = await fetch('/api/ministerio/auto-envio-dual', {
                                         method: 'POST',
                                         headers: { 'Content-Type': 'application/json' },
                                         body: JSON.stringify({
-                                          id: registro.id,
-                                          referencia: registro.referencia
+                                          referencia: registro.referencia,
+                                          fechaEntrada: registro.fecha_entrada,
+                                          fechaSalida: registro.fecha_salida,
+                                          personas: registro.datos?.comunicaciones?.[0]?.personas || []
                                         })
                                       });
                                       
@@ -586,6 +612,12 @@ export default function MirComunicacionesPage() {
                             {resultado.estado.toUpperCase()}
                           </Badge>
                         </div>
+                        {resultado.nombreReserva && resultado.nombreReserva !== 'No encontrado' && (
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-gray-900">👤 Huésped:</span>
+                            <span className="text-gray-700 font-semibold">{resultado.nombreReserva}</span>
+                          </div>
+                        )}
                         <div className="text-sm text-gray-800 space-y-2 bg-gray-50 p-4 rounded-lg">
                           <div className="flex items-center gap-2">
                             <span className="font-bold text-gray-900">Tipo:</span>
@@ -632,7 +664,7 @@ export default function MirComunicacionesPage() {
                   className="font-semibold text-gray-800"
                 />
                 <p className="text-sm text-gray-600 font-medium">
-                  Catálogos disponibles: TIPOS_DOCUMENTO, TIPOS_PAGO, PAISES, MUNICIPIOS, TIPOS_VEHICULO, COLORES_VEHICULO, CATEGORIAS_VEHICULO, ROLES_PERSONA
+                  Catálogos disponibles: TIPOS_DOCUMENTO, TIPOS_PAGO, PAISES, MUNICIPIOS, TIPOS_ESTABLECIMIENTO, ROLES_PERSONA
                 </p>
               </div>
               
@@ -648,29 +680,23 @@ export default function MirComunicacionesPage() {
                     <CardTitle className="text-gray-900 font-bold text-lg">Resultado de la Consulta</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    {/* Mensaje claro de éxito/error */}
-                    <div className={`p-4 rounded-lg border ${
-                      resultadoCatalogoCompleto.success 
-                        ? 'bg-green-50 border-green-200' 
-                        : 'bg-red-50 border-red-200'
-                    }`}>
+                    {/* Información del catálogo */}
+                    <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
                       <div className="flex items-center space-x-2">
-                        {resultadoCatalogoCompleto.success ? (
-                          <CheckCircle className="h-5 w-5 text-green-600" />
-                        ) : (
-                          <XCircle className="h-5 w-5 text-red-600" />
-                        )}
+                        <CheckCircle className="h-5 w-5 text-blue-600" />
                         <div>
-                          <p className={`font-semibold ${
-                            resultadoCatalogoCompleto.success ? 'text-green-800' : 'text-red-800'
-                          }`}>
-                            {resultadoCatalogoCompleto.success ? '✅ Conexión Exitosa' : '❌ Error en la Conexión'}
+                          <p className="font-semibold text-blue-800">
+                            ✅ Conexión Exitosa
                           </p>
-                          <p className={`text-sm ${
-                            resultadoCatalogoCompleto.success ? 'text-green-700' : 'text-red-700'
-                          }`}>
-                            {resultadoCatalogoCompleto.interpretacion?.mensaje || resultadoCatalogoCompleto.message}
+                          <p className="text-sm text-blue-700">
+                            Catálogo '{resultadoCatalogoCompleto.catalogo?.nombre}' consultado correctamente. 
+                            Encontrados {resultadoCatalogoCompleto.catalogo?.totalElementos} elementos
                           </p>
+                          {resultadoCatalogoCompleto.catalogo?.descripcion && (
+                            <p className="text-xs text-blue-600 mt-1">
+                              {resultadoCatalogoCompleto.catalogo.descripcion}
+                            </p>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -681,13 +707,22 @@ export default function MirComunicacionesPage() {
                         <h4 className="font-medium text-gray-900">Elementos del Catálogo ({resultadosCatalogo.length})</h4>
                         <div className="grid gap-2 max-h-96 overflow-y-auto">
                           {resultadosCatalogo.map((elemento, index) => (
-                            <Card key={index} className="p-3">
+                            <Card key={index} className="p-3 border border-gray-200">
                               <div className="flex items-center justify-between">
-                                <div>
-                                  <span className="font-medium text-gray-900">{elemento.codigo}</span>
-                                  <p className="text-sm text-gray-600">{elemento.descripcion}</p>
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-semibold text-gray-900">{elemento.codigo}</span>
+                                    {elemento.activo !== false && (
+                                      <Badge variant="default" className="bg-green-100 text-green-800 text-xs">
+                                        Activo
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  <p className="text-sm text-gray-600 mt-1">{elemento.descripcion}</p>
+                                  {elemento.provincia && (
+                                    <p className="text-xs text-gray-500 mt-1">Provincia: {elemento.provincia}</p>
+                                  )}
                                 </div>
-                                <Badge variant="outline">{elemento.codigo}</Badge>
                               </div>
                             </Card>
                           ))}
