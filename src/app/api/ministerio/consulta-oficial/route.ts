@@ -29,6 +29,24 @@ export async function POST(req: NextRequest) {
 
     console.log('📋 Consultando códigos:', codigos);
 
+    // Procesar códigos para cumplir con maxLength de 36 caracteres del MIR
+    const codigosProcesados = codigos.map(codigo => {
+      // Si el código tiene formato REF-UUID-timestamp, extraer solo el UUID
+      if (codigo.startsWith('REF-') && codigo.length > 36) {
+        const parts = codigo.split('-');
+        if (parts.length >= 5) {
+          // Extraer UUID: REF-UUID-timestamp -> UUID
+          const uuid = parts.slice(1, 5).join('-'); // UUID tiene 4 partes separadas por -
+          console.log(`🔧 Procesando código: ${codigo} -> ${uuid}`);
+          return uuid;
+        }
+      }
+      // Si ya es de 36 caracteres o menos, usar tal como está
+      return codigo.length <= 36 ? codigo : codigo.substring(0, 36);
+    });
+
+    console.log('📋 Códigos procesados para MIR:', codigosProcesados);
+
     // Verificar credenciales MIR
     if (!process.env.MIR_HTTP_USER || !process.env.MIR_HTTP_PASS || !process.env.MIR_CODIGO_ARRENDADOR) {
       return NextResponse.json({
@@ -58,8 +76,8 @@ export async function POST(req: NextRequest) {
     // Crear cliente MIR oficial
     const client = new MinisterioClientOfficial(config);
     
-    // Consultar comunicaciones
-    const resultado = await client.consultaComunicacion({ codigos });
+    // Consultar comunicaciones con códigos procesados
+    const resultado = await client.consultaComunicacion({ codigos: codigosProcesados });
     
     console.log('✅ Resultado de la consulta oficial:', resultado);
 
