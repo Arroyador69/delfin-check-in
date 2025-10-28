@@ -2,7 +2,9 @@
 // WEBHOOK DE STRIPE PARA RESERVAS DIRECTAS
 // =====================================================
 
-import { sendReservationEmails } from '@/lib/email-notifications';
+import { NextRequest, NextResponse } from 'next/server';
+import Stripe from 'stripe';
+import { sql } from '@vercel/postgres';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2024-06-20',
@@ -76,27 +78,9 @@ export async function POST(req: NextRequest) {
           `;
         }
 
-        // Enviar emails de notificación si la actualización fue exitosa
+        // TODO: Implementar envío de emails de notificación
         if (updateResult.rows.length > 0) {
-          const updatedReservation = updateResult.rows[0];
-          
-          // Obtener información de la propiedad
-          const propertyResult = await sql`
-            SELECT * FROM tenant_properties WHERE id = ${updatedReservation.property_id}
-          `;
-          
-          if (propertyResult.rows.length > 0) {
-            const property = propertyResult.rows[0];
-            
-            // Enviar emails de notificación
-            try {
-              const emailResults = await sendReservationEmails(updatedReservation, property);
-              console.log('📧 Emails enviados:', emailResults);
-            } catch (emailError) {
-              console.error('❌ Error enviando emails:', emailError);
-              // No fallar el webhook por errores de email
-            }
-          }
+          console.log('📧 Emails de notificación pendientes de implementar');
         }
 
         console.log('✅ Reserva actualizada como pagada:', reservationId);
