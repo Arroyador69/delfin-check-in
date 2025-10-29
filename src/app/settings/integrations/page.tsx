@@ -339,15 +339,15 @@ export default function IntegrationsSettingsPage() {
       {showAddForm && (
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle>Agregar Calendario Externo</CardTitle>
-            <CardDescription>
+            <CardTitle className="font-bold text-gray-900">Agregar Calendario Externo</CardTitle>
+            <CardDescription className="font-semibold text-gray-800">
               Conecta calendarios de Airbnb, Expedia, Booking.com u otras OTAs
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="property_id">Propiedad/Habitación *</Label>
+                <Label htmlFor="property_id" className="font-bold text-gray-900">Propiedad/Habitación *</Label>
                 <select
                   id="property_id"
                   className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md"
@@ -362,7 +362,7 @@ export default function IntegrationsSettingsPage() {
               </div>
               
               <div>
-                <Label htmlFor="calendar_name">Nombre del Calendario *</Label>
+                <Label htmlFor="calendar_name" className="font-bold text-gray-900">Nombre del Calendario *</Label>
                 <Input
                   id="calendar_name"
                   placeholder="Ej: Airbnb - Habitación 1"
@@ -372,7 +372,7 @@ export default function IntegrationsSettingsPage() {
               </div>
               
               <div>
-                <Label htmlFor="calendar_type">Tipo de Calendario *</Label>
+                <Label htmlFor="calendar_type" className="font-bold text-gray-900">Tipo de Calendario *</Label>
                 <select
                   id="calendar_type"
                   className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md"
@@ -387,7 +387,7 @@ export default function IntegrationsSettingsPage() {
               </div>
               
               <div>
-                <Label htmlFor="sync_frequency">Frecuencia de Sincronización (minutos)</Label>
+                <Label htmlFor="sync_frequency" className="font-bold text-gray-900">Frecuencia de Sincronización (minutos)</Label>
                 <Input
                   id="sync_frequency"
                   type="number"
@@ -400,7 +400,7 @@ export default function IntegrationsSettingsPage() {
               
               {formData.calendar_type === 'ical' && (
                 <div className="col-span-2">
-                  <Label htmlFor="calendar_url">URL del Calendario iCal *</Label>
+                  <Label htmlFor="calendar_url" className="font-bold text-gray-900">URL del Calendario iCal *</Label>
                   <Input
                     id="calendar_url"
                     placeholder="https://..."
@@ -415,7 +415,7 @@ export default function IntegrationsSettingsPage() {
               <Button onClick={handleAddExternalCalendar} className="bg-blue-600 hover:bg-blue-700">
                 Agregar Calendario
               </Button>
-              <Button variant="outline" onClick={() => setShowAddForm(false)}>
+              <Button variant="outline" onClick={() => setShowAddForm(false)} className="font-bold text-gray-900">
                 Cancelar
               </Button>
             </div>
@@ -426,17 +426,17 @@ export default function IntegrationsSettingsPage() {
       {/* Calendarios del Sistema (iCals generados automáticamente) */}
       <Card className="mb-6">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 font-bold text-gray-900">
             <Calendar className="w-5 h-5" />
             Calendarios del Sistema
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="font-semibold text-gray-800">
             Cada propiedad genera automáticamente un iCal único que puedes usar en tus OTAs
           </CardDescription>
         </CardHeader>
         <CardContent>
           {properties.length === 0 ? (
-            <div className="text-center py-8 text-gray-700">
+            <div className="text-center py-8 font-bold text-gray-900">
               No tienes propiedades configuradas. Crea una propiedad primero.
             </div>
           ) : (
@@ -487,17 +487,17 @@ export default function IntegrationsSettingsPage() {
       {/* Calendarios Externos */}
       <Card className="mb-6">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 font-bold text-gray-900">
             <Settings className="w-5 h-5" />
             Calendarios Externos
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="font-semibold text-gray-800">
             Calendarios de OTAs que sincronizan con tu sistema para bloquear fechas automáticamente
           </CardDescription>
         </CardHeader>
         <CardContent>
           {externalCalendars.length === 0 ? (
-            <div className="text-center py-8 text-gray-700">
+            <div className="text-center py-8 font-bold text-gray-900">
               No tienes calendarios externos configurados. Agrega uno para sincronizar con OTAs.
             </div>
           ) : (
@@ -584,15 +584,15 @@ export default function IntegrationsSettingsPage() {
       {/* Información adicional */}
       <Card className="mt-8">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 font-bold text-gray-900">
             <Info className="w-5 h-5" />
             Información sobre Integraciones
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <h4 className="font-semibold mb-2">Cómo funciona:</h4>
-            <ul className="list-disc list-inside space-y-1 text-sm text-gray-600">
+            <h4 className="font-bold text-gray-900 mb-2">Cómo funciona:</h4>
+            <ul className="list-disc list-inside space-y-1 text-sm font-semibold text-gray-900">
               <li><strong>Calendarios del Sistema:</strong> Cada propiedad genera automáticamente un iCal único con todas tus reservas directas. Usa esta URL en tus OTAs para que bloqueen automáticamente las fechas cuando tengas reservas directas.</li>
               <li><strong>Calendarios Externos:</strong> Agrega los iCals de tus OTAs (Airbnb, Expedia, Booking) para que el sistema bloquee automáticamente las fechas cuando tengas reservas en esas plataformas.</li>
               <li><strong>Sincronización:</strong> Los calendarios externos se sincronizan automáticamente según la frecuencia configurada. Puedes sincronizar manualmente en cualquier momento.</li>
