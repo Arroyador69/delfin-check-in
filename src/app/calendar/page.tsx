@@ -37,7 +37,7 @@ export default function CalendarPage() {
   const [loading, setLoading] = useState(false)
   const [availability, setAvailability] = useState<Availability[]>([])
   const [events, setEvents] = useState<CalendarEvent[]>([])
-  const [properties, setProperties] = useState<{ id: number; property_name: string }[]>([])
+  const [properties, setProperties] = useState<{ id: number | null; property_name: string; room_id?: number; is_placeholder?: boolean }[]>([])
 
   // Cargar tenant actual y propiedades del tenant (autenticado por JWT/middleware)
   useEffect(() => {
@@ -50,15 +50,32 @@ export default function CalendarPage() {
           setTenantId(meData.tenant.id)
         }
 
-        // Cargar propiedades del tenant
-        const res = await fetch('/api/tenant/properties')
-        const data = await res.json()
-        if (data.success) {
-          setProperties(data.properties || [])
-          // Seleccionar la primera propiedad por defecto
-          if (!propertyId && data.properties?.length) {
-            setPropertyId(String(data.properties[0].id))
+        // Intentar slots unificados; fallback a /tenant/properties
+        let list: any[] = []
+        try {
+          const slotsRes = await fetch('/api/tenant/property-slots')
+          const slotsData = await slotsRes.json()
+          if (slotsRes.ok && slotsData.success) {
+            list = (slotsData.slots || []).map((s: any) => ({
+              id: s.property_id,
+              property_name: s.property_name || s.room_name,
+              room_id: s.room_id,
+              is_placeholder: s.is_placeholder
+            }))
           }
+        } catch {}
+
+        if (!list?.length) {
+          const res = await fetch('/api/tenant/properties')
+          const data = await res.json()
+          if (data.success) list = data.properties || []
+        }
+
+        setProperties(list)
+        if (!propertyId && list.length) {
+          // Seleccionar la primera opción
+          const first = list[0]
+          if (first?.id) setPropertyId(String(first.id))
         }
       } catch (e) {
         console.error('Error inicializando calendario:', e)
@@ -120,8 +137,10 @@ export default function CalendarPage() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
         <select value={propertyId} onChange={e=>setPropertyId(e.target.value)} className="border p-2 rounded">
           <option value="">Selecciona propiedad</option>
-          {properties.map(p => (
-            <option key={p.id} value={p.id}>{p.property_name} (#{p.id})</option>
+          {properties.map((p, idx) => (
+            <option key={p.id ?? `ph-${idx}`} value={p.id ?? ''}>
+              {p.property_name}{p.id ? ` (#${p.id})` : ' (sin configurar)'}
+            </option>
           ))}
         </select>
         <input type="date" value={start} onChange={e=>setStart(e.target.value)} className="border p-2 rounded" />
