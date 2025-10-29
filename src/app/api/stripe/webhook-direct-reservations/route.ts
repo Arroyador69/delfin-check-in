@@ -15,17 +15,25 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 const webhookSecret = process.env.STRIPE_WEBHOOK_DIRECT_RESERVATIONS_SECRET!;
 
 export async function POST(req: NextRequest) {
+  // Log inicial para confirmar que este endpoint está siendo llamado
+  console.log('🎯 [WEBHOOK RESERVAS] ========== ENDPOINT LLAMADO ==========');
+  console.log('🎯 [WEBHOOK RESERVAS] URL:', req.url);
+  console.log('🎯 [WEBHOOK RESERVAS] Método:', req.method);
+  
   try {
     const body = await req.text();
     const signature = req.headers.get('stripe-signature')!;
 
+    console.log('🎯 [WEBHOOK RESERVAS] Body recibido, length:', body.length);
+    console.log('🎯 [WEBHOOK RESERVAS] Signature presente:', !!signature);
+
     if (!webhookSecret) {
-      console.error('❌ STRIPE_WEBHOOK_DIRECT_RESERVATIONS_SECRET no configurado');
+      console.error('❌ [WEBHOOK RESERVAS] STRIPE_WEBHOOK_DIRECT_RESERVATIONS_SECRET no configurado');
       return NextResponse.json({ error: 'Webhook secret not configured' }, { status: 500 });
     }
 
     if (!signature) {
-      console.error('❌ Firma de webhook no presente en headers');
+      console.error('❌ [WEBHOOK RESERVAS] Firma de webhook no presente en headers');
       return NextResponse.json({ error: 'Missing stripe-signature header' }, { status: 400 });
     }
 
@@ -33,22 +41,24 @@ export async function POST(req: NextRequest) {
 
     try {
       event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
-      console.log('✅ Webhook verificado correctamente:', event.type);
+      console.log('✅ [WEBHOOK RESERVAS] Webhook verificado correctamente:', event.type);
     } catch (err: any) {
-      console.error('❌ Error verificando webhook de reservas directas:', {
+      console.error('❌ [WEBHOOK RESERVAS] Error verificando webhook:', {
         error: err.message,
         hasSignature: !!signature,
         signatureLength: signature?.length,
         bodyLength: body.length,
-        webhookSecretConfigured: !!webhookSecret
+        webhookSecretConfigured: !!webhookSecret,
+        webhookSecretLength: webhookSecret?.length
       });
       return NextResponse.json({ error: 'Webhook signature verification failed' }, { status: 400 });
     }
 
-    console.log('🔔 [WEBHOOK RESERVAS DIRECTAS] Evento recibido:', {
+    console.log('🔔 [WEBHOOK RESERVAS DIRECTAS] Evento recibido y verificado:', {
       type: event.type,
       id: event.id,
-      created: event.created
+      created: event.created,
+      livemode: event.livemode
     });
 
     // Manejar eventos de Payment Intent
@@ -63,17 +73,25 @@ export async function POST(req: NextRequest) {
         hasReservationId: !!paymentIntent.metadata?.reservation_id
       });
 
-      // Verificar que tenga reservation_id en metadata
+      // Verificar que tenga reservation_id en metadata (CRÍTICO para reservas directas)
       if (!paymentIntent.metadata?.reservation_id) {
         console.warn('⚠️ [WEBHOOK RESERVAS] Payment Intent sin reservation_id en metadata:', {
           paymentIntentId: paymentIntent.id,
           metadata: paymentIntent.metadata,
-          source: paymentIntent.metadata?.source
+          source: paymentIntent.metadata?.source,
+          amount: paymentIntent.amount,
+          customer: paymentIntent.customer
         });
-        // Continuar para procesar aunque no tenga reservation_id, pero loguear
+        console.warn('⚠️ [WEBHOOK RESERVAS] Este pago NO es de una reserva directa, ignorando...');
+        // No procesar si no tiene reservation_id
+        return NextResponse.json({ 
+          received: true, 
+          message: 'Ignored: No reservation_id in metadata' 
+        });
       }
 
       // Actualizar reserva como pagada
+      // SIEMPRE procesar si tiene reservation_id
       if (paymentIntent.metadata?.reservation_id) {
         const reservationId = parseInt(paymentIntent.metadata.reservation_id);
         console.log('🔍 [WEBHOOK RESERVAS] Procesando reserva:', reservationId);
@@ -264,9 +282,8 @@ export async function POST(req: NextRequest) {
           console.warn('⚠️ [WEBHOOK RESERVAS] Reserva no fue actualizada, no se enviarán emails');
         }
 
-        console.log('✅ [WEBHOOK RESERVAS] Procesamiento completado para reserva:', reservationId);
-      } else {
-        console.warn('⚠️ [WEBHOOK RESERVAS] Payment Intent recibido sin reservation_id en metadata, ignorando');
+        console.log('✅ [WEBHOOK RESERVAS] ========== PROCESAMIENTO COMPLETADO ==========');
+        console.log('✅ [WEBHOOK RESERVAS] Reserva:', reservationId);
       }
     }
 
@@ -290,11 +307,17 @@ export async function POST(req: NextRequest) {
           WHERE id = ${reservationId} AND stripe_payment_intent_id = ${paymentIntent.id}
         `;
 
-        console.log('❌ Reserva marcada como pago fallido:', reservationId);
+        console.log('❌ [WEBHOOK RESERVAS] Reserva marcada como pago fallido:', reservationId);
       }
     }
 
-    return NextResponse.json({ received: true });
+    // Retornar success para cualquier evento procesado
+    console.log('✅ [WEBHOOK RESERVAS] Respuesta enviada exitosamente');
+    return NextResponse.json({ 
+      received: true,
+      eventType: event.type,
+      message: 'Webhook processed successfully'
+    });
 
   } catch (error) {
     console.error('❌ Error procesando webhook:', error);
