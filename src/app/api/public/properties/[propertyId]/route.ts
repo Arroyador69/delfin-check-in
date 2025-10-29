@@ -6,19 +6,47 @@ import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
 import { TenantProperty } from '@/lib/direct-reservations-types';
 
+function corsHeaders(origin: string | null) {
+  const allowedOrigins = [
+    'https://book.delfincheckin.com',
+    'https://admin.delfincheckin.com',
+    'http://localhost:3000',
+    'http://localhost:3001'
+  ];
+  
+  const originHeader = origin && allowedOrigins.includes(origin) ? origin : allowedOrigins[0];
+  
+  return {
+    'Access-Control-Allow-Origin': originHeader,
+    'Access-Control-Allow-Methods': 'GET, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Credentials': 'true',
+  };
+}
+
+export async function OPTIONS(req: NextRequest) {
+  const origin = req.headers.get('origin');
+  return NextResponse.json({}, { headers: corsHeaders(origin) });
+}
+
 export async function GET(
   req: NextRequest,
   { params }: { params: { propertyId: string } }
 ) {
   try {
+    const origin = req.headers.get('origin');
     const { searchParams } = new URL(req.url);
     const tenantId = searchParams.get('tenant_id');
     
     if (!tenantId) {
-      return NextResponse.json(
+      const response = NextResponse.json(
         { success: false, error: 'tenant_id requerido' },
         { status: 400 }
       );
+      Object.entries(corsHeaders(origin)).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return response;
     }
 
     console.log('🏠 Obteniendo propiedad pública:', { propertyId: params.propertyId, tenantId });
@@ -34,10 +62,14 @@ export async function GET(
     `;
     
     if (result.rows.length === 0) {
-      return NextResponse.json(
+      const response = NextResponse.json(
         { success: false, error: 'Propiedad no encontrada' },
         { status: 404 }
       );
+      Object.entries(corsHeaders(origin)).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return response;
     }
     
     const property: TenantProperty = {
@@ -63,16 +95,27 @@ export async function GET(
     
     console.log('✅ Propiedad encontrada:', property.property_name);
     
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       property
     });
     
+    Object.entries(corsHeaders(origin)).forEach(([key, value]) => {
+      response.headers.set(key, value);
+    });
+    
+    return response;
+    
   } catch (error) {
     console.error('❌ Error obteniendo propiedad pública:', error);
-    return NextResponse.json(
+    const origin = req.headers.get('origin');
+    const response = NextResponse.json(
       { success: false, error: 'Error interno del servidor' },
       { status: 500 }
     );
+    Object.entries(corsHeaders(origin)).forEach(([key, value]) => {
+      response.headers.set(key, value);
+    });
+    return response;
   }
 }

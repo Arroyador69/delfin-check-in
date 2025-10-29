@@ -11,8 +11,32 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2024-06-20',
 });
 
+function corsHeaders(origin: string | null) {
+  const allowedOrigins = [
+    'https://book.delfincheckin.com',
+    'https://admin.delfincheckin.com',
+    'http://localhost:3000',
+    'http://localhost:3001'
+  ];
+  
+  const originHeader = origin && allowedOrigins.includes(origin) ? origin : allowedOrigins[0];
+  
+  return {
+    'Access-Control-Allow-Origin': originHeader,
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Credentials': 'true',
+  };
+}
+
+export async function OPTIONS(req: NextRequest) {
+  const origin = req.headers.get('origin');
+  return NextResponse.json({}, { headers: corsHeaders(origin) });
+}
+
 export async function POST(req: NextRequest) {
   try {
+    const origin = req.headers.get('origin');
     const data = await req.json();
     const {
       property_id,
@@ -37,10 +61,14 @@ export async function POST(req: NextRequest) {
 
     // Validar datos requeridos
     if (!property_id || !guest_name || !guest_email || !check_in_date || !check_out_date) {
-      return NextResponse.json(
+      const response = NextResponse.json(
         { success: false, error: 'Faltan datos requeridos' },
         { status: 400 }
       );
+      Object.entries(corsHeaders(origin)).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return response;
     }
 
     // Obtener información de la propiedad
@@ -53,10 +81,14 @@ export async function POST(req: NextRequest) {
     `;
 
     if (propertyResult.rows.length === 0) {
-      return NextResponse.json(
+      const response = NextResponse.json(
         { success: false, error: 'Propiedad no encontrada o inactiva' },
         { status: 404 }
       );
+      Object.entries(corsHeaders(origin)).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return response;
     }
 
     const property = propertyResult.rows[0];
@@ -68,10 +100,14 @@ export async function POST(req: NextRequest) {
     const nights = Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24));
 
     if (nights < property.minimum_nights) {
-      return NextResponse.json(
+      const response = NextResponse.json(
         { success: false, error: `Mínimo ${property.minimum_nights} noches requeridas` },
         { status: 400 }
       );
+      Object.entries(corsHeaders(origin)).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return response;
     }
 
     // Calcular precios
@@ -140,7 +176,7 @@ export async function POST(req: NextRequest) {
       reservationCode
     });
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       client_secret: paymentIntent.client_secret,
       payment_intent_id: paymentIntent.id,
@@ -160,11 +196,22 @@ export async function POST(req: NextRequest) {
       }
     });
 
+    Object.entries(corsHeaders(origin)).forEach(([key, value]) => {
+      response.headers.set(key, value);
+    });
+
+    return response;
+
   } catch (error) {
     console.error('❌ Error creando Payment Intent:', error);
-    return NextResponse.json(
+    const origin = req.headers.get('origin');
+    const response = NextResponse.json(
       { success: false, error: 'Error interno del servidor' },
       { status: 500 }
     );
+    Object.entries(corsHeaders(origin)).forEach(([key, value]) => {
+      response.headers.set(key, value);
+    });
+    return response;
   }
 }

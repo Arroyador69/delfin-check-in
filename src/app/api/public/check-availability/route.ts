@@ -6,8 +6,32 @@ import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
 import { calculateCommission } from '@/lib/direct-reservations-utils';
 
+function corsHeaders(origin: string | null) {
+  const allowedOrigins = [
+    'https://book.delfincheckin.com',
+    'https://admin.delfincheckin.com',
+    'http://localhost:3000',
+    'http://localhost:3001'
+  ];
+  
+  const originHeader = origin && allowedOrigins.includes(origin) ? origin : allowedOrigins[0];
+  
+  return {
+    'Access-Control-Allow-Origin': originHeader,
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Credentials': 'true',
+  };
+}
+
+export async function OPTIONS(req: NextRequest) {
+  const origin = req.headers.get('origin');
+  return NextResponse.json({}, { headers: corsHeaders(origin) });
+}
+
 export async function POST(req: NextRequest) {
   try {
+    const origin = req.headers.get('origin');
     const data = await req.json();
     const {
       property_id,
@@ -25,10 +49,14 @@ export async function POST(req: NextRequest) {
 
     // Validar datos requeridos
     if (!property_id || !check_in_date || !check_out_date || !guests) {
-      return NextResponse.json(
+      const response = NextResponse.json(
         { success: false, error: 'Faltan datos requeridos' },
         { status: 400 }
       );
+      Object.entries(corsHeaders(origin)).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return response;
     }
 
     // Obtener información de la propiedad
@@ -41,20 +69,28 @@ export async function POST(req: NextRequest) {
     `;
 
     if (propertyResult.rows.length === 0) {
-      return NextResponse.json(
+      const response = NextResponse.json(
         { success: false, error: 'Propiedad no encontrada' },
         { status: 404 }
       );
+      Object.entries(corsHeaders(origin)).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return response;
     }
 
     const property = propertyResult.rows[0];
 
     // Validar número de huéspedes
     if (guests > property.max_guests) {
-      return NextResponse.json(
+      const response = NextResponse.json(
         { success: false, error: `Máximo ${property.max_guests} huéspedes permitidos` },
         { status: 400 }
       );
+      Object.entries(corsHeaders(origin)).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return response;
     }
 
     // Calcular fechas y noches
@@ -63,17 +99,25 @@ export async function POST(req: NextRequest) {
     const nights = Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24));
 
     if (nights < property.minimum_nights) {
-      return NextResponse.json(
+      const response = NextResponse.json(
         { success: false, error: `Mínimo ${property.minimum_nights} noches requeridas` },
         { status: 400 }
       );
+      Object.entries(corsHeaders(origin)).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return response;
     }
 
     if (nights > property.maximum_nights) {
-      return NextResponse.json(
+      const response = NextResponse.json(
         { success: false, error: `Máximo ${property.maximum_nights} noches permitidas` },
         { status: 400 }
       );
+      Object.entries(corsHeaders(origin)).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return response;
     }
 
     // Verificar disponibilidad (por ahora asumimos que está disponible)
@@ -81,10 +125,14 @@ export async function POST(req: NextRequest) {
     const isAvailable = true;
 
     if (!isAvailable) {
-      return NextResponse.json(
+      const response = NextResponse.json(
         { success: false, error: 'No disponible para las fechas seleccionadas' },
         { status: 400 }
       );
+      Object.entries(corsHeaders(origin)).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return response;
     }
 
     // Calcular precios
@@ -109,16 +157,27 @@ export async function POST(req: NextRequest) {
 
     console.log('✅ Disponibilidad verificada:', pricing);
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       pricing
     });
+    
+    Object.entries(corsHeaders(origin)).forEach(([key, value]) => {
+      response.headers.set(key, value);
+    });
+    
+    return response;
 
   } catch (error) {
     console.error('❌ Error verificando disponibilidad:', error);
-    return NextResponse.json(
+    const origin = req.headers.get('origin');
+    const response = NextResponse.json(
       { success: false, error: 'Error interno del servidor' },
       { status: 500 }
     );
+    Object.entries(corsHeaders(origin)).forEach(([key, value]) => {
+      response.headers.set(key, value);
+    });
+    return response;
   }
 }
