@@ -24,7 +24,7 @@ export function generateGuestConfirmationEmail(
   reservation: DirectReservation,
   property: TenantProperty,
   publicFormUrl?: string,
-  contact?: { email?: string; phone?: string }
+  contact?: { email?: string; phone?: string; name?: string }
 ) {
   const checkInDate = new Date(reservation.check_in_date).toLocaleDateString('es-ES', {
     year: 'numeric',
@@ -43,6 +43,7 @@ export function generateGuestConfirmationEmail(
 
   const contactEmail = contact?.email || 'booking@delfincheckin.com'
   const contactPhone = contact?.phone || ''
+  const contactName = contact?.name || 'Delfin Check-in'
 
   return {
     subject: `✅ Reserva confirmada - ${reservation.reservation_code}`,
@@ -137,7 +138,7 @@ export function generateGuestConfirmationEmail(
             
             <div class="reservation-details">
               <h3>📞 Información de contacto</h3>
-              <p>Si tienes alguna pregunta sobre tu reserva, puedes contactarnos en:</p>
+              <p>Si tienes alguna pregunta sobre tu reserva, puedes contactar con <strong>${contactName}</strong>:</p>
               <p><strong>Email:</strong> ${contactEmail}</p>
               <p><strong>Teléfono:</strong> ${contactPhone || 'No proporcionado'}</p>
             </div>
@@ -177,12 +178,13 @@ export function generateGuestConfirmationEmail(
       Este formulario es obligatorio por ley y los datos se envían al Gobierno de España (Ministerio del Interior).
       
       Información de contacto del establecimiento:
+      - Establecimiento: ${contactName}
       - Email: ${contactEmail}
       - Teléfono: ${contactPhone || 'No proporcionado'}
       
       ¡Esperamos que disfrutes de tu estancia!
       
-      El equipo de Delfin Check-in
+      Equipo de ${contactName}
     `
   };
 }
@@ -368,11 +370,12 @@ export async function sendGuestConfirmationEmail(reservation: DirectReservation,
     // Obtener datos de contacto personalizados del tenant (empresa_config)
     let contactEmail: string | undefined = undefined
     let contactPhone: string | undefined = undefined
+    let contactName: string | undefined = undefined
 
     try {
       const { sql } = await import('@vercel/postgres')
       const cfg = await sql`
-        SELECT email, telefono 
+        SELECT email, telefono, nombre_empresa 
         FROM empresa_config 
         WHERE tenant_id = ${reservation.tenant_id}
         ORDER BY updated_at DESC NULLS LAST, created_at DESC NULLS LAST
@@ -381,6 +384,7 @@ export async function sendGuestConfirmationEmail(reservation: DirectReservation,
       if (cfg.rows.length > 0) {
         contactEmail = cfg.rows[0].email || undefined
         contactPhone = cfg.rows[0].telefono || undefined
+        contactName = cfg.rows[0].nombre_empresa || undefined
       }
     } catch (e) {
       console.warn('⚠️ No se pudo obtener empresa_config para email del huésped:', e)
@@ -390,7 +394,7 @@ export async function sendGuestConfirmationEmail(reservation: DirectReservation,
       reservation,
       property,
       publicFormUrl,
-      { email: contactEmail, phone: contactPhone }
+      { email: contactEmail, phone: contactPhone, name: contactName }
     );
     
     const mailOptions = {
