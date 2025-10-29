@@ -20,7 +20,12 @@ const transporter = nodemailer.createTransport({
 // PLANTILLAS DE EMAIL
 // =====================================================
 
-export function generateGuestConfirmationEmail(reservation: DirectReservation, property: TenantProperty, publicFormUrl?: string) {
+export function generateGuestConfirmationEmail(
+  reservation: DirectReservation,
+  property: TenantProperty,
+  publicFormUrl?: string,
+  contact?: { email?: string; phone?: string }
+) {
   const checkInDate = new Date(reservation.check_in_date).toLocaleDateString('es-ES', {
     year: 'numeric',
     month: 'long',
@@ -35,6 +40,9 @@ export function generateGuestConfirmationEmail(reservation: DirectReservation, p
   
   // URL del formulario público del tenant
   const formUrl = publicFormUrl || `${process.env.NEXT_PUBLIC_APP_URL || 'https://admin.delfincheckin.com'}/api/public/form-redirect/${reservation.tenant_id}`;
+
+  const contactEmail = contact?.email || 'booking@delfincheckin.com'
+  const contactPhone = contact?.phone || ''
 
   return {
     subject: `✅ Reserva confirmada - ${reservation.reservation_code}`,
@@ -130,8 +138,8 @@ export function generateGuestConfirmationEmail(reservation: DirectReservation, p
             <div class="reservation-details">
               <h3>📞 Información de contacto</h3>
               <p>Si tienes alguna pregunta sobre tu reserva, puedes contactarnos en:</p>
-              <p><strong>Email:</strong> booking@delfincheckin.com</p>
-              <p><strong>Teléfono:</strong> ${reservation.guest_phone || 'No proporcionado'}</p>
+              <p><strong>Email:</strong> ${contactEmail}</p>
+              <p><strong>Teléfono:</strong> ${contactPhone || 'No proporcionado'}</p>
             </div>
             
             <p>¡Esperamos que disfrutes de tu estancia!</p>
@@ -167,6 +175,10 @@ export function generateGuestConfirmationEmail(reservation: DirectReservation, p
       ${formUrl}
       
       Este formulario es obligatorio por ley y los datos se envían al Gobierno de España (Ministerio del Interior).
+      
+      Información de contacto del establecimiento:
+      - Email: ${contactEmail}
+      - Teléfono: ${contactPhone || 'No proporcionado'}
       
       ¡Esperamos que disfrutes de tu estancia!
       
@@ -353,7 +365,33 @@ export function generatePropertyOwnerNotificationEmail(reservation: DirectReserv
 
 export async function sendGuestConfirmationEmail(reservation: DirectReservation, property: TenantProperty, publicFormUrl?: string) {
   try {
-    const emailContent = generateGuestConfirmationEmail(reservation, property, publicFormUrl);
+    // Obtener datos de contacto personalizados del tenant (empresa_config)
+    let contactEmail: string | undefined = undefined
+    let contactPhone: string | undefined = undefined
+
+    try {
+      const { sql } = await import('@vercel/postgres')
+      const cfg = await sql`
+        SELECT email, telefono 
+        FROM empresa_config 
+        WHERE tenant_id = ${reservation.tenant_id}
+        ORDER BY updated_at DESC NULLS LAST, created_at DESC NULLS LAST
+        LIMIT 1
+      `
+      if (cfg.rows.length > 0) {
+        contactEmail = cfg.rows[0].email || undefined
+        contactPhone = cfg.rows[0].telefono || undefined
+      }
+    } catch (e) {
+      console.warn('⚠️ No se pudo obtener empresa_config para email del huésped:', e)
+    }
+
+    const emailContent = generateGuestConfirmationEmail(
+      reservation,
+      property,
+      publicFormUrl,
+      { email: contactEmail, phone: contactPhone }
+    );
     
     const mailOptions = {
       // Email específico para reservas directas (book.delfincheckin.com)
