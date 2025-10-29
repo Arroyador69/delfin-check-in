@@ -41,7 +41,7 @@ export async function GET(req: NextRequest) {
         FROM tenant_properties tp
         LEFT JOIN property_room_map prm
           ON prm.tenant_id = tp.tenant_id::uuid AND prm.property_id = tp.id
-        WHERE tp.tenant_id = ${tenantId}
+        WHERE tp.tenant_id = ${tenantId}::uuid
       ),
       placeholders AS (
         SELECT 
