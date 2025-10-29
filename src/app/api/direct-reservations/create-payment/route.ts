@@ -149,8 +149,10 @@ export async function POST(req: NextRequest) {
       amount: paymentAmount,
       amountInEuros: commission.total_amount,
       currency: 'eur',
-      reservationId,
-      guestEmail: guest_email
+      reservationCode,
+      guestEmail: guest_email,
+      nights,
+      guests
     });
 
     // Crear Payment Intent en Stripe (modo test)
