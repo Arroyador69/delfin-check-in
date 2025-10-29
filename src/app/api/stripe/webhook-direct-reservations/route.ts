@@ -19,30 +19,64 @@ export async function POST(req: NextRequest) {
     const body = await req.text();
     const signature = req.headers.get('stripe-signature')!;
 
+    if (!webhookSecret) {
+      console.error('❌ STRIPE_WEBHOOK_DIRECT_RESERVATIONS_SECRET no configurado');
+      return NextResponse.json({ error: 'Webhook secret not configured' }, { status: 500 });
+    }
+
+    if (!signature) {
+      console.error('❌ Firma de webhook no presente en headers');
+      return NextResponse.json({ error: 'Missing stripe-signature header' }, { status: 400 });
+    }
+
     let event: Stripe.Event;
 
     try {
       event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
-    } catch (err) {
-      console.error('❌ Error verificando webhook:', err);
+      console.log('✅ Webhook verificado correctamente:', event.type);
+    } catch (err: any) {
+      console.error('❌ Error verificando webhook de reservas directas:', {
+        error: err.message,
+        hasSignature: !!signature,
+        signatureLength: signature?.length,
+        bodyLength: body.length,
+        webhookSecretConfigured: !!webhookSecret
+      });
       return NextResponse.json({ error: 'Webhook signature verification failed' }, { status: 400 });
     }
 
-    console.log('🔔 Webhook recibido:', event.type);
+    console.log('🔔 [WEBHOOK RESERVAS DIRECTAS] Evento recibido:', {
+      type: event.type,
+      id: event.id,
+      created: event.created
+    });
 
     // Manejar eventos de Payment Intent
     if (event.type === 'payment_intent.succeeded') {
       const paymentIntent = event.data.object as Stripe.PaymentIntent;
       
-      console.log('✅ Pago exitoso:', {
+      console.log('✅ [WEBHOOK RESERVAS] Pago exitoso recibido:', {
         paymentIntentId: paymentIntent.id,
         amount: paymentIntent.amount,
-        metadata: paymentIntent.metadata
+        amountInEuros: (paymentIntent.amount / 100).toFixed(2),
+        metadata: paymentIntent.metadata,
+        hasReservationId: !!paymentIntent.metadata?.reservation_id
       });
 
+      // Verificar que tenga reservation_id en metadata
+      if (!paymentIntent.metadata?.reservation_id) {
+        console.warn('⚠️ [WEBHOOK RESERVAS] Payment Intent sin reservation_id en metadata:', {
+          paymentIntentId: paymentIntent.id,
+          metadata: paymentIntent.metadata,
+          source: paymentIntent.metadata?.source
+        });
+        // Continuar para procesar aunque no tenga reservation_id, pero loguear
+      }
+
       // Actualizar reserva como pagada
-      if (paymentIntent.metadata.reservation_id) {
+      if (paymentIntent.metadata?.reservation_id) {
         const reservationId = parseInt(paymentIntent.metadata.reservation_id);
+        console.log('🔍 [WEBHOOK RESERVAS] Procesando reserva:', reservationId);
         
         const updateResult = await sql`
           UPDATE direct_reservations 
@@ -55,6 +89,35 @@ export async function POST(req: NextRequest) {
           WHERE id = ${reservationId} AND stripe_payment_intent_id = ${paymentIntent.id}
           RETURNING *
         `;
+
+        console.log('📝 [WEBHOOK RESERVAS] Reserva actualizada:', {
+          reservationId,
+          rowsUpdated: updateResult.rows.length,
+          wasUpdated: updateResult.rows.length > 0
+        });
+
+        if (updateResult.rows.length === 0) {
+          console.warn('⚠️ [WEBHOOK RESERVAS] No se encontró reserva para actualizar:', {
+            reservationId,
+            paymentIntentId: paymentIntent.id,
+            expectedPaymentIntentId: paymentIntent.id
+          });
+          // Intentar buscar por reservation_id sin verificar payment_intent_id
+          const fallbackCheck = await sql`
+            SELECT id, stripe_payment_intent_id, payment_status, reservation_code
+            FROM direct_reservations 
+            WHERE id = ${reservationId}
+          `;
+          if (fallbackCheck.rows.length > 0) {
+            console.log('🔍 [WEBHOOK RESERVAS] Reserva encontrada pero payment_intent_id no coincide:', {
+              reservationId,
+              storedPaymentIntentId: fallbackCheck.rows[0].stripe_payment_intent_id,
+              receivedPaymentIntentId: paymentIntent.id
+            });
+          } else {
+            console.error('❌ [WEBHOOK RESERVAS] Reserva no encontrada en base de datos:', reservationId);
+          }
+        }
 
         // Crear transacción de comisión
         const reservation = await sql`
@@ -82,6 +145,7 @@ export async function POST(req: NextRequest) {
 
         // Enviar emails de notificación al huésped y propietario
         if (updateResult.rows.length > 0) {
+          console.log('📧 [WEBHOOK RESERVAS] Iniciando envío de emails para reserva:', reservationId);
           try {
             // Obtener los datos completos de la reserva y propiedad
             const reservationData = await sql`
@@ -168,23 +232,41 @@ export async function POST(req: NextRequest) {
               const publicFormUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://admin.delfincheckin.com'}/api/public/form-redirect/${reservation.tenant_id}`;
               
               // Enviar emails
+              console.log('📧 [WEBHOOK RESERVAS] Enviando emails...', {
+                reservationCode: reservation.reservation_code,
+                guestEmail: reservation.guest_email,
+                formUrl: publicFormUrl
+              });
+              
               const emailResults = await sendReservationEmails(reservation, property, publicFormUrl);
               
-              console.log('📧 Emails enviados:', {
+              console.log('📧 [WEBHOOK RESERVAS] Resultado envío emails:', {
                 reservationCode: reservation.reservation_code,
                 guestEmail: emailResults.guestEmail.success ? '✅ Enviado' : '❌ Error',
                 ownerEmail: emailResults.ownerEmail.success ? '✅ Enviado' : '❌ Error',
                 guestError: emailResults.guestEmail.error,
-                ownerError: emailResults.ownerEmail.error
+                ownerError: emailResults.ownerEmail.error,
+                guestMessageId: emailResults.guestEmail.messageId,
+                ownerMessageId: emailResults.ownerEmail.messageId
               });
+            } else {
+              console.error('❌ [WEBHOOK RESERVAS] No se encontraron datos de reserva después de actualizar:', reservationId);
             }
-          } catch (emailError) {
-            console.error('❌ Error enviando emails:', emailError);
+          } catch (emailError: any) {
+            console.error('❌ [WEBHOOK RESERVAS] Error enviando emails:', {
+              error: emailError.message,
+              stack: emailError.stack,
+              reservationId
+            });
             // No fallar el webhook si los emails fallan, solo loguear el error
           }
+        } else {
+          console.warn('⚠️ [WEBHOOK RESERVAS] Reserva no fue actualizada, no se enviarán emails');
         }
 
-        console.log('✅ Reserva actualizada como pagada:', reservationId);
+        console.log('✅ [WEBHOOK RESERVAS] Procesamiento completado para reserva:', reservationId);
+      } else {
+        console.warn('⚠️ [WEBHOOK RESERVAS] Payment Intent recibido sin reservation_id en metadata, ignorando');
       }
     }
 
