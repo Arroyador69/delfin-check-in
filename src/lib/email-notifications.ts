@@ -6,7 +6,7 @@ import nodemailer from 'nodemailer';
 import { DirectReservation, TenantProperty } from '@/lib/direct-reservations-types';
 
 // Configuración del transporter SMTP
-const transporter = nodemailer.createTransporter({
+const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
   port: parseInt(process.env.SMTP_PORT || '587'),
   secure: process.env.SMTP_SECURE === 'true',
@@ -350,14 +350,14 @@ export async function sendPropertyOwnerNotificationEmail(reservation: DirectRese
     // Obtener email del propietario desde la tabla tenants
     const { sql } = await import('@vercel/postgres');
     const tenantResult = await sql`
-      SELECT email_contact FROM tenants WHERE id = ${reservation.tenant_id}
+      SELECT email FROM tenants WHERE id = ${reservation.tenant_id}
     `;
     
     if (tenantResult.rows.length === 0) {
       throw new Error('Tenant no encontrado');
     }
     
-    const ownerEmail = tenantResult.rows[0].email_contact;
+    const ownerEmail = tenantResult.rows[0].email;
     if (!ownerEmail) {
       throw new Error('Email del propietario no configurado');
     }

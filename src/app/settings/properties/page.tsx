@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Plus, Edit, Trash2, Camera, Euro, Users, Bed, Bath, Upload, X, Image as ImageIcon } from 'lucide-react';
+import { Plus, Edit, Trash2, Camera, Euro, Users, Bed, Bath, Upload, X, Image as ImageIcon, Copy, Link as LinkIcon } from 'lucide-react';
 import { TenantProperty, CreatePropertyRequest } from '@/lib/direct-reservations-types';
 
 export default function PropertiesManagement() {
@@ -10,6 +10,8 @@ export default function PropertiesManagement() {
   const [showForm, setShowForm] = useState(false);
   const [editingProperty, setEditingProperty] = useState<TenantProperty | null>(null);
   const [uploadingImages, setUploadingImages] = useState(false);
+  const [tenantId, setTenantId] = useState<string>('');
+  const [copiedLink, setCopiedLink] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState<CreatePropertyRequest>({
     property_name: '',
@@ -27,19 +29,43 @@ export default function PropertiesManagement() {
     availability_rules: {}
   });
 
+  // Obtener tenant_id desde el token
+  useEffect(() => {
+    const getTenantId = async () => {
+      try {
+        const response = await fetch('/api/tenants/me');
+        if (response.ok) {
+          const data = await response.json();
+          if (data?.tenant?.id) {
+            setTenantId(data.tenant.id);
+          } else {
+            // Fallback: el middleware inyecta el tenant_id por defecto
+            setTenantId('870e589f-d313-4a5a-901f-f25fd4e7240a');
+          }
+        } else {
+          // Fallback: el middleware inyecta el tenant_id por defecto
+          setTenantId('870e589f-d313-4a5a-901f-f25fd4e7240a');
+        }
+      } catch (error) {
+        console.error('Error obteniendo tenant ID:', error);
+        // Fallback: el middleware inyecta el tenant_id por defecto
+        setTenantId('870e589f-d313-4a5a-901f-f25fd4e7240a');
+      }
+    };
+    getTenantId();
+  }, []);
+
   // Cargar propiedades al montar el componente
   useEffect(() => {
-    loadProperties();
-  }, []);
+    if (tenantId) {
+      loadProperties();
+    }
+  }, [tenantId]);
 
   const loadProperties = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/tenant/properties', {
-        headers: {
-          'x-tenant-id': 'default' // TODO: Obtener del contexto de usuario
-        }
-      });
+      const response = await fetch('/api/tenant/properties');
       
       const data = await response.json();
       if (data.success) {
@@ -50,6 +76,25 @@ export default function PropertiesManagement() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Función para copiar al portapapeles
+  const copyToClipboard = async (text: string, propertyId: number) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedLink(propertyId);
+      setTimeout(() => setCopiedLink(null), 2000);
+    } catch (error) {
+      console.error('Error copiando al portapapeles:', error);
+      alert('Error al copiar el enlace');
+    }
+  };
+
+  // Generar enlace de reserva directa
+  const getBookingLink = (propertyId: number) => {
+    if (!tenantId) return '';
+    const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://admin.delfincheckin.com';
+    return `${baseUrl}/book/${tenantId}/${propertyId}`;
   };
 
   // Función para convertir imágenes a base64
@@ -123,8 +168,7 @@ export default function PropertiesManagement() {
       const response = await fetch(url, {
         method,
         headers: {
-          'Content-Type': 'application/json',
-          'x-tenant-id': 'default'
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify(formData)
       });
@@ -173,10 +217,7 @@ export default function PropertiesManagement() {
     
     try {
       const response = await fetch(`/api/tenant/properties?id=${propertyId}`, {
-        method: 'DELETE',
-        headers: {
-          'x-tenant-id': 'default'
-        }
+        method: 'DELETE'
       });
       
       const data = await response.json();
@@ -341,7 +382,7 @@ export default function PropertiesManagement() {
                     </div>
                   </div>
                   
-                  <div className="mt-2">
+                  <div className="mt-2 mb-3">
                     <span className={`px-3 py-1 rounded-full text-xs font-medium ${
                       property.is_active 
                         ? 'bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 border border-green-200' 
@@ -350,6 +391,39 @@ export default function PropertiesManagement() {
                       {property.is_active ? '✅ Activa' : '❌ Inactiva'}
                     </span>
                   </div>
+
+                  {/* Enlace de reserva directa */}
+                  {property.is_active && tenantId && (
+                    <div className="mt-4 pt-4 border-t border-gray-200">
+                      <label className="block text-xs font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                        <LinkIcon className="w-4 h-4 text-blue-600" />
+                        Enlace de Reserva Directa
+                      </label>
+                      <div className="flex items-center gap-2 bg-gray-50 rounded-lg p-2 border border-gray-200">
+                        <input
+                          type="text"
+                          readOnly
+                          value={getBookingLink(property.id)}
+                          className="flex-1 text-xs font-mono text-gray-700 bg-transparent border-none outline-none"
+                          onClick={(e) => (e.target as HTMLInputElement).select()}
+                        />
+                        <button
+                          onClick={() => copyToClipboard(getBookingLink(property.id), property.id)}
+                          className={`p-2 rounded-lg transition-all duration-200 ${
+                            copiedLink === property.id
+                              ? 'bg-green-100 text-green-700'
+                              : 'bg-blue-50 text-blue-600 hover:bg-blue-100'
+                          }`}
+                          title="Copiar enlace"
+                        >
+                          <Copy className="w-4 h-4" />
+                        </button>
+                      </div>
+                      {copiedLink === property.id && (
+                        <p className="text-xs text-green-600 mt-1 font-medium">✓ Enlace copiado</p>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             ))}

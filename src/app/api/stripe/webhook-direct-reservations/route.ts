@@ -5,6 +5,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { sql } from '@vercel/postgres';
+import { sendReservationEmails } from '@/lib/email-notifications';
+import { DirectReservation, TenantProperty } from '@/lib/direct-reservations-types';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2024-06-20',
@@ -78,9 +80,105 @@ export async function POST(req: NextRequest) {
           `;
         }
 
-        // TODO: Implementar envío de emails de notificación
+        // Enviar emails de notificación al huésped y propietario
         if (updateResult.rows.length > 0) {
-          console.log('📧 Emails de notificación pendientes de implementar');
+          try {
+            // Obtener los datos completos de la reserva y propiedad
+            const reservationData = await sql`
+              SELECT 
+                dr.*,
+                tp.property_name,
+                tp.description,
+                tp.photos,
+                tp.max_guests,
+                tp.bedrooms,
+                tp.bathrooms,
+                tp.amenities,
+                t.email as tenant_email,
+                t.name as tenant_name
+              FROM direct_reservations dr
+              JOIN tenant_properties tp ON dr.property_id = tp.id
+              JOIN tenants t ON dr.tenant_id = t.id
+              WHERE dr.id = ${reservationId}
+            `;
+
+            if (reservationData.rows.length > 0) {
+              const row = reservationData.rows[0];
+              
+              // Formatear la reserva para el tipo DirectReservation
+              const reservation: DirectReservation = {
+                id: row.id,
+                tenant_id: row.tenant_id,
+                property_id: row.property_id,
+                reservation_code: row.reservation_code,
+                guest_name: row.guest_name,
+                guest_email: row.guest_email,
+                guest_phone: row.guest_phone,
+                guest_document_type: row.guest_document_type,
+                guest_document_number: row.guest_document_number,
+                guest_nationality: row.guest_nationality,
+                check_in_date: row.check_in_date,
+                check_out_date: row.check_out_date,
+                nights: row.nights,
+                guests: row.guests,
+                base_price: parseFloat(row.base_price),
+                cleaning_fee: parseFloat(row.cleaning_fee || '0'),
+                security_deposit: parseFloat(row.security_deposit || '0'),
+                subtotal: parseFloat(row.subtotal),
+                delfin_commission_rate: parseFloat(row.delfin_commission_rate),
+                delfin_commission_amount: parseFloat(row.delfin_commission_amount),
+                stripe_fee_amount: parseFloat(row.stripe_fee_amount || '0'),
+                property_owner_amount: parseFloat(row.property_owner_amount),
+                total_amount: parseFloat(row.total_amount),
+                stripe_payment_intent_id: row.stripe_payment_intent_id,
+                stripe_charge_id: row.stripe_charge_id,
+                payment_status: row.payment_status,
+                payment_method: row.payment_method,
+                reservation_status: row.reservation_status,
+                special_requests: row.special_requests,
+                internal_notes: row.internal_notes,
+                created_at: row.created_at.toISOString(),
+                updated_at: row.updated_at?.toISOString() || row.created_at.toISOString(),
+                confirmed_at: row.confirmed_at?.toISOString()
+              };
+
+              // Formatear la propiedad para el tipo TenantProperty
+              const property: TenantProperty = {
+                id: row.property_id,
+                tenant_id: row.tenant_id,
+                property_name: row.property_name,
+                description: row.description,
+                photos: row.photos || [],
+                max_guests: row.max_guests,
+                bedrooms: row.bedrooms,
+                bathrooms: row.bathrooms,
+                amenities: row.amenities || [],
+                base_price: parseFloat(row.base_price),
+                cleaning_fee: parseFloat(row.cleaning_fee || '0'),
+                security_deposit: parseFloat(row.security_deposit || '0'),
+                minimum_nights: row.minimum_nights,
+                maximum_nights: row.maximum_nights,
+                availability_rules: {},
+                is_active: true,
+                created_at: '',
+                updated_at: ''
+              };
+
+              // Enviar emails
+              const emailResults = await sendReservationEmails(reservation, property);
+              
+              console.log('📧 Emails enviados:', {
+                reservationCode: reservation.reservation_code,
+                guestEmail: emailResults.guestEmail.success ? '✅ Enviado' : '❌ Error',
+                ownerEmail: emailResults.ownerEmail.success ? '✅ Enviado' : '❌ Error',
+                guestError: emailResults.guestEmail.error,
+                ownerError: emailResults.ownerEmail.error
+              });
+            }
+          } catch (emailError) {
+            console.error('❌ Error enviando emails:', emailError);
+            // No fallar el webhook si los emails fallan, solo loguear el error
+          }
         }
 
         console.log('✅ Reserva actualizada como pagada:', reservationId);
