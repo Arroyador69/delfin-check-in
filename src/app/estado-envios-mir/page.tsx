@@ -416,10 +416,17 @@ export default function EstadoEnviosMIRPage() {
 
         {/* Tabs de comunicaciones */}
         {estadoEnvio && (
-          <div className="bg-white rounded-xl shadow-xl border border-blue-200">
-            <div className="p-6">
-              <Tabs defaultValue="pendientes" className="space-y-4">
-                <TabsList className="grid w-full grid-cols-4">
+          <div className="bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden">
+            {/* Cabecera fija */}
+            <div className="bg-white px-6 py-4 border-b border-gray-200">
+              <h2 className="text-lg font-semibold text-gray-900">Estado Envíos MIR</h2>
+              <p className="text-sm text-gray-600 mt-1">{estadoEnvio.estadisticas.total} comunicaciones encontradas</p>
+            </div>
+
+            {/* Tabs */}
+            <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
+              <Tabs defaultValue="pendientes" className="space-y-0">
+                <TabsList className="grid w-full grid-cols-4 bg-white">
                   <TabsTrigger value="pendientes" className="flex items-center space-x-2">
                     <Clock className="w-4 h-4" />
                     <span>Pendientes ({estadoEnvio.estadisticas.pendientes})</span>
@@ -439,16 +446,9 @@ export default function EstadoEnviosMIRPage() {
                 </TabsList>
               </Tabs>
             </div>
-            
-            {/* Contenedor con scroll */}
-            <div 
-              style={{ 
-                maxHeight: 'calc(100vh - 450px)',
-                overflowY: 'auto',
-                overflowX: 'auto'
-              }}
-              className="border-t border-gray-200"
-            >
+
+            {/* Contenedor con scroll independiente */}
+            <div className="overflow-auto" style={{ maxHeight: 'calc(100vh - 400px)' }}>
               <Tabs defaultValue="pendientes" className="w-full">
                 <TabsContent value="pendientes" className="m-0">
                   <div className="p-6">
