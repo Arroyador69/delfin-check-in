@@ -29,18 +29,55 @@ export async function GET(req: NextRequest) {
     
     console.log('🏠 Obteniendo propiedades para tenant:', tenantId);
     
+    // Unir propiedades existentes con placeholders derivados de Room sin mapping
     const result = await sql`
-      SELECT 
-        id, tenant_id, property_name, description, photos, max_guests,
-        bedrooms, bathrooms, amenities, base_price, cleaning_fee,
-        security_deposit, minimum_nights, maximum_nights,
-        availability_rules, is_active, created_at, updated_at
-      FROM tenant_properties 
-      WHERE tenant_id = ${tenantId}
+      WITH mapped AS (
+        SELECT 
+          tp.id, tp.tenant_id, tp.property_name, tp.description, tp.photos, tp.max_guests,
+          tp.bedrooms, tp.bathrooms, tp.amenities, tp.base_price, tp.cleaning_fee,
+          tp.security_deposit, tp.minimum_nights, tp.maximum_nights,
+          tp.availability_rules, tp.is_active, tp.created_at, tp.updated_at,
+          prm.room_id, FALSE AS is_placeholder
+        FROM tenant_properties tp
+        LEFT JOIN property_room_map prm
+          ON prm.tenant_id = tp.tenant_id::uuid AND prm.property_id = tp.id
+        WHERE tp.tenant_id = ${tenantId}
+      ),
+      placeholders AS (
+        SELECT 
+          NULL::int AS id,
+          t.id       AS tenant_id,
+          r.name     AS property_name,
+          NULL::text AS description,
+          '[]'::jsonb AS photos,
+          2 AS max_guests,
+          1 AS bedrooms,
+          1 AS bathrooms,
+          '[]'::jsonb AS amenities,
+          50.00::decimal(10,2) AS base_price,
+          0.00::decimal(10,2) AS cleaning_fee,
+          0.00::decimal(10,2) AS security_deposit,
+          1 AS minimum_nights,
+          30 AS maximum_nights,
+          '{}'::jsonb AS availability_rules,
+          TRUE AS is_active,
+          NOW() AS created_at,
+          NOW() AS updated_at,
+          r.id AS room_id,
+          TRUE AS is_placeholder
+        FROM "Room" r
+        JOIN tenants t ON t.id::text = r."lodgingId"
+        LEFT JOIN property_room_map prm
+          ON prm.tenant_id = t.id::uuid AND prm.room_id = r.id
+        WHERE t.id = ${tenantId}::uuid AND prm.room_id IS NULL
+      )
+      SELECT * FROM mapped
+      UNION ALL
+      SELECT * FROM placeholders
       ORDER BY created_at DESC
     `;
-    
-    const properties: TenantProperty[] = result.rows.map(row => ({
+
+    const properties: any[] = result.rows.map(row => ({
       id: row.id,
       tenant_id: row.tenant_id,
       property_name: row.property_name,
@@ -58,7 +95,9 @@ export async function GET(req: NextRequest) {
       availability_rules: row.availability_rules || {},
       is_active: row.is_active,
       created_at: row.created_at,
-      updated_at: row.updated_at
+      updated_at: row.updated_at,
+      room_id: row.room_id || null,
+      is_placeholder: row.is_placeholder || false
     }));
     
     console.log(`✅ Encontradas ${properties.length} propiedades`);
@@ -100,12 +139,19 @@ export async function POST(req: NextRequest) {
       );
     }
     
-    const data: CreatePropertyRequest = await req.json();
+    const data: CreatePropertyRequest & { room_id?: number } = await req.json();
     
     console.log('🏠 Creando nueva propiedad para tenant:', tenantId);
     console.log('📋 Datos de la propiedad:', data);
     
-    // Validaciones básicas
+    // Validaciones básicas: obligamos a indicar el slot (room_id)
+    if (!data.room_id) {
+      return NextResponse.json(
+        { success: false, error: 'room_id es obligatorio (slot a completar)' },
+        { status: 400 }
+      );
+    }
+
     if (!data.property_name || !data.base_price) {
       return NextResponse.json(
         { success: false, error: 'Nombre y precio base son obligatorios' },
@@ -120,40 +166,91 @@ export async function POST(req: NextRequest) {
       );
     }
     
-    // Insertar propiedad
-    const result = await sql`
-      INSERT INTO tenant_properties (
-        tenant_id, property_name, description, photos, max_guests,
-        bedrooms, bathrooms, amenities, base_price, cleaning_fee,
-        security_deposit, minimum_nights, maximum_nights, availability_rules
-      ) VALUES (
-        ${tenantId},
-        ${data.property_name},
-        ${data.description || ''},
-        ${JSON.stringify(data.photos || [])},
-        ${data.max_guests || 2},
-        ${data.bedrooms || 1},
-        ${data.bathrooms || 1},
-        ${JSON.stringify(data.amenities || [])},
-        ${data.base_price},
-        ${data.cleaning_fee || 0},
-        ${data.security_deposit || 0},
-        ${data.minimum_nights || 1},
-        ${data.maximum_nights || 30},
-        ${JSON.stringify(data.availability_rules || {})}
-      )
-      RETURNING id, created_at
+    // Validar límite por plan (conteo de Rooms activas vs plan)
+    const planRes = await sql`
+      SELECT plan_id FROM tenants WHERE id = ${tenantId}
     `;
-    
-    const newProperty = result.rows[0];
-    
-    console.log('✅ Propiedad creada con ID:', newProperty.id);
-    
+    const planId = planRes.rows[0]?.plan_id || 'basic';
+    const maxByPlan = planId === 'enterprise' ? 9999 : planId === 'pro' ? 6 : 1;
+    const roomsCountRes = await sql`
+      SELECT COUNT(*) AS c FROM "Room" r WHERE r."lodgingId" = ${tenantId}::text
+    `;
+    const roomsCount = parseInt(roomsCountRes.rows[0].c || '0');
+    if (roomsCount > maxByPlan) {
+      return NextResponse.json(
+        { success: false, error: `Tu plan (${planId}) permite hasta ${maxByPlan} unidades` },
+        { status: 403 }
+      );
+    }
+
+    // Comprobar si el room_id ya está mapeado a una propiedad
+    const mapping = await sql`
+      SELECT prm.property_id FROM property_room_map prm
+      WHERE prm.tenant_id = ${tenantId}::uuid AND prm.room_id = ${data.room_id}
+      LIMIT 1
+    `;
+
+    let propertyId: number;
+    if (mapping.rows.length > 0) {
+      // Actualizar la propiedad existente (upsert por slot)
+      propertyId = mapping.rows[0].property_id;
+      await sql`
+        UPDATE tenant_properties SET
+          property_name = ${data.property_name},
+          description   = ${data.description || ''},
+          photos        = ${JSON.stringify(data.photos || [])},
+          max_guests    = ${data.max_guests || 2},
+          bedrooms      = ${data.bedrooms || 1},
+          bathrooms     = ${data.bathrooms || 1},
+          amenities     = ${JSON.stringify(data.amenities || [])},
+          base_price    = ${data.base_price},
+          cleaning_fee  = ${data.cleaning_fee || 0},
+          security_deposit = ${data.security_deposit || 0},
+          minimum_nights = ${data.minimum_nights || 1},
+          maximum_nights = ${data.maximum_nights || 30},
+          availability_rules = ${JSON.stringify(data.availability_rules || {})},
+          updated_at    = NOW()
+        WHERE id = ${propertyId} AND tenant_id = ${tenantId}
+      `;
+    } else {
+      // Crear nueva propiedad y mapping para ese room_id
+      const created = await sql`
+        INSERT INTO tenant_properties (
+          tenant_id, property_name, description, photos, max_guests,
+          bedrooms, bathrooms, amenities, base_price, cleaning_fee,
+          security_deposit, minimum_nights, maximum_nights, availability_rules
+        ) VALUES (
+          ${tenantId},
+          ${data.property_name},
+          ${data.description || ''},
+          ${JSON.stringify(data.photos || [])},
+          ${data.max_guests || 2},
+          ${data.bedrooms || 1},
+          ${data.bathrooms || 1},
+          ${JSON.stringify(data.amenities || [])},
+          ${data.base_price},
+          ${data.cleaning_fee || 0},
+          ${data.security_deposit || 0},
+          ${data.minimum_nights || 1},
+          ${data.maximum_nights || 30},
+          ${JSON.stringify(data.availability_rules || {})}
+        )
+        RETURNING id, created_at
+      `;
+      propertyId = created.rows[0].id;
+      await sql`
+        INSERT INTO property_room_map (tenant_id, property_id, room_id, created_at, updated_at)
+        VALUES (${tenantId}::uuid, ${propertyId}, ${data.room_id}, NOW(), NOW())
+        ON CONFLICT (tenant_id, property_id) DO UPDATE SET room_id = EXCLUDED.room_id, updated_at = NOW()
+      `;
+    }
+
+    console.log('✅ Propiedad asignada al slot (room_id):', data.room_id, '-> property_id:', propertyId);
+
     return NextResponse.json({
       success: true,
-      property_id: newProperty.id,
-      message: 'Propiedad creada correctamente',
-      created_at: newProperty.created_at
+      property_id: propertyId,
+      message: 'Propiedad guardada correctamente (slot completado)'
     });
     
   } catch (error) {
