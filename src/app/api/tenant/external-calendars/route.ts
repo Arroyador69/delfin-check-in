@@ -104,16 +104,16 @@ export async function POST(req: NextRequest) {
         }, { status: 403 });
       }
 
-      // Verificar límite de calendarios por propiedad
+      // Verificar límite de calendarios por propiedad (máximo 5 calendarios externos adicionales)
       const calendarCount = await sql`
         SELECT COUNT(*) as count FROM external_calendars
         WHERE property_id = ${property_id} AND tenant_id = ${tenantId}
       `;
 
-      if (parseInt(calendarCount.rows[0].count) >= 3) { // Máximo 3 calendarios por propiedad
+      if (parseInt(calendarCount.rows[0].count) >= 5) { // Máximo 5 calendarios externos por propiedad
         return NextResponse.json({
           success: false,
-          error: 'Límite de calendarios por propiedad alcanzado (máximo 3)'
+          error: 'Límite de calendarios externos por propiedad alcanzado (máximo 5)'
         }, { status: 403 });
       }
     }
@@ -242,3 +242,4 @@ export async function DELETE(req: NextRequest) {
     );
   }
 }
+
