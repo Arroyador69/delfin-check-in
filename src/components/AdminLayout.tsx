@@ -2,16 +2,13 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import AdminNavigation from './AdminNavigation'
 
 /**
- * 🎨 LAYOUT ADMINISTRATIVO CON NAVEGACIÓN
+ * 🎨 LAYOUT ADMINISTRATIVO
  * 
  * Layout principal para páginas administrativas
  * - Verifica autenticación JWT
  * - Maneja refresh de tokens
- * - Proporciona navegación lateral
- * - Botón de logout
  */
 
 interface AdminLayoutProps {
@@ -119,17 +116,9 @@ export default function AdminLayout({ children, showHeader = true }: AdminLayout
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="flex">
-        {/* Sidebar */}
-        <AdminNavigation onLogout={handleLogout} />
-        
-        {/* Main content */}
-        <div className="flex-1 flex flex-col lg:pl-0">
-          <main className="flex-1">
-            {children}
-          </main>
-        </div>
-      </div>
+      <main className="flex-1">
+        {children}
+      </main>
     </div>
   )
 }

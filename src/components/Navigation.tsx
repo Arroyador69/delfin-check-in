@@ -15,6 +15,7 @@ export default function Navigation() {
   const navigation = [
     { name: 'Dashboard', href: '/', icon: Home },
     { name: 'Reservas', href: '/reservations', icon: Calendar },
+    { name: 'Reservas Directas', href: '/admin/direct-reservations', icon: Calendar },
     { name: 'Registros de formularios', href: '/guest-registrations-dashboard', icon: Users },
     { name: 'Facturas', href: '/facturas', icon: Receipt },
     { name: 'Estado Envíos MIR', href: '/admin/mir-comunicaciones', icon: TrendingUp },
