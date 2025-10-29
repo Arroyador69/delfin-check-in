@@ -15,11 +15,14 @@ export async function GET(req: NextRequest) {
   try {
     // Obtener tenant_id del header (inyectado por middleware) o del token
     let tenantId = req.headers.get('x-tenant-id');
-    if (!tenantId) {
+    
+    // Validar que no sea 'default' o string vacío
+    if (!tenantId || tenantId === 'default' || tenantId.trim() === '') {
       tenantId = await getTenantId(req);
     }
     
-    if (!tenantId) {
+    if (!tenantId || tenantId === 'default' || tenantId.trim() === '') {
+      console.error('❌ No se pudo identificar el tenant válido');
       return NextResponse.json(
         { success: false, error: 'No se pudo identificar el tenant' },
         { status: 401 }
@@ -85,11 +88,14 @@ export async function POST(req: NextRequest) {
   try {
     // Obtener tenant_id del header (inyectado por middleware) o del token
     let tenantId = req.headers.get('x-tenant-id');
-    if (!tenantId) {
+    
+    // Validar que no sea 'default' o string vacío
+    if (!tenantId || tenantId === 'default' || tenantId.trim() === '') {
       tenantId = await getTenantId(req);
     }
     
-    if (!tenantId) {
+    if (!tenantId || tenantId === 'default' || tenantId.trim() === '') {
+      console.error('❌ No se pudo identificar el tenant válido');
       return NextResponse.json(
         { success: false, error: 'No se pudo identificar el tenant' },
         { status: 401 }
@@ -169,11 +175,14 @@ export async function PUT(req: NextRequest) {
   try {
     // Obtener tenant_id del header (inyectado por middleware) o del token
     let tenantId = req.headers.get('x-tenant-id');
-    if (!tenantId) {
+    
+    // Validar que no sea 'default' o string vacío
+    if (!tenantId || tenantId === 'default' || tenantId.trim() === '') {
       tenantId = await getTenantId(req);
     }
     
-    if (!tenantId) {
+    if (!tenantId || tenantId === 'default' || tenantId.trim() === '') {
+      console.error('❌ No se pudo identificar el tenant válido');
       return NextResponse.json(
         { success: false, error: 'No se pudo identificar el tenant' },
         { status: 401 }
@@ -327,11 +336,14 @@ export async function DELETE(req: NextRequest) {
   try {
     // Obtener tenant_id del header (inyectado por middleware) o del token
     let tenantId = req.headers.get('x-tenant-id');
-    if (!tenantId) {
+    
+    // Validar que no sea 'default' o string vacío
+    if (!tenantId || tenantId === 'default' || tenantId.trim() === '') {
       tenantId = await getTenantId(req);
     }
     
-    if (!tenantId) {
+    if (!tenantId || tenantId === 'default' || tenantId.trim() === '') {
+      console.error('❌ No se pudo identificar el tenant válido');
       return NextResponse.json(
         { success: false, error: 'No se pudo identificar el tenant' },
         { status: 401 }
