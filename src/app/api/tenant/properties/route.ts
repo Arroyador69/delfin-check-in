@@ -13,12 +13,10 @@ import { getTenantId } from '@/lib/tenant';
 
 export async function GET(req: NextRequest) {
   try {
-    // Obtener tenant_id del header (inyectado por middleware) o del token
-    let tenantId = req.headers.get('x-tenant-id');
-    
-    // Validar que no sea 'default' o string vacío
-    if (!tenantId || tenantId === 'default' || tenantId.trim() === '') {
-      tenantId = await getTenantId(req);
+    // Priorizar tenant_id desde JWT; si no está, caer al header (middleware)
+    let tenantId = await getTenantId(req);
+    if (!tenantId || tenantId.trim() === '') {
+      tenantId = req.headers.get('x-tenant-id');
     }
     
     if (!tenantId || tenantId === 'default' || tenantId.trim() === '') {

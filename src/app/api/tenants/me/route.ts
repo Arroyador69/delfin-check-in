@@ -1,12 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
+import { getTenantId } from '@/lib/tenant';
 
 export async function GET(req: NextRequest) {
   try {
-    const headerTenantId = req.headers.get('x-tenant-id') || '';
-    const { searchParams } = new URL(req.url);
-    const queryTenantId = searchParams.get('tenantId') || '';
-    const tenantId = headerTenantId || queryTenantId;
+    // Priorizar tenant desde JWT
+    let tenantId = await getTenantId(req);
+    if (!tenantId) {
+      const headerTenantId = req.headers.get('x-tenant-id') || '';
+      const { searchParams } = new URL(req.url);
+      const queryTenantId = searchParams.get('tenantId') || '';
+      tenantId = headerTenantId || queryTenantId;
+    }
 
     if (!tenantId) {
       return NextResponse.json({ error: 'No tenant in context' }, { status: 401 });
