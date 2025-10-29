@@ -73,68 +73,114 @@ export async function POST(req: NextRequest) {
         hasReservationId: !!paymentIntent.metadata?.reservation_id
       });
 
-      // Verificar que tenga reservation_id en metadata (CRÍTICO para reservas directas)
-      if (!paymentIntent.metadata?.reservation_id) {
-        console.warn('⚠️ [WEBHOOK RESERVAS] Payment Intent sin reservation_id en metadata:', {
+      // Verificar que sea una reserva directa (CRÍTICO)
+      if (paymentIntent.metadata?.source !== 'direct_reservation' || !paymentIntent.metadata?.reservation_code) {
+        console.warn('⚠️ [WEBHOOK RESERVAS] Payment Intent NO es de una reserva directa:', {
           paymentIntentId: paymentIntent.id,
-          metadata: paymentIntent.metadata,
           source: paymentIntent.metadata?.source,
-          amount: paymentIntent.amount,
-          customer: paymentIntent.customer
+          hasReservationCode: !!paymentIntent.metadata?.reservation_code,
+          metadata: paymentIntent.metadata
         });
-        console.warn('⚠️ [WEBHOOK RESERVAS] Este pago NO es de una reserva directa, ignorando...');
-        // No procesar si no tiene reservation_id
+        console.warn('⚠️ [WEBHOOK RESERVAS] Ignorando pago que no es de reserva directa...');
+        // No procesar si no es una reserva directa
         return NextResponse.json({ 
           received: true, 
-          message: 'Ignored: No reservation_id in metadata' 
+          message: 'Ignored: Not a direct reservation' 
         });
       }
 
-      // Actualizar reserva como pagada
-      // SIEMPRE procesar si tiene reservation_id
-      if (paymentIntent.metadata?.reservation_id) {
-        const reservationId = parseInt(paymentIntent.metadata.reservation_id);
-        console.log('🔍 [WEBHOOK RESERVAS] Procesando reserva:', reservationId);
-        
-        const updateResult = await sql`
-          UPDATE direct_reservations 
-          SET 
-            payment_status = 'paid',
-            stripe_charge_id = ${paymentIntent.latest_charge as string},
-            payment_method = 'card',
-            confirmed_at = NOW(),
-            updated_at = NOW()
-          WHERE id = ${reservationId} AND stripe_payment_intent_id = ${paymentIntent.id}
-          RETURNING *
-        `;
-
-        console.log('📝 [WEBHOOK RESERVAS] Reserva actualizada:', {
-          reservationId,
-          rowsUpdated: updateResult.rows.length,
-          wasUpdated: updateResult.rows.length > 0
+      // Crear o actualizar reserva desde los metadatos del Payment Intent
+      // La reserva se crea SOLO cuando el pago se confirma exitosamente
+      if (paymentIntent.metadata?.source === 'direct_reservation' && paymentIntent.metadata?.reservation_code) {
+        console.log('🔍 [WEBHOOK RESERVAS] Procesando pago de reserva directa:', {
+          paymentIntentId: paymentIntent.id,
+          reservationCode: paymentIntent.metadata.reservation_code,
+          status: paymentIntent.status
         });
 
-        if (updateResult.rows.length === 0) {
-          console.warn('⚠️ [WEBHOOK RESERVAS] No se encontró reserva para actualizar:', {
-            reservationId,
-            paymentIntentId: paymentIntent.id,
-            expectedPaymentIntentId: paymentIntent.id
-          });
-          // Intentar buscar por reservation_id sin verificar payment_intent_id
-          const fallbackCheck = await sql`
-            SELECT id, stripe_payment_intent_id, payment_status, reservation_code
-            FROM direct_reservations 
+        // Verificar si la reserva ya existe (por código de reserva)
+        const existingReservation = await sql`
+          SELECT id FROM direct_reservations 
+          WHERE reservation_code = ${paymentIntent.metadata.reservation_code}
+        `;
+
+        let reservationId: number;
+
+        if (existingReservation.rows.length > 0) {
+          // Reserva ya existe, actualizarla
+          reservationId = existingReservation.rows[0].id;
+          console.log('📝 [WEBHOOK RESERVAS] Reserva ya existe, actualizando:', reservationId);
+
+          const updateResult = await sql`
+            UPDATE direct_reservations 
+            SET 
+              payment_status = 'paid',
+              stripe_payment_intent_id = ${paymentIntent.id},
+              stripe_charge_id = ${paymentIntent.latest_charge as string},
+              payment_method = 'card',
+              confirmed_at = NOW(),
+              updated_at = NOW()
             WHERE id = ${reservationId}
+            RETURNING *
           `;
-          if (fallbackCheck.rows.length > 0) {
-            console.log('🔍 [WEBHOOK RESERVAS] Reserva encontrada pero payment_intent_id no coincide:', {
-              reservationId,
-              storedPaymentIntentId: fallbackCheck.rows[0].stripe_payment_intent_id,
-              receivedPaymentIntentId: paymentIntent.id
-            });
-          } else {
-            console.error('❌ [WEBHOOK RESERVAS] Reserva no encontrada en base de datos:', reservationId);
-          }
+
+          console.log('✅ [WEBHOOK RESERVAS] Reserva actualizada:', {
+            reservationId,
+            rowsUpdated: updateResult.rows.length
+          });
+        } else {
+          // Crear nueva reserva desde los metadatos (esto es lo nuevo)
+          console.log('✨ [WEBHOOK RESERVAS] Creando nueva reserva desde metadatos del Payment Intent');
+
+          const createResult = await sql`
+            INSERT INTO direct_reservations (
+              tenant_id, property_id, reservation_code,
+              guest_name, guest_email, guest_phone, guest_document_type,
+              guest_document_number, guest_nationality,
+              check_in_date, check_out_date, nights, guests,
+              base_price, cleaning_fee, security_deposit,
+              subtotal, delfin_commission_rate, delfin_commission_amount,
+              stripe_fee_amount, property_owner_amount, total_amount,
+              stripe_payment_intent_id, stripe_charge_id,
+              payment_status, payment_method, reservation_status, special_requests
+            ) VALUES (
+              ${paymentIntent.metadata.tenant_id}, 
+              ${parseInt(paymentIntent.metadata.property_id)}, 
+              ${paymentIntent.metadata.reservation_code},
+              ${paymentIntent.metadata.guest_name}, 
+              ${paymentIntent.metadata.guest_email}, 
+              ${paymentIntent.metadata.guest_phone || null}, 
+              ${paymentIntent.metadata.guest_document_type || null},
+              ${paymentIntent.metadata.guest_document_number || null}, 
+              ${paymentIntent.metadata.guest_nationality || null},
+              ${paymentIntent.metadata.check_in_date}, 
+              ${paymentIntent.metadata.check_out_date}, 
+              ${parseInt(paymentIntent.metadata.nights)}, 
+              ${parseInt(paymentIntent.metadata.guests)},
+              ${parseFloat(paymentIntent.metadata.base_price)}, 
+              ${parseFloat(paymentIntent.metadata.cleaning_fee)}, 
+              ${parseFloat(paymentIntent.metadata.security_deposit)},
+              ${parseFloat(paymentIntent.metadata.subtotal)}, 
+              ${parseFloat(paymentIntent.metadata.delfin_commission_rate)}, 
+              ${parseFloat(paymentIntent.metadata.delfin_commission_amount)},
+              ${parseFloat(paymentIntent.metadata.stripe_fee_amount)}, 
+              ${parseFloat(paymentIntent.metadata.property_owner_amount)}, 
+              ${parseFloat(paymentIntent.metadata.total_amount)},
+              ${paymentIntent.id},
+              ${paymentIntent.latest_charge as string},
+              'paid', 
+              'card', 
+              'confirmed', 
+              ${paymentIntent.metadata.special_requests || null}
+            )
+            RETURNING id
+          `;
+
+          reservationId = createResult.rows[0].id;
+          console.log('✅ [WEBHOOK RESERVAS] Nueva reserva creada desde Payment Intent:', {
+            reservationId,
+            reservationCode: paymentIntent.metadata.reservation_code
+          });
         }
 
         // Crear transacción de comisión
@@ -148,21 +194,30 @@ export async function POST(req: NextRequest) {
         if (reservation.rows.length > 0) {
           const res = reservation.rows[0];
           
-          await sql`
-            INSERT INTO commission_transactions (
-              reservation_id, tenant_id, transaction_type, amount, 
-              stripe_fee, net_amount, status, processed_at
-            ) VALUES (
-              ${reservationId}, ${res.tenant_id}, 'commission', 
-              ${res.delfin_commission_amount}, ${res.stripe_fee_amount}, 
-              ${res.delfin_commission_amount - res.stripe_fee_amount}, 
-              'completed', NOW()
-            )
+          // Verificar que no exista ya la transacción
+          const existingTransaction = await sql`
+            SELECT id FROM commission_transactions 
+            WHERE reservation_id = ${reservationId}
           `;
+
+          if (existingTransaction.rows.length === 0) {
+            await sql`
+              INSERT INTO commission_transactions (
+                reservation_id, tenant_id, transaction_type, amount, 
+                stripe_fee, net_amount, status, processed_at
+              ) VALUES (
+                ${reservationId}, ${res.tenant_id}, 'commission', 
+                ${res.delfin_commission_amount}, ${res.stripe_fee_amount}, 
+                ${res.delfin_commission_amount - res.stripe_fee_amount}, 
+                'completed', NOW()
+              )
+            `;
+            console.log('✅ [WEBHOOK RESERVAS] Transacción de comisión creada:', reservationId);
+          }
         }
 
         // Enviar emails de notificación al huésped y propietario
-        if (updateResult.rows.length > 0) {
+        if (reservationId) {
           console.log('📧 [WEBHOOK RESERVAS] Iniciando envío de emails para reserva:', reservationId);
           try {
             // Obtener los datos completos de la reserva y propiedad
@@ -183,6 +238,11 @@ export async function POST(req: NextRequest) {
               JOIN tenants t ON dr.tenant_id = t.id
               WHERE dr.id = ${reservationId}
             `;
+
+            if (reservationData.rows.length === 0) {
+              console.error('❌ [WEBHOOK RESERVAS] No se encontró la reserva después de crearla:', reservationId);
+              throw new Error('Reserva no encontrada después de crear');
+            }
 
             if (reservationData.rows.length > 0) {
               const row = reservationData.rows[0];

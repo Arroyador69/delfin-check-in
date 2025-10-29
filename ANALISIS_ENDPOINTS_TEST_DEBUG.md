@@ -300,3 +300,4 @@ rm -rf src/app/api/public/test-pruebas
 **⚠️ 6 endpoints deben mantenerse (4 útiles + 2 usados en UI)**
 
 **Total de endpoints eliminables: 15 de 21 (71%)**
+

@@ -125,3 +125,4 @@ Todos los cambios han sido subidos exitosamente a GitHub y el sistema está comp
 **Repositorio**: `https://github.com/Arroyador69/delfin-check-in.git`  
 **Rama**: `main`  
 **Estado**: ✅ **PUSH EXITOSO**
+

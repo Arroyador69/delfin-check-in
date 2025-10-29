@@ -135,31 +135,13 @@ export async function POST(req: NextRequest) {
     // Generar código de reserva único
     const reservationCode = generateReservationCode();
 
-    // Crear reserva en BD (con estado pending)
-    const reservationResult = await sql`
-      INSERT INTO direct_reservations (
-        tenant_id, property_id, reservation_code,
-        guest_name, guest_email, guest_phone, guest_document_type,
-        guest_document_number, guest_nationality,
-        check_in_date, check_out_date, nights, guests,
-        base_price, cleaning_fee, security_deposit,
-        subtotal, delfin_commission_rate, delfin_commission_amount,
-        stripe_fee_amount, property_owner_amount, total_amount,
-        payment_status, reservation_status, special_requests
-      ) VALUES (
-        ${tenantId}, ${property_id}, ${reservationCode},
-        ${guest_name}, ${guest_email}, ${guest_phone || null}, ${guest_document_type || null},
-        ${guest_document_number || null}, ${guest_nationality || null},
-        ${check_in_date}, ${check_out_date}, ${nights}, ${guests},
-        ${basePrice}, ${cleaningFee}, ${parseFloat(String(property.security_deposit || 0))},
-        ${subtotal}, ${commissionRate}, ${commission.delfin_commission_amount},
-        ${commission.stripe_fee_amount}, ${commission.property_owner_amount}, ${commission.total_amount},
-        'pending', 'confirmed', ${special_requests || null}
-      )
-      RETURNING id
-    `;
-
-    const reservationId = reservationResult.rows[0].id;
+    // NO crear reserva en BD todavía - se creará después de confirmar el pago
+    // Esto evita que queden reservas huérfanas si el pago falla
+    console.log('💳 [CREATE PAYMENT] Preparando Payment Intent sin crear reserva aún:', {
+      reservationCode,
+      amount: commission.total_amount,
+      nights
+    });
 
     // Crear Payment Intent en Stripe
     const paymentAmount = Math.round(commission.total_amount * 100); // Convertir a centavos
@@ -172,16 +154,35 @@ export async function POST(req: NextRequest) {
     });
 
     // Crear Payment Intent en Stripe (modo test)
-    // IMPORTANTE: No usar confirmation_method junto con automatic_payment_methods
+    // IMPORTANTE: Guardamos toda la info en metadata para crear la reserva después del pago
     const paymentIntent = await stripe.paymentIntents.create({
       amount: paymentAmount,
       currency: 'eur',
       metadata: {
-        reservation_id: reservationId.toString(),
+        // Guardar todos los datos necesarios en metadata para crear reserva después
         tenant_id: tenantId,
         property_id: property_id.toString(),
+        guest_name: guest_name,
         guest_email: guest_email,
+        guest_phone: guest_phone || '',
+        guest_document_type: guest_document_type || '',
+        guest_document_number: guest_document_number || '',
+        guest_nationality: guest_nationality || '',
+        check_in_date: check_in_date,
+        check_out_date: check_out_date,
+        nights: nights.toString(),
+        guests: guests.toString(),
+        base_price: basePrice.toString(),
+        cleaning_fee: cleaningFee.toString(),
+        security_deposit: parseFloat(String(property.security_deposit || 0)).toString(),
+        subtotal: subtotal.toString(),
+        delfin_commission_rate: commissionRate.toString(),
+        delfin_commission_amount: commission.delfin_commission_amount.toString(),
+        stripe_fee_amount: commission.stripe_fee_amount.toString(),
+        property_owner_amount: commission.property_owner_amount.toString(),
+        total_amount: commission.total_amount.toString(),
         reservation_code: reservationCode,
+        special_requests: special_requests || '',
         source: 'direct_reservation'
       },
       description: `Reserva ${reservationCode} - ${property.property_name}`,
@@ -211,15 +212,7 @@ export async function POST(req: NextRequest) {
       throw new Error('Payment Intent creado sin client_secret. Verifique la configuración de Stripe.');
     }
 
-    // Actualizar reserva con Payment Intent ID
-    await sql`
-      UPDATE direct_reservations 
-      SET stripe_payment_intent_id = ${paymentIntent.id}
-      WHERE id = ${reservationId}
-    `;
-
-    console.log('✅ [CREATE PAYMENT] Payment Intent creado y guardado:', {
-      reservationId,
+    console.log('✅ [CREATE PAYMENT] Payment Intent creado (reserva se creará después del pago):', {
       paymentIntentId: paymentIntent.id,
       amount: commission.total_amount,
       reservationCode
@@ -235,14 +228,14 @@ export async function POST(req: NextRequest) {
       hasClientSecret: !!paymentIntent.client_secret,
       clientSecretLength: paymentIntent.client_secret.length,
       paymentIntentId: paymentIntent.id,
-      reservationId
+      reservationCode
     });
 
     const response = NextResponse.json({
       success: true,
       client_secret: paymentIntent.client_secret,
       payment_intent_id: paymentIntent.id,
-      reservation_id: reservationId,
+      // NO enviar reservation_id porque aún no existe
       reservation_code: reservationCode,
       amount: commission.total_amount,
       currency: 'eur',

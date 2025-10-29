@@ -94,3 +94,4 @@ Durante la limpieza de endpoints duplicados, se eliminaron endpoints que **SÍ e
 **URGENTE**: Restaurar estos endpoints para evitar errores en producción.
 
 **IMPACTO**: Sin estos endpoints, las funcionalidades de consulta en tiempo real y sincronización MIR no funcionarán.
+

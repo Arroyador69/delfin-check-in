@@ -36,3 +36,4 @@ SELECT
     COUNT(CASE WHEN tenant_id IS NOT NULL THEN 1 END) as con_tenant_id,
     COUNT(CASE WHEN tenant_id IS NULL THEN 1 END) as sin_tenant_id
 FROM mir_comunicaciones;
+

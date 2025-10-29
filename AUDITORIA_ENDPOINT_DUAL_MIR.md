@@ -186,3 +186,4 @@ El endpoint `/api/ministerio/auto-envio-dual` **SÍ cumple con las normas MIR of
 **Recomendación**: Mantener este endpoint como principal y eliminar los duplicados para evitar confusión y mantener el código limpio.
 
 **Estado**: ✅ APROBADO para producción con mejoras menores pendientes.
+

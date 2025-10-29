@@ -138,3 +138,4 @@ Se han eliminado **23 endpoints** de testing y debug que eran seguros de elimina
 - **Funcionalidad principal intacta**
 
 **🚀 El sistema Delfín Check-in está ahora más optimizado y listo para producción!**
+

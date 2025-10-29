@@ -33,3 +33,4 @@ for file in "${files[@]}"; do
 done
 
 echo "🎉 Corrección de Stripe completada"
+
