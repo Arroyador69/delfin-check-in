@@ -337,7 +337,7 @@ export default function IntegrationsSettingsPage() {
 
       {/* Formulario para agregar calendario externo */}
       {showAddForm && (
-        <Card className="mb-6">
+        <Card className="mb-6 bg-white">
           <CardHeader>
             <CardTitle className="font-bold text-gray-900">Agregar Calendario Externo</CardTitle>
             <CardDescription className="font-semibold text-gray-800">
@@ -424,7 +424,7 @@ export default function IntegrationsSettingsPage() {
       )}
 
       {/* Calendarios del Sistema (iCals generados automáticamente) */}
-      <Card className="mb-6">
+      <Card className="mb-6 bg-white">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 font-bold text-gray-900">
             <Calendar className="w-5 h-5" />
@@ -485,7 +485,7 @@ export default function IntegrationsSettingsPage() {
       </Card>
 
       {/* Calendarios Externos */}
-      <Card className="mb-6">
+      <Card className="mb-6 bg-white">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 font-bold text-gray-900">
             <Settings className="w-5 h-5" />
@@ -582,7 +582,7 @@ export default function IntegrationsSettingsPage() {
       </Card>
 
       {/* Información adicional */}
-      <Card className="mt-8">
+      <Card className="mt-8 bg-white">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 font-bold text-gray-900">
             <Info className="w-5 h-5" />
