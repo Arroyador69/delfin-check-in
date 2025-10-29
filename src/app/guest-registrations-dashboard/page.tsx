@@ -730,118 +730,128 @@ export default function GuestRegistrationsDashboard() {
         </div>
 
         {/* Lista de registros */}
-        <div className="bg-white rounded-lg shadow">
-          <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-            <h3 className="text-lg font-semibold text-gray-900">Registros de Viajeros</h3>
-            {filteredRegistrations.length > 0 && (
-              <div className="flex items-center space-x-4">
-                <button
-                  onClick={toggleAllRegistrations}
-                  className="text-sm text-blue-600 hover:text-blue-800"
-                >
-                  {selectedRegistrations.size === filteredRegistrations.length ? "Deseleccionar todo" : "Seleccionar todo"}
-                </button>
-                {selectedRegistrations.size > 0 && (
-                  <div className="flex space-x-2">
-                    <button
-                      onClick={generateConjuntoXML}
-                      disabled={generatingXML}
-                      className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50"
-                    >
-                      <Download className="h-4 w-4 inline mr-2" />
-                      {generatingXML ? "Generando..." : `Generar XML Conjunto (${selectedRegistrations.size})`}
-                    </button>
-                    <button
-                      onClick={deleteSelectedRegistrations}
-                      disabled={deleting}
-                      className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50"
-                    >
-                      <Trash2 className="h-4 w-4 inline mr-2" />
-                      {deleting ? "Eliminando..." : `Eliminar Seleccionados (${selectedRegistrations.size})`}
-                    </button>
-                  </div>
-                )}
+        <div className="bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden">
+          {/* Cabecera fija */}
+          <div className="bg-white px-6 py-4 border-b border-gray-200">
+            <div className="flex justify-between items-center">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900">Registros de Viajeros</h2>
+                <p className="text-sm text-gray-600 mt-1">{filteredRegistrations.length} registros encontrados</p>
               </div>
-            )}
-          </div>
-          <div className="p-6">
-            {filteredRegistrations.length === 0 ? (
-              <div className="text-center py-12">
-                <div className="text-6xl mb-4">🐬</div>
-                <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  {registrations.length === 0 ? 'No hay registros aún' : 'No hay registros para los filtros seleccionados'}
-                </h3>
-                <p className="text-gray-500 mb-4">
-                  {registrations.length === 0 
-                    ? 'Los clientes pueden enviar registros desde el formulario público'
-                    : 'Intenta ajustar los filtros de búsqueda'
-                  }
-                </p>
-                <div className="space-y-2 text-sm text-gray-400">
-                  <p>• Los registros aparecerán aquí cuando los clientes completen el formulario</p>
-                  <p>• Puedes generar XML individual o conjunto para enviar al Ministerio del Interior</p>
-                  <p>• Usa los filtros para encontrar registros específicos</p>
+              {filteredRegistrations.length > 0 && (
+                <div className="flex items-center space-x-4">
+                  <button
+                    onClick={toggleAllRegistrations}
+                    className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                  >
+                    {selectedRegistrations.size === filteredRegistrations.length ? "Deseleccionar todo" : "Seleccionar todo"}
+                  </button>
+                  {selectedRegistrations.size > 0 && (
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={generateConjuntoXML}
+                        disabled={generatingXML}
+                        className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50"
+                      >
+                        <Download className="h-4 w-4 inline mr-2" />
+                        {generatingXML ? "Generando..." : `Generar XML Conjunto (${selectedRegistrations.size})`}
+                      </button>
+                      <button
+                        onClick={deleteSelectedRegistrations}
+                        disabled={deleting}
+                        className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50"
+                      >
+                        <Trash2 className="h-4 w-4 inline mr-2" />
+                        {deleting ? "Eliminando..." : `Eliminar Seleccionados (${selectedRegistrations.size})`}
+                      </button>
+                    </div>
+                  )}
                 </div>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {filteredRegistrations.map((registration) => (
-                  <div key={registration.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center space-x-4">
-                        <input
-                          type="checkbox"
-                          checked={selectedRegistrations.has(registration.id)}
-                          onChange={() => toggleRegistrationSelection(registration.id)}
-                          className="rounded border-gray-300 h-5 w-5"
-                        />
-                        <div className="text-2xl">📋</div>
-                        <div>
-                          <h4 className="font-semibold text-gray-900">
-                            Referencia: {registration.contrato.referencia}
-                          </h4>
-                          <p className="text-sm text-gray-600">
-                            Establecimiento: {registration.contrato.codigoEstablecimiento} | 
-                            Habitación: {registration.contrato.numHabitaciones} | 
-                            Fecha registro: {new Date(registration.created_at).toLocaleDateString('es-ES')}
-                          </p>
-                          <p className="text-sm text-gray-500">
-                            Viajero: {registration.viajero.nombre} {registration.viajero.apellido1}
-                          </p>
-                          <p className="text-sm text-gray-500">
-                            Check-in: {new Date(registration.fecha_entrada).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })} | 
-                            Check-out: {new Date(registration.fecha_salida).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                          </p>
+              )}
+            </div>
+          </div>
+
+          {/* Contenedor con scroll independiente */}
+          <div className="overflow-auto" style={{ maxHeight: 'calc(100vh - 400px)' }}>
+            <div className="p-6">
+              {filteredRegistrations.length === 0 ? (
+                <div className="text-center py-12">
+                  <div className="text-6xl mb-4">🐬</div>
+                  <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                    {registrations.length === 0 ? 'No hay registros aún' : 'No hay registros para los filtros seleccionados'}
+                  </h3>
+                  <p className="text-gray-500 mb-4">
+                    {registrations.length === 0 
+                      ? 'Los clientes pueden enviar registros desde el formulario público'
+                      : 'Intenta ajustar los filtros de búsqueda'
+                    }
+                  </p>
+                  <div className="space-y-2 text-sm text-gray-400">
+                    <p>• Los registros aparecerán aquí cuando los clientes completen el formulario</p>
+                    <p>• Puedes generar XML individual o conjunto para enviar al Ministerio del Interior</p>
+                    <p>• Usa los filtros para encontrar registros específicos</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {filteredRegistrations.map((registration) => (
+                    <div key={registration.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center space-x-4">
+                          <input
+                            type="checkbox"
+                            checked={selectedRegistrations.has(registration.id)}
+                            onChange={() => toggleRegistrationSelection(registration.id)}
+                            className="rounded border-gray-300 h-5 w-5"
+                          />
+                          <div className="text-2xl">📋</div>
+                          <div>
+                            <h4 className="font-semibold text-gray-900">
+                              Referencia: {registration.contrato.referencia}
+                            </h4>
+                            <p className="text-sm text-gray-600">
+                              Establecimiento: {registration.contrato.codigoEstablecimiento} | 
+                              Habitación: {registration.contrato.numHabitaciones} | 
+                              Fecha registro: {new Date(registration.created_at).toLocaleDateString('es-ES')}
+                            </p>
+                            <p className="text-sm text-gray-500">
+                              Viajero: {registration.viajero.nombre} {registration.viajero.apellido1}
+                            </p>
+                            <p className="text-sm text-gray-500">
+                              Check-in: {new Date(registration.fecha_entrada).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })} | 
+                              Check-out: {new Date(registration.fecha_salida).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => setSelectedRegistration(registration)}
+                            className="px-3 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                          >
+                            <Eye className="h-4 w-4 inline mr-1" />
+                            Ver
+                          </button>
+                          <ExportButton
+                            solicitud={prepareSolicitudData(registration)}
+                            onSuccess={() => alert("XML generado y descargado correctamente")}
+                            onError={(error) => alert(`Error al generar XML:\n${error}`)}
+                          />
+                          <button
+                            onClick={() => deleteRegistration(registration.id)}
+                            disabled={deleting}
+                            className="px-3 py-2 bg-red-100 text-red-700 rounded-md hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50"
+                          >
+                            <Trash2 className="h-4 w-4 inline mr-1" />
+                            Eliminar
+                          </button>
                         </div>
                       </div>
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() => setSelectedRegistration(registration)}
-                          className="px-3 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500"
-                        >
-                          <Eye className="h-4 w-4 inline mr-1" />
-                          Ver
-                        </button>
-                        <ExportButton
-                          solicitud={prepareSolicitudData(registration)}
-                          onSuccess={() => alert("XML generado y descargado correctamente")}
-                          onError={(error) => alert(`Error al generar XML:\n${error}`)}
-                        />
-                        <button
-                          onClick={() => deleteRegistration(registration.id)}
-                          disabled={deleting}
-                          className="px-3 py-2 bg-red-100 text-red-700 rounded-md hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50"
-                        >
-                          <Trash2 className="h-4 w-4 inline mr-1" />
-                          Eliminar
-                        </button>
-                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

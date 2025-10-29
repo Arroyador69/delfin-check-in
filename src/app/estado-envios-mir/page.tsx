@@ -423,9 +423,9 @@ export default function EstadoEnviosMIRPage() {
               <p className="text-sm text-gray-600 mt-1">{estadoEnvio.estadisticas.total} comunicaciones encontradas</p>
             </div>
 
-            {/* Tabs */}
-            <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
-              <Tabs defaultValue="pendientes" className="space-y-0">
+            <Tabs defaultValue="pendientes" className="w-full">
+              {/* Tabs */}
+              <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
                 <TabsList className="grid w-full grid-cols-4 bg-white">
                   <TabsTrigger value="pendientes" className="flex items-center space-x-2">
                     <Clock className="w-4 h-4" />
@@ -444,12 +444,10 @@ export default function EstadoEnviosMIRPage() {
                     <span>Errores ({estadoEnvio.estadisticas.errores})</span>
                   </TabsTrigger>
                 </TabsList>
-              </Tabs>
-            </div>
+              </div>
 
-            {/* Contenedor con scroll independiente */}
-            <div className="overflow-auto" style={{ maxHeight: 'calc(100vh - 400px)' }}>
-              <Tabs defaultValue="pendientes" className="w-full">
+              {/* Contenedor con scroll independiente */}
+              <div className="overflow-auto" style={{ maxHeight: 'calc(100vh - 400px)' }}>
                 <TabsContent value="pendientes" className="m-0">
                   <div className="p-6">
                     <div className="flex items-center space-x-2 mb-4">
@@ -489,8 +487,8 @@ export default function EstadoEnviosMIRPage() {
                     {renderComunicaciones(estadoEnvio.comunicaciones.errores, 'con errores')}
                   </div>
                 </TabsContent>
-              </Tabs>
-            </div>
+              </div>
+            </Tabs>
           </div>
         )}
       </div>
