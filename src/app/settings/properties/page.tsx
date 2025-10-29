@@ -93,8 +93,8 @@ export default function PropertiesManagement() {
   // Generar enlace de reserva directa
   const getBookingLink = (propertyId: number) => {
     if (!tenantId) return '';
-    const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://admin.delfincheckin.com';
-    return `${baseUrl}/book/${tenantId}/${propertyId}`;
+    // Usar el subdominio público de reservas
+    return `https://book.delfincheckin.com/${tenantId}/${propertyId}`;
   };
 
   // Función para convertir imágenes a base64
