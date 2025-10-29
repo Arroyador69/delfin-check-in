@@ -7,7 +7,20 @@ import Stripe from 'stripe';
 import { sql } from '@vercel/postgres';
 import { generateReservationCode, calculateCommission } from '@/lib/direct-reservations-utils';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+// Inicializar Stripe con logging para diagnóstico
+const stripeKey = process.env.STRIPE_SECRET_KEY;
+if (!stripeKey) {
+  console.error('❌ [STRIPE] STRIPE_SECRET_KEY no configurada');
+} else {
+  console.log('✅ [STRIPE] Clave secreta configurada:', {
+    prefix: stripeKey.substring(0, 7), // Mostrar solo el prefijo (sk_test_ o sk_live_)
+    length: stripeKey.length,
+    isTest: stripeKey.startsWith('sk_test_'),
+    isLive: stripeKey.startsWith('sk_live_')
+  });
+}
+
+const stripe = new Stripe(stripeKey!, {
   apiVersion: '2024-06-20',
 });
 
@@ -149,8 +162,18 @@ export async function POST(req: NextRequest) {
     const reservationId = reservationResult.rows[0].id;
 
     // Crear Payment Intent en Stripe
+    const paymentAmount = Math.round(commission.total_amount * 100); // Convertir a centavos
+    console.log('💳 [CREATE PAYMENT] Creando Payment Intent con:', {
+      amount: paymentAmount,
+      amountInEuros: commission.total_amount,
+      currency: 'eur',
+      reservationId,
+      guestEmail: guest_email
+    });
+
+    // Crear Payment Intent en Stripe (modo test)
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: Math.round(commission.total_amount * 100), // Convertir a centavos
+      amount: paymentAmount,
       currency: 'eur',
       metadata: {
         reservation_id: reservationId.toString(),
@@ -162,7 +185,31 @@ export async function POST(req: NextRequest) {
       },
       description: `Reserva ${reservationCode} - ${property.property_name}`,
       receipt_email: guest_email,
+      // No confirmar automáticamente - el frontend lo confirmará
+      confirmation_method: 'manual',
+      automatic_payment_methods: {
+        enabled: true,
+      },
     });
+
+    console.log('✅ [CREATE PAYMENT] Payment Intent creado:', {
+      paymentIntentId: paymentIntent.id,
+      status: paymentIntent.status,
+      clientSecret: paymentIntent.client_secret ? '✅ Presente' : '❌ FALTANTE',
+      clientSecretLength: paymentIntent.client_secret?.length || 0,
+      clientSecretPrefix: paymentIntent.client_secret?.substring(0, 20) || 'N/A',
+      amount: paymentIntent.amount,
+      amountInEuros: (paymentIntent.amount / 100).toFixed(2),
+      currency: paymentIntent.currency,
+      livemode: paymentIntent.livemode,
+      confirmationMethod: paymentIntent.confirmation_method
+    });
+
+    if (!paymentIntent.client_secret) {
+      console.error('❌ [CREATE PAYMENT] ERROR CRÍTICO: Payment Intent creado sin client_secret!');
+      console.error('❌ [CREATE PAYMENT] Payment Intent completo:', JSON.stringify(paymentIntent, null, 2));
+      throw new Error('Payment Intent creado sin client_secret. Verifique la configuración de Stripe.');
+    }
 
     // Actualizar reserva con Payment Intent ID
     await sql`
@@ -171,11 +218,24 @@ export async function POST(req: NextRequest) {
       WHERE id = ${reservationId}
     `;
 
-    console.log('✅ Payment Intent creado:', {
+    console.log('✅ [CREATE PAYMENT] Payment Intent creado y guardado:', {
       reservationId,
       paymentIntentId: paymentIntent.id,
       amount: commission.total_amount,
       reservationCode
+    });
+
+    // Verificar una vez más antes de enviar
+    if (!paymentIntent.client_secret) {
+      console.error('❌ [CREATE PAYMENT] ERROR: client_secret no disponible antes de enviar respuesta');
+      throw new Error('client_secret no disponible');
+    }
+
+    console.log('✅ [CREATE PAYMENT] Enviando respuesta al frontend:', {
+      hasClientSecret: !!paymentIntent.client_secret,
+      clientSecretLength: paymentIntent.client_secret.length,
+      paymentIntentId: paymentIntent.id,
+      reservationId
     });
 
     const response = NextResponse.json({
