@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Camera, Euro, Users, Bed, Bath } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Plus, Edit, Trash2, Camera, Euro, Users, Bed, Bath, Upload, X, Image as ImageIcon } from 'lucide-react';
 import { TenantProperty, CreatePropertyRequest } from '@/lib/direct-reservations-types';
 
 export default function PropertiesManagement() {
@@ -9,6 +9,8 @@ export default function PropertiesManagement() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingProperty, setEditingProperty] = useState<TenantProperty | null>(null);
+  const [uploadingImages, setUploadingImages] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState<CreatePropertyRequest>({
     property_name: '',
     description: '',
@@ -50,6 +52,64 @@ export default function PropertiesManagement() {
     }
   };
 
+  // Función para convertir imágenes a base64
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setUploadingImages(true);
+    const newPhotos: string[] = [];
+
+    try {
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        
+        // Validar tipo de archivo
+        if (!file.type.startsWith('image/')) {
+          alert(`El archivo ${file.name} no es una imagen válida`);
+          continue;
+        }
+
+        // Validar tamaño (máximo 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+          alert(`La imagen ${file.name} es demasiado grande (máximo 5MB)`);
+          continue;
+        }
+
+        // Convertir a base64
+        const reader = new FileReader();
+        const base64 = await new Promise<string>((resolve, reject) => {
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+
+        newPhotos.push(base64);
+      }
+
+      setFormData({
+        ...formData,
+        photos: [...(formData.photos || []), ...newPhotos]
+      });
+
+      // Limpiar el input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    } catch (error) {
+      console.error('Error procesando imágenes:', error);
+      alert('Error al procesar las imágenes');
+    } finally {
+      setUploadingImages(false);
+    }
+  };
+
+  const removeImage = (index: number) => {
+    const newPhotos = [...(formData.photos || [])];
+    newPhotos.splice(index, 1);
+    setFormData({ ...formData, photos: newPhotos });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -76,7 +136,7 @@ export default function PropertiesManagement() {
         setShowForm(false);
         setEditingProperty(null);
         resetForm();
-        alert(editingProperty ? 'Propiedad actualizada' : 'Propiedad creada');
+        alert(editingProperty ? 'Propiedad actualizada ✅' : 'Propiedad creada ✅');
       } else {
         alert('Error: ' + data.error);
       }
@@ -123,7 +183,7 @@ export default function PropertiesManagement() {
       
       if (data.success) {
         await loadProperties();
-        alert('Propiedad eliminada');
+        alert('Propiedad eliminada ✅');
       } else {
         alert('Error: ' + data.error);
       }
@@ -168,297 +228,425 @@ export default function PropertiesManagement() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500"></div>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 text-lg font-medium">Cargando propiedades...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto p-6">
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Gestión de Propiedades</h1>
-          <p className="text-gray-600 mt-2">Administra tus propiedades para reservas directas</p>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-4 sm:p-6">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <h1 className="text-3xl sm:text-5xl font-bold mb-2 sm:mb-4">
+            <span className="text-4xl sm:text-6xl mr-2 sm:mr-3" style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>🏠</span>
+            <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              Gestión de Propiedades
+            </span>
+          </h1>
+          <p className="text-gray-600 text-sm sm:text-lg">Administra tus propiedades para reservas directas</p>
         </div>
-        <button
-          onClick={() => {
-            resetForm();
-            setEditingProperty(null);
-            setShowForm(true);
-          }}
-          className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 flex items-center gap-2"
-        >
-          <Plus className="w-5 h-5" />
-          Nueva Propiedad
-        </button>
-      </div>
 
-      {/* Lista de propiedades */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-        {properties.map((property) => (
-          <div key={property.id} className="bg-white rounded-lg shadow-md overflow-hidden">
-            {property.photos && property.photos.length > 0 ? (
-              <img 
-                src={property.photos[0]} 
-                alt={property.property_name}
-                className="w-full h-48 object-cover"
-              />
-            ) : (
-              <div className="w-full h-48 bg-gray-200 flex items-center justify-center">
-                <Camera className="w-12 h-12 text-gray-400" />
-              </div>
-            )}
-            
-            <div className="p-6">
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                {property.property_name}
-              </h3>
-              
-              {property.description && (
-                <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-                  {property.description}
-                </p>
-              )}
-              
-              <div className="flex items-center gap-4 text-sm text-gray-500 mb-4">
-                <div className="flex items-center gap-1">
-                  <Users className="w-4 h-4" />
-                  {property.max_guests} huéspedes
-                </div>
-                <div className="flex items-center gap-1">
-                  <Bed className="w-4 h-4" />
-                  {property.bedrooms} dormitorios
-                </div>
-                <div className="flex items-center gap-1">
-                  <Bath className="w-4 h-4" />
-                  {property.bathrooms} baños
-                </div>
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1 text-lg font-semibold text-green-600">
-                  <Euro className="w-5 h-5" />
-                  {property.base_price}/noche
-                </div>
-                
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => handleEdit(property)}
-                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
-                  >
-                    <Edit className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(property.id)}
-                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-              
-              <div className="mt-2">
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                  property.is_active 
-                    ? 'bg-green-100 text-green-800' 
-                    : 'bg-red-100 text-red-800'
-                }`}>
-                  {property.is_active ? 'Activa' : 'Inactiva'}
-                </span>
-              </div>
+        {/* Botón Nueva Propiedad */}
+        <div className="flex justify-center mb-8">
+          <button
+            onClick={() => {
+              resetForm();
+              setEditingProperty(null);
+              setShowForm(true);
+            }}
+            className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-xl shadow-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 transform hover:scale-105 flex items-center gap-2 sm:gap-3 font-semibold text-sm sm:text-base"
+          >
+            <Plus className="w-5 h-5 sm:w-6 sm:h-6" />
+            <span>Nueva Propiedad</span>
+          </button>
+        </div>
+
+        {/* Lista de propiedades */}
+        {properties.length === 0 ? (
+          <div className="bg-white rounded-xl shadow-lg p-8 sm:p-12 text-center border border-blue-200">
+            <div className="bg-gradient-to-r from-blue-100 to-purple-100 p-6 rounded-full w-24 h-24 mx-auto mb-6 flex items-center justify-center">
+              <Camera className="w-12 h-12 text-blue-600" />
             </div>
+            <h3 className="text-xl sm:text-2xl font-semibold text-gray-800 mb-2">No hay propiedades</h3>
+            <p className="text-gray-600 text-sm sm:text-base mb-6">Crea tu primera propiedad usando el botón de arriba</p>
           </div>
-        ))}
-      </div>
-
-      {/* Formulario de nueva/edición propiedad */}
-      {showForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              <h2 className="text-2xl font-bold mb-6">
-                {editingProperty ? 'Editar Propiedad' : 'Nueva Propiedad'}
-              </h2>
-              
-              <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Información básica */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Nombre de la Propiedad *
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.property_name}
-                      onChange={(e) => setFormData({ ...formData, property_name: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="Ej: Apartamento Centro Histórico"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Precio Base por Noche (€) *
-                    </label>
-                    <input
-                      type="number"
-                      required
-                      min="1"
-                      step="0.01"
-                      value={formData.base_price}
-                      onChange={(e) => setFormData({ ...formData, base_price: parseFloat(e.target.value) })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Descripción
-                  </label>
-                  <textarea
-                    value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Describe tu propiedad..."
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-8">
+            {properties.map((property) => (
+              <div key={property.id} className="bg-white rounded-xl shadow-lg overflow-hidden border border-blue-200 hover:shadow-xl transition-all duration-200 transform hover:scale-105">
+                {property.photos && property.photos.length > 0 ? (
+                  <img 
+                    src={property.photos[0]} 
+                    alt={property.property_name}
+                    className="w-full h-48 object-cover"
                   />
-                </div>
+                ) : (
+                  <div className="w-full h-48 bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center">
+                    <Camera className="w-16 h-16 text-blue-400" />
+                  </div>
+                )}
                 
-                {/* Características */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Huéspedes Máx.
-                    </label>
-                    <input
-                      type="number"
-                      min="1"
-                      value={formData.max_guests}
-                      onChange={(e) => setFormData({ ...formData, max_guests: parseInt(e.target.value) })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
+                <div className="p-4 sm:p-6">
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                    {property.property_name}
+                  </h3>
+                  
+                  {property.description && (
+                    <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+                      {property.description}
+                    </p>
+                  )}
+                  
+                  <div className="flex items-center gap-3 sm:gap-4 text-sm text-gray-500 mb-4 flex-wrap">
+                    <div className="flex items-center gap-1 bg-blue-50 px-2 py-1 rounded-lg">
+                      <Users className="w-4 h-4 text-blue-600" />
+                      <span className="font-medium">{property.max_guests}</span>
+                    </div>
+                    <div className="flex items-center gap-1 bg-purple-50 px-2 py-1 rounded-lg">
+                      <Bed className="w-4 h-4 text-purple-600" />
+                      <span className="font-medium">{property.bedrooms}</span>
+                    </div>
+                    <div className="flex items-center gap-1 bg-indigo-50 px-2 py-1 rounded-lg">
+                      <Bath className="w-4 h-4 text-indigo-600" />
+                      <span className="font-medium">{property.bathrooms}</span>
+                    </div>
                   </div>
                   
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Dormitorios
-                    </label>
-                    <input
-                      type="number"
-                      min="1"
-                      value={formData.bedrooms}
-                      onChange={(e) => setFormData({ ...formData, bedrooms: parseInt(e.target.value) })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-1 text-lg sm:text-xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+                      <Euro className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" />
+                      {property.base_price}/noche
+                    </div>
+                    
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleEdit(property)}
+                        className="p-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg transition-all duration-200 hover:scale-110"
+                        title="Editar"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(property.id)}
+                        className="p-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg transition-all duration-200 hover:scale-110"
+                        title="Eliminar"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
                   
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Baños
-                    </label>
-                    <input
-                      type="number"
-                      min="1"
-                      step="0.5"
-                      value={formData.bathrooms}
-                      onChange={(e) => setFormData({ ...formData, bathrooms: parseFloat(e.target.value) })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Noches Mín.
-                    </label>
-                    <input
-                      type="number"
-                      min="1"
-                      value={formData.minimum_nights}
-                      onChange={(e) => setFormData({ ...formData, minimum_nights: parseInt(e.target.value) })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
+                  <div className="mt-2">
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                      property.is_active 
+                        ? 'bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 border border-green-200' 
+                        : 'bg-gradient-to-r from-red-100 to-pink-100 text-red-800 border border-red-200'
+                    }`}>
+                      {property.is_active ? '✅ Activa' : '❌ Inactiva'}
+                    </span>
                   </div>
                 </div>
-                
-                {/* Tarifas adicionales */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Tarifa de Limpieza (€)
-                    </label>
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={formData.cleaning_fee}
-                      onChange={(e) => setFormData({ ...formData, cleaning_fee: parseFloat(e.target.value) })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Depósito de Seguridad (€)
-                    </label>
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={formData.security_deposit}
-                      onChange={(e) => setFormData({ ...formData, security_deposit: parseFloat(e.target.value) })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-                </div>
-                
-                {/* Comodidades */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Comodidades
-                  </label>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                    {commonAmenities.map((amenity) => (
-                      <label key={amenity} className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          checked={formData.amenities?.includes(amenity) || false}
-                          onChange={() => toggleAmenity(amenity)}
-                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                        />
-                        <span className="text-sm text-gray-700">{amenity}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-                
-                {/* Botones */}
-                <div className="flex justify-end gap-4 pt-6 border-t">
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Formulario de nueva/edición propiedad */}
+        {showForm && (
+          <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50 animate-fade-in">
+            <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-blue-200">
+              <div className="p-6 sm:p-8">
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-2xl sm:text-3xl font-bold">
+                    <span className="text-3xl sm:text-4xl mr-2" style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>
+                      {editingProperty ? '✏️' : '✨'}
+                    </span>
+                    <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                      {editingProperty ? 'Editar Propiedad' : 'Nueva Propiedad'}
+                    </span>
+                  </h2>
                   <button
-                    type="button"
                     onClick={() => {
                       setShowForm(false);
                       setEditingProperty(null);
                       resetForm();
                     }}
-                    className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+                    className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all"
                   >
-                    Cancelar
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                  >
-                    {editingProperty ? 'Actualizar' : 'Crear'} Propiedad
+                    <X className="w-6 h-6" />
                   </button>
                 </div>
-              </form>
+                
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  {/* Subida de Imágenes */}
+                  <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-6 rounded-xl border border-blue-200 shadow-sm">
+                    <label className="block text-base sm:text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                      <ImageIcon className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
+                      <span>Imágenes de la Propiedad</span>
+                      <span className="text-xs sm:text-sm text-gray-500 font-normal">(máx. 5MB por imagen)</span>
+                    </label>
+                    
+                    {/* Vista previa de imágenes */}
+                    {formData.photos && formData.photos.length > 0 && (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4 mb-4">
+                        {formData.photos.map((photo, index) => (
+                          <div key={index} className="relative group">
+                            <img 
+                              src={photo} 
+                              alt={`Imagen ${index + 1}`}
+                              className="w-full h-32 sm:h-40 object-cover rounded-lg border-2 border-blue-200"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => removeImage(index)}
+                              className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    
+                    {/* Botón de subida */}
+                    <div className="flex justify-center">
+                      <label className="cursor-pointer">
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          onChange={handleImageUpload}
+                          className="hidden"
+                          disabled={uploadingImages}
+                        />
+                        <div className={`flex items-center gap-2 sm:gap-3 px-6 sm:px-8 py-3 sm:py-4 bg-white border-2 border-dashed border-blue-300 rounded-xl hover:bg-blue-50 transition-all duration-200 ${uploadingImages ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:border-blue-400'}`}>
+                          {uploadingImages ? (
+                            <>
+                              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                              <span className="text-blue-600 font-medium text-sm sm:text-base">Subiendo...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Upload className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
+                              <span className="text-blue-600 font-medium text-sm sm:text-base">
+                                {formData.photos && formData.photos.length > 0 ? 'Añadir más imágenes' : 'Subir imágenes'}
+                              </span>
+                            </>
+                          )}
+                        </div>
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Información básica */}
+                  <div className="bg-white p-6 rounded-xl border border-blue-200 shadow-sm">
+                    <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                      <span className="text-xl sm:text-2xl" style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>📝</span>
+                      Información Básica
+                    </h3>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+                      <div>
+                        <label className="block text-sm sm:text-base font-semibold text-gray-700 mb-2">
+                          Nombre de la Propiedad *
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={formData.property_name}
+                          onChange={(e) => setFormData({ ...formData, property_name: e.target.value })}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                          placeholder="Ej: Apartamento Centro Histórico"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm sm:text-base font-semibold text-gray-700 mb-2">
+                          Precio Base por Noche (€) *
+                        </label>
+                        <input
+                          type="number"
+                          required
+                          min="1"
+                          step="0.01"
+                          value={formData.base_price}
+                          onChange={(e) => setFormData({ ...formData, base_price: parseFloat(e.target.value) })}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="mt-4 sm:mt-6">
+                      <label className="block text-sm sm:text-base font-semibold text-gray-700 mb-2">
+                        Descripción
+                      </label>
+                      <textarea
+                        value={formData.description}
+                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                        rows={4}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all resize-none"
+                        placeholder="Describe tu propiedad con detalle..."
+                      />
+                    </div>
+                  </div>
+                  
+                  {/* Características */}
+                  <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-6 rounded-xl border border-purple-200 shadow-sm">
+                    <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                      <span className="text-xl sm:text-2xl" style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>🏡</span>
+                      Características
+                    </h3>
+                    
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          <Users className="w-4 h-4 inline mr-1" />
+                          Huéspedes Máx.
+                        </label>
+                        <input
+                          type="number"
+                          min="1"
+                          value={formData.max_guests}
+                          onChange={(e) => setFormData({ ...formData, max_guests: parseInt(e.target.value) })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          <Bed className="w-4 h-4 inline mr-1" />
+                          Dormitorios
+                        </label>
+                        <input
+                          type="number"
+                          min="1"
+                          value={formData.bedrooms}
+                          onChange={(e) => setFormData({ ...formData, bedrooms: parseInt(e.target.value) })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          <Bath className="w-4 h-4 inline mr-1" />
+                          Baños
+                        </label>
+                        <input
+                          type="number"
+                          min="1"
+                          step="0.5"
+                          value={formData.bathrooms}
+                          onChange={(e) => setFormData({ ...formData, bathrooms: parseFloat(e.target.value) })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          🌙 Noches Mín.
+                        </label>
+                        <input
+                          type="number"
+                          min="1"
+                          value={formData.minimum_nights}
+                          onChange={(e) => setFormData({ ...formData, minimum_nights: parseInt(e.target.value) })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Tarifas adicionales */}
+                  <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-6 rounded-xl border border-green-200 shadow-sm">
+                    <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                      <Euro className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" />
+                      Tarifas Adicionales
+                    </h3>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+                      <div>
+                        <label className="block text-sm sm:text-base font-semibold text-gray-700 mb-2">
+                          Tarifa de Limpieza (€)
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={formData.cleaning_fee}
+                          onChange={(e) => setFormData({ ...formData, cleaning_fee: parseFloat(e.target.value) })}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm sm:text-base font-semibold text-gray-700 mb-2">
+                          Depósito de Seguridad (€)
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={formData.security_deposit}
+                          onChange={(e) => setFormData({ ...formData, security_deposit: parseFloat(e.target.value) })}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Comodidades */}
+                  <div className="bg-gradient-to-r from-indigo-50 to-blue-50 p-6 rounded-xl border border-indigo-200 shadow-sm">
+                    <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                      <span className="text-xl sm:text-2xl" style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>⭐</span>
+                      Comodidades
+                    </h3>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                      {commonAmenities.map((amenity) => (
+                        <label key={amenity} className="flex items-center space-x-2 p-2 rounded-lg hover:bg-white transition-all cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={formData.amenities?.includes(amenity) || false}
+                            onChange={() => toggleAmenity(amenity)}
+                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4"
+                          />
+                          <span className="text-sm text-gray-700">{amenity}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  {/* Botones */}
+                  <div className="flex flex-col sm:flex-row justify-end gap-4 pt-6 border-t border-gray-200">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowForm(false);
+                        setEditingProperty(null);
+                        resetForm();
+                      }}
+                      className="px-6 sm:px-8 py-3 border-2 border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 font-semibold transition-all duration-200"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-6 sm:px-8 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 font-semibold shadow-lg transition-all duration-200 transform hover:scale-105"
+                    >
+                      {editingProperty ? '✨ Actualizar Propiedad' : '✨ Crear Propiedad'}
+                    </button>
+                  </div>
+                </form>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
