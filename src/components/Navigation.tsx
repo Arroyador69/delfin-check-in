@@ -16,6 +16,7 @@ export default function Navigation() {
     { name: 'Dashboard', href: '/', icon: Home },
     { name: 'Reservas', href: '/reservations', icon: Calendar },
     { name: 'Reservas Directas', href: '/admin/direct-reservations', icon: Calendar },
+    { name: 'Calendario', href: '/calendar', icon: Calendar },
     { name: 'Registros de formularios', href: '/guest-registrations-dashboard', icon: Users },
     { name: 'Facturas', href: '/facturas', icon: Receipt },
     { name: 'Estado Envíos MIR', href: '/admin/mir-comunicaciones', icon: TrendingUp },

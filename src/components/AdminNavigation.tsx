@@ -30,6 +30,12 @@ export default function AdminNavigation({ onLogout }: AdminNavigationProps) {
       current: pathname === '/admin'
     },
     {
+      name: 'Calendario',
+      href: '/calendar',
+      icon: Calendar,
+      current: pathname === '/calendar'
+    },
+    {
       name: 'Reservas Directas',
       href: '/admin/direct-reservations',
       icon: Calendar,
@@ -195,4 +201,5 @@ export default function AdminNavigation({ onLogout }: AdminNavigationProps) {
     </>
   );
 }
+
 

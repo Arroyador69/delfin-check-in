@@ -39,16 +39,32 @@ export default function CalendarPage() {
   const [events, setEvents] = useState<CalendarEvent[]>([])
   const [properties, setProperties] = useState<{ id: number; property_name: string }[]>([])
 
-  // Cargar propiedades para elegir (nota: en un futuro filtrar por tenant autenticado)
+  // Cargar tenant actual y propiedades del tenant (autenticado por JWT/middleware)
   useEffect(() => {
-    const run = async () => {
+    const bootstrap = async () => {
       try {
-        const res = await fetch('/api/public/properties')
+        // Obtener tenant del contexto actual
+        const me = await fetch('/api/tenants/me')
+        const meData = await me.json()
+        if (me.ok && meData?.tenant?.id) {
+          setTenantId(meData.tenant.id)
+        }
+
+        // Cargar propiedades del tenant
+        const res = await fetch('/api/tenant/properties')
         const data = await res.json()
-        if (data.success) setProperties(data.properties || [])
-      } catch {}
+        if (data.success) {
+          setProperties(data.properties || [])
+          // Seleccionar la primera propiedad por defecto
+          if (!propertyId && data.properties?.length) {
+            setPropertyId(String(data.properties[0].id))
+          }
+        }
+      } catch (e) {
+        console.error('Error inicializando calendario:', e)
+      }
     }
-    run()
+    bootstrap()
   }, [])
 
   const load = async () => {
@@ -101,8 +117,7 @@ export default function CalendarPage() {
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-4">Calendario</h1>
 
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-3 mb-4">
-        <input value={tenantId} onChange={e=>setTenantId(e.target.value)} className="border p-2 rounded" placeholder="tenant_id (uuid)" />
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
         <select value={propertyId} onChange={e=>setPropertyId(e.target.value)} className="border p-2 rounded">
           <option value="">Selecciona propiedad</option>
           {properties.map(p => (
