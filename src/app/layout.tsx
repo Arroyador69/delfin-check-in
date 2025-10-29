@@ -4,6 +4,7 @@ import "./globals.css";
 import ConditionalNavigation from "@/components/ConditionalNavigation";
 import SWRegister from "@/components/SWRegister";
 import PWAInstallGuide from "@/components/PWAInstallGuide";
+import ConditionalFooter from "@/components/ConditionalFooter";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -21,14 +22,15 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body className={inter.className}>
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen bg-gray-50 flex flex-col">
           <SWRegister />
           <ConditionalNavigation />
           <PWAInstallGuide />
           {/* Compensar la barra de navegación fija (h-16) */}
-          <main className="pt-16">
+          <main className="pt-16 flex-1">
             {children}
           </main>
+          <ConditionalFooter />
         </div>
       </body>
     </html>
