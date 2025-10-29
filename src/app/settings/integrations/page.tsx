@@ -314,7 +314,7 @@ export default function IntegrationsSettingsPage() {
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Integraciones de Calendario</h1>
-          <p className="text-gray-600 mt-2">Gestiona los calendarios del sistema y sincroniza con OTAs</p>
+          <p className="text-gray-800 mt-2">Gestiona los calendarios del sistema y sincroniza con OTAs</p>
         </div>
         <Button 
           className="bg-blue-600 hover:bg-blue-700"
@@ -436,7 +436,7 @@ export default function IntegrationsSettingsPage() {
         </CardHeader>
         <CardContent>
           {properties.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-8 text-gray-700">
               No tienes propiedades configuradas. Crea una propiedad primero.
             </div>
           ) : (
@@ -448,7 +448,7 @@ export default function IntegrationsSettingsPage() {
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
                         <h4 className="font-semibold text-lg mb-2">{property.property_name}</h4>
-                        <p className="text-sm text-gray-600 mb-3">
+                        <p className="text-sm text-gray-800 mb-3">
                           URL del iCal del sistema para sincronizar con OTAs:
                         </p>
                         <div className="flex items-center gap-2 bg-gray-50 p-3 rounded-md">
@@ -468,7 +468,7 @@ export default function IntegrationsSettingsPage() {
                             <ExternalLink className="w-4 h-4" />
                           </Button>
                         </div>
-                        <p className="text-xs text-gray-500 mt-2">
+                        <p className="text-xs text-gray-700 mt-2">
                           Copia esta URL y úsala en Airbnb, Expedia, Booking.com u otras OTAs para sincronizar tus reservas directas.
                         </p>
                       </div>
@@ -497,7 +497,7 @@ export default function IntegrationsSettingsPage() {
         </CardHeader>
         <CardContent>
           {externalCalendars.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-8 text-gray-700">
               No tienes calendarios externos configurados. Agrega uno para sincronizar con OTAs.
             </div>
           ) : (
@@ -517,12 +517,12 @@ export default function IntegrationsSettingsPage() {
                       </div>
                       
                       {calendar.calendar_url && (
-                        <p className="text-sm text-gray-600 mb-2">
+                        <p className="text-sm text-gray-800 mb-2">
                           <strong>URL:</strong> <code className="text-xs">{calendar.calendar_url}</code>
                         </p>
                       )}
                       
-                      <div className="flex items-center gap-4 text-sm text-gray-600">
+                      <div className="flex items-center gap-4 text-sm text-gray-800">
                         <span className="flex items-center gap-1">
                           <Clock className="w-4 h-4" />
                           Sincroniza cada {calendar.sync_frequency} min
