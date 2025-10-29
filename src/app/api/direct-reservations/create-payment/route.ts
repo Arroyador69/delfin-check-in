@@ -60,9 +60,9 @@ export async function POST(req: NextRequest) {
     });
 
     // Validar datos requeridos
-    if (!property_id || !guest_name || !guest_email || !check_in_date || !check_out_date) {
+    if (!property_id || !guest_name || !guest_email || !guest_phone || !check_in_date || !check_out_date) {
       const response = NextResponse.json(
-        { success: false, error: 'Faltan datos requeridos' },
+        { success: false, error: 'Faltan datos requeridos. El teléfono es obligatorio para contactar con usted sobre su reserva.' },
         { status: 400 }
       );
       Object.entries(corsHeaders(origin)).forEach(([key, value]) => {
@@ -110,10 +110,12 @@ export async function POST(req: NextRequest) {
       return response;
     }
 
-    // Calcular precios
-    const subtotal = (property.base_price * nights) + (property.cleaning_fee || 0);
-    const commissionRate = property.commission_rate || 0.09;
-    const stripeFeeRate = property.stripe_fee_rate || 0.014;
+    // Calcular precios (asegurar que sean números)
+    const basePrice = parseFloat(String(property.base_price || 0));
+    const cleaningFee = parseFloat(String(property.cleaning_fee || 0));
+    const subtotal = (basePrice * nights) + cleaningFee;
+    const commissionRate = parseFloat(String(property.commission_rate || 0.09));
+    const stripeFeeRate = parseFloat(String(property.stripe_fee_rate || 0.014));
     
     const commission = calculateCommission(subtotal, commissionRate, stripeFeeRate);
 
@@ -136,7 +138,7 @@ export async function POST(req: NextRequest) {
         ${guest_name}, ${guest_email}, ${guest_phone || null}, ${guest_document_type || null},
         ${guest_document_number || null}, ${guest_nationality || null},
         ${check_in_date}, ${check_out_date}, ${nights}, ${guests},
-        ${property.base_price}, ${property.cleaning_fee || 0}, ${property.security_deposit || 0},
+        ${basePrice}, ${cleaningFee}, ${parseFloat(String(property.security_deposit || 0))},
         ${subtotal}, ${commissionRate}, ${commission.delfin_commission_amount},
         ${commission.stripe_fee_amount}, ${commission.property_owner_amount}, ${commission.total_amount},
         'pending', 'confirmed', ${special_requests || null}

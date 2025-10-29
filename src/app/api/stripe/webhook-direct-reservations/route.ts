@@ -164,8 +164,11 @@ export async function POST(req: NextRequest) {
                 updated_at: ''
               };
 
+              // Generar URL del formulario público del tenant
+              const publicFormUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://admin.delfincheckin.com'}/api/public/form-redirect/${reservation.tenant_id}`;
+              
               // Enviar emails
-              const emailResults = await sendReservationEmails(reservation, property);
+              const emailResults = await sendReservationEmails(reservation, property, publicFormUrl);
               
               console.log('📧 Emails enviados:', {
                 reservationCode: reservation.reservation_code,

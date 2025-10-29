@@ -277,6 +277,11 @@ export async function POST(req: NextRequest) {
       case 'payment_intent.succeeded':
         try {
           const pi = event.data.object as Stripe.PaymentIntent
+          // IMPORTANTE: Ignorar pagos de reservas directas (ellos tienen su propio webhook)
+          if (pi.metadata?.reservation_id) {
+            console.log('ℹ️ Pago de reserva directa detectado, ignorando en webhook de onboarding')
+            break
+          }
           console.log('✅ Pago exitoso (PI):', { id: pi.id, amount: pi.amount, email: pi.metadata?.email || pi.receipt_email })
           // Disparar onboarding directamente desde el Payment Intent usando metadatos/email
           await createTenantFromPayment(pi)

@@ -135,23 +135,25 @@ export async function POST(req: NextRequest) {
       return response;
     }
 
-    // Calcular precios
-    const subtotal = (property.base_price * nights) + (property.cleaning_fee || 0);
-    const commissionRate = property.commission_rate || 0.09;
-    const stripeFeeRate = property.stripe_fee_rate || 0.014;
+    // Calcular precios (asegurar que base_price y cleaning_fee sean números)
+    const basePrice = parseFloat(String(property.base_price || 0));
+    const cleaningFee = parseFloat(String(property.cleaning_fee || 0));
+    const subtotal = (basePrice * nights) + cleaningFee;
+    const commissionRate = parseFloat(String(property.commission_rate || 0.09));
+    const stripeFeeRate = parseFloat(String(property.stripe_fee_rate || 0.014));
     
     const commission = calculateCommission(subtotal, commissionRate, stripeFeeRate);
 
     const pricing = {
       nights,
-      base_price: property.base_price,
-      cleaning_fee: property.cleaning_fee || 0,
-      subtotal,
+      base_price: basePrice.toFixed(2),
+      cleaning_fee: cleaningFee.toFixed(2),
+      subtotal: subtotal.toFixed(2),
       delfin_commission_rate: commissionRate,
-      delfin_commission_amount: commission.delfin_commission_amount,
-      stripe_fee_amount: commission.stripe_fee_amount,
-      property_owner_amount: commission.property_owner_amount,
-      total_amount: commission.total_amount,
+      delfin_commission_amount: commission.delfin_commission_amount.toFixed(2),
+      stripe_fee_amount: commission.stripe_fee_amount.toFixed(2),
+      property_owner_amount: commission.property_owner_amount.toFixed(2),
+      total_amount: commission.total_amount.toFixed(2),
       available: true
     };
 

@@ -20,7 +20,8 @@ export async function sendOnboardingEmail(params: {
   tempPassword?: string;
 }) {
   const transporter = getTransport();
-  const from = process.env.SMTP_FROM || `Delfín Check-in <no-reply@delfincheckin.com>`;
+  // Email específico para onboarding de propietarios (admin)
+  const from = process.env.SMTP_FROM_ONBOARDING || process.env.SMTP_FROM || `Delfín Check-in <noreply@delfincheckin.com>`;
 
   const html = `
   <div style="font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; line-height:1.6;">

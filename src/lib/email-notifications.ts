@@ -20,7 +20,7 @@ const transporter = nodemailer.createTransport({
 // PLANTILLAS DE EMAIL
 // =====================================================
 
-export function generateGuestConfirmationEmail(reservation: DirectReservation, property: TenantProperty) {
+export function generateGuestConfirmationEmail(reservation: DirectReservation, property: TenantProperty, publicFormUrl?: string) {
   const checkInDate = new Date(reservation.check_in_date).toLocaleDateString('es-ES', {
     year: 'numeric',
     month: 'long',
@@ -32,6 +32,9 @@ export function generateGuestConfirmationEmail(reservation: DirectReservation, p
     month: 'long',
     day: 'numeric'
   });
+  
+  // URL del formulario público del tenant
+  const formUrl = publicFormUrl || `${process.env.NEXT_PUBLIC_APP_URL || 'https://admin.delfincheckin.com'}/api/public/form-redirect/${reservation.tenant_id}`;
 
   return {
     subject: `✅ Reserva confirmada - ${reservation.reservation_code}`,
@@ -107,11 +110,28 @@ export function generateGuestConfirmationEmail(reservation: DirectReservation, p
               </div>
             ` : ''}
             
+            <div class="reservation-details" style="background: #fff3cd; border-left: 4px solid #ffc107;">
+              <h3>⚠️ IMPORTANTE: Formulario de registro obligatorio</h3>
+              <p><strong>Debe completar el formulario de registro de viajeros lo antes posible.</strong> Este formulario es obligatorio por ley y los datos se envían al Gobierno de España (Ministerio del Interior).</p>
+              <p style="margin-top: 15px;">
+                <a href="${formUrl}" target="_blank" style="background:#28a745;color:white;padding:12px 24px;border-radius:6px;text-decoration:none;display:inline-block;font-weight:bold;">
+                  📝 Rellenar formulario de registro de viajeros
+                </a>
+              </p>
+              <p style="margin-top: 15px; font-size: 14px; color: #666;">
+                <strong>¿Por qué es importante?</strong><br>
+                - Es un requisito legal obligatorio en España<br>
+                - Los datos se comunican automáticamente al Ministerio del Interior<br>
+                - Necesario para el check-in en la propiedad<br>
+                - Tiempo estimado: 5-10 minutos
+              </p>
+            </div>
+            
             <div class="reservation-details">
               <h3>📞 Información de contacto</h3>
               <p>Si tienes alguna pregunta sobre tu reserva, puedes contactarnos en:</p>
-              <p><strong>Email:</strong> noreply@delfincheckin.com</p>
-              <p><strong>Teléfono:</strong> +34 XXX XXX XXX</p>
+              <p><strong>Email:</strong> booking@delfincheckin.com</p>
+              <p><strong>Teléfono:</strong> ${reservation.guest_phone || 'No proporcionado'}</p>
             </div>
             
             <p>¡Esperamos que disfrutes de tu estancia!</p>
@@ -142,6 +162,11 @@ export function generateGuestConfirmationEmail(reservation: DirectReservation, p
       - Total: ${reservation.total_amount.toFixed(2)}€
       
       ${reservation.special_requests ? `Solicitudes especiales: ${reservation.special_requests}` : ''}
+      
+      ⚠️ IMPORTANTE: Debe completar el formulario de registro de viajeros:
+      ${formUrl}
+      
+      Este formulario es obligatorio por ley y los datos se envían al Gobierno de España (Ministerio del Interior).
       
       ¡Esperamos que disfrutes de tu estancia!
       
@@ -198,6 +223,13 @@ export function generatePropertyOwnerNotificationEmail(reservation: DirectReserv
           <div class="content">
             <h2>¡Felicitaciones!</h2>
             <p>Has recibido una nueva reserva directa para tu propiedad <strong>${property.property_name}</strong>.</p>
+            
+            ${reservation.payment_status === 'paid' ? `
+              <div class="reservation-details" style="background: #d4edda; border-left: 4px solid #28a745;">
+                <h3 style="color: #155724; margin-top: 0;">✅ Pago Confirmado</h3>
+                <p style="color: #155724; margin-bottom: 0;">El cliente ha completado el pago exitosamente. La reserva está confirmada y lista para gestionar.</p>
+              </div>
+            ` : ''}
             
             <div class="reservation-details">
               <h3>👤 Información del huésped</h3>
@@ -291,7 +323,7 @@ export function generatePropertyOwnerNotificationEmail(reservation: DirectReserv
       
       Has recibido una nueva reserva directa para tu propiedad ${property.property_name}.
       
-      Información del huésped:
+      ${reservation.payment_status === 'paid' ? '✅ PAGO CONFIRMADO - El cliente ha completado el pago exitosamente.\n\n' : ''}Información del huésped:
       - Nombre: ${reservation.guest_name}
       - Email: ${reservation.guest_email}
       - Teléfono: ${reservation.guest_phone || 'No proporcionado'}
@@ -319,12 +351,13 @@ export function generatePropertyOwnerNotificationEmail(reservation: DirectReserv
 // FUNCIONES DE ENVÍO
 // =====================================================
 
-export async function sendGuestConfirmationEmail(reservation: DirectReservation, property: TenantProperty) {
+export async function sendGuestConfirmationEmail(reservation: DirectReservation, property: TenantProperty, publicFormUrl?: string) {
   try {
-    const emailContent = generateGuestConfirmationEmail(reservation, property);
+    const emailContent = generateGuestConfirmationEmail(reservation, property, publicFormUrl);
     
     const mailOptions = {
-      from: process.env.SMTP_FROM || 'noreply@delfincheckin.com',
+      // Email específico para reservas directas (book.delfincheckin.com)
+      from: process.env.SMTP_FROM_BOOKING || process.env.SMTP_FROM || 'Delfín Check-in <booking@delfincheckin.com>',
       to: reservation.guest_email,
       subject: emailContent.subject,
       html: emailContent.html,
@@ -365,7 +398,8 @@ export async function sendPropertyOwnerNotificationEmail(reservation: DirectRese
     const emailContent = generatePropertyOwnerNotificationEmail(reservation, property);
     
     const mailOptions = {
-      from: process.env.SMTP_FROM || 'noreply@delfincheckin.com',
+      // Email específico para reservas directas (book.delfincheckin.com)
+      from: process.env.SMTP_FROM_BOOKING || process.env.SMTP_FROM || 'Delfín Check-in <booking@delfincheckin.com>',
       to: ownerEmail,
       subject: emailContent.subject,
       html: emailContent.html,
@@ -386,11 +420,11 @@ export async function sendPropertyOwnerNotificationEmail(reservation: DirectRese
   }
 }
 
-export async function sendReservationEmails(reservation: DirectReservation, property: TenantProperty) {
+export async function sendReservationEmails(reservation: DirectReservation, property: TenantProperty, publicFormUrl?: string) {
   console.log('📧 Enviando emails de notificación para reserva:', reservation.reservation_code);
   
   const results = await Promise.allSettled([
-    sendGuestConfirmationEmail(reservation, property),
+    sendGuestConfirmationEmail(reservation, property, publicFormUrl),
     sendPropertyOwnerNotificationEmail(reservation, property)
   ]);
 
