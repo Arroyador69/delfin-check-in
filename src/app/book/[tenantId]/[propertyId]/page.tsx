@@ -1,18 +1,187 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, use } from 'react';
 import { Calendar, Users, Euro, CreditCard, CheckCircle } from 'lucide-react';
 import { TenantProperty } from '@/lib/direct-reservations-types';
 import { loadStripe } from '@stripe/stripe-js';
+import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
-interface BookingFormProps {
-  tenantId: string;
-  propertyId: string;
+interface BookingPageProps {
+  params: Promise<{
+    tenantId: string;
+    propertyId: string;
+  }>;
 }
 
-export default function PublicBookingPage({ tenantId, propertyId }: BookingFormProps) {
+function PaymentForm({ 
+  tenantId, 
+  propertyId, 
+  formData, 
+  pricing, 
+  property, 
+  onBack, 
+  onSuccess 
+}: {
+  tenantId: string;
+  propertyId: string;
+  formData: any;
+  pricing: any;
+  property: TenantProperty;
+  onBack: () => void;
+  onSuccess: () => void;
+}) {
+  const stripe = useStripe();
+  const elements = useElements();
+  const [processing, setProcessing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!stripe || !elements) return;
+
+    setProcessing(true);
+    setError(null);
+
+    try {
+      const cardElement = elements.getElement(CardElement);
+      if (!cardElement) {
+        throw new Error('Tarjeta no encontrada');
+      }
+
+      // Crear Payment Intent
+      const response = await fetch('/api/direct-reservations/create-payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          property_id: parseInt(propertyId),
+          ...formData
+        })
+      });
+
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.error || 'Error creando el pago');
+      }
+
+      // Confirmar el pago con Stripe
+      const { error: confirmError } = await stripe.confirmCardPayment(data.client_secret, {
+        payment_method: {
+          card: cardElement,
+          billing_details: {
+            name: formData.guest_name,
+            email: formData.guest_email,
+          },
+        },
+      });
+
+      if (confirmError) {
+        throw new Error(confirmError.message);
+      }
+
+      onSuccess();
+    } catch (err: any) {
+      setError(err.message || 'Error procesando el pago');
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <h2 className="text-xl font-semibold mb-4">Confirmar y pagar</h2>
+      
+      {pricing && (
+        <div className="bg-gray-50 p-4 rounded-lg">
+          <h3 className="font-semibold mb-3">Resumen de la reserva</h3>
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between">
+              <span>Propiedad:</span>
+              <span>{property.property_name}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Fechas:</span>
+              <span>{formData.check_in_date} - {formData.check_out_date}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Huéspedes:</span>
+              <span>{formData.guests}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Noches:</span>
+              <span>{pricing.nights}</span>
+            </div>
+            <div className="flex justify-between border-t pt-2 font-semibold">
+              <span>Total:</span>
+              <span>{pricing.total_amount}€</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="border border-gray-300 rounded-lg p-4">
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Datos de la tarjeta *
+        </label>
+        <CardElement
+          options={{
+            style: {
+              base: {
+                fontSize: '16px',
+                color: '#424770',
+                '::placeholder': {
+                  color: '#aab7c4',
+                },
+              },
+              invalid: {
+                color: '#9e2146',
+              },
+            },
+          }}
+        />
+      </div>
+
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+          {error}
+        </div>
+      )}
+
+      <div className="flex gap-4">
+        <button
+          type="button"
+          onClick={onBack}
+          className="flex-1 bg-gray-300 text-gray-700 py-3 rounded-lg hover:bg-gray-400"
+        >
+          Atrás
+        </button>
+        <button
+          type="submit"
+          disabled={processing || !stripe}
+          className="flex-1 bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 disabled:bg-gray-300 flex items-center justify-center gap-2"
+        >
+          {processing ? (
+            <>
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+              Procesando...
+            </>
+          ) : (
+            <>
+              <CreditCard className="w-4 h-4" />
+              Pagar {pricing?.total_amount}€
+            </>
+          )}
+        </button>
+      </div>
+    </form>
+  );
+}
+
+export default function PublicBookingPage({ params }: BookingPageProps) {
+  const resolvedParams = use(params);
+  const { tenantId, propertyId } = resolvedParams;
   const [property, setProperty] = useState<TenantProperty | null>(null);
   const [loading, setLoading] = useState(true);
   const [step, setStep] = useState(1); // 1: Fechas, 2: Huéspedes, 3: Datos, 4: Pago
@@ -29,11 +198,12 @@ export default function PublicBookingPage({ tenantId, propertyId }: BookingFormP
     special_requests: ''
   });
   const [pricing, setPricing] = useState<any>(null);
-  const [processing, setProcessing] = useState(false);
 
   useEffect(() => {
-    loadProperty();
-  }, [propertyId]);
+    if (propertyId && tenantId) {
+      loadProperty();
+    }
+  }, [propertyId, tenantId]);
 
   const loadProperty = async () => {
     try {
@@ -43,6 +213,8 @@ export default function PublicBookingPage({ tenantId, propertyId }: BookingFormP
       
       if (data.success) {
         setProperty(data.property);
+      } else {
+        console.error('Error cargando propiedad:', data.error);
       }
     } catch (error) {
       console.error('Error cargando propiedad:', error);
@@ -81,56 +253,8 @@ export default function PublicBookingPage({ tenantId, propertyId }: BookingFormP
     }
   }, [formData.check_in_date, formData.check_out_date, formData.guests]);
 
-  const handlePayment = async () => {
-    if (!pricing) return;
-
-    setProcessing(true);
-
-    try {
-      // Crear Payment Intent
-      const response = await fetch('/api/direct-reservations/create-payment', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          property_id: parseInt(propertyId),
-          ...formData
-        })
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        // Procesar pago con Stripe
-        const stripe = await stripePromise;
-        if (!stripe) throw new Error('Stripe no disponible');
-
-        const { error } = await stripe.confirmCardPayment(data.client_secret, {
-          payment_method: {
-            card: {
-              // Aquí iría la información de la tarjeta del formulario
-            },
-            billing_details: {
-              name: formData.guest_name,
-              email: formData.guest_email,
-            },
-          },
-        });
-
-        if (error) {
-          console.error('Error en el pago:', error);
-          alert('Error en el pago: ' + error.message);
-        } else {
-          setStep(5); // Página de confirmación
-        }
-      } else {
-        alert('Error: ' + data.error);
-      }
-    } catch (error) {
-      console.error('Error procesando pago:', error);
-      alert('Error procesando el pago');
-    } finally {
-      setProcessing(false);
-    }
+  const handlePaymentSuccess = () => {
+    setStep(5);
   };
 
   if (loading) {
@@ -398,63 +522,17 @@ export default function PublicBookingPage({ tenantId, propertyId }: BookingFormP
 
           {/* Paso 4: Pago */}
           {step === 4 && (
-            <div className="space-y-4">
-              <h2 className="text-xl font-semibold mb-4">Confirmar y pagar</h2>
-              
-              {pricing && (
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h3 className="font-semibold mb-3">Resumen de la reserva</h3>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span>Propiedad:</span>
-                      <span>{property.property_name}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Fechas:</span>
-                      <span>{formData.check_in_date} - {formData.check_out_date}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Huéspedes:</span>
-                      <span>{formData.guests}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Noches:</span>
-                      <span>{pricing.nights}</span>
-                    </div>
-                    <div className="flex justify-between border-t pt-2 font-semibold">
-                      <span>Total:</span>
-                      <span>{pricing.total_amount}€</span>
-                    </div>
-                  </div>
-                </div>
-              )}
-              
-              <div className="flex gap-4">
-                <button
-                  onClick={() => setStep(3)}
-                  className="flex-1 bg-gray-300 text-gray-700 py-3 rounded-lg hover:bg-gray-400"
-                >
-                  Atrás
-                </button>
-                <button
-                  onClick={handlePayment}
-                  disabled={processing}
-                  className="flex-1 bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 disabled:bg-gray-300 flex items-center justify-center gap-2"
-                >
-                  {processing ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                      Procesando...
-                    </>
-                  ) : (
-                    <>
-                      <CreditCard className="w-4 h-4" />
-                      Pagar {pricing?.total_amount}€
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
+            <Elements stripe={stripePromise}>
+              <PaymentForm
+                tenantId={tenantId}
+                propertyId={propertyId}
+                formData={formData}
+                pricing={pricing}
+                property={property}
+                onBack={() => setStep(3)}
+                onSuccess={handlePaymentSuccess}
+              />
+            </Elements>
           )}
 
           {/* Paso 5: Confirmación */}

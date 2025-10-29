@@ -29,7 +29,9 @@ export async function middleware(req: NextRequest) {
   const isPublicRoute = (
     url.pathname === '/admin-login' ||
     url.pathname === '/forgot-password' ||
+    url.pathname.startsWith('/book/') ||
     url.pathname.startsWith('/api/public/') ||
+    url.pathname.startsWith('/api/direct-reservations/') ||
     url.pathname.startsWith('/api/test-') ||
     url.pathname.startsWith('/api/debug-') ||
     url.pathname.startsWith('/api/check-') ||
