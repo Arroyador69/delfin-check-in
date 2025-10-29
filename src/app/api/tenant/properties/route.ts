@@ -46,7 +46,7 @@ export async function GET(req: NextRequest) {
       placeholders AS (
         SELECT 
           NULL::int AS id,
-          t.id       AS tenant_id,
+          ${tenantId}::uuid AS tenant_id,
           r.name     AS property_name,
           NULL::text AS description,
           '[]'::jsonb AS photos,
@@ -66,10 +66,9 @@ export async function GET(req: NextRequest) {
           r.id AS room_id,
           TRUE AS is_placeholder
         FROM "Room" r
-        JOIN tenants t ON t.id::text = r."lodgingId"
         LEFT JOIN property_room_map prm
-          ON prm.tenant_id = t.id::uuid AND prm.room_id = r.id
-        WHERE t.id = ${tenantId}::uuid AND prm.room_id IS NULL
+          ON prm.tenant_id = ${tenantId}::uuid AND prm.room_id = r.id
+        WHERE r."lodgingId" = ${tenantId}::text AND prm.room_id IS NULL
       )
       SELECT * FROM mapped
       UNION ALL
