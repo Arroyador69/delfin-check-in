@@ -5,6 +5,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
 import { CreatePropertyRequest, UpdatePropertyRequest, TenantProperty } from '@/lib/direct-reservations-types';
+import { getTenantId } from '@/lib/tenant';
 
 // =====================================================
 // GET: Obtener propiedades del tenant
@@ -12,7 +13,18 @@ import { CreatePropertyRequest, UpdatePropertyRequest, TenantProperty } from '@/
 
 export async function GET(req: NextRequest) {
   try {
-    const tenantId = req.headers.get('x-tenant-id') || 'default';
+    // Obtener tenant_id del header (inyectado por middleware) o del token
+    let tenantId = req.headers.get('x-tenant-id');
+    if (!tenantId) {
+      tenantId = await getTenantId(req);
+    }
+    
+    if (!tenantId) {
+      return NextResponse.json(
+        { success: false, error: 'No se pudo identificar el tenant' },
+        { status: 401 }
+      );
+    }
     
     console.log('🏠 Obteniendo propiedades para tenant:', tenantId);
     
@@ -71,7 +83,19 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const tenantId = req.headers.get('x-tenant-id') || 'default';
+    // Obtener tenant_id del header (inyectado por middleware) o del token
+    let tenantId = req.headers.get('x-tenant-id');
+    if (!tenantId) {
+      tenantId = await getTenantId(req);
+    }
+    
+    if (!tenantId) {
+      return NextResponse.json(
+        { success: false, error: 'No se pudo identificar el tenant' },
+        { status: 401 }
+      );
+    }
+    
     const data: CreatePropertyRequest = await req.json();
     
     console.log('🏠 Creando nueva propiedad para tenant:', tenantId);
@@ -143,7 +167,19 @@ export async function POST(req: NextRequest) {
 
 export async function PUT(req: NextRequest) {
   try {
-    const tenantId = req.headers.get('x-tenant-id') || 'default';
+    // Obtener tenant_id del header (inyectado por middleware) o del token
+    let tenantId = req.headers.get('x-tenant-id');
+    if (!tenantId) {
+      tenantId = await getTenantId(req);
+    }
+    
+    if (!tenantId) {
+      return NextResponse.json(
+        { success: false, error: 'No se pudo identificar el tenant' },
+        { status: 401 }
+      );
+    }
+    
     const { searchParams } = new URL(req.url);
     const propertyId = searchParams.get('id');
     
@@ -289,7 +325,19 @@ export async function PUT(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   try {
-    const tenantId = req.headers.get('x-tenant-id') || 'default';
+    // Obtener tenant_id del header (inyectado por middleware) o del token
+    let tenantId = req.headers.get('x-tenant-id');
+    if (!tenantId) {
+      tenantId = await getTenantId(req);
+    }
+    
+    if (!tenantId) {
+      return NextResponse.json(
+        { success: false, error: 'No se pudo identificar el tenant' },
+        { status: 401 }
+      );
+    }
+    
     const { searchParams } = new URL(req.url);
     const propertyId = searchParams.get('id');
     

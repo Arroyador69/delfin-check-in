@@ -5,10 +5,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
 import { DirectReservation } from '@/lib/direct-reservations-types';
+import { getTenantId } from '@/lib/tenant';
 
 export async function GET(req: NextRequest) {
   try {
-    const tenantId = req.headers.get('x-tenant-id') || 'default';
+    // Obtener tenant_id del header (inyectado por middleware) o del token
+    let tenantId = req.headers.get('x-tenant-id');
+    if (!tenantId) {
+      tenantId = await getTenantId(req);
+    }
+    
+    if (!tenantId) {
+      return NextResponse.json(
+        { success: false, error: 'No se pudo identificar el tenant' },
+        { status: 401 }
+      );
+    }
     
     console.log('📊 Obteniendo reservas directas para tenant:', tenantId);
     
