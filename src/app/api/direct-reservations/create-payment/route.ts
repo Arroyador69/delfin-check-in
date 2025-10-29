@@ -172,6 +172,7 @@ export async function POST(req: NextRequest) {
     });
 
     // Crear Payment Intent en Stripe (modo test)
+    // IMPORTANTE: No usar confirmation_method junto con automatic_payment_methods
     const paymentIntent = await stripe.paymentIntents.create({
       amount: paymentAmount,
       currency: 'eur',
@@ -185,8 +186,7 @@ export async function POST(req: NextRequest) {
       },
       description: `Reserva ${reservationCode} - ${property.property_name}`,
       receipt_email: guest_email,
-      // No confirmar automáticamente - el frontend lo confirmará
-      confirmation_method: 'manual',
+      // Usar automatic_payment_methods (forma moderna recomendada)
       automatic_payment_methods: {
         enabled: true,
       },
