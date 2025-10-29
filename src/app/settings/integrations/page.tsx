@@ -328,7 +328,7 @@ export default function IntegrationsSettingsPage() {
       {/* Información del plan */}
       <Alert className="mb-6">
         <Info className="h-4 w-4" />
-        <AlertDescription>
+        <AlertDescription className="font-bold text-gray-900">
           <strong>Plan actual:</strong> Puedes gestionar hasta <strong>{maxProperties}</strong> propiedades/habitaciones según tu plan.
           Cada propiedad genera automáticamente un iCal único que puedes usar en Airbnb, Expedia y Booking.com.
           Además, puedes agregar hasta 5 calendarios externos adicionales por propiedad para sincronizar sus reservas.
