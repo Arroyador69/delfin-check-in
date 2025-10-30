@@ -120,9 +120,45 @@ export async function POST(req: NextRequest) {
       return response;
     }
 
-    // Verificar disponibilidad (por ahora asumimos que está disponible)
-    // TODO: Implementar verificación real contra property_availability
-    const isAvailable = true;
+    // Verificar disponibilidad REAL contra:
+    // - reservations (operacional) por room_id mapeado
+    // - direct_reservations confirmadas por property_id
+    // - property_availability con available = FALSE
+    // Primero resolvemos el room_id del slot
+    const overlap = await sql`
+      WITH map AS (
+        SELECT room_id
+        FROM property_room_map
+        WHERE tenant_id = ${property.tenant_id}::uuid AND property_id = ${property_id}::int
+        LIMIT 1
+      ),
+      solapadas AS (
+        SELECT 1
+        FROM reservations r, map m
+        WHERE r.tenant_id = ${property.tenant_id}::uuid
+          AND r.room_id = m.room_id
+          AND r.check_in  < ${check_out_date}::date
+          AND r.check_out > ${check_in_date}::date
+        UNION ALL
+        SELECT 1
+        FROM direct_reservations dr
+        WHERE dr.tenant_id = ${property.tenant_id}::uuid
+          AND dr.property_id = ${property_id}::int
+          AND dr.reservation_status = 'confirmed'
+          AND dr.check_in_date  < ${check_out_date}::date
+          AND dr.check_out_date > ${check_in_date}::date
+        UNION ALL
+        SELECT 1
+        FROM property_availability pa
+        WHERE pa.property_id = ${property_id}::int
+          AND pa.date >= ${check_in_date}::date
+          AND pa.date <  ${check_out_date}::date
+          AND pa.available = FALSE
+      )
+      SELECT COUNT(*)::int AS cnt FROM solapadas;
+    `;
+
+    const isAvailable = (overlap.rows[0]?.cnt ?? 0) === 0;
 
     if (!isAvailable) {
       const response = NextResponse.json(
@@ -154,7 +190,7 @@ export async function POST(req: NextRequest) {
       stripe_fee_amount: commission.stripe_fee_amount.toFixed(2),
       property_owner_amount: commission.property_owner_amount.toFixed(2),
       total_amount: commission.total_amount.toFixed(2),
-      available: true
+      available: isAvailable
     };
 
     console.log('✅ Disponibilidad verificada:', pricing);
