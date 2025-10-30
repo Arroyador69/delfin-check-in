@@ -997,42 +997,48 @@ export default function ReservationsPage() {
             
             <form onSubmit={handleUpdateReservation} className="p-6 space-y-6">
               {/* Información de la habitación */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <Bed className="h-4 w-4 inline mr-2" />
-                    Habitación *
-                  </label>
-                  <select
-                    required
-                    value={formData.room_id}
-                    onChange={(e) => setFormData({...formData, room_id: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">Seleccionar habitación</option>
-                    {rooms.map(room => (
-                      <option key={room.id} value={room.id}>
-                        {room.name} - €{room.basePrice}/noche
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <User className="h-4 w-4 inline mr-2" />
-                    Estado *
-                  </label>
-                  <select
-                    required
-                    value={formData.status}
-                    onChange={(e) => setFormData({...formData, status: e.target.value as any})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="confirmed">Confirmada</option>
-                    <option value="completed">Completada</option>
-                    <option value="cancelled">Cancelada</option>
-                  </select>
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-200">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                  <span style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>🏠</span>
+                  Información de la Reserva
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <Bed className="h-4 w-4 inline mr-2" />
+                      Habitación *
+                    </label>
+                    <select
+                      required
+                      value={formData.room_id}
+                      onChange={(e) => setFormData({...formData, room_id: e.target.value})}
+                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white"
+                    >
+                      <option value="">Seleccionar habitación</option>
+                      {rooms.map(room => (
+                        <option key={room.id} value={room.id}>
+                          {room.name} - €{room.basePrice}/noche
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <User className="h-4 w-4 inline mr-2" />
+                      Estado *
+                    </label>
+                    <select
+                      required
+                      value={formData.status}
+                      onChange={(e) => setFormData({...formData, status: e.target.value as any})}
+                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white"
+                    >
+                      <option value="confirmed">Confirmada</option>
+                      <option value="completed">Completada</option>
+                      <option value="cancelled">Cancelada</option>
+                    </select>
+                  </div>
                 </div>
               </div>
 
@@ -1151,86 +1157,98 @@ export default function ReservationsPage() {
               </div>
 
               {/* Información financiera */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <Euro className="h-4 w-4 inline mr-2" />
-                    Precio total
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={formData.total_price}
-                    onChange={(e) => setFormData({...formData, total_price: e.target.value})}
-                    placeholder="0.00"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <CreditCard className="h-4 w-4 inline mr-2" />
-                    Pagó huésped
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={formData.guest_paid}
-                    onChange={(e) => setFormData({...formData, guest_paid: e.target.value})}
-                    placeholder="0.00"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <Euro className="h-4 w-4 inline mr-2" />
-                    Comisión plataforma
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={formData.platform_commission}
-                    onChange={(e) => setFormData({...formData, platform_commission: e.target.value})}
-                    placeholder="0.00"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
+              <div className="bg-gradient-to-r from-yellow-50 to-orange-50 p-6 rounded-xl border border-yellow-200">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                  <span style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>💰</span>
+                  Información Financiera
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <Euro className="h-4 w-4 inline mr-2" />
+                      Precio total
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={formData.total_price}
+                      onChange={(e) => setFormData({...formData, total_price: e.target.value})}
+                      placeholder="0.00"
+                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <CreditCard className="h-4 w-4 inline mr-2" />
+                      Pagó huésped
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={formData.guest_paid}
+                      onChange={(e) => setFormData({...formData, guest_paid: e.target.value})}
+                      placeholder="0.00"
+                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <Euro className="h-4 w-4 inline mr-2" />
+                      Comisión plataforma
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={formData.platform_commission}
+                      onChange={(e) => setFormData({...formData, platform_commission: e.target.value})}
+                      placeholder="0.00"
+                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white"
+                    />
+                  </div>
                 </div>
               </div>
 
               {/* Canal y Moneda */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <Globe className="h-4 w-4 inline mr-2" />
-                    Canal de reserva *
-                  </label>
-                  <select
-                    required
-                    value={formData.channel}
-                    onChange={(e) => setFormData({...formData, channel: e.target.value as 'airbnb' | 'booking' | 'manual'})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="manual">📝 Manual</option>
-                    <option value="airbnb">🏠 Airbnb</option>
-                    <option value="booking">🌐 Booking.com</option>
-                  </select>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <Euro className="h-4 w-4 inline mr-2" />
-                    Moneda
-                  </label>
-                  <select
-                    value={formData.currency}
-                    onChange={(e) => setFormData({...formData, currency: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="EUR">EUR (Euro)</option>
-                    <option value="USD">USD (Dólar)</option>
-                    <option value="GBP">GBP (Libra)</option>
-                  </select>
+              <div className="bg-gradient-to-r from-indigo-50 to-blue-50 p-6 rounded-xl border border-indigo-200">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                  <span style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>🌐</span>
+                  Configuración de Reserva
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <Globe className="h-4 w-4 inline mr-2" />
+                      Canal de reserva *
+                    </label>
+                    <select
+                      required
+                      value={formData.channel}
+                      onChange={(e) => setFormData({...formData, channel: e.target.value as 'airbnb' | 'booking' | 'manual'})}
+                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white"
+                    >
+                      <option value="manual">📝 Manual</option>
+                      <option value="airbnb">🏠 Airbnb</option>
+                      <option value="booking">🌐 Booking.com</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <Euro className="h-4 w-4 inline mr-2" />
+                      Moneda
+                    </label>
+                    <select
+                      value={formData.currency}
+                      onChange={(e) => setFormData({...formData, currency: e.target.value})}
+                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white"
+                    >
+                      <option value="EUR">EUR (Euro)</option>
+                      <option value="USD">USD (Dólar)</option>
+                      <option value="GBP">GBP (Libra)</option>
+                    </select>
+                  </div>
                 </div>
               </div>
 
