@@ -14,27 +14,33 @@ export async function GET(req: NextRequest) {
 
     console.log('🏠 [property-slots] Tenant detectado:', tenantId)
 
-    // Resolver lodgingIds asociados al tenant
+    // Resolver lodging_id asociado al tenant (columna singular)
     const tenantRow = await sql`
-      SELECT lodgings
+      SELECT lodging_id
       FROM tenants
       WHERE id = ${tenantId}::uuid
       LIMIT 1
     `
-    const lodgingIds: string[] = Array.isArray(tenantRow.rows?.[0]?.lodgings)
-      ? tenantRow.rows[0].lodgings
-      : []
-    console.log('🏨 [property-slots] LodgingIds detectados:', lodgingIds)
+    const lodgingId: string | null = tenantRow.rows?.[0]?.lodging_id || null
+    console.log('🏨 [property-slots] LodgingId detectado:', lodgingId)
 
-    // Si no hay lodgingIds, no habrá Rooms
-    const rooms = lodgingIds.length > 0
-      ? await sql`
+    // Si no hay lodging_id, intentamos fallback comparando con tenantId (por compatibilidad antigua)
+    let rooms
+    if (lodgingId) {
+      rooms = await sql`
         SELECT id AS room_id, name AS room_name
         FROM "Room"
-        WHERE "lodgingId" = ANY(${lodgingIds}::text[])
+        WHERE "lodgingId" = ${lodgingId}::text
         ORDER BY id
       `
-      : { rowCount: 0, rows: [] as any[] }
+    } else {
+      rooms = await sql`
+        SELECT id AS room_id, name AS room_name
+        FROM "Room"
+        WHERE "lodgingId" = ${tenantId}::text
+        ORDER BY id
+      `
+    }
     console.log('📦 [property-slots] Rooms encontrados:', (rooms as any).rowCount)
 
     // Traer mappings existentes y sus propiedades
