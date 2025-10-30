@@ -13,6 +13,7 @@ export default function PropertiesManagement() {
   const [tenantId, setTenantId] = useState<string>('');
   const [copiedLink, setCopiedLink] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [slots, setSlots] = useState<{ room_id: string; room_name: string; property_id: number|null; property_name: string|null; is_placeholder: boolean }[]>([]);
   const [formData, setFormData] = useState<CreatePropertyRequest>({
     property_name: '',
     description: '',
@@ -70,6 +71,14 @@ export default function PropertiesManagement() {
       const data = await response.json();
       if (data.success) {
         setProperties(data.properties);
+      }
+      // Cargar slots para el formulario (solo placeholders y los mapeados)
+      const slotsRes = await fetch('/api/tenant/property-slots', {
+        headers: tenantId ? { 'x-tenant-id': tenantId } : undefined
+      })
+      const slotsData = await slotsRes.json()
+      if (slotsRes.ok && slotsData.success) {
+        setSlots(slotsData.slots || [])
       }
     } catch (error) {
       console.error('Error cargando propiedades:', error);
@@ -517,6 +526,30 @@ export default function PropertiesManagement() {
                       </label>
                     </div>
                   </div>
+
+                  {/* Selector de Slot (Room) */}
+                  {!editingProperty && (
+                    <div className="bg-white p-6 rounded-xl border border-blue-200 shadow-sm">
+                      <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                        <span className="text-xl sm:text-2xl" style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>🧩</span>
+                        Seleccionar Slot (Habitación/Unidad)
+                      </h3>
+                      <p className="text-sm text-gray-600 mb-3">Elige una unidad existente para convertir el placeholder en propiedad configurada.</p>
+                      <select
+                        required
+                        value={(formData as any).room_id || ''}
+                        onChange={(e)=> setFormData({ ...formData, room_id: e.target.value })}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                      >
+                        <option value="" disabled>Selecciona un slot</option>
+                        {slots.map((s, idx) => (
+                          <option key={s.room_id || `slot-${idx}`} value={s.room_id}>
+                            {s.property_name || s.room_name} {s.property_id ? '' : '(sin configurar)'}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
 
                   {/* Información básica */}
                   <div className="bg-white p-6 rounded-xl border border-blue-200 shadow-sm">

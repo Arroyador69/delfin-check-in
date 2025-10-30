@@ -126,6 +126,8 @@ export interface CreatePropertyRequest {
   minimum_nights?: number;
   maximum_nights?: number;
   availability_rules?: Record<string, any>;
+  // Slot (Room) a asociar al crear/convertir placeholder en propiedad real
+  room_id?: string | number;
 }
 
 export interface UpdatePropertyRequest extends Partial<CreatePropertyRequest> {
