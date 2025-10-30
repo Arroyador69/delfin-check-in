@@ -134,6 +134,19 @@ export async function GET(req: NextRequest) {
       text += ` ORDER BY r.check_in ASC`
       reservations = await sql.query(text, params)
     }
+    // Traer nombres de habitación para mejor visualización
+    const roomNamesMap = new Map<string, string>()
+    try {
+      const roomIds = [...new Set(reservations.rows.map((r: any) => r.room_id))]
+      if (roomIds.length > 0) {
+        const roomsRes = await sql.query(
+          `SELECT id, name FROM "Room" WHERE id = ANY($1::text[])`,
+          [roomIds]
+        )
+        roomsRes.rows.forEach((row: any) => roomNamesMap.set(String(row.id), row.name))
+      }
+    } catch {}
+
     const reservationEvents = reservations.rows.map((r: any) => ({
       tenant_id: r.tenant_id,
       property_id: propertyId ? parseInt(propertyId) : null,
@@ -142,7 +155,9 @@ export async function GET(req: NextRequest) {
       start_date: r.check_in,
       end_date: r.check_out,
       is_blocked: true,
-      event_type: 'reservation'
+      event_type: 'reservation',
+      room_id: r.room_id,
+      room_name: roomNamesMap.get(String(r.room_id)) || null
     }))
 
     return NextResponse.json({

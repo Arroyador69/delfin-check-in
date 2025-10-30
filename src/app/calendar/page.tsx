@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import { useRouter } from 'next/navigation'
 
 type Availability = {
   property_id: number
@@ -19,6 +20,8 @@ type CalendarEvent = {
   is_blocked: boolean
   event_type: string
   created_at: string
+  room_id?: string
+  room_name?: string | null
 }
 
 function formatDate(d: Date) {
@@ -38,6 +41,7 @@ export default function CalendarPage() {
   const [availability, setAvailability] = useState<Availability[]>([])
   const [events, setEvents] = useState<CalendarEvent[]>([])
   const [properties, setProperties] = useState<{ id: number | null; property_name: string; room_id?: number; is_placeholder?: boolean }[]>([])
+  const router = useRouter()
 
   // Cargar tenant actual y propiedades del tenant (autenticado por JWT/middleware)
   useEffect(() => {
@@ -76,11 +80,6 @@ export default function CalendarPage() {
 
         setProperties(list)
         console.log('[Calendar] Props finales total=', list.length)
-        if (!propertyId && list.length) {
-          // Seleccionar la primera opción
-          const first = list[0]
-          setPropertyId(first?.id ? String(first.id) : `room:${first.room_id}`)
-        }
       } catch (e) {
         console.error('Error inicializando calendario:', e)
       }
@@ -89,12 +88,11 @@ export default function CalendarPage() {
   }, [])
 
   const load = async () => {
-    if (!tenantId || !propertyId || !start || !end) return
+    if (!tenantId || !start || !end) return
     setLoading(true)
     try {
-      const isRoomOnly = propertyId.startsWith('room:')
       const base = `/api/calendar?tenant_id=${tenantId}`
-      const url = `${base}${isRoomOnly ? '' : `&property_id=${propertyId}`}&from=${start}&to=${end}`
+      const url = `${base}${propertyId ? `&property_id=${propertyId}` : ''}&from=${start}&to=${end}`
       const res = await fetch(url)
       const data = await res.json()
       if (data.success) {
@@ -136,22 +134,24 @@ export default function CalendarPage() {
     return map
   }, [events])
 
+  const checkoutByDate = useMemo(() => {
+    const map = new Map<string, CalendarEvent[]>()
+    events.forEach(ev => {
+      const key = formatDate(new Date(ev.end_date))
+      if (!map.has(key)) map.set(key, [])
+      map.get(key)!.push(ev)
+    })
+    return map
+  }, [events])
+
   return (
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-4">Calendario</h1>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
-        <select value={propertyId} onChange={e=>setPropertyId(e.target.value)} className="border p-2 rounded">
-          <option value="">Selecciona propiedad</option>
-          {properties.map((p, idx) => (
-            <option key={p.id ?? `ph-${idx}`} value={p.id ? String(p.id) : `room:${p.room_id}`}>
-              {p.property_name}{p.id ? ` (#${p.id})` : ` (slot ${p.room_id})`}
-            </option>
-          ))}
-        </select>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
         <input type="date" value={start} onChange={e=>setStart(e.target.value)} className="border p-2 rounded" />
         <input type="date" value={end} onChange={e=>setEnd(e.target.value)} className="border p-2 rounded" />
-        <button onClick={load} disabled={loading || !tenantId || !propertyId} className="bg-blue-600 text-white rounded px-4">Cargar</button>
+        <button onClick={load} disabled={loading || !tenantId} className="bg-blue-600 text-white rounded px-4">Cargar</button>
       </div>
 
       <div className="grid grid-cols-7 gap-2">
@@ -160,14 +160,24 @@ export default function CalendarPage() {
           const evs = eventsByDate.get(day) || []
           const blocked = a && a.available === false
           return (
-            <div key={day} className={`border rounded p-2 min-h-[96px] ${blocked ? 'bg-red-50 border-red-200' : 'bg-white'}`}>
+            <div key={day} className={`border rounded p-2 min-h-[112px] ${blocked ? 'bg-red-50 border-red-200' : 'bg-white'}`}>
               <div className="text-xs text-gray-600 mb-1">{day}</div>
               {blocked && (
                 <div className="text-[11px] text-red-700">Bloqueado: {a?.blocked_reason || 'N/A'}</div>
               )}
               {evs.map((ev, i) => (
-                <div key={i} className={`text-[11px] mt-1 rounded px-1 ${ev.event_type === 'reservation' ? 'bg-green-100 text-green-800' : 'bg-gray-100'}`}>
-                  {ev.event_title}
+                <div
+                  key={i}
+                  onClick={()=>router.push('/reservations')}
+                  className={`cursor-pointer text-[11px] mt-1 rounded px-1 ${ev.event_type === 'reservation' ? 'bg-green-100 text-green-800' : 'bg-gray-100'} ${formatDate(new Date(ev.start_date)) === day ? 'border-l-4 border-green-600' : ''}`}
+                  title={`${ev.room_name ? ev.room_name + ' · ' : ''}${ev.event_title}`}
+                >
+                  {ev.room_name ? `${ev.room_name} · ` : ''}{ev.event_title}
+                </div>
+              ))}
+              {(checkoutByDate.get(day) || []).map((ev, j) => (
+                <div key={`co-${j}`} className="text-[10px] mt-1 rounded px-1 bg-amber-100 text-amber-800">
+                  Checkout {ev.room_name || ev.room_id}
                 </div>
               ))}
             </div>
@@ -179,7 +189,9 @@ export default function CalendarPage() {
         <span className="inline-block w-3 h-3 mr-2 align-middle bg-red-200 border border-red-300"></span>
         Bloqueo/disponibilidad
         <span className="inline-block w-3 h-3 ml-4 mr-2 align-middle bg-green-200 border border-green-300"></span>
-        Reservas
+        Reserva (borde izq = check-in)
+        <span className="inline-block w-3 h-3 ml-4 mr-2 align-middle bg-amber-200 border border-amber-300"></span>
+        Checkout (día de salida)
       </div>
     </div>
   )
