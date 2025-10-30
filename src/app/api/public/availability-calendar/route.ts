@@ -11,6 +11,28 @@ export async function GET(req: NextRequest) {
     const propertyId = parseInt(searchParams.get('property_id') || '0', 10);
     const from = searchParams.get('from');
     const to = searchParams.get('to');
+    // Validación de fechas (evitar 500 por formatos inválidos)
+    const isoDate = /^\d{4}-\d{2}-\d{2}$/;
+    if (!isoDate.test(from) || !isoDate.test(to)) {
+      return NextResponse.json(
+        { success: false, error: 'Parámetros from/to deben tener formato YYYY-MM-DD' },
+        { status: 400 }
+      );
+    }
+    const fromDate = new Date(from + 'T00:00:00Z');
+    const toDate = new Date(to + 'T00:00:00Z');
+    if (isNaN(fromDate.getTime()) || isNaN(toDate.getTime())) {
+      return NextResponse.json(
+        { success: false, error: 'Fechas inválidas' },
+        { status: 400 }
+      );
+    }
+    if (fromDate >= toDate) {
+      return NextResponse.json(
+        { success: false, error: 'from debe ser anterior a to' },
+        { status: 400 }
+      );
+    }
 
     if (!propertyId || !from || !to) {
       return NextResponse.json(
