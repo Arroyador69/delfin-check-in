@@ -40,11 +40,41 @@ export async function GET(req: NextRequest) {
       ORDER BY start_date ASC
     `
 
+    // Reservas operativas como eventos
+    let filterRoomId: string | null = null
+    if (propertyId) {
+      const mapRow = await sql`
+        SELECT room_id FROM property_room_map
+        WHERE tenant_id = ${tenantId}::uuid AND property_id = ${parseInt(propertyId)}
+        LIMIT 1
+      `
+      filterRoomId = mapRow.rows?.[0]?.room_id || null
+    }
+    const reservations = await sql`
+      SELECT tenant_id, room_id, guest_name, check_in, check_out
+      FROM reservations
+      WHERE tenant_id = ${tenantId}
+        ${filterRoomId ? sql`AND room_id = ${filterRoomId}` : sql``}
+        AND check_in  < ${toDate.toISOString().slice(0,10)}::date
+        AND check_out > ${fromDate.toISOString().slice(0,10)}::date
+      ORDER BY check_in ASC
+    `
+    const reservationEvents = reservations.rows.map((r: any) => ({
+      tenant_id: r.tenant_id,
+      property_id: propertyId ? parseInt(propertyId) : null,
+      event_title: `Reserva ${r.guest_name}`,
+      event_description: null,
+      start_date: r.check_in,
+      end_date: r.check_out,
+      is_blocked: true,
+      event_type: 'reservation'
+    }))
+
     return NextResponse.json({
       success: true,
       range: { from: fromDate.toISOString().slice(0,10), to: toDate.toISOString().slice(0,10) },
       availability: availability.rows,
-      events: events.rows
+      events: [...events.rows, ...reservationEvents]
     })
   } catch (e: any) {
     return NextResponse.json({ success: false, error: e.message }, { status: 500 })

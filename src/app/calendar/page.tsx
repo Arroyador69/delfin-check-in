@@ -166,7 +166,7 @@ export default function CalendarPage() {
                 <div className="text-[11px] text-red-700">Bloqueado: {a?.blocked_reason || 'N/A'}</div>
               )}
               {evs.map((ev, i) => (
-                <div key={i} className="text-[11px] mt-1 bg-gray-100 rounded px-1">
+                <div key={i} className={`text-[11px] mt-1 rounded px-1 ${ev.event_type === 'reservation' ? 'bg-green-100 text-green-800' : 'bg-gray-100'}`}>
                   {ev.event_title}
                 </div>
               ))}
@@ -177,7 +177,9 @@ export default function CalendarPage() {
 
       <div className="mt-4 text-sm text-gray-600">
         <span className="inline-block w-3 h-3 mr-2 align-middle bg-red-200 border border-red-300"></span>
-        Bloqueo/disponibilidad: property_availability · Eventos: calendar_events
+        Bloqueo/disponibilidad
+        <span className="inline-block w-3 h-3 ml-4 mr-2 align-middle bg-green-200 border border-green-300"></span>
+        Reservas
       </div>
     </div>
   )
