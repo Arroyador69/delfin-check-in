@@ -191,13 +191,13 @@ export default function CalendarPage() {
               type="date" 
               value={start} 
               onChange={e=>setStart(e.target.value)} 
-              className="border-2 border-gray-300 p-3 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all font-medium" 
+              className="border-2 border-gray-300 p-3 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all font-semibold text-gray-800 placeholder-gray-500" 
             />
             <input 
               type="date" 
               value={end} 
               onChange={e=>setEnd(e.target.value)} 
-              className="border-2 border-gray-300 p-3 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all font-medium" 
+              className="border-2 border-gray-300 p-3 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all font-semibold text-gray-800 placeholder-gray-500" 
             />
             <button 
               onClick={load} 
