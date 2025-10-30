@@ -282,7 +282,7 @@ export default function EstadoEnviosMIRPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex flex-col">
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -290,8 +290,8 @@ export default function EstadoEnviosMIRPage() {
             <div className="flex items-center">
               <div className="text-3xl mr-3">🏛️</div>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Estado Envíos MIR - Tiempo Real</h1>
-                <p className="text-sm text-gray-600">Seguimiento en tiempo real de comunicaciones al Ministerio del Interior</p>
+                <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Estado Envíos MIR - Tiempo Real</h1>
+                <p className="text-xs sm:text-sm text-gray-600">Seguimiento en tiempo real de comunicaciones al Ministerio del Interior</p>
                 {ultimaActualizacion && (
                   <p className="text-xs text-gray-500">
                     Última actualización: {formatearFecha(ultimaActualizacion.toISOString())}
@@ -305,6 +305,7 @@ export default function EstadoEnviosMIRPage() {
                 variant="outline" 
                 size="sm"
                 onClick={() => setAutoRefresh(!autoRefresh)}
+                className="rounded-xl"
               >
                 <Bell className={`w-4 h-4 mr-2 ${autoRefresh ? 'text-green-600' : 'text-gray-400'}`} />
                 {autoRefresh ? 'Auto-actualizando' : 'Pausado'}
@@ -313,7 +314,7 @@ export default function EstadoEnviosMIRPage() {
               <Button 
                 onClick={() => consultarLotesMIR()} 
                 disabled={consultandoLotes}
-                className="bg-green-600 hover:bg-green-700 text-white font-semibold"
+                className="bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white font-semibold rounded-xl shadow"
               >
                 <Activity className={`w-4 h-4 mr-2 ${consultandoLotes ? 'animate-spin' : ''}`} />
                 {consultandoLotes ? 'Consultando MIR...' : 'Consultar Estado Real MIR'}
@@ -322,7 +323,7 @@ export default function EstadoEnviosMIRPage() {
               <Button 
                 onClick={() => cargarEstadoEnvios()} 
                 disabled={loading} 
-                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold"
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold rounded-xl shadow"
               >
                 <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
                 Actualizar
