@@ -13,6 +13,8 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'tenant_id es requerido' }, { status: 400 })
     }
 
+    console.log('[calendar] params:', { tenantId, propertyId, from, to })
+
     // Rango por defecto: hoy hasta +60 días
     const fromDate = from ? new Date(from) : new Date()
     const toDate = to ? new Date(to) : new Date(Date.now() + 60 * 24 * 3600 * 1000)
@@ -22,7 +24,7 @@ export async function GET(req: NextRequest) {
       SELECT pa.property_id, pa.date, pa.available, pa.blocked_reason
       FROM property_availability pa
       JOIN tenant_properties tp ON tp.id = pa.property_id
-      WHERE tp.tenant_id = ${tenantId}
+      WHERE tp.tenant_id = ${tenantId}::uuid
         ${propertyId ? sql`AND pa.property_id = ${parseInt(propertyId)}` : sql``}
         AND pa.date >= ${fromDate.toISOString().slice(0,10)}::date
         AND pa.date <  ${toDate.toISOString().slice(0,10)}::date
@@ -33,7 +35,7 @@ export async function GET(req: NextRequest) {
     const events = await sql`
       SELECT tenant_id, property_id, event_title, event_description, start_date, end_date, is_blocked, event_type
       FROM calendar_events
-      WHERE tenant_id = ${tenantId}
+      WHERE tenant_id = ${tenantId}::uuid
         ${propertyId ? sql`AND property_id = ${parseInt(propertyId)}` : sql``}
         AND start_date < ${toDate.toISOString().slice(0,10)}::date
         AND end_date   > ${fromDate.toISOString().slice(0,10)}::date
@@ -53,7 +55,7 @@ export async function GET(req: NextRequest) {
     const reservations = await sql`
       SELECT tenant_id, room_id, guest_name, check_in, check_out
       FROM reservations
-      WHERE tenant_id = ${tenantId}
+      WHERE tenant_id = ${tenantId}::uuid
         ${filterRoomId ? sql`AND room_id = ${filterRoomId}` : sql``}
         AND check_in  < ${toDate.toISOString().slice(0,10)}::date
         AND check_out > ${fromDate.toISOString().slice(0,10)}::date
