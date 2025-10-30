@@ -12,6 +12,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Tenant no identificado' }, { status: 401 })
     }
 
+    console.log('🏠 [property-slots] Tenant detectado:', tenantId)
     // Traer Rooms (slots) del tenant
     const rooms = await sql`
       SELECT id AS room_id, name AS room_name
@@ -19,6 +20,7 @@ export async function GET(req: NextRequest) {
       WHERE "lodgingId" = ${tenantId}::text
       ORDER BY id
     `
+    console.log('📦 [property-slots] Rooms encontrados:', rooms.rowCount)
 
     // Traer mappings existentes y sus propiedades
     const mappings = await sql`
@@ -28,16 +30,19 @@ export async function GET(req: NextRequest) {
       WHERE prm.tenant_id = ${tenantId}::uuid
     `
 
-    const mapByRoom = new Map<number, { property_id: number; property_name: string }>()
+    console.log('🔗 [property-slots] Mappings encontrados:', mappings.rowCount)
+
+    const mapByRoom = new Map<string, { property_id: number; property_name: string }>()
     for (const r of mappings.rows) {
-      mapByRoom.set(Number(r.room_id), { property_id: Number(r.property_id), property_name: r.property_name })
+      mapByRoom.set(String(r.room_id), { property_id: Number(r.property_id), property_name: r.property_name })
     }
 
     const slots = rooms.rows.map(r => {
-      const m = mapByRoom.get(Number(r.room_id))
+      const key = String(r.room_id)
+      const m = mapByRoom.get(key)
       return {
         tenant_id: tenantId,
-        room_id: Number(r.room_id),
+        room_id: key,
         room_name: r.room_name as string,
         property_id: m?.property_id || null,
         property_name: m?.property_name || null,
@@ -45,11 +50,14 @@ export async function GET(req: NextRequest) {
       }
     })
 
+    console.log('✅ [property-slots] Slots construidos:', slots.length)
     return NextResponse.json({ success: true, total: slots.length, slots })
   } catch (e: any) {
     console.error('❌ [property-slots] Error:', e)
     return NextResponse.json({ success: false, error: 'Error obteniendo slots' }, { status: 500 })
   }
 }
+
+
 
 

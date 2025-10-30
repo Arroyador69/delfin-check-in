@@ -56,6 +56,7 @@ export default function CalendarPage() {
           const slotsRes = await fetch('/api/tenant/property-slots')
           const slotsData = await slotsRes.json()
           if (slotsRes.ok && slotsData.success) {
+            console.log('[Calendar] Usando /api/tenant/property-slots total=', slotsData.total)
             list = (slotsData.slots || []).map((s: any) => ({
               id: s.property_id,
               property_name: s.property_name || s.room_name,
@@ -68,10 +69,14 @@ export default function CalendarPage() {
         if (!list?.length) {
           const res = await fetch('/api/tenant/properties')
           const data = await res.json()
-          if (data.success) list = data.properties || []
+          if (data.success) {
+            console.log('[Calendar] Fallback /api/tenant/properties total=', (data.properties || []).length)
+            list = data.properties || []
+          }
         }
 
         setProperties(list)
+        console.log('[Calendar] Props finales total=', list.length)
         if (!propertyId && list.length) {
           // Seleccionar la primera opción
           const first = list[0]
