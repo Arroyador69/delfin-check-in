@@ -511,7 +511,7 @@ export default function ReservationsPage() {
         </div>
 
         <div className="bg-white rounded-xl shadow-lg border border-blue-200 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-blue-50 to-indigo-50">
+          <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
             <div>
               <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
                 <span style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>📋</span>
