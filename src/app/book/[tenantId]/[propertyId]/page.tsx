@@ -198,6 +198,8 @@ export default function PublicBookingPage({ params }: BookingPageProps) {
     special_requests: ''
   });
   const [pricing, setPricing] = useState<any>(null);
+  const [blockedDates, setBlockedDates] = useState<Set<string>>(new Set());
+  const [availabilityInfo, setAvailabilityInfo] = useState<{from: string; to: string} | null>(null);
 
   useEffect(() => {
     if (propertyId && tenantId) {
@@ -213,6 +215,20 @@ export default function PublicBookingPage({ params }: BookingPageProps) {
       
       if (data.success) {
         setProperty(data.property);
+        // Pre-cargar calendario de disponibilidad (12 meses desde hoy)
+        const from = new Date();
+        const to = new Date();
+        to.setMonth(to.getMonth() + 12);
+        const fromStr = from.toISOString().split('T')[0];
+        const toStr = to.toISOString().split('T')[0];
+        try {
+          const calRes = await fetch(`/api/public/availability-calendar?property_id=${propertyId}&from=${fromStr}&to=${toStr}`);
+          const cal = await calRes.json();
+          if (cal.success && Array.isArray(cal.blockedDates)) {
+            setBlockedDates(new Set(cal.blockedDates));
+            setAvailabilityInfo({ from: fromStr, to: toStr });
+          }
+        } catch (_) {}
       } else {
         console.error('Error cargando propiedad:', data.error);
       }
@@ -343,7 +359,14 @@ export default function PublicBookingPage({ params }: BookingPageProps) {
                   <input
                     type="date"
                     value={formData.check_in_date}
-                    onChange={(e) => setFormData({ ...formData, check_in_date: e.target.value })}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      if (blockedDates.has(v)) {
+                        alert('Ese día ya está ocupado. Elige otro.');
+                        return;
+                      }
+                      setFormData({ ...formData, check_in_date: v });
+                    }}
                     min={new Date().toISOString().split('T')[0]}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
@@ -356,12 +379,25 @@ export default function PublicBookingPage({ params }: BookingPageProps) {
                   <input
                     type="date"
                     value={formData.check_out_date}
-                    onChange={(e) => setFormData({ ...formData, check_out_date: e.target.value })}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      if (blockedDates.has(v)) {
+                        alert('Ese día ya está ocupado. Elige otro.');
+                        return;
+                      }
+                      setFormData({ ...formData, check_out_date: v });
+                    }}
                     min={formData.check_in_date || new Date().toISOString().split('T')[0]}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
               </div>
+
+              {availabilityInfo && (
+                <p className="text-xs text-gray-500">
+                  Días ocupados ocultos en el selector entre {availabilityInfo.from} y {availabilityInfo.to}. Si eliges una fecha ocupada te avisaremos.
+                </p>
+              )}
               
               {pricing && (
                 <div className="bg-blue-50 p-4 rounded-lg">
