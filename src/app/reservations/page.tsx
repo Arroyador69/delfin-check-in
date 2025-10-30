@@ -402,22 +402,10 @@ export default function ReservationsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center mb-8">
-            <span className="text-3xl mr-3">📅</span>
-            <h1 className="text-3xl font-bold text-gray-900">Reservas</h1>
-          </div>
-          <div className="animate-pulse">
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="h-4 bg-gray-200 rounded w-1/4 mb-4"></div>
-              <div className="space-y-3">
-                {[...Array(5)].map((_, i) => (
-                  <div key={i} className="h-16 bg-gray-200 rounded"></div>
-                ))}
-              </div>
-            </div>
-          </div>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 text-lg font-medium">Cargando reservas...</p>
         </div>
       </div>
     );
@@ -425,27 +413,23 @@ export default function ReservationsPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center mb-8">
-            <span className="text-3xl mr-3">📅</span>
-            <h1 className="text-3xl font-bold text-gray-900">Reservas</h1>
-          </div>
-          <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center p-8">
+        <div className="max-w-2xl mx-auto">
+          <div className="bg-white rounded-xl shadow-lg border border-red-200 p-6">
             <div className="flex">
               <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                <svg className="h-8 w-8 text-red-400" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
                 </svg>
               </div>
-              <div className="ml-3">
-                <h3 className="text-sm font-medium text-red-800">❌ Error al cargar las reservas</h3>
+              <div className="ml-4">
+                <h3 className="text-lg font-bold text-red-800">❌ Error al cargar las reservas</h3>
                 <div className="mt-2 text-sm text-red-700">
-                  <p>{error}</p>
-                  <p className="mt-2">
+                  <p className="font-medium">{error}</p>
+                  <p className="mt-4">
                     <button 
                       onClick={fetchReservations}
-                      className="underline hover:no-underline"
+                      className="bg-gradient-to-r from-red-600 to-pink-600 text-white px-6 py-3 rounded-xl hover:from-red-700 hover:to-pink-700 font-semibold transition-all duration-200 transform hover:scale-105"
                     >
                       🔄 Intentar de nuevo
                     </button>
@@ -460,25 +444,26 @@ export default function ReservationsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      {/* Encabezado compacto con el título visible bajo la barra fija */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-3 sm:py-4">
-            <div className="flex items-center">
-              <span className="text-2xl sm:text-3xl mr-2">📅</span>
-              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Reservas</h1>
-            </div>
-          </div>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-4 sm:p-6">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <h1 className="text-3xl sm:text-5xl font-bold mb-2 sm:mb-4">
+            <span className="text-4xl sm:text-6xl mr-2 sm:mr-3" style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>📅</span>
+            <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              Gestión de Reservas
+            </span>
+          </h1>
+          <p className="text-gray-600 text-sm sm:text-lg">Crea y gestiona las reservas de tus clientes</p>
         </div>
-      </header>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
 
         {/* Barra de búsqueda */}
-        <div className="bg-white rounded-lg shadow mb-4 sm:mb-6 p-4 sm:p-6">
+        <div className="bg-white rounded-xl shadow-lg border border-blue-200 mb-4 sm:mb-6 p-4 sm:p-6">
           <div className="flex items-center justify-between mb-3 sm:mb-4">
-            <h3 className="text-base sm:text-lg font-semibold text-gray-900">🔍 Buscar Reservas</h3>
+            <h3 className="text-base sm:text-lg font-bold text-gray-900 flex items-center gap-2">
+              <span style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>🔍</span>
+              Buscar Reservas
+            </h3>
             {isSearching && (
               <button
                 onClick={clearSearch}
@@ -507,7 +492,7 @@ export default function ReservationsPage() {
             <button
               onClick={handleSearch}
               disabled={!searchTerm.trim()}
-              className="px-4 sm:px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center gap-2 text-sm sm:text-base"
+              className="px-4 sm:px-6 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center gap-2 text-sm sm:text-base font-semibold transition-all duration-200 transform hover:scale-105 shadow-lg"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -517,21 +502,24 @@ export default function ReservationsPage() {
           </div>
           
           {isSearching && (
-            <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-              <p className="text-sm text-blue-800">
-                <strong>Búsqueda activa:</strong> "{searchTerm}" - {filteredReservations.length} resultado{filteredReservations.length !== 1 ? 's' : ''} encontrado{filteredReservations.length !== 1 ? 's' : ''}
+            <div className="mt-4 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
+              <p className="text-sm text-blue-800 font-semibold">
+                <span style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>🔍</span> Búsqueda activa: "{searchTerm}" - {filteredReservations.length} resultado{filteredReservations.length !== 1 ? 's' : ''} encontrado{filteredReservations.length !== 1 ? 's' : ''}
               </p>
             </div>
           )}
         </div>
 
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+        <div className="bg-white rounded-xl shadow-lg border border-blue-200 overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-blue-50 to-indigo-50">
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">Gestión de Reservas</h2>
-              <p className="text-sm text-gray-600">Crear y gestionar reservas de clientes</p>
+              <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                <span style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>📋</span>
+                Gestión de Reservas
+              </h2>
+              <p className="text-sm text-gray-600 font-medium">Crear y gestionar reservas de clientes</p>
               {displayReservations.length > 0 && (
-                <p className="text-xs text-blue-600 mt-1">
+                <p className="text-xs text-blue-700 mt-1 font-semibold">
                   {displayReservations.length} reserva{displayReservations.length !== 1 ? 's' : ''} encontrada{displayReservations.length !== 1 ? 's' : ''}
                   {isSearching && ` (de ${reservations.length} total)`}
                 </p>
@@ -539,7 +527,7 @@ export default function ReservationsPage() {
             </div>
             <button 
               onClick={() => setShowCreateModal(true)}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center space-x-2"
+              className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-xl hover:from-blue-700 hover:to-purple-700 flex items-center space-x-2 font-semibold transition-all duration-200 transform hover:scale-105 shadow-lg"
             >
               <Plus className="h-5 w-5" />
               <span>Nueva Reserva</span>
@@ -547,43 +535,43 @@ export default function ReservationsPage() {
           </div>
           <div className="overflow-x-auto max-h-[70vh] overflow-y-auto">
             <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+              <thead className="bg-gradient-to-r from-blue-50 to-indigo-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Habitación
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                    🏠 Habitación
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Huésped
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                    👤 Huésped
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Teléfono
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                    📞 Teléfono
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Personas
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                    👥 Personas
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Llegada
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                    📅 Llegada
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Salida
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                    📤 Salida
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Estado
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                    🎯 Estado
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Pagó Huésped
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                    💰 Pagó Huésped
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Comisión
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                    💎 Comisión
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Tu Ganancia
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                    💵 Tu Ganancia
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Canal
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                    🌐 Canal
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Acciones
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                    ⚙️ Acciones
                   </th>
                 </tr>
               </thead>
@@ -591,11 +579,14 @@ export default function ReservationsPage() {
                 {displayReservations.length === 0 ? (
                   <tr>
                     <td colSpan={12} className="px-6 py-12 text-center">
-                      <div className="text-gray-500">
+                      <div className="bg-gradient-to-r from-blue-100 to-purple-100 p-8 rounded-full w-24 h-24 mx-auto mb-6 flex items-center justify-center">
+                        <Bed className="w-12 h-12 text-blue-600" />
+                      </div>
+                      <div className="text-gray-700">
                         {isSearching ? (
                           <>
-                            <div className="text-lg mb-2">No se encontraron resultados</div>
-                            <div className="text-sm">No hay reservas que coincidan con "{searchTerm}"</div>
+                            <h3 className="text-xl sm:text-2xl font-semibold text-gray-800 mb-2">No se encontraron resultados</h3>
+                            <p className="text-gray-600 text-sm sm:text-base mb-4">No hay reservas que coincidan con "{searchTerm}"</p>
                             <button
                               onClick={clearSearch}
                               className="mt-3 text-blue-600 hover:text-blue-800 underline"
@@ -668,7 +659,7 @@ export default function ReservationsPage() {
                       {/* Botón Check-in retirado a petición del usuario */}
                       <button
                         onClick={() => handleEditClick(reservation)}
-                        className="text-blue-600 hover:text-blue-900 mr-3 flex items-center"
+                        className="bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-700 hover:from-blue-100 hover:to-indigo-100 px-3 py-1.5 rounded-lg mr-2 flex items-center transition-all duration-200 transform hover:scale-105 font-semibold text-sm"
                         title="Editar reserva"
                       >
                         <Edit className="h-4 w-4 mr-1" />
@@ -677,7 +668,7 @@ export default function ReservationsPage() {
                       <button 
                         onClick={() => handleDeleteClick(reservation)}
                         disabled={deleting === reservation.id}
-                        className="text-red-600 hover:text-red-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="bg-gradient-to-r from-red-50 to-pink-50 text-red-700 hover:from-red-100 hover:to-pink-100 px-3 py-1.5 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-105 font-semibold text-sm"
                       >
                         {deleting === reservation.id ? 'Eliminando...' : 'Eliminar'}
                       </button>
