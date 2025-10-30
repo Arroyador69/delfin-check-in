@@ -535,7 +535,7 @@ export default function ReservationsPage() {
           </div>
           <div className="overflow-x-auto max-h-[70vh] overflow-y-auto">
             <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gradient-to-r from-blue-50 to-indigo-50">
+              <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                     🏠 Habitación
