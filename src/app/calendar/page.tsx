@@ -222,30 +222,8 @@ export default function CalendarPage() {
                   <span>Cargar</span>
                 </>
               )}
-<<<<<<< HEAD
             </button>
           </div>
-=======
-              {evs.map((ev, i) => (
-                <div
-                  key={i}
-                  onClick={()=>router.push('/reservations')}
-                  className={`cursor-pointer text-[11px] mt-1 rounded px-1 ${ev.event_type === 'reservation' ? 'bg-green-100 text-green-800' : 'bg-gray-100'} ${formatDate(new Date(ev.start_date)) === day ? 'border-l-4 border-green-600' : ''}`}
-                  title={`${ev.room_name ? ev.room_name + ' · ' : ''}${ev.event_title}`}
-                >
-                  {ev.room_name ? `${ev.room_name} · ` : ''}{ev.event_title}
-                </div>
-              ))}
-              {(checkoutByDate.get(day) || []).map((ev, j) => (
-                <div key={`co-${j}`} className="text-[10px] mt-1 rounded px-1 bg-amber-100 text-amber-800">
-                  {(ev.room_name || ev.room_id) + ' · ' + ev.event_title}
-                </div>
-              ))}
-            </div>
-          )
-        })}
-      </div>
->>>>>>> 555ba1f (ux(calendar): checkout badge muestra 'Habitación · Nombre' sin texto 'Checkout' (color ámbar))
 
           {/* Navegación de meses */}
           <div className="flex justify-center items-center gap-4 mt-4">
