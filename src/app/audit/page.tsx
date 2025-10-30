@@ -43,61 +43,132 @@ export default function AuditPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      {/* Header compacto */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center py-4">
-            <h1 className="text-2xl font-bold text-gray-900">🛡️ Bitácora de cumplimiento</h1>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-4 sm:p-6">
+      {/* Header con emoji y gradiente */}
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 flex items-center gap-3">
+          <span className="text-4xl sm:text-5xl md:text-6xl" style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>🛡️</span>
+          <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            Bitácora de Cumplimiento
+          </span>
+        </h1>
+        <p className="text-gray-700 text-base sm:text-lg">
+          Registro completo de acciones y validaciones del sistema
+        </p>
+      </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-4">
-        <input value={q} onChange={e=>setQ(e.target.value)} placeholder="Buscar (texto)" className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
-        <input value={action} onChange={e=>setAction(e.target.value)} placeholder="Acción (p.ej. VALIDATE_OK)" className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
-        <input value={entityType} onChange={e=>setEntityType(e.target.value)} placeholder="Tipo (PV_EXPORT/AEAT_EXPORT)" className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
-        <input type="date" value={from} onChange={e=>setFrom(e.target.value)} className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
-        <input type="date" value={to} onChange={e=>setTo(e.target.value)} className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
-        <button onClick={fetchData} disabled={loading} className="px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 transition-all duration-200 shadow-md hover:shadow-lg font-medium">{loading ? 'Cargando...' : 'Filtrar'}</button>
+      {/* Filtros en una card */}
+      <div className="bg-white rounded-xl shadow-lg border border-blue-200 p-4 sm:p-6 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
+          <input 
+            value={q} 
+            onChange={e=>setQ(e.target.value)} 
+            placeholder="Buscar (texto)" 
+            className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white text-gray-900 placeholder-gray-500" 
+          />
+          <input 
+            value={action} 
+            onChange={e=>setAction(e.target.value)} 
+            placeholder="Acción (p.ej. VALIDATE_OK)" 
+            className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white text-gray-900 placeholder-gray-500" 
+          />
+          <input 
+            value={entityType} 
+            onChange={e=>setEntityType(e.target.value)} 
+            placeholder="Tipo (PV_EXPORT/AEAT_EXPORT)" 
+            className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white text-gray-900 placeholder-gray-500" 
+          />
+          <input 
+            type="date" 
+            value={from} 
+            onChange={e=>setFrom(e.target.value)} 
+            className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white text-gray-900" 
+          />
+          <input 
+            type="date" 
+            value={to} 
+            onChange={e=>setTo(e.target.value)} 
+            className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white text-gray-900" 
+          />
+          <button 
+            onClick={fetchData} 
+            disabled={loading} 
+            className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 transition-all duration-200 shadow-lg font-semibold transform hover:scale-105 flex items-center justify-center gap-2"
+          >
+            {loading ? (
+              <>
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                Cargando...
+              </>
+            ) : (
+              <>
+                🔍 Filtrar
+              </>
+            )}
+          </button>
+        </div>
       </div>
 
       {/* Contenedor con scroll independiente */}
-      <div className="bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-xl shadow-lg border border-blue-200 overflow-hidden">
         {/* Cabecera fija */}
-        <div className="bg-white px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">Bitácora de Cumplimiento</h2>
-          <p className="text-sm text-gray-600 mt-1">{items.length} registros encontrados</p>
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4 border-b border-blue-200">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-2xl" style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>📋</span>
+              <h2 className="text-lg font-bold text-gray-900">Bitácora de Cumplimiento</h2>
+            </div>
+            <p className="text-sm text-gray-700 font-semibold">
+              {items.length} registro{items.length !== 1 ? 's' : ''} encontrado{items.length !== 1 ? 's' : ''}
+            </p>
+          </div>
         </div>
 
-                 {/* Tabla con scroll vertical y horizontal independiente */}
-         <div className="overflow-auto" style={{ maxHeight: 'calc(100vh - 250px)' }}>
+        {/* Tabla con scroll vertical y horizontal independiente */}
+        <div className="overflow-auto" style={{ maxHeight: 'calc(100vh - 250px)' }}>
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50 sticky top-0 z-10">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acción</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Entidad</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hash</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Meta</th>
+                <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                  📅 Fecha
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                  ⚡ Acción
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                  🏷️ Tipo
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                  🔢 Entidad
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                  🔐 Hash
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                  📝 Meta
+                </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {items.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-8 text-center text-sm text-gray-500">
-                    No se encontraron registros
+                  <td colSpan={6} className="px-6 py-12 text-center">
+                    <div className="text-6xl mb-4" style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>🔍</div>
+                    <p className="text-lg text-gray-700 font-semibold">No se encontraron registros</p>
+                    <p className="text-gray-600 mt-2">Intenta ajustar los filtros de búsqueda</p>
                   </td>
                 </tr>
               ) : (
                 items.map((it) => (
-                  <tr key={it.id} className="hover:bg-gray-50 transition-colors duration-150">
+                  <tr key={it.id} className="hover:bg-blue-50 transition-colors duration-150">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-800">{new Date(it.at).toLocaleString()}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{it.action}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 border border-blue-200">
+                        {it.action}
+                      </span>
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{it.entity_type}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{it.entity_id}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 font-medium">{it.entity_id}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-xs text-gray-500 font-mono max-w-xs truncate" title={it.payload_hash}>{it.payload_hash}</td>
                     <td className="px-6 py-4 text-xs text-gray-600 max-w-xs truncate" title={it.meta ? JSON.stringify(it.meta) : '-'}>{it.meta ? JSON.stringify(it.meta) : '-'}</td>
                   </tr>
@@ -106,7 +177,6 @@ export default function AuditPage() {
             </tbody>
           </table>
         </div>
-      </div>
       </div>
     </div>
   );
