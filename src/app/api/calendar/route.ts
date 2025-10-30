@@ -81,7 +81,7 @@ export async function GET(req: NextRequest) {
       if (propertyId) {
         const params: any[] = [tenantId, toDate.toISOString().slice(0,10), fromDate.toISOString().slice(0,10), parseInt(propertyId)]
         const text = `
-          SELECT r.id, r.tenant_id, r.room_id, r.guest_name, r.check_in, r.check_out, r.channel
+          SELECT r.id, r.tenant_id, r.room_id, r.guest_name, r.check_in, r.check_out, r.channel, r.guest_count
           FROM reservations r
           JOIN property_room_map prm
             ON prm.tenant_id = $1::uuid AND prm.room_id = r.room_id
@@ -94,7 +94,7 @@ export async function GET(req: NextRequest) {
       } else if (lodgingId) {
         const params: any[] = [lodgingId, toDate.toISOString().slice(0,10), fromDate.toISOString().slice(0,10)]
         const text = `
-          SELECT r.id, r.tenant_id, r.room_id, r.guest_name, r.check_in, r.check_out, r.channel
+          SELECT r.id, r.tenant_id, r.room_id, r.guest_name, r.check_in, r.check_out, r.channel, r.guest_count
           FROM reservations r
           WHERE r.room_id = ANY(
             SELECT id FROM "Room" WHERE "lodgingId" = $1::text
@@ -107,7 +107,7 @@ export async function GET(req: NextRequest) {
         // fallback por tenant
         const params: any[] = [tenantId, toDate.toISOString().slice(0,10), fromDate.toISOString().slice(0,10)]
         const text = `
-          SELECT r.id, r.tenant_id, r.room_id, r.guest_name, r.check_in, r.check_out, r.channel
+          SELECT r.id, r.tenant_id, r.room_id, r.guest_name, r.check_in, r.check_out, r.channel, r.guest_count
           FROM reservations r
           WHERE r.tenant_id = $1::uuid
             AND r.check_in  < $2::date
@@ -119,7 +119,7 @@ export async function GET(req: NextRequest) {
       console.warn('[calendar] reservations primary query error, falling back:', (e as any)?.message)
       const params: any[] = [tenantId, toDate.toISOString().slice(0,10), fromDate.toISOString().slice(0,10)]
       let text = `
-        SELECT r.id, r.tenant_id, r.room_id, r.guest_name, r.check_in, r.check_out, r.channel
+        SELECT r.id, r.tenant_id, r.room_id, r.guest_name, r.check_in, r.check_out, r.channel, r.guest_count
         FROM reservations r
         WHERE r.room_id = ANY(
           SELECT prm.room_id FROM property_room_map prm WHERE prm.tenant_id = $1::uuid
@@ -160,7 +160,8 @@ export async function GET(req: NextRequest) {
       room_id: r.room_id,
       room_name: roomNamesMap.get(String(r.room_id)) || null,
       guest_name: r.guest_name,
-      channel: r.channel || null
+      channel: r.channel || null,
+      guest_count: r.guest_count || null
     }))
 
     return NextResponse.json({

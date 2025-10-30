@@ -26,6 +26,7 @@ type CalendarEvent = {
   reservation_id?: number
   guest_name?: string
   channel?: string | null
+  guest_count?: number | null
 }
 
 function formatDate(d: Date) {
@@ -271,22 +272,22 @@ export default function CalendarPage() {
                     </div>
                   )}
                   {evs.map((ev, i) => (
-                    <div
-                      key={i}
+                <div
+                  key={i}
                   onClick={()=> ev.event_type === 'reservation' ? setViewEvent(ev) : undefined}
-                      className={`cursor-pointer text-[10px] sm:text-[11px] mt-1 rounded px-1 py-0.5 font-medium ${
+                  className={`cursor-pointer text-[10px] sm:text-[11px] mt-1 rounded px-1 py-0.5 font-medium ${
                         ev.event_type === 'reservation' 
                           ? 'bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 border border-green-200' 
                           : 'bg-gradient-to-r from-gray-100 to-slate-100 text-gray-800 border border-gray-200'
                       } ${formatDate(new Date(ev.start_date)) === day ? 'border-l-4 border-green-600' : ''}`}
-                      title={`${ev.room_name ? ev.room_name + ' · ' : ''}${ev.event_title}`}
+                  title={`${ev.room_name ? ev.room_name + ' · ' : ''}${ev.event_title?.replace(/^Reserva\s+/,'')}`}
                     >
-                  {ev.event_type === 'reservation' ? '✅' : '📝'} {ev.room_name ? `${ev.room_name} · ` : ''}{ev.event_title}
+                      {ev.event_type === 'reservation' ? '✅' : '📝'} {ev.room_name ? `${ev.room_name} · ` : ''}{ev.event_title?.replace(/^Reserva\s+/,'')}
                     </div>
                   ))}
                   {(checkoutByDate.get(day) || []).map((ev, j) => (
                     <div key={`co-${j}`} className="text-[10px] mt-1 rounded px-1 bg-amber-100 text-amber-800">
-                      {ev.room_name ? `${ev.room_name} · ` : ''}{ev.event_title}
+                  {ev.room_name ? `${ev.room_name} · ` : ''}{ev.event_title?.replace(/^Reserva\s+/,'')}
                     </div>
                   ))}
                 </div>
@@ -330,14 +331,15 @@ export default function CalendarPage() {
               <h3 className="text-lg font-bold text-gray-800">Ver reserva</h3>
               <button onClick={()=>setViewEvent(null)} className="text-gray-500 hover:text-gray-700">✕</button>
             </div>
-            <div className="p-6 grid grid-cols-1 gap-3 text-sm">
-              <div><span className="font-semibold text-gray-700">Habitación:</span> {viewEvent.room_name || viewEvent.room_id}</div>
-              <div><span className="font-semibold text-gray-700">Huésped:</span> {viewEvent.guest_name || viewEvent.event_title?.replace('Reserva ','')}</div>
-              <div><span className="font-semibold text-gray-700">Check-in:</span> {new Date(viewEvent.start_date).toLocaleDateString('es-ES')}</div>
-              <div><span className="font-semibold text-gray-700">Check-out:</span> {new Date(viewEvent.end_date).toLocaleDateString('es-ES')}</div>
-              {viewEvent.channel && (<div><span className="font-semibold text-gray-700">Canal:</span> {viewEvent.channel}</div>)}
+            <div className="p-6 grid grid-cols-1 gap-3 text-sm text-gray-800">
+              <div><span className="font-semibold">Habitación:</span> <span className="font-semibold">{viewEvent.room_name || viewEvent.room_id}</span></div>
+              <div><span className="font-semibold">Huésped:</span> <span className="font-semibold">{viewEvent.guest_name || viewEvent.event_title?.replace(/^Reserva\s+/,'')}</span></div>
+              <div><span className="font-semibold">Personas:</span> <span className="font-semibold">{viewEvent.guest_count ?? '-'}</span></div>
+              <div><span className="font-semibold">Check-in:</span> <span className="font-semibold">{new Date(viewEvent.start_date).toLocaleDateString('es-ES')}</span></div>
+              <div><span className="font-semibold">Check-out:</span> <span className="font-semibold">{new Date(viewEvent.end_date).toLocaleDateString('es-ES')}</span></div>
+              {viewEvent.channel && (<div><span className="font-semibold">Canal:</span> <span className="font-semibold">{viewEvent.channel}</span></div>)}
               {viewEvent.reservation_id && (
-                <div className="text-xs text-gray-500">ID reserva: {viewEvent.reservation_id}</div>
+                <div className="text-xs text-gray-600 font-semibold">ID reserva: {viewEvent.reservation_id}</div>
               )}
             </div>
             <div className="p-4 border-t flex justify-end">
