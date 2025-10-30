@@ -250,3 +250,6 @@ export const DIRECT_RESERVATIONS_CONFIG = {
   ADVANCE_BOOKING_DAYS: 365
 } as const;
 
+
+
+

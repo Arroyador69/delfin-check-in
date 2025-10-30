@@ -286,3 +286,6 @@ function parseICalDate(dateStr: string): string {
   return new Date().toISOString().split('T')[0]; // Fallback a fecha actual
 }
 
+
+
+

@@ -301,3 +301,6 @@ rm -rf src/app/api/public/test-pruebas
 
 **Total de endpoints eliminables: 15 de 21 (71%)**
 
+
+
+

@@ -34,3 +34,6 @@ done
 
 echo "🎉 Corrección de Stripe completada"
 
+
+
+

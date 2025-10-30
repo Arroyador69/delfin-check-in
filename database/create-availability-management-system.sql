@@ -326,3 +326,6 @@ COMMENT ON COLUMN calendar_events.is_blocked IS 'Si el evento bloquea la propied
 COMMENT ON COLUMN tenant_integration_settings.max_properties IS 'Máximo de propiedades según plan contratado';
 COMMENT ON COLUMN tenant_integration_settings.sync_conflict_resolution IS 'Estrategia para resolver conflictos: external_priority, internal_priority, manual';
 
+
+
+

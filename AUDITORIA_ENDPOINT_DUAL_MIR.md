@@ -187,3 +187,6 @@ El endpoint `/api/ministerio/auto-envio-dual` **SÍ cumple con las normas MIR of
 
 **Estado**: ✅ APROBADO para producción con mejoras menores pendientes.
 
+
+
+

@@ -248,3 +248,6 @@ Las mejoras recomendadas son **opcionales** y se pueden implementar gradualmente
 
 **🏆 Delfín Check-in es el mejor registrador de check-ins del mundo!**
 
+
+
+

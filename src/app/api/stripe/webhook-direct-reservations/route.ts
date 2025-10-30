@@ -110,19 +110,19 @@ export async function POST(req: NextRequest) {
           // Reserva ya existe, actualizarla
           reservationId = existingReservation.rows[0].id;
           console.log('📝 [WEBHOOK RESERVAS] Reserva ya existe, actualizando:', reservationId);
-
-          const updateResult = await sql`
-            UPDATE direct_reservations 
-            SET 
-              payment_status = 'paid',
+        
+        const updateResult = await sql`
+          UPDATE direct_reservations 
+          SET 
+            payment_status = 'paid',
               stripe_payment_intent_id = ${paymentIntent.id},
-              stripe_charge_id = ${paymentIntent.latest_charge as string},
-              payment_method = 'card',
-              confirmed_at = NOW(),
-              updated_at = NOW()
+            stripe_charge_id = ${paymentIntent.latest_charge as string},
+            payment_method = 'card',
+            confirmed_at = NOW(),
+            updated_at = NOW()
             WHERE id = ${reservationId}
-            RETURNING *
-          `;
+          RETURNING *
+        `;
 
           console.log('✅ [WEBHOOK RESERVAS] Reserva actualizada:', {
             reservationId,
@@ -183,6 +183,64 @@ export async function POST(req: NextRequest) {
           });
         }
 
+        // 4.1 Insertar en tabla operacional 'reservations' (si no existe)
+        try {
+          const mapping = await sql`
+            SELECT room_id 
+            FROM property_room_map 
+            WHERE tenant_id = ${paymentIntent.metadata.tenant_id}
+              AND property_id = ${parseInt(paymentIntent.metadata.property_id)}
+            LIMIT 1
+          `;
+          const roomId = mapping.rows[0]?.room_id || null;
+
+          // Idempotencia: comprobar si ya existe una fila equivalente
+          const existingOp = await sql`
+            SELECT id FROM reservations
+            WHERE tenant_id = ${paymentIntent.metadata.tenant_id}
+              AND room_id = ${roomId}
+              AND check_in = ${paymentIntent.metadata.check_in_date}
+              AND check_out = ${paymentIntent.metadata.check_out_date}
+              AND guest_email = ${paymentIntent.metadata.guest_email}
+            LIMIT 1
+          `;
+
+          if (existingOp.rows.length === 0) {
+            await sql`
+              INSERT INTO reservations (
+                tenant_id,
+                room_id,
+                guest_name,
+                guest_email,
+                guest_phone,
+                check_in,
+                check_out,
+                guest_count,
+                total_price,
+                channel,
+                created_at
+              ) VALUES (
+                ${paymentIntent.metadata.tenant_id}::uuid,
+                ${roomId},
+                ${paymentIntent.metadata.guest_name},
+                ${paymentIntent.metadata.guest_email},
+                ${paymentIntent.metadata.guest_phone || null},
+                ${paymentIntent.metadata.check_in_date}::timestamp,
+                ${paymentIntent.metadata.check_out_date}::timestamp,
+                ${parseInt(paymentIntent.metadata.guests)},
+                ${parseFloat(paymentIntent.metadata.total_amount)},
+                'direct',
+                NOW()
+              )
+            `;
+            console.log('✅ [WEBHOOK RESERVAS] Reserva operacional insertada en reservations');
+          } else {
+            console.log('ℹ️ [WEBHOOK RESERVAS] Reserva operacional ya existe, no se duplica');
+          }
+        } catch (opErr) {
+          console.error('⚠️ [WEBHOOK RESERVAS] Error insertando en reservations (continuo):', opErr);
+        }
+
         // Crear transacción de comisión
         const reservation = await sql`
           SELECT 
@@ -201,19 +259,74 @@ export async function POST(req: NextRequest) {
           `;
 
           if (existingTransaction.rows.length === 0) {
-            await sql`
-              INSERT INTO commission_transactions (
-                reservation_id, tenant_id, transaction_type, amount, 
-                stripe_fee, net_amount, status, processed_at
-              ) VALUES (
-                ${reservationId}, ${res.tenant_id}, 'commission', 
-                ${res.delfin_commission_amount}, ${res.stripe_fee_amount}, 
-                ${res.delfin_commission_amount - res.stripe_fee_amount}, 
-                'completed', NOW()
-              )
-            `;
+          await sql`
+            INSERT INTO commission_transactions (
+              reservation_id, tenant_id, transaction_type, amount, 
+              stripe_fee, net_amount, status, processed_at
+            ) VALUES (
+              ${reservationId}, ${res.tenant_id}, 'commission', 
+              ${res.delfin_commission_amount}, ${res.stripe_fee_amount}, 
+              ${res.delfin_commission_amount - res.stripe_fee_amount}, 
+              'completed', NOW()
+            )
+          `;
             console.log('✅ [WEBHOOK RESERVAS] Transacción de comisión creada:', reservationId);
           }
+        }
+
+        // 4.2 Bloquear disponibilidad por día en property_availability (idempotente)
+        try {
+          await sql`
+            INSERT INTO property_availability (property_id, date, available, blocked_reason, created_at)
+            SELECT
+              ${parseInt(paymentIntent.metadata.property_id)} AS property_id,
+              d::date,
+              FALSE,
+              'direct_reservation',
+              NOW()
+            FROM generate_series(${paymentIntent.metadata.check_in_date}::date, (${paymentIntent.metadata.check_out_date}::date - INTERVAL '1 day'), INTERVAL '1 day') AS g(d)
+            ON CONFLICT (property_id, date) DO UPDATE
+              SET available = EXCLUDED.available,
+                  blocked_reason = EXCLUDED.blocked_reason,
+                  created_at = EXCLUDED.created_at
+          `;
+          console.log('✅ [WEBHOOK RESERVAS] Disponibilidad bloqueada en property_availability');
+        } catch (avErr) {
+          console.error('⚠️ [WEBHOOK RESERVAS] Error bloqueando disponibilidad (continuo):', avErr);
+        }
+
+        // 4.3 Crear evento de calendario interno
+        try {
+          await sql`
+            INSERT INTO calendar_events (
+              tenant_id,
+              property_id,
+              calendar_name,
+              calendar_type,
+              event_title,
+              event_description,
+              start_date,
+              end_date,
+              is_blocked,
+              event_type,
+              created_at
+            ) VALUES (
+              ${paymentIntent.metadata.tenant_id}::uuid,
+              ${parseInt(paymentIntent.metadata.property_id)}::integer,
+              'Reservas Directas',
+              'internal',
+              ${'Reserva ' + paymentIntent.metadata.reservation_code},
+              ${'Bloqueo por reserva ' + paymentIntent.metadata.reservation_code},
+              ${paymentIntent.metadata.check_in_date}::date,
+              ${paymentIntent.metadata.check_out_date}::date,
+              TRUE,
+              'reservation',
+              NOW()
+            )
+          `;
+          console.log('✅ [WEBHOOK RESERVAS] Evento interno creado en calendar_events');
+        } catch (calErr) {
+          console.error('⚠️ [WEBHOOK RESERVAS] Error creando calendar_event (continuo):', calErr);
         }
 
         // Enviar emails de notificación al huésped y propietario
@@ -308,7 +421,7 @@ export async function POST(req: NextRequest) {
 
               // Generar URL del formulario público del tenant
               const publicFormUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://admin.delfincheckin.com'}/api/public/form-redirect/${reservation.tenant_id}`;
-              
+
               // Enviar emails
               console.log('📧 [WEBHOOK RESERVAS] Enviando emails...', {
                 reservationCode: reservation.reservation_code,

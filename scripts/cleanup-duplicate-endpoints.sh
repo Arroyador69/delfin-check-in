@@ -148,3 +148,6 @@ echo "5. /api/ministerio/anulacion-oficial   - Anulación oficial MIR"
 echo ""
 echo "✅ Sistema MIR optimizado según normas oficiales"
 
+
+
+

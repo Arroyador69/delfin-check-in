@@ -139,3 +139,6 @@
 
 El sistema Delfín Check-in ahora es el **mejor registrador de check-ins del mundo** cumpliendo con todas las normas MIR oficiales y proporcionando una experiencia multitenant completa.
 
+
+
+

@@ -160,3 +160,6 @@ SELECT '🎉 MIGRACIÓN COMPLETADA EXITOSAMENTE' as resultado,
        'La tabla mir_comunicaciones ahora soporta el sistema multitenant según las normas MIR' as descripcion,
        NOW() as fecha_migracion;
 
+
+
+
