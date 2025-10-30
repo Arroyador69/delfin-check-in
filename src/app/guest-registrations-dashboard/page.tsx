@@ -480,7 +480,7 @@ export default function GuestRegistrationsDashboard() {
   if (loading) {
     return (
       <AdminLayout>
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center">
           <div className="text-center">
             <div className="text-6xl mb-4">🐬</div>
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
@@ -494,23 +494,22 @@ export default function GuestRegistrationsDashboard() {
 
   return (
     <AdminLayout showHeader={false}>
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
       {/* Header compacto */}
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center">
-              <div className="text-2xl mr-2">🐬</div>
+              <div className="text-2xl mr-2">📋</div>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Delfín Check-in</h1>
-                <p className="text-sm text-gray-600">📋 Registros de formularios</p>
-                <p className="text-xs text-gray-500">🏛️ Gestión y generación de XML para Ministerio del Interior</p>
+                <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Registros de Formularios</h1>
+                <p className="text-xs sm:text-sm text-gray-600">🏛️ Gestión y generación de XML para Ministerio del Interior</p>
               </div>
             </div>
             <div className="flex items-center space-x-4">
               <a 
                 href="/admin/mir-comunicaciones" 
-                className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors flex items-center space-x-2 font-semibold"
+                className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-xl hover:from-blue-700 hover:to-purple-700 transition-colors flex items-center space-x-2 font-semibold shadow"
               >
                 <span>📤</span>
                 <span>Estado Envíos MIR</span>
@@ -522,7 +521,7 @@ export default function GuestRegistrationsDashboard() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Form URL Section */}
-        <div className="bg-white rounded-lg shadow p-6 mb-8">
+        <div className="bg-white rounded-xl shadow-lg border border-blue-200 p-6 mb-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div className="flex items-center space-x-4">
               <div className="text-3xl">🔗</div>
@@ -544,7 +543,7 @@ export default function GuestRegistrationsDashboard() {
               </div>
               <button
                 onClick={() => copyToClipboard(formUrl)}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center space-x-2"
+                className="px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 transition-colors flex items-center space-x-2 shadow"
               >
                 <Copy className="w-4 h-4" />
                 <span>Copiar</span>
@@ -553,7 +552,7 @@ export default function GuestRegistrationsDashboard() {
                 href={formUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors flex items-center space-x-2"
+                className="px-4 py-2 bg-gradient-to-r from-emerald-600 to-green-600 text-white rounded-xl hover:from-emerald-700 hover:to-green-700 transition-colors flex items-center space-x-2 shadow"
               >
                 <ExternalLink className="w-4 h-4" />
                 <span>Ver</span>
