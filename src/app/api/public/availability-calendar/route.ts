@@ -5,40 +5,70 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
 
+function corsHeaders(origin: string | null) {
+  const allowedOrigins = [
+    'https://book.delfincheckin.com',
+    'https://admin.delfincheckin.com',
+    'http://localhost:3000',
+    'http://localhost:3001'
+  ];
+  const originHeader = origin && allowedOrigins.includes(origin) ? origin : allowedOrigins[0];
+  return {
+    'Access-Control-Allow-Origin': originHeader,
+    'Access-Control-Allow-Methods': 'GET, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Credentials': 'true',
+  } as Record<string, string>;
+}
+
+export async function OPTIONS(req: NextRequest) {
+  const origin = req.headers.get('origin');
+  return NextResponse.json({}, { headers: corsHeaders(origin) });
+}
+
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
+    const origin = req.headers.get('origin');
     const propertyId = parseInt(searchParams.get('property_id') || '0', 10);
     const from = searchParams.get('from');
     const to = searchParams.get('to');
     // Validación de fechas (evitar 500 por formatos inválidos)
     const isoDate = /^\d{4}-\d{2}-\d{2}$/;
     if (!isoDate.test(from) || !isoDate.test(to)) {
-      return NextResponse.json(
+      const res = NextResponse.json(
         { success: false, error: 'Parámetros from/to deben tener formato YYYY-MM-DD' },
         { status: 400 }
       );
+      Object.entries(corsHeaders(origin)).forEach(([k, v]) => res.headers.set(k, v));
+      return res;
     }
     const fromDate = new Date(from + 'T00:00:00Z');
     const toDate = new Date(to + 'T00:00:00Z');
     if (isNaN(fromDate.getTime()) || isNaN(toDate.getTime())) {
-      return NextResponse.json(
+      const res = NextResponse.json(
         { success: false, error: 'Fechas inválidas' },
         { status: 400 }
       );
+      Object.entries(corsHeaders(origin)).forEach(([k, v]) => res.headers.set(k, v));
+      return res;
     }
     if (fromDate >= toDate) {
-      return NextResponse.json(
+      const res = NextResponse.json(
         { success: false, error: 'from debe ser anterior a to' },
         { status: 400 }
       );
+      Object.entries(corsHeaders(origin)).forEach(([k, v]) => res.headers.set(k, v));
+      return res;
     }
 
     if (!propertyId || !from || !to) {
-      return NextResponse.json(
+      const res = NextResponse.json(
         { success: false, error: 'Parámetros requeridos: property_id, from, to' },
         { status: 400 }
       );
+      Object.entries(corsHeaders(origin)).forEach(([k, v]) => res.headers.set(k, v));
+      return res;
     }
 
     // Obtener tenant_id y room_id del slot
@@ -54,7 +84,9 @@ export async function GET(req: NextRequest) {
 
     if (mapping.rows.length === 0) {
       console.warn('[availability-calendar] mapping not found for property', propertyId);
-      return NextResponse.json({ success: true, blockedDates: [] });
+      const res = NextResponse.json({ success: true, blockedDates: [] });
+      Object.entries(corsHeaders(origin)).forEach(([k, v]) => res.headers.set(k, v));
+      return res;
     }
 
     const tenantId = mapping.rows[0].tenant_id as string;
@@ -64,7 +96,9 @@ export async function GET(req: NextRequest) {
     // Si no hay roomId mapeado, no podemos calcular ocupación por reservations
     if (!roomId) {
       console.warn('[availability-calendar] roomId is null for property', propertyId);
-      return NextResponse.json({ success: true, blockedDates: [] });
+      const res = NextResponse.json({ success: true, blockedDates: [] });
+      Object.entries(corsHeaders(origin)).forEach(([k, v]) => res.headers.set(k, v));
+      return res;
     }
 
     // Recopilar días bloqueados desde 3 fuentes
@@ -111,10 +145,15 @@ export async function GET(req: NextRequest) {
 
     const blockedDates = result.rows.map((r) => r.date);
     console.log('[availability-calendar] blockedDates count', blockedDates.length);
-    return NextResponse.json({ success: true, blockedDates });
+    const res = NextResponse.json({ success: true, blockedDates });
+    Object.entries(corsHeaders(origin)).forEach(([k, v]) => res.headers.set(k, v));
+    return res;
   } catch (error) {
     console.error('❌ [public/availability-calendar] Error:', error);
-    return NextResponse.json({ success: false, error: 'Error interno' }, { status: 500 });
+    const origin = req.headers.get('origin');
+    const res = NextResponse.json({ success: false, error: 'Error interno' }, { status: 500 });
+    Object.entries(corsHeaders(origin)).forEach(([k, v]) => res.headers.set(k, v));
+    return res;
   }
 }
 
