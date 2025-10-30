@@ -52,15 +52,31 @@ export async function GET(req: NextRequest) {
       `
       filterRoomId = mapRow.rows?.[0]?.room_id || null
     }
-    const reservations = await sql`
-      SELECT tenant_id, room_id, guest_name, check_in, check_out
-      FROM reservations
-      WHERE tenant_id = ${tenantId}::uuid
-        ${filterRoomId ? sql`AND room_id = ${filterRoomId}` : sql``}
-        AND check_in  < ${toDate.toISOString().slice(0,10)}::date
-        AND check_out > ${fromDate.toISOString().slice(0,10)}::date
-      ORDER BY check_in ASC
-    `
+    let reservations
+    try {
+      reservations = await sql`
+        SELECT tenant_id, room_id, guest_name, check_in, check_out
+        FROM reservations
+        WHERE tenant_id = ${tenantId}::uuid
+          ${filterRoomId ? sql`AND room_id = ${filterRoomId}` : sql``}
+          AND check_in  < ${toDate.toISOString().slice(0,10)}::date
+          AND check_out > ${fromDate.toISOString().slice(0,10)}::date
+        ORDER BY check_in ASC
+      `
+    } catch (e) {
+      console.warn('[calendar] fallback reservations query by room mapping due to error:', (e as any)?.message)
+      reservations = await sql`
+        SELECT r.tenant_id, r.room_id, r.guest_name, r.check_in, r.check_out
+        FROM reservations r
+        WHERE r.room_id = ANY(
+          SELECT prm.room_id FROM property_room_map prm WHERE prm.tenant_id = ${tenantId}::uuid
+        )
+          ${filterRoomId ? sql`AND r.room_id = ${filterRoomId}` : sql``}
+          AND r.check_in  < ${toDate.toISOString().slice(0,10)}::date
+          AND r.check_out > ${fromDate.toISOString().slice(0,10)}::date
+        ORDER BY r.check_in ASC
+      `
+    }
     const reservationEvents = reservations.rows.map((r: any) => ({
       tenant_id: r.tenant_id,
       property_id: propertyId ? parseInt(propertyId) : null,
