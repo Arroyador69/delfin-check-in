@@ -20,27 +20,37 @@ export async function GET(req: NextRequest) {
     const toDate = to ? new Date(to) : new Date(Date.now() + 60 * 24 * 3600 * 1000)
 
     // Availability (bloqueos por día)
-    const availability = await sql`
-      SELECT pa.property_id, pa.date, pa.available, pa.blocked_reason
-      FROM property_availability pa
-      JOIN tenant_properties tp ON tp.id = pa.property_id
-      WHERE tp.tenant_id = ${tenantId}::uuid
-        ${propertyId ? sql`AND pa.property_id = ${parseInt(propertyId)}` : sql``}
-        AND pa.date >= ${fromDate.toISOString().slice(0,10)}::date
-        AND pa.date <  ${toDate.toISOString().slice(0,10)}::date
-      ORDER BY pa.date ASC
-    `
+    let availability: any = { rows: [] as any[] }
+    try {
+      availability = await sql`
+        SELECT pa.property_id, pa.date, pa.available, pa.blocked_reason
+        FROM property_availability pa
+        JOIN tenant_properties tp ON tp.id = pa.property_id
+        WHERE tp.tenant_id = ${tenantId}::uuid
+          ${propertyId ? sql`AND pa.property_id = ${parseInt(propertyId)}` : sql``}
+          AND pa.date >= ${fromDate.toISOString().slice(0,10)}::date
+          AND pa.date <  ${toDate.toISOString().slice(0,10)}::date
+        ORDER BY pa.date ASC
+      `
+    } catch (e: any) {
+      console.error('[calendar] availability error:', e?.message || e)
+    }
 
     // Eventos internos
-    const events = await sql`
-      SELECT tenant_id, property_id, event_title, event_description, start_date, end_date, is_blocked, event_type
-      FROM calendar_events
-      WHERE tenant_id = ${tenantId}::uuid
-        ${propertyId ? sql`AND property_id = ${parseInt(propertyId)}` : sql``}
-        AND start_date < ${toDate.toISOString().slice(0,10)}::date
-        AND end_date   > ${fromDate.toISOString().slice(0,10)}::date
-      ORDER BY start_date ASC
-    `
+    let events: any = { rows: [] as any[] }
+    try {
+      events = await sql`
+        SELECT tenant_id, property_id, event_title, event_description, start_date, end_date, is_blocked, event_type
+        FROM calendar_events
+        WHERE tenant_id = ${tenantId}::uuid
+          ${propertyId ? sql`AND property_id = ${parseInt(propertyId)}` : sql``}
+          AND start_date < ${toDate.toISOString().slice(0,10)}::date
+          AND end_date   > ${fromDate.toISOString().slice(0,10)}::date
+        ORDER BY start_date ASC
+      `
+    } catch (e: any) {
+      console.error('[calendar] events error:', e?.message || e)
+    }
 
     // Reservas operativas como eventos
     let filterRoomId: string | null = null
@@ -64,7 +74,7 @@ export async function GET(req: NextRequest) {
         ORDER BY check_in ASC
       `
     } catch (e) {
-      console.warn('[calendar] fallback reservations query by room mapping due to error:', (e as any)?.message)
+      console.warn('[calendar] reservations primary query error, falling back:', (e as any)?.message)
       reservations = await sql`
         SELECT r.tenant_id, r.room_id, r.guest_name, r.check_in, r.check_out
         FROM reservations r
@@ -95,7 +105,8 @@ export async function GET(req: NextRequest) {
       events: [...events.rows, ...reservationEvents]
     })
   } catch (e: any) {
-    return NextResponse.json({ success: false, error: e.message }, { status: 500 })
+    console.error('[calendar] fatal error:', e?.message || e)
+    return NextResponse.json({ success: false, error: e?.message || 'unknown' }, { status: 500 })
   }
 }
 
