@@ -974,12 +974,14 @@ export default function ReservationsPage() {
 
       {/* Modal de edición de reserva */}
       {showEditModal && reservationToEdit && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <h2 className="text-xl font-semibold text-gray-900 flex items-center">
-                <Edit className="h-6 w-6 mr-2 text-blue-600" />
-                Editar Reserva
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50 animate-fade-in">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto border border-blue-200">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-t-2xl">
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 flex items-center">
+                <span className="text-3xl sm:text-4xl mr-2" style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>✏️</span>
+                <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                  Editar Reserva
+                </span>
               </h2>
               <button
                 onClick={() => {
@@ -987,7 +989,7 @@ export default function ReservationsPage() {
                   setReservationToEdit(null);
                   resetForm();
                 }}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-gray-400 hover:text-gray-600 transition-all hover:scale-110"
               >
                 <X className="h-6 w-6" />
               </button>
@@ -1035,98 +1037,116 @@ export default function ReservationsPage() {
               </div>
 
               {/* Información del huésped */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <User className="h-4 w-4 inline mr-2" />
-                    Nombre del huésped *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.guest_name}
-                    onChange={(e) => setFormData({...formData, guest_name: e.target.value})}
-                    placeholder="Nombre completo"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <User className="h-4 w-4 inline mr-2" />
-                    Email del huésped
-                  </label>
-                  <input
-                    type="email"
-                    value={formData.guest_email}
-                    onChange={(e) => setFormData({...formData, guest_email: e.target.value})}
-                    placeholder="email@ejemplo.com"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
+              <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-6 rounded-xl border border-green-200">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                  <span style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>👤</span>
+                  Información del Huésped
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <User className="h-4 w-4 inline mr-2" />
+                      Nombre del huésped *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.guest_name}
+                      onChange={(e) => setFormData({...formData, guest_name: e.target.value})}
+                      placeholder="Nombre completo"
+                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <User className="h-4 w-4 inline mr-2" />
+                      Email del huésped
+                    </label>
+                    <input
+                      type="email"
+                      value={formData.guest_email}
+                      onChange={(e) => setFormData({...formData, guest_email: e.target.value})}
+                      placeholder="email@ejemplo.com"
+                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white"
+                    />
+                  </div>
                 </div>
               </div>
 
               {/* Información adicional del huésped */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <Phone className="h-4 w-4 inline mr-2" />
-                    Teléfono del huésped
-                  </label>
-                  <input
-                    type="tel"
-                    value={formData.guest_phone}
-                    onChange={(e) => setFormData({...formData, guest_phone: e.target.value})}
-                    placeholder="+34 600 000 000"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <Users className="h-4 w-4 inline mr-2" />
-                    Número de personas *
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="10"
-                    required
-                    value={formData.guest_count}
-                    onChange={(e) => setFormData({...formData, guest_count: parseInt(e.target.value) || 1})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
+              <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-6 rounded-xl border border-purple-200">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                  <span style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>📞</span>
+                  Información Adicional
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <Phone className="h-4 w-4 inline mr-2" />
+                      Teléfono del huésped
+                    </label>
+                    <input
+                      type="tel"
+                      value={formData.guest_phone}
+                      onChange={(e) => setFormData({...formData, guest_phone: e.target.value})}
+                      placeholder="+34 600 000 000"
+                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <Users className="h-4 w-4 inline mr-2" />
+                      Número de personas *
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="10"
+                      required
+                      value={formData.guest_count}
+                      onChange={(e) => setFormData({...formData, guest_count: parseInt(e.target.value) || 1})}
+                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white"
+                    />
+                  </div>
                 </div>
               </div>
 
               {/* Fechas */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <Calendar className="h-4 w-4 inline mr-2" />
-                    Fecha de llegada *
-                  </label>
-                  <input
-                    type="date"
-                    required
-                    value={formData.check_in}
-                    onChange={(e) => setFormData({...formData, check_in: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <Calendar className="h-4 w-4 inline mr-2" />
-                    Fecha de salida *
-                  </label>
-                  <input
-                    type="date"
-                    required
-                    value={formData.check_out}
-                    onChange={(e) => setFormData({...formData, check_out: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
+              <div className="bg-gradient-to-r from-orange-50 to-amber-50 p-6 rounded-xl border border-orange-200">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                  <span style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>📅</span>
+                  Fechas de Estancia
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <Calendar className="h-4 w-4 inline mr-2" />
+                      Fecha de llegada *
+                    </label>
+                    <input
+                      type="date"
+                      required
+                      value={formData.check_in}
+                      onChange={(e) => setFormData({...formData, check_in: e.target.value})}
+                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <Calendar className="h-4 w-4 inline mr-2" />
+                      Fecha de salida *
+                    </label>
+                    <input
+                      type="date"
+                      required
+                      value={formData.check_out}
+                      onChange={(e) => setFormData({...formData, check_out: e.target.value})}
+                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -1215,7 +1235,7 @@ export default function ReservationsPage() {
               </div>
 
               {/* Botones */}
-              <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+              <div className="flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-3 pt-4 border-t border-gray-200">
                 <button
                   type="button"
                   onClick={() => {
@@ -1223,24 +1243,24 @@ export default function ReservationsPage() {
                     setReservationToEdit(null);
                     resetForm();
                   }}
-                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
+                  className="px-6 sm:px-8 py-3 border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 font-semibold transition-all duration-200"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={updating}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center"
+                  className="px-6 sm:px-8 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 flex items-center justify-center font-semibold shadow-lg transition-all duration-200 transform hover:scale-105"
                 >
                   {updating ? (
                     <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
                       Actualizando...
                     </>
                   ) : (
                     <>
-                      <Edit className="h-4 w-4 mr-2" />
-                      Actualizar Reserva
+                      <Edit className="h-5 w-5 mr-2" />
+                      ✨ Actualizar Reserva
                     </>
                   )}
                 </button>
