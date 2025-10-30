@@ -39,6 +39,12 @@ export async function GET(req: NextRequest) {
     const roomId = mapping.rows[0].room_id ? String(mapping.rows[0].room_id) : null;
     console.log('[availability-calendar] mapping', { tenantId, roomId });
 
+    // Si no hay roomId mapeado, no podemos calcular ocupación por reservations
+    if (!roomId) {
+      console.warn('[availability-calendar] roomId is null for property', propertyId);
+      return NextResponse.json({ success: true, blockedDates: [] });
+    }
+
     // Recopilar días bloqueados desde 3 fuentes
     const result = await sql`
       WITH rango AS (
@@ -47,8 +53,7 @@ export async function GET(req: NextRequest) {
       op AS (
         SELECT generate_series(r.check_in::date, (r.check_out::date - INTERVAL '1 day'), '1 day')::date AS d
         FROM reservations r, rango g
-        WHERE ${roomId} IS NOT NULL
-          AND r.tenant_id::uuid = ${tenantId}::uuid
+        WHERE r.tenant_id::uuid = ${tenantId}::uuid
           AND r.room_id::text = ${roomId}::text
           AND r.check_in  < g.t
           AND r.check_out > g.f
