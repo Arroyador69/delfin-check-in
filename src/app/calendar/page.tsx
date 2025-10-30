@@ -54,7 +54,7 @@ export default function CalendarPage() {
         let list: any[] = []
         try {
           const slotsRes = await fetch('/api/tenant/property-slots', {
-            headers: tenantId ? { 'x-tenant-id': tenantId } : undefined
+            headers: meData?.tenant?.id ? { 'x-tenant-id': meData.tenant.id } : undefined
           })
           const slotsData = await slotsRes.json()
           console.log('[Calendar] /api/tenant/property-slots status=', slotsRes.status, 'success=', slotsData?.success)
@@ -79,7 +79,7 @@ export default function CalendarPage() {
         if (!propertyId && list.length) {
           // Seleccionar la primera opción
           const first = list[0]
-          if (first?.id) setPropertyId(String(first.id))
+          setPropertyId(first?.id ? String(first.id) : `room:${first.room_id}`)
         }
       } catch (e) {
         console.error('Error inicializando calendario:', e)
@@ -92,7 +92,9 @@ export default function CalendarPage() {
     if (!tenantId || !propertyId || !start || !end) return
     setLoading(true)
     try {
-      const url = `/api/calendar/overview?tenant_id=${tenantId}&property_id=${propertyId}&start=${start}&end=${end}`
+      const isRoomOnly = propertyId.startsWith('room:')
+      const base = `/api/calendar?tenant_id=${tenantId}`
+      const url = `${base}${isRoomOnly ? '' : `&property_id=${propertyId}`}&from=${start}&to=${end}`
       const res = await fetch(url)
       const data = await res.json()
       if (data.success) {
@@ -142,8 +144,8 @@ export default function CalendarPage() {
         <select value={propertyId} onChange={e=>setPropertyId(e.target.value)} className="border p-2 rounded">
           <option value="">Selecciona propiedad</option>
           {properties.map((p, idx) => (
-            <option key={p.id ?? `ph-${idx}`} value={p.id ?? ''}>
-              {p.property_name}{p.id ? ` (#${p.id})` : ' (sin configurar)'}
+            <option key={p.id ?? `ph-${idx}`} value={p.id ? String(p.id) : `room:${p.room_id}`}>
+              {p.property_name}{p.id ? ` (#${p.id})` : ` (slot ${p.room_id})`}
             </option>
           ))}
         </select>
