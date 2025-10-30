@@ -23,6 +23,9 @@ type CalendarEvent = {
   created_at: string
   room_id?: string
   room_name?: string | null
+  reservation_id?: number
+  guest_name?: string
+  channel?: string | null
 }
 
 function formatDate(d: Date) {
@@ -43,6 +46,7 @@ export default function CalendarPage() {
   const [events, setEvents] = useState<CalendarEvent[]>([])
   const [properties, setProperties] = useState<{ id: number | null; property_name: string; room_id?: number; is_placeholder?: boolean }[]>([])
   const router = useRouter()
+  const [viewEvent, setViewEvent] = useState<CalendarEvent | null>(null)
 
   // Cargar tenant actual y propiedades del tenant (autenticado por JWT/middleware)
   useEffect(() => {
@@ -181,19 +185,7 @@ export default function CalendarPage() {
 
         {/* Controles */}
         <div className="bg-white rounded-xl shadow-lg border border-blue-200 p-4 sm:p-6 mb-6">
-          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 sm:gap-4">
-            <select 
-              value={propertyId} 
-              onChange={e=>setPropertyId(e.target.value)} 
-              className="border-2 border-gray-300 p-3 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all font-medium"
-            >
-              <option value="">Selecciona propiedad</option>
-              {properties.map((p, idx) => (
-                <option key={p.id ?? `ph-${idx}`} value={p.id ? String(p.id) : `room:${p.room_id}`}>
-                  {p.property_name}{p.id ? ` (#${p.id})` : ` (slot ${p.room_id})`}
-                </option>
-              ))}
-            </select>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
             <input 
               type="date" 
               value={start} 
@@ -281,7 +273,7 @@ export default function CalendarPage() {
                   {evs.map((ev, i) => (
                     <div
                       key={i}
-                      onClick={()=>router.push('/reservations')}
+                  onClick={()=> ev.event_type === 'reservation' ? setViewEvent(ev) : undefined}
                       className={`cursor-pointer text-[10px] sm:text-[11px] mt-1 rounded px-1 py-0.5 font-medium ${
                         ev.event_type === 'reservation' 
                           ? 'bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 border border-green-200' 
@@ -289,7 +281,7 @@ export default function CalendarPage() {
                       } ${formatDate(new Date(ev.start_date)) === day ? 'border-l-4 border-green-600' : ''}`}
                       title={`${ev.room_name ? ev.room_name + ' · ' : ''}${ev.event_title}`}
                     >
-                      {ev.event_type === 'reservation' ? '✅' : '📝'} {ev.room_name ? `${ev.room_name} · ` : ''}{ev.event_title}
+                  {ev.event_type === 'reservation' ? '✅' : '📝'} {ev.room_name ? `${ev.room_name} · ` : ''}{ev.event_title}
                     </div>
                   ))}
                   {(checkoutByDate.get(day) || []).map((ev, j) => (
@@ -329,6 +321,31 @@ export default function CalendarPage() {
           </div>
         </div>
       </div>
+
+      {/* Modal ver reserva */}
+      {viewEvent && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl border border-blue-200">
+            <div className="p-4 border-b flex items-center justify-between">
+              <h3 className="text-lg font-bold text-gray-800">Ver reserva</h3>
+              <button onClick={()=>setViewEvent(null)} className="text-gray-500 hover:text-gray-700">✕</button>
+            </div>
+            <div className="p-6 grid grid-cols-1 gap-3 text-sm">
+              <div><span className="font-semibold text-gray-700">Habitación:</span> {viewEvent.room_name || viewEvent.room_id}</div>
+              <div><span className="font-semibold text-gray-700">Huésped:</span> {viewEvent.guest_name || viewEvent.event_title?.replace('Reserva ','')}</div>
+              <div><span className="font-semibold text-gray-700">Check-in:</span> {new Date(viewEvent.start_date).toLocaleDateString('es-ES')}</div>
+              <div><span className="font-semibold text-gray-700">Check-out:</span> {new Date(viewEvent.end_date).toLocaleDateString('es-ES')}</div>
+              {viewEvent.channel && (<div><span className="font-semibold text-gray-700">Canal:</span> {viewEvent.channel}</div>)}
+              {viewEvent.reservation_id && (
+                <div className="text-xs text-gray-500">ID reserva: {viewEvent.reservation_id}</div>
+              )}
+            </div>
+            <div className="p-4 border-t flex justify-end">
+              <button onClick={()=>setViewEvent(null)} className="px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl">Cerrar</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
