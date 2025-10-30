@@ -325,25 +325,96 @@ export default function CalendarPage() {
 
       {/* Modal ver reserva */}
       {viewEvent && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl border border-blue-200">
-            <div className="p-4 border-b flex items-center justify-between">
-              <h3 className="text-lg font-bold text-gray-800">Ver reserva</h3>
-              <button onClick={()=>setViewEvent(null)} className="text-gray-500 hover:text-gray-700">✕</button>
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50 animate-fade-in">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl border border-blue-200">
+            {/* Header del modal */}
+            <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-t-2xl">
+              <div className="flex items-center justify-between">
+                <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 flex items-center gap-2">
+                  <span className="text-3xl sm:text-4xl" style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>👁️</span>
+                  <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                    Ver Reserva
+                  </span>
+                </h3>
+                <button onClick={()=>setViewEvent(null)} className="text-gray-400 hover:text-gray-600 transition-all hover:scale-110">
+                  <span className="text-2xl" style={{fontFamily: 'Arial, sans-serif'}}>✕</span>
+                </button>
+              </div>
             </div>
-            <div className="p-6 grid grid-cols-1 gap-3 text-sm text-gray-800">
-              <div><span className="font-semibold">Habitación:</span> <span className="font-semibold">{viewEvent.room_name || viewEvent.room_id}</span></div>
-              <div><span className="font-semibold">Huésped:</span> <span className="font-semibold">{viewEvent.guest_name || viewEvent.event_title?.replace(/^Reserva\s+/,'')}</span></div>
-              <div><span className="font-semibold">Personas:</span> <span className="font-semibold">{viewEvent.guest_count ?? '-'}</span></div>
-              <div><span className="font-semibold">Check-in:</span> <span className="font-semibold">{new Date(viewEvent.start_date).toLocaleDateString('es-ES')}</span></div>
-              <div><span className="font-semibold">Check-out:</span> <span className="font-semibold">{new Date(viewEvent.end_date).toLocaleDateString('es-ES')}</span></div>
-              {viewEvent.channel && (<div><span className="font-semibold">Canal:</span> <span className="font-semibold">{viewEvent.channel}</span></div>)}
-              {viewEvent.reservation_id && (
-                <div className="text-xs text-gray-600 font-semibold">ID reserva: {viewEvent.reservation_id}</div>
-              )}
-            </div>
-            <div className="p-4 border-t flex justify-end">
-              <button onClick={()=>setViewEvent(null)} className="px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl">Cerrar</button>
+            
+            {/* Contenido del modal */}
+            <div className="p-6">
+              {/* Información de la habitación */}
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-5 rounded-xl border border-blue-200 mb-4">
+                <h4 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                  <span style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>🏠</span>
+                  Información de la Reserva
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-gray-600 mb-1">Habitación</p>
+                    <p className="text-base font-bold text-gray-900">{viewEvent.room_name || viewEvent.room_id}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600 mb-1">Huésped</p>
+                    <p className="text-base font-bold text-gray-900">{viewEvent.guest_name || viewEvent.event_title?.replace(/^Reserva\s+/,'')}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Fechas */}
+              <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-5 rounded-xl border border-green-200 mb-4">
+                <h4 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                  <span style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>📅</span>
+                  Fechas de Estancia
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-gray-600 mb-1">Check-in</p>
+                    <p className="text-base font-bold text-gray-900">{new Date(viewEvent.start_date).toLocaleDateString('es-ES')}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600 mb-1">Check-out</p>
+                    <p className="text-base font-bold text-gray-900">{new Date(viewEvent.end_date).toLocaleDateString('es-ES')}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Información adicional */}
+              <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-5 rounded-xl border border-purple-200 mb-4">
+                <h4 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                  <span style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>ℹ️</span>
+                  Detalles Adicionales
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-gray-600 mb-1">Personas</p>
+                    <p className="text-base font-bold text-gray-900">{viewEvent.guest_count ?? '-'}</p>
+                  </div>
+                  {viewEvent.channel && (
+                    <div>
+                      <p className="text-sm text-gray-600 mb-1">Canal</p>
+                      <p className="text-base font-bold text-gray-900">{viewEvent.channel}</p>
+                    </div>
+                  )}
+                  {viewEvent.reservation_id && (
+                    <div className="sm:col-span-2">
+                      <p className="text-sm text-gray-600 mb-1">ID Reserva</p>
+                      <p className="text-xs text-gray-600 font-mono bg-white px-3 py-2 rounded-lg border border-gray-200 break-all">{viewEvent.reservation_id}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Botón de cerrar */}
+              <div className="flex justify-end pt-4">
+                <button 
+                  onClick={()=>setViewEvent(null)} 
+                  className="px-8 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 font-semibold shadow-lg transition-all duration-200 transform hover:scale-105 flex items-center gap-2"
+                >
+                  ✨ Cerrar
+                </button>
+              </div>
             </div>
           </div>
         </div>
