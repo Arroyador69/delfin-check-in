@@ -326,7 +326,7 @@ export default function IntegrationsSettingsPage() {
         </div>
 
         {/* Información del plan */}
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-4 sm:p-6 mb-6 shadow-lg">
+        <div className="bg-white border border-blue-200 rounded-xl p-4 sm:p-6 mb-6 shadow-lg">
           <div className="flex items-start gap-3">
             <Info className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 flex-shrink-0 mt-1" />
             <div>
