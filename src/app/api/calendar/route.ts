@@ -65,13 +65,15 @@ export async function GET(req: NextRequest) {
     let reservations
     try {
       reservations = await sql`
-        SELECT tenant_id, room_id, guest_name, check_in, check_out
-        FROM reservations
-        WHERE tenant_id = ${tenantId}::uuid
-          ${filterRoomId ? sql`AND room_id = ${filterRoomId}` : sql``}
-          AND check_in  < ${toDate.toISOString().slice(0,10)}::date
-          AND check_out > ${fromDate.toISOString().slice(0,10)}::date
-        ORDER BY check_in ASC
+        SELECT r.tenant_id, r.room_id, r.guest_name, r.check_in, r.check_out
+        FROM reservations r
+        JOIN property_room_map prm
+          ON prm.tenant_id = ${tenantId}::uuid AND prm.room_id = r.room_id
+        WHERE r.tenant_id = ${tenantId}::uuid
+          ${propertyId ? sql`AND prm.property_id = ${parseInt(propertyId)}` : sql``}
+          AND r.check_in  < ${toDate.toISOString().slice(0,10)}::date
+          AND r.check_out > ${fromDate.toISOString().slice(0,10)}::date
+        ORDER BY r.check_in ASC
       `
     } catch (e) {
       console.warn('[calendar] reservations primary query error, falling back:', (e as any)?.message)
