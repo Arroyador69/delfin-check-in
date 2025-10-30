@@ -319,7 +319,7 @@ export async function POST(req: NextRequest) {
               ${'Bloqueo por reserva ' + paymentIntent.metadata.reservation_code},
               ${paymentIntent.metadata.check_in_date}::date,
               ${paymentIntent.metadata.check_out_date}::date,
-              TRUE,
+              FALSE,
               'reservation',
               NOW()
             )

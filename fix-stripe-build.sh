@@ -37,3 +37,5 @@ echo "🎉 Corrección de Stripe completada"
 
 
 
+
+

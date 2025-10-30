@@ -135,6 +135,57 @@ export async function POST(req: NextRequest) {
     // Generar código de reserva único
     const reservationCode = generateReservationCode();
 
+    // Validar disponibilidad ANTES de crear el Payment Intent (evita overbooking)
+    try {
+      const overlap = await sql`
+        WITH map AS (
+          SELECT room_id
+          FROM property_room_map
+          WHERE tenant_id = ${tenantId}::uuid AND property_id = ${property_id}::int
+          LIMIT 1
+        ),
+        solapadas AS (
+          SELECT 1
+          FROM reservations r, map m
+          WHERE r.tenant_id = ${tenantId}::uuid
+            AND r.room_id = m.room_id
+            AND r.check_in  < ${check_out_date}::date
+            AND r.check_out > ${check_in_date}::date
+          UNION ALL
+          SELECT 1
+          FROM direct_reservations dr
+          WHERE dr.tenant_id = ${tenantId}::uuid
+            AND dr.property_id = ${property_id}::int
+            AND dr.reservation_status = 'confirmed'
+            AND dr.check_in_date  < ${check_out_date}::date
+            AND dr.check_out_date > ${check_in_date}::date
+          UNION ALL
+          SELECT 1
+          FROM property_availability pa
+          WHERE pa.property_id = ${property_id}::int
+            AND pa.date >= ${check_in_date}::date
+            AND pa.date <  ${check_out_date}::date
+            AND pa.available = FALSE
+        )
+        SELECT COUNT(*)::int AS cnt FROM solapadas;
+      `;
+
+      const cnt = overlap.rows[0]?.cnt ?? 0;
+      if (cnt > 0) {
+        const response = NextResponse.json(
+          { success: false, error: 'Fechas no disponibles. Por favor, elige otro rango.' },
+          { status: 409 }
+        );
+        Object.entries(corsHeaders(origin)).forEach(([key, value]) => {
+          response.headers.set(key, value);
+        });
+        return response;
+      }
+    } catch (availErr) {
+      console.error('⚠️ [CREATE PAYMENT] Error validando disponibilidad (continuo):', availErr);
+      // Continuamos, pero en el webhook volveremos a bloquear availability e insertar en reservations idempotentemente
+    }
+
     // NO crear reserva en BD todavía - se creará después de confirmar el pago
     // Esto evita que queden reservas huérfanas si el pago falla
     console.log('💳 [CREATE PAYMENT] Preparando Payment Intent sin crear reserva aún:', {
