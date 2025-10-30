@@ -772,7 +772,7 @@ export default function GuestRegistrationsDashboard() {
           </div>
 
           {/* Contenedor con scroll independiente */}
-          <div className="overflow-auto" style={{ maxHeight: 'calc(100vh - 250px)' }}>
+          <div className="overflow-auto" style={{ maxHeight: 'calc(100vh - 180px)' }}>
             <div className="p-6">
               {filteredRegistrations.length === 0 ? (
                 <div className="text-center py-12">
