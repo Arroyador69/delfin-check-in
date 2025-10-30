@@ -22,16 +22,21 @@ export async function GET(req: NextRequest) {
     // Availability (bloqueos por día)
     let availability: any = { rows: [] as any[] }
     try {
-      availability = await sql`
+      const params: any[] = [tenantId, fromDate.toISOString().slice(0,10), toDate.toISOString().slice(0,10)]
+      let text = `
         SELECT pa.property_id, pa.date, pa.available, pa.blocked_reason
         FROM property_availability pa
         JOIN tenant_properties tp ON tp.id = pa.property_id
-        WHERE tp.tenant_id = ${tenantId}::uuid
-          ${propertyId ? sql`AND pa.property_id = ${parseInt(propertyId)}` : sql``}
-          AND pa.date >= ${fromDate.toISOString().slice(0,10)}::date
-          AND pa.date <  ${toDate.toISOString().slice(0,10)}::date
-        ORDER BY pa.date ASC
+        WHERE tp.tenant_id = $1::uuid
+          AND pa.date >= $2::date
+          AND pa.date <  $3::date
       `
+      if (propertyId) {
+        params.push(parseInt(propertyId))
+        text += ` AND pa.property_id = $4`
+      }
+      text += ` ORDER BY pa.date ASC`
+      availability = await sql.query(text, params)
     } catch (e: any) {
       console.error('[calendar] availability error:', e?.message || e)
     }
@@ -39,15 +44,20 @@ export async function GET(req: NextRequest) {
     // Eventos internos
     let events: any = { rows: [] as any[] }
     try {
-      events = await sql`
+      const params: any[] = [tenantId, toDate.toISOString().slice(0,10), fromDate.toISOString().slice(0,10)]
+      let text = `
         SELECT tenant_id, property_id, event_title, event_description, start_date, end_date, is_blocked, event_type
         FROM calendar_events
-        WHERE tenant_id = ${tenantId}::uuid
-          ${propertyId ? sql`AND property_id = ${parseInt(propertyId)}` : sql``}
-          AND start_date < ${toDate.toISOString().slice(0,10)}::date
-          AND end_date   > ${fromDate.toISOString().slice(0,10)}::date
-        ORDER BY start_date ASC
+        WHERE tenant_id = $1::uuid
+          AND start_date < $2::date
+          AND end_date   > $3::date
       `
+      if (propertyId) {
+        params.push(parseInt(propertyId))
+        text += ` AND property_id = $4`
+      }
+      text += ` ORDER BY start_date ASC`
+      events = await sql.query(text, params)
     } catch (e: any) {
       console.error('[calendar] events error:', e?.message || e)
     }
@@ -64,30 +74,40 @@ export async function GET(req: NextRequest) {
     }
     let reservations
     try {
-      reservations = await sql`
+      const params: any[] = [tenantId, toDate.toISOString().slice(0,10), fromDate.toISOString().slice(0,10)]
+      let text = `
         SELECT r.tenant_id, r.room_id, r.guest_name, r.check_in, r.check_out
         FROM reservations r
         JOIN property_room_map prm
-          ON prm.tenant_id = ${tenantId}::uuid AND prm.room_id = r.room_id
-        WHERE r.tenant_id = ${tenantId}::uuid
-          ${propertyId ? sql`AND prm.property_id = ${parseInt(propertyId)}` : sql``}
-          AND r.check_in  < ${toDate.toISOString().slice(0,10)}::date
-          AND r.check_out > ${fromDate.toISOString().slice(0,10)}::date
-        ORDER BY r.check_in ASC
+          ON prm.tenant_id = $1::uuid AND prm.room_id = r.room_id
+        WHERE r.tenant_id = $1::uuid
+          AND r.check_in  < $2::date
+          AND r.check_out > $3::date
       `
+      if (propertyId) {
+        params.push(parseInt(propertyId))
+        text += ` AND prm.property_id = $4`
+      }
+      text += ` ORDER BY r.check_in ASC`
+      reservations = await sql.query(text, params)
     } catch (e) {
       console.warn('[calendar] reservations primary query error, falling back:', (e as any)?.message)
-      reservations = await sql`
+      const params: any[] = [tenantId, toDate.toISOString().slice(0,10), fromDate.toISOString().slice(0,10)]
+      let text = `
         SELECT r.tenant_id, r.room_id, r.guest_name, r.check_in, r.check_out
         FROM reservations r
         WHERE r.room_id = ANY(
-          SELECT prm.room_id FROM property_room_map prm WHERE prm.tenant_id = ${tenantId}::uuid
+          SELECT prm.room_id FROM property_room_map prm WHERE prm.tenant_id = $1::uuid
         )
-          ${filterRoomId ? sql`AND r.room_id = ${filterRoomId}` : sql``}
-          AND r.check_in  < ${toDate.toISOString().slice(0,10)}::date
-          AND r.check_out > ${fromDate.toISOString().slice(0,10)}::date
-        ORDER BY r.check_in ASC
+          AND r.check_in  < $2::date
+          AND r.check_out > $3::date
       `
+      if (filterRoomId) {
+        params.push(filterRoomId)
+        text += ` AND r.room_id = $4`
+      }
+      text += ` ORDER BY r.check_in ASC`
+      reservations = await sql.query(text, params)
     }
     const reservationEvents = reservations.rows.map((r: any) => ({
       tenant_id: r.tenant_id,
