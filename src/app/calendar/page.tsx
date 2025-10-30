@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { Calendar as CalendarIcon, CalendarDays, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 
 type Availability = {
   property_id: number
@@ -20,6 +21,8 @@ type CalendarEvent = {
   is_blocked: boolean
   event_type: string
   created_at: string
+  room_id?: string
+  room_name?: string | null
 }
 
 function formatDate(d: Date) {
@@ -39,6 +42,7 @@ export default function CalendarPage() {
   const [availability, setAvailability] = useState<Availability[]>([])
   const [events, setEvents] = useState<CalendarEvent[]>([])
   const [properties, setProperties] = useState<{ id: number | null; property_name: string; room_id?: number; is_placeholder?: boolean }[]>([])
+  const router = useRouter()
 
   // Cargar tenant actual y propiedades del tenant (autenticado por JWT/middleware)
   useEffect(() => {
@@ -77,11 +81,6 @@ export default function CalendarPage() {
 
         setProperties(list)
         console.log('[Calendar] Props finales total=', list.length)
-        if (!propertyId && list.length) {
-          // Seleccionar la primera opción
-          const first = list[0]
-          setPropertyId(first?.id ? String(first.id) : `room:${first.room_id}`)
-        }
       } catch (e) {
         console.error('Error inicializando calendario:', e)
       }
@@ -90,12 +89,11 @@ export default function CalendarPage() {
   }, [])
 
   const load = async () => {
-    if (!tenantId || !propertyId || !start || !end) return
+    if (!tenantId || !start || !end) return
     setLoading(true)
     try {
-      const isRoomOnly = propertyId.startsWith('room:')
       const base = `/api/calendar?tenant_id=${tenantId}`
-      const url = `${base}${isRoomOnly ? '' : `&property_id=${propertyId}`}&from=${start}&to=${end}`
+      const url = `${base}${propertyId ? `&property_id=${propertyId}` : ''}&from=${start}&to=${end}`
       const res = await fetch(url)
       const data = await res.json()
       if (data.success) {
@@ -133,6 +131,16 @@ export default function CalendarPage() {
         if (!map.has(key)) map.set(key, [])
         map.get(key)!.push(ev)
       }
+    })
+    return map
+  }, [events])
+
+  const checkoutByDate = useMemo(() => {
+    const map = new Map<string, CalendarEvent[]>()
+    events.forEach(ev => {
+      const key = formatDate(new Date(ev.end_date))
+      if (!map.has(key)) map.set(key, [])
+      map.get(key)!.push(ev)
     })
     return map
   }, [events])
@@ -200,7 +208,7 @@ export default function CalendarPage() {
             />
             <button 
               onClick={load} 
-              disabled={loading || !tenantId || !propertyId} 
+              disabled={loading || !tenantId} 
               className="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl px-6 py-3 hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 transition-all duration-200 transform hover:scale-105 font-semibold shadow-lg flex items-center justify-center gap-2"
             >
               {loading ? (
@@ -254,7 +262,7 @@ export default function CalendarPage() {
               return (
                 <div 
                   key={day} 
-                  className={`border-2 rounded-xl p-2 sm:p-3 min-h-[96px] transition-all hover:shadow-md ${
+                  className={`border-2 rounded-xl p-2 sm:p-3 min-h-[112px] transition-all hover:shadow-md ${
                     blocked 
                       ? 'bg-gradient-to-r from-red-50 to-pink-50 border-red-300' 
                       : isToday
@@ -271,15 +279,22 @@ export default function CalendarPage() {
                     </div>
                   )}
                   {evs.map((ev, i) => (
-                    <div 
-                      key={i} 
-                      className={`text-[10px] sm:text-[11px] mt-1 rounded px-1 py-0.5 font-medium ${
+                    <div
+                      key={i}
+                      onClick={()=>router.push('/reservations')}
+                      className={`cursor-pointer text-[10px] sm:text-[11px] mt-1 rounded px-1 py-0.5 font-medium ${
                         ev.event_type === 'reservation' 
                           ? 'bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 border border-green-200' 
                           : 'bg-gradient-to-r from-gray-100 to-slate-100 text-gray-800 border border-gray-200'
-                      }`}
+                      } ${formatDate(new Date(ev.start_date)) === day ? 'border-l-4 border-green-600' : ''}`}
+                      title={`${ev.room_name ? ev.room_name + ' · ' : ''}${ev.event_title}`}
                     >
-                      {ev.event_type === 'reservation' ? '✅' : '📝'} {ev.event_title}
+                      {ev.event_type === 'reservation' ? '✅' : '📝'} {ev.room_name ? `${ev.room_name} · ` : ''}{ev.event_title}
+                    </div>
+                  ))}
+                  {(checkoutByDate.get(day) || []).map((ev, j) => (
+                    <div key={`co-${j}`} className="text-[10px] mt-1 rounded px-1 bg-amber-100 text-amber-800">
+                      🚪 Checkout {ev.room_name || ev.room_id}
                     </div>
                   ))}
                 </div>
@@ -297,7 +312,11 @@ export default function CalendarPage() {
           <div className="flex flex-wrap gap-4 sm:gap-6">
             <div className="flex items-center">
               <div className="inline-block w-4 h-4 mr-2 align-middle bg-gradient-to-r from-green-100 to-emerald-100 border-2 border-green-300 rounded"></div>
-              <span className="text-sm font-medium text-gray-700">✅ Reservas</span>
+              <span className="text-sm font-medium text-gray-700">✅ Reservas (borde izq = check-in)</span>
+            </div>
+            <div className="flex items-center">
+              <div className="inline-block w-4 h-4 mr-2 align-middle bg-amber-200 border-2 border-amber-300 rounded"></div>
+              <span className="text-sm font-medium text-gray-700">🚪 Checkout (día de salida)</span>
             </div>
             <div className="flex items-center">
               <div className="inline-block w-4 h-4 mr-2 align-middle bg-gradient-to-r from-red-50 to-pink-50 border-2 border-red-300 rounded"></div>
@@ -306,10 +325,6 @@ export default function CalendarPage() {
             <div className="flex items-center">
               <div className="inline-block w-4 h-4 mr-2 align-middle bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-400 rounded"></div>
               <span className="text-sm font-medium text-gray-700">📅 Hoy</span>
-            </div>
-            <div className="flex items-center">
-              <div className="inline-block w-4 h-4 mr-2 align-middle bg-gradient-to-r from-gray-100 to-slate-100 border-2 border-gray-300 rounded"></div>
-              <span className="text-sm font-medium text-gray-700">📝 Otros eventos</span>
             </div>
           </div>
         </div>
