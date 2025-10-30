@@ -223,87 +223,88 @@ export default function CostCalculator() {
 
   return (
     <AdminLayout>
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Header */}
-          <div className="bg-white rounded-lg shadow-sm border p-6 mb-6 transition-all duration-300 hover:transform hover:-translate-y-1 hover:shadow-2xl">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <div className="text-4xl mr-3">🧮</div>
-                <div>
-                  <h1 className="text-2xl font-bold text-gray-900">💰 Calculadora de Costos</h1>
-                  <p className="text-gray-600">Calcula el costo real por huésped en tu alojamiento</p>
-                </div>
-              </div>
-              <button
-                onClick={calculateCosts}
-                className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-              >
-                <Calculator className="h-4 w-4 mr-2" />
-                Calcular
-              </button>
-            </div>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-4 sm:p-6">
+        <div className="max-w-7xl mx-auto">
+          {/* Header mejorado */}
+          <div className="mb-6 sm:mb-8">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 flex items-center gap-3">
+              <span className="text-4xl sm:text-5xl md:text-6xl" style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>🧮</span>
+              <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                Calculadora de Costos
+              </span>
+            </h1>
+            <p className="text-gray-700 text-base sm:text-lg mb-4">
+              Calcula el costo real por huésped en tu alojamiento
+            </p>
+            <button
+              onClick={calculateCosts}
+              className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 font-semibold shadow-lg transition-all duration-200 transform hover:scale-105 flex items-center gap-2"
+            >
+              <Calculator className="h-5 w-5" />
+              ✨ Calcular Costos
+            </button>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Configuración */}
             <div className="lg:col-span-1">
-              <div className="bg-white rounded-lg shadow-sm border p-6 transition-all duration-300 hover:transform hover:-translate-y-1 hover:shadow-2xl">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                  <Settings className="h-5 w-5 mr-2" />
+              <div className="bg-white rounded-xl shadow-lg border border-blue-200 p-6">
+                <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+                  <span style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>⚙️</span>
+                  <Settings className="h-6 w-6" />
                   Configuración
                 </h2>
                 
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Total de habitaciones
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      🏠 Total de habitaciones
                     </label>
                     <input
                       type="number"
                       value={totalRooms}
                       onChange={(e) => setTotalRooms(Number(e.target.value))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white text-gray-900"
                       min="1"
                     />
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Huéspedes por habitación
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      👥 Huéspedes por habitación
                     </label>
                     <input
                       type="number"
                       value={guestsPerRoom}
                       onChange={(e) => setGuestsPerRoom(Number(e.target.value))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white text-gray-900"
                       min="1"
                     />
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Ocupación mensual (%)
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      📊 Ocupación mensual (%)
                     </label>
                     <input
                       type="number"
                       value={monthlyOccupancy}
                       onChange={(e) => setMonthlyOccupancy(Number(e.target.value))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white text-gray-900"
                       min="0"
                       max="100"
                     />
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Precio medio por habitación (€/noche)
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      💶 Precio medio por habitación (€/noche)
                     </label>
                     <input
                       type="number"
                       value={averageRoomPrice}
                       onChange={(e) => setAverageRoomPrice(Number(e.target.value))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white text-gray-900"
                       min="0"
                       step="0.01"
                     />
@@ -314,46 +315,47 @@ export default function CostCalculator() {
 
             {/* Gastos */}
             <div className="lg:col-span-2">
-              <div className="bg-white rounded-lg shadow-sm border p-6 transition-all duration-300 hover:transform hover:-translate-y-1 hover:shadow-2xl">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-semibold text-gray-900 flex items-center">
-                    <Euro className="h-5 w-5 mr-2" />
+              <div className="bg-white rounded-xl shadow-lg border border-blue-200 p-6">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
+                  <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                    <span style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>💸</span>
+                    <Euro className="h-6 w-6" />
                     Gastos Operativos
                   </h2>
                   <button
                     onClick={addExpense}
-                    className="flex items-center px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+                    className="flex items-center px-5 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl hover:from-green-700 hover:to-emerald-700 font-semibold shadow-lg transition-all duration-200 transform hover:scale-105"
                   >
-                    <Plus className="h-4 w-4 mr-1" />
-                    Añadir
+                    <Plus className="h-5 w-5 mr-2" />
+                    ✨ Añadir Gasto
                   </button>
                 </div>
 
                 <div className="space-y-4">
                   {expenses.map((expense) => (
-                    <div key={expense.id} className="border border-gray-200 rounded-lg p-4">
+                    <div key={expense.id} className="bg-gradient-to-r from-gray-50 to-gray-100 border-2 border-gray-200 rounded-xl p-4 hover:border-blue-300 transition-all">
                       <div className="grid grid-cols-1 md:grid-cols-6 gap-4 items-end">
                         <div className="md:col-span-2">
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Concepto
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            📝 Concepto
                           </label>
                           <input
                             type="text"
                             value={expense.name}
                             onChange={(e) => updateExpense(expense.id, 'name', e.target.value)}
                             placeholder="Ej: Luz, Agua, Limpieza..."
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white text-gray-900"
                           />
                         </div>
 
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Frecuencia
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            📅 Frecuencia
                           </label>
                           <select
                             value={expense.frequency}
                             onChange={(e) => updateExpense(expense.id, 'frequency', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white text-gray-900"
                           >
                             <option value="monthly">Mensual</option>
                             <option value="quarterly">Trimestral</option>
@@ -364,8 +366,8 @@ export default function CostCalculator() {
                         </div>
 
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            {expense.isPercentage ? 'Porcentaje (%)' : 'Importe (€)'}
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            💰 {expense.isPercentage ? 'Porcentaje (%)' : 'Importe (€)'}
                           </label>
                           <input
                             type="number"
@@ -378,20 +380,20 @@ export default function CostCalculator() {
                                 updateExpense(expense.id, 'amount', value);
                               }
                             }}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white text-gray-900"
                             min="0"
                             step={expense.isPercentage ? "0.1" : "0.01"}
                           />
                         </div>
 
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Tipo
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            🏷️ Tipo
                           </label>
                           <select
                             value={expense.isPercentage ? 'percentage' : 'fixed'}
                             onChange={(e) => updateExpense(expense.id, 'isPercentage', e.target.value === 'percentage')}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white text-gray-900"
                           >
                             <option value="fixed">Fijo</option>
                             <option value="percentage">Porcentaje</option>
@@ -401,9 +403,9 @@ export default function CostCalculator() {
                         <div>
                           <button
                             onClick={() => removeExpense(expense.id)}
-                            className="w-full px-3 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors flex items-center justify-center"
+                            className="w-full px-4 py-3 bg-gradient-to-r from-red-600 to-rose-600 text-white rounded-xl hover:from-red-700 hover:to-rose-700 transition-all transform hover:scale-105 flex items-center justify-center font-semibold shadow-lg"
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="h-5 w-5" />
                           </button>
                         </div>
                       </div>
@@ -416,55 +418,56 @@ export default function CostCalculator() {
 
           {/* Resultados */}
           {calculationResult && (
-            <div className="mt-6 bg-white rounded-lg shadow-sm border p-6 transition-all duration-300 hover:transform hover:-translate-y-1 hover:shadow-2xl">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                <Calculator className="h-5 w-5 mr-2" />
+            <div className="mt-6 bg-white rounded-xl shadow-lg border border-blue-200 p-6">
+              <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+                <span style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>📊</span>
+                <Calculator className="h-6 w-6" />
                 Resultados del Cálculo
               </h2>
               
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <div className="bg-blue-50 rounded-lg p-4">
-                  <div className="flex items-center">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-5 border border-blue-200">
+                  <div className="flex items-center mb-2">
                     <Euro className="h-8 w-8 text-blue-600 mr-3" />
                     <div>
-                      <p className="text-sm text-gray-600">Costo Total Mensual</p>
-                      <p className="text-2xl font-bold text-blue-600">
+                      <p className="text-sm text-gray-600 font-semibold">Costo Total Mensual</p>
+                      <p className="text-3xl font-bold text-blue-600">
                         €{calculationResult.totalMonthlyCosts.toFixed(2)}
                       </p>
                     </div>
                   </div>
                 </div>
 
-                <div className="bg-green-50 rounded-lg p-4">
-                  <div className="flex items-center">
+                <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-5 border border-green-200">
+                  <div className="flex items-center mb-2">
                     <Home className="h-8 w-8 text-green-600 mr-3" />
                     <div>
-                      <p className="text-sm text-gray-600">Costo por Habitación</p>
-                      <p className="text-2xl font-bold text-green-600">
+                      <p className="text-sm text-gray-600 font-semibold">Costo por Habitación</p>
+                      <p className="text-3xl font-bold text-green-600">
                         €{calculationResult.costPerRoom.toFixed(2)}
                       </p>
                     </div>
                   </div>
                 </div>
 
-                <div className="bg-purple-50 rounded-lg p-4">
-                  <div className="flex items-center">
+                <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-5 border border-purple-200">
+                  <div className="flex items-center mb-2">
                     <Users className="h-8 w-8 text-purple-600 mr-3" />
                     <div>
-                      <p className="text-sm text-gray-600">Costo por Huésped</p>
-                      <p className="text-2xl font-bold text-purple-600">
+                      <p className="text-sm text-gray-600 font-semibold">Costo por Huésped</p>
+                      <p className="text-3xl font-bold text-purple-600">
                         €{calculationResult.costPerGuest.toFixed(2)}
                       </p>
                     </div>
                   </div>
                 </div>
 
-                <div className="bg-orange-50 rounded-lg p-4">
-                  <div className="flex items-center">
+                <div className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl p-5 border border-orange-200">
+                  <div className="flex items-center mb-2">
                     <Calendar className="h-8 w-8 text-orange-600 mr-3" />
                     <div>
-                      <p className="text-sm text-gray-600">Costo por Noche</p>
-                      <p className="text-2xl font-bold text-orange-600">
+                      <p className="text-sm text-gray-600 font-semibold">Costo por Noche</p>
+                      <p className="text-3xl font-bold text-orange-600">
                         €{(calculationResult.costPerGuest / 30).toFixed(2)}
                       </p>
                     </div>
@@ -473,24 +476,27 @@ export default function CostCalculator() {
               </div>
 
               {/* Desglose detallado */}
-              <div className="mt-6">
-                <h3 className="text-md font-semibold text-gray-900 mb-3">Desglose de Costos</h3>
+              <div className="mt-8">
+                <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                  <span style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>📈</span>
+                  Desglose de Costos
+                </h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <p className="text-sm text-gray-600">Costos Fijos</p>
-                    <p className="text-lg font-semibold text-gray-900">
+                  <div className="bg-gradient-to-br from-indigo-50 to-blue-50 rounded-xl p-5 border border-indigo-200">
+                    <p className="text-sm text-gray-600 font-semibold mb-2">💰 Costos Fijos</p>
+                    <p className="text-2xl font-bold text-indigo-600">
                       €{calculationResult.breakdown.fixed.toFixed(2)}
                     </p>
                   </div>
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <p className="text-sm text-gray-600">Costos Variables</p>
-                    <p className="text-lg font-semibold text-gray-900">
+                  <div className="bg-gradient-to-br from-teal-50 to-cyan-50 rounded-xl p-5 border border-teal-200">
+                    <p className="text-sm text-gray-600 font-semibold mb-2">📊 Costos Variables</p>
+                    <p className="text-2xl font-bold text-teal-600">
                       €{calculationResult.breakdown.variable.toFixed(2)}
                     </p>
                   </div>
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <p className="text-sm text-gray-600">Costos por Porcentaje</p>
-                    <p className="text-lg font-semibold text-gray-900">
+                  <div className="bg-gradient-to-br from-amber-50 to-yellow-50 rounded-xl p-5 border border-amber-200">
+                    <p className="text-sm text-gray-600 font-semibold mb-2">📉 Costos por Porcentaje</p>
+                    <p className="text-2xl font-bold text-amber-600">
                       €{calculationResult.breakdown.percentage.toFixed(2)}
                     </p>
                   </div>
@@ -498,22 +504,40 @@ export default function CostCalculator() {
               </div>
 
               {/* Información adicional */}
-              <div className="mt-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                <h4 className="font-semibold text-yellow-800 mb-2">💡 Información Importante</h4>
-                <ul className="text-sm text-yellow-700 space-y-1">
-                  <li>• El cálculo se basa en una ocupación del {monthlyOccupancy}% mensual</li>
-                  <li>• Se utiliza un precio medio de €{averageRoomPrice} por noche para cálculos de porcentajes</li>
-                  <li>• Los costos por huésped se calculan dividiendo entre el total de huéspedes mensuales</li>
-                  <li>• Los datos se guardan automáticamente en tu navegador</li>
+              <div className="mt-6 bg-gradient-to-r from-yellow-50 to-orange-50 border-2 border-yellow-200 rounded-xl p-5">
+                <h4 className="font-bold text-yellow-800 mb-3 flex items-center gap-2">
+                  <span style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>💡</span>
+                  Información Importante
+                </h4>
+                <ul className="text-sm text-yellow-700 space-y-2">
+                  <li className="flex items-start gap-2">
+                    <span className="font-bold">•</span>
+                    <span>El cálculo se basa en una ocupación del <strong>{monthlyOccupancy}%</strong> mensual</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="font-bold">•</span>
+                    <span>Se utiliza un precio medio de <strong>€{averageRoomPrice}</strong> por noche para cálculos de porcentajes</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="font-bold">•</span>
+                    <span>Los costos por huésped se calculan dividiendo entre el total de huéspedes mensuales</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="font-bold">•</span>
+                    <span>Los datos se guardan automáticamente en tu navegador</span>
+                  </li>
                 </ul>
               </div>
 
               {/* Ejemplos de gastos */}
-              <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h4 className="font-semibold text-blue-800 mb-2">📋 Ejemplos de Gastos Comunes</h4>
+              <div className="mt-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl p-5">
+                <h4 className="font-bold text-blue-800 mb-4 flex items-center gap-2">
+                  <span style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>📋</span>
+                  Ejemplos de Gastos Comunes
+                </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-blue-700">
-                  <div>
-                    <p className="font-medium mb-1">Gastos Fijos:</p>
+                  <div className="bg-white rounded-lg p-4 border border-blue-200">
+                    <p className="font-bold mb-2 text-blue-900">💰 Gastos Fijos:</p>
                     <ul className="space-y-1">
                       <li>• Luz: €80/mes</li>
                       <li>• Agua: €120/trimestre</li>
@@ -521,8 +545,8 @@ export default function CostCalculator() {
                       <li>• Software gestión: €25/mes</li>
                     </ul>
                   </div>
-                  <div>
-                    <p className="font-medium mb-1">Gastos Variables:</p>
+                  <div className="bg-white rounded-lg p-4 border border-blue-200">
+                    <p className="font-bold mb-2 text-blue-900">📊 Gastos Variables:</p>
                     <ul className="space-y-1">
                       <li>• Limpieza: €15/habitación</li>
                       <li>• Desayunos: €5/huésped</li>
