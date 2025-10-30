@@ -20,6 +20,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Obtener tenant_id y room_id del slot
+    console.log('[availability-calendar] params', { propertyId, from, to });
     const mapping = await sql`
       SELECT tp.tenant_id, prm.room_id
       FROM tenant_properties tp
@@ -30,11 +31,13 @@ export async function GET(req: NextRequest) {
     `;
 
     if (mapping.rows.length === 0) {
+      console.warn('[availability-calendar] mapping not found for property', propertyId);
       return NextResponse.json({ success: true, blockedDates: [] });
     }
 
     const tenantId = mapping.rows[0].tenant_id as string;
-    const roomId = mapping.rows[0].room_id as string | null;
+    const roomId = mapping.rows[0].room_id ? String(mapping.rows[0].room_id) : null;
+    console.log('[availability-calendar] mapping', { tenantId, roomId });
 
     // Recopilar días bloqueados desde 3 fuentes
     const result = await sql`
@@ -45,8 +48,8 @@ export async function GET(req: NextRequest) {
         SELECT generate_series(r.check_in::date, (r.check_out::date - INTERVAL '1 day'), '1 day')::date AS d
         FROM reservations r, rango g
         WHERE ${roomId} IS NOT NULL
-          AND r.tenant_id = ${tenantId}::uuid
-          AND r.room_id = ${roomId}
+          AND r.tenant_id::uuid = ${tenantId}::uuid
+          AND r.room_id::text = ${roomId}::text
           AND r.check_in  < g.t
           AND r.check_out > g.f
       ),
@@ -80,6 +83,7 @@ export async function GET(req: NextRequest) {
     `;
 
     const blockedDates = result.rows.map((r) => r.date);
+    console.log('[availability-calendar] blockedDates count', blockedDates.length);
     return NextResponse.json({ success: true, blockedDates });
   } catch (error) {
     console.error('❌ [public/availability-calendar] Error:', error);
