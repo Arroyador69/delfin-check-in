@@ -13,14 +13,29 @@ export async function GET(req: NextRequest) {
     }
 
     console.log('🏠 [property-slots] Tenant detectado:', tenantId)
-    // Traer Rooms (slots) del tenant
-    const rooms = await sql`
-      SELECT id AS room_id, name AS room_name
-      FROM "Room"
-      WHERE "lodgingId" = ${tenantId}::text
-      ORDER BY id
+
+    // Resolver lodgingIds asociados al tenant
+    const tenantRow = await sql`
+      SELECT lodgings
+      FROM tenants
+      WHERE id = ${tenantId}::uuid
+      LIMIT 1
     `
-    console.log('📦 [property-slots] Rooms encontrados:', rooms.rowCount)
+    const lodgingIds: string[] = Array.isArray(tenantRow.rows?.[0]?.lodgings)
+      ? tenantRow.rows[0].lodgings
+      : []
+    console.log('🏨 [property-slots] LodgingIds detectados:', lodgingIds)
+
+    // Si no hay lodgingIds, no habrá Rooms
+    const rooms = lodgingIds.length > 0
+      ? await sql`
+        SELECT id AS room_id, name AS room_name
+        FROM "Room"
+        WHERE "lodgingId" = ANY(${lodgingIds}::text[])
+        ORDER BY id
+      `
+      : { rowCount: 0, rows: [] as any[] }
+    console.log('📦 [property-slots] Rooms encontrados:', (rooms as any).rowCount)
 
     // Traer mappings existentes y sus propiedades
     const mappings = await sql`
