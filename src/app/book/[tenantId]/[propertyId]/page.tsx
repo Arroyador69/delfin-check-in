@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, use } from 'react';
-import { Calendar, Users, Euro, CreditCard, CheckCircle } from 'lucide-react';
+import { Calendar, Users, Euro, CreditCard, CheckCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { TenantProperty } from '@/lib/direct-reservations-types';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
@@ -179,6 +179,135 @@ function PaymentForm({
   );
 }
 
+function MonthGrid({ month, blocked, selectedStart, selectedEnd, onSelect }: {
+  month: Date;
+  blocked: Set<string>;
+  selectedStart?: string;
+  selectedEnd?: string;
+  onSelect: (iso: string) => void;
+}) {
+  const start = new Date(month.getFullYear(), month.getMonth(), 1);
+  const end = new Date(month.getFullYear(), month.getMonth() + 1, 0);
+  const startWeekday = (start.getDay() + 6) % 7; // lunes=0
+  const daysInMonth = end.getDate();
+  const cells: Array<{ d: Date | null; iso?: string; disabled?: boolean; inRange?: boolean; isStart?: boolean; isEnd?: boolean }>=[];
+  for (let i = 0; i < startWeekday; i++) cells.push({ d: null });
+  for (let day = 1; day <= daysInMonth; day++) {
+    const d = new Date(month.getFullYear(), month.getMonth(), day);
+    const iso = d.toISOString().split('T')[0];
+    const disabled = blocked.has(iso) || iso < new Date().toISOString().split('T')[0];
+    const inRange = selectedStart && selectedEnd && iso > selectedStart && iso < selectedEnd;
+    const isStart = selectedStart === iso;
+    const isEnd = selectedEnd === iso;
+    cells.push({ d, iso, disabled, inRange, isStart, isEnd });
+  }
+  const weekdays = ['L','M','X','J','V','S','D'];
+  return (
+    <div className="border rounded-lg p-3">
+      <div className="grid grid-cols-7 text-center text-xs text-gray-500 mb-2">
+        {weekdays.map((w) => (<div key={w}>{w}</div>))}
+      </div>
+      <div className="grid grid-cols-7 gap-1">
+        {cells.map((c, i) => (
+          <button
+            key={i}
+            disabled={!c.d || c.disabled}
+            onClick={() => c.iso && onSelect(c.iso)}
+            className={[
+              'h-9 rounded-md text-sm',
+              !c.d ? 'invisible' : '',
+              c.disabled ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'hover:bg-blue-50',
+              c.isStart || c.isEnd ? 'bg-blue-600 text-white' : '',
+              c.inRange ? 'bg-blue-100' : ''
+            ].join(' ')}
+          >
+            {c.d?.getDate()}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function DateRangePicker({ blockedDates, onChange, initialCheckIn, initialCheckOut }: {
+  blockedDates: Set<string>;
+  onChange: (checkIn: string, checkOut: string) => void;
+  initialCheckIn?: string;
+  initialCheckOut?: string;
+}) {
+  const [monthLeft, setMonthLeft] = useState<Date>(() => { const d=new Date(); d.setDate(1); return d; });
+  const [monthRight, setMonthRight] = useState<Date>(() => { const d=new Date(); d.setMonth(d.getMonth()+1); d.setDate(1); return d; });
+  const [checkIn, setCheckIn] = useState<string>(initialCheckIn || '');
+  const [checkOut, setCheckOut] = useState<string>(initialCheckOut || '');
+
+  const hasBlockedInRange = (a: string, b: string) => {
+    if (!a || !b) return false;
+    const start = new Date(a);
+    const end = new Date(b);
+    for (let d = new Date(start); d < end; d.setDate(d.getDate()+1)) {
+      const iso = d.toISOString().split('T')[0];
+      if (blockedDates.has(iso)) return true;
+    }
+    return false;
+  };
+
+  const handleSelect = (iso: string) => {
+    if (!checkIn || (checkIn && checkOut)) {
+      // start new range
+      if (blockedDates.has(iso)) return;
+      setCheckIn(iso);
+      setCheckOut('');
+      onChange(iso, '');
+      return;
+    }
+    // set checkout
+    if (iso <= checkIn) return;
+    if (hasBlockedInRange(checkIn, iso)) {
+      alert('Hay días ocupados dentro del rango. Elige otras fechas.');
+      return;
+    }
+    setCheckOut(iso);
+    onChange(checkIn, iso);
+  };
+
+  const prev = () => {
+    const l = new Date(monthLeft); l.setMonth(l.getMonth()-1);
+    const r = new Date(monthRight); r.setMonth(r.getMonth()-1);
+    setMonthLeft(l); setMonthRight(r);
+  };
+  const next = () => {
+    const l = new Date(monthLeft); l.setMonth(l.getMonth()+1);
+    const r = new Date(monthRight); r.setMonth(r.getMonth()+1);
+    setMonthLeft(l); setMonthRight(r);
+  };
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-2">
+        <button onClick={prev} className="p-2 rounded hover:bg-gray-100"><ChevronLeft className="w-5 h-5"/></button>
+        <div className="text-sm font-medium text-gray-700">
+          {monthLeft.toLocaleString('es-ES', { month: 'long', year: 'numeric' })} · {monthRight.toLocaleString('es-ES', { month: 'long', year: 'numeric' })}
+        </div>
+        <button onClick={next} className="p-2 rounded hover:bg-gray-100"><ChevronRight className="w-5 h-5"/></button>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <MonthGrid month={monthLeft} blocked={blockedDates} selectedStart={checkIn} selectedEnd={checkOut} onSelect={handleSelect} />
+        <MonthGrid month={monthRight} blocked={blockedDates} selectedStart={checkIn} selectedEnd={checkOut} onSelect={handleSelect} />
+      </div>
+      <div className="mt-3 text-sm text-gray-600">
+        {checkIn ? (
+          <div>
+            Seleccionado: <span className="font-medium">{checkIn}</span>
+            {checkOut && <> → <span className="font-medium">{checkOut}</span></>}
+          </div>
+        ) : (
+          <div>Selecciona fecha de entrada</div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function PublicBookingPage({ params }: BookingPageProps) {
   const resolvedParams = use(params);
   const { tenantId, propertyId } = resolvedParams;
@@ -200,6 +329,21 @@ export default function PublicBookingPage({ params }: BookingPageProps) {
   const [pricing, setPricing] = useState<any>(null);
   const [blockedDates, setBlockedDates] = useState<Set<string>>(new Set());
   const [availabilityInfo, setAvailabilityInfo] = useState<{from: string; to: string} | null>(null);
+
+  // Utils
+  const toISO = (d: Date) => d.toISOString().split('T')[0];
+  const addDays = (d: Date, n: number) => {
+    const x = new Date(d);
+    x.setDate(x.getDate() + n);
+    return x;
+  };
+  const iterateDates = (start: Date, end: Date) => {
+    const days: string[] = [];
+    for (let d = new Date(start); d < end; d = addDays(d, 1)) {
+      days.push(toISO(d));
+    }
+    return days;
+  };
 
   useEffect(() => {
     if (propertyId && tenantId) {
@@ -351,47 +495,12 @@ export default function PublicBookingPage({ params }: BookingPageProps) {
             <div className="space-y-4">
               <h2 className="text-xl font-semibold mb-4">Selecciona tus fechas</h2>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Fecha de entrada
-                  </label>
-                  <input
-                    type="date"
-                    value={formData.check_in_date}
-                    onChange={(e) => {
-                      const v = e.target.value;
-                      if (blockedDates.has(v)) {
-                        alert('Ese día ya está ocupado. Elige otro.');
-                        return;
-                      }
-                      setFormData({ ...formData, check_in_date: v });
-                    }}
-                    min={new Date().toISOString().split('T')[0]}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Fecha de salida
-                  </label>
-                  <input
-                    type="date"
-                    value={formData.check_out_date}
-                    onChange={(e) => {
-                      const v = e.target.value;
-                      if (blockedDates.has(v)) {
-                        alert('Ese día ya está ocupado. Elige otro.');
-                        return;
-                      }
-                      setFormData({ ...formData, check_out_date: v });
-                    }}
-                    min={formData.check_in_date || new Date().toISOString().split('T')[0]}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-              </div>
+              <DateRangePicker
+                blockedDates={blockedDates}
+                onChange={(ci, co) => setFormData({ ...formData, check_in_date: ci, check_out_date: co })}
+                initialCheckIn={formData.check_in_date}
+                initialCheckOut={formData.check_out_date}
+              />
 
               {availabilityInfo && (
                 <p className="text-xs text-gray-500">
