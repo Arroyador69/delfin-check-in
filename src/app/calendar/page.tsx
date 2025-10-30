@@ -50,11 +50,17 @@ export default function CalendarPage() {
           setTenantId(meData.tenant.id)
         }
 
-        // Intentar slots unificados; fallback a /tenant/properties
+        // Usar SOLO slots unificados con cabecera x-tenant-id
         let list: any[] = []
         try {
-          const slotsRes = await fetch('/api/tenant/property-slots')
+          const slotsRes = await fetch('/api/tenant/property-slots', {
+            headers: tenantId ? { 'x-tenant-id': tenantId } : undefined
+          })
           const slotsData = await slotsRes.json()
+          console.log('[Calendar] /api/tenant/property-slots status=', slotsRes.status, 'success=', slotsData?.success)
+          if (!slotsRes.ok) {
+            console.error('[Calendar] Error property-slots:', slotsData?.error || 'unknown')
+          }
           if (slotsRes.ok && slotsData.success) {
             console.log('[Calendar] Usando /api/tenant/property-slots total=', slotsData.total)
             list = (slotsData.slots || []).map((s: any) => ({
@@ -64,15 +70,8 @@ export default function CalendarPage() {
               is_placeholder: s.is_placeholder
             }))
           }
-        } catch {}
-
-        if (!list?.length) {
-          const res = await fetch('/api/tenant/properties')
-          const data = await res.json()
-          if (data.success) {
-            console.log('[Calendar] Fallback /api/tenant/properties total=', (data.properties || []).length)
-            list = data.properties || []
-          }
+        } catch (err) {
+          console.error('[Calendar] Excepción property-slots', err)
         }
 
         setProperties(list)
