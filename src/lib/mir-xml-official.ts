@@ -118,7 +118,11 @@ function buildPersonaXml(persona: PvPersona): string {
   const apellido2Xml = persona.apellido2 ? `\n        <apellido2>${esc(persona.apellido2)}</apellido2>` : '';
   const tipoDocumentoXml = persona.tipoDocumento ? `\n        <tipoDocumento>${esc(persona.tipoDocumento)}</tipoDocumento>` : '';
   const numeroDocumentoXml = persona.numeroDocumento ? `\n        <numeroDocumento>${esc(persona.numeroDocumento)}</numeroDocumento>` : '';
-  const soporteDocumentoXml = persona.soporteDocumento ? `\n        <soporteDocumento>${esc(persona.soporteDocumento)}</soporteDocumento>` : '';
+  // CRÍTICO: Si hay numeroDocumento (y no es un valor de prueba), soporteDocumento es obligatorio para MIR
+  // Si no viene, usar 'C' por defecto (número de soporte del documento)
+  const tieneDocReal = persona.numeroDocumento && persona.numeroDocumento !== '12345678Z' && persona.numeroDocumento.trim() !== '';
+  const soporteDoc = tieneDocReal ? (persona.soporteDocumento || 'C') : undefined;
+  const soporteDocumentoXml = soporteDoc ? `\n        <soporteDocumento>${esc(soporteDoc)}</soporteDocumento>` : '';
   const nacionalidadXml = persona.nacionalidad ? `\n        <nacionalidad>${esc(persona.nacionalidad)}</nacionalidad>` : '';
   const sexoXml = persona.sexo ? `\n        <sexo>${esc(persona.sexo)}</sexo>` : '';
   const telefonoXml = persona.telefono ? `\n        <telefono>${esc(persona.telefono)}</telefono>` : '';

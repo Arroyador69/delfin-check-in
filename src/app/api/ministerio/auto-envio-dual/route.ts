@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
     const client = new MinisterioClientOfficial(config);
 
     // Extraer datos del JSON
-    const { referencia, fechaEntrada, fechaSalida, personas } = json;
+    const { referencia, fechaEntrada, fechaSalida, personas, tipoPago, pago } = json;
     
     if (!referencia || !fechaEntrada || !fechaSalida || !personas || !Array.isArray(personas) || personas.length === 0) {
       return NextResponse.json({
@@ -89,6 +89,38 @@ export async function POST(req: NextRequest) {
     const fechaSalidaDT = asDateTime(fechaSalida);
     const codigoEstablecimientoFinal = config.codigoEstablecimiento || config.codigoArrendador || '0000256653';
 
+    // Determinar tipo de pago: del JSON, de la reserva asociada, o 'EFECT' por defecto
+    let tipoPagoFinal = tipoPago || pago?.tipoPago || 'EFECT';
+    
+    // Si no viene en el JSON, intentar buscar en direct_reservations por referencia
+    if (tipoPagoFinal === 'EFECT' && referenciaNorm) {
+      try {
+        const reserva = await sql`
+          SELECT payment_method, payment_status 
+          FROM direct_reservations 
+          WHERE reservation_code = ${referenciaNorm} 
+             OR id::text = ${referenciaNorm}
+          LIMIT 1
+        `;
+        if (reserva.rows.length > 0 && reserva.rows[0].payment_method) {
+          const pm = reserva.rows[0].payment_method.toLowerCase();
+          if (pm.includes('card') || pm.includes('tarjeta') || pm.includes('tarj')) {
+            tipoPagoFinal = 'TARJ';
+          } else if (pm.includes('transfer') || pm.includes('transferencia') || pm.includes('transf')) {
+            tipoPagoFinal = 'TRANSF';
+          }
+        }
+      } catch (e) {
+        console.warn('⚠️ No se pudo buscar tipo de pago en reserva:', e);
+      }
+    }
+    
+    // Normalizar tipoPago según catálogo MIR
+    const tipoPagoNorm = tipoPagoFinal === 'EFECT' || tipoPagoFinal === 'EFECTIVO' ? 'EFECT' :
+                        tipoPagoFinal === 'TARJ' || tipoPagoFinal === 'TARJETA' || tipoPagoFinal === 'CARD' ? 'TARJ' :
+                        tipoPagoFinal === 'TRANSF' || tipoPagoFinal === 'TRANSFERENCIA' ? 'TRANSF' :
+                        'EFECT'; // fallback seguro
+
     // Preparar datos para PV (Parte de Hospedaje)
     const datosPV: PvSolicitud = {
       codigoEstablecimiento: codigoEstablecimientoFinal,
@@ -101,30 +133,38 @@ export async function POST(req: NextRequest) {
         numHabitaciones: 1,
         internet: false,
         pago: {
-          tipoPago: "EFECT",
+          tipoPago: tipoPagoNorm,
           fechaPago: new Date().toISOString().split('T')[0]
         }
       },
-      personas: personas.map(persona => ({
-        rol: "VI",
-        nombre: persona.nombre,
-        apellido1: persona.apellido1,
-        apellido2: persona.apellido2 || '',
-        tipoDocumento: persona.tipoDocumento || 'NIF',
-        numeroDocumento: persona.numeroDocumento || '12345678Z',
-        fechaNacimiento: persona.fechaNacimiento,
-        nacionalidad: persona.nacionalidad || 'ESP',
-        sexo: persona.sexo || 'M',
-        direccion: {
-          direccion: persona.direccion?.direccion || 'Calle Ejemplo 123',
-          codigoPostal: persona.direccion?.codigoPostal || '28001',
-          pais: persona.direccion?.pais || 'ESP',
-          codigoMunicipio: persona.direccion?.codigoMunicipio || '28079',
-          nombreMunicipio: persona.direccion?.nombreMunicipio || 'Madrid'
-        },
-        telefono: persona.contacto?.telefono || '600000000',
-        correo: persona.contacto?.correo || 'viajero@example.com'
-      }))
+      personas: personas.map(persona => {
+        // Si hay numeroDocumento, el soporteDocumento es obligatorio para MIR
+        const numDoc = persona.numeroDocumento || '';
+        // CRÍTICO: soporteDocumento debe existir siempre que hay numeroDocumento
+        const soporteDoc = persona.soporteDocumento || (numDoc && numDoc !== '12345678Z' ? 'C' : undefined);
+        
+        return {
+          rol: "VI",
+          nombre: persona.nombre,
+          apellido1: persona.apellido1,
+          apellido2: persona.apellido2 || '',
+          tipoDocumento: persona.tipoDocumento || 'NIF',
+          numeroDocumento: numDoc || '12345678Z',
+          soporteDocumento: soporteDoc,
+          fechaNacimiento: persona.fechaNacimiento,
+          nacionalidad: persona.nacionalidad || 'ESP',
+          sexo: persona.sexo || 'M',
+          direccion: {
+            direccion: persona.direccion?.direccion || 'Calle Ejemplo 123',
+            codigoPostal: persona.direccion?.codigoPostal || '28001',
+            pais: persona.direccion?.pais || 'ESP',
+            codigoMunicipio: persona.direccion?.codigoMunicipio || '28079',
+            nombreMunicipio: persona.direccion?.nombreMunicipio || 'Madrid'
+          },
+          telefono: persona.contacto?.telefono || '600000000',
+          correo: persona.contacto?.correo || 'viajero@example.com'
+        };
+      })
     };
 
     // Preparar datos para RH (Reserva de Hospedaje)
@@ -139,30 +179,38 @@ export async function POST(req: NextRequest) {
         numHabitaciones: 1,
         internet: false,
         pago: {
-          tipoPago: "EFECT",
+          tipoPago: tipoPagoNorm,
           fechaPago: new Date().toISOString().split('T')[0]
         }
       },
-      personas: personas.map((persona, index) => ({
-        rol: index === 0 ? 'TI' : 'VI',
-        nombre: persona.nombre,
-        apellido1: persona.apellido1,
-        apellido2: persona.apellido2 || '',
-        tipoDocumento: persona.tipoDocumento || 'NIF',
-        numeroDocumento: persona.numeroDocumento || '12345678Z',
-        fechaNacimiento: persona.fechaNacimiento,
-        nacionalidad: persona.nacionalidad || 'ESP',
-        sexo: persona.sexo || 'M',
-        direccion: {
-          direccion: persona.direccion?.direccion || 'Calle Ejemplo 123',
-          codigoPostal: persona.direccion?.codigoPostal || '28001',
-          pais: persona.direccion?.pais || 'ESP',
-          codigoMunicipio: persona.direccion?.codigoMunicipio || '28079',
-          nombreMunicipio: persona.direccion?.nombreMunicipio || 'Madrid'
-        },
-        telefono: persona.contacto?.telefono || '600000000',
-        correo: persona.contacto?.correo || 'viajero@example.com'
-      }))
+      personas: personas.map((persona, index) => {
+        // Si hay numeroDocumento, el soporteDocumento es obligatorio para MIR
+        const numDoc = persona.numeroDocumento || '';
+        // CRÍTICO: soporteDocumento debe existir siempre que hay numeroDocumento
+        const soporteDoc = persona.soporteDocumento || (numDoc && numDoc !== '12345678Z' ? 'C' : undefined);
+        
+        return {
+          rol: index === 0 ? 'TI' : 'VI',
+          nombre: persona.nombre,
+          apellido1: persona.apellido1,
+          apellido2: persona.apellido2 || '',
+          tipoDocumento: persona.tipoDocumento || 'NIF',
+          numeroDocumento: numDoc || '12345678Z',
+          soporteDocumento: soporteDoc,
+          fechaNacimiento: persona.fechaNacimiento,
+          nacionalidad: persona.nacionalidad || 'ESP',
+          sexo: persona.sexo || 'M',
+          direccion: {
+            direccion: persona.direccion?.direccion || 'Calle Ejemplo 123',
+            codigoPostal: persona.direccion?.codigoPostal || '28001',
+            pais: persona.direccion?.pais || 'ESP',
+            codigoMunicipio: persona.direccion?.codigoMunicipio || '28079',
+            nombreMunicipio: persona.direccion?.nombreMunicipio || 'Madrid'
+          },
+          telefono: persona.contacto?.telefono || '600000000',
+          correo: persona.contacto?.correo || 'viajero@example.com'
+        };
+      })
     };
 
     console.log('📤 Preparando envío dual PV + RH al MIR (dos peticiones separadas)...');
