@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
     // Crear cliente MIR
     const client = new MinisterioClientOfficial(config);
 
-    // Extraer datos del JSON
+    // Extraer datos del JSON según normas MIR (TODO debe venir parseado del JSON, no de la BD)
     const { referencia, fechaEntrada, fechaSalida, personas, tipoPago, pago } = json;
     
     if (!referencia || !fechaEntrada || !fechaSalida || !personas || !Array.isArray(personas) || personas.length === 0) {
@@ -89,54 +89,22 @@ export async function POST(req: NextRequest) {
     const fechaSalidaDT = asDateTime(fechaSalida);
     const codigoEstablecimientoFinal = config.codigoEstablecimiento || config.codigoArrendador || '0000256653';
 
-    // Determinar tipo de pago: del JSON, de la reserva asociada, o 'EFECT' por defecto
-    let tipoPagoFinal = tipoPago || pago?.tipoPago || 'EFECT';
+    // Parsear tipo de pago SOLO del JSON según normas MIR (pagoType del XSD)
+    // pagoType tiene: tipoPago (obligatorio), fechaPago (opcional), medioPago (opcional), etc.
+    let tipoPagoFinal = tipoPago || pago?.tipoPago;
     
-    // Si no viene en el JSON, intentar buscar en direct_reservations o guest_registrations por referencia
-    if (tipoPagoFinal === 'EFECT' && referenciaNorm) {
-      try {
-        // Buscar primero en direct_reservations
-        const reservaDirecta = await sql`
-          SELECT payment_method, payment_status 
-          FROM direct_reservations 
-          WHERE reservation_code = ${referenciaNorm} 
-             OR id::text = ${referenciaNorm}
-          LIMIT 1
-        `;
-        if (reservaDirecta.rows.length > 0 && reservaDirecta.rows[0].payment_method) {
-          const pm = reservaDirecta.rows[0].payment_method.toLowerCase();
-          if (pm.includes('card') || pm.includes('tarjeta') || pm.includes('tarj')) {
-            tipoPagoFinal = 'TARJ';
-          } else if (pm.includes('transfer') || pm.includes('transferencia') || pm.includes('transf')) {
-            tipoPagoFinal = 'TRANSF';
-          }
-        } else {
-          // Si no está en direct_reservations, buscar en guest_registrations
-          const guestReg = await sql`
-            SELECT data 
-            FROM guest_registrations 
-            WHERE reserva_ref = ${referenciaNorm}
-               OR id::text = ${referenciaNorm}
-            LIMIT 1
-          `;
-          if (guestReg.rows.length > 0 && guestReg.rows[0].data) {
-            const data = guestReg.rows[0].data;
-            const tipoPagoFromData = data?.comunicaciones?.[0]?.contrato?.pago?.tipoPago;
-            if (tipoPagoFromData) {
-              tipoPagoFinal = tipoPagoFromData;
-            }
-          }
-        }
-      } catch (e) {
-        console.warn('⚠️ No se pudo buscar tipo de pago en reserva:', e);
-      }
+    // Si no viene en el JSON, usar 'EFECT' por defecto según normas MIR
+    if (!tipoPagoFinal) {
+      console.warn('⚠️ tipoPago no viene en el JSON, usando "EFECT" por defecto');
+      tipoPagoFinal = 'EFECT';
     }
     
-    // Normalizar tipoPago según catálogo MIR
+    // Normalizar tipoPago según catálogo MIR (valores válidos según normas)
+    // NOTA: Los valores deben coincidir exactamente con el catálogo MIR
     const tipoPagoNorm = tipoPagoFinal === 'EFECT' || tipoPagoFinal === 'EFECTIVO' ? 'EFECT' :
                         tipoPagoFinal === 'TARJ' || tipoPagoFinal === 'TARJETA' || tipoPagoFinal === 'CARD' ? 'TARJ' :
                         tipoPagoFinal === 'TRANSF' || tipoPagoFinal === 'TRANSFERENCIA' ? 'TRANSF' :
-                        'EFECT'; // fallback seguro
+                        tipoPagoFinal; // Usar el valor tal cual si no coincide con los anteriores
 
     // Preparar datos para PV (Parte de Hospedaje)
     const datosPV: PvSolicitud = {
@@ -151,7 +119,10 @@ export async function POST(req: NextRequest) {
         internet: false,
         pago: {
           tipoPago: tipoPagoNorm,
-          fechaPago: new Date().toISOString().split('T')[0]
+          fechaPago: pago?.fechaPago || new Date().toISOString().split('T')[0],
+          medioPago: pago?.medioPago,
+          titular: pago?.titular,
+          caducidadTarjeta: pago?.caducidadTarjeta
         }
       },
       personas: personas.map(persona => {
@@ -199,7 +170,10 @@ export async function POST(req: NextRequest) {
         internet: false,
         pago: {
           tipoPago: tipoPagoNorm,
-          fechaPago: new Date().toISOString().split('T')[0]
+          fechaPago: pago?.fechaPago || new Date().toISOString().split('T')[0],
+          medioPago: pago?.medioPago,
+          titular: pago?.titular,
+          caducidadTarjeta: pago?.caducidadTarjeta
         }
       },
       personas: personas.map((persona, index) => {
