@@ -239,60 +239,63 @@ export default function CalendarPage() {
         </div>
 
         {/* Calendario */}
-        <div className="bg-white rounded-xl shadow-lg border border-blue-200 p-4 sm:p-6">
-          <div className="grid grid-cols-7 gap-2 sm:gap-3">
-            {['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].map(day => (
-              <div key={day} className="text-center font-bold text-gray-700 py-2 text-sm sm:text-base">
-                {day}
-              </div>
-            ))}
-            {days.map(day => {
-              const a = availabilityByDate.get(day)
-              const evs = eventsByDate.get(day) || []
-              const blocked = a && a.available === false
-              const dayNum = new Date(day).getDate()
-              const isToday = formatDate(new Date()) === day
-              return (
-                <div 
-                  key={day} 
-                  className={`border-2 rounded-xl p-2 sm:p-3 min-h-[112px] transition-all hover:shadow-md ${
-                    blocked 
-                      ? 'bg-gradient-to-r from-red-50 to-pink-50 border-red-300' 
-                      : isToday
-                      ? 'bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-400'
-                      : 'bg-white border-gray-200'
-                  }`}
-                >
-                  <div className="text-xs sm:text-sm font-bold mb-1 text-gray-600">
-                    {dayNum}
-                  </div>
-                  {blocked && (
-                    <div className="text-[11px] text-red-700 font-semibold bg-white px-1 py-0.5 rounded mb-1">
-                      🚫 {a?.blocked_reason || 'Bloqueado'}
-                    </div>
-                  )}
-                  {evs.map((ev, i) => (
-                <div
-                  key={i}
-                  onClick={()=> ev.event_type === 'reservation' ? setViewEvent(ev) : undefined}
-                  className={`cursor-pointer text-[10px] sm:text-[11px] mt-1 rounded px-1 py-0.5 font-medium ${
-                        ev.event_type === 'reservation' 
-                          ? 'bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 border border-green-200' 
-                          : 'bg-gradient-to-r from-gray-100 to-slate-100 text-gray-800 border border-gray-200'
-                      } ${formatDate(new Date(ev.start_date)) === day ? 'border-l-4 border-green-600' : ''}`}
-                  title={`${ev.room_name ? ev.room_name + ' · ' : ''}${ev.event_title?.replace(/^Reserva\s+/,'')}`}
-                    >
-                      {ev.event_type === 'reservation' ? '✅' : '📝'} {ev.room_name ? `${ev.room_name} · ` : ''}{ev.event_title?.replace(/^Reserva\s+/,'')}
-                    </div>
-                  ))}
-                  {(checkoutByDate.get(day) || []).map((ev, j) => (
-                    <div key={`co-${j}`} className="text-[10px] mt-1 rounded px-1 bg-amber-100 text-amber-800">
-                  {ev.room_name ? `${ev.room_name} · ` : ''}{ev.event_title?.replace(/^Reserva\s+/,'')}
-                    </div>
-                  ))}
+        <div className="bg-white rounded-xl shadow-lg border border-blue-200 p-2 sm:p-4 lg:p-6">
+          {/* Contenedor con scroll horizontal en móvil */}
+          <div className="overflow-x-auto -mx-2 sm:mx-0 -my-2 sm:my-0 lg:overflow-x-visible">
+            <div className="inline-grid grid-cols-7 gap-2 sm:gap-3 min-w-full sm:min-w-0 w-max sm:w-full">
+              {['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].map(day => (
+                <div key={day} className="text-center font-bold text-gray-700 py-2 text-sm sm:text-base px-1">
+                  {day}
                 </div>
-              )
-            })}
+              ))}
+              {days.map(day => {
+                const a = availabilityByDate.get(day)
+                const evs = eventsByDate.get(day) || []
+                const blocked = a && a.available === false
+                const dayNum = new Date(day).getDate()
+                const isToday = formatDate(new Date()) === day
+                return (
+                  <div 
+                    key={day} 
+                    className={`border-2 rounded-xl p-2 sm:p-3 min-h-[112px] transition-all hover:shadow-md w-[100px] sm:w-auto ${
+                      blocked 
+                        ? 'bg-gradient-to-r from-red-50 to-pink-50 border-red-300' 
+                        : isToday
+                        ? 'bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-400'
+                        : 'bg-white border-gray-200'
+                    }`}
+                  >
+                    <div className="text-xs sm:text-sm font-bold mb-1 text-gray-600">
+                      {dayNum}
+                    </div>
+                    {blocked && (
+                      <div className="text-[11px] text-red-700 font-semibold bg-white px-1 py-0.5 rounded mb-1">
+                        🚫 {a?.blocked_reason || 'Bloqueado'}
+                      </div>
+                    )}
+                    {evs.map((ev, i) => (
+                  <div
+                    key={i}
+                    onClick={()=> ev.event_type === 'reservation' ? setViewEvent(ev) : undefined}
+                    className={`cursor-pointer text-[9px] sm:text-[11px] mt-1 rounded px-1 py-0.5 font-medium truncate ${
+                          ev.event_type === 'reservation' 
+                            ? 'bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 border border-green-200' 
+                            : 'bg-gradient-to-r from-gray-100 to-slate-100 text-gray-800 border border-gray-200'
+                        } ${formatDate(new Date(ev.start_date)) === day ? 'border-l-4 border-green-600' : ''}`}
+                    title={`${ev.room_name ? ev.room_name + ' · ' : ''}${ev.event_title?.replace(/^Reserva\s+/,'')}`}
+                      >
+                        {ev.event_type === 'reservation' ? '✅' : '📝'} {ev.room_name ? `${ev.room_name} · ` : ''}{ev.event_title?.replace(/^Reserva\s+/,'')}
+                      </div>
+                    ))}
+                    {(checkoutByDate.get(day) || []).map((ev, j) => (
+                      <div key={`co-${j}`} className="text-[9px] sm:text-[10px] mt-1 rounded px-1 bg-amber-100 text-amber-800 truncate">
+                    {ev.room_name ? `${ev.room_name} · ` : ''}{ev.event_title?.replace(/^Reserva\s+/,'')}
+                      </div>
+                    ))}
+                  </div>
+                )
+              })}
+            </div>
           </div>
         </div>
 
