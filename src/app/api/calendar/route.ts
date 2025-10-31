@@ -24,9 +24,9 @@ export async function GET(req: NextRequest) {
     try {
       const params: any[] = [tenantId, fromDate.toISOString().slice(0,10), toDate.toISOString().slice(0,10)]
       let text = `
-        SELECT pa.property_id, pa.date, pa.available, pa.blocked_reason
-        FROM property_availability pa
-        JOIN tenant_properties tp ON tp.id = pa.property_id
+      SELECT pa.property_id, pa.date, pa.available, pa.blocked_reason
+      FROM property_availability pa
+      JOIN tenant_properties tp ON tp.id = pa.property_id
         WHERE tp.tenant_id = $1::uuid
           AND pa.date >= $2::date
           AND pa.date <  $3::date
@@ -46,8 +46,8 @@ export async function GET(req: NextRequest) {
     try {
       const params: any[] = [tenantId, toDate.toISOString().slice(0,10), fromDate.toISOString().slice(0,10)]
       let text = `
-        SELECT tenant_id, property_id, event_title, event_description, start_date, end_date, is_blocked, event_type
-        FROM calendar_events
+      SELECT tenant_id, property_id, event_title, event_description, start_date, end_date, is_blocked, event_type
+      FROM calendar_events
         WHERE tenant_id = $1::uuid
           AND start_date < $2::date
           AND end_date   > $3::date

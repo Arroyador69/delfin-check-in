@@ -44,7 +44,7 @@ export async function GET(req: NextRequest) {
         WHERE tp.tenant_id = ${tenantId}::uuid
       ),
       placeholders AS (
-        SELECT 
+      SELECT 
           NULL::int AS id,
           ${tenantId}::uuid AS tenant_id,
           r.name     AS property_name,
@@ -75,7 +75,7 @@ export async function GET(req: NextRequest) {
       SELECT * FROM placeholders
       ORDER BY created_at DESC
     `;
-
+    
     const properties: any[] = result.rows.map(row => ({
       id: row.id,
       tenant_id: row.tenant_id,
@@ -214,28 +214,28 @@ export async function POST(req: NextRequest) {
     } else {
       // Crear nueva propiedad y mapping para ese room_id
       const created = await sql`
-        INSERT INTO tenant_properties (
-          tenant_id, property_name, description, photos, max_guests,
-          bedrooms, bathrooms, amenities, base_price, cleaning_fee,
-          security_deposit, minimum_nights, maximum_nights, availability_rules
-        ) VALUES (
-          ${tenantId},
-          ${data.property_name},
-          ${data.description || ''},
-          ${JSON.stringify(data.photos || [])},
-          ${data.max_guests || 2},
-          ${data.bedrooms || 1},
-          ${data.bathrooms || 1},
-          ${JSON.stringify(data.amenities || [])},
-          ${data.base_price},
-          ${data.cleaning_fee || 0},
-          ${data.security_deposit || 0},
-          ${data.minimum_nights || 1},
-          ${data.maximum_nights || 30},
-          ${JSON.stringify(data.availability_rules || {})}
-        )
-        RETURNING id, created_at
-      `;
+      INSERT INTO tenant_properties (
+        tenant_id, property_name, description, photos, max_guests,
+        bedrooms, bathrooms, amenities, base_price, cleaning_fee,
+        security_deposit, minimum_nights, maximum_nights, availability_rules
+      ) VALUES (
+        ${tenantId},
+        ${data.property_name},
+        ${data.description || ''},
+        ${JSON.stringify(data.photos || [])},
+        ${data.max_guests || 2},
+        ${data.bedrooms || 1},
+        ${data.bathrooms || 1},
+        ${JSON.stringify(data.amenities || [])},
+        ${data.base_price},
+        ${data.cleaning_fee || 0},
+        ${data.security_deposit || 0},
+        ${data.minimum_nights || 1},
+        ${data.maximum_nights || 30},
+        ${JSON.stringify(data.availability_rules || {})}
+      )
+      RETURNING id, created_at
+    `;
       propertyId = created.rows[0].id;
       await sql`
         INSERT INTO property_room_map (tenant_id, property_id, room_id, created_at, updated_at)
@@ -243,9 +243,9 @@ export async function POST(req: NextRequest) {
         ON CONFLICT (tenant_id, property_id) DO UPDATE SET room_id = EXCLUDED.room_id, updated_at = NOW()
       `;
     }
-
+    
     console.log('✅ Propiedad asignada al slot (room_id):', data.room_id, '-> property_id:', propertyId);
-
+    
     return NextResponse.json({
       success: true,
       property_id: propertyId,

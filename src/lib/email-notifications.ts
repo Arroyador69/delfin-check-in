@@ -137,6 +137,22 @@ export function generateGuestConfirmationEmail(
               </p>
             </div>
             
+            <div class="reservation-details" style="background: #e3f2fd; border-left: 4px solid #2196f3;">
+              <h3>🔄 ¿Necesitas cancelar tu reserva?</h3>
+              <p>Si necesitas cancelar tu reserva, puedes hacerlo fácilmente a través de nuestro sistema.</p>
+              <p style="margin-top: 15px;">
+                <a href="https://book.delfincheckin.com/cancelar" target="_blank" style="background:#dc3545;color:white;padding:12px 24px;border-radius:6px;text-decoration:none;display:inline-block;font-weight:bold;">
+                  🚫 Cancelar reserva
+                </a>
+              </p>
+              <p style="margin-top: 15px; font-size: 14px; color: #666;">
+                <strong>Política de cancelación:</strong><br>
+                - Debe realizarse al menos 1 día antes del check-in<br>
+                - Reembolso completo sin comisiones<br>
+                - Procesado automáticamente en 5-10 días hábiles
+              </p>
+            </div>
+            
             <div class="reservation-details">
               <h3>📞 Información de contacto</h3>
               <p>Si tienes alguna pregunta sobre tu reserva, puedes contactar con <strong>${contactName}</strong>:</p>
@@ -177,6 +193,14 @@ export function generateGuestConfirmationEmail(
       ${formUrl}
       
       Este formulario es obligatorio por ley y los datos se envían al Gobierno de España (Ministerio del Interior).
+      
+      ¿Necesitas cancelar tu reserva?
+      Visita: https://book.delfincheckin.com/cancelar
+      
+      Política de cancelación:
+      - Debe realizarse al menos 1 día antes del check-in
+      - Reembolso completo sin comisiones
+      - Procesado automáticamente en 5-10 días hábiles
       
       Información de contacto del establecimiento:
       - Establecimiento: ${contactName}
@@ -238,6 +262,13 @@ function generateCheckinInstructionsEmailHtml(params: {
               <p><a href="${formUrl}" target="_blank" style="background:#22c55e;color:white;padding:10px 16px;border-radius:8px;text-decoration:none">Rellenar formulario</a></p>
             </div>
 
+            <div class="section" style="background:#fee2e2;border-left:4px solid #ef4444">
+              <h3>🔄 ¿Necesitas cancelar tu reserva?</h3>
+              <p>Si necesitas cancelar tu reserva, puedes hacerlo fácilmente a través de nuestro sistema.</p>
+              <p style="margin:12px 0"><a href="https://book.delfincheckin.com/cancelar" target="_blank" style="background:#dc3545;color:white;padding:10px 16px;border-radius:8px;text-decoration:none">🚫 Cancelar reserva</a></p>
+              <p style="font-size:14px;color:#666;margin:0"><strong>Política:</strong> Cancelación al menos 1 día antes · Reembolso completo · Sin comisiones · 5-10 días hábiles</p>
+            </div>
+
             <div class="section">
               <h3>Contacto</h3>
               <p>Para cualquier duda, contacta con <strong>${contactName}</strong>:</p>
@@ -251,7 +282,13 @@ function generateCheckinInstructionsEmailHtml(params: {
       Instrucciones de check-in (Reserva ${reservation.reservation_code})\n\n
       Fechas: ${checkInDate} → ${checkOutDate}\n
       Instrucciones: (HTML adjunto)\n
-      Registro de viajeros: ${formUrl}\n
+      Registro de viajeros: ${formUrl}\n\n
+      ¿Necesitas cancelar tu reserva?\n
+      Visita: https://book.delfincheckin.com/cancelar\n\n
+      Política de cancelación:
+      - Debe realizarse al menos 1 día antes del check-in
+      - Reembolso completo sin comisiones
+      - Procesado automáticamente en 5-10 días hábiles\n\n
       Contacto: ${contactName} · ${contactEmail} ${contactPhone ? '· ' + contactPhone : ''}
     `
   }
@@ -614,4 +651,227 @@ export async function sendReservationEmails(reservation: DirectReservation, prop
     guestEmail: guestResult.status === 'fulfilled' ? guestResult.value : { success: false, error: 'Failed' },
     ownerEmail: ownerResult.status === 'fulfilled' ? ownerResult.value : { success: false, error: 'Failed' }
   };
+}
+
+// =====================================================
+// PLANTILLA Y ENVÍO: NOTIFICACIÓN DE PAGO PROCESADO
+// =====================================================
+
+export function generatePayoutNotificationEmail(params: {
+  reservation_code: string;
+  check_in_date: string;
+  check_out_date: string;
+  total_amount: number;
+  stripe_fee: number;
+  delfin_commission: number;
+  payout_amount: number;
+  transfer_id: string;
+  tenant_name: string;
+  iban: string;
+}) {
+  const {
+    reservation_code,
+    check_in_date,
+    check_out_date,
+    total_amount,
+    stripe_fee,
+    delfin_commission,
+    payout_amount,
+    transfer_id,
+    tenant_name,
+    iban
+  } = params;
+
+  const checkInDate = new Date(check_in_date).toLocaleDateString('es-ES', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+
+  const checkOutDate = new Date(check_out_date).toLocaleDateString('es-ES', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+
+  const maskedIban = iban.substring(0, 4) + ' **** **** ' + iban.substring(iban.length - 4);
+
+  return {
+    subject: `💰 Pago procesado - ${reservation_code}`,
+    html: `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Pago Procesado</title>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+          .content { background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px; }
+          .payment-details { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; }
+          .detail-row { display: flex; justify-content: space-between; margin: 10px 0; padding: 8px 0; border-bottom: 1px solid #eee; }
+          .detail-label { font-weight: bold; color: #555; }
+          .detail-value { color: #333; }
+          .total { font-size: 18px; font-weight: bold; color: #059669; }
+          .footer { text-align: center; margin-top: 30px; color: #666; font-size: 14px; }
+          .logo { font-size: 24px; font-weight: bold; }
+          .info-box { background: #dbeafe; border-left: 4px solid #3b82f6; padding: 15px; margin: 20px 0; border-radius: 5px; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <div class="logo">🐬 Delfin Check-in</div>
+            <h1>Pago Procesado</h1>
+            <p>Tu transferencia ha sido enviada exitosamente</p>
+          </div>
+          
+          <div class="content">
+            <h2>Hola ${tenant_name},</h2>
+            <p>¡Excelente noticia! El pago de la reserva <strong>${reservation_code}</strong> ha sido procesado y transferido a tu cuenta bancaria.</p>
+            
+            <div class="payment-details">
+              <h3>📋 Detalles del pago</h3>
+              <div class="detail-row">
+                <span class="detail-label">Código de reserva:</span>
+                <span class="detail-value"><strong>${reservation_code}</strong></span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">Fechas:</span>
+                <span class="detail-value">${checkInDate} - ${checkOutDate}</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">Total de la reserva:</span>
+                <span class="detail-value">${total_amount.toFixed(2)}€</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">Comisión Stripe:</span>
+                <span class="detail-value" style="color: #dc2626;">-${stripe_fee.toFixed(2)}€</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">Comisión Delfin (9%):</span>
+                <span class="detail-value" style="color: #ea580c;">-${delfin_commission.toFixed(2)}€</span>
+              </div>
+              <div class="detail-row" style="border-top: 2px solid #059669; margin-top: 10px; padding-top: 15px;">
+                <span class="detail-label total">Pago recibido:</span>
+                <span class="detail-value total">${payout_amount.toFixed(2)}€</span>
+              </div>
+            </div>
+
+            <div class="payment-details">
+              <h3>🏦 Información de transferencia</h3>
+              <div class="detail-row">
+                <span class="detail-label">ID de transferencia:</span>
+                <span class="detail-value"><code style="background: #f3f4f6; padding: 2px 6px; border-radius: 3px;">${transfer_id}</code></span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">Cuenta bancaria:</span>
+                <span class="detail-value">${maskedIban}</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">Fecha de procesamiento:</span>
+                <span class="detail-value">${new Date().toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+              </div>
+            </div>
+
+            <div class="info-box">
+              <p style="margin: 0;"><strong>📅 Tiempo de recepción:</strong></p>
+              <p style="margin: 5px 0 0 0;">El dinero debería aparecer en tu cuenta en <strong>1-2 días hábiles</strong>.</p>
+              <p style="margin: 5px 0 0 0;">Si tienes alguna duda sobre la transferencia, contacta con tu banco mostrando el ID de transferencia.</p>
+            </div>
+
+            <div class="payment-details">
+              <h3>📊 Consultar todos tus pagos</h3>
+              <p>Puedes ver el historial completo de todos tus pagos y descargar reportes fiscales desde:</p>
+              <p style="text-align: center; margin: 20px 0;">
+                <a href="https://admin.delfincheckin.com/settings/microsite-payments" 
+                   target="_blank" 
+                   style="background:#059669;color:white;padding:12px 24px;border-radius:6px;text-decoration:none;display:inline-block;font-weight:bold;">
+                  Ver historial de pagos
+                </a>
+              </p>
+            </div>
+            
+            <p>¡Gracias por confiar en Delfín Check-in!</p>
+            <p>El equipo de Delfin Check-in</p>
+          </div>
+          
+          <div class="footer">
+            <p>Este email fue enviado automáticamente por Delfin Check-in</p>
+            <p>© 2024 Delfin Check-in. Todos los derechos reservados.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `,
+    text: `
+      🐬 Delfin Check-in - Pago Procesado
+      
+      Hola ${tenant_name},
+      
+      El pago de la reserva ${reservation_code} ha sido procesado y transferido a tu cuenta bancaria.
+      
+      Detalles del pago:
+      - Código: ${reservation_code}
+      - Fechas: ${checkInDate} - ${checkOutDate}
+      - Total reserva: ${total_amount.toFixed(2)}€
+      - Comisión Stripe: -${stripe_fee.toFixed(2)}€
+      - Comisión Delfin (9%): -${delfin_commission.toFixed(2)}€
+      - PAGO RECIBIDO: ${payout_amount.toFixed(2)}€
+      
+      Información de transferencia:
+      - ID: ${transfer_id}
+      - Cuenta: ${maskedIban}
+      - Fecha: ${new Date().toLocaleDateString('es-ES')}
+      
+      📅 Tiempo de recepción: El dinero debería aparecer en 1-2 días hábiles.
+      
+      Consulta todos tus pagos en:
+      https://admin.delfincheckin.com/settings/microsite-payments
+      
+      ¡Gracias por confiar en Delfín Check-in!
+      
+      El equipo de Delfin Check-in
+    `
+  };
+}
+
+export async function sendPayoutNotificationEmail(params: {
+  to: string;
+  reservation_code: string;
+  check_in_date: string;
+  check_out_date: string;
+  total_amount: number;
+  stripe_fee: number;
+  delfin_commission: number;
+  payout_amount: number;
+  transfer_id: string;
+  tenant_name: string;
+  iban: string;
+}) {
+  try {
+    const emailContent = generatePayoutNotificationEmail(params);
+    
+    const mailOptions = {
+      from: process.env.SMTP_FROM_BOOKING || process.env.SMTP_FROM || 'Delfín Check-in <booking@delfincheckin.com>',
+      to: params.to,
+      subject: emailContent.subject,
+      html: emailContent.html,
+      text: emailContent.text,
+    };
+
+    const result = await transporter.sendMail(mailOptions);
+    console.log('✅ Email de pago procesado enviado:', {
+      reservation_code: params.reservation_code,
+      recipient: params.to,
+      messageId: result.messageId
+    });
+
+    return { success: true, messageId: result.messageId };
+  } catch (error) {
+    console.error('❌ Error enviando email de pago:', error);
+    return { success: false, error: error instanceof Error ? error.message : 'Error desconocido' };
+  }
 }

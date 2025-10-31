@@ -134,25 +134,25 @@ export async function POST(req: NextRequest) {
           : undefined;
         
         return {
-          rol: "VI",
-          nombre: persona.nombre,
-          apellido1: persona.apellido1,
-          apellido2: persona.apellido2 || '',
-          tipoDocumento: persona.tipoDocumento || 'NIF',
+        rol: "VI",
+        nombre: persona.nombre,
+        apellido1: persona.apellido1,
+        apellido2: persona.apellido2 || '',
+        tipoDocumento: persona.tipoDocumento || 'NIF',
           numeroDocumento: numDoc,
           soporteDocumento: soporteDoc,
-          fechaNacimiento: persona.fechaNacimiento,
-          nacionalidad: persona.nacionalidad || 'ESP',
-          sexo: persona.sexo || 'M',
-          direccion: {
-            direccion: persona.direccion?.direccion || 'Calle Ejemplo 123',
-            codigoPostal: persona.direccion?.codigoPostal || '28001',
-            pais: persona.direccion?.pais || 'ESP',
-            codigoMunicipio: persona.direccion?.codigoMunicipio || '28079',
-            nombreMunicipio: persona.direccion?.nombreMunicipio || 'Madrid'
-          },
-          telefono: persona.contacto?.telefono || '600000000',
-          correo: persona.contacto?.correo || 'viajero@example.com'
+        fechaNacimiento: persona.fechaNacimiento,
+        nacionalidad: persona.nacionalidad || 'ESP',
+        sexo: persona.sexo || 'M',
+        direccion: {
+          direccion: persona.direccion?.direccion || 'Calle Ejemplo 123',
+          codigoPostal: persona.direccion?.codigoPostal || '28001',
+          pais: persona.direccion?.pais || 'ESP',
+          codigoMunicipio: persona.direccion?.codigoMunicipio || '28079',
+          nombreMunicipio: persona.direccion?.nombreMunicipio || 'Madrid'
+        },
+        telefono: persona.contacto?.telefono || '600000000',
+        correo: persona.contacto?.correo || 'viajero@example.com'
         };
       })
     };
@@ -182,25 +182,25 @@ export async function POST(req: NextRequest) {
         const numDoc = persona.numeroDocumento || '';
         
         return {
-          rol: index === 0 ? 'TI' : 'VI',
-          nombre: persona.nombre,
-          apellido1: persona.apellido1,
-          apellido2: persona.apellido2 || '',
-          tipoDocumento: persona.tipoDocumento || 'NIF',
+        rol: index === 0 ? 'TI' : 'VI',
+        nombre: persona.nombre,
+        apellido1: persona.apellido1,
+        apellido2: persona.apellido2 || '',
+        tipoDocumento: persona.tipoDocumento || 'NIF',
           numeroDocumento: numDoc,
           // NO incluir soporteDocumento para RH (no está en personaReservaType)
-          fechaNacimiento: persona.fechaNacimiento,
-          nacionalidad: persona.nacionalidad || 'ESP',
-          sexo: persona.sexo || 'M',
-          direccion: {
-            direccion: persona.direccion?.direccion || 'Calle Ejemplo 123',
-            codigoPostal: persona.direccion?.codigoPostal || '28001',
-            pais: persona.direccion?.pais || 'ESP',
-            codigoMunicipio: persona.direccion?.codigoMunicipio || '28079',
-            nombreMunicipio: persona.direccion?.nombreMunicipio || 'Madrid'
-          },
-          telefono: persona.contacto?.telefono || '600000000',
-          correo: persona.contacto?.correo || 'viajero@example.com'
+        fechaNacimiento: persona.fechaNacimiento,
+        nacionalidad: persona.nacionalidad || 'ESP',
+        sexo: persona.sexo || 'M',
+        direccion: {
+          direccion: persona.direccion?.direccion || 'Calle Ejemplo 123',
+          codigoPostal: persona.direccion?.codigoPostal || '28001',
+          pais: persona.direccion?.pais || 'ESP',
+          codigoMunicipio: persona.direccion?.codigoMunicipio || '28079',
+          nombreMunicipio: persona.direccion?.nombreMunicipio || 'Madrid'
+        },
+        telefono: persona.contacto?.telefono || '600000000',
+        correo: persona.contacto?.correo || 'viajero@example.com'
         };
       })
     };

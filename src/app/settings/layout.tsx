@@ -4,7 +4,7 @@ import { useState } from 'react';
 import AdminLayout from '@/components/AdminLayout';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Settings, FileText, CreditCard, User, LinkIcon, Home, Calendar } from 'lucide-react';
+import { Settings, FileText, CreditCard, User, LinkIcon, Home, Calendar, Wallet } from 'lucide-react';
 
 export default function SettingsLayout({
   children,
@@ -55,6 +55,12 @@ export default function SettingsLayout({
             name: 'Facturación',
             icon: CreditCard,
             href: '/settings/billing',
+          },
+          {
+            id: 'microsite-payments',
+            name: 'Pagos Microsite',
+            icon: Wallet,
+            href: '/settings/microsite-payments',
           },
     {
       id: 'account',

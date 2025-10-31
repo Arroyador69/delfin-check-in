@@ -13,9 +13,17 @@ export function calculateCommission(
   commissionRate: number = 0.09, // 9% por defecto
   stripeFeeRate: number = 0.014  // 1.4% + 0.25€ por defecto
 ): CommissionCalculation {
-  const delfinCommissionAmount = subtotal * commissionRate;
+  // Calcular comisión de Stripe primero
   const stripeFeeAmount = (subtotal * stripeFeeRate) + 0.25; // 0.25€ fijo
-  const propertyOwnerAmount = subtotal - delfinCommissionAmount;
+  
+  // Calcular total neto después de Stripe
+  const netAfterStripe = subtotal - stripeFeeAmount;
+  
+  // Calcular comisión de Delfin sobre el neto
+  const delfinCommissionAmount = netAfterStripe * commissionRate;
+  
+  // Lo que recibe el propietario
+  const propertyOwnerAmount = netAfterStripe - delfinCommissionAmount;
   
   return {
     subtotal,
