@@ -138,10 +138,12 @@ export async function POST(req: NextRequest) {
         }
       },
       personas: personas.map(persona => {
-        // Si hay numeroDocumento, el soporteDocumento es obligatorio para MIR
+        // CRÍTICO según normas MIR: si hay numeroDocumento, soporteDocumento es OBLIGATORIO
         const numDoc = persona.numeroDocumento || '';
-        // CRÍTICO: soporteDocumento debe existir siempre que hay numeroDocumento
-        const soporteDoc = persona.soporteDocumento || (numDoc && numDoc !== '12345678Z' ? 'C' : undefined);
+        // Si hay numeroDocumento (no vacío), incluir soporteDocumento con valor 'C' por defecto si no viene
+        const soporteDoc = numDoc && numDoc.trim() !== '' 
+          ? (persona.soporteDocumento || 'C') 
+          : undefined;
         
         return {
           rol: "VI",
@@ -149,7 +151,7 @@ export async function POST(req: NextRequest) {
           apellido1: persona.apellido1,
           apellido2: persona.apellido2 || '',
           tipoDocumento: persona.tipoDocumento || 'NIF',
-          numeroDocumento: numDoc || '12345678Z',
+          numeroDocumento: numDoc,
           soporteDocumento: soporteDoc,
           fechaNacimiento: persona.fechaNacimiento,
           nacionalidad: persona.nacionalidad || 'ESP',
@@ -184,10 +186,12 @@ export async function POST(req: NextRequest) {
         }
       },
       personas: personas.map((persona, index) => {
-        // Si hay numeroDocumento, el soporteDocumento es obligatorio para MIR
+        // CRÍTICO según normas MIR: si hay numeroDocumento, soporteDocumento es OBLIGATORIO
         const numDoc = persona.numeroDocumento || '';
-        // CRÍTICO: soporteDocumento debe existir siempre que hay numeroDocumento
-        const soporteDoc = persona.soporteDocumento || (numDoc && numDoc !== '12345678Z' ? 'C' : undefined);
+        // Si hay numeroDocumento (no vacío), incluir soporteDocumento con valor 'C' por defecto si no viene
+        const soporteDoc = numDoc && numDoc.trim() !== '' 
+          ? (persona.soporteDocumento || 'C') 
+          : undefined;
         
         return {
           rol: index === 0 ? 'TI' : 'VI',
@@ -195,7 +199,7 @@ export async function POST(req: NextRequest) {
           apellido1: persona.apellido1,
           apellido2: persona.apellido2 || '',
           tipoDocumento: persona.tipoDocumento || 'NIF',
-          numeroDocumento: numDoc || '12345678Z',
+          numeroDocumento: numDoc,
           soporteDocumento: soporteDoc,
           fechaNacimiento: persona.fechaNacimiento,
           nacionalidad: persona.nacionalidad || 'ESP',
