@@ -46,13 +46,13 @@ export default function PWAInstallGuide() {
   if (!show) return null;
 
   return (
-    <div className="md:hidden mx-4 my-3 p-3 rounded-lg border border-blue-200 bg-blue-50 text-blue-900">
+    <div className="lg:hidden mx-2 my-2 p-3 rounded-lg border-2 border-blue-300 bg-gradient-to-br from-blue-50 to-indigo-50 shadow-lg">
       <div className="flex items-start justify-between gap-3">
-        <div className="text-sm">
+        <div className="text-xs flex-1">
           {platform.ios ? (
             <>
-              <div className="font-semibold mb-1">Instala la app en tu iPhone</div>
-              <ol className="list-decimal list-inside space-y-1">
+              <div className="font-bold mb-1 text-blue-900">📱 Instala la app en tu iPhone</div>
+              <ol className="list-decimal list-inside space-y-0.5 text-blue-800">
                 <li>Abre el menú <span className="font-semibold">Compartir</span> en Safari.</li>
                 <li>Toca <span className="font-semibold">Añadir a pantalla de inicio</span>.</li>
                 <li>Confirma para crear el acceso directo.</li>
@@ -60,8 +60,8 @@ export default function PWAInstallGuide() {
             </>
           ) : (
             <>
-              <div className="font-semibold mb-1">Instala la app en Android</div>
-              <ol className="list-decimal list-inside space-y-1">
+              <div className="font-bold mb-1 text-blue-900">📱 Instala la app en Android</div>
+              <ol className="list-decimal list-inside space-y-0.5 text-blue-800">
                 <li>Abre el menú del navegador (⋮).</li>
                 <li>Toca <span className="font-semibold">Añadir a pantalla de inicio</span>.</li>
                 <li>Confirma para crear el icono.</li>
@@ -69,7 +69,12 @@ export default function PWAInstallGuide() {
             </>
           )}
         </div>
-        <button onClick={() => setDismissed(true)} className="text-blue-700 text-sm hover:underline">Cerrar</button>
+        <button 
+          onClick={() => setDismissed(true)} 
+          className="text-blue-700 hover:text-blue-900 text-xs font-bold hover:bg-blue-100 px-2 py-1 rounded transition-all"
+        >
+          ✕
+        </button>
       </div>
     </div>
   );

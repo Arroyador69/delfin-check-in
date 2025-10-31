@@ -35,8 +35,8 @@ input[type="email"],
 input[type="password"],
 select,
 textarea {
-  color: #1f2937 !important; /* Texto negro/gris oscuro */
-  background-color: #ffffff !important; /* Fondo blanco */
+  color: #1f2937 !important;
+  background-color: #ffffff !important;
 }
 
 input[type="text"]::placeholder,
@@ -45,7 +45,7 @@ input[type="number"]::placeholder,
 input[type="email"]::placeholder,
 input[type="password"]::placeholder,
 textarea::placeholder {
-  color: #9c3af !important; /* Placeholder gris medio */
+  color: #9c3af !important;
   opacity: 1;
 }
 
@@ -53,7 +53,7 @@ textarea::placeholder {
 input:focus,
 select:focus,
 textarea:focus {
-  color: #111827 !important; /* Texto más oscuro al hacer foco */
+  color: #111827 !important;
   background-color: #ffffff !important;
 }
 
@@ -73,26 +73,47 @@ textarea:focus {
   --shadow: 0 10px 30px rgba(0,0,0,.35);
 }
 
-/* KPIs dashboard */
+/* KPIs dashboard - RESPONSIVE */
 .kpis{ 
   display:grid; 
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); 
-  gap:24px; 
+  grid-template-columns: 1fr;
+  gap:16px; 
   margin: 8px 0 18px; 
   padding: 8px; 
+}
+
+@media (min-width: 640px) {
+  .kpis { 
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .kpis { 
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 24px;
+  }
 }
 
 .kpi{ 
   background: #ffffff; 
   border:1px solid #e2e8f0; 
   border-radius:14px; 
-  padding:16px; 
+  padding:12px;
   display:flex; 
   align-items:center; 
-  gap:14px; 
+  gap:12px; 
   box-shadow: 0 10px 30px rgba(0,0,0,.35); 
   margin: 4px; 
   transition: all 0.3s ease;
+}
+
+@media (min-width: 640px) {
+  .kpi { 
+    padding: 16px;
+    gap: 14px;
+  }
 }
 
 .kpi:hover{ 
@@ -100,123 +121,45 @@ textarea:focus {
 }
 
 .kpi .ic{ 
-  width:42px; 
-  height:42px; 
+  width:36px; 
+  height:36px; 
   display:grid; 
   place-items:center; 
   border-radius:12px; 
-  font-size:20px 
+  font-size:18px;
+  flex-shrink: 0;
+}
+
+@media (min-width: 640px) {
+  .kpi .ic { 
+    width: 42px;
+    height: 42px;
+    font-size: 20px;
+  }
 }
 
 .kpi .meta{ 
   color:#64748b; 
-  font-weight:600 
+  font-weight:600;
+  font-size: 14px;
+}
+
+@media (min-width: 640px) {
+  .kpi .meta { 
+    font-size: 16px;
+  }
 }
 
 .kpi .value{ 
-  font-size:24px; 
+  font-size:20px; 
   font-weight:800; 
   color:#0f172a 
 }
 
-/* Cards */
-.card{ 
-  background: var(--card); 
-  border:1px solid var(--border); 
-  border-radius: var(--radius); 
-  padding:16px; 
-  box-shadow: var(--shadow);
-  transition: all 0.3s ease;
-}
-
-.card:hover{ 
-  transform: translateY(-4px); 
-  box-shadow: 0 12px 40px rgba(0,0,0,.2); 
-}
-
-/* Pricing grid */
-.pricing{ 
-  display:grid; 
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); 
-  gap:16px 
-}
-
-/* Loading spinner */
-.loading{ 
-  display: inline-block; 
-  width: 20px; 
-  height: 20px; 
-  border: 2px solid #f3f3f3; 
-  border-top: 2px solid #2563eb; 
-  border-radius: 50%; 
-  animation: spin 1s linear infinite; 
-}
-
-@keyframes spin{ 
-  0% { transform: rotate(0deg); } 
-  100% { transform: rotate(360deg); } 
-}
-
-/* Estilos del index.html para el admin */
-:root{
-  --bg: #eef6ff; /* azul pastel muy tenue para el fondo */
-  --card: #ffffff;
-  --text: #0f172a;
-  --muted: #475569;
-  --brand: #2563eb;
-  --accent: #16a34a;
-  --danger: #ef4444;
-  --ring: rgba(37,99,235,.18);
-  --border: rgba(15,23,42,.08);
-  --maxw: 1180px;
-  --radius: 14px;
-  --shadow: 0 10px 30px rgba(0,0,0,.35);
-}
-
-/* KPIs dashboard */
-.kpis{ 
-  display:grid; 
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); 
-  gap:24px; 
-  margin: 8px 0 18px; 
-  padding: 8px; 
-}
-
-.kpi{ 
-  background: #ffffff; 
-  border:1px solid #e2e8f0; 
-  border-radius:14px; 
-  padding:16px; 
-  display:flex; 
-  align-items:center; 
-  gap:14px; 
-  box-shadow: 0 10px 30px rgba(0,0,0,.35); 
-  margin: 4px; 
-  transition: all 0.3s ease;
-}
-
-.kpi:hover{ 
-  transform: translateY(-2px); 
-}
-
-.kpi .ic{ 
-  width:42px; 
-  height:42px; 
-  display:grid; 
-  place-items:center; 
-  border-radius:12px; 
-  font-size:20px 
-}
-
-.kpi .meta{ 
-  color:#64748b; 
-  font-weight:600 
-}
-
-.kpi .value{ 
-  font-size:24px; 
-  font-weight:800; 
-  color:#0f172a 
+@media (min-width: 640px) {
+  .kpi .value { 
+    font-size: 24px;
+  }
 }
 
 /* Cards */
