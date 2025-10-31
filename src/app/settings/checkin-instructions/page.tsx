@@ -108,7 +108,7 @@ export default function CheckinInstructionsPage() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Contenido (HTML permitido)</label>
               <textarea value={body} onChange={(e) => setBody(e.target.value)} rows={12} className="w-full border rounded-lg px-3 py-2 font-mono text-sm" placeholder="Ej.: Código de la puerta, instrucciones de llegada, aparcamiento, etc..." />
-              <p className="text-xs text-gray-500 mt-1">Puedes usar variables: {{reservation_code}}, {{guest_name}}, {{check_in_date}}, {{check_out_date}}.</p>
+              <p className="text-xs text-gray-500 mt-1">Puedes usar variables: {'{{reservation_code}}'}, {'{{guest_name}}'}, {'{{check_in_date}}'}, {'{{check_out_date}}'}.</p>
             </div>
 
             <div className="flex items-center gap-2">
