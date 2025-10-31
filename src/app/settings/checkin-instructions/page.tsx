@@ -16,6 +16,7 @@ export default function CheckinInstructionsPage() {
   const [body, setBody] = useState('')
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<string>('')
+  const [templates, setTemplates] = useState<Array<{ id:number; room_id:string|null; title:string|null; body_html:string; updated_at:string }>>([])
 
   useEffect(() => {
     const load = async () => {
@@ -38,6 +39,7 @@ export default function CheckinInstructionsPage() {
         const res = await fetch('/api/settings/checkin-instructions')
         const data = await res.json()
         if (data.success && Array.isArray(data.items) && data.items.length > 0) {
+          setTemplates(data.items)
           // si hay una por defecto, precargar
           const def = data.items.find((it: any) => !it.room_id)
           if (def) {
@@ -74,7 +76,15 @@ export default function CheckinInstructionsPage() {
         body: JSON.stringify({ room_id: selectedRoomId || null, title, body_html: body })
       })
       const data = await res.json()
-      if (data.success) setMessage('Guardado correctamente')
+      if (data.success) {
+        setMessage('Guardado correctamente')
+        // refrescar lista
+        try {
+          const r = await fetch('/api/settings/checkin-instructions')
+          const d = await r.json()
+          if (d.success) setTemplates(d.items)
+        } catch {}
+      }
       else setMessage(data.error || 'Error guardando')
     } catch (e: any) {
       setMessage(e.message || 'Error guardando')
@@ -82,6 +92,9 @@ export default function CheckinInstructionsPage() {
       setSaving(false)
     }
   }
+
+  const templateForRoom = (roomId: string) => templates.find(t => (t.room_id || '') === (roomId || ''))
+  const hasTemplateSelected = !!templateForRoom(selectedRoomId)
 
   return (
     <AdminLayout>
@@ -128,8 +141,36 @@ export default function CheckinInstructionsPage() {
             </div>
 
             <div className="flex items-center gap-2">
-              <button onClick={save} disabled={saving} className="px-5 py-2.5 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 disabled:bg-gray-300 shadow-md">{saving ? 'Guardando...' : 'Guardar'}</button>
+              <button onClick={save} disabled={saving} className="px-5 py-2.5 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 disabled:bg-gray-300 shadow-md">{saving ? 'Guardando...' : (hasTemplateSelected ? 'Actualizar' : 'Guardar')}</button>
               {message && <span className="text-sm text-gray-700">{message}</span>}
+            </div>
+          </div>
+
+          {/* Lista de plantillas existentes */}
+          <div className="mt-6 bg-white rounded-2xl shadow p-4 border border-gray-100">
+            <h2 className="text-lg font-semibold mb-2">Plantillas guardadas</h2>
+            <p className="text-xs text-gray-500 mb-3">Máximo por tu plan: {Math.max(1, slots.filter(s=>s.id!=='' ).length)} plantillas (1 por habitación/slot). Puedes actualizar una plantilla existente desde aquí.</p>
+            <div className="divide-y">
+              {templates.length === 0 && (
+                <div className="text-sm text-gray-500">Aún no has guardado ninguna plantilla.</div>
+              )}
+              {templates.map((tpl) => {
+                const roomLabel = tpl.room_id ? (slots.find(s=> (s.room_id||'') === tpl.room_id)?.label || `Habitación ${tpl.room_id}`) : 'Por defecto'
+                return (
+                  <details key={tpl.id} className="py-2 group">
+                    <summary className="cursor-pointer text-sm flex items-center justify-between">
+                      <span className="font-medium text-gray-800">{roomLabel}</span>
+                      <span className="text-xs text-gray-500">Actualizado {new Date(tpl.updated_at).toLocaleDateString('es-ES')}</span>
+                    </summary>
+                    <div className="mt-2 p-3 bg-gray-50 rounded">
+                      <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: tpl.body_html.substring(0, 800) + (tpl.body_html.length>800?'…':'') }} />
+                      <div className="mt-2">
+                        <button onClick={() => { setSelectedRoomId(tpl.room_id || ''); setTitle(tpl.title || ''); setBody(tpl.body_html || ''); window.scrollTo({ top: 0, behavior: 'smooth' }) }} className="text-indigo-600 text-sm font-medium hover:underline">Editar esta plantilla</button>
+                      </div>
+                    </div>
+                  </details>
+                )
+              })}
             </div>
           </div>
         </div>
