@@ -199,12 +199,20 @@ export async function POST(req: NextRequest) {
     try {
       console.log('🚀 Iniciando auto-envío al MIR...');
       
-      // Preparar datos para el MIR con estructura correcta
+      // Preparar datos para el MIR con estructura correcta según normas MIR
+      // pagoType según XSD: tipoPago (obligatorio), fechaPago (opcional), medioPago (opcional), titular (opcional), caducidadTarjeta (opcional)
       const datosMIR = {
         referencia: reserva_ref,  // Incluir la referencia única
         fechaEntrada: fecha_entrada,
         fechaSalida: fecha_salida,
-        tipoPago: comunicacion.contrato.pago?.tipoPago || 'EFECT', // Pasar tipoPago del formulario
+        tipoPago: comunicacion.contrato.pago?.tipoPago || 'EFECT', // tipoPago obligatorio
+        pago: {
+          tipoPago: comunicacion.contrato.pago?.tipoPago || 'EFECT',
+          fechaPago: comunicacion.contrato.pago?.fechaPago, // Opcional según XSD
+          medioPago: comunicacion.contrato.pago?.medioPago, // Opcional según XSD
+          titular: comunicacion.contrato.pago?.titular, // Opcional según XSD
+          caducidadTarjeta: comunicacion.contrato.pago?.caducidadTarjeta // Opcional según XSD
+        },
         personas: comunicacion.personas.map(persona => ({
           nombre: persona.nombre,
           apellido1: persona.apellido1,
