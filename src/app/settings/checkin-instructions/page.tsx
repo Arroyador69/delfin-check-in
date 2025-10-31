@@ -163,7 +163,7 @@ export default function CheckinInstructionsPage() {
                       <span className="text-xs text-gray-500">Actualizado {new Date(tpl.updated_at).toLocaleDateString('es-ES')}</span>
                     </summary>
                     <div className="mt-2 p-3 bg-gray-50 rounded">
-                      <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: tpl.body_html.substring(0, 800) + (tpl.body_html.length>800?'…':'') }} />
+                      <div className="prose prose-sm max-w-none text-gray-800" dangerouslySetInnerHTML={{ __html: tpl.body_html.substring(0, 800) + (tpl.body_html.length>800?'…':'') }} />
                       <div className="mt-2">
                         <button onClick={() => { setSelectedRoomId(tpl.room_id || ''); setTitle(tpl.title || ''); setBody(tpl.body_html || ''); window.scrollTo({ top: 0, behavior: 'smooth' }) }} className="text-indigo-600 text-sm font-medium hover:underline">Editar esta plantilla</button>
                       </div>
