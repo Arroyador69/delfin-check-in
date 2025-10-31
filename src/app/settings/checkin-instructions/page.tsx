@@ -85,21 +85,23 @@ export default function CheckinInstructionsPage() {
 
   return (
     <AdminLayout>
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-        <div className="max-w-5xl mx-auto px-4 py-8">
-          <div className="mb-6">
-            <div className="text-3xl mb-2">🧭</div>
-            <h1 className="text-2xl font-bold">Instrucciones de Check‑in</h1>
-            <p className="text-sm text-gray-600">Configura el contenido que enviaremos al huésped tras confirmar su reserva</p>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+        <div className="max-w-6xl mx-auto px-4 py-8">
+          <div className="bg-white rounded-2xl shadow-md border border-indigo-100 p-6 mb-8">
+            <div className="flex items-center gap-3 mb-1">
+              <div className="text-3xl">🧭</div>
+              <h1 className="text-3xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">Instrucciones de Check‑in</h1>
+            </div>
+            <p className="text-gray-600">Configura el contenido que enviaremos al huésped tras confirmar su reserva.</p>
           </div>
 
-          <div className="bg-white rounded-xl shadow p-4 space-y-4">
+          <div className="bg-white rounded-2xl shadow p-6 space-y-5 border border-gray-100">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Habitación/slot</label>
               <select
                 value={selectedRoomId}
                 onChange={(e) => { setSelectedRoomId(e.target.value); loadForRoom(e.target.value) }}
-                className="w-full border rounded-lg px-3 py-2"
+                className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
               >
                 {slots.map((s) => (
                   <option key={s.id} value={s.room_id || ''}>{s.label}</option>
@@ -110,17 +112,23 @@ export default function CheckinInstructionsPage() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Título (opcional)</label>
-              <input value={title} onChange={(e) => setTitle(e.target.value)} className="w-full border rounded-lg px-3 py-2" />
+              <input value={title} onChange={(e) => setTitle(e.target.value)} className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent" />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Contenido (HTML permitido)</label>
-              <textarea value={body} onChange={(e) => setBody(e.target.value)} rows={12} className="w-full border rounded-lg px-3 py-2 font-mono text-sm" placeholder="Ej.: Código de la puerta, instrucciones de llegada, aparcamiento, etc..." />
-              <p className="text-xs text-gray-500 mt-1">Puedes usar variables: {'{{reservation_code}}'}, {'{{guest_name}}'}, {'{{check_in_date}}'}, {'{{check_out_date}}'}.</p>
+              <textarea value={body} onChange={(e) => setBody(e.target.value)} rows={12} className="w-full border rounded-lg px-3 py-2 font-mono text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="Ej.: Código de la puerta, instrucciones de llegada, aparcamiento, etc..." />
+              <div className="mt-2 text-xs text-gray-600 space-y-1">
+                <div className="font-semibold">Variables disponibles:</div>
+                <div><code className="px-1 py-0.5 bg-gray-100 rounded">{'{{guest_name}}'}</code> → nombre del huésped (ej.: Juan Pérez)</div>
+                <div><code className="px-1 py-0.5 bg-gray-100 rounded">{'{{check_in_date}}'}</code> → fecha de entrada formateada (ej.: 5 de noviembre de 2025)</div>
+                <div><code className="px-1 py-0.5 bg-gray-100 rounded">{'{{check_out_date}}'}</code> → fecha de salida formateada (ej.: 8 de noviembre de 2025)</div>
+                <div className="text-[11px] text-gray-500">Estas variables se sustituyen automáticamente cuando se envía el email al huésped.</div>
+              </div>
             </div>
 
             <div className="flex items-center gap-2">
-              <button onClick={save} disabled={saving} className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:bg-gray-300">{saving ? 'Guardando...' : 'Guardar'}</button>
+              <button onClick={save} disabled={saving} className="px-5 py-2.5 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 disabled:bg-gray-300 shadow-md">{saving ? 'Guardando...' : 'Guardar'}</button>
               {message && <span className="text-sm text-gray-700">{message}</span>}
             </div>
           </div>

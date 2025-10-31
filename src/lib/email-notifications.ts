@@ -282,7 +282,6 @@ export async function sendCheckinInstructionsEmail(params: {
     const ci = new Date(reservation.check_in_date).toLocaleDateString('es-ES')
     const co = new Date(reservation.check_out_date).toLocaleDateString('es-ES')
     const replacements: Record<string, string> = {
-      '{{reservation_code}}': reservation.reservation_code,
       '{{guest_name}}': reservation.guest_name || '',
       '{{check_in_date}}': ci,
       '{{check_out_date}}': co,
