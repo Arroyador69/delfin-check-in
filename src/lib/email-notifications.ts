@@ -276,7 +276,20 @@ export async function sendCheckinInstructionsEmail(params: {
       const r = await sql`SELECT body_html, title FROM checkin_instructions WHERE tenant_id = ${reservation.tenant_id}::uuid AND room_id IS NULL ORDER BY updated_at DESC LIMIT 1`
       instr = r.rows[0]
     }
-    const bodyHtml = instr?.body_html || '<p>Te enviaremos los detalles del check-in en breve.</p>'
+    let bodyHtml = instr?.body_html || '<p>Te enviaremos los detalles del check-in en breve.</p>'
+
+    // Sustituir variables simples {{reservation_code}} etc.
+    const ci = new Date(reservation.check_in_date).toLocaleDateString('es-ES')
+    const co = new Date(reservation.check_out_date).toLocaleDateString('es-ES')
+    const replacements: Record<string, string> = {
+      '{{reservation_code}}': reservation.reservation_code,
+      '{{guest_name}}': reservation.guest_name || '',
+      '{{check_in_date}}': ci,
+      '{{check_out_date}}': co,
+    }
+    for (const [k, v] of Object.entries(replacements)) {
+      bodyHtml = bodyHtml.split(k).join(v)
+    }
 
     // Datos de contacto
     let contactEmail: string | undefined

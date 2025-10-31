@@ -23,7 +23,11 @@ export default function CheckinInstructionsPage() {
         const res = await fetch('/api/tenant/property-slots')
         const data = await res.json()
         if (data.success && Array.isArray(data.slots)) {
-          const opts: SlotOption[] = data.slots.map((s: any) => ({ id: String(s.property_id || s.id), label: s.label || s.name || `Habitación ${s.id}`, room_id: s.room_id }))
+          const opts: SlotOption[] = data.slots.map((s: any) => ({
+            id: String(s.room_id || s.property_id || s.id),
+            label: s.room_name || s.label || s.name || (s.room_id ? `Habitación ${s.room_id}` : `Habitación ${s.id}`),
+            room_id: s.room_id || s.id || null
+          }))
           // opción por defecto del tenant (sin room)
           setSlots([{ id: '', label: 'Por defecto (todas las habitaciones)' }, ...opts])
         }
@@ -83,7 +87,11 @@ export default function CheckinInstructionsPage() {
     <AdminLayout>
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
         <div className="max-w-5xl mx-auto px-4 py-8">
-          <h1 className="text-2xl font-bold mb-6">Instrucciones de Check‑in</h1>
+          <div className="mb-6">
+            <div className="text-3xl mb-2">🧭</div>
+            <h1 className="text-2xl font-bold">Instrucciones de Check‑in</h1>
+            <p className="text-sm text-gray-600">Configura el contenido que enviaremos al huésped tras confirmar su reserva</p>
+          </div>
 
           <div className="bg-white rounded-xl shadow p-4 space-y-4">
             <div>
