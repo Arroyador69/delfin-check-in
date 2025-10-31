@@ -698,261 +698,280 @@ export default function ReservationsPage() {
 
       {/* Modal para crear nueva reserva */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-              <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-                <Plus className="h-5 w-5 mr-2 text-blue-600" />
-                Nueva Reserva Manual
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50 animate-fade-in">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border-2 border-blue-200">
+            <div className="flex items-center justify-between p-6 border-b-2 border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-t-2xl">
+              <h3 className="text-2xl font-bold text-gray-900 flex items-center">
+                <span className="text-3xl mr-2" style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>➕</span>
+                <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                  Nueva Reserva Manual
+                </span>
               </h3>
               <button
                 onClick={() => {
                   setShowCreateModal(false);
                   resetForm();
                 }}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-gray-500 hover:text-red-600 hover:bg-red-50 p-2 rounded-full transition-all duration-200 transform hover:scale-110"
               >
                 <X className="h-6 w-6" />
               </button>
             </div>
             
-            <form onSubmit={handleCreateReservation} className="p-6 space-y-6">
+            <form onSubmit={handleCreateReservation} className="p-6 space-y-6 bg-gradient-to-br from-white to-blue-50">
               {/* Información de la habitación */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <Bed className="h-4 w-4 inline mr-2" />
-                    Habitación *
-                  </label>
-                  <select
-                    required
-                    value={formData.room_id}
-                    onChange={(e) => setFormData({...formData, room_id: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">Seleccionar habitación</option>
-                    {rooms.map(room => (
-                      <option key={room.id} value={room.id}>
-                        {room.name} - €{room.basePrice}/noche
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <User className="h-4 w-4 inline mr-2" />
-                    Estado *
-                  </label>
-                  <select
-                    required
-                    value={formData.status}
-                    onChange={(e) => setFormData({...formData, status: e.target.value as any})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="confirmed">Confirmada</option>
-                    <option value="completed">Completada</option>
-                    <option value="cancelled">Cancelada</option>
-                  </select>
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-100 p-4 rounded-xl border-2 border-blue-200">
+                <h4 className="text-sm font-bold text-gray-700 mb-3 flex items-center">
+                  <span className="text-lg mr-2">🏠</span>
+                  Información de la Reserva
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      🛏️ Habitación *
+                    </label>
+                    <select
+                      required
+                      value={formData.room_id}
+                      onChange={(e) => setFormData({...formData, room_id: e.target.value})}
+                      className="w-full px-3 py-2 border-2 border-blue-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white font-medium transition-all"
+                    >
+                      <option value="">Seleccionar habitación</option>
+                      {rooms.map(room => (
+                        <option key={room.id} value={room.id}>
+                          {room.name} - €{room.basePrice}/noche
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      ✅ Estado *
+                    </label>
+                    <select
+                      required
+                      value={formData.status}
+                      onChange={(e) => setFormData({...formData, status: e.target.value as any})}
+                      className="w-full px-3 py-2 border-2 border-blue-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white font-medium transition-all"
+                    >
+                      <option value="confirmed">✅ Confirmada</option>
+                      <option value="completed">✨ Completada</option>
+                      <option value="cancelled">❌ Cancelada</option>
+                    </select>
+                  </div>
                 </div>
               </div>
 
               {/* Información del huésped */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <User className="h-4 w-4 inline mr-2" />
-                    Nombre del huésped *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.guest_name}
-                    onChange={(e) => setFormData({...formData, guest_name: e.target.value})}
-                    placeholder="Nombre completo"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
+              <div className="bg-gradient-to-br from-green-50 to-emerald-100 p-4 rounded-xl border-2 border-green-200">
+                <h4 className="text-sm font-bold text-gray-700 mb-3 flex items-center">
+                  <span className="text-lg mr-2">👤</span>
+                  Información del Huésped
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      👤 Nombre del huésped *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.guest_name}
+                      onChange={(e) => setFormData({...formData, guest_name: e.target.value})}
+                      placeholder="Nombre completo"
+                      className="w-full px-3 py-2 border-2 border-green-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white font-medium transition-all"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      📧 Email del huésped
+                    </label>
+                    <input
+                      type="email"
+                      value={formData.guest_email}
+                      onChange={(e) => setFormData({...formData, guest_email: e.target.value})}
+                      placeholder="email@ejemplo.com"
+                      className="w-full px-3 py-2 border-2 border-green-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white font-medium text-black placeholder-gray-500 transition-all"
+                    />
+                  </div>
                 </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <User className="h-4 w-4 inline mr-2" />
-                    Email del huésped
-                  </label>
-                  <input
-                    type="email"
-                    value={formData.guest_email}
-                    onChange={(e) => setFormData({...formData, guest_email: e.target.value})}
-                    placeholder="email@ejemplo.com"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black placeholder-gray-500"
-                  />
-                </div>
-              </div>
 
-              {/* Información adicional del huésped */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <Phone className="h-4 w-4 inline mr-2" />
-                    Teléfono del huésped
-                  </label>
-                  <input
-                    type="tel"
-                    value={formData.guest_phone}
-                    onChange={(e) => setFormData({...formData, guest_phone: e.target.value})}
-                    placeholder="+34 600 000 000"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black placeholder-gray-500"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <Users className="h-4 w-4 inline mr-2" />
-                    Número de personas *
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="10"
-                    required
-                    value={formData.guest_count}
-                    onChange={(e) => setFormData({...formData, guest_count: parseInt(e.target.value) || 1})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
+                {/* Información adicional del huésped */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      📞 Teléfono del huésped
+                    </label>
+                    <input
+                      type="tel"
+                      value={formData.guest_phone}
+                      onChange={(e) => setFormData({...formData, guest_phone: e.target.value})}
+                      placeholder="+34 600 000 000"
+                      className="w-full px-3 py-2 border-2 border-green-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white font-medium text-black placeholder-gray-500 transition-all"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      👥 Número de personas *
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="10"
+                      required
+                      value={formData.guest_count}
+                      onChange={(e) => setFormData({...formData, guest_count: parseInt(e.target.value) || 1})}
+                      className="w-full px-3 py-2 border-2 border-green-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white font-medium transition-all"
+                    />
+                  </div>
                 </div>
               </div>
 
               {/* Fechas */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <Calendar className="h-4 w-4 inline mr-2" />
-                    Fecha de llegada *
-                  </label>
-                  <input
-                    type="date"
-                    required
-                    value={formData.check_in}
-                    onChange={(e) => setFormData({...formData, check_in: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <Calendar className="h-4 w-4 inline mr-2" />
-                    Fecha de salida *
-                  </label>
-                  <input
-                    type="date"
-                    required
-                    value={formData.check_out}
-                    onChange={(e) => setFormData({...formData, check_out: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
-                  />
+              <div className="bg-gradient-to-br from-orange-50 to-amber-100 p-4 rounded-xl border-2 border-orange-200">
+                <h4 className="text-sm font-bold text-gray-700 mb-3 flex items-center">
+                  <span className="text-lg mr-2">📅</span>
+                  Fechas de Estancia
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      📥 Fecha de llegada *
+                    </label>
+                    <input
+                      type="date"
+                      required
+                      value={formData.check_in}
+                      onChange={(e) => setFormData({...formData, check_in: e.target.value})}
+                      className="w-full px-3 py-2 border-2 border-orange-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-white font-medium text-black transition-all"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      📤 Fecha de salida *
+                    </label>
+                    <input
+                      type="date"
+                      required
+                      value={formData.check_out}
+                      onChange={(e) => setFormData({...formData, check_out: e.target.value})}
+                      className="w-full px-3 py-2 border-2 border-orange-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-white font-medium text-black transition-all"
+                    />
+                  </div>
                 </div>
               </div>
 
               {/* Información financiera */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <Euro className="h-4 w-4 inline mr-2" />
-                    Precio total
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={formData.total_price}
-                    onChange={(e) => setFormData({...formData, total_price: e.target.value})}
-                    placeholder="0.00"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <CreditCard className="h-4 w-4 inline mr-2" />
-                    Pagó huésped
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={formData.guest_paid}
-                    onChange={(e) => setFormData({...formData, guest_paid: e.target.value})}
-                    placeholder="0.00"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <Euro className="h-4 w-4 inline mr-2" />
-                    Comisión plataforma
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={formData.platform_commission}
-                    onChange={(e) => setFormData({...formData, platform_commission: e.target.value})}
-                    placeholder="0.00"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
+              <div className="bg-gradient-to-br from-yellow-50 to-orange-100 p-4 rounded-xl border-2 border-yellow-200">
+                <h4 className="text-sm font-bold text-gray-700 mb-3 flex items-center">
+                  <span className="text-lg mr-2">💰</span>
+                  Información Financiera
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      💵 Precio total
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={formData.total_price}
+                      onChange={(e) => setFormData({...formData, total_price: e.target.value})}
+                      placeholder="0.00"
+                      className="w-full px-3 py-2 border-2 border-yellow-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 bg-white font-medium transition-all"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      💳 Pagó huésped
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={formData.guest_paid}
+                      onChange={(e) => setFormData({...formData, guest_paid: e.target.value})}
+                      placeholder="0.00"
+                      className="w-full px-3 py-2 border-2 border-yellow-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 bg-white font-medium transition-all"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      💎 Comisión plataforma
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={formData.platform_commission}
+                      onChange={(e) => setFormData({...formData, platform_commission: e.target.value})}
+                      placeholder="0.00"
+                      className="w-full px-3 py-2 border-2 border-yellow-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 bg-white font-medium transition-all"
+                    />
+                  </div>
                 </div>
               </div>
 
               {/* Canal y Moneda */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <Globe className="h-4 w-4 inline mr-2" />
-                    Canal de reserva *
-                  </label>
-                  <select
-                    required
-                    value={formData.channel}
-                    onChange={(e) => setFormData({...formData, channel: e.target.value as 'airbnb' | 'booking' | 'manual'})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="manual">📝 Manual</option>
-                    <option value="airbnb">🏠 Airbnb</option>
-                    <option value="booking">🌐 Booking.com</option>
-                  </select>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <Euro className="h-4 w-4 inline mr-2" />
-                    Moneda
-                  </label>
-                  <select
-                    value={formData.currency}
-                    onChange={(e) => setFormData({...formData, currency: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="EUR">EUR (Euro)</option>
-                    <option value="USD">USD (Dólar)</option>
-                    <option value="GBP">GBP (Libra)</option>
-                  </select>
+              <div className="bg-gradient-to-br from-indigo-50 to-blue-100 p-4 rounded-xl border-2 border-indigo-200">
+                <h4 className="text-sm font-bold text-gray-700 mb-3 flex items-center">
+                  <span className="text-lg mr-2">🌐</span>
+                  Configuración de Reserva
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      📡 Canal de reserva *
+                    </label>
+                    <select
+                      required
+                      value={formData.channel}
+                      onChange={(e) => setFormData({...formData, channel: e.target.value as 'airbnb' | 'booking' | 'manual'})}
+                      className="w-full px-3 py-2 border-2 border-indigo-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white font-medium transition-all"
+                    >
+                      <option value="manual">📝 Manual</option>
+                      <option value="airbnb">🏠 Airbnb</option>
+                      <option value="booking">🌐 Booking.com</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      💱 Moneda
+                    </label>
+                    <select
+                      value={formData.currency}
+                      onChange={(e) => setFormData({...formData, currency: e.target.value})}
+                      className="w-full px-3 py-2 border-2 border-indigo-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white font-medium transition-all"
+                    >
+                      <option value="EUR">🇪🇺 EUR (Euro)</option>
+                      <option value="USD">🇺🇸 USD (Dólar)</option>
+                      <option value="GBP">🇬🇧 GBP (Libra)</option>
+                    </select>
+                  </div>
                 </div>
               </div>
 
               {/* Botones */}
-              <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+              <div className="flex justify-end space-x-3 pt-4 border-t-2 border-gray-200">
                 <button
                   type="button"
                   onClick={() => {
                     setShowCreateModal(false);
                     resetForm();
                   }}
-                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
+                  className="px-6 py-2 border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 font-semibold transition-all duration-200 transform hover:scale-105"
                 >
-                  Cancelar
+                  ❌ Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={creating}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center"
+                  className="px-6 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center font-semibold shadow-lg transition-all duration-200 transform hover:scale-105"
                 >
                   {creating ? (
                     <>
@@ -961,7 +980,7 @@ export default function ReservationsPage() {
                     </>
                   ) : (
                     <>
-                      <Plus className="h-4 w-4 mr-2" />
+                      <span className="text-lg mr-2">✨</span>
                       Crear Reserva
                     </>
                   )}
