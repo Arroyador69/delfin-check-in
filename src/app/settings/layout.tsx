@@ -39,6 +39,12 @@ export default function SettingsLayout({
             href: '/settings/properties',
           },
           {
+            id: 'checkinInstructions',
+            name: 'Instrucciones Check‑in',
+            icon: FileText,
+            href: '/settings/checkin-instructions',
+          },
+          {
             id: 'integrations',
             name: 'Integraciones',
             icon: Calendar,

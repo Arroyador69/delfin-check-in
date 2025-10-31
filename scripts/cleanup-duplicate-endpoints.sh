@@ -153,3 +153,4 @@ echo "✅ Sistema MIR optimizado según normas oficiales"
 
 
 
+
