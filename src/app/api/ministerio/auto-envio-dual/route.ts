@@ -92,22 +92,39 @@ export async function POST(req: NextRequest) {
     // Determinar tipo de pago: del JSON, de la reserva asociada, o 'EFECT' por defecto
     let tipoPagoFinal = tipoPago || pago?.tipoPago || 'EFECT';
     
-    // Si no viene en el JSON, intentar buscar en direct_reservations por referencia
+    // Si no viene en el JSON, intentar buscar en direct_reservations o guest_registrations por referencia
     if (tipoPagoFinal === 'EFECT' && referenciaNorm) {
       try {
-        const reserva = await sql`
+        // Buscar primero en direct_reservations
+        const reservaDirecta = await sql`
           SELECT payment_method, payment_status 
           FROM direct_reservations 
           WHERE reservation_code = ${referenciaNorm} 
              OR id::text = ${referenciaNorm}
           LIMIT 1
         `;
-        if (reserva.rows.length > 0 && reserva.rows[0].payment_method) {
-          const pm = reserva.rows[0].payment_method.toLowerCase();
+        if (reservaDirecta.rows.length > 0 && reservaDirecta.rows[0].payment_method) {
+          const pm = reservaDirecta.rows[0].payment_method.toLowerCase();
           if (pm.includes('card') || pm.includes('tarjeta') || pm.includes('tarj')) {
             tipoPagoFinal = 'TARJ';
           } else if (pm.includes('transfer') || pm.includes('transferencia') || pm.includes('transf')) {
             tipoPagoFinal = 'TRANSF';
+          }
+        } else {
+          // Si no está en direct_reservations, buscar en guest_registrations
+          const guestReg = await sql`
+            SELECT data 
+            FROM guest_registrations 
+            WHERE reserva_ref = ${referenciaNorm}
+               OR id::text = ${referenciaNorm}
+            LIMIT 1
+          `;
+          if (guestReg.rows.length > 0 && guestReg.rows[0].data) {
+            const data = guestReg.rows[0].data;
+            const tipoPagoFromData = data?.comunicaciones?.[0]?.contrato?.pago?.tipoPago;
+            if (tipoPagoFromData) {
+              tipoPagoFinal = tipoPagoFromData;
+            }
           }
         }
       } catch (e) {
@@ -186,12 +203,9 @@ export async function POST(req: NextRequest) {
         }
       },
       personas: personas.map((persona, index) => {
-        // CRÍTICO según normas MIR: si hay numeroDocumento, soporteDocumento es OBLIGATORIO
+        // NOTA: Para RH (personaReservaType), NO se incluye soporteDocumento según XSD
+        // Solo se usa en PV (personaHospedajeType)
         const numDoc = persona.numeroDocumento || '';
-        // Si hay numeroDocumento (no vacío), incluir soporteDocumento con valor 'C' por defecto si no viene
-        const soporteDoc = numDoc && numDoc.trim() !== '' 
-          ? (persona.soporteDocumento || 'C') 
-          : undefined;
         
         return {
           rol: index === 0 ? 'TI' : 'VI',
@@ -200,7 +214,7 @@ export async function POST(req: NextRequest) {
           apellido2: persona.apellido2 || '',
           tipoDocumento: persona.tipoDocumento || 'NIF',
           numeroDocumento: numDoc,
-          soporteDocumento: soporteDoc,
+          // NO incluir soporteDocumento para RH (no está en personaReservaType)
           fechaNacimiento: persona.fechaNacimiento,
           nacionalidad: persona.nacionalidad || 'ESP',
           sexo: persona.sexo || 'M',

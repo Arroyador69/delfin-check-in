@@ -204,6 +204,7 @@ export async function POST(req: NextRequest) {
         referencia: reserva_ref,  // Incluir la referencia única
         fechaEntrada: fecha_entrada,
         fechaSalida: fecha_salida,
+        tipoPago: comunicacion.contrato.pago?.tipoPago || 'EFECT', // Pasar tipoPago del formulario
         personas: comunicacion.personas.map(persona => ({
           nombre: persona.nombre,
           apellido1: persona.apellido1,

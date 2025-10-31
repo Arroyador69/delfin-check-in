@@ -85,9 +85,9 @@ function buildPersonaXml(persona: RhPersona): string {
     xml += `\n        <numeroDocumento>${esc(persona.numeroDocumento)}</numeroDocumento>`;
   }
   
-  if (persona.soporteDocumento) {
-    xml += `\n        <soporteDocumento>${esc(persona.soporteDocumento)}</soporteDocumento>`;
-  }
+  // NOTA: personaReservaType (RH) NO incluye soporteDocumento según XSD
+  // Solo personaHospedajeType (PV) lo incluye
+  // Por lo tanto, NO se añade soporteDocumento aquí
   
   if (persona.fechaNacimiento) {
     xml += `\n        <fechaNacimiento>${esc(persona.fechaNacimiento)}</fechaNacimiento>`;
