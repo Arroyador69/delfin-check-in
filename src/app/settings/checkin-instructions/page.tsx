@@ -148,7 +148,7 @@ export default function CheckinInstructionsPage() {
 
           {/* Lista de plantillas existentes */}
           <div className="mt-6 bg-white rounded-2xl shadow p-4 border border-gray-100">
-            <h2 className="text-lg font-semibold mb-2">Plantillas guardadas</h2>
+            <h2 className="text-lg font-semibold mb-2 text-gray-900">Plantillas guardadas</h2>
             <p className="text-xs text-gray-500 mb-3">Máximo por tu plan: {Math.max(1, slots.filter(s=>s.id!=='' ).length)} plantillas (1 por habitación/slot). Puedes actualizar una plantilla existente desde aquí.</p>
             <div className="divide-y">
               {templates.length === 0 && (
