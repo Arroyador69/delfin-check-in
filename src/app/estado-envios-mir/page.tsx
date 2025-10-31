@@ -179,10 +179,10 @@ export default function EstadoEnviosMIRPage() {
   const renderComunicaciones = (comunicaciones: ComunicacionMIR[], titulo: string) => {
     if (comunicaciones.length === 0) {
       return (
-        <div className="text-center py-8 text-gray-500">
-          <Database className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-          <p className="text-lg font-medium">No hay comunicaciones {titulo.toLowerCase()}</p>
-          <p className="text-sm">Las nuevas comunicaciones aparecerán aquí automáticamente</p>
+        <div className="text-center py-16">
+          <div className="text-6xl mb-4">🔍</div>
+          <p className="text-xl font-semibold bg-gradient-to-r from-gray-600 to-gray-800 bg-clip-text text-transparent">No hay comunicaciones {titulo.toLowerCase()}</p>
+          <p className="text-sm text-gray-500 mt-2">Las nuevas comunicaciones aparecerán aquí automáticamente</p>
         </div>
       );
     }
@@ -190,88 +190,94 @@ export default function EstadoEnviosMIRPage() {
     return (
       <div className="space-y-4">
         {comunicaciones.map((com) => (
-          <Card key={com.id} className="border-l-4 border-l-blue-500">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center space-x-3">
-                <div className="text-sm font-mono text-gray-600">
-                  #{com.id.slice(-8)}
+          <Card key={com.id} className="border-2 border-gray-200 hover:border-blue-400 hover:shadow-xl transition-all duration-300 bg-white rounded-xl overflow-hidden">
+            <CardContent className="p-5">
+              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center space-x-3 flex-wrap gap-2">
+                <div className="text-sm font-mono font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent border-2 border-blue-200 rounded-lg px-2 py-1 bg-blue-50">
+                  🆔 #{com.id.slice(-8)}
                 </div>
-                <div className="text-sm text-gray-500">
-                  {formatearFecha(com.timestamp)}
+                <div className="text-sm text-gray-600 font-medium">
+                  🕒 {formatearFecha(com.timestamp)}
                 </div>
                 {com.referencia && (
-                  <div className="text-xs bg-gray-100 px-2 py-1 rounded">
-                    Ref: {com.referencia}
+                  <div className="text-xs bg-gradient-to-r from-purple-100 to-pink-100 text-purple-800 px-3 py-1 rounded-full font-semibold border border-purple-200">
+                    🏷️ {com.referencia}
                   </div>
                 )}
                 {com.nombreCompleto && (
-                  <div className="text-sm font-medium text-gray-800">
+                  <div className="text-sm font-semibold text-gray-800 bg-gradient-to-r from-blue-50 to-indigo-50 px-3 py-1 rounded-lg border border-blue-200">
                     👤 {com.nombreCompleto}
                   </div>
                 )}
-                <div className={`px-2 py-1 rounded text-xs font-semibold ${
-                  com.tipo === 'PV' ? 'bg-blue-100 text-blue-800' : 
-                  com.tipo === 'RH' ? 'bg-green-100 text-green-800' : 
-                  'bg-gray-100 text-gray-800'
+                <div className={`px-3 py-1 rounded-full text-xs font-bold border-2 ${
+                  com.tipo === 'PV' ? 'bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-800 border-blue-300' : 
+                  com.tipo === 'RH' ? 'bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 border-green-300' : 
+                  'bg-gradient-to-r from-gray-100 to-slate-100 text-gray-800 border-gray-300'
                 }`}>
                   📋 {com.tipo || 'PV'}
                 </div>
                 {com.tenant_id && (
-                  <div className="text-xs text-purple-600 bg-purple-50 px-2 py-1 rounded">
+                  <div className="text-xs text-purple-700 bg-gradient-to-r from-purple-50 to-pink-50 px-3 py-1 rounded-full font-semibold border border-purple-200">
                     🏢 {com.tenant_id.substring(0, 8)}...
                   </div>
                 )}
               </div>
                 <div className="flex items-center space-x-2">
                   {getEstadoBadge(com.estado, com.codigoEstado)}
-                  <Button size="sm" variant="outline">
+                  <Button size="sm" variant="outline" className="border-2 rounded-lg hover:bg-blue-50 hover:border-blue-400 transition-all">
                     <Eye className="w-4 h-4" />
                   </Button>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm bg-gradient-to-br from-gray-50 to-blue-50 p-4 rounded-lg border border-gray-200">
                 <div>
-                  <span className="font-medium text-gray-700">Lote MIR:</span>
-                  <div className="font-mono text-blue-600">
+                  <span className="font-bold text-gray-700 flex items-center mb-1">
+                    📦 Lote MIR:
+                  </span>
+                  <div className="font-mono font-semibold bg-white px-3 py-2 rounded-lg border-2 border-blue-200 text-blue-700">
                     {com.lote || 'Sin lote asignado'}
                   </div>
                 </div>
                 
                 {com.fechaEnvio && (
                   <div>
-                    <span className="font-medium text-gray-700">Fecha Envío:</span>
-                    <div className="text-gray-600">
+                    <span className="font-bold text-gray-700 flex items-center mb-1">
+                      📅 Fecha Envío:
+                    </span>
+                    <div className="text-gray-700 bg-white px-3 py-2 rounded-lg border-2 border-gray-200 font-medium">
                       {formatearFecha(com.fechaEnvio)}
                     </div>
                   </div>
                 )}
 
                 <div>
-                  <span className="font-medium text-gray-700">Estado MIR:</span>
-                  <div className="text-gray-600">
+                  <span className="font-bold text-gray-700 flex items-center mb-1">
+                    🏛️ Estado MIR:
+                  </span>
+                  <div className="text-gray-700 bg-white px-3 py-2 rounded-lg border-2 border-gray-200 font-medium">
                     {com.codigoEstado ? `Código ${com.codigoEstado}` : 'No consultado'}
                     {com.descEstado && (
-                      <div className="text-xs text-gray-500">{com.descEstado}</div>
+                      <div className="text-xs text-gray-600 font-normal mt-1">{com.descEstado}</div>
                     )}
                   </div>
                 </div>
               </div>
 
               {com.error && (
-                <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded">
-                  <div className="flex items-center text-red-700">
-                    <AlertTriangle className="w-4 h-4 mr-2" />
-                    <span className="font-medium">Error:</span>
+                <div className="mt-4 p-4 bg-gradient-to-br from-red-50 to-pink-50 border-2 border-red-300 rounded-xl">
+                  <div className="flex items-center text-red-700 font-bold mb-2">
+                    <AlertTriangle className="w-5 h-5 mr-2" />
+                    <span>Error detectado:</span>
                   </div>
-                  <div className="text-sm text-red-600 mt-1">{com.error}</div>
+                  <div className="text-sm text-red-800 font-medium">{com.error}</div>
                 </div>
               )}
 
               {com.ultimaConsulta && (
-                <div className="mt-2 text-xs text-gray-500">
-                  Última consulta: {formatearFecha(com.ultimaConsulta)}
+                <div className="mt-3 text-xs text-gray-600 font-medium bg-gray-100 px-3 py-2 rounded-lg inline-block">
+                  🔄 Última consulta: {formatearFecha(com.ultimaConsulta)}
                 </div>
               )}
             </CardContent>
@@ -338,62 +344,62 @@ export default function EstadoEnviosMIRPage() {
         {/* Estadísticas */}
         {estadoEnvio && (
           <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-            <Card className="border-l-4 border-l-blue-500">
-              <CardContent className="p-4">
+            <Card className="border-2 border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-100 hover:shadow-xl hover:scale-105 transition-all duration-300 rounded-xl">
+              <CardContent className="p-5">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Total</p>
-                    <p className="text-2xl font-bold text-blue-600">{estadoEnvio.estadisticas.total}</p>
+                    <p className="text-sm font-semibold text-gray-700 mb-1">📊 Total</p>
+                    <p className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">{estadoEnvio.estadisticas.total}</p>
                   </div>
-                  <Database className="w-8 h-8 text-blue-500" />
+                  <Database className="w-10 h-10 text-blue-600 opacity-80" />
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="border-l-4 border-l-yellow-500">
-              <CardContent className="p-4">
+            <Card className="border-2 border-yellow-200 bg-gradient-to-br from-yellow-50 to-amber-100 hover:shadow-xl hover:scale-105 transition-all duration-300 rounded-xl">
+              <CardContent className="p-5">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Pendientes</p>
-                    <p className="text-2xl font-bold text-yellow-600">{estadoEnvio.estadisticas.pendientes}</p>
+                    <p className="text-sm font-semibold text-gray-700 mb-1">⏳ Pendientes</p>
+                    <p className="text-3xl font-bold bg-gradient-to-r from-yellow-600 to-amber-600 bg-clip-text text-transparent">{estadoEnvio.estadisticas.pendientes}</p>
                   </div>
-                  <Clock className="w-8 h-8 text-yellow-500" />
+                  <Clock className="w-10 h-10 text-yellow-600 opacity-80" />
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="border-l-4 border-l-orange-500">
-              <CardContent className="p-4">
+            <Card className="border-2 border-orange-200 bg-gradient-to-br from-orange-50 to-amber-100 hover:shadow-xl hover:scale-105 transition-all duration-300 rounded-xl">
+              <CardContent className="p-5">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Enviados</p>
-                    <p className="text-2xl font-bold text-orange-600">{estadoEnvio.estadisticas.enviados}</p>
+                    <p className="text-sm font-semibold text-gray-700 mb-1">✉️ Enviados</p>
+                    <p className="text-3xl font-bold bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent">{estadoEnvio.estadisticas.enviados}</p>
                   </div>
-                  <Send className="w-8 h-8 text-orange-500" />
+                  <Send className="w-10 h-10 text-orange-600 opacity-80" />
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="border-l-4 border-l-green-500">
-              <CardContent className="p-4">
+            <Card className="border-2 border-green-200 bg-gradient-to-br from-green-50 to-emerald-100 hover:shadow-xl hover:scale-105 transition-all duration-300 rounded-xl">
+              <CardContent className="p-5">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Confirmados</p>
-                    <p className="text-2xl font-bold text-green-600">{estadoEnvio.estadisticas.confirmados}</p>
+                    <p className="text-sm font-semibold text-gray-700 mb-1">✅ Confirmados</p>
+                    <p className="text-3xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">{estadoEnvio.estadisticas.confirmados}</p>
                   </div>
-                  <CheckCircle className="w-8 h-8 text-green-500" />
+                  <CheckCircle className="w-10 h-10 text-green-600 opacity-80" />
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="border-l-4 border-l-red-500">
-              <CardContent className="p-4">
+            <Card className="border-2 border-red-200 bg-gradient-to-br from-red-50 to-pink-100 hover:shadow-xl hover:scale-105 transition-all duration-300 rounded-xl">
+              <CardContent className="p-5">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Errores</p>
-                    <p className="text-2xl font-bold text-red-600">{estadoEnvio.estadisticas.errores}</p>
+                    <p className="text-sm font-semibold text-gray-700 mb-1">❌ Errores</p>
+                    <p className="text-3xl font-bold bg-gradient-to-r from-red-600 to-pink-600 bg-clip-text text-transparent">{estadoEnvio.estadisticas.errores}</p>
                   </div>
-                  <XCircle className="w-8 h-8 text-red-500" />
+                  <XCircle className="w-10 h-10 text-red-600 opacity-80" />
                 </div>
               </CardContent>
             </Card>
@@ -402,47 +408,49 @@ export default function EstadoEnviosMIRPage() {
 
         {/* Mensajes de estado */}
         {error && (
-          <Alert className="border-red-200 bg-red-50">
-            <AlertTriangle className="h-4 w-4 text-red-600" />
-            <AlertDescription className="text-red-800">{error}</AlertDescription>
+          <Alert className="border-2 border-red-300 bg-gradient-to-br from-red-50 to-pink-50 rounded-xl shadow-lg">
+            <AlertTriangle className="h-5 w-5 text-red-600" />
+            <AlertDescription className="text-red-800 font-semibold">{error}</AlertDescription>
           </Alert>
         )}
 
         {success && (
-          <Alert className="border-green-200 bg-green-50">
-            <CheckCircle className="h-4 w-4 text-green-600" />
-            <AlertDescription className="text-green-800">{success}</AlertDescription>
+          <Alert className="border-2 border-green-300 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl shadow-lg">
+            <CheckCircle className="h-5 w-5 text-green-600" />
+            <AlertDescription className="text-green-800 font-semibold">{success}</AlertDescription>
           </Alert>
         )}
 
         {/* Tabs de comunicaciones */}
         {estadoEnvio && (
-          <div className="bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden">
+          <div className="bg-white rounded-xl shadow-xl border-2 border-blue-200 overflow-hidden">
             {/* Cabecera fija */}
-            <div className="bg-white px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-900">Estado Envíos MIR</h2>
-              <p className="text-sm text-gray-600 mt-1">{estadoEnvio.estadisticas.total} comunicaciones encontradas</p>
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4 border-b-2 border-blue-200">
+              <h2 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent flex items-center">
+                📋 Estado Envíos MIR
+              </h2>
+              <p className="text-sm text-gray-600 mt-1 font-medium">✨ {estadoEnvio.estadisticas.total} comunicaciones encontradas</p>
             </div>
 
             <Tabs defaultValue="pendientes" className="w-full">
               {/* Tabs */}
-              <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
-                <TabsList className="grid w-full grid-cols-4 bg-white">
-                  <TabsTrigger value="pendientes" className="flex items-center space-x-2">
+              <div className="px-6 py-4 border-b-2 border-gray-200 bg-gradient-to-r from-gray-50 to-blue-50">
+                <TabsList className="grid w-full grid-cols-4 bg-white border-2 border-gray-200 rounded-xl p-1">
+                  <TabsTrigger value="pendientes" className="flex items-center justify-center space-x-2 rounded-lg font-semibold transition-all hover:bg-yellow-50 data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-50 data-[state=active]:to-amber-50 data-[state=active]:border-2 data-[state=active]:border-yellow-300">
                     <Clock className="w-4 h-4" />
-                    <span>Pendientes ({estadoEnvio.estadisticas.pendientes})</span>
+                    <span>⏳ Pendientes ({estadoEnvio.estadisticas.pendientes})</span>
                   </TabsTrigger>
-                  <TabsTrigger value="enviados" className="flex items-center space-x-2">
+                  <TabsTrigger value="enviados" className="flex items-center justify-center space-x-2 rounded-lg font-semibold transition-all hover:bg-orange-50 data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-50 data-[state=active]:to-amber-50 data-[state=active]:border-2 data-[state=active]:border-orange-300">
                     <Send className="w-4 h-4" />
-                    <span>Enviados ({estadoEnvio.estadisticas.enviados})</span>
+                    <span>✉️ Enviados ({estadoEnvio.estadisticas.enviados})</span>
                   </TabsTrigger>
-                  <TabsTrigger value="confirmados" className="flex items-center space-x-2">
+                  <TabsTrigger value="confirmados" className="flex items-center justify-center space-x-2 rounded-lg font-semibold transition-all hover:bg-green-50 data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-50 data-[state=active]:to-emerald-50 data-[state=active]:border-2 data-[state=active]:border-green-300">
                     <CheckCircle className="w-4 h-4" />
-                    <span>Confirmados ({estadoEnvio.estadisticas.confirmados})</span>
+                    <span>✅ Confirmados ({estadoEnvio.estadisticas.confirmados})</span>
                   </TabsTrigger>
-                  <TabsTrigger value="errores" className="flex items-center space-x-2">
+                  <TabsTrigger value="errores" className="flex items-center justify-center space-x-2 rounded-lg font-semibold transition-all hover:bg-red-50 data-[state=active]:bg-gradient-to-r data-[state=active]:from-red-50 data-[state=active]:to-pink-50 data-[state=active]:border-2 data-[state=active]:border-red-300">
                     <XCircle className="w-4 h-4" />
-                    <span>Errores ({estadoEnvio.estadisticas.errores})</span>
+                    <span>❌ Errores ({estadoEnvio.estadisticas.errores})</span>
                   </TabsTrigger>
                 </TabsList>
               </div>
@@ -451,9 +459,9 @@ export default function EstadoEnviosMIRPage() {
               <div className="overflow-auto" style={{ maxHeight: 'calc(100vh - 400px)' }}>
                 <TabsContent value="pendientes" className="m-0">
                   <div className="p-6">
-                    <div className="flex items-center space-x-2 mb-4">
-                      <Clock className="w-5 h-5 text-yellow-600" />
-                      <h3 className="text-lg font-semibold text-gray-900">Comunicaciones Pendientes de Envío</h3>
+                    <div className="flex items-center space-x-2 mb-6">
+                      <Clock className="w-6 h-6 text-yellow-600" />
+                      <h3 className="text-xl font-bold bg-gradient-to-r from-yellow-600 to-amber-600 bg-clip-text text-transparent">⏳ Comunicaciones Pendientes de Envío</h3>
                     </div>
                     {renderComunicaciones(estadoEnvio.comunicaciones.pendientes, 'pendientes')}
                   </div>
@@ -461,9 +469,9 @@ export default function EstadoEnviosMIRPage() {
 
                 <TabsContent value="enviados" className="m-0">
                   <div className="p-6">
-                    <div className="flex items-center space-x-2 mb-4">
-                      <Send className="w-5 h-5 text-orange-600" />
-                      <h3 className="text-lg font-semibold text-gray-900">Comunicaciones Enviadas al MIR</h3>
+                    <div className="flex items-center space-x-2 mb-6">
+                      <Send className="w-6 h-6 text-orange-600" />
+                      <h3 className="text-xl font-bold bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent">✉️ Comunicaciones Enviadas al MIR</h3>
                     </div>
                     {renderComunicaciones(estadoEnvio.comunicaciones.enviados, 'enviadas')}
                   </div>
@@ -471,9 +479,9 @@ export default function EstadoEnviosMIRPage() {
 
                 <TabsContent value="confirmados" className="m-0">
                   <div className="p-6">
-                    <div className="flex items-center space-x-2 mb-4">
-                      <CheckCircle className="w-5 h-5 text-green-600" />
-                      <h3 className="text-lg font-semibold text-gray-900">Comunicaciones Confirmadas por el MIR</h3>
+                    <div className="flex items-center space-x-2 mb-6">
+                      <CheckCircle className="w-6 h-6 text-green-600" />
+                      <h3 className="text-xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">✅ Comunicaciones Confirmadas por el MIR</h3>
                     </div>
                     {renderComunicaciones(estadoEnvio.comunicaciones.confirmados, 'confirmadas')}
                   </div>
@@ -481,9 +489,9 @@ export default function EstadoEnviosMIRPage() {
 
                 <TabsContent value="errores" className="m-0">
                   <div className="p-6">
-                    <div className="flex items-center space-x-2 mb-4">
-                      <XCircle className="w-5 h-5 text-red-600" />
-                      <h3 className="text-lg font-semibold text-gray-900">Comunicaciones con Errores</h3>
+                    <div className="flex items-center space-x-2 mb-6">
+                      <XCircle className="w-6 h-6 text-red-600" />
+                      <h3 className="text-xl font-bold bg-gradient-to-r from-red-600 to-pink-600 bg-clip-text text-transparent">❌ Comunicaciones con Errores</h3>
                     </div>
                     {renderComunicaciones(estadoEnvio.comunicaciones.errores, 'con errores')}
                   </div>
