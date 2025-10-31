@@ -79,6 +79,7 @@ export function generateGuestConfirmationEmail(
           <div class="content">
             <h2>Hola ${reservation.guest_name},</h2>
             <p>¡Excelente noticia! Tu reserva ha sido confirmada y el pago procesado correctamente.</p>
+            <p style="margin-top:6px;color:#f59e0b"><strong>En breve recibirás otro email con las <u>instrucciones de check‑in</u>.</strong> Si no lo ves en unos minutos, revisa tu carpeta de correo no deseado (spam).</p>
             
             <div class="reservation-details">
               <h3>📋 Detalles de tu reserva</h3>
@@ -187,6 +188,130 @@ export function generateGuestConfirmationEmail(
       Equipo de ${contactName}
     `
   };
+}
+
+// =====================================================
+// PLANTILLA Y ENVÍO: INSTRUCCIONES DE CHECK-IN
+// =====================================================
+
+function generateCheckinInstructionsEmailHtml(params: {
+  reservation: DirectReservation,
+  property: TenantProperty,
+  instructionsHtml: string,
+  publicFormUrl?: string,
+  contact?: { email?: string; phone?: string; name?: string }
+}) {
+  const { reservation, property, instructionsHtml, publicFormUrl, contact } = params
+  const checkInDate = new Date(reservation.check_in_date).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })
+  const checkOutDate = new Date(reservation.check_out_date).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })
+  const contactEmail = contact?.email || 'booking@delfincheckin.com'
+  const contactPhone = contact?.phone || ''
+  const contactName = contact?.name || 'Delfin Check-in'
+  const formUrl = publicFormUrl || `${process.env.NEXT_PUBLIC_APP_URL || 'https://admin.delfincheckin.com'}/api/public/form-redirect/${reservation.tenant_id}`
+
+  return {
+    subject: `📬 Instrucciones de Check‑in · Código ${reservation.reservation_code}`,
+    html: `
+      <!DOCTYPE html>
+      <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <style>body{font-family:Arial,sans-serif;line-height:1.6;color:#333}.container{max-width:640px;margin:0 auto;padding:20px}.header{background:#0ea5e9;color:#fff;padding:24px;border-radius:12px 12px 0 0}.content{background:#f8fafc;padding:24px;border-radius:0 0 12px 12px}.section{background:#fff;padding:16px 20px;border-radius:10px;margin:14px 0}.muted{color:#64748b}</style>
+      </head><body>
+        <div class="container">
+          <div class="header">
+            <h1 style="margin:0">Instrucciones de Check‑in</h1>
+            <p style="margin:6px 0 0">Reserva <strong>${reservation.reservation_code}</strong> · ${property.property_name}</p>
+          </div>
+          <div class="content">
+            <div class="section">
+              <p>Hola <strong>${reservation.guest_name}</strong>, aquí tienes toda la información para tu llegada.</p>
+              <p><strong>Fechas:</strong> ${checkInDate} → ${checkOutDate} · <strong>Huéspedes:</strong> ${reservation.guests}</p>
+              <p class="muted">Si no ves este email correctamente, revisa la carpeta de spam y márcalo como "No es spam".</p>
+            </div>
+
+            <div class="section">
+              ${instructionsHtml}
+            </div>
+
+            <div class="section" style="background:#fff7ed;border-left:4px solid #f59e0b">
+              <h3>Recordatorio: registro de viajeros</h3>
+              <p>Si aún no lo has hecho, completa el formulario obligatorio antes de tu llegada:</p>
+              <p><a href="${formUrl}" target="_blank" style="background:#22c55e;color:white;padding:10px 16px;border-radius:8px;text-decoration:none">Rellenar formulario</a></p>
+            </div>
+
+            <div class="section">
+              <h3>Contacto</h3>
+              <p>Para cualquier duda, contacta con <strong>${contactName}</strong>:</p>
+              <p><strong>Email:</strong> ${contactEmail}<br/><strong>Teléfono:</strong> ${contactPhone || 'No proporcionado'}</p>
+            </div>
+          </div>
+        </div>
+      </body></html>
+    `,
+    text: `
+      Instrucciones de check-in (Reserva ${reservation.reservation_code})\n\n
+      Fechas: ${checkInDate} → ${checkOutDate}\n
+      Instrucciones: (HTML adjunto)\n
+      Registro de viajeros: ${formUrl}\n
+      Contacto: ${contactName} · ${contactEmail} ${contactPhone ? '· ' + contactPhone : ''}
+    `
+  }
+}
+
+export async function sendCheckinInstructionsEmail(params: {
+  reservation: DirectReservation,
+  property: TenantProperty,
+  roomId?: string | null,
+  publicFormUrl?: string
+}) {
+  const { reservation, property, roomId, publicFormUrl } = params
+  try {
+    // Obtener instrucciones desde la tabla (prioridad: por room_id, si no, por defecto del tenant)
+    const { sql } = await import('@vercel/postgres')
+    let instr
+    if (roomId) {
+      const r = await sql`SELECT body_html, title FROM checkin_instructions WHERE tenant_id = ${reservation.tenant_id}::uuid AND room_id = ${roomId}::text LIMIT 1`
+      instr = r.rows[0]
+    }
+    if (!instr) {
+      const r = await sql`SELECT body_html, title FROM checkin_instructions WHERE tenant_id = ${reservation.tenant_id}::uuid AND room_id IS NULL ORDER BY updated_at DESC LIMIT 1`
+      instr = r.rows[0]
+    }
+    const bodyHtml = instr?.body_html || '<p>Te enviaremos los detalles del check-in en breve.</p>'
+
+    // Datos de contacto
+    let contactEmail: string | undefined
+    let contactPhone: string | undefined
+    let contactName: string | undefined
+    try {
+      const cfg = await sql`SELECT email, telefono, nombre_empresa FROM empresa_config WHERE tenant_id = ${reservation.tenant_id} ORDER BY updated_at DESC NULLS LAST, created_at DESC NULLS LAST LIMIT 1`
+      if (cfg.rows.length > 0) {
+        contactEmail = cfg.rows[0].email || undefined
+        contactPhone = cfg.rows[0].telefono || undefined
+        contactName = cfg.rows[0].nombre_empresa || undefined
+      }
+    } catch {}
+
+    const content = generateCheckinInstructionsEmailHtml({
+      reservation,
+      property,
+      instructionsHtml: bodyHtml,
+      publicFormUrl,
+      contact: { email: contactEmail, phone: contactPhone, name: contactName }
+    })
+
+    const result = await transporter.sendMail({
+      from: process.env.SMTP_FROM_BOOKING || process.env.SMTP_FROM || 'Delfín Check-in <booking@delfincheckin.com>',
+      to: reservation.guest_email,
+      subject: content.subject,
+      html: content.html,
+      text: content.text,
+    })
+
+    return { success: true, messageId: result.messageId }
+  } catch (e: any) {
+    console.error('❌ Error enviando email de instrucciones:', e)
+    return { success: false, error: e.message || 'Error' }
+  }
 }
 
 export function generatePropertyOwnerNotificationEmail(reservation: DirectReservation, property: TenantProperty) {

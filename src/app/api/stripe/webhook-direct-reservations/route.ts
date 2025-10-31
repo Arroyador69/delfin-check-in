@@ -5,7 +5,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { sql } from '@vercel/postgres';
-import { sendReservationEmails } from '@/lib/email-notifications';
+import { sendReservationEmails, sendCheckinInstructionsEmail } from '@/lib/email-notifications';
 import { DirectReservation, TenantProperty } from '@/lib/direct-reservations-types';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -430,6 +430,31 @@ export async function POST(req: NextRequest) {
               });
               
               const emailResults = await sendReservationEmails(reservation, property, publicFormUrl);
+
+              // Tras confirmación, enviar instrucciones de check‑in (ligero retardo para evitar solaparse)
+              try {
+                // Resolver room_id para personalizar instrucciones si existen
+                let roomId: string | null = null
+                try {
+                  const mapping = await sql`
+                    SELECT room_id FROM property_room_map
+                    WHERE tenant_id = ${reservation.tenant_id} AND property_id = ${reservation.property_id}
+                    LIMIT 1
+                  `
+                  roomId = mapping.rows[0]?.room_id || null
+                } catch {}
+
+                await new Promise((r) => setTimeout(r, 2500))
+                const instrRes = await sendCheckinInstructionsEmail({
+                  reservation,
+                  property,
+                  roomId,
+                  publicFormUrl
+                })
+                console.log('📧 [WEBHOOK RESERVAS] Instrucciones check‑in:', instrRes.success ? '✅ Enviadas' : `❌ ${instrRes.error}`)
+              } catch (e:any) {
+                console.error('⚠️ [WEBHOOK RESERVAS] Error al enviar instrucciones check‑in (no bloquea webhook):', e.message)
+              }
               
               console.log('📧 [WEBHOOK RESERVAS] Resultado envío emails:', {
                 reservationCode: reservation.reservation_code,
