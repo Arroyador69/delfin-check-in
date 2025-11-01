@@ -25,6 +25,63 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
+  // 🔒 PROTECCIÓN HTTP BASIC AUTH PARA STAGING
+  // Solo se aplica si estamos en staging.delfincheckin.com
+  const hostname = req.headers.get('host') || '';
+  const isStaging = hostname.includes('staging.delfincheckin.com') || 
+                    hostname.includes('staging-delfincheckin.vercel.app');
+  
+  if (isStaging) {
+    const stagingUser = process.env.STAGING_USER;
+    const stagingPassword = process.env.STAGING_PASSWORD;
+    
+    // Solo aplicar protección si las credenciales están configuradas
+    if (stagingUser && stagingPassword) {
+      const authHeader = req.headers.get('authorization');
+      
+      // Si no hay header de autorización, solicitar autenticación
+      if (!authHeader || !authHeader.startsWith('Basic ')) {
+        return new NextResponse('Authentication required', {
+          status: 401,
+          headers: {
+            'WWW-Authenticate': 'Basic realm="Staging Access - Ingresa tus credenciales"',
+            'Content-Type': 'text/plain',
+          },
+        });
+      }
+      
+      try {
+        // Decodificar credenciales base64
+        const base64Credentials = authHeader.split(' ')[1];
+        const credentials = Buffer.from(base64Credentials, 'base64').toString('utf-8');
+        const [username, password] = credentials.split(':');
+        
+        // Verificar credenciales
+        if (username !== stagingUser || password !== stagingPassword) {
+          return new NextResponse('Invalid credentials', {
+            status: 401,
+            headers: {
+              'WWW-Authenticate': 'Basic realm="Staging Access - Credenciales incorrectas"',
+              'Content-Type': 'text/plain',
+            },
+          });
+        }
+        
+        // Credenciales correctas, continuar
+        console.log('✅ Staging auth: Credenciales correctas');
+      } catch (error) {
+        // Error al decodificar, solicitar nuevamente
+        return new NextResponse('Invalid authentication format', {
+          status: 401,
+          headers: {
+            'WWW-Authenticate': 'Basic realm="Staging Access"',
+            'Content-Type': 'text/plain',
+          },
+        });
+      }
+    }
+  }
+
   // Rutas completamente públicas - no requieren autenticación
   const isPublicRoute = (
     url.pathname === '/admin-login' ||
