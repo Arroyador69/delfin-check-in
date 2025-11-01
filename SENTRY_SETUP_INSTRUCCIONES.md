@@ -45,15 +45,15 @@ Value: https://xxxxx@xxxxx.ingest.sentry.io/xxxxx
 
 4. Click en **"Save"**
 
-### 5️⃣ Redeploy
+### 5️⃣ Redeploy (AUTO)
 
-1. Ve a **Deployments** en Vercel
-2. Click en **"Redeploy"** (o haz un push a main)
-3. Espera ~2 minutos
+Si ya pusiste la variable en Vercel, ya se ha desplegado automáticamente.
 
 ### 6️⃣ Listo ✨
 
 Sentry está activo. Ahora capturará errores automáticamente.
+
+**Si hay un nuevo deploy en Vercel después de poner la variable, Sentry ya está funcionando.**
 
 ---
 
