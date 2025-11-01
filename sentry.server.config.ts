@@ -17,7 +17,9 @@ Sentry.init({
   
   // Integraciones para servidor
   integrations: [
-    Sentry.nodeProfilingIntegration(),
+    // nodeProfilingIntegration requiere @sentry/profiling-node y no está instalado
+    // Si necesitas profiling, instala: npm install @sentry/profiling-node
+    // Sentry.nodeProfilingIntegration(),
   ],
   
   // Filtrado de errores
