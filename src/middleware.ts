@@ -69,25 +69,15 @@ export async function middleware(req: NextRequest) {
     }
   }
 
-  // Verificar acceso especial para rutas de superadmin
+  // Para rutas de superadmin, solo verificar que haya token
+  // La verificación real del flag se hará en la página (server-side)
   if (url.pathname.startsWith('/superadmin')) {
     if (!authToken) {
       console.log('🔒 No hay token, redirigiendo al login');
       const loginUrl = new URL('/admin-login', req.url);
       return NextResponse.redirect(loginUrl);
     }
-    
-    // Verificar que el usuario sea superadmin
-    const { verifyToken } = await import('@/lib/auth');
-    const payload = verifyToken(authToken);
-    
-    if (!payload || !payload.isPlatformAdmin) {
-      console.log('🔒 Acceso denegado a SuperAdmin - usuario no es plataforma admin');
-      const dashboardUrl = new URL('/', req.url);
-      return NextResponse.redirect(dashboardUrl);
-    }
-    
-    console.log('✅ Acceso SuperAdmin permitido');
+    console.log('🔍 Verificando acceso SuperAdmin...');
   }
 
   // Si hay token, permitir acceso a todas las páginas
