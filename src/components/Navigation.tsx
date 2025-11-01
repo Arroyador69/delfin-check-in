@@ -2,8 +2,8 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Bed, Calendar, Users, Settings, Menu, X, TrendingUp, FileText, Download, Shield, Calculator, Send, MessageSquare, Receipt } from 'lucide-react';
-import { useState } from 'react';
+import { Home, Bed, Calendar, Users, Settings, Menu, X, TrendingUp, FileText, Download, Shield, Calculator, Send, MessageSquare, Receipt, Crown } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 
 const PWAInstallButton = dynamic(() => import('./PWAInstallButton'), { ssr: false });
@@ -11,6 +11,19 @@ const PWAInstallButton = dynamic(() => import('./PWAInstallButton'), { ssr: fals
 export default function Navigation() {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isPlatformAdmin, setIsPlatformAdmin] = useState(false);
+
+  useEffect(() => {
+    // Obtener información del usuario para saber si es superadmin
+    fetch('/api/auth/me')
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.data.isPlatformAdmin) {
+          setIsPlatformAdmin(true);
+        }
+      })
+      .catch(err => console.error('Error fetching user:', err));
+  }, []);
 
   const navigation = [
     { name: 'Dashboard', href: '/', icon: Home },
@@ -78,6 +91,30 @@ export default function Navigation() {
                 </Link>
               );
             })}
+            
+            {/* Botón SuperAdmin (solo visible si es superadmin) */}
+            {isPlatformAdmin && pathname.startsWith('/superadmin') && (
+              <Link
+                href="/"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-colors border-t border-gray-200 mt-2 pt-3"
+              >
+                <Home className="w-5 h-5 mr-3" />
+                Ver Mi Panel Tenant
+              </Link>
+            )}
+            
+            {/* Botón SuperAdmin (solo visible si es superadmin y NO está en /superadmin) */}
+            {isPlatformAdmin && !pathname.startsWith('/superadmin') && (
+              <Link
+                href="/superadmin"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center px-3 py-2 rounded-md text-base font-medium text-purple-600 hover:text-purple-900 hover:bg-purple-50 transition-colors border-t border-gray-200 mt-2 pt-3"
+              >
+                <Crown className="w-5 h-5 mr-3" />
+                👑 SuperAdmin Dashboard
+              </Link>
+            )}
           </div>
         </div>
       )}

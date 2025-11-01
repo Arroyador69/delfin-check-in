@@ -42,6 +42,7 @@ export async function GET(req: NextRequest) {
         tu.email_verified,
         tu.last_login,
         tu.recovery_email,
+        tu.is_platform_admin,
         t.name as tenant_name,
         t.plan_id
       FROM tenant_users tu
@@ -73,6 +74,7 @@ export async function GET(req: NextRequest) {
         lastLogin: user.last_login,
         tenantName: user.tenant_name,
         planId: user.plan_id,
+        isPlatformAdmin: user.is_platform_admin || false,
         recoveryEmail: user.recovery_email || user.email // Usar recovery_email si existe, sino el email principal
       }
     });
