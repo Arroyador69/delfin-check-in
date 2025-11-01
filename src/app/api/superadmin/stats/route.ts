@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
         COUNT(DISTINCT t.id) FILTER (WHERE t.status IN ('active', 'trial')) as total_tenants,
         COUNT(DISTINCT t.id) FILTER (WHERE t.status = 'active') as active_tenants,
         COUNT(DISTINCT t.id) FILTER (WHERE t.status = 'trial') as trial_tenants,
-        COALESCE(SUM(ct.property_owner_amount), 0) as commissions_this_month
+        COALESCE(SUM(ct.net_amount), 0) as commissions_this_month
       FROM tenants t
       LEFT JOIN commission_transactions ct ON ct.tenant_id = t.id
         AND ct.created_at >= date_trunc('month', CURRENT_DATE)
