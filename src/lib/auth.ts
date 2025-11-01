@@ -28,6 +28,7 @@ export interface JWTPayload {
   tenantId: string;
   email: string;
   role: 'owner' | 'admin' | 'staff';
+  isPlatformAdmin?: boolean;
   tenantName?: string;
   planId?: string;
   iat?: number;
@@ -143,6 +144,7 @@ export function generateTokenPair(userData: {
   tenantId: string;
   email: string;
   role: 'owner' | 'admin' | 'staff';
+  isPlatformAdmin?: boolean;
   tenantName?: string;
   planId?: string;
 }): TokenPair {
@@ -151,6 +153,7 @@ export function generateTokenPair(userData: {
     tenantId: userData.tenantId,
     email: userData.email,
     role: userData.role,
+    isPlatformAdmin: userData.isPlatformAdmin,
     tenantName: userData.tenantName,
     planId: userData.planId
   };

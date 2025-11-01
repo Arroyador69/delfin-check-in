@@ -142,7 +142,8 @@ export async function POST(req: NextRequest) {
         tu.role,
         tu.is_active,
         tu.email_verified,
-        tu.last_login
+        tu.last_login,
+        tu.is_platform_admin
       FROM tenant_users tu
       WHERE tu.tenant_id = $1 AND tu.email = $2 AND tu.is_active = true
       LIMIT 1
@@ -229,6 +230,7 @@ export async function POST(req: NextRequest) {
       tenantId: tenant.id,
       email: user.email,
       role: user.role,
+      isPlatformAdmin: user.is_platform_admin || false,
       tenantName: tenant.name,
       planId: tenant.plan_id
     };
@@ -250,6 +252,7 @@ export async function POST(req: NextRequest) {
         email: user.email,
         fullName: user.full_name,
         role: user.role,
+        isPlatformAdmin: user.is_platform_admin || false,
         tenant: {
           id: tenant.id,
           name: tenant.name,

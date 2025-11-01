@@ -69,6 +69,27 @@ export async function middleware(req: NextRequest) {
     }
   }
 
+  // Verificar acceso especial para rutas de superadmin
+  if (url.pathname.startsWith('/superadmin')) {
+    if (!authToken) {
+      console.log('🔒 No hay token, redirigiendo al login');
+      const loginUrl = new URL('/admin-login', req.url);
+      return NextResponse.redirect(loginUrl);
+    }
+    
+    // Verificar que el usuario sea superadmin
+    const { verifyToken } = await import('@/lib/auth');
+    const payload = verifyToken(authToken);
+    
+    if (!payload || !payload.isPlatformAdmin) {
+      console.log('🔒 Acceso denegado a SuperAdmin - usuario no es plataforma admin');
+      const dashboardUrl = new URL('/', req.url);
+      return NextResponse.redirect(dashboardUrl);
+    }
+    
+    console.log('✅ Acceso SuperAdmin permitido');
+  }
+
   // Si hay token, permitir acceso a todas las páginas
   console.log('🔍 Token encontrado, permitiendo acceso...');
   return NextResponse.next();
