@@ -102,17 +102,6 @@ export default function SuperAdminDashboard() {
               </a>
 
               <a 
-                href="/"
-                className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition"
-              >
-                <span className="text-2xl mr-3">🏖️</span>
-                <div>
-                  <p className="font-semibold">Ver Mi Panel Tenant</p>
-                  <p className="text-sm text-gray-600">Panel normal</p>
-                </div>
-              </a>
-
-              <a 
                 href="/superadmin/analytics"
                 className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition"
               >

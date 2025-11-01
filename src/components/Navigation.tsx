@@ -25,7 +25,8 @@ export default function Navigation() {
       .catch(err => console.error('Error fetching user:', err));
   }, []);
 
-  const navigation = [
+  // Menú de Tenant (normal)
+  const tenantNavigation = [
     { name: 'Dashboard', href: '/', icon: Home },
     { name: 'Reservas', href: '/reservations', icon: Calendar },
     { name: 'Reservas Directas', href: '/admin/direct-reservations', icon: Calendar },
@@ -40,6 +41,18 @@ export default function Navigation() {
     { name: 'Bitácora', href: '/audit', icon: Shield },
     { name: 'Configuración', href: '/settings', icon: Settings },
   ];
+
+  // Menú de SuperAdmin
+  const superAdminNavigation = [
+    { name: 'Dashboard SuperAdmin', href: '/superadmin', icon: Crown },
+    { name: 'Tenants', href: '/superadmin/tenants', icon: Users },
+    { name: 'Analytics', href: '/superadmin/analytics', icon: TrendingUp },
+    { name: 'Logs', href: '/superadmin/logs', icon: Shield },
+  ];
+
+  // Decidir qué menú mostrar
+  const isInSuperAdmin = pathname.startsWith('/superadmin');
+  const navigation = isInSuperAdmin && isPlatformAdmin ? superAdminNavigation : tenantNavigation;
 
   return (
     <nav className="bg-white shadow-lg fixed w-full top-0 z-50">
@@ -92,27 +105,28 @@ export default function Navigation() {
               );
             })}
             
-            {/* Botón SuperAdmin (solo visible si es superadmin) */}
-            {isPlatformAdmin && pathname.startsWith('/superadmin') && (
+            {/* Botón para cambiar entre modos (solo si es superadmin) */}
+            {isPlatformAdmin && (
               <Link
-                href="/"
+                href={isInSuperAdmin ? "/" : "/superadmin"}
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-colors border-t border-gray-200 mt-2 pt-3"
+                className={`flex items-center px-3 py-2 rounded-md text-base font-medium transition-colors border-t border-gray-200 mt-2 pt-3 ${
+                  isInSuperAdmin 
+                    ? 'text-gray-600 hover:text-gray-900 hover:bg-gray-50' 
+                    : 'text-purple-600 hover:text-purple-900 hover:bg-purple-50'
+                }`}
               >
-                <Home className="w-5 h-5 mr-3" />
-                Ver Mi Panel Tenant
-              </Link>
-            )}
-            
-            {/* Botón SuperAdmin (solo visible si es superadmin y NO está en /superadmin) */}
-            {isPlatformAdmin && !pathname.startsWith('/superadmin') && (
-              <Link
-                href="/superadmin"
-                onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center px-3 py-2 rounded-md text-base font-medium text-purple-600 hover:text-purple-900 hover:bg-purple-50 transition-colors border-t border-gray-200 mt-2 pt-3"
-              >
-                <Crown className="w-5 h-5 mr-3" />
-                👑 SuperAdmin Dashboard
+                {isInSuperAdmin ? (
+                  <>
+                    <Home className="w-5 h-5 mr-3" />
+                    Ver Mi Panel Tenant
+                  </>
+                ) : (
+                  <>
+                    <Crown className="w-5 h-5 mr-3" />
+                    👑 SuperAdmin Dashboard
+                  </>
+                )}
               </Link>
             )}
           </div>
