@@ -32,6 +32,7 @@
     "@radix-ui/react-label": "^2.0.2",
     "@radix-ui/react-slot": "^1.0.2",
     "@radix-ui/react-tabs": "^1.0.4",
+    "@sentry/nextjs": "^10.22.0",
     "@stripe/react-stripe-js": "^5.2.0",
     "@stripe/stripe-js": "^8.0.0",
     "@vercel/kv": "^1.0.0",

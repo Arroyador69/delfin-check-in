@@ -113,28 +113,6 @@ export default function AnalyticsPage() {
             </div>
           </div>
 
-          {/* Distribución de Planes */}
-          <div className="bg-white rounded-lg shadow p-6 mb-8">
-            <h2 className="text-xl font-bold mb-4">📦 Distribución de Planes</h2>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="text-center p-4 bg-blue-50 rounded-lg">
-                <p className="text-2xl font-bold text-blue-600">Basic</p>
-                <p className="text-sm text-gray-600 mt-1">Plan básico</p>
-              </div>
-              <div className="text-center p-4 bg-green-50 rounded-lg">
-                <p className="text-2xl font-bold text-green-600">Standard</p>
-                <p className="text-sm text-gray-600 mt-1">Plan estándar</p>
-              </div>
-              <div className="text-center p-4 bg-purple-50 rounded-lg">
-                <p className="text-2xl font-bold text-purple-600">Premium</p>
-                <p className="text-sm text-gray-600 mt-1">Plan premium</p>
-              </div>
-              <div className="text-center p-4 bg-yellow-50 rounded-lg">
-                <p className="text-2xl font-bold text-yellow-600">Enterprise</p>
-                <p className="text-sm text-gray-600 mt-1">Plan enterprise</p>
-              </div>
-            </div>
-          </div>
         </>
       )}
     </div>

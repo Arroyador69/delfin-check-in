@@ -6,6 +6,9 @@ import SWRegister from "@/components/SWRegister";
 import PWAInstallGuide from "@/components/PWAInstallGuide";
 import ConditionalFooter from "@/components/ConditionalFooter";
 
+// Importar Sentry
+import '@sentry/nextjs';
+
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {

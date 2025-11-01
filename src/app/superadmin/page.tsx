@@ -122,16 +122,20 @@ export default function SuperAdminDashboard() {
                   <p className="text-sm text-gray-600">Métricas detalladas</p>
                 </div>
               </a>
+
+              <a 
+                href="/superadmin/logs"
+                className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition"
+              >
+                <span className="text-2xl mr-3">🚨</span>
+                <div>
+                  <p className="font-semibold">Logs & Errores</p>
+                  <p className="text-sm text-gray-600">Errores del sistema</p>
+                </div>
+              </a>
             </div>
           </div>
 
-          {/* Info */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <p className="text-blue-800">
-              💡 <strong>Nota:</strong> Esta es una versión básica del SuperAdmin Dashboard. 
-              Las funcionalidades completas (lista de tenants, analytics, logs) se implementarán a continuación.
-            </p>
-          </div>
         </>
       )}
     </div>
