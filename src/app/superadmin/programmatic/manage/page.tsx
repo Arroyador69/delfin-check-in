@@ -247,7 +247,7 @@ export default function ManageTemplatesPage() {
           <h2 className="text-xl font-bold mb-4 text-gray-900">Crear Nueva Plantilla</h2>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-1">Nombre</label>
+              <label className="block text-sm font-medium mb-1 text-gray-700">Nombre</label>
               <input
                 type="text"
                 value={formData.name || ''}
@@ -257,7 +257,7 @@ export default function ManageTemplatesPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Tipo</label>
+              <label className="block text-sm font-medium mb-1 text-gray-700">Tipo</label>
               <select
                 value={formData.type || 'local'}
                 onChange={(e) => setFormData({ ...formData, type: e.target.value })}
@@ -271,7 +271,7 @@ export default function ManageTemplatesPage() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Prompt Base</label>
+              <label className="block text-sm font-medium mb-1 text-gray-700">Prompt Base</label>
               <textarea
                 value={formData.prompt_base || ''}
                 onChange={(e) => setFormData({ ...formData, prompt_base: e.target.value })}
@@ -281,7 +281,7 @@ export default function ManageTemplatesPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Variables Schema (JSON)</label>
+              <label className="block text-sm font-medium mb-1 text-gray-700">Variables Schema (JSON)</label>
               <textarea
                 value={JSON.stringify(formData.variables_schema || {}, null, 2)}
                 onChange={(e) => {
@@ -297,7 +297,7 @@ export default function ManageTemplatesPage() {
             </div>
             <div className="grid grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-1">Longitud Objetivo</label>
+                <label className="block text-sm font-medium mb-1 text-gray-700">Longitud Objetivo</label>
                 <input
                   type="number"
                   value={formData.target_length || 800}
@@ -450,7 +450,7 @@ export default function ManageTemplatesPage() {
           <h3 className="text-lg font-bold mb-4 text-gray-900">Editar Prompt y Variables</h3>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-1">Prompt Base</label>
+              <label className="block text-sm font-medium mb-1 text-gray-700">Prompt Base</label>
               <textarea
                 value={formData.prompt_base || ''}
                 onChange={(e) => setFormData({ ...formData, prompt_base: e.target.value })}
@@ -459,7 +459,7 @@ export default function ManageTemplatesPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Variables Schema (JSON)</label>
+              <label className="block text-sm font-medium mb-1 text-gray-700">Variables Schema (JSON)</label>
               <textarea
                 value={JSON.stringify(formData.variables_schema || {}, null, 2)}
                 onChange={(e) => {
