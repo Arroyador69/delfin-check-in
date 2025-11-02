@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
     if (error) return error;
 
     const body = await req.json();
-    const { name, type, prompt_base, variables_schema, target_length, cta_url, pricing_eur } = body;
+    const { name, type, prompt_base, variables_schema, target_length, is_test } = body;
 
     if (!name || !type || !prompt_base || !variables_schema) {
       return NextResponse.json(
@@ -44,15 +44,14 @@ export async function POST(req: NextRequest) {
 
     const result = await sql`
       INSERT INTO content_templates (
-        name, type, prompt_base, variables_schema, target_length, cta_url, pricing_eur
+        name, type, prompt_base, variables_schema, target_length, is_test
       ) VALUES (
         ${name},
         ${type},
         ${prompt_base},
         ${JSON.stringify(variables_schema)}::jsonb,
         ${target_length || 800},
-        ${cta_url || 'https://delfincheckin.com'},
-        ${pricing_eur || 29.99}
+        ${is_test || false}
       ) RETURNING *
     `;
 
@@ -77,7 +76,7 @@ export async function PUT(req: NextRequest) {
     if (error) return error;
 
     const body = await req.json();
-    const { id, name, prompt_base, variables_schema, target_length, cta_url, pricing_eur, active } = body;
+    const { id, name, prompt_base, variables_schema, target_length, active, is_test } = body;
 
     if (!id) {
       return NextResponse.json(
@@ -102,14 +101,11 @@ export async function PUT(req: NextRequest) {
     if (target_length !== undefined) {
       query = sql`${query}, target_length = ${target_length}`;
     }
-    if (cta_url !== undefined) {
-      query = sql`${query}, cta_url = ${cta_url}`;
-    }
-    if (pricing_eur !== undefined) {
-      query = sql`${query}, pricing_eur = ${pricing_eur}`;
-    }
     if (active !== undefined) {
       query = sql`${query}, active = ${active}`;
+    }
+    if (is_test !== undefined) {
+      query = sql`${query}, is_test = ${is_test}`;
     }
 
     query = sql`${query} WHERE id = ${id} RETURNING *`;

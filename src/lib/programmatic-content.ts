@@ -12,8 +12,7 @@ export interface ContentTemplate {
   prompt_base: string;
   variables_schema: Record<string, any>;
   target_length: number;
-  cta_url: string;
-  pricing_eur: number;
+  is_test?: boolean; // Para generar páginas de prueba/preview
 }
 
 export interface ProgrammaticPage {
@@ -32,6 +31,7 @@ export interface ProgrammaticPage {
   word_count: number;
   status: 'draft' | 'scheduled' | 'published' | 'indexed' | 'failed';
   publish_at: string | null;
+  is_test?: boolean; // Para identificar páginas de prueba/preview
 }
 
 export interface DatasetItem {
@@ -82,8 +82,8 @@ Explica {dolor_principal} en {ciudad} con 2 ejemplos locales (organismos, trámi
 ## Preguntas frecuentes
 3–4 FAQs sobre legal, offline, soporte y pagos.
 
-## Llamada a la acción
-Botón textual: **Comprar ahora → {cta_url}**
+## Información adicional
+Incluye información relevante sobre el servicio y sus beneficios.
 
 {# if sin_garantia == false}
 Nota breve: "Devolución 30 días si no te sirve".
@@ -104,21 +104,21 @@ Restricciones:
 
   'problem-solution': `Genera una página transaccional para quien busca resolver: {problema}.
 
-Estructura: Hook → Evidencia del problema → Solución paso a paso con nuestro software → Beneficios ({beneficios[]}) → CTA "Comprar ahora" ({cta_url}) → 3 FAQs.
+Estructura: Hook → Evidencia del problema → Solución paso a paso con nuestro software → Beneficios ({beneficios[]}) → 3 FAQs.
 
 700–900 palabras. JSON-LD: Product + SoftwareApplication. Sin demo/free.`,
 
   feature: `Página de compra centrada en la feature {feature}. Explica {por_que_importa} con un ejemplo práctico y un micro-flujo (3 pasos).
 
-Incluye sección "Qué recibes hoy" y CTA a {cta_url}. 600–800 palabras. Con JSON-LD de Product/SoftwareApplication.`,
+Incluye sección "Qué recibes hoy". 600–800 palabras. Con JSON-LD de Product/SoftwareApplication.`,
 
   comparison: `Comparativa honesta "Delfín vs {alternativa}" orientada a compra. Tabla con 6 filas (RD 933, offline, microsite, split, facturación, coste total).
 
-Cierra con "Cuándo elegir cada uno" y CTA a {cta_url}. 700–900 palabras. Sin descalificar, sólo hechos.`,
+Cierra con "Cuándo elegir cada uno". 700–900 palabras. Sin descalificar, sólo hechos.`,
 
   pillar: `Página pilar sobre {tema} (RD 933, check-in offline/cola, canal directo, pagos divididos).
 
-700–900 palabras. Enlaces internos relevantes. JSON-LD: Article + Product. CTA a {cta_url}.`
+700–900 palabras. Enlaces internos relevantes. JSON-LD: Article + Product.`
 };
 
 export async function generateContentWithOpenAI(
@@ -147,8 +147,6 @@ export async function generateContentWithOpenAI(
   });
 
   // Reemplazar variables comunes
-  prompt = prompt.replace(/{cta_url}/g, template.cta_url);
-  prompt = prompt.replace(/{precio}/g, String(template.pricing_eur));
   prompt = prompt.replace(/{sin_garantia}/g, variables.sin_garantia === false ? 'false' : 'true');
 
   try {
@@ -241,7 +239,7 @@ function createDefaultJSONLD(
     operatingSystem: 'Web',
     offers: {
       '@type': 'Offer',
-      price: template.pricing_eur,
+      price: 14.99, // Precio base por propiedad
       priceCurrency: 'EUR',
       availability: 'https://schema.org/InStock'
     },
@@ -356,7 +354,7 @@ export async function saveProgrammaticPage(page: Partial<ProgrammaticPage>): Pro
     INSERT INTO programmatic_pages (
       template_id, type, slug, canonical_url, title, meta_description,
       content_html, content_jsonld, variables_used, seo_score,
-      local_signals_count, word_count, status, publish_at
+      local_signals_count, word_count, status, publish_at, is_test
     ) VALUES (
       ${page.template_id || null},
       ${page.type!},
@@ -371,7 +369,8 @@ export async function saveProgrammaticPage(page: Partial<ProgrammaticPage>): Pro
       ${page.local_signals_count || 0},
       ${page.word_count || 0},
       ${page.status || 'draft'},
-      ${page.publish_at || null}
+      ${page.publish_at || null},
+      ${page.is_test || false}
     ) RETURNING id
   `;
   return result.rows[0].id;

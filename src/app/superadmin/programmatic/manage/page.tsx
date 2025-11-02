@@ -10,8 +10,7 @@ interface ContentTemplate {
   prompt_base: string
   variables_schema: any
   target_length: number
-  cta_url: string
-  pricing_eur: number
+  is_test?: boolean
   active: boolean
   created_at: string
   updated_at: string
@@ -28,8 +27,6 @@ export default function ManageTemplatesPage() {
     prompt_base: '',
     variables_schema: {},
     target_length: 800,
-    cta_url: 'https://delfincheckin.com/checkout',
-    pricing_eur: 29.99,
     active: true
   })
 
@@ -69,8 +66,6 @@ export default function ManageTemplatesPage() {
           prompt_base: '',
           variables_schema: {},
           target_length: 800,
-          cta_url: 'https://delfincheckin.com/checkout',
-          pricing_eur: 29.99,
           active: true
         })
       } else {
@@ -106,8 +101,6 @@ export default function ManageTemplatesPage() {
           prompt_base: '',
           variables_schema: {},
           target_length: 800,
-          cta_url: 'https://delfincheckin.com/checkout',
-          pricing_eur: 29.99,
           active: true
         })
       } else {
@@ -128,10 +121,70 @@ export default function ManageTemplatesPage() {
       prompt_base: template.prompt_base,
       variables_schema: template.variables_schema,
       target_length: template.target_length,
-      cta_url: template.cta_url,
-      pricing_eur: template.pricing_eur,
       active: template.active
     })
+  }
+
+  const createTestPage = async (templateId: string) => {
+    try {
+      // Obtener variables de ejemplo según el tipo de plantilla
+      const template = templates.find(t => t.id === templateId)
+      if (!template) return
+
+      let testVariables: Record<string, any> = {}
+      
+      // Generar variables de ejemplo según el tipo
+      if (template.type === 'local') {
+        testVariables = {
+          ciudad: 'Málaga',
+          region: 'Andalucía',
+          dolor_principal: 'Cumplimiento normativo RD 933',
+          features_clave: ['RD 933 en lote', 'Cola offline', 'Microsite', 'Stripe split', 'Facturación', 'Calculadora de costes'],
+          sin_garantia: false
+        }
+      } else if (template.type === 'problem-solution') {
+        testVariables = {
+          problema: 'Gestionar partes de viajeros sin complicaciones',
+          beneficios: ['Automatización', 'Cumplimiento normativo', 'Ahorro de tiempo']
+        }
+      } else if (template.type === 'feature') {
+        testVariables = {
+          feature: 'Microsite de reservas',
+          por_que_importa: 'Permite reservas directas sin comisiones de plataformas'
+        }
+      } else if (template.type === 'comparison') {
+        testVariables = {
+          alternativa: 'Sistema tradicional'
+        }
+      } else if (template.type === 'pillar') {
+        testVariables = {
+          tema: 'RD 933 y cumplimiento normativo'
+        }
+      }
+
+      const response = await fetch('/api/superadmin/programmatic/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          template_id: templateId,
+          variables: testVariables,
+          is_test: true
+        })
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        alert(`✅ Página de prueba creada: ${data.title}\nSlug: ${data.slug}`)
+        // Opcional: redirigir a la página generada
+        // window.open(`https://delfincheckin.com/${data.slug}`, '_blank')
+      } else {
+        const error = await response.json()
+        alert(error.error || 'Error creando página de prueba')
+      }
+    } catch (error) {
+      console.error('Error creando página de prueba:', error)
+      alert('Error creando página de prueba')
+    }
   }
 
   const toggleActive = async (id: string, currentActive: boolean) => {
@@ -252,25 +305,6 @@ export default function ManageTemplatesPage() {
                   className="w-full border rounded px-3 py-2"
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">CTA URL</label>
-                <input
-                  type="text"
-                  value={formData.cta_url || ''}
-                  onChange={(e) => setFormData({ ...formData, cta_url: e.target.value })}
-                  className="w-full border rounded px-3 py-2"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Precio (€)</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={formData.pricing_eur || 29.99}
-                  onChange={(e) => setFormData({ ...formData, pricing_eur: parseFloat(e.target.value) })}
-                  className="w-full border rounded px-3 py-2"
-                />
-              </div>
             </div>
             <button
               onClick={handleCreate}
@@ -290,7 +324,6 @@ export default function ManageTemplatesPage() {
               <th className="text-left p-4 text-gray-800 font-semibold">Nombre</th>
               <th className="text-left p-4 text-gray-800 font-semibold">Tipo</th>
               <th className="text-left p-4 text-gray-800 font-semibold">Longitud</th>
-              <th className="text-left p-4 text-gray-800 font-semibold">Precio</th>
               <th className="text-center p-4 text-gray-800 font-semibold">Estado</th>
               <th className="text-center p-4 text-gray-800 font-semibold">Acciones</th>
             </tr>
@@ -298,7 +331,7 @@ export default function ManageTemplatesPage() {
           <tbody>
             {templates.length === 0 ? (
               <tr>
-                <td colSpan={6} className="text-center p-8 text-gray-500">
+                <td colSpan={5} className="text-center p-8 text-gray-500">
                   No hay plantillas. Crea una nueva para empezar.
                 </td>
               </tr>
@@ -348,19 +381,6 @@ export default function ManageTemplatesPage() {
                       template.target_length
                     )}
                   </td>
-                  <td className="p-4">
-                    {editing === template.id ? (
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={formData.pricing_eur || 29.99}
-                        onChange={(e) => setFormData({ ...formData, pricing_eur: parseFloat(e.target.value) })}
-                        className="w-24 border rounded px-2 py-1"
-                      />
-                    ) : (
-                      `€${template.pricing_eur}`
-                    )}
-                  </td>
                   <td className="text-center p-4">
                     <button
                       onClick={() => toggleActive(template.id, template.active)}
@@ -391,8 +411,6 @@ export default function ManageTemplatesPage() {
                               prompt_base: '',
                               variables_schema: {},
                               target_length: 800,
-                              cta_url: 'https://delfincheckin.com/checkout',
-                              pricing_eur: 29.99,
                               active: true
                             })
                           }}
@@ -403,6 +421,13 @@ export default function ManageTemplatesPage() {
                       </div>
                     ) : (
                       <div className="flex gap-2 justify-center">
+                        <button
+                          onClick={() => createTestPage(template.id)}
+                          className="px-3 py-1 bg-purple-600 text-white rounded text-sm hover:bg-purple-700"
+                          title="Crear una página de prueba con esta plantilla"
+                        >
+                          🧪 Probar
+                        </button>
                         <button
                           onClick={() => startEdit(template)}
                           className="px-3 py-1 bg-yellow-600 text-white rounded text-sm hover:bg-yellow-700"
@@ -445,15 +470,6 @@ export default function ManageTemplatesPage() {
                 }}
                 className="w-full border rounded px-3 py-2 font-mono text-sm"
                 rows={8}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">CTA URL</label>
-              <input
-                type="text"
-                value={formData.cta_url || ''}
-                onChange={(e) => setFormData({ ...formData, cta_url: e.target.value })}
-                className="w-full border rounded px-3 py-2"
               />
             </div>
           </div>

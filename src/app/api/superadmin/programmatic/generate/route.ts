@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
     if (error) return error;
 
     const body = await req.json();
-    const { template_id, variables, schedule_publish_at } = body;
+    const { template_id, variables, schedule_publish_at, is_test } = body;
 
     if (!template_id || !variables) {
       return NextResponse.json(
@@ -36,10 +36,11 @@ export async function POST(req: NextRequest) {
     // Generar contenido con OpenAI
     const generated = await generateContentWithOpenAI(template, variables);
 
-    // Generar slug y canonical URL
+    // Generar slug y canonical URL (añadir prefijo test- si es prueba)
+    const slugPrefix = is_test ? 'test-' : '';
     const slugBase = variables.slug || 
-      (variables.ciudad ? `rd-933/software-${variables.ciudad.toLowerCase().replace(/\s+/g, '-')}` : 
-      `content/${template.type}-${Date.now()}`);
+      (variables.ciudad ? `${slugPrefix}rd-933/software-${variables.ciudad.toLowerCase().replace(/\s+/g, '-')}` : 
+      `${slugPrefix}content/${template.type}-${Date.now()}`);
     const canonicalUrl = `https://delfincheckin.com/${slugBase}`;
 
     // Guardar en BD
@@ -57,7 +58,8 @@ export async function POST(req: NextRequest) {
       local_signals_count: generated.localSignalsCount,
       word_count: generated.wordCount,
       status: schedule_publish_at ? 'scheduled' : 'draft',
-      publish_at: schedule_publish_at || null
+      publish_at: schedule_publish_at || null,
+      is_test: is_test || false
     });
 
     return NextResponse.json({

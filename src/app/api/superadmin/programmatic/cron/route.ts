@@ -3,6 +3,7 @@ import { verifySuperAdmin } from '@/lib/auth-superadmin';
 import { getScheduledPages } from '@/lib/programmatic-content';
 import { sql } from '@/lib/db';
 import { Octokit } from '@octokit/rest';
+import { marked } from 'marked';
 
 const octokit = new Octokit({
   auth: process.env.GITHUB_TOKEN,
@@ -315,6 +316,16 @@ async function selectPagesForPublishing() {
 function generateSEOHTML(page: any): string {
   const jsonld = page.content_jsonld || {};
   
+  // Convertir Markdown a HTML
+  let contentHtml = '';
+  try {
+    contentHtml = marked.parse(page.content_html || '');
+  } catch (error) {
+    console.error('Error convirtiendo Markdown a HTML:', error);
+    // Si falla, usar el contenido tal cual (puede ser HTML ya)
+    contentHtml = page.content_html || '';
+  }
+  
   return `<!DOCTYPE html>
 <html lang="es">
 <head>
@@ -369,7 +380,12 @@ function generateSEOHTML(page: any): string {
   </style>
 </head>
 <body>
-  ${page.content_html}
+  ${contentHtml}
+  
+  ${generatePriceCalculatorHTML()}
+  ${generateBenefitsHTML()}
+  ${generateEmailCaptureHTML()}
+  ${generateComponentsScript()}
 </body>
 </html>`;
 }
@@ -383,4 +399,259 @@ function escapeHtml(text: string): string {
     "'": '&#039;'
   };
   return text.replace(/[&<>"']/g, (m) => map[m]);
+}
+
+// Generar componente de Calculadora de Precios con Stripe
+function generatePriceCalculatorHTML(): string {
+  return `
+<!-- Calculadora de Precios con Stripe -->
+<section style="margin: 3rem 0; padding: 2rem; background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); border: 2px solid #2563eb; border-radius: 16px;">
+  <div style="background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); padding: 24px; text-align: center; color: white; border-radius: 12px; margin-bottom: 24px;">
+    <div style="font-size: 32px; margin-bottom: 8px;">💰</div>
+    <h2 style="margin: 0 0 8px; font-size: 24px; font-weight: 700;">Calculadora de Precios</h2>
+    <p style="margin: 0; opacity: 0.9; font-size: 16px;">Descubre cuánto te costaría Delfín Check-in según tus necesidades</p>
+  </div>
+  
+  <div style="padding: 24px; background: white; border-radius: 12px; margin-bottom: 24px;">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 24px; margin-bottom: 24px;">
+      <div>
+        <label style="display: block; margin-bottom: 12px; font-weight: 600; color: #1f2937; font-size: 16px;">
+          🏠 Número de propiedades
+        </label>
+        <div style="position: relative;">
+          <input type="number" id="calcProperties" min="1" max="50" value="1" readonly
+                 style="width: 100%; height: 50px; border-radius: 12px; border: 2px solid #e2e8f0; padding: 0 60px 0 20px; font-size: 18px; text-align: center; font-weight: 600; color: #2563eb; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.05); -moz-appearance: textfield;"
+                 onkeydown="return false;" onpaste="return false;" oninput="return false;">
+          <div style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 2px; pointer-events: auto; z-index: 10;">
+            <button type="button" id="incrementBtn" onclick="incrementCalc()" 
+                    style="width: 24px; height: 20px; background: #2563eb; color: white; border: none; border-radius: 4px 4px 0 0; cursor: pointer; font-size: 12px; font-weight: bold;"
+                    onmouseover="this.style.background='#1d4ed8'" onmouseout="this.style.background='#2563eb'">▲</button>
+            <button type="button" id="decrementBtn" onclick="decrementCalc()"
+                    style="width: 24px; height: 20px; background: #2563eb; color: white; border: none; border-radius: 0 0 4px 4px; cursor: pointer; font-size: 12px; font-weight: bold;"
+                    onmouseover="this.style.background='#1d4ed8'" onmouseout="this.style.background='#2563eb'">▼</button>
+          </div>
+        </div>
+      </div>
+      
+      <div>
+        <label style="display: block; margin-bottom: 12px; font-weight: 600; color: #1f2937; font-size: 16px;">
+          📅 Tipo de plan
+        </label>
+        <select id="calcPlan" onchange="updateCalc()" 
+                style="width: 100%; height: 50px; border-radius: 12px; border: 2px solid #e2e8f0; padding: 0 50px 0 20px; font-size: 16px; font-weight: 500; background: white; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+          <option value="monthly">💳 Mensual (14,99€/propiedad)</option>
+          <option value="yearly" selected>🎯 Anual (descuento 16,7%)</option>
+        </select>
+      </div>
+    </div>
+    
+    <div id="calcResults" style="background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); border-radius: 16px; padding: 32px; text-align: center; border: 2px solid #e2e8f0;">
+      <div style="font-size: 36px; font-weight: 900; color: #2563eb; margin-bottom: 12px;" id="calcTotal">149,90€/año</div>
+      <div style="color: #64748b; margin-bottom: 16px; font-size: 16px;" id="calcPerProperty">14,99€ por propiedad</div>
+      <div style="color: #16a34a; font-weight: 700; font-size: 18px; padding: 8px 16px; background: rgba(22, 163, 74, 0.1); border-radius: 20px; display: inline-block;" id="calcSavings">Ahorras 29,90€ al año</div>
+    </div>
+    
+    <p style="text-align: center; margin-top: 16px; font-size: 14px; color: #64748b;">
+      <strong>IVA no incluido</strong>
+    </p>
+    
+    <button onclick="openStripePayment()" 
+            style="width: 100%; margin-top: 24px; padding: 16px; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white; border: none; border-radius: 12px; font-size: 18px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);"
+            onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(37, 99, 235, 0.4)'"
+            onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(37, 99, 235, 0.3)'">
+      💳 Contratar ahora con Stripe
+    </button>
+  </div>
+</section>
+`;
+}
+
+// Generar sección de Beneficios del Servicio
+function generateBenefitsHTML(): string {
+  return `
+<!-- Beneficios del Servicio -->
+<section style="margin: 3rem 0; padding: 2rem; background: white; border-radius: 16px; border: 1px solid #e2e8f0;">
+  <h2 style="font-size: 2rem; margin-bottom: 1.5rem; color: #1f2937;">✨ Ventajas de usar Delfín Check-in</h2>
+  
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+    <div style="padding: 20px; background: #f0f9ff; border-radius: 12px; border-left: 4px solid #2563eb;">
+      <h3 style="margin: 0 0 12px; color: #1e40af; font-size: 18px;">🏠 Microsite de Reservas Directas</h3>
+      <p style="margin: 0; color: #475569; line-height: 1.6;">
+        Tus huéspedes pueden hacer reservas directas con un perfil microsite de tu vivienda o habitación. 
+        Así no te cobran Airbnb o Booking sus tarifas porque la tarifa es la mitad del precio que ellos.
+      </p>
+    </div>
+    
+    <div style="padding: 20px; background: #f0fdf4; border-radius: 12px; border-left: 4px solid #16a34a;">
+      <h3 style="margin: 0 0 12px; color: #166534; font-size: 18px;">📤 Envío Automático al Ministerio</h3>
+      <p style="margin: 0; color: #475569; line-height: 1.6;">
+        Beneficios de no hacer nada: se envía directamente el parte de viajeros y la reserva de hospedaje 
+        al Ministerio del Interior de manera directa y sencilla tras rellenar nuestro formulario por parte del huésped.
+      </p>
+    </div>
+    
+    <div style="padding: 20px; background: #fef3c7; border-radius: 12px; border-left: 4px solid #f59e0b;">
+      <h3 style="margin: 0 0 12px; color: #92400e; font-size: 18px;">📄 Generador de Facturas</h3>
+      <p style="margin: 0; color: #475569; line-height: 1.6;">
+        Nuestro sistema tiene un generador de facturas para cuando los huéspedes las necesitan, 
+        facilitando la gestión administrativa y fiscal.
+      </p>
+    </div>
+    
+    <div style="padding: 20px; background: #f3e8ff; border-radius: 12px; border-left: 4px solid #9333ea;">
+      <h3 style="margin: 0 0 12px; color: #6b21a8; font-size: 18px;">💰 Calculadora de Costes</h3>
+      <p style="margin: 0; color: #475569; line-height: 1.6;">
+        Calculadora de costes para saber exactamente cuánto se gasta por absolutamente todo lo que consume 
+        tener una vivienda vacacional o alquilar habitaciones.
+      </p>
+    </div>
+    
+    <div style="padding: 20px; background: #fef2f2; border-radius: 12px; border-left: 4px solid #ef4444;">
+      <h3 style="margin: 0 0 12px; color: #991b1b; font-size: 18px;">✅ Cumplimiento RD 933/2021</h3>
+      <p style="margin: 0; color: #475569; line-height: 1.6;">
+        Cumplimiento automático con el Real Decreto 933/2021 para el registro de viajeros, 
+        garantizando que estés siempre en cumplimiento de la normativa vigente.
+      </p>
+    </div>
+  </div>
+</section>
+`;
+}
+
+// Generar formulario de captura de email
+function generateEmailCaptureHTML(): string {
+  return `
+<!-- Formulario de Captura de Email -->
+<section style="margin: 3rem 0; padding: 2rem; background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border-radius: 16px; border: 2px solid #bae6fd;">
+  <h2 style="font-size: 2rem; margin-bottom: 1rem; color: #1f2937; text-align: center;">🤔 ¿Te lo estás pensando?</h2>
+  <p style="text-align: center; color: #475569; margin-bottom: 2rem; font-size: 18px;">
+    Deja tu email y nos pondremos en contacto contigo para resolver todas tus dudas
+  </p>
+  
+  <form id="emailCaptureForm" onsubmit="handleEmailCapture(event)" style="max-width: 500px; margin: 0 auto;">
+    <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+      <input type="email" id="leadEmail" required placeholder="tu@email.com" 
+             style="flex: 1; min-width: 250px; height: 50px; padding: 0 16px; border-radius: 12px; border: 2px solid #e2e8f0; font-size: 16px; background: white;"
+             onfocus="this.style.borderColor='#2563eb'; this.style.boxShadow='0 0 0 3px rgba(37, 99, 235, 0.1)'"
+             onblur="this.style.borderColor='#e2e8f0'; this.style.boxShadow='none'">
+      <button type="submit" 
+              style="height: 50px; padding: 0 24px; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); white-space: nowrap;"
+              onmouseover="this.style.transform='translateY(-2px)'"
+              onmouseout="this.style.transform='translateY(0)'">
+        Enviar
+      </button>
+    </div>
+    <p id="emailCaptureMessage" style="margin-top: 12px; text-align: center; font-size: 14px; color: #16a34a; display: none;"></p>
+  </form>
+</section>
+`;
+}
+
+// Generar JavaScript para los componentes
+function generateComponentsScript(): string {
+  return `
+<script>
+// Calculadora de Precios
+function getVolumePrice(properties) {
+  if (properties === 1) return 14.99;
+  if (properties === 2) return 13.49;
+  if (properties >= 3 && properties <= 4) return 12.74;
+  if (properties >= 5 && properties <= 9) return 11.99;
+  if (properties >= 10) return 11.24;
+  return 14.99;
+}
+
+function updateCalc() {
+  const properties = parseInt(document.getElementById('calcProperties').value) || 1;
+  const plan = document.getElementById('calcPlan').value;
+  
+  const pricePerProperty = getVolumePrice(properties);
+  const monthlyTotal = properties * pricePerProperty;
+  const yearlyTotal = monthlyTotal * 12;
+  const yearlyDiscount = yearlyTotal * 0.167;
+  const finalYearlyTotal = yearlyTotal - yearlyDiscount;
+  
+  let total, periodText, savingsText;
+  if (plan === 'monthly') {
+    total = monthlyTotal;
+    periodText = '/mes';
+    savingsText = properties > 1 ? \`Descuento \${Math.round(((14.99 - pricePerProperty) / 14.99) * 100)}% por volumen\` : 'Precio base';
+  } else {
+    total = finalYearlyTotal;
+    periodText = '/año';
+    const regularYearly = properties * 14.99 * 12;
+    const totalSavings = regularYearly - finalYearlyTotal;
+    savingsText = \`Ahorras \${totalSavings.toFixed(2)}€ al año\`;
+  }
+  
+  document.getElementById('calcTotal').textContent = \`\${total.toFixed(2)}€\${periodText}\`;
+  document.getElementById('calcPerProperty').textContent = \`\${pricePerProperty.toFixed(2)}€ por propiedad\`;
+  document.getElementById('calcSavings').textContent = savingsText;
+}
+
+function incrementCalc() {
+  const input = document.getElementById('calcProperties');
+  const current = parseInt(input.value) || 1;
+  if (current < 50) {
+    input.value = current + 1;
+    updateCalc();
+  }
+}
+
+function decrementCalc() {
+  const input = document.getElementById('calcProperties');
+  const current = parseInt(input.value) || 1;
+  if (current > 1) {
+    input.value = current - 1;
+    updateCalc();
+  }
+}
+
+function openStripePayment() {
+  const properties = parseInt(document.getElementById('calcProperties').value) || 1;
+  const plan = document.getElementById('calcPlan').value;
+  const planId = plan === 'monthly' ? 'basic' : 'basic_yearly';
+  
+  // Redirigir a checkout con parámetros
+  window.location.href = \`https://admin.delfincheckin.com/checkout-rooms?properties=\${properties}&plan=\${planId}\`;
+}
+
+// Captura de Email
+async function handleEmailCapture(event) {
+  event.preventDefault();
+  const email = document.getElementById('leadEmail').value;
+  const messageEl = document.getElementById('emailCaptureMessage');
+  
+  try {
+    const response = await fetch('https://admin.delfincheckin.com/api/public/lead-capture', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, source: 'programmatic_page' })
+    });
+    
+    if (response.ok) {
+      messageEl.textContent = '✅ ¡Gracias! Te contactaremos pronto.';
+      messageEl.style.color = '#16a34a';
+      messageEl.style.display = 'block';
+      document.getElementById('leadEmail').value = '';
+      
+      setTimeout(() => {
+        messageEl.style.display = 'none';
+      }, 5000);
+    } else {
+      throw new Error('Error en el servidor');
+    }
+  } catch (error) {
+    messageEl.textContent = '❌ Error al enviar. Por favor, intenta de nuevo.';
+    messageEl.style.color = '#ef4444';
+    messageEl.style.display = 'block';
+  }
+}
+
+// Inicializar calculadora al cargar
+if (document.getElementById('calcProperties')) {
+  updateCalc();
+}
+</script>
+`;
 }

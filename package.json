@@ -49,6 +49,7 @@
     "jspdf": "^2.5.1",
     "jszip": "^3.10.1",
     "lucide-react": "^0.540.0",
+    "marked": "^16.4.1",
     "next": "15.4.6",
     "next-auth": "^4.24.11",
     "node-fetch": "^3.3.2",

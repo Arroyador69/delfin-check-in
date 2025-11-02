@@ -73,9 +73,7 @@ Restricciones:
       features_clave: { type: 'array', required: true },
       sin_garantia: { type: 'boolean', default: false }
     },
-    target_length: 800,
-    cta_url: 'https://delfincheckin.com',
-    pricing_eur: 29.99
+    target_length: 800
   },
   {
     name: 'Problema → Solución',
@@ -89,9 +87,7 @@ Estructura: Hook → Evidencia del problema → Solución paso a paso con nuestr
       problema: { type: 'string', required: true },
       beneficios: { type: 'array', required: true }
     },
-    target_length: 800,
-    cta_url: 'https://delfincheckin.com',
-    pricing_eur: 29.99
+    target_length: 800
   },
   {
     name: 'Feature-Focus',
@@ -116,9 +112,7 @@ Cierra con "Cuándo elegir cada uno" y CTA a {cta_url}. 700–900 palabras. Sin 
     variables_schema: {
       alternativa: { type: 'string', required: true }
     },
-    target_length: 800,
-    cta_url: 'https://delfincheckin.com',
-    pricing_eur: 29.99
+    target_length: 800
   },
   {
     name: 'Pilar',
@@ -129,9 +123,7 @@ Cierra con "Cuándo elegir cada uno" y CTA a {cta_url}. 700–900 palabras. Sin 
     variables_schema: {
       tema: { type: 'string', required: true }
     },
-    target_length: 800,
-    cta_url: 'https://delfincheckin.com',
-    pricing_eur: 29.99
+    target_length: 800
   }
 ];
 
@@ -153,15 +145,13 @@ export async function initTemplates() {
       // Crear plantilla
       await sql`
         INSERT INTO content_templates (
-          name, type, prompt_base, variables_schema, target_length, cta_url, pricing_eur
+          name, type, prompt_base, variables_schema, target_length
         ) VALUES (
           ${template.name},
           ${template.type},
           ${template.prompt_base},
           ${JSON.stringify(template.variables_schema)}::jsonb,
-          ${template.target_length},
-          ${template.cta_url},
-          ${template.pricing_eur}
+          ${template.target_length}
         )
       `;
 
