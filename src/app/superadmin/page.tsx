@@ -122,6 +122,17 @@ export default function SuperAdminDashboard() {
                   <p className="text-sm text-gray-600">Errores del sistema</p>
                 </div>
               </a>
+
+              <a 
+                href="/superadmin/programmatic"
+                className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition"
+              >
+                <span className="text-2xl mr-3">📄</span>
+                <div>
+                  <p className="font-semibold">Páginas Programáticas</p>
+                  <p className="text-sm text-gray-600">SEO y métricas</p>
+                </div>
+              </a>
             </div>
           </div>
 

@@ -1,9 +1,8 @@
 {
   "crons": [
     {
-      "path": "/api/cron/process-payouts",
-      "schedule": "0 8 * * *"
+      "path": "/api/superadmin/programmatic/cron",
+      "schedule": "0 9,17 * * *"
     }
   ]
 }
-
