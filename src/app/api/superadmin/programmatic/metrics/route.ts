@@ -127,7 +127,7 @@ export async function GET(req: NextRequest) {
         FROM content_templates ct
         LEFT JOIN programmatic_pages pp ON pp.template_id = ct.id
         LEFT JOIN programmatic_page_metrics ppm ON ppm.page_id = pp.id
-          AND ppm.metric_date >= CURRENT_DATE - INTERVAL '30 days'
+          AND ppm.metric_date >= CURRENT_DATE - make_interval(days => 30)
         GROUP BY ct.id, ct.name, ct.type
         ORDER BY total_pages DESC
       `;
