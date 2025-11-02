@@ -11,8 +11,8 @@ export async function GET(req: NextRequest) {
     const days = parseInt(searchParams.get('days') || '30');
     const type = searchParams.get('type');
     
-    // Usar make_interval de PostgreSQL para construir INTERVAL correctamente
-    // Esto evita problemas con sintaxis de INTERVAL string
+    // Construir INTERVAL usando sintaxis SQL directa sin parámetros
+    // Esto evita problemas de interpolación con template tags
 
     // KPIs generales
     const kpis = await sql`
@@ -21,8 +21,8 @@ export async function GET(req: NextRequest) {
         COUNT(*) FILTER (WHERE status = 'published') as published_pages,
         COUNT(*) FILTER (WHERE status = 'indexed') as indexed_pages,
         COUNT(*) FILTER (WHERE status = 'scheduled') as scheduled_pages,
-        COUNT(*) FILTER (WHERE DATE(created_at) >= CURRENT_DATE - make_interval(days => ${days})) as created_last_days,
-        COUNT(*) FILTER (WHERE DATE(published_at) >= CURRENT_DATE - make_interval(days => ${days})) as published_last_days,
+        COUNT(*) FILTER (WHERE DATE(created_at) >= CURRENT_DATE - (${days} || ' days')::interval) as created_last_days,
+        COUNT(*) FILTER (WHERE DATE(published_at) >= CURRENT_DATE - (${days} || ' days')::interval) as published_last_days,
         AVG(seo_score) as avg_seo_score,
         AVG(local_signals_count) as avg_local_signals,
         COUNT(*) FILTER (WHERE seo_score < 60) as low_seo_pages
@@ -38,7 +38,7 @@ export async function GET(req: NextRequest) {
         AVG(EXTRACT(EPOCH FROM (indexation_date - published_at))/86400) as avg_days_to_index
       FROM programmatic_page_metrics ppm
       JOIN programmatic_pages pp ON pp.id = ppm.page_id
-      WHERE ppm.metric_date >= CURRENT_DATE - make_interval(days => ${days})
+      WHERE ppm.metric_date >= CURRENT_DATE - (${days} || ' days')::interval
         ${type ? sql`AND pp.type = ${type}` : sql``}
     `;
 
@@ -53,7 +53,7 @@ export async function GET(req: NextRequest) {
         SUM(conversions) as total_conversions,
         SUM(revenue) as total_revenue
       FROM programmatic_page_metrics
-      WHERE metric_date >= CURRENT_DATE - make_interval(days => ${days})
+      WHERE metric_date >= CURRENT_DATE - (${days} || ' days')::interval
     `;
 
     // Top páginas por conversión
@@ -127,7 +127,7 @@ export async function GET(req: NextRequest) {
         FROM content_templates ct
         LEFT JOIN programmatic_pages pp ON pp.template_id = ct.id
         LEFT JOIN programmatic_page_metrics ppm ON ppm.page_id = pp.id
-          AND ppm.metric_date >= CURRENT_DATE - make_interval(days => 30)
+          AND ppm.metric_date >= CURRENT_DATE - INTERVAL '30 days'
         GROUP BY ct.id, ct.name, ct.type
         ORDER BY total_pages DESC
       `;
@@ -139,7 +139,7 @@ export async function GET(req: NextRequest) {
         COUNT(*) as pages_created,
         COUNT(*) FILTER (WHERE status = 'published') as pages_published
       FROM programmatic_pages
-      WHERE created_at >= CURRENT_DATE - make_interval(days => ${days})
+      WHERE created_at >= CURRENT_DATE - (${days} || ' days')::interval
       GROUP BY DATE(created_at)
       ORDER BY date ASC
     `;
