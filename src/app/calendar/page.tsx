@@ -119,12 +119,19 @@ export default function CalendarPage() {
     const firstDayOfMonth = new Date(s.getFullYear(), s.getMonth(), 1)
     const startWeekday = (firstDayOfMonth.getDay() + 6) % 7 // lunes=0
     
-    // Añadir celdas vacías al inicio si el mes no empieza en lunes
-    for (let i = 0; i < startWeekday; i++) {
-      out.push('')
+    // Añadir días del mes anterior para las celdas de padding al inicio
+    if (startWeekday > 0) {
+      const prevMonth = new Date(s.getFullYear(), s.getMonth(), 0) // último día del mes anterior
+      const prevMonthDays = prevMonth.getDate()
+      // Empezar desde el día necesario para completar la semana
+      const startFromDay = prevMonthDays - startWeekday + 1
+      for (let i = startFromDay; i <= prevMonthDays; i++) {
+        const d = new Date(s.getFullYear(), s.getMonth() - 1, i)
+        out.push(formatDate(d))
+      }
     }
     
-    // Añadir los días del mes
+    // Añadir los días del mes actual
     for (let d = new Date(s); d < e; d.setDate(d.getDate() + 1)) {
       out.push(formatDate(d))
     }
@@ -161,6 +168,11 @@ export default function CalendarPage() {
     })
     return map
   }, [events])
+
+  const currentMonth = useMemo(() => {
+    const s = new Date(start)
+    return { year: s.getFullYear(), month: s.getMonth() }
+  }, [start])
 
   const previousMonth = () => {
     const d = new Date(start)
@@ -266,23 +278,28 @@ export default function CalendarPage() {
                   return <div key={`empty-${idx}`} className="border-2 rounded-xl p-2 sm:p-3 min-h-[112px] w-[100px] sm:w-auto bg-gray-50 border-gray-100"></div>
                 }
                 
+                const dayDate = new Date(day)
+                const isOtherMonth = dayDate.getFullYear() !== currentMonth.year || dayDate.getMonth() !== currentMonth.month
+                
                 const a = availabilityByDate.get(day)
                 const evs = eventsByDate.get(day) || []
                 const blocked = a && a.available === false
-                const dayNum = new Date(day).getDate()
+                const dayNum = dayDate.getDate()
                 const isToday = formatDate(new Date()) === day
                 return (
                   <div 
                     key={day} 
                     className={`border-2 rounded-xl p-2 sm:p-3 min-h-[112px] transition-all hover:shadow-md w-[100px] sm:w-auto ${
-                      blocked 
+                      isOtherMonth
+                        ? 'bg-gray-50 border-gray-100'
+                        : blocked 
                         ? 'bg-gradient-to-r from-red-50 to-pink-50 border-red-300' 
                         : isToday
                         ? 'bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-400'
                         : 'bg-white border-gray-200'
                     }`}
                   >
-                    <div className="text-xs sm:text-sm font-bold mb-1 text-gray-600">
+                    <div className={`text-xs sm:text-sm font-bold mb-1 ${isOtherMonth ? 'text-gray-400' : 'text-gray-600'}`}>
                       {dayNum}
                     </div>
                     {blocked && (
