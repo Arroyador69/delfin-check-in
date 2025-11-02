@@ -73,7 +73,7 @@ export async function GET(req: NextRequest) {
         END as conversion_rate
       FROM programmatic_pages pp
       LEFT JOIN programmatic_page_metrics ppm ON ppm.page_id = pp.id
-        AND ppm.metric_date >= CURRENT_DATE - INTERVAL ${`${days} days`}
+        AND ppm.metric_date >= CURRENT_DATE - (${days} || ' days')::interval
       WHERE pp.status = 'published'
         ${type ? sql`AND pp.type = ${type}` : sql``}
       GROUP BY pp.id, pp.slug, pp.title, pp.type
