@@ -112,7 +112,7 @@ export default function ProgrammaticPage() {
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">📄 Páginas Programáticas</h1>
+        <h1 className="text-3xl font-bold text-gray-900">📄 Páginas Programáticas</h1>
         <Link
           href="/superadmin/programmatic/manage"
           className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
@@ -124,65 +124,65 @@ export default function ProgrammaticPage() {
       {/* KPIs */}
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
         <div className="bg-white rounded-lg shadow p-4">
-          <div className="text-sm text-gray-600">Total Páginas</div>
-          <div className="text-2xl font-bold">{metrics.kpis.totalPages}</div>
+          <div className="text-sm text-gray-800">Total Páginas</div>
+          <div className="text-2xl font-bold text-gray-900">{metrics.kpis.totalPages}</div>
         </div>
         <div className="bg-white rounded-lg shadow p-4">
-          <div className="text-sm text-gray-600">Publicadas</div>
+          <div className="text-sm text-gray-800">Publicadas</div>
           <div className="text-2xl font-bold text-green-600">{metrics.kpis.publishedPages}</div>
         </div>
         <div className="bg-white rounded-lg shadow p-4">
-          <div className="text-sm text-gray-600">Indexadas</div>
+          <div className="text-sm text-gray-800">Indexadas</div>
           <div className="text-2xl font-bold text-blue-600">{metrics.kpis.indexedPages}</div>
         </div>
         <div className="bg-white rounded-lg shadow p-4">
-          <div className="text-sm text-gray-600">Programadas</div>
+          <div className="text-sm text-gray-800">Programadas</div>
           <div className="text-2xl font-bold text-orange-600">{metrics.kpis.scheduledPages}</div>
         </div>
         <div className="bg-white rounded-lg shadow p-4">
-          <div className="text-sm text-gray-600">SEO Promedio</div>
-          <div className="text-2xl font-bold">{((metrics.kpis.avgSeoScore ?? 0)).toFixed(1)}/100</div>
+          <div className="text-sm text-gray-800">SEO Promedio</div>
+          <div className="text-2xl font-bold text-gray-900">{((metrics.kpis.avgSeoScore ?? 0)).toFixed(1)}/100</div>
         </div>
         <div className="bg-white rounded-lg shadow p-4">
-          <div className="text-sm text-gray-600">Tasa Indexación</div>
-          <div className="text-2xl font-bold">{((metrics.indexation.indexationRate ?? 0)).toFixed(1)}%</div>
+          <div className="text-sm text-gray-800">Tasa Indexación</div>
+          <div className="text-2xl font-bold text-gray-900">{((metrics.indexation.indexationRate ?? 0)).toFixed(1)}%</div>
         </div>
         <div className="bg-white rounded-lg shadow p-4">
-          <div className="text-sm text-gray-600">Sesiones (30d)</div>
-          <div className="text-2xl font-bold">{(metrics.traffic.totalSessions ?? 0).toLocaleString()}</div>
+          <div className="text-sm text-gray-800">Sesiones (30d)</div>
+          <div className="text-2xl font-bold text-gray-900">{(metrics.traffic.totalSessions ?? 0).toLocaleString()}</div>
         </div>
         <div className="bg-white rounded-lg shadow p-4">
-          <div className="text-sm text-gray-600">Tasa Conversión</div>
-          <div className="text-2xl font-bold">{((metrics.traffic.conversionRate ?? 0)).toFixed(2)}%</div>
+          <div className="text-sm text-gray-800">Tasa Conversión</div>
+          <div className="text-2xl font-bold text-gray-900">{((metrics.traffic.conversionRate ?? 0)).toFixed(2)}%</div>
         </div>
       </div>
 
       {/* Tráfico */}
       <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-xl font-bold mb-4">📊 Tráfico (últimos 30 días)</h2>
+        <h2 className="text-xl font-bold mb-4 text-gray-900">📊 Tráfico (últimos 30 días)</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div>
-            <div className="text-sm text-gray-600">Impresiones</div>
-            <div className="text-xl font-bold">{metrics.traffic.totalImpressions.toLocaleString()}</div>
+            <div className="text-sm text-gray-800">Impresiones</div>
+            <div className="text-xl font-bold text-gray-900">{metrics.traffic.totalImpressions.toLocaleString()}</div>
           </div>
           <div>
-            <div className="text-sm text-gray-600">Clics</div>
-            <div className="text-xl font-bold">{metrics.traffic.totalClicks.toLocaleString()}</div>
+            <div className="text-sm text-gray-800">Clics</div>
+            <div className="text-xl font-bold text-gray-900">{metrics.traffic.totalClicks.toLocaleString()}</div>
           </div>
           <div>
-            <div className="text-sm text-gray-600">CTR</div>
-            <div className="text-xl font-bold">{((metrics.traffic.avgCtr ?? 0)).toFixed(2)}%</div>
+            <div className="text-sm text-gray-800">CTR</div>
+            <div className="text-xl font-bold text-gray-900">{((metrics.traffic.avgCtr ?? 0)).toFixed(2)}%</div>
           </div>
           <div>
-            <div className="text-sm text-gray-600">Posición Media</div>
-            <div className="text-xl font-bold">{((metrics.traffic.avgPosition ?? 0)).toFixed(1)}</div>
+            <div className="text-sm text-gray-800">Posición Media</div>
+            <div className="text-xl font-bold text-gray-900">{((metrics.traffic.avgPosition ?? 0)).toFixed(1)}</div>
           </div>
           <div>
-            <div className="text-sm text-gray-600">Conversiones</div>
+            <div className="text-sm text-gray-800">Conversiones</div>
             <div className="text-xl font-bold text-green-600">{metrics.traffic.totalConversions ?? 0}</div>
           </div>
           <div>
-            <div className="text-sm text-gray-600">Ingresos</div>
+            <div className="text-sm text-gray-800">Ingresos</div>
             <div className="text-xl font-bold text-green-600">€{((metrics.traffic.totalRevenue ?? 0)).toFixed(2)}</div>
           </div>
         </div>
@@ -190,16 +190,16 @@ export default function ProgrammaticPage() {
 
       {/* Top Páginas */}
       <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-xl font-bold mb-4">🏆 Top Páginas por Conversión</h2>
+        <h2 className="text-xl font-bold mb-4 text-gray-900">🏆 Top Páginas por Conversión</h2>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="border-b">
-                <th className="text-left p-2">Título</th>
-                <th className="text-right p-2">Sesiones</th>
-                <th className="text-right p-2">Conversiones</th>
-                <th className="text-right p-2">Tasa</th>
-                <th className="text-right p-2">Ingresos</th>
+                <th className="text-left p-2 text-gray-800 font-semibold">Título</th>
+                <th className="text-right p-2 text-gray-800 font-semibold">Sesiones</th>
+                <th className="text-right p-2 text-gray-800 font-semibold">Conversiones</th>
+                <th className="text-right p-2 text-gray-800 font-semibold">Tasa</th>
+                <th className="text-right p-2 text-gray-800 font-semibold">Ingresos</th>
               </tr>
             </thead>
             <tbody>
@@ -229,7 +229,7 @@ export default function ProgrammaticPage() {
       {/* Páginas con Bajo Rendimiento */}
       {metrics.lowPerformance.length > 0 && (
         <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-bold mb-4">⚠️ Páginas con Bajo Rendimiento (0 sesiones en 14 días)</h2>
+          <h2 className="text-xl font-bold mb-4 text-gray-900">⚠️ Páginas con Bajo Rendimiento (0 sesiones en 14 días)</h2>
           <div className="space-y-2">
             {metrics.lowPerformance.map((page) => (
               <div key={page.id} className="flex items-center justify-between p-2 border-b">
@@ -255,20 +255,20 @@ export default function ProgrammaticPage() {
 
       {/* Por Plantilla con Semáforos */}
       <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-xl font-bold mb-4">📋 Estadísticas por Plantilla (con Semáforos)</h2>
+        <h2 className="text-xl font-bold mb-4 text-gray-900">📋 Estadísticas por Plantilla (con Semáforos)</h2>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="border-b">
-                <th className="text-left p-2">Plantilla</th>
-                <th className="text-left p-2">Tipo</th>
-                <th className="text-right p-2">Total</th>
-                <th className="text-right p-2">Publicadas</th>
-                <th className="text-right p-2">Sesiones/día</th>
-                <th className="text-right p-2">Objetivo</th>
-                <th className="text-right p-2">CR %</th>
-                <th className="text-right p-2">Objetivo CR</th>
-                <th className="text-center p-2">Estado</th>
+                <th className="text-left p-2 text-gray-800 font-semibold">Plantilla</th>
+                <th className="text-left p-2 text-gray-800 font-semibold">Tipo</th>
+                <th className="text-right p-2 text-gray-800 font-semibold">Total</th>
+                <th className="text-right p-2 text-gray-800 font-semibold">Publicadas</th>
+                <th className="text-right p-2 text-gray-800 font-semibold">Sesiones/día</th>
+                <th className="text-right p-2 text-gray-800 font-semibold">Objetivo</th>
+                <th className="text-right p-2 text-gray-800 font-semibold">CR %</th>
+                <th className="text-right p-2 text-gray-800 font-semibold">Objetivo CR</th>
+                <th className="text-center p-2 text-gray-800 font-semibold">Estado</th>
               </tr>
             </thead>
             <tbody>

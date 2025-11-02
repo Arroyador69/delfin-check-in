@@ -32,8 +32,8 @@ export default function SuperAdminDashboard() {
   return (
     <div className="container mx-auto p-6">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold">👑 SuperAdmin Dashboard</h1>
-        <p className="text-gray-600 mt-2">Gestión central de la plataforma Delfín Check-in</p>
+        <h1 className="text-3xl font-bold text-gray-900">👑 SuperAdmin Dashboard</h1>
+        <p className="text-gray-700 mt-2">Gestión central de la plataforma Delfín Check-in</p>
       </div>
 
       {stats.loading ? (
@@ -48,8 +48,8 @@ export default function SuperAdminDashboard() {
             <div className="bg-white rounded-lg shadow p-6 border-l-4 border-blue-500">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Total Tenants</p>
-                  <p className="text-3xl font-bold">{stats.totalTenants}</p>
+                  <p className="text-sm text-gray-800">Total Tenants</p>
+                  <p className="text-3xl font-bold text-gray-900">{stats.totalTenants}</p>
                 </div>
                 <div className="text-4xl">🏢</div>
               </div>
@@ -58,8 +58,8 @@ export default function SuperAdminDashboard() {
             <div className="bg-white rounded-lg shadow p-6 border-l-4 border-green-500">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Activos</p>
-                  <p className="text-3xl font-bold">{stats.activeTenants}</p>
+                  <p className="text-sm text-gray-800">Activos</p>
+                  <p className="text-3xl font-bold text-gray-900">{stats.activeTenants}</p>
                 </div>
                 <div className="text-4xl">✅</div>
               </div>
@@ -68,8 +68,8 @@ export default function SuperAdminDashboard() {
             <div className="bg-white rounded-lg shadow p-6 border-l-4 border-yellow-500">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">En Prueba</p>
-                  <p className="text-3xl font-bold">{stats.trialTenants}</p>
+                  <p className="text-sm text-gray-800">En Prueba</p>
+                  <p className="text-3xl font-bold text-gray-900">{stats.trialTenants}</p>
                 </div>
                 <div className="text-4xl">⏱️</div>
               </div>
@@ -78,8 +78,8 @@ export default function SuperAdminDashboard() {
             <div className="bg-white rounded-lg shadow p-6 border-l-4 border-purple-500">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Comisiones (Mes)</p>
-                  <p className="text-3xl font-bold">{stats.commissionsThisMonth.toFixed(2)}€</p>
+                  <p className="text-sm text-gray-800">Comisiones (Mes)</p>
+                  <p className="text-3xl font-bold text-gray-900">{stats.commissionsThisMonth.toFixed(2)}€</p>
                 </div>
                 <div className="text-4xl">💰</div>
               </div>
@@ -88,7 +88,7 @@ export default function SuperAdminDashboard() {
 
           {/* Acciones Rápidas */}
           <div className="bg-white rounded-lg shadow p-6 mb-8">
-            <h2 className="text-xl font-bold mb-4">⚡ Acciones Rápidas</h2>
+            <h2 className="text-xl font-bold mb-4 text-gray-900">⚡ Acciones Rápidas</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <a 
                 href="/superadmin/tenants"
@@ -96,8 +96,8 @@ export default function SuperAdminDashboard() {
               >
                 <span className="text-2xl mr-3">📋</span>
                 <div>
-                  <p className="font-semibold">Ver Todos los Tenants</p>
-                  <p className="text-sm text-gray-600">Gestionar clientes</p>
+                  <p className="font-semibold text-gray-900">Ver Todos los Tenants</p>
+                  <p className="text-sm text-gray-700">Gestionar clientes</p>
                 </div>
               </a>
 
@@ -107,8 +107,8 @@ export default function SuperAdminDashboard() {
               >
                 <span className="text-2xl mr-3">📊</span>
                 <div>
-                  <p className="font-semibold">Analytics Global</p>
-                  <p className="text-sm text-gray-600">Métricas detalladas</p>
+                  <p className="font-semibold text-gray-900">Analytics Global</p>
+                  <p className="text-sm text-gray-700">Métricas detalladas</p>
                 </div>
               </a>
 
@@ -118,8 +118,8 @@ export default function SuperAdminDashboard() {
               >
                 <span className="text-2xl mr-3">🚨</span>
                 <div>
-                  <p className="font-semibold">Logs & Errores</p>
-                  <p className="text-sm text-gray-600">Errores del sistema</p>
+                  <p className="font-semibold text-gray-900">Logs & Errores</p>
+                  <p className="text-sm text-gray-700">Errores del sistema</p>
                 </div>
               </a>
 
@@ -129,8 +129,8 @@ export default function SuperAdminDashboard() {
               >
                 <span className="text-2xl mr-3">📄</span>
                 <div>
-                  <p className="font-semibold">Páginas Programáticas</p>
-                  <p className="text-sm text-gray-600">SEO y métricas</p>
+                  <p className="font-semibold text-gray-900">Páginas Programáticas</p>
+                  <p className="text-sm text-gray-700">SEO y métricas</p>
                 </div>
               </a>
             </div>

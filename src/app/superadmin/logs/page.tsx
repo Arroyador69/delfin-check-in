@@ -72,8 +72,8 @@ export default function LogsPage() {
       <div className="mb-8">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold">🚨 Logs del Sistema</h1>
-            <p className="text-gray-600 mt-2">Errores y eventos críticos de toda la plataforma</p>
+            <h1 className="text-3xl font-bold text-gray-900">🚨 Logs del Sistema</h1>
+            <p className="text-gray-700 mt-2">Errores y eventos críticos de toda la plataforma</p>
           </div>
           {stats && (
             <div className="flex gap-4">

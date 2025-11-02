@@ -178,7 +178,7 @@ export default function ManageTemplatesPage() {
           >
             ← Volver a Métricas
           </Link>
-          <h1 className="text-3xl font-bold">📋 Gestionar Plantillas</h1>
+          <h1 className="text-3xl font-bold text-gray-900">📋 Gestionar Plantillas</h1>
         </div>
         <button
           onClick={() => setShowCreateForm(!showCreateForm)}
@@ -191,7 +191,7 @@ export default function ManageTemplatesPage() {
       {/* Formulario de creación */}
       {showCreateForm && (
         <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-bold mb-4">Crear Nueva Plantilla</h2>
+          <h2 className="text-xl font-bold mb-4 text-gray-900">Crear Nueva Plantilla</h2>
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium mb-1">Nombre</label>
@@ -287,12 +287,12 @@ export default function ManageTemplatesPage() {
         <table className="w-full">
           <thead className="bg-gray-50">
             <tr>
-              <th className="text-left p-4">Nombre</th>
-              <th className="text-left p-4">Tipo</th>
-              <th className="text-left p-4">Longitud</th>
-              <th className="text-left p-4">Precio</th>
-              <th className="text-center p-4">Estado</th>
-              <th className="text-center p-4">Acciones</th>
+              <th className="text-left p-4 text-gray-800 font-semibold">Nombre</th>
+              <th className="text-left p-4 text-gray-800 font-semibold">Tipo</th>
+              <th className="text-left p-4 text-gray-800 font-semibold">Longitud</th>
+              <th className="text-left p-4 text-gray-800 font-semibold">Precio</th>
+              <th className="text-center p-4 text-gray-800 font-semibold">Estado</th>
+              <th className="text-center p-4 text-gray-800 font-semibold">Acciones</th>
             </tr>
           </thead>
           <tbody>
@@ -422,7 +422,7 @@ export default function ManageTemplatesPage() {
       {/* Vista detallada para edición de prompt */}
       {editing && (
         <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-bold mb-4">Editar Prompt y Variables</h3>
+          <h3 className="text-lg font-bold mb-4 text-gray-900">Editar Prompt y Variables</h3>
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium mb-1">Prompt Base</label>
@@ -462,4 +462,5 @@ export default function ManageTemplatesPage() {
     </div>
   )
 }
+
 

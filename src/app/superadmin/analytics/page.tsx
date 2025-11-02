@@ -72,8 +72,8 @@ export default function AnalyticsPage() {
   return (
     <div className="container mx-auto p-6">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold">📊 Analytics Global</h1>
-        <p className="text-gray-600 mt-2">Métricas y estadísticas de toda la plataforma</p>
+        <h1 className="text-3xl font-bold text-gray-900">📊 Analytics Global</h1>
+        <p className="text-gray-700 mt-2">Métricas y estadísticas de toda la plataforma</p>
       </div>
 
       {loading ? (
@@ -88,9 +88,9 @@ export default function AnalyticsPage() {
             <div className="bg-white rounded-lg shadow p-6 border-l-4 border-blue-500">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Total Tenants</p>
-                  <p className="text-3xl font-bold">{analytics.totalTenants}</p>
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-sm text-gray-800">Total Tenants</p>
+                  <p className="text-3xl font-bold text-gray-900">{analytics.totalTenants}</p>
+                  <p className="text-xs text-gray-700 mt-1">
                     {analytics.activeTenants} activos, {analytics.trialTenants} en prueba
                   </p>
                 </div>
@@ -101,9 +101,9 @@ export default function AnalyticsPage() {
             <div className="bg-white rounded-lg shadow p-6 border-l-4 border-green-500">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Reservas Mes</p>
-                  <p className="text-3xl font-bold">{analytics.reservationsThisMonth}</p>
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-sm text-gray-800">Reservas Mes</p>
+                  <p className="text-3xl font-bold text-gray-900">{analytics.reservationsThisMonth}</p>
+                  <p className="text-xs text-gray-700 mt-1">
                     {analytics.totalReservations} total
                   </p>
                 </div>
@@ -114,9 +114,9 @@ export default function AnalyticsPage() {
             <div className="bg-white rounded-lg shadow p-6 border-l-4 border-purple-500">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Comisiones Mes</p>
-                  <p className="text-3xl font-bold">{analytics.commissionsThisMonth.toFixed(2)}€</p>
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-sm text-gray-800">Comisiones Mes</p>
+                  <p className="text-3xl font-bold text-gray-900">{analytics.commissionsThisMonth.toFixed(2)}€</p>
+                  <p className="text-xs text-gray-700 mt-1">
                     {analytics.totalCommissions.toFixed(2)}€ total
                   </p>
                 </div>
@@ -127,9 +127,9 @@ export default function AnalyticsPage() {
             <div className="bg-white rounded-lg shadow p-6 border-l-4 border-yellow-500">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Ticket Promedio</p>
-                  <p className="text-3xl font-bold">{analytics.averageReservationValue.toFixed(2)}€</p>
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-sm text-gray-800">Ticket Promedio</p>
+                  <p className="text-3xl font-bold text-gray-900">{analytics.averageReservationValue.toFixed(2)}€</p>
+                  <p className="text-xs text-gray-700 mt-1">
                     Por reserva
                   </p>
                 </div>
@@ -140,7 +140,7 @@ export default function AnalyticsPage() {
 
           {/* Reservas Directas */}
           <div className="bg-white rounded-lg shadow p-6 mb-8">
-            <h2 className="text-xl font-bold mb-4">🎫 Reservas Directas</h2>
+            <h2 className="text-xl font-bold mb-4 text-gray-900">🎫 Reservas Directas</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <p className="text-sm text-blue-600 font-medium">Total Reservas Directas</p>
@@ -155,21 +155,21 @@ export default function AnalyticsPage() {
           {/* Top Tenants por Reservas */}
           {analytics.topTenantsByReservations.length > 0 && (
             <div className="bg-white rounded-lg shadow p-6 mb-8">
-              <h2 className="text-xl font-bold mb-4">🏆 Top Tenants por Reservas (Este Mes)</h2>
+              <h2 className="text-xl font-bold mb-4 text-gray-900">🏆 Top Tenants por Reservas (Este Mes)</h2>
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                         Tenant
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                         Estado
                       </th>
-                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-700 uppercase tracking-wider">
                         Reservas
                       </th>
-                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-700 uppercase tracking-wider">
                         Ingresos
                       </th>
                     </tr>
@@ -209,7 +209,7 @@ export default function AnalyticsPage() {
           {/* Crecimiento de Tenants */}
           {analytics.tenantGrowth.length > 0 && (
             <div className="bg-white rounded-lg shadow p-6 mb-8">
-              <h2 className="text-xl font-bold mb-4">📈 Crecimiento de Tenants (Últimos 12 Meses)</h2>
+              <h2 className="text-xl font-bold mb-4 text-gray-900">📈 Crecimiento de Tenants (Últimos 12 Meses)</h2>
               <div className="overflow-x-auto">
                 <div className="min-w-[600px]">
                   <div className="flex items-end justify-between space-x-2 h-64">
@@ -242,7 +242,7 @@ export default function AnalyticsPage() {
           {/* Crecimiento de Reservas */}
           {analytics.reservationsGrowth.length > 0 && (
             <div className="bg-white rounded-lg shadow p-6 mb-8">
-              <h2 className="text-xl font-bold mb-4">📊 Crecimiento de Reservas (Últimos 12 Meses)</h2>
+              <h2 className="text-xl font-bold mb-4 text-gray-900">📊 Crecimiento de Reservas (Últimos 12 Meses)</h2>
               <div className="overflow-x-auto">
                 <div className="min-w-[600px]">
                   <div className="flex items-end justify-between space-x-2 h-64">
