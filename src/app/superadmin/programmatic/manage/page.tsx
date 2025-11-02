@@ -29,6 +29,7 @@ export default function ManageTemplatesPage() {
     target_length: 800,
     active: true
   })
+  const [variablesSchemaText, setVariablesSchemaText] = useState<string>('{}')
 
   useEffect(() => {
     fetchTemplates()
@@ -68,6 +69,7 @@ export default function ManageTemplatesPage() {
           target_length: 800,
           active: true
         })
+        setVariablesSchemaText('{}')
       } else {
         const error = await response.json()
         alert(error.error || 'Error creando plantilla')
@@ -123,6 +125,7 @@ export default function ManageTemplatesPage() {
       target_length: template.target_length,
       active: template.active
     })
+    setVariablesSchemaText(JSON.stringify(template.variables_schema || {}, null, 2))
   }
 
   const createTestPage = async (templateId: string) => {
@@ -283,12 +286,28 @@ export default function ManageTemplatesPage() {
             <div>
               <label className="block text-sm font-medium mb-1 text-gray-700">Variables Schema (JSON)</label>
               <textarea
-                value={JSON.stringify(formData.variables_schema || {}, null, 2)}
+                value={variablesSchemaText}
                 onChange={(e) => {
+                  const newValue = e.target.value
+                  setVariablesSchemaText(newValue)
+                  // Intentar parsear el JSON y actualizar formData solo si es válido
                   try {
-                    const parsed = JSON.parse(e.target.value)
+                    const parsed = JSON.parse(newValue)
                     setFormData({ ...formData, variables_schema: parsed })
-                  } catch {}
+                  } catch {
+                    // Si no es válido, simplemente no actualizamos variables_schema
+                    // pero permitimos que el usuario siga editando
+                  }
+                }}
+                onBlur={() => {
+                  // Al perder el foco, intentar parsear una vez más
+                  try {
+                    const parsed = JSON.parse(variablesSchemaText)
+                    setFormData({ ...formData, variables_schema: parsed })
+                  } catch {
+                    // Si no es válido, resetear al último valor válido
+                    setVariablesSchemaText(JSON.stringify(formData.variables_schema || {}, null, 2))
+                  }
                 }}
                 className="w-full border rounded px-3 py-2 font-mono text-sm"
                 rows={6}
@@ -413,6 +432,7 @@ export default function ManageTemplatesPage() {
                               target_length: 800,
                               active: true
                             })
+                            setVariablesSchemaText('{}')
                           }}
                           className="px-3 py-1 bg-gray-600 text-white rounded text-sm hover:bg-gray-700"
                         >
@@ -461,12 +481,28 @@ export default function ManageTemplatesPage() {
             <div>
               <label className="block text-sm font-medium mb-1 text-gray-700">Variables Schema (JSON)</label>
               <textarea
-                value={JSON.stringify(formData.variables_schema || {}, null, 2)}
+                value={variablesSchemaText}
                 onChange={(e) => {
+                  const newValue = e.target.value
+                  setVariablesSchemaText(newValue)
+                  // Intentar parsear el JSON y actualizar formData solo si es válido
                   try {
-                    const parsed = JSON.parse(e.target.value)
+                    const parsed = JSON.parse(newValue)
                     setFormData({ ...formData, variables_schema: parsed })
-                  } catch {}
+                  } catch {
+                    // Si no es válido, simplemente no actualizamos variables_schema
+                    // pero permitimos que el usuario siga editando
+                  }
+                }}
+                onBlur={() => {
+                  // Al perder el foco, intentar parsear una vez más
+                  try {
+                    const parsed = JSON.parse(variablesSchemaText)
+                    setFormData({ ...formData, variables_schema: parsed })
+                  } catch {
+                    // Si no es válido, resetear al último valor válido
+                    setVariablesSchemaText(JSON.stringify(formData.variables_schema || {}, null, 2))
+                  }
                 }}
                 className="w-full border rounded px-3 py-2 font-mono text-sm"
                 rows={8}
