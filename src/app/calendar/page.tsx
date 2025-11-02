@@ -114,9 +114,21 @@ export default function CalendarPage() {
     const out: string[] = []
     const s = new Date(start)
     const e = new Date(end)
+    
+    // Calcular offset: convertir getDay() (domingo=0) a offset de lunes (lunes=0)
+    const firstDayOfMonth = new Date(s.getFullYear(), s.getMonth(), 1)
+    const startWeekday = (firstDayOfMonth.getDay() + 6) % 7 // lunes=0
+    
+    // Añadir celdas vacías al inicio si el mes no empieza en lunes
+    for (let i = 0; i < startWeekday; i++) {
+      out.push('')
+    }
+    
+    // Añadir los días del mes
     for (let d = new Date(s); d < e; d.setDate(d.getDate() + 1)) {
       out.push(formatDate(d))
     }
+    
     return out
   }, [start, end])
 
@@ -243,7 +255,7 @@ export default function CalendarPage() {
           {/* Contenedor con scroll horizontal en móvil */}
           <div className="overflow-x-auto -mx-2 sm:mx-0 -my-2 sm:my-0 lg:overflow-x-visible">
             <div className="inline-grid grid-cols-7 gap-2 sm:gap-3 min-w-full sm:min-w-0 w-max sm:w-full">
-              {['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].map(day => (
+              {['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map(day => (
                 <div key={day} className="text-center font-bold text-gray-700 py-2 text-sm sm:text-base px-1">
                   {day}
                 </div>

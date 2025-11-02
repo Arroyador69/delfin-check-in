@@ -66,7 +66,11 @@ export async function GET(req: NextRequest) {
     const traffic = await sql.query(trafficQuery, []);
 
     // Top páginas por conversión
-    const topPages = await sql`
+    const topPagesParams: any[] = [];
+    const topPagesWhere = type ? `AND pp.type = $${topPagesParams.length + 1}` : '';
+    if (type) topPagesParams.push(type);
+    
+    const topPagesQuery = `
       SELECT 
         pp.id,
         pp.slug,
@@ -82,14 +86,15 @@ export async function GET(req: NextRequest) {
         END as conversion_rate
       FROM programmatic_pages pp
       LEFT JOIN programmatic_page_metrics ppm ON ppm.page_id = pp.id
-        AND ppm.metric_date >= CURRENT_DATE - (${days} || ' days')::interval
+        AND ppm.metric_date >= CURRENT_DATE - INTERVAL '${days} days'
       WHERE pp.status = 'published'
-        ${type ? sql`AND pp.type = ${type}` : sql``}
+        ${topPagesWhere}
       GROUP BY pp.id, pp.slug, pp.title, pp.type
       HAVING SUM(ppm.sessions) > 0
       ORDER BY conversion_rate DESC, total_conversions DESC
       LIMIT 10
     `;
+    const topPages = await sql.query(topPagesQuery, topPagesParams);
 
     // Páginas con bajo rendimiento (0 sesiones en 14 días)
     const lowPerfParams: any[] = [];
