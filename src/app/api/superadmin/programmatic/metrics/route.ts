@@ -11,8 +11,13 @@ export async function GET(req: NextRequest) {
     const days = parseInt(searchParams.get('days') || '30');
     const type = searchParams.get('type');
 
-    // KPIs generales
-    const kpis = await sql`
+    // Construir WHERE clause dinámicamente
+    const whereClause = type ? `WHERE type = $1` : '';
+    const params: any[] = [];
+    if (type) params.push(type);
+
+    // KPIs generales - usar sql.query para INTERVAL dinámico
+    const kpisQuery = `
       SELECT 
         COUNT(*) as total_pages,
         COUNT(*) FILTER (WHERE status = 'published') as published_pages,
@@ -24,11 +29,16 @@ export async function GET(req: NextRequest) {
         AVG(local_signals_count) as avg_local_signals,
         COUNT(*) FILTER (WHERE seo_score < 60) as low_seo_pages
       FROM programmatic_pages
-      ${type ? sql`WHERE type = ${type}` : sql``}
+      ${whereClause}
     `;
+    const kpis = await sql.query(kpisQuery, params);
 
     // Métricas de indexación
-    const indexation = await sql`
+    const indexationParams: any[] = [];
+    const indexationWhere = type ? `AND pp.type = $${indexationParams.length + 1}` : '';
+    if (type) indexationParams.push(type);
+    
+    const indexationQuery = `
       SELECT 
         COUNT(*) FILTER (WHERE is_indexed = true) as indexed_count,
         COUNT(*) FILTER (WHERE is_indexed = false) as not_indexed_count,
@@ -36,11 +46,12 @@ export async function GET(req: NextRequest) {
       FROM programmatic_page_metrics ppm
       JOIN programmatic_pages pp ON pp.id = ppm.page_id
       WHERE ppm.metric_date >= CURRENT_DATE - INTERVAL '${days} days'
-        ${type ? sql`AND pp.type = ${type}` : sql``}
+        ${indexationWhere}
     `;
+    const indexation = await sql.query(indexationQuery, indexationParams);
 
     // Métricas de tráfico (últimos 30 días)
-    const traffic = await sql`
+    const trafficQuery = `
       SELECT 
         SUM(sessions) as total_sessions,
         SUM(clicks) as total_clicks,
@@ -52,6 +63,7 @@ export async function GET(req: NextRequest) {
       FROM programmatic_page_metrics
       WHERE metric_date >= CURRENT_DATE - INTERVAL '${days} days'
     `;
+    const traffic = await sql.query(trafficQuery, []);
 
     // Top páginas por conversión
     const topPages = await sql`
@@ -80,7 +92,11 @@ export async function GET(req: NextRequest) {
     `;
 
     // Páginas con bajo rendimiento (0 sesiones en 14 días)
-    const lowPerformance = await sql`
+    const lowPerfParams: any[] = [];
+    const lowPerfWhere = type ? `AND pp.type = $${lowPerfParams.length + 1}` : '';
+    if (type) lowPerfParams.push(type);
+    
+    const lowPerformanceQuery = `
       SELECT 
         pp.id,
         pp.slug,
@@ -93,12 +109,13 @@ export async function GET(req: NextRequest) {
         AND ppm.metric_date >= CURRENT_DATE - INTERVAL '14 days'
       WHERE pp.status = 'published'
         AND pp.published_at <= CURRENT_DATE - INTERVAL '14 days'
-        ${type ? sql`AND pp.type = ${type}` : sql``}
+        ${lowPerfWhere}
       GROUP BY pp.id, pp.slug, pp.title, pp.type, pp.published_at
       HAVING COALESCE(SUM(ppm.sessions), 0) = 0
       ORDER BY pp.published_at ASC
       LIMIT 20
     `;
+    const lowPerformance = await sql.query(lowPerformanceQuery, lowPerfParams);
 
       // Cobertura por plantilla con KPIs de rendimiento
       const byTemplate = await sql`
@@ -130,7 +147,7 @@ export async function GET(req: NextRequest) {
       `;
 
     // Crecimiento de páginas por día (últimos 30 días)
-    const growth = await sql`
+    const growthQuery = `
       SELECT 
         DATE(created_at) as date,
         COUNT(*) as pages_created,
@@ -140,6 +157,7 @@ export async function GET(req: NextRequest) {
       GROUP BY DATE(created_at)
       ORDER BY date ASC
     `;
+    const growth = await sql.query(growthQuery, []);
 
     return NextResponse.json({
       kpis: {
