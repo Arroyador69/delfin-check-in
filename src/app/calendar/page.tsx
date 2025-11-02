@@ -260,7 +260,12 @@ export default function CalendarPage() {
                   {day}
                 </div>
               ))}
-              {days.map(day => {
+              {days.map((day, idx) => {
+                // Si el día está vacío (celda de padding), renderizar celda vacía
+                if (!day) {
+                  return <div key={`empty-${idx}`} className="border-2 rounded-xl p-2 sm:p-3 min-h-[112px] w-[100px] sm:w-auto bg-gray-50 border-gray-100"></div>
+                }
+                
                 const a = availabilityByDate.get(day)
                 const evs = eventsByDate.get(day) || []
                 const blocked = a && a.available === false
