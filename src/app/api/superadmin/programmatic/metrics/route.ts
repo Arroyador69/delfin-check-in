@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
       SELECT 
         COUNT(*) FILTER (WHERE is_indexed = true) as indexed_count,
         COUNT(*) FILTER (WHERE is_indexed = false) as not_indexed_count,
-        AVG(EXTRACT(EPOCH FROM (indexation_date - published_at))/86400) as avg_days_to_index
+        AVG(EXTRACT(EPOCH FROM (indexation_date::timestamp - published_at::timestamp))/86400) as avg_days_to_index
       FROM programmatic_page_metrics ppm
       JOIN programmatic_pages pp ON pp.id = ppm.page_id
       WHERE ppm.metric_date >= CURRENT_DATE - INTERVAL '${days} days'
@@ -132,9 +132,9 @@ export async function GET(req: NextRequest) {
           AVG(pp.seo_score) as avg_seo_score,
           AVG(pp.local_signals_count) as avg_local_signals,
           -- KPIs de rendimiento (últimos 30 días)
-          AVG(ppm.sessions::decimal / NULLIF(EXTRACT(DAY FROM (CURRENT_DATE - ppm.metric_date)), 0)) as avg_sessions_per_day,
+          AVG(ppm.sessions::decimal / NULLIF(GREATEST((CURRENT_DATE - ppm.metric_date)::integer, 1), 0)) as avg_sessions_per_day,
           AVG(CASE WHEN ppm.sessions > 0 THEN (ppm.conversions::decimal / ppm.sessions) * 100 ELSE 0 END) as avg_conversion_rate,
-          COUNT(*) FILTER (WHERE ppm.sessions::decimal / NULLIF(EXTRACT(DAY FROM (CURRENT_DATE - ppm.metric_date)), 0) < 
+          COUNT(*) FILTER (WHERE ppm.sessions::decimal / NULLIF(GREATEST((CURRENT_DATE - ppm.metric_date)::integer, 1), 0) < 
             CASE ct.type
               WHEN 'local' THEN 1.7
               WHEN 'problem-solution' THEN 1.2
