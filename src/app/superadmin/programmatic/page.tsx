@@ -141,19 +141,19 @@ export default function ProgrammaticPage() {
         </div>
         <div className="bg-white rounded-lg shadow p-4">
           <div className="text-sm text-gray-600">SEO Promedio</div>
-          <div className="text-2xl font-bold">{metrics.kpis.avgSeoScore.toFixed(1)}/100</div>
+          <div className="text-2xl font-bold">{((metrics.kpis.avgSeoScore ?? 0)).toFixed(1)}/100</div>
         </div>
         <div className="bg-white rounded-lg shadow p-4">
           <div className="text-sm text-gray-600">Tasa Indexación</div>
-          <div className="text-2xl font-bold">{metrics.indexation.indexationRate.toFixed(1)}%</div>
+          <div className="text-2xl font-bold">{((metrics.indexation.indexationRate ?? 0)).toFixed(1)}%</div>
         </div>
         <div className="bg-white rounded-lg shadow p-4">
           <div className="text-sm text-gray-600">Sesiones (30d)</div>
-          <div className="text-2xl font-bold">{metrics.traffic.totalSessions.toLocaleString()}</div>
+          <div className="text-2xl font-bold">{(metrics.traffic.totalSessions ?? 0).toLocaleString()}</div>
         </div>
         <div className="bg-white rounded-lg shadow p-4">
           <div className="text-sm text-gray-600">Tasa Conversión</div>
-          <div className="text-2xl font-bold">{metrics.traffic.conversionRate.toFixed(2)}%</div>
+          <div className="text-2xl font-bold">{((metrics.traffic.conversionRate ?? 0)).toFixed(2)}%</div>
         </div>
       </div>
 
@@ -171,19 +171,19 @@ export default function ProgrammaticPage() {
           </div>
           <div>
             <div className="text-sm text-gray-600">CTR</div>
-            <div className="text-xl font-bold">{metrics.traffic.avgCtr.toFixed(2)}%</div>
+            <div className="text-xl font-bold">{((metrics.traffic.avgCtr ?? 0)).toFixed(2)}%</div>
           </div>
           <div>
             <div className="text-sm text-gray-600">Posición Media</div>
-            <div className="text-xl font-bold">{metrics.traffic.avgPosition.toFixed(1)}</div>
+            <div className="text-xl font-bold">{((metrics.traffic.avgPosition ?? 0)).toFixed(1)}</div>
           </div>
           <div>
             <div className="text-sm text-gray-600">Conversiones</div>
-            <div className="text-xl font-bold text-green-600">{metrics.traffic.totalConversions}</div>
+            <div className="text-xl font-bold text-green-600">{metrics.traffic.totalConversions ?? 0}</div>
           </div>
           <div>
             <div className="text-sm text-gray-600">Ingresos</div>
-            <div className="text-xl font-bold text-green-600">€{metrics.traffic.totalRevenue.toFixed(2)}</div>
+            <div className="text-xl font-bold text-green-600">€{((metrics.traffic.totalRevenue ?? 0)).toFixed(2)}</div>
           </div>
         </div>
       </div>
@@ -215,10 +215,10 @@ export default function ProgrammaticPage() {
                       {page.title}
                     </a>
                   </td>
-                  <td className="text-right p-2">{page.totalSessions.toLocaleString()}</td>
-                  <td className="text-right p-2 text-green-600 font-bold">{page.totalConversions}</td>
-                  <td className="text-right p-2">{page.conversionRate.toFixed(2)}%</td>
-                  <td className="text-right p-2">€{page.totalRevenue.toFixed(2)}</td>
+                  <td className="text-right p-2">{(page.totalSessions ?? 0).toLocaleString()}</td>
+                  <td className="text-right p-2 text-green-600 font-bold">{page.totalConversions ?? 0}</td>
+                  <td className="text-right p-2">{((page.conversionRate ?? 0)).toFixed(2)}%</td>
+                  <td className="text-right p-2">€{((page.totalRevenue ?? 0)).toFixed(2)}</td>
                 </tr>
               ))}
             </tbody>
@@ -283,17 +283,17 @@ export default function ProgrammaticPage() {
                   <td className="text-right p-2">{template.totalPages}</td>
                   <td className="text-right p-2">{template.published}</td>
                   <td className={`text-right p-2 font-bold ${
-                    template.avgSessionsPerDay >= template.targetSessionsPerDay ? 'text-green-600' :
-                    template.avgSessionsPerDay >= template.targetSessionsPerDay * 0.7 ? 'text-yellow-600' : 'text-red-600'
+                    (template.avgSessionsPerDay ?? 0) >= template.targetSessionsPerDay ? 'text-green-600' :
+                    (template.avgSessionsPerDay ?? 0) >= template.targetSessionsPerDay * 0.7 ? 'text-yellow-600' : 'text-red-600'
                   }`}>
-                    {template.avgSessionsPerDay.toFixed(2)}
+                    {((template.avgSessionsPerDay ?? 0)).toFixed(2)}
                   </td>
                   <td className="text-right p-2 text-gray-500">{template.targetSessionsPerDay}</td>
                   <td className={`text-right p-2 font-bold ${
-                    template.avgConversionRate >= template.targetConversionRate ? 'text-green-600' :
-                    template.avgConversionRate >= template.targetConversionRate * 0.7 ? 'text-yellow-600' : 'text-red-600'
+                    (template.avgConversionRate ?? 0) >= template.targetConversionRate ? 'text-green-600' :
+                    (template.avgConversionRate ?? 0) >= template.targetConversionRate * 0.7 ? 'text-yellow-600' : 'text-red-600'
                   }`}>
-                    {template.avgConversionRate.toFixed(2)}%
+                    {((template.avgConversionRate ?? 0)).toFixed(2)}%
                   </td>
                   <td className="text-right p-2 text-gray-500">{template.targetConversionRate}%</td>
                   <td className="text-center p-2">

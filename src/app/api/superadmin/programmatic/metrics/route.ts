@@ -166,35 +166,35 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       kpis: {
-        totalPages: parseInt(kpis.rows[0]?.total_pages || '0'),
-        publishedPages: parseInt(kpis.rows[0]?.published_pages || '0'),
-        indexedPages: parseInt(kpis.rows[0]?.indexed_pages || '0'),
-        scheduledPages: parseInt(kpis.rows[0]?.scheduled_pages || '0'),
-        createdLastDays: parseInt(kpis.rows[0]?.created_last_days || '0'),
-        publishedLastDays: parseInt(kpis.rows[0]?.published_last_days || '0'),
-        avgSeoScore: parseFloat(kpis.rows[0]?.avg_seo_score || '0'),
-        avgLocalSignals: parseFloat(kpis.rows[0]?.avg_local_signals || '0'),
-        lowSeoPages: parseInt(kpis.rows[0]?.low_seo_pages || '0'),
+        totalPages: parseInt(kpis.rows[0]?.total_pages || '0') || 0,
+        publishedPages: parseInt(kpis.rows[0]?.published_pages || '0') || 0,
+        indexedPages: parseInt(kpis.rows[0]?.indexed_pages || '0') || 0,
+        scheduledPages: parseInt(kpis.rows[0]?.scheduled_pages || '0') || 0,
+        createdLastDays: parseInt(kpis.rows[0]?.created_last_days || '0') || 0,
+        publishedLastDays: parseInt(kpis.rows[0]?.published_last_days || '0') || 0,
+        avgSeoScore: parseFloat(kpis.rows[0]?.avg_seo_score || '0') || 0,
+        avgLocalSignals: parseFloat(kpis.rows[0]?.avg_local_signals || '0') || 0,
+        lowSeoPages: parseInt(kpis.rows[0]?.low_seo_pages || '0') || 0,
       },
       indexation: {
-        indexedCount: parseInt(indexation.rows[0]?.indexed_count || '0'),
-        notIndexedCount: parseInt(indexation.rows[0]?.not_indexed_count || '0'),
-        avgDaysToIndex: parseFloat(indexation.rows[0]?.avg_days_to_index || '0'),
+        indexedCount: parseInt(indexation.rows[0]?.indexed_count || '0') || 0,
+        notIndexedCount: parseInt(indexation.rows[0]?.not_indexed_count || '0') || 0,
+        avgDaysToIndex: parseFloat(indexation.rows[0]?.avg_days_to_index || '0') || 0,
         indexationRate: indexation.rows[0]?.indexed_count 
           ? (parseInt(indexation.rows[0].indexed_count) / 
-             (parseInt(indexation.rows[0].indexed_count) + parseInt(indexation.rows[0].not_indexed_count || '0'))) * 100
+             (parseInt(indexation.rows[0].indexed_count) + parseInt(indexation.rows[0].not_indexed_count || '0'))) * 100 || 0
           : 0
       },
       traffic: {
-        totalSessions: parseInt(traffic.rows[0]?.total_sessions || '0'),
-        totalClicks: parseInt(traffic.rows[0]?.total_clicks || '0'),
-        totalImpressions: parseInt(traffic.rows[0]?.total_impressions || '0'),
-        avgCtr: parseFloat(traffic.rows[0]?.avg_ctr || '0') * 100,
-        avgPosition: parseFloat(traffic.rows[0]?.avg_position || '0'),
-        totalConversions: parseInt(traffic.rows[0]?.total_conversions || '0'),
-        totalRevenue: parseFloat(traffic.rows[0]?.total_revenue || '0'),
-        conversionRate: traffic.rows[0]?.total_sessions 
-          ? (parseInt(traffic.rows[0].total_conversions || '0') / parseInt(traffic.rows[0].total_sessions)) * 100
+        totalSessions: parseInt(traffic.rows[0]?.total_sessions || '0') || 0,
+        totalClicks: parseInt(traffic.rows[0]?.total_clicks || '0') || 0,
+        totalImpressions: parseInt(traffic.rows[0]?.total_impressions || '0') || 0,
+        avgCtr: (parseFloat(traffic.rows[0]?.avg_ctr || '0') || 0) * 100,
+        avgPosition: parseFloat(traffic.rows[0]?.avg_position || '0') || 0,
+        totalConversions: parseInt(traffic.rows[0]?.total_conversions || '0') || 0,
+        totalRevenue: parseFloat(traffic.rows[0]?.total_revenue || '0') || 0,
+        conversionRate: traffic.rows[0]?.total_sessions && parseInt(traffic.rows[0].total_sessions) > 0
+          ? (parseInt(traffic.rows[0].total_conversions || '0') / parseInt(traffic.rows[0].total_sessions)) * 100 || 0
           : 0
       },
       topPages: topPages.rows.map(row => ({
@@ -202,10 +202,10 @@ export async function GET(req: NextRequest) {
         slug: row.slug,
         title: row.title,
         type: row.type,
-        totalSessions: parseInt(row.total_sessions || '0'),
-        totalConversions: parseInt(row.total_conversions || '0'),
-        totalRevenue: parseFloat(row.total_revenue || '0'),
-        conversionRate: parseFloat(row.conversion_rate || '0')
+        totalSessions: parseInt(row.total_sessions || '0') || 0,
+        totalConversions: parseInt(row.total_conversions || '0') || 0,
+        totalRevenue: parseFloat(row.total_revenue || '0') || 0,
+        conversionRate: parseFloat(row.conversion_rate || '0') || 0
       })),
       lowPerformance: lowPerformance.rows.map(row => ({
         id: row.id,
@@ -224,8 +224,8 @@ export async function GET(req: NextRequest) {
           'comparison': 0.8
         }[type] || 0;
 
-        const avgSessions = parseFloat(row.avg_sessions_per_day || '0');
-        const avgConversion = parseFloat(row.avg_conversion_rate || '0');
+        const avgSessions = parseFloat(row.avg_sessions_per_day || '0') || 0;
+        const avgConversion = parseFloat(row.avg_conversion_rate || '0') || 0;
         
         // Semáforo de rendimiento
         let performanceStatus: 'green' | 'yellow' | 'red' = 'green';
@@ -242,9 +242,9 @@ export async function GET(req: NextRequest) {
           published: parseInt(row.published || '0'),
           avgSeoScore: parseFloat(row.avg_seo_score || '0'),
           avgLocalSignals: parseFloat(row.avg_local_signals || '0'),
-          avgSessionsPerDay: avgSessions,
-          targetSessionsPerDay: targetSessions,
-          avgConversionRate: avgConversion,
+          avgSessionsPerDay: avgSessions || 0,
+          targetSessionsPerDay: targetSessions || 0,
+          avgConversionRate: avgConversion || 0,
           targetConversionRate: {
             'local': 0.30,
             'problem-solution': 0.45,
