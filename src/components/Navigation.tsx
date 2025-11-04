@@ -83,10 +83,10 @@ export default function Navigation() {
         </div>
       </div>
 
-      {/* Menú desplegable (se muestra en cualquier tamaño cuando está abierto) */}
+      {/* Menú desplegable adaptativo (alto de pantalla y scroll) */}
       {mobileMenuOpen && (
-        <div>
-          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white border-t shadow">
+        <div className="fixed inset-x-0 top-16 bottom-0 bg-white border-t shadow overflow-y-auto">
+          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
             {navigation.map((item) => {
               const isActive = pathname === item.href;
               return (
