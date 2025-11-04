@@ -47,6 +47,7 @@ export default function Navigation() {
     { name: 'Dashboard SuperAdmin', href: '/superadmin', icon: Crown },
     { name: 'Tenants', href: '/superadmin/tenants', icon: Users },
     { name: 'Analytics', href: '/superadmin/analytics', icon: TrendingUp },
+    { name: 'Páginas Programáticas', href: '/superadmin/programmatic', icon: FileText },
     { name: 'Logs', href: '/superadmin/logs', icon: Shield },
   ];
 
