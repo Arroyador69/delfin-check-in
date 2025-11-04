@@ -280,14 +280,21 @@ function generatePriceCalculatorHTML(): string {
     </div>
     
     <div id="calcResults" style="background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); border-radius: 16px; padding: 32px; text-align: center; border: 2px solid #e2e8f0;">
-      <div style="font-size: 36px; font-weight: 900; color: #2563eb; margin-bottom: 12px;" id="calcTotal">149,90€/año</div>
-      <div style="color: #64748b; margin-bottom: 16px; font-size: 16px;" id="calcPerProperty">14,99€ por propiedad</div>
+      <div style="font-size: 36px; font-weight: 900; color: #2563eb; margin-bottom: 12px;" id="calcTotal">181,38€/año</div>
+      <div style="color: #64748b; margin-bottom: 8px; font-size: 14px;">(IVA incluido)</div>
+      <div style="color: #64748b; margin-bottom: 8px; font-size: 16px;" id="calcPerProperty">14,99€ por propiedad</div>
+      <div style="margin-bottom: 12px; padding: 8px 12px; background: rgba(0,0,0,0.02); border-radius: 8px; font-size: 12px; color: #64748b;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+          <span>Base imponible:</span>
+          <span id="calcBase" style="font-weight: 600;">149,90€</span>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+          <span>IVA (21%):</span>
+          <span id="calcIVA" style="font-weight: 600;">31,48€</span>
+        </div>
+      </div>
       <div style="color: #16a34a; font-weight: 700; font-size: 18px; padding: 8px 16px; background: rgba(22, 163, 74, 0.1); border-radius: 20px; display: inline-block;" id="calcSavings">Ahorras 29,90€ al año</div>
     </div>
-    
-    <p style="text-align: center; margin-top: 16px; font-size: 14px; color: #64748b;">
-      <strong>IVA no incluido</strong>
-    </p>
     
     <button onclick="openStripePayment()" 
             style="width: 100%; margin-top: 24px; padding: 16px; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white; border: none; border-radius: 12px; font-size: 18px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);"
@@ -418,8 +425,15 @@ function updateCalc() {
     savingsText = \`Ahorras \${totalSavings.toFixed(2)}€ al año\`;
   }
   
-  document.getElementById('calcTotal').textContent = \`\${total.toFixed(2)}€\${periodText}\`;
+  // Calcular IVA
+  const base = total;
+  const iva = total * 0.21;
+  const totalWithVat = total * 1.21;
+  
+  document.getElementById('calcTotal').textContent = \`\${totalWithVat.toFixed(2)}€\${periodText}\`;
   document.getElementById('calcPerProperty').textContent = \`\${pricePerProperty.toFixed(2)}€ por propiedad\`;
+  document.getElementById('calcBase').textContent = \`\${base.toFixed(2)}€\`;
+  document.getElementById('calcIVA').textContent = \`\${iva.toFixed(2)}€\`;
   document.getElementById('calcSavings').textContent = savingsText;
 }
 

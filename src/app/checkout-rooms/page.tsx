@@ -299,12 +299,19 @@ function CheckoutRoomsContent() {
                   <span className="text-gray-600">Frecuencia:</span>
                   <span className="font-semibold">{isYearly ? 'Anual' : 'Mensual'}</span>
                 </div>
-                <div className="pt-2 border-t border-gray-300 flex justify-between">
-                  <span className="font-semibold text-gray-900">Total:</span>
-                  <span className="text-2xl font-bold text-blue-600">{totalPrice.toFixed(2)}€</span>
-                </div>
-                <div className="text-xs text-gray-500 text-center mt-2">
-                  <strong>IVA no incluido</strong>
+                <div className="pt-2 border-t border-gray-300 space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Base imponible:</span>
+                    <span className="font-semibold text-gray-900">{totalPrice.toFixed(2)}€</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">IVA (21%):</span>
+                    <span className="font-semibold text-gray-900">{(totalPrice * 0.21).toFixed(2)}€</span>
+                  </div>
+                  <div className="pt-2 border-t border-gray-300 flex justify-between">
+                    <span className="font-semibold text-gray-900">Total:</span>
+                    <span className="text-2xl font-bold text-blue-600">{(totalPrice * 1.21).toFixed(2)}€</span>
+                  </div>
                 </div>
               </div>
 
