@@ -4,6 +4,7 @@ import { buildPvXml, PvSolicitud } from '@/lib/mir-xml-official';
 import { buildRhXml, RhSolicitud } from '@/lib/mir-xml-rh';
 import { insertMirComunicacion, MirComunicacion } from '@/lib/mir-db';
 import { sql } from '@vercel/postgres';
+import { logError } from '@/lib/error-logger';
 
 export async function POST(req: NextRequest) {
   try {
@@ -227,6 +228,20 @@ export async function POST(req: NextRequest) {
     } catch (errorPV) {
       console.error('❌ Error enviando PV:', errorPV);
       resultados.pv = { ok: false, error: errorPV instanceof Error ? errorPV.message : 'Error desconocido' };
+      
+      // Registrar error en logs del superadmin
+      await logError({
+        level: 'error',
+        message: `Error enviando PV al MIR: ${errorPV instanceof Error ? errorPV.message : 'Error desconocido'}`,
+        error: errorPV,
+        tenantId: tenantId !== 'default' ? tenantId : null,
+        url: '/api/ministerio/auto-envio-dual',
+        metadata: {
+          referencia: referenciaNorm,
+          tipo: 'PV',
+          tenantId,
+        },
+      });
     }
 
     try {
@@ -236,6 +251,20 @@ export async function POST(req: NextRequest) {
     } catch (errorRH) {
       console.error('❌ Error enviando RH:', errorRH);
       resultados.rh = { ok: false, error: errorRH instanceof Error ? errorRH.message : 'Error desconocido' };
+      
+      // Registrar error en logs del superadmin
+      await logError({
+        level: 'error',
+        message: `Error enviando RH al MIR: ${errorRH instanceof Error ? errorRH.message : 'Error desconocido'}`,
+        error: errorRH,
+        tenantId: tenantId !== 'default' ? tenantId : null,
+        url: '/api/ministerio/auto-envio-dual',
+        metadata: {
+          referencia: referenciaNorm,
+          tipo: 'RH',
+          tenantId,
+        },
+      });
     }
 
     // Guardar ambas comunicaciones en base de datos por separado
@@ -306,6 +335,23 @@ export async function POST(req: NextRequest) {
 
   } catch (error) {
     console.error('❌ Error en envío dual al MIR:', error);
+    
+    // Obtener tenant_id del request
+    const tenantId = req.headers.get('x-tenant-id') || 'default';
+    
+    // Registrar error en logs del superadmin
+    await logError({
+      level: 'error',
+      message: `Error crítico en envío dual al MIR: ${error instanceof Error ? error.message : 'Error desconocido'}`,
+      error,
+      tenantId: tenantId !== 'default' ? tenantId : null,
+      url: '/api/ministerio/auto-envio-dual',
+      metadata: {
+        errorType: 'dual_send_failure',
+        tenantId,
+      },
+    });
+    
     return NextResponse.json({
       success: false,
       error: 'Error interno del servidor',

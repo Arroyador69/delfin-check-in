@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { insertGuestRegistration } from '@/lib/db';
+import { logError } from '@/lib/error-logger';
 
 // Configuración CORS robusta - Fix definitivo
 const ALLOWED_ORIGINS = new Set([
@@ -301,6 +302,21 @@ export async function POST(req: NextRequest) {
         console.error('❌ Error en auto-envío al MIR:', errorMIR);
         resultadoMIR = { error: errorMIR.message || 'Error desconocido' };
         
+        // Registrar error en logs del superadmin
+        await logError({
+          level: 'error',
+          message: `Error en auto-envío al MIR desde guest-registration: ${errorMIR.message || 'Error desconocido'}`,
+          error: new Error(errorMIR.message || 'Error desconocido'),
+          tenantId: tenantId && tenantId !== 'default' ? tenantId : null,
+          url: '/api/public/guest-registration',
+          metadata: {
+            registrationId: id,
+            reserva_ref: reserva_ref,
+            errorMIR,
+            tenantId,
+          },
+        });
+        
         // Actualizar el registro con el error del MIR
         const updatedData = {
           ...dataWithDefaults,
@@ -322,6 +338,21 @@ export async function POST(req: NextRequest) {
     } catch (errorMIR) {
       console.error('❌ Error en auto-envío al MIR:', errorMIR);
       resultadoMIR = { error: errorMIR instanceof Error ? errorMIR.message : 'Error desconocido' };
+      
+      // Registrar error en logs del superadmin
+      await logError({
+        level: 'error',
+        message: `Error crítico en auto-envío al MIR desde guest-registration: ${errorMIR instanceof Error ? errorMIR.message : 'Error desconocido'}`,
+        error: errorMIR,
+        tenantId: tenantId && tenantId !== 'default' ? tenantId : null,
+        url: '/api/public/guest-registration',
+        metadata: {
+          registrationId: id,
+          reserva_ref: reserva_ref,
+          errorType: 'mir_send_exception',
+          tenantId,
+        },
+      });
       
       // Actualizar el registro con el error del MIR
       const updatedData = {
@@ -356,6 +387,22 @@ export async function POST(req: NextRequest) {
 
   } catch (error) {
     console.error('💥 Error interno del servidor en endpoint público:', error);
+    
+    // Obtener tenant_id del request
+    const tenantId = req.headers.get('x-tenant-id') || null;
+    
+    // Registrar error en logs del superadmin
+    await logError({
+      level: 'error',
+      message: `Error interno del servidor en guest-registration: ${error instanceof Error ? error.message : 'Error desconocido'}`,
+      error,
+      tenantId: tenantId && tenantId !== 'default' ? tenantId : null,
+      url: '/api/public/guest-registration',
+      metadata: {
+        errorType: 'internal_server_error',
+        tenantId,
+      },
+    });
     
     return NextResponse.json({ 
       error: 'Error interno del servidor',
