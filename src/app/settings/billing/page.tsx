@@ -414,6 +414,7 @@ export default function BillingPage() {
                 </div>
                 <p className="text-2xl font-bold text-gray-900">{formatCurrency(currentPlan.price)}</p>
                 <p className="text-xs text-gray-500 mt-1">por mes</p>
+                <p className="text-xs text-gray-400 mt-1"><strong>IVA no incluido</strong></p>
               </div>
 
               <div className="p-4 bg-gray-50 rounded-lg">

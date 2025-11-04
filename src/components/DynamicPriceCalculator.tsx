@@ -158,8 +158,11 @@ export default function DynamicPriceCalculator({
           <div className="text-4xl font-black text-blue-600 mb-2">
             {total.toFixed(2)}€
           </div>
-          <div className="text-sm text-gray-600 mb-4">
+          <div className="text-sm text-gray-600 mb-2">
             {isYearlyPlan ? 'por año' : 'por mes'}
+          </div>
+          <div className="text-xs text-gray-500 mb-4">
+            <strong>IVA no incluido</strong>
           </div>
           
           {/* Descuento por volumen */}

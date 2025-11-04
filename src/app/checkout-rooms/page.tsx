@@ -303,6 +303,9 @@ function CheckoutRoomsContent() {
                   <span className="font-semibold text-gray-900">Total:</span>
                   <span className="text-2xl font-bold text-blue-600">{totalPrice.toFixed(2)}€</span>
                 </div>
+                <div className="text-xs text-gray-500 text-center mt-2">
+                  <strong>IVA no incluido</strong>
+                </div>
               </div>
 
               {/* Formulario de pago */}
