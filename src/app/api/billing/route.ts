@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
 import Stripe from 'stripe';
+import { getPendingInvoices } from '@/lib/payment-tracking';
 
 const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: '2023-10-16',
@@ -28,7 +29,7 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // Obtener información del tenant
+    // Obtener información del tenant (incluyendo campos de pago)
     const result = await sql`
       SELECT 
         id,
@@ -38,6 +39,12 @@ export async function GET(req: NextRequest) {
         stripe_customer_id,
         stripe_subscription_id,
         status,
+        subscription_status,
+        payment_retry_count,
+        last_payment_failed_at,
+        last_payment_succeeded_at,
+        subscription_suspended_at,
+        next_payment_attempt_at,
         created_at
       FROM tenants 
       WHERE id = ${tenantId}
@@ -62,6 +69,9 @@ export async function GET(req: NextRequest) {
 
     const planInfo = planDetails[tenant.plan_id] || planDetails.basic;
 
+    // Obtener facturas pendientes de la base de datos
+    const pendingInvoices = await getPendingInvoices(tenantId);
+
     // Preparar respuesta base
     const billingInfo: any = {
       tenant: {
@@ -72,11 +82,33 @@ export async function GET(req: NextRequest) {
         plan_name: planInfo.name,
         plan_price: planInfo.price,
         status: tenant.status,
+        subscription_status: tenant.subscription_status || 'active',
+        payment_retry_count: tenant.payment_retry_count || 0,
+        last_payment_failed_at: tenant.last_payment_failed_at,
+        last_payment_succeeded_at: tenant.last_payment_succeeded_at,
+        subscription_suspended_at: tenant.subscription_suspended_at,
+        next_payment_attempt_at: tenant.next_payment_attempt_at,
+        is_suspended: tenant.status === 'suspended' || (tenant.payment_retry_count || 0) >= 3,
         stripe_customer_id: tenant.stripe_customer_id,
         stripe_subscription_id: tenant.stripe_subscription_id,
         created_at: tenant.created_at,
       },
-      invoices: []
+      invoices: [],
+      pending_invoices: pendingInvoices.map(inv => ({
+        id: inv.stripe_invoice_id,
+        invoice_number: inv.invoice_number,
+        amount_due: Number(inv.amount_due),
+        amount_paid: Number(inv.amount_paid),
+        currency: inv.currency,
+        status: inv.status,
+        due_date: inv.due_date,
+        period_start: inv.period_start,
+        period_end: inv.period_end,
+        invoice_pdf_url: inv.invoice_pdf_url,
+        hosted_invoice_url: inv.hosted_invoice_url,
+        attempt_count: inv.attempt_count,
+        next_payment_attempt_at: inv.next_payment_attempt_at,
+      })),
     };
 
     // Si tiene Stripe subscription, obtener información adicional

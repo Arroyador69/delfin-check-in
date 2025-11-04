@@ -11,6 +11,12 @@ import {
   updateTenantStripeInfo
 } from '@/lib/tenant'
 import { sendOnboardingEmail } from '@/lib/mailer'
+import { 
+  handlePaymentFailed, 
+  syncStripeInvoice, 
+  restoreTenantServices,
+  findTenantByStripeCustomerId 
+} from '@/lib/payment-tracking'
 
 export const config = {
   api: {
@@ -301,29 +307,122 @@ export async function POST(req: NextRequest) {
           const invoice = event.data.object as Stripe.Invoice
           const customerEmail = String(invoice.customer_email || '')
           console.log('📧 Email desde invoice:', customerEmail)
-          // Disparar SIEMPRE onboarding desde el invoice, sin depender del PI
-          await createTenantFromInvoice(invoice, customerEmail)
+          
+          // Si es un tenant existente, restaurar servicios si estaban suspendidos
+          if (invoice.customer) {
+            const tenant = await findTenantByStripeCustomerId(String(invoice.customer))
+            if (tenant) {
+              // Restaurar servicios si estaban suspendidos
+              await restoreTenantServices(tenant.id)
+              // Sincronizar factura
+              await syncStripeInvoice(invoice, tenant.id)
+              console.log('✅ Pago exitoso - servicios restaurados para tenant:', tenant.id)
+            } else {
+              // Si no existe, crear nuevo tenant (onboarding)
+              await createTenantFromInvoice(invoice, customerEmail)
+            }
+          } else {
+            // Disparar onboarding si no hay customer
+            await createTenantFromInvoice(invoice, customerEmail)
+          }
         } catch (e) {
           console.error('❌ Error procesando invoice.payment_succeeded:', e)
+        }
+        break
+
+      case 'invoice.payment_failed':
+        try {
+          const invoice = event.data.object as Stripe.Invoice
+          console.log('❌ Pago fallido para invoice:', invoice.id)
+          await handlePaymentFailed(invoice)
+        } catch (e) {
+          console.error('❌ Error procesando invoice.payment_failed:', e)
+        }
+        break
+
+      case 'invoice.payment_action_required':
+        try {
+          const invoice = event.data.object as Stripe.Invoice
+          console.log('⚠️ Acción requerida para invoice:', invoice.id)
+          // Sincronizar factura y notificar al tenant
+          if (invoice.customer) {
+            const tenant = await findTenantByStripeCustomerId(String(invoice.customer))
+            if (tenant) {
+              await syncStripeInvoice(invoice, tenant.id)
+            }
+          }
+        } catch (e) {
+          console.error('❌ Error procesando invoice.payment_action_required:', e)
         }
         break
 
       case 'customer.subscription.created':
         const subscription = event.data.object as Stripe.Subscription
         console.log('🔄 Suscripción creada:', subscription.id)
-        // TODO: Manejar creación de suscripción
+        // Actualizar tenant con subscription_id si es necesario
+        if (subscription.customer) {
+          const tenant = await findTenantByStripeCustomerId(String(subscription.customer))
+          if (tenant && !tenant.stripe_subscription_id) {
+            await sql`
+              UPDATE tenants 
+              SET stripe_subscription_id = ${subscription.id},
+                  subscription_status = ${subscription.status}
+              WHERE id = ${tenant.id}
+            `
+          }
+        }
         break
 
       case 'customer.subscription.updated':
-        const updatedSub = event.data.object as Stripe.Subscription
-        console.log('🔄 Suscripción actualizada:', updatedSub.id)
-        // TODO: Manejar actualización de suscripción
+        try {
+          const updatedSub = event.data.object as Stripe.Subscription
+          console.log('🔄 Suscripción actualizada:', updatedSub.id, 'Status:', updatedSub.status)
+          // Actualizar estado de suscripción del tenant
+          if (updatedSub.customer) {
+            const tenant = await findTenantByStripeCustomerId(String(updatedSub.customer))
+            if (tenant) {
+              await sql`
+                UPDATE tenants 
+                SET subscription_status = ${updatedSub.status}
+                WHERE id = ${tenant.id}
+              `
+              // Si la suscripción está cancelada o unpaid, verificar si necesita suspensión
+              if (updatedSub.status === 'unpaid' || updatedSub.status === 'past_due') {
+                // Verificar si tiene más de 3 intentos fallidos
+                const tenantResult = await sql`
+                  SELECT payment_retry_count FROM tenants WHERE id = ${tenant.id}
+                `
+                const currentRetryCount = tenantResult.rows[0]?.payment_retry_count || 0
+                if (currentRetryCount >= 3) {
+                  // La suspensión ya debería haberse hecho en handlePaymentFailed
+                  console.log('⚠️ Suscripción en estado problemático:', updatedSub.status)
+                }
+              } else if (updatedSub.status === 'active') {
+                // Restaurar servicios si la suscripción vuelve a activa
+                await restoreTenantServices(tenant.id)
+              }
+            }
+          }
+        } catch (e) {
+          console.error('❌ Error procesando customer.subscription.updated:', e)
+        }
         break
 
       case 'customer.subscription.deleted':
         const deletedSub = event.data.object as Stripe.Subscription
         console.log('❌ Suscripción cancelada:', deletedSub.id)
-        // TODO: Manejar cancelación de suscripción
+        // Actualizar tenant
+        if (deletedSub.customer) {
+          const tenant = await findTenantByStripeCustomerId(String(deletedSub.customer))
+          if (tenant) {
+            await sql`
+              UPDATE tenants 
+              SET subscription_status = 'canceled',
+                  status = 'cancelled'
+              WHERE id = ${tenant.id}
+            `
+          }
+        }
         break
 
       default:

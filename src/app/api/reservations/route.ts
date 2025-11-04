@@ -128,6 +128,20 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    // Verificar si el tenant puede realizar operaciones (no está suspendido)
+    const { requireActiveTenant } = await import('@/lib/payment-middleware');
+    const paymentCheck = await requireActiveTenant(request, tenantId);
+    if (paymentCheck) {
+      return NextResponse.json(
+        { 
+          error: paymentCheck.error,
+          code: paymentCheck.code,
+          reason: paymentCheck.reason
+        },
+        { status: paymentCheck.status }
+      );
+    }
     
     // PRIMERO: Verificar si la tabla Room existe (solo verificar, no crear)
     try {

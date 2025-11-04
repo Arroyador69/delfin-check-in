@@ -183,6 +183,23 @@ export async function POST(req: NextRequest) {
     
     console.log('🏢 Tenant ID detectado:', tenantId);
 
+    // Verificar si el tenant puede realizar operaciones (no está suspendido)
+    if (tenantId && tenantId !== 'default') {
+      const { requireActiveTenant } = await import('@/lib/payment-middleware');
+      const paymentCheck = await requireActiveTenant(req, tenantId);
+      if (paymentCheck) {
+        return NextResponse.json(
+          { 
+            error: paymentCheck.error,
+            code: paymentCheck.code,
+            reason: paymentCheck.reason,
+            canViewData: true
+          },
+          { status: paymentCheck.status, headers }
+        );
+      }
+    }
+
     // Guardar en base de datos Postgres con tenant_id
     const id = await insertGuestRegistration({
       reserva_ref,

@@ -14,6 +14,12 @@ interface BillingInfo {
     plan_name: string;
     plan_price: number;
     status: string;
+    subscription_status?: string;
+    payment_retry_count?: number;
+    last_payment_failed_at?: string;
+    subscription_suspended_at?: string;
+    next_payment_attempt_at?: string;
+    is_suspended?: boolean;
     stripe_customer_id?: string;
     stripe_subscription_id?: string;
     created_at: string;
@@ -31,6 +37,21 @@ interface BillingInfo {
     status: string;
     date: string;
     invoice_pdf?: string;
+  }>;
+  pending_invoices?: Array<{
+    id: string;
+    invoice_number?: string;
+    amount_due: number;
+    amount_paid: number;
+    currency: string;
+    status: string;
+    due_date?: string;
+    period_start?: string;
+    period_end?: string;
+    invoice_pdf_url?: string;
+    hosted_invoice_url?: string;
+    attempt_count: number;
+    next_payment_attempt_at?: string;
   }>;
 }
 
@@ -226,6 +247,153 @@ export default function BillingPage() {
             </div>
           )}
 
+          {/* Alerta de Suspensión */}
+          {billingInfo.tenant.is_suspended && (
+            <div className="p-6 bg-red-50 border-l-4 border-red-500 rounded-lg">
+              <div className="flex items-start">
+                <AlertCircle className="w-6 h-6 text-red-600 mr-3 mt-0.5" />
+                <div className="flex-1">
+                  <h3 className="text-lg font-bold text-red-900 mb-2">🚫 Servicios Suspendidos</h3>
+                  <p className="text-red-800 mb-3">
+                    Tus servicios han sido suspendidos por falta de pago después de {billingInfo.tenant.payment_retry_count || 0} intentos fallidos.
+                  </p>
+                  <p className="text-red-700 text-sm mb-4">
+                    Puedes ver tus datos, pero no podrás crear nuevos registros, enviar mensajes o procesar reservas hasta que actualices tu método de pago.
+                  </p>
+                  {billingInfo.pending_invoices && billingInfo.pending_invoices.length > 0 && (
+                    <div className="mt-4">
+                      <p className="text-red-700 font-semibold mb-2">Facturas pendientes:</p>
+                      <ul className="space-y-2">
+                        {billingInfo.pending_invoices.map((inv) => (
+                          <li key={inv.id} className="flex items-center justify-between bg-white p-3 rounded border border-red-200">
+                            <div>
+                              <p className="font-medium text-red-900">
+                                {formatCurrency(inv.amount_due)} {inv.currency.toUpperCase()}
+                              </p>
+                              {inv.due_date && (
+                                <p className="text-sm text-red-600">
+                                  Vencimiento: {formatDate(inv.due_date)}
+                                </p>
+                              )}
+                            </div>
+                            {inv.hosted_invoice_url && (
+                              <a
+                                href={inv.hosted_invoice_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-medium"
+                              >
+                                Pagar ahora
+                              </a>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Alerta de Pagos Fallidos (antes de suspensión) */}
+          {!billingInfo.tenant.is_suspended && billingInfo.tenant.payment_retry_count && billingInfo.tenant.payment_retry_count > 0 && (
+            <div className="p-6 bg-yellow-50 border-l-4 border-yellow-500 rounded-lg">
+              <div className="flex items-start">
+                <AlertCircle className="w-6 h-6 text-yellow-600 mr-3 mt-0.5" />
+                <div className="flex-1">
+                  <h3 className="text-lg font-bold text-yellow-900 mb-2">⚠️ Pago Fallido</h3>
+                  <p className="text-yellow-800 mb-3">
+                    No se ha podido procesar el pago de tu suscripción. Intento {billingInfo.tenant.payment_retry_count}/3.
+                  </p>
+                  <p className="text-yellow-700 text-sm mb-4">
+                    Si no actualizas tu método de pago, se intentará cobrar automáticamente {3 - (billingInfo.tenant.payment_retry_count || 0)} {3 - (billingInfo.tenant.payment_retry_count || 0) === 1 ? 'vez más' : 'veces más'}. 
+                    Después de 3 intentos fallidos, los servicios serán suspendidos.
+                  </p>
+                  {billingInfo.pending_invoices && billingInfo.pending_invoices.length > 0 && (
+                    <div className="mt-4">
+                      <p className="text-yellow-700 font-semibold mb-2">Facturas pendientes:</p>
+                      <ul className="space-y-2">
+                        {billingInfo.pending_invoices.map((inv) => (
+                          <li key={inv.id} className="flex items-center justify-between bg-white p-3 rounded border border-yellow-200">
+                            <div>
+                              <p className="font-medium text-yellow-900">
+                                {formatCurrency(inv.amount_due)} {inv.currency.toUpperCase()}
+                              </p>
+                              {inv.due_date && (
+                                <p className="text-sm text-yellow-600">
+                                  Vencimiento: {formatDate(inv.due_date)}
+                                </p>
+                              )}
+                              {inv.next_payment_attempt_at && (
+                                <p className="text-sm text-yellow-600">
+                                  Próximo intento: {formatDate(inv.next_payment_attempt_at)}
+                                </p>
+                              )}
+                            </div>
+                            {inv.hosted_invoice_url && (
+                              <a
+                                href={inv.hosted_invoice_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors text-sm font-medium"
+                              >
+                                Actualizar pago
+                              </a>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Alerta de Facturas Pendientes (sin problemas de pago) */}
+          {!billingInfo.tenant.is_suspended && 
+           (!billingInfo.tenant.payment_retry_count || billingInfo.tenant.payment_retry_count === 0) &&
+           billingInfo.pending_invoices && billingInfo.pending_invoices.length > 0 && (
+            <div className="p-6 bg-blue-50 border-l-4 border-blue-500 rounded-lg">
+              <div className="flex items-start">
+                <Calendar className="w-6 h-6 text-blue-600 mr-3 mt-0.5" />
+                <div className="flex-1">
+                  <h3 className="text-lg font-bold text-blue-900 mb-2">📋 Facturas Pendientes</h3>
+                  <p className="text-blue-800 mb-4">
+                    Tienes {billingInfo.pending_invoices.length} {billingInfo.pending_invoices.length === 1 ? 'factura pendiente' : 'facturas pendientes'} de pago.
+                  </p>
+                  <ul className="space-y-2">
+                    {billingInfo.pending_invoices.map((inv) => (
+                      <li key={inv.id} className="flex items-center justify-between bg-white p-3 rounded border border-blue-200">
+                        <div>
+                          <p className="font-medium text-blue-900">
+                            {inv.invoice_number || 'Factura'} - {formatCurrency(inv.amount_due)} {inv.currency.toUpperCase()}
+                          </p>
+                          {inv.due_date && (
+                            <p className="text-sm text-blue-600">
+                              Vencimiento: {formatDate(inv.due_date)}
+                            </p>
+                          )}
+                        </div>
+                        {inv.hosted_invoice_url && (
+                          <a
+                            href={inv.hosted_invoice_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                          >
+                            Ver factura
+                          </a>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Current Plan */}
           <div className="card">
             <div className="flex items-center justify-between mb-6">
@@ -329,12 +497,84 @@ export default function BillingPage() {
           </div>
 
 
+          {/* Facturas Pendientes - Sección Separada */}
+          {billingInfo.pending_invoices && billingInfo.pending_invoices.length > 0 && (
+            <div className="card border-2 border-orange-200">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-xl font-bold text-orange-900">⚠️ Facturas Pendientes</h2>
+                  <p className="text-sm text-orange-600">Facturas que requieren atención</p>
+                </div>
+                <AlertCircle className="w-6 h-6 text-orange-600" />
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-orange-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-orange-700 uppercase">Factura</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-orange-700 uppercase">Importe</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-orange-700 uppercase">Vencimiento</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-orange-700 uppercase">Estado</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-orange-700 uppercase">Intentos</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-orange-700 uppercase">Acción</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {billingInfo.pending_invoices.map((inv) => (
+                      <tr key={inv.id} className="hover:bg-orange-50">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          {inv.invoice_number || inv.id.slice(0, 20) + '...'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-orange-900">
+                          {formatCurrency(inv.amount_due)} {inv.currency.toUpperCase()}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {inv.due_date ? formatDate(inv.due_date) : 'N/A'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`px-2 py-1 text-xs rounded-full ${
+                            inv.status === 'open' 
+                              ? 'bg-yellow-100 text-yellow-800' 
+                              : inv.status === 'uncollectible'
+                              ? 'bg-red-100 text-red-800'
+                              : 'bg-gray-100 text-gray-800'
+                          }`}>
+                            {inv.status === 'open' ? 'Pendiente' : inv.status === 'uncollectible' ? 'No cobrable' : inv.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {inv.attempt_count || 0} intentos
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                          {inv.hosted_invoice_url ? (
+                            <a
+                              href={inv.hosted_invoice_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors text-sm font-medium inline-flex items-center"
+                            >
+                              Pagar ahora
+                              <ExternalLink className="w-4 h-4 ml-1" />
+                            </a>
+                          ) : (
+                            <span className="text-gray-400 text-sm">No disponible</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
           {/* Invoices */}
           <div className="card">
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h2 className="text-xl font-bold text-gray-900">Historial de facturas</h2>
-                <p className="text-sm text-gray-600">Descarga tus facturas anteriores</p>
+                <p className="text-sm text-gray-600">Facturas pagadas y procesadas</p>
               </div>
               <Download className="w-6 h-6 text-gray-600" />
             </div>

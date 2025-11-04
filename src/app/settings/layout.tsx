@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import AdminLayout from '@/components/AdminLayout';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Settings, FileText, CreditCard, User, LinkIcon, Home, Calendar, Wallet } from 'lucide-react';
+import { Settings, FileText, CreditCard, User, LinkIcon, Home, Calendar, Wallet, AlertCircle, ExternalLink } from 'lucide-react';
 
 export default function SettingsLayout({
   children,
@@ -12,6 +12,8 @@ export default function SettingsLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const [billingInfo, setBillingInfo] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
   const settingsSections = [
     {
@@ -70,6 +72,38 @@ export default function SettingsLayout({
     },
   ];
 
+  useEffect(() => {
+    const loadBillingInfo = async () => {
+      try {
+        const response = await fetch('/api/billing');
+        if (response.ok) {
+          const data = await response.json();
+          setBillingInfo(data);
+        }
+      } catch (error) {
+        console.error('Error cargando información de facturación:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadBillingInfo();
+  }, []);
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('es-ES', {
+      style: 'currency',
+      currency: 'EUR'
+    }).format(amount);
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('es-ES', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
   return (
     <AdminLayout>
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -85,6 +119,92 @@ export default function SettingsLayout({
             </div>
           </div>
         </div>
+
+        {/* Alerta de Suspensión o Facturas Pendientes */}
+        {!loading && billingInfo && (
+          <>
+            {/* Alerta de Suspensión */}
+            {billingInfo.tenant?.is_suspended && (
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+                <div className="p-4 bg-red-50 border-l-4 border-red-500 rounded-lg shadow-sm">
+                  <div className="flex items-start">
+                    <AlertCircle className="w-6 h-6 text-red-600 mr-3 mt-0.5 flex-shrink-0" />
+                    <div className="flex-1">
+                      <h3 className="text-lg font-bold text-red-900 mb-1">🚫 Servicios Suspendidos</h3>
+                      <p className="text-red-800 text-sm mb-2">
+                        Tus servicios han sido suspendidos por falta de pago después de {billingInfo.tenant.payment_retry_count || 0} intentos fallidos.
+                      </p>
+                      <p className="text-red-700 text-xs mb-3">
+                        Puedes ver tus datos, pero no podrás crear nuevos registros, enviar mensajes o procesar reservas hasta que actualices tu método de pago.
+                      </p>
+                      <Link
+                        href="/settings/billing"
+                        className="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-medium"
+                      >
+                        Ver facturas pendientes
+                        <ExternalLink className="w-4 h-4 ml-2" />
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Alerta de Pagos Fallidos (antes de suspensión) */}
+            {!billingInfo.tenant?.is_suspended && billingInfo.tenant?.payment_retry_count && billingInfo.tenant.payment_retry_count > 0 && (
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+                <div className="p-4 bg-yellow-50 border-l-4 border-yellow-500 rounded-lg shadow-sm">
+                  <div className="flex items-start">
+                    <AlertCircle className="w-6 h-6 text-yellow-600 mr-3 mt-0.5 flex-shrink-0" />
+                    <div className="flex-1">
+                      <h3 className="text-lg font-bold text-yellow-900 mb-1">⚠️ Pago Fallido</h3>
+                      <p className="text-yellow-800 text-sm mb-2">
+                        No se ha podido procesar el pago de tu suscripción. Intento {billingInfo.tenant.payment_retry_count}/3.
+                      </p>
+                      <p className="text-yellow-700 text-xs mb-3">
+                        Si no actualizas tu método de pago, se intentará cobrar automáticamente {3 - (billingInfo.tenant.payment_retry_count || 0)} {3 - (billingInfo.tenant.payment_retry_count || 0) === 1 ? 'vez más' : 'veces más'}. 
+                        Después de 3 intentos fallidos, los servicios serán suspendidos.
+                      </p>
+                      <Link
+                        href="/settings/billing"
+                        className="inline-flex items-center px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors text-sm font-medium"
+                      >
+                        Actualizar método de pago
+                        <ExternalLink className="w-4 h-4 ml-2" />
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Alerta de Facturas Pendientes (sin problemas de pago) */}
+            {!billingInfo.tenant?.is_suspended && 
+             (!billingInfo.tenant?.payment_retry_count || billingInfo.tenant.payment_retry_count === 0) &&
+             billingInfo.pending_invoices && billingInfo.pending_invoices.length > 0 && (
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+                <div className="p-4 bg-blue-50 border-l-4 border-blue-500 rounded-lg shadow-sm">
+                  <div className="flex items-start">
+                    <AlertCircle className="w-6 h-6 text-blue-600 mr-3 mt-0.5 flex-shrink-0" />
+                    <div className="flex-1">
+                      <h3 className="text-lg font-bold text-blue-900 mb-1">📋 Facturas Pendientes</h3>
+                      <p className="text-blue-800 text-sm mb-3">
+                        Tienes {billingInfo.pending_invoices.length} {billingInfo.pending_invoices.length === 1 ? 'factura pendiente' : 'facturas pendientes'} de pago.
+                      </p>
+                      <Link
+                        href="/settings/billing"
+                        className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                      >
+                        Ver facturas pendientes
+                        <ExternalLink className="w-4 h-4 ml-2" />
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
+        )}
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">

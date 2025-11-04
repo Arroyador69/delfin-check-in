@@ -67,6 +67,26 @@ async function sendWhatsAppMessage(
 // POST - Enviar mensaje de WhatsApp
 export async function POST(request: NextRequest) {
   try {
+    // Obtener tenant_id del header (enviado por el middleware)
+    const tenantId = request.headers.get('x-tenant-id');
+    
+    if (tenantId) {
+      // Verificar si el tenant puede realizar operaciones (no está suspendido)
+      const { requireActiveTenant } = await import('@/lib/payment-middleware');
+      const paymentCheck = await requireActiveTenant(request, tenantId);
+      if (paymentCheck) {
+        return NextResponse.json(
+          { 
+            success: false,
+            error: paymentCheck.error,
+            code: paymentCheck.code,
+            reason: paymentCheck.reason
+          },
+          { status: paymentCheck.status }
+        );
+      }
+    }
+
     const body = await request.json();
     
     const { 
