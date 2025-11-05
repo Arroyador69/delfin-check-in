@@ -143,7 +143,8 @@ export default function ManageTemplatesPage() {
           region: 'Andalucía',
           dolor_principal: 'Cumplimiento normativo RD 933',
           features_clave: ['RD 933 en lote', 'Cola offline', 'Microsite', 'Stripe split', 'Facturación', 'Calculadora de costes'],
-          sin_garantia: false
+          sin_garantia: false,
+          precio: 14.99
         }
       } else if (template.type === 'problem-solution') {
         testVariables = {
@@ -177,16 +178,47 @@ export default function ManageTemplatesPage() {
 
       if (response.ok) {
         const data = await response.json()
-        alert(`✅ Página de prueba creada: ${data.title}\nSlug: ${data.slug}`)
-        // Opcional: redirigir a la página generada
-        // window.open(`https://delfincheckin.com/${data.slug}`, '_blank')
+        const previewUrl = `/superadmin/programmatic/preview/${data.page_id}`
+        const confirmMessage = `✅ Página de prueba creada exitosamente!\n\n` +
+          `Título: ${data.title}\n` +
+          `Slug: ${data.slug}\n` +
+          `Palabras: ${data.word_count}\n` +
+          `Score SEO: ${data.seo_score}/100\n\n` +
+          `¿Quieres ver la página de prueba ahora?`
+        
+        if (window.confirm(confirmMessage)) {
+          window.open(previewUrl, '_blank')
+        }
       } else {
         const error = await response.json()
-        alert(error.error || 'Error creando página de prueba')
+        alert(`❌ Error creando página de prueba:\n${error.error || 'Error desconocido'}`)
       }
     } catch (error) {
       console.error('Error creando página de prueba:', error)
-      alert('Error creando página de prueba')
+      alert(`❌ Error creando página de prueba:\n${error instanceof Error ? error.message : 'Error desconocido'}`)
+    }
+  }
+
+  const handleDelete = async (templateId: string, templateName: string) => {
+    if (!confirm(`¿Estás seguro de que quieres eliminar la plantilla "${templateName}"?\n\nEsta acción no se puede deshacer.`)) {
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/superadmin/programmatic/templates?id=${templateId}`, {
+        method: 'DELETE'
+      })
+
+      if (response.ok) {
+        await fetchTemplates()
+        alert('✅ Plantilla eliminada correctamente')
+      } else {
+        const error = await response.json()
+        alert(`❌ Error eliminando plantilla:\n${error.error || 'Error desconocido'}`)
+      }
+    } catch (error) {
+      console.error('Error eliminando plantilla:', error)
+      alert('❌ Error eliminando plantilla')
     }
   }
 
@@ -363,10 +395,10 @@ export default function ManageTemplatesPage() {
                         type="text"
                         value={formData.name || ''}
                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        className="w-full border rounded px-2 py-1"
+                        className="w-full border rounded px-2 py-1 text-gray-900"
                       />
                     ) : (
-                      <div className="font-medium">{template.name}</div>
+                      <div className="font-medium text-gray-900">{template.name}</div>
                     )}
                   </td>
                   <td className="p-4">
@@ -374,7 +406,7 @@ export default function ManageTemplatesPage() {
                       <select
                         value={formData.type || 'local'}
                         onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                        className="w-full border rounded px-2 py-1"
+                        className="w-full border rounded px-2 py-1 text-gray-900"
                       >
                         <option value="local">Local</option>
                         <option value="problem-solution">Problema→Solución</option>
@@ -383,7 +415,7 @@ export default function ManageTemplatesPage() {
                         <option value="pillar">Pilar</option>
                       </select>
                     ) : (
-                      <span className="px-2 py-1 bg-gray-100 rounded text-xs">
+                      <span className="px-2 py-1 bg-gray-100 rounded text-xs text-gray-800 font-medium">
                         {template.type}
                       </span>
                     )}
@@ -394,10 +426,10 @@ export default function ManageTemplatesPage() {
                         type="number"
                         value={formData.target_length || 800}
                         onChange={(e) => setFormData({ ...formData, target_length: parseInt(e.target.value) })}
-                        className="w-24 border rounded px-2 py-1"
+                        className="w-24 border rounded px-2 py-1 text-gray-900"
                       />
                     ) : (
-                      template.target_length
+                      <span className="text-gray-900 font-medium">{template.target_length}</span>
                     )}
                   </td>
                   <td className="text-center p-4">
@@ -453,6 +485,13 @@ export default function ManageTemplatesPage() {
                           className="px-3 py-1 bg-yellow-600 text-white rounded text-sm hover:bg-yellow-700"
                         >
                           Editar
+                        </button>
+                        <button
+                          onClick={() => handleDelete(template.id, template.name)}
+                          className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700"
+                          title="Eliminar esta plantilla"
+                        >
+                          🗑️ Eliminar
                         </button>
                       </div>
                     )}
