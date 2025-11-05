@@ -168,10 +168,41 @@ export async function generateContentWithOpenAI(
 
     const generatedContent = completion.choices[0]?.message?.content || '';
     
-    // Extraer front-matter y contenido
-    const frontMatterMatch = generatedContent.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
+    // Extraer front-matter y contenido - intentar múltiples formatos
+    let frontMatterMatch = generatedContent.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
+    
+    // Si no hay front-matter con saltos de línea exactos, intentar más flexible
     if (!frontMatterMatch) {
-      throw new Error('No se encontró front-matter válido en la respuesta');
+      frontMatterMatch = generatedContent.match(/^---\s*\n([\s\S]*?)\n---\s*\n([\s\S]*)$/);
+    }
+    
+    // Si aún no funciona, intentar sin el segundo salto de línea
+    if (!frontMatterMatch) {
+      frontMatterMatch = generatedContent.match(/^---\s*\n([\s\S]*?)\n---\s*([\s\S]*)$/);
+    }
+    
+    // Si aún no funciona, intentar extraer solo el contenido y generar front-matter básico
+    if (!frontMatterMatch) {
+      console.warn('⚠️ No se encontró front-matter en formato estándar, extrayendo contenido directamente');
+      // Intentar extraer título del primer H1
+      const h1Match = generatedContent.match(/^#\s+(.+)$/m);
+      const title = h1Match?.[1] || 'Software RD 933 y check-in';
+      
+      // Usar el contenido completo como body
+      const content = generatedContent;
+      
+      // Generar front-matter básico
+      return {
+        content: content,
+        title: title,
+        metaDescription: variables.ciudad 
+          ? `Software de gestión para alquiler vacacional en ${variables.ciudad}`
+          : 'Software de gestión para alquiler vacacional',
+        jsonld: createDefaultJSONLD(title, '', template, variables),
+        wordCount: content.split(/\s+/).length,
+        seoScore: calculateSEOScore(content, title, '', createDefaultJSONLD(title, '', template, variables)),
+        localSignalsCount: countLocalSignals(content, variables)
+      };
     }
 
     const frontMatter = frontMatterMatch[1];

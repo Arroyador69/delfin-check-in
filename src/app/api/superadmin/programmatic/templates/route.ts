@@ -133,3 +133,50 @@ export async function PUT(req: NextRequest) {
   }
 }
 
+// DELETE: Eliminar plantilla
+export async function DELETE(req: NextRequest) {
+  try {
+    const { error } = await verifySuperAdmin(req);
+    if (error) return error;
+
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get('id');
+
+    if (!id) {
+      return NextResponse.json(
+        { error: 'id es requerido' },
+        { status: 400 }
+      );
+    }
+
+    // Verificar que la plantilla existe
+    const checkResult = await sql`
+      SELECT id FROM content_templates WHERE id = ${id}
+    `;
+
+    if (checkResult.rows.length === 0) {
+      return NextResponse.json(
+        { error: 'Plantilla no encontrada' },
+        { status: 404 }
+      );
+    }
+
+    // Eliminar plantilla
+    await sql`
+      DELETE FROM content_templates WHERE id = ${id}
+    `;
+
+    return NextResponse.json({
+      success: true,
+      message: 'Plantilla eliminada correctamente'
+    });
+
+  } catch (error: any) {
+    console.error('❌ Error eliminando plantilla:', error);
+    return NextResponse.json(
+      { error: error.message || 'Error interno del servidor' },
+      { status: 500 }
+    );
+  }
+}
+
