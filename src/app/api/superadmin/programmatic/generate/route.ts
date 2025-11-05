@@ -254,25 +254,111 @@ function generateSEOHTML(page: any): string {
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      line-height: 1.6;
-      color: #333;
-      max-width: 800px;
+      line-height: 1.7;
+      color: #0f172a; /* más oscuro */
+      max-width: 860px;
       margin: 0 auto;
       padding: 2rem;
     }
-    h1 { font-size: 2rem; margin-top: 2rem; margin-bottom: 1rem; }
-    h2 { font-size: 1.5rem; margin-top: 1.5rem; margin-bottom: 1rem; }
-    h3 { font-size: 1.25rem; margin-top: 1.25rem; margin-bottom: 0.75rem; }
+    h1 { font-size: 2.25rem; margin-top: 2rem; margin-bottom: 1rem; color: #0b1220; }
+    h2 { font-size: 1.75rem; margin-top: 1.5rem; margin-bottom: 1rem; color: #0b1220; }
+    h3 { font-size: 1.35rem; margin-top: 1.25rem; margin-bottom: 0.75rem; color: #0b1220; }
     ul, ol { margin: 1rem 0; padding-left: 2rem; }
     p { margin: 1rem 0; }
     a { color: #2563eb; text-decoration: none; }
     a:hover { text-decoration: underline; }
+    .cta-button {
+      display: inline-block;
+      background: #2563eb;
+      color: white;
+      padding: 0.75rem 1.5rem;
+      border-radius: 0.5rem;
+      font-weight: 600;
+      margin: 2rem 0;
+    }
+    .cta-button:hover { background: #1d4ed8; text-decoration: none; }
   </style>
 </head>
 <body>
   ${contentHtml}
+  ${generatePriceCalculatorHTML()}
+  ${generateBenefitsHTML()}
+  ${generateEmailCaptureHTML()}
+  ${generateComponentsScript()}
 </body>
 </html>`;
+}
+
+function generatePriceCalculatorHTML(): string {
+  return `
+<!-- Calculadora de Precios con Stripe -->
+<section style="margin: 3rem 0; padding: 2rem; background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); border: 2px solid #2563eb; border-radius: 16px;">
+  <div style="background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); padding: 24px; text-align: center; color: white; border-radius: 12px; margin-bottom: 24px;">
+    <div style="font-size: 32px; margin-bottom: 8px;">💰</div>
+    <h2 style="margin: 0 0 8px; font-size: 24px; font-weight: 700;">Calculadora de Precios</h2>
+    <p style="margin: 0; opacity: 0.9; font-size: 16px;">Descubre cuánto te costaría Delfín Check-in según tus necesidades</p>
+  </div>
+  <div id="calcContainer"></div>
+  <button onclick="openStripePayment()" 
+          style="width: 100%; margin-top: 24px; padding: 16px; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white; border: none; border-radius: 12px; font-size: 18px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);">
+    💳 Contratar ahora con Stripe
+  </button>
+</section>`;
+}
+
+function generateBenefitsHTML(): string {
+  return `
+<!-- Beneficios del Servicio -->
+<section style="margin: 3rem 0; padding: 2rem; background: white; border-radius: 16px; border: 1px solid #e2e8f0;">
+  <h2 style="font-size: 2rem; margin-bottom: 1.5rem; color: #0b1220;">✨ Ventajas de usar Delfín Check-in</h2>
+  <ul style="color:#0f172a; line-height:1.8; padding-left:1.25rem;">
+    <li>Microsite de reservas directas sin comisiones</li>
+    <li>Envío automático al Ministerio (RD 933)</li>
+    <li>Generador de facturas integrado</li>
+    <li>Calculadora de costes detallada</li>
+  </ul>
+</section>`;
+}
+
+function generateEmailCaptureHTML(): string {
+  return `
+<!-- Formulario de Captura de Email -->
+<section style="margin: 3rem 0; padding: 2rem; background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border-radius: 16px; border: 2px solid #bae6fd;">
+  <h2 style="font-size: 2rem; margin-bottom: 1rem; color: #0b1220; text-align: center;">🤔 ¿Te lo estás pensando?</h2>
+  <p style="text-align: center; color: #0f172a; margin-bottom: 2rem; font-size: 18px;">
+    Deja tu email y nos pondremos en contacto contigo para resolver todas tus dudas
+  </p>
+  <form id="emailCaptureForm" onsubmit="handleEmailCapture(event)" style="max-width: 500px; margin: 0 auto;">
+    <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+      <input type="email" id="leadEmail" required placeholder="tu@email.com" 
+             style="flex: 1; min-width: 250px; height: 50px; padding: 0 16px; border-radius: 12px; border: 2px solid #e2e8f0; font-size: 16px; background: white; color: #0f172a;">
+      <button type="submit" 
+              style="height: 50px; padding: 0 24px; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); white-space: nowrap;">
+        Enviar
+      </button>
+    </div>
+    <p id="emailCaptureMessage" style="margin-top: 12px; text-align: center; font-size: 14px; color: #16a34a; display: none;"></p>
+  </form>
+</section>`;
+}
+
+function generateComponentsScript(): string {
+  return `
+<script>
+function openStripePayment(){
+  // Redirige al checkout del admin con parámetros por defecto
+  window.location.href = 'https://admin.delfincheckin.com/checkout';
+}
+
+function handleEmailCapture(e){
+  e.preventDefault();
+  const el = document.getElementById('leadEmail');
+  const msg = document.getElementById('emailCaptureMessage');
+  if(!el || !msg) return;
+  msg.textContent = '¡Gracias! Te contactaremos pronto.';
+  msg.style.display = 'block';
+}
+</script>`;
 }
 
 function escapeHtml(text: string): string {
