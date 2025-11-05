@@ -185,6 +185,7 @@ async function publishToGitHub(page: any): Promise<{
     // Crear o actualizar archivo
     const fileContent = Buffer.from(htmlContent).toString('base64');
 
+    // 1) index.html en carpeta (ruta limpia)
     await octokit.repos.createOrUpdateFileContents({
       owner: GITHUB_OWNER,
       repo: GITHUB_REPO,
@@ -193,6 +194,17 @@ async function publishToGitHub(page: any): Promise<{
       content: fileContent,
       branch: GITHUB_BRANCH,
       ...(sha ? { sha } : {}),
+    });
+
+    // 2) Copia con .html en raíz (fallback por si no aplica rutas limpias)
+    const fallbackPath = `${page.slug}.html`
+    await octokit.repos.createOrUpdateFileContents({
+      owner: GITHUB_OWNER,
+      repo: GITHUB_REPO,
+      path: fallbackPath,
+      message: `[Auto] Publicar fallback .html: ${page.title}`,
+      content: fileContent,
+      branch: GITHUB_BRANCH,
     });
 
     // Obtener commit SHA

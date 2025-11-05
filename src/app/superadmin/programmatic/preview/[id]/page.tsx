@@ -163,14 +163,14 @@ export default function PreviewPage() {
             </div>
           </div>
 
-          {/* Contenido renderizado */}
-          <div 
-            className="prose prose-lg max-w-none"
-            style={{ color: '#0f172a' }}
-            dangerouslySetInnerHTML={{ 
-              __html: marked(page.content_html || '', { breaks: true }) 
-            }}
-          />
+      {/* Contenido renderizado exacto (HTML del servidor) */}
+      <div className="w-full min-h-[600px] border rounded-lg overflow-hidden bg-white">
+        <iframe
+          title="preview"
+          src={`/api/superadmin/programmatic/render/${page.id}`}
+          style={{ width: '100%', height: '80vh', border: '0' }}
+        />
+      </div>
 
           {/* JSON-LD */}
           {page.content_jsonld && (
