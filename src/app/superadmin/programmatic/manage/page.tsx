@@ -190,7 +190,7 @@ export default function ManageTemplatesPage() {
         const data = await response.json()
         setProgress(100)
         // Si está publicado, abrir URL pública; si no, abrir preview interna
-        const publicUrl = data?.slug ? `https://delfincheckin.com/${data.slug}` : ''
+        const publicUrl = data?.slug ? `https://delfincheckin.com/${data.slug}/` : ''
         const previewUrl = `/superadmin/programmatic/preview/${data.page_id}`
         window.open(data.status === 'published' ? publicUrl : previewUrl, '_blank')
       } else {

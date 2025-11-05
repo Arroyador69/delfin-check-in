@@ -32,6 +32,9 @@ export default function PreviewPage() {
   const [page, setPage] = useState<ProgrammaticPage | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [publishing, setPublishing] = useState(false)
+  const [publishedUrl, setPublishedUrl] = useState<string | null>(null)
+  const [fallbackUrl, setFallbackUrl] = useState<string | null>(null)
 
   useEffect(() => {
     fetchPage()
@@ -54,6 +57,34 @@ export default function PreviewPage() {
       console.error('Error:', err)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const publishNow = async () => {
+    if (!page) return
+    try {
+      setPublishing(true)
+      setPublishedUrl(null)
+      setFallbackUrl(null)
+      const res = await fetch('/api/superadmin/programmatic/publish', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ page_id: page.id })
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.error || 'Error publicando página')
+      }
+      const data = await res.json()
+      // Construir URLs limpia + fallback
+      const cleanUrl = `https://delfincheckin.com/${page.slug}/`
+      const fallback = `https://delfincheckin.com/${page.slug}.html`
+      setPublishedUrl(cleanUrl)
+      setFallbackUrl(fallback)
+    } catch (e: any) {
+      alert(e.message || 'Error publicando')
+    } finally {
+      setPublishing(false)
     }
   }
 
@@ -116,15 +147,21 @@ export default function PreviewPage() {
                 )}
               </div>
             </div>
-            <div className="flex gap-2">
-              <a
-                href={page.canonical_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
+            <div className="flex gap-2 items-center">
+              <button
+                onClick={publishNow}
+                disabled={publishing}
+                className={`px-4 py-2 rounded text-sm text-white ${publishing ? 'bg-green-400' : 'bg-green-600 hover:bg-green-700'}`}
+                title="Publicar ahora en la landing (GitHub Pages)"
               >
-                🔗 Ver en producción
-              </a>
+                {publishing ? 'Publicando…' : '🚀 Publicar ahora'}
+              </button>
+              {publishedUrl && (
+                <>
+                  <a href={publishedUrl} target="_blank" rel="noopener noreferrer" className="px-3 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700">URL limpia</a>
+                  <a href={fallbackUrl!} target="_blank" rel="noopener noreferrer" className="px-3 py-2 bg-gray-700 text-white rounded text-sm hover:bg-gray-800">Fallback .html</a>
+                </>
+              )}
             </div>
           </div>
         </div>
