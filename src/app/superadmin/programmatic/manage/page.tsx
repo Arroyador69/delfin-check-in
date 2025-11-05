@@ -395,10 +395,10 @@ export default function ManageTemplatesPage() {
                         type="text"
                         value={formData.name || ''}
                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        className="w-full border rounded px-2 py-1"
+                        className="w-full border rounded px-2 py-1 text-gray-900"
                       />
                     ) : (
-                      <div className="font-medium">{template.name}</div>
+                      <div className="font-medium text-gray-900">{template.name}</div>
                     )}
                   </td>
                   <td className="p-4">
@@ -406,7 +406,7 @@ export default function ManageTemplatesPage() {
                       <select
                         value={formData.type || 'local'}
                         onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                        className="w-full border rounded px-2 py-1"
+                        className="w-full border rounded px-2 py-1 text-gray-900"
                       >
                         <option value="local">Local</option>
                         <option value="problem-solution">Problema→Solución</option>
@@ -415,7 +415,7 @@ export default function ManageTemplatesPage() {
                         <option value="pillar">Pilar</option>
                       </select>
                     ) : (
-                      <span className="px-2 py-1 bg-gray-100 rounded text-xs">
+                      <span className="px-2 py-1 bg-gray-100 rounded text-xs text-gray-800 font-medium">
                         {template.type}
                       </span>
                     )}
@@ -426,10 +426,10 @@ export default function ManageTemplatesPage() {
                         type="number"
                         value={formData.target_length || 800}
                         onChange={(e) => setFormData({ ...formData, target_length: parseInt(e.target.value) })}
-                        className="w-24 border rounded px-2 py-1"
+                        className="w-24 border rounded px-2 py-1 text-gray-900"
                       />
                     ) : (
-                      template.target_length
+                      <span className="text-gray-900 font-medium">{template.target_length}</span>
                     )}
                   </td>
                   <td className="text-center p-4">

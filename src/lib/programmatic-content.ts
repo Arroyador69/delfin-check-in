@@ -168,6 +168,10 @@ export async function generateContentWithOpenAI(
 
     const generatedContent = completion.choices[0]?.message?.content || '';
     
+    if (!generatedContent || generatedContent.trim().length === 0) {
+      throw new Error('OpenAI devolvió contenido vacío');
+    }
+    
     // Extraer front-matter y contenido - intentar múltiples formatos
     let frontMatterMatch = generatedContent.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
     
@@ -181,12 +185,21 @@ export async function generateContentWithOpenAI(
       frontMatterMatch = generatedContent.match(/^---\s*\n([\s\S]*?)\n---\s*([\s\S]*)$/);
     }
     
+    // Si aún no funciona, intentar con cualquier formato de front-matter
+    if (!frontMatterMatch) {
+      frontMatterMatch = generatedContent.match(/^---([\s\S]*?)---([\s\S]*)$/);
+    }
+    
     // Si aún no funciona, intentar extraer solo el contenido y generar front-matter básico
     if (!frontMatterMatch) {
       console.warn('⚠️ No se encontró front-matter en formato estándar, extrayendo contenido directamente');
+      console.log('Primeros 200 caracteres del contenido:', generatedContent.substring(0, 200));
+      
       // Intentar extraer título del primer H1
       const h1Match = generatedContent.match(/^#\s+(.+)$/m);
-      const title = h1Match?.[1] || 'Software RD 933 y check-in';
+      const title = h1Match?.[1] || variables.ciudad 
+        ? `Software RD 933 y check-in en ${variables.ciudad}`
+        : 'Software RD 933 y check-in';
       
       // Usar el contenido completo como body
       const content = generatedContent;
