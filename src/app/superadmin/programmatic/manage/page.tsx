@@ -21,6 +21,8 @@ export default function ManageTemplatesPage() {
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState<string | null>(null)
   const [showCreateForm, setShowCreateForm] = useState(false)
+  const [generatingId, setGeneratingId] = useState<string | null>(null)
+  const [progress, setProgress] = useState<number>(0)
   const [formData, setFormData] = useState<Partial<ContentTemplate>>({
     name: '',
     type: 'local',
@@ -130,6 +132,14 @@ export default function ManageTemplatesPage() {
 
   const createTestPage = async (templateId: string) => {
     try {
+      setGeneratingId(templateId)
+      setProgress(10)
+
+      // Progreso simulado mientras esperamos la respuesta
+      const interval = setInterval(() => {
+        setProgress((p) => (p < 90 ? p + 5 : p))
+      }, 400)
+
       // Obtener variables de ejemplo según el tipo de plantilla
       const template = templates.find(t => t.id === templateId)
       if (!template) return
@@ -178,17 +188,10 @@ export default function ManageTemplatesPage() {
 
       if (response.ok) {
         const data = await response.json()
+        setProgress(100)
         const previewUrl = `/superadmin/programmatic/preview/${data.page_id}`
-        const confirmMessage = `✅ Página de prueba creada exitosamente!\n\n` +
-          `Título: ${data.title}\n` +
-          `Slug: ${data.slug}\n` +
-          `Palabras: ${data.word_count}\n` +
-          `Score SEO: ${data.seo_score}/100\n\n` +
-          `¿Quieres ver la página de prueba ahora?`
-        
-        if (window.confirm(confirmMessage)) {
-          window.open(previewUrl, '_blank')
-        }
+        // Abrir automáticamente en nueva pestaña
+        window.open(previewUrl, '_blank')
       } else {
         const error = await response.json()
         alert(`❌ Error creando página de prueba:\n${error.error || 'Error desconocido'}`)
@@ -196,6 +199,13 @@ export default function ManageTemplatesPage() {
     } catch (error) {
       console.error('Error creando página de prueba:', error)
       alert(`❌ Error creando página de prueba:\n${error instanceof Error ? error.message : 'Error desconocido'}`)
+    }
+    finally {
+      // Pequeño retraso para que se vea el 100%
+      setTimeout(() => {
+        setGeneratingId(null)
+        setProgress(0)
+      }, 600)
     }
   }
 
@@ -472,14 +482,22 @@ export default function ManageTemplatesPage() {
                         </button>
                       </div>
                     ) : (
-                      <div className="flex gap-2 justify-center">
-                        <button
-                          onClick={() => createTestPage(template.id)}
-                          className="px-3 py-1 bg-purple-600 text-white rounded text-sm hover:bg-purple-700"
-                          title="Crear una página de prueba con esta plantilla"
-                        >
-                          🧪 Probar
-                        </button>
+                      <div className="flex gap-3 justify-center items-center">
+                        <div className="flex flex-col items-center gap-1">
+                          <button
+                            onClick={() => createTestPage(template.id)}
+                            disabled={generatingId === template.id}
+                            className={`px-3 py-1 rounded text-sm text-white ${generatingId === template.id ? 'bg-purple-400 cursor-not-allowed' : 'bg-purple-600 hover:bg-purple-700'}`}
+                            title="Crear una página de prueba con esta plantilla"
+                          >
+                            {generatingId === template.id ? 'Generando…' : '🧪 Probar'}
+                          </button>
+                          {generatingId === template.id && (
+                            <div className="w-28 h-1 bg-gray-200 rounded overflow-hidden">
+                              <div className="h-full bg-purple-600 transition-all" style={{ width: `${progress}%` }} />
+                            </div>
+                          )}
+                        </div>
                         <button
                           onClick={() => startEdit(template)}
                           className="px-3 py-1 bg-yellow-600 text-white rounded text-sm hover:bg-yellow-700"
