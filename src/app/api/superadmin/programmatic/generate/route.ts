@@ -5,10 +5,12 @@ import { sql } from '@/lib/db';
 import { Octokit } from '@octokit/rest';
 import { marked } from 'marked';
 
-// Inicializar Octokit para publicar en GitHub Pages
-const octokit = new Octokit({
-  auth: process.env.GITHUB_TOKEN,
-});
+// Inicializar Octokit para publicar en GitHub Pages (repo landing)
+const GITHUB_TOKEN = process.env.GITHUB_TOKEN_LANDING || process.env.GITHUB_TOKEN;
+const octokit = new Octokit({ auth: GITHUB_TOKEN });
+if (!GITHUB_TOKEN) {
+  console.warn('[programmatic/generate] Falta GITHUB_TOKEN_LANDING (o GITHUB_TOKEN). La publicación automática a GitHub Pages estará desactivada.');
+}
 
 const GITHUB_OWNER = 'Arroyador69';
 const GITHUB_REPO = 'delfincheckin.com';
@@ -82,7 +84,7 @@ export async function POST(req: NextRequest) {
     let githubPath = null;
     let commitSha = null;
     
-    if (is_test && process.env.GITHUB_TOKEN) {
+    if (is_test && GITHUB_TOKEN) {
       try {
         const page = await sql`SELECT * FROM programmatic_pages WHERE id = ${pageId}`;
         if (page.rows.length > 0) {

@@ -4,10 +4,13 @@ import { sql } from '@/lib/db';
 import { Octokit } from '@octokit/rest';
 import { marked } from 'marked';
 
-// Inicializar Octokit con token de GitHub
-const octokit = new Octokit({
-  auth: process.env.GITHUB_TOKEN, // Personal Access Token con permisos repo
-});
+// Inicializar Octokit con token de GitHub (repo landing)
+// Preferimos GITHUB_TOKEN_LANDING para diferenciar del resto de repos
+const GITHUB_TOKEN = process.env.GITHUB_TOKEN_LANDING || process.env.GITHUB_TOKEN;
+const octokit = new Octokit({ auth: GITHUB_TOKEN });
+if (!GITHUB_TOKEN) {
+  console.warn('[programmatic/publish] Falta GITHUB_TOKEN_LANDING (o GITHUB_TOKEN). No se podrá publicar a GitHub Pages.');
+}
 
 const GITHUB_OWNER = 'Arroyador69';
 const GITHUB_REPO = 'delfincheckin.com';
