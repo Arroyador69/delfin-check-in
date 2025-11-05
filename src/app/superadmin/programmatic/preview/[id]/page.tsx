@@ -166,6 +166,7 @@ export default function PreviewPage() {
           {/* Contenido renderizado */}
           <div 
             className="prose prose-lg max-w-none"
+            style={{ color: '#0f172a' }}
             dangerouslySetInnerHTML={{ 
               __html: marked(page.content_html || '', { breaks: true }) 
             }}

@@ -50,8 +50,11 @@ export async function POST(req: NextRequest) {
 
     // Generar slug y canonical URL (añadir prefijo test- si es prueba)
     const slugPrefix = is_test ? 'test-' : '';
+    const citySlug = variables.ciudad
+      ? slugify(String(variables.ciudad))
+      : null;
     const slugBase = variables.slug || 
-      (variables.ciudad ? `${slugPrefix}rd-933/software-${variables.ciudad.toLowerCase().replace(/\s+/g, '-')}` : 
+      (citySlug ? `${slugPrefix}rd-933/software-${citySlug}` : 
       `${slugPrefix}content/${template.type}-${Date.now()}`);
     const canonicalUrl = `https://delfincheckin.com/${slugBase}`;
 
@@ -370,5 +373,17 @@ function escapeHtml(text: string): string {
     "'": '&#039;'
   };
   return text.replace(/[&<>"']/g, (m) => map[m]);
+}
+
+// Slugify seguro (quita acentos y caracteres especiales)
+function slugify(text: string): string {
+  return text
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // quitar diacríticos
+    .toLowerCase()
+    .replace(/[^a-z0-9\-\s]/g, '')
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-');
 }
 

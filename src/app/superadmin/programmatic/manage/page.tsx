@@ -189,9 +189,10 @@ export default function ManageTemplatesPage() {
       if (response.ok) {
         const data = await response.json()
         setProgress(100)
+        // Si está publicado, abrir URL pública; si no, abrir preview interna
+        const publicUrl = data?.slug ? `https://delfincheckin.com/${data.slug}` : ''
         const previewUrl = `/superadmin/programmatic/preview/${data.page_id}`
-        // Abrir automáticamente en nueva pestaña
-        window.open(previewUrl, '_blank')
+        window.open(data.status === 'published' ? publicUrl : previewUrl, '_blank')
       } else {
         const error = await response.json()
         alert(`❌ Error creando página de prueba:\n${error.error || 'Error desconocido'}`)
@@ -484,14 +485,14 @@ export default function ManageTemplatesPage() {
                     ) : (
                       <div className="flex gap-3 justify-center items-center">
                         <div className="flex flex-col items-center gap-1">
-                          <button
-                            onClick={() => createTestPage(template.id)}
+                        <button
+                          onClick={() => createTestPage(template.id)}
                             disabled={generatingId === template.id}
                             className={`px-3 py-1 rounded text-sm text-white ${generatingId === template.id ? 'bg-purple-400 cursor-not-allowed' : 'bg-purple-600 hover:bg-purple-700'}`}
-                            title="Crear una página de prueba con esta plantilla"
-                          >
+                          title="Crear una página de prueba con esta plantilla"
+                        >
                             {generatingId === template.id ? 'Generando…' : '🧪 Probar'}
-                          </button>
+                        </button>
                           {generatingId === template.id && (
                             <div className="w-28 h-1 bg-gray-200 rounded overflow-hidden">
                               <div className="h-full bg-purple-600 transition-all" style={{ width: `${progress}%` }} />
