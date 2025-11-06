@@ -202,7 +202,7 @@ function generateComponentsScript(): string {
     const planEl = document.getElementById('calcPlan');
     const properties = propertiesEl ? parseInt(propertiesEl.value) || 1 : 1;
     const planType = planEl && planEl.value === 'monthly' ? 'monthly' : 'yearly';
-    window.location.href = `https://delfincheckin.com/#precio?properties=${properties}&plan=${planType}&openModal=true`;
+    window.location.href = \`https://delfincheckin.com/#precio?properties=\${properties}&plan=\${planType}&openModal=true\`;
   }
   function handleEmailCapture(e){ e.preventDefault(); const msg = document.getElementById('emailCaptureMessage'); if(msg){ msg.textContent='¡Gracias! Te contactaremos pronto.'; msg.style.display='block'; } }
 </script>`
