@@ -303,7 +303,7 @@ function generatePriceCalculatorHTML(): string {
             style="width: 100%; margin-top: 24px; padding: 16px; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white; border: none; border-radius: 12px; font-size: 18px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);"
             onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(37, 99, 235, 0.4)'"
             onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(37, 99, 235, 0.3)'">
-      💳 Contratar ahora con Stripe
+      💳 Contratar
     </button>
   </div>
 </section>
@@ -470,10 +470,10 @@ function decrementCalc() {
 function openStripePayment() {
   const properties = parseInt(document.getElementById('calcProperties').value) || 1;
   const plan = document.getElementById('calcPlan').value;
-  const planId = plan === 'monthly' ? 'basic' : 'basic_yearly';
+  const planType = plan === 'monthly' ? 'monthly' : 'yearly';
   
-  // Redirigir a checkout con parámetros
-  window.location.href = \`https://admin.delfincheckin.com/checkout-rooms?properties=\${properties}&plan=\${planId}\`;
+  // Redirigir a la landing con parámetros para abrir el modal
+  window.location.href = \`https://delfincheckin.com/#precio?properties=\${properties}&plan=\${planType}&openModal=true\`;
 }
 
 // Captura de Email
