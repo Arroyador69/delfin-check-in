@@ -197,14 +197,122 @@ function generateEmailCaptureHTML(): string {
 function generateComponentsScript(): string {
   return `
 <script>
-  function openStripePayment(){ 
-    const propertiesEl = document.getElementById('calcProperties');
-    const planEl = document.getElementById('calcPlan');
-    const properties = propertiesEl ? parseInt(propertiesEl.value) || 1 : 1;
-    const planType = planEl && planEl.value === 'monthly' ? 'monthly' : 'yearly';
-    window.location.href = \`https://delfincheckin.com/#precio?properties=\${properties}&plan=\${planType}&openModal=true\`;
+// Calculadora de Precios
+function getVolumePrice(properties) {
+  if (properties === 1) return 14.99;
+  if (properties === 2) return 13.49;
+  if (properties >= 3 && properties <= 4) return 12.74;
+  if (properties >= 5 && properties <= 9) return 11.99;
+  if (properties >= 10) return 11.24;
+  return 14.99;
+}
+
+function updateCalc() {
+  const properties = parseInt(document.getElementById('calcProperties').value) || 1;
+  const plan = document.getElementById('calcPlan').value;
+  
+  const pricePerProperty = getVolumePrice(properties);
+  const monthlyTotal = properties * pricePerProperty;
+  const yearlyTotal = monthlyTotal * 12;
+  const yearlyDiscount = yearlyTotal * 0.167;
+  const finalYearlyTotal = yearlyTotal - yearlyDiscount;
+  
+  let total, periodText, savingsText;
+  if (plan === 'monthly') {
+    total = monthlyTotal;
+    periodText = '/mes';
+    savingsText = properties > 1 ? \`Descuento \${Math.round(((14.99 - pricePerProperty) / 14.99) * 100)}% por volumen\` : 'Precio base';
+  } else {
+    total = finalYearlyTotal;
+    periodText = '/año';
+    const regularYearly = properties * 14.99 * 12;
+    const totalSavings = regularYearly - finalYearlyTotal;
+    savingsText = \`Ahorras \${totalSavings.toFixed(2)}€ al año\`;
   }
-  function handleEmailCapture(e){ e.preventDefault(); const msg = document.getElementById('emailCaptureMessage'); if(msg){ msg.textContent='¡Gracias! Te contactaremos pronto.'; msg.style.display='block'; } }
+  
+  // Calcular IVA
+  const base = total;
+  const iva = total * 0.21;
+  const totalWithVat = total * 1.21;
+  
+  // Formatear números con comas para decimales (formato español)
+  const formatNumber = (num) => num.toFixed(2).replace('.', ',');
+  
+  document.getElementById('calcTotal').textContent = \`\${formatNumber(totalWithVat)}€\${periodText}\`;
+  document.getElementById('calcPerProperty').textContent = \`\${formatNumber(pricePerProperty)}€ por propiedad\`;
+  document.getElementById('calcBase').textContent = \`\${formatNumber(base)}€\`;
+  document.getElementById('calcIVA').textContent = \`\${formatNumber(iva)}€\`;
+  document.getElementById('calcSavings').textContent = savingsText.replace(/\\./g, ',');
+}
+
+function incrementCalc() {
+  const input = document.getElementById('calcProperties');
+  const current = parseInt(input.value) || 1;
+  if (current < 50) {
+    input.value = current + 1;
+    updateCalc();
+  }
+}
+
+function decrementCalc() {
+  const input = document.getElementById('calcProperties');
+  const current = parseInt(input.value) || 1;
+  if (current > 1) {
+    input.value = current - 1;
+    updateCalc();
+  }
+}
+
+function openStripePayment(){ 
+  const propertiesEl = document.getElementById('calcProperties');
+  const planEl = document.getElementById('calcPlan');
+  const properties = propertiesEl ? parseInt(propertiesEl.value) || 1 : 1;
+  const planType = planEl && planEl.value === 'monthly' ? 'monthly' : 'yearly';
+  window.location.href = \`https://delfincheckin.com/#precio?properties=\${properties}&plan=\${planType}&openModal=true\`;
+}
+
+// Captura de Email
+async function handleEmailCapture(e){ 
+  e.preventDefault(); 
+  const email = document.getElementById('leadEmail').value;
+  const msg = document.getElementById('emailCaptureMessage');
+  
+  try {
+    const response = await fetch('https://admin.delfincheckin.com/api/public/lead-capture', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, source: 'programmatic_page' })
+    });
+    
+    if (response.ok) {
+      msg.textContent = '✅ ¡Gracias! Te contactaremos pronto.';
+      msg.style.color = '#16a34a';
+      msg.style.display = 'block';
+      document.getElementById('leadEmail').value = '';
+      
+      setTimeout(() => {
+        msg.style.display = 'none';
+      }, 5000);
+    } else {
+      throw new Error('Error en el servidor');
+    }
+  } catch (error) {
+    msg.textContent = '❌ Error al enviar. Por favor, intenta de nuevo.';
+    msg.style.color = '#ef4444';
+    msg.style.display = 'block';
+  }
+}
+
+// Inicializar calculadora al cargar
+if (document.getElementById('calcProperties')) {
+  updateCalc();
+}
+
+// Asegurar que la calculadora se actualice cuando cambie el plan
+const calcPlanSelect = document.getElementById('calcPlan');
+if (calcPlanSelect) {
+  calcPlanSelect.addEventListener('change', updateCalc);
+}
 </script>`
 }
 
