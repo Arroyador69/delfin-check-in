@@ -314,45 +314,54 @@ function generatePriceCalculatorHTML(): string {
 function generateBenefitsHTML(): string {
   return `
 <!-- Beneficios del Servicio -->
-<section style="margin: 3rem 0; padding: 2rem; background: white; border-radius: 16px; border: 1px solid #e2e8f0;">
-  <h2 style="font-size: 2rem; margin-bottom: 1.5rem; color: #1f2937;">✨ Ventajas de usar Delfín Check-in</h2>
+<section style="margin: 3rem 0; padding: 2.5rem; background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); border-radius: 20px; border: 2px solid #e2e8f0; box-shadow: 0 10px 30px rgba(0,0,0,0.05);">
+  <div style="text-align: center; margin-bottom: 2rem;">
+    <div style="font-size: 48px; margin-bottom: 12px;">✨</div>
+    <h2 style="font-size: 2.25rem; margin: 0 0 8px; color: #1f2937; font-weight: 800;">Ventajas de usar Delfín Check-in</h2>
+    <p style="margin: 0; color: #64748b; font-size: 18px;">Todo lo que necesitas para gestionar tu alojamiento de forma profesional</p>
+  </div>
   
-  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
-    <div style="padding: 20px; background: #f0f9ff; border-radius: 12px; border-left: 4px solid #2563eb;">
-      <h3 style="margin: 0 0 12px; color: #1e40af; font-size: 18px;">🏠 Microsite de Reservas Directas</h3>
-      <p style="margin: 0; color: #475569; line-height: 1.6;">
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px;">
+    <div style="padding: 24px; background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border-radius: 16px; border: 2px solid #3b82f6; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15); transition: transform 0.3s ease, box-shadow 0.3s ease;" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 8px 20px rgba(59, 130, 246, 0.25)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(59, 130, 246, 0.15)'">
+      <div style="font-size: 36px; margin-bottom: 12px;">🏠</div>
+      <h3 style="margin: 0 0 12px; color: #1e40af; font-size: 20px; font-weight: 700;">Microsite de Reservas Directas</h3>
+      <p style="margin: 0; color: #475569; line-height: 1.7; font-size: 15px;">
         Tus huéspedes pueden hacer reservas directas con un perfil microsite de tu vivienda o habitación. 
         Así no te cobran Airbnb o Booking sus tarifas porque la tarifa es la mitad del precio que ellos.
       </p>
     </div>
     
-    <div style="padding: 20px; background: #f0fdf4; border-radius: 12px; border-left: 4px solid #16a34a;">
-      <h3 style="margin: 0 0 12px; color: #166534; font-size: 18px;">📤 Envío Automático al Ministerio</h3>
-      <p style="margin: 0; color: #475569; line-height: 1.6;">
+    <div style="padding: 24px; background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border-radius: 16px; border: 2px solid #22c55e; box-shadow: 0 4px 12px rgba(34, 197, 94, 0.15); transition: transform 0.3s ease, box-shadow 0.3s ease;" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 8px 20px rgba(34, 197, 94, 0.25)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(34, 197, 94, 0.15)'">
+      <div style="font-size: 36px; margin-bottom: 12px;">📤</div>
+      <h3 style="margin: 0 0 12px; color: #166534; font-size: 20px; font-weight: 700;">Envío Automático al Ministerio</h3>
+      <p style="margin: 0; color: #475569; line-height: 1.7; font-size: 15px;">
         Beneficios de no hacer nada: se envía directamente el parte de viajeros y la reserva de hospedaje 
         al Ministerio del Interior de manera directa y sencilla tras rellenar nuestro formulario por parte del huésped.
       </p>
     </div>
     
-    <div style="padding: 20px; background: #fef3c7; border-radius: 12px; border-left: 4px solid #f59e0b;">
-      <h3 style="margin: 0 0 12px; color: #92400e; font-size: 18px;">📄 Generador de Facturas</h3>
-      <p style="margin: 0; color: #475569; line-height: 1.6;">
+    <div style="padding: 24px; background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border-radius: 16px; border: 2px solid #f59e0b; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.15); transition: transform 0.3s ease, box-shadow 0.3s ease;" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 8px 20px rgba(245, 158, 11, 0.25)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(245, 158, 11, 0.15)'">
+      <div style="font-size: 36px; margin-bottom: 12px;">📄</div>
+      <h3 style="margin: 0 0 12px; color: #92400e; font-size: 20px; font-weight: 700;">Generador de Facturas</h3>
+      <p style="margin: 0; color: #475569; line-height: 1.7; font-size: 15px;">
         Nuestro sistema tiene un generador de facturas para cuando los huéspedes las necesitan, 
         facilitando la gestión administrativa y fiscal.
       </p>
     </div>
     
-    <div style="padding: 20px; background: #f3e8ff; border-radius: 12px; border-left: 4px solid #9333ea;">
-      <h3 style="margin: 0 0 12px; color: #6b21a8; font-size: 18px;">💰 Calculadora de Costes</h3>
-      <p style="margin: 0; color: #475569; line-height: 1.6;">
+    <div style="padding: 24px; background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%); border-radius: 16px; border: 2px solid #a855f7; box-shadow: 0 4px 12px rgba(168, 85, 247, 0.15); transition: transform 0.3s ease, box-shadow 0.3s ease;" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 8px 20px rgba(168, 85, 247, 0.25)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(168, 85, 247, 0.15)'">
+      <div style="font-size: 36px; margin-bottom: 12px;">💰</div>
+      <h3 style="margin: 0 0 12px; color: #6b21a8; font-size: 20px; font-weight: 700;">Calculadora de Costes</h3>
+      <p style="margin: 0; color: #475569; line-height: 1.7; font-size: 15px;">
         Calculadora de costes para saber exactamente cuánto se gasta por absolutamente todo lo que consume 
         tener una vivienda vacacional o alquilar habitaciones.
       </p>
     </div>
     
-    <div style="padding: 20px; background: #fef2f2; border-radius: 12px; border-left: 4px solid #ef4444;">
-      <h3 style="margin: 0 0 12px; color: #991b1b; font-size: 18px;">✅ Cumplimiento RD 933/2021</h3>
-      <p style="margin: 0; color: #475569; line-height: 1.6;">
+    <div style="padding: 24px; background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%); border-radius: 16px; border: 2px solid #ef4444; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.15); transition: transform 0.3s ease, box-shadow 0.3s ease;" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 8px 20px rgba(239, 68, 68, 0.25)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(239, 68, 68, 0.15)'">
+      <div style="font-size: 36px; margin-bottom: 12px;">✅</div>
+      <h3 style="margin: 0 0 12px; color: #991b1b; font-size: 20px; font-weight: 700;">Cumplimiento RD 933/2021</h3>
+      <p style="margin: 0; color: #475569; line-height: 1.7; font-size: 15px;">
         Cumplimiento automático con el Real Decreto 933/2021 para el registro de viajeros, 
         garantizando que estés siempre en cumplimiento de la normativa vigente.
       </p>
