@@ -115,10 +115,34 @@ export async function POST(req: NextRequest) {
     }
 
     // Generar código único del enlace
-    const linkCodeResult = await sql`
-      SELECT generate_payment_link_code() AS link_code
-    `;
-    const linkCode = linkCodeResult.rows[0].link_code;
+    let linkCode: string;
+    let codeExists = true;
+    let attempts = 0;
+    const maxAttempts = 10;
+    
+    // Generar código único (intentar hasta encontrar uno disponible)
+    while (codeExists && attempts < maxAttempts) {
+      const now = new Date();
+      const year = now.getFullYear().toString();
+      const month = (now.getMonth() + 1).toString().padStart(2, '0');
+      const random = Math.floor(Math.random() * 1000000).toString().padStart(6, '0');
+      linkCode = `PL${year}${month}${random}`;
+      
+      // Verificar si el código ya existe
+      const existingCode = await sql`
+        SELECT link_code FROM payment_links WHERE link_code = ${linkCode} LIMIT 1
+      `;
+      
+      codeExists = existingCode.rows.length > 0;
+      attempts++;
+    }
+    
+    if (attempts >= maxAttempts) {
+      return NextResponse.json(
+        { success: false, error: 'Error generando código único. Por favor, intenta de nuevo.' },
+        { status: 500 }
+      );
+    }
 
     // Crear el enlace
     const result = await sql`
