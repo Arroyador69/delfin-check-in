@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, Copy, ExternalLink, Calendar, Euro, Users, Home, Bed, X, CheckCircle } from 'lucide-react';
+import { Plus, Trash2, Copy, ExternalLink, Calendar, Euro, Users, Home, Bed, X, CheckCircle, Link as LinkIcon } from 'lucide-react';
 
 interface PaymentLink {
   id: number;
