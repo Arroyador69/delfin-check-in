@@ -91,7 +91,7 @@ export async function POST(req: NextRequest) {
 
       // Crear o actualizar reserva desde los metadatos del Payment Intent
       // La reserva se crea SOLO cuando el pago se confirma exitosamente
-      if (paymentIntent.metadata?.source === 'direct_reservation' && paymentIntent.metadata?.reservation_code) {
+      if ((paymentIntent.metadata?.source === 'direct_reservation' || paymentIntent.metadata?.source === 'payment_link') && paymentIntent.metadata?.reservation_code) {
         console.log('🔍 [WEBHOOK RESERVAS] Procesando pago de reserva directa:', {
           paymentIntentId: paymentIntent.id,
           reservationCode: paymentIntent.metadata.reservation_code,
@@ -128,6 +128,25 @@ export async function POST(req: NextRequest) {
             reservationId,
             rowsUpdated: updateResult.rows.length
           });
+
+          // Si es un pago desde enlace de pago, actualizar el enlace
+          if (paymentIntent.metadata?.source === 'payment_link' && paymentIntent.metadata?.payment_link_code) {
+            try {
+              await sql`
+                UPDATE payment_links
+                SET 
+                  payment_completed = true,
+                  payment_completed_at = NOW(),
+                  reservation_id = ${reservationId},
+                  usage_count = usage_count + 1,
+                  updated_at = NOW()
+                WHERE link_code = ${paymentIntent.metadata.payment_link_code}
+              `;
+              console.log('✅ [WEBHOOK RESERVAS] Enlace de pago marcado como completado:', paymentIntent.metadata.payment_link_code);
+            } catch (linkErr) {
+              console.error('⚠️ [WEBHOOK RESERVAS] Error actualizando enlace de pago (continuo):', linkErr);
+            }
+          }
         } else {
           // Crear nueva reserva desde los metadatos (esto es lo nuevo)
           console.log('✨ [WEBHOOK RESERVAS] Creando nueva reserva desde metadatos del Payment Intent');
@@ -181,6 +200,25 @@ export async function POST(req: NextRequest) {
             reservationId,
             reservationCode: paymentIntent.metadata.reservation_code
           });
+
+          // Si es un pago desde enlace de pago, actualizar el enlace
+          if (paymentIntent.metadata?.source === 'payment_link' && paymentIntent.metadata?.payment_link_code) {
+            try {
+              await sql`
+                UPDATE payment_links
+                SET 
+                  payment_completed = true,
+                  payment_completed_at = NOW(),
+                  reservation_id = ${reservationId},
+                  usage_count = usage_count + 1,
+                  updated_at = NOW()
+                WHERE link_code = ${paymentIntent.metadata.payment_link_code}
+              `;
+              console.log('✅ [WEBHOOK RESERVAS] Enlace de pago marcado como completado:', paymentIntent.metadata.payment_link_code);
+            } catch (linkErr) {
+              console.error('⚠️ [WEBHOOK RESERVAS] Error actualizando enlace de pago (continuo):', linkErr);
+            }
+          }
         }
 
         // 4.1 Insertar en tabla operacional 'reservations' (si no existe)

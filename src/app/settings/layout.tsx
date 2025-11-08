@@ -64,6 +64,12 @@ export default function SettingsLayout({
             icon: Wallet,
             href: '/settings/microsite-payments',
           },
+          {
+            id: 'payment-links',
+            name: 'Enlaces de Pago',
+            icon: LinkIcon,
+            href: '/settings/payment-links',
+          },
     {
       id: 'account',
       name: 'Cuenta',
