@@ -177,7 +177,7 @@ export default function IntegrationsSettingsPage() {
 
   // Agregar calendario externo
   const handleAddExternalCalendar = async () => {
-    if (!formData.property_id || !formData.calendar_name || !formData.calendar_type) {
+    if (!formData.property_id || !formData.calendar_name || !formData.calendar_url) {
       alert('⚠️ Por favor completa todos los campos obligatorios');
       return;
     }
@@ -192,8 +192,8 @@ export default function IntegrationsSettingsPage() {
         body: JSON.stringify({
           property_id: parseInt(formData.property_id),
           calendar_name: formData.calendar_name,
-          calendar_type: formData.calendar_type,
-          calendar_url: formData.calendar_url || null,
+          calendar_type: 'ical', // Siempre usar 'ical' ya que todos los calendarios externos son iCal
+          calendar_url: formData.calendar_url,
           sync_frequency: formData.sync_frequency
         })
       });
@@ -390,25 +390,8 @@ export default function IntegrationsSettingsPage() {
                     placeholder="Ej: Airbnb - Habitación 1"
                     value={formData.calendar_name}
                     onChange={(e) => setFormData({ ...formData, calendar_name: e.target.value })}
-                    className="rounded-xl border-gray-300 focus:ring-2 focus:ring-blue-500"
+                    className="rounded-xl border-gray-300 focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder:text-gray-500"
                   />
-                </div>
-                
-                <div>
-                  <Label htmlFor="calendar_type" className="font-semibold text-gray-900 mb-2 block text-sm sm:text-base">
-                    🔗 Tipo de Calendario *
-                  </Label>
-                  <select
-                    id="calendar_type"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                    value={formData.calendar_type}
-                    onChange={(e) => setFormData({ ...formData, calendar_type: e.target.value })}
-                  >
-                    <option value="ical">iCal Feed</option>
-                    <option value="google">Google Calendar</option>
-                    <option value="airbnb">Airbnb</option>
-                    <option value="booking">Booking.com</option>
-                  </select>
                 </div>
                 
                 <div>
@@ -426,20 +409,18 @@ export default function IntegrationsSettingsPage() {
                   />
                 </div>
                 
-                {formData.calendar_type === 'ical' && (
-                  <div className="md:col-span-2">
-                    <Label htmlFor="calendar_url" className="font-semibold text-gray-900 mb-2 block text-sm sm:text-base">
-                      🌐 URL del Calendario iCal *
-                    </Label>
-                    <Input
-                      id="calendar_url"
-                      placeholder="https://..."
-                      value={formData.calendar_url}
-                      onChange={(e) => setFormData({ ...formData, calendar_url: e.target.value })}
-                      className="rounded-xl border-gray-300 focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                )}
+                <div className="md:col-span-2">
+                  <Label htmlFor="calendar_url" className="font-semibold text-gray-900 mb-2 block text-sm sm:text-base">
+                    🌐 URL del Calendario iCal *
+                  </Label>
+                  <Input
+                    id="calendar_url"
+                    placeholder="https://..."
+                    value={formData.calendar_url}
+                    onChange={(e) => setFormData({ ...formData, calendar_url: e.target.value })}
+                    className="rounded-xl border-gray-300 focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
               </div>
               
               <div className="flex flex-col sm:flex-row justify-end gap-3 sm:gap-4 pt-4 border-t border-gray-200">

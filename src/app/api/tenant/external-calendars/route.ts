@@ -66,12 +66,15 @@ export async function POST(req: NextRequest) {
       is_active = true
     } = body;
 
-    if (!property_id || !calendar_name || !calendar_type) {
+    if (!property_id || !calendar_name || !calendar_url) {
       return NextResponse.json({
         success: false,
-        error: 'Faltan campos obligatorios: property_id, calendar_name, calendar_type'
+        error: 'Faltan campos obligatorios: property_id, calendar_name, calendar_url'
       }, { status: 400 });
     }
+
+    // Usar 'ical' como tipo por defecto si no se especifica
+    const calendarType = calendar_type || 'ical';
 
     // Verificar que la propiedad pertenece al tenant
     const propertyCheck = await sql`
@@ -96,11 +99,11 @@ export async function POST(req: NextRequest) {
     if (settingsResult.rows.length > 0) {
       const settings = settingsResult.rows[0];
       
-      // Verificar tipo de calendario permitido
-      if (!settings.allowed_calendar_types.includes(calendar_type)) {
+      // Verificar tipo de calendario permitido (siempre permitir 'ical')
+      if (!settings.allowed_calendar_types.includes(calendarType) && calendarType !== 'ical') {
         return NextResponse.json({
           success: false,
-          error: `Tipo de calendario '${calendar_type}' no permitido en tu plan`
+          error: `Tipo de calendario '${calendarType}' no permitido en tu plan`
         }, { status: 403 });
       }
 
@@ -123,8 +126,8 @@ export async function POST(req: NextRequest) {
         tenant_id, property_id, calendar_name, calendar_type,
         calendar_url, sync_frequency, is_active
       ) VALUES (
-        ${tenantId}, ${property_id}, ${calendar_name}, ${calendar_type},
-        ${calendar_url || null}, ${sync_frequency}, ${is_active}
+        ${tenantId}, ${property_id}, ${calendar_name}, ${calendarType},
+        ${calendar_url}, ${sync_frequency}, ${is_active}
       )
       RETURNING *
     `;
