@@ -305,7 +305,7 @@ export default function IntegrationsSettingsPage() {
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 text-lg font-medium">Cargando integraciones...</p>
+          <p className="text-gray-800 text-lg font-semibold">Cargando integraciones...</p>
         </div>
       </div>
     );
@@ -322,7 +322,7 @@ export default function IntegrationsSettingsPage() {
               Integraciones de Calendario
             </span>
           </h1>
-          <p className="text-gray-600 text-sm sm:text-lg">Gestiona los calendarios del sistema y sincroniza con OTAs</p>
+          <p className="text-gray-800 text-sm sm:text-lg font-medium">Gestiona los calendarios del sistema y sincroniza con OTAs</p>
         </div>
 
         {/* Información del plan */}
@@ -358,14 +358,14 @@ export default function IntegrationsSettingsPage() {
                 <span className="text-2xl sm:text-3xl" style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>➕</span>
                 Agregar Calendario Externo
               </CardTitle>
-              <CardDescription className="font-semibold text-gray-700 text-sm sm:text-base">
+              <CardDescription className="font-semibold text-gray-900 text-sm sm:text-base">
                 Conecta calendarios de Airbnb, Expedia, Booking.com u otras OTAs
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4 sm:space-y-6 p-4 sm:p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                 <div>
-                  <Label htmlFor="property_id" className="font-semibold text-gray-700 mb-2 block text-sm sm:text-base">
+                  <Label htmlFor="property_id" className="font-semibold text-gray-900 mb-2 block text-sm sm:text-base">
                     🏠 Propiedad/Habitación *
                   </Label>
                   <select
@@ -382,7 +382,7 @@ export default function IntegrationsSettingsPage() {
                 </div>
                 
                 <div>
-                  <Label htmlFor="calendar_name" className="font-semibold text-gray-700 mb-2 block text-sm sm:text-base">
+                  <Label htmlFor="calendar_name" className="font-semibold text-gray-900 mb-2 block text-sm sm:text-base">
                     📋 Nombre del Calendario *
                   </Label>
                   <Input
@@ -395,7 +395,7 @@ export default function IntegrationsSettingsPage() {
                 </div>
                 
                 <div>
-                  <Label htmlFor="calendar_type" className="font-semibold text-gray-700 mb-2 block text-sm sm:text-base">
+                  <Label htmlFor="calendar_type" className="font-semibold text-gray-900 mb-2 block text-sm sm:text-base">
                     🔗 Tipo de Calendario *
                   </Label>
                   <select
@@ -412,7 +412,7 @@ export default function IntegrationsSettingsPage() {
                 </div>
                 
                 <div>
-                  <Label htmlFor="sync_frequency" className="font-semibold text-gray-700 mb-2 block text-sm sm:text-base">
+                  <Label htmlFor="sync_frequency" className="font-semibold text-gray-900 mb-2 block text-sm sm:text-base">
                     ⏱️ Frecuencia de Sincronización (minutos)
                   </Label>
                   <Input
@@ -428,7 +428,7 @@ export default function IntegrationsSettingsPage() {
                 
                 {formData.calendar_type === 'ical' && (
                   <div className="md:col-span-2">
-                    <Label htmlFor="calendar_url" className="font-semibold text-gray-700 mb-2 block text-sm sm:text-base">
+                    <Label htmlFor="calendar_url" className="font-semibold text-gray-900 mb-2 block text-sm sm:text-base">
                       🌐 URL del Calendario iCal *
                     </Label>
                     <Input
@@ -446,7 +446,7 @@ export default function IntegrationsSettingsPage() {
                 <Button 
                   variant="outline" 
                   onClick={() => setShowAddForm(false)} 
-                  className="font-semibold text-gray-700 border-gray-300 rounded-xl hover:bg-gray-50 px-6 py-3"
+                  className="font-semibold text-gray-900 border-gray-300 rounded-xl hover:bg-gray-50 px-6 py-3"
                 >
                   Cancelar
                 </Button>
@@ -469,7 +469,7 @@ export default function IntegrationsSettingsPage() {
               <span className="text-2xl sm:text-3xl" style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>📆</span>
               Calendarios del Sistema
             </CardTitle>
-            <CardDescription className="font-semibold text-gray-700 text-sm sm:text-base">
+            <CardDescription className="font-semibold text-gray-900 text-sm sm:text-base">
               Cada propiedad genera automáticamente un iCal único que puedes usar en tus OTAs
             </CardDescription>
           </CardHeader>
@@ -479,8 +479,8 @@ export default function IntegrationsSettingsPage() {
                 <div className="bg-gradient-to-r from-blue-100 to-purple-100 p-6 rounded-full w-24 h-24 mx-auto mb-6 flex items-center justify-center">
                   <Calendar className="w-12 h-12 text-blue-600" />
                 </div>
-                <h3 className="text-xl sm:text-2xl font-semibold text-gray-800 mb-2">No hay propiedades configuradas</h3>
-                <p className="text-gray-600 text-sm sm:text-base">Crea una propiedad primero en la sección de Propiedades</p>
+                <h3 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-2">No hay propiedades configuradas</h3>
+                <p className="text-gray-800 text-sm sm:text-base font-medium">Crea una propiedad primero en la sección de Propiedades</p>
               </div>
             ) : (
               <div className="space-y-4">
@@ -494,11 +494,11 @@ export default function IntegrationsSettingsPage() {
                             <span className="text-xl sm:text-2xl" style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>🏠</span>
                             {property.property_name}
                           </h4>
-                          <p className="text-sm sm:text-base text-gray-700 mb-3 font-medium">
+                          <p className="text-sm sm:text-base text-gray-900 mb-3 font-semibold">
                             URL del iCal del sistema para sincronizar con OTAs:
                           </p>
                           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 bg-white p-3 sm:p-4 rounded-xl border border-blue-200 shadow-sm">
-                            <code className="flex-1 text-xs sm:text-sm break-all p-2 bg-gray-50 rounded-lg font-mono">{icalUrl}</code>
+                            <code className="flex-1 text-xs sm:text-sm break-all p-2 bg-gray-50 rounded-lg font-mono text-gray-900">{icalUrl}</code>
                             <div className="flex gap-2">
                               <Button
                                 size="sm"
@@ -520,7 +520,7 @@ export default function IntegrationsSettingsPage() {
                               </Button>
                             </div>
                           </div>
-                          <p className="text-xs sm:text-sm text-gray-600 mt-3 font-medium">
+                          <p className="text-xs sm:text-sm text-gray-800 mt-3 font-semibold">
                             💡 Copia esta URL y úsala en Airbnb, Expedia, Booking.com u otras OTAs para sincronizar tus reservas directas.
                           </p>
                         </div>
@@ -544,7 +544,7 @@ export default function IntegrationsSettingsPage() {
               <span className="text-2xl sm:text-3xl" style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>🔗</span>
               Calendarios Externos
             </CardTitle>
-            <CardDescription className="font-semibold text-gray-700 text-sm sm:text-base">
+            <CardDescription className="font-semibold text-gray-900 text-sm sm:text-base">
               Calendarios de OTAs que sincronizan con tu sistema para bloquear fechas automáticamente
             </CardDescription>
           </CardHeader>
@@ -554,8 +554,8 @@ export default function IntegrationsSettingsPage() {
                 <div className="bg-gradient-to-r from-purple-100 to-pink-100 p-6 rounded-full w-24 h-24 mx-auto mb-6 flex items-center justify-center">
                   <Settings className="w-12 h-12 text-purple-600" />
                 </div>
-                <h3 className="text-xl sm:text-2xl font-semibold text-gray-800 mb-2">No hay calendarios externos</h3>
-                <p className="text-gray-600 text-sm sm:text-base">Agrega uno para sincronizar con OTAs</p>
+                <h3 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-2">No hay calendarios externos</h3>
+                <p className="text-gray-800 text-sm sm:text-base font-medium">Agrega uno para sincronizar con OTAs</p>
               </div>
             ) : (
               <div className="space-y-4">
@@ -574,18 +574,18 @@ export default function IntegrationsSettingsPage() {
                         </div>
                         
                         {calendar.calendar_url && (
-                          <p className="text-sm sm:text-base text-gray-700 mb-3 font-medium">
-                            <strong>🌐 URL:</strong> <code className="text-xs sm:text-sm bg-white px-2 py-1 rounded border border-gray-200">{calendar.calendar_url}</code>
+                          <p className="text-sm sm:text-base text-gray-900 mb-3 font-semibold">
+                            <strong>🌐 URL:</strong> <code className="text-xs sm:text-sm bg-white px-2 py-1 rounded border border-gray-200 text-gray-900">{calendar.calendar_url}</code>
                           </p>
                         )}
                         
-                        <div className="flex flex-wrap items-center gap-4 text-sm sm:text-base text-gray-700">
+                        <div className="flex flex-wrap items-center gap-4 text-sm sm:text-base text-gray-800">
                           <span className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-gray-200">
                             <Clock className="w-4 h-4 text-purple-600" />
                             <span className="font-semibold">Sincroniza cada {calendar.sync_frequency} min</span>
                           </span>
                           {calendar.last_sync_at && (
-                            <span className="bg-white px-3 py-2 rounded-lg border border-gray-200 font-medium">
+                            <span className="bg-white px-3 py-2 rounded-lg border border-gray-200 font-semibold text-gray-900">
                               📅 Última sincronización: {new Date(calendar.last_sync_at).toLocaleString('es-ES')}
                             </span>
                           )}

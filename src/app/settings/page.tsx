@@ -19,14 +19,6 @@ export default function SettingsPage() {
   });
   const [message, setMessage] = useState({ type: '', text: '' });
 
-  const handleSaveSettings = async () => {
-    setLoading(true);
-    // Aquí iría la lógica para guardar configuraciones
-    setTimeout(() => {
-      setLoading(false);
-    }, 1000);
-  };
-
   // Cargar datos al montar el componente
   useEffect(() => {
     const loadData = async () => {
@@ -221,18 +213,6 @@ export default function SettingsPage() {
             </div>
           )}
         </div>
-      </div>
-
-
-      {/* Save button */}
-      <div className="mt-8 pt-6 border-t border-gray-200">
-        <button
-          onClick={handleSaveSettings}
-          disabled={loading}
-          className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-4 text-lg font-semibold rounded-xl shadow-lg transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-        >
-          {loading ? 'Guardando...' : 'Guardar Configuración'}
-        </button>
       </div>
 
         </div>
