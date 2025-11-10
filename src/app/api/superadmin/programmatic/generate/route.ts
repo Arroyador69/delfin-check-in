@@ -308,6 +308,7 @@ function generateSEOHTML(page: any): string {
 </html>`;
 }
 
+// IMPORTANTE: Esta función debe ser idéntica a la de render/[id]/route.ts para garantizar consistencia
 function generatePriceCalculatorHTML(): string {
   return `
 <!-- Calculadora de Precios -->
@@ -359,7 +360,7 @@ function generatePriceCalculatorHTML(): string {
             <option value="monthly">💳 Mensual (14,99€/propiedad)</option>
             <option value="yearly" selected>🎯 Anual (descuento 16,7%) - RECOMENDADO</option>
           </select>
-          <!-- Flecha personalizada -->
+          <!-- Flecha personalizada para el select -->
           <div style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); pointer-events: none; color: #2563eb; font-size: 16px; font-weight: bold;">▼</div>
         </div>
       </div>
@@ -396,7 +397,7 @@ function generatePriceCalculatorHTML(): string {
       💳 Contratar
     </button>
   </div>
-</div>`;
+</div>`
 }
 
 function generateBenefitsHTML(): string {

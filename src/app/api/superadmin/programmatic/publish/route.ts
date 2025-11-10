@@ -239,6 +239,7 @@ function escapeHtml(text: string): string {
 }
 
 // Generar componente de Calculadora de Precios con Stripe
+// IMPORTANTE: Esta función debe ser idéntica a la de render/[id]/route.ts para garantizar consistencia
 function generatePriceCalculatorHTML(): string {
   return `
 <!-- Calculadora de Precios -->
@@ -261,8 +262,6 @@ function generatePriceCalculatorHTML(): string {
         <div style="position: relative;">
           <input type="number" id="calcProperties" min="1" max="50" value="1" readonly
                  style="width: 100%; height: 50px; border-radius: 12px; border: 2px solid #e2e8f0; padding: 0 20px 0 20px; font-size: 18px; text-align: center; font-weight: 600; color: #2563eb; background: white; transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(0,0,0,0.05); -moz-appearance: textfield; cursor: default;"
-                 onfocus="this.style.borderColor='#2563eb'; this.style.boxShadow='0 0 0 3px rgba(37, 99, 235, 0.1)'"
-                 onblur="this.style.borderColor='#e2e8f0'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.05)'"
                  onkeydown="return false;"
                  onpaste="return false;"
                  oninput="return false;">
@@ -288,9 +287,7 @@ function generatePriceCalculatorHTML(): string {
         </label>
         <div style="position: relative;">
           <select id="calcPlan" onchange="updateCalc()" 
-                  style="width: 100%; height: 50px; border-radius: 12px; border: 2px solid #e2e8f0; padding: 0 50px 0 20px; font-size: 16px; font-weight: 500; background: white; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(0,0,0,0.05); appearance: none; -webkit-appearance: none; -moz-appearance: none;"
-                  onfocus="this.style.borderColor='#2563eb'; this.style.boxShadow='0 0 0 3px rgba(37, 99, 235, 0.1)'"
-                  onblur="this.style.borderColor='#e2e8f0'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.05)'">
+                  style="width: 100%; height: 50px; border-radius: 12px; border: 2px solid #e2e8f0; padding: 0 50px 0 20px; font-size: 16px; font-weight: 500; background: white; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(0,0,0,0.05); appearance: none; -webkit-appearance: none; -moz-appearance: none;">
             <option value="monthly">💳 Mensual (14,99€/propiedad)</option>
             <option value="yearly" selected>🎯 Anual (descuento 16,7%) - RECOMENDADO</option>
           </select>
@@ -300,9 +297,8 @@ function generatePriceCalculatorHTML(): string {
       </div>
     </div>
     
-    <!-- Resultados con diseño mejorado -->
+    <!-- Resultados -->
     <div id="calcResults" style="background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); border-radius: 16px; padding: 32px; text-align: center; border: 2px solid #e2e8f0; position: relative; overflow: hidden;">
-      <!-- Decoración de fondo -->
       <div style="position: absolute; top: -20px; right: -20px; width: 100px; height: 100px; background: linear-gradient(135deg, #2563eb, #1d4ed8); border-radius: 50%; opacity: 0.1;"></div>
       <div style="position: absolute; bottom: -30px; left: -30px; width: 80px; height: 80px; background: linear-gradient(135deg, #16a34a, #15803d); border-radius: 50%; opacity: 0.1;"></div>
       
@@ -332,8 +328,7 @@ function generatePriceCalculatorHTML(): string {
       💳 Contratar
     </button>
   </div>
-</div>
-`;
+</div>`
 }
 
 // Generar sección de Beneficios del Servicio
