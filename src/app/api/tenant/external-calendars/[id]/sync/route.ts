@@ -5,11 +5,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
 
-export async function POST(req: NextRequest) {
+export async function POST(
+  req: NextRequest,
+  { params }: { params: { id: string } }
+) {
   try {
     const tenantId = req.headers.get('x-tenant-id') || 'default';
-    const { searchParams } = new URL(req.url);
-    const calendarId = searchParams.get('id');
+    const calendarId = params.id;
 
     if (!calendarId) {
       return NextResponse.json({
@@ -20,10 +22,19 @@ export async function POST(req: NextRequest) {
 
     console.log('🔄 Iniciando sincronización de calendario:', calendarId);
 
+    // Convertir calendarId a número
+    const calendarIdNum = parseInt(calendarId);
+    if (isNaN(calendarIdNum)) {
+      return NextResponse.json({
+        success: false,
+        error: 'ID de calendario inválido'
+      }, { status: 400 });
+    }
+
     // Verificar que el calendario pertenece al tenant
     const calendarResult = await sql`
       SELECT * FROM external_calendars
-      WHERE id = ${calendarId} AND tenant_id = ${tenantId} AND is_active = true
+      WHERE id = ${calendarIdNum} AND tenant_id = ${tenantId} AND is_active = true
     `;
 
     if (calendarResult.rows.length === 0) {
@@ -39,7 +50,7 @@ export async function POST(req: NextRequest) {
     await sql`
       UPDATE external_calendars
       SET sync_status = 'syncing', last_sync_at = NOW()
-      WHERE id = ${calendarId}
+      WHERE id = ${calendarIdNum}
     `;
 
     try {
@@ -70,7 +81,7 @@ export async function POST(req: NextRequest) {
           sync_status = 'success',
           sync_error = NULL,
           last_sync_at = NOW()
-        WHERE id = ${calendarId}
+        WHERE id = ${calendarIdNum}
       `;
 
       console.log('✅ Sincronización completada:', syncResult);
@@ -88,7 +99,7 @@ export async function POST(req: NextRequest) {
         SET 
           sync_status = 'error',
           sync_error = ${syncError instanceof Error ? syncError.message : 'Error desconocido'}
-        WHERE id = ${calendarId}
+        WHERE id = ${calendarIdNum}
       `;
 
       console.error('❌ Error en sincronización:', syncError);
