@@ -5,6 +5,7 @@ import ConditionalNavigation from "@/components/ConditionalNavigation";
 import SWRegister from "@/components/SWRegister";
 import PWAInstallGuide from "@/components/PWAInstallGuide";
 import ConditionalFooter from "@/components/ConditionalFooter";
+import CookieConsentModal from "@/components/CookieConsentModal";
 
 // Importar Sentry
 import '@sentry/nextjs';
@@ -34,6 +35,7 @@ export default function RootLayout({
             {children}
           </main>
           <ConditionalFooter />
+          <CookieConsentModal />
         </div>
       </body>
     </html>

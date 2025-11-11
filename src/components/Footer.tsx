@@ -48,9 +48,21 @@ export default function Footer() {
               <a href="/legal/notice" className="block text-sm text-blue-600 hover:text-blue-800 underline">
                 Aviso Legal
               </a>
-              <a href="/legal/cookies" className="block text-sm text-blue-600 hover:text-blue-800 underline">
+              <button
+                type="button"
+                onClick={() => {
+                  if (typeof window !== 'undefined') {
+                    window.dispatchEvent(
+                      new CustomEvent('open-cookie-consent', {
+                        detail: { view: 'manage' as const },
+                      })
+                    );
+                  }
+                }}
+                className="block text-left text-sm text-blue-600 underline transition hover:text-blue-800"
+              >
                 Gestionar Cookies
-              </a>
+              </button>
             </div>
           </div>
         </div>
