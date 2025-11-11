@@ -25,10 +25,20 @@ export default function PrivacyPage() {
               <span className="text-2xl mr-2" style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>1️⃣</span>
               Información del Responsable
             </h2>
-            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-200">
-              <p><strong>Delfín Check-in</strong><br />
-              📧 Email: contacto@delfincheckin.com<br />
-              📍 Dirección: Málaga, España</p>
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-200 text-gray-800">
+              <p className="leading-relaxed">
+                <span className="font-semibold text-gray-900">Delfín Check-in</span>
+                <br />
+                <span className="inline-flex items-center gap-2">
+                  <span role="img" aria-hidden="true">📧</span>
+                  Email: contacto@delfincheckin.com
+                </span>
+                <br />
+                <span className="inline-flex items-center gap-2">
+                  <span role="img" aria-hidden="true">📍</span>
+                  Dirección: Málaga, España
+                </span>
+              </p>
             </div>
           </div>
 
