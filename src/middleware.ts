@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { verifyToken } from '@/lib/auth'
 
 /**
  * 🔒 MIDDLEWARE DE AUTENTICACIÓN SIMPLIFICADO Y ROBUSTO
@@ -93,16 +94,33 @@ export async function middleware(req: NextRequest) {
     url.pathname.startsWith('/api/debug-') ||
     url.pathname.startsWith('/api/check-') ||
     url.pathname.startsWith('/api/onboarding/') ||
-    url.pathname.startsWith('/api/admin/login')
+    url.pathname.startsWith('/api/admin/login') ||
+    url.pathname.startsWith('/api/auth/mobile-login') ||
+    url.pathname.startsWith('/api/auth/refresh')
   );
   
   if (isPublicRoute) {
     return NextResponse.next();
   }
 
-  // Para rutas de API, inyectar tenant ID por defecto
+  // Para rutas de API, inyectar tenant ID desde JWT o usar por defecto
   if (url.pathname.startsWith('/api/')) {
     const requestHeaders = new Headers(req.headers);
+    
+    // Intentar obtener tenant_id desde Authorization Bearer token (para apps móviles)
+    const authHeader = req.headers.get('authorization');
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      try {
+        const token = authHeader.split(' ')[1];
+        const payload = verifyToken(token);
+        if (payload?.tenantId) {
+          requestHeaders.set('x-tenant-id', payload.tenantId);
+          console.log(`📱 Token móvil detectado, tenant_id: ${payload.tenantId}`);
+        }
+      } catch (error) {
+        console.error('Error verificando token Bearer:', error);
+      }
+    }
     
     // Si no hay tenant ID en el header, usar el tenant por defecto
     if (!requestHeaders.get('x-tenant-id')) {
