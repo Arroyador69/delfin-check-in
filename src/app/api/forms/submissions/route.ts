@@ -27,19 +27,8 @@ export async function GET(req: NextRequest) {
 
     const offset = (page - 1) * limit;
 
-    // Construir query con filtros
-    let whereClause = `WHERE fs.tenant_id = $1`;
-    const queryParams = [tenantId];
-    let paramIndex = 2;
-
-    if (search) {
-      whereClause += ` AND (fs.name ILIKE $${paramIndex} OR fs.email ILIKE $${paramIndex} OR fs.message ILIKE $${paramIndex})`;
-      queryParams.push(`%${search}%`);
-      paramIndex++;
-    }
-
-    // Query principal
-    const submissionsQuery = `
+    // Construir query con filtros usando template literals de @vercel/postgres
+    let submissionsQuery = sql`
       SELECT 
         fs.id,
         fs.name,
@@ -55,33 +44,53 @@ export async function GET(req: NextRequest) {
         fs.created_at,
         fs.updated_at
       FROM form_submissions fs
-      ${whereClause}
-      ORDER BY fs.${sortBy} ${sortOrder.toUpperCase()}
-      LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
+      WHERE fs.tenant_id = ${tenantId}
     `;
 
-    queryParams.push(limit, offset);
+    if (search) {
+      const searchPattern = `%${search}%`;
+      submissionsQuery = sql`
+        ${submissionsQuery}
+        AND (fs.name ILIKE ${searchPattern} OR fs.email ILIKE ${searchPattern} OR fs.message ILIKE ${searchPattern})
+      `;
+    }
+
+    // Agregar ORDER BY, LIMIT y OFFSET
+    const sortBySafe = ['id', 'name', 'email', 'created_at', 'updated_at'].includes(sortBy) ? sortBy : 'created_at';
+    const sortOrderSafe = sortOrder.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
+    
+    submissionsQuery = sql`
+      ${submissionsQuery}
+      ORDER BY fs.${sql.unsafe(sortBySafe)} ${sql.unsafe(sortOrderSafe)}
+      LIMIT ${limit} OFFSET ${offset}
+    `;
 
     // Query de conteo total
-    const countQuery = `
+    let countQuery = sql`
       SELECT COUNT(*) as total
       FROM form_submissions fs
-      ${whereClause}
+      WHERE fs.tenant_id = ${tenantId}
     `;
 
-    const countParams = queryParams.slice(0, paramIndex - 2);
+    if (search) {
+      const searchPattern = `%${search}%`;
+      countQuery = sql`
+        ${countQuery}
+        AND (fs.name ILIKE ${searchPattern} OR fs.email ILIKE ${searchPattern} OR fs.message ILIKE ${searchPattern})
+      `;
+    }
 
     // Ejecutar queries
     const [submissionsResult, countResult] = await Promise.all([
-      sql.query(submissionsQuery, queryParams),
-      sql.query(countQuery, countParams)
+      submissionsQuery,
+      countQuery
     ]);
 
     const submissions = submissionsResult.rows;
-    const total = parseInt(countResult.rows[0].total);
+    const total = parseInt(countResult.rows[0]?.total || '0');
 
     // Estadísticas adicionales
-    const statsQuery = `
+    const statsResult = await sql`
       SELECT 
         COUNT(*) as total_submissions,
         COUNT(CASE WHEN fs.created_at >= NOW() - INTERVAL '7 days' THEN 1 END) as submissions_last_7_days,
@@ -89,10 +98,9 @@ export async function GET(req: NextRequest) {
         COUNT(CASE WHEN fs.checkin IS NOT NULL THEN 1 END) as submissions_with_dates,
         COUNT(CASE WHEN fs.guests IS NOT NULL THEN 1 END) as submissions_with_guests
       FROM form_submissions fs
-      WHERE fs.tenant_id = $1
+      WHERE fs.tenant_id = ${tenantId}
     `;
 
-    const statsResult = await sql.query(statsQuery, [tenantId]);
     const stats = statsResult.rows[0];
 
     console.log(`📊 Obtenidos ${submissions.length} envíos de formulario para tenant ${tenantId}`);
@@ -116,10 +124,15 @@ export async function GET(req: NextRequest) {
       }
     });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error obteniendo envíos de formularios:', error);
+    console.error('Detalles del error:', {
+      message: error.message,
+      stack: error.stack,
+      tenantId: req.headers.get('x-tenant-id'),
+    });
     return NextResponse.json(
-      { error: 'Error al obtener envíos de formularios' },
+      { error: 'Error al obtener envíos de formularios', details: error.message },
       { status: 500 }
     );
   }
