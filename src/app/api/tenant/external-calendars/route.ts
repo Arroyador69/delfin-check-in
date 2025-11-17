@@ -103,7 +103,11 @@ export async function POST(req: NextRequest) {
       if (!settings.allowed_calendar_types.includes(calendarType) && calendarType !== 'ical') {
         return NextResponse.json({
           success: false,
-          error: `Tipo de calendario '${calendarType}' no permitido en tu plan`
+          error: `⚠️ Tipo de calendario no permitido: El tipo '${calendarType}' no está disponible en tu plan actual.`,
+          details: `Tu plan solo permite los siguientes tipos de calendario: ${settings.allowed_calendar_types.join(', ')}. El tipo 'ical' está siempre disponible.`,
+          suggestion: 'Usa un tipo de calendario permitido o actualiza tu plan para obtener acceso a más tipos de calendario.',
+          requested_type: calendarType,
+          allowed_types: settings.allowed_calendar_types
         }, { status: 403 });
       }
 
@@ -113,10 +117,15 @@ export async function POST(req: NextRequest) {
         WHERE property_id = ${property_id} AND tenant_id = ${tenantId}
       `;
 
-      if (parseInt(calendarCount.rows[0].count) >= 5) { // Máximo 5 calendarios externos por propiedad
+      const currentCalendarCount = parseInt(calendarCount.rows[0].count);
+      if (currentCalendarCount >= 5) { // Máximo 5 calendarios externos por propiedad
         return NextResponse.json({
           success: false,
-          error: 'Límite de calendarios externos por propiedad alcanzado (máximo 5)'
+          error: '⚠️ Límite alcanzado: Has alcanzado el máximo de 5 calendarios externos por propiedad.',
+          details: `Esta propiedad ya tiene ${currentCalendarCount} calendarios externos configurados. Cada propiedad puede tener un máximo de 5 calendarios externos adicionales.`,
+          suggestion: 'Si necesitas más calendarios, puedes eliminar uno existente o considerar actualizar tu plan para obtener más capacidad.',
+          current_count: currentCalendarCount,
+          max_allowed: 5
         }, { status: 403 });
       }
     }

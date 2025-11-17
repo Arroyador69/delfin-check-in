@@ -167,17 +167,34 @@ export async function POST(req: NextRequest) {
     
     // Validar límite por plan (conteo de Rooms activas vs plan)
     const planRes = await sql`
-      SELECT plan_id FROM tenants WHERE id = ${tenantId}
+      SELECT plan_id, max_rooms FROM tenants WHERE id = ${tenantId}
     `;
     const planId = planRes.rows[0]?.plan_id || 'basic';
-    const maxByPlan = planId === 'enterprise' ? 9999 : planId === 'pro' ? 6 : 1;
+    const maxRooms = planRes.rows[0]?.max_rooms || 2;
     const roomsCountRes = await sql`
       SELECT COUNT(*) AS c FROM "Room" r WHERE r."lodgingId" = ${tenantId}::text
     `;
     const roomsCount = parseInt(roomsCountRes.rows[0].c || '0');
-    if (roomsCount > maxByPlan) {
+    
+    if (maxRooms !== -1 && roomsCount >= maxRooms) {
+      const planNames: { [key: string]: string } = {
+        basic: 'Básico',
+        standard: 'Estándar',
+        premium: 'Premium',
+        enterprise: 'Empresa'
+      };
+      const planName = planNames[planId] || planId;
+      
       return NextResponse.json(
-        { success: false, error: `Tu plan (${planId}) permite hasta ${maxByPlan} unidades` },
+        { 
+          success: false, 
+          error: `⚠️ Límite alcanzado: Has usado todas las ${maxRooms} habitaciones incluidas en tu plan ${planName}.`,
+          details: `Tu plan actual permite hasta ${maxRooms} habitaciones/propiedades. Actualmente tienes ${roomsCount} configuradas.`,
+          suggestion: 'Para añadir más habitaciones, actualiza tu plan desde la página de Mejora de Plan.',
+          current_usage: roomsCount,
+          max_allowed: maxRooms,
+          plan_id: planId
+        },
         { status: 403 }
       );
     }

@@ -124,8 +124,11 @@ export default function SettingsPage() {
                 const newId = Math.max(...roomsConfig.map(r => r.id), 0) + 1;
                 setRoomsConfig([...roomsConfig, { id: newId, name: `Habitación ${newId}` }]);
               } else {
-                setMessage({ type: 'error', text: `Has alcanzado el límite máximo de ${tenantLimits.maxRooms} habitaciones según tu plan` });
-                setTimeout(() => setMessage({ type: '', text: '' }), 5000);
+                setMessage({ 
+                  type: 'error', 
+                  text: `⚠️ Límite alcanzado: Has usado todas las ${tenantLimits.maxRooms} habitaciones incluidas en tu plan actual. Para añadir más habitaciones, visita la página de Mejora de Plan.` 
+                });
+                setTimeout(() => setMessage({ type: '', text: '' }), 8000);
               }
             }}
             disabled={roomsConfig.length >= tenantLimits.maxRooms}
@@ -174,8 +177,43 @@ export default function SettingsPage() {
             💡 <strong>Nota:</strong> Los nombres que configures aquí aparecerán en todo el sistema: dashboard, creación de reservas, calendarios, etc.
           </p>
           <p className="text-xs text-blue-700 mt-1">
-            📊 <strong>Límite contratado:</strong> Puedes configurar hasta {tenantLimits.maxRooms === -1 ? 'habitaciones ilimitadas' : `${tenantLimits.maxRooms} habitaciones/apartamentos`} según tu contrato con Delfín Check-in.
+            📊 <strong>Límite de tu plan:</strong> Puedes configurar hasta {tenantLimits.maxRooms === -1 ? 'habitaciones ilimitadas' : `${tenantLimits.maxRooms} habitaciones/apartamentos`} según tu plan actual.
           </p>
+          {/* Mostrar información de uso actual */}
+          {roomsConfig.length > 0 && tenantLimits.maxRooms !== -1 && (
+            <div className={`mt-3 p-3 rounded-lg border ${
+              roomsConfig.length >= tenantLimits.maxRooms 
+                ? 'bg-red-50 border-red-200' 
+                : roomsConfig.length >= Math.floor(tenantLimits.maxRooms * 0.8)
+                ? 'bg-orange-50 border-orange-200'
+                : 'bg-green-50 border-green-200'
+            }`}>
+              <p className={`text-xs font-medium ${
+                roomsConfig.length >= tenantLimits.maxRooms 
+                  ? 'text-red-800' 
+                  : roomsConfig.length >= Math.floor(tenantLimits.maxRooms * 0.8)
+                  ? 'text-orange-800'
+                  : 'text-green-800'
+              }`}>
+                {roomsConfig.length >= tenantLimits.maxRooms ? (
+                  <>
+                    ⚠️ <strong>Límite alcanzado:</strong> Has configurado {roomsConfig.length}/{tenantLimits.maxRooms} habitaciones. 
+                    Para añadir más, <a href="/upgrade-plan" className="underline font-bold">actualiza tu plan</a>.
+                  </>
+                ) : roomsConfig.length >= Math.floor(tenantLimits.maxRooms * 0.8) ? (
+                  <>
+                    ⚡ <strong>Cerca del límite:</strong> Has configurado {roomsConfig.length}/{tenantLimits.maxRooms} habitaciones ({Math.round((roomsConfig.length / tenantLimits.maxRooms) * 100)}% usado).
+                    Te quedan {tenantLimits.maxRooms - roomsConfig.length} habitaciones disponibles.
+                  </>
+                ) : (
+                  <>
+                    ✅ <strong>Uso actual:</strong> {roomsConfig.length}/{tenantLimits.maxRooms} habitaciones configuradas ({Math.round((roomsConfig.length / tenantLimits.maxRooms) * 100)}% usado).
+                    Puedes añadir hasta {tenantLimits.maxRooms - roomsConfig.length} habitaciones más.
+                  </>
+                )}
+              </p>
+            </div>
+          )}
           {tenantLimits.maxRooms < 6 && (
             <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
               <p className="text-xs text-yellow-700 mb-2">

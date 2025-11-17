@@ -128,7 +128,23 @@ export async function GET(req: NextRequest) {
       },
       limits: {
         can_add_rooms: tenant.max_rooms === -1 || parseInt(stats.total_rooms) < tenant.max_rooms,
-        rooms_usage_percentage: tenant.max_rooms === -1 ? 0 : Math.round((parseInt(stats.total_rooms) / tenant.max_rooms) * 100)
+        rooms_usage_percentage: tenant.max_rooms === -1 ? 0 : Math.round((parseInt(stats.total_rooms) / tenant.max_rooms) * 100),
+        rooms_remaining: tenant.max_rooms === -1 ? -1 : Math.max(0, tenant.max_rooms - parseInt(stats.total_rooms)),
+        limit_message: tenant.max_rooms === -1 
+          ? null 
+          : parseInt(stats.total_rooms) >= tenant.max_rooms
+          ? {
+              type: 'error',
+              message: `⚠️ Límite alcanzado: Has usado todas las ${tenant.max_rooms} habitaciones de tu plan ${currentPlan.name}.`,
+              suggestion: 'Para añadir más habitaciones, actualiza tu plan desde la página de Mejora de Plan.'
+            }
+          : Math.round((parseInt(stats.total_rooms) / tenant.max_rooms) * 100) >= 80
+          ? {
+              type: 'warning',
+              message: `⚡ Estás cerca del límite: ${parseInt(stats.total_rooms)}/${tenant.max_rooms} habitaciones (${Math.round((parseInt(stats.total_rooms) / tenant.max_rooms) * 100)}% usado).`,
+              suggestion: `Te quedan ${tenant.max_rooms - parseInt(stats.total_rooms)} habitaciones disponibles. Considera actualizar tu plan si necesitas más capacidad.`
+            }
+          : null
       }
     };
 
