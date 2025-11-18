@@ -78,18 +78,39 @@ export async function GET(req: NextRequest) {
     };
 
     try {
+      // Obtener lodging_id del tenant primero
+      const tenantLodgingResult = await sql`
+        SELECT lodging_id FROM tenants WHERE id = ${tenantId}
+      `;
+      
+      const lodgingId = tenantLodgingResult.rows[0]?.lodging_id || tenantId;
+      
       const statsResult = await sql`
         SELECT 
-          (SELECT COUNT(*) FROM "Room" r WHERE r."lodgingId" = (SELECT lodging_id FROM tenants WHERE id = ${tenantId})) as total_rooms,
-          (SELECT COUNT(*) FROM reservations WHERE tenant_id = ${tenantId}) as total_reservations,
-          (SELECT COUNT(*) FROM guests WHERE tenant_id = ${tenantId}) as total_guests,
-          (SELECT COUNT(*) FROM guest_registrations WHERE tenant_id = ${tenantId}) as total_registrations
+          (SELECT COUNT(*) FROM "Room" r WHERE r."lodgingId" = ${lodgingId}::text) as total_rooms,
+          (SELECT COUNT(*) FROM reservations WHERE tenant_id = ${tenantId}::uuid) as total_reservations,
+          (SELECT COUNT(*) FROM guests WHERE tenant_id = ${tenantId}::uuid) as total_guests,
+          (SELECT COUNT(*) FROM guest_registrations WHERE tenant_id = ${tenantId}::uuid) as total_registrations
       `;
       
       if (statsResult.rows.length > 0) {
         stats = statsResult.rows[0];
+        // Si no hay lodging_id configurado, intentar contar usando tenant_id como fallback
+        if (parseInt(stats.total_rooms) === 0 && !tenantLodgingResult.rows[0]?.lodging_id) {
+          console.log(`⚠️ No se encontraron habitaciones usando lodging_id. Intentando con tenant_id...`);
+          const fallbackStats = await sql`
+            SELECT COUNT(*) as total_rooms
+            FROM "Room" r 
+            WHERE r."lodgingId" = ${tenantId}::text
+          `;
+          if (fallbackStats.rows.length > 0 && parseInt(fallbackStats.rows[0].total_rooms) > 0) {
+            stats.total_rooms = fallbackStats.rows[0].total_rooms;
+            console.log(`✅ Encontradas ${stats.total_rooms} habitaciones usando tenant_id como fallback`);
+          }
+        }
       }
     } catch (error) {
+      console.log('⚠️ Error obteniendo estadísticas:', error);
       console.log('⚠️ Algunas tablas no existen aún, usando valores por defecto');
     }
 
