@@ -96,10 +96,10 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const paymentIntent = await stripe.paymentIntents.create({
+    // Preparar parámetros para el payment intent
+    const paymentIntentParams: any = {
       amount,
       currency: 'eur',
-      customer: customerId,
       description: `Delfín Check-in - Plan ${planId.charAt(0).toUpperCase() + planId.slice(1)}`,
       metadata: {
         planId,
@@ -111,8 +111,27 @@ export async function POST(req: NextRequest) {
       },
       receipt_email: email || undefined,
       automatic_payment_methods: { enabled: true },
-      confirmation_method: 'manual', // Requerir confirmación manual explícita
+      // Nota: confirmation_method puede no ser compatible con automatic_payment_methods
+      // Dejar que Stripe use el método por defecto
+    }
+    
+    // Solo incluir customer si existe
+    if (customerId) {
+      paymentIntentParams.customer = customerId
+    }
+    
+    console.log('💳 [CREATE PAYMENT INTENT] Creando Payment Intent con:', {
+      amount,
+      amountInEuros: (amount / 100).toFixed(2),
+      currency: 'eur',
+      hasCustomer: !!customerId,
+      customerId: customerId || 'N/A',
+      email,
+      planId,
+      properties
     })
+    
+    const paymentIntent = await stripe.paymentIntents.create(paymentIntentParams)
     
     console.log('✅ Payment Intent creado:', {
       id: paymentIntent.id,
@@ -145,8 +164,27 @@ export async function POST(req: NextRequest) {
     res.headers.set('Vary', 'Origin')
     return res
   } catch (error: any) {
+    console.error('❌ [CREATE PAYMENT INTENT] Error creando Payment Intent:', {
+      errorMessage: error?.message,
+      errorType: error?.type,
+      errorCode: error?.code,
+      errorStatus: error?.statusCode,
+      errorRaw: error,
+      stripeError: error?.raw
+    })
+    
     const allowedOrigin = process.env.ALLOWED_LANDING_ORIGIN || 'https://delfincheckin.com'
-    const res = NextResponse.json({ error: error?.message || 'Error interno' }, { status: 500 })
+    const errorMessage = error?.message || 'Error interno al crear el payment intent'
+    
+    const res = NextResponse.json({ 
+      error: errorMessage,
+      details: process.env.NODE_ENV === 'development' ? {
+        type: error?.type,
+        code: error?.code,
+        statusCode: error?.statusCode
+      } : undefined
+    }, { status: 500 })
+    
     res.headers.set('Access-Control-Allow-Origin', allowedOrigin)
     res.headers.set('Access-Control-Allow-Methods', 'POST, OPTIONS')
     res.headers.set('Access-Control-Allow-Headers', 'Content-Type')
