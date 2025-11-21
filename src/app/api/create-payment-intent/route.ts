@@ -64,23 +64,80 @@ export async function POST(req: NextRequest) {
 
     const amount = calculateTotalPrice(properties, planId === 'basic_yearly')
 
+    // Crear o buscar customer en Stripe para asociar el pago
+    let customerId: string | undefined
+    if (email) {
+      try {
+        // Buscar customer existente por email
+        const existingCustomers = await stripe.customers.list({
+          email: email,
+          limit: 1
+        })
+        
+        if (existingCustomers.data.length > 0) {
+          customerId = existingCustomers.data[0].id
+          console.log('✅ Customer existente encontrado:', customerId)
+        } else {
+          // Crear nuevo customer
+          const customer = await stripe.customers.create({
+            email: email,
+            name: name,
+            metadata: {
+              source: 'landing_page',
+              planId: planId
+            }
+          })
+          customerId = customer.id
+          console.log('✅ Nuevo customer creado:', customerId)
+        }
+      } catch (customerError) {
+        console.error('⚠️ Error creando/buscando customer:', customerError)
+        // Continuar sin customer si hay error
+      }
+    }
+
     const paymentIntent = await stripe.paymentIntents.create({
       amount,
       currency: 'eur',
+      customer: customerId,
       description: `Delfín Check-in - Plan ${planId.charAt(0).toUpperCase() + planId.slice(1)}`,
       metadata: {
         planId,
         properties: properties.toString(),
         email,
         name,
-        plan: planId === 'basic_yearly' ? 'yearly' : 'monthly' // Por compatibilidad con webhook existente
+        plan: planId === 'basic_yearly' ? 'yearly' : 'monthly', // Por compatibilidad con webhook existente
+        source: 'landing_page' // Marcar como pago de landing page
       },
       receipt_email: email || undefined,
       automatic_payment_methods: { enabled: true },
+      confirmation_method: 'manual', // Requerir confirmación manual explícita
+    })
+    
+    console.log('✅ Payment Intent creado:', {
+      id: paymentIntent.id,
+      amount: paymentIntent.amount,
+      customer: paymentIntent.customer,
+      email: email,
+      status: paymentIntent.status,
+      client_secret: paymentIntent.client_secret ? '✅ Presente' : '❌ FALTANTE',
+      client_secret_length: paymentIntent.client_secret?.length || 0,
+      livemode: paymentIntent.livemode
     })
 
+    if (!paymentIntent.client_secret) {
+      console.error('❌ ERROR CRÍTICO: Payment Intent creado sin client_secret!')
+      return NextResponse.json({ 
+        error: 'Error al crear el payment intent. Por favor, intenta de nuevo.' 
+      }, { status: 500 })
+    }
+
     const allowedOrigin = process.env.ALLOWED_LANDING_ORIGIN || 'https://delfincheckin.com'
-    const res = NextResponse.json({ client_secret: paymentIntent.client_secret })
+    const res = NextResponse.json({ 
+      client_secret: paymentIntent.client_secret,
+      payment_intent_id: paymentIntent.id,
+      status: paymentIntent.status
+    })
     res.headers.set('Access-Control-Allow-Origin', allowedOrigin)
     res.headers.set('Access-Control-Allow-Methods', 'POST, OPTIONS')
     res.headers.set('Access-Control-Allow-Headers', 'Content-Type')
