@@ -271,13 +271,18 @@ export async function POST(req: NextRequest) {
     const comunicacionesGuardadas: any[] = [];
 
     if (resultados.pv) {
+      // Extraer mensaje de error correctamente (puede venir en error, descripcion, o message)
+      const errorMessage = resultados.pv.ok 
+        ? null 
+        : (resultados.pv.error || resultados.pv.descripcion || resultados.pv.message || 'Error desconocido');
+      
       const comunicacionPV: Omit<MirComunicacion, 'id' | 'created_at' | 'updated_at'> = {
         referencia: `${referenciaNorm}-PV`,
         tipo: 'PV',
         estado: resultados.pv.ok ? 'enviado' : 'error',
         lote: resultados.pv.lote || null,
         resultado: JSON.stringify(resultados.pv),
-        error: resultados.pv.ok ? null : resultados.pv.error,
+        error: errorMessage,
         xml_enviado: xmlPV,
         xml_respuesta: resultados.pv.rawResponse || null,
         tenant_id: tenantId
@@ -293,13 +298,18 @@ export async function POST(req: NextRequest) {
     }
 
     if (resultados.rh) {
+      // Extraer mensaje de error correctamente (puede venir en error, descripcion, o message)
+      const errorMessage = resultados.rh.ok 
+        ? null 
+        : (resultados.rh.error || resultados.rh.descripcion || resultados.rh.message || 'Error desconocido');
+      
       const comunicacionRH: Omit<MirComunicacion, 'id' | 'created_at' | 'updated_at'> = {
         referencia: `${referenciaNorm}-RH`,
         tipo: 'RH',
         estado: resultados.rh.ok ? 'enviado' : 'error',
         lote: resultados.rh.lote || null,
         resultado: JSON.stringify(resultados.rh),
-        error: resultados.rh.ok ? null : resultados.rh.error,
+        error: errorMessage,
         xml_enviado: xmlRH,
         xml_respuesta: resultados.rh.rawResponse || null,
         tenant_id: tenantId
