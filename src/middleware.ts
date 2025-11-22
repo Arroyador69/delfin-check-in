@@ -103,9 +103,10 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // Para rutas de API, inyectar tenant ID desde JWT o usar por defecto
+  // Para rutas de API, inyectar tenant ID desde JWT (CRÍTICO: sin fallback)
   if (url.pathname.startsWith('/api/')) {
     const requestHeaders = new Headers(req.headers);
+    let tenantId: string | null = null;
     
     // Intentar obtener tenant_id desde Authorization Bearer token (para apps móviles)
     const authHeader = req.headers.get('authorization');
@@ -114,23 +115,62 @@ export async function middleware(req: NextRequest) {
         const token = authHeader.split(' ')[1];
         const payload = verifyToken(token);
         if (payload?.tenantId) {
-          requestHeaders.set('x-tenant-id', payload.tenantId);
-          console.log(`📱 Token móvil detectado, tenant_id: ${payload.tenantId}`);
+          tenantId = payload.tenantId;
+          requestHeaders.set('x-tenant-id', tenantId);
+          console.log(`📱 Token móvil detectado, tenant_id: ${tenantId}`);
         }
       } catch (error) {
         console.error('Error verificando token Bearer:', error);
       }
     }
     
-    // Si no hay tenant ID en el header, usar el tenant por defecto
-    if (!requestHeaders.get('x-tenant-id')) {
-      requestHeaders.set('x-tenant-id', '870e589f-d313-4a5a-901f-f25fd4e7240a');
+    // Si no hay tenant_id en Bearer token, intentar desde cookie (web)
+    if (!tenantId) {
+      const authToken = req.cookies.get('auth_token')?.value;
+      if (authToken) {
+        try {
+          const payload = verifyToken(authToken);
+          if (payload?.tenantId) {
+            tenantId = payload.tenantId;
+            requestHeaders.set('x-tenant-id', tenantId);
+            console.log(`🌐 Token web detectado, tenant_id: ${tenantId}`);
+          }
+        } catch (error) {
+          console.error('Error verificando token cookie:', error);
+        }
+      }
+    }
+    
+    // ⚠️ CRÍTICO: NO usar tenant por defecto - esto causa fuga de datos entre tenants
+    // Si no hay tenant_id válido, las rutas protegidas deben fallar con 401
+    if (!tenantId) {
+      // Solo permitir rutas públicas sin tenant_id
+      const isPublicApiRoute = (
+        url.pathname.startsWith('/api/public/') ||
+        url.pathname.startsWith('/api/direct-reservations/') ||
+        url.pathname.startsWith('/api/test-') ||
+        url.pathname.startsWith('/api/debug-') ||
+        url.pathname.startsWith('/api/check-') ||
+        url.pathname.startsWith('/api/onboarding/') ||
+        url.pathname.startsWith('/api/admin/login') ||
+        url.pathname.startsWith('/api/auth/mobile-login') ||
+        url.pathname.startsWith('/api/auth/refresh') ||
+        url.pathname.startsWith('/api/stripe/webhook')
+      );
+      
+      if (!isPublicApiRoute) {
+        console.warn(`⚠️ [SECURITY] Intento de acceso sin tenant_id a: ${url.pathname}`);
+        return NextResponse.json(
+          { error: 'No autorizado - tenant_id requerido' },
+          { status: 401 }
+        );
+      }
     }
     
     return NextResponse.next({ request: { headers: requestHeaders } });
   }
 
-  // Para rutas de páginas, verificar autenticación de manera más inteligente
+  // Para rutas de páginas, verificar autenticación y extraer tenant_id
   const authToken = req.cookies.get('auth_token')?.value;
   
   // Si no hay token, redirigir al login SOLO si no está ya en una ruta pública
@@ -139,6 +179,22 @@ export async function middleware(req: NextRequest) {
     if (!url.pathname.startsWith('/admin-login') && 
         !url.pathname.startsWith('/forgot-password')) {
       console.log('🔒 No hay token de autenticación, redirigiendo al login');
+      const loginUrl = new URL('/admin-login', req.url);
+      return NextResponse.redirect(loginUrl);
+    }
+  } else {
+    // Si hay token, extraer tenant_id y agregarlo a los headers para las páginas
+    try {
+      const payload = verifyToken(authToken);
+      if (payload?.tenantId) {
+        const requestHeaders = new Headers(req.headers);
+        requestHeaders.set('x-tenant-id', payload.tenantId);
+        console.log(`🔐 Tenant_id extraído del JWT para página: ${payload.tenantId}`);
+        return NextResponse.next({ request: { headers: requestHeaders } });
+      }
+    } catch (error) {
+      console.error('Error verificando token en middleware de páginas:', error);
+      // Token inválido, redirigir al login
       const loginUrl = new URL('/admin-login', req.url);
       return NextResponse.redirect(loginUrl);
     }
