@@ -171,9 +171,27 @@ async function createTenantFromPayment(pi: Stripe.PaymentIntent, overrideEmail?:
 
     // Enviar email real de onboarding (Brevo/SMTP)
     try {
-      await sendOnboardingEmail({ to: email, onboardingUrl, tempPassword });
-    } catch (mailErr) {
-      console.error('✉️ Error enviando email de onboarding:', mailErr);
+      const emailResult = await sendOnboardingEmail({ to: email, onboardingUrl, tempPassword });
+      console.log('✅ [WEBHOOK] Email de onboarding enviado exitosamente:', emailResult);
+    } catch (mailErr: any) {
+      // Log detallado del error
+      console.error('❌ [WEBHOOK] Error CRÍTICO enviando email de onboarding:', {
+        error: mailErr.message,
+        stack: mailErr.stack,
+        code: mailErr.code,
+        to: email,
+        onboardingUrl: onboardingUrl,
+        // Verificar configuración SMTP
+        smtpHost: process.env.SMTP_HOST || '❌ NO CONFIGURADO',
+        smtpUser: process.env.SMTP_USER || '❌ NO CONFIGURADO',
+        smtpPass: (process.env.SMTP_PASS || process.env.SMTP_PASSWORD) ? '✅ Configurado' : '❌ NO CONFIGURADO',
+        smtpFrom: process.env.SMTP_FROM_ONBOARDING || process.env.SMTP_FROM || '❌ NO CONFIGURADO'
+      });
+      
+      // IMPORTANTE: No lanzar el error para que el webhook se complete exitosamente
+      // El tenant ya fue creado, solo falló el envío del email
+      // El usuario puede usar el endpoint /api/admin/recover-onboarding para obtener el token
+      console.warn('⚠️ [WEBHOOK] Tenant creado pero email no enviado. El usuario puede usar /api/admin/recover-onboarding para obtener el token.');
     }
 
   } catch (error) {
@@ -257,9 +275,21 @@ async function createTenantFromInvoice(inv: Stripe.Invoice, email: string): Prom
     console.log('🔗 Magic link de onboarding (invoice):', onboardingUrl)
     console.log('📧 Enviando email de onboarding a:', email)
     try {
-      await sendOnboardingEmail({ to: email, onboardingUrl, tempPassword })
-    } catch (mailErr) {
-      console.error('✉️ Error enviando email de onboarding (invoice):', mailErr)
+      const emailResult = await sendOnboardingEmail({ to: email, onboardingUrl, tempPassword })
+      console.log('✅ [WEBHOOK INVOICE] Email de onboarding enviado exitosamente:', emailResult)
+    } catch (mailErr: any) {
+      console.error('❌ [WEBHOOK INVOICE] Error CRÍTICO enviando email de onboarding:', {
+        error: mailErr.message,
+        stack: mailErr.stack,
+        code: mailErr.code,
+        to: email,
+        onboardingUrl: onboardingUrl,
+        smtpHost: process.env.SMTP_HOST || '❌ NO CONFIGURADO',
+        smtpUser: process.env.SMTP_USER || '❌ NO CONFIGURADO',
+        smtpPass: (process.env.SMTP_PASS || process.env.SMTP_PASSWORD) ? '✅ Configurado' : '❌ NO CONFIGURADO',
+        smtpFrom: process.env.SMTP_FROM_ONBOARDING || process.env.SMTP_FROM || '❌ NO CONFIGURADO'
+      })
+      console.warn('⚠️ [WEBHOOK INVOICE] Tenant creado pero email no enviado. El usuario puede usar /api/admin/recover-onboarding para obtener el token.')
     }
 
   } catch (error) {

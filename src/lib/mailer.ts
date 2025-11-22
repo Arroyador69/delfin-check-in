@@ -4,7 +4,17 @@ export function getTransport() {
   const host = process.env.SMTP_HOST || '';
   const port = Number(process.env.SMTP_PORT || 587);
   const user = process.env.SMTP_USER || '';
-  const pass = process.env.SMTP_PASS || '';
+  const pass = process.env.SMTP_PASS || process.env.SMTP_PASSWORD || '';
+
+  // Validar que SMTP esté configurado
+  if (!host || !user || !pass) {
+    const missing = [];
+    if (!host) missing.push('SMTP_HOST');
+    if (!user) missing.push('SMTP_USER');
+    if (!pass) missing.push('SMTP_PASS o SMTP_PASSWORD');
+    
+    throw new Error(`❌ SMTP no configurado correctamente. Faltan: ${missing.join(', ')}`);
+  }
 
   return nodemailer.createTransport({
     host,
@@ -19,26 +29,65 @@ export async function sendOnboardingEmail(params: {
   onboardingUrl: string;
   tempPassword?: string;
 }) {
-  const transporter = getTransport();
-  // Email específico para onboarding de propietarios (admin)
-  const from = process.env.SMTP_FROM_ONBOARDING || process.env.SMTP_FROM || `Delfín Check-in <noreply@delfincheckin.com>`;
+  try {
+    // Validar que SMTP esté configurado antes de intentar enviar
+    const transporter = getTransport();
+    
+    // Email específico para onboarding de propietarios (admin)
+    const from = process.env.SMTP_FROM_ONBOARDING || process.env.SMTP_FROM || `Delfín Check-in <noreply@delfincheckin.com>`;
 
-  const html = `
-  <div style="font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; line-height:1.6;">
-    <h2>🐬 Bienvenido a Delfín Check-in</h2>
-    <p>Gracias por tu compra. Para completar tu configuración inicial, por favor haz clic en el siguiente enlace:</p>
-    <p><a href="${params.onboardingUrl}" target="_blank" style="background:#2563eb;color:white;padding:10px 16px;border-radius:6px;text-decoration:none;">Comenzar Onboarding</a></p>
-    ${params.tempPassword ? `<p>Contraseña temporal: <b>${params.tempPassword}</b></p>` : ''}
-    <hr/>
-    <p><b>Importante:</b> Si no ves este correo en tu bandeja de entrada, revisa la carpeta <i>Spam/Correo no deseado</i> y márcalo como <i>No es spam</i>.</p>
-  </div>`;
+    const html = `
+    <div style="font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; line-height:1.6;">
+      <h2>🐬 Bienvenido a Delfín Check-in</h2>
+      <p>Gracias por tu compra. Para completar tu configuración inicial, por favor haz clic en el siguiente enlace:</p>
+      <p><a href="${params.onboardingUrl}" target="_blank" style="background:#2563eb;color:white;padding:10px 16px;border-radius:6px;text-decoration:none;">Comenzar Onboarding</a></p>
+      ${params.tempPassword ? `<p>Contraseña temporal: <b>${params.tempPassword}</b></p>` : ''}
+      <hr/>
+      <p><b>Importante:</b> Si no ves este correo en tu bandeja de entrada, revisa la carpeta <i>Spam/Correo no deseado</i> y márcalo como <i>No es spam</i>.</p>
+    </div>`;
 
-  await transporter.sendMail({
-    from,
-    to: params.to,
-    subject: 'Tu acceso a Delfín Check-in - Completa el onboarding',
-    html,
-  });
+    console.log('📧 [SEND ONBOARDING EMAIL] Intentando enviar email:', {
+      to: params.to,
+      from,
+      hasOnboardingUrl: !!params.onboardingUrl,
+      onboardingUrlPrefix: params.onboardingUrl.substring(0, 50) + '...',
+      smtpHost: process.env.SMTP_HOST,
+      smtpUser: process.env.SMTP_USER,
+      smtpConfigured: !!(process.env.SMTP_HOST && process.env.SMTP_USER && (process.env.SMTP_PASS || process.env.SMTP_PASSWORD))
+    });
+
+    const result = await transporter.sendMail({
+      from,
+      to: params.to,
+      subject: 'Tu acceso a Delfín Check-in - Completa el onboarding',
+      html,
+    });
+
+    console.log('✅ [SEND ONBOARDING EMAIL] Email enviado exitosamente:', {
+      messageId: result.messageId,
+      to: params.to,
+      accepted: result.accepted,
+      rejected: result.rejected
+    });
+
+    return { success: true, messageId: result.messageId };
+  } catch (error: any) {
+    console.error('❌ [SEND ONBOARDING EMAIL] Error enviando email de onboarding:', {
+      error: error.message,
+      stack: error.stack,
+      code: error.code,
+      command: error.command,
+      response: error.response,
+      responseCode: error.responseCode,
+      to: params.to,
+      smtpHost: process.env.SMTP_HOST,
+      smtpUser: process.env.SMTP_USER,
+      smtpConfigured: !!(process.env.SMTP_HOST && process.env.SMTP_USER && (process.env.SMTP_PASS || process.env.SMTP_PASSWORD))
+    });
+    
+    // Re-lanzar el error para que el webhook pueda manejarlo
+    throw error;
+  }
 }
 
 export async function sendPaymentNotificationEmail(params: {
