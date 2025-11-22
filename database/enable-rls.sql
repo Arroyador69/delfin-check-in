@@ -50,15 +50,24 @@ BEGIN
 END $$;
 
 -- ========================================
--- 2. CREAR FUNCIÓN PARA OBTENER TENANT_ID ACTUAL
+-- 2. CREAR FUNCIONES PARA OBTENER TENANT_ID ACTUAL
 -- ========================================
 
--- Esta función obtiene el tenant_id del contexto de la sesión
+-- Esta función obtiene el tenant_id como UUID (para tablas con tenant_id UUID)
 -- Se establece mediante: SET LOCAL app.current_tenant_id = 'uuid';
-
 CREATE OR REPLACE FUNCTION current_tenant_id() RETURNS UUID AS $$
 BEGIN
   RETURN current_setting('app.current_tenant_id', true)::UUID;
+EXCEPTION
+  WHEN OTHERS THEN
+    RETURN NULL;
+END;
+$$ LANGUAGE plpgsql STABLE;
+
+-- Esta función obtiene el tenant_id como VARCHAR (para tablas con tenant_id VARCHAR)
+CREATE OR REPLACE FUNCTION current_tenant_id_varchar() RETURNS VARCHAR(255) AS $$
+BEGIN
+  RETURN current_setting('app.current_tenant_id', true);
 EXCEPTION
   WHEN OTHERS THEN
     RETURN NULL;
@@ -70,11 +79,12 @@ $$ LANGUAGE plpgsql STABLE;
 -- ========================================
 
 -- Política para empresa_config: solo ver tu propio tenant
+-- NOTA: empresa_config tiene tenant_id como VARCHAR(255), no UUID
 DROP POLICY IF EXISTS empresa_config_tenant_isolation ON empresa_config;
 CREATE POLICY empresa_config_tenant_isolation ON empresa_config
   FOR ALL
-  USING (tenant_id = current_tenant_id())
-  WITH CHECK (tenant_id = current_tenant_id());
+  USING (tenant_id = current_tenant_id_varchar())
+  WITH CHECK (tenant_id = current_tenant_id_varchar());
 
 -- Política para tenant_users: solo ver usuarios de tu tenant
 DROP POLICY IF EXISTS tenant_users_tenant_isolation ON tenant_users;
