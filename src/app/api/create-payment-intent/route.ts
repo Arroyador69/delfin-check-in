@@ -110,8 +110,9 @@ export async function POST(req: NextRequest) {
         source: 'landing_page' // Marcar como pago de landing page
       },
       receipt_email: email || undefined,
-      automatic_payment_methods: { enabled: true },
-      confirmation_method: 'manual', // Requerir confirmación manual explícita
+      automatic_payment_methods: { enabled: true }
+      // Nota: No podemos usar confirmation_method junto con automatic_payment_methods
+      // Cuando usamos automatic_payment_methods, Stripe maneja la confirmación automáticamente
     }
     
     // Solo incluir customer si existe
