@@ -96,6 +96,8 @@ export async function POST(request: NextRequest) {
       `;
 
       // 2. Insertar/actualizar datos de empresa
+      // IMPORTANTE: empresa_config.tenant_id es VARCHAR(255), convertir UUID a string
+      const tenantIdString = String(tenantId);
       await sql`
         INSERT INTO empresa_config (
           tenant_id,
@@ -110,7 +112,7 @@ export async function POST(request: NextRequest) {
           email,
           web
         ) VALUES (
-          ${tenantId},
+          ${tenantIdString},
           ${data.nombreEmpresa},
           ${data.nifEmpresa},
           ${data.direccionEmpresa},
