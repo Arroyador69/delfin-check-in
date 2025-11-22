@@ -1,5 +1,6 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
+import { verifyToken } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -18,19 +19,35 @@ function maskConnectionString(conn?: string): string {
   }
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    // Ejecutar consultas de conteo en paralelo
+    // ⚠️ SEGURIDAD: Verificar autenticación y obtener tenant_id
+    const authToken = request.cookies.get('auth_token')?.value;
+    
+    if (!authToken) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
+
+    const payload = verifyToken(authToken);
+    
+    if (!payload || !payload.tenantId) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
+
+    const tenantId = payload.tenantId;
+
+    // ⚠️ CRÍTICO: Filtrar TODOS los conteos por tenant_id para aislamiento multi-tenant
     const [rooms, reservations, guests, guestRegs, msgTemplates] = await Promise.all([
-      sql`SELECT COUNT(1) AS c FROM "Room"` .catch(() => ({ rows: [{ c: 0 }] } as any)),
-      sql`SELECT COUNT(1) AS c FROM reservations` .catch(() => ({ rows: [{ c: 0 }] } as any)),
-      sql`SELECT COUNT(1) AS c FROM guests` .catch(() => ({ rows: [{ c: 0 }] } as any)),
-      sql`SELECT COUNT(1) AS c FROM guest_registrations` .catch(() => ({ rows: [{ c: 0 }] } as any)),
-      sql`SELECT COUNT(1) AS c FROM message_templates` .catch(() => ({ rows: [{ c: 0 }] } as any)),
+      sql`SELECT COUNT(1) AS c FROM "Room" WHERE tenant_id = ${tenantId}::uuid` .catch(() => ({ rows: [{ c: 0 }] } as any)),
+      sql`SELECT COUNT(1) AS c FROM reservations WHERE tenant_id = ${tenantId}::uuid` .catch(() => ({ rows: [{ c: 0 }] } as any)),
+      sql`SELECT COUNT(1) AS c FROM guests WHERE tenant_id = ${tenantId}::uuid` .catch(() => ({ rows: [{ c: 0 }] } as any)),
+      sql`SELECT COUNT(1) AS c FROM guest_registrations WHERE tenant_id = ${tenantId}::uuid` .catch(() => ({ rows: [{ c: 0 }] } as any)),
+      sql`SELECT COUNT(1) AS c FROM message_templates WHERE tenant_id = ${tenantId}::uuid` .catch(() => ({ rows: [{ c: 0 }] } as any)),
     ]);
 
     const info = {
       connectedTo: maskConnectionString(process.env.POSTGRES_URL),
+      tenant_id: tenantId,
       counts: {
         rooms: Number(rooms.rows?.[0]?.c || 0),
         reservations: Number(reservations.rows?.[0]?.c || 0),
