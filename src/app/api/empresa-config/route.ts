@@ -21,6 +21,9 @@ export async function GET(request: NextRequest) {
 
     const tenantId = payload.tenantId;
 
+    // IMPORTANTE: empresa_config.tenant_id es VARCHAR(255), convertir UUID a string
+    const tenantIdString = String(tenantId);
+
     const result = await sql`
       SELECT 
         nombre_empresa,
@@ -36,7 +39,7 @@ export async function GET(request: NextRequest) {
         created_at,
         updated_at
       FROM empresa_config 
-      WHERE tenant_id = ${tenantId}
+      WHERE tenant_id = ${tenantIdString}
       LIMIT 1
     `;
 
@@ -77,6 +80,9 @@ export async function PUT(request: NextRequest) {
     const tenantId = payload.tenantId;
     const data = await request.json();
 
+    // IMPORTANTE: empresa_config.tenant_id es VARCHAR(255), convertir UUID a string
+    const tenantIdString = String(tenantId);
+
     // Validar datos requeridos
     if (!data.nombreEmpresa || !data.nifEmpresa || !data.direccionEmpresa || 
         !data.codigoPostal || !data.ciudad || !data.provincia || 
@@ -100,7 +106,7 @@ export async function PUT(request: NextRequest) {
         email = ${data.email},
         web = ${data.web || ''},
         updated_at = NOW()
-      WHERE tenant_id = ${tenantId}
+      WHERE tenant_id = ${tenantIdString}
       RETURNING *
     `;
 
@@ -142,6 +148,9 @@ export async function POST(request: NextRequest) {
     const tenantId = payload.tenantId;
     const data = await request.json();
 
+    // IMPORTANTE: empresa_config.tenant_id es VARCHAR(255), convertir UUID a string
+    const tenantIdString = String(tenantId);
+
     // Validar datos requeridos
     if (!data.nombre_empresa || !data.nif_empresa || !data.direccion_empresa || 
         !data.codigo_postal || !data.ciudad || !data.provincia || 
@@ -167,7 +176,7 @@ export async function POST(request: NextRequest) {
         web = ${data.web || ''},
         logo_url = ${data.logo_url || ''},
         updated_at = NOW()
-      WHERE tenant_id = ${tenantId}
+      WHERE tenant_id = ${tenantIdString}
       RETURNING *
     `;
 
@@ -182,7 +191,7 @@ export async function POST(request: NextRequest) {
           tenant_id, nombre_empresa, nif_empresa, direccion_empresa,
           codigo_postal, ciudad, provincia, pais, telefono, email, web, logo_url
         ) VALUES (
-          ${tenantId}, ${data.nombre_empresa}, ${data.nif_empresa}, ${data.direccion_empresa},
+          ${tenantIdString}, ${data.nombre_empresa}, ${data.nif_empresa}, ${data.direccion_empresa},
           ${data.codigo_postal}, ${data.ciudad}, ${data.provincia}, ${data.pais || 'España'},
           ${data.telefono}, ${data.email}, ${data.web || ''}, ${data.logo_url || ''}
         )

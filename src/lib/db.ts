@@ -624,9 +624,11 @@ export async function ensureFacturasTables(): Promise<void> {
 
 // Función para obtener configuración de empresa por tenant
 export async function getEmpresaConfig(tenantId: string): Promise<any | null> {
+  // IMPORTANTE: empresa_config.tenant_id es VARCHAR(255), asegurar conversión a string
+  const tenantIdString = String(tenantId);
   const result = await sql`
     SELECT * FROM empresa_config 
-    WHERE tenant_id = ${tenantId}
+    WHERE tenant_id = ${tenantIdString}
     LIMIT 1
   `;
   return result.rows[0] || null;

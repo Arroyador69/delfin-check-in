@@ -19,11 +19,14 @@ export async function GET(request: NextRequest) {
     }
 
     const tenantId = payload.tenantId;
+    
+    // IMPORTANTE: empresa_config.tenant_id es VARCHAR(255), convertir UUID a string
+    const tenantIdString = String(tenantId);
 
     // Verificar si existe una aceptación del DPA
     const dpaResult = await sql`
       SELECT * FROM dpa_aceptaciones 
-      WHERE tenant_id = ${tenantId} 
+      WHERE tenant_id = ${tenantIdString} 
       AND onboarding_completo = true
       LIMIT 1
     `;
@@ -31,7 +34,7 @@ export async function GET(request: NextRequest) {
     // Verificar si existen datos de empresa
     const empresaResult = await sql`
       SELECT * FROM empresa_config 
-      WHERE tenant_id = ${tenantId}
+      WHERE tenant_id = ${tenantIdString}
       LIMIT 1
     `;
 
