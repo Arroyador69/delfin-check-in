@@ -1,12 +1,23 @@
 import nodemailer from 'nodemailer';
 
+// Usar el mismo transporter que funciona en booking (email-notifications.ts)
+// Esto asegura consistencia y que funcione igual que los emails de reservas
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST,
+  port: parseInt(process.env.SMTP_PORT || '587'),
+  secure: process.env.SMTP_SECURE === 'true',
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS || process.env.SMTP_PASSWORD,
+  },
+});
+
 export function getTransport() {
+  // Validar que SMTP esté configurado
   const host = process.env.SMTP_HOST || '';
-  const port = Number(process.env.SMTP_PORT || 587);
   const user = process.env.SMTP_USER || '';
   const pass = process.env.SMTP_PASS || process.env.SMTP_PASSWORD || '';
 
-  // Validar que SMTP esté configurado
   if (!host || !user || !pass) {
     const missing = [];
     if (!host) missing.push('SMTP_HOST');
@@ -16,12 +27,7 @@ export function getTransport() {
     throw new Error(`❌ SMTP no configurado correctamente. Faltan: ${missing.join(', ')}`);
   }
 
-  return nodemailer.createTransport({
-    host,
-    port,
-    secure: port === 465,
-    auth: { user, pass },
-  });
+  return transporter;
 }
 
 export async function sendOnboardingEmail(params: {
@@ -36,15 +42,59 @@ export async function sendOnboardingEmail(params: {
     // Email específico para onboarding de propietarios (admin)
     const from = process.env.SMTP_FROM_ONBOARDING || process.env.SMTP_FROM || `Delfín Check-in <noreply@delfincheckin.com>`;
 
+    // HTML mejorado similar al de booking para evitar spam
     const html = `
-    <div style="font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; line-height:1.6;">
-      <h2>🐬 Bienvenido a Delfín Check-in</h2>
-      <p>Gracias por tu compra. Para completar tu configuración inicial, por favor haz clic en el siguiente enlace:</p>
-      <p><a href="${params.onboardingUrl}" target="_blank" style="background:#2563eb;color:white;padding:10px 16px;border-radius:6px;text-decoration:none;">Comenzar Onboarding</a></p>
-      ${params.tempPassword ? `<p>Contraseña temporal: <b>${params.tempPassword}</b></p>` : ''}
-      <hr/>
-      <p><b>Importante:</b> Si no ves este correo en tu bandeja de entrada, revisa la carpeta <i>Spam/Correo no deseado</i> y márcalo como <i>No es spam</i>.</p>
-    </div>`;
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Bienvenido a Delfín Check-in</title>
+      <style>
+        body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f5f5f5; }
+        .container { max-width: 600px; margin: 20px auto; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; }
+        .header h1 { margin: 0; font-size: 28px; }
+        .content { padding: 30px; }
+        .button { display: inline-block; background: #2563eb; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: bold; margin: 20px 0; }
+        .button:hover { background: #1d4ed8; }
+        .footer { background: #f8f9fa; padding: 20px; text-align: center; color: #666; font-size: 14px; border-top: 1px solid #e5e7eb; }
+        .password-box { background: #f8f9fa; border-left: 4px solid #2563eb; padding: 15px; margin: 20px 0; border-radius: 4px; }
+        .warning { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; border-radius: 4px; color: #856404; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>🐬 Bienvenido a Delfín Check-in</h1>
+          <p style="margin: 10px 0 0 0; opacity: 0.9;">Tu plataforma de gestión de alojamientos</p>
+        </div>
+        <div class="content">
+          <h2>¡Gracias por tu compra!</h2>
+          <p>Tu cuenta ha sido creada exitosamente. Para completar tu configuración inicial y acceder a tu panel de administración, haz clic en el siguiente botón:</p>
+          <p style="text-align: center;">
+            <a href="${params.onboardingUrl}" class="button">Comenzar Onboarding</a>
+          </p>
+          ${params.tempPassword ? `
+          <div class="password-box">
+            <p style="margin: 0 0 10px 0;"><strong>🔑 Contraseña temporal:</strong></p>
+            <p style="margin: 0; font-size: 18px; font-family: monospace; letter-spacing: 2px;"><strong>${params.tempPassword}</strong></p>
+            <p style="margin: 10px 0 0 0; font-size: 12px; color: #666;">Podrás cambiarla durante el proceso de onboarding.</p>
+          </div>
+          ` : ''}
+          <div class="warning">
+            <p style="margin: 0;"><strong>⚠️ Importante:</strong> Si no ves este correo en tu bandeja de entrada, revisa la carpeta <strong>Spam/Correo no deseado</strong> y márcalo como <strong>No es spam</strong>.</p>
+          </div>
+          <p>Si tienes problemas para acceder, puedes usar este enlace directo:</p>
+          <p style="word-break: break-all; color: #2563eb; font-size: 12px;">${params.onboardingUrl}</p>
+        </div>
+        <div class="footer">
+          <p style="margin: 0;">Este es un email automático, por favor no respondas a este mensaje.</p>
+          <p style="margin: 5px 0 0 0;">© ${new Date().getFullYear()} Delfín Check-in. Todos los derechos reservados.</p>
+        </div>
+      </div>
+    </body>
+    </html>`;
 
     console.log('📧 [SEND ONBOARDING EMAIL] Intentando enviar email:', {
       to: params.to,
@@ -56,11 +106,35 @@ export async function sendOnboardingEmail(params: {
       smtpConfigured: !!(process.env.SMTP_HOST && process.env.SMTP_USER && (process.env.SMTP_PASS || process.env.SMTP_PASSWORD))
     });
 
+    // Agregar versión texto plano para mejor deliverability
+    const text = `
+🐬 Bienvenido a Delfín Check-in
+
+¡Gracias por tu compra!
+
+Tu cuenta ha sido creada exitosamente. Para completar tu configuración inicial, visita:
+
+${params.onboardingUrl}
+
+${params.tempPassword ? `\n🔑 Contraseña temporal: ${params.tempPassword}\n` : ''}
+
+Si tienes problemas, revisa tu carpeta de Spam/Correo no deseado.
+
+© ${new Date().getFullYear()} Delfín Check-in
+    `.trim();
+
     const result = await transporter.sendMail({
       from,
       to: params.to,
-      subject: 'Tu acceso a Delfín Check-in - Completa el onboarding',
+      subject: '🐬 Bienvenido a Delfín Check-in - Completa tu configuración',
       html,
+      text, // Versión texto plano para mejor deliverability
+      // Headers adicionales para evitar spam
+      headers: {
+        'X-Priority': '1',
+        'X-MSMail-Priority': 'High',
+        'Importance': 'high',
+      },
     });
 
     console.log('✅ [SEND ONBOARDING EMAIL] Email enviado exitosamente:', {
