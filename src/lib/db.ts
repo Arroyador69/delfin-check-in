@@ -105,6 +105,7 @@ export async function insertGuestRegistration(data: {
   fecha_entrada: string;
   fecha_salida: string;
   data: any;
+  tenant_id?: string | null; // ⚠️ CRÍTICO: tenant_id para aislamiento multi-tenant
 }): Promise<string> {
   // Extraer documento de identidad para detectar duplicados
   const documento = data.data?.comunicaciones?.[0]?.personas?.[0]?.numeroDocumento;
@@ -174,10 +175,21 @@ export async function insertGuestRegistration(data: {
     }
   }
   
-  // Insertar nuevo registro
+  // ⚠️ CRÍTICO: Convertir tenant_id a UUID si es string
+  const tenantIdUuid = data.tenant_id && data.tenant_id !== 'default' 
+    ? (data.tenant_id.includes('-') ? data.tenant_id : null) // Si ya es UUID, usarlo; si no, null
+    : null;
+
+  // Insertar nuevo registro con tenant_id
   const result = await sql`
-    INSERT INTO guest_registrations (reserva_ref, fecha_entrada, fecha_salida, data)
-    VALUES (${data.reserva_ref}, ${data.fecha_entrada}, ${data.fecha_salida}, ${JSON.stringify(data.data)}::jsonb)
+    INSERT INTO guest_registrations (reserva_ref, fecha_entrada, fecha_salida, data, tenant_id)
+    VALUES (
+      ${data.reserva_ref}, 
+      ${data.fecha_entrada}, 
+      ${data.fecha_salida}, 
+      ${JSON.stringify(data.data)}::jsonb,
+      ${tenantIdUuid}::uuid
+    )
     RETURNING id;
   `;
   
