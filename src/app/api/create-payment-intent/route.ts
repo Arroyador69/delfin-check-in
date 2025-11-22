@@ -111,7 +111,7 @@ export async function POST(req: NextRequest) {
       },
       receipt_email: email || undefined,
       payment_method_types: ['card'], // Usar payment_method_types en lugar de automatic_payment_methods para mayor control
-      confirmation_method: 'manual' // Requerir confirmación manual explícita
+      confirmation_method: 'automatic' // Confirmación automática cuando se adjunta el payment method
     }
     
     // Solo incluir customer si existe
