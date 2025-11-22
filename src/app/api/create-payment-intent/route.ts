@@ -111,8 +111,7 @@ export async function POST(req: NextRequest) {
       },
       receipt_email: email || undefined,
       automatic_payment_methods: { enabled: true },
-      // Nota: confirmation_method puede no ser compatible con automatic_payment_methods
-      // Dejar que Stripe use el método por defecto
+      confirmation_method: 'manual', // Requerir confirmación manual explícita
     }
     
     // Solo incluir customer si existe
