@@ -80,11 +80,21 @@ async function resolveEmailFromPaymentIntent(pi: Stripe.PaymentIntent): Promise<
 }
 
 async function createTenantFromPayment(pi: Stripe.PaymentIntent, overrideEmail?: string): Promise<void> {
+  console.log('🔍 [CREATE TENANT] Iniciando creación de tenant desde Payment Intent:', pi.id)
+  console.log('🔍 [CREATE TENANT] Metadatos del Payment Intent:', {
+    email: pi.metadata?.email,
+    name: pi.metadata?.name,
+    planId: pi.metadata?.planId,
+    properties: pi.metadata?.properties,
+    receipt_email: pi.receipt_email,
+    customer: pi.customer
+  })
+  
   const email = overrideEmail || (await resolveEmailFromPaymentIntent(pi))
   const name = String(pi.metadata?.name || (email ? email.split('@')[0] : ''))
   const plan_id = mapPaymentPlanToPlanId(pi.amount)
   
-  console.log('🏢 Creando tenant desde pago:', { email, name, plan_id, amount: pi.amount })
+  console.log('🏢 [CREATE TENANT] Datos resueltos:', { email, name, plan_id, amount: pi.amount })
 
   if (!email) {
     console.error('⚠️ No se pudo resolver email del comprador. Abortando envío de onboarding.')
@@ -276,23 +286,43 @@ export async function POST(req: NextRequest) {
       return new NextResponse(`Firma inválida: ${err.message}`, { status: 400 })
     }
 
-    console.log('🔔 Webhook recibido:', event.type)
+    console.log('🔔 [WEBHOOK ONBOARDING] Webhook recibido:', event.type)
+    console.log('🔔 [WEBHOOK ONBOARDING] Event ID:', event.id)
+    console.log('🔔 [WEBHOOK ONBOARDING] Livemode:', event.livemode)
 
     // Manejar diferentes tipos de eventos
     switch (event.type) {
       case 'payment_intent.succeeded':
         try {
           const pi = event.data.object as Stripe.PaymentIntent
+          console.log('🔔 [WEBHOOK ONBOARDING] Payment Intent recibido:', {
+            id: pi.id,
+            amount: pi.amount,
+            metadata: pi.metadata,
+            receipt_email: pi.receipt_email,
+            customer: pi.customer
+          })
+          
           // IMPORTANTE: Ignorar pagos de reservas directas (ellos tienen su propio webhook)
-          if (pi.metadata?.reservation_id) {
-            console.log('ℹ️ Pago de reserva directa detectado, ignorando en webhook de onboarding')
+          if (pi.metadata?.reservation_id || pi.metadata?.source === 'direct_reservation') {
+            console.log('ℹ️ [WEBHOOK ONBOARDING] Pago de reserva directa detectado, ignorando en webhook de onboarding')
             break
           }
-          console.log('✅ Pago exitoso (PI):', { id: pi.id, amount: pi.amount, email: pi.metadata?.email || pi.receipt_email })
+          
+          console.log('✅ [WEBHOOK ONBOARDING] Pago exitoso (PI):', { 
+            id: pi.id, 
+            amount: pi.amount, 
+            email: pi.metadata?.email || pi.receipt_email,
+            name: pi.metadata?.name,
+            planId: pi.metadata?.planId
+          })
+          
           // Disparar onboarding directamente desde el Payment Intent usando metadatos/email
           await createTenantFromPayment(pi)
+          console.log('✅ [WEBHOOK ONBOARDING] Procesamiento completado para Payment Intent:', pi.id)
         } catch (e) {
-          console.error('❌ Error procesando payment_intent.succeeded:', e)
+          console.error('❌ [WEBHOOK ONBOARDING] Error procesando payment_intent.succeeded:', e)
+          console.error('❌ [WEBHOOK ONBOARDING] Stack trace:', e instanceof Error ? e.stack : 'No stack trace')
         }
         break
 
