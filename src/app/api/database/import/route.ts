@@ -1,11 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
+import { verifyToken } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export async function POST(req: NextRequest) {
   try {
+    // ⚠️ CRÍTICO: Obtener tenant_id del usuario autenticado
+    const authToken = req.cookies.get('auth_token')?.value;
+    
+    if (!authToken) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
+
+    const payload = verifyToken(authToken);
+    
+    if (!payload || !payload.tenantId) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
+
+    const tenantId = payload.tenantId;
+    console.log('🏢 Importando datos para tenant:', tenantId);
+
     const body = await req.json();
 
     const rooms = Array.isArray(body.rooms) ? body.rooms : [];
@@ -28,15 +45,17 @@ export async function POST(req: NextRequest) {
       `;
     }
 
+    // ⚠️ CRÍTICO: Importar reservations con tenant_id del usuario autenticado
     for (const rv of reservations) {
       await sql`
         INSERT INTO reservations (
           id, external_id, room_id, guest_name, guest_email, guest_phone, guest_count,
-          check_in, check_out, channel, total_price, guest_paid, platform_commission, net_income, currency, status
+          check_in, check_out, channel, total_price, guest_paid, platform_commission, net_income, currency, status, tenant_id
         ) VALUES (
           ${rv.id || null}, ${rv.external_id}, ${rv.room_id}, ${rv.guest_name}, ${rv.guest_email || ''}, ${rv.guest_phone || ''}, ${rv.guest_count || 1},
           ${rv.check_in}::timestamp, ${rv.check_out}::timestamp, ${rv.channel || 'manual'}, ${rv.total_price || 0},
-          ${rv.guest_paid || 0}, ${rv.platform_commission || 0}, ${rv.net_income || 0}, ${rv.currency || 'EUR'}, ${rv.status || 'confirmed'}
+          ${rv.guest_paid || 0}, ${rv.platform_commission || 0}, ${rv.net_income || 0}, ${rv.currency || 'EUR'}, ${rv.status || 'confirmed'},
+          ${tenantId}::uuid
         )
         ON CONFLICT (external_id) DO UPDATE SET
           room_id = EXCLUDED.room_id,
@@ -52,23 +71,46 @@ export async function POST(req: NextRequest) {
           platform_commission = EXCLUDED.platform_commission,
           net_income = EXCLUDED.net_income,
           currency = EXCLUDED.currency,
-          status = EXCLUDED.status;
+          status = EXCLUDED.status,
+          tenant_id = EXCLUDED.tenant_id;
       `;
     }
 
+    // ⚠️ CRÍTICO: Importar guests con tenant_id del usuario autenticado
     for (const g of guests) {
       await sql`
-        INSERT INTO guests (id, reservation_id, name, document_type, document_number, birth_date, country, signature_url, accepts_rules)
-        VALUES (${g.id || null}, ${g.reservation_id || null}, ${g.name}, ${g.document_type}, ${g.document_number}, ${g.birth_date}, ${g.country}, ${g.signature_url || null}, ${g.accepts_rules || false})
-        ON CONFLICT (id) DO NOTHING;
+        INSERT INTO guests (id, reservation_id, name, document_type, document_number, birth_date, country, signature_url, accepts_rules, tenant_id)
+        VALUES (
+          ${g.id || null}, 
+          ${g.reservation_id || null}, 
+          ${g.name}, 
+          ${g.document_type}, 
+          ${g.document_number}, 
+          ${g.birth_date}, 
+          ${g.country}, 
+          ${g.signature_url || null}, 
+          ${g.accepts_rules || false},
+          ${tenantId}::uuid
+        )
+        ON CONFLICT (id) DO UPDATE SET
+          tenant_id = EXCLUDED.tenant_id;
       `;
     }
 
+    // ⚠️ CRÍTICO: Importar guest_registrations con tenant_id del usuario autenticado
     for (const gr of guestRegs) {
       await sql`
-        INSERT INTO guest_registrations (id, reserva_ref, fecha_entrada, fecha_salida, data)
-        VALUES (${gr.id || null}, ${gr.reserva_ref || null}, ${gr.fecha_entrada}, ${gr.fecha_salida}, ${JSON.stringify(gr.data || {})}::jsonb)
-        ON CONFLICT (id) DO NOTHING;
+        INSERT INTO guest_registrations (id, reserva_ref, fecha_entrada, fecha_salida, data, tenant_id)
+        VALUES (
+          ${gr.id || null}, 
+          ${gr.reserva_ref || null}, 
+          ${gr.fecha_entrada}, 
+          ${gr.fecha_salida}, 
+          ${JSON.stringify(gr.data || {})}::jsonb,
+          ${tenantId}::uuid
+        )
+        ON CONFLICT (id) DO UPDATE SET
+          tenant_id = EXCLUDED.tenant_id;
       `;
     }
 
