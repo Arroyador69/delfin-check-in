@@ -74,9 +74,25 @@ export async function POST(request: NextRequest) {
       audit_hash: hash
     };
 
+    // ⚠️ CRÍTICO: Obtener tenant_id del body o headers
+    const tenantId = body.tenant_id || 
+                     body.tenantId ||
+                     request.headers.get('X-Tenant-ID') ||
+                     request.headers.get('x-tenant-id') ||
+                     null;
+    
+    console.log('🏢 Tenant ID detectado en /api/partes:', tenantId);
+    
+    // Insertar con tenant_id para aislamiento multi-tenant
     await sql`
-      INSERT INTO guest_registrations (reserva_ref, fecha_entrada, fecha_salida, data)
-      VALUES (${registro.contrato.referencia}, ${entrada}::timestamp, ${salida}::timestamp, ${JSON.stringify(registro)}::jsonb)
+      INSERT INTO guest_registrations (reserva_ref, fecha_entrada, fecha_salida, data, tenant_id)
+      VALUES (
+        ${registro.contrato.referencia}, 
+        ${entrada}::timestamp, 
+        ${salida}::timestamp, 
+        ${JSON.stringify(registro)}::jsonb,
+        ${tenantId}::uuid
+      )
     `;
 
     await logAudit({

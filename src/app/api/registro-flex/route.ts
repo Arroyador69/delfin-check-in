@@ -539,12 +539,23 @@ export async function POST(req: NextRequest) {
     console.log('💾 Guardando en base de datos...');
     console.log('🔍 Debug - Datos finales que se van a guardar:', JSON.stringify(dbData, null, 2));
     
-    // Guardar en base de datos
+    // ⚠️ CRÍTICO: Obtener tenant_id del header o parámetros
+    // El endpoint /api/public/form/[slug]/submit pasa tenant_id en X-Tenant-ID
+    const tenantId = req.headers.get('X-Tenant-ID') || 
+                     req.headers.get('x-tenant-id') ||
+                     json.tenant_id || 
+                     json.tenantId ||
+                     null;
+    
+    console.log('🏢 Tenant ID detectado:', tenantId);
+    
+    // Guardar en base de datos con tenant_id
     const id = await insertGuestRegistration({
       reserva_ref: ESTABLISHMENT_REFERENCE,
       fecha_entrada: c.entrada.split('T')[0],
       fecha_salida: c.salida.split('T')[0],
-      data: dbData
+      data: dbData,
+      tenant_id: tenantId
     });
 
     console.log('✅ Registro guardado con ID:', id);

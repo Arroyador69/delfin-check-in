@@ -137,10 +137,24 @@ export async function POST(req: NextRequest) {
       }
     };
 
-    // Insertar registro de prueba
+    // ⚠️ CRÍTICO: Obtener tenant_id del query parameter o body
+    const urlParams = new URL(req.url).searchParams;
+    const tenantId = urlParams.get('tenant_id') || 
+                     urlParams.get('tenantId') ||
+                     null;
+    
+    console.log('🏢 Tenant ID detectado en /api/verificar-formulario-mir:', tenantId);
+    
+    // Insertar registro de prueba con tenant_id (si está disponible)
     const insertResult = await sql`
-      INSERT INTO guest_registrations (reserva_ref, fecha_entrada, fecha_salida, data)
-      VALUES (${testData.reserva_ref}, ${testData.fecha_entrada}, ${testData.fecha_salida}, ${JSON.stringify(testData.data)}::jsonb)
+      INSERT INTO guest_registrations (reserva_ref, fecha_entrada, fecha_salida, data, tenant_id)
+      VALUES (
+        ${testData.reserva_ref}, 
+        ${testData.fecha_entrada}, 
+        ${testData.fecha_salida}, 
+        ${JSON.stringify(testData.data)}::jsonb,
+        ${tenantId}::uuid
+      )
       RETURNING id
     `;
 
