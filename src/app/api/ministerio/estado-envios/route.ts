@@ -5,34 +5,73 @@ export async function GET(req: NextRequest) {
   try {
     console.log('📊 Obteniendo estado de envíos al MIR...');
     
+    // Obtener tenant_id del header o query params
+    const tenantId = req.headers.get('x-tenant-id') || 
+                     req.headers.get('X-Tenant-ID') ||
+                     req.nextUrl.searchParams.get('tenant_id') ||
+                     null;
+    
+    console.log('🏢 Tenant ID para estado-envios:', tenantId);
+    
     // Obtener registros de guest_registrations CON TODAS sus comunicaciones MIR (PV y RH)
-    const result = await sql`
-      SELECT 
-        gr.id,
-        gr.created_at,
-        gr.fecha_entrada,
-        gr.fecha_salida,
-        gr.data,
-        gr.reserva_ref,
-        gr.tenant_id,
-        mc.id as mir_id,
-        mc.referencia as mir_referencia,
-        mc.tipo as mir_tipo,
-        mc.estado as mir_estado,
-        mc.lote as mir_lote,
-        mc.resultado as mir_resultado,
-        mc.error as mir_error,
-        mc.created_at as mir_created_at,
-        mc.xml_respuesta as mir_xml_respuesta,
-        mc.tenant_id as mir_tenant_id
-      FROM guest_registrations gr
-      LEFT JOIN mir_comunicaciones mc ON (
-        gr.comunicacion_id = mc.referencia OR 
-        gr.reserva_ref = mc.referencia OR
-        mc.referencia LIKE gr.reserva_ref || '%'
-      )
-      ORDER BY gr.created_at DESC, mc.tipo ASC
-    `;
+    // Si hay tenant_id, filtrar por él para cumplir con RLS
+    const result = tenantId 
+      ? await sql`
+          SELECT 
+            gr.id,
+            gr.created_at,
+            gr.fecha_entrada,
+            gr.fecha_salida,
+            gr.data,
+            gr.reserva_ref,
+            gr.tenant_id,
+            mc.id as mir_id,
+            mc.referencia as mir_referencia,
+            mc.tipo as mir_tipo,
+            mc.estado as mir_estado,
+            mc.lote as mir_lote,
+            mc.resultado as mir_resultado,
+            mc.error as mir_error,
+            mc.created_at as mir_created_at,
+            mc.xml_respuesta as mir_xml_respuesta,
+            mc.tenant_id as mir_tenant_id
+          FROM guest_registrations gr
+          LEFT JOIN mir_comunicaciones mc ON (
+            (gr.comunicacion_id = mc.referencia OR 
+             gr.reserva_ref = mc.referencia OR
+             mc.referencia LIKE gr.reserva_ref || '%')
+            AND mc.tenant_id = ${tenantId}
+          )
+          WHERE gr.tenant_id = ${tenantId}
+          ORDER BY gr.created_at DESC, mc.tipo ASC
+        `
+      : await sql`
+          SELECT 
+            gr.id,
+            gr.created_at,
+            gr.fecha_entrada,
+            gr.fecha_salida,
+            gr.data,
+            gr.reserva_ref,
+            gr.tenant_id,
+            mc.id as mir_id,
+            mc.referencia as mir_referencia,
+            mc.tipo as mir_tipo,
+            mc.estado as mir_estado,
+            mc.lote as mir_lote,
+            mc.resultado as mir_resultado,
+            mc.error as mir_error,
+            mc.created_at as mir_created_at,
+            mc.xml_respuesta as mir_xml_respuesta,
+            mc.tenant_id as mir_tenant_id
+          FROM guest_registrations gr
+          LEFT JOIN mir_comunicaciones mc ON (
+            gr.comunicacion_id = mc.referencia OR 
+            gr.reserva_ref = mc.referencia OR
+            mc.referencia LIKE gr.reserva_ref || '%'
+          )
+          ORDER BY gr.created_at DESC, mc.tipo ASC
+        `;
     
     console.log(`📋 Encontrados ${result.rows.length} registros`);
     
