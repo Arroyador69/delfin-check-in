@@ -82,7 +82,48 @@ export async function POST(req: NextRequest) {
       console.warn('⚠️ No se pudo cargar configuración MIR, usando valores por defecto:', configError);
     }
 
-    console.log('🔧 Configuración MIR cargada:', { ...config, password: '***' });
+    console.log('🔧 Configuración MIR cargada:', { 
+      ...config, 
+      password: '***',
+      usernameLength: config.username?.length || 0,
+      passwordLength: config.password?.length || 0,
+      codigoArrendador: config.codigoArrendador,
+      codigoEstablecimiento: config.codigoEstablecimiento,
+      simulacion: config.simulacion
+    });
+
+    // Validar que las credenciales MIR no estén vacías (a menos que sea simulación)
+    if (!config.simulacion) {
+      if (!config.username || config.username.trim() === '') {
+        console.error('❌ ERROR: Usuario MIR vacío o no configurado');
+        return NextResponse.json({
+          success: false,
+          error: 'Credenciales MIR no configuradas',
+          message: 'El usuario MIR está vacío. Por favor, configura las credenciales MIR en la configuración del tenant.',
+          tenantId
+        }, { status: 400 });
+      }
+      
+      if (!config.password || config.password.trim() === '') {
+        console.error('❌ ERROR: Contraseña MIR vacía o no configurada');
+        return NextResponse.json({
+          success: false,
+          error: 'Credenciales MIR no configuradas',
+          message: 'La contraseña MIR está vacía. Por favor, configura las credenciales MIR en la configuración del tenant.',
+          tenantId
+        }, { status: 400 });
+      }
+      
+      if (!config.codigoArrendador || config.codigoArrendador.trim() === '') {
+        console.error('❌ ERROR: Código arrendador MIR vacío o no configurado');
+        return NextResponse.json({
+          success: false,
+          error: 'Credenciales MIR no configuradas',
+          message: 'El código arrendador MIR está vacío. Por favor, configura las credenciales MIR en la configuración del tenant.',
+          tenantId
+        }, { status: 400 });
+      }
+    }
 
     // Crear cliente MIR
     const client = new MinisterioClientOfficial(config);

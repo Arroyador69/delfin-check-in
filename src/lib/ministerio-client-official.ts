@@ -300,10 +300,30 @@ function matchTag(xml: string, tag: string): string | null {
 async function makeSoapRequest(cfg: MinisterioConfig, soapXml: string, operation: string): Promise<Response> {
   const contentLength = Buffer.byteLength(soapXml, 'utf8');
   
+  // Validar credenciales antes de construir el header
+  if (!cfg.username || cfg.username.trim() === '' || !cfg.password || cfg.password.trim() === '') {
+    console.error('❌ ERROR CRÍTICO: Credenciales MIR vacías:', {
+      username: cfg.username ? `${cfg.username.substring(0, 3)}...` : 'VACÍO',
+      password: cfg.password ? '***' : 'VACÍO',
+      usernameLength: cfg.username?.length || 0,
+      passwordLength: cfg.password?.length || 0
+    });
+    throw new Error('Credenciales MIR vacías o no configuradas');
+  }
+  
+  const authHeader = buildBasicAuthHeader(cfg.username, cfg.password);
+  console.log('🔐 Autenticación HTTP Basic construida:', {
+    username: cfg.username.substring(0, 3) + '...',
+    usernameLength: cfg.username.length,
+    passwordLength: cfg.password.length,
+    authHeaderPrefix: authHeader.substring(0, 20) + '...',
+    codigoArrendador: cfg.codigoArrendador
+  });
+  
   const fetchOptions: RequestInit = {
     method: 'POST',
     headers: {
-      'Authorization': buildBasicAuthHeader(cfg.username, cfg.password),
+      'Authorization': authHeader,
       'Content-Type': 'text/xml; charset=utf-8',
       'Content-Length': contentLength.toString(),
       'SOAPAction': `"${operation}"`,
