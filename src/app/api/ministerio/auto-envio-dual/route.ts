@@ -58,13 +58,21 @@ export async function POST(req: NextRequest) {
 
     let dbResult = null;
     try {
+      // Buscar por propietario_id O tenant_id (ambos pueden existir)
       dbResult = await sql`
-        SELECT usuario, contraseña, codigo_arrendador, codigo_establecimiento, base_url, aplicacion, simulacion, activo
+        SELECT usuario, contraseña, codigo_arrendador, codigo_establecimiento, base_url, aplicacion, simulacion, activo, propietario_id, tenant_id
         FROM mir_configuraciones 
-        WHERE propietario_id = ${tenantId}
+        WHERE propietario_id = ${tenantId} OR tenant_id = ${tenantId}
         ORDER BY updated_at DESC
         LIMIT 1
       `;
+      
+      console.log('🔍 Búsqueda de configuración MIR:', {
+        tenantIdBuscado: tenantId,
+        resultadosEncontrados: dbResult.rows.length,
+        propietario_id_encontrado: dbResult.rows[0]?.propietario_id,
+        tenant_id_encontrado: dbResult.rows[0]?.tenant_id
+      });
 
       if (dbResult.rows.length > 0 && dbResult.rows[0].activo) {
         const dbConfig = dbResult.rows[0];
@@ -96,11 +104,25 @@ export async function POST(req: NextRequest) {
     if (!config.simulacion) {
       if (!config.username || config.username.trim() === '') {
         console.error('❌ ERROR: Usuario MIR vacío o no configurado');
+        console.error('🔍 Diagnóstico:', {
+          tenantIdBuscado: tenantId,
+          configuracionEncontrada: dbResult?.rows?.length > 0,
+          propietario_id_encontrado: dbResult?.rows?.[0]?.propietario_id,
+          tenant_id_encontrado: dbResult?.rows?.[0]?.tenant_id,
+          usuario_encontrado: dbResult?.rows?.[0]?.usuario ? 'SÍ' : 'NO',
+          activo: dbResult?.rows?.[0]?.activo
+        });
         return NextResponse.json({
           success: false,
           error: 'Credenciales MIR no configuradas',
           message: 'El usuario MIR está vacío. Por favor, configura las credenciales MIR en la configuración del tenant.',
-          tenantId
+          tenantId,
+          diagnostico: {
+            tenantIdBuscado: tenantId,
+            configuracionEncontrada: dbResult?.rows?.length > 0,
+            propietario_id_encontrado: dbResult?.rows?.[0]?.propietario_id,
+            tenant_id_encontrado: dbResult?.rows?.[0]?.tenant_id
+          }
         }, { status: 400 });
       }
       
