@@ -103,28 +103,38 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // Para rutas de API, inyectar tenant ID desde JWT (CRÍTICO: sin fallback)
+  // Para rutas de API, inyectar tenant ID desde JWT o header (CRÍTICO: sin fallback)
   if (url.pathname.startsWith('/api/')) {
     const requestHeaders = new Headers(req.headers);
     let tenantId: string | null = null;
     
-    // Intentar obtener tenant_id desde Authorization Bearer token (para apps móviles)
-    const authHeader = req.headers.get('authorization');
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      try {
-        const token = authHeader.split(' ')[1];
-        const payload = verifyTokenEdge(token);
-        if (payload?.tenantId) {
-          tenantId = payload.tenantId;
-          requestHeaders.set('x-tenant-id', tenantId);
-          console.log(`📱 Token móvil detectado, tenant_id: ${tenantId}`);
+    // PRIMERO: Verificar si hay tenant_id en el header (para llamadas internas entre endpoints)
+    const headerTenantId = req.headers.get('x-tenant-id') || req.headers.get('X-Tenant-ID');
+    if (headerTenantId) {
+      tenantId = headerTenantId;
+      requestHeaders.set('x-tenant-id', tenantId);
+      console.log(`🔗 Tenant_id desde header (llamada interna): ${tenantId}`);
+    }
+    
+    // SEGUNDO: Si no hay tenant_id en header, intentar desde Authorization Bearer token (para apps móviles)
+    if (!tenantId) {
+      const authHeader = req.headers.get('authorization');
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        try {
+          const token = authHeader.split(' ')[1];
+          const payload = verifyTokenEdge(token);
+          if (payload?.tenantId) {
+            tenantId = payload.tenantId;
+            requestHeaders.set('x-tenant-id', tenantId);
+            console.log(`📱 Token móvil detectado, tenant_id: ${tenantId}`);
+          }
+        } catch (error) {
+          console.error('Error verificando token Bearer:', error);
         }
-      } catch (error) {
-        console.error('Error verificando token Bearer:', error);
       }
     }
     
-    // Si no hay tenant_id en Bearer token, intentar desde cookie (web)
+    // TERCERO: Si no hay tenant_id en Bearer token, intentar desde cookie (web)
     if (!tenantId) {
       const authToken = req.cookies.get('auth_token')?.value;
       if (authToken) {
