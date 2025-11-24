@@ -28,12 +28,20 @@ export async function POST(req: NextRequest) {
 
     console.log('📋 Datos recibidos para envío dual:', JSON.stringify(json, null, 2));
 
-    // Obtener tenant_id del header o del body
-    tenantId = req.headers.get('x-tenant-id') || 
-               req.headers.get('X-Tenant-ID') || 
-               json.tenant_id || 
-               'default';
-    console.log('🏢 Tenant ID para envío dual:', tenantId);
+    // Obtener tenant_id del header o del body y limpiar duplicados
+    let rawTenantId = req.headers.get('x-tenant-id') || 
+                      req.headers.get('X-Tenant-ID') || 
+                      json.tenant_id || 
+                      'default';
+    
+    // Limpiar tenant_id: si viene duplicado (separado por coma), tomar solo el primero
+    if (rawTenantId.includes(',')) {
+      rawTenantId = rawTenantId.split(',')[0].trim();
+      console.warn('⚠️ Tenant ID duplicado detectado, usando solo el primero:', rawTenantId);
+    }
+    
+    tenantId = rawTenantId;
+    console.log('🏢 Tenant ID para envío dual (limpio):', tenantId);
     console.log('🔍 Headers recibidos:', {
       'x-tenant-id': req.headers.get('x-tenant-id'),
       'X-Tenant-ID': req.headers.get('X-Tenant-ID'),
@@ -373,6 +381,7 @@ export async function POST(req: NextRequest) {
           referencia: comunicacionPV.referencia,
           tipo: comunicacionPV.tipo,
           estado: comunicacionPV.estado,
+          lote: comunicacionPV.lote || 'NO ASIGNADO (error o pendiente)',
           tenant_id: comunicacionPV.tenant_id
         });
         const idPV = await insertMirComunicacion(comunicacionPV);
@@ -411,6 +420,7 @@ export async function POST(req: NextRequest) {
           referencia: comunicacionRH.referencia,
           tipo: comunicacionRH.tipo,
           estado: comunicacionRH.estado,
+          lote: comunicacionRH.lote || 'NO ASIGNADO (error o pendiente)',
           tenant_id: comunicacionRH.tenant_id
         });
         const idRH = await insertMirComunicacion(comunicacionRH);
