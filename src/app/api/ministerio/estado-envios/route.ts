@@ -14,7 +14,10 @@ export async function GET(req: NextRequest) {
     console.log('🏢 Tenant ID para estado-envios:', tenantId);
     
     // Obtener registros de guest_registrations CON TODAS sus comunicaciones MIR (PV y RH)
-    // Si hay tenant_id, filtrar por él para cumplir con RLS
+    // IMPORTANTE: 
+    // - WHERE filtra por tenant_id para seguridad (solo registros del tenant actual)
+    // - JOIN es flexible para encontrar comunicaciones MIR por referencia (sin filtrar por tenant_id en el JOIN)
+    //   Esto permite encontrar comunicaciones antiguas que pueden tener tenant_id NULL o diferente
     const result = tenantId 
       ? await sql`
           SELECT 
@@ -37,10 +40,10 @@ export async function GET(req: NextRequest) {
             mc.tenant_id as mir_tenant_id
           FROM guest_registrations gr
           LEFT JOIN mir_comunicaciones mc ON (
-            (gr.comunicacion_id = mc.referencia OR 
-             gr.reserva_ref = mc.referencia OR
-             mc.referencia LIKE gr.reserva_ref || '%')
-            AND mc.tenant_id = ${tenantId}
+            gr.comunicacion_id = mc.referencia OR 
+            gr.reserva_ref = mc.referencia OR
+            mc.referencia LIKE gr.reserva_ref || '%' OR
+            gr.reserva_ref = SPLIT_PART(mc.referencia, '-', 1)
           )
           WHERE gr.tenant_id = ${tenantId}
           ORDER BY gr.created_at DESC, mc.tipo ASC
@@ -68,7 +71,8 @@ export async function GET(req: NextRequest) {
           LEFT JOIN mir_comunicaciones mc ON (
             gr.comunicacion_id = mc.referencia OR 
             gr.reserva_ref = mc.referencia OR
-            mc.referencia LIKE gr.reserva_ref || '%'
+            mc.referencia LIKE gr.reserva_ref || '%' OR
+            gr.reserva_ref = SPLIT_PART(mc.referencia, '-', 1)
           )
           ORDER BY gr.created_at DESC, mc.tipo ASC
         `;
