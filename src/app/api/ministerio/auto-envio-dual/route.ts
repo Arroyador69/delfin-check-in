@@ -7,10 +7,14 @@ import { sql } from '@vercel/postgres';
 import { logError } from '@/lib/error-logger';
 
 export async function POST(req: NextRequest) {
+  let json: any = undefined;
+  let tenantId = 'default';
+  let referenciaNorm = 'ERROR-' + Date.now();
+  
   try {
     console.log('🚀 Envío dual PV + RH al MIR iniciado...');
     
-    const json = await req.json().catch(() => undefined);
+    json = await req.json().catch(() => undefined);
     
     if (!json) {
       console.error('❌ Datos JSON inválidos o vacíos');
@@ -25,8 +29,13 @@ export async function POST(req: NextRequest) {
     console.log('📋 Datos recibidos para envío dual:', JSON.stringify(json, null, 2));
 
     // Obtener tenant_id del header o del body
-    const tenantId = req.headers.get('x-tenant-id') || json.tenant_id || 'default';
+    tenantId = req.headers.get('x-tenant-id') || json.tenant_id || 'default';
     console.log('🏢 Tenant ID para envío dual:', tenantId);
+    
+    // Obtener referencia del JSON si está disponible
+    if (json.referencia) {
+      referenciaNorm = String(json.referencia).slice(0, 50);
+    }
 
     // Cargar configuración MIR desde la base de datos
     let config = {
@@ -84,7 +93,7 @@ export async function POST(req: NextRequest) {
     console.log('👥 Personas:', personas.length);
 
     // Normalizaciones requeridas por XSD oficial
-    const referenciaNorm = String(referencia).slice(0, 50);
+    referenciaNorm = String(referencia).slice(0, 50);
     const asDateTime = (d: string) => (d && d.includes('T') ? d : `${d}T12:00:00`);
     const fechaEntradaDT = asDateTime(fechaEntrada);
     const fechaSalidaDT = asDateTime(fechaSalida);
@@ -346,8 +355,42 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error('❌ Error en envío dual al MIR:', error);
     
-    // Obtener tenant_id del request
-    const tenantId = req.headers.get('x-tenant-id') || 'default';
+    // Guardar errores en mir_comunicaciones para que aparezcan en la página de estados
+    try {
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      
+      // Guardar error para PV
+      await insertMirComunicacion({
+        referencia: `${referenciaNorm}-PV`,
+        tipo: 'PV',
+        estado: 'error',
+        error: `Error crítico: ${errorMessage}`,
+        resultado: JSON.stringify({ 
+          error: errorMessage,
+          stack: error instanceof Error ? error.stack : undefined,
+          tipo: 'critical_error'
+        }),
+        tenant_id: tenantId !== 'default' ? tenantId : null
+      });
+      
+      // Guardar error para RH
+      await insertMirComunicacion({
+        referencia: `${referenciaNorm}-RH`,
+        tipo: 'RH',
+        estado: 'error',
+        error: `Error crítico: ${errorMessage}`,
+        resultado: JSON.stringify({ 
+          error: errorMessage,
+          stack: error instanceof Error ? error.stack : undefined,
+          tipo: 'critical_error'
+        }),
+        tenant_id: tenantId !== 'default' ? tenantId : null
+      });
+      
+      console.log('✅ Errores críticos guardados en mir_comunicaciones');
+    } catch (saveError) {
+      console.error('❌ Error guardando errores críticos en mir_comunicaciones:', saveError);
+    }
     
     // Registrar error en logs del superadmin
     await logError({
