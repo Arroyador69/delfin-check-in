@@ -556,6 +556,10 @@ export async function POST(req: NextRequest) {
       data: dbData,
       tenant_id: tenantId
     });
+    
+    console.log('✅ Registro guardado en guest_registrations con ID:', id);
+    console.log('🔍 Reserva Ref:', ESTABLISHMENT_REFERENCE);
+    console.log('🔍 Tenant ID:', tenantId);
 
     console.log('✅ Registro guardado con ID:', id);
 
@@ -766,7 +770,11 @@ export async function POST(req: NextRequest) {
       id: id,
       reserva_ref: ESTABLISHMENT_REFERENCE,
       date: new Date().toISOString().split('T')[0],
-      comunicaciones_enviadas: ['PV', 'RH']
+      comunicaciones_enviadas: ['PV', 'RH'],
+      debug: {
+        seguimiento_url: `${req.nextUrl.origin}/api/debug/seguimiento-mir?reserva_ref=${ESTABLISHMENT_REFERENCE}&tenant_id=${tenantId}`,
+        guest_id: id
+      }
     }, {
       status: 201,
       headers
