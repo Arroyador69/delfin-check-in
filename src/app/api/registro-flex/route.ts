@@ -545,12 +545,26 @@ export async function POST(req: NextRequest) {
       }]
     };
 
+    // ⚠️ CRÍTICO: Generar referencia única ANTES de guardar
+    // Esta referencia se usará para reserva_ref, comunicacion_id y el envío al MIR
+    // Usar Web Crypto API compatible con Edge Runtime
+    const reserva_ref = crypto.randomUUID ? crypto.randomUUID() : 
+      Array.from(crypto.getRandomValues(new Uint8Array(16)))
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('')
+        .replace(/(.{8})(.{4})(.{4})(.{4})(.{12})/, '$1-$2-$3-$4-$5'); // Formato UUID v4
+    
+    console.log('🔖 Referencia única generada:', reserva_ref);
+    
+    // Actualizar dbData con la referencia única
+    dbData.comunicaciones[0].contrato.referencia = reserva_ref;
+    
     console.log('💾 Guardando en base de datos...');
     console.log('🔍 Debug - Datos finales que se van a guardar:', JSON.stringify(dbData, null, 2));
     
-    // Guardar en base de datos con tenant_id
+    // Guardar en base de datos con tenant_id y referencia única
     const id = await insertGuestRegistration({
-      reserva_ref: ESTABLISHMENT_REFERENCE,
+      reserva_ref: reserva_ref, // Usar referencia única, NO ESTABLISHMENT_REFERENCE
       fecha_entrada: c.entrada.split('T')[0],
       fecha_salida: c.salida.split('T')[0],
       data: dbData,
@@ -558,22 +572,29 @@ export async function POST(req: NextRequest) {
     });
     
     console.log('✅ Registro guardado en guest_registrations con ID:', id);
-    console.log('🔍 Reserva Ref:', ESTABLISHMENT_REFERENCE);
+    console.log('🔍 Reserva Ref:', reserva_ref);
     console.log('🔍 Tenant ID:', tenantId);
-
-    console.log('✅ Registro guardado con ID:', id);
+    
+    // Generar comunicacion_id con formato "guest-{id}-{timestamp}"
+    const timestamp = Date.now();
+    const comunicacion_id = `guest-${id}-${timestamp}`;
+    
+    // Actualizar comunicacion_id inmediatamente después de guardar
+    try {
+      const { sql: pgSql } = await import('@vercel/postgres');
+      await pgSql`
+        UPDATE guest_registrations 
+        SET comunicacion_id = ${comunicacion_id}
+        WHERE id = ${id}
+      `;
+      console.log('✅ Comunicacion ID actualizado:', comunicacion_id);
+    } catch (updateError) {
+      console.error('⚠️ Error actualizando comunicacion_id:', updateError);
+    }
 
     // Enviar automáticamente al MIR (PV + RH dual)
     try {
       console.log('📤 Enviando automáticamente al MIR (PV + RH dual)...');
-      
-      // Generar referencia única para cada reserva (máximo 36 caracteres según normas MIR)
-      // Usar Web Crypto API compatible con Edge Runtime
-      const reserva_ref = crypto.randomUUID ? crypto.randomUUID() : 
-        Array.from(crypto.getRandomValues(new Uint8Array(16)))
-          .map(b => b.toString(16).padStart(2, '0'))
-          .join('')
-          .replace(/(.{8})(.{4})(.{4})(.{4})(.{12})/, '$1-$2-$3-$4-$5'); // Formato UUID v4
       
       // Preparar datos para el envío dual
       const datosMIR = {
@@ -659,14 +680,12 @@ export async function POST(req: NextRequest) {
             }
           };
           
-          // Actualizar el registro con la referencia única y el estado MIR
+          // Actualizar el registro con el estado MIR (reserva_ref y comunicacion_id ya están correctos)
           const { sql: pgSql } = await import('@vercel/postgres');
           await pgSql`
             UPDATE guest_registrations 
             SET 
-              data = ${JSON.stringify(updatedData)}::jsonb,
-              reserva_ref = ${reserva_ref},
-              comunicacion_id = ${reserva_ref}
+              data = ${JSON.stringify(updatedData)}::jsonb
             WHERE id = ${id}
           `;
           
@@ -768,11 +787,12 @@ export async function POST(req: NextRequest) {
       success: true, 
       message: 'Registro guardado y enviado al MIR correctamente (PV + RH)',
       id: id,
-      reserva_ref: ESTABLISHMENT_REFERENCE,
+      reserva_ref: reserva_ref, // Usar referencia única generada
+      comunicacion_id: comunicacion_id, // Incluir comunicacion_id en la respuesta
       date: new Date().toISOString().split('T')[0],
       comunicaciones_enviadas: ['PV', 'RH'],
       debug: {
-        seguimiento_url: `${req.nextUrl.origin}/api/debug/seguimiento-mir?reserva_ref=${ESTABLISHMENT_REFERENCE}&tenant_id=${tenantId}`,
+        seguimiento_url: `${req.nextUrl.origin}/api/debug/seguimiento-mir?reserva_ref=${reserva_ref}&tenant_id=${tenantId}`,
         guest_id: id
       }
     }, {
