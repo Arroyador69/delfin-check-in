@@ -29,8 +29,16 @@ export async function POST(req: NextRequest) {
     console.log('📋 Datos recibidos para envío dual:', JSON.stringify(json, null, 2));
 
     // Obtener tenant_id del header o del body
-    tenantId = req.headers.get('x-tenant-id') || json.tenant_id || 'default';
+    tenantId = req.headers.get('x-tenant-id') || 
+               req.headers.get('X-Tenant-ID') || 
+               json.tenant_id || 
+               'default';
     console.log('🏢 Tenant ID para envío dual:', tenantId);
+    console.log('🔍 Headers recibidos:', {
+      'x-tenant-id': req.headers.get('x-tenant-id'),
+      'X-Tenant-ID': req.headers.get('X-Tenant-ID'),
+      'Content-Type': req.headers.get('Content-Type')
+    });
     
     // Obtener referencia del JSON si está disponible
     if (json.referencia) {
@@ -298,11 +306,22 @@ export async function POST(req: NextRequest) {
       };
 
       try {
+        console.log('💾 Intentando guardar comunicación PV:', {
+          referencia: comunicacionPV.referencia,
+          tipo: comunicacionPV.tipo,
+          estado: comunicacionPV.estado,
+          tenant_id: comunicacionPV.tenant_id
+        });
         const idPV = await insertMirComunicacion(comunicacionPV);
         comunicacionesGuardadas.push({ tipo: 'PV', id: idPV, resultado: resultados.pv });
         console.log('✅ Comunicación PV guardada con ID:', idPV);
       } catch (saveErrorPV) {
         console.error('❌ Error guardando comunicación PV:', saveErrorPV);
+        console.error('❌ Detalles del error:', {
+          error: saveErrorPV instanceof Error ? saveErrorPV.message : String(saveErrorPV),
+          stack: saveErrorPV instanceof Error ? saveErrorPV.stack : undefined,
+          comunicacion: comunicacionPV
+        });
       }
     }
 
@@ -325,11 +344,22 @@ export async function POST(req: NextRequest) {
       };
 
       try {
+        console.log('💾 Intentando guardar comunicación RH:', {
+          referencia: comunicacionRH.referencia,
+          tipo: comunicacionRH.tipo,
+          estado: comunicacionRH.estado,
+          tenant_id: comunicacionRH.tenant_id
+        });
         const idRH = await insertMirComunicacion(comunicacionRH);
         comunicacionesGuardadas.push({ tipo: 'RH', id: idRH, resultado: resultados.rh });
         console.log('✅ Comunicación RH guardada con ID:', idRH);
       } catch (saveErrorRH) {
         console.error('❌ Error guardando comunicación RH:', saveErrorRH);
+        console.error('❌ Detalles del error:', {
+          error: saveErrorRH instanceof Error ? saveErrorRH.message : String(saveErrorRH),
+          stack: saveErrorRH instanceof Error ? saveErrorRH.stack : undefined,
+          comunicacion: comunicacionRH
+        });
       }
     }
 

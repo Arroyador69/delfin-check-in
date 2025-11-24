@@ -600,10 +600,15 @@ export async function POST(req: NextRequest) {
       };
       
       // Enviar usando el endpoint dual (PV + RH en una sola llamada)
+      console.log('═══════════════════════════════════════════════════════════');
       console.log('📤 Enviando PV + RH al MIR usando endpoint dual...');
+      console.log('═══════════════════════════════════════════════════════════');
       console.log('🔍 URL del endpoint:', `${req.nextUrl.origin}/api/ministerio/auto-envio-dual`);
       console.log('🔍 Tenant ID:', tenantId);
+      console.log('🔍 Tenant ID type:', typeof tenantId);
+      console.log('🔍 Datos MIR keys:', Object.keys(datosMIR));
       console.log('🔍 Datos MIR:', JSON.stringify(datosMIR, null, 2));
+      console.log('═══════════════════════════════════════════════════════════');
       
       let dualResult = null;
       let dualError = null;
@@ -619,16 +624,20 @@ export async function POST(req: NextRequest) {
           body: JSON.stringify(datosMIR)
         });
         
-        console.log('📥 Respuesta del endpoint dual:', {
-          status: dualResponse.status,
-          statusText: dualResponse.statusText,
-          ok: dualResponse.ok,
-          headers: Object.fromEntries(dualResponse.headers.entries())
-        });
+        console.log('═══════════════════════════════════════════════════════════');
+        console.log('📥 Respuesta del endpoint dual:');
+        console.log('═══════════════════════════════════════════════════════════');
+        console.log('Status:', dualResponse.status);
+        console.log('Status Text:', dualResponse.statusText);
+        console.log('OK:', dualResponse.ok);
+        console.log('Headers:', Object.fromEntries(dualResponse.headers.entries()));
+        console.log('═══════════════════════════════════════════════════════════');
         
         if (dualResponse.ok) {
           dualResult = await dualResponse.json();
           console.log('✅ Envío dual PV + RH al MIR exitoso:', dualResult);
+          console.log('🔍 Comunicaciones guardadas:', dualResult.comunicaciones);
+          console.log('🔍 Estado:', dualResult.estado);
           
           // Actualizar el registro con el estado del MIR dual y crear vinculación
           const updatedData = {
