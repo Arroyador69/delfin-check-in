@@ -10,6 +10,7 @@ export interface MirComunicacion {
   error?: string;
   xml_enviado?: string;
   xml_respuesta?: string;
+  tenant_id?: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -18,7 +19,7 @@ export async function insertMirComunicacion(comunicacion: Omit<MirComunicacion, 
   try {
     const result = await sql`
       INSERT INTO mir_comunicaciones (
-        referencia, tipo, estado, lote, resultado, error, xml_enviado, xml_respuesta
+        referencia, tipo, estado, lote, resultado, error, xml_enviado, xml_respuesta, tenant_id
       ) VALUES (
         ${comunicacion.referencia},
         ${comunicacion.tipo},
@@ -27,7 +28,8 @@ export async function insertMirComunicacion(comunicacion: Omit<MirComunicacion, 
         ${comunicacion.resultado || null},
         ${comunicacion.error || null},
         ${comunicacion.xml_enviado || null},
-        ${comunicacion.xml_respuesta || null}
+        ${comunicacion.xml_respuesta || null},
+        ${comunicacion.tenant_id || null}
       ) RETURNING id
     `;
     

@@ -605,7 +605,8 @@ export async function POST(req: NextRequest) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Tenant-ID': tenantId || 'default'
+          'x-tenant-id': tenantId || 'default',
+          'X-Tenant-ID': tenantId || 'default' // Mantener ambos por compatibilidad
         },
         body: JSON.stringify(datosMIR)
       });
