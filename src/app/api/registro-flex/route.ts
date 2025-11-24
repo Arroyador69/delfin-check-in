@@ -746,6 +746,9 @@ export async function POST(req: NextRequest) {
           console.error('❌ Error guardando errores de conexión en mir_comunicaciones:', saveError);
         }
       }
+    } catch (mirError) {
+      console.error('⚠️ Error en envío dual al MIR, pero registro guardado correctamente:', mirError);
+    }
 
     const headers = cors(req);
     return NextResponse.json({ 
