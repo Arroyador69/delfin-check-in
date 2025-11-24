@@ -457,9 +457,18 @@ export async function POST(req: NextRequest) {
       return sendError(req, 422, 'Validación fallida', issues);
     }
 
+    // ⚠️ CRÍTICO: Obtener tenant_id del header o parámetros
+    // El endpoint /api/public/form/[slug]/submit pasa tenant_id en X-Tenant-ID
+    const tenantId = req.headers.get('X-Tenant-ID') || 
+                     req.headers.get('x-tenant-id') ||
+                     json.tenant_id || 
+                     json.tenantId ||
+                     null;
+    
+    console.log('🏢 Tenant ID detectado:', tenantId);
+    
     // Obtener configuración MIR del tenant (si está autenticado)
     // Si no hay tenant_id, usar valores por defecto (formulario público)
-    const tenantId = req.headers.get('x-tenant-id');
     let ESTABLISHMENT_CODE = "0000256653"; // Valor por defecto
     let ESTABLISHMENT_REFERENCE = "0000146967"; // Valor por defecto
     let ESTABLISHMENT_NAME = "Delfín Check-in"; // Valor por defecto
@@ -539,16 +548,6 @@ export async function POST(req: NextRequest) {
     console.log('💾 Guardando en base de datos...');
     console.log('🔍 Debug - Datos finales que se van a guardar:', JSON.stringify(dbData, null, 2));
     
-    // ⚠️ CRÍTICO: Obtener tenant_id del header o parámetros
-    // El endpoint /api/public/form/[slug]/submit pasa tenant_id en X-Tenant-ID
-    const tenantId = req.headers.get('X-Tenant-ID') || 
-                     req.headers.get('x-tenant-id') ||
-                     json.tenant_id || 
-                     json.tenantId ||
-                     null;
-    
-    console.log('🏢 Tenant ID detectado:', tenantId);
-    
     // Guardar en base de datos con tenant_id
     const id = await insertGuestRegistration({
       reserva_ref: ESTABLISHMENT_REFERENCE,
@@ -565,7 +564,12 @@ export async function POST(req: NextRequest) {
       console.log('📤 Enviando automáticamente al MIR (PV + RH dual)...');
       
       // Generar referencia única para cada reserva (máximo 36 caracteres según normas MIR)
-      const reserva_ref = crypto.randomUUID(); // Solo UUID, sin prefijo REF- ni timestamp
+      // Usar Web Crypto API compatible con Edge Runtime
+      const reserva_ref = crypto.randomUUID ? crypto.randomUUID() : 
+        Array.from(crypto.getRandomValues(new Uint8Array(16)))
+          .map(b => b.toString(16).padStart(2, '0'))
+          .join('')
+          .replace(/(.{8})(.{4})(.{4})(.{4})(.{12})/, '$1-$2-$3-$4-$5'); // Formato UUID v4
       
       // Preparar datos para el envío dual
       const datosMIR = {

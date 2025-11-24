@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { verifyToken } from '@/lib/auth'
+import { verifyTokenEdge } from '@/lib/auth-edge'
 
 /**
  * 🔒 MIDDLEWARE DE AUTENTICACIÓN SIMPLIFICADO Y ROBUSTO
@@ -113,7 +113,7 @@ export async function middleware(req: NextRequest) {
     if (authHeader && authHeader.startsWith('Bearer ')) {
       try {
         const token = authHeader.split(' ')[1];
-        const payload = verifyToken(token);
+        const payload = verifyTokenEdge(token);
         if (payload?.tenantId) {
           tenantId = payload.tenantId;
           requestHeaders.set('x-tenant-id', tenantId);
@@ -129,7 +129,7 @@ export async function middleware(req: NextRequest) {
       const authToken = req.cookies.get('auth_token')?.value;
       if (authToken) {
         try {
-          const payload = verifyToken(authToken);
+          const payload = verifyTokenEdge(authToken);
           if (payload?.tenantId) {
             tenantId = payload.tenantId;
             requestHeaders.set('x-tenant-id', tenantId);
@@ -185,7 +185,7 @@ export async function middleware(req: NextRequest) {
   } else {
     // Si hay token, extraer tenant_id y agregarlo a los headers para las páginas
     try {
-      const payload = verifyToken(authToken);
+      const payload = verifyTokenEdge(authToken);
       if (payload?.tenantId) {
         const requestHeaders = new Headers(req.headers);
         requestHeaders.set('x-tenant-id', payload.tenantId);
