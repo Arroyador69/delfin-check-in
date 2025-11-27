@@ -5,16 +5,38 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
   apiVersion: '2023-10-16',
 })
 
+// Orígenes permitidos para CORS
+const getAllowedOrigin = (origin: string | null): string => {
+  const allowedOrigins = [
+    'https://delfincheckin.com',
+    'http://localhost:3000',
+    'http://localhost:3001',
+    process.env.ALLOWED_LANDING_ORIGIN || 'https://delfincheckin.com'
+  ].filter(Boolean)
+  
+  // Si el origen está en la lista permitida, usarlo; si no, usar el primero de la lista
+  if (origin && allowedOrigins.includes(origin)) {
+    return origin
+  }
+  
+  return allowedOrigins[0] || 'https://delfincheckin.com'
+}
+
 // Manejar CORS preflight
 export async function OPTIONS(req: NextRequest) {
-  const allowedOrigin = process.env.ALLOWED_LANDING_ORIGIN || 'https://delfincheckin.com'
+  const origin = req.headers.get('origin')
+  const allowedOrigin = getAllowedOrigin(origin)
+  
+  console.log('🔍 [CORS OPTIONS] Origen solicitado:', origin, '→ Permitido:', allowedOrigin)
+  
   return new NextResponse(null, {
     status: 200,
     headers: {
       'Access-Control-Allow-Origin': allowedOrigin,
       'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
       'Access-Control-Allow-Credentials': 'true',
+      'Vary': 'Origin',
     },
   })
 }
@@ -150,7 +172,11 @@ export async function POST(req: NextRequest) {
       }, { status: 500 })
     }
 
-    const allowedOrigin = process.env.ALLOWED_LANDING_ORIGIN || 'https://delfincheckin.com'
+    const origin = req.headers.get('origin')
+    const allowedOrigin = getAllowedOrigin(origin)
+    
+    console.log('🔍 [CORS POST] Origen solicitado:', origin, '→ Permitido:', allowedOrigin)
+    
     const res = NextResponse.json({ 
       client_secret: paymentIntent.client_secret,
       payment_intent_id: paymentIntent.id,
@@ -158,7 +184,7 @@ export async function POST(req: NextRequest) {
     })
     res.headers.set('Access-Control-Allow-Origin', allowedOrigin)
     res.headers.set('Access-Control-Allow-Methods', 'POST, OPTIONS')
-    res.headers.set('Access-Control-Allow-Headers', 'Content-Type')
+    res.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization')
     res.headers.set('Access-Control-Allow-Credentials', 'true')
     res.headers.set('Vary', 'Origin')
     return res
@@ -172,7 +198,11 @@ export async function POST(req: NextRequest) {
       stripeError: error?.raw
     })
     
-    const allowedOrigin = process.env.ALLOWED_LANDING_ORIGIN || 'https://delfincheckin.com'
+    const origin = req.headers.get('origin')
+    const allowedOrigin = getAllowedOrigin(origin)
+    
+    console.log('🔍 [CORS ERROR] Origen solicitado:', origin, '→ Permitido:', allowedOrigin)
+    
     const errorMessage = error?.message || 'Error interno al crear el payment intent'
     
     const res = NextResponse.json({ 
@@ -186,8 +216,9 @@ export async function POST(req: NextRequest) {
     
     res.headers.set('Access-Control-Allow-Origin', allowedOrigin)
     res.headers.set('Access-Control-Allow-Methods', 'POST, OPTIONS')
-    res.headers.set('Access-Control-Allow-Headers', 'Content-Type')
+    res.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization')
     res.headers.set('Access-Control-Allow-Credentials', 'true')
+    res.headers.set('Vary', 'Origin')
     return res
   }
 }
