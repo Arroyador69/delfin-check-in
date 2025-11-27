@@ -96,7 +96,9 @@ export async function middleware(req: NextRequest) {
     url.pathname.startsWith('/api/onboarding/') ||
     url.pathname.startsWith('/api/admin/login') ||
     url.pathname.startsWith('/api/auth/mobile-login') ||
-    url.pathname.startsWith('/api/auth/refresh')
+    url.pathname.startsWith('/api/auth/refresh') ||
+    url.pathname.startsWith('/api/create-payment-intent') ||
+    url.pathname.startsWith('/api/stripe/webhook')
   );
   
   if (isPublicRoute) {
@@ -118,18 +120,18 @@ export async function middleware(req: NextRequest) {
     
     // SEGUNDO: Si no hay tenant_id en header, intentar desde Authorization Bearer token (para apps móviles)
     if (!tenantId) {
-      const authHeader = req.headers.get('authorization');
-      if (authHeader && authHeader.startsWith('Bearer ')) {
-        try {
-          const token = authHeader.split(' ')[1];
+    const authHeader = req.headers.get('authorization');
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      try {
+        const token = authHeader.split(' ')[1];
           const payload = verifyTokenEdge(token);
-          if (payload?.tenantId) {
-            tenantId = payload.tenantId;
-            requestHeaders.set('x-tenant-id', tenantId);
-            console.log(`📱 Token móvil detectado, tenant_id: ${tenantId}`);
-          }
-        } catch (error) {
-          console.error('Error verificando token Bearer:', error);
+        if (payload?.tenantId) {
+          tenantId = payload.tenantId;
+          requestHeaders.set('x-tenant-id', tenantId);
+          console.log(`📱 Token móvil detectado, tenant_id: ${tenantId}`);
+        }
+      } catch (error) {
+        console.error('Error verificando token Bearer:', error);
         }
       }
     }
@@ -165,7 +167,8 @@ export async function middleware(req: NextRequest) {
         url.pathname.startsWith('/api/admin/login') ||
         url.pathname.startsWith('/api/auth/mobile-login') ||
         url.pathname.startsWith('/api/auth/refresh') ||
-        url.pathname.startsWith('/api/stripe/webhook')
+        url.pathname.startsWith('/api/stripe/webhook') ||
+        url.pathname.startsWith('/api/create-payment-intent')
       );
       
       if (!isPublicApiRoute) {
