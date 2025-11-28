@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { sql } from '@/lib/db';
+import { sql, withTenantContext } from '@/lib/db';
 import { verifyToken } from '@/lib/auth';
 
 /**
@@ -33,64 +33,56 @@ export async function GET(request: NextRequest) {
 
     console.log(`🤖 Obteniendo reservas estructuradas para Telegram - Fecha: ${fecha}`);
 
-    // Verificar que la tabla reservations existe
-    try {
-      await sql`SELECT 1 FROM reservations LIMIT 1`;
-    } catch (error) {
-      console.log('⚠️ Tabla reservations no existe');
-      return NextResponse.json({
-        fecha_consulta: fecha,
-        alojados: [],
-        llegan: [],
-        salen: []
-      });
-    }
+    // 🔒 IMPORTANTE: Usar withTenantContext para que RLS funcione correctamente
+    const { alojadosResult, lleganResult, salenResult } = await withTenantContext(tenantId, async () => {
+      // 🔹 Alojados el día X (excluyendo los que salen ese día)
+      const alojados = await sql`
+        SELECT 
+          guest_name as nombre,
+          room_id as habitacion,
+          guest_count as personas,
+          check_in::date as check_in,
+          check_out::date as check_out
+        FROM reservations
+        WHERE tenant_id = ${tenantId}
+          AND status = 'confirmed'
+          AND ${fecha}::date >= DATE(check_in)
+          AND ${fecha}::date < DATE(check_out)
+        ORDER BY check_in
+      `;
 
-    // 🔹 Alojados el día X (excluyendo los que salen ese día)
-    const alojadosResult = await sql`
-      SELECT 
-        guest_name as nombre,
-        room_id as habitacion,
-        guest_count as personas,
-        check_in::date as check_in,
-        check_out::date as check_out
-      FROM reservations
-      WHERE tenant_id = ${tenantId}
-        AND status = 'confirmed'
-        AND ${fecha}::date >= DATE(check_in)
-        AND ${fecha}::date < DATE(check_out)
-      ORDER BY check_in
-    `;
+      // 🔹 Llegadas (Check-in ese día)
+      const llegan = await sql`
+        SELECT 
+          guest_name as nombre,
+          room_id as habitacion,
+          guest_count as personas,
+          check_in::date as check_in,
+          check_out::date as check_out
+        FROM reservations
+        WHERE tenant_id = ${tenantId}
+          AND status = 'confirmed'
+          AND DATE(check_in) = ${fecha}::date
+        ORDER BY check_in
+      `;
 
-    // 🔹 Llegadas (Check-in ese día)
-    const lleganResult = await sql`
-      SELECT 
-        guest_name as nombre,
-        room_id as habitacion,
-        guest_count as personas,
-        check_in::date as check_in,
-        check_out::date as check_out
-      FROM reservations
-      WHERE tenant_id = ${tenantId}
-        AND status = 'confirmed'
-        AND DATE(check_in) = ${fecha}::date
-      ORDER BY check_in
-    `;
+      // 🔹 Salidas (Check-out ese día)
+      const salen = await sql`
+        SELECT 
+          guest_name as nombre,
+          room_id as habitacion,
+          guest_count as personas,
+          check_in::date as check_in,
+          check_out::date as check_out
+        FROM reservations
+        WHERE tenant_id = ${tenantId}
+          AND status = 'confirmed'
+          AND DATE(check_out) = ${fecha}::date
+        ORDER BY check_in
+      `;
 
-    // 🔹 Salidas (Check-out ese día)
-    const salenResult = await sql`
-      SELECT 
-        guest_name as nombre,
-        room_id as habitacion,
-        guest_count as personas,
-        check_in::date as check_in,
-        check_out::date as check_out
-      FROM reservations
-      WHERE tenant_id = ${tenantId}
-        AND status = 'confirmed'
-        AND DATE(check_out) = ${fecha}::date
-      ORDER BY check_in
-    `;
+      return { alojadosResult: alojados, lleganResult: llegan, salenResult: salen };
+    });
 
     console.log(`✅ SQL directo: ${alojadosResult.rows.length} alojados, ${lleganResult.rows.length} llegan, ${salenResult.rows.length} salen`);
 

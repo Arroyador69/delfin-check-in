@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
+import { withTenantContext } from '@/lib/db';
 import OpenAI from 'openai';
 import { TELEGRAM_FACTUAL_PROMPT } from '@/lib/telegram-prompt';
 
@@ -248,35 +249,40 @@ export async function POST(request: NextRequest) {
         // Usar directamente el tenant_id del usuario (ya sea owner o shared_user)
         console.log(`🔍 Consultando reservas para tenant: ${tenant.id} (rol: ${tenant.role})`);
         
-        const alojadosResult = await sql`
-          SELECT 
-            guest_name as nombre, room_id as habitacion, guest_count as personas, 
-            check_in::date as check_in, check_out::date as check_out
-          FROM reservations
-          WHERE tenant_id = ${tenant.id} AND status = 'confirmed'
-            AND ${fecha}::date >= DATE(check_in) AND ${fecha}::date < DATE(check_out)
-          ORDER BY check_in
-        `;
+        // 🔒 IMPORTANTE: Usar withTenantContext para que RLS funcione correctamente
+        const { alojadosResult, lleganResult, salenResult } = await withTenantContext(tenant.id, async () => {
+          const alojados = await sql`
+            SELECT 
+              guest_name as nombre, room_id as habitacion, guest_count as personas, 
+              check_in::date as check_in, check_out::date as check_out
+            FROM reservations
+            WHERE tenant_id = ${tenant.id} AND status = 'confirmed'
+              AND ${fecha}::date >= DATE(check_in) AND ${fecha}::date < DATE(check_out)
+            ORDER BY check_in
+          `;
 
-        const lleganResult = await sql`
-          SELECT 
-            guest_name as nombre, room_id as habitacion, guest_count as personas, 
-            check_in::date as check_in, check_out::date as check_out
-          FROM reservations
-          WHERE tenant_id = ${tenant.id} AND status = 'confirmed'
-            AND DATE(check_in) = ${fecha}::date
-          ORDER BY check_in
-        `;
+          const llegan = await sql`
+            SELECT 
+              guest_name as nombre, room_id as habitacion, guest_count as personas, 
+              check_in::date as check_in, check_out::date as check_out
+            FROM reservations
+            WHERE tenant_id = ${tenant.id} AND status = 'confirmed'
+              AND DATE(check_in) = ${fecha}::date
+            ORDER BY check_in
+          `;
 
-        const salenResult = await sql`
-          SELECT 
-            guest_name as nombre, room_id as habitacion, guest_count as personas, 
-            check_in::date as check_in, check_out::date as check_out
-          FROM reservations
-          WHERE tenant_id = ${tenant.id} AND status = 'confirmed'
-            AND DATE(check_out) = ${fecha}::date
-          ORDER BY check_in
-        `;
+          const salen = await sql`
+            SELECT 
+              guest_name as nombre, room_id as habitacion, guest_count as personas, 
+              check_in::date as check_in, check_out::date as check_out
+            FROM reservations
+            WHERE tenant_id = ${tenant.id} AND status = 'confirmed'
+              AND DATE(check_out) = ${fecha}::date
+            ORDER BY check_in
+          `;
+
+          return { alojadosResult: alojados, lleganResult: llegan, salenResult: salen };
+        });
 
         // Mapear resultados
         console.log(`📊 Resultados de consulta para ${fecha}:`);
