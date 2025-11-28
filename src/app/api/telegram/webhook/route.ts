@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { sql } from '@vercel/postgres';
-import { withTenantContext } from '@/lib/db';
+import { sql, withTenantContext } from '@/lib/db';
 import OpenAI from 'openai';
 import { TELEGRAM_FACTUAL_PROMPT } from '@/lib/telegram-prompt';
 
