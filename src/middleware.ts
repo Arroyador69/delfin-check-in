@@ -98,7 +98,8 @@ export async function middleware(req: NextRequest) {
     url.pathname.startsWith('/api/auth/mobile-login') ||
     url.pathname.startsWith('/api/auth/refresh') ||
     url.pathname.startsWith('/api/create-payment-intent') ||
-    url.pathname.startsWith('/api/stripe/webhook')
+    url.pathname.startsWith('/api/stripe/webhook') ||
+    url.pathname.startsWith('/api/telegram/webhook') // Webhook de Telegram debe ser público
   );
   
   if (isPublicRoute) {
@@ -168,7 +169,8 @@ export async function middleware(req: NextRequest) {
         url.pathname.startsWith('/api/auth/mobile-login') ||
         url.pathname.startsWith('/api/auth/refresh') ||
         url.pathname.startsWith('/api/stripe/webhook') ||
-        url.pathname.startsWith('/api/create-payment-intent')
+        url.pathname.startsWith('/api/create-payment-intent') ||
+        url.pathname.startsWith('/api/telegram/webhook') // Webhook de Telegram debe ser público
       );
       
       if (!isPublicApiRoute) {
