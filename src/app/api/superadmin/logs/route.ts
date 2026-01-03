@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifySuperAdmin } from '@/lib/auth';
+import { verifySuperAdmin } from '@/lib/auth-superadmin';
 import { getErrorLogs, getErrorStats } from '@/lib/error-logger';
 
 export async function GET(req: NextRequest) {
