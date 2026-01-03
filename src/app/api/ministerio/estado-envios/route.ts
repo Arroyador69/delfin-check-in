@@ -49,33 +49,33 @@ export async function GET(req: NextRequest) {
           ORDER BY gr.created_at DESC, mc.tipo ASC
         `
       : await sql`
-          SELECT 
-            gr.id,
-            gr.created_at,
-            gr.fecha_entrada,
-            gr.fecha_salida,
-            gr.data,
-            gr.reserva_ref,
-            gr.tenant_id,
-            mc.id as mir_id,
-            mc.referencia as mir_referencia,
-            mc.tipo as mir_tipo,
-            mc.estado as mir_estado,
-            mc.lote as mir_lote,
-            mc.resultado as mir_resultado,
-            mc.error as mir_error,
-            mc.created_at as mir_created_at,
-            mc.xml_respuesta as mir_xml_respuesta,
-            mc.tenant_id as mir_tenant_id
-          FROM guest_registrations gr
-          LEFT JOIN mir_comunicaciones mc ON (
-            gr.comunicacion_id = mc.referencia OR 
-            gr.reserva_ref = mc.referencia OR
+      SELECT 
+        gr.id,
+        gr.created_at,
+        gr.fecha_entrada,
+        gr.fecha_salida,
+        gr.data,
+        gr.reserva_ref,
+        gr.tenant_id,
+        mc.id as mir_id,
+        mc.referencia as mir_referencia,
+        mc.tipo as mir_tipo,
+        mc.estado as mir_estado,
+        mc.lote as mir_lote,
+        mc.resultado as mir_resultado,
+        mc.error as mir_error,
+        mc.created_at as mir_created_at,
+        mc.xml_respuesta as mir_xml_respuesta,
+        mc.tenant_id as mir_tenant_id
+      FROM guest_registrations gr
+      LEFT JOIN mir_comunicaciones mc ON (
+        gr.comunicacion_id = mc.referencia OR 
+        gr.reserva_ref = mc.referencia OR
             mc.referencia LIKE gr.reserva_ref || '%' OR
             gr.reserva_ref = SPLIT_PART(mc.referencia, '-', 1)
-          )
-          ORDER BY gr.created_at DESC, mc.tipo ASC
-        `;
+      )
+      ORDER BY gr.created_at DESC, mc.tipo ASC
+    `;
     
     console.log(`📋 Encontrados ${result.rows.length} registros`);
     

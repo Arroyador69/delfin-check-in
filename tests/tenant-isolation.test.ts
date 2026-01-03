@@ -53,29 +53,32 @@ describe('Aislamiento Multi-Tenant', () => {
     userBId = userBResult.rows[0].id;
 
     // Crear empresa_config para cada tenant
+    // NOTA: empresa_config.tenant_id es VARCHAR(255), no UUID
     await sql`
       INSERT INTO empresa_config (tenant_id, nombre_empresa, nif_empresa, direccion_empresa, email)
-      VALUES (${tenantAId}, 'Empresa A', 'A12345678', 'Dirección A', 'contacto@empresaa.com')
+      VALUES (${String(tenantAId)}, 'Empresa A', 'A12345678', 'Dirección A', 'contacto@empresaa.com')
     `;
 
     await sql`
       INSERT INTO empresa_config (tenant_id, nombre_empresa, nif_empresa, direccion_empresa, email)
-      VALUES (${tenantBId}, 'Empresa B', 'B87654321', 'Dirección B', 'contacto@empresab.com')
+      VALUES (${String(tenantBId)}, 'Empresa B', 'B87654321', 'Dirección B', 'contacto@empresab.com')
     `;
   });
 
   afterAll(async () => {
     // Limpiar datos de prueba
-    await sql`DELETE FROM empresa_config WHERE tenant_id IN (${tenantAId}, ${tenantBId})`;
+    // NOTA: empresa_config.tenant_id es VARCHAR(255)
+    await sql`DELETE FROM empresa_config WHERE tenant_id IN (${String(tenantAId)}, ${String(tenantBId)})`;
     await sql`DELETE FROM tenant_users WHERE tenant_id IN (${tenantAId}, ${tenantBId})`;
     await sql`DELETE FROM tenants WHERE id IN (${tenantAId}, ${tenantBId})`;
   });
 
   describe('empresa_config - Aislamiento', () => {
     it('Tenant A solo debe ver su propia configuración', async () => {
+      // NOTA: empresa_config.tenant_id es VARCHAR(255), convertir a string
       const result = await sql`
         SELECT * FROM empresa_config 
-        WHERE tenant_id = ${tenantAId}
+        WHERE tenant_id = ${String(tenantAId)}
       `;
 
       expect(result.rows.length).toBe(1);
@@ -84,9 +87,10 @@ describe('Aislamiento Multi-Tenant', () => {
     });
 
     it('Tenant A NO debe ver configuración de Tenant B', async () => {
+      // NOTA: empresa_config.tenant_id es VARCHAR(255), convertir a string
       const result = await sql`
         SELECT * FROM empresa_config 
-        WHERE tenant_id = ${tenantAId}
+        WHERE tenant_id = ${String(tenantAId)}
       `;
 
       // Verificar que no hay datos de Tenant B

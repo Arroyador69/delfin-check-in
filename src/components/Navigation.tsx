@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Bed, Calendar, Users, Settings, Menu, X, TrendingUp, FileText, Download, Shield, Calculator, Send, MessageSquare, Receipt, Crown } from 'lucide-react';
+import { Home, Bed, Calendar, Users, Settings, Menu, X, TrendingUp, FileText, Download, Shield, Calculator, Send, MessageSquare, Receipt, Crown, Target } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 
@@ -48,6 +48,7 @@ export default function Navigation() {
     { name: 'Tenants', href: '/superadmin/tenants', icon: Users },
     { name: 'Analytics', href: '/superadmin/analytics', icon: TrendingUp },
     { name: 'Páginas Programáticas', href: '/superadmin/programmatic', icon: FileText },
+    { name: 'Radar Reach', href: '/superadmin/radar-reach', icon: Target },
     { name: 'Logs', href: '/superadmin/logs', icon: Shield },
   ];
 

@@ -558,7 +558,7 @@ export async function POST(req: NextRequest) {
     
     // Actualizar dbData con la referencia única
     dbData.comunicaciones[0].contrato.referencia = reserva_ref;
-    
+
     console.log('💾 Guardando en base de datos...');
     console.log('🔍 Debug - Datos finales que se van a guardar:', JSON.stringify(dbData, null, 2));
     
@@ -570,7 +570,7 @@ export async function POST(req: NextRequest) {
       data: dbData,
       tenant_id: tenantId
     });
-    
+
     console.log('✅ Registro guardado en guest_registrations con ID:', id);
     console.log('🔍 Reserva Ref:', reserva_ref);
     console.log('🔍 Tenant ID:', tenantId);
@@ -639,16 +639,16 @@ export async function POST(req: NextRequest) {
       let dualError = null;
       
       try {
-        const dualResponse = await fetch(`${req.nextUrl.origin}/api/ministerio/auto-envio-dual`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
+      const dualResponse = await fetch(`${req.nextUrl.origin}/api/ministerio/auto-envio-dual`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
             'x-tenant-id': tenantId || 'default',
             'X-Tenant-ID': tenantId || 'default' // Mantener ambos por compatibilidad
-          },
-          body: JSON.stringify(datosMIR)
-        });
-        
+        },
+        body: JSON.stringify(datosMIR)
+      });
+      
         console.log('═══════════════════════════════════════════════════════════');
         console.log('📥 Respuesta del endpoint dual:');
         console.log('═══════════════════════════════════════════════════════════');
@@ -658,39 +658,39 @@ export async function POST(req: NextRequest) {
         console.log('Headers:', Object.fromEntries(dualResponse.headers.entries()));
         console.log('═══════════════════════════════════════════════════════════');
         
-        if (dualResponse.ok) {
-          dualResult = await dualResponse.json();
-          console.log('✅ Envío dual PV + RH al MIR exitoso:', dualResult);
+      if (dualResponse.ok) {
+        dualResult = await dualResponse.json();
+        console.log('✅ Envío dual PV + RH al MIR exitoso:', dualResult);
           console.log('🔍 Comunicaciones guardadas:', dualResult.comunicaciones);
           console.log('🔍 Estado:', dualResult.estado);
-          
-          // Actualizar el registro con el estado del MIR dual y crear vinculación
-          const updatedData = {
-            ...dbData,
-            mir_status: {
-              lote: dualResult.resultados?.pv?.lote || dualResult.resultados?.rh?.lote || null,
-              codigoComunicacion: dualResult.resultados?.pv?.codigoComunicacion || dualResult.resultados?.rh?.codigoComunicacion || null,
-              fechaEnvio: new Date().toISOString(),
-              estado: dualResult.estado || 'enviado',
-              comunicaciones: dualResult.comunicaciones || [],
-              resultados: {
-                pv: dualResult.resultados?.pv || null,
-                rh: dualResult.resultados?.rh || null
-              }
+        
+        // Actualizar el registro con el estado del MIR dual y crear vinculación
+        const updatedData = {
+          ...dbData,
+          mir_status: {
+            lote: dualResult.resultados?.pv?.lote || dualResult.resultados?.rh?.lote || null,
+            codigoComunicacion: dualResult.resultados?.pv?.codigoComunicacion || dualResult.resultados?.rh?.codigoComunicacion || null,
+            fechaEnvio: new Date().toISOString(),
+            estado: dualResult.estado || 'enviado',
+            comunicaciones: dualResult.comunicaciones || [],
+            resultados: {
+              pv: dualResult.resultados?.pv || null,
+              rh: dualResult.resultados?.rh || null
             }
-          };
-          
+          }
+        };
+        
           // Actualizar el registro con el estado MIR (reserva_ref y comunicacion_id ya están correctos)
-          const { sql: pgSql } = await import('@vercel/postgres');
-          await pgSql`
-            UPDATE guest_registrations 
-            SET 
+        const { sql: pgSql } = await import('@vercel/postgres');
+        await pgSql`
+          UPDATE guest_registrations 
+          SET 
               data = ${JSON.stringify(updatedData)}::jsonb
-            WHERE id = ${id}
-          `;
-          
-          console.log('✅ Estado MIR dual guardado en el registro');
-        } else {
+          WHERE id = ${id}
+        `;
+        
+        console.log('✅ Estado MIR dual guardado en el registro');
+      } else {
           // Intentar leer el error de la respuesta
           let errorText = '';
           try {
@@ -736,15 +736,15 @@ export async function POST(req: NextRequest) {
           } catch (saveError) {
             console.error('❌ Error guardando errores en mir_comunicaciones:', saveError);
           }
-        }
-        
-        console.log('📊 Resumen de envío dual MIR:', {
-          estado: dualResult?.estado || 'error',
-          pv: dualResult?.resultados?.pv ? { success: dualResult.resultados.pv.ok, lote: dualResult.resultados.pv.lote } : { success: false },
+      }
+      
+      console.log('📊 Resumen de envío dual MIR:', {
+        estado: dualResult?.estado || 'error',
+        pv: dualResult?.resultados?.pv ? { success: dualResult.resultados.pv.ok, lote: dualResult.resultados.pv.lote } : { success: false },
           rh: dualResult?.resultados?.rh ? { success: dualResult.resultados.rh.ok, lote: dualResult.resultados.rh.lote } : { success: false },
           error: dualError
-        });
-        
+      });
+      
       } catch (fetchError) {
         console.error('❌ Error en fetch al endpoint dual:', fetchError);
         dualError = fetchError instanceof Error ? fetchError.message : String(fetchError);

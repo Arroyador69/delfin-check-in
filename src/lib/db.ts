@@ -4,6 +4,56 @@ import { sql } from "@vercel/postgres";
 // Vercel inyecta automáticamente las credenciales desde POSTGRES_URL
 export { sql };
 
+/**
+ * 🔒 FUNCIÓN WRAPPER PARA QUERIES CON CONTEXTO DE TENANT
+ * 
+ * Esta función establece app.current_tenant_id para Row Level Security (RLS)
+ * y ejecuta la query con el contexto del tenant correcto.
+ * 
+ * IMPORTANTE: Vercel Postgres puede tener limitaciones con SET LOCAL en conexiones serverless.
+ * Por eso mantenemos el filtrado explícito por tenant_id como capa principal de seguridad.
+ * RLS es una capa adicional de protección.
+ * 
+ * @param tenantId - UUID del tenant (puede ser string o UUID)
+ * @param queryFn - Función que ejecuta la query SQL
+ * @returns Resultado de la query
+ */
+export async function withTenantContext<T>(
+  tenantId: string | null,
+  queryFn: () => Promise<T>
+): Promise<T> {
+  if (!tenantId) {
+    throw new Error('tenant_id es requerido para ejecutar queries con contexto de tenant');
+  }
+
+  try {
+    // Intentar establecer app.current_tenant_id para RLS
+    // NOTA: Esto puede fallar en Vercel Postgres serverless, pero no es crítico
+    // porque el filtrado explícito por tenant_id ya protege los datos
+    try {
+      await sql`SET LOCAL app.current_tenant_id = ${tenantId}`;
+    } catch (rlsError) {
+      // Si falla, no es crítico - el filtrado explícito por tenant_id ya protege
+      console.warn('⚠️ No se pudo establecer app.current_tenant_id para RLS (puede ser normal en Vercel Postgres):', rlsError);
+    }
+
+    // Ejecutar la query
+    const result = await queryFn();
+
+    // Limpiar el contexto (opcional, pero buena práctica)
+    try {
+      await sql`RESET app.current_tenant_id`;
+    } catch (resetError) {
+      // Ignorar errores al resetear
+    }
+
+    return result;
+  } catch (error) {
+    console.error('Error ejecutando query con contexto de tenant:', error);
+    throw error;
+  }
+}
+
 // Función helper para manejar errores de base de datos
 export async function executeQuery<T = any>(
   query: TemplateStringsArray,

@@ -133,3 +133,4 @@ He creado `corregir-todo-aislamiento-final.sql` que:
 **Fecha:** 2025-11-22
 **Estado:** ✅ Código 100% seguro | ⏳ Pendiente corrección de datos y tablas
 
+

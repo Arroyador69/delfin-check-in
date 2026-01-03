@@ -220,3 +220,4 @@ SELECT
     ELSE '❌ AÚN FALTAN CORRECCIONES'
   END as estado_final;
 
+
