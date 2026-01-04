@@ -52,31 +52,75 @@ export async function GET(
 
     const landing = result.rows[0];
 
-    // Obtener TODAS las propiedades/habitaciones activas del property (en este caso, como el sistema usa tenant_properties,
-    // obtenemos todas las propiedades activas del tenant para mostrar como "habitaciones")
-    // NOTA: Según el requerimiento, debemos mostrar TODAS las habitaciones activas del property
-    // Como el sistema usa tenant_properties, vamos a obtener todas las propiedades activas del tenant
-    const propertiesResult = await sql`
-      SELECT 
-        id,
-        property_name,
-        description,
-        photos,
-        max_guests,
-        bedrooms,
-        bathrooms,
-        amenities,
-        base_price,
-        cleaning_fee,
-        security_deposit,
-        minimum_nights,
-        maximum_nights,
-        is_active
-      FROM tenant_properties
-      WHERE tenant_id = ${landing.tenant_id}::uuid
-        AND is_active = true
-      ORDER BY base_price ASC, property_name ASC
+    // Obtener el lodging_id del tenant para buscar las habitaciones reales
+    const tenantInfo = await sql`
+      SELECT lodging_id
+      FROM tenants
+      WHERE id = ${landing.tenant_id}::uuid
+      LIMIT 1
     `;
+    
+    const lodgingId = tenantInfo.rows[0]?.lodging_id || null;
+
+    // Obtener TODAS las habitaciones activas del tenant desde la tabla Room
+    // Combinamos con tenant_properties si hay mapping en property_room_map
+    let roomsQuery;
+    if (lodgingId) {
+      roomsQuery = sql`
+        SELECT 
+          r.id as room_id,
+          r.name as room_name,
+          tp.id as property_id,
+          tp.property_name,
+          COALESCE(tp.description, '') as description,
+          COALESCE(tp.photos, '[]'::jsonb) as photos,
+          COALESCE(tp.max_guests, 2) as max_guests,
+          COALESCE(tp.bedrooms, 1) as bedrooms,
+          COALESCE(tp.bathrooms, 1) as bathrooms,
+          COALESCE(tp.amenities, '[]'::jsonb) as amenities,
+          COALESCE(tp.base_price, 50.00) as base_price,
+          COALESCE(tp.cleaning_fee, 0.00) as cleaning_fee,
+          COALESCE(tp.security_deposit, 0.00) as security_deposit,
+          COALESCE(tp.minimum_nights, 1) as minimum_nights,
+          COALESCE(tp.maximum_nights, 30) as maximum_nights,
+          COALESCE(tp.is_active, true) as is_active,
+          CASE WHEN tp.id IS NOT NULL THEN true ELSE false END as has_property_mapping
+        FROM "Room" r
+        LEFT JOIN property_room_map prm ON prm.room_id = r.id::text AND prm.tenant_id = ${landing.tenant_id}::uuid
+        LEFT JOIN tenant_properties tp ON tp.id = prm.property_id AND tp.is_active = true
+        WHERE r."lodgingId" = ${lodgingId}::text
+        ORDER BY r.id ASC
+      `;
+    } else {
+      // Fallback: usar tenant_id directamente (compatibilidad antigua)
+      roomsQuery = sql`
+        SELECT 
+          r.id as room_id,
+          r.name as room_name,
+          tp.id as property_id,
+          tp.property_name,
+          COALESCE(tp.description, '') as description,
+          COALESCE(tp.photos, '[]'::jsonb) as photos,
+          COALESCE(tp.max_guests, 2) as max_guests,
+          COALESCE(tp.bedrooms, 1) as bedrooms,
+          COALESCE(tp.bathrooms, 1) as bathrooms,
+          COALESCE(tp.amenities, '[]'::jsonb) as amenities,
+          COALESCE(tp.base_price, 50.00) as base_price,
+          COALESCE(tp.cleaning_fee, 0.00) as cleaning_fee,
+          COALESCE(tp.security_deposit, 0.00) as security_deposit,
+          COALESCE(tp.minimum_nights, 1) as minimum_nights,
+          COALESCE(tp.maximum_nights, 30) as maximum_nights,
+          COALESCE(tp.is_active, true) as is_active,
+          CASE WHEN tp.id IS NOT NULL THEN true ELSE false END as has_property_mapping
+        FROM "Room" r
+        LEFT JOIN property_room_map prm ON prm.room_id = r.id::text AND prm.tenant_id = ${landing.tenant_id}::uuid
+        LEFT JOIN tenant_properties tp ON tp.id = prm.property_id AND tp.is_active = true
+        WHERE r."lodgingId" = ${landing.tenant_id}::text
+        ORDER BY r.id ASC
+      `;
+    }
+
+    const propertiesResult = await roomsQuery;
 
     // Incrementar contador de vistas (solo si es una vista nueva, no en cada refresh)
     // Por simplicidad, lo hacemos aquí, pero en producción deberías usar sesiones o similar
@@ -104,19 +148,22 @@ export async function GET(
         tenant_name: landing.tenant_name
       },
       properties: propertiesResult.rows.map(p => ({
-        id: p.id,
-        property_name: p.property_name,
-        description: p.description,
-        photos: p.photos || [],
-        max_guests: p.max_guests,
-        bedrooms: p.bedrooms,
-        bathrooms: p.bathrooms,
-        amenities: p.amenities || [],
-        base_price: parseFloat(p.base_price),
+        id: p.property_id || parseInt(p.room_id), // Usar property_id si existe, sino room_id
+        room_id: parseInt(p.room_id),
+        property_name: p.property_name || p.room_name, // Usar property_name si existe, sino room_name
+        room_name: p.room_name,
+        description: p.description || '',
+        photos: Array.isArray(p.photos) ? p.photos : (p.photos ? JSON.parse(p.photos) : []),
+        max_guests: p.max_guests || 2,
+        bedrooms: p.bedrooms || 1,
+        bathrooms: p.bathrooms || 1,
+        amenities: Array.isArray(p.amenities) ? p.amenities : (p.amenities ? JSON.parse(p.amenities) : []),
+        base_price: parseFloat(p.base_price || '50'),
         cleaning_fee: parseFloat(p.cleaning_fee || '0'),
         security_deposit: parseFloat(p.security_deposit || '0'),
-        minimum_nights: p.minimum_nights,
-        maximum_nights: p.maximum_nights
+        minimum_nights: p.minimum_nights || 1,
+        maximum_nights: p.maximum_nights || 30,
+        has_property_mapping: p.has_property_mapping || false
       }))
     });
 
