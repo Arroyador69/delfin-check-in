@@ -29,7 +29,11 @@ export async function GET(req: NextRequest) {
           const token = authHeader.split(' ')[1];
           const payload = verifyToken(token);
           isSuperAdmin = payload?.isPlatformAdmin === true;
-        } catch {}
+        } catch (tokenError: any) {
+          // Si el token expiró, intentar obtener tenantId del header para continuar
+          console.warn('⚠️ Token expirado o inválido:', tokenError.message);
+          // No bloquear, continuar con el flujo normal
+        }
       }
     }
     
