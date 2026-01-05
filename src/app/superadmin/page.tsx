@@ -134,6 +134,61 @@ export default function SuperAdminDashboard() {
             <h2 className="text-xl font-bold mb-4 text-gray-900">⚡ Acciones Rápidas</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <a 
+                href="/superadmin/metrics"
+                className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition"
+              >
+                <span className="text-2xl mr-3">📊</span>
+                <div>
+                  <p className="font-semibold text-gray-900">Métricas</p>
+                  <p className="text-sm text-gray-700">Tracción, ingresos, retención</p>
+                </div>
+              </a>
+
+              <a 
+                href="/superadmin/affiliates"
+                className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition"
+              >
+                <span className="text-2xl mr-3">🧩</span>
+                <div>
+                  <p className="font-semibold text-gray-900">Afiliados</p>
+                  <p className="text-sm text-gray-700">Gestionar afiliados y comisiones</p>
+                </div>
+              </a>
+
+              <a 
+                href="/superadmin/referrals"
+                className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition"
+              >
+                <span className="text-2xl mr-3">🔗</span>
+                <div>
+                  <p className="font-semibold text-gray-900">Referidos</p>
+                  <p className="text-sm text-gray-700">Sistema de referidos</p>
+                </div>
+              </a>
+
+              <a 
+                href="/superadmin/emails"
+                className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition"
+              >
+                <span className="text-2xl mr-3">📬</span>
+                <div>
+                  <p className="font-semibold text-gray-900">Emails</p>
+                  <p className="text-sm text-gray-700">Enviar y trackear emails</p>
+                </div>
+              </a>
+
+              <a 
+                href="/superadmin/investor-mode"
+                className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition"
+              >
+                <span className="text-2xl mr-3">📈</span>
+                <div>
+                  <p className="font-semibold text-gray-900">Investor Mode</p>
+                  <p className="text-sm text-gray-700">Vista para inversores</p>
+                </div>
+              </a>
+
+              <a 
                 href="/superadmin/tenants"
                 className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition"
               >
