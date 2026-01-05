@@ -184,18 +184,26 @@ export default function GuestRegistrationsDashboard() {
   // Verificar acceso al módulo legal (excepto superadmins)
   useEffect(() => {
     if (!tenantLoading && tenant) {
-      // Verificar si es superadmin
+      // Verificar si es superadmin - SI ES SUPERADMIN, PERMITIR ACCESO COMPLETO
       fetch('/api/auth/me')
         .then(res => res.json())
         .then(data => {
           const isSuperAdmin = data.success && data.data?.isPlatformAdmin;
-          if (!isSuperAdmin && !hasLegalModule(tenant)) {
+          // Superadmins SIEMPRE tienen acceso, sin importar el plan
+          if (isSuperAdmin) {
+            console.log('👑 SuperAdmin: Acceso completo al módulo legal concedido');
+            return; // No hacer nada, permitir acceso
+          }
+          // Solo para usuarios normales, verificar legal_module
+          if (!hasLegalModule(tenant)) {
             router.push('/upgrade-plan?reason=legal_module');
           }
         })
         .catch(() => {
-          // Si falla la verificación, aplicar validación normal
+          // Si falla la verificación, verificar si es superadmin de otra forma
+          // Por seguridad, si no podemos verificar, permitir acceso si tiene legal_module
           if (!hasLegalModule(tenant)) {
+            // Solo bloquear si definitivamente no tiene legal_module
             router.push('/upgrade-plan?reason=legal_module');
           }
         });

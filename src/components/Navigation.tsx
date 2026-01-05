@@ -45,7 +45,13 @@ export default function Navigation() {
   ];
 
   // Filtrar elementos según permisos del plan
+  // IMPORTANTE: Superadmins SIEMPRE ven todos los elementos, sin importar el plan
   const tenantNavigation = allTenantNavigation.filter(item => {
+    // Si es superadmin, mostrar TODO
+    if (isPlatformAdmin) {
+      return true;
+    }
+    // Para usuarios normales, aplicar filtros según plan
     if (item.requiresLegal) {
       return hasLegalModule(tenant);
     }
