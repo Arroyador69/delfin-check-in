@@ -66,40 +66,79 @@ export async function GET(req: NextRequest) {
       console.log('✅ Tabla guest_registrations creada correctamente');
     }
     
-    // Obtener tenant_id del request
-    const { getTenantFromRequest } = await import('@/lib/permissions');
-    const tenantData = await getTenantFromRequest(req);
-    const tenantId = tenantData?.tenantId || null;
+    // Obtener tenant_id del request - MÚLTIPLES MÉTODOS para asegurar compatibilidad
+    let finalTenantId: string | null = null;
     
-    console.log('🏢 Tenant ID para filtrar registros:', tenantId);
-    console.log('🔍 Tenant data completa:', JSON.stringify(tenantData, null, 2));
+    // Método 1: Desde header (ya inyectado por middleware)
+    const headerTenantId = req.headers.get('x-tenant-id');
+    if (headerTenantId) {
+      finalTenantId = headerTenantId;
+      console.log('📋 Tenant ID obtenido del header (middleware):', finalTenantId);
+    }
     
-    // Si no hay tenantId, intentar obtenerlo directamente del header o JWT
-    let finalTenantId = tenantId;
+    // Método 2: Desde JWT Bearer token (app móvil)
     if (!finalTenantId) {
-      const headerTenantId = req.headers.get('x-tenant-id');
-      if (headerTenantId) {
-        finalTenantId = headerTenantId;
-        console.log('📋 Tenant ID obtenido del header:', finalTenantId);
-      } else {
-        // Intentar desde JWT
-        const { getTenantId } = await import('@/lib/tenant');
-        const jwtTenantId = await getTenantId(req);
-        if (jwtTenantId) {
-          finalTenantId = jwtTenantId;
-          console.log('🔑 Tenant ID obtenido del JWT:', finalTenantId);
+      const authHeader = req.headers.get('authorization');
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        try {
+          const token = authHeader.split(' ')[1];
+          const { verifyToken } = await import('@/lib/auth');
+          const payload = verifyToken(token);
+          if (payload?.tenantId) {
+            finalTenantId = payload.tenantId;
+            console.log('🔑 Tenant ID obtenido del JWT Bearer token:', finalTenantId);
+          }
+        } catch (jwtError) {
+          console.warn('⚠️ Error verificando JWT Bearer token:', jwtError);
         }
+      }
+    }
+    
+    // Método 3: Desde cookie (web)
+    if (!finalTenantId) {
+      const authToken = req.cookies.get('auth_token')?.value;
+      if (authToken) {
+        try {
+          const { verifyToken } = await import('@/lib/auth');
+          const payload = verifyToken(authToken);
+          if (payload?.tenantId) {
+            finalTenantId = payload.tenantId;
+            console.log('🍪 Tenant ID obtenido del JWT cookie:', finalTenantId);
+          }
+        } catch (cookieError) {
+          console.warn('⚠️ Error verificando JWT cookie:', cookieError);
+        }
+      }
+    }
+    
+    // Método 4: Usar getTenantFromRequest como fallback
+    if (!finalTenantId) {
+      const { getTenantFromRequest } = await import('@/lib/permissions');
+      const tenantData = await getTenantFromRequest(req);
+      if (tenantData?.tenantId) {
+        finalTenantId = tenantData.tenantId;
+        console.log('🔄 Tenant ID obtenido de getTenantFromRequest:', finalTenantId);
       }
     }
     
     if (!finalTenantId) {
       console.error('❌ No se pudo obtener tenantId del request');
+      console.error('🔍 Headers disponibles:', {
+        'x-tenant-id': req.headers.get('x-tenant-id'),
+        'authorization': req.headers.get('authorization') ? 'Presente' : 'Ausente',
+        'cookie': req.headers.get('cookie') ? 'Presente' : 'Ausente'
+      });
       return NextResponse.json(
         { 
           ok: false, 
           error: 'No se pudo identificar el tenant',
           items: [],
-          total: 0
+          total: 0,
+          debug: {
+            hasHeader: !!req.headers.get('x-tenant-id'),
+            hasAuthHeader: !!req.headers.get('authorization'),
+            hasCookie: !!req.cookies.get('auth_token')
+          }
         },
         { status: 400 }
       );
@@ -115,7 +154,10 @@ export async function GET(req: NextRequest) {
     // DEBUG: Verificar algunos registros en la BD directamente
     try {
       const debugQuery = await sql`
-        SELECT COUNT(*) as total, COUNT(*) FILTER (WHERE tenant_id = ${finalTenantId}::uuid) as con_tenant_id
+        SELECT 
+          COUNT(*) as total, 
+          COUNT(*) FILTER (WHERE tenant_id = ${finalTenantId}::uuid) as con_tenant_id,
+          COUNT(*) FILTER (WHERE tenant_id IS NULL) as sin_tenant_id
         FROM guest_registrations
       `;
       console.log('🔍 DEBUG - Total registros en BD:', debugQuery.rows[0]);
