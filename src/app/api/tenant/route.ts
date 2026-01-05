@@ -147,7 +147,7 @@ export async function GET(req: NextRequest) {
     const response = {
       tenant: {
         id: tenant.id,
-        name: tenant.name,
+        name: empresaNombre, // Usar nombre de la empresa en lugar del nombre del tenant
         email: tenant.email,
         plan_id: tenant.plan_id,
         plan_type: tenant.plan_type || (tenant.plan_id === 'pro' ? 'pro' : tenant.plan_id === 'premium' ? 'free_legal' : 'free'),
