@@ -247,25 +247,35 @@ export default function GuestRegistrationsDashboard() {
     try {
       setLoading(true);
       
-      // Obtener información del tenant (ya tenemos tenant del hook useTenant, pero necesitamos el ID para la URL)
-      if (!tenant?.id) {
+      // Obtener información del tenant para asegurar que tenemos el ID
+      let tenantId = tenant?.id;
+      
+      if (!tenantId) {
+        console.log('🔍 No hay tenant del hook, obteniendo desde API...');
         const tenantResponse = await fetch('/api/tenant');
         const tenantData = await tenantResponse.json();
-        // No usar setTenant, ya tenemos tenant del hook useTenant
         
-        // Generar URL del formulario (redirección al formulario existente)
         if (tenantData?.tenant?.id) {
-          const baseUrl = process.env.NODE_ENV === 'development' 
-            ? 'http://localhost:3000' 
-            : 'https://admin.delfincheckin.com';
-          setFormUrl(`${baseUrl}/api/public/form-redirect/${tenantData.tenant.id}`);
+          tenantId = tenantData.tenant.id;
+          console.log('✅ Tenant ID obtenido desde API:', tenantId);
         }
       } else {
-        // Si ya tenemos tenant del hook, usar su ID directamente
-        const baseUrl = process.env.NODE_ENV === 'development' 
-          ? 'http://localhost:3000' 
-          : 'https://admin.delfincheckin.com';
-        setFormUrl(`${baseUrl}/api/public/form-redirect/${tenant.id}`);
+        console.log('✅ Tenant ID del hook:', tenantId);
+      }
+      
+      // Generar URL del formulario (redirección al formulario existente)
+      if (tenantId) {
+        const baseUrl = typeof window !== 'undefined' 
+          ? window.location.origin
+          : (process.env.NODE_ENV === 'development' 
+            ? 'http://localhost:3000' 
+            : 'https://admin.delfincheckin.com');
+        const formUrlValue = `${baseUrl}/api/public/form-redirect/${tenantId}`;
+        setFormUrl(formUrlValue);
+        console.log('🔗 URL del formulario generada:', formUrlValue);
+      } else {
+        console.error('❌ No se pudo obtener tenantId para generar URL del formulario');
+        setFormUrl('');
       }
       
       const url = showAllRegistrations 
@@ -295,12 +305,26 @@ export default function GuestRegistrationsDashboard() {
       }
       
       const data = await response.json();
-      console.log('Registros cargados:', data);
+      console.log('📦 Respuesta completa de la API:', data);
+      console.log('📊 Estructura de datos:', {
+        isArray: Array.isArray(data),
+        hasItems: !!data.items,
+        itemsLength: data.items?.length || 0,
+        ok: data.ok,
+        total: data.total
+      });
       
       // Manejar tanto array directo como objeto con items
       const registrationsData = Array.isArray(data) ? data : (data.items || []);
+      console.log(`✅ ${registrationsData.length} registros procesados para mostrar`);
       setRegistrations(registrationsData);
       setSelectedRegistrations(new Set()); // Reset selección
+      
+      if (registrationsData.length === 0) {
+        console.warn('⚠️ No se encontraron registros. Verificar:');
+        console.warn('  - Tenant ID usado:', tenantId);
+        console.warn('  - Respuesta de la API:', JSON.stringify(data, null, 2));
+      }
     } catch (error) {
       console.error('Error cargando registros:', error);
       // En caso de error, mostrar datos de ejemplo para desarrollo

@@ -255,19 +255,52 @@ export async function insertGuestRegistration(data: {
 export async function getGuestRegistrations(limit: number = 200, tenantId?: string | null): Promise<any[]> {
   // Si se proporciona tenantId, filtrar por él
   if (tenantId) {
-    const result = await sql`
-      SELECT id, reserva_ref, fecha_entrada, fecha_salida, data, created_at, updated_at
-      FROM guest_registrations
-      WHERE tenant_id = ${tenantId}
-      ORDER BY created_at DESC
-      LIMIT ${limit};
-    `;
-    return result.rows;
+    console.log('🔍 Buscando registros con tenantId:', tenantId);
+    console.log('🔍 Tipo de tenantId:', typeof tenantId);
+    
+    // Intentar con UUID primero
+    try {
+      const result = await sql`
+        SELECT id, reserva_ref, fecha_entrada, fecha_salida, data, created_at, updated_at, tenant_id
+        FROM guest_registrations
+        WHERE tenant_id = ${tenantId}::uuid
+        ORDER BY created_at DESC
+        LIMIT ${limit};
+      `;
+      console.log(`✅ Encontrados ${result.rows.length} registros con UUID`);
+      return result.rows;
+    } catch (uuidError) {
+      console.log('⚠️ Error con UUID, intentando con string:', uuidError);
+      // Si falla con UUID, intentar con string
+      try {
+        const result = await sql`
+          SELECT id, reserva_ref, fecha_entrada, fecha_salida, data, created_at, updated_at, tenant_id
+          FROM guest_registrations
+          WHERE tenant_id::text = ${tenantId}
+          ORDER BY created_at DESC
+          LIMIT ${limit};
+        `;
+        console.log(`✅ Encontrados ${result.rows.length} registros con string`);
+        return result.rows;
+      } catch (stringError) {
+        console.error('❌ Error con ambos métodos:', stringError);
+        // Como último recurso, devolver todos (pero esto no debería pasar)
+        const result = await sql`
+          SELECT id, reserva_ref, fecha_entrada, fecha_salida, data, created_at, updated_at, tenant_id
+          FROM guest_registrations
+          ORDER BY created_at DESC
+          LIMIT ${limit};
+        `;
+        console.warn('⚠️ Devolviendo todos los registros (sin filtro)');
+        return result.rows;
+      }
+    }
   }
   
   // Si no se proporciona tenantId, devolver todos (para compatibilidad, pero mejor siempre pasar tenantId)
+  console.warn('⚠️ getGuestRegistrations llamado sin tenantId - devolviendo todos los registros');
   const result = await sql`
-    SELECT id, reserva_ref, fecha_entrada, fecha_salida, data, created_at, updated_at
+    SELECT id, reserva_ref, fecha_entrada, fecha_salida, data, created_at, updated_at, tenant_id
     FROM guest_registrations
     ORDER BY created_at DESC
     LIMIT ${limit};

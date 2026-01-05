@@ -72,11 +72,56 @@ export async function GET(req: NextRequest) {
     const tenantId = tenantData?.tenantId || null;
     
     console.log('🏢 Tenant ID para filtrar registros:', tenantId);
+    console.log('🔍 Tenant data completa:', JSON.stringify(tenantData, null, 2));
+    
+    // Si no hay tenantId, intentar obtenerlo directamente del header o JWT
+    let finalTenantId = tenantId;
+    if (!finalTenantId) {
+      const headerTenantId = req.headers.get('x-tenant-id');
+      if (headerTenantId) {
+        finalTenantId = headerTenantId;
+        console.log('📋 Tenant ID obtenido del header:', finalTenantId);
+      } else {
+        // Intentar desde JWT
+        const { getTenantId } = await import('@/lib/tenant');
+        const jwtTenantId = await getTenantId(req);
+        if (jwtTenantId) {
+          finalTenantId = jwtTenantId;
+          console.log('🔑 Tenant ID obtenido del JWT:', finalTenantId);
+        }
+      }
+    }
+    
+    if (!finalTenantId) {
+      console.error('❌ No se pudo obtener tenantId del request');
+      return NextResponse.json(
+        { 
+          ok: false, 
+          error: 'No se pudo identificar el tenant',
+          items: [],
+          total: 0
+        },
+        { status: 400 }
+      );
+    }
+    
+    console.log('✅ Usando Tenant ID final:', finalTenantId);
     
     // Obtener registros desde la base de datos filtrados por tenant_id
-    const registros = await getGuestRegistrations(limit, tenantId);
+    const registros = await getGuestRegistrations(limit, finalTenantId);
     
-    console.log(`✅ Se encontraron ${registros.length} registros para tenant ${tenantId}`);
+    console.log(`✅ Se encontraron ${registros.length} registros para tenant ${finalTenantId}`);
+    
+    // DEBUG: Verificar algunos registros en la BD directamente
+    try {
+      const debugQuery = await sql`
+        SELECT COUNT(*) as total, COUNT(*) FILTER (WHERE tenant_id = ${finalTenantId}::uuid) as con_tenant_id
+        FROM guest_registrations
+      `;
+      console.log('🔍 DEBUG - Total registros en BD:', debugQuery.rows[0]);
+    } catch (debugError) {
+      console.error('⚠️ Error en query de debug:', debugError);
+    }
     
     // Formatear datos para el dashboard
     const items = registros.map(registro => ({
