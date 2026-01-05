@@ -165,39 +165,27 @@ export async function POST(req: NextRequest) {
       );
     }
     
-    // Validar límite por plan (conteo de Rooms activas vs plan)
-    const planRes = await sql`
-      SELECT plan_id, max_rooms FROM tenants WHERE id = ${tenantId}
-    `;
-    const planId = planRes.rows[0]?.plan_id || 'basic';
-    const maxRooms = planRes.rows[0]?.max_rooms || 2;
-    const roomsCountRes = await sql`
-      SELECT COUNT(*) AS c FROM "Room" r WHERE r."lodgingId" = ${tenantId}::text
-    `;
-    const roomsCount = parseInt(roomsCountRes.rows[0].c || '0');
+    // Validar límite por plan usando el nuevo sistema de permisos
+    const { validateUnitCreation } = await import('@/lib/permissions');
+    const unitValidation = await validateUnitCreation(req);
     
-    if (maxRooms !== -1 && roomsCount >= maxRooms) {
-      const planNames: { [key: string]: string } = {
-        basic: 'Básico',
-        standard: 'Estándar',
-        premium: 'Premium',
-        enterprise: 'Empresa'
-      };
-      const planName = planNames[planId] || planId;
-      
+    if (!unitValidation.success) {
       return NextResponse.json(
         { 
           success: false, 
-          error: `⚠️ Límite alcanzado: Has usado todas las ${maxRooms} habitaciones incluidas en tu plan ${planName}.`,
-          details: `Tu plan actual permite hasta ${maxRooms} habitaciones/propiedades. Actualmente tienes ${roomsCount} configuradas.`,
-          suggestion: 'Para añadir más habitaciones, actualiza tu plan desde la página de Mejora de Plan.',
-          current_usage: roomsCount,
-          max_allowed: maxRooms,
-          plan_id: planId
+          error: unitValidation.error,
+          suggestion: 'Para añadir más unidades, actualiza a PRO o crea otra cuenta.',
+          current_usage: unitValidation.tenant?.current_rooms || 0,
+          max_allowed: unitValidation.tenant?.max_rooms || 2,
+          plan_type: unitValidation.tenant?.plan_type || 'free'
         },
-        { status: 403 }
+        { status: unitValidation.status || 403 }
       );
     }
+    
+    const tenant = unitValidation.tenant;
+    const maxRooms = tenant.max_rooms;
+    const roomsCount = tenant.current_rooms;
 
     // Comprobar si el room_id ya está mapeado a una propiedad
     const mapping = await sql`

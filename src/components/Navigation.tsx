@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { Home, Bed, Calendar, Users, Settings, Menu, X, TrendingUp, FileText, Download, Shield, Calculator, Send, MessageSquare, Receipt, Crown, Target } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
+import { useTenant, hasLegalModule } from '@/hooks/useTenant';
 
 const PWAInstallButton = dynamic(() => import('./PWAInstallButton'), { ssr: false });
 
@@ -12,6 +13,7 @@ export default function Navigation() {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isPlatformAdmin, setIsPlatformAdmin] = useState(false);
+  const { tenant } = useTenant();
 
   useEffect(() => {
     // Obtener información del usuario para saber si es superadmin
@@ -25,22 +27,30 @@ export default function Navigation() {
       .catch(err => console.error('Error fetching user:', err));
   }, []);
 
-  // Menú de Tenant (normal)
-  const tenantNavigation = [
-    { name: 'Dashboard', href: '/', icon: Home },
-    { name: 'Reservas', href: '/reservations', icon: Calendar },
-    { name: 'Reservas Directas', href: '/admin/direct-reservations', icon: Calendar },
-    { name: 'Calendario', href: '/calendar', icon: Calendar },
-    { name: 'Registros de formularios', href: '/guest-registrations-dashboard', icon: Users },
-    { name: 'Facturas', href: '/facturas', icon: Receipt },
-    { name: 'Estado Envíos MIR', href: '/admin/mir-comunicaciones', icon: TrendingUp },
-    { name: 'Asistente IA (Telegram)', href: '/telegram-assistant', icon: MessageSquare },
-    { name: 'Calculadora de Costos', href: '/cost-calculator', icon: Calculator },
-    { name: 'Exportar AEAT', href: '/aeat', icon: FileText },
-    { name: 'Cola offline', href: '/offline-queue', icon: Download },
-    { name: 'Bitácora', href: '/audit', icon: Shield },
-    { name: 'Configuración', href: '/settings', icon: Settings },
+  // Menú de Tenant (normal) - Filtrar según plan
+  const allTenantNavigation = [
+    { name: 'Dashboard', href: '/', icon: Home, requiresLegal: false },
+    { name: 'Reservas', href: '/reservations', icon: Calendar, requiresLegal: false },
+    { name: 'Reservas Directas', href: '/admin/direct-reservations', icon: Calendar, requiresLegal: false },
+    { name: 'Calendario', href: '/calendar', icon: Calendar, requiresLegal: false },
+    { name: 'Registros de formularios', href: '/guest-registrations-dashboard', icon: Users, requiresLegal: true },
+    { name: 'Facturas', href: '/facturas', icon: Receipt, requiresLegal: false },
+    { name: 'Estado Envíos MIR', href: '/admin/mir-comunicaciones', icon: TrendingUp, requiresLegal: true },
+    { name: 'Asistente IA (Telegram)', href: '/telegram-assistant', icon: MessageSquare, requiresLegal: false },
+    { name: 'Calculadora de Costos', href: '/cost-calculator', icon: Calculator, requiresLegal: false },
+    { name: 'Exportar AEAT', href: '/aeat', icon: FileText, requiresLegal: false },
+    { name: 'Cola offline', href: '/offline-queue', icon: Download, requiresLegal: false },
+    { name: 'Bitácora', href: '/audit', icon: Shield, requiresLegal: false },
+    { name: 'Configuración', href: '/settings', icon: Settings, requiresLegal: false },
   ];
+
+  // Filtrar elementos según permisos del plan
+  const tenantNavigation = allTenantNavigation.filter(item => {
+    if (item.requiresLegal) {
+      return hasLegalModule(tenant);
+    }
+    return true;
+  });
 
   // Menú de SuperAdmin
   const superAdminNavigation = [

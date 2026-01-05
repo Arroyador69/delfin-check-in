@@ -3,6 +3,22 @@ import { sql } from '@vercel/postgres';
 
 export async function GET(req: NextRequest) {
   try {
+    // Validar acceso al módulo legal
+    const { validateLegalModuleAccess } = await import('@/lib/permissions');
+    const legalValidation = await validateLegalModuleAccess(req);
+    
+    if (!legalValidation.success) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: legalValidation.error,
+          code: 'LEGAL_MODULE_REQUIRED',
+          suggestion: 'El módulo de registro de viajeros requiere un plan FREE+LEGAL o PRO. Actualiza tu plan para acceder.'
+        },
+        { status: legalValidation.status || 403 }
+      );
+    }
+    
     console.log('📊 Obteniendo estado de envíos al MIR...');
     
     // Obtener tenant_id del header o query params

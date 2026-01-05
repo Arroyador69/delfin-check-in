@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import AdminLayout from '@/components/AdminLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useTenant, hasLegalModule } from '@/hooks/useTenant';
 import { 
   Send, 
   Search, 
@@ -49,10 +51,19 @@ interface ConsultaResult {
 }
 
 export default function MirComunicacionesPage() {
+  const { tenant, loading: tenantLoading } = useTenant();
+  const router = useRouter();
   const [comunicaciones, setComunicaciones] = useState<Comunicacion[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+
+  // Verificar acceso al módulo legal
+  useEffect(() => {
+    if (!tenantLoading && tenant && !hasLegalModule(tenant)) {
+      router.push('/upgrade-plan?reason=legal_module');
+    }
+  }, [tenant, tenantLoading, router]);
   
   // Estados para consulta
   const [codigosConsulta, setCodigosConsulta] = useState('');

@@ -199,6 +199,25 @@ export async function POST(req: NextRequest) {
           { status: paymentCheck.status, headers }
         );
       }
+      
+      // Validar acceso al módulo legal
+      // Extraer país del formulario si está disponible (para validación específica)
+      const countryCode = parsed.data.comunicaciones[0]?.personas[0]?.direccion?.pais;
+      const countryCodeISO = countryCode ? countryCode.substring(0, 2).toUpperCase() : undefined;
+      
+      const { validateLegalModuleAccess } = await import('@/lib/permissions');
+      const legalValidation = await validateLegalModuleAccess(req, countryCodeISO);
+      
+      if (!legalValidation.success) {
+        return NextResponse.json(
+          { 
+            error: legalValidation.error,
+            code: 'LEGAL_MODULE_REQUIRED',
+            suggestion: 'El módulo de registro de viajeros requiere un plan FREE+LEGAL o PRO. Actualiza tu plan para acceder.'
+          },
+          { status: legalValidation.status || 403, headers }
+        );
+      }
     }
 
     // Guardar en base de datos Postgres con tenant_id

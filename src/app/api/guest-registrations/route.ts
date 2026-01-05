@@ -8,6 +8,22 @@ export const revalidate = 0;
 
 export async function GET(req: NextRequest) {
   try {
+    // Validar acceso al módulo legal
+    const { validateLegalModuleAccess } = await import('@/lib/permissions');
+    const legalValidation = await validateLegalModuleAccess(req);
+    
+    if (!legalValidation.success) {
+      return NextResponse.json(
+        { 
+          ok: false, 
+          error: legalValidation.error,
+          code: 'LEGAL_MODULE_REQUIRED',
+          suggestion: 'El módulo de registro de viajeros requiere un plan FREE+LEGAL o PRO. Actualiza tu plan para acceder.'
+        },
+        { status: legalValidation.status || 403 }
+      );
+    }
+    
     const url = new URL(req.url);
     const limit = Math.min(parseInt(url.searchParams.get("limit") || "200"), 500);
     

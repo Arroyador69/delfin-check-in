@@ -6,9 +6,14 @@ export interface Tenant {
   id: string;
   name: string;
   email: string;
-  plan_id: 'basic' | 'standard' | 'premium' | 'enterprise';
-  max_rooms: number;
-  current_rooms: number;
+  plan_id: 'basic' | 'standard' | 'premium' | 'enterprise' | 'free' | 'free_legal' | 'pro';
+  plan_type?: 'free' | 'free_legal' | 'pro';
+  max_rooms: number; // También usado como max_units_allowed
+  current_rooms: number; // También usado como current_units_count
+  ads_enabled?: boolean;
+  legal_module?: boolean;
+  country_code?: string; // Código ISO del país (ES, IT, PT, etc.)
+  onboarding_status?: 'pending' | 'in_progress' | 'completed';
   stripe_customer_id?: string;
   stripe_subscription_id?: string;
   status: 'active' | 'trial' | 'suspended' | 'cancelled';
@@ -285,4 +290,117 @@ export async function getTenantId(request: NextRequest): Promise<string | null> 
     console.error('Error al obtener tenant ID:', error);
     return null;
   }
+}
+
+/**
+ * Obtiene un tenant completo por ID
+ */
+export async function getTenantById(tenantId: string): Promise<Tenant | null> {
+  try {
+    const result = await sql`
+      SELECT * FROM tenants WHERE id = ${tenantId} LIMIT 1
+    `;
+    
+    return result.rows[0] as Tenant || null;
+  } catch (error) {
+    console.error('Error al obtener tenant:', error);
+    return null;
+  }
+}
+
+/**
+ * ========================================
+ * FUNCIONES DE VALIDACIÓN DE PERMISOS
+ * ========================================
+ */
+
+/**
+ * Valida si el tenant tiene acceso al módulo legal
+ * @param tenant - El tenant a validar
+ * @param countryCode - Código del país requerido (opcional, para validar país específico)
+ * @returns true si tiene acceso, false si no
+ */
+export function hasLegalModuleAccess(tenant: Tenant, countryCode?: string): boolean {
+  if (!tenant.legal_module) {
+    return false;
+  }
+  
+  // Si es plan PRO, tiene acceso a todos los países
+  if (tenant.plan_type === 'pro' || tenant.plan_id === 'pro') {
+    return true;
+  }
+  
+  // Si es FREE+LEGAL, solo tiene acceso al país configurado
+  if (countryCode && tenant.country_code) {
+    return tenant.country_code.toUpperCase() === countryCode.toUpperCase();
+  }
+  
+  // Si no se especifica país, permitir si tiene legal_module activo
+  return tenant.legal_module === true;
+}
+
+/**
+ * Valida si el tenant puede crear más unidades (habitaciones/apartamentos)
+ * @param tenant - El tenant a validar
+ * @param currentCount - Número actual de unidades (opcional, si no se usa current_rooms)
+ * @returns { canCreate: boolean, reason?: string }
+ */
+export function canCreateUnit(tenant: Tenant, currentCount?: number): { canCreate: boolean; reason?: string } {
+  const maxUnits = tenant.max_rooms; // max_rooms = max_units_allowed
+  const currentUnits = currentCount ?? tenant.current_rooms; // current_rooms = current_units_count
+  
+  // Si max_rooms es -1, es ilimitado (plan PRO)
+  if (maxUnits === -1) {
+    return { canCreate: true };
+  }
+  
+  // Si ya alcanzó el límite
+  if (currentUnits >= maxUnits) {
+    return {
+      canCreate: false,
+      reason: `Has alcanzado el límite de ${maxUnits} unidades de tu plan. Para crear más, actualiza a PRO o crea otra cuenta.`
+    };
+  }
+  
+  return { canCreate: true };
+}
+
+/**
+ * Valida si el tenant tiene anuncios habilitados
+ * @param tenant - El tenant a validar
+ * @returns true si tiene anuncios, false si no
+ */
+export function hasAdsEnabled(tenant: Tenant): boolean {
+  // Si ads_enabled está explícitamente definido, usarlo
+  if (tenant.ads_enabled !== undefined) {
+    return tenant.ads_enabled;
+  }
+  
+  // Fallback: PRO no tiene anuncios, los demás sí
+  return tenant.plan_type !== 'pro' && tenant.plan_id !== 'pro';
+}
+
+/**
+ * Obtiene la configuración del plan del tenant
+ * @param tenant - El tenant
+ * @returns Configuración del plan
+ */
+export function getPlanConfig(tenant: Tenant): {
+  planType: 'free' | 'free_legal' | 'pro';
+  adsEnabled: boolean;
+  legalModule: boolean;
+  maxUnits: number;
+  countryCode?: string;
+} {
+  const planType = tenant.plan_type || 
+    (tenant.plan_id === 'pro' ? 'pro' : 
+     tenant.plan_id === 'premium' ? 'free_legal' : 'free');
+  
+  return {
+    planType,
+    adsEnabled: hasAdsEnabled(tenant),
+    legalModule: tenant.legal_module || false,
+    maxUnits: tenant.max_rooms === -1 ? Infinity : tenant.max_rooms,
+    countryCode: tenant.country_code
+  };
 }

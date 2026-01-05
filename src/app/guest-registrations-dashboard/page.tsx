@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { Download, Eye, Users, FileText, Calendar, Search, Filter, CheckSquare, Square, Trash2, AlertTriangle, Copy, ExternalLink } from 'lucide-react';
 import AdminLayout from '@/components/AdminLayout';
 import ExportButton, { normalizeData } from './ExportButton';
+import { useTenant, hasLegalModule } from '@/hooks/useTenant';
+import { useRouter } from 'next/navigation';
 
 interface ComunicacionPayload {
   codigoEstablecimiento: string;
@@ -148,6 +150,8 @@ const getTravelerData = (registration: GuestRegistration) => {
 };
 
 export default function GuestRegistrationsDashboard() {
+  const { tenant, loading: tenantLoading } = useTenant();
+  const router = useRouter();
   const [registrations, setRegistrations] = useState<GuestRegistration[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState<string>("");
@@ -167,8 +171,14 @@ export default function GuestRegistrationsDashboard() {
   const [filterCheckIn, setFilterCheckIn] = useState("");
   const [filterCheckOut, setFilterCheckOut] = useState("");
   const [filterRoom, setFilterRoom] = useState("");
-  const [tenant, setTenant] = useState<any>(null);
   const [formUrl, setFormUrl] = useState('');
+
+  // Verificar acceso al módulo legal
+  useEffect(() => {
+    if (!tenantLoading && tenant && !hasLegalModule(tenant)) {
+      router.push('/upgrade-plan?reason=legal_module');
+    }
+  }, [tenant, tenantLoading, router]);
 
   const copyToClipboard = async (text: string) => {
     try {
