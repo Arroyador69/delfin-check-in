@@ -70,6 +70,25 @@ export async function GET(req: NextRequest) {
 
     const tenant = tenantResult.rows[0];
 
+    // Obtener nombre de la empresa desde empresa_config
+    const tenantIdString = String(tenantId);
+    let empresaNombre = tenant.name; // Fallback al nombre del tenant
+    
+    try {
+      const empresaResult = await sql`
+        SELECT nombre_empresa 
+        FROM empresa_config 
+        WHERE tenant_id = ${tenantIdString}
+        LIMIT 1
+      `;
+      
+      if (empresaResult.rows.length > 0 && empresaResult.rows[0].nombre_empresa) {
+        empresaNombre = empresaResult.rows[0].nombre_empresa;
+      }
+    } catch (error) {
+      console.warn('⚠️ No se pudo obtener nombre de empresa, usando nombre del tenant:', error);
+    }
+
     // Obtener estadísticas actuales del tenant (con manejo de tablas que pueden no existir)
     let stats = {
       total_rooms: 0,
