@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
+import { useTenant } from '@/hooks/useTenant';
 import { 
   CheckCircle, 
   XCircle, 
@@ -16,7 +17,8 @@ import {
   Save,
   TestTube,
   ExternalLink,
-  Info
+  Info,
+  Globe
 } from 'lucide-react';
 
 interface MirConfig {
@@ -30,7 +32,16 @@ interface MirConfig {
   activo: boolean;
 }
 
+const COUNTRIES = [
+  { code: 'ES', name: 'España' },
+  { code: 'IT', name: 'Italia' },
+  { code: 'PT', name: 'Portugal' },
+  { code: 'FR', name: 'Francia' },
+  { code: 'DE', name: 'Alemania' },
+];
+
 export default function MirSettingsPage() {
+  const { tenant } = useTenant();
   const [config, setConfig] = useState<MirConfig>({
     usuario: '',
     contraseña: '',
@@ -47,11 +58,59 @@ export default function MirSettingsPage() {
   const [success, setSuccess] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [testResult, setTestResult] = useState<any>(null);
+  const [countryCode, setCountryCode] = useState<string>('');
+  const [savingCountry, setSavingCountry] = useState(false);
 
   // Cargar configuración actual
   useEffect(() => {
     cargarConfiguracion();
+    cargarCountryCode();
   }, []);
+
+  const cargarCountryCode = async () => {
+    try {
+      const response = await fetch('/api/tenant/country-code');
+      const data = await response.json();
+      if (data.success) {
+        setCountryCode(data.country_code || '');
+      }
+    } catch (err) {
+      console.error('Error cargando country_code:', err);
+    }
+  };
+
+  const guardarCountryCode = async () => {
+    if (!countryCode) {
+      setError('Selecciona un país');
+      return;
+    }
+
+    setSavingCountry(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      const response = await fetch('/api/tenant/country-code', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ country_code: countryCode })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setSuccess('✅ País configurado correctamente');
+        setTimeout(() => setSuccess(null), 3000);
+      } else {
+        setError(`❌ ${data.error || 'Error guardando país'}`);
+      }
+    } catch (err) {
+      setError('Error de conexión');
+      console.error('Error guardando país:', err);
+    } finally {
+      setSavingCountry(false);
+    }
+  };
 
   const cargarConfiguracion = async () => {
     try {
@@ -330,6 +389,67 @@ export default function MirSettingsPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Selector de País para Módulo Legal */}
+      {tenant?.legal_module && (
+        <Card className="bg-white/90 backdrop-blur-sm border-white/30 shadow-xl transition-all duration-500 hover:shadow-2xl hover:scale-[1.02]">
+          <CardHeader>
+            <CardTitle className="text-gray-900 font-bold flex items-center">
+              <Globe className="h-5 w-5 mr-2" />
+              País del Módulo Legal
+            </CardTitle>
+            <CardDescription className="text-gray-700 font-medium">
+              {tenant?.plan_type === 'pro' 
+                ? 'Plan PRO: Tienes acceso a todos los países. El módulo legal se adaptará automáticamente según el país del viajero.'
+                : 'Plan FREE+LEGAL: Selecciona el país para el que está configurado tu módulo legal. Solo podrás registrar viajeros de este país.'}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {tenant?.plan_type === 'free_legal' ? (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="country_code" className="text-gray-800 font-semibold">País *</Label>
+                  <select
+                    id="country_code"
+                    value={countryCode}
+                    onChange={(e) => setCountryCode(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 bg-white"
+                  >
+                    <option value="">Selecciona un país</option>
+                    {COUNTRIES.map(country => (
+                      <option key={country.code} value={country.code}>
+                        {country.name} ({country.code})
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-gray-600 font-medium">
+                    Solo podrás registrar viajeros de este país. Para acceder a todos los países, actualiza a PRO.
+                  </p>
+                </div>
+                <Button
+                  onClick={guardarCountryCode}
+                  disabled={savingCountry || !countryCode}
+                  className="w-full sm:w-auto"
+                >
+                  <Save className="h-4 w-4 mr-2" />
+                  {savingCountry ? 'Guardando...' : 'Guardar País'}
+                </Button>
+              </>
+            ) : (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <p className="text-sm text-blue-900">
+                  <strong>Plan PRO:</strong> Tienes acceso a todos los países. El módulo legal se adaptará automáticamente según el país del viajero en cada registro.
+                </p>
+                {countryCode && (
+                  <p className="text-xs text-blue-700 mt-2">
+                    País configurado actualmente: <strong>{COUNTRIES.find(c => c.code === countryCode)?.name || countryCode}</strong>
+                  </p>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
         {/* Información importante */}
         <Card className="bg-white/90 backdrop-blur-sm border-white/30 shadow-xl transition-all duration-500 hover:shadow-2xl hover:scale-[1.02]">

@@ -205,6 +205,13 @@ export async function POST(request: NextRequest) {
           updated_at = NOW()
       `;
 
+      // 5. Actualizar onboarding_status a 'completed'
+      await sql`
+        UPDATE tenants
+        SET onboarding_status = 'completed', updated_at = NOW()
+        WHERE id = ${tenantId}
+      `;
+
       // Confirmar transacción
       await sql`COMMIT`;
 

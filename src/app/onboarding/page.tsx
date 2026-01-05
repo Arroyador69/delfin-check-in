@@ -58,11 +58,21 @@ export default function OnboardingPage() {
 
   const checkOnboardingStatus = async () => {
     try {
+      // Verificar estado del tenant
+      const tenantResponse = await fetch('/api/tenant');
+      const tenantData = await tenantResponse.json();
+      
+      if (tenantData.tenant?.onboarding_status === 'completed') {
+        router.push('/');
+        return;
+      }
+
+      // Fallback: verificar endpoint antiguo
       const response = await fetch('/api/onboarding/status');
       const data = await response.json();
       
       if (data.onboardingCompleto) {
-        router.push('/dashboard');
+        router.push('/');
       }
     } catch (error) {
       console.error('Error verificando estado del onboarding:', error);
@@ -76,8 +86,20 @@ export default function OnboardingPage() {
     }));
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (currentStep < 3) {
+      // Actualizar onboarding_status a 'in_progress' cuando avanza
+      if (currentStep === 1) {
+        try {
+          await fetch('/api/tenant/onboarding-status', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ onboarding_status: 'in_progress' })
+          });
+        } catch (error) {
+          console.error('Error actualizando onboarding_status:', error);
+        }
+      }
       setCurrentStep(currentStep + 1);
     }
   };
@@ -100,7 +122,9 @@ export default function OnboardingPage() {
       });
 
       if (response.ok) {
-        router.push('/dashboard');
+        // Actualizar onboarding_status a 'in_progress' mientras completa pasos
+        // El endpoint /api/onboarding/complete lo marcará como 'completed' al finalizar
+        router.push('/');
       } else {
         throw new Error('Error al completar el onboarding');
       }

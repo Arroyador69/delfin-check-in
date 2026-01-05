@@ -7,6 +7,14 @@ import ExportButton, { normalizeData } from './ExportButton';
 import { useTenant, hasLegalModule } from '@/hooks/useTenant';
 import { useRouter } from 'next/navigation';
 
+const COUNTRIES: Record<string, string> = {
+  'ES': 'España',
+  'IT': 'Italia',
+  'PT': 'Portugal',
+  'FR': 'Francia',
+  'DE': 'Alemania',
+};
+
 interface ComunicacionPayload {
   codigoEstablecimiento: string;
   contrato?: {
@@ -526,7 +534,19 @@ export default function GuestRegistrationsDashboard() {
             <div className="flex items-center">
               <div className="text-2xl mr-2">📋</div>
               <div>
-                <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Registros de Formularios</h1>
+                <div className="flex items-center gap-3">
+                  <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Registros de Formularios</h1>
+                  {tenant?.country_code && (
+                    <span className="px-3 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full border border-blue-200">
+                      🌍 {COUNTRIES[tenant.country_code] || tenant.country_code}
+                    </span>
+                  )}
+                  {tenant?.plan_type === 'pro' && (
+                    <span className="px-3 py-1 bg-purple-100 text-purple-800 text-xs font-semibold rounded-full border border-purple-200">
+                      ⭐ PRO - Todos los países
+                    </span>
+                  )}
+                </div>
                 <p className="text-xs sm:text-sm text-gray-600">🏛️ Gestión y generación de XML para Ministerio del Interior</p>
               </div>
             </div>

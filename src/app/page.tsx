@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import AdminLayout from '@/components/AdminLayout';
 import { ArrowUpCircle } from 'lucide-react';
 import { getRoomNumber } from '@/lib/db';
+import UnitLimitWarning from '@/components/UnitLimitWarning';
 
 type FilterPeriod = 'total' | 'annual' | 'today' | 'thisWeek' | 'last7Days' | 'thisMonth' | 'last30Days' | 'custom';
 
@@ -333,6 +334,10 @@ export default function HomePage() {
   return (
     <AdminLayout>
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+        {/* Advertencia de límite de unidades */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4">
+          <UnitLimitWarning />
+        </div>
         {/* Header */}
         <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

@@ -24,6 +24,14 @@ import {
   Download
 } from 'lucide-react';
 
+const COUNTRIES: Record<string, string> = {
+  'ES': 'España',
+  'IT': 'Italia',
+  'PT': 'Portugal',
+  'FR': 'Francia',
+  'DE': 'Alemania',
+};
+
 interface Comunicacion {
   id: number;
   referencia: string;
@@ -306,7 +314,19 @@ export default function MirComunicacionesPage() {
               <div className="flex items-center">
                 <div className="text-3xl mr-3">🏛️</div>
                 <div>
-                  <h1 className="text-2xl font-bold text-gray-900">Estado Envíos MIR</h1>
+                  <div className="flex items-center gap-3">
+                    <h1 className="text-2xl font-bold text-gray-900">Estado Envíos MIR</h1>
+                    {tenant?.country_code && (
+                      <span className="px-3 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full border border-blue-200">
+                        🌍 {COUNTRIES[tenant.country_code] || tenant.country_code}
+                      </span>
+                    )}
+                    {tenant?.plan_type === 'pro' && (
+                      <span className="px-3 py-1 bg-purple-100 text-purple-800 text-xs font-semibold rounded-full border border-purple-200">
+                        ⭐ PRO - Todos los países
+                      </span>
+                    )}
+                  </div>
                   <p className="text-sm text-gray-600">Gestión de comunicaciones con el Ministerio del Interior</p>
                   <p className="text-xs text-gray-500">Envío, consulta y anulación de comunicaciones oficiales</p>
                 </div>

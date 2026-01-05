@@ -3,7 +3,26 @@ import { sql } from '@vercel/postgres';
 
 export async function checkOnboardingStatus(tenantId: string): Promise<boolean> {
   try {
-    // Verificar si el onboarding está completo
+    // Verificar onboarding_status en la tabla tenants (nuevo sistema)
+    const tenantResult = await sql`
+      SELECT onboarding_status 
+      FROM tenants 
+      WHERE id = ${tenantId}
+      LIMIT 1
+    `;
+
+    if (tenantResult.rows.length > 0) {
+      const status = tenantResult.rows[0].onboarding_status;
+      // Si tiene el nuevo campo, usarlo
+      if (status === 'completed') {
+        return true;
+      }
+      if (status === 'pending' || status === 'in_progress') {
+        return false;
+      }
+    }
+
+    // Fallback: verificar si el onboarding está completo (sistema antiguo)
     const result = await sql`
       SELECT onboarding_completo 
       FROM dpa_aceptaciones 

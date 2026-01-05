@@ -51,10 +51,11 @@ export async function GET(req: NextRequest) {
       console.log('✅ Tabla tenants creada correctamente');
     }
 
-    // Obtener información del tenant
+    // Obtener información del tenant (incluyendo nuevos campos)
     const tenantResult = await sql`
       SELECT 
-        id, name, email, plan_id, max_rooms, current_rooms, 
+        id, name, email, plan_id, plan_type, max_rooms, current_rooms, 
+        ads_enabled, legal_module, country_code, onboarding_status,
         status, config, created_at
       FROM tenants 
       WHERE id = ${tenantId}
@@ -130,11 +131,16 @@ export async function GET(req: NextRequest) {
         name: tenant.name,
         email: tenant.email,
         plan_id: tenant.plan_id,
+        plan_type: tenant.plan_type || (tenant.plan_id === 'pro' ? 'pro' : tenant.plan_id === 'premium' ? 'free_legal' : 'free'),
         plan_name: currentPlan.name,
         plan_price: currentPlan.price,
         plan_features: currentPlan.features,
         max_rooms: tenant.max_rooms,
         current_rooms: parseInt(stats.total_rooms),
+        ads_enabled: tenant.ads_enabled !== undefined ? tenant.ads_enabled : (tenant.plan_type !== 'pro' && tenant.plan_id !== 'pro'),
+        legal_module: tenant.legal_module || false,
+        country_code: tenant.country_code || null,
+        onboarding_status: tenant.onboarding_status || 'pending',
         status: tenant.status,
         config: tenant.config,
         created_at: tenant.created_at

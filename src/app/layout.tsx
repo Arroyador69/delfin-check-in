@@ -6,6 +6,7 @@ import SWRegister from "@/components/SWRegister";
 import PWAInstallGuide from "@/components/PWAInstallGuide";
 import ConditionalFooter from "@/components/ConditionalFooter";
 import CookieConsentModal from "@/components/CookieConsentModal";
+import AdsBanner from "@/components/AdsBanner";
 
 // Importar Sentry
 import '@sentry/nextjs';
@@ -29,6 +30,7 @@ export default function RootLayout({
         <div className="min-h-screen bg-gray-50 flex flex-col">
           <SWRegister />
           <ConditionalNavigation />
+          <AdsBanner />
           <PWAInstallGuide />
           {/* Compensar la barra de navegación fija (h-16) */}
           <main className="pt-16 flex-1">
