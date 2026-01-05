@@ -459,6 +459,53 @@ export default function HomePage() {
           </div>
         )}
 
+        {/* Video Tutorial */}
+        <div className="card mb-6 sm:mb-8 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center space-x-3">
+              <div className="text-2xl sm:text-3xl">🎥</div>
+              <div className="flex-1">
+                <h2 className="text-base sm:text-lg font-semibold text-gray-900">
+                  Video Tutorial - Panel de Usuario
+                </h2>
+                <p className="text-xs sm:text-sm text-gray-600 mt-1">
+                  Aprende a usar todas las funcionalidades de Delfín Check-in
+                </p>
+              </div>
+            </div>
+            <div className="w-full" style={{ position: 'relative', paddingBottom: '56.25%', height: 0, overflow: 'hidden', borderRadius: '12px' }}>
+              <iframe
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  height: '100%',
+                  border: 'none',
+                  borderRadius: '12px'
+                }}
+                src="https://www.youtube.com/embed/pHm49uVLYVc"
+                title="Video Tutorial - Panel de Usuario Delfín Check-in"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              ></iframe>
+            </div>
+            <div className="text-center">
+              <a
+                href="https://youtu.be/pHm49uVLYVc"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-blue-600 hover:text-blue-700 font-medium inline-flex items-center gap-1"
+              >
+                Ver en YouTube
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+              </a>
+            </div>
+          </div>
+        </div>
+
         {/* Filtros de Período */}
         <div className="card mb-6 sm:mb-8">
           <div className="flex flex-col gap-4">
