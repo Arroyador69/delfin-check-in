@@ -29,10 +29,18 @@ export async function GET(req: NextRequest) {
     `;
 
     // Obtener todos los registros
+    // Nota: La tabla waitlist puede tener o no las columnas name, source, notes
+    // Usamos COALESCE para manejar columnas que pueden no existir
     const entriesResult = await sql`
       SELECT 
-        id, email, name, source, notes, 
-        created_at, activated_at, tenant_id
+        id, 
+        email, 
+        COALESCE(name, NULL) as name,
+        COALESCE(source, NULL) as source,
+        COALESCE(notes, NULL) as notes,
+        created_at, 
+        activated_at, 
+        tenant_id
       FROM waitlist
       ORDER BY created_at DESC
     `;
