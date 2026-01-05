@@ -252,7 +252,20 @@ export async function insertGuestRegistration(data: {
 }
 
 // Función helper para obtener registros
-export async function getGuestRegistrations(limit: number = 200): Promise<any[]> {
+export async function getGuestRegistrations(limit: number = 200, tenantId?: string | null): Promise<any[]> {
+  // Si se proporciona tenantId, filtrar por él
+  if (tenantId) {
+    const result = await sql`
+      SELECT id, reserva_ref, fecha_entrada, fecha_salida, data, created_at, updated_at
+      FROM guest_registrations
+      WHERE tenant_id = ${tenantId}
+      ORDER BY created_at DESC
+      LIMIT ${limit};
+    `;
+    return result.rows;
+  }
+  
+  // Si no se proporciona tenantId, devolver todos (para compatibilidad, pero mejor siempre pasar tenantId)
   const result = await sql`
     SELECT id, reserva_ref, fecha_entrada, fecha_salida, data, created_at, updated_at
     FROM guest_registrations

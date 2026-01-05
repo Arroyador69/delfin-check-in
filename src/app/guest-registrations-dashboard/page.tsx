@@ -247,17 +247,25 @@ export default function GuestRegistrationsDashboard() {
     try {
       setLoading(true);
       
-      // Obtener información del tenant
-      const tenantResponse = await fetch('/api/tenant');
-      const tenantData = await tenantResponse.json();
-      setTenant(tenantData);
-      
-      // Generar URL del formulario (redirección al formulario existente)
-      if (tenantData?.tenant?.id) {
+      // Obtener información del tenant (ya tenemos tenant del hook useTenant, pero necesitamos el ID para la URL)
+      if (!tenant?.id) {
+        const tenantResponse = await fetch('/api/tenant');
+        const tenantData = await tenantResponse.json();
+        // No usar setTenant, ya tenemos tenant del hook useTenant
+        
+        // Generar URL del formulario (redirección al formulario existente)
+        if (tenantData?.tenant?.id) {
+          const baseUrl = process.env.NODE_ENV === 'development' 
+            ? 'http://localhost:3000' 
+            : 'https://admin.delfincheckin.com';
+          setFormUrl(`${baseUrl}/api/public/form-redirect/${tenantData.tenant.id}`);
+        }
+      } else {
+        // Si ya tenemos tenant del hook, usar su ID directamente
         const baseUrl = process.env.NODE_ENV === 'development' 
           ? 'http://localhost:3000' 
           : 'https://admin.delfincheckin.com';
-        setFormUrl(`${baseUrl}/api/public/form-redirect/${tenantData.tenant.id}`);
+        setFormUrl(`${baseUrl}/api/public/form-redirect/${tenant.id}`);
       }
       
       const url = showAllRegistrations 

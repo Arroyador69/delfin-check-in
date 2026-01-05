@@ -66,10 +66,17 @@ export async function GET(req: NextRequest) {
       console.log('✅ Tabla guest_registrations creada correctamente');
     }
     
-    // Obtener registros desde la base de datos
-    const registros = await getGuestRegistrations(limit);
+    // Obtener tenant_id del request
+    const { getTenantFromRequest } = await import('@/lib/permissions');
+    const tenantData = await getTenantFromRequest(req);
+    const tenantId = tenantData?.tenantId || null;
     
-    console.log(`✅ Se encontraron ${registros.length} registros`);
+    console.log('🏢 Tenant ID para filtrar registros:', tenantId);
+    
+    // Obtener registros desde la base de datos filtrados por tenant_id
+    const registros = await getGuestRegistrations(limit, tenantId);
+    
+    console.log(`✅ Se encontraron ${registros.length} registros para tenant ${tenantId}`);
     
     // Formatear datos para el dashboard
     const items = registros.map(registro => ({
