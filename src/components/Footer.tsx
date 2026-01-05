@@ -71,7 +71,7 @@ export default function Footer() {
         <div className="border-t border-gray-200 pt-4">
           <div className="text-center">
             <p className="text-sm text-gray-600">
-              © 2025 Delfín Check-in ·{' '}
+              © 2026 Delfín Check-in ·{' '}
               <a href="https://delfincheckin.com" className="text-blue-600 hover:text-blue-800 underline">
                 Ver precios
               </a>
