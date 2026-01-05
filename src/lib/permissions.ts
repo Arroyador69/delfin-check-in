@@ -15,15 +15,34 @@ import { verifyToken } from './auth';
 
 /**
  * Verifica si el usuario es superadmin
+ * Soporta tanto cookies (web) como Bearer tokens (app móvil)
  */
 function isSuperAdmin(req: NextRequest): boolean {
   try {
+    // Método 1: Verificar desde cookie (web)
     const authToken = req.cookies.get('auth_token')?.value;
-    if (!authToken) return false;
+    if (authToken) {
+      const payload = verifyToken(authToken);
+      if (payload?.isPlatformAdmin === true) {
+        console.log('👑 SuperAdmin detectado desde cookie');
+        return true;
+      }
+    }
     
-    const payload = verifyToken(authToken);
-    return payload?.isPlatformAdmin === true;
-  } catch {
+    // Método 2: Verificar desde Bearer token (app móvil)
+    const authHeader = req.headers.get('authorization');
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.split(' ')[1];
+      const payload = verifyToken(token);
+      if (payload?.isPlatformAdmin === true) {
+        console.log('👑 SuperAdmin detectado desde Bearer token');
+        return true;
+      }
+    }
+    
+    return false;
+  } catch (error) {
+    console.warn('⚠️ Error verificando superadmin:', error);
     return false;
   }
 }
@@ -32,7 +51,28 @@ function isSuperAdmin(req: NextRequest): boolean {
  * Obtiene el tenant del request y valida que exista
  */
 export async function getTenantFromRequest(req: NextRequest): Promise<{ tenant: Tenant; tenantId: string } | null> {
-  const tenantId = req.headers.get('x-tenant-id') || await getTenantId(req);
+  // Intentar obtener tenantId desde múltiples fuentes
+  let tenantId: string | null = null;
+  
+  // 1. Desde header (inyectado por middleware)
+  tenantId = req.headers.get('x-tenant-id');
+  
+  // 2. Desde cookie (web)
+  if (!tenantId) {
+    tenantId = await getTenantId(req);
+  }
+  
+  // 3. Desde Bearer token (app móvil)
+  if (!tenantId) {
+    const authHeader = req.headers.get('authorization');
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      try {
+        const token = authHeader.split(' ')[1];
+        const payload = verifyToken(token);
+        tenantId = payload?.tenantId || null;
+      } catch {}
+    }
+  }
   
   if (!tenantId) {
     return null;

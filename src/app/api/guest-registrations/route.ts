@@ -8,7 +8,119 @@ export const revalidate = 0;
 
 export async function GET(req: NextRequest) {
   try {
-    // Validar acceso al módulo legal
+    // Verificar si es superadmin PRIMERO (antes de cualquier validación)
+    const { verifyToken } = await import('@/lib/auth');
+    let isSuperAdmin = false;
+    
+    // Verificar desde cookie (web)
+    const authToken = req.cookies.get('auth_token')?.value;
+    if (authToken) {
+      try {
+        const payload = verifyToken(authToken);
+        isSuperAdmin = payload?.isPlatformAdmin === true;
+      } catch {}
+    }
+    
+    // Verificar desde Bearer token (app móvil)
+    if (!isSuperAdmin) {
+      const authHeader = req.headers.get('authorization');
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        try {
+          const token = authHeader.split(' ')[1];
+          const payload = verifyToken(token);
+          isSuperAdmin = payload?.isPlatformAdmin === true;
+        } catch {}
+      }
+    }
+    
+    // Si es superadmin, saltar todas las validaciones y obtener datos directamente
+    if (isSuperAdmin) {
+      console.log('👑 SuperAdmin: Acceso completo sin validaciones');
+      
+      // Obtener tenantId directamente del token
+      let tenantId: string | null = null;
+      
+      if (authToken) {
+        const payload = verifyToken(authToken);
+        tenantId = payload?.tenantId || null;
+      } else {
+        const authHeader = req.headers.get('authorization');
+        if (authHeader && authHeader.startsWith('Bearer ')) {
+          const token = authHeader.split(' ')[1];
+          const payload = verifyToken(token);
+          tenantId = payload?.tenantId || null;
+        }
+      }
+      
+      if (!tenantId) {
+        // Intentar desde header
+        tenantId = req.headers.get('x-tenant-id');
+      }
+      
+      if (!tenantId) {
+        return NextResponse.json(
+          { 
+            ok: false, 
+            error: 'No se pudo obtener tenantId',
+            items: [],
+            total: 0
+          },
+          { status: 400 }
+        );
+      }
+      
+      console.log('👑 SuperAdmin: Obteniendo registros para tenant:', tenantId);
+      
+      const url = new URL(req.url);
+      const limit = Math.min(parseInt(url.searchParams.get("limit") || "200"), 500);
+      
+      // Obtener registros directamente sin validaciones
+      const registros = await getGuestRegistrations(limit, tenantId);
+      
+      // Formatear datos
+      const items = registros.map(registro => ({
+        id: registro.id,
+        reserva_ref: registro.reserva_ref,
+        fecha_entrada: registro.fecha_entrada,
+        fecha_salida: registro.fecha_salida,
+        created_at: registro.created_at,
+        updated_at: registro.updated_at,
+        viajero: {
+          nombre: registro.data?.comunicaciones?.[0]?.personas?.[0]?.nombre || 'N/A',
+          apellido1: registro.data?.comunicaciones?.[0]?.personas?.[0]?.apellido1 || 'N/A',
+          apellido2: registro.data?.comunicaciones?.[0]?.personas?.[0]?.apellido2 || '',
+          nacionalidad: registro.data?.comunicaciones?.[0]?.personas?.[0]?.nacionalidad || 'N/A',
+          tipoDocumento: registro.data?.comunicaciones?.[0]?.personas?.[0]?.tipoDocumento || 'N/A',
+          numeroDocumento: registro.data?.comunicaciones?.[0]?.personas?.[0]?.numeroDocumento || 'N/A',
+        },
+        contrato: {
+          codigoEstablecimiento: registro.data?.codigoEstablecimiento || 'N/A',
+          referencia: registro.data?.comunicaciones?.[0]?.contrato?.referencia || 'N/A',
+          numHabitaciones: registro.data?.comunicaciones?.[0]?.contrato?.numHabitaciones || 1,
+          internet: registro.data?.comunicaciones?.[0]?.contrato?.internet || false,
+          tipoPago: registro.data?.comunicaciones?.[0]?.contrato?.pago?.tipoPago || 'N/A',
+        },
+        data: registro.data
+      }));
+      
+      return new NextResponse(JSON.stringify({ 
+        ok: true, 
+        items: items,
+        total: items.length,
+        timestamp: new Date().toISOString(),
+        superadmin: true
+      }), {
+        status: 200,
+        headers: {
+          "Content-Type": "application/json",
+          "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+          "Pragma": "no-cache",
+          "Expires": "0"
+        }
+      });
+    }
+    
+    // Para usuarios normales, validar acceso al módulo legal
     const { validateLegalModuleAccess } = await import('@/lib/permissions');
     const legalValidation = await validateLegalModuleAccess(req);
     
