@@ -137,6 +137,23 @@ export async function sendEmail(config: EmailConfig): Promise<{ success: boolean
         if (response.ok) {
           const result = await response.json();
           console.log(`✅ Email enviado exitosamente con Zoho a ${config.to}:`, result.messageId);
+          
+          // Registrar en tracking
+          try {
+            const { trackEmail } = await import('@/lib/tracking');
+            await trackEmail({
+              tenantId: (config as any).tenantId,
+              emailType: (config as any).emailType || 'custom',
+              recipientEmail: config.to,
+              subject: config.subject,
+              messageId: result.messageId,
+              status: 'sent',
+              metadata: { provider: 'zoho' }
+            });
+          } catch (trackError) {
+            console.error('⚠️ Error tracking email:', trackError);
+          }
+          
           return {
             success: true,
             messageId: result.messageId
@@ -174,6 +191,23 @@ export async function sendEmail(config: EmailConfig): Promise<{ success: boolean
         if (response.ok) {
           const result = await response.json();
           console.log(`✅ Email enviado exitosamente con Resend a ${config.to}:`, result.id);
+          
+          // Registrar en tracking
+          try {
+            const { trackEmail } = await import('@/lib/tracking');
+            await trackEmail({
+              tenantId: (config as any).tenantId,
+              emailType: (config as any).emailType || 'custom',
+              recipientEmail: config.to,
+              subject: config.subject,
+              messageId: result.id,
+              status: 'sent',
+              metadata: { provider: 'resend' }
+            });
+          } catch (trackError) {
+            console.error('⚠️ Error tracking email:', trackError);
+          }
+          
           return {
             success: true,
             messageId: result.id
@@ -225,6 +259,23 @@ export async function sendEmail(config: EmailConfig): Promise<{ success: boolean
         });
 
         console.log(`✅ Email enviado exitosamente con SMTP a ${config.to}:`, info.messageId);
+        
+        // Registrar en tracking
+        try {
+          const { trackEmail } = await import('@/lib/tracking');
+          await trackEmail({
+            tenantId: (config as any).tenantId,
+            emailType: (config as any).emailType || 'custom',
+            recipientEmail: config.to,
+            subject: config.subject,
+            messageId: info.messageId,
+            status: 'sent',
+            metadata: { provider: 'smtp' }
+          });
+        } catch (trackError) {
+          console.error('⚠️ Error tracking email:', trackError);
+        }
+        
         return {
           success: true,
           messageId: info.messageId
@@ -236,6 +287,22 @@ export async function sendEmail(config: EmailConfig): Promise<{ success: boolean
 
     // Si llegamos aquí, ningún método funcionó
     console.log('❌ Todos los métodos de envío fallaron');
+    
+    // Registrar en tracking aunque haya fallado
+    try {
+      const { trackEmail } = await import('@/lib/tracking');
+      await trackEmail({
+        tenantId: (config as any).tenantId,
+        emailType: (config as any).emailType || 'custom',
+        recipientEmail: config.to,
+        subject: config.subject,
+        status: 'failed',
+        metadata: { error: 'No se pudo enviar el email con ningún método disponible' }
+      });
+    } catch (trackError) {
+      console.error('⚠️ Error tracking failed email:', trackError);
+    }
+    
     return {
       success: false,
       error: 'No se pudo enviar el email con ningún método disponible'

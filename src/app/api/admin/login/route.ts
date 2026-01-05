@@ -221,6 +221,23 @@ export async function POST(req: NextRequest) {
       [user.id]
     );
 
+    // Registrar actividad de login (para tracking DAU/WAU/MAU)
+    try {
+      const { trackUserActivity } = await import('@/lib/tracking');
+      const userAgent = req.headers.get('user-agent') || undefined;
+      await trackUserActivity({
+        tenantId: tenant.id,
+        userId: user.id,
+        activityType: 'login',
+        activityData: { email: user.email, role: user.role },
+        ipAddress: clientIP,
+        userAgent
+      });
+    } catch (trackError) {
+      // No fallar si hay error en tracking
+      console.error('⚠️ Error tracking login activity:', trackError);
+    }
+
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     // PASO 6: GENERAR TOKENS JWT MULTI-TENANT
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

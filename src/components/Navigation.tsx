@@ -55,6 +55,11 @@ export default function Navigation() {
   // Menú de SuperAdmin
   const superAdminNavigation = [
     { name: 'Dashboard SuperAdmin', href: '/superadmin', icon: Crown },
+    { name: 'Métricas', href: '/superadmin/metrics', icon: TrendingUp },
+    { name: 'Afiliados', href: '/superadmin/affiliates', icon: Users },
+    { name: 'Referidos', href: '/superadmin/referrals', icon: Users },
+    { name: 'Emails', href: '/superadmin/emails', icon: FileText },
+    { name: 'Investor Mode', href: '/superadmin/investor-mode', icon: Target },
     { name: 'Tenants', href: '/superadmin/tenants', icon: Users },
     { name: 'Analytics', href: '/superadmin/analytics', icon: TrendingUp },
     { name: 'Páginas Programáticas', href: '/superadmin/programmatic', icon: FileText },
