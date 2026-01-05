@@ -11,6 +11,22 @@
 import { sql } from '@vercel/postgres';
 import { NextRequest } from 'next/server';
 import { getTenantId, getTenantById, Tenant, hasLegalModuleAccess, canCreateUnit, hasAdsEnabled } from './tenant';
+import { verifyToken } from './auth';
+
+/**
+ * Verifica si el usuario es superadmin
+ */
+function isSuperAdmin(req: NextRequest): boolean {
+  try {
+    const authToken = req.cookies.get('auth_token')?.value;
+    if (!authToken) return false;
+    
+    const payload = verifyToken(authToken);
+    return payload?.isPlatformAdmin === true;
+  } catch {
+    return false;
+  }
+}
 
 /**
  * Obtiene el tenant del request y valida que exista
@@ -33,11 +49,20 @@ export async function getTenantFromRequest(req: NextRequest): Promise<{ tenant: 
 
 /**
  * Valida acceso al módulo legal y retorna error si no tiene acceso
+ * EXCEPCIÓN: Superadmins siempre tienen acceso
  */
 export async function validateLegalModuleAccess(
   req: NextRequest,
   countryCode?: string
 ): Promise<{ success: true; tenant: Tenant } | { success: false; error: string; status: number }> {
+  // Superadmins siempre tienen acceso
+  if (isSuperAdmin(req)) {
+    const tenantData = await getTenantFromRequest(req);
+    if (tenantData) {
+      return { success: true, tenant: tenantData.tenant };
+    }
+  }
+  
   const tenantData = await getTenantFromRequest(req);
   
   if (!tenantData) {
@@ -60,10 +85,19 @@ export async function validateLegalModuleAccess(
 
 /**
  * Valida que el tenant pueda crear una nueva unidad
+ * EXCEPCIÓN: Superadmins siempre pueden crear unidades
  */
 export async function validateUnitCreation(
   req: NextRequest
 ): Promise<{ success: true; tenant: Tenant } | { success: false; error: string; status: number }> {
+  // Superadmins siempre pueden crear unidades
+  if (isSuperAdmin(req)) {
+    const tenantData = await getTenantFromRequest(req);
+    if (tenantData) {
+      return { success: true, tenant: tenantData.tenant };
+    }
+  }
+  
   const tenantData = await getTenantFromRequest(req);
   
   if (!tenantData) {

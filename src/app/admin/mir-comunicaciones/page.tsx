@@ -58,10 +58,24 @@ export default function MirComunicacionesPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  // Verificar acceso al módulo legal
+  // Verificar acceso al módulo legal (excepto superadmins)
   useEffect(() => {
-    if (!tenantLoading && tenant && !hasLegalModule(tenant)) {
-      router.push('/upgrade-plan?reason=legal_module');
+    if (!tenantLoading && tenant) {
+      // Verificar si es superadmin
+      fetch('/api/auth/me')
+        .then(res => res.json())
+        .then(data => {
+          const isSuperAdmin = data.success && data.data?.isPlatformAdmin;
+          if (!isSuperAdmin && !hasLegalModule(tenant)) {
+            router.push('/upgrade-plan?reason=legal_module');
+          }
+        })
+        .catch(() => {
+          // Si falla la verificación, aplicar validación normal
+          if (!hasLegalModule(tenant)) {
+            router.push('/upgrade-plan?reason=legal_module');
+          }
+        });
     }
   }, [tenant, tenantLoading, router]);
   

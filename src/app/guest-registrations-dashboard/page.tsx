@@ -173,10 +173,24 @@ export default function GuestRegistrationsDashboard() {
   const [filterRoom, setFilterRoom] = useState("");
   const [formUrl, setFormUrl] = useState('');
 
-  // Verificar acceso al módulo legal
+  // Verificar acceso al módulo legal (excepto superadmins)
   useEffect(() => {
-    if (!tenantLoading && tenant && !hasLegalModule(tenant)) {
-      router.push('/upgrade-plan?reason=legal_module');
+    if (!tenantLoading && tenant) {
+      // Verificar si es superadmin
+      fetch('/api/auth/me')
+        .then(res => res.json())
+        .then(data => {
+          const isSuperAdmin = data.success && data.data?.isPlatformAdmin;
+          if (!isSuperAdmin && !hasLegalModule(tenant)) {
+            router.push('/upgrade-plan?reason=legal_module');
+          }
+        })
+        .catch(() => {
+          // Si falla la verificación, aplicar validación normal
+          if (!hasLegalModule(tenant)) {
+            router.push('/upgrade-plan?reason=legal_module');
+          }
+        });
     }
   }, [tenant, tenantLoading, router]);
 
