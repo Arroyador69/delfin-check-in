@@ -30,27 +30,17 @@ export async function GET(req: NextRequest) {
           const payload = verifyToken(token);
           isSuperAdmin = payload?.isPlatformAdmin === true;
         } catch (tokenError: any) {
-          // Si el token expiró, verificar si es superadmin antes de rechazar
-          // Esto permite que el interceptor de la app móvil refresque el token
+          // Si el token expiró, no hacer nada - simplemente continuar
+          // El interceptor de la app móvil debería refrescar el token automáticamente
+          // Si hay tenantId en header, podemos continuar sin problemas
           if (tokenError.name === 'TokenExpiredError' || tokenError.message?.includes('expired')) {
-            console.warn('⚠️ Token expirado detectado, verificando si es superadmin desde header...');
-            // Intentar obtener tenantId del header para continuar
-            const headerTenantId = req.headers.get('x-tenant-id');
-            if (headerTenantId) {
-              // Si hay tenantId en header, probablemente es una llamada válida que necesita refresh
-              // Devolver 401 para que el interceptor refresque
-              return NextResponse.json(
-                { 
-                  ok: false, 
-                  error: 'Token expirado',
-                  code: 'TOKEN_EXPIRED',
-                  message: 'Por favor, refresca tu sesión'
-                },
-                { status: 401 }
-              );
-            }
+            // No loguear como error, solo continuar
+            // El tenantId del header se usará más adelante
+          } else {
+            // Solo loguear errores que no sean de expiración
+            console.warn('⚠️ Error verificando token:', tokenError.message);
           }
-          // No bloquear, continuar con el flujo normal
+          // Continuar con el flujo normal - no bloquear
         }
       }
     }
@@ -59,24 +49,39 @@ export async function GET(req: NextRequest) {
     if (isSuperAdmin) {
       console.log('👑 SuperAdmin: Acceso completo sin validaciones');
       
-      // Obtener tenantId directamente del token
+      // Obtener tenantId directamente del token o header
       let tenantId: string | null = null;
       
-      if (authToken) {
-        const payload = verifyToken(authToken);
-        tenantId = payload?.tenantId || null;
-      } else {
-        const authHeader = req.headers.get('authorization');
-        if (authHeader && authHeader.startsWith('Bearer ')) {
-          const token = authHeader.split(' ')[1];
-          const payload = verifyToken(token);
-          tenantId = payload?.tenantId || null;
-        }
-      }
+      // Primero intentar desde header (más confiable si token expirado)
+      tenantId = req.headers.get('x-tenant-id');
       
+      // Si no hay en header, intentar desde token (pero manejar expiración)
       if (!tenantId) {
-        // Intentar desde header
-        tenantId = req.headers.get('x-tenant-id');
+        if (authToken) {
+          try {
+            const payload = verifyToken(authToken);
+            tenantId = payload?.tenantId || null;
+          } catch (error: any) {
+            // Token expirado, pero continuamos porque es superadmin
+            if (error.name !== 'TokenExpiredError') {
+              console.warn('⚠️ Error verificando token de superadmin:', error);
+            }
+          }
+        } else {
+          const authHeader = req.headers.get('authorization');
+          if (authHeader && authHeader.startsWith('Bearer ')) {
+            try {
+              const token = authHeader.split(' ')[1];
+              const payload = verifyToken(token);
+              tenantId = payload?.tenantId || null;
+            } catch (error: any) {
+              // Token expirado, pero continuamos porque es superadmin
+              if (error.name !== 'TokenExpiredError') {
+                console.warn('⚠️ Error verificando token de superadmin:', error);
+              }
+            }
+          }
+        }
       }
       
       if (!tenantId) {
@@ -223,13 +228,17 @@ export async function GET(req: NextRequest) {
             console.log('🔑 Tenant ID obtenido del JWT Bearer token:', finalTenantId);
           }
         } catch (jwtError: any) {
-          // Si el token está expirado, devolver 401 limpio para que el interceptor lo maneje
+          // Si el token está expirado, usar tenantId del header si está disponible
+          // No devolver error - simplemente usar el header y continuar
           if (jwtError.name === 'TokenExpiredError' || jwtError.message?.includes('expired')) {
-            console.warn('⚠️ Token expirado en verificación de tenantId');
-            // Si hay tenantId en header, probablemente es válido pero necesita refresh
+            // No loguear como error - es normal que los tokens expiren
             const headerTenantId = req.headers.get('x-tenant-id');
-            if (!headerTenantId) {
-              // No hay tenantId en header, devolver 401 para que refresque
+            if (headerTenantId) {
+              finalTenantId = headerTenantId;
+              console.log('🔑 Token expirado, usando tenantId del header:', finalTenantId);
+            } else {
+              // Solo devolver 401 si NO hay tenantId en header
+              console.warn('⚠️ Token expirado y no hay tenantId en header');
               return NextResponse.json(
                 { 
                   ok: false, 
@@ -240,11 +249,9 @@ export async function GET(req: NextRequest) {
                 { status: 401 }
               );
             }
-            // Si hay tenantId en header, usar ese y continuar (el interceptor refrescará)
-            finalTenantId = headerTenantId;
-            console.log('🔑 Usando tenantId del header porque token expirado:', finalTenantId);
           } else {
-            console.warn('⚠️ Error verificando JWT Bearer token:', jwtError);
+            // Solo loguear errores que no sean de expiración
+            console.warn('⚠️ Error verificando JWT Bearer token:', jwtError.message);
           }
         }
       }
