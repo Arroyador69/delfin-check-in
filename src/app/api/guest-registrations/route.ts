@@ -55,13 +55,37 @@ export async function GET(req: NextRequest) {
         }
       }
     } else {
-      // Si hay tenantId en header, asumir que es válido y continuar
+      // Si hay tenantId en header, intentar verificar si es superadmin (pero sin bloquear si falla)
       // El interceptor de la app móvil ya verificó y refrescó el token si era necesario
       console.log('✅ Usando tenantId del header (skip token verification):', headerTenantId);
+      
+      // Intentar verificar superadmin desde token (pero no bloquear si está expirado)
+      const authHeader = req.headers.get('authorization');
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        const token = authHeader.split(' ')[1];
+        const payload = verifyTokenSilently(token);
+        if (payload?.isPlatformAdmin === true) {
+          isSuperAdmin = true;
+          console.log('👑 SuperAdmin detectado desde Bearer token (con tenantId en header)');
+        }
+      }
+      
+      // También verificar desde cookie si no se encontró en Bearer
+      if (!isSuperAdmin) {
+        const authToken = req.cookies.get('auth_token')?.value;
+        if (authToken) {
+          const payload = verifyTokenSilently(authToken);
+          if (payload?.isPlatformAdmin === true) {
+            isSuperAdmin = true;
+            console.log('👑 SuperAdmin detectado desde cookie (con tenantId en header)');
+          }
+        }
+      }
     }
     
     // Si es superadmin, saltar todas las validaciones y obtener datos directamente
     if (isSuperAdmin) {
+      console.log('👑 SuperAdmin detectado - saltando validaciones');
       console.log('👑 SuperAdmin: Acceso completo sin validaciones');
       
       // Obtener tenantId directamente del token o header
@@ -149,10 +173,18 @@ export async function GET(req: NextRequest) {
     }
     
     // Para usuarios normales, validar acceso al módulo legal
+    console.log('🔍 Validando acceso al módulo legal...');
     const { validateLegalModuleAccess } = await import('@/lib/permissions');
     const legalValidation = await validateLegalModuleAccess(req);
     
+    console.log('📋 Resultado de validación legal:', {
+      success: legalValidation.success,
+      error: legalValidation.success ? undefined : legalValidation.error,
+      status: legalValidation.success ? undefined : legalValidation.status
+    });
+    
     if (!legalValidation.success) {
+      console.warn('⚠️ Validación legal falló:', legalValidation.error);
       return NextResponse.json(
         { 
           ok: false, 
@@ -163,6 +195,8 @@ export async function GET(req: NextRequest) {
         { status: legalValidation.status || 403 }
       );
     }
+    
+    console.log('✅ Validación legal pasada, continuando...');
     
     const url = new URL(req.url);
     const limit = Math.min(parseInt(url.searchParams.get("limit") || "200"), 500);
