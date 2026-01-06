@@ -73,28 +73,14 @@ export async function GET(req: NextRequest) {
       // Si no hay en header, intentar desde token (pero manejar expiración)
       if (!tenantId) {
         if (authToken) {
-          try {
-            const payload = verifyToken(authToken);
-            tenantId = payload?.tenantId || null;
-          } catch (error: any) {
-            // Token expirado, pero continuamos porque es superadmin
-            if (error.name !== 'TokenExpiredError') {
-              console.warn('⚠️ Error verificando token de superadmin:', error);
-            }
-          }
+          const payload = verifyTokenSilently(authToken);
+          tenantId = payload?.tenantId || null;
         } else {
           const authHeader = req.headers.get('authorization');
           if (authHeader && authHeader.startsWith('Bearer ')) {
-            try {
-              const token = authHeader.split(' ')[1];
-              const payload = verifyToken(token);
-              tenantId = payload?.tenantId || null;
-            } catch (error: any) {
-              // Token expirado, pero continuamos porque es superadmin
-              if (error.name !== 'TokenExpiredError') {
-                console.warn('⚠️ Error verificando token de superadmin:', error);
-              }
-            }
+            const token = authHeader.split(' ')[1];
+            const payload = verifyTokenSilently(token);
+            tenantId = payload?.tenantId || null;
           }
         }
       }
