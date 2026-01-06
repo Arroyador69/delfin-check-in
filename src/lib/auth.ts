@@ -190,13 +190,17 @@ export function verifyToken(token: string): JWTPayload | null {
     // Verificar expiración (doble verificación)
     const isExpired = decoded.exp * 1000 < Date.now();
     if (isExpired) {
-      console.log('Token expirado');
+      // No loguear - es normal que los tokens expiren
       return null;
     }
     
     return decoded;
-  } catch (error) {
-    console.error('Error al verificar token:', error);
+  } catch (error: any) {
+    // No loguear errores de expiración - es normal
+    // Solo loguear otros tipos de errores (firma inválida, formato incorrecto, etc.)
+    if (error.name !== 'TokenExpiredError' && !error.message?.includes('expired')) {
+      console.error('Error al verificar token:', error);
+    }
     return null;
   }
 }
