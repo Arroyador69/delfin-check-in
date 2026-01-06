@@ -61,35 +61,68 @@ export async function POST(req: NextRequest) {
       }, { status: 400 });
     }
 
-    // Obtener información del tenant (límites y lodging_id)
-    const tenantResult = await sql`
-      SELECT max_rooms, lodging_id, status, name
-      FROM tenants
-      WHERE id = ${tenantId}
-    `;
-
-    if (tenantResult.rows.length === 0) {
+    // Validar límite por plan usando el nuevo sistema de permisos
+    const { validateUnitCreation } = await import('@/lib/permissions');
+    const { getTenantById } = await import('@/lib/tenant');
+    
+    const tenant = await getTenantById(tenantId);
+    if (!tenant) {
       return NextResponse.json({
         success: false,
         message: 'Tenant no encontrado'
       }, { status: 404 });
     }
 
-    const tenant = tenantResult.rows[0];
-    const lodgingId = tenant.lodging_id;
+    // Obtener lodging_id
+    const lodgingResult = await sql`
+      SELECT lodging_id FROM tenants WHERE id = ${tenantId}
+    `;
+    const lodgingId = lodgingResult.rows[0]?.lodging_id;
     
-    // Usar el límite personalizado que el cliente contrató
-    const maxRooms = tenant.max_rooms || 6; // Default a 6 si no está configurado
-    
-    console.log(`🏢 Tenant ${tenantId} (${tenant.name}): Límite contratado: ${maxRooms} habitaciones`);
-
-    // Validar que no exceda el límite contratado
-    if (maxRooms !== -1 && rooms.length > maxRooms) {
+    if (!lodgingId) {
       return NextResponse.json({
         success: false,
-        message: `No puedes tener más de ${maxRooms} habitaciones según tu contrato. Contacta con soporte si necesitas más habitaciones.`
-      }, { status: 400 });
+        message: 'No se encontró el lodging asociado al tenant'
+      }, { status: 404 });
     }
+
+    // Obtener conteo actual de habitaciones
+    const existingRoomsCount = await sql`
+      SELECT COUNT(*) as count 
+      FROM "Room" r
+      WHERE r."lodgingId" = ${lodgingId}
+    `;
+    const currentCount = parseInt(existingRoomsCount.rows[0]?.count || '0', 10);
+    
+    // Validar que puede crear las nuevas habitaciones
+    const { canCreateUnit } = await import('@/lib/tenant');
+    const validation = canCreateUnit(tenant, currentCount + rooms.length);
+    
+    if (!validation.canCreate) {
+      const planType = tenant.plan_type || 'free';
+      let errorMessage = validation.reason || 'No puedes crear más habitaciones';
+      
+      // Mensajes personalizados según el plan
+      if (planType === 'free' && currentCount >= 2) {
+        errorMessage = 'Has alcanzado el límite de 2 habitaciones del Plan Gratis. Actualiza a Plan Check-in (8€/mes) o Plan Pro (29,99€/mes) para añadir más habitaciones.';
+      } else if (planType === 'checkin') {
+        errorMessage = `Puedes añadir más habitaciones, pero cada una adicional costará 4€/mes. Actualmente tienes ${currentCount} habitaciones.`;
+      } else if (planType === 'pro' && currentCount >= 6) {
+        errorMessage = `Has alcanzado las 6 habitaciones incluidas en Plan Pro. Las habitaciones adicionales tendrán un coste extra de 5€/mes cada una.`;
+      }
+      
+      return NextResponse.json({
+        success: false,
+        error: errorMessage,
+        current_usage: currentCount,
+        max_included: planType === 'free' ? 2 : planType === 'pro' ? 6 : null,
+        plan_type: planType,
+        needs_upgrade: validation.needsUpgrade || false,
+        upgrade_plan: validation.upgradePlan || null
+      }, { status: 403 });
+    }
+    
+    console.log(`🏢 Tenant ${tenantId} (${tenant.name}): Plan ${tenant.plan_type || 'free'}, ${currentCount} habitaciones actuales, creando ${rooms.length} nuevas`);
 
     // Obtener habitaciones existentes
     const existingRooms = await sql`
