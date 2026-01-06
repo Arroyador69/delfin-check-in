@@ -131,8 +131,13 @@ export async function middleware(req: NextRequest) {
           requestHeaders.set('x-tenant-id', tenantId);
           console.log(`📱 Token móvil detectado, tenant_id: ${tenantId}`);
         }
-      } catch (error) {
-        console.error('Error verificando token Bearer:', error);
+      } catch (error: any) {
+        // No loguear errores de token expirado - el interceptor de la app lo manejará
+        // Solo loguear otros tipos de errores
+        if (error.name !== 'TokenExpiredError' && !error.message?.includes('expired')) {
+          console.error('Error verificando token Bearer:', error);
+        }
+        // Si hay tenantId en header, ya está configurado arriba, así que continuar
         }
       }
     }
