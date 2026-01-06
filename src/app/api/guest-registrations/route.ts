@@ -30,8 +30,26 @@ export async function GET(req: NextRequest) {
           const payload = verifyToken(token);
           isSuperAdmin = payload?.isPlatformAdmin === true;
         } catch (tokenError: any) {
-          // Si el token expiró, intentar obtener tenantId del header para continuar
-          console.warn('⚠️ Token expirado o inválido:', tokenError.message);
+          // Si el token expiró, verificar si es superadmin antes de rechazar
+          // Esto permite que el interceptor de la app móvil refresque el token
+          if (tokenError.name === 'TokenExpiredError' || tokenError.message?.includes('expired')) {
+            console.warn('⚠️ Token expirado detectado, verificando si es superadmin desde header...');
+            // Intentar obtener tenantId del header para continuar
+            const headerTenantId = req.headers.get('x-tenant-id');
+            if (headerTenantId) {
+              // Si hay tenantId en header, probablemente es una llamada válida que necesita refresh
+              // Devolver 401 para que el interceptor refresque
+              return NextResponse.json(
+                { 
+                  ok: false, 
+                  error: 'Token expirado',
+                  code: 'TOKEN_EXPIRED',
+                  message: 'Por favor, refresca tu sesión'
+                },
+                { status: 401 }
+              );
+            }
+          }
           // No bloquear, continuar con el flujo normal
         }
       }
@@ -204,8 +222,30 @@ export async function GET(req: NextRequest) {
             finalTenantId = payload.tenantId;
             console.log('🔑 Tenant ID obtenido del JWT Bearer token:', finalTenantId);
           }
-        } catch (jwtError) {
-          console.warn('⚠️ Error verificando JWT Bearer token:', jwtError);
+        } catch (jwtError: any) {
+          // Si el token está expirado, devolver 401 limpio para que el interceptor lo maneje
+          if (jwtError.name === 'TokenExpiredError' || jwtError.message?.includes('expired')) {
+            console.warn('⚠️ Token expirado en verificación de tenantId');
+            // Si hay tenantId en header, probablemente es válido pero necesita refresh
+            const headerTenantId = req.headers.get('x-tenant-id');
+            if (!headerTenantId) {
+              // No hay tenantId en header, devolver 401 para que refresque
+              return NextResponse.json(
+                { 
+                  ok: false, 
+                  error: 'Token expirado',
+                  code: 'TOKEN_EXPIRED',
+                  message: 'Por favor, refresca tu sesión'
+                },
+                { status: 401 }
+              );
+            }
+            // Si hay tenantId en header, usar ese y continuar (el interceptor refrescará)
+            finalTenantId = headerTenantId;
+            console.log('🔑 Usando tenantId del header porque token expirado:', finalTenantId);
+          } else {
+            console.warn('⚠️ Error verificando JWT Bearer token:', jwtError);
+          }
         }
       }
     }
