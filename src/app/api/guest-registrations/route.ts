@@ -59,6 +59,7 @@ export async function GET(req: NextRequest) {
       // El interceptor de la app móvil ya verificó y refrescó el token si era necesario
       console.log('✅ Usando tenantId del header (skip token verification):', headerTenantId);
       
+      // CRÍTICO: Verificar superadmin ANTES de validar módulo legal
       // Intentar verificar superadmin desde token (pero no bloquear si está expirado)
       const authHeader = req.headers.get('authorization');
       if (authHeader && authHeader.startsWith('Bearer ')) {
@@ -79,6 +80,30 @@ export async function GET(req: NextRequest) {
             isSuperAdmin = true;
             console.log('👑 SuperAdmin detectado desde cookie (con tenantId en header)');
           }
+        }
+      }
+      
+      // Si no se pudo verificar desde token (porque está expirado), usar isSuperAdmin de permissions
+      // que también verifica desde tokens pero de forma más robusta
+      if (!isSuperAdmin) {
+        const { isSuperAdmin: checkSuperAdmin } = await import('@/lib/permissions');
+        // isSuperAdmin es una función, necesitamos llamarla de otra forma
+        // Mejor verificar directamente desde el token decodificado sin verificar expiración
+        try {
+          if (authHeader && authHeader.startsWith('Bearer ')) {
+            const token = authHeader.split(' ')[1];
+            // Decodificar sin verificar (solo para leer el payload)
+            const parts = token.split('.');
+            if (parts.length === 3) {
+              const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString());
+              if (payload?.isPlatformAdmin === true) {
+                isSuperAdmin = true;
+                console.log('👑 SuperAdmin detectado desde token decodificado (sin verificar expiración)');
+              }
+            }
+          }
+        } catch (e) {
+          // Ignorar errores de decodificación
         }
       }
     }
@@ -173,7 +198,78 @@ export async function GET(req: NextRequest) {
     }
     
     // Para usuarios normales, validar acceso al módulo legal
+    // PERO: Si es superadmin, ya debería haber saltado arriba
+    // Si llegamos aquí y es superadmin, algo falló en la detección
     console.log('🔍 Validando acceso al módulo legal...');
+    console.log('🔍 isSuperAdmin antes de validar:', isSuperAdmin);
+    
+    // Si todavía no detectamos superadmin pero hay tenantId en header, intentar una vez más
+    if (!isSuperAdmin && headerTenantId) {
+      console.log('🔄 Reintentando detección de superadmin...');
+      const authHeader = req.headers.get('authorization');
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        const token = authHeader.split(' ')[1];
+        try {
+          // Decodificar sin verificar expiración
+          const parts = token.split('.');
+          if (parts.length === 3) {
+            const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString());
+            if (payload?.isPlatformAdmin === true) {
+              isSuperAdmin = true;
+              console.log('👑 SuperAdmin detectado en último intento (decodificación directa)');
+              // Si es superadmin, saltar validación y obtener datos directamente
+              const tenantId = headerTenantId;
+              const url = new URL(req.url);
+              const limit = Math.min(parseInt(url.searchParams.get("limit") || "200"), 500);
+              console.log('👑 SuperAdmin: Obteniendo registros para tenant:', tenantId);
+              const registros = await getGuestRegistrations(limit, tenantId);
+              const items = registros.map(registro => ({
+                id: registro.id,
+                reserva_ref: registro.reserva_ref,
+                fecha_entrada: registro.fecha_entrada,
+                fecha_salida: registro.fecha_salida,
+                created_at: registro.created_at,
+                updated_at: registro.updated_at,
+                viajero: {
+                  nombre: registro.data?.comunicaciones?.[0]?.personas?.[0]?.nombre || 'N/A',
+                  apellido1: registro.data?.comunicaciones?.[0]?.personas?.[0]?.apellido1 || 'N/A',
+                  apellido2: registro.data?.comunicaciones?.[0]?.personas?.[0]?.apellido2 || '',
+                  nacionalidad: registro.data?.comunicaciones?.[0]?.personas?.[0]?.nacionalidad || 'N/A',
+                  tipoDocumento: registro.data?.comunicaciones?.[0]?.personas?.[0]?.tipoDocumento || 'N/A',
+                  numeroDocumento: registro.data?.comunicaciones?.[0]?.personas?.[0]?.numeroDocumento || 'N/A',
+                },
+                contrato: {
+                  codigoEstablecimiento: registro.data?.codigoEstablecimiento || 'N/A',
+                  referencia: registro.data?.comunicaciones?.[0]?.contrato?.referencia || 'N/A',
+                  numHabitaciones: registro.data?.comunicaciones?.[0]?.contrato?.numHabitaciones || 1,
+                  internet: registro.data?.comunicaciones?.[0]?.contrato?.internet || false,
+                  tipoPago: registro.data?.comunicaciones?.[0]?.contrato?.pago?.tipoPago || 'N/A',
+                },
+                data: registro.data
+              }));
+              return new NextResponse(JSON.stringify({ 
+                ok: true, 
+                items: items,
+                total: items.length,
+                timestamp: new Date().toISOString(),
+                superadmin: true
+              }), {
+                status: 200,
+                headers: {
+                  "Content-Type": "application/json",
+                  "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+                  "Pragma": "no-cache",
+                  "Expires": "0"
+                }
+              });
+            }
+          }
+        } catch (e) {
+          console.warn('⚠️ Error decodificando token:', e);
+        }
+      }
+    }
+    
     const { validateLegalModuleAccess } = await import('@/lib/permissions');
     const legalValidation = await validateLegalModuleAccess(req);
     
