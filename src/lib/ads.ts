@@ -23,9 +23,9 @@
  */
 
 export const ADSENSE_CONFIG = {
-  // Tu Publisher ID de Google AdSense (formato: ca-pub-XXXXXXXXXX)
-  // Lo obtienes en AdSense > Configuración > Cuenta
-  publisherId: process.env.NEXT_PUBLIC_ADSENSE_PUBLISHER_ID || '',
+  // Publisher ID de Google AdSense
+  // Obtenido de: https://www.google.com/adsense/
+  publisherId: process.env.NEXT_PUBLIC_ADSENSE_PUBLISHER_ID || 'ca-pub-6039298229774115',
   
   // IDs de unidades de anuncios (los obtienes al crear unidades en AdSense)
   adUnits: {
@@ -39,11 +39,8 @@ export const ADSENSE_CONFIG = {
  * Verifica si AdSense está configurado
  */
 export function isAdSenseConfigured(): boolean {
-  return !!ADSENSE_CONFIG.publisherId && (
-    !!ADSENSE_CONFIG.adUnits.banner ||
-    !!ADSENSE_CONFIG.adUnits.sidebar ||
-    !!ADSENSE_CONFIG.adUnits.footer
-  );
+  // Publisher ID ya está configurado, solo falta crear las unidades de anuncios
+  return !!ADSENSE_CONFIG.publisherId;
 }
 
 /**
