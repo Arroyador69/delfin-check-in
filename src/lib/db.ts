@@ -255,8 +255,23 @@ export async function insertGuestRegistration(data: {
 export async function getGuestRegistrations(limit: number = 200, tenantId?: string | null): Promise<any[]> {
   // Si se proporciona tenantId, filtrar por él
   if (tenantId) {
-    console.log('🔍 Buscando registros con tenantId:', tenantId);
-    console.log('🔍 Tipo de tenantId:', typeof tenantId);
+    console.log('🔍 [getGuestRegistrations] Buscando registros con tenantId:', tenantId);
+    console.log('🔍 [getGuestRegistrations] Tipo de tenantId:', typeof tenantId);
+    
+    // Primero verificar cuántos registros hay en total y cuántos tienen tenant_id NULL
+    try {
+      const statsQuery = await sql`
+        SELECT 
+          COUNT(*) as total,
+          COUNT(*) FILTER (WHERE tenant_id IS NULL) as sin_tenant,
+          COUNT(*) FILTER (WHERE tenant_id::text = ${tenantId}) as con_este_tenant,
+          COUNT(*) FILTER (WHERE tenant_id IS NOT NULL) as con_tenant
+        FROM guest_registrations
+      `;
+      console.log('📊 [getGuestRegistrations] Estadísticas:', statsQuery.rows[0]);
+    } catch (statsError) {
+      console.warn('⚠️ Error obteniendo estadísticas:', statsError);
+    }
     
     // Intentar con UUID primero
     try {
@@ -267,10 +282,17 @@ export async function getGuestRegistrations(limit: number = 200, tenantId?: stri
         ORDER BY created_at DESC
         LIMIT ${limit};
       `;
-      console.log(`✅ Encontrados ${result.rows.length} registros con UUID`);
+      console.log(`✅ [getGuestRegistrations] Encontrados ${result.rows.length} registros con UUID`);
+      if (result.rows.length > 0) {
+        console.log('📋 [getGuestRegistrations] Primer registro:', {
+          id: result.rows[0].id,
+          tenant_id: result.rows[0].tenant_id,
+          reserva_ref: result.rows[0].reserva_ref
+        });
+      }
       return result.rows;
-    } catch (uuidError) {
-      console.log('⚠️ Error con UUID, intentando con string:', uuidError);
+    } catch (uuidError: any) {
+      console.log('⚠️ [getGuestRegistrations] Error con UUID, intentando con string:', uuidError.message);
       // Si falla con UUID, intentar con string
       try {
         const result = await sql`
@@ -280,10 +302,17 @@ export async function getGuestRegistrations(limit: number = 200, tenantId?: stri
           ORDER BY created_at DESC
           LIMIT ${limit};
         `;
-        console.log(`✅ Encontrados ${result.rows.length} registros con string`);
+        console.log(`✅ [getGuestRegistrations] Encontrados ${result.rows.length} registros con string`);
+        if (result.rows.length > 0) {
+          console.log('📋 [getGuestRegistrations] Primer registro:', {
+            id: result.rows[0].id,
+            tenant_id: result.rows[0].tenant_id,
+            reserva_ref: result.rows[0].reserva_ref
+          });
+        }
         return result.rows;
-      } catch (stringError) {
-        console.error('❌ Error con ambos métodos:', stringError);
+      } catch (stringError: any) {
+        console.error('❌ [getGuestRegistrations] Error con ambos métodos:', stringError.message);
         // Como último recurso, devolver todos (pero esto no debería pasar)
         const result = await sql`
           SELECT id, reserva_ref, fecha_entrada, fecha_salida, data, created_at, updated_at, tenant_id
@@ -291,7 +320,7 @@ export async function getGuestRegistrations(limit: number = 200, tenantId?: stri
           ORDER BY created_at DESC
           LIMIT ${limit};
         `;
-        console.warn('⚠️ Devolviendo todos los registros (sin filtro)');
+        console.warn('⚠️ [getGuestRegistrations] Devolviendo todos los registros (sin filtro)');
         return result.rows;
       }
     }

@@ -271,11 +271,15 @@ export async function GET(req: NextRequest) {
     }
     
     console.log('✅ Usando Tenant ID final:', finalTenantId);
+    console.log('🔍 Tipo de tenantId:', typeof finalTenantId);
+    console.log('🔍 Valor de tenantId:', finalTenantId);
     
     // Obtener registros desde la base de datos filtrados por tenant_id
+    console.log('📊 Llamando a getGuestRegistrations con:', { limit, tenantId: finalTenantId });
     const registros = await getGuestRegistrations(limit, finalTenantId);
     
     console.log(`✅ Se encontraron ${registros.length} registros para tenant ${finalTenantId}`);
+    console.log('📋 Primeros registros:', registros.slice(0, 3).map(r => ({ id: r.id, tenant_id: r.tenant_id, reserva_ref: r.reserva_ref })));
     
     // DEBUG: Verificar algunos registros en la BD directamente
     try {
