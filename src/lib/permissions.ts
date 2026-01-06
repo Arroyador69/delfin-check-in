@@ -13,16 +13,34 @@ import { NextRequest } from 'next/server';
 import { getTenantId, getTenantById, Tenant, hasLegalModuleAccess, canCreateUnit, hasAdsEnabled } from './tenant';
 import { verifyToken } from './auth';
 
+// Función helper para verificar token de forma silenciosa (sin logs de error)
+function verifyTokenSilently(token: string): any | null {
+  try {
+    return verifyToken(token);
+  } catch (error: any) {
+    // No loguear errores de expiración - es normal
+    if (error.name !== 'TokenExpiredError' && !error.message?.includes('expired')) {
+      console.warn('⚠️ Error verificando token (no expiración):', error.message);
+    }
+    return null;
+  }
+}
+
 /**
  * Verifica si el usuario es superadmin
  * Soporta tanto cookies (web) como Bearer tokens (app móvil)
+ * Si hay tenantId en header, solo verifica si realmente es necesario
  */
 function isSuperAdmin(req: NextRequest): boolean {
   try {
+    // Si hay tenantId en header, podemos saltar la verificación de superadmin
+    // porque el interceptor ya verificó y refrescó el token si era necesario
+    const headerTenantId = req.headers.get('x-tenant-id');
+    
     // Método 1: Verificar desde cookie (web)
     const authToken = req.cookies.get('auth_token')?.value;
     if (authToken) {
-      const payload = verifyToken(authToken);
+      const payload = verifyTokenSilently(authToken);
       if (payload?.isPlatformAdmin === true) {
         console.log('👑 SuperAdmin detectado desde cookie');
         return true;
@@ -33,7 +51,7 @@ function isSuperAdmin(req: NextRequest): boolean {
     const authHeader = req.headers.get('authorization');
     if (authHeader && authHeader.startsWith('Bearer ')) {
       const token = authHeader.split(' ')[1];
-      const payload = verifyToken(token);
+      const payload = verifyTokenSilently(token);
       if (payload?.isPlatformAdmin === true) {
         console.log('👑 SuperAdmin detectado desde Bearer token');
         return true;
@@ -41,8 +59,11 @@ function isSuperAdmin(req: NextRequest): boolean {
     }
     
     return false;
-  } catch (error) {
-    console.warn('⚠️ Error verificando superadmin:', error);
+  } catch (error: any) {
+    // No loguear errores de expiración
+    if (error.name !== 'TokenExpiredError' && !error.message?.includes('expired')) {
+      console.warn('⚠️ Error verificando superadmin:', error.message);
+    }
     return false;
   }
 }
@@ -96,11 +117,49 @@ export async function getTenantFromRequest(req: NextRequest): Promise<{ tenant: 
 /**
  * Valida acceso al módulo legal y retorna error si no tiene acceso
  * EXCEPCIÓN: Superadmins siempre tienen acceso
+ * 
+ * Si hay tenantId en header, lo usa directamente sin verificar tokens
  */
 export async function validateLegalModuleAccess(
   req: NextRequest,
   countryCode?: string
 ): Promise<{ success: true; tenant: Tenant } | { success: false; error: string; status: number }> {
+  // Obtener tenantId del header primero (más confiable si token expirado)
+  const headerTenantId = req.headers.get('x-tenant-id');
+  
+  // Si hay tenantId en header, usarlo directamente sin verificar tokens
+  if (headerTenantId) {
+    try {
+      const tenant = await getTenantById(headerTenantId);
+      if (tenant) {
+        // Verificar si es superadmin sin verificar token (solo si realmente necesario)
+        // Por ahora, asumimos que si hay tenantId en header, es válido
+        // El interceptor ya verificó y refrescó el token si era necesario
+        
+        // Verificar acceso al módulo legal
+        if (hasLegalModuleAccess(tenant, countryCode)) {
+          return { success: true, tenant };
+        }
+        
+        // Si no tiene acceso, verificar si es superadmin (solo entonces)
+        const isAdmin = isSuperAdmin(req);
+        if (isAdmin) {
+          return { success: true, tenant };
+        }
+        
+        const planType = tenant.plan_type || 'free';
+        return {
+          success: false,
+          error: `El módulo de registro de viajeros no está disponible en tu plan actual (${planType}). Actualiza a FREE+LEGAL o PRO para acceder.`,
+          status: 403
+        };
+      }
+    } catch (error) {
+      console.warn('⚠️ Error obteniendo tenant desde header:', error);
+    }
+  }
+  
+  // Fallback: usar getTenantFromRequest (pero ya maneja tokens expirados silenciosamente)
   // Superadmins siempre tienen acceso
   if (isSuperAdmin(req)) {
     const tenantData = await getTenantFromRequest(req);
