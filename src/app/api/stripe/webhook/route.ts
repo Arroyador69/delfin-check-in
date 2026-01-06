@@ -417,19 +417,48 @@ export async function POST(req: NextRequest) {
         break
 
       case 'customer.subscription.created':
-        const subscription = event.data.object as Stripe.Subscription
-        console.log('🔄 Suscripción creada:', subscription.id)
-        // Actualizar tenant con subscription_id si es necesario
-        if (subscription.customer) {
-          const tenant = await findTenantByStripeCustomerId(String(subscription.customer))
-          if (tenant && !tenant.stripe_subscription_id) {
+        try {
+          const subscription = event.data.object as Stripe.Subscription
+          console.log('🔄 [WEBHOOK] Suscripción creada:', subscription.id)
+          
+          const tenantId = subscription.metadata?.tenant_id;
+          if (tenantId) {
+            // Actualizar suscripción en BD si existe
             await sql`
-              UPDATE tenants 
-              SET stripe_subscription_id = ${subscription.id},
-                  subscription_status = ${subscription.status}
-              WHERE id = ${tenant.id}
-            `
+              UPDATE subscriptions
+              SET 
+                status = ${subscription.status},
+                current_period_start = ${new Date(subscription.current_period_start * 1000)},
+                current_period_end = ${new Date(subscription.current_period_end * 1000)},
+                updated_at = NOW()
+              WHERE stripe_subscription_id = ${subscription.id}
+            `;
+            
+            // Actualizar tenant
+            await sql`
+              UPDATE tenants
+              SET 
+                subscription_status = ${subscription.status},
+                subscription_current_period_end = ${new Date(subscription.current_period_end * 1000)},
+                updated_at = NOW()
+              WHERE id = ${tenantId}::uuid
+            `;
+            
+            console.log(`✅ [WEBHOOK] Suscripción ${subscription.id} sincronizada para tenant ${tenantId}`);
+          } else if (subscription.customer) {
+            // Fallback al método antiguo si no hay metadata
+            const tenant = await findTenantByStripeCustomerId(String(subscription.customer))
+            if (tenant && !tenant.stripe_subscription_id) {
+              await sql`
+                UPDATE tenants 
+                SET stripe_subscription_id = ${subscription.id},
+                    subscription_status = ${subscription.status}
+                WHERE id = ${tenant.id}
+              `
+            }
           }
+        } catch (e) {
+          console.error('❌ Error procesando customer.subscription.created:', e)
         }
         break
 
@@ -469,19 +498,55 @@ export async function POST(req: NextRequest) {
         break
 
       case 'customer.subscription.deleted':
-        const deletedSub = event.data.object as Stripe.Subscription
-        console.log('❌ Suscripción cancelada:', deletedSub.id)
-        // Actualizar tenant
-        if (deletedSub.customer) {
-          const tenant = await findTenantByStripeCustomerId(String(deletedSub.customer))
-          if (tenant) {
+        try {
+          const deletedSub = event.data.object as Stripe.Subscription
+          console.log('❌ [WEBHOOK] Suscripción cancelada:', deletedSub.id)
+          
+          const tenantId = deletedSub.metadata?.tenant_id;
+          if (tenantId) {
+            // Actualizar suscripción en BD
             await sql`
-              UPDATE tenants 
-              SET subscription_status = 'canceled',
-                  status = 'cancelled'
-              WHERE id = ${tenant.id}
-            `
+              UPDATE subscriptions
+              SET 
+                status = 'canceled',
+                canceled_at = NOW(),
+                updated_at = NOW()
+              WHERE stripe_subscription_id = ${deletedSub.id}
+            `;
+            
+            // Downgrade tenant a plan gratis
+            await sql`
+              UPDATE tenants
+              SET 
+                plan_type = 'free',
+                plan_id = 'free',
+                subscription_status = 'canceled',
+                subscription_price = NULL,
+                base_plan_price = 0.00,
+                extra_room_price = NULL,
+                max_rooms_included = 2,
+                ads_enabled = true,
+                legal_module = false,
+                max_rooms = 2,
+                updated_at = NOW()
+              WHERE id = ${tenantId}::uuid
+            `;
+            
+            console.log(`✅ [WEBHOOK] Tenant ${tenantId} downgradeado a plan gratis`);
+          } else if (deletedSub.customer) {
+            // Fallback al método antiguo
+            const tenant = await findTenantByStripeCustomerId(String(deletedSub.customer))
+            if (tenant) {
+              await sql`
+                UPDATE tenants 
+                SET subscription_status = 'canceled',
+                    status = 'cancelled'
+                WHERE id = ${tenant.id}
+              `
+            }
           }
+        } catch (e) {
+          console.error('❌ Error procesando customer.subscription.deleted:', e)
         }
         break
 
