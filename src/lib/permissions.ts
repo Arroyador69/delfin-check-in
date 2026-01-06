@@ -70,7 +70,13 @@ export async function getTenantFromRequest(req: NextRequest): Promise<{ tenant: 
         const token = authHeader.split(' ')[1];
         const payload = verifyToken(token);
         tenantId = payload?.tenantId || null;
-      } catch {}
+      } catch (error: any) {
+        // Si el token está expirado, no hacer nada - el interceptor lo refrescará
+        // No loguear errores de expiración aquí
+        if (error.name !== 'TokenExpiredError' && !error.message?.includes('expired')) {
+          console.warn('⚠️ Error verificando token en getTenantFromRequest:', error.message);
+        }
+      }
     }
   }
   
