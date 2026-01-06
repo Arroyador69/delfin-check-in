@@ -6,8 +6,8 @@ export interface Tenant {
   id: string;
   name: string;
   email: string;
-  plan_id: 'basic' | 'standard' | 'premium' | 'enterprise' | 'free' | 'free_legal' | 'pro';
-  plan_type?: 'free' | 'free_legal' | 'pro';
+  plan_id: 'basic' | 'standard' | 'premium' | 'enterprise' | 'free' | 'checkin' | 'pro';
+  plan_type?: 'free' | 'checkin' | 'pro';
   max_rooms: number; // También usado como max_units_allowed
   current_rooms: number; // También usado como current_units_count
   ads_enabled?: boolean;
@@ -18,6 +18,15 @@ export interface Tenant {
   stripe_subscription_id?: string;
   status: 'active' | 'trial' | 'suspended' | 'cancelled';
   trial_ends_at?: Date;
+  // Nuevos campos para sistema de planes MVP
+  subscription_price?: number; // Precio base de suscripción
+  subscription_currency?: string;
+  vat_rate?: number; // IVA según país
+  base_plan_price?: number; // Precio base del plan (sin IVA)
+  extra_room_price?: number; // Precio por habitación extra (solo checkin)
+  max_rooms_included?: number; // Habitaciones incluidas en precio base
+  subscription_status?: 'active' | 'trialing' | 'past_due' | 'canceled' | 'unpaid';
+  subscription_current_period_end?: Date;
   config: {
     propertyName?: string;
     timezone?: string;
@@ -343,22 +352,61 @@ export function hasLegalModuleAccess(tenant: Tenant, countryCode?: string): bool
  * Valida si el tenant puede crear más unidades (habitaciones/apartamentos)
  * @param tenant - El tenant a validar
  * @param currentCount - Número actual de unidades (opcional, si no se usa current_rooms)
- * @returns { canCreate: boolean, reason?: string }
+ * @returns { canCreate: boolean, reason?: string, needsUpgrade?: boolean }
  */
-export function canCreateUnit(tenant: Tenant, currentCount?: number): { canCreate: boolean; reason?: string } {
-  const maxUnits = tenant.max_rooms; // max_rooms = max_units_allowed
-  const currentUnits = currentCount ?? tenant.current_rooms; // current_rooms = current_units_count
+export function canCreateUnit(tenant: Tenant, currentCount?: number): { 
+  canCreate: boolean; 
+  reason?: string;
+  needsUpgrade?: boolean;
+  upgradePlan?: 'checkin' | 'pro';
+} {
+  const planType = tenant.plan_type || 'free';
+  const currentUnits = currentCount ?? tenant.current_rooms;
   
-  // Si max_rooms es -1, es ilimitado (plan PRO)
+  // Plan FREE: máximo 2 habitaciones
+  if (planType === 'free') {
+    if (currentUnits >= 2) {
+      return {
+        canCreate: false,
+        reason: 'Has alcanzado el límite de 2 habitaciones del Plan Gratis. Actualiza a Plan Check-in o Plan Pro para añadir más habitaciones.',
+        needsUpgrade: true,
+        upgradePlan: 'checkin'
+      };
+    }
+    return { canCreate: true };
+  }
+  
+  // Plan CHECKIN: ilimitado (pero con precio por habitación adicional)
+  if (planType === 'checkin') {
+    // Puede crear ilimitadas, pero se cobrará 4€/mes por cada una adicional
+    return { canCreate: true };
+  }
+  
+  // Plan PRO: hasta 6 habitaciones incluidas, luego precio adicional
+  if (planType === 'pro') {
+    const maxIncluded = tenant.max_rooms_included || 6;
+    if (currentUnits >= maxIncluded) {
+      // Puede crear más, pero se cobrará precio adicional
+      return { 
+        canCreate: true,
+        reason: `Has alcanzado las ${maxIncluded} habitaciones incluidas. Las habitaciones adicionales tendrán un coste extra.`
+      };
+    }
+    return { canCreate: true };
+  }
+  
+  // Fallback: usar max_rooms si existe
+  const maxUnits = tenant.max_rooms;
   if (maxUnits === -1) {
     return { canCreate: true };
   }
   
-  // Si ya alcanzó el límite
   if (currentUnits >= maxUnits) {
     return {
       canCreate: false,
-      reason: `Has alcanzado el límite de ${maxUnits} unidades de tu plan. Para crear más, actualiza a PRO o crea otra cuenta.`
+      reason: `Has alcanzado el límite de ${maxUnits} unidades de tu plan. Para crear más, actualiza a Plan Pro.`,
+      needsUpgrade: true,
+      upgradePlan: 'pro'
     };
   }
   
