@@ -6,43 +6,58 @@ import { sql } from '@/lib/db';
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+// Función helper para verificar token de forma silenciosa (sin logs de error)
+function verifyTokenSilently(token: string): any | null {
+  try {
+    const { verifyToken } = require('@/lib/auth');
+    return verifyToken(token);
+  } catch (error: any) {
+    // No loguear errores de expiración - es normal
+    if (error.name !== 'TokenExpiredError' && !error.message?.includes('expired')) {
+      // Solo loguear errores que no sean de expiración
+      console.warn('⚠️ Error verificando token (no expiración):', error.message);
+    }
+    return null;
+  }
+}
+
 export async function GET(req: NextRequest) {
   try {
-    // Verificar si es superadmin PRIMERO (antes de cualquier validación)
+    // ESTRATEGIA ROBUSTA: Si hay tenantId en header, usarlo directamente sin verificar token
+    // Esto permite que funcione incluso con tokens expirados (el interceptor refrescará)
+    const headerTenantId = req.headers.get('x-tenant-id');
+    
+    // Verificar si es superadmin SOLO si no hay tenantId en header o si necesitamos verificar permisos
     const { verifyToken } = await import('@/lib/auth');
     let isSuperAdmin = false;
     
-    // Verificar desde cookie (web)
-    const authToken = req.cookies.get('auth_token')?.value;
-    if (authToken) {
-      try {
-        const payload = verifyToken(authToken);
-        isSuperAdmin = payload?.isPlatformAdmin === true;
-      } catch {}
-    }
-    
-    // Verificar desde Bearer token (app móvil)
-    if (!isSuperAdmin) {
-      const authHeader = req.headers.get('authorization');
-      if (authHeader && authHeader.startsWith('Bearer ')) {
-        try {
-          const token = authHeader.split(' ')[1];
-          const payload = verifyToken(token);
+    // Solo verificar superadmin si realmente necesitamos saberlo
+    // Si hay tenantId en header, podemos saltar esta verificación
+    if (!headerTenantId) {
+      // Verificar desde cookie (web)
+      const authToken = req.cookies.get('auth_token')?.value;
+      if (authToken) {
+        const payload = verifyTokenSilently(authToken);
+        if (payload) {
           isSuperAdmin = payload?.isPlatformAdmin === true;
-        } catch (tokenError: any) {
-          // Si el token expiró, no hacer nada - simplemente continuar
-          // El interceptor de la app móvil debería refrescar el token automáticamente
-          // Si hay tenantId en header, podemos continuar sin problemas
-          if (tokenError.name === 'TokenExpiredError' || tokenError.message?.includes('expired')) {
-            // No loguear como error, solo continuar
-            // El tenantId del header se usará más adelante
-          } else {
-            // Solo loguear errores que no sean de expiración
-            console.warn('⚠️ Error verificando token:', tokenError.message);
-          }
-          // Continuar con el flujo normal - no bloquear
         }
       }
+      
+      // Verificar desde Bearer token (app móvil)
+      if (!isSuperAdmin) {
+        const authHeader = req.headers.get('authorization');
+        if (authHeader && authHeader.startsWith('Bearer ')) {
+          const token = authHeader.split(' ')[1];
+          const payload = verifyTokenSilently(token);
+          if (payload) {
+            isSuperAdmin = payload?.isPlatformAdmin === true;
+          }
+        }
+      }
+    } else {
+      // Si hay tenantId en header, asumir que es válido y continuar
+      // El interceptor de la app móvil ya verificó y refrescó el token si era necesario
+      console.log('✅ Usando tenantId del header (skip token verification):', headerTenantId);
     }
     
     // Si es superadmin, saltar todas las validaciones y obtener datos directamente
@@ -205,82 +220,44 @@ export async function GET(req: NextRequest) {
       console.log('✅ Tabla guest_registrations creada correctamente');
     }
     
-    // Obtener tenant_id del request - MÚLTIPLES MÉTODOS para asegurar compatibilidad
-    let finalTenantId: string | null = null;
+    // Obtener tenant_id del request - PRIORIDAD: Header primero (más confiable)
+    let finalTenantId: string | null = headerTenantId || null;
     
-    // Método 1: Desde header (ya inyectado por middleware)
-    const headerTenantId = req.headers.get('x-tenant-id');
-    if (headerTenantId) {
-      finalTenantId = headerTenantId;
-      console.log('📋 Tenant ID obtenido del header (middleware):', finalTenantId);
-    }
-    
-    // Método 2: Desde JWT Bearer token (app móvil)
-    if (!finalTenantId) {
+    if (finalTenantId) {
+      console.log('✅ Tenant ID obtenido del header (prioridad):', finalTenantId);
+    } else {
+      // Solo intentar otros métodos si NO hay tenantId en header
+      // Método 2: Desde JWT Bearer token (app móvil)
       const authHeader = req.headers.get('authorization');
       if (authHeader && authHeader.startsWith('Bearer ')) {
-        try {
-          const token = authHeader.split(' ')[1];
-          const { verifyToken } = await import('@/lib/auth');
-          const payload = verifyToken(token);
-          if (payload?.tenantId) {
-            finalTenantId = payload.tenantId;
-            console.log('🔑 Tenant ID obtenido del JWT Bearer token:', finalTenantId);
-          }
-        } catch (jwtError: any) {
-          // Si el token está expirado, usar tenantId del header si está disponible
-          // No devolver error - simplemente usar el header y continuar
-          if (jwtError.name === 'TokenExpiredError' || jwtError.message?.includes('expired')) {
-            // No loguear como error - es normal que los tokens expiren
-            const headerTenantId = req.headers.get('x-tenant-id');
-            if (headerTenantId) {
-              finalTenantId = headerTenantId;
-              console.log('🔑 Token expirado, usando tenantId del header:', finalTenantId);
-            } else {
-              // Solo devolver 401 si NO hay tenantId en header
-              console.warn('⚠️ Token expirado y no hay tenantId en header');
-              return NextResponse.json(
-                { 
-                  ok: false, 
-                  error: 'Token expirado',
-                  code: 'TOKEN_EXPIRED',
-                  message: 'Por favor, refresca tu sesión'
-                },
-                { status: 401 }
-              );
-            }
-          } else {
-            // Solo loguear errores que no sean de expiración
-            console.warn('⚠️ Error verificando JWT Bearer token:', jwtError.message);
-          }
+        const token = authHeader.split(' ')[1];
+        const payload = verifyTokenSilently(token);
+        if (payload?.tenantId) {
+          finalTenantId = payload.tenantId;
+          console.log('🔑 Tenant ID obtenido del JWT Bearer token:', finalTenantId);
         }
       }
-    }
-    
-    // Método 3: Desde cookie (web)
-    if (!finalTenantId) {
-      const authToken = req.cookies.get('auth_token')?.value;
-      if (authToken) {
-        try {
-          const { verifyToken } = await import('@/lib/auth');
-          const payload = verifyToken(authToken);
+      
+      // Método 3: Desde cookie (web)
+      if (!finalTenantId) {
+        const authToken = req.cookies.get('auth_token')?.value;
+        if (authToken) {
+          const payload = verifyTokenSilently(authToken);
           if (payload?.tenantId) {
             finalTenantId = payload.tenantId;
             console.log('🍪 Tenant ID obtenido del JWT cookie:', finalTenantId);
           }
-        } catch (cookieError) {
-          console.warn('⚠️ Error verificando JWT cookie:', cookieError);
         }
       }
-    }
-    
-    // Método 4: Usar getTenantFromRequest como fallback
-    if (!finalTenantId) {
-      const { getTenantFromRequest } = await import('@/lib/permissions');
-      const tenantData = await getTenantFromRequest(req);
-      if (tenantData?.tenantId) {
-        finalTenantId = tenantData.tenantId;
-        console.log('🔄 Tenant ID obtenido de getTenantFromRequest:', finalTenantId);
+      
+      // Método 4: Usar getTenantFromRequest como fallback
+      if (!finalTenantId) {
+        const { getTenantFromRequest } = await import('@/lib/permissions');
+        const tenantData = await getTenantFromRequest(req);
+        if (tenantData?.tenantId) {
+          finalTenantId = tenantData.tenantId;
+          console.log('🔄 Tenant ID obtenido de getTenantFromRequest:', finalTenantId);
+        }
       }
     }
     
