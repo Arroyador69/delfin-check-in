@@ -208,9 +208,15 @@ export async function POST(req: NextRequest) {
 
     // Crear Payment Intent en Stripe (modo test)
     // IMPORTANTE: Guardamos toda la info en metadata para crear la reserva después del pago
+    // Calcular días hasta check-in para determinar si retener el pago
+    const daysUntilCheckIn = Math.ceil((checkInDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+    const shouldHoldPayment = daysUntilCheckIn > 0; // Retener si el check-in es en el futuro
+
     const paymentIntent = await stripe.paymentIntents.create({
       amount: paymentAmount,
       currency: 'eur',
+      // Retener pago hasta check-in si es en el futuro
+      capture_method: shouldHoldPayment ? 'manual' : 'automatic',
       metadata: {
         // Guardar todos los datos necesarios en metadata para crear reserva después
         tenant_id: tenantId,
@@ -236,7 +242,8 @@ export async function POST(req: NextRequest) {
         total_amount: commission.total_amount.toString(),
         reservation_code: reservationCode,
         special_requests: special_requests || '',
-        source: 'direct_reservation'
+        source: 'direct_reservation',
+        payment_hold: shouldHoldPayment ? 'true' : 'false'
       },
       description: `Reserva ${reservationCode} - ${property.property_name}`,
       receipt_email: guest_email,
