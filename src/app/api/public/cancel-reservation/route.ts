@@ -120,10 +120,10 @@ export async function POST(req: NextRequest) {
       return response;
     }
 
-    // Verificar que el pago fue exitoso
-    if (reservation.payment_status !== 'paid' || !reservation.stripe_payment_intent_id) {
+    // Verificar que existe Payment Intent
+    if (!reservation.stripe_payment_intent_id) {
       const response = NextResponse.json(
-        { success: false, error: 'No se puede procesar el reembolso: pago no encontrado' },
+        { success: false, error: 'No se puede procesar la cancelación: pago no encontrado' },
         { status: 400 }
       );
       Object.entries(corsHeaders(origin)).forEach(([key, value]) => {
@@ -132,13 +132,13 @@ export async function POST(req: NextRequest) {
       return response;
     }
 
-    console.log('✅ Datos validados correctamente. Procesando cancelación y reembolso...', {
+    console.log('✅ Datos validados correctamente. Procesando cancelación...', {
       reservation_id: reservation.id,
       payment_intent_id: reservation.stripe_payment_intent_id,
-      amount_to_refund: reservation.total_amount
+      payment_status: reservation.payment_status
     });
 
-    // Obtener el Payment Intent de Stripe para confirmar detalles
+    // Obtener el Payment Intent de Stripe para verificar estado
     let paymentIntent;
     try {
       paymentIntent = await stripe.paymentIntents.retrieve(reservation.stripe_payment_intent_id);
@@ -154,46 +154,90 @@ export async function POST(req: NextRequest) {
       return response;
     }
 
-    // Crear el reembolso
-    let refund;
+    // Determinar si el pago está retenido (no capturado) o ya fue capturado
+    const isPaymentHeld = paymentIntent.status === 'requires_capture';
+    let refund = null;
+    let paymentAction = '';
+
     try {
-      // Si hay una charge_id, usarla. Si no, usar el payment_intent
-      const chargeId = reservation.stripe_charge_id || paymentIntent.latest_charge;
-
-      if (chargeId && typeof chargeId === 'string') {
-        refund = await stripe.refunds.create({
-          charge: chargeId,
-          reason: 'requested_by_customer',
-          metadata: {
-            reservation_code: reservation.reservation_code,
-            reservation_id: reservation.id.toString(),
-            cancelled_by: 'customer',
-            cancelled_at: new Date().toISOString()
-          }
+      if (isPaymentHeld) {
+        // Pago retenido: simplemente cancelarlo (no se cobró nada)
+        await stripe.paymentIntents.cancel(reservation.stripe_payment_intent_id, {
+          cancellation_reason: 'requested_by_customer',
         });
+        paymentAction = 'cancelled';
+        console.log('✅ Payment Intent cancelado (pago no capturado):', reservation.stripe_payment_intent_id);
+      } else if (paymentIntent.status === 'succeeded') {
+        // Pago ya capturado: hacer reembolso según política
+        const chargeId = reservation.stripe_charge_id || paymentIntent.latest_charge;
+        
+        // Calcular monto de reembolso según política
+        // Política: 50% retenido si cancela menos de 7 días antes
+        let refundAmount = reservation.total_amount * 100; // En centavos
+        if (daysUntilCheckIn < 7) {
+          refundAmount = Math.round(refundAmount * 0.5); // 50% retenido
+        }
+
+        if (chargeId && typeof chargeId === 'string') {
+          refund = await stripe.refunds.create({
+            charge: chargeId,
+            amount: refundAmount,
+            reason: 'requested_by_customer',
+            metadata: {
+              reservation_code: reservation.reservation_code,
+              reservation_id: reservation.id.toString(),
+              cancelled_by: 'customer',
+              cancelled_at: new Date().toISOString(),
+              refund_policy: daysUntilCheckIn < 7 ? '50_percent_retained' : 'full_refund'
+            }
+          });
+        } else {
+          // Fallback: crear refund usando el payment intent
+          refund = await stripe.refunds.create({
+            payment_intent: reservation.stripe_payment_intent_id,
+            amount: refundAmount,
+            reason: 'requested_by_customer',
+            metadata: {
+              reservation_code: reservation.reservation_code,
+              reservation_id: reservation.id.toString(),
+              cancelled_by: 'customer',
+              cancelled_at: new Date().toISOString(),
+              refund_policy: daysUntilCheckIn < 7 ? '50_percent_retained' : 'full_refund'
+            }
+          });
+        }
+
+        paymentAction = 'refunded';
+        console.log('✅ Reembolso creado:', {
+          refund_id: refund.id,
+          amount: refund.amount / 100,
+          status: refund.status,
+          policy: daysUntilCheckIn < 7 ? '50% retenido' : '100% reembolsado'
+        });
+
+        // Registrar gasto en tenant_costs
+        await sql`
+          INSERT INTO tenant_costs (
+            tenant_id, cost_type, amount, currency, description,
+            stripe_transaction_id, reservation_id
+          ) VALUES (
+            ${reservation.tenant_id}::uuid,
+            'refund',
+            ${refund.amount / 100},
+            'EUR',
+            ${`Reembolso por cancelación - Reserva ${reservation.reservation_code} - ${daysUntilCheckIn < 7 ? '50% retenido' : '100% reembolsado'}`},
+            ${refund.id},
+            ${reservation.id}::uuid
+          )
+        `;
       } else {
-        // Fallback: crear refund usando el payment intent
-        refund = await stripe.refunds.create({
-          payment_intent: reservation.stripe_payment_intent_id,
-          reason: 'requested_by_customer',
-          metadata: {
-            reservation_code: reservation.reservation_code,
-            reservation_id: reservation.id.toString(),
-            cancelled_by: 'customer',
-            cancelled_at: new Date().toISOString()
-          }
-        });
+        // Estado inesperado
+        throw new Error(`Estado de pago no manejado: ${paymentIntent.status}`);
       }
-
-      console.log('✅ Reembolso creado:', {
-        refund_id: refund.id,
-        amount: refund.amount / 100,
-        status: refund.status
-      });
     } catch (error: any) {
-      console.error('❌ Error creando reembolso:', error);
+      console.error('❌ Error procesando cancelación/reembolso:', error);
       const response = NextResponse.json(
-        { success: false, error: `Error procesando el reembolso: ${error.message}` },
+        { success: false, error: `Error procesando la cancelación: ${error.message}` },
         { status: 500 }
       );
       Object.entries(corsHeaders(origin)).forEach(([key, value]) => {
@@ -208,7 +252,7 @@ export async function POST(req: NextRequest) {
         UPDATE direct_reservations 
         SET 
           reservation_status = 'cancelled',
-          payment_status = 'refunded',
+          payment_status = ${isPaymentHeld ? 'cancelled' : 'refunded'},
           cancelled_at = NOW(),
           updated_at = NOW()
         WHERE id = ${reservation.id}
@@ -251,13 +295,16 @@ export async function POST(req: NextRequest) {
 
     const response = NextResponse.json({
       success: true,
-      message: 'Reserva cancelada y reembolso procesado exitosamente',
-      refund: {
+      message: isPaymentHeld 
+        ? 'Reserva cancelada. El pago no fue capturado.'
+        : 'Reserva cancelada y reembolso procesado exitosamente',
+      payment_action: paymentAction,
+      refund: refund ? {
         id: refund.id,
         amount: refund.amount / 100,
         status: refund.status,
         currency: refund.currency
-      },
+      } : null,
       reservation: {
         code: reservation.reservation_code,
         property_name: reservation.property_name,
