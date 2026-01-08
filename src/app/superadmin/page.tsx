@@ -189,6 +189,17 @@ export default function SuperAdminDashboard() {
               </a>
 
               <a 
+                href="/superadmin/landing-analytics"
+                className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition"
+              >
+                <span className="text-2xl mr-3">📊</span>
+                <div>
+                  <p className="font-semibold text-gray-900">Monitoreo Landing</p>
+                  <p className="text-sm text-gray-700">Analytics de la landing page</p>
+                </div>
+              </a>
+
+              <a 
                 href="/superadmin/investor-mode"
                 className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition"
               >
