@@ -101,7 +101,6 @@ export async function middleware(req: NextRequest) {
     url.pathname.startsWith('/api/auth/refresh') ||
     url.pathname.startsWith('/api/create-payment-intent') ||
     url.pathname.startsWith('/api/landing/') ||
-    url.pathname.startsWith('/api/waitlist') ||
     url.pathname.startsWith('/api/stripe/webhook') ||
     url.pathname.startsWith('/api/telegram/webhook') // Webhook de Telegram debe ser público
   );
