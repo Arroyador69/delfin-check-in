@@ -121,7 +121,11 @@ export async function POST(req: NextRequest) {
               
               <p>Gracias por registrarte en Delfín Check-in. Estamos muy contentos de tenerte con nosotros.</p>
               
-              <p><strong>En los próximos días, cuando todo esté listo, te daremos acceso al PMS de manera completamente gratuita.</strong></p>
+              <p style="background: #fef3c7; padding: 16px; border-radius: 8px; border-left: 4px solid #f59e0b; margin: 20px 0;">
+                <strong>🎉 Early Adopter:</strong> Como uno de los primeros en registrarte, tendrás acceso prioritario al PMS de manera completamente gratuita cuando lo lancemos. Serás uno de nuestros early adopters y podrás ayudarnos a mejorar el producto con tus comentarios.
+              </p>
+              
+              <p><strong>En los próximos días, cuando todo esté listo, te enviaremos un email con las instrucciones para acceder al PMS.</strong></p>
               
               <p>Mientras tanto, esto es lo que puedes esperar:</p>
               
@@ -132,11 +136,11 @@ export async function POST(req: NextRequest) {
                 <li>✅ <strong>App móvil</strong> - Próximamente disponible para iOS y Android</li>
               </ul>
               
-              <p style="background: #f0f9ff; padding: 16px; border-radius: 8px; border-left: 4px solid #2563eb;">
+              <p style="background: #f0f9ff; padding: 16px; border-radius: 8px; border-left: 4px solid #2563eb; margin: 20px 0;">
                 <strong>💡 Nota importante:</strong> El módulo de check-in digital (envío al Ministerio del Interior) tendrá un coste de 8€/mes, pero el PMS completo será gratis para siempre.
               </p>
               
-              <p>Te notificaremos por email en cuanto el PMS esté listo para que puedas empezar a usarlo.</p>
+              <p>Te notificaremos por email en cuanto el PMS esté listo para que puedas empezar a usarlo como early adopter.</p>
               
               <p>Si tienes alguna pregunta, no dudes en contactarnos en <a href="mailto:contacto@delfincheckin.com" style="color: #2563eb;">contacto@delfincheckin.com</a></p>
               
@@ -158,7 +162,9 @@ export async function POST(req: NextRequest) {
 
 Gracias por registrarte en Delfín Check-in. Estamos muy contentos de tenerte con nosotros.
 
-En los próximos días, cuando todo esté listo, te daremos acceso al PMS de manera completamente gratuita.
+🎉 Early Adopter: Como uno de los primeros en registrarte, tendrás acceso prioritario al PMS de manera completamente gratuita cuando lo lancemos. Serás uno de nuestros early adopters y podrás ayudarnos a mejorar el producto con tus comentarios.
+
+En los próximos días, cuando todo esté listo, te enviaremos un email con las instrucciones para acceder al PMS.
 
 Mientras tanto, esto es lo que puedes esperar:
 
@@ -169,7 +175,7 @@ Mientras tanto, esto es lo que puedes esperar:
 
 Nota importante: El módulo de check-in digital (envío al Ministerio del Interior) tendrá un coste de 8€/mes, pero el PMS completo será gratis para siempre.
 
-Te notificaremos por email en cuanto el PMS esté listo para que puedas empezar a usarlo.
+Te notificaremos por email en cuanto el PMS esté listo para que puedas empezar a usarlo como early adopter.
 
 Si tienes alguna pregunta, no dudes en contactarnos en contacto@delfincheckin.com
 
@@ -182,7 +188,7 @@ El equipo de Delfín Check-in
       
       await sendEmail({
         to: email,
-        subject: '🎉 ¡Bienvenido a Delfín Check-in! - Acceso gratuito próximamente',
+        subject: '🎉 ¡Bienvenido a Delfín Check-in! - Early Adopter - Acceso gratuito próximamente',
         html: emailHtml,
         text: emailText
       });

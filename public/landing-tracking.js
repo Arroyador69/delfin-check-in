@@ -249,7 +249,7 @@
           transition: all 0.2s;
           display: inline-block;
           box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
-        ">🚀 Quiero ser de los primeros</a>
+        ">🎁 Quiero gratis para siempre</a>
         <button id="pms-popup-close-btn" style="
           background: #f1f5f9;
           color: #64748b;
