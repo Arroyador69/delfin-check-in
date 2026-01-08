@@ -83,18 +83,84 @@ async function getZohoAccessToken(): Promise<string | null> {
  */
 export async function sendEmail(config: EmailConfig): Promise<{ success: boolean; messageId?: string; error?: string }> {
   try {
+    // Usar 'from' del config si viene, si no usar la configuración SMTP/Zoho
+    const fromEmail = config.from || SMTP_CONFIG.from || ZOHO_CONFIG.fromEmail;
+    
     console.log('📧 Configurando envío de email...', {
       to: config.to,
+      from: fromEmail,
       subject: config.subject,
       hasZohoRefreshToken: !!ZOHO_CONFIG.refreshToken,
       hasResendKey: !!process.env.RESEND_API_KEY,
       hasSmtpConfig: !!(SMTP_CONFIG.host && SMTP_CONFIG.user && SMTP_CONFIG.password),
+      smtpHost: SMTP_CONFIG.host,
+      smtpUser: SMTP_CONFIG.user,
       availableEnvVars: Object.keys(process.env).filter(key => 
         key.includes('SMTP') || key.includes('ZOHO') || key.includes('RESEND') || key.includes('MAIL')
       )
     });
 
-    // Método 1: Intentar con Zoho Mail si está configurado
+    // MÉTODO 1: Intentar con SMTP directo PRIMERO (más confiable para Zoho)
+    if (SMTP_CONFIG.host && SMTP_CONFIG.user && SMTP_CONFIG.password) {
+      try {
+        console.log('🔵 Intentando envío con SMTP directo (Zoho)...');
+        
+        const nodemailer = await import('nodemailer');
+        const transporter = nodemailer.createTransport({
+          host: SMTP_CONFIG.host,
+          port: parseInt(SMTP_CONFIG.port),
+          secure: SMTP_CONFIG.port === '465', // true para 465, false para otros puertos
+          auth: {
+            user: SMTP_CONFIG.user,
+            pass: SMTP_CONFIG.password
+          },
+          tls: {
+            // No fallar en certificados inválidos
+            rejectUnauthorized: false
+          }
+        });
+
+        // Verificar conexión SMTP
+        await transporter.verify();
+        console.log('✅ Conexión SMTP verificada correctamente');
+
+        const info = await transporter.sendMail({
+          from: fromEmail,
+          to: config.to,
+          subject: config.subject,
+          html: config.html,
+          text: config.text
+        });
+
+        console.log(`✅ Email enviado exitosamente con SMTP a ${config.to}:`, info.messageId);
+        
+        // Registrar en tracking
+        try {
+          const { trackEmail } = await import('@/lib/tracking');
+          await trackEmail({
+            tenantId: (config as any).tenantId,
+            emailType: (config as any).emailType || 'custom',
+            recipientEmail: config.to,
+            subject: config.subject,
+            messageId: info.messageId,
+            status: 'sent',
+            metadata: { provider: 'smtp' }
+          });
+        } catch (trackError) {
+          console.error('⚠️ Error tracking email:', trackError);
+        }
+        
+        return {
+          success: true,
+          messageId: info.messageId
+        };
+      } catch (smtpError: any) {
+        console.log('⚠️ Error con SMTP:', smtpError.message || smtpError);
+        // Continuar con otros métodos si SMTP falla
+      }
+    }
+
+    // Método 2: Intentar con Zoho Mail API si está configurado
     console.log('🔍 Verificando Zoho Mail:', {
       hasRefreshToken: !!ZOHO_CONFIG.refreshToken,
       refreshTokenLength: ZOHO_CONFIG.refreshToken?.length || 0,
@@ -218,72 +284,7 @@ export async function sendEmail(config: EmailConfig): Promise<{ success: boolean
       }
     }
 
-    // Método 3: Intentar con SMTP directo (Zoho SMTP)
-    console.log('🔍 Verificando SMTP:', {
-      hasHost: !!SMTP_CONFIG.host,
-      hasUser: !!SMTP_CONFIG.user,
-      hasPassword: !!SMTP_CONFIG.password,
-      host: SMTP_CONFIG.host,
-      user: SMTP_CONFIG.user,
-      condition: SMTP_CONFIG.host && SMTP_CONFIG.user && SMTP_CONFIG.password
-    });
-    
-    if (SMTP_CONFIG.host && SMTP_CONFIG.user && SMTP_CONFIG.password) {
-      try {
-        console.log('🔵 Intentando envío con SMTP directo (Zoho)...');
-        
-        const nodemailer = await import('nodemailer');
-        const transporter = nodemailer.createTransport({
-          host: SMTP_CONFIG.host,
-          port: parseInt(SMTP_CONFIG.port),
-          secure: SMTP_CONFIG.port === '465', // true para 465, false para otros puertos
-          auth: {
-            user: SMTP_CONFIG.user,
-            pass: SMTP_CONFIG.password
-          },
-          tls: {
-            // No fallar en certificados inválidos
-            rejectUnauthorized: false
-          }
-        });
-
-        // Verificar conexión SMTP
-        await transporter.verify();
-
-        const info = await transporter.sendMail({
-          from: SMTP_CONFIG.from,
-          to: config.to,
-          subject: config.subject,
-          html: config.html,
-          text: config.text
-        });
-
-        console.log(`✅ Email enviado exitosamente con SMTP a ${config.to}:`, info.messageId);
-        
-        // Registrar en tracking
-        try {
-          const { trackEmail } = await import('@/lib/tracking');
-          await trackEmail({
-            tenantId: (config as any).tenantId,
-            emailType: (config as any).emailType || 'custom',
-            recipientEmail: config.to,
-            subject: config.subject,
-            messageId: info.messageId,
-            status: 'sent',
-            metadata: { provider: 'smtp' }
-          });
-        } catch (trackError) {
-          console.error('⚠️ Error tracking email:', trackError);
-        }
-        
-        return {
-          success: true,
-          messageId: info.messageId
-        };
-      } catch (smtpError) {
-        console.log('⚠️ Error con SMTP:', smtpError.message);
-      }
-    }
+    // SMTP ya se intentó primero, si llegamos aquí es que falló
 
     // Si llegamos aquí, ningún método funcionó
     console.log('❌ Todos los métodos de envío fallaron');
