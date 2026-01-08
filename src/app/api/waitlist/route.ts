@@ -17,6 +17,26 @@ const WaitlistSchema = z.object({
   notes: z.string().optional()
 });
 
+// Headers CORS comunes
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type',
+};
+
+/**
+ * OPTIONS - CORS preflight
+ */
+export async function OPTIONS(req: NextRequest) {
+  return new NextResponse(null, {
+    status: 200,
+    headers: {
+      ...corsHeaders,
+      'Access-Control-Max-Age': '86400',
+    },
+  });
+}
+
 /**
  * POST - Agregar email a la waitlist
  */
@@ -33,7 +53,10 @@ export async function POST(req: NextRequest) {
           error: 'Datos inválidos',
           details: parsed.error.flatten()
         },
-        { status: 400 }
+        { 
+          status: 400,
+          headers: corsHeaders
+        }
       );
     }
     
@@ -55,7 +78,10 @@ export async function POST(req: NextRequest) {
             error: 'Este email ya tiene una cuenta activa',
             alreadyActivated: true
           },
-          { status: 400 }
+          { 
+            status: 400,
+            headers: corsHeaders
+          }
         );
       }
       
@@ -66,7 +92,10 @@ export async function POST(req: NextRequest) {
           error: 'Este email ya está en la lista de espera',
           alreadyInWaitlist: true
         },
-        { status: 400 }
+        { 
+          status: 400,
+          headers: corsHeaders
+        }
       );
     }
     
@@ -82,7 +111,10 @@ export async function POST(req: NextRequest) {
           error: 'Este email ya tiene una cuenta activa',
           alreadyActivated: true
         },
-        { status: 400 }
+        { 
+          status: 400,
+          headers: corsHeaders
+        }
       );
     }
     
@@ -203,6 +235,8 @@ El equipo de Delfín Check-in
       success: true,
       message: 'Te hemos agregado a la lista de espera. Te notificaremos cuando el PMS esté disponible.',
       data: result.rows[0]
+    }, {
+      headers: corsHeaders
     });
     
   } catch (error: any) {
@@ -215,7 +249,10 @@ El equipo de Delfín Check-in
           success: false, 
           error: 'Este email ya está en la lista de espera'
         },
-        { status: 400 }
+        { 
+          status: 400,
+          headers: corsHeaders
+        }
       );
     }
     
@@ -224,7 +261,10 @@ El equipo de Delfín Check-in
         success: false, 
         error: 'Error al agregar a la lista de espera'
       },
-      { status: 500 }
+      { 
+        status: 500,
+        headers: corsHeaders
+      }
     );
   }
 }
@@ -263,6 +303,8 @@ export async function GET(req: NextRequest) {
       success: true,
       stats: stats.rows[0],
       entries: entries
+    }, {
+      headers: corsHeaders
     });
     
   } catch (error) {
@@ -272,7 +314,10 @@ export async function GET(req: NextRequest) {
         success: false, 
         error: 'Error al obtener la lista de espera'
       },
-      { status: 500 }
+      { 
+        status: 500,
+        headers: corsHeaders
+      }
     );
   }
 }
