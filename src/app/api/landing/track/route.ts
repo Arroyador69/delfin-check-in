@@ -29,6 +29,21 @@ const TrackEventSchema = z.object({
 });
 
 /**
+ * OPTIONS - CORS preflight
+ */
+export async function OPTIONS(req: NextRequest) {
+  return new NextResponse(null, {
+    status: 200,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+      'Access-Control-Max-Age': '86400',
+    },
+  });
+}
+
+/**
  * POST - Registrar evento de tracking
  */
 export async function POST(req: NextRequest) {
@@ -44,7 +59,14 @@ export async function POST(req: NextRequest) {
           error: 'Datos inválidos',
           details: parsed.error.flatten()
         },
-        { status: 400 }
+        { 
+          status: 400,
+          headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type',
+          },
+        }
       );
     }
     
@@ -58,31 +80,35 @@ export async function POST(req: NextRequest) {
     // Extraer user agent del request si no viene en body
     const finalUserAgent = user_agent || req.headers.get('user-agent') || 'unknown';
     
-    // Si es page_view, crear o actualizar sesión
-    if (event_type === 'page_view') {
-      // Verificar si la sesión ya existe
+    // SIEMPRE asegurar que la sesión existe antes de insertar eventos
+    // Usar INSERT ... ON CONFLICT para evitar race conditions
+    try {
+      await sql`
+        INSERT INTO landing_sessions (
+          session_id,
+          started_at,
+          user_agent,
+          referrer,
+          ip_address
+        )
+        VALUES (
+          ${session_id},
+          NOW(),
+          ${finalUserAgent},
+          ${referrer || null},
+          ${ip}
+        )
+        ON CONFLICT (session_id) DO NOTHING
+      `;
+    } catch (insertError: any) {
+      // Si falla, verificar que la sesión existe (puede haber sido creada por otro request)
       const existingSession = await sql`
         SELECT id FROM landing_sessions WHERE session_id = ${session_id} LIMIT 1
       `;
       
       if (existingSession.rows.length === 0) {
-        // Crear nueva sesión
-        await sql`
-          INSERT INTO landing_sessions (
-            session_id,
-            started_at,
-            user_agent,
-            referrer,
-            ip_address
-          )
-          VALUES (
-            ${session_id},
-            NOW(),
-            ${finalUserAgent},
-            ${referrer || null},
-            ${ip}
-          )
-        `;
+        // Si realmente no existe, lanzar error
+        throw insertError;
       }
     }
     
@@ -128,6 +154,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true,
       message: 'Evento registrado correctamente'
+    }, {
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type',
+      },
     });
     
   } catch (error: any) {
@@ -138,7 +170,14 @@ export async function POST(req: NextRequest) {
         error: 'Error interno del servidor',
         details: error.message
       },
-      { status: 500 }
+      { 
+        status: 500,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type',
+        },
+      }
     );
   }
 }
@@ -150,5 +189,11 @@ export async function GET() {
   return NextResponse.json({
     success: true,
     message: 'Landing tracking API está funcionando'
+  }, {
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+    },
   });
 }
