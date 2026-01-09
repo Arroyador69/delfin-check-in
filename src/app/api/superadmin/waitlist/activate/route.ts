@@ -138,17 +138,17 @@ export async function POST(req: NextRequest) {
         });
       }
     } else {
-      // Crear nuevo tenant con plan FREE
+      // Crear nuevo tenant con plan FREE (usamos 'basic' para createTenant que tiene max_rooms = 2)
       const tenant = await createTenant({
         name: waitlistEntry.name || waitlistEntry.email.split('@')[0],
         email: waitlistEntry.email,
-        plan_id: 'free',
+        plan_id: 'basic', // 'basic' tiene max_rooms = 2, que es lo que queremos para FREE
         config: {}
       });
       
       tenantId = tenant.id;
       
-      // Actualizar tenant con flags del nuevo sistema
+      // Actualizar tenant con flags del nuevo sistema (plan_type = 'free', pero plan_id = 'basic')
       await sql`
         UPDATE tenants
         SET 
