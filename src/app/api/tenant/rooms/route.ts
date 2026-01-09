@@ -144,29 +144,42 @@ export async function POST(req: NextRequest) {
     console.log('Habitaciones existentes:', existingRooms.rows);
     console.log('Habitaciones a guardar:', rooms);
 
-    // Procesar cada habitación
+    // Primero, eliminar todas las habitaciones existentes para evitar conflictos
+    // Luego insertar las nuevas
+    await sql`
+      DELETE FROM "Room"
+      WHERE "lodgingId" = ${lodgingId}
+    `;
+    console.log(`🗑️ Eliminadas ${existingRooms.rows.length} habitaciones existentes para recrearlas`);
+
+    // Insertar todas las habitaciones nuevas
     for (let i = 0; i < rooms.length; i++) {
       const room = rooms[i];
       const roomId = room.id.toString();
       
-      // Verificar si la habitación ya existe
-      const existingRoom = existingRooms.rows.find(r => r.id === roomId);
-      
-      if (existingRoom) {
-        // Actualizar habitación existente
-        await sql`
-          UPDATE "Room"
-          SET name = ${room.name}, updated_at = NOW()
-          WHERE id = ${roomId} AND "lodgingId" = ${lodgingId}
-        `;
-        console.log(`✅ Actualizada habitación ${roomId}: ${room.name}`);
-      } else {
-        // Crear nueva habitación
+      try {
+        // Usar INSERT con ON CONFLICT para evitar duplicados
         await sql`
           INSERT INTO "Room" (id, name, "lodgingId", created_at, updated_at)
           VALUES (${roomId}, ${room.name}, ${lodgingId}, NOW(), NOW())
+          ON CONFLICT (id) DO UPDATE
+          SET name = ${room.name}, updated_at = NOW(), "lodgingId" = ${lodgingId}
         `;
-        console.log(`✅ Creada nueva habitación ${roomId}: ${room.name}`);
+        console.log(`✅ Habitación ${roomId} guardada: ${room.name}`);
+      } catch (insertError: any) {
+        console.error(`❌ Error insertando habitación ${roomId}:`, insertError);
+        // Si falla, intentar actualizar
+        try {
+          await sql`
+            UPDATE "Room"
+            SET name = ${room.name}, updated_at = NOW(), "lodgingId" = ${lodgingId}
+            WHERE id = ${roomId}
+          `;
+          console.log(`✅ Habitación ${roomId} actualizada: ${room.name}`);
+        } catch (updateError: any) {
+          console.error(`❌ Error también al actualizar habitación ${roomId}:`, updateError);
+          throw new Error(`No se pudo guardar la habitación ${roomId}: ${insertError.message}`);
+        }
       }
     }
 

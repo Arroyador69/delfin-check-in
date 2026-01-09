@@ -24,19 +24,29 @@ export function useTenant() {
   useEffect(() => {
     async function fetchTenant() {
       try {
-        const response = await fetch('/api/tenant');
+        const response = await fetch('/api/tenant', {
+          credentials: 'include' // Asegurar que se envíen cookies
+        });
         if (response.ok) {
           const data = await response.json();
           if (data.success && data.tenant) {
+            console.log('📊 [useTenant] Tenant cargado:', {
+              id: data.tenant.id,
+              plan_type: data.tenant.plan_type,
+              ads_enabled: data.tenant.ads_enabled,
+              hasAds: data.tenant.plan_type === 'free' || data.tenant.plan_type === 'checkin'
+            });
             setTenant(data.tenant);
           } else {
+            console.warn('⚠️ [useTenant] Respuesta sin tenant:', data);
             setError('No se pudo obtener información del tenant');
           }
         } else {
+          console.error('❌ [useTenant] Error en respuesta:', response.status, response.statusText);
           setError('Error al obtener información del tenant');
         }
       } catch (err) {
-        console.error('Error fetching tenant:', err);
+        console.error('❌ [useTenant] Error fetching tenant:', err);
         setError('Error de conexión');
       } finally {
         setLoading(false);

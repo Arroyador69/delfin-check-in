@@ -54,21 +54,56 @@ export default function AdsBanner() {
 
   // Debug: Log para verificar estado
   useEffect(() => {
+    console.log('📢 [AdsBanner] Estado completo:', {
+      loading,
+      hasTenant: !!tenant,
+      tenantPlanType: tenant?.plan_type,
+      tenantAdsEnabled: tenant?.ads_enabled,
+      hasAds: tenant ? hasAds(tenant) : false,
+      isAdSenseConfigured: isAdSenseConfigured(),
+      adSenseReady,
+      dismissed
+    });
+    
     if (!loading && tenant) {
-      console.log('📢 [AdsBanner] Estado:', {
-        hasAds: hasAds(tenant),
+      console.log('📢 [AdsBanner] Tenant detectado:', {
+        id: tenant.id,
         plan_type: tenant.plan_type,
         ads_enabled: tenant.ads_enabled,
+        hasAds: hasAds(tenant),
         isAdSenseConfigured: isAdSenseConfigured(),
         adSenseReady
       });
+    } else if (!loading && !tenant) {
+      console.warn('⚠️ [AdsBanner] No hay tenant disponible');
     }
-  }, [loading, tenant, adSenseReady]);
+  }, [loading, tenant, adSenseReady, dismissed]);
 
   // No mostrar si está cargando, no hay tenant, no tiene anuncios, o fue cerrado
-  if (loading || !tenant || !hasAds(tenant) || dismissed) {
+  if (loading) {
+    console.log('⏳ [AdsBanner] Cargando...');
     return null;
   }
+  
+  if (!tenant) {
+    console.warn('⚠️ [AdsBanner] No hay tenant, no se muestra');
+    return null;
+  }
+  
+  if (!hasAds(tenant)) {
+    console.log('🚫 [AdsBanner] Tenant no tiene anuncios habilitados:', {
+      plan_type: tenant.plan_type,
+      ads_enabled: tenant.ads_enabled
+    });
+    return null;
+  }
+  
+  if (dismissed) {
+    console.log('❌ [AdsBanner] Anuncio cerrado por el usuario');
+    return null;
+  }
+  
+  console.log('✅ [AdsBanner] Mostrando anuncio');
 
   // Si AdSense no está configurado, mostrar marcador visual MÁS VISIBLE
   if (!isAdSenseConfigured() || !ADSENSE_CONFIG.adUnits.banner) {
