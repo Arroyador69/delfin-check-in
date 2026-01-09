@@ -2,13 +2,16 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-// import { useAuth } from '@/lib/auth';
+import Link from 'next/link';
 
 interface OnboardingData {
-  // Datos del DPA
-  dpaAceptado: boolean;
+  // Paso 1: Cambiar contraseña
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+  passwordChanged: boolean;
   
-  // Datos de empresa
+  // Paso 2: Datos de empresa
   nombreEmpresa: string;
   nifEmpresa: string;
   direccionEmpresa: string;
@@ -19,22 +22,31 @@ interface OnboardingData {
   telefono: string;
   email: string;
   web: string;
+  fechaCreacion: string; // Fecha de creación de la empresa
   
-  // Configuración MIR
+  // Paso 3: MIR (opcional)
   usuarioMir: string;
   contraseñaMir: string;
   codigoArrendador: string;
   codigoEstablecimiento: string;
+  
+  // Paso 4: Añadir propiedad
+  propertyName: string;
+  propertyAdded: boolean;
 }
 
 export default function OnboardingPage() {
   const router = useRouter();
-  // const { user, tenantId } = useAuth();
-  const tenantId = '870e589f-d313-4a5a-901f-f25fd4e7240a'; // Temporal para testing
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string>('');
+  const [rooms, setRooms] = useState<Array<{id: number, name: string}>>([]);
+  
   const [formData, setFormData] = useState<OnboardingData>({
-    dpaAceptado: false,
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+    passwordChanged: false,
     nombreEmpresa: '',
     nifEmpresa: '',
     direccionEmpresa: '',
@@ -45,20 +57,24 @@ export default function OnboardingPage() {
     telefono: '',
     email: '',
     web: '',
+    fechaCreacion: '',
     usuarioMir: '',
     contraseñaMir: '',
     codigoArrendador: '',
-    codigoEstablecimiento: ''
+    codigoEstablecimiento: '',
+    propertyName: '',
+    propertyAdded: false
   });
 
   useEffect(() => {
-    // Verificar si el usuario ya completó el onboarding
     checkOnboardingStatus();
-  }, [tenantId]);
+    if (currentStep === 4) {
+      loadRooms();
+    }
+  }, [currentStep]);
 
   const checkOnboardingStatus = async () => {
     try {
-      // Verificar estado del tenant
       const tenantResponse = await fetch('/api/tenant');
       const tenantData = await tenantResponse.json();
       
@@ -66,16 +82,20 @@ export default function OnboardingPage() {
         router.push('/');
         return;
       }
-
-      // Fallback: verificar endpoint antiguo
-      const response = await fetch('/api/onboarding/status');
-      const data = await response.json();
-      
-      if (data.onboardingCompleto) {
-        router.push('/');
-      }
     } catch (error) {
       console.error('Error verificando estado del onboarding:', error);
+    }
+  };
+
+  const loadRooms = async () => {
+    try {
+      const response = await fetch('/api/tenant/rooms');
+      const data = await response.json();
+      if (data.success) {
+        setRooms(data.rooms || []);
+      }
+    } catch (error) {
+      console.error('Error cargando habitaciones:', error);
     }
   };
 
@@ -86,9 +106,48 @@ export default function OnboardingPage() {
     }));
   };
 
+  const validateStep = (step: number): boolean => {
+    switch (step) {
+      case 1: // Cambiar contraseña
+        if (!formData.passwordChanged) {
+          setError('Debes cambiar tu contraseña antes de continuar');
+          return false;
+        }
+        return true;
+      case 2: // Datos empresa
+        if (!formData.nombreEmpresa || !formData.nifEmpresa || !formData.direccionEmpresa ||
+            !formData.codigoPostal || !formData.ciudad || !formData.provincia || 
+            !formData.pais || !formData.telefono || !formData.email || !formData.fechaCreacion) {
+          setError('Todos los campos marcados con * son obligatorios');
+          return false;
+        }
+        return true;
+      case 3: // MIR (opcional, puede saltarse)
+        return true;
+      case 4: // Añadir propiedad
+        if (!formData.propertyAdded) {
+          setError('Debes añadir al menos una propiedad antes de continuar');
+          return false;
+        }
+        return true;
+      default:
+        return true;
+    }
+  };
+
   const handleNext = async () => {
-    if (currentStep < 3) {
-      // Actualizar onboarding_status a 'in_progress' cuando avanza
+    setError('');
+    
+    if (!validateStep(currentStep)) {
+      return;
+    }
+
+    // Guardar datos del paso actual antes de avanzar
+    if (currentStep === 2) {
+      await saveCompanyData();
+    }
+
+    if (currentStep < 4) {
       if (currentStep === 1) {
         try {
           await fetch('/api/tenant/onboarding-status', {
@@ -107,145 +166,258 @@ export default function OnboardingPage() {
   const handlePrevious = () => {
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1);
+      setError('');
     }
   };
 
-  const handleSubmit = async () => {
+  const handlePasswordChange = async () => {
+    setError('');
     setLoading(true);
+
+    if (!formData.currentPassword || !formData.newPassword || !formData.confirmPassword) {
+      setError('Todos los campos son obligatorios');
+      setLoading(false);
+      return;
+    }
+
+    if (formData.newPassword !== formData.confirmPassword) {
+      setError('Las contraseñas nuevas no coinciden');
+      setLoading(false);
+      return;
+    }
+
+    if (formData.newPassword.length < 8) {
+      setError('La nueva contraseña debe tener al menos 8 caracteres');
+      setLoading(false);
+      return;
+    }
+
     try {
-      const response = await fetch('/api/onboarding/complete', {
+      const response = await fetch('/api/auth/change-password', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          currentPassword: formData.currentPassword,
+          newPassword: formData.newPassword
+        })
       });
 
-      if (response.ok) {
-        // Actualizar onboarding_status a 'in_progress' mientras completa pasos
-        // El endpoint /api/onboarding/complete lo marcará como 'completed' al finalizar
-        router.push('/');
-      } else {
-        throw new Error('Error al completar el onboarding');
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.message || 'Error al cambiar la contraseña');
+        setLoading(false);
+        return;
       }
+
+      setFormData(prev => ({ ...prev, passwordChanged: true }));
+      setError('');
+      // Auto-avanzar al siguiente paso
+      setTimeout(() => {
+        setCurrentStep(2);
+      }, 1000);
     } catch (error) {
-      console.error('Error:', error);
-      alert('Error al completar el onboarding. Por favor, inténtalo de nuevo.');
+      setError('Error al cambiar la contraseña');
     } finally {
       setLoading(false);
     }
   };
 
-  const renderDPAStep = () => (
+  const saveCompanyData = async () => {
+    try {
+      const response = await fetch('/api/empresa/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nombre_empresa: formData.nombreEmpresa,
+          nif: formData.nifEmpresa,
+          direccion: formData.direccionEmpresa,
+          codigo_postal: formData.codigoPostal,
+          ciudad: formData.ciudad,
+          provincia: formData.provincia,
+          pais: formData.pais,
+          telefono: formData.telefono,
+          email: formData.email,
+          web: formData.web,
+          fecha_creacion: formData.fechaCreacion
+        })
+      });
+
+      if (!response.ok) {
+        console.error('Error guardando datos de empresa');
+      }
+    } catch (error) {
+      console.error('Error guardando datos de empresa:', error);
+    }
+  };
+
+  const handleAddProperty = async () => {
+    setError('');
+    setLoading(true);
+
+    if (!formData.propertyName.trim()) {
+      setError('El nombre de la propiedad es obligatorio');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      // Crear habitación primero
+      const roomsResponse = await fetch('/api/tenant/rooms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          rooms: [{ name: formData.propertyName }]
+        })
+      });
+
+      const roomsData = await roomsResponse.json();
+
+      if (!roomsResponse.ok || !roomsData.success) {
+        setError(roomsData.error || 'Error al crear la propiedad');
+        setLoading(false);
+        return;
+      }
+
+      setFormData(prev => ({ ...prev, propertyAdded: true }));
+      setError('');
+      await loadRooms();
+    } catch (error) {
+      setError('Error al añadir la propiedad');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSubmit = async () => {
+    setError('');
+    setLoading(true);
+
+    if (!validateStep(4)) {
+      setLoading(false);
+      return;
+    }
+
+    try {
+      // Guardar datos MIR si se proporcionaron (opcional)
+      if (formData.usuarioMir && formData.contraseñaMir && formData.codigoArrendador && formData.codigoEstablecimiento) {
+        await fetch('/api/ministerio/config-produccion', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            usuario: formData.usuarioMir,
+            contraseña: formData.contraseñaMir,
+            codigoArrendador: formData.codigoArrendador,
+            codigoEstablecimiento: formData.codigoEstablecimiento,
+            baseUrl: 'https://hospedajes.ses.mir.es/hospedajes-web/ws/v1/comunicacion',
+            aplicacion: 'Delfin_Check_in',
+            simulacion: false,
+            activo: true
+          })
+        });
+      }
+
+      // Marcar onboarding como completado
+      await fetch('/api/tenant/onboarding-status', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ onboarding_status: 'completed' })
+      });
+
+      router.push('/');
+    } catch (error) {
+      console.error('Error:', error);
+      setError('Error al completar el onboarding. Por favor, inténtalo de nuevo.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Paso 1: Cambiar contraseña
+  const renderPasswordStep = () => (
     <div className="max-w-4xl mx-auto p-6">
       <div className="bg-white rounded-lg shadow-lg p-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-6">
-          🐬 Bienvenido a Delfín Check-in
+          🔐 Cambiar Contraseña
         </h1>
         
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
-          <h2 className="text-xl font-semibold text-blue-900 mb-4">
-            Contrato de Encargado del Tratamiento (DPA)
-          </h2>
-          <p className="text-blue-800 mb-4">
-            De acuerdo con el RGPD (art. 28) y el RD 933/2021, debe aceptar el Contrato de Encargado del Tratamiento entre su alojamiento (Responsable) y Delfín Check-in (Encargado), para poder utilizar el sistema de registro y envío de partes de viajeros.
-          </p>
+        <p className="text-gray-600 mb-6">
+          Por seguridad, debes cambiar tu contraseña temporal antes de continuar.
+        </p>
+
+        {formData.passwordChanged && (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+            <p className="text-green-800 font-semibold">✅ Contraseña cambiada exitosamente</p>
+          </div>
+        )}
+
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <p className="text-red-800">{error}</p>
+          </div>
+        )}
+
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Contraseña Actual *
+            </label>
+            <input
+              type="password"
+              value={formData.currentPassword}
+              onChange={(e) => handleInputChange('currentPassword', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+              required
+              disabled={formData.passwordChanged}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Nueva Contraseña *
+            </label>
+            <input
+              type="password"
+              value={formData.newPassword}
+              onChange={(e) => handleInputChange('newPassword', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+              required
+              disabled={formData.passwordChanged}
+              minLength={8}
+            />
+            <p className="text-xs text-gray-500 mt-1">Mínimo 8 caracteres</p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Confirmar Nueva Contraseña *
+            </label>
+            <input
+              type="password"
+              value={formData.confirmPassword}
+              onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+              required
+              disabled={formData.passwordChanged}
+            />
+          </div>
         </div>
 
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 mb-6 max-h-96 overflow-y-auto">
-          <h3 className="text-lg font-semibold mb-4 text-gray-900">1. Partes</h3>
-          <p className="mb-4 text-gray-800">
-            <strong className="text-gray-900">Responsable del Tratamiento (RDT):</strong> El usuario titular del alojamiento o empresa de gestión de hospedajes que utiliza la plataforma Delfín Check-in para el registro de viajeros conforme al RD 933/2021, en adelante "el Responsable".
-          </p>
-          <p className="mb-4 text-gray-800">
-            <strong className="text-gray-900">Encargado del Tratamiento (EDT):</strong> Titular del sistema Delfín Check-in, con NIF 49128023T y correo de contacto contacto@delfincheckin.com, en adelante "el Encargado".
-          </p>
-
-          <h3 className="text-lg font-semibold mb-4 text-gray-900">2. Objeto del contrato</h3>
-          <p className="mb-4 text-gray-800">
-            El Encargado tratará, por cuenta del Responsable, los datos personales de viajeros y reservas necesarios para cumplir con la obligación legal de registro documental y comunicación de hospedajes establecida por la Ley Orgánica 4/2015 y el Real Decreto 933/2021, mediante el envío telemático al Sistema de Hospedajes (SES-Hospedajes) del Ministerio del Interior.
-          </p>
-
-          <h3 className="text-lg font-semibold mb-4 text-gray-900">3. Naturaleza, finalidad y categorías de datos</h3>
-          <p className="mb-2 text-gray-800"><strong className="text-gray-900">Finalidad del tratamiento:</strong></p>
-          <p className="mb-4 text-gray-800">
-            Recolección, validación, almacenamiento y comunicación inmediata o en un plazo no superior a 24 horas de los datos de huéspedes al MIR, para garantizar la seguridad ciudadana.
-          </p>
-          
-          <p className="mb-2 text-gray-800"><strong className="text-gray-900">Categorías de datos tratados:</strong></p>
-          <ul className="list-disc list-inside mb-4 space-y-1 text-gray-800">
-            <li>Identificación personal: NIF/NIE/Pasaporte, nombre y apellidos</li>
-            <li>Datos de contacto: teléfono y/o correo electrónico</li>
-            <li>Datos contractuales: referencia, fechas de entrada y salida</li>
-            <li>Datos de pago: tipo, medio, fecha y titular del pago</li>
-            <li>Datos de filiación: fecha de nacimiento, sexo, nacionalidad</li>
-            <li>Datos del alojamiento o propiedad que pone en el sistema</li>
-          </ul>
-
-          <h3 className="text-lg font-semibold mb-4 text-gray-900">4. Obligaciones del Encargado (Delfín Check-in)</h3>
-          <ul className="list-disc list-inside mb-4 space-y-1 text-gray-800">
-            <li>Tratamiento por instrucciones: Tratar los datos solo siguiendo las instrucciones documentadas del Responsable</li>
-            <li>Confidencialidad: Garantizar que el personal autorizado mantenga confidencialidad permanente</li>
-            <li>Seguridad técnica: Utilizar túneles SSL/TLS y autenticación segura</li>
-            <li>Gestión de credenciales: Usar de forma segura las credenciales del servicio web</li>
-            <li>Notificación de brechas: Informar al Responsable sin demora ante cualquier violación</li>
-          </ul>
-
-          <h3 className="text-lg font-semibold mb-4 text-gray-900">5. Obligaciones del Responsable (propietario/gestor)</h3>
-          <ul className="list-disc list-inside mb-4 space-y-1 text-gray-800">
-            <li>Base jurídica: Garantizar que el tratamiento se realiza bajo obligación legal (art. 6.1.c RGPD)</li>
-            <li>Veracidad de los datos: Asegurar que los datos comunicados son exactos y completos</li>
-            <li>Custodia de credenciales: Mantener bajo su responsabilidad las credenciales de acceso al SES-Hospedajes</li>
-            <li>Información al viajero: Garantizar que los huéspedes son informados mediante la Parte de Viajero</li>
-          </ul>
-
-          <h3 className="text-lg font-semibold mb-4 text-gray-900">6. Medidas de seguridad aplicadas por Delfín Check-in</h3>
-          <ul className="list-disc list-inside mb-4 space-y-1 text-gray-800">
-            <li>Transmisión cifrada (HTTPS TLS 1.2+)</li>
-            <li>Cifrado de datos en reposo y backups seguros</li>
-            <li>Control de accesos y autenticación multifactor</li>
-            <li>Registro de logs y auditoría</li>
-            <li>Segmentación por cliente (multi-tenant)</li>
-          </ul>
-
-          <h3 className="text-lg font-semibold mb-4 text-gray-900">7. Duración</h3>
-          <p className="mb-4 text-gray-800">
-            Este contrato entra en vigor desde el momento en que el Responsable activa su cuenta en Delfín Check-in y permanecerá vigente mientras utilice el servicio.
-          </p>
-
-          <h3 className="text-lg font-semibold mb-4 text-gray-900">8. Aceptación</h3>
-          <p className="mb-4 text-gray-800">
-            Mediante la activación y uso inicial del sistema, el Responsable declara haber leído y aceptar este Contrato de Encargado del Tratamiento, que pasa a formar parte integrante de las condiciones de uso de Delfín Check-in.
-          </p>
-        </div>
-
-        <div className="flex items-center space-x-3 mb-6">
-          <input
-            type="checkbox"
-            id="dpaAceptado"
-            checked={formData.dpaAceptado}
-            onChange={(e) => handleInputChange('dpaAceptado', e.target.checked)}
-            className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
-            required
-          />
-          <label htmlFor="dpaAceptado" className="text-sm font-medium text-gray-900">
-            Acepto el Contrato de Encargado del Tratamiento (DPA) entre mi alojamiento y Delfín Check-in.
-          </label>
-        </div>
-
-        <div className="flex justify-end">
+        <div className="flex justify-end mt-8">
           <button
-            onClick={handleNext}
-            disabled={!formData.dpaAceptado}
+            onClick={handlePasswordChange}
+            disabled={loading || formData.passwordChanged}
             className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
           >
-            Continuar
+            {loading ? 'Cambiando...' : formData.passwordChanged ? 'Contraseña Cambiada' : 'Cambiar Contraseña'}
           </button>
         </div>
       </div>
     </div>
   );
 
+  // Paso 2: Datos empresa
   const renderEmpresaStep = () => (
     <div className="max-w-4xl mx-auto p-6">
       <div className="bg-white rounded-lg shadow-lg p-8">
@@ -256,6 +428,12 @@ export default function OnboardingPage() {
         <p className="text-gray-600 mb-6">
           Complete los datos de su empresa o alojamiento. Esta información se utilizará para las facturas y el formulario público de huéspedes.
         </p>
+
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <p className="text-red-800">{error}</p>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
@@ -351,6 +529,19 @@ export default function OnboardingPage() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
+              Fecha de Creación de la Empresa *
+            </label>
+            <input
+              type="date"
+              value={formData.fechaCreacion}
+              onChange={(e) => handleInputChange('fechaCreacion', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Teléfono *
             </label>
             <input
@@ -406,11 +597,12 @@ export default function OnboardingPage() {
     </div>
   );
 
+  // Paso 3: MIR (opcional)
   const renderMIRStep = () => (
     <div className="max-w-4xl mx-auto p-6">
       <div className="bg-white rounded-lg shadow-lg p-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-6">
-          🔐 Configuración MIR
+          🔐 Configuración MIR (Opcional)
         </h1>
         
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-6">
@@ -450,7 +642,7 @@ export default function OnboardingPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Usuario MIR *
+              Usuario MIR
             </label>
             <input
               type="text"
@@ -458,7 +650,6 @@ export default function OnboardingPage() {
               onChange={(e) => handleInputChange('usuarioMir', e.target.value)}
               placeholder="Formato: CIF---WS"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-              required
             />
             <p className="text-xs text-gray-500 mt-1">
               Formato: CIF---WS (ejemplo: B12345678---WS)
@@ -467,57 +658,119 @@ export default function OnboardingPage() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Contraseña MIR *
+              Contraseña MIR
             </label>
             <input
               type="password"
               value={formData.contraseñaMir}
               onChange={(e) => handleInputChange('contraseñaMir', e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-              required
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Código de Arrendador *
+              Código de Arrendador
             </label>
             <input
               type="text"
               value={formData.codigoArrendador}
               onChange={(e) => handleInputChange('codigoArrendador', e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-              required
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Código de Establecimiento *
+              Código de Establecimiento
             </label>
             <input
               type="text"
               value={formData.codigoEstablecimiento}
               onChange={(e) => handleInputChange('codigoEstablecimiento', e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-              required
             />
           </div>
         </div>
 
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mt-6">
-          <h3 className="text-lg font-semibold text-blue-900 mb-2">
-            📋 Resumen de la Configuración
-          </h3>
-          <p className="text-blue-800 mb-4">
-            Una vez completado este proceso, tendrá configurado:
-          </p>
-          <ul className="list-disc list-inside text-blue-800 space-y-1">
-            <li>✅ Contrato de Encargado del Tratamiento (DPA) firmado</li>
-            <li>✅ Datos de empresa configurados para facturas y formulario público</li>
-            <li>✅ Credenciales MIR configuradas para envío de comunicaciones</li>
-            <li>✅ Sistema listo para recibir registros de huéspedes</li>
-          </ul>
+        <div className="flex justify-between mt-8">
+          <button
+            onClick={handlePrevious}
+            className="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600"
+          >
+            Anterior
+          </button>
+          <button
+            onClick={handleNext}
+            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
+          >
+            Continuar (Opcional)
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Paso 4: Añadir propiedad
+  const renderPropertyStep = () => (
+    <div className="max-w-4xl mx-auto p-6">
+      <div className="bg-white rounded-lg shadow-lg p-8">
+        <h1 className="text-3xl font-bold text-gray-900 mb-6">
+          🏠 Añadir Propiedad
+        </h1>
+        
+        <p className="text-gray-600 mb-6">
+          Añade al menos una propiedad o habitación para comenzar a gestionar tus reservas.
+        </p>
+
+        {formData.propertyAdded && (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+            <p className="text-green-800 font-semibold">✅ Propiedad añadida exitosamente</p>
+          </div>
+        )}
+
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <p className="text-red-800">{error}</p>
+          </div>
+        )}
+
+        {rooms.length > 0 && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <h3 className="font-semibold text-blue-900 mb-2">Propiedades existentes:</h3>
+            <ul className="list-disc list-inside text-blue-800">
+              {rooms.map(room => (
+                <li key={room.id}>{room.name}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Nombre de la Propiedad/Habitación *
+            </label>
+            <input
+              type="text"
+              value={formData.propertyName}
+              onChange={(e) => handleInputChange('propertyName', e.target.value)}
+              placeholder="Ej: Habitación 1, Apartamento Vista al Mar, etc."
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+              required
+              disabled={formData.propertyAdded}
+            />
+          </div>
+
+          {!formData.propertyAdded && (
+            <button
+              onClick={handleAddProperty}
+              disabled={loading || !formData.propertyName.trim()}
+              className="w-full bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+            >
+              {loading ? 'Añadiendo...' : 'Añadir Propiedad'}
+            </button>
+          )}
         </div>
 
         <div className="flex justify-between mt-8">
@@ -529,8 +782,8 @@ export default function OnboardingPage() {
           </button>
           <button
             onClick={handleSubmit}
-            disabled={loading}
-            className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 disabled:bg-gray-400"
+            disabled={loading || !formData.propertyAdded}
+            className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
           >
             {loading ? 'Completando...' : 'Completar Configuración'}
           </button>
@@ -549,13 +802,13 @@ export default function OnboardingPage() {
               <h1 className="text-xl font-bold text-gray-900">Delfín Check-in</h1>
             </div>
             <div className="text-sm text-gray-500">
-              Paso {currentStep} de 3
+              Paso {currentStep} de 4
             </div>
           </div>
           
           <div className="mt-4">
             <div className="flex space-x-2">
-              {[1, 2, 3].map((step) => (
+              {[1, 2, 3, 4].map((step) => (
                 <div
                   key={step}
                   className={`h-2 flex-1 rounded-full ${
@@ -568,9 +821,10 @@ export default function OnboardingPage() {
         </div>
       </div>
 
-      {currentStep === 1 && renderDPAStep()}
+      {currentStep === 1 && renderPasswordStep()}
       {currentStep === 2 && renderEmpresaStep()}
       {currentStep === 3 && renderMIRStep()}
+      {currentStep === 4 && renderPropertyStep()}
     </div>
   );
 }
