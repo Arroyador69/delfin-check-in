@@ -43,8 +43,8 @@ export default function AdBlockDetector() {
         document.body.removeChild(testAd);
         
         // Verificar también si el script de AdSense fue bloqueado
-        const adSenseBlocked = !window.adsbygoogle || 
-                              (window.adsbygoogle && window.adsbygoogle.loaded === false);
+        const adSenseBlocked = !(window as any).adsbygoogle || 
+                              ((window as any).adsbygoogle && (window as any).adsbygoogle.loaded === false);
         
         if (isBlocked || adSenseBlocked) {
           setAdBlockDetected(true);
@@ -59,7 +59,7 @@ export default function AdBlockDetector() {
       if (typeof window !== 'undefined') {
         // Esperar a que el script se intente cargar
         setTimeout(() => {
-          if (!window.adsbygoogle) {
+          if (!(window as any).adsbygoogle) {
             setAdBlockDetected(true);
             setChecking(false);
           } else {
