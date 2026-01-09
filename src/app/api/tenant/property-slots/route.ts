@@ -14,33 +14,23 @@ export async function GET(req: NextRequest) {
 
     console.log('🏠 [property-slots] Tenant detectado:', tenantId)
 
-    // Resolver lodging_id asociado al tenant (columna singular)
+    // Resolver lodging_id asociado al tenant (usar tenant_id como fallback si no existe)
     const tenantRow = await sql`
       SELECT lodging_id
       FROM tenants
       WHERE id = ${tenantId}::uuid
       LIMIT 1
     `
-    const lodgingId: string | null = tenantRow.rows?.[0]?.lodging_id || null
+    const lodgingId: string = tenantRow.rows?.[0]?.lodging_id || tenantId
     console.log('🏨 [property-slots] LodgingId detectado:', lodgingId)
 
-    // Si no hay lodging_id, intentamos fallback comparando con tenantId (por compatibilidad antigua)
-    let rooms
-    if (lodgingId) {
-      rooms = await sql`
-        SELECT id AS room_id, name AS room_name
-        FROM "Room"
-        WHERE "lodgingId" = ${lodgingId}::text
-        ORDER BY id
-      `
-    } else {
-      rooms = await sql`
-        SELECT id AS room_id, name AS room_name
-        FROM "Room"
-        WHERE "lodgingId" = ${tenantId}::text
-        ORDER BY id
-      `
-    }
+    // Obtener habitaciones usando lodgingId (con fallback a tenantId)
+    const rooms = await sql`
+      SELECT id AS room_id, name AS room_name
+      FROM "Room"
+      WHERE "lodgingId" = ${lodgingId}::text
+      ORDER BY id
+    `
     console.log('📦 [property-slots] Rooms encontrados:', (rooms as any).rowCount)
 
     // Traer mappings existentes y sus propiedades
