@@ -28,6 +28,7 @@ export default function SuperAdminWaitlist() {
     html: '',
     text: ''
   });
+  const [activating, setActivating] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     fetchWaitlist();
@@ -105,6 +106,46 @@ export default function SuperAdminWaitlist() {
     } catch (error) {
       console.error('Error sending email:', error);
       alert('Error al enviar emails');
+    }
+  };
+
+  const handleActivateUser = async (entryId: string, email: string) => {
+    if (!confirm(`¿Activar usuario ${email}? Se creará el tenant y se enviará el email de onboarding.`)) {
+      return;
+    }
+
+    setActivating(prev => new Set(prev).add(entryId));
+
+    try {
+      const response = await fetch('/api/superadmin/waitlist/activate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: entryId })
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        alert(`✅ Usuario activado correctamente!\n\nTenant ID: ${data.tenant_id}\nEmail enviado: ${data.email_sent ? 'Sí' : 'No'}`);
+        // Recargar lista
+        fetchWaitlist();
+      } else {
+        if (data.alreadyActivated) {
+          alert(`⚠️ Este usuario ya está activado.\n\nTenant ID: ${data.tenant_id || 'N/A'}`);
+          fetchWaitlist();
+        } else {
+          alert(`❌ Error: ${data.error || 'Error al activar usuario'}\n\n${data.details || ''}`);
+        }
+      }
+    } catch (error) {
+      console.error('Error activating user:', error);
+      alert('Error al activar usuario');
+    } finally {
+      setActivating(prev => {
+        const next = new Set(prev);
+        next.delete(entryId);
+        return next;
+      });
     }
   };
 
@@ -196,10 +237,9 @@ export default function SuperAdminWaitlist() {
             pendingEntries.map((entry) => (
               <div
                 key={entry.id}
-                className={`p-4 hover:bg-gray-50 cursor-pointer ${
+                className={`p-4 hover:bg-gray-50 ${
                   selectedEmails.has(entry.email) ? 'bg-blue-50 border-l-4 border-blue-500' : ''
                 }`}
-                onClick={() => toggleEmailSelection(entry.email)}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
@@ -208,10 +248,9 @@ export default function SuperAdminWaitlist() {
                         type="checkbox"
                         checked={selectedEmails.has(entry.email)}
                         onChange={() => toggleEmailSelection(entry.email)}
-                        onClick={(e) => e.stopPropagation()}
                         className="w-4 h-4 text-blue-600"
                       />
-                      <div>
+                      <div className="flex-1">
                         <div className="font-semibold text-gray-900">{entry.email}</div>
                         {entry.name && (
                           <div className="text-sm text-gray-600">Nombre: {entry.name}</div>
@@ -233,6 +272,22 @@ export default function SuperAdminWaitlist() {
                         )}
                       </div>
                     </div>
+                  </div>
+                  <div className="ml-4">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleActivateUser(entry.id, entry.email);
+                      }}
+                      disabled={activating.has(entry.id)}
+                      className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                        activating.has(entry.id)
+                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                          : 'bg-green-600 text-white hover:bg-green-700'
+                      }`}
+                    >
+                      {activating.has(entry.id) ? 'Activando...' : '🚀 Activar'}
+                    </button>
                   </div>
                 </div>
               </div>
