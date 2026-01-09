@@ -29,9 +29,10 @@ export const ADSENSE_CONFIG = {
   
   // IDs de unidades de anuncios (los obtienes al crear unidades en AdSense)
   adUnits: {
-    banner: process.env.NEXT_PUBLIC_ADSENSE_BANNER_ID || '', // Banner superior
-    sidebar: process.env.NEXT_PUBLIC_ADSENSE_SIDEBAR_ID || '', // Sidebar 300x250
-    footer: process.env.NEXT_PUBLIC_ADSENSE_FOOTER_ID || '', // Footer
+    banner: process.env.NEXT_PUBLIC_ADSENSE_BANNER_ID || '7723571524', // Banner superior (adaptable)
+    sidebar: process.env.NEXT_PUBLIC_ADSENSE_SIDEBAR_ID || '7723571524', // Sidebar (adaptable)
+    footer: process.env.NEXT_PUBLIC_ADSENSE_FOOTER_ID || '7723571524', // Footer (adaptable)
+    menu: process.env.NEXT_PUBLIC_ADSENSE_MENU_ID || '7723571524', // Menú (adaptable)
   }
 };
 

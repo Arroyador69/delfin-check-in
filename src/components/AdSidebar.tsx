@@ -88,7 +88,8 @@ export default function AdSidebar() {
         style={{ display: 'block', width: '100%', minHeight: '250px' }}
         data-ad-client={ADSENSE_CONFIG.publisherId}
         data-ad-slot={ADSENSE_CONFIG.adUnits.sidebar}
-        data-ad-format="rectangle"
+        data-ad-format="auto"
+        data-full-width-responsive="true"
       />
       <p className="text-xs text-gray-500 text-center mt-2">Publicidad</p>
     </div>

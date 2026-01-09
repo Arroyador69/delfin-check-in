@@ -6,7 +6,6 @@ import { Home, Bed, Calendar, Users, Settings, Menu, X, TrendingUp, FileText, Do
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { useTenant, hasLegalModule } from '@/hooks/useTenant';
-import dynamic from 'next/dynamic';
 
 const PWAInstallButton = dynamic(() => import('./PWAInstallButton'), { ssr: false });
 const AdMenu = dynamic(() => import('./AdMenu'), { ssr: false });

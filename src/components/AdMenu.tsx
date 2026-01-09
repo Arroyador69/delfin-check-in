@@ -62,7 +62,7 @@ export default function AdMenu() {
   }
 
   // Si AdSense no está configurado, mostrar marcador visual MÁS VISIBLE
-  if (!isAdSenseConfigured() || !ADSENSE_CONFIG.adUnits.banner) {
+  if (!isAdSenseConfigured() || !ADSENSE_CONFIG.adUnits.menu) {
     return (
       <div className="bg-gradient-to-r from-yellow-100 to-yellow-50 border-2 border-dashed border-yellow-400 px-3 py-2 mx-2 my-2 rounded-lg shadow-md">
         <div className="text-center">
@@ -84,8 +84,8 @@ export default function AdMenu() {
         className="adsbygoogle-menu"
         style={{ display: 'block', width: '100%', minHeight: '90px' }}
         data-ad-client={ADSENSE_CONFIG.publisherId}
-        data-ad-slot={ADSENSE_CONFIG.adUnits.banner}
-        data-ad-format="horizontal"
+        data-ad-slot={ADSENSE_CONFIG.adUnits.menu}
+        data-ad-format="auto"
         data-full-width-responsive="true"
       />
       <p className="text-xs text-gray-500 text-center mt-1">Publicidad</p>

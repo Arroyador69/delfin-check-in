@@ -142,7 +142,7 @@ export default function AdsBanner() {
           <div className="flex-1">
             <ins
               className="adsbygoogle"
-              style={{ display: 'block', width: '100%', height: '90px' }}
+              style={{ display: 'block', width: '100%', minHeight: '90px' }}
               data-ad-client={ADSENSE_CONFIG.publisherId}
               data-ad-slot={ADSENSE_CONFIG.adUnits.banner}
               data-ad-format="auto"

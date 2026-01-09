@@ -88,7 +88,7 @@ export default function AdFooter() {
       <div className="max-w-7xl mx-auto px-4">
         <ins
           className="adsbygoogle"
-          style={{ display: 'block', width: '100%', height: '90px' }}
+          style={{ display: 'block', width: '100%', minHeight: '90px' }}
           data-ad-client={ADSENSE_CONFIG.publisherId}
           data-ad-slot={ADSENSE_CONFIG.adUnits.footer}
           data-ad-format="auto"
