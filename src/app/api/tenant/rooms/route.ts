@@ -95,36 +95,71 @@ export async function POST(req: NextRequest) {
     `;
     let lodgingId = lodgingResult.rows[0]?.lodging_id || tenantId;
 
-    // Si no hay lodging_id en tenants, usar tenant_id directamente
-    // Pero primero verificar/crear el registro en Lodging si la tabla existe
+    // Si no hay lodging_id en tenants, intentar crear/obtener el registro en Lodging
     if (!lodgingResult.rows[0]?.lodging_id) {
       // Intentar crear el registro en Lodging si la tabla existe
       try {
+        // Primero verificar si existe
         const lodgingCheck = await sql`
-          SELECT id FROM "Lodging" WHERE id = ${tenantId}::uuid OR id::text = ${tenantId}::text LIMIT 1
+          SELECT id FROM "Lodging" 
+          WHERE id::text = ${tenantId}::text 
+             OR "tenant_id" = ${tenantId}::text 
+          LIMIT 1
         `;
         
-        if (lodgingCheck.rows.length === 0) {
-          // Crear registro en Lodging si no existe
+        if (lodgingCheck.rows.length > 0) {
+          // Ya existe, usar ese ID
+          lodgingId = lodgingCheck.rows[0].id;
+          console.log(`✅ Encontrado registro en Lodging: ${lodgingId}`);
+        } else {
+          // Intentar crear el registro en Lodging
+          // Probar diferentes estructuras posibles de la tabla
           try {
-            await sql`
+            // Intentar con id como UUID y tenant_id como text
+            const insertResult = await sql`
               INSERT INTO "Lodging" (id, "tenant_id", name, created_at, updated_at)
               VALUES (${tenantId}::uuid, ${tenantId}::text, ${tenant.name || 'Mi Propiedad'}, NOW(), NOW())
               ON CONFLICT (id) DO NOTHING
+              RETURNING id
             `;
-            console.log(`✅ Creado registro en Lodging para tenant ${tenantId}`);
-          } catch (lodgingError: any) {
-            // Si la tabla Lodging no existe o hay otro error, usar tenant_id como string
-            console.warn(`⚠️ No se pudo crear registro en Lodging (puede que la tabla no exista):`, lodgingError.message);
+            
+            if (insertResult.rows.length > 0) {
+              lodgingId = insertResult.rows[0].id;
+              console.log(`✅ Creado registro en Lodging: ${lodgingId}`);
+            } else {
+              // Si ON CONFLICT no devolvió nada, intentar obtener el existente
+              const existing = await sql`
+                SELECT id FROM "Lodging" WHERE id::text = ${tenantId}::text LIMIT 1
+              `;
+              if (existing.rows.length > 0) {
+                lodgingId = existing.rows[0].id;
+              } else {
+                throw new Error('No se pudo crear ni encontrar registro en Lodging');
+              }
+            }
+          } catch (insertError: any) {
+            // Si falla el INSERT, puede ser por estructura de tabla diferente
+            // Usar tenant_id directamente como string (compatibilidad con sistema antiguo)
+            console.warn(`⚠️ No se pudo crear registro en Lodging, usando tenant_id directamente:`, insertError.message);
             lodgingId = tenantId; // Usar tenant_id como string directamente
           }
-        } else {
-          lodgingId = lodgingCheck.rows[0].id;
         }
       } catch (error: any) {
-        // Si la tabla Lodging no existe, usar tenant_id como string
+        // Si la tabla Lodging no existe o hay error, usar tenant_id como string
         console.warn(`⚠️ Tabla Lodging no accesible, usando tenant_id directamente:`, error.message);
         lodgingId = tenantId; // Usar tenant_id como string directamente
+      }
+      
+      // Actualizar tenants.lodging_id para futuras consultas
+      try {
+        await sql`
+          UPDATE tenants 
+          SET lodging_id = ${lodgingId}::text 
+          WHERE id = ${tenantId}::uuid
+        `;
+        console.log(`✅ Actualizado lodging_id en tenants: ${lodgingId}`);
+      } catch (updateError: any) {
+        console.warn(`⚠️ No se pudo actualizar lodging_id en tenants:`, updateError.message);
       }
     }
 
