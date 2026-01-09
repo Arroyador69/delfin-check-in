@@ -115,15 +115,31 @@ export async function POST(req: NextRequest) {
           // Intentar crear el registro en Lodging
           // Probar diferentes estructuras posibles de la tabla
           try {
-            // Intentar con id como UUID y tenant_id como text
-            const insertResult = await sql`
-              INSERT INTO "Lodging" (id, "tenant_id", name, created_at, updated_at)
-              VALUES (${tenantId}::uuid, ${tenantId}::text, ${tenant.name || 'Mi Propiedad'}, NOW(), NOW())
-              ON CONFLICT (id) DO NOTHING
-              RETURNING id
-            `;
+            // Primero intentar con estructura mínima (solo id y name)
+            let insertResult;
+            try {
+              insertResult = await sql`
+                INSERT INTO "Lodging" (id, name, created_at, updated_at)
+                VALUES (${tenantId}::uuid, ${tenant.name || 'Mi Propiedad'}, NOW(), NOW())
+                ON CONFLICT (id) DO NOTHING
+                RETURNING id
+              `;
+            } catch (minError: any) {
+              // Si falla, intentar con estructura que incluye tenant_id
+              try {
+                insertResult = await sql`
+                  INSERT INTO "Lodging" (id, "tenant_id", name, created_at, updated_at)
+                  VALUES (${tenantId}::uuid, ${tenantId}::text, ${tenant.name || 'Mi Propiedad'}, NOW(), NOW())
+                  ON CONFLICT (id) DO NOTHING
+                  RETURNING id
+                `;
+              } catch (fullError: any) {
+                // Si ambas fallan, la tabla puede no existir o tener estructura diferente
+                throw new Error(`Estructura de tabla no compatible: ${minError.message}`);
+              }
+            }
             
-            if (insertResult.rows.length > 0) {
+            if (insertResult && insertResult.rows.length > 0) {
               lodgingId = insertResult.rows[0].id;
               console.log(`✅ Creado registro en Lodging: ${lodgingId}`);
             } else {
@@ -133,13 +149,15 @@ export async function POST(req: NextRequest) {
               `;
               if (existing.rows.length > 0) {
                 lodgingId = existing.rows[0].id;
+                console.log(`✅ Encontrado registro existente en Lodging: ${lodgingId}`);
               } else {
+                // Si no existe y no se pudo crear, usar tenant_id directamente
                 throw new Error('No se pudo crear ni encontrar registro en Lodging');
               }
             }
           } catch (insertError: any) {
-            // Si falla el INSERT, puede ser por estructura de tabla diferente
-            // Usar tenant_id directamente como string (compatibilidad con sistema antiguo)
+            // Si falla el INSERT, usar tenant_id directamente como string
+            // Esto funciona porque Room.lodgingId puede ser TEXT y aceptar el tenant_id
             console.warn(`⚠️ No se pudo crear registro en Lodging, usando tenant_id directamente:`, insertError.message);
             lodgingId = tenantId; // Usar tenant_id como string directamente
           }

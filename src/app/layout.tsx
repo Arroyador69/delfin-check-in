@@ -7,6 +7,7 @@ import PWAInstallGuide from "@/components/PWAInstallGuide";
 import ConditionalFooter from "@/components/ConditionalFooter";
 import CookieConsentModal from "@/components/CookieConsentModal";
 import AdsBanner from "@/components/AdsBanner";
+import AdBlockDetector from "@/components/AdBlockDetector";
 
 // Importar Sentry
 import '@sentry/nextjs';
@@ -40,6 +41,8 @@ export default function RootLayout({
           <ConditionalNavigation />
           <AdsBanner />
           <PWAInstallGuide />
+          {/* Detector de AdBlock - bloquea la página si está activo */}
+          <AdBlockDetector />
           {/* Compensar la barra de navegación fija (h-16) */}
           <main className="pt-16 flex-1">
             {children}
