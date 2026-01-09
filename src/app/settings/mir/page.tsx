@@ -60,6 +60,9 @@ export default function MirSettingsPage() {
   const [testResult, setTestResult] = useState<any>(null);
   const [countryCode, setCountryCode] = useState<string>('');
   const [savingCountry, setSavingCountry] = useState(false);
+  const [hasConfig, setHasConfig] = useState(false); // Para saber si hay datos configurados
+  const [editingUsuario, setEditingUsuario] = useState(false);
+  const [editingContraseña, setEditingContraseña] = useState(false);
 
   // Cargar configuración actual
   useEffect(() => {
@@ -118,6 +121,9 @@ export default function MirSettingsPage() {
       const data = await response.json();
       
       if (data.success) {
+        const hasUsuario = !!data.config.usuario;
+        const hasContraseña = !!data.config.contraseña;
+        setHasConfig(hasUsuario || hasContraseña);
         setConfig({
           usuario: data.config.usuario || '',
           contraseña: data.config.contraseña || '',
@@ -285,13 +291,29 @@ export default function MirSettingsPage() {
               <Label htmlFor="usuario" className="text-gray-800 font-semibold">Usuario MIR *</Label>
               <Input
                 id="usuario"
-                placeholder="27380387ZWS"
-                value={config.usuario}
-                onChange={(e) => setConfig({...config, usuario: e.target.value})}
+                placeholder="ejemplo12345678TWS"
+                value={hasConfig && !editingUsuario && config.usuario ? "•••••••••••" : config.usuario}
+                onChange={(e) => {
+                  if (e.target.value !== "•••••••••••") {
+                    setConfig({...config, usuario: e.target.value});
+                    setEditingUsuario(true);
+                  }
+                }}
+                onFocus={() => {
+                  if (hasConfig && config.usuario && !editingUsuario) {
+                    setEditingUsuario(true);
+                    setConfig({...config, usuario: ""});
+                  }
+                }}
+                onBlur={() => {
+                  if (config.usuario) {
+                    setEditingUsuario(false);
+                  }
+                }}
                 className="text-gray-900"
               />
               <p className="text-xs text-gray-600 font-medium">
-                Formato: DNI/CIF + letra + WS (ejemplo: 27380387ZWS, 12345678TWS)
+                Formato: DNI/CIF + letra + WS (ejemplo: ejemplo12345678TWS)
               </p>
             </div>
             
@@ -301,9 +323,29 @@ export default function MirSettingsPage() {
                 <Input
                   id="contraseña"
                   type={showPassword ? "text" : "password"}
-                  placeholder="Tu contraseña del MIR"
-                  value={config.contraseña}
-                  onChange={(e) => setConfig({...config, contraseña: e.target.value})}
+                  placeholder="ejemplo_contraseña_segura"
+                  value={
+                    hasConfig && !editingContraseña && config.contraseña && !showPassword
+                      ? "••••••••"
+                      : config.contraseña
+                  }
+                  onChange={(e) => {
+                    if (e.target.value !== "••••••••") {
+                      setConfig({...config, contraseña: e.target.value});
+                      setEditingContraseña(true);
+                    }
+                  }}
+                  onFocus={() => {
+                    if (hasConfig && config.contraseña && !editingContraseña) {
+                      setEditingContraseña(true);
+                      setConfig({...config, contraseña: ""});
+                    }
+                  }}
+                  onBlur={() => {
+                    if (config.contraseña) {
+                      setEditingContraseña(false);
+                    }
+                  }}
                   className="text-gray-900"
                 />
                 <Button
