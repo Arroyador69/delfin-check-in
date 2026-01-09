@@ -138,29 +138,44 @@ export async function POST(req: NextRequest) {
         });
       }
     } else {
-      // Crear nuevo tenant con plan FREE (usamos 'basic' para createTenant que tiene max_rooms = 2)
-      const tenant = await createTenant({
-        name: waitlistEntry.name || waitlistEntry.email.split('@')[0],
-        email: waitlistEntry.email,
-        plan_id: 'basic', // 'basic' tiene max_rooms = 2, que es lo que queremos para FREE
-        config: {}
-      });
+      // Crear nuevo tenant con plan FREE directamente con SQL para incluir plan_type desde el inicio
+      const tenantName = waitlistEntry.name || waitlistEntry.email.split('@')[0];
+      const tenantConfig = {
+        propertyName: tenantName,
+        timezone: 'Europe/Madrid',
+        language: 'es',
+        currency: 'EUR'
+      };
       
-      tenantId = tenant.id;
-      
-      // Actualizar tenant con flags del nuevo sistema (plan_type = 'free', pero plan_id = 'basic')
-      await sql`
-        UPDATE tenants
-        SET 
-          plan_type = 'free',
-          ads_enabled = true,
-          legal_module = false,
-          max_rooms = 2,
-          current_rooms = 0,
-          onboarding_status = 'pending',
-          status = 'active'
-        WHERE id = ${tenantId}
+      const tenantResult = await sql`
+        INSERT INTO tenants (
+          name,
+          email,
+          plan_id,
+          plan_type,
+          max_rooms,
+          current_rooms,
+          ads_enabled,
+          legal_module,
+          onboarding_status,
+          status,
+          config
+        ) VALUES (
+          ${tenantName},
+          ${waitlistEntry.email},
+          'basic', -- plan_id para compatibilidad
+          'free', -- plan_type para el nuevo sistema
+          2, -- max_rooms para plan FREE
+          0, -- current_rooms inicial
+          true, -- ads_enabled para plan FREE
+          false, -- legal_module deshabilitado en FREE
+          'pending', -- onboarding_status
+          'active', -- status
+          ${JSON.stringify(tenantConfig)}::jsonb
+        ) RETURNING id
       `;
+      
+      tenantId = tenantResult.rows[0].id;
       
       // Generar contraseña temporal
       const tempPassword = crypto.randomBytes(12).toString('base64').slice(0, 16);
