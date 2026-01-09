@@ -12,12 +12,16 @@ export async function GET(req: NextRequest) {
       }, { status: 400 });
     }
 
+    // Obtener lodging_id (usar tenant_id como fallback si no existe)
+    const lodgingResult = await sql`
+      SELECT lodging_id FROM tenants WHERE id = ${tenantId}
+    `;
+    const lodgingId = lodgingResult.rows[0]?.lodging_id || tenantId;
+    
     const result = await sql`
       SELECT id, name
       FROM "Room"
-      WHERE "lodgingId" = (
-        SELECT lodging_id FROM tenants WHERE id = ${tenantId}
-      )
+      WHERE "lodgingId" = ${lodgingId}
       ORDER BY id ASC
     `;
 
@@ -73,18 +77,11 @@ export async function POST(req: NextRequest) {
       }, { status: 404 });
     }
 
-    // Obtener lodging_id
+    // Obtener lodging_id (usar tenant_id como fallback si no existe)
     const lodgingResult = await sql`
       SELECT lodging_id FROM tenants WHERE id = ${tenantId}
     `;
-    const lodgingId = lodgingResult.rows[0]?.lodging_id;
-    
-    if (!lodgingId) {
-      return NextResponse.json({
-        success: false,
-        message: 'No se encontró el lodging asociado al tenant'
-      }, { status: 404 });
-    }
+    const lodgingId = lodgingResult.rows[0]?.lodging_id || tenantId;
 
     // Obtener conteo actual de habitaciones
     const existingRoomsCount = await sql`
@@ -161,8 +158,11 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Eliminar habitaciones que excedan el límite (si es necesario)
-    if (rooms.length < maxRooms) {
+    // Eliminar habitaciones que excedan el límite del plan (si es necesario)
+    // Solo eliminar si el usuario tiene menos habitaciones que el máximo permitido
+    const maxRoomsAllowed = tenant.max_rooms === -1 ? Infinity : tenant.max_rooms;
+    if (rooms.length < existingRooms.rows.length && maxRoomsAllowed !== Infinity) {
+      // Eliminar habitaciones que excedan el límite
       const roomsToDelete = await sql`
         DELETE FROM "Room"
         WHERE "lodgingId" = ${lodgingId}
