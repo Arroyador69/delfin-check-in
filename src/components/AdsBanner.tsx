@@ -52,33 +52,47 @@ export default function AdsBanner() {
     }
   }, [adSenseReady]);
 
+  // Debug: Log para verificar estado
+  useEffect(() => {
+    if (!loading && tenant) {
+      console.log('📢 [AdsBanner] Estado:', {
+        hasAds: hasAds(tenant),
+        plan_type: tenant.plan_type,
+        ads_enabled: tenant.ads_enabled,
+        isAdSenseConfigured: isAdSenseConfigured(),
+        adSenseReady
+      });
+    }
+  }, [loading, tenant, adSenseReady]);
+
   // No mostrar si está cargando, no hay tenant, no tiene anuncios, o fue cerrado
   if (loading || !tenant || !hasAds(tenant) || dismissed) {
     return null;
   }
 
-  // Si AdSense no está configurado, mostrar marcador visual
+  // Si AdSense no está configurado, mostrar marcador visual MÁS VISIBLE
   if (!isAdSenseConfigured() || !ADSENSE_CONFIG.adUnits.banner) {
     return (
-      <div className="bg-yellow-50 border-b-2 border-dashed border-yellow-300 px-4 py-3 relative">
+      <div className="bg-gradient-to-r from-yellow-100 to-yellow-50 border-b-4 border-dashed border-yellow-400 px-4 py-4 relative shadow-md">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3 flex-1">
-            <div className="text-2xl">📢</div>
+          <div className="flex items-center gap-4 flex-1">
+            <div className="text-4xl animate-pulse">📢</div>
             <div className="flex-1">
-              <p className="text-sm font-semibold text-yellow-800">
-                Espacio para Anuncio (Banner Superior)
+              <p className="text-base font-bold text-yellow-900">
+                📢 ESPACIO PARA ANUNCIO (Banner Superior) - Plan {tenant.plan_type?.toUpperCase() || 'FREE'}
               </p>
-              <p className="text-xs text-yellow-700 mt-1">
-                Configurar unidad de anuncios en AdSense para mostrar publicidad aquí
+              <p className="text-sm text-yellow-800 mt-1 font-medium">
+                Este espacio mostrará anuncios de Google AdSense cuando esté configurado. 
+                <span className="ml-2 text-yellow-700">(Solo visible en planes FREE y CHECKIN)</span>
               </p>
             </div>
           </div>
           <button
             onClick={() => setDismissed(true)}
-            className="p-1 text-yellow-400 hover:text-yellow-600 transition-colors"
+            className="p-2 text-yellow-600 hover:text-yellow-800 hover:bg-yellow-200 rounded-full transition-colors"
             aria-label="Cerrar marcador"
           >
-            <X className="w-5 h-5" />
+            <X className="w-6 h-6" />
           </button>
         </div>
       </div>

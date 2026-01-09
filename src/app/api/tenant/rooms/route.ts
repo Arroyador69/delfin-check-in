@@ -1,15 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
+import { getTenantId } from '@/lib/tenant';
 
 export async function GET(req: NextRequest) {
   try {
-    const tenantId = req.headers.get('x-tenant-id');
+    // Priorizar tenant_id desde JWT; si no está, caer al header (middleware)
+    let tenantId = await getTenantId(req);
+    if (!tenantId || tenantId.trim() === '') {
+      tenantId = req.headers.get('x-tenant-id');
+    }
     
-    if (!tenantId || tenantId === 'default') {
+    if (!tenantId || tenantId === 'default' || tenantId.trim() === '') {
       return NextResponse.json({
         success: false,
         error: 'No se pudo identificar el tenant'
-      }, { status: 400 });
+      }, { status: 401 });
     }
 
     // Obtener lodging_id (usar tenant_id como fallback si no existe)
@@ -48,14 +53,21 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const tenantId = req.headers.get('x-tenant-id');
+    // Priorizar tenant_id desde JWT; si no está, caer al header (middleware)
+    let tenantId = await getTenantId(req);
+    if (!tenantId || tenantId.trim() === '') {
+      tenantId = req.headers.get('x-tenant-id');
+    }
     
-    if (!tenantId || tenantId === 'default') {
+    if (!tenantId || tenantId === 'default' || tenantId.trim() === '') {
+      console.error('❌ [POST /api/tenant/rooms] No se pudo identificar el tenant válido');
       return NextResponse.json({
         success: false,
         error: 'No se pudo identificar el tenant'
-      }, { status: 400 });
+      }, { status: 401 });
     }
+    
+    console.log('🏢 [POST /api/tenant/rooms] Tenant identificado:', tenantId);
     const { rooms } = await req.json();
 
     if (!Array.isArray(rooms)) {
