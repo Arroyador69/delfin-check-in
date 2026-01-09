@@ -62,11 +62,13 @@ export function hasLegalModule(tenant: TenantInfo | null): boolean {
  */
 export function hasAds(tenant: TenantInfo | null): boolean {
   if (!tenant) return false;
+  // Si ads_enabled está explícitamente definido, usarlo
   if (tenant.ads_enabled !== undefined) {
     return tenant.ads_enabled;
   }
-  // Fallback: PRO no tiene anuncios
-  return tenant.plan_type !== 'pro' && tenant.plan_id !== 'pro';
+  // Fallback: FREE y CHECKIN tienen anuncios, PRO no
+  // plan_type puede ser 'free', 'checkin', 'pro'
+  return tenant.plan_type === 'free' || tenant.plan_type === 'checkin';
 }
 
 /**
