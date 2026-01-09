@@ -365,7 +365,7 @@ export function canCreateUnit(tenant: Tenant, currentCount?: number): {
   
   // Plan FREE: máximo 2 habitaciones
   if (planType === 'free') {
-    if (currentUnits >= 2) {
+    if (currentUnits > 2) {
       return {
         canCreate: false,
         reason: 'Has alcanzado el límite de 2 habitaciones del Plan Gratis. Actualiza a Plan Check-in o Plan Pro para añadir más habitaciones.',

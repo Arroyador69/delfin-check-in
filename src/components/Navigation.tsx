@@ -6,8 +6,10 @@ import { Home, Bed, Calendar, Users, Settings, Menu, X, TrendingUp, FileText, Do
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { useTenant, hasLegalModule } from '@/hooks/useTenant';
+import dynamic from 'next/dynamic';
 
 const PWAInstallButton = dynamic(() => import('./PWAInstallButton'), { ssr: false });
+const AdMenu = dynamic(() => import('./AdMenu'), { ssr: false });
 
 export default function Navigation() {
   const pathname = usePathname();
@@ -109,6 +111,9 @@ export default function Navigation() {
       {mobileMenuOpen && (
         <div className="fixed inset-x-0 top-16 bottom-0 bg-white border-t shadow overflow-y-auto">
           <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+            {/* Anuncio en el menú - arriba */}
+            <AdMenu />
+            
             {navigation.map((item) => {
               const isActive = pathname === item.href;
               return (
