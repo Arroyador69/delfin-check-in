@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -218,6 +219,37 @@ export default function MirSettingsPage() {
           </h2>
           <p className="text-gray-700 font-medium text-lg">Configura las credenciales para el envío de comunicaciones al Ministerio del Interior</p>
         </div>
+
+        {/* Banner Recordatorio MIR - Solo si no tiene módulo activado */}
+        {tenant && (!tenant.legal_module || tenant.plan_type === 'free') && (
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-300 rounded-lg p-6 shadow-md">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="flex-1">
+                <h3 className="text-xl font-bold text-blue-900 mb-2">
+                  💰 Módulo MIR - Solo 8€/mes (+ IVA)
+                </h3>
+                <p className="text-base text-blue-800 mb-2">
+                  <strong>Recordatorio:</strong> El envío automático de formularios de huéspedes al Ministerio del Interior es <strong>obligatorio</strong> en España.
+                </p>
+                <p className="text-sm text-blue-700 mb-2">
+                  Por solo <strong>8€/mes (+ IVA 21%)</strong> puedes tener el módulo MIR activado, que incluye:
+                </p>
+                <ul className="list-disc list-inside text-blue-800 text-sm space-y-1">
+                  <li>Check-in digital automático</li>
+                  <li>Envío automático de formularios al gobierno</li>
+                  <li>Cumplimiento legal garantizado</li>
+                  <li>Sin preocupaciones por multas o sanciones</li>
+                </ul>
+              </div>
+              <Link
+                href="/upgrade-plan"
+                className="whitespace-nowrap bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 font-semibold transition-colors shadow-md hover:shadow-lg"
+              >
+                Activar Módulo MIR
+              </Link>
+            </div>
+          </div>
+        )}
 
         {/* Estado de configuración */}
         <Card className="bg-white/90 backdrop-blur-sm border-white/30 shadow-xl transition-all duration-500 hover:shadow-2xl hover:scale-[1.02]">
