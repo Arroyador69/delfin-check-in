@@ -1,26 +1,27 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { ArrowLeft, Check, CheckCircle, Crown, Zap, Shield, TrendingUp, Loader2, CreditCard } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { ArrowLeft, Check, Crown, Zap, Loader2, Calculator, Info } from 'lucide-react';
 import Link from 'next/link';
 import AdminLayout from '@/components/AdminLayout';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
-import DynamicPriceCalculator from '@/components/DynamicPriceCalculator';
 
-// Inicializar Stripe
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '');
 
-// Tipos de planes
-type PlanId = 'basic' | 'basic_yearly' | 'standard' | 'premium' | 'enterprise';
+type PlanId = 'checkin' | 'pro';
 
 interface Plan {
   id: PlanId;
   name: string;
   description: string;
-  price: number;
+  basePrice: number; // Sin IVA
   maxRooms: number;
+  maxRoomsIncluded: number;
+  extraRoomPrice?: number;
+  adsEnabled: boolean;
+  legalModule: boolean;
   features: string[];
   popular?: boolean;
   color: string;
@@ -29,313 +30,305 @@ interface Plan {
 
 const PLANS: Plan[] = [
   {
-    id: 'basic',
-    name: 'Plan Básico',
-    description: 'Perfecto para pequeños alojamientos',
-    price: 14.99,
-    maxRooms: 1,
-    color: 'blue',
-    icon: Shield,
-    features: [
-      '1 propiedad',
-      'Dashboard completo',
-      'Registro MIR automático',
-      'Integraciones de calendario',
-      'Soporte por email'
-    ]
-  },
-  {
-    id: 'standard',
-    name: 'Plan Estándar',
-    description: 'Ideal para alojamientos medianos',
-    price: 26.98,
-    maxRooms: 2,
+    id: 'checkin',
+    name: 'Plan Check-in',
+    description: 'PMS con check-in digital automático',
+    basePrice: 8, // Sin IVA
+    maxRooms: -1, // Ilimitado
+    maxRoomsIncluded: 2,
+    extraRoomPrice: 4,
     color: 'green',
     icon: Zap,
     popular: true,
+    adsEnabled: true,
+    legalModule: true,
     features: [
-      '2 propiedades (13,49€ cada una)',
-      '10% descuento por volumen',
-      'Dashboard completo',
-      'Registro MIR automático',
-      'Integraciones de calendario',
+      'Habitaciones ilimitadas',
+      'Check-in digital automático (MIR)',
+      'Registro de viajeros ilimitado',
+      'PMS completo',
+      'Reservas directas (9% fee)',
+      'Anuncios discretos',
       'Soporte prioritario'
     ]
   },
   {
-    id: 'premium',
-    name: 'Plan Premium',
-    description: 'Para alojamientos grandes',
-    price: 50.96,
-    maxRooms: 4,
+    id: 'pro',
+    name: 'Plan Pro',
+    description: 'PMS completo sin anuncios',
+    basePrice: 29.99, // Sin IVA
+    maxRooms: -1, // Ilimitado
+    maxRoomsIncluded: 6,
+    extraRoomPrice: 5,
     color: 'purple',
-    icon: TrendingUp,
+    icon: Crown,
+    adsEnabled: false,
+    legalModule: true,
     features: [
-      '4 propiedades (12,74€ cada una)',
-      '15% descuento por volumen',
-      'Dashboard completo',
-      'Registro MIR automático',
-      'Integraciones de calendario',
+      'Hasta 6 habitaciones incluidas',
+      'Habitaciones adicionales: 5€/mes',
+      'Check-in digital automático (MIR)',
+      'Sin anuncios',
+      'PMS completo',
+      'Reservas directas (9% fee)',
       'Soporte prioritario',
       'Backup automático'
-    ]
-  },
-  {
-    id: 'enterprise',
-    name: 'Plan Empresarial',
-    description: 'Para cadenas hoteleras',
-    price: 112.40,
-    maxRooms: 10,
-    color: 'gold',
-    icon: Crown,
-    features: [
-      '10+ propiedades (11,24€ cada una)',
-      '25% descuento por volumen',
-      'Todo lo anterior',
-      'Soporte 24/7',
-      'Gestión multi-propiedad',
-      'Soporte telefónico'
     ]
   }
 ];
 
-function CheckoutForm({ planId, propertiesCount, isYearly, totalPrice, onSuccess, onError }: { 
-  planId: PlanId; 
-  propertiesCount: number; 
-  isYearly: boolean;
-  totalPrice: number;
-  onSuccess: () => void; 
-  onError: (error: string) => void 
+function CheckoutForm({ 
+  planId, 
+  roomCount, 
+  pricing, 
+  onSuccess, 
+  onError 
+}: { 
+  planId: PlanId;
+  roomCount: number;
+  pricing: {
+    base_price: number;
+    vat_rate: number;
+    vat_amount: number;
+    total: number;
+  };
+  onSuccess: () => void;
+  onError: (error: string) => void;
 }) {
   const stripe = useStripe();
   const elements = useElements();
-  const [processing, setProcessing] = useState(false);
-  const [termsAccepted, setTermsAccepted] = useState(false);
-  const [showTerms, setShowTerms] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
-
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
     if (!stripe || !elements) {
       return;
     }
 
-    if (!termsAccepted) {
-      onError('Debes aceptar los términos y condiciones para continuar');
-      return;
-    }
-
-    setProcessing(true);
+    setLoading(true);
+    setError('');
 
     try {
-      // Crear payment method con el CardElement
       const cardElement = elements.getElement(CardElement);
-      
       if (!cardElement) {
-        throw new Error('CardElement no encontrado');
+        throw new Error('Elemento de tarjeta no encontrado');
       }
 
-      const { error: methodError, paymentMethod } = await stripe.createPaymentMethod({
+      // Crear payment method
+      const { error: pmError, paymentMethod } = await stripe.createPaymentMethod({
         type: 'card',
         card: cardElement,
       });
 
-      if (methodError) {
-        throw new Error(methodError.message);
+      if (pmError || !paymentMethod) {
+        throw new Error(pmError?.message || 'Error creando método de pago');
       }
 
-      // Procesar el upgrade en el backend usando la nueva API de suscripción por habitaciones
-      const response = await fetch('/api/create-room-subscription', {
+      // Crear suscripción
+      const response = await fetch('/api/stripe/create-subscription', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          roomCount: propertiesCount,
-          isYearly: isYearly,
+          planId,
           paymentMethodId: paymentMethod.id,
+          roomCount,
         }),
       });
 
       const data = await response.json();
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Error procesando el upgrade');
+      if (!data.success) {
+        throw new Error(data.error || 'Error creando suscripción');
       }
 
-      // La nueva API maneja todo internamente, no necesitamos confirmar el pago
       onSuccess();
-
-    } catch (error: any) {
-      onError(error.message);
+    } catch (err: any) {
+      const errorMessage = err.message || 'Error procesando pago';
+      setError(errorMessage);
+      onError(errorMessage);
     } finally {
-      setProcessing(false);
+      setLoading(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Información de tarjeta
-        </label>
-        <div className="p-4 border border-gray-300 rounded-lg">
-          <CardElement
-            options={{
-              style: {
-                base: {
-                  fontSize: '16px',
-                  color: '#424770',
-                  '::placeholder': {
-                    color: '#aab7c4',
-                  },
-                },
-                invalid: {
-                  color: '#9e2146',
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="bg-gray-50 p-4 rounded-lg">
+        <div className="space-y-2 text-sm">
+          <div className="flex justify-between">
+            <span>Precio base:</span>
+            <span>{pricing.base_price.toFixed(2)}€</span>
+          </div>
+          <div className="flex justify-between">
+            <span>IVA ({pricing.vat_rate}%):</span>
+            <span>{pricing.vat_amount.toFixed(2)}€</span>
+          </div>
+          <div className="flex justify-between font-bold text-lg pt-2 border-t">
+            <span>Total:</span>
+            <span>{pricing.total.toFixed(2)}€/mes</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="border rounded-lg p-4">
+        <CardElement
+          options={{
+            style: {
+              base: {
+                fontSize: '16px',
+                color: '#424770',
+                '::placeholder': {
+                  color: '#aab7c4',
                 },
               },
-            }}
-          />
-        </div>
+            },
+          }}
+        />
       </div>
 
-      {/* Términos y Condiciones */}
-      <div className="space-y-4">
-        <div className="flex items-start space-x-3">
-          <input
-            type="checkbox"
-            id="terms-acceptance"
-            checked={termsAccepted}
-            onChange={(e) => setTermsAccepted(e.target.checked)}
-            className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-          />
-          <label htmlFor="terms-acceptance" className="text-sm text-gray-700 cursor-pointer">
-            ☐ Declaro haber leído y aceptado los Términos y Condiciones, la Política de Privacidad y los Supuestos de Uso del servicio Delfín Check-in, y consiento el tratamiento de mis datos conforme a lo dispuesto en la normativa vigente de protección de datos.
-          </label>
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+          {error}
         </div>
-
-        {/* Botón para mostrar/ocultar términos detallados */}
-        <button
-          type="button"
-          onClick={() => setShowTerms(!showTerms)}
-          className="text-sm text-blue-600 hover:text-blue-800 underline"
-        >
-          {showTerms ? 'Ocultar términos detallados' : 'Ver términos detallados'}
-        </button>
-
-        {/* Términos detallados desplegables */}
-        {showTerms && (
-          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-4 text-sm text-gray-700">
-            <p className="font-semibold">Al aceptar, confirmo que:</p>
-            
-            <div className="space-y-3">
-              <p>• Comprendo que Delfín Check-in es una herramienta de gestión que facilita la creación, almacenamiento y exportación de ficheros de registro de viajeros conforme al Real Decreto 933/2021, pero que no realiza el envío automático al MIR ni sustituye las obligaciones legales del titular del alojamiento.</p>
-              
-              <p>• Soy responsable de la veracidad, exactitud y conservación de los datos introducidos en los formularios de registro.</p>
-              
-              <p>• Entiendo que la IA y las funciones disponibles (por ejemplo, chatbot en Telegram o WhatsApp) actúan como asistencia complementaria y no como servicio oficial de verificación, firma o presentación telemática ante las autoridades.</p>
-              
-              <p>• Acepto que los datos procesados se almacenarán de forma segura durante el tiempo necesario para cumplir con las finalidades del servicio y la normativa aplicable.</p>
-              
-              <p>• Reconozco que el servicio requiere una suscripción activa (mensual o anual), cuyo pago otorga acceso al software y sus funcionalidades, sin implicar custodia ni certificación oficial de registros.</p>
-              
-              <p>• Comprendo que pueden producirse interrupciones temporales por mantenimiento, actualizaciones o causas técnicas ajenas a la plataforma, y que estas no darán lugar a compensaciones salvo en casos de incidencia prolongada.</p>
-              
-              <p>• Acepto que los precios, condiciones y funcionalidades del servicio podrán actualizarse, comunicándose siempre por medios electrónicos con antelación razonable.</p>
-              
-              <p>• He revisado las políticas aplicables en <a href="https://delfincheckin.com/terminos-servicio.html" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 underline">Términos de Servicio</a> y <a href="https://delfincheckin.com/politica-privacidad.html" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 underline">Política de Privacidad</a> y las acepto expresamente antes de realizar el pago.</p>
-            </div>
-
-            <p className="font-semibold mt-4">Al continuar, confirmo mi conformidad y doy consentimiento informado para la prestación del servicio.</p>
-          </div>
-        )}
-      </div>
+      )}
 
       <button
         type="submit"
-        disabled={!stripe || processing || !termsAccepted}
-        className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+        disabled={loading || !stripe}
+        className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
       >
-        {processing ? (
+        {loading ? (
           <>
-            <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+            <Loader2 className="animate-spin" size={20} />
             Procesando...
           </>
         ) : (
           <>
-            <CreditCard className="w-5 h-5 mr-2" />
-            Confirmar cambio de plan
+            Suscribirse por {pricing.total.toFixed(2)}€/mes
           </>
         )}
       </button>
-
-      <p className="text-xs text-gray-500 text-center">
-        Tus datos de pago están protegidos con encriptación SSL
-      </p>
     </form>
   );
 }
 
-function UpgradeContent() {
+function PlanCalculator({ planId, onPriceChange }: { planId: PlanId; onPriceChange: (pricing: any) => void }) {
+  const [roomCount, setRoomCount] = useState(2);
+  const [pricing, setPricing] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+
+  const plan = PLANS.find(p => p.id === planId);
+  if (!plan) return null;
+
+  useEffect(() => {
+    calculatePrice();
+  }, [roomCount, planId]);
+
+  const calculatePrice = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch(`/api/plans/calculate-price?planId=${planId}&roomCount=${roomCount}`);
+      const data = await response.json();
+      
+      if (data.success) {
+        setPricing(data.pricing);
+        onPriceChange(data.pricing);
+      }
+    } catch (error) {
+      console.error('Error calculando precio:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="bg-gray-50 p-6 rounded-lg border-2 border-dashed border-gray-300">
+      <div className="flex items-center gap-2 mb-4">
+        <Calculator className="text-blue-600" size={20} />
+        <h3 className="font-semibold text-lg">Calculadora de Precio</h3>
+      </div>
+
+      <div className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium mb-2">
+            Número de habitaciones:
+          </label>
+          <input
+            type="number"
+            min={plan.maxRoomsIncluded}
+            value={roomCount}
+            onChange={(e) => setRoomCount(parseInt(e.target.value) || plan.maxRoomsIncluded)}
+            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+          />
+          <p className="text-xs text-gray-500 mt-1">
+            {plan.maxRoomsIncluded} habitaciones incluidas en el precio base
+            {plan.extraRoomPrice && `, ${plan.extraRoomPrice}€/mes por cada adicional`}
+          </p>
+        </div>
+
+        {pricing && (
+          <div className="bg-white p-4 rounded-lg border">
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span>Precio base:</span>
+                <span>{pricing.base_price.toFixed(2)}€</span>
+              </div>
+              {pricing.extra_rooms_price > 0 && (
+                <div className="flex justify-between text-sm text-gray-600">
+                  <span>Habitaciones extra ({pricing.extra_rooms || 0}):</span>
+                  <span>+{pricing.extra_rooms_price.toFixed(2)}€</span>
+                </div>
+              )}
+              <div className="flex justify-between text-sm">
+                <span>Subtotal:</span>
+                <span>{pricing.subtotal.toFixed(2)}€</span>
+              </div>
+              <div className="flex justify-between text-sm text-gray-600">
+                <span>IVA ({pricing.vat.vat_rate}%):</span>
+                <span>+{pricing.vat.vat_amount.toFixed(2)}€</span>
+              </div>
+              <div className="flex justify-between font-bold text-lg pt-2 border-t">
+                <span>Total mensual:</span>
+                <span className="text-blue-600">{pricing.total.toFixed(2)}€</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {loading && (
+          <div className="flex items-center justify-center py-4">
+            <Loader2 className="animate-spin text-blue-600" size={24} />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default function UpgradePlanPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const [currentPlanId, setCurrentPlanId] = useState<PlanId>('basic');
-  const [selectedPlanId, setSelectedPlanId] = useState<PlanId | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
+  const [currentPlan, setCurrentPlan] = useState<string | null>(null);
+  const [selectedPlan, setSelectedPlan] = useState<PlanId | null>(null);
   const [showCheckout, setShowCheckout] = useState(false);
-  const [properties, setProperties] = useState<Array<{id: number, name: string}>>([]);
-  const [selectedProperties, setSelectedProperties] = useState<number>(1);
-  const [newPropertyName, setNewPropertyName] = useState('');
-  const [currentMaxRooms, setCurrentMaxRooms] = useState<number>(1);
-  const [isYearly, setIsYearly] = useState<boolean>(false);
-  const [totalPrice, setTotalPrice] = useState<number>(0);
+  const [pricing, setPricing] = useState<any>(null);
+  const [roomCount, setRoomCount] = useState(2);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadCurrentPlan();
-    loadProperties();
-    
-    // Obtener plan de la URL si está presente
-    const urlPlan = searchParams.get('plan') as PlanId;
-    if (urlPlan && PLANS.find(p => p.id === urlPlan)) {
-      setSelectedPlanId(urlPlan);
-    }
-  }, [searchParams]);
-
-  // Actualizar precio cuando cambia el número de propiedades
-  useEffect(() => {
-    const pricePerProperty = getVolumePrice(selectedProperties);
-    let calculatedPrice = selectedProperties * pricePerProperty;
-    
-    if (isYearly) {
-      const yearlyPrice = calculatedPrice * 12;
-      const annualDiscount = yearlyPrice * 0.167; // 16.7% descuento anual
-      calculatedPrice = yearlyPrice - annualDiscount;
-    }
-    
-    setTotalPrice(calculatedPrice);
-  }, [selectedProperties, isYearly]);
-
-  // Función para obtener precio por propiedad según volumen (misma lógica que DynamicPriceCalculator)
-  const getVolumePrice = (propCount: number): number => {
-    if (propCount === 1) return 14.99;
-    if (propCount === 2) return 13.49;
-    if (propCount >= 3 && propCount <= 4) return 12.74;
-    if (propCount >= 5 && propCount <= 9) return 11.99;
-    if (propCount >= 10) return 11.24;
-    return 14.99;
-  };
+  }, []);
 
   const loadCurrentPlan = async () => {
     try {
-      setLoading(true);
       const response = await fetch('/api/tenant');
       const data = await response.json();
       
-      if (response.ok && data.tenant) {
-        setCurrentPlanId(data.tenant.plan_id as PlanId);
-        setCurrentMaxRooms(data.tenant.max_rooms || 1);
+      if (data.success && data.tenant) {
+        setCurrentPlan(data.tenant.plan_type || 'free');
       }
     } catch (error) {
       console.error('Error cargando plan actual:', error);
@@ -344,95 +337,39 @@ function UpgradeContent() {
     }
   };
 
-  const loadProperties = async () => {
-    try {
-      // Cargar propiedades desde localStorage o API
-      const savedProperties = localStorage.getItem('rooms_config');
-      if (savedProperties) {
-        const parsedProperties = JSON.parse(savedProperties);
-        setProperties(parsedProperties);
-        setSelectedProperties(parsedProperties.length);
-      } else {
-        // Propiedades por defecto
-        const defaultProperties = [
-          { id: 1, name: 'Habitación 1' },
-          { id: 2, name: 'Habitación 2' },
-          { id: 3, name: 'Habitación 3' },
-          { id: 4, name: 'Habitación 4' },
-          { id: 5, name: 'Habitación 5' },
-          { id: 6, name: 'Habitación 6' }
-        ];
-        setProperties(defaultProperties);
-        setSelectedProperties(1);
-      }
-    } catch (error) {
-      console.error('Error cargando propiedades:', error);
-    }
-  };
-
   const handleSelectPlan = (planId: PlanId) => {
-    if (planId === currentPlanId) {
-      return;
+    if (planId === currentPlan) {
+      return; // No se puede seleccionar el plan actual
     }
-    setSelectedPlanId(planId);
-    
-    // Si es un upgrade, permitir más propiedades
-    const selectedPlan = PLANS.find(p => p.id === planId);
-    if (selectedPlan && selectedPlan.maxRooms > currentMaxRooms) {
-      setSelectedProperties(Math.min(properties.length + 1, selectedPlan.maxRooms));
-    } else {
-      setSelectedProperties(Math.min(selectedProperties, selectedPlan?.maxRooms || 1));
-    }
-    
+    setSelectedPlan(planId);
     setShowCheckout(true);
+    setRoomCount(planId === 'checkin' ? 2 : planId === 'pro' ? 6 : 2);
   };
 
-  const addProperty = () => {
-    if (newPropertyName.trim()) {
-      const newId = Math.max(...properties.map(p => p.id), 0) + 1;
-      const newProperty = { id: newId, name: newPropertyName.trim() };
-      const updatedProperties = [...properties, newProperty];
-      setProperties(updatedProperties);
-      setSelectedProperties(updatedProperties.length);
-      setNewPropertyName('');
-      localStorage.setItem('rooms_config', JSON.stringify(updatedProperties));
-    }
+  const handlePriceChange = (newPricing: any) => {
+    setPricing(newPricing);
   };
 
-  const removeProperty = (propertyId: number) => {
-    const updatedProperties = properties.filter(p => p.id !== propertyId);
-    setProperties(updatedProperties);
-    setSelectedProperties(Math.min(selectedProperties, updatedProperties.length));
-    localStorage.setItem('rooms_config', JSON.stringify(updatedProperties));
+  const handleSuccess = () => {
+    alert('¡Plan actualizado exitosamente!');
+    router.push('/');
+    router.refresh();
   };
 
-  const handleUpgradeSuccess = () => {
-    setSuccess(true);
-    setShowCheckout(false);
-    
-    setTimeout(() => {
-      router.push('/settings/billing');
-    }, 2000);
-  };
-
-  const handleUpgradeError = (errorMessage: string) => {
-    setError(errorMessage);
-    setTimeout(() => setError(''), 5000);
-  };
-
-  const currentPlan = PLANS.find(p => p.id === currentPlanId);
-  const selectedPlan = selectedPlanId ? PLANS.find(p => p.id === selectedPlanId) : null;
-  const isUpgrade = selectedPlan && selectedPlan.price > (currentPlan?.price || 0);
-  const isDowngrade = selectedPlan && selectedPlan.price < (currentPlan?.price || 0);
+  // Filtrar planes según el plan actual
+  // Si tiene CHECKIN, solo mostrar PRO
+  // Si tiene FREE, mostrar CHECKIN y PRO
+  const availablePlans = currentPlan === 'checkin' 
+    ? PLANS.filter(p => p.id === 'pro')
+    : PLANS;
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-center">
-          <div className="loading mx-auto"></div>
-          <p className="mt-4 text-gray-600">Cargando planes...</p>
+      <AdminLayout>
+        <div className="flex items-center justify-center min-h-screen">
+          <Loader2 className="animate-spin text-blue-600" size={32} />
         </div>
-      </div>
+      </AdminLayout>
     );
   }
 
@@ -444,15 +381,19 @@ function UpgradeContent() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center py-6">
               <Link 
-                href="/settings/billing"
+                href="/"
                 className="mr-4 p-2 hover:bg-gray-100 rounded-lg transition-colors"
               >
                 <ArrowLeft className="w-5 h-5 text-gray-600" />
               </Link>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Cambiar de plan</h1>
+                <h1 className="text-2xl font-bold text-gray-900">Mejorar Plan</h1>
                 <p className="text-sm text-gray-600">
-                  Plan actual: <span className="font-semibold">{currentPlan?.name}</span>
+                  Plan actual: <span className="font-semibold">
+                    {currentPlan === 'free' ? 'Plan Gratis' : 
+                     currentPlan === 'checkin' ? 'Plan Check-in' : 
+                     currentPlan === 'pro' ? 'Plan Pro' : 'Desconocido'}
+                  </span>
                 </p>
               </div>
             </div>
@@ -460,196 +401,139 @@ function UpgradeContent() {
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          
-          {/* Success Message */}
-          {success && (
-            <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center">
-              <Check className="w-5 h-5 text-green-600 mr-3" />
-              <p className="text-green-800">
-                ¡Plan actualizado correctamente! Redirigiendo...
+          {showCheckout && selectedPlan ? (
+            <div className="max-w-2xl mx-auto">
+              <div className="bg-white rounded-lg shadow-lg p-8">
+                <button
+                  onClick={() => {
+                    setShowCheckout(false);
+                    setSelectedPlan(null);
+                  }}
+                  className="text-gray-600 hover:text-gray-900 mb-6 flex items-center gap-2"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  Volver a planes
+                </button>
+
+                <h2 className="text-2xl font-bold mb-4">
+                  Suscribirse a {PLANS.find(p => p.id === selectedPlan)?.name}
+                </h2>
+
+                <PlanCalculator 
+                  planId={selectedPlan} 
+                  onPriceChange={handlePriceChange}
+                />
+
+                {pricing && (
+                  <div className="mt-6">
+                    <Elements stripe={stripePromise}>
+                      <CheckoutForm
+                        planId={selectedPlan}
+                        roomCount={roomCount}
+                        pricing={pricing}
+                        onSuccess={handleSuccess}
+                        onError={(error) => console.error(error)}
+                      />
+                    </Elements>
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="text-center mb-12">
+              <h2 className="text-3xl font-bold text-gray-900 mb-4">
+                Mejora tu Plan
+              </h2>
+              <p className="text-xl text-gray-600">
+                Elige el plan que mejor se adapte a tus necesidades
               </p>
             </div>
           )}
 
-          {/* Error Message */}
-          {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-red-800">{error}</p>
-            </div>
-          )}
+          {!showCheckout && (
+            <div className={`grid gap-8 ${availablePlans.length === 1 ? 'md:grid-cols-1 max-w-md mx-auto' : 'md:grid-cols-2'}`}>
+              {availablePlans.map((plan) => {
+                const Icon = plan.icon;
+                const isCurrent = plan.id === currentPlan;
 
-          {!showCheckout ? (
-            <div className="max-w-2xl mx-auto">
-              <DynamicPriceCalculator
-                currentProperties={properties.length}
-                isYearly={false}
-                showUpgradeButton={true}
-                onCheckout={(rooms, isYearly, totalPrice) => {
-                  setSelectedProperties(rooms);
-                  setIsYearly(isYearly);
-                  setTotalPrice(totalPrice);
-                  setShowCheckout(true);
-                }}
-              />
-            </div>
-          ) : null}
-
-          {showCheckout ? (
-            <div className="max-w-4xl mx-auto">
-              <div className="bg-white rounded-lg shadow-lg p-8">
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">
-                  {isUpgrade ? 'Upgrade a' : 'Cambiar a'} {selectedPlan?.name}
-                </h2>
-
-                {/* Selección de Propiedades */}
-                <div className="mb-8 p-6 bg-blue-50 rounded-lg border border-blue-200">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                    <span className="text-2xl mr-3" style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>🏠</span>
-                    Seleccionar Propiedades
-                  </h3>
-                  
-                  {/* Propiedades existentes */}
-                  <div className="mb-4">
-                    <h4 className="text-sm font-medium text-gray-700 mb-3">Propiedades disponibles:</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
-                      {properties.map((property) => (
-                        <div key={property.id} className="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-200">
-                          <div className="flex items-center">
-                            <span className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-sm mr-3">
-                              {property.id}
-                            </span>
-                            <span className="text-gray-900 font-medium">{property.name}</span>
-                          </div>
-                          <button
-                            onClick={() => removeProperty(property.id)}
-                            className="text-red-600 hover:text-red-800 text-sm font-medium"
-                          >
-                            Eliminar
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Añadir nueva propiedad */}
-                  <div className="mb-4">
-                    <h4 className="text-sm font-medium text-gray-700 mb-3">Añadir nueva propiedad:</h4>
-                    <div className="flex space-x-3">
-                      <input
-                        type="text"
-                        value={newPropertyName}
-                        onChange={(e) => setNewPropertyName(e.target.value)}
-                        placeholder="Nombre de la propiedad"
-                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                        onKeyPress={(e) => e.key === 'Enter' && addProperty()}
-                      />
-                      <button
-                        onClick={addProperty}
-                        disabled={!newPropertyName.trim()}
-                        className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
-                      >
-                        Añadir
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Selector de número de propiedades */}
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-700 mb-3">Número de propiedades a contratar:</h4>
-                    <input
-                      type="number"
-                      min="1"
-                      max="100"
-                      value={selectedProperties}
-                      onChange={(e) => setSelectedProperties(parseInt(e.target.value) || 1)}
-                      className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                    />
-                    <p className="text-xs text-gray-500 mt-2">
-                      Puedes contratar desde 1 hasta 100 propiedades. El precio se calcula automáticamente con descuentos por volumen.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="mb-8 p-4 bg-gray-50 rounded-lg">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-gray-600">Plan actual:</span>
-                    <span className="font-semibold">{currentPlan?.name} - €{currentPlan?.price}/mes</span>
-                  </div>
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-gray-600">Nuevo plan:</span>
-                    <span className="font-semibold text-green-600">{selectedPlan?.name}</span>
-                  </div>
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-gray-600">Propiedades:</span>
-                    <span className="font-semibold">{selectedProperties} {selectedProperties === 1 ? 'propiedad' : 'propiedades'}</span>
-                  </div>
-                  <div className="mt-4 pt-4 border-t border-gray-200">
-                    <div className="flex justify-between items-center">
-                      <span className="font-semibold">
-                        {isUpgrade ? 'Costo adicional:' : 'Nuevo costo:'}
-                      </span>
-                      <span className="text-xl font-bold text-gray-900">
-                        €{totalPrice.toFixed(2)}/{isYearly ? 'año' : 'mes'}
-                      </span>
-                    </div>
-                    {isYearly && (
-                      <div className="text-sm text-gray-600 mt-1">
-                        Equivale a €{(totalPrice / 12).toFixed(2)}/mes
+                return (
+                  <div
+                    key={plan.id}
+                    className={`bg-white rounded-lg shadow-lg p-8 relative ${
+                      plan.popular ? 'ring-2 ring-blue-500 scale-105' : ''
+                    } ${isCurrent ? 'ring-2 ring-green-500' : ''}`}
+                  >
+                    {plan.popular && (
+                      <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                        <span className="bg-blue-600 text-white px-4 py-1 rounded-full text-sm font-semibold">
+                          Más Popular
+                        </span>
                       </div>
                     )}
+
+                    {isCurrent && (
+                      <div className="absolute top-4 right-4">
+                        <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-semibold">
+                          Plan Actual
+                        </span>
+                      </div>
+                    )}
+
+                    <div className="text-center mb-6">
+                      <div className={`inline-flex items-center justify-center w-16 h-16 rounded-full bg-${plan.color}-100 mb-4`}>
+                        <Icon className={`text-${plan.color}-600`} size={32} />
+                      </div>
+                      <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                        {plan.name}
+                      </h3>
+                      <p className="text-gray-600 mb-4">{plan.description}</p>
+                      <div className="mb-4">
+                        <span className="text-4xl font-bold text-gray-900">
+                          {plan.basePrice}€
+                        </span>
+                        <span className="text-gray-600">/mes</span>
+                        <p className="text-xs text-gray-500 mt-1">
+                          + IVA (21%)
+                        </p>
+                      </div>
+                      {plan.extraRoomPrice && (
+                        <p className="text-sm text-gray-500">
+                          +{plan.extraRoomPrice}€/mes por habitación adicional
+                        </p>
+                      )}
+                    </div>
+
+                    <ul className="space-y-3 mb-8">
+                      {plan.features.map((feature, index) => (
+                        <li key={index} className="flex items-start gap-2">
+                          <Check className="text-green-500 flex-shrink-0 mt-0.5" size={20} />
+                          <span className="text-gray-700">{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+
+                    <button
+                      onClick={() => handleSelectPlan(plan.id)}
+                      disabled={isCurrent}
+                      className={`w-full py-3 px-4 rounded-lg font-semibold transition-colors ${
+                        isCurrent
+                          ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                          : plan.popular
+                          ? 'bg-blue-600 text-white hover:bg-blue-700'
+                          : `bg-${plan.color}-600 text-white hover:bg-${plan.color}-700`
+                      }`}
+                    >
+                      {isCurrent
+                        ? 'Plan Actual'
+                        : 'Seleccionar Plan'}
+                    </button>
                   </div>
-                </div>
-
-                <Elements stripe={stripePromise}>
-                  <CheckoutForm
-                    planId={selectedPlanId!}
-                    propertiesCount={selectedProperties}
-                    isYearly={isYearly}
-                    totalPrice={totalPrice}
-                    onSuccess={handleUpgradeSuccess}
-                    onError={handleUpgradeError}
-                  />
-                </Elements>
-
-                <div className="mt-6 text-center">
-                  <button
-                    onClick={() => setShowCheckout(false)}
-                    className="text-gray-600 hover:text-gray-800 text-sm"
-                  >
-                    Volver a planes
-                  </button>
-                </div>
-              </div>
+                );
+              })}
             </div>
-          ) : null}
-
-          {/* Info Card */}
-          <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
-            <h3 className="font-semibold text-blue-900 mb-3">💡 Información importante</h3>
-            <ul className="text-blue-800 text-sm space-y-2">
-              <li>• Los upgrades son efectivos inmediatamente</li>
-              <li>• Los downgrades se aplican al final del período de facturación actual</li>
-              <li>• Puedes cancelar en cualquier momento desde la configuración de facturación</li>
-              <li>• Todos los planes incluyen soporte técnico</li>
-            </ul>
-          </div>
+          )}
         </div>
       </div>
     </AdminLayout>
-  );
-}
-
-export default function UpgradePlanPage() {
-  return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="loading mx-auto"></div>
-          <p className="mt-4 text-gray-600">Cargando...</p>
-        </div>
-      </div>
-    }>
-      <UpgradeContent />
-    </Suspense>
   );
 }
