@@ -235,6 +235,10 @@ export default function SettingsLayout({
                   );
                 })}
               </nav>
+              {/* Anuncio en sidebar - solo en settings, no crítico */}
+              <div className="mt-6">
+                <AdSidebar />
+              </div>
             </div>
 
             {/* Content */}
