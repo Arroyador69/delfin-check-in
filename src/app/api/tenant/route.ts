@@ -195,7 +195,10 @@ export async function GET(req: NextRequest) {
     };
 
     console.log(`🏢 Información del tenant obtenida: ${tenant.name} (${tenant.plan_id})`);
-    return NextResponse.json(response);
+    return NextResponse.json({
+      success: true,
+      ...response
+    });
 
   } catch (error) {
     console.error('Error fetching tenant info:', error);

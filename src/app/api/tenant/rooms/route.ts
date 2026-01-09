@@ -104,26 +104,38 @@ export async function POST(req: NextRequest) {
     const currentCount = parseInt(existingRoomsCount.rows[0]?.count || '0', 10);
     
     // Validar que puede crear las nuevas habitaciones
+    // IMPORTANTE: Validar el número FINAL de habitaciones, no el incremento
+    const finalCount = rooms.length; // Después de eliminar y recrear, será el número total
     const { canCreateUnit } = await import('@/lib/tenant');
-    const validation = canCreateUnit(tenant, currentCount + rooms.length);
+    const validation = canCreateUnit(tenant, finalCount);
+    
+    console.log(`🔍 [POST /api/tenant/rooms] Validación:`, {
+      plan_type: tenant.plan_type,
+      currentCount,
+      finalCount,
+      roomsToSave: rooms.length,
+      canCreate: validation.canCreate,
+      reason: validation.reason
+    });
     
     if (!validation.canCreate) {
       const planType = tenant.plan_type || 'free';
       let errorMessage = validation.reason || 'No puedes crear más habitaciones';
       
       // Mensajes personalizados según el plan
-      if (planType === 'free' && currentCount >= 2) {
+      if (planType === 'free' && finalCount > 2) {
         errorMessage = 'Has alcanzado el límite de 2 habitaciones del Plan Gratis. Actualiza a Plan Check-in (8€/mes) o Plan Pro (29,99€/mes) para añadir más habitaciones.';
       } else if (planType === 'checkin') {
-        errorMessage = `Puedes añadir más habitaciones, pero cada una adicional costará 4€/mes. Actualmente tienes ${currentCount} habitaciones.`;
-      } else if (planType === 'pro' && currentCount >= 6) {
+        errorMessage = `Puedes añadir más habitaciones, pero cada una adicional costará 4€/mes. Actualmente tienes ${finalCount} habitaciones.`;
+      } else if (planType === 'pro' && finalCount > 6) {
         errorMessage = `Has alcanzado las 6 habitaciones incluidas en Plan Pro. Las habitaciones adicionales tendrán un coste extra de 5€/mes cada una.`;
       }
       
+      console.error(`❌ [POST /api/tenant/rooms] Validación fallida:`, errorMessage);
       return NextResponse.json({
         success: false,
         error: errorMessage,
-        current_usage: currentCount,
+        current_usage: finalCount,
         max_included: planType === 'free' ? 2 : planType === 'pro' ? 6 : null,
         plan_type: planType,
         needs_upgrade: validation.needsUpgrade || false,
