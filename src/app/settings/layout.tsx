@@ -5,7 +5,11 @@ import AdminLayout from '@/components/AdminLayout';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Settings, FileText, CreditCard, User, LinkIcon, Home, Calendar, Wallet, AlertCircle, ExternalLink } from 'lucide-react';
-import AdSidebar from '@/components/AdSidebar';
+import dynamic from 'next/dynamic';
+
+const AdSidebar = dynamic(() => import('@/components/AdSidebar'), {
+  ssr: false
+});
 
 export default function SettingsLayout({
   children,
