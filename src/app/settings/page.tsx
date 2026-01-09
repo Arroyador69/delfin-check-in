@@ -24,7 +24,9 @@ export default function SettingsPage() {
     const loadData = async () => {
       try {
         // Cargar límites del tenant
-        const limitsResponse = await fetch('/api/tenant/limits');
+        const limitsResponse = await fetch('/api/tenant/limits', {
+          credentials: 'include' // Incluir cookies
+        });
         if (limitsResponse.ok) {
           const limitsData = await limitsResponse.json();
           if (limitsData.success) {
@@ -142,6 +144,7 @@ export default function SettingsPage() {
                 const response = await fetch('/api/tenant/rooms', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
+                  credentials: 'include', // Incluir cookies para que el middleware pueda extraer tenant_id
                   body: JSON.stringify({ rooms: roomsConfig })
                 });
                 

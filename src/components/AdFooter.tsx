@@ -12,28 +12,36 @@ export default function AdFooter() {
   const { tenant, loading } = useTenant();
   const [adSenseReady, setAdSenseReady] = useState(false);
 
-  // Cargar script de AdSense si está configurado
+  // El script ya se carga en layout.tsx, solo verificar que esté listo
   useEffect(() => {
     if (isAdSenseConfigured() && typeof window !== 'undefined') {
-      if (!document.querySelector('script[src*="adsbygoogle"]')) {
-        const script = document.createElement('script');
-        script.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CONFIG.publisherId}`;
-        script.async = true;
-        script.crossOrigin = 'anonymous';
-        document.head.appendChild(script);
-      }
-      setAdSenseReady(true);
+      const checkAdSense = () => {
+        if ((window as any).adsbygoogle) {
+          setAdSenseReady(true);
+        } else {
+          setTimeout(checkAdSense, 100);
+        }
+      };
+      checkAdSense();
     }
   }, []);
 
-  // Inicializar anuncios cuando estén listos
+  // Inicializar anuncios cuando estén listos (solo una vez)
   useEffect(() => {
     if (adSenseReady && typeof window !== 'undefined' && (window as any).adsbygoogle) {
-      try {
-        ((window as any).adsbygoogle = (window as any).adsbygoogle || []).push({});
-      } catch (e) {
-        console.warn('Error inicializando AdSense footer:', e);
-      }
+      const timer = setTimeout(() => {
+        try {
+          const adElements = document.querySelectorAll('.adsbygoogle');
+          adElements.forEach((el) => {
+            if (!el.hasAttribute('data-adsbygoogle-status')) {
+              ((window as any).adsbygoogle = (window as any).adsbygoogle || []).push({});
+            }
+          });
+        } catch (e) {
+          console.warn('Error inicializando AdSense footer:', e);
+        }
+      }, 500);
+      return () => clearTimeout(timer);
     }
   }, [adSenseReady]);
 
@@ -42,9 +50,20 @@ export default function AdFooter() {
     return null;
   }
 
-  // Si AdSense no está configurado, no mostrar nada
+  // Si AdSense no está configurado, mostrar marcador visual
   if (!isAdSenseConfigured() || !ADSENSE_CONFIG.adUnits.footer) {
-    return null;
+    return (
+      <div className="bg-yellow-50 border-t-2 border-dashed border-yellow-300 py-4 mt-8">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="text-center">
+            <div className="text-2xl mb-2">📢</div>
+            <p className="text-xs font-semibold text-yellow-800 mb-1">Espacio para Anuncio</p>
+            <p className="text-xs text-yellow-700">Footer Responsive</p>
+            <p className="text-xs text-yellow-600 mt-2">(Configurar unidad de anuncios en AdSense)</p>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
