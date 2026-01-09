@@ -70,7 +70,7 @@ export async function sendOnboardingEmail(params: {
           <p style="margin: 10px 0 0 0; opacity: 0.9;">Tu plataforma de gestión de alojamientos</p>
         </div>
         <div class="content">
-          <h2>¡Gracias por tu compra!</h2>
+          <h2>¡Bienvenido a Delfín Check-in!</h2>
           <p>Tu cuenta ha sido creada exitosamente. Para completar tu configuración inicial y acceder a tu panel de administración, haz clic en el siguiente botón:</p>
           <p style="text-align: center;">
             <a href="${params.onboardingUrl}" class="button">Comenzar Onboarding</a>
@@ -110,7 +110,7 @@ export async function sendOnboardingEmail(params: {
     const text = `
 🐬 Bienvenido a Delfín Check-in
 
-¡Gracias por tu compra!
+¡Bienvenido a Delfín Check-in!
 
 Tu cuenta ha sido creada exitosamente. Para completar tu configuración inicial, visita:
 

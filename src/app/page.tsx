@@ -215,7 +215,8 @@ export default function HomePage() {
   };
 
   // Calcular estadísticas basadas en reservas filtradas
-  const totalRooms = 6;
+  // Usar el número real de habitaciones del tenant (stats.rooms_used) o el array de habitaciones
+  const totalRooms = tenant?.stats?.rooms_used || rooms.length || 0;
   const totalReservations = filteredReservations.length;
   const confirmedReservations = filteredReservations.filter(r => r.status === 'confirmed').length;
   const today = new Date().toISOString().split('T')[0];
