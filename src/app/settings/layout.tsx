@@ -5,6 +5,7 @@ import AdminLayout from '@/components/AdminLayout';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Settings, FileText, CreditCard, User, LinkIcon, Home, Calendar, Wallet, AlertCircle, ExternalLink } from 'lucide-react';
+import AdSidebar from '@/components/AdSidebar';
 
 export default function SettingsLayout({
   children,
