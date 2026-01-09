@@ -382,6 +382,31 @@ export default function HomePage() {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
+        {/* Banner MIR - Solo para usuarios sin módulo MIR activado */}
+        {tenant && tenant.tenant && (!tenant.tenant.legal_module || tenant.tenant.plan_type === 'free') && (
+          <div className="mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-300 rounded-lg p-4 sm:p-6 shadow-md">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="flex-1">
+                <h3 className="text-lg sm:text-xl font-bold text-blue-900 mb-2">
+                  💰 Módulo MIR - Solo 8€/mes (+ IVA)
+                </h3>
+                <p className="text-sm sm:text-base text-blue-800 mb-2">
+                  <strong>Recordatorio:</strong> El envío automático de formularios de huéspedes al Ministerio del Interior es <strong>obligatorio</strong> en España.
+                </p>
+                <p className="text-sm sm:text-base text-blue-700">
+                  Por solo <strong>8€/mes (+ IVA 21%)</strong> puedes tener el módulo MIR activado, que incluye check-in digital automático y envío automático de formularios al gobierno.
+                </p>
+              </div>
+              <Link
+                href="/upgrade-plan"
+                className="whitespace-nowrap bg-blue-600 text-white px-4 py-2 sm:px-6 sm:py-3 rounded-lg hover:bg-blue-700 font-semibold text-sm sm:text-base transition-colors shadow-md hover:shadow-lg"
+              >
+                Activar Módulo MIR
+              </Link>
+            </div>
+          </div>
+        )}
+
         {/* Información del Plan */}
         {tenant && tenant.tenant && (
           <div className="card mb-6 sm:mb-8 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">

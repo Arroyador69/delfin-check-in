@@ -417,10 +417,34 @@ export default function OnboardingPage() {
           <h2 className="text-lg font-semibold text-yellow-800 mb-2">
             ⚠️ Información Importante
           </h2>
-          <p className="text-yellow-700">
+          <p className="text-yellow-700 mb-3">
             Para poder enviar las comunicaciones al Ministerio del Interior, necesita configurar sus credenciales MIR. 
             Estas credenciales las obtiene al registrarse en el Sistema de Hospedajes (SES-Hospedajes) del MIR.
           </p>
+        </div>
+
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+          <h2 className="text-lg font-semibold text-blue-800 mb-2">
+            💰 Módulo MIR - Solo 8€/mes
+          </h2>
+          <p className="text-blue-700 mb-2">
+            <strong>Recordatorio:</strong> El envío automático de formularios de huéspedes al Ministerio del Interior es <strong>obligatorio</strong> en España.
+          </p>
+          <p className="text-blue-700">
+            Por solo <strong>8€/mes (+ IVA)</strong> puedes tener el módulo MIR activado, que incluye:
+          </p>
+          <ul className="list-disc list-inside text-blue-800 mt-2 space-y-1">
+            <li>Check-in digital automático</li>
+            <li>Envío automático de formularios al gobierno</li>
+            <li>Cumplimiento legal garantizado</li>
+            <li>Sin preocupaciones por multas o sanciones</li>
+          </ul>
+          <Link 
+            href="/upgrade-plan"
+            className="inline-block mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-semibold"
+          >
+            Activar Módulo MIR por 8€/mes
+          </Link>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
