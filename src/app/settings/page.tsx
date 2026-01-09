@@ -9,7 +9,7 @@ export default function SettingsPage() {
   // Estados para configuración de habitaciones/apartamentos
   const [roomsConfig, setRoomsConfig] = useState<Array<{id: number, name: string}>>([]);
   const [tenantLimits, setTenantLimits] = useState({ 
-    maxRooms: 6, 
+    maxRooms: 2, // Default para plan FREE
     maxReservations: 100, 
     maxGuests: 50 
   });
@@ -38,14 +38,10 @@ export default function SettingsPage() {
         }
       } catch (error) {
         console.error('Error cargando datos:', error);
-        // Fallback a configuración por defecto
+        // Fallback a configuración por defecto (2 habitaciones para plan FREE)
         setRoomsConfig([
           { id: 1, name: 'Habitación 1' },
-          { id: 2, name: 'Habitación 2' },
-          { id: 3, name: 'Habitación 3' },
-          { id: 4, name: 'Habitación 4' },
-          { id: 5, name: 'Habitación 5' },
-          { id: 6, name: 'Habitación 6' }
+          { id: 2, name: 'Habitación 2' }
         ]);
       }
     };
