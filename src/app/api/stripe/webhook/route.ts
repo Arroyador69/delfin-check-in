@@ -148,6 +148,16 @@ async function createTenantFromPayment(pi: Stripe.PaymentIntent, overrideEmail?:
 
     console.log('✅ Usuario creado:', user.id)
 
+    // Generar código de referido para el nuevo tenant
+    try {
+      const { generateReferralCodeForTenant } = await import('@/lib/referrals');
+      await generateReferralCodeForTenant(tenant.id);
+      console.log('✅ Código de referido generado para tenant:', tenant.id);
+    } catch (refError) {
+      console.warn('⚠️ Error generando código de referido:', refError);
+      // No es crítico, continuar
+    }
+
     // Generar token para onboarding (usar reset_token como token temporal)
     const onboardingToken = Math.random().toString(36).slice(-32) + Math.random().toString(36).slice(-32);
     const tokenExpiry = new Date();
@@ -257,6 +267,16 @@ async function createTenantFromInvoice(inv: Stripe.Invoice, email: string): Prom
     })
 
     console.log('✅ Usuario creado (invoice):', user.id)
+
+    // Generar código de referido para el nuevo tenant
+    try {
+      const { generateReferralCodeForTenant } = await import('@/lib/referrals');
+      await generateReferralCodeForTenant(tenant.id);
+      console.log('✅ Código de referido generado para tenant (invoice):', tenant.id);
+    } catch (refError) {
+      console.warn('⚠️ Error generando código de referido (invoice):', refError);
+      // No es crítico, continuar
+    }
 
     const onboardingToken = Math.random().toString(36).slice(-32) + Math.random().toString(36).slice(-32)
     const tokenExpiry = new Date()
@@ -377,6 +397,21 @@ export async function POST(req: NextRequest) {
               // Sincronizar factura
               await syncStripeInvoice(invoice, tenant.id)
               console.log('✅ Pago exitoso - servicios restaurados para tenant:', tenant.id)
+              
+              // Manejar referidos: actualizar estado y recalcular recompensas
+              try {
+                const { handleReferralPaymentSucceeded } = await import('@/lib/referral-webhooks');
+                const { applyCreditsBeforePayment } = await import('@/lib/referral-credits');
+                
+                // Aplicar créditos antes del cobro (si aplica)
+                await applyCreditsBeforePayment(tenant.id);
+                
+                // Manejar referido si es referido de alguien
+                await handleReferralPaymentSucceeded(tenant.id, invoice);
+              } catch (refError) {
+                console.warn('⚠️ Error manejando referidos en pago exitoso:', refError);
+                // No es crítico, continuar
+              }
             } else {
               // Si no existe, crear nuevo tenant (onboarding)
               await createTenantFromInvoice(invoice, customerEmail)
@@ -395,6 +430,20 @@ export async function POST(req: NextRequest) {
           const invoice = event.data.object as Stripe.Invoice
           console.log('❌ Pago fallido para invoice:', invoice.id)
           await handlePaymentFailed(invoice)
+          
+          // Manejar referidos: actualizar estado y notificar
+          if (invoice.customer) {
+            try {
+              const tenant = await findTenantByStripeCustomerId(String(invoice.customer))
+              if (tenant) {
+                const { handleReferralPaymentFailed } = await import('@/lib/referral-webhooks');
+                await handleReferralPaymentFailed(tenant.id);
+              }
+            } catch (refError) {
+              console.warn('⚠️ Error manejando referidos en pago fallido:', refError);
+              // No es crítico, continuar
+            }
+          }
         } catch (e) {
           console.error('❌ Error procesando invoice.payment_failed:', e)
         }
@@ -470,11 +519,36 @@ export async function POST(req: NextRequest) {
           if (updatedSub.customer) {
             const tenant = await findTenantByStripeCustomerId(String(updatedSub.customer))
             if (tenant) {
+              // Obtener plan_type desde metadata o desde el producto
+              const planTypeFromMetadata = updatedSub.metadata?.plan_id || updatedSub.metadata?.plan_type;
+              let planType = tenant.plan_type || 'free';
+              
+              if (planTypeFromMetadata) {
+                // Mapear plan_id a plan_type si es necesario
+                if (planTypeFromMetadata === 'checkin' || planTypeFromMetadata === 'check-in') {
+                  planType = 'checkin';
+                } else if (planTypeFromMetadata === 'pro') {
+                  planType = 'pro';
+                }
+              }
+
               await sql`
                 UPDATE tenants 
-                SET subscription_status = ${updatedSub.status}
+                SET 
+                  subscription_status = ${updatedSub.status},
+                  plan_type = ${planType}
                 WHERE id = ${tenant.id}
               `
+              
+              // Manejar referidos: actualizar estado según plan
+              try {
+                const { handleReferralPlanUpdated } = await import('@/lib/referral-webhooks');
+                await handleReferralPlanUpdated(tenant.id, planType as 'free' | 'checkin' | 'pro');
+              } catch (refError) {
+                console.warn('⚠️ Error manejando referidos en actualización de suscripción:', refError);
+                // No es crítico, continuar
+              }
+              
               // Si la suscripción está cancelada o unpaid, verificar si necesita suspensión
               if (updatedSub.status === 'unpaid' || updatedSub.status === 'past_due') {
                 // Verificar si tiene más de 3 intentos fallidos
@@ -533,6 +607,15 @@ export async function POST(req: NextRequest) {
             `;
             
             console.log(`✅ [WEBHOOK] Tenant ${tenantId} downgradeado a plan gratis`);
+            
+            // Manejar referidos: marcar como cancelado y revocar recompensas
+            try {
+              const { handleReferralCancelled } = await import('@/lib/referral-webhooks');
+              await handleReferralCancelled(tenantId);
+            } catch (refError) {
+              console.warn('⚠️ Error manejando referidos en cancelación:', refError);
+              // No es crítico, continuar
+            }
           } else if (deletedSub.customer) {
             // Fallback al método antiguo
             const tenant = await findTenantByStripeCustomerId(String(deletedSub.customer))
@@ -543,6 +626,14 @@ export async function POST(req: NextRequest) {
                     status = 'cancelled'
                 WHERE id = ${tenant.id}
               `
+              
+              // Manejar referidos
+              try {
+                const { handleReferralCancelled } = await import('@/lib/referral-webhooks');
+                await handleReferralCancelled(tenant.id);
+              } catch (refError) {
+                console.warn('⚠️ Error manejando referidos en cancelación:', refError);
+              }
             }
           }
         } catch (e) {

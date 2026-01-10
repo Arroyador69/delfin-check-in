@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
 import { verifyToken } from '@/lib/auth';
+import { generateReferralCodeForTenant, associateTenantWithReferrer, getReferrerFromCookie } from '@/lib/referrals';
+import { parseReferralCookie } from '@/lib/referral-tracking';
 
 interface OnboardingData {
   dpaAceptado: boolean;
@@ -211,6 +213,53 @@ export async function POST(request: NextRequest) {
         SET onboarding_status = 'completed', updated_at = NOW()
         WHERE id = ${tenantId}
       `;
+
+      // 6. Generar código de referido para el tenant (si no existe)
+      try {
+        await generateReferralCodeForTenant(tenantId);
+      } catch (refError) {
+        console.warn('⚠️ Error generando código de referido:', refError);
+        // No es crítico, continuar
+      }
+
+      // 7. Intentar asociar con referente desde cookie
+      try {
+        const cookieHeader = request.headers.get('cookie');
+        if (cookieHeader) {
+          const cookieMatch = cookieHeader.match(/referral_ref=([^;]+)/);
+          if (cookieMatch) {
+            try {
+              const cookieData = JSON.parse(decodeURIComponent(cookieMatch[1]));
+              const referrerTenantId = await getReferrerFromCookie(cookieData);
+              
+              if (referrerTenantId && referrerTenantId !== tenantId) {
+                // Obtener plan_type del tenant actual
+                const tenantInfo = await sql`
+                  SELECT plan_type 
+                  FROM tenants 
+                  WHERE id = ${tenantId}
+                  LIMIT 1
+                `;
+                const planType = (tenantInfo.rows[0]?.plan_type || 'free') as 'free' | 'checkin' | 'pro';
+                
+                await associateTenantWithReferrer(
+                  tenantId,
+                  referrerTenantId,
+                  cookieData.code,
+                  planType
+                );
+                console.log('✅ Tenant asociado con referente desde cookie:', referrerTenantId);
+              }
+            } catch (cookieError) {
+              console.warn('⚠️ Error parseando cookie de referido:', cookieError);
+              // No es crítico, continuar
+            }
+          }
+        }
+      } catch (assocError) {
+        console.warn('⚠️ Error asociando tenant con referente:', assocError);
+        // No es crítico, continuar
+      }
 
       // Confirmar transacción
       await sql`COMMIT`;

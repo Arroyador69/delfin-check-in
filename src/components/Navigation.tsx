@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Bed, Calendar, Users, Settings, Menu, X, TrendingUp, FileText, Download, Shield, Calculator, Send, MessageSquare, Receipt, Crown, Target } from 'lucide-react';
+import { Home, Bed, Calendar, Users, Settings, Menu, X, TrendingUp, FileText, Download, Shield, Calculator, Send, Receipt, Crown, Target, UserPlus } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { useTenant, hasLegalModule } from '@/hooks/useTenant';
@@ -37,11 +37,11 @@ export default function Navigation() {
     { name: 'Registros de formularios', href: '/guest-registrations-dashboard', icon: Users, requiresLegal: true },
     { name: 'Facturas', href: '/facturas', icon: Receipt, requiresLegal: false },
     { name: 'Estado Envíos MIR', href: '/admin/mir-comunicaciones', icon: TrendingUp, requiresLegal: true },
-    { name: 'Asistente IA (Telegram)', href: '/telegram-assistant', icon: MessageSquare, requiresLegal: false },
     { name: 'Calculadora de Costos', href: '/cost-calculator', icon: Calculator, requiresLegal: false },
     { name: 'Exportar AEAT', href: '/aeat', icon: FileText, requiresLegal: false },
     { name: 'Cola offline', href: '/offline-queue', icon: Download, requiresLegal: false },
     { name: 'Bitácora', href: '/audit', icon: Shield, requiresLegal: false },
+    { name: 'Referidos', href: '/referrals', icon: UserPlus, requiresLegal: false },
     { name: 'Configuración', href: '/settings', icon: Settings, requiresLegal: false },
   ];
 

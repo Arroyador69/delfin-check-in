@@ -4,6 +4,8 @@ import { createTenant, createTenantUser } from '@/lib/tenant';
 import { hash } from 'bcryptjs';
 import crypto from 'crypto';
 import { sendOnboardingEmail } from '@/lib/mailer';
+import { generateReferralCodeForTenant, associateTenantWithReferrer, getReferrerFromCookie } from '@/lib/referrals';
+import { parseReferralCookie } from '@/lib/referral-tracking';
 
 /**
  * ========================================
@@ -213,6 +215,30 @@ export async function POST(req: NextRequest) {
           tenant_id = ${tenantId}
         WHERE id = ${waitlistEntry.id}
       `;
+      
+      // Generar código de referido para el nuevo tenant
+      try {
+        await generateReferralCodeForTenant(tenantId);
+      } catch (refError) {
+        console.warn('Error generando código de referido:', refError);
+        // No es crítico, continuar
+      }
+      
+      // Intentar asociar con referente si viene de un referido
+      // Nota: En este endpoint no tenemos acceso a la cookie, pero podemos verificar si viene en el body
+      if (body.referrer_tenant_id && body.referral_code) {
+        try {
+          await associateTenantWithReferrer(
+            tenantId,
+            body.referrer_tenant_id,
+            body.referral_code,
+            'free' // Plan inicial
+          );
+        } catch (assocError) {
+          console.warn('Error asociando tenant con referente:', assocError);
+          // No es crítico, continuar
+        }
+      }
       
       // Generar URL de onboarding
       const onboardingUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://admin.delfincheckin.com'}/onboarding?token=${onboardingToken}&email=${encodeURIComponent(waitlistEntry.email)}`;
