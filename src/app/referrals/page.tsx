@@ -27,16 +27,30 @@ interface ReferralItem {
   lastPaidAt?: string;
 }
 
+interface RewardItem {
+  id: string;
+  rewardType: string;
+  reason: string;
+  monthsGranted: number;
+  status: string;
+  grantedAt: string;
+  appliedAt?: string;
+  revokedAt?: string;
+  createdAt: string;
+}
+
 export default function ReferralsPage() {
   const { tenant } = useTenant();
   const [stats, setStats] = useState<ReferralStats | null>(null);
   const [referrals, setReferrals] = useState<ReferralItem[]>([]);
+  const [rewards, setRewards] = useState<RewardItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     fetchStats();
     fetchReferrals();
+    fetchRewards();
   }, []);
 
   const fetchStats = async () => {
@@ -62,6 +76,18 @@ export default function ReferralsPage() {
       }
     } catch (error) {
       console.error('Error obteniendo referidos:', error);
+    }
+  };
+
+  const fetchRewards = async () => {
+    try {
+      const res = await fetch('/api/referrals/rewards');
+      const data = await res.json();
+      if (data.success) {
+        setRewards(data.data);
+      }
+    } catch (error) {
+      console.error('Error obteniendo recompensas:', error);
     }
   };
 
@@ -266,6 +292,56 @@ export default function ReferralsPage() {
         {getMotivationalMessage() && (
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
             <p className="text-blue-800">{getMotivationalMessage()}</p>
+          </div>
+        )}
+
+        {/* Historial de Recompensas */}
+        {rewards.length > 0 && (
+          <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 className="text-xl font-semibold mb-4 flex items-center">
+              <Gift className="w-5 h-5 mr-2 text-purple-600" />
+              Historial de Recompensas
+            </h2>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-200">
+                    <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Recompensa</th>
+                    <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Razón</th>
+                    <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Meses</th>
+                    <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Estado</th>
+                    <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Fecha</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rewards.map((reward) => (
+                    <tr key={reward.id} className="border-b border-gray-100 hover:bg-gray-50">
+                      <td className="py-3 px-4">
+                        <span className="font-medium text-gray-900">
+                          {reward.rewardType === 'checkin_month' ? '1 mes Check-in' :
+                           reward.rewardType === 'pro_month' ? '1 mes Pro' :
+                           '2 meses Pro'}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-sm text-gray-600">{reward.reason}</td>
+                      <td className="py-3 px-4 text-sm text-gray-600">{reward.monthsGranted} mes{reward.monthsGranted !== 1 ? 'es' : ''}</td>
+                      <td className="py-3 px-4">
+                        {reward.status === 'applied' ? (
+                          <span className="px-2 py-1 text-xs rounded bg-green-100 text-green-700">Aplicado</span>
+                        ) : reward.status === 'revoked' ? (
+                          <span className="px-2 py-1 text-xs rounded bg-red-100 text-red-700">Revocado</span>
+                        ) : (
+                          <span className="px-2 py-1 text-xs rounded bg-yellow-100 text-yellow-700">Pendiente</span>
+                        )}
+                      </td>
+                      <td className="py-3 px-4 text-sm text-gray-600">
+                        {new Date(reward.grantedAt).toLocaleDateString('es-ES')}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
 

@@ -158,6 +158,25 @@ async function createTenantFromPayment(pi: Stripe.PaymentIntent, overrideEmail?:
       // No es crítico, continuar
     }
 
+    // Intentar asociar con referente si hay referral_code en metadatos de Stripe
+    // Nota: La asociación principal se hará en onboarding/complete cuando haya cookie
+    try {
+      if (pi.metadata?.referral_code) {
+        const { associateTenantWithReferrer } = await import('@/lib/referrals');
+        const { getTenantIdFromReferralCode } = await import('@/lib/referral-tracking');
+        const referrerTenantId = await getTenantIdFromReferralCode(pi.metadata.referral_code);
+        
+        if (referrerTenantId && referrerTenantId !== tenant.id) {
+          const planType = (plan_id === 'checkin' ? 'checkin' : plan_id === 'pro' ? 'pro' : 'free') as 'free' | 'checkin' | 'pro';
+          await associateTenantWithReferrer(tenant.id, referrerTenantId, pi.metadata.referral_code, planType);
+          console.log('✅ Tenant asociado con referente desde metadatos Stripe:', referrerTenantId);
+        }
+      }
+    } catch (refError) {
+      console.warn('⚠️ Error asociando referido desde metadatos Stripe:', refError);
+      // No es crítico, se asociará en onboarding si hay cookie
+    }
+
     // Generar token para onboarding (usar reset_token como token temporal)
     const onboardingToken = Math.random().toString(36).slice(-32) + Math.random().toString(36).slice(-32);
     const tokenExpiry = new Date();
@@ -276,6 +295,25 @@ async function createTenantFromInvoice(inv: Stripe.Invoice, email: string): Prom
     } catch (refError) {
       console.warn('⚠️ Error generando código de referido (invoice):', refError);
       // No es crítico, continuar
+    }
+
+    // Intentar asociar con referente si hay referral_code en metadatos de Stripe
+    // Nota: La asociación principal se hará en onboarding/complete cuando haya cookie
+    try {
+      if (inv.metadata?.referral_code) {
+        const { associateTenantWithReferrer } = await import('@/lib/referrals');
+        const { getTenantIdFromReferralCode } = await import('@/lib/referral-tracking');
+        const referrerTenantId = await getTenantIdFromReferralCode(inv.metadata.referral_code);
+        
+        if (referrerTenantId && referrerTenantId !== tenant.id) {
+          const planType = (plan_id === 'checkin' ? 'checkin' : plan_id === 'pro' ? 'pro' : 'free') as 'free' | 'checkin' | 'pro';
+          await associateTenantWithReferrer(tenant.id, referrerTenantId, inv.metadata.referral_code, planType);
+          console.log('✅ Tenant asociado con referente desde metadatos Stripe (invoice):', referrerTenantId);
+        }
+      }
+    } catch (refError) {
+      console.warn('⚠️ Error asociando referido desde metadatos Stripe (invoice):', refError);
+      // No es crítico, se asociará en onboarding si hay cookie
     }
 
     const onboardingToken = Math.random().toString(36).slice(-32) + Math.random().toString(36).slice(-32)
