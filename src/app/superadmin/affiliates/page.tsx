@@ -1,40 +1,42 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { Users, TrendingUp, DollarSign, CheckCircle, XCircle, Calendar } from 'lucide-react'
 
 interface Affiliate {
   id: string
-  name: string
   email: string
-  code: string
-  referralLink: string
-  commissionRate: number
-  commissionMonths: number
+  fullName: string
+  companyName?: string
+  phone?: string
   status: string
-  totalUsersBrought: number
-  totalRevenueGenerated: number
-  totalCommissionEarned: number
-  totalCommissionPaid: number
-  totalReferrals: number
-  convertedReferrals: number
-  notes?: string
+  referralCode: string
+  commissionRate: number
+  emailVerified: boolean
+  totalClicks: number
+  totalCustomers: number
+  activeCustomers: number
+  registeredCustomers: number
+  cancelledCustomers: number
+  pendingCommissions: number
+  paidCommissions: number
+  totalEarnings: number
   createdAt: string
   updatedAt: string
+  lastLoginAt?: string
+}
+
+interface GlobalStats {
+  totalAffiliates: number
+  activeAffiliates: number
+  suspendedAffiliates: number
+  inactiveAffiliates: number
 }
 
 export default function SuperAdminAffiliates() {
   const [affiliates, setAffiliates] = useState<Affiliate[]>([])
+  const [globalStats, setGlobalStats] = useState<GlobalStats | null>(null)
   const [loading, setLoading] = useState(true)
-  const [showModal, setShowModal] = useState(false)
-  const [editingAffiliate, setEditingAffiliate] = useState<Affiliate | null>(null)
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    commission_rate: 25,
-    commission_months: 12,
-    status: 'active',
-    notes: ''
-  })
 
   useEffect(() => {
     fetchAffiliates()
@@ -47,7 +49,8 @@ export default function SuperAdminAffiliates() {
       if (response.ok) {
         const data = await response.json()
         if (data.success) {
-          setAffiliates(data.affiliates)
+          setAffiliates(data.affiliates || [])
+          setGlobalStats(data.globalStats)
         }
       }
     } catch (error) {
@@ -57,75 +60,16 @@ export default function SuperAdminAffiliates() {
     }
   }
 
-  const handleCreate = () => {
-    setEditingAffiliate(null)
-    setFormData({
-      name: '',
-      email: '',
-      commission_rate: 25,
-      commission_months: 12,
-      status: 'active',
-      notes: ''
-    })
-    setShowModal(true)
-  }
-
-  const handleEdit = (affiliate: Affiliate) => {
-    setEditingAffiliate(affiliate)
-    setFormData({
-      name: affiliate.name,
-      email: affiliate.email,
-      commission_rate: affiliate.commissionRate,
-      commission_months: affiliate.commissionMonths,
-      status: affiliate.status,
-      notes: affiliate.notes || ''
-    })
-    setShowModal(true)
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    try {
-      const url = editingAffiliate
-        ? '/api/superadmin/affiliates'
-        : '/api/superadmin/affiliates'
-      const method = editingAffiliate ? 'PUT' : 'POST'
-      
-      const body = editingAffiliate
-        ? { id: editingAffiliate.id, ...formData }
-        : formData
-
-      const response = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-      })
-
-      if (response.ok) {
-        setShowModal(false)
-        fetchAffiliates()
-      } else {
-        alert('Error al guardar afiliado')
-      }
-    } catch (error) {
-      console.error('Error saving affiliate:', error)
-      alert('Error al guardar afiliado')
-    }
-  }
-
-  const handleDelete = async (id: string) => {
-    if (!confirm('¿Estás seguro de desactivar este afiliado?')) return
-
-    try {
-      const response = await fetch(`/api/superadmin/affiliates?id=${id}`, {
-        method: 'DELETE'
-      })
-
-      if (response.ok) {
-        fetchAffiliates()
-      }
-    } catch (error) {
-      console.error('Error deleting affiliate:', error)
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'active':
+        return <span className="px-2 py-1 text-xs rounded bg-green-100 text-green-700">Activo</span>
+      case 'suspended':
+        return <span className="px-2 py-1 text-xs rounded bg-red-100 text-red-700">Suspendido</span>
+      case 'inactive':
+        return <span className="px-2 py-1 text-xs rounded bg-gray-100 text-gray-700">Inactivo</span>
+      default:
+        return <span className="px-2 py-1 text-xs rounded bg-gray-100 text-gray-700">{status}</span>
     }
   }
 
@@ -141,170 +85,113 @@ export default function SuperAdminAffiliates() {
 
   return (
     <div className="container mx-auto p-6">
-      <div className="mb-8 flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">🧩 Afiliados</h1>
-          <p className="text-gray-700 mt-2">Gestiona los afiliados que promocionan Delfín Check-in</p>
-        </div>
-        <button
-          onClick={handleCreate}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-        >
-          + Nuevo Afiliado
-        </button>
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 flex items-center">
+          <Users className="w-8 h-8 mr-3 text-blue-600" />
+          Afiliados
+        </h1>
+        <p className="text-gray-700 mt-2">Gestión del portal de afiliados - Sistema completo</p>
       </div>
 
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nombre</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Código</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Usuarios</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ingresos</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Comisión</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Acciones</th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {affiliates.map((affiliate) => (
-              <tr key={affiliate.id}>
-                <td className="px-6 py-4 whitespace-nowrap font-medium">{affiliate.name}</td>
-                <td className="px-6 py-4 whitespace-nowrap">{affiliate.email}</td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <code className="bg-gray-100 px-2 py-1 rounded text-sm">{affiliate.code}</code>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  {affiliate.totalUsersBrought} ({affiliate.convertedReferrals} convertidos)
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">{affiliate.totalRevenueGenerated.toFixed(2)}€</td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  {affiliate.totalCommissionEarned.toFixed(2)}€ / {affiliate.totalCommissionPaid.toFixed(2)}€ pagado
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`px-2 py-1 rounded text-xs ${
-                    affiliate.status === 'active' ? 'bg-green-100 text-green-800' :
-                    affiliate.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                    'bg-gray-100 text-gray-800'
-                  }`}>
-                    {affiliate.status}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm">
-                  <button
-                    onClick={() => handleEdit(affiliate)}
-                    className="text-blue-600 hover:text-blue-900 mr-3"
-                  >
-                    Editar
-                  </button>
-                  <button
-                    onClick={() => handleDelete(affiliate.id)}
-                    className="text-red-600 hover:text-red-900"
-                  >
-                    Desactivar
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full">
-            <h2 className="text-2xl font-bold mb-4">
-              {editingAffiliate ? 'Editar Afiliado' : 'Nuevo Afiliado'}
-            </h2>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">Nombre</label>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Email</label>
-                <input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg"
-                  required
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">Comisión (%)</label>
-                  <input
-                    type="number"
-                    value={formData.commission_rate}
-                    onChange={(e) => setFormData({ ...formData, commission_rate: parseFloat(e.target.value) })}
-                    className="w-full px-3 py-2 border rounded-lg"
-                    min="0"
-                    max="100"
-                    step="0.01"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Meses</label>
-                  <input
-                    type="number"
-                    value={formData.commission_months}
-                    onChange={(e) => setFormData({ ...formData, commission_months: parseInt(e.target.value) })}
-                    className="w-full px-3 py-2 border rounded-lg"
-                    min="1"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Estado</label>
-                <select
-                  value={formData.status}
-                  onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg"
-                >
-                  <option value="active">Activo</option>
-                  <option value="pending">Pendiente</option>
-                  <option value="blocked">Bloqueado</option>
-                  <option value="inactive">Inactivo</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Notas</label>
-                <textarea
-                  value={formData.notes}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg"
-                  rows={3}
-                />
-              </div>
-              <div className="flex gap-3">
-                <button
-                  type="submit"
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                >
-                  Guardar
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowModal(false)}
-                  className="flex-1 px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300"
-                >
-                  Cancelar
-                </button>
-              </div>
-            </form>
+      {/* Estadísticas Globales */}
+      {globalStats && (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <div className="bg-white rounded-lg shadow p-4">
+            <p className="text-sm text-gray-600">Total Afiliados</p>
+            <p className="text-2xl font-bold text-gray-900">{globalStats.totalAffiliates}</p>
           </div>
+          <div className="bg-white rounded-lg shadow p-4">
+            <p className="text-sm text-gray-600">Activos</p>
+            <p className="text-2xl font-bold text-green-600">{globalStats.activeAffiliates}</p>
+          </div>
+          <div className="bg-white rounded-lg shadow p-4">
+            <p className="text-sm text-gray-600">Suspendidos</p>
+            <p className="text-2xl font-bold text-red-600">{globalStats.suspendedAffiliates}</p>
+          </div>
+          <div className="bg-white rounded-lg shadow p-4">
+            <p className="text-sm text-gray-600">Inactivos</p>
+            <p className="text-2xl font-bold text-gray-600">{globalStats.inactiveAffiliates}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Tabla de Afiliados */}
+      <div className="bg-white rounded-lg shadow overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Afiliado</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Código</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Clicks</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Clientes</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Activos</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Comisiones Pendientes</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Comisiones Pagadas</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total Ganado</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Último Login</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {affiliates.map((affiliate) => (
+                <tr key={affiliate.id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div>
+                      <p className="font-medium text-gray-900">{affiliate.fullName || 'Sin nombre'}</p>
+                      <p className="text-sm text-gray-500">{affiliate.email}</p>
+                      {affiliate.companyName && (
+                        <p className="text-xs text-gray-400">{affiliate.companyName}</p>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <code className="bg-gray-100 px-2 py-1 rounded text-xs">{affiliate.referralCode}</code>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {getStatusBadge(affiliate.status)}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                    {affiliate.totalClicks}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                    <div>
+                      <p className="font-medium">{affiliate.totalCustomers}</p>
+                      <p className="text-xs text-gray-500">
+                        {affiliate.registeredCustomers} reg. / {affiliate.cancelledCustomers} canc.
+                      </p>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                    {affiliate.activeCustomers}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                    {affiliate.pendingCommissions.toFixed(2)}€
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                    {affiliate.paidCommissions.toFixed(2)}€
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-green-600">
+                    {affiliate.totalEarnings.toFixed(2)}€
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {affiliate.lastLoginAt 
+                      ? new Date(affiliate.lastLoginAt).toLocaleDateString('es-ES')
+                      : 'Nunca'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {affiliates.length === 0 && (
+        <div className="text-center py-12 bg-white rounded-lg shadow">
+          <Users className="w-16 h-16 mx-auto mb-4 opacity-50 text-gray-400" />
+          <p className="text-gray-600">No hay afiliados registrados</p>
         </div>
       )}
     </div>
   )
 }
-

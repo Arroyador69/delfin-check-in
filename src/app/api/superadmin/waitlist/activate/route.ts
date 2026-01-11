@@ -239,6 +239,54 @@ export async function POST(req: NextRequest) {
           // No es crítico, continuar
         }
       }
+
+      // =====================================================
+      // INTEGRACIÓN CON SISTEMA DE AFILIADOS
+      // =====================================================
+      try {
+        // Leer cookie de afiliado desde el request
+        const affiliateCookie = req.cookies.get('affiliate_ref')?.value;
+        
+        if (affiliateCookie) {
+          try {
+            const cookieData = JSON.parse(affiliateCookie);
+            const referralCode = cookieData.code;
+            const cookieId = cookieData.cookieId;
+
+            if (referralCode && tenantId) {
+              // Llamar a la API de afiliados para asociar
+              const affiliatesUrl = process.env.NEXT_PUBLIC_AFFILIATES_URL || 'https://affiliates.delfincheckin.com';
+              const associateResponse = await fetch(`${affiliatesUrl}/api/customers/associate`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  referral_code: referralCode,
+                  cookie_id: cookieId,
+                  tenant_id: tenantId,
+                  customer_email: waitlistEntry.email,
+                  customer_name: waitlistEntry.name || undefined,
+                }),
+              });
+
+              const associateData = await associateResponse.json();
+              
+              if (associateData.success) {
+                console.log(`✅ Cliente asociado con afiliado: ${tenantId} -> ${referralCode}`);
+              } else {
+                console.warn(`⚠️ No se pudo asociar cliente con afiliado:`, associateData.error);
+              }
+            }
+          } catch (cookieError: any) {
+            console.warn('Error procesando cookie de afiliado:', cookieError.message);
+            // No fallar el proceso si la cookie es inválida
+          }
+        }
+      } catch (affiliateError: any) {
+        console.warn('Error en integración de afiliados (no crítico):', affiliateError.message);
+        // No fallar el proceso si falla la asociación de afiliado
+      }
       
       // Generar URL de onboarding
       const onboardingUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://admin.delfincheckin.com'}/onboarding?token=${onboardingToken}&email=${encodeURIComponent(waitlistEntry.email)}`;
