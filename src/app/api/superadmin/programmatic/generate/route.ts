@@ -50,14 +50,13 @@ export async function POST(req: NextRequest) {
     // Generar contenido con OpenAI
     const generated = await generateContentWithOpenAI(template, variables);
 
-    // Generar slug y canonical URL (añadir prefijo test- si es prueba)
-    const slugPrefix = is_test ? 'test-' : '';
-    const citySlug = variables.ciudad
-      ? slugify(String(variables.ciudad))
-      : null;
-    const slugBase = variables.slug || 
-      (citySlug ? `${slugPrefix}rd-933/software-${citySlug}` : 
-      `${slugPrefix}content/${template.type}-${Date.now()}`);
+    // Generar slug único (verificar duplicados)
+    const slugBase = await generateUniqueSlug({
+      requestedSlug: variables.slug,
+      templateType: template.type,
+      variables: variables,
+      isTest: is_test || false
+    });
     const canonicalUrl = `https://delfincheckin.com/${slugBase}`;
 
     // Guardar en BD
@@ -130,8 +129,29 @@ export async function POST(req: NextRequest) {
 
   } catch (error: any) {
     console.error('❌ Error generando contenido programático:', error);
+    
+    // Manejar errores específicos de base de datos
+    if (error.code === '23505') {
+      // Error de clave duplicada
+      const detail = error.detail || '';
+      const slugMatch = detail.match(/Key \(slug\)=\(([^)]+)\)/);
+      const duplicateSlug = slugMatch ? slugMatch[1] : 'desconocido';
+      
+      return NextResponse.json(
+        { 
+          error: `El slug "${duplicateSlug}" ya existe. Por favor, intenta con diferentes variables o espera un momento.`,
+          code: 'DUPLICATE_SLUG',
+          duplicateSlug: duplicateSlug
+        },
+        { status: 409 } // Conflict
+      );
+    }
+    
     return NextResponse.json(
-      { error: error.message || 'Error interno del servidor' },
+      { 
+        error: error.message || 'Error interno del servidor',
+        details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      },
       { status: 500 }
     );
   }
@@ -611,5 +631,64 @@ function slugify(text: string): string {
     .trim()
     .replace(/\s+/g, '-')
     .replace(/-+/g, '-');
+}
+
+// Generar slug único verificando duplicados en BD
+async function generateUniqueSlug(options: {
+  requestedSlug?: string;
+  templateType: string;
+  variables: Record<string, any>;
+  isTest: boolean;
+}): Promise<string> {
+  const { requestedSlug, templateType, variables, isTest } = options;
+  
+  const slugPrefix = isTest ? 'test-' : '';
+  let baseSlug: string;
+  
+  if (requestedSlug) {
+    // Si se proporciona un slug específico, usarlo como base
+    baseSlug = `${slugPrefix}${requestedSlug}`;
+  } else {
+    // Generar slug basado en variables
+    const citySlug = variables.ciudad ? slugify(String(variables.ciudad)) : null;
+    
+    if (citySlug) {
+      // Para plantillas tipo "local", usar formato: pms-software-gestion-{ciudad}
+      baseSlug = `${slugPrefix}pms-software-gestion-${citySlug}`;
+    } else {
+      // Para otros tipos, usar timestamp
+      baseSlug = `${slugPrefix}content/${templateType}-${Date.now()}`;
+    }
+  }
+  
+  // Verificar si el slug ya existe
+  let finalSlug = baseSlug;
+  let counter = 1;
+  let exists = true;
+  
+  while (exists) {
+    const checkResult = await sql`
+      SELECT id FROM programmatic_pages WHERE slug = ${finalSlug} LIMIT 1
+    `;
+    
+    if (checkResult.rows.length === 0) {
+      // Slug disponible
+      exists = false;
+    } else {
+      // Slug duplicado, añadir sufijo
+      const baseWithoutSuffix = baseSlug.replace(/-\d+$/, '');
+      finalSlug = `${baseWithoutSuffix}-${counter}`;
+      counter++;
+      
+      // Prevenir loops infinitos (máximo 100 intentos)
+      if (counter > 100) {
+        // Si llegamos aquí, usar timestamp como último recurso
+        finalSlug = `${baseSlug}-${Date.now()}`;
+        break;
+      }
+    }
+  }
+  
+  return finalSlug;
 }
 
