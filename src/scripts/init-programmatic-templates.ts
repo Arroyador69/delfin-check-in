@@ -7,64 +7,71 @@ import { sql } from '@/lib/db';
 
 const TEMPLATES = [
   {
-    name: 'Compra Local - Software RD 933 por Ciudad',
+    name: 'PMS Local - Software de Gestión Hotelera por Ciudad',
     type: 'local',
-    prompt_base: `Eres un redactor SEO técnico. Escribe una PÁGINA DE COMPRA con ALTA INTENCIÓN sobre un software de check-in y cumplimiento RD 933 para alquiler vacacional en {ciudad}, {region}.
+    prompt_base: `Eres un redactor SEO técnico especializado en PMS (Property Management System) y software de gestión hotelera. Escribe un ARTÍCULO con ALTA INTENCIÓN DE BÚSQUEDA sobre PMS y software de gestión para alquiler vacacional en {ciudad}, {region}.
 
-Objetivo: que el usuario COMPRE ahora mismo (sin demo ni prueba).
+IMPORTANTE: En TODAS las páginas debes mencionar que "Estamos diseñando el PMS de gestión en la nube con todo lo que se necesita para gestionar tu alquiler vacacional de forma profesional". Este mensaje debe aparecer de forma natural en el contenido.
+
+Objetivo: Captar leads interesados en PMS y software de gestión hotelera para nuestra waitlist. El usuario busca un PMS completo y profesional.
 
 Requisitos de salida (en Markdown con front-matter MDX y JSON-LD):
 
 ---
-title: "Software RD 933 y check-in en {ciudad} | Compra directa"
-slug: "rd-933/software-{ciudad}"
-intent: "transactional"
+title: "PMS y Software de Gestión Hotelera en {ciudad} | Lista de Espera"
+slug: "pms-software-gestion-{ciudad}"
+intent: "informational_to_lead"
 region: "{region}"
 city: "{ciudad}"
-price_eur: {precio}
-canonical: "/rd-933/software-{ciudad}"
+canonical: "/pms-software-gestion-{ciudad}"
 draft: false
 ---
 
-<meta-title>Software RD 933 y check-in en {ciudad} | Compra directa</meta-title>
-<meta-description>Envía partes en lote (incluso sin internet), microsite de reservas, Stripe split y facturación automática. Compra ahora.</meta-description>
+<meta-title>PMS y Software de Gestión Hotelera en {ciudad} | Lista de Espera</meta-title>
+<meta-description>Estamos diseñando el PMS de gestión en la nube con todo lo que necesitas para gestionar tu alquiler vacacional. Únete a la lista de espera y sé de los primeros en acceder.</meta-description>
 
-# H1: "Software RD 933 y check-in en {ciudad} (compra directa)"
+# H1: "PMS y Software de Gestión Hotelera en {ciudad}: Todo lo que Necesitas"
 
-Intro (70–100 palabras): problema real en {ciudad} → consecuencia → solución (nuestro software). Tono profesional y directo, sin humo.
+Intro (100–150 palabras): Explica qué es un PMS y por qué es esencial para propietarios de alquileres vacacionales en {ciudad}. Menciona que estamos diseñando el PMS de gestión en la nube con todas las funcionalidades necesarias. Tono profesional y educativo.
 
-## Qué compras hoy
-Lista de 6 bullets basados en {features_clave[]} (menciona RD 933 en lote, cola offline, microsite, Stripe split, facturación y calculadora de costes).
+## ¿Qué es un PMS (Property Management System)?
 
-## Cómo resuelve el dolor
-Explica {dolor_principal} en {ciudad} con 2 ejemplos locales (organismos, trámites, casuísticas).
+Explica qué es un PMS de forma clara y educativa. Menciona que estamos diseñando el PMS de gestión en la nube con todo lo que se necesita: gestión de reservas, habitaciones, check-in digital, facturación, y más.
 
-## Mini-pruebas (capturas descritas)
-- Panel de envíos RD 933 (describir sin revelar datos sensibles)
-- Cola offline (qué pasa si no hay internet)
-- Stripe split (esquema de reparto)
+## Funcionalidades que Incluirá Nuestro PMS
 
-## Preguntas frecuentes
-3–4 FAQs sobre legal, offline, soporte y pagos.
+Lista de funcionalidades clave que incluirá el PMS:
+- Gestión completa de reservas y calendario
+- Check-in digital y cumplimiento normativo (RD 933)
+- Microsite de reservas directas sin comisiones
+- Facturación automática
+- Gestión de múltiples propiedades
+- App móvil para gestión desde cualquier lugar
+- Y mucho más...
 
-## Llamada a la acción
-Botón textual: **Comprar ahora → {cta_url}**
+## Por Qué Necesitas un PMS Profesional
 
-{# if sin_garantia == false}
-Nota breve: "Devolución 30 días si no te sirve".
-{# endif}
+Explica {dolor_principal} en {ciudad} con ejemplos reales de propietarios que necesitan un PMS completo. Menciona cómo nuestro PMS en la nube resolverá estos problemas.
+
+## Estamos Diseñando el PMS Completo en la Nube
+
+Sección dedicada explicando que estamos diseñando el PMS de gestión en la nube con todo lo que se necesita. Menciona que los primeros en apuntarse tendrán acceso prioritario y beneficios especiales.
+
+## Preguntas frecuentes sobre PMS
+3–4 FAQs sobre qué es un PMS, cuándo lo lanzaremos, qué incluirá, y cómo apuntarse a la lista de espera.
 
 ## Datos locales útiles
-Incluye 2–3 referencias de {ciudad} (organismos, horarios o casuística) de forma genérica (no inventes direcciones).
+Incluye 2–3 referencias de {ciudad} relacionadas con alquileres vacacionales y gestión hotelera (organismos, normativas, casuísticas).
 
 <schema>
-Incluye JSON-LD de Organization + Product + SoftwareApplication con \`offers.price\`={precio} y \`areaServed\`={region}/{ciudad}.
+Incluye JSON-LD de Organization + SoftwareApplication + WebPage con información sobre el PMS en desarrollo.
 </schema>
 
 Restricciones:
-- 700–900 palabras.
-- Español claro, sin tecnicismos innecesarios.
-- Nada de "prueba gratis" o "demo".
+- 800–1000 palabras.
+- Español claro, educativo pero sin tecnicismos innecesarios.
+- Enfocado en captar leads para waitlist, no en venta directa.
+- Menciona siempre que "estamos diseñando el PMS de gestión en la nube con todo lo que se necesita".
 - Evita contenido duplicado con otras ciudades: personaliza el bloque "Datos locales útiles".`,
     variables_schema: {
       ciudad: { type: 'string', required: true },
@@ -76,13 +83,15 @@ Restricciones:
     target_length: 800
   },
   {
-    name: 'Problema → Solución',
+    name: 'Problema → Solución (PMS)',
     type: 'problem-solution',
-    prompt_base: `Genera una página transaccional para quien busca resolver: {problema}.
+    prompt_base: `Eres un redactor SEO especializado en PMS y software de gestión hotelera. Genera un ARTÍCULO con ALTA INTENCIÓN DE BÚSQUEDA sobre cómo resolver: {problema} con un PMS profesional.
 
-Estructura: Hook → Evidencia del problema → Solución paso a paso con nuestro software → Beneficios ({beneficios[]}) → CTA "Comprar ahora" ({cta_url}) → 3 FAQs.
+IMPORTANTE: Debes mencionar que "Estamos diseñando el PMS de gestión en la nube con todo lo que se necesita para gestionar tu alquiler vacacional de forma profesional".
 
-700–900 palabras. JSON-LD: Product + SoftwareApplication. Sin demo/free.`,
+Estructura: Hook sobre el problema → Evidencia del problema en propietarios → Cómo un PMS resuelve esto → Menciona que estamos diseñando el PMS completo en la nube → Beneficios del PMS ({beneficios[]}) → CTA para unirse a la waitlist → 3 FAQs.
+
+800–1000 palabras. JSON-LD: Article + SoftwareApplication. Enfocado en captar leads, no en venta.`,
     variables_schema: {
       problema: { type: 'string', required: true },
       beneficios: { type: 'array', required: true }
@@ -90,11 +99,13 @@ Estructura: Hook → Evidencia del problema → Solución paso a paso con nuestr
     target_length: 800
   },
   {
-    name: 'Feature-Focus',
+    name: 'Feature-Focus (PMS)',
     type: 'feature',
-    prompt_base: `Página de compra centrada en la feature {feature}. Explica {por_que_importa} con un ejemplo práctico y un micro-flujo (3 pasos).
+    prompt_base: `Eres un redactor SEO especializado en PMS. Escribe un ARTÍCULO sobre la funcionalidad {feature} en un PMS profesional.
 
-Incluye sección "Qué recibes hoy" y CTA a {cta_url}. 600–800 palabras. Con JSON-LD de Product/SoftwareApplication.`,
+IMPORTANTE: Menciona que "Estamos diseñando el PMS de gestión en la nube con todo lo que se necesita, incluyendo {feature}".
+
+Explica {por_que_importa} con ejemplos prácticos y un micro-flujo (3 pasos). Incluye sección "Qué incluirá nuestro PMS" y CTA para waitlist. 700–900 palabras. Con JSON-LD de Article/SoftwareApplication.`,
     variables_schema: {
       feature: { type: 'string', required: true },
       por_que_importa: { type: 'string', required: true }
@@ -104,22 +115,26 @@ Incluye sección "Qué recibes hoy" y CTA a {cta_url}. 600–800 palabras. Con J
     pricing_eur: 29.99
   },
   {
-    name: 'Comparativa',
+    name: 'Comparativa (PMS)',
     type: 'comparison',
-    prompt_base: `Comparativa honesta "Delfín vs {alternativa}" orientada a compra. Tabla con 6 filas (RD 933, offline, microsite, split, facturación, coste total).
+    prompt_base: `Eres un redactor SEO especializado en PMS. Escribe un ARTÍCULO comparativo "PMS Delfín vs {alternativa}" orientado a educar sobre opciones de PMS.
 
-Cierra con "Cuándo elegir cada uno" y CTA a {cta_url}. 700–900 palabras. Sin descalificar, sólo hechos.`,
+IMPORTANTE: Menciona que "Estamos diseñando el PMS de gestión en la nube con todo lo que se necesita".
+
+Tabla comparativa con 6 filas (funcionalidades clave, precio, facilidad de uso, soporte, etc.). Cierra con "Cuándo elegir cada uno" y CTA para waitlist. 800–1000 palabras. Sin descalificar, sólo hechos educativos.`,
     variables_schema: {
       alternativa: { type: 'string', required: true }
     },
     target_length: 800
   },
   {
-    name: 'Pilar',
+    name: 'Pilar (PMS)',
     type: 'pillar',
-    prompt_base: `Página pilar sobre {tema} (RD 933, check-in offline/cola, canal directo, pagos divididos).
+    prompt_base: `Eres un redactor SEO especializado en PMS. Escribe un ARTÍCULO PILAR sobre {tema} relacionado con PMS y gestión hotelera.
 
-700–900 palabras. Enlaces internos relevantes. JSON-LD: Article + Product. CTA a {cta_url}.`,
+IMPORTANTE: Menciona que "Estamos diseñando el PMS de gestión en la nube con todo lo que se necesita, incluyendo funcionalidades relacionadas con {tema}".
+
+800–1000 palabras. Enlaces internos relevantes. JSON-LD: Article + SoftwareApplication. CTA para waitlist.`,
     variables_schema: {
       tema: { type: 'string', required: true }
     },
