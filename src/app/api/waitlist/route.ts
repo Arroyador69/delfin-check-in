@@ -164,12 +164,13 @@ export async function POST(req: NextRequest) {
               <ul style="line-height: 2;">
                 <li>✅ <strong>PMS completo gratis para siempre</strong> - Gestión de reservas, habitaciones y más</li>
                 <li>✅ <strong>De propietarios, para propietarios</strong> - Hecho por personas que entienden tu negocio</li>
-                <li>✅ <strong>Sin costes ocultos</strong> - El plan gratuito se financia con anuncios elegantes y discretos</li>
+                <li>✅ <strong>Crea enlaces de pago personalizados</strong> - Define fechas, importe acordado y genera un enlace único de pago. Compártelo por WhatsApp o email y el huésped paga de forma segura</li>
+                <li>✅ <strong>Microsite para reservas directas</strong> - Crea en minutos una página pública para tu alojamiento, comparte el enlace y recibe reservas directas con pagos directos</li>
                 <li>✅ <strong>App móvil</strong> - Próximamente disponible para iOS y Android</li>
               </ul>
               
               <p style="background: #f0f9ff; padding: 16px; border-radius: 8px; border-left: 4px solid #2563eb; margin: 20px 0;">
-                <strong>💡 Nota importante:</strong> El módulo de check-in digital (envío al Ministerio del Interior) tendrá un coste de 8€/mes, pero el PMS completo será gratis para siempre.
+                <strong>💡 Nota importante:</strong> El módulo de check-in digital (envío al Ministerio del Interior) tendrá un coste de 8€/mes, pero el PMS completo (a excepción del envío al Ministerio del Interior) será gratis para siempre.
               </p>
               
               <p>Te notificaremos por email en cuanto el PMS esté listo para que puedas empezar a usarlo como early adopter.</p>
@@ -202,10 +203,11 @@ Mientras tanto, esto es lo que puedes esperar:
 
 ✅ PMS completo gratis para siempre - Gestión de reservas, habitaciones y más
 ✅ De propietarios, para propietarios - Hecho por personas que entienden tu negocio
-✅ Sin costes ocultos - El plan gratuito se financia con anuncios elegantes y discretos
+✅ Crea enlaces de pago personalizados - Define fechas, importe acordado y genera un enlace único de pago. Compártelo por WhatsApp o email y el huésped paga de forma segura
+✅ Microsite para reservas directas - Crea en minutos una página pública para tu alojamiento, comparte el enlace y recibe reservas directas con pagos directos
 ✅ App móvil - Próximamente disponible para iOS y Android
 
-Nota importante: El módulo de check-in digital (envío al Ministerio del Interior) tendrá un coste de 8€/mes, pero el PMS completo será gratis para siempre.
+Nota importante: El módulo de check-in digital (envío al Ministerio del Interior) tendrá un coste de 8€/mes, pero el PMS completo (a excepción del envío al Ministerio del Interior) será gratis para siempre.
 
 Te notificaremos por email en cuanto el PMS esté listo para que puedas empezar a usarlo como early adopter.
 
