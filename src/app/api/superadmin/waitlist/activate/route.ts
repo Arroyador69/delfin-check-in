@@ -224,20 +224,60 @@ export async function POST(req: NextRequest) {
         // No es crítico, continuar
       }
       
-      // Intentar asociar con referente si viene de un referido
-      // Nota: En este endpoint no tenemos acceso a la cookie, pero podemos verificar si viene en el body
-      if (body.referrer_tenant_id && body.referral_code) {
-        try {
-          await associateTenantWithReferrer(
-            tenantId,
-            body.referrer_tenant_id,
-            body.referral_code,
-            'free' // Plan inicial
-          );
-        } catch (assocError) {
-          console.warn('Error asociando tenant con referente:', assocError);
-          // No es crítico, continuar
+      // =====================================================
+      // INTEGRACIÓN CON SISTEMA DE REFERIDOS
+      // =====================================================
+      try {
+        // Leer cookie de referido desde el request
+        const referralCookie = req.cookies.get('referral_ref')?.value;
+        
+        if (referralCookie) {
+          try {
+            const cookieData = parseReferralCookie(referralCookie);
+            
+            if (cookieData && cookieData.code && tenantId) {
+              // Obtener el tenant_id del referente desde el código
+              const referrerTenantId = await getReferrerFromCookie(cookieData);
+              
+              if (referrerTenantId && referrerTenantId !== tenantId) {
+                // Asociar el tenant con su referente
+                const result = await associateTenantWithReferrer(
+                  tenantId,
+                  referrerTenantId,
+                  cookieData.code,
+                  'free' // Plan inicial
+                );
+                
+                if (result.success) {
+                  console.log(`✅ Tenant asociado con referente: ${tenantId} -> ${referrerTenantId} (${cookieData.code})`);
+                } else {
+                  console.warn(`⚠️ No se pudo asociar tenant con referente:`, result.error);
+                }
+              }
+            }
+          } catch (cookieError: any) {
+            console.warn('Error procesando cookie de referido:', cookieError.message);
+            // No fallar el proceso si la cookie es inválida
+          }
         }
+        
+        // También verificar si viene en el body (para compatibilidad)
+        if (body.referrer_tenant_id && body.referral_code) {
+          try {
+            await associateTenantWithReferrer(
+              tenantId,
+              body.referrer_tenant_id,
+              body.referral_code,
+              'free' // Plan inicial
+            );
+          } catch (assocError) {
+            console.warn('Error asociando tenant con referente desde body:', assocError);
+            // No es crítico, continuar
+          }
+        }
+      } catch (referralError: any) {
+        console.warn('Error en integración de referidos (no crítico):', referralError.message);
+        // No fallar el proceso si falla la asociación de referido
       }
 
       // =====================================================
