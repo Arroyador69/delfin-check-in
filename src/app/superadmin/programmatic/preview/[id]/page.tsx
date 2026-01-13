@@ -213,7 +213,7 @@ export default function PreviewPage() {
           {page.content_jsonld && (
             <div className="mt-8 pt-6 border-t border-gray-200">
               <h2 className="text-xl font-bold text-gray-900 mb-4">JSON-LD Schema</h2>
-              <pre className="bg-gray-100 p-4 rounded text-xs overflow-auto">
+              <pre className="bg-gray-100 p-4 rounded text-xs overflow-auto" style={{ color: '#000000', fontWeight: 600 }}>
                 {JSON.stringify(page.content_jsonld, null, 2)}
               </pre>
             </div>
@@ -222,7 +222,7 @@ export default function PreviewPage() {
           {/* Variables usadas */}
           <div className="mt-8 pt-6 border-t border-gray-200">
             <h2 className="text-xl font-bold text-gray-900 mb-4">Variables Usadas</h2>
-            <pre className="bg-gray-100 p-4 rounded text-xs overflow-auto">
+            <pre className="bg-gray-100 p-4 rounded text-xs overflow-auto" style={{ color: '#000000', fontWeight: 600 }}>
               {JSON.stringify(page.variables_used, null, 2)}
             </pre>
           </div>

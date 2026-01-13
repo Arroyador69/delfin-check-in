@@ -39,6 +39,13 @@ function generateSEOHTML(page: any): string {
   } catch {
     contentHtml = page.content_html || ''
   }
+  
+  // Limpiar contenido HTML para remover JSON-LD visible si existe
+  let cleanContentHtml = contentHtml;
+  // Remover bloques de código JSON-LD que puedan aparecer en el contenido
+  cleanContentHtml = cleanContentHtml.replace(/<pre[^>]*>[\s\S]*?\{[\s\S]*?"@context"[\s\S]*?"@type"[\s\S]*?\}[\s\S]*?<\/pre>/gi, '');
+  cleanContentHtml = cleanContentHtml.replace(/```json[\s\S]*?\{[\s\S]*?"@context"[\s\S]*?"@type"[\s\S]*?\}[\s\S]*?```/gi, '');
+  cleanContentHtml = cleanContentHtml.replace(/```[\s\S]*?\{[\s\S]*?"@context"[\s\S]*?"@type"[\s\S]*?\}[\s\S]*?```/gi, '');
 
   return `<!DOCTYPE html>
 <html lang="es">
@@ -55,20 +62,107 @@ function generateSEOHTML(page: any): string {
   <meta property="og:url" content="${page.canonical_url}">
   <meta property="og:site_name" content="Delfín Check-in">
   <script type="application/ld+json">${JSON.stringify(jsonld)}</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    body { font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, Noto Sans, Helvetica, "Apple Color Emoji", "Segoe UI Emoji"; line-height: 1.7; color: #0f172a; max-width: 860px; margin: 0 auto; padding: 2rem; }
-    h1,h2,h3 { color: #0b1220; }
-    a { color: #2563eb; text-decoration: none; }
-    a:hover { text-decoration: underline; }
+    :root{
+      --bg: #0b1220;
+      --card: #0f1629;
+      --text: #e5ecff;
+      --muted: #9fb0d1;
+      --brand: #44c0ff;
+      --accent: #7cf07c;
+      --danger: #ff6b6b;
+      --ring: rgba(68,192,255,0.35);
+      --maxw: 1180px;
+      --radius: 14px;
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+      --border: rgba(255,255,255,.06);
+    }
+    *{ box-sizing: border-box }
+    html,body{ height:100%; margin: 0; }
+    body{
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color: var(--text);
+      background: radial-gradient(1200px 800px at 70% -10%, rgba(68,192,255,.15), transparent), linear-gradient(180deg, #0b1220 0%, #0a1020 100%);
+    }
+    a{ color: var(--brand); text-decoration: none }
+    .container{ max-width: var(--maxw); margin:0 auto; padding: 0 20px }
+    
+    /* Header */
+    header{
+      position: sticky; top:0; z-index:100; backdrop-filter: saturate(160%) blur(8px);
+      background: rgba(11,18,32,.6); border-bottom: 1px solid rgba(255,255,255,.06);
+    }
+    .nav{ display:flex; align-items:center; justify-content:space-between; gap:16px; padding:16px 0 }
+    .brand{ display:flex; gap:12px; align-items:center }
+    .logo{ font-size:32px; line-height:1; display:grid; place-items:center }
+    .brand b{ font-weight:800; letter-spacing:.2px; font-size:22px }
+    .actions{ display:flex; gap:10px; align-items:center }
+    .btn{ display:inline-flex; align-items:center; justify-content:center; gap:8px; height:40px; padding:0 14px; border-radius:10px; border:1px solid rgba(255,255,255,.12); color:var(--text); background: rgba(255,255,255,.03); cursor: pointer; }
+    .btn:hover{ border-color: rgba(255,255,255,.22); background: rgba(255,255,255,.06) }
+    .btn.primary{ background: linear-gradient(135deg, var(--brand), #2bb3ff); border: none; color: #0a1020; font-weight:700; box-shadow: 0 6px 20px var(--ring) }
+    .btn.primary:hover{ filter: brightness(1.05) }
+    
+    /* Contenido del artículo */
+    main {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 2rem;
+      background: rgba(15,22,41,0.4);
+      border-radius: var(--radius);
+      margin-top: 2rem;
+      margin-bottom: 2rem;
+    }
+    main h1 { font-size: 2.25rem; margin-top: 2rem; margin-bottom: 1rem; color: var(--text); }
+    main h2 { font-size: 1.75rem; margin-top: 1.5rem; margin-bottom: 1rem; color: var(--text); }
+    main h3 { font-size: 1.35rem; margin-top: 1.25rem; margin-bottom: 0.75rem; color: var(--text); }
+    main ul, main ol { margin: 1rem 0; padding-left: 2rem; color: var(--muted); }
+    main p { margin: 1rem 0; color: var(--muted); line-height: 1.7; }
+    main a { color: var(--brand); }
+    main a:hover { text-decoration: underline; }
+    main code, main pre {
+      background: rgba(0,0,0,0.3);
+      color: #000000;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: 'Courier New', monospace;
+      font-weight: 600;
+    }
+    main pre {
+      padding: 1rem;
+      overflow-x: auto;
+      color: #000000;
+      font-weight: 600;
+    }
+    
+    /* Footer */
+    footer{ color:var(--muted); border-top:1px solid rgba(255,255,255,.06); margin-top:32px; padding:14px 0 26px }
+    .footer-content{ display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 20px; }
+    footer h4{ margin: 0 0 10px; color: var(--text); }
+    footer p{ margin: 0; color: var(--muted); font-size: 14px; }
+    
+    @media (max-width: 768px) {
+      header{ background:#ffffff; border-bottom:1px solid var(--border); backdrop-filter: none; }
+      .brand b{ color: #0f172a; }
+      footer{ background:#ffffff; border-top:1px solid var(--border) }
+      footer h4{ color: #0f172a; }
+      footer p{ color: #64748b; }
+      main{ background: #ffffff; color: #0f172a; }
+      main h1, main h2, main h3{ color: #0b1220; }
+      main p, main li{ color: #475569; }
+    }
   </style>
-  
 </head>
 <body>
-  ${contentHtml}
-  ${generatePriceCalculatorHTML()}
-  ${generateBenefitsHTML()}
-  ${generateEmailCaptureHTML()}
-  ${generateComponentsScript()}
+  ${generateHeaderHTML()}
+  <main>
+    ${cleanContentHtml}
+    ${generateWaitlistSectionHTML()}
+  </main>
+  ${generateFooterHTML()}
+  ${generateWaitlistScript()}
 </body>
 </html>`
 }
@@ -78,221 +172,207 @@ function escapeHtml(text: string): string {
   return (text || '').replace(/[&<>"']/g, (m) => map[m])
 }
 
-function generatePriceCalculatorHTML(): string {
+// Header de la landing (copiado exactamente)
+function generateHeaderHTML(): string {
   return `
-<!-- Calculadora de Precios -->
-<div style="margin: 3rem 0; padding: 0; background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); border: 2px solid #2563eb; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(37, 99, 235, 0.1);">
-  <!-- Header con gradiente -->
-  <div style="background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); padding: 24px; text-align: center; color: white;">
-    <div style="font-size: 32px; margin-bottom: 8px;">💰</div>
-    <h3 style="margin: 0 0 8px; font-size: 24px; font-weight: 700;">Calculadora de precios</h3>
-    <p style="margin: 0; opacity: 0.9; font-size: 16px;">Descubre cuánto te costaría Delfín Check-in según tus necesidades</p>
+<header>
+  <div class="container nav">
+    <div class="brand">
+      <div class="logo" aria-hidden="true">🐬</div>
+      <b>Delfín Check‑in</b>
+    </div>
+    <div class="actions">
+      <a class="btn primary" href="https://delfincheckin.com/#registro">Registro Gratis</a>
+      <a class="btn" href="https://delfincheckin.com/#caracteristicas">Funciones</a>
+    </div>
   </div>
-  
-  <!-- Contenido principal -->
-  <div style="padding: 32px;">
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; margin-bottom: 32px;">
-      <!-- Selector de propiedades -->
-      <div style="position: relative;">
-        <label style="display: block; margin-bottom: 12px; font-weight: 600; color: #1f2937; font-size: 16px;">
-          🏠 Número de propiedades
-        </label>
-        <div style="position: relative;">
-          <input type="number" id="calcProperties" min="1" max="50" value="1" readonly
-                 style="width: 100%; height: 50px; border-radius: 12px; border: 2px solid #e2e8f0; padding: 0 20px 0 20px; font-size: 18px; text-align: center; font-weight: 600; color: #2563eb; background: white; transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(0,0,0,0.05); -moz-appearance: textfield; cursor: default;"
-                 onkeydown="return false;"
-                 onpaste="return false;"
-                 oninput="return false;">
-          <!-- Flechas personalizadas -->
-          <div style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 2px; pointer-events: auto; z-index: 10;">
-            <button type="button" id="incrementBtn" onclick="incrementCalc()" 
-                    style="width: 24px; height: 20px; background: #2563eb; color: white; border: none; border-radius: 4px 4px 0 0; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; transition: all 0.2s ease; user-select: none;"
-                    onmouseover="this.style.background='#1d4ed8'"
-                    onmouseout="this.style.background='#2563eb'">▲</button>
-            <button type="button" id="decrementBtn" onclick="decrementCalc()"
-                    style="width: 24px; height: 20px; background: #2563eb; color: white; border: none; border-radius: 0 0 4px 4px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; transition: all 0.2s ease; user-select: none;"
-                    onmouseover="this.style.background='#1d4ed8'"
-                    onmouseout="this.style.background='#2563eb'">▼</button>
-          </div>
-          <div style="position: absolute; right: 40px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 14px; font-weight: 500; pointer-events: none;">propiedades</div>
-        </div>
-      </div>
-      
-      <!-- Selector de plan -->
+</header>`;
+}
+
+// Footer de la landing (copiado exactamente)
+function generateFooterHTML(): string {
+  const currentYear = new Date().getFullYear();
+  return `
+<footer>
+  <div class="container">
+    <div class="footer-content">
       <div>
-        <label style="display: block; margin-bottom: 12px; font-weight: 600; color: #1f2937; font-size: 16px;">
-          📅 Tipo de plan
-        </label>
-        <div style="position: relative;">
-          <select id="calcPlan" onchange="updateCalc()" 
-                  style="width: 100%; height: 50px; border-radius: 12px; border: 2px solid #e2e8f0; padding: 0 50px 0 20px; font-size: 16px; font-weight: 500; background: white; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(0,0,0,0.05); appearance: none; -webkit-appearance: none; -moz-appearance: none;">
-            <option value="monthly">💳 Mensual (14,99€/propiedad)</option>
-            <option value="yearly" selected>🎯 Anual (descuento 16,7%) - RECOMENDADO</option>
-          </select>
-          <!-- Flecha personalizada para el select -->
-          <div style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); pointer-events: none; color: #2563eb; font-size: 16px; font-weight: bold;">▼</div>
-        </div>
+        <h4>Delfín Check‑in</h4>
+        <p>Software de gestión hotelera y auto check‑in para hostales y apartamentos.</p>
+      </div>
+      <div>
+        <h4>Contacto</h4>
+        <p>
+          📧 <a href="mailto:contacto@delfincheckin.com" style="color: var(--brand);">contacto@delfincheckin.com</a><br>
+          🕒 Lun-Dom: 9:00-22:00
+        </p>
+      </div>
+      <div>
+        <h4>Programas</h4>
+        <p>
+          <a href="https://delfincheckin.com/referidos.html" style="color: var(--brand);">Programa de Referidos</a><br>
+          <a href="https://delfincheckin.com/afiliados.html" style="color: var(--brand);">Programa de Afiliados</a>
+        </p>
+      </div>
+      <div>
+        <h4>Legal</h4>
+        <p>
+          <a href="https://delfincheckin.com/politica-privacidad.html" style="color: var(--brand);">Política de Privacidad</a><br>
+          <a href="https://delfincheckin.com/politica-cookies.html" style="color: var(--brand);">Política de Cookies</a><br>
+          <a href="https://delfincheckin.com/terminos-servicio.html" style="color: var(--brand);">Términos de Servicio</a><br>
+          <a href="https://delfincheckin.com/aviso-legal.html" style="color: var(--brand);">Aviso Legal</a>
+        </p>
       </div>
     </div>
-    
-    <!-- Resultados -->
-    <div id="calcResults" style="background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); border-radius: 16px; padding: 32px; text-align: center; border: 2px solid #e2e8f0; position: relative; overflow: hidden;">
-      <div style="position: absolute; top: -20px; right: -20px; width: 100px; height: 100px; background: linear-gradient(135deg, #2563eb, #1d4ed8); border-radius: 50%; opacity: 0.1;"></div>
-      <div style="position: absolute; bottom: -30px; left: -30px; width: 80px; height: 80px; background: linear-gradient(135deg, #16a34a, #15803d); border-radius: 50%; opacity: 0.1;"></div>
-      
-      <div style="position: relative; z-index: 1;">
-        <div style="font-size: 36px; font-weight: 900; color: #2563eb; margin-bottom: 12px; text-shadow: 0 2px 4px rgba(37, 99, 235, 0.1);" id="calcTotal">181,38€/año</div>
-        <div style="color: #64748b; margin-bottom: 8px; font-size: 14px; font-weight: 500;">(IVA incluido)</div>
-        <div style="color: #64748b; margin-bottom: 8px; font-size: 14px; font-weight: 500;" id="calcPerProperty">14,99€ por propiedad</div>
-        <div style="margin-bottom: 12px; padding: 8px 12px; background: rgba(0,0,0,0.02); border-radius: 8px; font-size: 12px; color: #64748b;">
-          <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-            <span>Base imponible:</span>
-            <span id="calcBase" style="font-weight: 600;">149,90€</span>
-          </div>
-          <div style="display: flex; justify-content: space-between;">
-            <span>IVA (21%):</span>
-            <span id="calcIVA" style="font-weight: 600;">31,48€</span>
-          </div>
-        </div>
-        <div style="color: #16a34a; font-weight: 700; font-size: 18px; padding: 8px 16px; background: rgba(22, 163, 74, 0.1); border-radius: 20px; display: inline-block;" id="calcSavings">Ahorras 29,90€ al año</div>
-      </div>
-    </div>
-    
-    <!-- Información sobre el PMS en desarrollo -->
-    <div style="margin-top: 24px; padding: 20px; background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-radius: 12px; border: 2px solid #f59e0b;">
-      <p style="margin: 0; color: #92400e; font-size: 16px; line-height: 1.6; text-align: center;">
-        <strong>🚀 Estamos diseñando el PMS de gestión en la nube con todo lo que necesitas.</strong><br>
-        Los primeros en apuntarse a la lista de espera tendrán acceso prioritario y beneficios exclusivos.
+    <div style="border-top: 1px solid var(--border); padding-top: 15px; text-align: center; color: var(--muted);">
+      <p style="margin: 0 0 12px; font-size: 14px;">
+        © ${currentYear} Delfín Check‑in · <a href="https://delfincheckin.com/#registro" style="color: var(--brand);">Registro Gratis</a>
+      </p>
+      <p style="margin: 0; font-size: 12px; color: #94a3b8; line-height: 1.8;">
+        <a href="https://delfincheckin.com/politica-privacidad.html" style="color: var(--brand); margin: 0 8px;">Política de Privacidad</a> ·
+        <a href="https://delfincheckin.com/terminos-servicio.html" style="color: var(--brand); margin: 0 8px;">Términos de Servicio</a> ·
+        <a href="https://delfincheckin.com/aviso-legal.html" style="color: var(--brand); margin: 0 8px;">Aviso Legal</a>
+        <br style="margin: 8px 0;">
+        <span style="font-size: 11px; display: block; margin-top: 8px;">
+          El Plan Gratuito se financia con anuncios elegantes y discretos. El Plan Check-in tiene un coste de 8€/mes. Sin costes ocultos.
+        </span>
       </p>
     </div>
   </div>
-</div>`
+</footer>`;
 }
 
-function generateBenefitsHTML(): string {
+// Sección de Waitlist completa (copiada exactamente de la landing)
+function generateWaitlistSectionHTML(): string {
   return `
-<!-- Beneficios del PMS en Desarrollo -->
-<section style="margin: 3rem 0; padding: 2rem; background: white; border-radius: 16px; border: 1px solid #e2e8f0;">
-  <h2 style="font-size: 2rem; margin-bottom: 1rem; color: #0b1220;">✨ Estamos Diseñando el PMS Completo en la Nube</h2>
-  <p style="color: #475569; margin-bottom: 1.5rem; font-size: 16px; line-height: 1.6;">
-    Estamos diseñando el PMS de gestión en la nube con todo lo que se necesita para gestionar tu alquiler vacacional de forma profesional. Incluirá:
-  </p>
-  <ul style="color:#0f172a; line-height:1.8; padding-left:1.25rem; margin-bottom: 1.5rem;">
-    <li><strong>Gestión completa de reservas y calendario</strong> - Organiza todas tus reservas en un solo lugar</li>
-    <li><strong>Check-in digital y cumplimiento normativo (RD 933)</strong> - Envío automático al Ministerio del Interior</li>
-    <li><strong>Microsite de reservas directas</strong> - Sin comisiones de plataformas externas</li>
-    <li><strong>Facturación automática</strong> - Genera facturas de forma instantánea</li>
-    <li><strong>Gestión de múltiples propiedades</strong> - Controla todas tus propiedades desde un solo panel</li>
-    <li><strong>App móvil</strong> - Gestiona tu negocio desde cualquier lugar</li>
-    <li><strong>Y mucho más...</strong> - Todo lo que necesitas para gestionar tu alquiler vacacional</li>
-  </ul>
-  <p style="color: #2563eb; font-weight: 600; font-size: 16px; margin-top: 1.5rem; padding: 1rem; background: #f0f9ff; border-radius: 8px; border-left: 4px solid #2563eb;">
-    🎉 <strong>Early Adopters:</strong> Los primeros en apuntarse tendrán acceso prioritario y el PMS completo gratis para siempre.
-  </p>
-</section>`
-}
-
-function generateEmailCaptureHTML(): string {
-  return `
-<!-- Formulario de Captura de Email para Waitlist -->
-<section style="margin: 3rem 0; padding: 2rem; background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border-radius: 16px; border: 2px solid #bae6fd;">
-  <h2 style="font-size: 2rem; margin-bottom: 1rem; color: #0b1220; text-align: center;">🚀 Únete a la Lista de Espera</h2>
-  <p style="text-align: center; color: #0f172a; margin-bottom: 1rem; font-size: 18px; font-weight: 600;">
-    Estamos diseñando el PMS de gestión en la nube con todo lo que necesitas
-  </p>
-  <p style="text-align: center; color: #475569; margin-bottom: 2rem; font-size: 16px;">
-    Sé de los primeros en acceder cuando lo lancemos. Acceso prioritario y beneficios exclusivos para early adopters.
-  </p>
-  <form id="emailCaptureForm" onsubmit="handleEmailCapture(event)" style="max-width: 500px; margin: 0 auto;">
-    <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-      <input type="email" id="leadEmail" required placeholder="tu@email.com" 
-             style="flex: 1; min-width: 250px; height: 50px; padding: 0 16px; border-radius: 12px; border: 2px solid #e2e8f0; font-size: 16px; background: white; color: #0f172a;">
-      <button type="submit" 
-              style="height: 50px; padding: 0 24px; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); white-space: nowrap;">
-        Apuntarme
-      </button>
+<section id="registro" style="background: linear-gradient(135deg, #44c0ff 0%, #2563eb 100%); border-radius: 24px; padding: 48px 24px; margin: 64px auto; max-width: 900px; box-shadow: 0 20px 60px rgba(37, 99, 235, 0.3);">
+  <div style="text-align: center; color: white; margin-bottom: 32px;">
+    <div style="font-size: 64px; margin-bottom: 16px;">🐬</div>
+    <h2 style="color: white; margin-bottom: 16px; font-size: 42px; font-weight: 900; text-shadow: 0 4px 12px rgba(0,0,0,0.2);">El software de gestión hotelera (PMS) que estabas esperando</h2>
+    <p class="lead" style="color: rgba(255,255,255,0.95); font-size: 22px; line-height: 1.6; margin-bottom: 16px; font-weight: 600;">
+      <strong>Gratis para siempre si te apuntas ya.</strong> De propietarios, para propietarios.
+    </p>
+    <p style="color: rgba(255,255,255,0.9); font-size: 18px; margin-top: 12px; line-height: 1.6;">
+      Estamos en la fase final de desarrollo. <strong style="font-size: 20px; text-decoration: underline;">⚠️ URGENTE: Solo los primeros en registrarse tendrán el software completo gratis para siempre.</strong>
+      <br><strong style="font-size: 20px;">Regístrate ahora antes de que se agoten las plazas gratuitas.</strong>
+      <br><span style="font-size: 16px; opacity: 0.9;">El módulo de check-in digital (envío al Ministerio del Interior) siempre costará 8€/mes.</span>
+    </p>
+    <div style="margin-top: 24px; padding: 16px; background: rgba(255,255,255,0.15); border-radius: 12px; backdrop-filter: blur(10px);">
+      <p style="margin: 0; font-size: 16px; font-weight: 600;">📱 Apps móviles en desarrollo | 💯 PMS 100% Gratis | 💰 Check-in: 8€/mes</p>
     </div>
-    <p id="emailCaptureMessage" style="margin-top: 12px; text-align: center; font-size: 14px; color: #16a34a; display: none;"></p>
-  </form>
-</section>`
+  </div>
+  
+  <div class="card" style="background: white; max-width: 600px; margin: 0 auto; padding: 32px; border-radius: 16px;">
+    <div style="text-align: center; margin-bottom: 24px;">
+      <div style="font-size: 48px; margin-bottom: 12px;">🎯</div>
+      <h3 style="color: #0f172a; font-size: 28px; font-weight: 800; margin-bottom: 8px;">Consigue el plan gratis para siempre</h3>
+      <p style="color: #64748b; font-size: 18px; line-height: 1.6;">
+        Únete a la lista de espera y recibe acceso prioritario cuando lancemos. Los primeros usuarios tendrán el Plan Gratuito para siempre.
+      </p>
+    </div>
+    
+    <form id="waitlistForm" style="display: grid; gap: 20px;" onsubmit="handleWaitlistSubmit(event)">
+      <label>
+        <span style="display: block; margin-bottom: 8px; font-weight: 600; color: #0f172a;">Email *</span>
+        <input 
+          id="waitlistEmail" 
+          type="email" 
+          required 
+          placeholder="tu@email.com" 
+          style="width: 100%; height: 52px; border-radius: 12px; background: #ffffff; color: #0f172a; border: 2px solid rgba(15,23,42,.2); padding: 0 16px; font-size: 16px; transition: border-color 0.2s;"
+          onfocus="this.style.borderColor='#2563eb'; this.style.boxShadow='0 0 0 3px rgba(37, 99, 235, 0.1)'"
+          onblur="this.style.borderColor='rgba(15,23,42,.2)'; this.style.boxShadow='none'"
+        >
+      </label>
+      <label>
+        <span style="display: block; margin-bottom: 8px; font-weight: 600; color: #0f172a;">Nombre (opcional)</span>
+        <input 
+          id="waitlistName" 
+          type="text" 
+          placeholder="Tu nombre" 
+          style="width: 100%; height: 52px; border-radius: 12px; background: #ffffff; color: #0f172a; border: 2px solid rgba(15,23,42,.2); padding: 0 16px; font-size: 16px; transition: border-color 0.2s;"
+          onfocus="this.style.borderColor='#2563eb'; this.style.boxShadow='0 0 0 3px rgba(37, 99, 235, 0.1)'"
+          onblur="this.style.borderColor='rgba(15,23,42,.2)'; this.style.boxShadow='none'"
+        >
+      </label>
+      <button 
+        type="submit" 
+        id="waitlistSubmit"
+        style="background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white; border: none; padding: 18px 32px; border-radius: 12px; font-size: 18px; font-weight: 700; cursor: pointer; transition: all 0.2s; width: 100%; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);"
+        onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(37, 99, 235, 0.4)'"
+        onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(37, 99, 235, 0.3)'"
+      >
+        <span id="waitlistSubmitText">🎁 ¡Quiero gratis para siempre</span>
+        <span id="waitlistLoading" style="display: none;">Enviando...</span>
+      </button>
+      <div id="waitlistMessage" style="margin: 0; padding: 0; border-radius: 8px; display: none; text-align: left;"></div>
+    </form>
+    
+    <div style="margin-top: 24px; padding: 20px; background: #f0f9ff; border-radius: 12px; border-left: 4px solid #2563eb;">
+      <div style="display: flex; align-items: start; gap: 12px;">
+        <div style="font-size: 24px;">ℹ️</div>
+        <div>
+          <h4 style="margin: 0 0 8px 0; color: #1e40af; font-weight: 700; font-size: 18px;">✨ Plan Gratuito - Incluye todo esto</h4>
+          <ul style="margin: 0; padding-left: 20px; color: #1e40af; font-size: 15px; line-height: 2;">
+            <li><strong>✅ Gestión completa de reservas</strong> - Sin límites</li>
+            <li><strong>✅ Gestión de habitaciones o propiedades</strong> - Control total</li>
+            <li><strong>✅ Exportación de datos</strong> - CSV/Excel</li>
+            <li><strong>✅ Panel de administración</strong> - Intuitivo y potente</li>
+            <li><strong>✅ Soporte por email</strong> - Siempre disponible</li>
+            <li><strong>✅ App móvil</strong> - iOS y Android (próximamente)</li>
+            <li><strong>✅ Crea enlaces de pago personalizados</strong> - Define fechas, importe acordado y genera un enlace único de pago. Compártelo por WhatsApp o email y el huésped paga de forma segura. El dinero entra directamente en tu cuenta bancaria.</li>
+            <li><strong>✅ Microsite para reservas directas</strong> - Crea en minutos una página pública para tu alojamiento, comparte el enlace en redes o con tus huéspedes y recibe reservas directas. Con pagos directos las comisiones se reducen y el dinero entra en tu cuenta sin esperas.</li>
+            <li><strong>💡 Financiado con anuncios</strong> - Elegantes y discretos, sin coste para ti</li>
+          </ul>
+          <div style="margin-top: 16px; padding: 16px; background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-radius: 8px; border: 2px solid #f59e0b;">
+            <p style="margin: 0; color: #92400e; font-size: 15px; font-weight: 700;">
+              🎁 Los primeros usuarios: tendrás el software con el plan gratis para siempre
+            </p>
+          </div>
+          <div style="margin-top: 16px; padding: 16px; background: #fef2f2; border-radius: 8px; border: 2px solid #ef4444;">
+            <p style="margin: 0; color: #991b1b; font-size: 15px; font-weight: 700;">
+              ❌ No incluye: Check-in digital (8€/mes) ni envío al Ministerio del Interior
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>`;
 }
 
-function generateComponentsScript(): string {
+// Script para el formulario de waitlist (copiado de la landing)
+function generateWaitlistScript(): string {
   return `
 <script>
-// Calculadora de Precios
-function getVolumePrice(properties) {
-  if (properties === 1) return 14.99;
-  if (properties === 2) return 13.49;
-  if (properties >= 3 && properties <= 4) return 12.74;
-  if (properties >= 5 && properties <= 9) return 11.99;
-  if (properties >= 10) return 11.24;
-  return 14.99;
-}
-
-function updateCalc() {
-  const properties = parseInt(document.getElementById('calcProperties').value) || 1;
-  const plan = document.getElementById('calcPlan').value;
+async function handleWaitlistSubmit(event) {
+  event.preventDefault();
   
-  const pricePerProperty = getVolumePrice(properties);
-  const monthlyTotal = properties * pricePerProperty;
-  const yearlyTotal = monthlyTotal * 12;
-  const yearlyDiscount = yearlyTotal * 0.167;
-  const finalYearlyTotal = yearlyTotal - yearlyDiscount;
+  const emailInput = document.getElementById('waitlistEmail');
+  const nameInput = document.getElementById('waitlistName');
+  const submitBtn = document.getElementById('waitlistSubmit');
+  const submitText = document.getElementById('waitlistSubmitText');
+  const loadingText = document.getElementById('waitlistLoading');
+  const messageDiv = document.getElementById('waitlistMessage');
   
-  let total, periodText, savingsText;
-  if (plan === 'monthly') {
-    total = monthlyTotal;
-    periodText = '/mes';
-    savingsText = properties > 1 ? \`Descuento \${Math.round(((14.99 - pricePerProperty) / 14.99) * 100)}% por volumen\` : 'Precio base';
-  } else {
-    total = finalYearlyTotal;
-    periodText = '/año';
-    const regularYearly = properties * 14.99 * 12;
-    const totalSavings = regularYearly - finalYearlyTotal;
-    savingsText = \`Ahorras \${totalSavings.toFixed(2)}€ al año\`;
+  if (!emailInput || !submitBtn || !messageDiv) {
+    console.error('Elementos del formulario no encontrados');
+    return;
   }
   
-  // Calcular IVA
-  const base = total;
-  const iva = total * 0.21;
-  const totalWithVat = total * 1.21;
+  const email = emailInput.value.trim();
+  const name = nameInput ? nameInput.value.trim() : null;
   
-  // Formatear números con comas para decimales (formato español)
-  const formatNumber = (num) => num.toFixed(2).replace('.', ',');
+  if (!email || !email.includes('@')) {
+    messageDiv.innerHTML = '<p style="margin: 0; padding: 12px; background: #fef2f2; color: #dc2626; border-radius: 8px;">Por favor, introduce un email válido.</p>';
+    messageDiv.style.display = 'block';
+    return;
+  }
   
-  document.getElementById('calcTotal').textContent = \`\${formatNumber(totalWithVat)}€\${periodText}\`;
-  document.getElementById('calcPerProperty').textContent = \`\${formatNumber(pricePerProperty)}€ por propiedad\`;
-  document.getElementById('calcBase').textContent = \`\${formatNumber(base)}€\`;
-  document.getElementById('calcIVA').textContent = \`\${formatNumber(iva)}€\`;
-  document.getElementById('calcSavings').textContent = savingsText.replace(/\\./g, ',');
-}
-
-function incrementCalc() {
-  const input = document.getElementById('calcProperties');
-  const current = parseInt(input.value) || 1;
-  if (current < 50) {
-    input.value = current + 1;
-    updateCalc();
-  }
-}
-
-function decrementCalc() {
-  const input = document.getElementById('calcProperties');
-  const current = parseInt(input.value) || 1;
-  if (current > 1) {
-    input.value = current - 1;
-    updateCalc();
-  }
-}
-
-// Función eliminada - ya no redirige a compra, el formulario de waitlist está más abajo
-
-// Captura de Email para Waitlist
-async function handleEmailCapture(e){ 
-  e.preventDefault(); 
-  const email = document.getElementById('leadEmail').value;
-  const messageEl = document.getElementById('emailCaptureMessage');
+  // Mostrar estado de carga
+  submitBtn.disabled = true;
+  submitText.style.display = 'none';
+  loadingText.style.display = 'inline';
   
   try {
     const response = await fetch('https://admin.delfincheckin.com/api/waitlist', {
@@ -300,8 +380,8 @@ async function handleEmailCapture(e){
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
         email: email,
+        name: name || null,
         source: 'programmatic_page',
-        name: null,
         notes: 'Lead capturado desde página programática'
       })
     });
@@ -309,54 +389,40 @@ async function handleEmailCapture(e){
     const data = await response.json();
     
     if (response.ok && data.success) {
-      messageEl.textContent = '✅ ¡Perfecto! Te hemos agregado a la lista de espera. Te notificaremos cuando el PMS esté disponible.';
-      messageEl.style.color = '#16a34a';
-      messageEl.style.display = 'block';
-      document.getElementById('leadEmail').value = '';
-      
-      setTimeout(() => {
-        messageEl.style.display = 'none';
-      }, 8000);
+      messageDiv.innerHTML = '<p style="margin: 0; padding: 12px; background: #dcfce7; color: #166534; border-radius: 8px; font-weight: 600;">✅ ¡Te hemos agregado a la lista de espera! Te notificaremos cuando el PMS esté disponible.</p>';
+      messageDiv.style.display = 'block';
+      emailInput.value = '';
+      if (nameInput) nameInput.value = '';
     } else {
-      // Manejar errores específicos
+      let errorMessage = data.error || 'Error al agregar a la lista de espera. Por favor, inténtalo de nuevo.';
       if (data.alreadyInWaitlist) {
-        messageEl.textContent = 'ℹ️ Ya estás en nuestra lista de espera. Te notificaremos cuando el PMS esté disponible.';
-        messageEl.style.color = '#2563eb';
+        errorMessage = 'ℹ️ Ya estás en nuestra lista de espera. Te notificaremos cuando el PMS esté disponible.';
+        messageDiv.innerHTML = '<p style="margin: 0; padding: 12px; background: #dbeafe; color: #1e40af; border-radius: 8px; font-weight: 600;">' + errorMessage + '</p>';
       } else if (data.alreadyActivated) {
-        messageEl.textContent = 'ℹ️ Ya tienes una cuenta activa. ¡Gracias por tu interés!';
-        messageEl.style.color = '#2563eb';
+        errorMessage = 'ℹ️ Ya tienes una cuenta activa. ¡Gracias por tu interés!';
+        messageDiv.innerHTML = '<p style="margin: 0; padding: 12px; background: #dbeafe; color: #1e40af; border-radius: 8px; font-weight: 600;">' + errorMessage + '</p>';
       } else {
-        messageEl.textContent = '❌ ' + (data.error || 'Error al enviar. Por favor, intenta de nuevo.');
-        messageEl.style.color = '#ef4444';
+        messageDiv.innerHTML = '<p style="margin: 0; padding: 12px; background: #fef2f2; color: #dc2626; border-radius: 8px;">❌ ' + errorMessage + '</p>';
       }
-      messageEl.style.display = 'block';
-      
-      setTimeout(() => {
-        messageEl.style.display = 'none';
-      }, 8000);
+      messageDiv.style.display = 'block';
     }
   } catch (error) {
-    messageEl.textContent = '❌ Error al enviar. Por favor, intenta de nuevo.';
-    messageEl.style.color = '#ef4444';
-    messageEl.style.display = 'block';
+    console.error('Error en waitlist:', error);
+    messageDiv.innerHTML = '<p style="margin: 0; padding: 12px; background: #fef2f2; color: #dc2626; border-radius: 8px;">❌ Error al enviar. Por favor, intenta de nuevo.</p>';
+    messageDiv.style.display = 'block';
+  } finally {
+    // Restaurar estado del botón
+    submitBtn.disabled = false;
+    submitText.style.display = 'inline';
+    loadingText.style.display = 'none';
     
+    // Ocultar mensaje después de 8 segundos
     setTimeout(() => {
-      messageEl.style.display = 'none';
-    }, 5000);
+      messageDiv.style.display = 'none';
+    }, 8000);
   }
 }
-
-// Inicializar calculadora al cargar
-if (document.getElementById('calcProperties')) {
-  updateCalc();
-}
-
-// Asegurar que la calculadora se actualice cuando cambie el plan
-const calcPlanSelect = document.getElementById('calcPlan');
-if (calcPlanSelect) {
-  calcPlanSelect.addEventListener('change', updateCalc);
-}
-</script>`
+</script>`;
 }
 
 
