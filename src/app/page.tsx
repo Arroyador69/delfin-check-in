@@ -200,17 +200,28 @@ export default function HomePage() {
   const handleLogout = async () => {
     try {
       // Llamar a la API de logout
-      await fetch('/api/auth/logout', { method: 'POST' })
+      const response = await fetch('/api/auth/logout', { 
+        method: 'POST',
+        credentials: 'include' // Importante: incluir cookies para que se eliminen
+      })
       
-      // Eliminar cookie manualmente
-      document.cookie = 'auth_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
+      if (!response.ok) {
+        console.error('Error en respuesta de logout:', response.status)
+      }
       
-      // Redirigir al login
-      router.push('/admin-login')
+      // ⚠️ CRÍTICO: Forzar recarga completa para limpiar cualquier caché
+      // Esto asegura que todas las cookies se eliminen correctamente
+      // NO usar document.cookie manualmente - la cookie es httpOnly y no se puede eliminar desde JS
+      window.location.href = '/admin-login'
+      
+      // NOTA: Usamos window.location.href en lugar de router.push
+      // porque router.push puede no limpiar completamente el estado
+      // y las cookies pueden persistir en algunos casos
+      
     } catch (error) {
       console.error('Error logging out:', error)
-      // Redirigir de todas formas
-      router.push('/admin-login')
+      // Redirigir de todas formas, incluso si hay error
+      window.location.href = '/admin-login'
     }
   };
 

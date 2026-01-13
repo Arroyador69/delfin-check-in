@@ -50,14 +50,13 @@ export async function POST(req: NextRequest) {
     // Generar contenido con OpenAI
     const generated = await generateContentWithOpenAI(template, variables);
 
-    // Generar slug y canonical URL (añadir prefijo test- si es prueba)
-    const slugPrefix = is_test ? 'test-' : '';
-    const citySlug = variables.ciudad
-      ? slugify(String(variables.ciudad))
-      : null;
-    const slugBase = variables.slug || 
-      (citySlug ? `${slugPrefix}rd-933/software-${citySlug}` : 
-      `${slugPrefix}content/${template.type}-${Date.now()}`);
+    // Generar slug único (verificar duplicados)
+    const slugBase = await generateUniqueSlug({
+      requestedSlug: variables.slug,
+      templateType: template.type,
+      variables: variables,
+      isTest: is_test || false
+    });
     const canonicalUrl = `https://delfincheckin.com/${slugBase}`;
 
     // Guardar en BD
@@ -130,8 +129,29 @@ export async function POST(req: NextRequest) {
 
   } catch (error: any) {
     console.error('❌ Error generando contenido programático:', error);
+    
+    // Manejar errores específicos de base de datos
+    if (error.code === '23505') {
+      // Error de clave duplicada
+      const detail = error.detail || '';
+      const slugMatch = detail.match(/Key \(slug\)=\(([^)]+)\)/);
+      const duplicateSlug = slugMatch ? slugMatch[1] : 'desconocido';
+      
+      return NextResponse.json(
+        { 
+          error: `El slug "${duplicateSlug}" ya existe. Por favor, intenta con diferentes variables o espera un momento.`,
+          code: 'DUPLICATE_SLUG',
+          duplicateSlug: duplicateSlug
+        },
+        { status: 409 } // Conflict
+      );
+    }
+    
     return NextResponse.json(
-      { error: error.message || 'Error interno del servidor' },
+      { 
+        error: error.message || 'Error interno del servidor',
+        details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      },
       { status: 500 }
     );
   }
@@ -389,38 +409,50 @@ function generatePriceCalculatorHTML(): string {
       </div>
     </div>
     
-    <!-- Botón de contratar -->
-    <button onclick="openStripePayment()" 
-            style="width: 100%; margin-top: 24px; padding: 16px; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white; border: none; border-radius: 12px; font-size: 18px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); transition: all 0.3s ease;"
-            onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(37, 99, 235, 0.4)'"
-            onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(37, 99, 235, 0.3)'">
-      💳 Contratar
-    </button>
+    <!-- Información sobre el PMS en desarrollo -->
+    <div style="margin-top: 24px; padding: 20px; background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-radius: 12px; border: 2px solid #f59e0b;">
+      <p style="margin: 0; color: #92400e; font-size: 16px; line-height: 1.6; text-align: center;">
+        <strong>🚀 Estamos diseñando el PMS de gestión en la nube con todo lo que necesitas.</strong><br>
+        Los primeros en apuntarse a la lista de espera tendrán acceso prioritario y beneficios exclusivos.
+      </p>
+    </div>
   </div>
 </div>`
 }
 
 function generateBenefitsHTML(): string {
   return `
-<!-- Beneficios del Servicio -->
+<!-- Beneficios del PMS en Desarrollo -->
 <section style="margin: 3rem 0; padding: 2rem; background: white; border-radius: 16px; border: 1px solid #e2e8f0;">
-  <h2 style="font-size: 2rem; margin-bottom: 1.5rem; color: #0b1220;">✨ Ventajas de usar Delfín Check-in</h2>
-  <ul style="color:#0f172a; line-height:1.8; padding-left:1.25rem;">
-    <li>Microsite de reservas directas sin comisiones</li>
-    <li>Envío automático al Ministerio (RD 933)</li>
-    <li>Generador de facturas integrado</li>
-    <li>Calculadora de costes detallada</li>
+  <h2 style="font-size: 2rem; margin-bottom: 1rem; color: #0b1220;">✨ Estamos Diseñando el PMS Completo en la Nube</h2>
+  <p style="color: #475569; margin-bottom: 1.5rem; font-size: 16px; line-height: 1.6;">
+    Estamos diseñando el PMS de gestión en la nube con todo lo que se necesita para gestionar tu alquiler vacacional de forma profesional. Incluirá:
+  </p>
+  <ul style="color:#0f172a; line-height:1.8; padding-left:1.25rem; margin-bottom: 1.5rem;">
+    <li><strong>Gestión completa de reservas y calendario</strong> - Organiza todas tus reservas en un solo lugar</li>
+    <li><strong>Check-in digital y cumplimiento normativo (RD 933)</strong> - Envío automático al Ministerio del Interior</li>
+    <li><strong>Microsite de reservas directas</strong> - Sin comisiones de plataformas externas</li>
+    <li><strong>Facturación automática</strong> - Genera facturas de forma instantánea</li>
+    <li><strong>Gestión de múltiples propiedades</strong> - Controla todas tus propiedades desde un solo panel</li>
+    <li><strong>App móvil</strong> - Gestiona tu negocio desde cualquier lugar</li>
+    <li><strong>Y mucho más...</strong> - Todo lo que necesitas para gestionar tu alquiler vacacional</li>
   </ul>
+  <p style="color: #2563eb; font-weight: 600; font-size: 16px; margin-top: 1.5rem; padding: 1rem; background: #f0f9ff; border-radius: 8px; border-left: 4px solid #2563eb;">
+    🎉 <strong>Early Adopters:</strong> Los primeros en apuntarse tendrán acceso prioritario y el PMS completo gratis para siempre.
+  </p>
 </section>`;
 }
 
 function generateEmailCaptureHTML(): string {
   return `
-<!-- Formulario de Captura de Email -->
+<!-- Formulario de Captura de Email para Waitlist -->
 <section style="margin: 3rem 0; padding: 2rem; background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border-radius: 16px; border: 2px solid #bae6fd;">
-  <h2 style="font-size: 2rem; margin-bottom: 1rem; color: #0b1220; text-align: center;">🤔 ¿Te lo estás pensando?</h2>
-  <p style="text-align: center; color: #0f172a; margin-bottom: 2rem; font-size: 18px;">
-    Deja tu email y nos pondremos en contacto contigo para resolver todas tus dudas
+  <h2 style="font-size: 2rem; margin-bottom: 1rem; color: #0b1220; text-align: center;">🚀 Únete a la Lista de Espera</h2>
+  <p style="text-align: center; color: #0f172a; margin-bottom: 1rem; font-size: 18px; font-weight: 600;">
+    Estamos diseñando el PMS de gestión en la nube con todo lo que necesitas
+  </p>
+  <p style="text-align: center; color: #475569; margin-bottom: 2rem; font-size: 16px;">
+    Sé de los primeros en acceder cuando lo lancemos. Acceso prioritario y beneficios exclusivos para early adopters.
   </p>
   <form id="emailCaptureForm" onsubmit="handleEmailCapture(event)" style="max-width: 500px; margin: 0 auto;">
     <div style="display: flex; gap: 12px; flex-wrap: wrap;">
@@ -428,7 +460,7 @@ function generateEmailCaptureHTML(): string {
              style="flex: 1; min-width: 250px; height: 50px; padding: 0 16px; border-radius: 12px; border: 2px solid #e2e8f0; font-size: 16px; background: white; color: #0f172a;">
       <button type="submit" 
               style="height: 50px; padding: 0 24px; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); white-space: nowrap;">
-        Enviar
+        Apuntarme
       </button>
     </div>
     <p id="emailCaptureMessage" style="margin-top: 12px; text-align: center; font-size: 14px; color: #16a34a; display: none;"></p>
@@ -505,43 +537,63 @@ function decrementCalc() {
   }
 }
 
-function openStripePayment(){
-  const propertiesEl = document.getElementById('calcProperties');
-  const planEl = document.getElementById('calcPlan');
-  const properties = propertiesEl ? parseInt(propertiesEl.value) || 1 : 1;
-  const planType = planEl && planEl.value === 'monthly' ? 'monthly' : 'yearly';
-  window.location.href = \`https://delfincheckin.com/#precio?properties=\${properties}&plan=\${planType}&openModal=true\`;
-}
+// Función eliminada - ya no redirige a compra, el formulario de waitlist está más abajo
 
-// Captura de Email
+// Captura de Email para Waitlist
 async function handleEmailCapture(e){
   e.preventDefault();
   const email = document.getElementById('leadEmail').value;
   const messageEl = document.getElementById('emailCaptureMessage');
   
   try {
-    const response = await fetch('https://admin.delfincheckin.com/api/public/lead-capture', {
+    const response = await fetch('https://admin.delfincheckin.com/api/waitlist', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, source: 'programmatic_page' })
+      body: JSON.stringify({ 
+        email: email,
+        source: 'programmatic_page',
+        name: null,
+        notes: 'Lead capturado desde página programática'
+      })
     });
     
-    if (response.ok) {
-      messageEl.textContent = '✅ ¡Gracias! Te contactaremos pronto.';
+    const data = await response.json();
+    
+    if (response.ok && data.success) {
+      messageEl.textContent = '✅ ¡Perfecto! Te hemos agregado a la lista de espera. Te notificaremos cuando el PMS esté disponible.';
       messageEl.style.color = '#16a34a';
       messageEl.style.display = 'block';
       document.getElementById('leadEmail').value = '';
       
       setTimeout(() => {
         messageEl.style.display = 'none';
-      }, 5000);
+      }, 8000);
     } else {
-      throw new Error('Error en el servidor');
+      // Manejar errores específicos
+      if (data.alreadyInWaitlist) {
+        messageEl.textContent = 'ℹ️ Ya estás en nuestra lista de espera. Te notificaremos cuando el PMS esté disponible.';
+        messageEl.style.color = '#2563eb';
+      } else if (data.alreadyActivated) {
+        messageEl.textContent = 'ℹ️ Ya tienes una cuenta activa. ¡Gracias por tu interés!';
+        messageEl.style.color = '#2563eb';
+      } else {
+        messageEl.textContent = '❌ ' + (data.error || 'Error al enviar. Por favor, intenta de nuevo.');
+        messageEl.style.color = '#ef4444';
+      }
+      messageEl.style.display = 'block';
+      
+      setTimeout(() => {
+        messageEl.style.display = 'none';
+      }, 8000);
     }
   } catch (error) {
     messageEl.textContent = '❌ Error al enviar. Por favor, intenta de nuevo.';
     messageEl.style.color = '#ef4444';
     messageEl.style.display = 'block';
+    
+    setTimeout(() => {
+      messageEl.style.display = 'none';
+    }, 5000);
   }
 }
 
@@ -579,5 +631,64 @@ function slugify(text: string): string {
     .trim()
     .replace(/\s+/g, '-')
     .replace(/-+/g, '-');
+}
+
+// Generar slug único verificando duplicados en BD
+async function generateUniqueSlug(options: {
+  requestedSlug?: string;
+  templateType: string;
+  variables: Record<string, any>;
+  isTest: boolean;
+}): Promise<string> {
+  const { requestedSlug, templateType, variables, isTest } = options;
+  
+  const slugPrefix = isTest ? 'test-' : '';
+  let baseSlug: string;
+  
+  if (requestedSlug) {
+    // Si se proporciona un slug específico, usarlo como base
+    baseSlug = `${slugPrefix}${requestedSlug}`;
+  } else {
+    // Generar slug basado en variables
+    const citySlug = variables.ciudad ? slugify(String(variables.ciudad)) : null;
+    
+    if (citySlug) {
+      // Para plantillas tipo "local", usar formato: pms-software-gestion-{ciudad}
+      baseSlug = `${slugPrefix}pms-software-gestion-${citySlug}`;
+    } else {
+      // Para otros tipos, usar timestamp
+      baseSlug = `${slugPrefix}content/${templateType}-${Date.now()}`;
+    }
+  }
+  
+  // Verificar si el slug ya existe
+  let finalSlug = baseSlug;
+  let counter = 1;
+  let exists = true;
+  
+  while (exists) {
+    const checkResult = await sql`
+      SELECT id FROM programmatic_pages WHERE slug = ${finalSlug} LIMIT 1
+    `;
+    
+    if (checkResult.rows.length === 0) {
+      // Slug disponible
+      exists = false;
+    } else {
+      // Slug duplicado, añadir sufijo
+      const baseWithoutSuffix = baseSlug.replace(/-\d+$/, '');
+      finalSlug = `${baseWithoutSuffix}-${counter}`;
+      counter++;
+      
+      // Prevenir loops infinitos (máximo 100 intentos)
+      if (counter > 100) {
+        // Si llegamos aquí, usar timestamp como último recurso
+        finalSlug = `${baseSlug}-${Date.now()}`;
+        break;
+      }
+    }
+  }
+  
+  return finalSlug;
 }
 

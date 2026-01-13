@@ -189,17 +189,33 @@ export default function ManageTemplatesPage() {
       if (response.ok) {
         const data = await response.json()
         setProgress(100)
+        clearInterval(interval)
         // Si está publicado, abrir URL pública; si no, abrir preview interna
         const publicUrl = data?.slug ? `https://delfincheckin.com/${data.slug}/` : ''
         const previewUrl = `/superadmin/programmatic/preview/${data.page_id}`
         window.open(data.status === 'published' ? publicUrl : previewUrl, '_blank')
       } else {
+        clearInterval(interval)
         const error = await response.json()
-        alert(`❌ Error creando página de prueba:\n${error.error || 'Error desconocido'}`)
+        
+        // Mensajes de error más específicos
+        let errorMessage = error.error || 'Error desconocido'
+        
+        if (error.code === 'DUPLICATE_SLUG') {
+          errorMessage = `El slug "${error.duplicateSlug || 'desconocido'}" ya existe.\n\n` +
+            `El sistema intentará generar un slug único automáticamente. ` +
+            `Si el problema persiste, intenta con diferentes variables o espera un momento.`
+        } else if (response.status === 409) {
+          errorMessage = `Conflicto: ${errorMessage}\n\n` +
+            `Esto suele ocurrir cuando se intenta crear una página con un slug que ya existe. ` +
+            `El sistema debería generar automáticamente un slug único.`
+        }
+        
+        alert(`❌ Error creando página de prueba:\n\n${errorMessage}`)
       }
     } catch (error) {
       console.error('Error creando página de prueba:', error)
-      alert(`❌ Error creando página de prueba:\n${error instanceof Error ? error.message : 'Error desconocido'}`)
+      alert(`❌ Error creando página de prueba:\n\n${error instanceof Error ? error.message : 'Error desconocido'}\n\nPor favor, verifica la consola para más detalles.`)
     }
     finally {
       // Pequeño retraso para que se vea el 100%
