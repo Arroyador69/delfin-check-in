@@ -29,6 +29,7 @@ export default function SuperAdminWaitlist() {
     text: ''
   });
   const [activating, setActivating] = useState<Set<string>>(new Set());
+  const [cleaning, setCleaning] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     fetchWaitlist();
@@ -144,6 +145,50 @@ export default function SuperAdminWaitlist() {
       setActivating(prev => {
         const next = new Set(prev);
         next.delete(entryId);
+        return next;
+      });
+    }
+  };
+
+  const handleCleanUser = async (email: string) => {
+    if (!confirm(`⚠️ ¿Eliminar completamente el usuario ${email}?\n\nEsto eliminará:\n- Entrada en waitlist\n- Tenant (si existe)\n- Usuarios del tenant\n- Referencias en referidos/afiliados\n\nEsta acción NO se puede deshacer.`)) {
+      return;
+    }
+
+    setCleaning(prev => new Set(prev).add(email));
+
+    try {
+      const response = await fetch('/api/superadmin/waitlist/clean-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        const results = data.results || {};
+        const details = [
+          results.deleted_from_waitlist && '✅ Eliminado de waitlist',
+          results.deleted_from_tenants && '✅ Eliminado de tenants',
+          results.deleted_from_tenant_users && '✅ Eliminado de tenant_users',
+          results.deleted_from_referrals && '✅ Eliminado de referrals',
+          results.deleted_from_affiliate_customers && '✅ Eliminado de affiliate_customers',
+        ].filter(Boolean).join('\n');
+
+        alert(`✅ Usuario eliminado completamente\n\n${details}\n\n${results.tenant_id_deleted ? `Tenant ID eliminado: ${results.tenant_id_deleted}` : ''}`);
+        // Recargar lista
+        fetchWaitlist();
+      } else {
+        alert(`❌ Error: ${data.error || 'Error al limpiar usuario'}\n\n${data.details || ''}`);
+      }
+    } catch (error) {
+      console.error('Error cleaning user:', error);
+      alert('Error al limpiar usuario');
+    } finally {
+      setCleaning(prev => {
+        const next = new Set(prev);
+        next.delete(email);
         return next;
       });
     }
@@ -273,20 +318,35 @@ export default function SuperAdminWaitlist() {
                       </div>
                     </div>
                   </div>
-                  <div className="ml-4">
+                  <div className="ml-4 flex gap-2">
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
                         handleActivateUser(entry.id, entry.email);
                       }}
-                      disabled={activating.has(entry.id)}
+                      disabled={activating.has(entry.id) || cleaning.has(entry.email)}
                       className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                        activating.has(entry.id)
+                        activating.has(entry.id) || cleaning.has(entry.email)
                           ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                           : 'bg-green-600 text-white hover:bg-green-700'
                       }`}
                     >
                       {activating.has(entry.id) ? 'Activando...' : '🚀 Activar'}
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleCleanUser(entry.email);
+                      }}
+                      disabled={activating.has(entry.id) || cleaning.has(entry.email)}
+                      className={`px-3 py-2 rounded-lg font-medium transition-colors text-sm ${
+                        activating.has(entry.id) || cleaning.has(entry.email)
+                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                          : 'bg-red-600 text-white hover:bg-red-700'
+                      }`}
+                      title="Eliminar completamente de la base de datos (útil para testing)"
+                    >
+                      {cleaning.has(entry.email) ? 'Limpiando...' : '🗑️ Limpiar'}
                     </button>
                   </div>
                 </div>
@@ -307,19 +367,40 @@ export default function SuperAdminWaitlist() {
           <div className="divide-y divide-gray-200">
             {activatedEntries.map((entry) => (
               <div key={entry.id} className="p-4">
-                <div className="font-semibold text-gray-900">{entry.email}</div>
-                {entry.name && (
-                  <div className="text-sm text-gray-600">Nombre: {entry.name}</div>
-                )}
-                <div className="text-xs text-gray-500 mt-1">
-                  Registrado: {new Date(entry.created_at).toLocaleDateString('es-ES')}
-                  {entry.activated_at && (
-                    <> · Activado: {new Date(entry.activated_at).toLocaleDateString('es-ES')}</>
-                  )}
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <div className="font-semibold text-gray-900">{entry.email}</div>
+                    {entry.name && (
+                      <div className="text-sm text-gray-600">Nombre: {entry.name}</div>
+                    )}
+                    <div className="text-xs text-gray-500 mt-1">
+                      Registrado: {new Date(entry.created_at).toLocaleDateString('es-ES')}
+                      {entry.activated_at && (
+                        <> · Activado: {new Date(entry.activated_at).toLocaleDateString('es-ES')}</>
+                      )}
+                    </div>
+                    {entry.tenant_id && (
+                      <div className="text-xs text-blue-600 mt-1">Tenant ID: {entry.tenant_id}</div>
+                    )}
+                  </div>
+                  <div className="ml-4">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleCleanUser(entry.email);
+                      }}
+                      disabled={cleaning.has(entry.email)}
+                      className={`px-3 py-2 rounded-lg font-medium transition-colors text-sm ${
+                        cleaning.has(entry.email)
+                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                          : 'bg-red-600 text-white hover:bg-red-700'
+                      }`}
+                      title="Eliminar completamente de la base de datos (útil para testing)"
+                    >
+                      {cleaning.has(entry.email) ? 'Limpiando...' : '🗑️ Limpiar'}
+                    </button>
+                  </div>
                 </div>
-                {entry.tenant_id && (
-                  <div className="text-xs text-blue-600 mt-1">Tenant ID: {entry.tenant_id}</div>
-                )}
               </div>
             ))}
           </div>
