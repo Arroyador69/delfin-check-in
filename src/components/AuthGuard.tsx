@@ -90,17 +90,31 @@ export default function AuthGuard({ children }: AuthGuardProps) {
   const handleLogout = async () => {
     try {
       // Llamar a la API de logout
-      await fetch('/api/auth/logout', { 
+      const response = await fetch('/api/auth/logout', { 
         method: 'POST',
-        credentials: 'include'
+        credentials: 'include' // Importante: incluir cookies para que se eliminen
       })
       
-      // Redirigir al login
-      router.push('/admin-login')
+      if (!response.ok) {
+        console.error('Error en respuesta de logout:', response.status)
+      }
+      
+      // ⚠️ CRÍTICO: Limpiar cualquier estado del cliente
+      setIsAuthenticated(false)
+      
+      // ⚠️ CRÍTICO: Forzar recarga completa para limpiar cualquier caché
+      // Esto asegura que todas las cookies se eliminen correctamente
+      window.location.href = '/admin-login'
+      
+      // NOTA: Usamos window.location.href en lugar de router.push
+      // porque router.push puede no limpiar completamente el estado
+      // y las cookies pueden persistir en algunos casos
+      
     } catch (error) {
       console.error('Error logging out:', error)
-      // Redirigir de todas formas
-      router.push('/admin-login')
+      // Redirigir de todas formas, incluso si hay error
+      setIsAuthenticated(false)
+      window.location.href = '/admin-login'
     }
   }
 

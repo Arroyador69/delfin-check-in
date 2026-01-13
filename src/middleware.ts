@@ -195,19 +195,21 @@ export async function middleware(req: NextRequest) {
   }
 
   // Para rutas de páginas, verificar autenticación y extraer tenant_id
-  const authToken = req.cookies.get('auth_token')?.value;
+  const authTokenCookie = req.cookies.get('auth_token');
+  const authToken = authTokenCookie?.value;
   
-  // Si no hay token, redirigir al login SOLO si no está ya en una ruta pública
-  if (!authToken) {
+  // ⚠️ CRÍTICO: Verificar que el token no esté vacío (cookie eliminada pero aún presente)
+  // Si la cookie existe pero está vacía, tratarla como no autenticado
+  if (!authToken || authToken.trim() === '') {
     // Solo redirigir si no está en una ruta pública
     if (!url.pathname.startsWith('/admin-login') && 
         !url.pathname.startsWith('/forgot-password')) {
-      console.log('🔒 No hay token de autenticación, redirigiendo al login');
+      console.log('🔒 No hay token de autenticación válido, redirigiendo al login');
       const loginUrl = new URL('/admin-login', req.url);
       return NextResponse.redirect(loginUrl);
     }
   } else {
-    // Si hay token, extraer tenant_id y agregarlo a los headers para las páginas
+    // Si hay token, verificar que sea válido y extraer tenant_id
     try {
       const payload = verifyTokenEdge(authToken);
       if (payload?.tenantId) {
@@ -215,10 +217,15 @@ export async function middleware(req: NextRequest) {
         requestHeaders.set('x-tenant-id', payload.tenantId);
         console.log(`🔐 Tenant_id extraído del JWT para página: ${payload.tenantId}`);
         return NextResponse.next({ request: { headers: requestHeaders } });
+      } else {
+        // Token válido pero sin tenantId - redirigir al login
+        console.log('🔒 Token sin tenantId, redirigiendo al login');
+        const loginUrl = new URL('/admin-login', req.url);
+        return NextResponse.redirect(loginUrl);
       }
     } catch (error) {
-      console.error('Error verificando token en middleware de páginas:', error);
-      // Token inválido, redirigir al login
+      // Token inválido o expirado, redirigir al login
+      console.log('🔒 Token inválido o expirado, redirigiendo al login');
       const loginUrl = new URL('/admin-login', req.url);
       return NextResponse.redirect(loginUrl);
     }

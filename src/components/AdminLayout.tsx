@@ -87,15 +87,28 @@ export default function AdminLayout({ children, showHeader = true }: AdminLayout
 
   const handleLogout = async () => {
     try {
-      await fetch('/api/auth/logout', { 
+      // Llamar a la API de logout
+      const response = await fetch('/api/auth/logout', { 
         method: 'POST',
-        credentials: 'include'
+        credentials: 'include' // Importante: incluir cookies para que se eliminen
       })
       
-      router.push('/admin-login')
+      if (!response.ok) {
+        console.error('Error en respuesta de logout:', response.status)
+      }
+      
+      // ⚠️ CRÍTICO: Forzar recarga completa para limpiar cualquier caché
+      // Esto asegura que todas las cookies se eliminen correctamente
+      window.location.href = '/admin-login'
+      
+      // NOTA: Usamos window.location.href en lugar de router.push
+      // porque router.push puede no limpiar completamente el estado
+      // y las cookies pueden persistir en algunos casos
+      
     } catch (error) {
       console.error('Error logging out:', error)
-      router.push('/admin-login')
+      // Redirigir de todas formas, incluso si hay error
+      window.location.href = '/admin-login'
     }
   }
 
