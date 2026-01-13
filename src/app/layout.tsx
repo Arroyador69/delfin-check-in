@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import ConditionalNavigation from "@/components/ConditionalNavigation";
+import ConditionalMainPadding from "@/components/ConditionalMainPadding";
 import SWRegister from "@/components/SWRegister";
 import PWAInstallGuide from "@/components/PWAInstallGuide";
 import ConditionalFooter from "@/components/ConditionalFooter";
@@ -46,10 +47,10 @@ export default function RootLayout({
           <PWAInstallGuide />
           {/* Detector de AdBlock - bloquea la página si está activo */}
           <AdBlockDetector />
-          {/* Compensar la barra de navegación fija (h-16) */}
-          <main className="pt-16 flex-1">
+          {/* Padding condicional: solo aplicar pt-16 si hay header */}
+          <ConditionalMainPadding>
             {children}
-          </main>
+          </ConditionalMainPadding>
           <ConditionalFooter />
           <CookieConsentModal />
         </div>

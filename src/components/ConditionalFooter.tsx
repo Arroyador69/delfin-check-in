@@ -8,7 +8,8 @@ export default function ConditionalFooter() {
   
   // Páginas que NO deben tener footer (páginas de login, formularios independientes, etc.)
   const EXCLUDED_PAGES: string[] = [
-    '/admin-login',
+    '/admin-login',      // Página de login - sin footer
+    '/forgot-password',  // Página de recuperación de contraseña - sin footer
     // Añade aquí otras páginas que no deben tener footer
   ];
   
