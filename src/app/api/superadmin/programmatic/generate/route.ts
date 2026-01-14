@@ -316,16 +316,34 @@ function cleanMarkdownContent(rawContent: string): string {
 function generateSEOHTML(page: any): string {
   const jsonld = page.content_jsonld || {};
   
+  // Obtener el contenido raw de la BD
+  const rawContent = page.content_html || '';
+  
   // Limpiar el contenido ANTES de parsearlo
-  const cleanedMarkdown = cleanMarkdownContent(page.content_html || '');
+  const cleanedMarkdown = cleanMarkdownContent(rawContent);
   
   // Convertir Markdown a HTML
   let contentHtml = '';
   try {
-    contentHtml = marked.parse(cleanedMarkdown);
+    // Asegurarse de que marked esté configurado correctamente
+    if (!cleanedMarkdown || cleanedMarkdown.trim().length === 0) {
+      console.warn('⚠️ Contenido markdown vacío después de limpiar');
+      contentHtml = '<p>Contenido no disponible</p>';
+    } else {
+      contentHtml = marked.parse(cleanedMarkdown, { breaks: true, gfm: true });
+      
+      // Verificar que el parseo funcionó (debería contener tags HTML)
+      if (!contentHtml.includes('<') && cleanedMarkdown.includes('#')) {
+        console.error('❌ El parseo de markdown no generó HTML. Contenido original:', cleanedMarkdown.substring(0, 200));
+        // Si el parseo falló silenciosamente, intentar parsear de nuevo
+        contentHtml = marked.parse(cleanedMarkdown, { breaks: true, gfm: true });
+      }
+    }
   } catch (error) {
-    console.error('Error convirtiendo Markdown a HTML:', error);
-    contentHtml = cleanedMarkdown;
+    console.error('❌ Error convirtiendo Markdown a HTML:', error);
+    console.error('Contenido que causó el error:', cleanedMarkdown.substring(0, 500));
+    // En caso de error, usar el contenido sin parsear pero escapado
+    contentHtml = `<pre>${escapeHtml(cleanedMarkdown)}</pre>`;
   }
   
   // Limpiar contenido HTML para remover JSON-LD visible si existe (como medida adicional)
