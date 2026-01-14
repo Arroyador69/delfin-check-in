@@ -287,7 +287,13 @@ function cleanMarkdownContent(rawContent: string): string {
     return true;
   }).join('\n');
   
-  // 5. Limpiar prefijos "H1: " y comillas en títulos
+  // 5. Normalizar símbolos de markdown no estándar a markdown estándar
+  // Convertir +++ a ### (H3), ++ a ## (H2), + a # (H1) - pero solo si están al inicio de línea
+  cleaned = cleaned.replace(/^\+\+\+\s+(.+)$/gm, '### $1');
+  cleaned = cleaned.replace(/^\+\+\s+(.+)$/gm, '## $1');
+  cleaned = cleaned.replace(/^\+\s+(.+)$/gm, '# $1');
+  
+  // 6. Limpiar prefijos "H1: " y comillas en títulos
   // Remover "H1: " al inicio de líneas que empiezan con #
   cleaned = cleaned.replace(/^#\s*H1:\s*"?/gm, '# ');
   // Remover comillas al final de títulos H1
@@ -295,7 +301,13 @@ function cleanMarkdownContent(rawContent: string): string {
   // Remover comillas que rodean todo el título en H1
   cleaned = cleaned.replace(/^#\s*"(.+?)"\s*$/gm, '# $1');
   
-  // 6. Limpiar líneas vacías múltiples
+  // 7. Asegurar que los títulos tengan espacio después del #
+  cleaned = cleaned.replace(/^#+([^#\s])/gm, (match, p1) => {
+    const hashes = match.match(/^#+/)?.[0] || '';
+    return hashes + ' ' + p1;
+  });
+  
+  // 8. Limpiar líneas vacías múltiples
   cleaned = cleaned.replace(/\n{3,}/g, '\n\n');
   
   return cleaned.trim();
