@@ -32,6 +32,7 @@ export default function ManageTemplatesPage() {
     active: true
   })
   const [variablesSchemaText, setVariablesSchemaText] = useState<string>('{}')
+  const [deletingTestPages, setDeletingTestPages] = useState(false)
 
   useEffect(() => {
     fetchTemplates()
@@ -128,6 +129,33 @@ export default function ManageTemplatesPage() {
       active: template.active
     })
     setVariablesSchemaText(JSON.stringify(template.variables_schema || {}, null, 2))
+  }
+
+  const handleDeleteAllTestPages = async () => {
+    if (!confirm('¿Estás seguro de que quieres eliminar TODAS las páginas de prueba? Esta acción no se puede deshacer.')) {
+      return
+    }
+
+    try {
+      setDeletingTestPages(true)
+      const response = await fetch('/api/superadmin/programmatic/delete-test-pages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        alert(`✅ ${data.message}\n\nEliminadas: ${data.deleted} páginas${data.deletedPages ? '\n\n' + data.deletedPages.slice(0, 10).join('\n') + (data.deletedPages.length > 10 ? `\n... y ${data.deletedPages.length - 10} más` : '') : ''}`)
+      } else {
+        const error = await response.json()
+        alert(`❌ Error: ${error.error || 'Error eliminando páginas de prueba'}`)
+      }
+    } catch (error) {
+      console.error('Error eliminando páginas de prueba:', error)
+      alert('❌ Error eliminando páginas de prueba')
+    } finally {
+      setDeletingTestPages(false)
+    }
   }
 
   const createTestPage = async (templateId: string) => {
