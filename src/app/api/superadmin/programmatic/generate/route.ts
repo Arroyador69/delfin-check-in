@@ -303,92 +303,82 @@ function generateSEOHTML(page: any): string {
   
   <style>
     :root{
-      --bg: #0b1220;
-      --card: #0f1629;
-      --text: #e5ecff;
-      --muted: #9fb0d1;
-      --brand: #44c0ff;
-      --accent: #7cf07c;
-      --danger: #ff6b6b;
-      --ring: rgba(68,192,255,0.35);
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --brand: #2563eb;
+      --accent: #16a34a;
+      --danger: #ef4444;
+      --ring: rgba(37,99,235,0.1);
       --maxw: 1180px;
       --radius: 14px;
-      --shadow: 0 10px 30px rgba(0,0,0,.35);
-      --border: rgba(255,255,255,.06);
+      --shadow: 0 2px 8px rgba(0,0,0,0.1);
+      --border: #e2e8f0;
     }
     *{ box-sizing: border-box }
     html,body{ height:100%; margin: 0; }
     body{
       font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
       color: var(--text);
-      background: radial-gradient(1200px 800px at 70% -10%, rgba(68,192,255,.15), transparent), linear-gradient(180deg, #0b1220 0%, #0a1020 100%);
+      background: #ffffff;
     }
     a{ color: var(--brand); text-decoration: none }
+    a:hover{ text-decoration: underline; }
     .container{ max-width: var(--maxw); margin:0 auto; padding: 0 20px }
     
     /* Header */
     header{
       position: sticky; top:0; z-index:100; backdrop-filter: saturate(160%) blur(8px);
-      background: rgba(11,18,32,.6); border-bottom: 1px solid rgba(255,255,255,.06);
+      background: #ffffff; border-bottom: 1px solid var(--border);
     }
     .nav{ display:flex; align-items:center; justify-content:space-between; gap:16px; padding:16px 0 }
     .brand{ display:flex; gap:12px; align-items:center }
     .logo{ font-size:32px; line-height:1; display:grid; place-items:center }
-    .brand b{ font-weight:800; letter-spacing:.2px; font-size:22px }
+    .brand b{ font-weight:800; letter-spacing:.2px; font-size:22px; color: #0f172a; }
     .actions{ display:flex; gap:10px; align-items:center }
-    .btn{ display:inline-flex; align-items:center; justify-content:center; gap:8px; height:40px; padding:0 14px; border-radius:10px; border:1px solid rgba(255,255,255,.12); color:var(--text); background: rgba(255,255,255,.03); cursor: pointer; }
-    .btn:hover{ border-color: rgba(255,255,255,.22); background: rgba(255,255,255,.06) }
-    .btn.primary{ background: linear-gradient(135deg, var(--brand), #2bb3ff); border: none; color: #0a1020; font-weight:700; box-shadow: 0 6px 20px var(--ring) }
-    .btn.primary:hover{ filter: brightness(1.05) }
+    .btn{ display:inline-flex; align-items:center; justify-content:center; gap:8px; height:40px; padding:0 14px; border-radius:10px; border:1px solid rgba(15,23,42,.12); color:#0f172a; background: #ffffff; cursor: pointer; }
+    .btn:hover{ border-color: rgba(15,23,42,.18); background: #f8fafc; }
+    .btn.primary{ background: #2563eb; border: none; color: #ffffff; font-weight:700; box-shadow: 0 6px 18px var(--ring) }
+    .btn.primary:hover{ background: #1d4ed8; }
     
     /* Contenido del artículo */
     main {
       max-width: 860px;
       margin: 0 auto;
       padding: 2rem;
-      background: rgba(15,22,41,0.4);
-      border-radius: var(--radius);
+      background: #ffffff;
       margin-top: 2rem;
       margin-bottom: 2rem;
     }
-    main h1 { font-size: 2.25rem; margin-top: 2rem; margin-bottom: 1rem; color: var(--text); }
-    main h2 { font-size: 1.75rem; margin-top: 1.5rem; margin-bottom: 1rem; color: var(--text); }
-    main h3 { font-size: 1.35rem; margin-top: 1.25rem; margin-bottom: 0.75rem; color: var(--text); }
-    main ul, main ol { margin: 1rem 0; padding-left: 2rem; color: var(--muted); }
-    main p { margin: 1rem 0; color: var(--muted); line-height: 1.7; }
+    main h1 { font-size: 2.25rem; margin-top: 2rem; margin-bottom: 1rem; color: #0b1220; font-weight: 800; line-height: 1.2; }
+    main h2 { font-size: 1.75rem; margin-top: 1.5rem; margin-bottom: 1rem; color: #0b1220; font-weight: 700; }
+    main h3 { font-size: 1.35rem; margin-top: 1.25rem; margin-bottom: 0.75rem; color: #0b1220; font-weight: 600; }
+    main ul, main ol { margin: 1rem 0; padding-left: 2rem; color: #475569; line-height: 1.8; }
+    main p { margin: 1rem 0; color: #475569; line-height: 1.7; font-size: 16px; }
     main a { color: var(--brand); }
     main a:hover { text-decoration: underline; }
     main code, main pre {
-      background: rgba(0,0,0,0.3);
-      color: #000000;
+      background: #f1f5f9;
+      color: #0f172a;
       padding: 2px 6px;
       border-radius: 4px;
       font-family: 'Courier New', monospace;
-      font-weight: 600;
+      font-weight: 500;
     }
     main pre {
       padding: 1rem;
       overflow-x: auto;
-      color: #000000;
-      font-weight: 600;
+      background: #f8fafc;
+      border: 1px solid var(--border);
     }
     
     /* Footer */
-    footer{ color:var(--muted); border-top:1px solid rgba(255,255,255,.06); margin-top:32px; padding:14px 0 26px }
+    footer{ color: #64748b; border-top:1px solid var(--border); margin-top:32px; padding:14px 0 26px; background: #ffffff; }
     .footer-content{ display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 20px; }
-    footer h4{ margin: 0 0 10px; color: var(--text); }
-    footer p{ margin: 0; color: var(--muted); font-size: 14px; }
-    
-    @media (max-width: 768px) {
-      header{ background:#ffffff; border-bottom:1px solid var(--border); backdrop-filter: none; }
-      .brand b{ color: #0f172a; }
-      footer{ background:#ffffff; border-top:1px solid var(--border) }
-      footer h4{ color: #0f172a; }
-      footer p{ color: #64748b; }
-      main{ background: #ffffff; color: #0f172a; }
-      main h1, main h2, main h3{ color: #0b1220; }
-      main p, main li{ color: #475569; }
-    }
+    footer h4{ margin: 0 0 10px; color: #0f172a; }
+    footer p{ margin: 0; color: #64748b; font-size: 14px; }
+    footer a{ color: var(--brand); }
   </style>
 </head>
 <body>
