@@ -323,12 +323,21 @@ export default function ManageTemplatesPage() {
           </Link>
           <h1 className="text-3xl font-bold text-gray-900">📋 Gestionar Plantillas</h1>
         </div>
-        <button
-          onClick={() => setShowCreateForm(!showCreateForm)}
-          className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-        >
-          {showCreateForm ? 'Cancelar' : '+ Nueva Plantilla'}
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={handleDeleteAllTestPages}
+            disabled={deletingTestPages}
+            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {deletingTestPages ? 'Eliminando...' : '🗑️ Eliminar Todas las Páginas de Prueba'}
+          </button>
+          <button
+            onClick={() => setShowCreateForm(!showCreateForm)}
+            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+          >
+            {showCreateForm ? 'Cancelar' : '+ Nueva Plantilla'}
+          </button>
+        </div>
       </div>
 
       {/* Formulario de creación */}
