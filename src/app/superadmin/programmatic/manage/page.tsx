@@ -723,6 +723,96 @@ export default function ManageTemplatesPage() {
           </div>
         </div>
       )}
+
+      {/* Gestor de Páginas de Prueba */}
+      {showTestPagesManager && (
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-2xl font-bold text-gray-900">📄 Páginas de Prueba</h2>
+            <div className="flex gap-3">
+              <button
+                onClick={handleSelectAllTestPages}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
+              >
+                {selectedTestPages.size === testPages.length ? 'Deseleccionar Todas' : 'Seleccionar Todas'}
+              </button>
+              <button
+                onClick={handleDeleteSelectedTestPages}
+                disabled={deletingTestPages || selectedTestPages.size === 0}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+              >
+                {deletingTestPages ? 'Eliminando...' : `🗑️ Eliminar Seleccionadas (${selectedTestPages.size})`}
+              </button>
+              <button
+                onClick={handleDeleteAllTestPages}
+                disabled={deletingTestPages}
+                className="px-4 py-2 bg-red-800 text-white rounded-lg hover:bg-red-900 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-bold"
+              >
+                {deletingTestPages ? 'Eliminando...' : '⚠️ Eliminar TODAS'}
+              </button>
+            </div>
+          </div>
+
+          {loadingTestPages ? (
+            <div className="text-center py-8">Cargando páginas de prueba...</div>
+          ) : testPages.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              No hay páginas de prueba creadas aún.
+            </div>
+          ) : (
+            <div className="space-y-2 max-h-96 overflow-y-auto">
+              {testPages.map((page) => (
+                <div
+                  key={page.id}
+                  className={`flex items-center gap-4 p-3 border rounded-lg ${
+                    selectedTestPages.has(page.id) ? 'bg-blue-50 border-blue-300' : 'bg-gray-50 border-gray-200'
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedTestPages.has(page.id)}
+                    onChange={() => handleToggleTestPage(page.id)}
+                    className="w-5 h-5 cursor-pointer"
+                  />
+                  <div className="flex-1">
+                    <div className="font-semibold text-gray-900">{page.title}</div>
+                    <div className="text-sm text-gray-600">
+                      Slug: <code className="bg-gray-200 px-1 rounded">{page.slug}</code>
+                      {' • '}
+                      Estado: <span className={`font-medium ${
+                        page.status === 'published' ? 'text-green-600' :
+                        page.status === 'draft' ? 'text-gray-600' :
+                        'text-orange-600'
+                      }`}>{page.status}</span>
+                      {' • '}
+                      Creada: {new Date(page.created_at).toLocaleDateString('es-ES')}
+                    </div>
+                  </div>
+                  <a
+                    href={`https://delfincheckin.com/${page.slug}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
+                  >
+                    Ver
+                  </a>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {testPages.length > 0 && (
+            <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <p className="text-sm text-yellow-800">
+                <strong>Total:</strong> {testPages.length} página(s) de prueba
+                {selectedTestPages.size > 0 && (
+                  <span className="ml-2">• <strong>Seleccionadas:</strong> {selectedTestPages.size}</span>
+                )}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }
