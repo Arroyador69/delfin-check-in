@@ -31,21 +31,69 @@ export async function GET(
   }
 }
 
+function cleanMarkdownContent(rawContent: string): string {
+  let cleaned = rawContent;
+  
+  // 1. Remover front-matter YAML (--- ... ---) - múltiples intentos para diferentes formatos
+  // Primero intentar con formato estándar (con saltos de línea)
+  cleaned = cleaned.replace(/^---\s*\n[\s\S]*?\n---\s*\n?/m, '');
+  // Si no funcionó, intentar sin saltos de línea estrictos
+  cleaned = cleaned.replace(/^---[\s\S]*?---\s*\n?/m, '');
+  // Remover cualquier línea que empiece con --- al inicio del documento
+  cleaned = cleaned.replace(/^---.*$/gm, '');
+  
+  // 2. Remover tags especiales que no deben aparecer en el contenido
+  cleaned = cleaned.replace(/<meta-title>[\s\S]*?<\/meta-title>/gi, '');
+  cleaned = cleaned.replace(/<meta-description>[\s\S]*?<\/meta-description>/gi, '');
+  // Remover <schema> con todo su contenido (puede tener múltiples objetos JSON-LD)
+  cleaned = cleaned.replace(/<schema>[\s\S]*?<\/schema>/gi, '');
+  
+  // 3. Remover bloques de código JSON-LD en Markdown (```json ... ``` o ``` ... ```)
+  cleaned = cleaned.replace(/```json[\s\S]*?\{[\s\S]*?"@context"[\s\S]*?"@type"[\s\S]*?\}[\s\S]*?```/gi, '');
+  cleaned = cleaned.replace(/```[\s\S]*?\{[\s\S]*?"@context"[\s\S]*?"@type"[\s\S]*?\}[\s\S]*?```/gi, '');
+  
+  // 4. Remover líneas que contengan solo metadatos YAML sueltos (title:, slug:, etc.)
+  cleaned = cleaned.split('\n').filter(line => {
+    const trimmed = line.trim();
+    // Ignorar líneas que sean solo metadatos YAML
+    if (/^(title|slug|intent|region|city|canonical|draft|createdAt):\s*/.test(trimmed)) {
+      return false;
+    }
+    return true;
+  }).join('\n');
+  
+  // 5. Limpiar prefijos "H1: " y comillas en títulos
+  // Remover "H1: " al inicio de líneas que empiezan con #
+  cleaned = cleaned.replace(/^#\s*H1:\s*"?/gm, '# ');
+  // Remover comillas al final de títulos H1
+  cleaned = cleaned.replace(/^#\s+(.+?)"\s*$/gm, '# $1');
+  // Remover comillas que rodean todo el título en H1
+  cleaned = cleaned.replace(/^#\s*"(.+?)"\s*$/gm, '# $1');
+  
+  // 6. Limpiar líneas vacías múltiples
+  cleaned = cleaned.replace(/\n{3,}/g, '\n\n');
+  
+  return cleaned.trim();
+}
+
 function generateSEOHTML(page: any): string {
   const jsonld = page.content_jsonld || {}
+  
+  // Limpiar el contenido ANTES de parsearlo
+  const cleanedMarkdown = cleanMarkdownContent(page.content_html || '');
+  
   let contentHtml = ''
   try {
-    contentHtml = marked.parse(page.content_html || '')
+    contentHtml = marked.parse(cleanedMarkdown)
   } catch {
-    contentHtml = page.content_html || ''
+    contentHtml = cleanedMarkdown
   }
   
-  // Limpiar contenido HTML para remover JSON-LD visible si existe
+  // Limpiar contenido HTML para remover JSON-LD visible si existe (como medida adicional)
   let cleanContentHtml = contentHtml;
-  // Remover bloques de código JSON-LD que puedan aparecer en el contenido
+  // Remover bloques de código JSON-LD que puedan aparecer en el contenido HTML
   cleanContentHtml = cleanContentHtml.replace(/<pre[^>]*>[\s\S]*?\{[\s\S]*?"@context"[\s\S]*?"@type"[\s\S]*?\}[\s\S]*?<\/pre>/gi, '');
-  cleanContentHtml = cleanContentHtml.replace(/```json[\s\S]*?\{[\s\S]*?"@context"[\s\S]*?"@type"[\s\S]*?\}[\s\S]*?```/gi, '');
-  cleanContentHtml = cleanContentHtml.replace(/```[\s\S]*?\{[\s\S]*?"@context"[\s\S]*?"@type"[\s\S]*?\}[\s\S]*?```/gi, '');
+  cleanContentHtml = cleanContentHtml.replace(/<code[^>]*>[\s\S]*?\{[\s\S]*?"@context"[\s\S]*?"@type"[\s\S]*?\}[\s\S]*?<\/code>/gi, '');
 
   return `<!DOCTYPE html>
 <html lang="es">
