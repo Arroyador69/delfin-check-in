@@ -34,6 +34,16 @@ export async function GET(
 function cleanMarkdownContent(rawContent: string): string {
   let cleaned = rawContent;
   
+  // 0. PRIMERO: Extraer contenido de bloques de código markdown (```mdx, ```markdown, ```md, ```)
+  // Esto es CRÍTICO porque OpenAI a veces envuelve todo el contenido en bloques de código
+  const codeBlockMatch = cleaned.match(/^```(?:mdx|markdown|md)?\s*\n([\s\S]*?)\n```$/m);
+  if (codeBlockMatch && codeBlockMatch[1]) {
+    console.log('✅ Contenido extraído de bloque de código markdown');
+    cleaned = codeBlockMatch[1];
+  }
+  // También remover bloques de código que puedan estar en medio
+  cleaned = cleaned.replace(/```(?:mdx|markdown|md)?\s*\n([\s\S]*?)\n```/g, '$1');
+  
   // 1. Remover front-matter YAML (--- ... ---) - múltiples intentos para diferentes formatos
   // Primero intentar con formato estándar (con saltos de línea)
   cleaned = cleaned.replace(/^---\s*\n[\s\S]*?\n---\s*\n?/m, '');
