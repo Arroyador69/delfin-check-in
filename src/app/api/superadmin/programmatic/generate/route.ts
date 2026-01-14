@@ -320,30 +320,110 @@ function generateSEOHTML(page: any): string {
   const rawContent = page.content_html || '';
   
   // Limpiar el contenido ANTES de parsearlo
-  const cleanedMarkdown = cleanMarkdownContent(rawContent);
+  let cleanedMarkdown = cleanMarkdownContent(rawContent);
   
   // Convertir Markdown a HTML
   let contentHtml = '';
-  try {
-    // Asegurarse de que marked esté configurado correctamente
-    if (!cleanedMarkdown || cleanedMarkdown.trim().length === 0) {
-      console.warn('⚠️ Contenido markdown vacío después de limpiar');
-      contentHtml = '<p>Contenido no disponible</p>';
-    } else {
-      contentHtml = marked.parse(cleanedMarkdown, { breaks: true, gfm: true });
-      
-      // Verificar que el parseo funcionó (debería contener tags HTML)
-      if (!contentHtml.includes('<') && cleanedMarkdown.includes('#')) {
-        console.error('❌ El parseo de markdown no generó HTML. Contenido original:', cleanedMarkdown.substring(0, 200));
-        // Si el parseo falló silenciosamente, intentar parsear de nuevo
-        contentHtml = marked.parse(cleanedMarkdown, { breaks: true, gfm: true });
+  
+  // Si el contenido ya es HTML válido (contiene tags de cierre), usarlo directamente
+  if (rawContent.trim().startsWith('<') && rawContent.includes('</') && rawContent.includes('>')) {
+    console.log('✅ Contenido ya es HTML, usando directamente');
+    contentHtml = rawContent;
+  } else {
+    // SIEMPRE parsear desde markdown - usar parseo manual robusto
+    try {
+      if (!cleanedMarkdown || cleanedMarkdown.trim().length === 0) {
+        console.warn('⚠️ Contenido markdown vacío después de limpiar');
+        contentHtml = '<p>Contenido no disponible</p>';
+      } else {
+        // Primero intentar con marked
+        let parsed = marked.parse(cleanedMarkdown, { breaks: true, gfm: true });
+        
+        // Verificar SIEMPRE si el parseo funcionó realmente
+        // Si parsed es igual al original o no tiene tags HTML, usar parseo manual
+        if (!parsed || parsed.trim() === cleanedMarkdown.trim() || (!parsed.includes('<h') && !parsed.includes('<p') && cleanedMarkdown.includes('#'))) {
+          console.log('⚠️ marked.parse no funcionó correctamente, usando parseo manual');
+          parsed = null; // Forzar parseo manual
+        }
+        
+        if (parsed && parsed.includes('<')) {
+          contentHtml = parsed;
+        } else {
+          // Parseo manual robusto
+          console.log('🔄 Usando parseo manual de markdown');
+          let html = cleanedMarkdown;
+          
+          // Convertir títulos (debe ir antes de otros reemplazos)
+          html = html.replace(/^#\s+(.+?)\s*$/gm, '<h1>$1</h1>');
+          html = html.replace(/^##\s+(.+?)\s*$/gm, '<h2>$1</h2>');
+          html = html.replace(/^###\s+(.+?)\s*$/gm, '<h3>$1</h3>');
+          html = html.replace(/^####\s+(.+?)\s*$/gm, '<h4>$1</h4>');
+          
+          // Convertir listas (debe ir antes de párrafos)
+          html = html.replace(/^[\*\-\+]\s+(.+?)\s*$/gm, '<li>$1</li>');
+          html = html.replace(/^\d+\.\s+(.+?)\s*$/gm, '<li>$1</li>');
+          
+          // Envolver listas consecutivas
+          html = html.replace(/(<li>.*?<\/li>\s*\n?)+/g, (match) => {
+            return '<ul>' + match.trim() + '</ul>';
+          });
+          
+          // Convertir negrita e itálica
+          html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+          html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+          
+          // Convertir enlaces
+          html = html.replace(/\[([^\]]+)\]\(([^\)]+)\)/g, '<a href="$2">$1</a>');
+          
+          // Dividir en líneas y procesar
+          const lines = html.split('\n');
+          const processedLines: string[] = [];
+          let inList = false;
+          
+          for (let i = 0; i < lines.length; i++) {
+            const line = lines[i].trim();
+            
+            if (!line) {
+              if (inList) {
+                inList = false;
+              }
+              continue;
+            }
+            
+            // Si ya es un tag HTML, añadirlo directamente
+            if (line.startsWith('<')) {
+              processedLines.push(line);
+              if (line.startsWith('<ul>')) inList = true;
+              if (line.startsWith('</ul>')) inList = false;
+              continue;
+            }
+            
+            // Si no es un tag, convertir a párrafo (a menos que esté en una lista)
+            if (!inList && !line.startsWith('<')) {
+              processedLines.push(`<p>${line}</p>`);
+            } else {
+              processedLines.push(line);
+            }
+          }
+          
+          contentHtml = processedLines.join('\n');
+        }
       }
+    } catch (error) {
+      console.error('❌ Error crítico convirtiendo Markdown a HTML:', error);
+      console.error('Contenido que causó el error:', cleanedMarkdown.substring(0, 500));
+      // En caso de error crítico, usar parseo manual básico
+      contentHtml = cleanedMarkdown
+        .replace(/^#\s+(.+)$/gm, '<h1>$1</h1>')
+        .replace(/^##\s+(.+)$/gm, '<h2>$1</h2>')
+        .replace(/^###\s+(.+)$/gm, '<h3>$1</h3>')
+        .replace(/^\*\s+(.+)$/gm, '<li>$1</li>')
+        .replace(/^-\s+(.+)$/gm, '<li>$1</li>')
+        .split('\n')
+        .filter(l => l.trim())
+        .map(l => l.trim().startsWith('<') ? l : `<p>${l}</p>`)
+        .join('\n');
     }
-  } catch (error) {
-    console.error('❌ Error convirtiendo Markdown a HTML:', error);
-    console.error('Contenido que causó el error:', cleanedMarkdown.substring(0, 500));
-    // En caso de error, usar el contenido sin parsear pero escapado
-    contentHtml = `<pre>${escapeHtml(cleanedMarkdown)}</pre>`;
   }
   
   // Limpiar contenido HTML para remover JSON-LD visible si existe (como medida adicional)
