@@ -33,10 +33,23 @@ export default function ManageTemplatesPage() {
   })
   const [variablesSchemaText, setVariablesSchemaText] = useState<string>('{}')
   const [deletingTestPages, setDeletingTestPages] = useState(false)
+  const [showTestPagesManager, setShowTestPagesManager] = useState(false)
+  const [testPages, setTestPages] = useState<Array<{
+    id: string
+    slug: string
+    title: string
+    status: string
+    created_at: string
+  }>>([])
+  const [selectedTestPages, setSelectedTestPages] = useState<Set<string>>(new Set())
+  const [loadingTestPages, setLoadingTestPages] = useState(false)
 
   useEffect(() => {
     fetchTemplates()
-  }, [])
+    if (showTestPagesManager) {
+      fetchTestPages()
+    }
+  }, [showTestPagesManager])
 
   const fetchTemplates = async () => {
     try {
@@ -131,8 +144,35 @@ export default function ManageTemplatesPage() {
     setVariablesSchemaText(JSON.stringify(template.variables_schema || {}, null, 2))
   }
 
+  const fetchTestPages = async () => {
+    try {
+      setLoadingTestPages(true)
+      const response = await fetch('/api/superadmin/programmatic/test-pages')
+      if (response.ok) {
+        const data = await response.json()
+        setTestPages(data.pages || [])
+      }
+    } catch (error) {
+      console.error('Error obteniendo páginas de prueba:', error)
+    } finally {
+      setLoadingTestPages(false)
+    }
+  }
+
   const handleDeleteAllTestPages = async () => {
-    if (!confirm('¿Estás seguro de que quieres eliminar TODAS las páginas de prueba? Esta acción no se puede deshacer.')) {
+    // Primera confirmación
+    if (!confirm('⚠️ PRIMERA CONFIRMACIÓN:\n\n¿Estás seguro de que quieres eliminar TODAS las páginas de prueba?\n\nEsta acción NO se puede deshacer.')) {
+      return
+    }
+
+    // Segunda confirmación (doble verificación)
+    if (!confirm('⚠️ SEGUNDA CONFIRMACIÓN:\n\n¿REALMENTE estás seguro?\n\nSe eliminarán TODAS las páginas de prueba de forma permanente.\n\nEscribe "ELIMINAR TODO" para confirmar.')) {
+      return
+    }
+
+    const finalConfirm = prompt('Escribe "ELIMINAR TODO" para confirmar la eliminación:')
+    if (finalConfirm !== 'ELIMINAR TODO') {
+      alert('❌ Confirmación cancelada. No se eliminó nada.')
       return
     }
 
@@ -146,6 +186,9 @@ export default function ManageTemplatesPage() {
       if (response.ok) {
         const data = await response.json()
         alert(`✅ ${data.message}\n\nEliminadas: ${data.deleted} páginas${data.deletedPages ? '\n\n' + data.deletedPages.slice(0, 10).join('\n') + (data.deletedPages.length > 10 ? `\n... y ${data.deletedPages.length - 10} más` : '') : ''}`)
+        if (showTestPagesManager) {
+          await fetchTestPages()
+        }
       } else {
         const error = await response.json()
         alert(`❌ Error: ${error.error || 'Error eliminando páginas de prueba'}`)
@@ -153,6 +196,60 @@ export default function ManageTemplatesPage() {
     } catch (error) {
       console.error('Error eliminando páginas de prueba:', error)
       alert('❌ Error eliminando páginas de prueba')
+    } finally {
+      setDeletingTestPages(false)
+    }
+  }
+
+  const handleToggleTestPage = (pageId: string) => {
+    const newSelection = new Set(selectedTestPages)
+    if (newSelection.has(pageId)) {
+      newSelection.delete(pageId)
+    } else {
+      newSelection.add(pageId)
+    }
+    setSelectedTestPages(newSelection)
+  }
+
+  const handleSelectAllTestPages = () => {
+    if (selectedTestPages.size === testPages.length) {
+      setSelectedTestPages(new Set())
+    } else {
+      setSelectedTestPages(new Set(testPages.map(p => p.id)))
+    }
+  }
+
+  const handleDeleteSelectedTestPages = async () => {
+    if (selectedTestPages.size === 0) {
+      alert('⚠️ No has seleccionado ninguna página para eliminar')
+      return
+    }
+
+    // Primera confirmación
+    if (!confirm(`⚠️ ¿Estás seguro de que quieres eliminar ${selectedTestPages.size} página(s) de prueba seleccionada(s)?\n\nEsta acción NO se puede deshacer.`)) {
+      return
+    }
+
+    try {
+      setDeletingTestPages(true)
+      const response = await fetch('/api/superadmin/programmatic/delete-selected-pages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pageIds: Array.from(selectedTestPages) })
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        alert(`✅ ${data.message}\n\nEliminadas: ${data.deleted} página(s)${data.deletedPages ? '\n\n' + data.deletedPages.join('\n') : ''}`)
+        setSelectedTestPages(new Set())
+        await fetchTestPages()
+      } else {
+        const error = await response.json()
+        alert(`❌ Error: ${error.error || 'Error eliminando páginas seleccionadas'}`)
+      }
+    } catch (error) {
+      console.error('Error eliminando páginas seleccionadas:', error)
+      alert('❌ Error eliminando páginas seleccionadas')
     } finally {
       setDeletingTestPages(false)
     }
@@ -325,11 +422,15 @@ export default function ManageTemplatesPage() {
         </div>
         <div className="flex gap-3">
           <button
-            onClick={handleDeleteAllTestPages}
-            disabled={deletingTestPages}
-            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={() => {
+              setShowTestPagesManager(!showTestPagesManager)
+              if (!showTestPagesManager) {
+                fetchTestPages()
+              }
+            }}
+            className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700"
           >
-            {deletingTestPages ? 'Eliminando...' : '🗑️ Eliminar Todas las Páginas de Prueba'}
+            {showTestPagesManager ? '❌ Cerrar Gestor' : '📄 Gestionar Páginas de Prueba'}
           </button>
           <button
             onClick={() => setShowCreateForm(!showCreateForm)}
