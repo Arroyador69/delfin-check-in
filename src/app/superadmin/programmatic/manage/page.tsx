@@ -788,14 +788,28 @@ export default function ManageTemplatesPage() {
                       Creada: {new Date(page.created_at).toLocaleDateString('es-ES')}
                     </div>
                   </div>
-                  <a
-                    href={`https://delfincheckin.com/${page.slug}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
-                  >
-                    Ver
-                  </a>
+                  <div className="flex gap-2">
+                    <a
+                      href={`/superadmin/programmatic/preview/${page.id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-3 py-1 bg-purple-600 text-white rounded text-sm hover:bg-purple-700"
+                      title="Ver preview de la página"
+                    >
+                      👁️ Preview
+                    </a>
+                    {page.status === 'published' && (
+                      <a
+                        href={`https://delfincheckin.com/${page.slug}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
+                        title="Ver página publicada"
+                      >
+                        🌐 Publicada
+                      </a>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>

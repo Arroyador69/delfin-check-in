@@ -254,7 +254,7 @@ function generateSEOHTML(page: any): string {
     body{
       font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
       color: var(--text);
-      background: #ffffff;
+      background: #f0f4f8;
     }
     a{ color: var(--brand); text-decoration: none }
     a:hover{ text-decoration: underline; }
