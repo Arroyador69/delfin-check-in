@@ -51,7 +51,19 @@ export async function POST(req: NextRequest) {
     const htmlContent = generateSEOHTML(page);
 
     // Path del archivo en GitHub
-    const filePath = `${GITHUB_PATH}/${page.slug}.html`;
+    // Para GitHub Pages, crear estructura de carpetas con index.html para URLs limpias
+    const slugParts = page.slug.split('/');
+    let filePath: string;
+    
+    if (slugParts.length > 1) {
+      // Si tiene estructura de carpetas, crear index.html en la última carpeta
+      const folderPath = slugParts.slice(0, -1).join('/');
+      const fileName = slugParts[slugParts.length - 1];
+      filePath = `${folderPath}/${fileName}/index.html`;
+    } else {
+      // Si es un slug simple, crear carpeta con index.html para URL limpia
+      filePath = `${page.slug}/index.html`;
+    }
 
     try {
       // Intentar obtener el archivo existente (para SHA)
