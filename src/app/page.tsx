@@ -521,7 +521,7 @@ export default function HomePage() {
                   border: 'none',
                   borderRadius: '12px'
                 }}
-                src="https://www.youtube.com/embed/pHm49uVLYVc"
+                src="https://www.youtube.com/embed/Ttr6aefFLbg"
                 title="Video Tutorial - Panel de Usuario Delfín Check-in"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
@@ -529,7 +529,7 @@ export default function HomePage() {
             </div>
             <div className="text-center">
               <a
-                href="https://youtu.be/pHm49uVLYVc"
+                href="https://youtu.be/Ttr6aefFLbg"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-sm text-blue-600 hover:text-blue-700 font-medium inline-flex items-center gap-1"
