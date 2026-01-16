@@ -215,6 +215,15 @@ function generateSEOHTML(page: any): string {
   // Remover bloques de código JSON-LD que puedan aparecer en el contenido HTML
   cleanContentHtml = cleanContentHtml.replace(/<pre[^>]*>[\s\S]*?\{[\s\S]*?"@context"[\s\S]*?"@type"[\s\S]*?\}[\s\S]*?<\/pre>/gi, '');
   cleanContentHtml = cleanContentHtml.replace(/<code[^>]*>[\s\S]*?\{[\s\S]*?"@context"[\s\S]*?"@type"[\s\S]*?\}[\s\S]*?<\/code>/gi, '');
+  // Remover títulos y secciones que mencionen "JSON-LD Estructurado" o variaciones
+  cleanContentHtml = cleanContentHtml.replace(/<h[1-6][^>]*>[\s\S]*?JSON-LD[\s\S]*?Estructurado[\s\S]*?<\/h[1-6]>/gi, '');
+  cleanContentHtml = cleanContentHtml.replace(/<h[1-6][^>]*>[\s\S]*?JSON-LD[\s\S]*?estructurado[\s\S]*?<\/h[1-6]>/gi, '');
+  cleanContentHtml = cleanContentHtml.replace(/<h[1-6][^>]*>[\s\S]*?json-ld[\s\S]*?estructurado[\s\S]*?<\/h[1-6]>/gi, '');
+  cleanContentHtml = cleanContentHtml.replace(/##\s*JSON-LD[\s\S]*?Estructurado[\s\S]*?\n/gi, '');
+  cleanContentHtml = cleanContentHtml.replace(/###\s*JSON-LD[\s\S]*?Estructurado[\s\S]*?\n/gi, '');
+  cleanContentHtml = cleanContentHtml.replace(/<p[^>]*>[\s\S]*?JSON-LD[\s\S]*?Estructurado[\s\S]*?<\/p>/gi, '');
+  // Remover párrafos completos que mencionen JSON-LD estructurado
+  cleanContentHtml = cleanContentHtml.replace(/<p>[\s\S]*?JSON-LD[\s\S]*?estructurado[\s\S]*?<\/p>/gi, '');
 
   return `<!DOCTYPE html>
 <html lang="es">
