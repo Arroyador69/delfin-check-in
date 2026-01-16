@@ -55,7 +55,8 @@ export async function POST(req: NextRequest) {
       requestedSlug: variables.slug,
       templateType: template.type,
       variables: variables,
-      isTest: is_test || false
+      isTest: is_test || false,
+      title: generated.title
     });
     const canonicalUrl = `https://delfincheckin.com/${slugBase}`;
 
@@ -78,39 +79,10 @@ export async function POST(req: NextRequest) {
       is_test: is_test || false
     });
 
-    // Si es página de prueba, publicarla automáticamente a GitHub Pages
+    // Las páginas de prueba se crean como draft por defecto (no se publican automáticamente)
     let publishStatus = 'draft';
     let githubPath = null;
     let commitSha = null;
-    
-    if (is_test && GITHUB_TOKEN) {
-      try {
-        const page = await sql`SELECT * FROM programmatic_pages WHERE id = ${pageId}`;
-        if (page.rows.length > 0) {
-          const publishResult = await publishToGitHub(page.rows[0]);
-          if (publishResult.success) {
-            publishStatus = 'published';
-            githubPath = publishResult.github_path;
-            commitSha = publishResult.commit_sha;
-            
-            // Actualizar estado en BD
-            await sql`
-              UPDATE programmatic_pages
-              SET 
-                status = 'published',
-                published_at = now(),
-                github_commit_sha = ${commitSha},
-                github_file_path = ${githubPath},
-                updated_at = now()
-              WHERE id = ${pageId}
-            `;
-          }
-        }
-      } catch (error) {
-        console.error('⚠️ Error publicando página de prueba automáticamente:', error);
-        // No fallar la generación si la publicación falla
-      }
-    }
 
     return NextResponse.json({
       success: true,
@@ -445,11 +417,17 @@ function generateSEOHTML(page: any): string {
   cleanContentHtml = cleanContentHtml.replace(/<h[1-6][^>]*>[\s\S]*?JSON-LD[\s\S]*?Estructurado[\s\S]*?<\/h[1-6]>/gi, '');
   cleanContentHtml = cleanContentHtml.replace(/<h[1-6][^>]*>[\s\S]*?JSON-LD[\s\S]*?estructurado[\s\S]*?<\/h[1-6]>/gi, '');
   cleanContentHtml = cleanContentHtml.replace(/<h[1-6][^>]*>[\s\S]*?json-ld[\s\S]*?estructurado[\s\S]*?<\/h[1-6]>/gi, '');
+  // Remover "JSON-LD: Article + SoftwareApplication" o variaciones
+  cleanContentHtml = cleanContentHtml.replace(/<h[1-6][^>]*>[\s\S]*?JSON-LD[\s\S]*?:[\s\S]*?Article[\s\S]*?\+[\s\S]*?SoftwareApplication[\s\S]*?<\/h[1-6]>/gi, '');
+  cleanContentHtml = cleanContentHtml.replace(/<h[1-6][^>]*>[\s\S]*?\*\*JSON-LD[\s\S]*?:[\s\S]*?Article[\s\S]*?\+[\s\S]*?SoftwareApplication\*\*[\s\S]*?<\/h[1-6]>/gi, '');
   cleanContentHtml = cleanContentHtml.replace(/##\s*JSON-LD[\s\S]*?Estructurado[\s\S]*?\n/gi, '');
   cleanContentHtml = cleanContentHtml.replace(/###\s*JSON-LD[\s\S]*?Estructurado[\s\S]*?\n/gi, '');
   cleanContentHtml = cleanContentHtml.replace(/<p[^>]*>[\s\S]*?JSON-LD[\s\S]*?Estructurado[\s\S]*?<\/p>/gi, '');
   // Remover párrafos completos que mencionen JSON-LD estructurado
   cleanContentHtml = cleanContentHtml.replace(/<p>[\s\S]*?JSON-LD[\s\S]*?estructurado[\s\S]*?<\/p>/gi, '');
+  // Remover texto plano que contenga "JSON-LD: Article + SoftwareApplication"
+  cleanContentHtml = cleanContentHtml.replace(/\*\*JSON-LD[\s\S]*?:[\s\S]*?Article[\s\S]*?\+[\s\S]*?SoftwareApplication\*\*/gi, '');
+  cleanContentHtml = cleanContentHtml.replace(/JSON-LD[\s\S]*?:[\s\S]*?Article[\s\S]*?\+[\s\S]*?SoftwareApplication/gi, '');
   
   return `<!DOCTYPE html>
 <html lang="es">
@@ -851,25 +829,46 @@ async function generateUniqueSlug(options: {
   templateType: string;
   variables: Record<string, any>;
   isTest: boolean;
+  title?: string;
 }): Promise<string> {
-  const { requestedSlug, templateType, variables, isTest } = options;
+  const { requestedSlug, templateType, variables, isTest, title } = options;
   
   const slugPrefix = isTest ? 'test-' : '';
   let baseSlug: string;
   
   if (requestedSlug) {
     // Si se proporciona un slug específico, usarlo como base
-    baseSlug = `${slugPrefix}${requestedSlug}`;
+    baseSlug = `${slugPrefix}${slugify(requestedSlug)}`;
   } else {
-    // Generar slug basado en variables
+    // Generar slug descriptivo basado en tipo de plantilla y variables
     const citySlug = variables.ciudad ? slugify(String(variables.ciudad)) : null;
     
-    if (citySlug) {
-      // Para plantillas tipo "local", usar formato: pms-software-gestion-{ciudad}
+    if (templateType === 'local' && citySlug) {
+      // Para plantillas tipo "local": pms-software-gestion-{ciudad}
       baseSlug = `${slugPrefix}pms-software-gestion-${citySlug}`;
+    } else if (templateType === 'problem-solution' && variables.problema) {
+      // Para problem-solution: resolver-{problema}
+      const problemaSlug = slugify(String(variables.problema)).substring(0, 40);
+      baseSlug = `${slugPrefix}resolver-${problemaSlug}`;
+    } else if (templateType === 'feature' && variables.feature) {
+      // Para feature: {feature}-pms
+      const featureSlug = slugify(String(variables.feature)).substring(0, 40);
+      baseSlug = `${slugPrefix}${featureSlug}-pms`;
+    } else if (templateType === 'comparison' && variables.alternativa) {
+      // Para comparison: pms-vs-{alternativa}
+      const altSlug = slugify(String(variables.alternativa)).substring(0, 40);
+      baseSlug = `${slugPrefix}pms-vs-${altSlug}`;
+    } else if (templateType === 'pillar' && variables.tema) {
+      // Para pillar: guia-{tema}
+      const temaSlug = slugify(String(variables.tema)).substring(0, 40);
+      baseSlug = `${slugPrefix}guia-${temaSlug}`;
+    } else if (title) {
+      // Si hay título, usarlo como base (máximo 50 caracteres)
+      const titleSlug = slugify(title).substring(0, 50);
+      baseSlug = `${slugPrefix}${titleSlug}`;
     } else {
-      // Para otros tipos, usar timestamp
-      baseSlug = `${slugPrefix}content/${templateType}-${Date.now()}`;
+      // Último recurso: usar tipo y timestamp
+      baseSlug = `${slugPrefix}${templateType}-${Date.now()}`;
     }
   }
   

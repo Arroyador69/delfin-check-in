@@ -85,32 +85,42 @@ export async function PUT(req: NextRequest) {
       );
     }
 
-    // Construir actualización dinámica
-    let query = sql`UPDATE content_templates SET updated_at = now()`;
-    const params: any[] = [];
-
+    // Construir actualización dinámica usando sql template literal
+    const updateParts: any[] = [];
+    
     if (name !== undefined) {
-      query = sql`${query}, name = ${name}`;
+      updateParts.push(sql`name = ${name}`);
     }
     if (prompt_base !== undefined) {
-      query = sql`${query}, prompt_base = ${prompt_base}`;
+      updateParts.push(sql`prompt_base = ${prompt_base}`);
     }
     if (variables_schema !== undefined) {
-      query = sql`${query}, variables_schema = ${JSON.stringify(variables_schema)}::jsonb`;
+      updateParts.push(sql`variables_schema = ${JSON.stringify(variables_schema)}::jsonb`);
     }
     if (target_length !== undefined) {
-      query = sql`${query}, target_length = ${target_length}`;
+      updateParts.push(sql`target_length = ${target_length}`);
     }
     if (active !== undefined) {
-      query = sql`${query}, active = ${active}`;
+      updateParts.push(sql`active = ${active}`);
     }
     if (is_test !== undefined) {
-      query = sql`${query}, is_test = ${is_test}`;
+      updateParts.push(sql`is_test = ${is_test}`);
     }
 
-    query = sql`${query} WHERE id = ${id} RETURNING *`;
+    if (updateParts.length === 0) {
+      return NextResponse.json(
+        { error: 'No hay campos para actualizar' },
+        { status: 400 }
+      );
+    }
 
-    const result = await query;
+    // Construir query usando sql template literal
+    const result = await sql`
+      UPDATE content_templates 
+      SET ${sql.join(updateParts, sql`, `)}, updated_at = now()
+      WHERE id = ${id}
+      RETURNING *
+    `;
 
     if (result.rows.length === 0) {
       return NextResponse.json(

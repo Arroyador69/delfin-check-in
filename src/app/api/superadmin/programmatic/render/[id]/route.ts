@@ -219,11 +219,17 @@ function generateSEOHTML(page: any): string {
   cleanContentHtml = cleanContentHtml.replace(/<h[1-6][^>]*>[\s\S]*?JSON-LD[\s\S]*?Estructurado[\s\S]*?<\/h[1-6]>/gi, '');
   cleanContentHtml = cleanContentHtml.replace(/<h[1-6][^>]*>[\s\S]*?JSON-LD[\s\S]*?estructurado[\s\S]*?<\/h[1-6]>/gi, '');
   cleanContentHtml = cleanContentHtml.replace(/<h[1-6][^>]*>[\s\S]*?json-ld[\s\S]*?estructurado[\s\S]*?<\/h[1-6]>/gi, '');
+  // Remover "JSON-LD: Article + SoftwareApplication" o variaciones
+  cleanContentHtml = cleanContentHtml.replace(/<h[1-6][^>]*>[\s\S]*?JSON-LD[\s\S]*?:[\s\S]*?Article[\s\S]*?\+[\s\S]*?SoftwareApplication[\s\S]*?<\/h[1-6]>/gi, '');
+  cleanContentHtml = cleanContentHtml.replace(/<h[1-6][^>]*>[\s\S]*?\*\*JSON-LD[\s\S]*?:[\s\S]*?Article[\s\S]*?\+[\s\S]*?SoftwareApplication\*\*[\s\S]*?<\/h[1-6]>/gi, '');
   cleanContentHtml = cleanContentHtml.replace(/##\s*JSON-LD[\s\S]*?Estructurado[\s\S]*?\n/gi, '');
   cleanContentHtml = cleanContentHtml.replace(/###\s*JSON-LD[\s\S]*?Estructurado[\s\S]*?\n/gi, '');
   cleanContentHtml = cleanContentHtml.replace(/<p[^>]*>[\s\S]*?JSON-LD[\s\S]*?Estructurado[\s\S]*?<\/p>/gi, '');
   // Remover párrafos completos que mencionen JSON-LD estructurado
   cleanContentHtml = cleanContentHtml.replace(/<p>[\s\S]*?JSON-LD[\s\S]*?estructurado[\s\S]*?<\/p>/gi, '');
+  // Remover texto plano que contenga "JSON-LD: Article + SoftwareApplication"
+  cleanContentHtml = cleanContentHtml.replace(/\*\*JSON-LD[\s\S]*?:[\s\S]*?Article[\s\S]*?\+[\s\S]*?SoftwareApplication\*\*/gi, '');
+  cleanContentHtml = cleanContentHtml.replace(/JSON-LD[\s\S]*?:[\s\S]*?Article[\s\S]*?\+[\s\S]*?SoftwareApplication/gi, '');
 
   return `<!DOCTYPE html>
 <html lang="es">
