@@ -37,6 +37,7 @@ export default function BlogManagerPage() {
   });
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
+  const [importing, setImporting] = useState(false);
 
   useEffect(() => {
     fetchArticles();
@@ -178,6 +179,32 @@ export default function BlogManagerPage() {
     setMessage(null);
   };
 
+  const importFirstArticle = async () => {
+    if (!confirm('¿Importar el artículo "Multas por no registrar viajeros" a la base de datos?')) {
+      return;
+    }
+
+    try {
+      setImporting(true);
+      const response = await fetch('/api/blog/import-first-article', {
+        method: 'POST'
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        setMessage({type: 'success', text: 'Artículo importado correctamente'});
+        fetchArticles(); // Recargar lista
+      } else {
+        throw new Error(data.error || 'Error al importar');
+      }
+    } catch (error: any) {
+      setMessage({type: 'error', text: error.message || 'Error al importar artículo'});
+    } finally {
+      setImporting(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="container mx-auto p-6">
@@ -207,6 +234,28 @@ export default function BlogManagerPage() {
             </button>
           )}
         </div>
+
+        {/* Banner de importación del primer artículo */}
+        {articles.length === 0 && !showForm && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">📥</span>
+              <div>
+                <h3 className="font-semibold text-gray-900">Importar artículo existente</h3>
+                <p className="text-sm text-gray-600">
+                  El artículo "Multas por no registrar viajeros" ya está publicado. Impórtalo para ver sus analytics.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={importFirstArticle}
+              disabled={importing}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+            >
+              {importing ? 'Importando...' : 'Importar Ahora'}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Mensaje */}
