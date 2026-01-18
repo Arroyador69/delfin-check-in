@@ -40,32 +40,75 @@ export async function GET(req: NextRequest) {
     }
 
     // Obtener lista de artículos con filtros
-    let query = sql`
-      SELECT 
-        id, slug, title, excerpt, meta_description, 
-        status, is_published, published_at, 
-        author_name, created_at, updated_at,
-        view_count, conversion_count
-      FROM blog_articles
-      WHERE 1=1
-    `;
-
-    if (status) {
-      query = sql`${query} AND status = ${status}`;
+    let result;
+    
+    if (published_only && status) {
+      result = await sql`
+        SELECT 
+          id, slug, title, excerpt, meta_description, 
+          status, is_published, published_at, 
+          author_name, created_at, updated_at,
+          view_count, conversion_count
+        FROM blog_articles
+        WHERE is_published = true AND status = ${status}
+        ORDER BY 
+          CASE 
+            WHEN is_published = true THEN published_at
+            ELSE created_at
+          END DESC
+      `;
+    } else if (published_only) {
+      result = await sql`
+        SELECT 
+          id, slug, title, excerpt, meta_description, 
+          status, is_published, published_at, 
+          author_name, created_at, updated_at,
+          view_count, conversion_count
+        FROM blog_articles
+        WHERE is_published = true
+        ORDER BY 
+          CASE 
+            WHEN is_published = true THEN published_at
+            ELSE created_at
+          END DESC
+      `;
+    } else if (status) {
+      result = await sql`
+        SELECT 
+          id, slug, title, excerpt, meta_description, 
+          status, is_published, published_at, 
+          author_name, created_at, updated_at,
+          view_count, conversion_count
+        FROM blog_articles
+        WHERE status = ${status}
+        ORDER BY 
+          CASE 
+            WHEN is_published = true THEN published_at
+            ELSE created_at
+          END DESC
+      `;
+    } else {
+      result = await sql`
+        SELECT 
+          id, slug, title, excerpt, meta_description, 
+          status, is_published, published_at, 
+          author_name, created_at, updated_at,
+          view_count, conversion_count
+        FROM blog_articles
+        ORDER BY 
+          CASE 
+            WHEN is_published = true THEN published_at
+            ELSE created_at
+          END DESC
+      `;
     }
 
-    if (published_only) {
-      query = sql`${query} AND is_published = true`;
-    }
-
-    query = sql`${query} ORDER BY 
-      CASE 
-        WHEN is_published = true THEN published_at
-        ELSE created_at
-      END DESC
-    `;
-
-    const result = await query;
+    console.log('📊 Query result:', {
+      published_only,
+      status,
+      rowCount: result.rows.length,
+      articles: result.rows.map(r => ({ slug: r.slug, is_published: r.is_published, status: r.status }))
+    });
 
     return NextResponse.json({
       success: true,
