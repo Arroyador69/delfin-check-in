@@ -200,6 +200,28 @@ export default function SuperAdminDashboard() {
               </a>
 
               <a 
+                href="/superadmin/blog-analytics"
+                className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition"
+              >
+                <span className="text-2xl mr-3">📊</span>
+                <div>
+                  <p className="font-semibold text-gray-900">Monitoreo Artículos</p>
+                  <p className="text-sm text-gray-700">Analytics de artículos del blog</p>
+                </div>
+              </a>
+
+              <a 
+                href="/superadmin/blog-manager"
+                className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition"
+              >
+                <span className="text-2xl mr-3">✏️</span>
+                <div>
+                  <p className="font-semibold text-gray-900">Gestión de Artículos</p>
+                  <p className="text-sm text-gray-700">CMS para crear y editar artículos</p>
+                </div>
+              </a>
+
+              <a 
                 href="/superadmin/investor-mode"
                 className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition"
               >
