@@ -148,6 +148,29 @@ async function getArticleStats(article_slug: string, startDate: Date) {
       AND timestamp >= ${startDate.toISOString()}
   `;
 
+  // Métricas del formulario
+  const formStarts = await sql`
+    SELECT COUNT(*) as total
+    FROM blog_analytics_events
+    WHERE article_id = ${article.id}::uuid
+      AND event_type = 'form_start'
+      AND timestamp >= ${startDate.toISOString()}
+  `;
+
+  const formSubmits = await sql`
+    SELECT COUNT(*) as total
+    FROM blog_analytics_events
+    WHERE article_id = ${article.id}::uuid
+      AND event_type = 'form_submit'
+      AND timestamp >= ${startDate.toISOString()}
+  `;
+
+  const formStartsCount = parseInt(formStarts.rows[0]?.total || '0');
+  const formSubmitsCount = parseInt(formSubmits.rows[0]?.total || '0');
+  const formAbandonmentRate = formStartsCount > 0
+    ? ((formStartsCount - formSubmitsCount) / formStartsCount * 100).toFixed(2)
+    : '0.00';
+
   // Top eventos
   const topEvents = await sql`
     SELECT 
@@ -226,6 +249,11 @@ async function getArticleStats(article_slug: string, startDate: Date) {
       closes: parseInt(popupCloses.rows[0]?.total || '0'),
       clicks: parseInt(popupClicks.rows[0]?.total || '0'),
       conversionRate: parseFloat(popupConversionRate)
+    },
+    form: {
+      starts: formStartsCount,
+      completions: formSubmitsCount,
+      abandonmentRate: parseFloat(formAbandonmentRate)
     },
     topEvents: topEvents.rows,
     referrers: referrers.rows,

@@ -37,6 +37,11 @@ interface ArticleStats {
     clicks: number;
     conversionRate: number;
   };
+  form: {
+    starts: number;
+    completions: number;
+    abandonmentRate: number;
+  };
   topEvents: Array<{ event_type: string; count: number }>;
   referrers: Array<{ referrer: string; count: number }>;
   devices: Array<{ device_type: string; count: number }>;
@@ -340,6 +345,25 @@ export default function BlogAnalyticsPage() {
               <div>
                 <div className="text-sm text-gray-600">Tasa Conversión</div>
                 <div className="text-2xl font-bold text-green-600">{stats.popup.conversionRate.toFixed(2)}%</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Métricas del Formulario */}
+          <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm mb-8">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">📝 Métricas del Formulario</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                <div className="text-sm text-blue-700 font-semibold mb-1">Inicios</div>
+                <div className="text-3xl font-bold text-blue-900">{formatNumber(stats.form.starts)}</div>
+              </div>
+              <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+                <div className="text-sm text-green-700 font-semibold mb-1">Completados</div>
+                <div className="text-3xl font-bold text-green-900">{formatNumber(stats.form.completions)}</div>
+              </div>
+              <div className="bg-amber-50 rounded-lg p-4 border border-amber-200">
+                <div className="text-sm text-amber-700 font-semibold mb-1">Tasa Abandono</div>
+                <div className="text-3xl font-bold text-amber-900">{stats.form.abandonmentRate.toFixed(2)}%</div>
               </div>
             </div>
           </div>
