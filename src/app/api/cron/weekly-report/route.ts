@@ -16,7 +16,13 @@ export async function GET(req: NextRequest) {
     const authHeader = req.headers.get('authorization');
     const cronSecret = process.env.CRON_SECRET;
     
+    // Debug logs
+    console.log('🔍 [DEBUG] Auth header recibido:', authHeader ? 'Presente' : 'Ausente');
+    console.log('🔍 [DEBUG] CRON_SECRET configurado:', cronSecret ? 'Presente' : 'Ausente');
+    console.log('🔍 [DEBUG] Comparación:', authHeader === `Bearer ${cronSecret}`);
+    
     if (authHeader !== `Bearer ${cronSecret}`) {
+      console.log('❌ [AUTH] Autorización fallida');
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
