@@ -9,6 +9,19 @@ import { sql } from '@/lib/db';
  * y trackea el origen para analytics
  */
 
+// Configuración CORS
+const corsHeaders = {
+  'Access-Control-Allow-Origin': 'https://delfincheckin.com',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  'Access-Control-Max-Age': '86400', // 24 horas
+};
+
+// Manejar preflight requests (OPTIONS)
+export async function OPTIONS(req: NextRequest) {
+  return NextResponse.json({}, { headers: corsHeaders });
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -18,7 +31,7 @@ export async function POST(req: NextRequest) {
     if (!email) {
       return NextResponse.json(
         { error: 'El email es obligatorio' },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       );
     }
 
@@ -27,7 +40,7 @@ export async function POST(req: NextRequest) {
     if (!emailRegex.test(email)) {
       return NextResponse.json(
         { error: 'Formato de email inválido' },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       );
     }
 
@@ -41,16 +54,19 @@ export async function POST(req: NextRequest) {
 
     if (existingUser.rows.length > 0) {
       // Email ya registrado, devolver info pero no error
-      return NextResponse.json({
-        success: true,
-        already_registered: true,
-        message: 'Ya estás registrado en nuestra lista de espera',
-        user: {
-          email: existingUser.rows[0].email,
-          source: existingUser.rows[0].source,
-          registered_at: existingUser.rows[0].created_at
-        }
-      });
+      return NextResponse.json(
+        {
+          success: true,
+          already_registered: true,
+          message: 'Ya estás registrado en nuestra lista de espera',
+          user: {
+            email: existingUser.rows[0].email,
+            source: existingUser.rows[0].source,
+            registered_at: existingUser.rows[0].created_at
+          }
+        },
+        { headers: corsHeaders }
+      );
     }
 
     // Insertar nuevo usuario en la waitlist
@@ -76,23 +92,29 @@ export async function POST(req: NextRequest) {
       `;
     }
 
-    return NextResponse.json({
-      success: true,
-      already_registered: false,
-      message: '¡Gracias por registrarte! Te avisaremos cuando esté disponible.',
-      user: result.rows[0]
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        already_registered: false,
+        message: '¡Gracias por registrarte! Te avisaremos cuando esté disponible.',
+        user: result.rows[0]
+      },
+      { headers: corsHeaders }
+    );
 
   } catch (error: any) {
     console.error('❌ Error registrando en waitlist:', error);
     
     // Error de unicidad (por si hay race condition)
     if (error.code === '23505') {
-      return NextResponse.json({
-        success: true,
-        already_registered: true,
-        message: 'Ya estás registrado en nuestra lista de espera'
-      });
+      return NextResponse.json(
+        {
+          success: true,
+          already_registered: true,
+          message: 'Ya estás registrado en nuestra lista de espera'
+        },
+        { headers: corsHeaders }
+      );
     }
 
     return NextResponse.json(
@@ -100,7 +122,7 @@ export async function POST(req: NextRequest) {
         success: false, 
         error: 'Error al procesar tu registro. Inténtalo de nuevo.' 
       },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     );
   }
 }

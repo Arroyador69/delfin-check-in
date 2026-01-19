@@ -8,6 +8,19 @@ import { sql } from '@/lib/db';
  * Registra eventos y sesiones de usuarios en artículos
  */
 
+// Configuración CORS
+const corsHeaders = {
+  'Access-Control-Allow-Origin': 'https://delfincheckin.com',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  'Access-Control-Max-Age': '86400', // 24 horas
+};
+
+// Manejar preflight requests (OPTIONS)
+export async function OPTIONS(req: NextRequest) {
+  return NextResponse.json({}, { headers: corsHeaders });
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -30,7 +43,7 @@ export async function POST(req: NextRequest) {
       console.log('❌ [BLOG ANALYTICS TRACK] Faltan parámetros requeridos');
       return NextResponse.json(
         { error: 'Se requieren article_slug y session_id' },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       );
     }
 
@@ -43,7 +56,7 @@ export async function POST(req: NextRequest) {
       console.log('❌ [BLOG ANALYTICS TRACK] Artículo no encontrado:', article_slug);
       return NextResponse.json(
         { error: 'Artículo no encontrado' },
-        { status: 404 }
+        { status: 404, headers: corsHeaders }
       );
     }
 
@@ -145,10 +158,13 @@ export async function POST(req: NextRequest) {
     }
 
     console.log('✅ [BLOG ANALYTICS TRACK] Tracking completado exitosamente');
-    return NextResponse.json({
-      success: true,
-      message: 'Evento registrado correctamente'
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        message: 'Evento registrado correctamente'
+      },
+      { headers: corsHeaders }
+    );
 
   } catch (error: any) {
     console.error('❌ [BLOG ANALYTICS TRACK] Error crítico:', {
@@ -158,7 +174,7 @@ export async function POST(req: NextRequest) {
     });
     return NextResponse.json(
       { success: false, error: 'Error interno del servidor', details: error.message },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     );
   }
 }
