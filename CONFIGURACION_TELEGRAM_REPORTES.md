@@ -112,14 +112,14 @@ https://api.telegram.org/bot7123456789:AAHdqTcvCH1vGEMyIrdq2bP8v5r3uL4sW7A/getUp
 
 Agrega estas **3 variables nuevas**:
 
-#### Variable 1: TELEGRAM_BOT_TOKEN
-- **Name:** `TELEGRAM_BOT_TOKEN`
+#### Variable 1: TELEGRAM_WAITLIST_BOT_TOKEN
+- **Name:** `TELEGRAM_WAITLIST_BOT_TOKEN`
 - **Value:** El token que te dio BotFather (ej: `7123456789:AAHdqTcvCH1vGEMyIrdq2bP8v5r3uL4sW7A`)
 - **Environments:** Marca **Production**, **Preview** y **Development**
 - Haz clic en **"Save"**
 
-#### Variable 2: TELEGRAM_CHAT_ID
-- **Name:** `TELEGRAM_CHAT_ID`
+#### Variable 2: TELEGRAM_WAITLIST_CHAT_ID
+- **Name:** `TELEGRAM_WAITLIST_CHAT_ID`
 - **Value:** Tu chat_id (ej: `123456789`)
 - **Environments:** Marca **Production**, **Preview** y **Development**
 - Haz clic en **"Save"**
@@ -277,7 +277,7 @@ dom, 19 ene: █ 2
 ### No recibo mensajes
 1. **Verifica las variables de entorno:**
    - Ve a Vercel → Settings → Environment Variables
-   - Confirma que `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` y `CRON_SECRET` están configuradas
+   - Confirma que `TELEGRAM_WAITLIST_BOT_TOKEN`, `TELEGRAM_WAITLIST_CHAT_ID` y `CRON_SECRET` están configuradas
    - Confirma que están en **Production**
 
 2. **Verifica el bot:**
@@ -332,8 +332,8 @@ Edita el archivo `vercel.json`:
 - [ ] TOKEN del bot guardado
 - [ ] CHAT_ID obtenido
 - [ ] Variables de entorno configuradas en Vercel:
-  - [ ] `TELEGRAM_BOT_TOKEN`
-  - [ ] `TELEGRAM_CHAT_ID`
+  - [ ] `TELEGRAM_WAITLIST_BOT_TOKEN`
+  - [ ] `TELEGRAM_WAITLIST_CHAT_ID`
   - [ ] `CRON_SECRET`
 - [ ] Código desplegado en Vercel (push a main)
 - [ ] Cron jobs visibles en Vercel Dashboard

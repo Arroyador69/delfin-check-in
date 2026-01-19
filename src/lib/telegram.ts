@@ -13,11 +13,11 @@ interface TelegramMessage {
 }
 
 export async function sendTelegramMessage(text: string): Promise<boolean> {
-  const botToken = process.env.TELEGRAM_BOT_TOKEN;
-  const chatId = process.env.TELEGRAM_CHAT_ID;
+  const botToken = process.env.TELEGRAM_WAITLIST_BOT_TOKEN;
+  const chatId = process.env.TELEGRAM_WAITLIST_CHAT_ID;
 
   if (!botToken || !chatId) {
-    console.error('❌ Telegram credentials not configured');
+    console.error('❌ Telegram Waitlist credentials not configured');
     return false;
   }
 
