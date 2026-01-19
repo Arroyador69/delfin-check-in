@@ -19,7 +19,15 @@ export async function POST(req: NextRequest) {
       session_data = {}
     } = body;
 
+    console.log('📊 [BLOG ANALYTICS TRACK] Petición recibida:', {
+      article_slug,
+      session_id,
+      event_type,
+      timestamp: new Date().toISOString()
+    });
+
     if (!article_slug || !session_id) {
+      console.log('❌ [BLOG ANALYTICS TRACK] Faltan parámetros requeridos');
       return NextResponse.json(
         { error: 'Se requieren article_slug y session_id' },
         { status: 400 }
@@ -32,6 +40,7 @@ export async function POST(req: NextRequest) {
     `;
 
     if (articleResult.rows.length === 0) {
+      console.log('❌ [BLOG ANALYTICS TRACK] Artículo no encontrado:', article_slug);
       return NextResponse.json(
         { error: 'Artículo no encontrado' },
         { status: 404 }
@@ -39,6 +48,7 @@ export async function POST(req: NextRequest) {
     }
 
     const article_id = articleResult.rows[0].id;
+    console.log('✅ [BLOG ANALYTICS TRACK] Article ID encontrado:', article_id);
 
     // ========================================
     // REGISTRAR O ACTUALIZAR SESIÓN
@@ -68,6 +78,7 @@ export async function POST(req: NextRequest) {
 
     if (existingSession.rows.length === 0) {
       // Crear nueva sesión
+      console.log('📝 [BLOG ANALYTICS TRACK] Creando nueva sesión:', { article_id, session_id, device_type });
       await sql`
         INSERT INTO blog_analytics_sessions (
           article_id, session_id, referrer, utm_source, utm_medium, utm_campaign,
@@ -81,8 +92,10 @@ export async function POST(req: NextRequest) {
           ${popup_clicked || false}, ${conversion || false}
         )
       `;
+      console.log('✅ [BLOG ANALYTICS TRACK] Sesión creada correctamente');
     } else {
       // Actualizar sesión existente
+      console.log('🔄 [BLOG ANALYTICS TRACK] Actualizando sesión existente:', session_id);
       const updates: any = {};
       if (time_on_page !== undefined) updates.time_on_page = time_on_page;
       if (scroll_depth !== undefined) updates.scroll_depth = scroll_depth;
@@ -109,6 +122,7 @@ export async function POST(req: NextRequest) {
     // REGISTRAR EVENTO
     // ========================================
     if (event_type) {
+      console.log('🎯 [BLOG ANALYTICS TRACK] Registrando evento:', event_type);
       await sql`
         INSERT INTO blog_analytics_events (
           article_id, session_id, event_type, event_data
@@ -117,6 +131,7 @@ export async function POST(req: NextRequest) {
           ${JSON.stringify(event_data)}::jsonb
         )
       `;
+      console.log('✅ [BLOG ANALYTICS TRACK] Evento guardado');
 
       // Actualizar contadores específicos en el artículo
       if (event_type === 'page_view') {
@@ -125,18 +140,24 @@ export async function POST(req: NextRequest) {
           SET view_count = view_count + 1
           WHERE id = ${article_id}::uuid
         `;
+        console.log('📈 [BLOG ANALYTICS TRACK] view_count incrementado');
       }
     }
 
+    console.log('✅ [BLOG ANALYTICS TRACK] Tracking completado exitosamente');
     return NextResponse.json({
       success: true,
       message: 'Evento registrado correctamente'
     });
 
   } catch (error: any) {
-    console.error('❌ Error tracking analytics:', error);
+    console.error('❌ [BLOG ANALYTICS TRACK] Error crítico:', {
+      error: error.message,
+      stack: error.stack,
+      timestamp: new Date().toISOString()
+    });
     return NextResponse.json(
-      { success: false, error: 'Error interno del servidor' },
+      { success: false, error: 'Error interno del servidor', details: error.message },
       { status: 500 }
     );
   }
