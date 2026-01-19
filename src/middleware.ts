@@ -104,6 +104,7 @@ export async function middleware(req: NextRequest) {
     url.pathname.startsWith('/api/waitlist') || // Waitlist debe ser público para la landing page
     url.pathname.startsWith('/api/blog/analytics/') || // Analytics de artículos debe ser público
     url.pathname.startsWith('/api/blog/waitlist') || // Waitlist de artículos debe ser público
+    url.pathname.startsWith('/api/cron/') || // Cron jobs de Vercel deben ser públicos
     url.pathname.startsWith('/api/stripe/webhook') ||
     url.pathname.startsWith('/api/telegram/webhook') // Webhook de Telegram debe ser público
   );
@@ -183,6 +184,7 @@ export async function middleware(req: NextRequest) {
         url.pathname.startsWith('/api/create-payment-intent') ||
         url.pathname.startsWith('/api/blog/analytics/') || // Analytics de artículos es público
         url.pathname.startsWith('/api/blog/waitlist') || // Waitlist de artículos es público
+        url.pathname.startsWith('/api/cron/') || // Cron jobs de Vercel son públicos
         url.pathname.startsWith('/api/telegram/webhook') // Webhook de Telegram debe ser público
       );
       
