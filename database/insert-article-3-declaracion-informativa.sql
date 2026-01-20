@@ -13,101 +13,145 @@ WHERE slug = 'declaracion-informativa-alquileres-corta-duracion-2026';
 
 -- Insertar el artículo 3
 INSERT INTO blog_articles (
-  title,
   slug,
-  excerpt,
+  title,
+  meta_description,
+  meta_keywords,
   content,
+  excerpt,
+  canonical_url,
+  schema_json,
+  status,
+  is_published,
+  published_at,
   author_name,
-  published,
-  featured,
-  seo_title,
-  seo_description,
-  seo_keywords,
   created_at,
-  updated_at,
-  published_at
+  updated_at
 )
 VALUES (
-  -- Title
-  'Declaración Informativa Anual de Alquileres de Corta Duración 2026',
-  
   -- Slug
   'declaracion-informativa-alquileres-corta-duracion-2026',
   
-  -- Excerpt
-  'Nueva obligación para propietarios de alquileres turísticos en 2026. Orden VAU/1560/2025 del BOE. Aprende qué es, quién debe presentarla, cuándo y cómo cumplir correctamente. Incluye PDF descargable y recordatorios de calendario.',
+  -- Title
+  'Declaración Informativa Anual de Alquileres de Corta Duración 2026',
   
-  -- Content (resumen, el HTML completo está en delfincheckin.com)
-  'Desde febrero de 2026, los propietarios de alquileres de corta duración en España tienen una nueva obligación administrativa: la declaración informativa anual ante el Registro de la Propiedad. Esta medida, establecida por la Orden VAU/1560/2025 publicada en el BOE, busca dotar de mayor trazabilidad y control al sector de los arrendamientos turísticos y temporales.
-
-## ¿Qué es la declaración informativa anual?
-
-Se trata de una obligación administrativa de carácter informativo cuyo objetivo principal es proporcionar trazabilidad y control a los arrendamientos de corta duración en España. Esta declaración NO es un impuesto ni sustituye a otras obligaciones fiscales o administrativas existentes.
-
-## Marco legal aplicable
-
-La obligación de presentar esta declaración se regula mediante la Orden VAU/1560/2025, publicada en el Boletín Oficial del Estado (BOE) y se integra dentro del Registro Único de Arrendamientos gestionado por los Registradores de España.
-
-## ¿A quién afecta?
-
-Deben presentar la declaración informativa anual:
-- Personas físicas (particulares) que ofrezcan alquileres de corta duración
-- Personas jurídicas (empresas, sociedades) que gestionen alquileres turísticos
-- Gestores profesionales que administren inmuebles de terceros
-- Cualquier propietario que ofrezca alquileres turísticos o temporales, independientemente del canal de comercialización
-
-## ¿Cuándo se presenta?
-
-La declaración tiene carácter anual y debe presentarse durante el mes de febrero con los datos correspondientes al año natural anterior. La primera presentación obligatoria será en febrero de 2026.
-
-## Errores comunes a evitar
-
-1. Confundir esta declaración con obligaciones fiscales
-2. Pensar que la plataforma de alquiler la presenta automáticamente
-3. No tener la información anual organizada
-4. No presentar la declaración dentro de plazo
-5. No tener el NRA (Número de Registro de Alquiler) en regla
-
-Descarga la guía completa en PDF y añade un recordatorio a tu calendario para no olvidar presentar tu declaración en febrero.',
-  
-  -- Author name
-  'Delfín Check-in',
-  
-  -- Published
-  true,
-  
-  -- Featured
-  true,
-  
-  -- SEO Title
-  'Declaración Informativa Anual de Alquileres de Corta Duración 2026 | Guía Completa BOE',
-  
-  -- SEO Description
+  -- Meta description
   'Nueva obligación para propietarios de alquileres turísticos en 2026. Orden VAU/1560/2025 del BOE. Aprende qué es, quién debe presentarla, cuándo y cómo cumplir correctamente. Incluye PDF descargable.',
   
-  -- SEO Keywords
+  -- Meta keywords
   'declaración informativa alquileres corta duración, Orden VAU/1560/2025, BOE 2026, registro propiedad alquileres, NRA, alquiler turístico españa, obligaciones propietarios, registro único arrendamientos, declaración anual alquiler vacacional, ventanilla única digital',
+  
+  -- Content (resumen, el HTML completo está en delfincheckin.com)
+  '<p>Desde febrero de 2026, los propietarios de alquileres de corta duración en España tienen una nueva obligación administrativa: la declaración informativa anual ante el Registro de la Propiedad. Esta medida, establecida por la Orden VAU/1560/2025 publicada en el BOE, busca dotar de mayor trazabilidad y control al sector de los arrendamientos turísticos y temporales.</p>
+
+<h2>¿Qué es la declaración informativa anual?</h2>
+<p>Se trata de una obligación administrativa de carácter informativo cuyo objetivo principal es proporcionar trazabilidad y control a los arrendamientos de corta duración en España. Esta declaración NO es un impuesto ni sustituye a otras obligaciones fiscales o administrativas existentes.</p>
+
+<h2>Marco legal aplicable</h2>
+<p>La obligación de presentar esta declaración se regula mediante la Orden VAU/1560/2025, publicada en el Boletín Oficial del Estado (BOE) y se integra dentro del Registro Único de Arrendamientos gestionado por los Registradores de España.</p>
+
+<h2>¿A quién afecta?</h2>
+<p>Deben presentar la declaración informativa anual:</p>
+<ul>
+<li>Personas físicas (particulares) que ofrezcan alquileres de corta duración</li>
+<li>Personas jurídicas (empresas, sociedades) que gestionen alquileres turísticos</li>
+<li>Gestores profesionales que administren inmuebles de terceros</li>
+<li>Cualquier propietario que ofrezca alquileres turísticos o temporales, independientemente del canal de comercialización</li>
+</ul>
+
+<h2>¿Cuándo se presenta?</h2>
+<p>La declaración tiene carácter anual y debe presentarse durante el mes de febrero con los datos correspondientes al año natural anterior. La primera presentación obligatoria será en febrero de 2026.</p>
+
+<h2>Errores comunes a evitar</h2>
+<ol>
+<li>Confundir esta declaración con obligaciones fiscales</li>
+<li>Pensar que la plataforma de alquiler la presenta automáticamente</li>
+<li>No tener la información anual organizada</li>
+<li>No presentar la declaración dentro de plazo</li>
+<li>No tener el NRA (Número de Registro de Alquiler) en regla</li>
+</ol>
+
+<p>Descarga la guía completa en PDF y añade un recordatorio a tu calendario para no olvidar presentar tu declaración en febrero.</p>',
+  
+  -- Excerpt
+  'Nueva obligación para propietarios de alquileres turísticos en 2026. Guía completa sobre la Orden VAU/1560/2025: qué es, quién debe presentarla, cuándo, dónde y cómo cumplir. Incluye PDF descargable y recordatorios de calendario.',
+  
+  -- Canonical URL
+  'https://delfincheckin.com/articulos/declaracion-informativa-alquileres-corta-duracion-2026',
+  
+  -- Schema JSON
+  '{
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "headline": "Declaración Informativa Anual de Alquileres de Corta Duración 2026",
+    "description": "Nueva obligación para propietarios de alquileres turísticos en 2026. Orden VAU/1560/2025 del BOE. Guía completa sobre qué es, quién debe presentarla, cuándo y cómo cumplir correctamente.",
+    "image": "https://delfincheckin.com/og-image.svg",
+    "author": {
+      "@type": "Organization",
+      "name": "Delfín Check-in",
+      "url": "https://delfincheckin.com"
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": "Delfín Check-in",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://delfincheckin.com/og-image.svg"
+      }
+    },
+    "datePublished": "2026-01-20T00:00:00+00:00",
+    "dateModified": "2026-01-20T00:00:00+00:00",
+    "mainEntityOfPage": {
+      "@type": "WebPage",
+      "@id": "https://delfincheckin.com/articulos/declaracion-informativa-alquileres-corta-duracion-2026"
+    }
+  }'::jsonb,
+  
+  -- Status
+  'published',
+  
+  -- Is published
+  true,
+  
+  -- Published at
+  '2026-01-20 12:00:00+00',
+  
+  -- Author name
+  'Equipo Delfín Check-in',
   
   -- Created at
   NOW(),
   
   -- Updated at
-  NOW(),
-  
-  -- Published at
-  '2026-01-20T00:00:00Z'
-);
+  NOW()
+)
+ON CONFLICT (slug) DO UPDATE SET
+  title = EXCLUDED.title,
+  meta_description = EXCLUDED.meta_description,
+  meta_keywords = EXCLUDED.meta_keywords,
+  content = EXCLUDED.content,
+  excerpt = EXCLUDED.excerpt,
+  canonical_url = EXCLUDED.canonical_url,
+  schema_json = EXCLUDED.schema_json,
+  status = EXCLUDED.status,
+  is_published = EXCLUDED.is_published,
+  published_at = EXCLUDED.published_at,
+  author_name = EXCLUDED.author_name,
+  updated_at = NOW();
 
 -- Verificar que se insertó correctamente
 SELECT 
   id,
-  title,
   slug,
+  title,
+  status,
+  is_published,
+  published_at,
   author_name,
-  published,
-  featured,
+  view_count,
+  conversion_count,
   created_at,
-  published_at
+  updated_at
 FROM blog_articles
 WHERE slug = 'declaracion-informativa-alquileres-corta-duracion-2026';
 
@@ -117,7 +161,9 @@ WHERE slug = 'declaracion-informativa-alquileres-corta-duracion-2026';
 -- Debería mostrar 1 fila con:
 -- - title: "Declaración Informativa Anual de Alquileres de Corta Duración 2026"
 -- - slug: "declaracion-informativa-alquileres-corta-duracion-2026"
--- - published: true
--- - featured: true
--- - published_at: 2026-01-20
+-- - status: "published"
+-- - is_published: true
+-- - published_at: 2026-01-20 12:00:00+00
+-- - view_count: 0
+-- - conversion_count: 0
 -- =====================================================
