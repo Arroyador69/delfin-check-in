@@ -108,14 +108,36 @@ export async function middleware(req: NextRequest) {
   // 3. DETECCIÓN DE IDIOMA (I18N)
   // ==============================================
   
-  // Excluir rutas API, superadmin, y rutas públicas específicas de la detección i18n
+  // Excluir rutas API, superadmin, y TODAS las rutas del tenant de la detección i18n
+  // Esto permite que se sirvan desde src/app/ sin redirect a /es/, /en/, etc.
   const shouldSkipI18n = (
     pathname.startsWith('/api/') ||
     pathname.startsWith('/superadmin') || // SuperAdmin NO traduce
     pathname.startsWith('/book/') || // Booking engine externo
     pathname === '/admin-login' ||
     pathname === '/forgot-password' ||
-    pathname === '/' // Ruta raíz se sirve desde src/app/page.tsx SIN redirect
+    pathname === '/' || // Ruta raíz
+    pathname.startsWith('/reservations') ||
+    pathname.startsWith('/calendar') ||
+    pathname.startsWith('/settings') ||
+    pathname.startsWith('/guest-registrations-dashboard') ||
+    pathname.startsWith('/aeat') ||
+    pathname.startsWith('/audit') ||
+    pathname.startsWith('/calendar-sync') ||
+    pathname.startsWith('/cost-calculator') ||
+    pathname.startsWith('/facturas') ||
+    pathname.startsWith('/messages') ||
+    pathname.startsWith('/offline-queue') ||
+    pathname.startsWith('/referrals') ||
+    pathname.startsWith('/rooms') ||
+    pathname.startsWith('/upgrade-plan') ||
+    pathname.startsWith('/admin/') ||
+    pathname.startsWith('/onboarding') ||
+    pathname.startsWith('/partes') ||
+    pathname.startsWith('/plans') ||
+    pathname.startsWith('/pricing') ||
+    pathname.startsWith('/checkout-rooms') ||
+    pathname.startsWith('/estado-envios-mir')
   );
   
   // Si la ruta no debe tener i18n, continuar sin aplicar intlMiddleware
