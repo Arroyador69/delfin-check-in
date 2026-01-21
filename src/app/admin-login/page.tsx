@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { useTranslations } from 'next-intl'
 
 /**
  * 🔐 PÁGINA DE LOGIN MULTI-TENANT
@@ -15,10 +14,12 @@ import { useTranslations } from 'next-intl'
  * - Validación de entrada (email + contraseña)
  * - Manejo de errores de rate limiting
  * - Interfaz de usuario mejorada
+ * 
+ * NOTA: Esta página NO está traducida porque es el punto de entrada
+ * al sistema. Una vez autenticado, el usuario verá el PMS en su idioma.
  */
 
 export default function AdminLoginPage() {
-  const t = useTranslations('auth');
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -39,13 +40,13 @@ export default function AdminLoginPage() {
 
     // Validación básica
     if (!email || email.trim().length === 0) {
-      setError(t('errors.enterEmail'))
+      setError('Por favor introduce tu email')
       setIsLoading(false)
       return
     }
     
     if (!password || password.trim().length === 0) {
-      setError(t('errors.enterPassword'))
+      setError('Por favor introduce tu contraseña')
       setIsLoading(false)
       return
     }
@@ -53,7 +54,7 @@ export default function AdminLoginPage() {
     // Validar formato de email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(email)) {
-      setError(t('errors.invalidEmail'))
+      setError('Por favor introduce un email válido')
       setIsLoading(false)
       return
     }
@@ -91,13 +92,13 @@ export default function AdminLoginPage() {
         // Manejar errores específicos
         if (response.status === 429) {
           // Rate limit excedido
-          setError(data.message || t('errors.tooManyAttempts'))
+          setError(data.message || 'Demasiados intentos. Por favor espera antes de intentar nuevamente.')
           setRateLimitInfo({
             retryAfter: data.retryAfter
           })
         } else if (response.status === 401) {
           // Credenciales inválidas
-          setError(data.message || t('errors.incorrectPassword'))
+          setError(data.message || 'Email o contraseña incorrectos')
           if (data.remaining !== undefined) {
             setRateLimitInfo({
               remaining: data.remaining
@@ -105,7 +106,7 @@ export default function AdminLoginPage() {
           }
         } else {
           // Otros errores
-          setError(data.message || t('errors.loginError'))
+          setError(data.message || 'Error al iniciar sesión. Por favor intenta nuevamente.')
         }
         
         setEmail('')
@@ -113,7 +114,7 @@ export default function AdminLoginPage() {
       }
     } catch (error) {
       console.error('Error en login:', error)
-      setError(t('errors.connectionError'))
+      setError('Error de conexión. Por favor verifica tu conexión a internet.')
     } finally {
       setIsLoading(false)
     }
@@ -133,7 +134,7 @@ export default function AdminLoginPage() {
               Delfín Check-in
             </h1>
             <p className="text-blue-100 text-center mt-1 text-sm">
-              {t('loginTitle')}
+              Gestión inteligente de alojamientos
             </p>
           </div>
 
@@ -149,10 +150,10 @@ export default function AdminLoginPage() {
                   </div>
                 </div>
                 <h2 className="text-xl font-semibold text-gray-900 mb-2">
-                  {t('welcome')}
+                  ¡Bienvenido de nuevo!
                 </h2>
                 <p className="text-gray-600">
-                  {t('redirecting')}
+                  Redirigiendo al panel de control...
                 </p>
                 <div className="mt-4">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
@@ -163,7 +164,7 @@ export default function AdminLoginPage() {
                 {/* Campo de email */}
                 <div>
                   <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                    {t('emailLabel')}
+                    Correo electrónico
                   </label>
                   <input
                     id="email"
@@ -171,7 +172,7 @@ export default function AdminLoginPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none"
-                    placeholder={t('emailPlaceholder')}
+                    placeholder="tu@email.com"
                     disabled={isLoading}
                     autoFocus
                   />
@@ -180,7 +181,7 @@ export default function AdminLoginPage() {
                 {/* Campo de contraseña */}
                 <div>
                   <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                    {t('passwordLabel')}
+                    Contraseña
                   </label>
                   <input
                     id="password"
@@ -188,7 +189,7 @@ export default function AdminLoginPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none"
-                    placeholder={t('passwordPlaceholder')}
+                    placeholder="••••••••"
                     disabled={isLoading}
                   />
                 </div>
@@ -234,10 +235,10 @@ export default function AdminLoginPage() {
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                       </svg>
-                      {t('verifying')}
+                      Verificando...
                     </span>
                   ) : (
-                    t('loginButton')
+                    'Iniciar sesión'
                   )}
                 </button>
 
@@ -247,7 +248,7 @@ export default function AdminLoginPage() {
                     href="/forgot-password" 
                     className="text-sm text-blue-600 hover:text-blue-800 hover:underline transition-colors"
                   >
-                    {t('forgotPassword')}
+                    ¿Olvidaste tu contraseña?
                   </Link>
                 </div>
               </form>
@@ -257,7 +258,7 @@ export default function AdminLoginPage() {
           {/* Footer */}
           <div className="bg-gray-50 px-8 py-4 border-t border-gray-100">
             <p className="text-xs text-center text-gray-500 mb-2">
-              {t('secureConnection')}
+              🔒 Conexión segura mediante encriptación SSL
             </p>
           </div>
         </div>
@@ -265,7 +266,7 @@ export default function AdminLoginPage() {
         {/* Información adicional */}
         <div className="mt-6 text-center text-sm text-gray-600">
           <p>
-            {t('systemDescription')}
+            Sistema de gestión para propiedades vacacionales
           </p>
         </div>
 
