@@ -3,6 +3,9 @@
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 
+// Force dynamic rendering to avoid SSG issues with next-intl
+export const dynamic = 'force-dynamic';
+
 export default function NotFound() {
   const t = useTranslations('common');
   
