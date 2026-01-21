@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Calculator, Plus, Trash2, Save, Euro, Calendar, Users, Home, Settings } from 'lucide-react';
 import AdminLayout from '@/components/AdminLayout';
+import { useClientTranslations } from '@/hooks/useClientTranslations';
 
 interface Expense {
   id: string;
@@ -33,6 +34,7 @@ interface Settings {
 }
 
 export default function CostCalculator() {
+  const t = useClientTranslations('costCalculator');
   const [expenses, setExpenses] = useState<Expense[]>([
     {
       id: '1',

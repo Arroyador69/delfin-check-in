@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useClientTranslations } from '@/hooks/useClientTranslations';
 
 export default function AEATPage() {
+  const t = useClientTranslations('aeat');
   const today = new Date().toISOString().slice(0,10);
   const firstOfMonth = new Date();
   firstOfMonth.setDate(1);

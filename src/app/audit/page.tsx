@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useClientTranslations } from '@/hooks/useClientTranslations';
 
 type Item = {
   id: string;
@@ -14,6 +15,7 @@ type Item = {
 };
 
 export default function AuditPage() {
+  const t = useClientTranslations('audit');
   const [items, setItems] = useState<Item[]>([]);
   const [q, setQ] = useState('');
   const [action, setAction] = useState('');

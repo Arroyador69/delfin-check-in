@@ -2,8 +2,10 @@
 
 import { useState } from 'react';
 import { Copy, RefreshCw, Smartphone, Calendar, AlertCircle, CheckCircle } from 'lucide-react';
+import { useClientTranslations } from '@/hooks/useClientTranslations';
 
 export default function CalendarSyncPage() {
+  const t = useClientTranslations('calendarSync');
   const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
 
   const calendarUrl = 'https://admin.delfincheckin.com/api/ical/reservations';

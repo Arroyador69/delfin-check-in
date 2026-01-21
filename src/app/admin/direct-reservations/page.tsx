@@ -3,8 +3,10 @@
 import { useState, useEffect } from 'react';
 import { Calendar, Users, Euro, CreditCard, CheckCircle, XCircle, Clock, TrendingUp, Eye, Home, Bed } from 'lucide-react';
 import { DirectReservation, ReservationStats } from '@/lib/direct-reservations-types';
+import { useClientTranslations } from '@/hooks/useClientTranslations';
 
 export default function DirectReservationsDashboard() {
+  const t = useClientTranslations('directReservations');
   const [reservations, setReservations] = useState<DirectReservation[]>([]);
   const [stats, setStats] = useState<ReservationStats | null>(null);
   const [loading, setLoading] = useState(true);

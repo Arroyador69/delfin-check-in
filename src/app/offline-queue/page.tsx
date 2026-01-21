@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { useClientTranslations } from '@/hooks/useClientTranslations';
 
 interface OutboxItem {
   id: string;
@@ -12,6 +13,7 @@ interface OutboxItem {
 }
 
 export default function OfflineQueuePage() {
+  const t = useClientTranslations('offlineQueue');
   const [items, setItems] = useState<OutboxItem[]>([]);
   const [loading, setLoading] = useState(false);
   const channelRef = useRef<MessagePort | null>(null);

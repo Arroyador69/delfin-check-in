@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { useClientTranslations } from '@/hooks/useClientTranslations';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useTenant, hasLegalModule } from '@/hooks/useTenant';
@@ -59,6 +60,7 @@ interface ConsultaResult {
 }
 
 export default function MirComunicacionesPage() {
+  const t = useClientTranslations('mirStatus');
   const { tenant, loading: tenantLoading } = useTenant();
   const router = useRouter();
   const [comunicaciones, setComunicaciones] = useState<Comunicacion[]>([]);

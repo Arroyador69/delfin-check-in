@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useClientTranslations } from '@/hooks/useClientTranslations';
 import { 
   FileText, 
   Plus, 
@@ -49,6 +50,7 @@ interface EmpresaConfig {
 }
 
 export default function FacturasPage() {
+  const t = useClientTranslations('invoices');
   const [facturas, setFacturas] = useState<Factura[]>([]);
   const [empresaConfig, setEmpresaConfig] = useState<EmpresaConfig | null>(null);
   const [loading, setLoading] = useState(true);
