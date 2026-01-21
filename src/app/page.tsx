@@ -7,60 +7,12 @@ import AdminLayout from '@/components/AdminLayout';
 import { ArrowUpCircle } from 'lucide-react';
 import { getRoomNumber } from '@/lib/db';
 import UnitLimitWarning from '@/components/UnitLimitWarning';
-import { useTranslations } from 'next-intl';
+import { useClientTranslations } from '@/hooks/useClientTranslations';
 
 type FilterPeriod = 'total' | 'annual' | 'today' | 'thisWeek' | 'last7Days' | 'thisMonth' | 'last30Days' | 'custom';
 
-/**
- * Hook seguro para traducciones que funciona CON o SIN provider de i18n
- * - Si hay provider → usa traducciones normales
- * - Si NO hay provider → usa textos hardcoded en español
- */
-function useSafeTranslations(namespace: string) {
-  const fallbackTexts: Record<string, any> = {
-    'dashboard': {
-      'loadingDashboard': 'Cargando dashboard...',
-      'title': 'Delfín Check-in',
-      'subtitle': 'Gestión inteligente de habitaciones',
-      'connected': 'Conectado',
-      'upgradePlan': 'Mejorar Plan',
-      'logout': 'Cerrar Sesión',
-      'kpis': {
-        'rooms': 'Habitaciones',
-        'guestsToday': 'Huéspedes Hoy',
-        'activeReservations': 'Reservas Activas',
-        'occupancy': 'Ocupación',
-        'revenue': 'Ingresos Totales',
-        'commissionsPaid': 'Comisiones Pagadas',
-        'netIncome': 'Ingresos Netos',
-      },
-      'currentReservations': {
-        'title': 'Huéspedes Actuales',
-      },
-      'upcomingReservations': {
-        'title': 'Próximas Reservas',
-      },
-    },
-  };
-  
-  try {
-    return useTranslations(namespace);
-  } catch (error) {
-    console.log(`ℹ️ [Dashboard] Sin provider i18n, usando textos en español`);
-    // Retornar función que busca en fallbackTexts
-    return (key: string) => {
-      const keys = key.split('.');
-      let value: any = fallbackTexts[namespace];
-      for (const k of keys) {
-        value = value?.[k];
-      }
-      return value || key;
-    };
-  }
-}
-
 export default function HomePage() {
-  const t = useSafeTranslations('dashboard');
+  const t = useClientTranslations('dashboard');
   const [rooms, setRooms] = useState<any[]>([]);
   const [reservations, setReservations] = useState<any[]>([]);
   const [tenant, setTenant] = useState<any>(null);

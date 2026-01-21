@@ -4,47 +4,8 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Plus, X, Calendar, User, Bed, Euro, CreditCard, Download, Phone, Users, Globe, Edit } from 'lucide-react';
 import { getRoomNumber } from '@/lib/db';
-import { useTranslations } from 'next-intl';
+import { useClientTranslations } from '@/hooks/useClientTranslations';
 // Base de datos: Neon PostgreSQL
-
-/**
- * Hook seguro para traducciones que funciona CON o SIN provider de i18n
- */
-function useSafeTranslations(namespace: string) {
-  const fallbackTexts: Record<string, any> = {
-    'reservations': {
-      'loading': 'Cargando reservas...',
-      'error': 'Error al cargar las reservas',
-      'title': 'Reservas',
-      'subtitle': 'Crea y gestiona las reservas de tus clientes',
-    },
-    'common': {
-      'retry': 'Reintentar',
-      'save': 'Guardar',
-      'cancel': 'Cancelar',
-      'delete': 'Eliminar',
-      'edit': 'Editar',
-      'search': 'Buscar',
-      'loading': 'Cargando...',
-      'error': 'Error',
-      'success': 'Éxito',
-    },
-  };
-  
-  try {
-    return useTranslations(namespace);
-  } catch (error) {
-    console.log(`ℹ️ [Reservations] Sin provider i18n, usando textos en español`);
-    return (key: string) => {
-      const keys = key.split('.');
-      let value: any = fallbackTexts[namespace];
-      for (const k of keys) {
-        value = value?.[k];
-      }
-      return value || key;
-    };
-  }
-}
 
 interface Reservation {
   id: string;
@@ -74,8 +35,8 @@ interface Room {
 }
 
 export default function ReservationsPage() {
-  const t = useSafeTranslations('reservations');
-  const tCommon = useSafeTranslations('common');
+  const t = useClientTranslations('reservations');
+  const tCommon = useClientTranslations('common');
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [rooms, setRooms] = useState<Room[]>([]);
   const [loading, setLoading] = useState(true);

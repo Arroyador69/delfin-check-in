@@ -1,35 +1,40 @@
 'use client';
 
-import { useRouter, usePathname } from 'next/navigation';
-import { useLocale } from 'next-intl';
 import { locales, localeNames, localeFlags, type Locale, defaultLocale } from '@/i18n/config';
 import { useState, useRef, useEffect } from 'react';
 import { Globe } from 'lucide-react';
 
 /**
- * Hook seguro que no falla si no hay provider
+ * Obtiene el locale actual desde localStorage
  */
-function useSafeLocale(): Locale {
-  try {
-    return useLocale() as Locale;
-  } catch (error) {
-    // Si no hay provider, devolver locale por defecto
-    return defaultLocale;
+function getCurrentLocale(): Locale {
+  if (typeof window === 'undefined') return defaultLocale;
+  
+  const stored = localStorage.getItem('preferred-locale');
+  if (stored && locales.includes(stored as Locale)) {
+    return stored as Locale;
   }
+  
+  return defaultLocale;
 }
 
 /**
- * 🌍 SELECTOR DE IDIOMAS
+ * 🌍 SELECTOR DE IDIOMAS SIMPLE
  * 
  * Permite al usuario cambiar el idioma del PMS.
- * Guarda la preferencia en localStorage y redirige a la URL con el nuevo locale.
+ * Guarda la preferencia en localStorage y recarga la página.
+ * 
+ * NO requiere next-intl provider, funciona en cualquier página.
+ * NO cambia las URLs - todo permanece igual.
  */
 export default function LanguageSwitcher() {
-  const locale = useSafeLocale();
-  const router = useRouter();
-  const pathname = usePathname();
+  const [locale, setLocale] = useState<Locale>(defaultLocale);
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setLocale(getCurrentLocale());
+  }, []);
 
   // Cerrar el dropdown cuando se hace clic fuera
   useEffect(() => {
@@ -47,42 +52,27 @@ export default function LanguageSwitcher() {
     }
   }, [isOpen]);
 
-  const changeLanguage = async (newLocale: Locale) => {
-    // Guardar preferencia en localStorage
+  const handleChangeLanguage = (newLocale: Locale) => {
+    // Guardar en localStorage
     localStorage.setItem('preferred-locale', newLocale);
     
     // Cerrar dropdown
     setIsOpen(false);
     
-    // Construir nueva URL con el nuevo locale
-    // Reemplazar el locale actual en la URL
-    const segments = pathname.split('/');
-    if (locales.includes(segments[1] as Locale)) {
-      // Si el primer segmento es un locale, reemplazarlo
-      segments[1] = newLocale;
-    } else {
-      // Si no hay locale en la URL, agregarlo
-      segments.splice(1, 0, newLocale);
-    }
-    const newPath = segments.join('/');
-    
-    // Redirigir
-    router.push(newPath);
-    router.refresh(); // Forzar refresco para cargar nuevas traducciones
-    
-    // Guardar también en BD (API call)
-    try {
-      await fetch('/api/user/preferences', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ locale: newLocale }),
-      });
-    } catch (error) {
+    // Guardar también en BD (API call) - no bloqueante
+    fetch('/api/user/preferences', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ locale: newLocale }),
+    }).catch((error) => {
       console.error('Error guardando preferencia de idioma:', error);
       // No bloqueante - continuar aunque falle
-    }
+    });
+    
+    // Recargar la página para aplicar el nuevo idioma
+    window.location.reload();
   };
 
   return (
@@ -117,7 +107,7 @@ export default function LanguageSwitcher() {
           {locales.map((loc) => (
             <button
               key={loc}
-              onClick={() => changeLanguage(loc)}
+              onClick={() => handleChangeLanguage(loc)}
               className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-100 transition-colors flex items-center space-x-3 ${
                 loc === locale ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700'
               }`}
