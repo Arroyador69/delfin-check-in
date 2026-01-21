@@ -7,6 +7,18 @@ import { getRoomNumber } from '@/lib/db';
 import { useTranslations } from 'next-intl';
 // Base de datos: Neon PostgreSQL
 
+/**
+ * Hook seguro para traducciones que funciona CON o SIN provider de i18n
+ */
+function useSafeTranslations(namespace: string) {
+  try {
+    return useTranslations(namespace);
+  } catch (error) {
+    console.log(`ℹ️ [${namespace}] Sin provider i18n, usando textos por defecto`);
+    return (key: string) => key; // Retorna la key como fallback
+  }
+}
+
 interface Reservation {
   id: string;
   external_id: string;
@@ -35,8 +47,8 @@ interface Room {
 }
 
 export default function ReservationsPage() {
-  const t = useTranslations('reservations');
-  const tCommon = useTranslations('common');
+  const t = useSafeTranslations('reservations');
+  const tCommon = useSafeTranslations('common');
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [rooms, setRooms] = useState<Room[]>([]);
   const [loading, setLoading] = useState(true);

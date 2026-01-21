@@ -123,7 +123,8 @@ export default function Navigation() {
           </div>
           {/* Botón de menú (visible en móvil y escritorio) */}
           <div className="flex items-center space-x-2">
-            <LanguageSwitcher />
+            {/* TEMPORALMENTE DESHABILITADO: LanguageSwitcher hasta arreglar rutas i18n */}
+            {/* <LanguageSwitcher /> */}
             <PWAInstallButton />
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}

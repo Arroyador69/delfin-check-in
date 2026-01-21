@@ -5,6 +5,18 @@ import { Calendar as CalendarIcon, CalendarDays, RefreshCw, ChevronLeft, Chevron
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 
+/**
+ * Hook seguro para traducciones que funciona CON o SIN provider de i18n
+ */
+function useSafeTranslations(namespace: string) {
+  try {
+    return useTranslations(namespace);
+  } catch (error) {
+    console.log(`ℹ️ [${namespace}] Sin provider i18n, usando textos por defecto`);
+    return (key: string) => key; // Retorna la key como fallback
+  }
+}
+
 type Availability = {
   property_id: number
   date: string
@@ -35,7 +47,7 @@ function formatDate(d: Date) {
 }
 
 export default function CalendarPage() {
-  const t = useTranslations('calendar');
+  const t = useSafeTranslations('calendar');
   const [tenantId, setTenantId] = useState('')
   const [propertyId, setPropertyId] = useState('')
   const [start, setStart] = useState<string>(() => {
