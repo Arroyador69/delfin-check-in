@@ -44,9 +44,11 @@
     "update": "Update",
     "create": "Create",
     "manage": "Manage",
-    "settings": "Settings"
+    "settings": "Settings",
+    "pageNotFound": "Page Not Found",
+    "pageNotFoundDescription": "Sorry, the page you are looking for does not exist or has been moved.",
+    "backToHome": "Back to Home"
   },
-  
   "navigation": {
     "dashboard": "Dashboard",
     "reservations": "Reservations",
@@ -75,7 +77,6 @@
     "viewMyTenantPanel": "View My Tenant Panel",
     "superAdminDashboardTitle": "👑 SuperAdmin Dashboard"
   },
-  
   "dashboard": {
     "title": "Delfín Check-in",
     "subtitle": "Intelligent room management",
@@ -97,7 +98,6 @@
     "roomsAvailableToAdd": "✅ {remaining} rooms available to add",
     "upgradeLink": "Plan Upgrade",
     "updatePlan": "Update Plan",
-    
     "mirModule": {
       "title": "💰 MIR Module - Only €8/month (+ VAT)",
       "reminder": "Reminder:",
@@ -109,13 +109,11 @@
       "descriptionSuffix": "you can activate the MIR module, which includes automatic digital check-in and automatic submission of forms to the government.",
       "activateButton": "Activate MIR Module"
     },
-    
     "videoTutorial": {
       "title": "Video Tutorial - User Panel",
       "description": "Learn how to use all Delfín Check-in features",
       "watchOnYouTube": "Watch on YouTube"
     },
-    
     "periodFilters": {
       "title": "📊 Period Filters",
       "showing": "Showing data for:",
@@ -134,7 +132,6 @@
       "totalSince2020": "Total (since 2020)",
       "currentYear": "Current year"
     },
-    
     "kpis": {
       "rooms": "Rooms",
       "guestsToday": "Guests Today",
@@ -144,7 +141,6 @@
       "commissionsPaid": "Commissions Paid",
       "netIncome": "Net Income"
     },
-    
     "quickActions": {
       "reservations": {
         "title": "Reservations",
@@ -163,7 +159,6 @@
         "description": "Generate files for Tax Authority"
       }
     },
-    
     "currentReservations": {
       "title": "Current Reservations",
       "noReservations": "No reservations",
@@ -173,7 +168,6 @@
       "checkIn": "🟢 Check-in:",
       "checkOut": "🔴 Check-out:"
     },
-    
     "upcomingReservations": {
       "title": "Upcoming Reservations",
       "noReservations": "No reservations",
@@ -184,7 +178,6 @@
       "checkOutLabel": "🔴 Check-out:"
     }
   },
-  
   "auth": {
     "loginTitle": "Log In",
     "welcome": "Welcome!",
@@ -198,7 +191,6 @@
     "forgotPassword": "Forgot your password?",
     "secureConnection": "🔒 Secure connection with JWT authentication",
     "systemDescription": "Management system for tourist establishments",
-    
     "errors": {
       "enterEmail": "Please enter your email",
       "enterPassword": "Please enter your password",

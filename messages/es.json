@@ -44,7 +44,10 @@
     "update": "Actualizar",
     "create": "Crear",
     "manage": "Gestionar",
-    "settings": "Configuración"
+    "settings": "Configuración",
+    "pageNotFound": "Página No Encontrada",
+    "pageNotFoundDescription": "Lo sentimos, la página que buscas no existe o ha sido movida.",
+    "backToHome": "Volver al Inicio"
   },
   "navigation": {
     "dashboard": "Dashboard",
