@@ -33,9 +33,10 @@ export async function middleware(req: NextRequest) {
   // Preflight CORS
   if (req.method === 'OPTIONS') return NextResponse.next();
 
-  // Archivos estáticos - siempre permitir
+  // Archivos estáticos y rutas especiales de Next.js - siempre permitir
   if (
     pathname.startsWith('/_next') ||
+    pathname === '/_not-found' || // Ruta especial de Next.js 404
     pathname.startsWith('/static') ||
     pathname.startsWith('/images') ||
     pathname.startsWith('/fonts') ||
