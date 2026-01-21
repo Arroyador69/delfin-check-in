@@ -7,6 +7,7 @@ import Link from 'next/link';
 import AdminLayout from '@/components/AdminLayout';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import { useClientTranslations } from '@/hooks/useClientTranslations';
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '');
 
@@ -310,6 +311,7 @@ function PlanCalculator({ planId, onPriceChange }: { planId: PlanId; onPriceChan
 }
 
 export default function UpgradePlanPage() {
+  const t = useClientTranslations('upgradePlan');
   const router = useRouter();
   const [currentPlan, setCurrentPlan] = useState<string | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<PlanId | null>(null);

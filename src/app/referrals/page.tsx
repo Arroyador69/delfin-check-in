@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { UserPlus, Copy, Share2, TrendingUp, Users, CheckCircle, XCircle, Gift, Calendar } from 'lucide-react';
 import { useTenant } from '@/hooks/useTenant';
+import { useClientTranslations } from '@/hooks/useClientTranslations';
 
 interface ReferralStats {
   totalReferrals: number;
@@ -40,6 +41,7 @@ interface RewardItem {
 }
 
 export default function ReferralsPage() {
+  const t = useClientTranslations('referrals');
   const { tenant } = useTenant();
   const [stats, setStats] = useState<ReferralStats | null>(null);
   const [referrals, setReferrals] = useState<ReferralItem[]>([]);

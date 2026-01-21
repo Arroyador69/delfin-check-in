@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Home, Calendar, DollarSign, Save, Plus, Trash2 } from 'lucide-react';
 import { roomSchema, RoomFormData } from '@/lib/validation';
+import { useClientTranslations } from '@/hooks/useClientTranslations';
 
 // Tipo local para habitaciones
 interface Room {
@@ -15,6 +16,7 @@ interface Room {
 }
 
 export default function RoomsPage() {
+  const t = useClientTranslations('rooms');
   const router = useRouter();
   useEffect(() => {
     router.replace('/');
