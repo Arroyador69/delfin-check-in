@@ -268,50 +268,31 @@ export async function middleware(req: NextRequest) {
   const authTokenCookie = req.cookies.get('auth_token');
   const authToken = authTokenCookie?.value;
   
-  // Si no hay token o está vacío, redirigir al login (sin prefijo de locale)
+  // Si no hay token o está vacío, redirigir al login
   if (!authToken || authToken.trim() === '') {
-    if (!pathname.startsWith('/admin-login') && 
-        !pathname.startsWith('/forgot-password') &&
-        // Excluir rutas con locale del redirect
-        !locales.some(locale => pathname === `/${locale}` || pathname.startsWith(`/${locale}/`))
-    ) {
-      console.log('🔒 No hay token de autenticación válido, redirigiendo al login');
-      const loginUrl = new URL('/admin-login', req.url);
-      return NextResponse.redirect(loginUrl);
-    }
-  } else {
-    // Si hay token, verificar que sea válido y extraer tenant_id
-    try {
-      const payload = verifyTokenEdge(authToken);
-      if (payload?.tenantId) {
-        const requestHeaders = new Headers(req.headers);
-        requestHeaders.set('x-tenant-id', payload.tenantId);
-        console.log(`🔐 Tenant_id extraído del JWT para página: ${payload.tenantId}`);
-        return NextResponse.next({ request: { headers: requestHeaders } });
-      } else {
-        console.log('🔒 Token sin tenantId, redirigiendo al login');
-        const loginUrl = new URL('/admin-login', req.url);
-        return NextResponse.redirect(loginUrl);
-      }
-    } catch (error) {
-      console.log('🔒 Token inválido o expirado, redirigiendo al login');
-      const loginUrl = new URL('/admin-login', req.url);
-      return NextResponse.redirect(loginUrl);
-    }
+    console.log('🔒 No hay token de autenticación válido, redirigiendo al login');
+    const loginUrl = new URL('/admin-login', req.url);
+    return NextResponse.redirect(loginUrl);
   }
-
-  // Para rutas de superadmin, solo verificar que haya token
-  if (pathname.startsWith('/superadmin')) {
-    if (!authToken) {
-      console.log('🔒 No hay token, redirigiendo al login');
+  
+  // Si hay token, verificar que sea válido y extraer tenant_id
+  try {
+    const payload = verifyTokenEdge(authToken);
+    if (payload?.tenantId) {
+      const requestHeaders = new Headers(req.headers);
+      requestHeaders.set('x-tenant-id', payload.tenantId);
+      console.log(`🔐 Tenant_id extraído del JWT para página: ${payload.tenantId}`);
+      return NextResponse.next({ request: { headers: requestHeaders } });
+    } else {
+      console.log('🔒 Token sin tenantId, redirigiendo al login');
       const loginUrl = new URL('/admin-login', req.url);
       return NextResponse.redirect(loginUrl);
     }
-    console.log('🔍 Verificando acceso SuperAdmin...');
+  } catch (error: any) {
+    console.log(`🔒 Token inválido o expirado (${error.message}), redirigiendo al login`);
+    const loginUrl = new URL('/admin-login', req.url);
+    return NextResponse.redirect(loginUrl);
   }
-
-  console.log('🔍 Token encontrado, permitiendo acceso...');
-  return NextResponse.next();
 }
 
 export const config = {
