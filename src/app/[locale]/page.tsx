@@ -339,7 +339,7 @@ export default function HomePage() {
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
         <div className="text-center">
           <div className="loading mx-auto"></div>
-          <p className="mt-4 text-gray-600">Cargando dashboard...</p>
+          <p className="mt-4 text-gray-600">{t('loadingDashboard')}</p>
         </div>
       </div>
     );
@@ -359,8 +359,8 @@ export default function HomePage() {
             <div className="flex items-center">
               <div className="text-2xl sm:text-3xl mr-2 sm:mr-3">🐬</div>
               <div>
-                <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Delfín Check-in</h1>
-                <p className="text-xs sm:text-sm text-gray-600">Gestión inteligente de habitaciones</p>
+                <h1 className="text-xl sm:text-2xl font-bold text-gray-900">{t('title')}</h1>
+                <p className="text-xs sm:text-sm text-gray-600">{t('subtitle')}</p>
               </div>
             </div>
             <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 w-full sm:w-auto">
@@ -369,7 +369,7 @@ export default function HomePage() {
                   <svg className="w-3 h-3 sm:w-4 sm:h-4 text-green-500 mr-1 sm:mr-2" fill="currentColor" viewBox="0 0 20 20">
                     <circle cx="10" cy="10" r="4" />
                   </svg>
-                  Conectado
+                  {t('connected')}
                 </span>
               </div>
               <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
@@ -378,13 +378,13 @@ export default function HomePage() {
                   className="px-3 sm:px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-md hover:from-purple-700 hover:to-blue-700 transition-all duration-200 flex items-center justify-center space-x-2 shadow-md hover:shadow-lg text-sm sm:text-base"
                 >
                   <ArrowUpCircle className="w-4 h-4 sm:w-5 sm:h-5" />
-                  <span className="font-medium">Mejorar Plan</span>
+                  <span className="font-medium">{t('upgradePlan')}</span>
                 </Link>
                 <button
                   onClick={handleLogout}
                   className="px-3 sm:px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors text-sm sm:text-base"
                 >
-                  Cerrar Sesión
+                  {t('logout')}
                 </button>
               </div>
             </div>
@@ -694,7 +694,7 @@ export default function HomePage() {
           <div className="kpi">
             <div className="ic" style={{background:'#e0ecff'}}>🏠</div>
             <div>
-              <div className="meta">Habitaciones</div>
+              <div className="meta">{t('kpis.rooms')}</div>
               <div className="value">{totalRooms}</div>
               {tenant && (
                 <div className="text-xs text-gray-600 mt-1">
@@ -710,7 +710,7 @@ export default function HomePage() {
           <div className="kpi">
             <div className="ic" style={{background:'#dcfce7'}}>👥</div>
             <div>
-              <div className="meta">Huéspedes Hoy</div>
+              <div className="meta">{t('kpis.guestsToday')}</div>
               <div className="value">{guestsToday}</div>
             </div>
           </div>
@@ -718,7 +718,7 @@ export default function HomePage() {
           <div className="kpi">
             <div className="ic" style={{background:'#fef9c3'}}>📅</div>
             <div>
-              <div className="meta">Reservas Activas</div>
+              <div className="meta">{t('kpis.activeReservations')}</div>
               <div className="value">{confirmedReservations}</div>
             </div>
           </div>
@@ -726,7 +726,7 @@ export default function HomePage() {
           <div className="kpi">
             <div className="ic" style={{background:'#f5e8ff'}}>📈</div>
             <div>
-              <div className="meta">Ocupación</div>
+              <div className="meta">{t('kpis.occupancy')}</div>
               <div className="value">{occupancyRate}%</div>
             </div>
           </div>
@@ -737,7 +737,7 @@ export default function HomePage() {
           <div className="kpi" style={{gridColumn: 'span 2'}}>
             <div className="ic" style={{background:'#e5f4ff'}}>💶</div>
             <div>
-              <div className="meta">Facturación</div>
+              <div className="meta">{t('kpis.revenue')}</div>
               <div className="value">€{totalRevenue.toFixed(2)}</div>
             </div>
           </div>
@@ -745,7 +745,7 @@ export default function HomePage() {
           <div className="kpi">
             <div className="ic" style={{background:'#ffe4e6'}}>💳</div>
             <div>
-              <div className="meta">Comisiones Pagadas</div>
+              <div className="meta">{t('kpis.commissionsPaid')}</div>
               <div className="value">€{totalCommissions.toFixed(2)}</div>
             </div>
           </div>
@@ -753,7 +753,7 @@ export default function HomePage() {
           <div className="kpi">
             <div className="ic" style={{background:'#e0ecff'}}>📊</div>
             <div>
-              <div className="meta">Ganancia Neta</div>
+              <div className="meta">{t('kpis.netIncome')}</div>
               <div className="value">€{totalNetIncome.toFixed(2)}</div>
             </div>
           </div>
@@ -821,7 +821,7 @@ export default function HomePage() {
           <div className="card">
             <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
               <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-              Reservas Actuales
+              {t('currentReservations.title')}
               <span className="ml-2 text-sm font-normal text-gray-500">
                 ({reservations.filter(r => {
                   const checkIn = new Date(r.check_in);
@@ -889,7 +889,7 @@ export default function HomePage() {
           <div className="card">
             <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
               <div className="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
-              Próximas Reservas
+              {t('upcomingReservations.title')}
               <span className="ml-2 text-sm font-normal text-gray-500">
                 ({reservations.filter(r => {
                   const checkIn = new Date(r.check_in);

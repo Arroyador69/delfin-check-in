@@ -39,13 +39,13 @@ export default function AdminLoginPage() {
 
     // Validación básica
     if (!email || email.trim().length === 0) {
-      setError('Por favor, ingresa tu email')
+      setError(t('errors.enterEmail'))
       setIsLoading(false)
       return
     }
     
     if (!password || password.trim().length === 0) {
-      setError('Por favor, ingresa tu contraseña')
+      setError(t('errors.enterPassword'))
       setIsLoading(false)
       return
     }
@@ -53,7 +53,7 @@ export default function AdminLoginPage() {
     // Validar formato de email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(email)) {
-      setError('Por favor, ingresa un email válido')
+      setError(t('errors.invalidEmail'))
       setIsLoading(false)
       return
     }
@@ -91,13 +91,13 @@ export default function AdminLoginPage() {
         // Manejar errores específicos
         if (response.status === 429) {
           // Rate limit excedido
-          setError(data.message || 'Demasiados intentos. Por favor, espera antes de intentar nuevamente.')
+          setError(data.message || t('errors.tooManyAttempts'))
           setRateLimitInfo({
             retryAfter: data.retryAfter
           })
         } else if (response.status === 401) {
           // Credenciales inválidas
-          setError(data.message || 'Contraseña incorrecta')
+          setError(data.message || t('errors.incorrectPassword'))
           if (data.remaining !== undefined) {
             setRateLimitInfo({
               remaining: data.remaining
@@ -105,7 +105,7 @@ export default function AdminLoginPage() {
           }
         } else {
           // Otros errores
-          setError(data.message || 'Error al iniciar sesión')
+          setError(data.message || t('errors.loginError'))
         }
         
         setEmail('')
@@ -113,7 +113,7 @@ export default function AdminLoginPage() {
       }
     } catch (error) {
       console.error('Error en login:', error)
-      setError('Error de conexión. Por favor, verifica tu conexión a internet.')
+      setError(t('errors.connectionError'))
     } finally {
       setIsLoading(false)
     }
@@ -133,7 +133,7 @@ export default function AdminLoginPage() {
               Delfín Check-in
             </h1>
             <p className="text-blue-100 text-center mt-1 text-sm">
-              Iniciar Sesión
+              {t('loginTitle')}
             </p>
           </div>
 
@@ -149,10 +149,10 @@ export default function AdminLoginPage() {
                   </div>
                 </div>
                 <h2 className="text-xl font-semibold text-gray-900 mb-2">
-                  ¡Bienvenido!
+                  {t('welcome')}
                 </h2>
                 <p className="text-gray-600">
-                  Redirigiendo al dashboard...
+                  {t('redirecting')}
                 </p>
                 <div className="mt-4">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
@@ -163,7 +163,7 @@ export default function AdminLoginPage() {
                 {/* Campo de email */}
                 <div>
                   <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                    Email
+                    {t('emailLabel')}
                   </label>
                   <input
                     id="email"
@@ -171,7 +171,7 @@ export default function AdminLoginPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none"
-                    placeholder="tu@email.com"
+                    placeholder={t('emailPlaceholder')}
                     disabled={isLoading}
                     autoFocus
                   />
@@ -180,7 +180,7 @@ export default function AdminLoginPage() {
                 {/* Campo de contraseña */}
                 <div>
                   <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                    Contraseña
+                    {t('passwordLabel')}
                   </label>
                   <input
                     id="password"
@@ -188,7 +188,7 @@ export default function AdminLoginPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none"
-                    placeholder="Ingresa tu contraseña"
+                    placeholder={t('passwordPlaceholder')}
                     disabled={isLoading}
                   />
                 </div>
@@ -234,10 +234,10 @@ export default function AdminLoginPage() {
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                       </svg>
-                      Verificando...
+                      {t('verifying')}
                     </span>
                   ) : (
-                    'Iniciar Sesión'
+                    t('loginButton')
                   )}
                 </button>
 
@@ -247,7 +247,7 @@ export default function AdminLoginPage() {
                     href="/forgot-password" 
                     className="text-sm text-blue-600 hover:text-blue-800 hover:underline transition-colors"
                   >
-                    ¿Has olvidado tu contraseña?
+                    {t('forgotPassword')}
                   </Link>
                 </div>
               </form>
@@ -257,7 +257,7 @@ export default function AdminLoginPage() {
           {/* Footer */}
           <div className="bg-gray-50 px-8 py-4 border-t border-gray-100">
             <p className="text-xs text-center text-gray-500 mb-2">
-              🔒 Conexión segura con autenticación JWT
+              {t('secureConnection')}
             </p>
           </div>
         </div>
@@ -265,7 +265,7 @@ export default function AdminLoginPage() {
         {/* Información adicional */}
         <div className="mt-6 text-center text-sm text-gray-600">
           <p>
-            Sistema de gestión para establecimientos turísticos
+            {t('systemDescription')}
           </p>
         </div>
 
