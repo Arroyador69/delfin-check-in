@@ -5,7 +5,8 @@ import createNextIntlPlugin from 'next-intl/plugin';
 const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 
 const nextConfig: NextConfig = {
-  output: 'standalone', // Deshabilitar SSG, todo dinámico
+  // output: 'standalone' REMOVIDO - causaba conflictos con next-intl
+  // Usamos dynamic: 'force-dynamic' en layouts en su lugar
   serverExternalPackages: ['pdfkit'],
   images: {
     domains: ['localhost', 'supabase.co'],
@@ -43,10 +44,9 @@ const nextConfig: NextConfig = {
 };
 
 // Wrapping con next-intl primero, luego Sentry
-// TEMPORALMENTE DESACTIVADO para fix de emergencia
-// const configWithIntl = withNextIntl(nextConfig);
+const configWithIntl = withNextIntl(nextConfig);
 
-export default withSentryConfig(nextConfig, {
+export default withSentryConfig(configWithIntl, {
   // For all available options, see:
   // https://github.com/getsentry/sentry-webpack-plugin#options
 
