@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { MessageSquare, Save, Trash2, Send, Settings, Eye, EyeOff } from 'lucide-react';
+import { useClientTranslations } from '@/hooks/useClientTranslations';
 
 // Tipo para plantillas de mensajes
 interface MessageTemplate {
@@ -47,6 +48,7 @@ interface WhatsAppConfig {
 }
 
 export default function MessagesPage() {
+  const t = useClientTranslations('messages');
   const router = useRouter();
   useEffect(() => {
     router.replace('/');

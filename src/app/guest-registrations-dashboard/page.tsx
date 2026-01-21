@@ -6,6 +6,7 @@ import AdminLayout from '@/components/AdminLayout';
 import ExportButton, { normalizeData } from './ExportButton';
 import { useTenant, hasLegalModule } from '@/hooks/useTenant';
 import { useRouter } from 'next/navigation';
+import { useClientTranslations } from '@/hooks/useClientTranslations';
 
 const COUNTRIES: Record<string, string> = {
   'ES': 'España',
@@ -158,6 +159,7 @@ const getTravelerData = (registration: GuestRegistration) => {
 };
 
 export default function GuestRegistrationsDashboard() {
+  const t = useClientTranslations('guestRegistrations');
   const { tenant, loading: tenantLoading } = useTenant();
   const router = useRouter();
   const [registrations, setRegistrations] = useState<GuestRegistration[]>([]);

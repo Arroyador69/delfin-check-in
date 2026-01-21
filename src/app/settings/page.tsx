@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { Settings } from 'lucide-react';
+import { useClientTranslations } from '@/hooks/useClientTranslations';
 
 export default function SettingsPage() {
+  const t = useClientTranslations('settings');
   const [loading, setLoading] = useState(false);
   
   // Estados para configuración de habitaciones/apartamentos
