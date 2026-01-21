@@ -15,6 +15,9 @@ import '@sentry/nextjs';
 
 const inter = Inter({ subsets: ["latin"] });
 
+// Forzar rendering dinámico para evitar errores de SSG con i18n
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: "Delfín Check-in 🐬",
   description: "Gestión inteligente de habitaciones Airbnb y Booking.com",
