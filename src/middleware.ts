@@ -114,7 +114,8 @@ export async function middleware(req: NextRequest) {
     pathname.startsWith('/superadmin') || // SuperAdmin NO traduce
     pathname.startsWith('/book/') || // Booking engine externo
     pathname === '/admin-login' ||
-    pathname === '/forgot-password'
+    pathname === '/forgot-password' ||
+    pathname === '/' // Ruta raíz se sirve desde src/app/page.tsx SIN redirect
   );
   
   // Si la ruta no debe tener i18n, continuar sin aplicar intlMiddleware
@@ -127,6 +128,7 @@ export async function middleware(req: NextRequest) {
     );
     
     // Si NO tiene locale, aplicar intlMiddleware para detectar y redirect
+    // NOTA: La ruta raíz "/" ya está excluida arriba, así que esto solo aplica a otras rutas
     if (!pathnameHasLocale) {
       // Detectar idioma preferido del navegador
       const acceptLanguage = req.headers.get('accept-language') || '';
