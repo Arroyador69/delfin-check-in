@@ -14,11 +14,31 @@ const AdMenu = dynamic(() => import('./AdMenu'), { ssr: false });
 
 // Hook seguro que no falla si no hay provider
 function useSafeTranslations(namespace: string) {
+  // Textos hardcoded en español para cuando NO hay provider de i18n
+  const fallbackTexts: Record<string, string> = {
+    'dashboard': 'Dashboard',
+    'reservations': 'Reservas',
+    'directReservations': 'Reservas Directas',
+    'calendar': 'Calendario',
+    'guestRegistrations': 'Registros de formularios',
+    'invoices': 'Facturas',
+    'mirStatus': 'Estado Envíos MIR',
+    'costCalculator': 'Calculadora de Costos',
+    'exportAEAT': 'Exportar AEAT',
+    'offlineQueue': 'Cola offline',
+    'audit': 'Bitácora',
+    'referrals': 'Referidos',
+    'settings': 'Configuración',
+    'superAdminDashboardTitle': '👑 SuperAdmin Dashboard',
+    'logout': 'Cerrar Sesión',
+  };
+  
   try {
     return useTranslations(namespace);
   } catch (error) {
-    // Si no hay provider, devolver función que retorna la key
-    return (key: string) => key;
+    // Si no hay provider, devolver función que retorna texto en español
+    console.log("ℹ️ [Navigation] Sin provider i18n, usando textos en español");
+    return (key: string) => fallbackTexts[key] || key;
   }
 }
 

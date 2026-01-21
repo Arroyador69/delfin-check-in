@@ -21,16 +21,20 @@ export default async function LocaleLayout({
   children: React.ReactNode;
   params: { locale: string };
 }) {
+  console.log(`🌍 [LocaleLayout] Iniciando con locale: ${locale}`);
+  
   // Validar que el locale sea soportado
   if (!locales.includes(locale as any)) {
+    console.error(`❌ [LocaleLayout] Locale no soportado: ${locale}`);
     notFound();
   }
 
   // Cargar mensajes del locale
   const messages = await getMessages();
+  console.log(`✅ [LocaleLayout] Mensajes cargados. Keys: ${Object.keys(messages).length > 0 ? Object.keys(messages).join(', ') : 'VACÍO'}`);
 
   return (
-    <NextIntlClientProvider messages={messages}>
+    <NextIntlClientProvider messages={messages} locale={locale}>
       {children}
     </NextIntlClientProvider>
   );
