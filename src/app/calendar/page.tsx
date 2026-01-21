@@ -9,11 +9,25 @@ import { useTranslations } from 'next-intl'
  * Hook seguro para traducciones que funciona CON o SIN provider de i18n
  */
 function useSafeTranslations(namespace: string) {
+  const fallbackTexts: Record<string, any> = {
+    'calendar': {
+      'title': 'Calendario de Disponibilidad',
+      'subtitle': 'Visualiza y gestiona la disponibilidad de tus propiedades',
+    },
+  };
+  
   try {
     return useTranslations(namespace);
   } catch (error) {
-    console.log(`ℹ️ [${namespace}] Sin provider i18n, usando textos por defecto`);
-    return (key: string) => key; // Retorna la key como fallback
+    console.log(`ℹ️ [Calendar] Sin provider i18n, usando textos en español`);
+    return (key: string) => {
+      const keys = key.split('.');
+      let value: any = fallbackTexts[namespace];
+      for (const k of keys) {
+        value = value?.[k];
+      }
+      return value || key;
+    };
   }
 }
 
