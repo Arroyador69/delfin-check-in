@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { pool } from '@/lib/db';
+import { sql } from '@/lib/db';
 import { verifyToken } from '@/lib/auth';
 
 /**
@@ -48,16 +48,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Guardar preferencia en BD
-    // Nota: Usamos JSONB para almacenar preferencias de manera flexible
-    const query = `
+    // Guardar preferencia en BD usando Vercel Postgres
+    const result = await sql`
       UPDATE tenants 
-      SET preferences = COALESCE(preferences, '{}'::jsonb) || jsonb_build_object('locale', $1::text)
-      WHERE id = $2
+      SET preferences = COALESCE(preferences, '{}'::jsonb) || jsonb_build_object('locale', ${locale}::text)
+      WHERE id = ${tenantId}
       RETURNING id, preferences
     `;
-
-    const result = await pool.query(query, [locale, tenantId]);
 
     if (result.rowCount === 0) {
       return NextResponse.json(
@@ -112,14 +109,12 @@ export async function GET(req: NextRequest) {
 
     const tenantId = payload.tenantId;
 
-    // Obtener preferencias de BD
-    const query = `
+    // Obtener preferencias de BD usando Vercel Postgres
+    const result = await sql`
       SELECT preferences 
       FROM tenants 
-      WHERE id = $1
+      WHERE id = ${tenantId}
     `;
-
-    const result = await pool.query(query, [tenantId]);
 
     if (result.rowCount === 0) {
       return NextResponse.json(

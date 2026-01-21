@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
-import { getTenantFromRequest } from '@/lib/auth';
+import { getTenantFromRequest } from '@/lib/permissions';
 
 /**
  * GET /api/referrals/rewards

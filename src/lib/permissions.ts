@@ -31,7 +31,7 @@ function verifyTokenSilently(token: string): any | null {
  * Soporta tanto cookies (web) como Bearer tokens (app móvil)
  * Si hay tenantId en header, solo verifica si realmente es necesario
  */
-function isSuperAdmin(req: NextRequest): boolean {
+export function isSuperAdmin(req: NextRequest): boolean {
   try {
     // Si hay tenantId en header, podemos saltar la verificación de superadmin
     // porque el interceptor ya verificó y refrescó el token si era necesario

@@ -5,15 +5,12 @@
 -- Esta migración añade la columna 'preferences' a la tabla tenants
 -- para almacenar preferencias de usuario, incluyendo el idioma (locale).
 --
--- Fecha: 2026-01-21
--- Autor: Sistema i18n
---
 -- ═══════════════════════════════════════════════════════════
 
--- Añadir columna preferences si no existe
--- Usamos JSONB para flexibilidad y rendimiento
+-- Ejecutar todo en un solo bloque para evitar errores de sintaxis
 DO $$ 
 BEGIN
+    -- Añadir columna preferences si no existe
     IF NOT EXISTS (
         SELECT 1 
         FROM information_schema.columns 
@@ -27,20 +24,26 @@ BEGIN
     ELSE
         RAISE NOTICE '⚠️ Columna preferences ya existe en tenants';
     END IF;
+    
+    -- Crear índice GIN para búsquedas eficientes en JSONB (si no existe)
+    IF NOT EXISTS (
+        SELECT 1 
+        FROM pg_indexes 
+        WHERE indexname = 'idx_tenants_preferences'
+    ) THEN
+        CREATE INDEX idx_tenants_preferences ON tenants USING GIN (preferences);
+        RAISE NOTICE '✅ Índice GIN creado para preferences';
+    ELSE
+        RAISE NOTICE '⚠️ Índice idx_tenants_preferences ya existe';
+    END IF;
+    
+    RAISE NOTICE '✅ Migración completada con éxito';
 END $$;
 
--- Crear índice GIN para búsquedas eficientes en JSONB
-CREATE INDEX IF NOT EXISTS idx_tenants_preferences 
-ON tenants USING GIN (preferences);
-
-RAISE NOTICE '✅ Índice GIN creado para preferences';
-
--- Comentario descriptivo
+-- Añadir comentario descriptivo
 COMMENT ON COLUMN tenants.preferences IS 
 'Preferencias del usuario en formato JSONB. Incluye: locale (idioma), theme, notifications, etc.';
 
 -- Ejemplo de uso:
 -- UPDATE tenants SET preferences = '{"locale": "en", "theme": "dark"}'::jsonb WHERE id = 1;
 -- SELECT preferences->>'locale' AS locale FROM tenants WHERE id = 1;
-
-RAISE NOTICE '✅ Migración completada: columna preferences añadida con éxito';

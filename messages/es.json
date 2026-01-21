@@ -46,7 +46,6 @@
     "manage": "Gestionar",
     "settings": "Configuración"
   },
-  
   "navigation": {
     "dashboard": "Dashboard",
     "reservations": "Reservas",
@@ -75,7 +74,6 @@
     "viewMyTenantPanel": "Ver Mi Panel Tenant",
     "superAdminDashboardTitle": "👑 SuperAdmin Dashboard"
   },
-  
   "dashboard": {
     "title": "Delfín Check-in",
     "subtitle": "Gestión inteligente de habitaciones",
@@ -97,7 +95,6 @@
     "roomsAvailableToAdd": "✅ {remaining} habitaciones disponibles para añadir",
     "upgradeLink": "Mejora de Plan",
     "updatePlan": "Actualizar Plan",
-    
     "mirModule": {
       "title": "💰 Módulo MIR - Solo 8€/mes (+ IVA)",
       "reminder": "Recordatorio:",
@@ -109,13 +106,11 @@
       "descriptionSuffix": "puedes tener el módulo MIR activado, que incluye check-in digital automático y envío automático de formularios al gobierno.",
       "activateButton": "Activar Módulo MIR"
     },
-    
     "videoTutorial": {
       "title": "Video Tutorial - Panel de Usuario",
       "description": "Aprende a usar todas las funcionalidades de Delfín Check-in",
       "watchOnYouTube": "Ver en YouTube"
     },
-    
     "periodFilters": {
       "title": "📊 Filtros de Período",
       "showing": "Mostrando datos para:",
@@ -134,7 +129,6 @@
       "totalSince2020": "Total (desde 2020)",
       "currentYear": "Año actual"
     },
-    
     "kpis": {
       "rooms": "Habitaciones",
       "guestsToday": "Huéspedes Hoy",
@@ -144,7 +138,6 @@
       "commissionsPaid": "Comisiones Pagadas",
       "netIncome": "Ganancia Neta"
     },
-    
     "quickActions": {
       "reservations": {
         "title": "Reservas",
@@ -163,7 +156,6 @@
         "description": "Generar archivos para Hacienda"
       }
     },
-    
     "currentReservations": {
       "title": "Reservas Actuales",
       "noReservations": "No hay reservas",
@@ -173,7 +165,6 @@
       "checkIn": "🟢 Check-in:",
       "checkOut": "🔴 Check-out:"
     },
-    
     "upcomingReservations": {
       "title": "Próximas Reservas",
       "noReservations": "No hay reservas",
@@ -184,7 +175,6 @@
       "checkOutLabel": "🔴 Check-out:"
     }
   },
-  
   "auth": {
     "loginTitle": "Iniciar Sesión",
     "welcome": "¡Bienvenido!",
@@ -198,7 +188,6 @@
     "forgotPassword": "¿Has olvidado tu contraseña?",
     "secureConnection": "🔒 Conexión segura con autenticación JWT",
     "systemDescription": "Sistema de gestión para establecimientos turísticos",
-    
     "errors": {
       "enterEmail": "Por favor, ingresa tu email",
       "enterPassword": "Por favor, ingresa tu contraseña",
@@ -213,5 +202,277 @@
       "retryIn": "Podrás intentar nuevamente en {minutes} minuto",
       "retryInPlural": "Podrás intentar nuevamente en {minutes} minutos"
     }
+  },
+  "reservations": {
+    "title": "Reservas",
+    "loading": "Cargando reservas...",
+    "error": "Error al cargar reservas",
+    "noReservations": "No hay reservas",
+    "createReservation": "Crear Reserva",
+    "editReservation": "Editar Reserva",
+    "deleteReservation": "Eliminar Reserva",
+    "confirmDelete": "¿Estás seguro de eliminar esta reserva?",
+    "deleteWarning": "Esta acción no se puede deshacer",
+    "searchPlaceholder": "Buscar por nombre, teléfono o email...",
+    "searching": "Buscando...",
+    "totalReservations": "Total de reservas: {count}",
+    "filterByStatus": "Filtrar por estado",
+    "allStatuses": "Todos los estados",
+    "statusConfirmed": "Confirmada",
+    "statusCancelled": "Cancelada",
+    "statusCompleted": "Completada",
+    "guestName": "Nombre del huésped",
+    "guestEmail": "Email del huésped",
+    "guestPhone": "Teléfono del huésped",
+    "guestCount": "Número de huéspedes",
+    "room": "Habitación",
+    "selectRoom": "Selecciona habitación",
+    "checkIn": "Check-in",
+    "checkOut": "Check-out",
+    "nights": "{count} noche",
+    "nightsPlural": "{count} noches",
+    "totalPrice": "Precio total",
+    "guestPaid": "Pagado por huésped",
+    "platformCommission": "Comisión plataforma",
+    "netIncome": "Ingreso neto",
+    "currency": "Moneda",
+    "status": "Estado",
+    "channel": "Canal",
+    "channelAirbnb": "Airbnb",
+    "channelBooking": "Booking.com",
+    "channelManual": "Manual",
+    "actions": "Acciones",
+    "created": "Creada",
+    "updated": "Actualizada",
+    "saving": "Guardando...",
+    "deleting": "Eliminando...",
+    "createSuccess": "Reserva creada correctamente",
+    "updateSuccess": "Reserva actualizada correctamente",
+    "deleteSuccess": "Reserva eliminada correctamente",
+    "createError": "Error al crear reserva",
+    "updateError": "Error al actualizar reserva",
+    "deleteError": "Error al eliminar reserva",
+    "requiredFields": "Por favor completa todos los campos obligatorios",
+    "invalidDates": "Las fechas son inválidas",
+    "checkOutBeforeCheckIn": "El check-out debe ser después del check-in",
+    "reservationDetails": "Detalles de la reserva"
+  },
+  "calendar": {
+    "title": "Calendario",
+    "loading": "Cargando calendario...",
+    "monthView": "Vista mensual",
+    "weekView": "Vista semanal",
+    "dayView": "Vista diaria",
+    "today": "Hoy",
+    "previousMonth": "Mes anterior",
+    "nextMonth": "Mes siguiente",
+    "reservationTooltip": "{guestName} - Hab. {room}",
+    "checkInToday": "Check-in hoy",
+    "checkOutToday": "Check-out hoy",
+    "occupied": "Ocupado",
+    "available": "Disponible",
+    "legend": "Leyenda",
+    "noReservationsThisMonth": "No hay reservas este mes",
+    "clickToViewDetails": "Haz clic para ver detalles",
+    "createReservationForDate": "Crear reserva para {date}"
+  },
+  "guestRegistrations": {
+    "title": "Registros de Huéspedes",
+    "subtitle": "Gestiona los formularios de registro de huéspedes",
+    "loading": "Cargando registros...",
+    "noRegistrations": "No hay registros de huéspedes",
+    "totalRegistrations": "{count} registros",
+    "exportXML": "Exportar XML",
+    "exportCSV": "Exportar CSV",
+    "exportPDF": "Exportar PDF",
+    "exporting": "Exportando...",
+    "exportSuccess": "Archivo exportado correctamente",
+    "exportError": "Error al exportar archivo",
+    "registrationDetails": "Detalles del registro",
+    "guestName": "Nombre completo",
+    "documentType": "Tipo de documento",
+    "documentNumber": "Número de documento",
+    "nationality": "Nacionalidad",
+    "dateOfBirth": "Fecha de nacimiento",
+    "gender": "Género",
+    "male": "Masculino",
+    "female": "Femenino",
+    "other": "Otro",
+    "address": "Dirección",
+    "city": "Ciudad",
+    "country": "País",
+    "arrivalDate": "Fecha de llegada",
+    "departureDate": "Fecha de salida",
+    "roomNumber": "Número de habitación",
+    "registrationDate": "Fecha de registro",
+    "status": "Estado",
+    "statusPending": "Pendiente",
+    "statusCompleted": "Completado",
+    "statusSent": "Enviado al gobierno",
+    "statusError": "Error al enviar",
+    "sendToGovernment": "Enviar al Ministerio",
+    "sending": "Enviando...",
+    "sendSuccess": "Enviado correctamente al Ministerio del Interior",
+    "sendError": "Error al enviar al gobierno",
+    "viewXML": "Ver XML",
+    "downloadForm": "Descargar formulario",
+    "searchPlaceholder": "Buscar por nombre, documento o nacionalidad..."
+  },
+  "settings": {
+    "title": "Configuración",
+    "subtitle": "Gestiona la configuración de tu cuenta y propiedades",
+    "tabs": {
+      "general": "General",
+      "properties": "Propiedades",
+      "integrations": "Integraciones",
+      "billing": "Facturación",
+      "account": "Cuenta",
+      "mir": "MIR",
+      "checkinInstructions": "Instrucciones Check-in",
+      "payments": "Pagos"
+    },
+    "general": {
+      "title": "Configuración General",
+      "businessName": "Nombre del negocio",
+      "contactEmail": "Email de contacto",
+      "contactPhone": "Teléfono de contacto",
+      "address": "Dirección",
+      "taxId": "NIF/CIF",
+      "language": "Idioma",
+      "timezone": "Zona horaria",
+      "currency": "Moneda",
+      "dateFormat": "Formato de fecha",
+      "timeFormat": "Formato de hora"
+    },
+    "properties": {
+      "title": "Mis Propiedades",
+      "addProperty": "Añadir Propiedad",
+      "editProperty": "Editar Propiedad",
+      "deleteProperty": "Eliminar Propiedad",
+      "propertyName": "Nombre de la propiedad",
+      "propertyType": "Tipo de propiedad",
+      "address": "Dirección completa",
+      "rooms": "Número de habitaciones",
+      "capacity": "Capacidad máxima",
+      "description": "Descripción",
+      "amenities": "Servicios",
+      "checkInTime": "Hora de check-in",
+      "checkOutTime": "Hora de check-out"
+    },
+    "integrations": {
+      "title": "Integraciones",
+      "airbnb": "Airbnb",
+      "booking": "Booking.com",
+      "google": "Google Calendar",
+      "stripe": "Stripe Payments",
+      "connected": "Conectado",
+      "notConnected": "No conectado",
+      "connect": "Conectar",
+      "disconnect": "Desconectar",
+      "apiKey": "API Key",
+      "apiSecret": "API Secret",
+      "testConnection": "Probar conexión",
+      "testing": "Probando...",
+      "connectionSuccess": "Conexión exitosa",
+      "connectionError": "Error de conexión"
+    },
+    "billing": {
+      "title": "Facturación y Planes",
+      "currentPlan": "Plan actual",
+      "planPrice": "€{price}/mes",
+      "planFeatures": "Características del plan",
+      "upgradeNow": "Mejorar ahora",
+      "billingHistory": "Historial de facturas",
+      "invoice": "Factura",
+      "date": "Fecha",
+      "amount": "Monto",
+      "status": "Estado",
+      "paid": "Pagada",
+      "pending": "Pendiente",
+      "failed": "Fallida",
+      "download": "Descargar",
+      "paymentMethod": "Método de pago",
+      "addPaymentMethod": "Añadir método de pago",
+      "updatePaymentMethod": "Actualizar método de pago",
+      "cardNumber": "Número de tarjeta",
+      "expiryDate": "Fecha de expiración",
+      "cvv": "CVV",
+      "billingAddress": "Dirección de facturación"
+    },
+    "account": {
+      "title": "Cuenta de Usuario",
+      "profile": "Perfil",
+      "name": "Nombre completo",
+      "email": "Email",
+      "phone": "Teléfono",
+      "changePassword": "Cambiar contraseña",
+      "currentPassword": "Contraseña actual",
+      "newPassword": "Nueva contraseña",
+      "confirmPassword": "Confirmar contraseña",
+      "updateProfile": "Actualizar perfil",
+      "updating": "Actualizando...",
+      "updateSuccess": "Perfil actualizado correctamente",
+      "updateError": "Error al actualizar perfil",
+      "passwordMismatch": "Las contraseñas no coinciden",
+      "passwordTooShort": "La contraseña debe tener al menos 8 caracteres",
+      "deleteAccount": "Eliminar cuenta",
+      "deleteAccountWarning": "Esta acción es permanente y no se puede deshacer",
+      "deleteAccountConfirm": "¿Estás seguro de que quieres eliminar tu cuenta?"
+    },
+    "saving": "Guardando...",
+    "saveSuccess": "Cambios guardados correctamente",
+    "saveError": "Error al guardar cambios"
+  },
+  "upgradePlan": {
+    "title": "Mejorar Plan",
+    "subtitle": "Elige el plan perfecto para tu negocio",
+    "currentPlan": "Plan actual",
+    "monthly": "Mensual",
+    "annually": "Anual",
+    "saveWithAnnual": "Ahorra {percentage}% con plan anual",
+    "mostPopular": "Más popular",
+    "recommended": "Recomendado",
+    "selectPlan": "Seleccionar plan",
+    "upgradeNow": "Mejorar ahora",
+    "downgrade": "Cambiar a este plan",
+    "contactSales": "Contactar ventas",
+    "features": "Características incluidas",
+    "roomsIncluded": "{count} habitación incluida",
+    "roomsIncludedPlural": "{count} habitaciones incluidas",
+    "unlimitedRooms": "Habitaciones ilimitadas",
+    "basicSupport": "Soporte básico",
+    "prioritySupport": "Soporte prioritario",
+    "dedicatedSupport": "Soporte dedicado 24/7",
+    "multiProperty": "Múltiples propiedades",
+    "advancedReporting": "Informes avanzados",
+    "apiAccess": "Acceso a API",
+    "whiteLabel": "Marca blanca",
+    "customIntegrations": "Integraciones personalizadas",
+    "pricing": {
+      "free": {
+        "name": "Gratuito",
+        "price": "0",
+        "description": "Perfecto para empezar"
+      },
+      "basic": {
+        "name": "Básico",
+        "price": "29",
+        "description": "Para propiedades pequeñas"
+      },
+      "professional": {
+        "name": "Profesional",
+        "price": "79",
+        "description": "Para negocios en crecimiento"
+      },
+      "enterprise": {
+        "name": "Empresa",
+        "price": "Personalizado",
+        "description": "Para grandes operaciones"
+      }
+    },
+    "compareFeatures": "Comparar características",
+    "faq": "Preguntas frecuentes",
+    "needHelp": "¿Necesitas ayuda para elegir?",
+    "talkToExpert": "Habla con un experto"
   }
 }
