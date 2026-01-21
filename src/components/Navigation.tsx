@@ -12,12 +12,22 @@ import LanguageSwitcher from './LanguageSwitcher';
 const PWAInstallButton = dynamic(() => import('./PWAInstallButton'), { ssr: false });
 const AdMenu = dynamic(() => import('./AdMenu'), { ssr: false });
 
+// Hook seguro que no falla si no hay provider
+function useSafeTranslations(namespace: string) {
+  try {
+    return useTranslations(namespace);
+  } catch (error) {
+    // Si no hay provider, devolver función que retorna la key
+    return (key: string) => key;
+  }
+}
+
 export default function Navigation() {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isPlatformAdmin, setIsPlatformAdmin] = useState(false);
   const { tenant } = useTenant();
-  const t = useTranslations('navigation');
+  const t = useSafeTranslations('navigation');
 
   useEffect(() => {
     // Obtener información del usuario para saber si es superadmin

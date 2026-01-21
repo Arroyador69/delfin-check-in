@@ -2,9 +2,21 @@
 
 import { useRouter, usePathname } from 'next/navigation';
 import { useLocale } from 'next-intl';
-import { locales, localeNames, localeFlags, type Locale } from '@/i18n/config';
+import { locales, localeNames, localeFlags, type Locale, defaultLocale } from '@/i18n/config';
 import { useState, useRef, useEffect } from 'react';
 import { Globe } from 'lucide-react';
+
+/**
+ * Hook seguro que no falla si no hay provider
+ */
+function useSafeLocale(): Locale {
+  try {
+    return useLocale() as Locale;
+  } catch (error) {
+    // Si no hay provider, devolver locale por defecto
+    return defaultLocale;
+  }
+}
 
 /**
  * 🌍 SELECTOR DE IDIOMAS
@@ -13,7 +25,7 @@ import { Globe } from 'lucide-react';
  * Guarda la preferencia en localStorage y redirige a la URL con el nuevo locale.
  */
 export default function LanguageSwitcher() {
-  const locale = useLocale() as Locale;
+  const locale = useSafeLocale();
   const router = useRouter();
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
