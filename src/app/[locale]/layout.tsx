@@ -10,6 +10,10 @@ import { locales } from '@/i18n/config';
  * Las rutas bajo [locale]/ tendrán acceso a traducciones.
  */
 
+// Forzar rendering dinámico para TODAS las páginas bajo [locale]
+export const dynamic = 'force-dynamic';
+export const dynamicParams = true;
+
 export default async function LocaleLayout({
   children,
   params: { locale }
