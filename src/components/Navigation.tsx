@@ -6,6 +6,8 @@ import { Home, Bed, Calendar, Users, Settings, Menu, X, TrendingUp, FileText, Do
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { useTenant, hasLegalModule } from '@/hooks/useTenant';
+import { useTranslations } from 'next-intl';
+import LanguageSwitcher from './LanguageSwitcher';
 
 const PWAInstallButton = dynamic(() => import('./PWAInstallButton'), { ssr: false });
 const AdMenu = dynamic(() => import('./AdMenu'), { ssr: false });
@@ -15,6 +17,7 @@ export default function Navigation() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isPlatformAdmin, setIsPlatformAdmin] = useState(false);
   const { tenant } = useTenant();
+  const t = useTranslations('navigation');
 
   useEffect(() => {
     // Obtener información del usuario para saber si es superadmin
@@ -30,19 +33,19 @@ export default function Navigation() {
 
   // Menú de Tenant (normal) - Filtrar según plan
   const allTenantNavigation = [
-    { name: 'Dashboard', href: '/', icon: Home, requiresLegal: false },
-    { name: 'Reservas', href: '/reservations', icon: Calendar, requiresLegal: false },
-    { name: 'Reservas Directas', href: '/admin/direct-reservations', icon: Calendar, requiresLegal: false },
-    { name: 'Calendario', href: '/calendar', icon: Calendar, requiresLegal: false },
-    { name: 'Registros de formularios', href: '/guest-registrations-dashboard', icon: Users, requiresLegal: true },
-    { name: 'Facturas', href: '/facturas', icon: Receipt, requiresLegal: false },
-    { name: 'Estado Envíos MIR', href: '/admin/mir-comunicaciones', icon: TrendingUp, requiresLegal: true },
-    { name: 'Calculadora de Costos', href: '/cost-calculator', icon: Calculator, requiresLegal: false },
-    { name: 'Exportar AEAT', href: '/aeat', icon: FileText, requiresLegal: false },
-    { name: 'Cola offline', href: '/offline-queue', icon: Download, requiresLegal: false },
-    { name: 'Bitácora', href: '/audit', icon: Shield, requiresLegal: false },
-    { name: 'Referidos', href: '/referrals', icon: UserPlus, requiresLegal: false },
-    { name: 'Configuración', href: '/settings', icon: Settings, requiresLegal: false },
+    { name: t('dashboard'), href: '/', icon: Home, requiresLegal: false },
+    { name: t('reservations'), href: '/reservations', icon: Calendar, requiresLegal: false },
+    { name: t('directReservations'), href: '/admin/direct-reservations', icon: Calendar, requiresLegal: false },
+    { name: t('calendar'), href: '/calendar', icon: Calendar, requiresLegal: false },
+    { name: t('guestRegistrations'), href: '/guest-registrations-dashboard', icon: Users, requiresLegal: true },
+    { name: t('invoices'), href: '/facturas', icon: Receipt, requiresLegal: false },
+    { name: t('mirStatus'), href: '/admin/mir-comunicaciones', icon: TrendingUp, requiresLegal: true },
+    { name: t('costCalculator'), href: '/cost-calculator', icon: Calculator, requiresLegal: false },
+    { name: t('exportAEAT'), href: '/aeat', icon: FileText, requiresLegal: false },
+    { name: t('offlineQueue'), href: '/offline-queue', icon: Download, requiresLegal: false },
+    { name: t('audit'), href: '/audit', icon: Shield, requiresLegal: false },
+    { name: t('referrals'), href: '/referrals', icon: UserPlus, requiresLegal: false },
+    { name: t('settings'), href: '/settings', icon: Settings, requiresLegal: false },
   ];
 
   // Filtrar elementos según permisos del plan
@@ -59,7 +62,7 @@ export default function Navigation() {
     return true;
   });
 
-  // Menú de SuperAdmin
+  // Menú de SuperAdmin (NO traducir - siempre en español)
   const superAdminNavigation = [
     { name: 'Dashboard SuperAdmin', href: '/superadmin', icon: Crown },
     { name: 'Métricas', href: '/superadmin/metrics', icon: TrendingUp },
@@ -89,7 +92,8 @@ export default function Navigation() {
             </Link>
           </div>
           {/* Botón de menú (visible en móvil y escritorio) */}
-          <div className="flex items-center">
+          <div className="flex items-center space-x-2">
+            <LanguageSwitcher />
             <PWAInstallButton />
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -100,7 +104,7 @@ export default function Navigation() {
               ) : (
                 <Menu className="h-6 w-6" />
               )}
-              <span className="hidden md:inline ml-2 font-medium">Menú</span>
+              <span className="hidden md:inline ml-2 font-medium">{t('menu')}</span>
             </button>
           </div>
         </div>
@@ -146,12 +150,12 @@ export default function Navigation() {
                 {isInSuperAdmin ? (
                   <>
                     <Home className="w-5 h-5 mr-3" />
-                    Ver Mi Panel Tenant
+                    {t('viewMyTenantPanel')}
                   </>
                 ) : (
                   <>
                     <Crown className="w-5 h-5 mr-3" />
-                    👑 SuperAdmin Dashboard
+                    {t('superAdminDashboardTitle')}
                   </>
                 )}
               </Link>

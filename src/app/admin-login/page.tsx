@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { useTranslations } from 'next-intl'
 
 /**
  * 🔐 PÁGINA DE LOGIN MULTI-TENANT
@@ -17,6 +18,7 @@ import Link from 'next/link'
  */
 
 export default function AdminLoginPage() {
+  const t = useTranslations('auth');
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')

@@ -1,5 +1,8 @@
 import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
+import createNextIntlPlugin from 'next-intl/plugin';
+
+const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 
 const nextConfig: NextConfig = {
   serverExternalPackages: ['pdfkit'],
@@ -38,8 +41,10 @@ const nextConfig: NextConfig = {
   },
 };
 
-// Wrapping with Sentry
-export default withSentryConfig(nextConfig, {
+// Wrapping con next-intl primero, luego Sentry
+const configWithIntl = withNextIntl(nextConfig);
+
+export default withSentryConfig(configWithIntl, {
   // For all available options, see:
   // https://github.com/getsentry/sentry-webpack-plugin#options
 

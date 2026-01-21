@@ -1,35 +1,59 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { verifyTokenEdge } from '@/lib/auth-edge'
+import createMiddleware from 'next-intl/middleware';
+import { locales, defaultLocale, getLocaleFromRequest, isValidLocale } from './i18n/config';
 
 /**
- * 🔒 MIDDLEWARE DE AUTENTICACIÓN SIMPLIFICADO Y ROBUSTO
+ * 🔒 MIDDLEWARE DE AUTENTICACIÓN + 🌍 I18N
+ * 
+ * Orden de ejecución:
+ * 1. Archivos estáticos → permitir siempre
+ * 2. Protección HTTP Basic Auth para staging
+ * 3. Detección y redirect de idioma (i18n)
+ * 4. Autenticación JWT para rutas protegidas
  */
+
+// Crear middleware de next-intl
+const intlMiddleware = createMiddleware({
+  locales,
+  defaultLocale,
+  localePrefix: 'always', // Siempre usar prefijo (/es/, /en/, etc.)
+  localeDetection: true, // Detectar idioma del navegador
+});
+
 export async function middleware(req: NextRequest) {
   const url = req.nextUrl
+  const pathname = url.pathname
+  
+  // ==============================================
+  // 1. ARCHIVOS ESTÁTICOS - SIEMPRE PERMITIR
+  // ==============================================
   
   // Preflight CORS
   if (req.method === 'OPTIONS') return NextResponse.next();
 
   // Archivos estáticos - siempre permitir
   if (
-    url.pathname.startsWith('/_next') ||
-    url.pathname.startsWith('/static') ||
-    url.pathname.startsWith('/images') ||
-    url.pathname.startsWith('/fonts') ||
-    url.pathname === '/manifest.json' ||
-    url.pathname === '/favicon.ico' ||
-    url.pathname === '/robots.txt' ||
-    url.pathname.startsWith('/icon') ||
-    url.pathname.startsWith('/sw.js') ||
-    url.pathname === '/landing-tracking.js' ||
-    url.pathname.endsWith('.js') && url.pathname.startsWith('/landing-')
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/static') ||
+    pathname.startsWith('/images') ||
+    pathname.startsWith('/fonts') ||
+    pathname === '/manifest.json' ||
+    pathname === '/favicon.ico' ||
+    pathname === '/robots.txt' ||
+    pathname.startsWith('/icon') ||
+    pathname.startsWith('/sw.js') ||
+    pathname === '/landing-tracking.js' ||
+    pathname.endsWith('.js') && pathname.startsWith('/landing-')
   ) {
     return NextResponse.next();
   }
 
-  // 🔒 PROTECCIÓN HTTP BASIC AUTH PARA STAGING
-  // Solo se aplica si estamos en staging.delfincheckin.com
+  // ==============================================
+  // 2. PROTECCIÓN HTTP BASIC AUTH PARA STAGING
+  // ==============================================
+  
   const hostname = req.headers.get('host') || '';
   const isStaging = hostname.includes('staging.delfincheckin.com') || 
                     hostname.includes('staging-delfincheckin.vercel.app');
@@ -38,11 +62,9 @@ export async function middleware(req: NextRequest) {
     const stagingUser = process.env.STAGING_USER;
     const stagingPassword = process.env.STAGING_PASSWORD;
     
-    // Solo aplicar protección si las credenciales están configuradas
     if (stagingUser && stagingPassword) {
       const authHeader = req.headers.get('authorization');
       
-      // Si no hay header de autorización, solicitar autenticación
       if (!authHeader || !authHeader.startsWith('Basic ')) {
         return new NextResponse('Authentication required', {
           status: 401,
@@ -54,12 +76,10 @@ export async function middleware(req: NextRequest) {
       }
       
       try {
-        // Decodificar credenciales base64
         const base64Credentials = authHeader.split(' ')[1];
         const credentials = Buffer.from(base64Credentials, 'base64').toString('utf-8');
         const [username, password] = credentials.split(':');
         
-        // Verificar credenciales
         if (username !== stagingUser || password !== stagingPassword) {
           return new NextResponse('Invalid credentials', {
             status: 401,
@@ -70,10 +90,8 @@ export async function middleware(req: NextRequest) {
           });
         }
         
-        // Credenciales correctas, continuar
         console.log('✅ Staging auth: Credenciales correctas');
       } catch (error) {
-        // Error al decodificar, solicitar nuevamente
         return new NextResponse('Invalid authentication format', {
           status: 401,
           headers: {
@@ -85,40 +103,90 @@ export async function middleware(req: NextRequest) {
     }
   }
 
+  // ==============================================
+  // 3. DETECCIÓN DE IDIOMA (I18N)
+  // ==============================================
+  
+  // Excluir rutas API, superadmin, y rutas públicas específicas de la detección i18n
+  const shouldSkipI18n = (
+    pathname.startsWith('/api/') ||
+    pathname.startsWith('/superadmin') || // SuperAdmin NO traduce
+    pathname.startsWith('/book/') || // Booking engine externo
+    pathname === '/admin-login' ||
+    pathname === '/forgot-password'
+  );
+  
+  // Si la ruta no debe tener i18n, continuar sin aplicar intlMiddleware
+  if (shouldSkipI18n) {
+    // Continuar con lógica de autenticación (abajo)
+  } else {
+    // Verificar si la ruta ya tiene un locale válido
+    const pathnameHasLocale = locales.some(
+      (locale) => pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`
+    );
+    
+    // Si NO tiene locale, aplicar intlMiddleware para detectar y redirect
+    if (!pathnameHasLocale) {
+      // Detectar idioma preferido del navegador
+      const acceptLanguage = req.headers.get('accept-language') || '';
+      const detectedLocale = getLocaleFromRequest(acceptLanguage);
+      
+      // Redirigir a la URL con prefijo de locale
+      const newUrl = new URL(`/${detectedLocale}${pathname}${url.search}`, req.url);
+      console.log(`🌍 Redirigiendo a: ${newUrl.pathname}`);
+      return NextResponse.redirect(newUrl);
+    }
+    
+    // Si ya tiene locale, extraerlo para usarlo en las páginas
+    const localeFromPath = pathname.split('/')[1];
+    if (isValidLocale(localeFromPath)) {
+      // Añadir locale a headers para que las páginas lo usen
+      const requestHeaders = new Headers(req.headers);
+      requestHeaders.set('x-locale', localeFromPath);
+      
+      // IMPORTANTE: Continuar con autenticación, pasando headers
+      // (no hacer return aquí, continuar abajo)
+    }
+  }
+
+  // ==============================================
+  // 4. AUTENTICACIÓN JWT PARA RUTAS PROTEGIDAS
+  // ==============================================
+  
   // Rutas completamente públicas - no requieren autenticación
   const isPublicRoute = (
-    url.pathname === '/admin-login' ||
-    url.pathname === '/forgot-password' ||
-    url.pathname.startsWith('/book/') ||
-    url.pathname.startsWith('/api/public/') ||
-    url.pathname.startsWith('/api/direct-reservations/') ||
-    url.pathname.startsWith('/api/test-') ||
-    url.pathname.startsWith('/api/debug-') ||
-    url.pathname.startsWith('/api/check-') ||
-    url.pathname.startsWith('/api/onboarding/') ||
-    url.pathname.startsWith('/api/admin/login') ||
-    url.pathname.startsWith('/api/auth/mobile-login') ||
-    url.pathname.startsWith('/api/auth/refresh') ||
-    url.pathname.startsWith('/api/create-payment-intent') ||
-    url.pathname.startsWith('/api/landing/') ||
-    url.pathname.startsWith('/api/waitlist') || // Waitlist debe ser público para la landing page
-    url.pathname.startsWith('/api/blog/analytics/') || // Analytics de artículos debe ser público
-    url.pathname.startsWith('/api/blog/waitlist') || // Waitlist de artículos debe ser público
-    url.pathname.startsWith('/api/cron/') || // Cron jobs de Vercel deben ser públicos
-    url.pathname.startsWith('/api/stripe/webhook') ||
-    url.pathname.startsWith('/api/telegram/webhook') // Webhook de Telegram debe ser público
+    pathname === '/admin-login' ||
+    pathname === '/forgot-password' ||
+    pathname.startsWith('/book/') ||
+    pathname.startsWith('/api/public/') ||
+    pathname.startsWith('/api/direct-reservations/') ||
+    pathname.startsWith('/api/test-') ||
+    pathname.startsWith('/api/debug-') ||
+    pathname.startsWith('/api/check-') ||
+    pathname.startsWith('/api/onboarding/') ||
+    pathname.startsWith('/api/admin/login') ||
+    pathname.startsWith('/api/auth/mobile-login') ||
+    pathname.startsWith('/api/auth/refresh') ||
+    pathname.startsWith('/api/create-payment-intent') ||
+    pathname.startsWith('/api/landing/') ||
+    pathname.startsWith('/api/waitlist') ||
+    pathname.startsWith('/api/blog/analytics/') ||
+    pathname.startsWith('/api/blog/waitlist') ||
+    pathname.startsWith('/api/cron/') ||
+    pathname.startsWith('/api/stripe/webhook') ||
+    pathname.startsWith('/api/telegram/webhook')
   );
   
   if (isPublicRoute) {
     return NextResponse.next();
   }
 
-  // Para rutas de API, inyectar tenant ID desde JWT o header (CRÍTICO: sin fallback)
-  if (url.pathname.startsWith('/api/')) {
+  // Para rutas de API, inyectar tenant ID desde JWT o header
+  if (pathname.startsWith('/api/')) {
     const requestHeaders = new Headers(req.headers);
     let tenantId: string | null = null;
     
-    // PRIMERO: Verificar si hay tenant_id en el header (para llamadas internas entre endpoints)
+    // PRIMERO: Verificar si hay tenant_id en el header
     const headerTenantId = req.headers.get('x-tenant-id') || req.headers.get('X-Tenant-ID');
     if (headerTenantId) {
       tenantId = headerTenantId;
@@ -126,25 +194,22 @@ export async function middleware(req: NextRequest) {
       console.log(`🔗 Tenant_id desde header (llamada interna): ${tenantId}`);
     }
     
-    // SEGUNDO: Si no hay tenant_id en header, intentar desde Authorization Bearer token (para apps móviles)
+    // SEGUNDO: Si no hay tenant_id en header, intentar desde Authorization Bearer token
     if (!tenantId) {
-    const authHeader = req.headers.get('authorization');
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      try {
-        const token = authHeader.split(' ')[1];
+      const authHeader = req.headers.get('authorization');
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        try {
+          const token = authHeader.split(' ')[1];
           const payload = verifyTokenEdge(token);
-        if (payload?.tenantId) {
-          tenantId = payload.tenantId;
-          requestHeaders.set('x-tenant-id', tenantId);
-          console.log(`📱 Token móvil detectado, tenant_id: ${tenantId}`);
-        }
-      } catch (error: any) {
-        // No loguear errores de token expirado - el interceptor de la app lo manejará
-        // Solo loguear otros tipos de errores
-        if (error.name !== 'TokenExpiredError' && !error.message?.includes('expired')) {
-          console.error('Error verificando token Bearer:', error);
-        }
-        // Si hay tenantId en header, ya está configurado arriba, así que continuar
+          if (payload?.tenantId) {
+            tenantId = payload.tenantId;
+            requestHeaders.set('x-tenant-id', tenantId);
+            console.log(`📱 Token móvil detectado, tenant_id: ${tenantId}`);
+          }
+        } catch (error: any) {
+          if (error.name !== 'TokenExpiredError' && !error.message?.includes('expired')) {
+            console.error('Error verificando token Bearer:', error);
+          }
         }
       }
     }
@@ -166,30 +231,28 @@ export async function middleware(req: NextRequest) {
       }
     }
     
-    // ⚠️ CRÍTICO: NO usar tenant por defecto - esto causa fuga de datos entre tenants
     // Si no hay tenant_id válido, las rutas protegidas deben fallar con 401
     if (!tenantId) {
-      // Solo permitir rutas públicas sin tenant_id
       const isPublicApiRoute = (
-        url.pathname.startsWith('/api/public/') ||
-        url.pathname.startsWith('/api/direct-reservations/') ||
-        url.pathname.startsWith('/api/test-') ||
-        url.pathname.startsWith('/api/debug-') ||
-        url.pathname.startsWith('/api/check-') ||
-        url.pathname.startsWith('/api/onboarding/') ||
-        url.pathname.startsWith('/api/admin/login') ||
-        url.pathname.startsWith('/api/auth/mobile-login') ||
-        url.pathname.startsWith('/api/auth/refresh') ||
-        url.pathname.startsWith('/api/stripe/webhook') ||
-        url.pathname.startsWith('/api/create-payment-intent') ||
-        url.pathname.startsWith('/api/blog/analytics/') || // Analytics de artículos es público
-        url.pathname.startsWith('/api/blog/waitlist') || // Waitlist de artículos es público
-        url.pathname.startsWith('/api/cron/') || // Cron jobs de Vercel son públicos
-        url.pathname.startsWith('/api/telegram/webhook') // Webhook de Telegram debe ser público
+        pathname.startsWith('/api/public/') ||
+        pathname.startsWith('/api/direct-reservations/') ||
+        pathname.startsWith('/api/test-') ||
+        pathname.startsWith('/api/debug-') ||
+        pathname.startsWith('/api/check-') ||
+        pathname.startsWith('/api/onboarding/') ||
+        pathname.startsWith('/api/admin/login') ||
+        pathname.startsWith('/api/auth/mobile-login') ||
+        pathname.startsWith('/api/auth/refresh') ||
+        pathname.startsWith('/api/stripe/webhook') ||
+        pathname.startsWith('/api/create-payment-intent') ||
+        pathname.startsWith('/api/blog/analytics/') ||
+        pathname.startsWith('/api/blog/waitlist') ||
+        pathname.startsWith('/api/cron/') ||
+        pathname.startsWith('/api/telegram/webhook')
       );
       
       if (!isPublicApiRoute) {
-        console.warn(`⚠️ [SECURITY] Intento de acceso sin tenant_id a: ${url.pathname}`);
+        console.warn(`⚠️ [SECURITY] Intento de acceso sin tenant_id a: ${pathname}`);
         return NextResponse.json(
           { error: 'No autorizado - tenant_id requerido' },
           { status: 401 }
@@ -200,16 +263,17 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next({ request: { headers: requestHeaders } });
   }
 
-  // Para rutas de páginas, verificar autenticación y extraer tenant_id
+  // Para rutas de páginas, verificar autenticación
   const authTokenCookie = req.cookies.get('auth_token');
   const authToken = authTokenCookie?.value;
   
-  // ⚠️ CRÍTICO: Verificar que el token no esté vacío (cookie eliminada pero aún presente)
-  // Si la cookie existe pero está vacía, tratarla como no autenticado
+  // Si no hay token o está vacío, redirigir al login (sin prefijo de locale)
   if (!authToken || authToken.trim() === '') {
-    // Solo redirigir si no está en una ruta pública
-    if (!url.pathname.startsWith('/admin-login') && 
-        !url.pathname.startsWith('/forgot-password')) {
+    if (!pathname.startsWith('/admin-login') && 
+        !pathname.startsWith('/forgot-password') &&
+        // Excluir rutas con locale del redirect
+        !locales.some(locale => pathname === `/${locale}` || pathname.startsWith(`/${locale}/`))
+    ) {
       console.log('🔒 No hay token de autenticación válido, redirigiendo al login');
       const loginUrl = new URL('/admin-login', req.url);
       return NextResponse.redirect(loginUrl);
@@ -224,13 +288,11 @@ export async function middleware(req: NextRequest) {
         console.log(`🔐 Tenant_id extraído del JWT para página: ${payload.tenantId}`);
         return NextResponse.next({ request: { headers: requestHeaders } });
       } else {
-        // Token válido pero sin tenantId - redirigir al login
         console.log('🔒 Token sin tenantId, redirigiendo al login');
         const loginUrl = new URL('/admin-login', req.url);
         return NextResponse.redirect(loginUrl);
       }
     } catch (error) {
-      // Token inválido o expirado, redirigir al login
       console.log('🔒 Token inválido o expirado, redirigiendo al login');
       const loginUrl = new URL('/admin-login', req.url);
       return NextResponse.redirect(loginUrl);
@@ -238,8 +300,7 @@ export async function middleware(req: NextRequest) {
   }
 
   // Para rutas de superadmin, solo verificar que haya token
-  // La verificación real del flag se hará en la página (server-side)
-  if (url.pathname.startsWith('/superadmin')) {
+  if (pathname.startsWith('/superadmin')) {
     if (!authToken) {
       console.log('🔒 No hay token, redirigiendo al login');
       const loginUrl = new URL('/admin-login', req.url);
@@ -248,7 +309,6 @@ export async function middleware(req: NextRequest) {
     console.log('🔍 Verificando acceso SuperAdmin...');
   }
 
-  // Si hay token, permitir acceso a todas las páginas
   console.log('🔍 Token encontrado, permitiendo acceso...');
   return NextResponse.next();
 }

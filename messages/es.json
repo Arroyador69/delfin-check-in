@@ -1,0 +1,217 @@
+{
+  "common": {
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "search": "Buscar",
+    "loading": "Cargando...",
+    "error": "Error",
+    "success": "Éxito",
+    "close": "Cerrar",
+    "confirm": "Confirmar",
+    "back": "Volver",
+    "next": "Siguiente",
+    "previous": "Anterior",
+    "yes": "Sí",
+    "no": "No",
+    "email": "Email",
+    "password": "Contraseña",
+    "name": "Nombre",
+    "phone": "Teléfono",
+    "address": "Dirección",
+    "date": "Fecha",
+    "time": "Hora",
+    "status": "Estado",
+    "actions": "Acciones",
+    "download": "Descargar",
+    "upload": "Subir",
+    "export": "Exportar",
+    "import": "Importar",
+    "print": "Imprimir",
+    "share": "Compartir",
+    "copy": "Copiar",
+    "paste": "Pegar",
+    "cut": "Cortar",
+    "selectAll": "Seleccionar todo",
+    "reset": "Resetear",
+    "refresh": "Actualizar",
+    "filter": "Filtrar",
+    "sort": "Ordenar",
+    "view": "Ver",
+    "add": "Añadir",
+    "remove": "Eliminar",
+    "update": "Actualizar",
+    "create": "Crear",
+    "manage": "Gestionar",
+    "settings": "Configuración"
+  },
+  
+  "navigation": {
+    "dashboard": "Dashboard",
+    "reservations": "Reservas",
+    "directReservations": "Reservas Directas",
+    "calendar": "Calendario",
+    "guestRegistrations": "Registros de formularios",
+    "invoices": "Facturas",
+    "mirStatus": "Estado Envíos MIR",
+    "costCalculator": "Calculadora de Costos",
+    "exportAEAT": "Exportar AEAT",
+    "offlineQueue": "Cola offline",
+    "audit": "Bitácora",
+    "referrals": "Referidos",
+    "settings": "Configuración",
+    "menu": "Menú",
+    "superAdminDashboard": "Dashboard SuperAdmin",
+    "metrics": "Métricas",
+    "affiliates": "Afiliados",
+    "emails": "Emails",
+    "investorMode": "Investor Mode",
+    "tenants": "Tenants",
+    "analytics": "Analytics",
+    "programmaticPages": "Páginas Programáticas",
+    "radarReach": "Radar Reach",
+    "logs": "Logs",
+    "viewMyTenantPanel": "Ver Mi Panel Tenant",
+    "superAdminDashboardTitle": "👑 SuperAdmin Dashboard"
+  },
+  
+  "dashboard": {
+    "title": "Delfín Check-in",
+    "subtitle": "Gestión inteligente de habitaciones",
+    "connected": "Conectado",
+    "upgradePlan": "Mejorar Plan",
+    "logout": "Cerrar Sesión",
+    "loadingDashboard": "Cargando dashboard...",
+    "planInfo": "Plan {planName}",
+    "monthlyPrice": "€{price}/mes",
+    "roomUsage": "Uso de habitaciones",
+    "unlimited": "Ilimitadas",
+    "available": "{count} disponibles",
+    "limitReached": "⚠️ Límite alcanzado: Has usado todas las habitaciones de tu plan ({used}/{max}).",
+    "limitReachedAction": "Para añadir más habitaciones, actualiza tu plan desde la página de",
+    "nearLimit": "⚡ Estás cerca del límite: {used}/{max} habitaciones ({percentage}% usado).",
+    "nearLimitRemaining": "Te quedan {remaining} habitaciones disponibles. Considera",
+    "nearLimitAction": "actualizar tu plan",
+    "nearLimitSuffix": "si necesitas más capacidad.",
+    "roomsAvailableToAdd": "✅ {remaining} habitaciones disponibles para añadir",
+    "upgradeLink": "Mejora de Plan",
+    "updatePlan": "Actualizar Plan",
+    
+    "mirModule": {
+      "title": "💰 Módulo MIR - Solo 8€/mes (+ IVA)",
+      "reminder": "Recordatorio:",
+      "mandatory": "El envío automático de formularios de huéspedes al Ministerio del Interior es",
+      "mandatoryBold": "obligatorio",
+      "mandatoryLocation": "en España.",
+      "description": "Por solo",
+      "priceBold": "8€/mes (+ IVA 21%)",
+      "descriptionSuffix": "puedes tener el módulo MIR activado, que incluye check-in digital automático y envío automático de formularios al gobierno.",
+      "activateButton": "Activar Módulo MIR"
+    },
+    
+    "videoTutorial": {
+      "title": "Video Tutorial - Panel de Usuario",
+      "description": "Aprende a usar todas las funcionalidades de Delfín Check-in",
+      "watchOnYouTube": "Ver en YouTube"
+    },
+    
+    "periodFilters": {
+      "title": "📊 Filtros de Período",
+      "showing": "Mostrando datos para:",
+      "total": "📊 Total",
+      "annual": "📅 Anual",
+      "today": "📅 Hoy",
+      "thisWeek": "📆 Esta semana",
+      "last7Days": "⏰ Últimos 7 días",
+      "thisMonth": "🗓️ Este mes",
+      "last30Days": "📈 Últimos 30 días",
+      "custom": "🎯 Personalizado",
+      "dateFrom": "📅 Fecha desde",
+      "dateTo": "📅 Fecha hasta",
+      "resetButton": "🔄 Reset",
+      "selectDateRange": "Selecciona un rango de fechas",
+      "totalSince2020": "Total (desde 2020)",
+      "currentYear": "Año actual"
+    },
+    
+    "kpis": {
+      "rooms": "Habitaciones",
+      "guestsToday": "Huéspedes Hoy",
+      "activeReservations": "Reservas Activas",
+      "occupancy": "Ocupación",
+      "revenue": "Facturación",
+      "commissionsPaid": "Comisiones Pagadas",
+      "netIncome": "Ganancia Neta"
+    },
+    
+    "quickActions": {
+      "reservations": {
+        "title": "Reservas",
+        "description": "Gestionar reservas y calendario"
+      },
+      "guestRegistrations": {
+        "title": "Registros de formularios",
+        "description": "Ver registros y generar XML"
+      },
+      "costCalculator": {
+        "title": "Calculadora de Costos",
+        "description": "Calcular costos reales por huésped"
+      },
+      "exportAEAT": {
+        "title": "Exportar AEAT",
+        "description": "Generar archivos para Hacienda"
+      }
+    },
+    
+    "currentReservations": {
+      "title": "Reservas Actuales",
+      "noReservations": "No hay reservas",
+      "noCurrentGuests": "No hay huéspedes actuales",
+      "people": "{count} personas",
+      "room": "Hab. {number}",
+      "checkIn": "🟢 Check-in:",
+      "checkOut": "🔴 Check-out:"
+    },
+    
+    "upcomingReservations": {
+      "title": "Próximas Reservas",
+      "noReservations": "No hay reservas",
+      "noUpcomingReservations": "No hay reservas próximas",
+      "people": "{count} personas",
+      "room": "Hab. {number}",
+      "checkInTime": "🚪 Check-in: 16:00",
+      "checkOutLabel": "🔴 Check-out:"
+    }
+  },
+  
+  "auth": {
+    "loginTitle": "Iniciar Sesión",
+    "welcome": "¡Bienvenido!",
+    "redirecting": "Redirigiendo al dashboard...",
+    "emailLabel": "Email",
+    "emailPlaceholder": "tu@email.com",
+    "passwordLabel": "Contraseña",
+    "passwordPlaceholder": "Ingresa tu contraseña",
+    "loginButton": "Iniciar Sesión",
+    "verifying": "Verificando...",
+    "forgotPassword": "¿Has olvidado tu contraseña?",
+    "secureConnection": "🔒 Conexión segura con autenticación JWT",
+    "systemDescription": "Sistema de gestión para establecimientos turísticos",
+    
+    "errors": {
+      "enterEmail": "Por favor, ingresa tu email",
+      "enterPassword": "Por favor, ingresa tu contraseña",
+      "invalidEmail": "Por favor, ingresa un email válido",
+      "tooManyAttempts": "Demasiados intentos. Por favor, espera antes de intentar nuevamente.",
+      "incorrectPassword": "Contraseña incorrecta",
+      "loginError": "Error al iniciar sesión",
+      "connectionError": "Error de conexión. Por favor, verifica tu conexión a internet.",
+      "attemptsExhausted": "Has agotado tus intentos. Espera antes de intentar nuevamente.",
+      "attemptsRemaining": "{remaining} intento restante",
+      "attemptsRemainingPlural": "{remaining} intentos restantes",
+      "retryIn": "Podrás intentar nuevamente en {minutes} minuto",
+      "retryInPlural": "Podrás intentar nuevamente en {minutes} minutos"
+    }
+  }
+}

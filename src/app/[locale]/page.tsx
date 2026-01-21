@@ -7,10 +7,12 @@ import AdminLayout from '@/components/AdminLayout';
 import { ArrowUpCircle } from 'lucide-react';
 import { getRoomNumber } from '@/lib/db';
 import UnitLimitWarning from '@/components/UnitLimitWarning';
+import { useTranslations } from 'next-intl';
 
 type FilterPeriod = 'total' | 'annual' | 'today' | 'thisWeek' | 'last7Days' | 'thisMonth' | 'last30Days' | 'custom';
 
 export default function HomePage() {
+  const t = useTranslations('dashboard');
   const [rooms, setRooms] = useState<any[]>([]);
   const [reservations, setReservations] = useState<any[]>([]);
   const [tenant, setTenant] = useState<any>(null);

@@ -1,0 +1,217 @@
+{
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "search": "Search",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "close": "Close",
+    "confirm": "Confirm",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "yes": "Yes",
+    "no": "No",
+    "email": "Email",
+    "password": "Password",
+    "name": "Name",
+    "phone": "Phone",
+    "address": "Address",
+    "date": "Date",
+    "time": "Time",
+    "status": "Status",
+    "actions": "Actions",
+    "download": "Download",
+    "upload": "Upload",
+    "export": "Export",
+    "import": "Import",
+    "print": "Print",
+    "share": "Share",
+    "copy": "Copy",
+    "paste": "Paste",
+    "cut": "Cut",
+    "selectAll": "Select all",
+    "reset": "Reset",
+    "refresh": "Refresh",
+    "filter": "Filter",
+    "sort": "Sort",
+    "view": "View",
+    "add": "Add",
+    "remove": "Remove",
+    "update": "Update",
+    "create": "Create",
+    "manage": "Manage",
+    "settings": "Settings"
+  },
+  
+  "navigation": {
+    "dashboard": "Dashboard",
+    "reservations": "Reservations",
+    "directReservations": "Direct Reservations",
+    "calendar": "Calendar",
+    "guestRegistrations": "Guest Registrations",
+    "invoices": "Invoices",
+    "mirStatus": "MIR Submissions Status",
+    "costCalculator": "Cost Calculator",
+    "exportAEAT": "Export AEAT",
+    "offlineQueue": "Offline Queue",
+    "audit": "Audit Log",
+    "referrals": "Referrals",
+    "settings": "Settings",
+    "menu": "Menu",
+    "superAdminDashboard": "SuperAdmin Dashboard",
+    "metrics": "Metrics",
+    "affiliates": "Affiliates",
+    "emails": "Emails",
+    "investorMode": "Investor Mode",
+    "tenants": "Tenants",
+    "analytics": "Analytics",
+    "programmaticPages": "Programmatic Pages",
+    "radarReach": "Radar Reach",
+    "logs": "Logs",
+    "viewMyTenantPanel": "View My Tenant Panel",
+    "superAdminDashboardTitle": "👑 SuperAdmin Dashboard"
+  },
+  
+  "dashboard": {
+    "title": "Delfín Check-in",
+    "subtitle": "Intelligent room management",
+    "connected": "Connected",
+    "upgradePlan": "Upgrade Plan",
+    "logout": "Logout",
+    "loadingDashboard": "Loading dashboard...",
+    "planInfo": "{planName} Plan",
+    "monthlyPrice": "€{price}/month",
+    "roomUsage": "Room usage",
+    "unlimited": "Unlimited",
+    "available": "{count} available",
+    "limitReached": "⚠️ Limit reached: You've used all rooms in your plan ({used}/{max}).",
+    "limitReachedAction": "To add more rooms, upgrade your plan from the",
+    "nearLimit": "⚡ You're near the limit: {used}/{max} rooms ({percentage}% used).",
+    "nearLimitRemaining": "You have {remaining} rooms available. Consider",
+    "nearLimitAction": "upgrading your plan",
+    "nearLimitSuffix": "if you need more capacity.",
+    "roomsAvailableToAdd": "✅ {remaining} rooms available to add",
+    "upgradeLink": "Plan Upgrade",
+    "updatePlan": "Update Plan",
+    
+    "mirModule": {
+      "title": "💰 MIR Module - Only €8/month (+ VAT)",
+      "reminder": "Reminder:",
+      "mandatory": "Automatic submission of guest forms to the Ministry of Interior is",
+      "mandatoryBold": "mandatory",
+      "mandatoryLocation": "in Spain.",
+      "description": "For only",
+      "priceBold": "€8/month (+ 21% VAT)",
+      "descriptionSuffix": "you can activate the MIR module, which includes automatic digital check-in and automatic submission of forms to the government.",
+      "activateButton": "Activate MIR Module"
+    },
+    
+    "videoTutorial": {
+      "title": "Video Tutorial - User Panel",
+      "description": "Learn how to use all Delfín Check-in features",
+      "watchOnYouTube": "Watch on YouTube"
+    },
+    
+    "periodFilters": {
+      "title": "📊 Period Filters",
+      "showing": "Showing data for:",
+      "total": "📊 Total",
+      "annual": "📅 Annual",
+      "today": "📅 Today",
+      "thisWeek": "📆 This week",
+      "last7Days": "⏰ Last 7 days",
+      "thisMonth": "🗓️ This month",
+      "last30Days": "📈 Last 30 days",
+      "custom": "🎯 Custom",
+      "dateFrom": "📅 Date from",
+      "dateTo": "📅 Date to",
+      "resetButton": "🔄 Reset",
+      "selectDateRange": "Select a date range",
+      "totalSince2020": "Total (since 2020)",
+      "currentYear": "Current year"
+    },
+    
+    "kpis": {
+      "rooms": "Rooms",
+      "guestsToday": "Guests Today",
+      "activeReservations": "Active Reservations",
+      "occupancy": "Occupancy",
+      "revenue": "Revenue",
+      "commissionsPaid": "Commissions Paid",
+      "netIncome": "Net Income"
+    },
+    
+    "quickActions": {
+      "reservations": {
+        "title": "Reservations",
+        "description": "Manage reservations and calendar"
+      },
+      "guestRegistrations": {
+        "title": "Guest Registrations",
+        "description": "View registrations and generate XML"
+      },
+      "costCalculator": {
+        "title": "Cost Calculator",
+        "description": "Calculate actual costs per guest"
+      },
+      "exportAEAT": {
+        "title": "Export AEAT",
+        "description": "Generate files for Tax Authority"
+      }
+    },
+    
+    "currentReservations": {
+      "title": "Current Reservations",
+      "noReservations": "No reservations",
+      "noCurrentGuests": "No current guests",
+      "people": "{count} people",
+      "room": "Room {number}",
+      "checkIn": "🟢 Check-in:",
+      "checkOut": "🔴 Check-out:"
+    },
+    
+    "upcomingReservations": {
+      "title": "Upcoming Reservations",
+      "noReservations": "No reservations",
+      "noUpcomingReservations": "No upcoming reservations",
+      "people": "{count} people",
+      "room": "Room {number}",
+      "checkInTime": "🚪 Check-in: 4:00 PM",
+      "checkOutLabel": "🔴 Check-out:"
+    }
+  },
+  
+  "auth": {
+    "loginTitle": "Log In",
+    "welcome": "Welcome!",
+    "redirecting": "Redirecting to dashboard...",
+    "emailLabel": "Email",
+    "emailPlaceholder": "your@email.com",
+    "passwordLabel": "Password",
+    "passwordPlaceholder": "Enter your password",
+    "loginButton": "Log In",
+    "verifying": "Verifying...",
+    "forgotPassword": "Forgot your password?",
+    "secureConnection": "🔒 Secure connection with JWT authentication",
+    "systemDescription": "Management system for tourist establishments",
+    
+    "errors": {
+      "enterEmail": "Please enter your email",
+      "enterPassword": "Please enter your password",
+      "invalidEmail": "Please enter a valid email",
+      "tooManyAttempts": "Too many attempts. Please wait before trying again.",
+      "incorrectPassword": "Incorrect password",
+      "loginError": "Login error",
+      "connectionError": "Connection error. Please check your internet connection.",
+      "attemptsExhausted": "You've exhausted your attempts. Wait before trying again.",
+      "attemptsRemaining": "{remaining} attempt remaining",
+      "attemptsRemainingPlural": "{remaining} attempts remaining",
+      "retryIn": "You can try again in {minutes} minute",
+      "retryInPlural": "You can try again in {minutes} minutes"
+    }
+  }
+}
