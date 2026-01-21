@@ -47,7 +47,8 @@
     "settings": "Configuración",
     "pageNotFound": "Página No Encontrada",
     "pageNotFoundDescription": "Lo sentimos, la página que buscas no existe o ha sido movida.",
-    "backToHome": "Volver al Inicio"
+    "backToHome": "Volver al Inicio",
+    "retry": "Intentar de nuevo"
   },
   "navigation": {
     "dashboard": "Dashboard",
@@ -258,7 +259,8 @@
     "requiredFields": "Por favor completa todos los campos obligatorios",
     "invalidDates": "Las fechas son inválidas",
     "checkOutBeforeCheckIn": "El check-out debe ser después del check-in",
-    "reservationDetails": "Detalles de la reserva"
+    "reservationDetails": "Detalles de la reserva",
+    "subtitle": "Crea y gestiona las reservas de tus clientes"
   },
   "calendar": {
     "title": "Calendario",

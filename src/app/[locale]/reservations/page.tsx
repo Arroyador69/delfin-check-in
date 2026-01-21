@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Plus, X, Calendar, User, Bed, Euro, CreditCard, Download, Phone, Users, Globe, Edit } from 'lucide-react';
 import { getRoomNumber } from '@/lib/db';
+import { useTranslations } from 'next-intl';
 // Base de datos: Neon PostgreSQL
 
 interface Reservation {
@@ -34,6 +35,8 @@ interface Room {
 }
 
 export default function ReservationsPage() {
+  const t = useTranslations('reservations');
+  const tCommon = useTranslations('common');
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [rooms, setRooms] = useState<Room[]>([]);
   const [loading, setLoading] = useState(true);
@@ -406,7 +409,7 @@ export default function ReservationsPage() {
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 text-lg font-medium">Cargando reservas...</p>
+          <p className="text-gray-600 text-lg font-medium">{t('loading')}</p>
         </div>
       </div>
     );
@@ -424,7 +427,7 @@ export default function ReservationsPage() {
                 </svg>
               </div>
               <div className="ml-4">
-                <h3 className="text-lg font-bold text-red-800">❌ Error al cargar las reservas</h3>
+                <h3 className="text-lg font-bold text-red-800">❌ {t('error')}</h3>
                 <div className="mt-2 text-sm text-red-700">
                   <p className="font-medium">{error}</p>
                   <p className="mt-4">
@@ -432,7 +435,7 @@ export default function ReservationsPage() {
                       onClick={fetchReservations}
                       className="bg-gradient-to-r from-red-600 to-pink-600 text-white px-6 py-3 rounded-xl hover:from-red-700 hover:to-pink-700 font-semibold transition-all duration-200 transform hover:scale-105"
                     >
-                      🔄 Intentar de nuevo
+                      🔄 {tCommon('retry')}
                     </button>
                   </p>
                 </div>
@@ -452,10 +455,10 @@ export default function ReservationsPage() {
           <h1 className="text-3xl sm:text-5xl font-bold mb-2 sm:mb-4">
             <span className="text-4xl sm:text-6xl mr-2 sm:mr-3" style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>📅</span>
             <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              Gestión de Reservas
+              {t('title')}
             </span>
           </h1>
-          <p className="text-gray-600 text-sm sm:text-lg">Crea y gestiona las reservas de tus clientes</p>
+          <p className="text-gray-600 text-sm sm:text-lg">{t('subtitle') || 'Crea y gestiona las reservas de tus clientes'}</p>
         </div>
 
         {/* Barra de búsqueda */}

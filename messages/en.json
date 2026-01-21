@@ -47,7 +47,8 @@
     "settings": "Settings",
     "pageNotFound": "Page Not Found",
     "pageNotFoundDescription": "Sorry, the page you are looking for does not exist or has been moved.",
-    "backToHome": "Back to Home"
+    "backToHome": "Back to Home",
+    "retry": "Try again"
   },
   "navigation": {
     "dashboard": "Dashboard",
@@ -205,5 +206,8 @@
       "retryIn": "You can try again in {minutes} minute",
       "retryInPlural": "You can try again in {minutes} minutes"
     }
+  },
+  "reservations": {
+    "subtitle": "Create and manage your client reservations"
   }
 }

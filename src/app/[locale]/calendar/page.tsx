@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Calendar as CalendarIcon, CalendarDays, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 
 type Availability = {
   property_id: number
@@ -34,6 +35,7 @@ function formatDate(d: Date) {
 }
 
 export default function CalendarPage() {
+  const t = useTranslations('calendar');
   const [tenantId, setTenantId] = useState('')
   const [propertyId, setPropertyId] = useState('')
   const [start, setStart] = useState<string>(() => {
@@ -202,10 +204,10 @@ export default function CalendarPage() {
           <h1 className="text-3xl sm:text-5xl font-bold mb-2 sm:mb-4">
             <span className="text-4xl sm:text-6xl mr-2 sm:mr-3" style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>📅</span>
             <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              Calendario de Disponibilidad
+              {t('title')}
             </span>
           </h1>
-          <p className="text-gray-600 text-sm sm:text-lg">Visualiza y gestiona la disponibilidad de tus propiedades</p>
+          <p className="text-gray-600 text-sm sm:text-lg">{t('subtitle') || 'Visualiza y gestiona la disponibilidad de tus propiedades'}</p>
         </div>
 
         {/* Controles */}
