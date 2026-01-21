@@ -42,9 +42,11 @@ const nextConfig: NextConfig = {
 };
 
 // Wrapping con next-intl primero, luego Sentry
-const configWithIntl = withNextIntl(nextConfig);
+// TEMPORALMENTE DESHABILITADO next-intl para solucionar build
+// TODO: Reactivar después de investigar el error de /_not-found
+// const configWithIntl = withNextIntl(nextConfig);
 
-export default withSentryConfig(configWithIntl, {
+export default withSentryConfig(nextConfig, {
   // For all available options, see:
   // https://github.com/getsentry/sentry-webpack-plugin#options
 
