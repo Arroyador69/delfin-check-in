@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslations, useLocale } from 'next-intl';
 
 type Item = {
   id: string;
@@ -14,6 +15,8 @@ type Item = {
 };
 
 export default function AuditPage() {
+  const t = useTranslations('audit');
+  const locale = useLocale();
   const [items, setItems] = useState<Item[]>([]);
   const [q, setQ] = useState('');
   const [action, setAction] = useState('');
@@ -49,11 +52,11 @@ export default function AuditPage() {
         <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 flex items-center gap-3">
           <span className="text-4xl sm:text-5xl md:text-6xl" style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>🛡️</span>
           <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            Bitácora de Cumplimiento
+            {t('title')}
           </span>
         </h1>
         <p className="text-gray-700 text-base sm:text-lg">
-          Registro completo de acciones y validaciones del sistema
+          {t('subtitle')}
         </p>
       </div>
 
@@ -63,19 +66,19 @@ export default function AuditPage() {
           <input 
             value={q} 
             onChange={e=>setQ(e.target.value)} 
-            placeholder="Buscar (texto)" 
+            placeholder={t('placeholderSearch')} 
             className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white text-gray-900 placeholder-gray-500" 
           />
           <input 
             value={action} 
             onChange={e=>setAction(e.target.value)} 
-            placeholder="Acción (p.ej. VALIDATE_OK)" 
+            placeholder={t('placeholderAction')} 
             className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white text-gray-900 placeholder-gray-500" 
           />
           <input 
             value={entityType} 
             onChange={e=>setEntityType(e.target.value)} 
-            placeholder="Tipo (PV_EXPORT/AEAT_EXPORT)" 
+            placeholder={t('placeholderType')} 
             className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white text-gray-900 placeholder-gray-500" 
           />
           <input 
@@ -98,11 +101,11 @@ export default function AuditPage() {
             {loading ? (
               <>
                 <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                Cargando...
+                {t('loading')}
               </>
             ) : (
               <>
-                🔍 Filtrar
+                🔍 {t('btnFilter')}
               </>
             )}
           </button>
@@ -116,10 +119,10 @@ export default function AuditPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="text-2xl" style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>📋</span>
-              <h2 className="text-lg font-bold text-gray-900">Bitácora de Cumplimiento</h2>
+              <h2 className="text-lg font-bold text-gray-900">{t('tableTitle')}</h2>
             </div>
             <p className="text-sm text-gray-700 font-semibold">
-              {items.length} registro{items.length !== 1 ? 's' : ''} encontrado{items.length !== 1 ? 's' : ''}
+              {items.length === 1 ? t('recordsFoundOne') : t('recordsFoundMany', { count: items.length })}
             </p>
           </div>
         </div>
@@ -130,22 +133,22 @@ export default function AuditPage() {
             <thead className="bg-gray-50 sticky top-0 z-10">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                  📅 Fecha
+                  📅 {t('colDate')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                  ⚡ Acción
+                  ⚡ {t('colAction')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                  🏷️ Tipo
+                  🏷️ {t('colType')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                  🔢 Entidad
+                  🔢 {t('colEntity')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                  🔐 Hash
+                  🔐 {t('colHash')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                  📝 Meta
+                  📝 {t('colMeta')}
                 </th>
               </tr>
             </thead>
@@ -154,14 +157,14 @@ export default function AuditPage() {
                 <tr>
                   <td colSpan={6} className="px-6 py-12 text-center">
                     <div className="text-6xl mb-4" style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>🔍</div>
-                    <p className="text-lg text-gray-700 font-semibold">No se encontraron registros</p>
-                    <p className="text-gray-600 mt-2">Intenta ajustar los filtros de búsqueda</p>
+                    <p className="text-lg text-gray-700 font-semibold">{t('emptyTitle')}</p>
+                    <p className="text-gray-600 mt-2">{t('emptyHint')}</p>
                   </td>
                 </tr>
               ) : (
                 items.map((it) => (
                   <tr key={it.id} className="hover:bg-blue-50 transition-colors duration-150">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-800">{new Date(it.at).toLocaleString()}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-800">{new Date(it.at).toLocaleString(locale)}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 border border-blue-200">
                         {it.action}

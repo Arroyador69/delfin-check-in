@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { Calculator, Plus, Trash2, Save, Euro, Calendar, Users, Home, Settings } from 'lucide-react';
 import AdminLayout from '@/components/AdminLayout';
 
@@ -33,6 +34,8 @@ interface Settings {
 }
 
 export default function CostCalculator() {
+  const t = useTranslations('costCalculator');
+
   const [expenses, setExpenses] = useState<Expense[]>([
     {
       id: '1',
@@ -211,14 +214,8 @@ export default function CostCalculator() {
   };
 
   const getFrequencyLabel = (frequency: string) => {
-    const labels = {
-      monthly: 'Mensual',
-      quarterly: 'Trimestral',
-      yearly: 'Anual',
-      per_guest: 'Por huésped',
-      per_room: 'Por habitación'
-    };
-    return labels[frequency as keyof typeof labels] || frequency;
+    const key = frequency === 'monthly' ? 'frequencyMonthly' : frequency === 'quarterly' ? 'frequencyQuarterly' : frequency === 'yearly' ? 'frequencyYearly' : frequency === 'per_guest' ? 'frequencyPerGuest' : 'frequencyPerRoom';
+    return t(key);
   };
 
   return (
@@ -230,18 +227,18 @@ export default function CostCalculator() {
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 flex items-center gap-3">
               <span className="text-4xl sm:text-5xl md:text-6xl" style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>🧮</span>
               <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                Calculadora de Costos
+                {t('title')}
               </span>
             </h1>
             <p className="text-gray-700 text-base sm:text-lg mb-4">
-              Calcula el costo real por huésped en tu alojamiento
+              {t('subtitle')}
             </p>
             <button
               onClick={calculateCosts}
               className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 font-semibold shadow-lg transition-all duration-200 transform hover:scale-105 flex items-center gap-2"
             >
               <Calculator className="h-5 w-5" />
-              ✨ Calcular Costos
+              ✨ {t('calculateButton')}
             </button>
           </div>
 
@@ -252,13 +249,13 @@ export default function CostCalculator() {
                 <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
                   <span style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>⚙️</span>
                   <Settings className="h-6 w-6" />
-                  Configuración
+                  {t('configTitle')}
                 </h2>
                 
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      🏠 Total de habitaciones
+                      🏠 {t('totalRooms')}
                     </label>
                     <input
                       type="number"
@@ -271,7 +268,7 @@ export default function CostCalculator() {
                   
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      👥 Huéspedes por habitación
+                      👥 {t('guestsPerRoom')}
                     </label>
                     <input
                       type="number"
@@ -284,7 +281,7 @@ export default function CostCalculator() {
                   
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      📊 Ocupación mensual (%)
+                      📊 {t('monthlyOccupancy')}
                     </label>
                     <input
                       type="number"
@@ -298,7 +295,7 @@ export default function CostCalculator() {
                   
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      💶 Precio medio por habitación (€/noche)
+                      💶 {t('averageRoomPrice')}
                     </label>
                     <input
                       type="number"
@@ -320,14 +317,14 @@ export default function CostCalculator() {
                   <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
                     <span style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>💸</span>
                     <Euro className="h-6 w-6" />
-                    Gastos Operativos
+                    {t('expensesTitle')}
                   </h2>
                   <button
                     onClick={addExpense}
                     className="flex items-center px-5 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl hover:from-green-700 hover:to-emerald-700 font-semibold shadow-lg transition-all duration-200 transform hover:scale-105"
                   >
                     <Plus className="h-5 w-5 mr-2" />
-                    ✨ Añadir Gasto
+                    ✨ {t('addExpense')}
                   </button>
                 </div>
 
@@ -337,37 +334,37 @@ export default function CostCalculator() {
                       <div className="grid grid-cols-1 md:grid-cols-6 gap-4 items-end">
                         <div className="md:col-span-2">
                           <label className="block text-sm font-semibold text-gray-700 mb-2">
-                            📝 Concepto
+                            📝 {t('concept')}
                           </label>
                           <input
                             type="text"
                             value={expense.name}
                             onChange={(e) => updateExpense(expense.id, 'name', e.target.value)}
-                            placeholder="Ej: Luz, Agua, Limpieza..."
+                            placeholder={t('conceptPlaceholder')}
                             className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white text-gray-900"
                           />
                         </div>
 
                         <div>
                           <label className="block text-sm font-semibold text-gray-700 mb-2">
-                            📅 Frecuencia
+                            📅 {t('frequency')}
                           </label>
                           <select
                             value={expense.frequency}
                             onChange={(e) => updateExpense(expense.id, 'frequency', e.target.value)}
                             className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white text-gray-900"
                           >
-                            <option value="monthly">Mensual</option>
-                            <option value="quarterly">Trimestral</option>
-                            <option value="yearly">Anual</option>
-                            <option value="per_guest">Por huésped</option>
-                            <option value="per_room">Por habitación</option>
+                            <option value="monthly">{t('frequencyMonthly')}</option>
+                            <option value="quarterly">{t('frequencyQuarterly')}</option>
+                            <option value="yearly">{t('frequencyYearly')}</option>
+                            <option value="per_guest">{t('frequencyPerGuest')}</option>
+                            <option value="per_room">{t('frequencyPerRoom')}</option>
                           </select>
                         </div>
 
                         <div>
                           <label className="block text-sm font-semibold text-gray-700 mb-2">
-                            💰 {expense.isPercentage ? 'Porcentaje (%)' : 'Importe (€)'}
+                            💰 {expense.isPercentage ? t('percentageLabel') : t('amountLabel')}
                           </label>
                           <input
                             type="number"
@@ -388,15 +385,15 @@ export default function CostCalculator() {
 
                         <div>
                           <label className="block text-sm font-semibold text-gray-700 mb-2">
-                            🏷️ Tipo
+                            🏷️ {t('typeLabel')}
                           </label>
                           <select
                             value={expense.isPercentage ? 'percentage' : 'fixed'}
                             onChange={(e) => updateExpense(expense.id, 'isPercentage', e.target.value === 'percentage')}
                             className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white text-gray-900"
                           >
-                            <option value="fixed">Fijo</option>
-                            <option value="percentage">Porcentaje</option>
+                            <option value="fixed">{t('typeFixed')}</option>
+                            <option value="percentage">{t('typePercentage')}</option>
                           </select>
                         </div>
 
@@ -422,7 +419,7 @@ export default function CostCalculator() {
               <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
                 <span style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>📊</span>
                 <Calculator className="h-6 w-6" />
-                Resultados del Cálculo
+                {t('resultsTitle')}
               </h2>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -430,7 +427,7 @@ export default function CostCalculator() {
                   <div className="flex items-center mb-2">
                     <Euro className="h-8 w-8 text-blue-600 mr-3" />
                     <div>
-                      <p className="text-sm text-gray-600 font-semibold">Costo Total Mensual</p>
+                      <p className="text-sm text-gray-600 font-semibold">{t('costTotalMonthly')}</p>
                       <p className="text-3xl font-bold text-blue-600">
                         €{calculationResult.totalMonthlyCosts.toFixed(2)}
                       </p>
@@ -442,7 +439,7 @@ export default function CostCalculator() {
                   <div className="flex items-center mb-2">
                     <Home className="h-8 w-8 text-green-600 mr-3" />
                     <div>
-                      <p className="text-sm text-gray-600 font-semibold">Costo por Habitación</p>
+                      <p className="text-sm text-gray-600 font-semibold">{t('costPerRoom')}</p>
                       <p className="text-3xl font-bold text-green-600">
                         €{calculationResult.costPerRoom.toFixed(2)}
                       </p>
@@ -454,7 +451,7 @@ export default function CostCalculator() {
                   <div className="flex items-center mb-2">
                     <Users className="h-8 w-8 text-purple-600 mr-3" />
                     <div>
-                      <p className="text-sm text-gray-600 font-semibold">Costo por Huésped</p>
+                      <p className="text-sm text-gray-600 font-semibold">{t('costPerGuest')}</p>
                       <p className="text-3xl font-bold text-purple-600">
                         €{calculationResult.costPerGuest.toFixed(2)}
                       </p>
@@ -466,7 +463,7 @@ export default function CostCalculator() {
                   <div className="flex items-center mb-2">
                     <Calendar className="h-8 w-8 text-orange-600 mr-3" />
                     <div>
-                      <p className="text-sm text-gray-600 font-semibold">Costo por Noche</p>
+                      <p className="text-sm text-gray-600 font-semibold">{t('costPerNight')}</p>
                       <p className="text-3xl font-bold text-orange-600">
                         €{(calculationResult.costPerGuest / 30).toFixed(2)}
                       </p>
@@ -479,23 +476,23 @@ export default function CostCalculator() {
               <div className="mt-8">
                 <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
                   <span style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>📈</span>
-                  Desglose de Costos
+                  {t('breakdownTitle')}
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="bg-gradient-to-br from-indigo-50 to-blue-50 rounded-xl p-5 border border-indigo-200">
-                    <p className="text-sm text-gray-600 font-semibold mb-2">💰 Costos Fijos</p>
+                    <p className="text-sm text-gray-600 font-semibold mb-2">💰 {t('costsFixed')}</p>
                     <p className="text-2xl font-bold text-indigo-600">
                       €{calculationResult.breakdown.fixed.toFixed(2)}
                     </p>
                   </div>
                   <div className="bg-gradient-to-br from-teal-50 to-cyan-50 rounded-xl p-5 border border-teal-200">
-                    <p className="text-sm text-gray-600 font-semibold mb-2">📊 Costos Variables</p>
+                    <p className="text-sm text-gray-600 font-semibold mb-2">📊 {t('costsVariable')}</p>
                     <p className="text-2xl font-bold text-teal-600">
                       €{calculationResult.breakdown.variable.toFixed(2)}
                     </p>
                   </div>
                   <div className="bg-gradient-to-br from-amber-50 to-yellow-50 rounded-xl p-5 border border-amber-200">
-                    <p className="text-sm text-gray-600 font-semibold mb-2">📉 Costos por Porcentaje</p>
+                    <p className="text-sm text-gray-600 font-semibold mb-2">📉 {t('costsPercentage')}</p>
                     <p className="text-2xl font-bold text-amber-600">
                       €{calculationResult.breakdown.percentage.toFixed(2)}
                     </p>
@@ -507,24 +504,24 @@ export default function CostCalculator() {
               <div className="mt-6 bg-gradient-to-r from-yellow-50 to-orange-50 border-2 border-yellow-200 rounded-xl p-5">
                 <h4 className="font-bold text-yellow-800 mb-3 flex items-center gap-2">
                   <span style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>💡</span>
-                  Información Importante
+                  {t('infoTitle')}
                 </h4>
                 <ul className="text-sm text-yellow-700 space-y-2">
                   <li className="flex items-start gap-2">
                     <span className="font-bold">•</span>
-                    <span>El cálculo se basa en una ocupación del <strong>{monthlyOccupancy}%</strong> mensual</span>
+                    <span>{t('infoOccupancy', { pct: monthlyOccupancy })}</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="font-bold">•</span>
-                    <span>Se utiliza un precio medio de <strong>€{averageRoomPrice}</strong> por noche para cálculos de porcentajes</span>
+                    <span>{t('infoPrice', { price: averageRoomPrice })}</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="font-bold">•</span>
-                    <span>Los costos por huésped se calculan dividiendo entre el total de huéspedes mensuales</span>
+                    <span>{t('infoGuestCost')}</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="font-bold">•</span>
-                    <span>Los datos se guardan automáticamente en tu navegador</span>
+                    <span>{t('infoSaved')}</span>
                   </li>
                 </ul>
               </div>
@@ -533,25 +530,25 @@ export default function CostCalculator() {
               <div className="mt-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl p-5">
                 <h4 className="font-bold text-blue-800 mb-4 flex items-center gap-2">
                   <span style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>📋</span>
-                  Ejemplos de Gastos Comunes
+                  {t('examplesTitle')}
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-blue-700">
                   <div className="bg-white rounded-lg p-4 border border-blue-200">
-                    <p className="font-bold mb-2 text-blue-900">💰 Gastos Fijos:</p>
+                    <p className="font-bold mb-2 text-blue-900">💰 {t('examplesFixed')}</p>
                     <ul className="space-y-1">
-                      <li>• Luz: €80/mes</li>
-                      <li>• Agua: €120/trimestre</li>
-                      <li>• Seguro: €300/año</li>
-                      <li>• Software gestión: €25/mes</li>
+                      <li>• {t('exampleLuz')}</li>
+                      <li>• {t('exampleAgua')}</li>
+                      <li>• {t('exampleSeguro')}</li>
+                      <li>• {t('exampleSoftware')}</li>
                     </ul>
                   </div>
                   <div className="bg-white rounded-lg p-4 border border-blue-200">
-                    <p className="font-bold mb-2 text-blue-900">📊 Gastos Variables:</p>
+                    <p className="font-bold mb-2 text-blue-900">📊 {t('examplesVariable')}</p>
                     <ul className="space-y-1">
-                      <li>• Limpieza: €15/habitación</li>
-                      <li>• Desayunos: €5/huésped</li>
-                      <li>• Ropa de cama: €200/año</li>
-                      <li>• Mantenimiento: €50/mes</li>
+                      <li>• {t('exampleLimpieza')}</li>
+                      <li>• {t('exampleDesayunos')}</li>
+                      <li>• {t('exampleRopa')}</li>
+                      <li>• {t('exampleMantenimiento')}</li>
                     </ul>
                   </div>
                 </div>

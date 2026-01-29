@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Home, Calendar, DollarSign, Save, Plus, Trash2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import { Home, Calendar, DollarSign, Save, Trash2 } from 'lucide-react';
 import { roomSchema, RoomFormData } from '@/lib/validation';
 
 // Tipo local para habitaciones
@@ -15,6 +16,7 @@ interface Room {
 }
 
 export default function RoomsPage() {
+  const t = useTranslations('rooms');
   const router = useRouter();
   useEffect(() => {
     router.replace('/');
@@ -65,7 +67,7 @@ export default function RoomsPage() {
       fetchRooms();
     } catch (error) {
       console.error('Error saving room:', error);
-      alert('Error al guardar la habitación');
+      alert(t('form.saveError'));
     }
   };
 
@@ -80,7 +82,7 @@ export default function RoomsPage() {
   };
 
   const handleDelete = async (roomId: string) => {
-    if (!confirm('¿Estás seguro de que quieres eliminar esta habitación?')) return;
+    if (!confirm(t('deleteConfirm'))) return;
 
     try {
       // TODO: Implementar con storage local
@@ -88,7 +90,7 @@ export default function RoomsPage() {
       fetchRooms();
     } catch (error) {
       console.error('Error deleting room:', error);
-      alert('Error al eliminar la habitación');
+      alert(t('form.deleteError'));
     }
   };
 
@@ -107,7 +109,7 @@ export default function RoomsPage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Cargando habitaciones...</p>
+          <p className="mt-4 text-gray-600">{t('loading')}</p>
         </div>
       </div>
     );
@@ -122,8 +124,8 @@ export default function RoomsPage() {
             <div className="flex items-center">
               <Home className="h-8 w-8 text-blue-600 mr-3" />
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Gestionar Habitaciones</h1>
-                <p className="text-sm text-gray-600">Configura tus habitaciones y sincronización iCal</p>
+                <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
+                <p className="text-sm text-gray-600">{t('subtitle')}</p>
               </div>
             </div>
           </div>
@@ -135,53 +137,53 @@ export default function RoomsPage() {
           {/* Formulario */}
           <div className="bg-white rounded-lg shadow p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-6">
-              {editingRoom ? 'Editar Habitación' : 'Nueva Habitación'}
+              {editingRoom ? t('editRoom') : t('newRoom')}
             </h2>
             
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Nombre de la Habitación
+                  {t('form.roomName')}
                 </label>
                 <input
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Ej: Habitación 1"
+                  placeholder={t('form.roomNamePlaceholder')}
                   required
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  URL iCal de Airbnb
+                  {t('form.airbnbUrl')}
                 </label>
                 <input
                   type="url"
                   value={formData.ical_in_airbnb_url}
                   onChange={(e) => setFormData({ ...formData, ical_in_airbnb_url: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="https://calendar.google.com/..."
+                  placeholder={t('form.airbnbUrlPlaceholder')}
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  URL iCal de Booking
+                  {t('form.bookingUrl')}
                 </label>
                 <input
                   type="url"
                   value={formData.ical_in_booking_url}
                   onChange={(e) => setFormData({ ...formData, ical_in_booking_url: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="https://calendar.google.com/..."
+                  placeholder={t('form.bookingUrlPlaceholder')}
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Precio Base (€/noche)
+                  {t('form.basePrice')}
                 </label>
                 <input
                   type="number"
@@ -190,7 +192,7 @@ export default function RoomsPage() {
                   value={formData.base_price}
                   onChange={(e) => setFormData({ ...formData, base_price: parseFloat(e.target.value) || 0 })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="80.00"
+                  placeholder={t('form.basePricePlaceholder')}
                   required
                 />
               </div>
@@ -201,7 +203,7 @@ export default function RoomsPage() {
                   className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <Save className="h-4 w-4 mr-2" />
-                  {editingRoom ? 'Actualizar' : 'Crear'}
+                  {editingRoom ? t('update') : t('create')}
                 </button>
                 
                 {editingRoom && (
@@ -210,7 +212,7 @@ export default function RoomsPage() {
                     onClick={handleCancel}
                     className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
-                    Cancelar
+                    {t('form.cancel')}
                   </button>
                 )}
               </div>
@@ -220,13 +222,13 @@ export default function RoomsPage() {
           {/* Lista de habitaciones */}
           <div className="bg-white rounded-lg shadow">
             <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-900">Tus Habitaciones</h2>
+              <h2 className="text-lg font-semibold text-gray-900">{t('yourRooms')}</h2>
             </div>
             
             <div className="p-6">
               {rooms.length === 0 ? (
                 <p className="text-gray-500 text-center py-8">
-                  No hay habitaciones configuradas. Crea tu primera habitación.
+                  {t('noRooms')}. {t('noRoomsDescription')}
                 </p>
               ) : (
                 <div className="space-y-4">
@@ -238,18 +240,18 @@ export default function RoomsPage() {
                           <div className="flex items-center space-x-4 mt-2 text-sm text-gray-600">
                             <div className="flex items-center">
                               <DollarSign className="h-4 w-4 mr-1" />
-                              {room.base_price}€/noche
+                              {room.base_price}€{t('perNight')}
                             </div>
                             {room.ical_in_airbnb_url && (
                               <div className="flex items-center">
                                 <Calendar className="h-4 w-4 mr-1" />
-                                Airbnb
+                                {t('airbnb')}
                               </div>
                             )}
                             {room.ical_in_booking_url && (
                               <div className="flex items-center">
                                 <Calendar className="h-4 w-4 mr-1" />
-                                Booking
+                                {t('booking')}
                               </div>
                             )}
                           </div>
@@ -280,24 +282,24 @@ export default function RoomsPage() {
 
         {/* Información de ayuda */}
         <div className="mt-8 bg-blue-50 rounded-lg p-6">
-          <h3 className="text-lg font-semibold text-blue-900 mb-4">¿Cómo configurar iCal?</h3>
+          <h3 className="text-lg font-semibold text-blue-900 mb-4">{t('howToConfigureIcal')}</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <h4 className="font-medium text-blue-800 mb-2">Airbnb</h4>
+              <h4 className="font-medium text-blue-800 mb-2">{t('airbnb')}</h4>
               <ol className="text-sm text-blue-700 space-y-1">
-                <li>1. Ve a tu panel de Airbnb</li>
-                <li>2. Selecciona la propiedad</li>
-                <li>3. Ve a "Calendario" → "Configuración"</li>
-                <li>4. Copia la URL de "Exportar calendario"</li>
+                <li>1. {t('airbnbStep1')}</li>
+                <li>2. {t('airbnbStep2')}</li>
+                <li>3. {t('airbnbStep3')}</li>
+                <li>4. {t('airbnbStep4')}</li>
               </ol>
             </div>
             <div>
-              <h4 className="font-medium text-blue-800 mb-2">Booking</h4>
+              <h4 className="font-medium text-blue-800 mb-2">{t('booking')}</h4>
               <ol className="text-sm text-blue-700 space-y-1">
-                <li>1. Accede a tu panel de Booking</li>
-                <li>2. Ve a "Calendario"</li>
-                <li>3. Haz clic en "Exportar calendario"</li>
-                <li>4. Copia la URL del calendario</li>
+                <li>1. {t('bookingStep1')}</li>
+                <li>2. {t('bookingStep2')}</li>
+                <li>3. {t('bookingStep3')}</li>
+                <li>4. {t('bookingStep4')}</li>
               </ol>
             </div>
           </div>

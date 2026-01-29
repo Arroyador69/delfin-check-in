@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Settings, FileText, CreditCard, User, LinkIcon, Home, Calendar, Wallet, AlertCircle, ExternalLink } from 'lucide-react';
 import dynamic from 'next/dynamic';
+import { useTranslations, useLocale } from 'next-intl';
 
 const AdSidebar = dynamic(() => import('@/components/AdSidebar'), {
   ssr: false
@@ -16,71 +17,23 @@ export default function SettingsLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const t = useTranslations('settings');
+  const locale = useLocale();
   const pathname = usePathname();
   const [billingInfo, setBillingInfo] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   const settingsSections = [
-    {
-      id: 'general',
-      name: 'General',
-      icon: Settings,
-      href: '/settings',
-    },
-    {
-      id: 'empresa',
-      name: 'Datos Empresa',
-      icon: FileText,
-      href: '/settings/empresa',
-    },
-    {
-      id: 'mir',
-      name: 'Configuración MIR',
-      icon: FileText,
-      href: '/settings/mir',
-    },
-          {
-            id: 'properties',
-            name: 'Propiedades',
-            icon: Home,
-            href: '/settings/properties',
-          },
-          {
-            id: 'checkinInstructions',
-            name: 'Instrucciones Check‑in',
-            icon: FileText,
-            href: '/settings/checkin-instructions',
-          },
-          {
-            id: 'integrations',
-            name: 'Integraciones',
-            icon: Calendar,
-            href: '/settings/integrations',
-          },
-          {
-            id: 'billing',
-            name: 'Facturación',
-            icon: CreditCard,
-            href: '/settings/billing',
-          },
-          {
-            id: 'microsite-payments',
-            name: 'Pagos Microsite',
-            icon: Wallet,
-            href: '/settings/microsite-payments',
-          },
-          {
-            id: 'payment-links',
-            name: 'Enlaces de Pago',
-            icon: LinkIcon,
-            href: '/settings/payment-links',
-          },
-    {
-      id: 'account',
-      name: 'Cuenta',
-      icon: User,
-      href: '/settings/account',
-    },
+    { id: 'general', tabKey: 'general', icon: Settings, href: '/settings' },
+    { id: 'empresa', tabKey: 'empresa', icon: FileText, href: '/settings/empresa' },
+    { id: 'mir', tabKey: 'mir', icon: FileText, href: '/settings/mir' },
+    { id: 'properties', tabKey: 'properties', icon: Home, href: '/settings/properties' },
+    { id: 'checkinInstructions', tabKey: 'checkinInstructions', icon: FileText, href: '/settings/checkin-instructions' },
+    { id: 'integrations', tabKey: 'integrations', icon: Calendar, href: '/settings/integrations' },
+    { id: 'billing', tabKey: 'billing', icon: CreditCard, href: '/settings/billing' },
+    { id: 'microsite-payments', tabKey: 'micrositePayments', icon: Wallet, href: '/settings/microsite-payments' },
+    { id: 'payment-links', tabKey: 'paymentLinks', icon: LinkIcon, href: '/settings/payment-links' },
+    { id: 'account', tabKey: 'account', icon: User, href: '/settings/account' },
   ];
 
   useEffect(() => {
@@ -101,14 +54,14 @@ export default function SettingsLayout({
   }, []);
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-ES', {
+    return new Intl.NumberFormat(locale, {
       style: 'currency',
       currency: 'EUR'
     }).format(amount);
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('es-ES', {
+    return new Date(dateString).toLocaleDateString(locale, {
       year: 'numeric',
       month: 'long',
       day: 'numeric'
@@ -124,8 +77,8 @@ export default function SettingsLayout({
             <div className="flex items-center py-6">
               <div className="text-3xl mr-3">⚙️</div>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Configuración</h1>
-                <p className="text-sm text-gray-600">Gestiona la configuración de tu cuenta</p>
+                <h1 className="text-2xl font-bold text-gray-900">{t('layout.headerTitle')}</h1>
+                <p className="text-sm text-gray-600">{t('layout.headerSubtitle')}</p>
               </div>
             </div>
           </div>
@@ -141,18 +94,18 @@ export default function SettingsLayout({
                   <div className="flex items-start">
                     <AlertCircle className="w-6 h-6 text-red-600 mr-3 mt-0.5 flex-shrink-0" />
                     <div className="flex-1">
-                      <h3 className="text-lg font-bold text-red-900 mb-1">🚫 Servicios Suspendidos</h3>
+                      <h3 className="text-lg font-bold text-red-900 mb-1">🚫 {t('layout.suspendedTitle')}</h3>
                       <p className="text-red-800 text-sm mb-2">
-                        Tus servicios han sido suspendidos por falta de pago después de {billingInfo.tenant.payment_retry_count || 0} intentos fallidos.
+                        {t('layout.suspendedMessage', { count: billingInfo.tenant.payment_retry_count || 0 })}
                       </p>
                       <p className="text-red-700 text-xs mb-3">
-                        Puedes ver tus datos, pero no podrás crear nuevos registros, enviar mensajes o procesar reservas hasta que actualices tu método de pago.
+                        {t('layout.suspendedHint')}
                       </p>
                       <Link
                         href="/settings/billing"
                         className="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-medium"
                       >
-                        Ver facturas pendientes
+                        {t('layout.viewPendingInvoices')}
                         <ExternalLink className="w-4 h-4 ml-2" />
                       </Link>
                     </div>
@@ -168,19 +121,20 @@ export default function SettingsLayout({
                   <div className="flex items-start">
                     <AlertCircle className="w-6 h-6 text-yellow-600 mr-3 mt-0.5 flex-shrink-0" />
                     <div className="flex-1">
-                      <h3 className="text-lg font-bold text-yellow-900 mb-1">⚠️ Pago Fallido</h3>
+                      <h3 className="text-lg font-bold text-yellow-900 mb-1">⚠️ {t('layout.paymentFailedTitle')}</h3>
                       <p className="text-yellow-800 text-sm mb-2">
-                        No se ha podido procesar el pago de tu suscripción. Intento {billingInfo.tenant.payment_retry_count}/3.
+                        {t('layout.paymentFailedMessage', { current: billingInfo.tenant.payment_retry_count })}
                       </p>
                       <p className="text-yellow-700 text-xs mb-3">
-                        Si no actualizas tu método de pago, se intentará cobrar automáticamente {3 - (billingInfo.tenant.payment_retry_count || 0)} {3 - (billingInfo.tenant.payment_retry_count || 0) === 1 ? 'vez más' : 'veces más'}. 
-                        Después de 3 intentos fallidos, los servicios serán suspendidos.
+                        {3 - (billingInfo.tenant.payment_retry_count || 0) === 1
+                          ? t('layout.paymentFailedHintOne')
+                          : t('layout.paymentFailedHintMany', { remaining: 3 - (billingInfo.tenant.payment_retry_count || 0) })}
                       </p>
                       <Link
                         href="/settings/billing"
                         className="inline-flex items-center px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors text-sm font-medium"
                       >
-                        Actualizar método de pago
+                        {t('layout.updatePaymentMethod')}
                         <ExternalLink className="w-4 h-4 ml-2" />
                       </Link>
                     </div>
@@ -198,15 +152,17 @@ export default function SettingsLayout({
                   <div className="flex items-start">
                     <AlertCircle className="w-6 h-6 text-blue-600 mr-3 mt-0.5 flex-shrink-0" />
                     <div className="flex-1">
-                      <h3 className="text-lg font-bold text-blue-900 mb-1">📋 Facturas Pendientes</h3>
+                      <h3 className="text-lg font-bold text-blue-900 mb-1">📋 {t('layout.pendingInvoicesTitle')}</h3>
                       <p className="text-blue-800 text-sm mb-3">
-                        Tienes {billingInfo.pending_invoices.length} {billingInfo.pending_invoices.length === 1 ? 'factura pendiente' : 'facturas pendientes'} de pago.
+                        {billingInfo.pending_invoices.length === 1
+                          ? t('layout.pendingInvoicesCountOne')
+                          : t('layout.pendingInvoicesCountMany', { count: billingInfo.pending_invoices.length })}
                       </p>
                       <Link
                         href="/settings/billing"
                         className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
                       >
-                        Ver facturas pendientes
+                        {t('layout.viewPendingInvoices')}
                         <ExternalLink className="w-4 h-4 ml-2" />
                       </Link>
                     </div>
@@ -235,7 +191,7 @@ export default function SettingsLayout({
                       }`}
                     >
                       <section.icon className="w-5 h-5 mr-3" />
-                      <span className="font-medium">{section.name}</span>
+                      <span className="font-medium">{t(`tabs.${section.tabKey}`)}</span>
                     </Link>
                   );
                 })}

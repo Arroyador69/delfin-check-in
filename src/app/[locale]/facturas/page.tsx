@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useTranslations, useLocale } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -49,6 +50,9 @@ interface EmpresaConfig {
 }
 
 export default function FacturasPage() {
+  const t = useTranslations('facturas');
+  const locale = useLocale();
+
   const [facturas, setFacturas] = useState<Factura[]>([]);
   const [empresaConfig, setEmpresaConfig] = useState<EmpresaConfig | null>(null);
   const [loading, setLoading] = useState(true);
@@ -102,12 +106,12 @@ export default function FacturasPage() {
       } else {
         setMessage({ 
           type: 'error', 
-          text: 'Debes configurar los datos de tu empresa antes de generar facturas. Ve a Configuración > Datos Empresa.' 
+          text: t('errorEmpresa') 
         });
       }
     } catch (error) {
       console.error('Error al cargar datos:', error);
-      setMessage({ type: 'error', text: 'Error al cargar los datos' });
+      setMessage({ type: 'error', text: t('errorLoad') });
     } finally {
       setLoading(false);
     }
@@ -145,7 +149,7 @@ export default function FacturasPage() {
       const data = await response.json();
 
       if (response.ok) {
-        setMessage({ type: 'success', text: 'Factura creada correctamente' });
+        setMessage({ type: 'success', text: t('successCreate') });
         setNuevaFactura({
           cliente_nombre: '',
           cliente_nif: '',
@@ -165,18 +169,18 @@ export default function FacturasPage() {
           cargarDatos();
         }, 500);
       } else {
-        setMessage({ type: 'error', text: data.error || 'Error al crear la factura' });
+        setMessage({ type: 'error', text: data.error || t('errorCreate') });
       }
     } catch (error) {
       console.error('Error al crear factura:', error);
-      setMessage({ type: 'error', text: 'Error al crear la factura' });
+      setMessage({ type: 'error', text: t('errorCreate') });
     } finally {
       setSaving(false);
     }
   };
 
   const eliminarFactura = async (id: number) => {
-    if (!confirm('¿Estás seguro de que quieres eliminar esta factura?')) {
+    if (!confirm(t('confirmDelete'))) {
       return;
     }
 
@@ -186,15 +190,15 @@ export default function FacturasPage() {
       });
 
       if (response.ok) {
-        setMessage({ type: 'success', text: 'Factura eliminada correctamente' });
+        setMessage({ type: 'success', text: t('successDelete') });
         cargarDatos(); // Recargar la lista
       } else {
         const data = await response.json();
-        setMessage({ type: 'error', text: data.error || 'Error al eliminar la factura' });
+        setMessage({ type: 'error', text: data.error || t('errorDelete') });
       }
     } catch (error) {
       console.error('Error al eliminar factura:', error);
-      setMessage({ type: 'error', text: 'Error al eliminar la factura' });
+      setMessage({ type: 'error', text: t('errorDelete') });
     }
   };
 
@@ -213,11 +217,11 @@ export default function FacturasPage() {
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
       } else {
-        setMessage({ type: 'error', text: 'Error al generar el PDF' });
+        setMessage({ type: 'error', text: t('errorPdf') });
       }
     } catch (error) {
       console.error('Error al descargar PDF:', error);
-      setMessage({ type: 'error', text: 'Error al descargar el PDF' });
+      setMessage({ type: 'error', text: t('errorDownloadPdf') });
     }
   };
 
@@ -237,7 +241,7 @@ export default function FacturasPage() {
       <div className="flex items-center justify-center py-12">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-2 text-gray-600">Cargando facturas...</p>
+          <p className="mt-2 text-gray-600">{t('loading')}</p>
         </div>
       </div>
     );
@@ -249,9 +253,9 @@ export default function FacturasPage() {
         <div className="text-center">
           <h1 className="text-2xl sm:text-4xl font-bold mb-2 sm:mb-4">
             <span className="text-3xl sm:text-5xl mr-2 sm:mr-3" style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>🧾</span>
-            <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Generador de Facturas</span>
+            <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">{t('title')}</span>
           </h1>
-          <p className="text-gray-600 text-sm sm:text-lg">Crea y gestiona las facturas de tu alojamiento</p>
+          <p className="text-gray-600 text-sm sm:text-lg">{t('subtitle')}</p>
         </div>
 
       {message && (
@@ -272,16 +276,16 @@ export default function FacturasPage() {
             className="flex items-center justify-center space-x-1 sm:space-x-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-purple-600 data-[state=active]:text-white text-gray-700 font-medium rounded-xl transition-all duration-200 hover:shadow-md text-xs sm:text-sm py-2"
           >
             <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
-            <span className="hidden sm:inline">Nueva Factura</span>
-            <span className="sm:hidden">Nueva</span>
+            <span className="hidden sm:inline">{t('tabNueva')}</span>
+            <span className="sm:hidden">{t('tabNuevaShort')}</span>
           </TabsTrigger>
           <TabsTrigger 
             value="historial" 
             className="flex items-center justify-center space-x-1 sm:space-x-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-purple-600 data-[state=active]:text-white text-gray-700 font-medium rounded-xl transition-all duration-200 hover:shadow-md text-xs sm:text-sm py-2"
           >
             <FileText className="w-3 h-3 sm:w-4 sm:h-4" />
-            <span className="hidden sm:inline">Historial ({facturas.length})</span>
-            <span className="sm:hidden">Historial</span>
+            <span className="hidden sm:inline">{t('tabHistorial', { count: facturas.length })}</span>
+            <span className="sm:hidden">{t('tabHistorialShort')}</span>
           </TabsTrigger>
         </TabsList>
 
@@ -293,96 +297,96 @@ export default function FacturasPage() {
                   <Building2 className="w-8 h-8 text-blue-600" />
                 </div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  Configuración Requerida
+                  {t('configRequired')}
                 </h3>
                 <p className="text-gray-600 mb-4">
-                  Necesitas configurar los datos de tu empresa antes de generar facturas.
+                  {t('configMessage')}
                 </p>
                 <Button 
                   onClick={() => window.location.href = '/settings/empresa'}
                   className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-3 px-6 rounded-xl shadow-lg transition-all duration-200 transform hover:scale-105"
                 >
-                  Ir a Configuración
+                  {t('goToSettings')}
                 </Button>
               </div>
             </Card>
           ) : (
             <Card className="p-4 sm:p-6 bg-white shadow-xl rounded-xl border border-blue-200">
-                              <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4 sm:mb-6 text-center bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Nueva Factura</h2>
+                              <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4 sm:mb-6 text-center bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">{t('newInvoiceTitle')}</h2>
               
                               <div className="space-y-4 sm:space-y-6">
                 {/* Datos del Cliente */}
                                   <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 sm:p-6 rounded-xl border border-blue-200 shadow-sm">
                                       <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-3 sm:mb-4 flex items-center">
                       <User className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-blue-600" />
-                      Datos del Cliente
+                      {t('clientData')}
                     </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="cliente_nombre" className="text-gray-700 font-medium">Nombre Completo *</Label>
+                      <Label htmlFor="cliente_nombre" className="text-gray-700 font-medium">{t('fullName')}</Label>
                         <Input
                           id="cliente_nombre"
                           value={nuevaFactura.cliente_nombre}
                           onChange={(e) => setNuevaFactura(prev => ({ ...prev, cliente_nombre: e.target.value }))}
-                          placeholder="Juan Pérez"
+                          placeholder={t('fullNamePlaceholder')}
                           className="text-gray-900 placeholder:text-gray-400"
                           style={{ color: '#111827' }}
                           required
                         />
                     </div>
                     <div>
-                      <Label htmlFor="cliente_nif" className="text-gray-700 font-medium">NIF/DNI</Label>
+                      <Label htmlFor="cliente_nif" className="text-gray-700 font-medium">{t('nifDni')}</Label>
                       <Input
                         id="cliente_nif"
                         value={nuevaFactura.cliente_nif}
                         onChange={(e) => setNuevaFactura(prev => ({ ...prev, cliente_nif: e.target.value }))}
-                        placeholder="12345678A"
+                        placeholder={t('nifPlaceholder')}
                         className="text-gray-900 placeholder:text-gray-400"
                         style={{ color: '#111827' }}
                       />
                     </div>
                   </div>
                   <div className="mt-4">
-                    <Label htmlFor="cliente_direccion" className="text-gray-700 font-medium">Dirección</Label>
+                    <Label htmlFor="cliente_direccion" className="text-gray-700 font-medium">{t('address')}</Label>
                     <Input
                       id="cliente_direccion"
                       value={nuevaFactura.cliente_direccion}
                       onChange={(e) => setNuevaFactura(prev => ({ ...prev, cliente_direccion: e.target.value }))}
-                      placeholder="Calle Mayor, 123"
+                      placeholder={t('addressPlaceholder')}
                       className="text-gray-900 placeholder:text-gray-400"
                       style={{ color: '#111827' }}
                     />
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
                     <div>
-                      <Label htmlFor="cliente_codigo_postal" className="text-gray-700 font-medium">Código Postal</Label>
+                      <Label htmlFor="cliente_codigo_postal" className="text-gray-700 font-medium">{t('postalCode')}</Label>
                       <Input
                         id="cliente_codigo_postal"
                         value={nuevaFactura.cliente_codigo_postal}
                         onChange={(e) => setNuevaFactura(prev => ({ ...prev, cliente_codigo_postal: e.target.value }))}
-                        placeholder="29640"
+                        placeholder={t('postalPlaceholder')}
                         className="text-gray-900 placeholder:text-gray-400"
                         style={{ color: '#111827' }}
                       />
                     </div>
                     <div>
-                      <Label htmlFor="cliente_ciudad" className="text-gray-700 font-medium">Ciudad</Label>
+                      <Label htmlFor="cliente_ciudad" className="text-gray-700 font-medium">{t('city')}</Label>
                       <Input
                         id="cliente_ciudad"
                         value={nuevaFactura.cliente_ciudad}
                         onChange={(e) => setNuevaFactura(prev => ({ ...prev, cliente_ciudad: e.target.value }))}
-                        placeholder="Fuengirola"
+                        placeholder={t('cityPlaceholder')}
                         className="text-gray-900 placeholder:text-gray-400"
                         style={{ color: '#111827' }}
                       />
                     </div>
                     <div>
-                      <Label htmlFor="cliente_provincia" className="text-gray-700 font-medium">Provincia</Label>
+                      <Label htmlFor="cliente_provincia" className="text-gray-700 font-medium">{t('province')}</Label>
                       <Input
                         id="cliente_provincia"
                         value={nuevaFactura.cliente_provincia}
                         onChange={(e) => setNuevaFactura(prev => ({ ...prev, cliente_provincia: e.target.value }))}
-                        placeholder="Málaga"
+                        placeholder={t('provincePlaceholder')}
                         className="text-gray-900 placeholder:text-gray-400"
                         style={{ color: '#111827' }}
                       />
@@ -394,23 +398,23 @@ export default function FacturasPage() {
                 <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-6 rounded-xl border border-purple-200 shadow-sm">
                   <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
                     <Euro className="w-5 h-5 mr-2 text-purple-600" />
-                    Concepto y Precio
+                    {t('conceptAndPrice')}
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="concepto" className="text-gray-700 font-medium">Concepto *</Label>
+                      <Label htmlFor="concepto" className="text-gray-700 font-medium">{t('concept')}</Label>
                       <Input
                         id="concepto"
                         value={nuevaFactura.concepto}
                         onChange={(e) => setNuevaFactura(prev => ({ ...prev, concepto: e.target.value }))}
-                        placeholder="Alojamiento"
+                        placeholder={t('conceptPlaceholder')}
                         className="text-gray-900 placeholder:text-gray-400"
                         style={{ color: '#111827' }}
                         required
                       />
                     </div>
                     <div>
-                      <Label htmlFor="total_pagado" className="text-gray-700 font-medium">Total Pagado por el Cliente (€) *</Label>
+                      <Label htmlFor="total_pagado" className="text-gray-700 font-medium">{t('totalPaid')}</Label>
                       <Input
                         id="total_pagado"
                         type="number"
@@ -418,7 +422,7 @@ export default function FacturasPage() {
                         min="0"
                         value={nuevaFactura.total_pagado}
                         onChange={(e) => setNuevaFactura(prev => ({ ...prev, total_pagado: parseFloat(e.target.value) || 0 }))}
-                        placeholder="121.00"
+                        placeholder={t('totalPlaceholder')}
                         className="text-gray-900 placeholder:text-gray-400"
                         style={{ color: '#111827' }}
                         required
@@ -426,19 +430,19 @@ export default function FacturasPage() {
                     </div>
                   </div>
                   <div className="mt-4">
-                    <Label htmlFor="descripcion" className="text-gray-700 font-medium">Descripción</Label>
+                    <Label htmlFor="descripcion" className="text-gray-700 font-medium">{t('description')}</Label>
                     <Input
                       id="descripcion"
                       value={nuevaFactura.descripcion}
                       onChange={(e) => setNuevaFactura(prev => ({ ...prev, descripcion: e.target.value }))}
-                      placeholder="Estancia de 3 noches en habitación doble"
+                      placeholder={t('descriptionPlaceholder')}
                       className="text-gray-900 placeholder:text-gray-400"
                       style={{ color: '#111827' }}
                     />
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                     <div>
-                      <Label htmlFor="iva_porcentaje" className="text-gray-700 font-medium">IVA (%)</Label>
+                      <Label htmlFor="iva_porcentaje" className="text-gray-700 font-medium">{t('ivaPercent')}</Label>
                       <Input
                         id="iva_porcentaje"
                         type="number"
@@ -447,18 +451,18 @@ export default function FacturasPage() {
                         max="100"
                         value={nuevaFactura.iva_porcentaje}
                         onChange={(e) => setNuevaFactura(prev => ({ ...prev, iva_porcentaje: parseFloat(e.target.value) || 0 }))}
-                        placeholder="21"
+                        placeholder={t('ivaPlaceholder')}
                         className="text-gray-900 placeholder:text-gray-400"
                         style={{ color: '#111827' }}
                       />
                     </div>
                     <div>
-                      <Label htmlFor="forma_pago" className="text-gray-700 font-medium">Forma de Pago</Label>
+                      <Label htmlFor="forma_pago" className="text-gray-700 font-medium">{t('paymentMethod')}</Label>
                       <Input
                         id="forma_pago"
                         value={nuevaFactura.forma_pago}
                         onChange={(e) => setNuevaFactura(prev => ({ ...prev, forma_pago: e.target.value }))}
-                        placeholder="Transferencia bancaria"
+                        placeholder={t('paymentPlaceholder')}
                         className="text-gray-900 placeholder:text-gray-400"
                         style={{ color: '#111827' }}
                       />
@@ -468,18 +472,18 @@ export default function FacturasPage() {
 
                 {/* Resumen */}
                 <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-6 rounded-xl border border-green-200 shadow-lg">
-                  <h4 className="font-semibold text-gray-800 mb-4 text-center text-lg">Resumen de la Factura</h4>
+                  <h4 className="font-semibold text-gray-800 mb-4 text-center text-lg">{t('summaryTitle')}</h4>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-gray-700">Precio base:</span>
+                      <span className="text-gray-700">{t('priceBase')}</span>
                       <span className="text-gray-900 font-medium">{calcularPrecioBase().toFixed(2)} €</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-700">IVA ({nuevaFactura.iva_porcentaje}%):</span>
+                      <span className="text-gray-700">{t('ivaLabel', { pct: nuevaFactura.iva_porcentaje })}</span>
                       <span className="text-gray-900 font-medium">{calcularIVA().toFixed(2)} €</span>
                     </div>
                     <div className="flex justify-between font-bold border-t border-gray-300 pt-2">
-                      <span className="text-gray-800">Total:</span>
+                      <span className="text-gray-800">{t('total')}</span>
                       <span className="text-blue-600 text-lg">{nuevaFactura.total_pagado.toFixed(2)} €</span>
                     </div>
                   </div>
@@ -493,12 +497,12 @@ export default function FacturasPage() {
                   {saving ? (
                     <>
                       <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                      Creando factura...
+                      {t('creating')}
                     </>
                   ) : (
                     <>
                       <Plus className="w-5 h-5 mr-2" />
-                      Crear Factura
+                      {t('createButton')}
                     </>
                   )}
                 </Button>
@@ -509,15 +513,15 @@ export default function FacturasPage() {
 
         <TabsContent value="historial" className="space-y-6">
           <Card className="p-6 bg-white shadow-xl rounded-xl border border-blue-200">
-            <h2 className="text-xl font-semibold text-gray-900 mb-6 text-center bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Historial de Facturas</h2>
+            <h2 className="text-xl font-semibold text-gray-900 mb-6 text-center bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">{t('historyTitle')}</h2>
             
             {facturas.length === 0 ? (
               <div className="text-center py-12">
                 <div className="bg-gradient-to-r from-blue-100 to-purple-100 p-6 rounded-full w-20 h-20 mx-auto mb-6 flex items-center justify-center">
                   <FileText className="w-10 h-10 text-blue-600" />
                 </div>
-                <h3 className="text-xl font-semibold text-gray-800 mb-2">No hay facturas</h3>
-                <p className="text-gray-600 text-lg">Crea tu primera factura usando la pestaña "Nueva Factura"</p>
+                <h3 className="text-xl font-semibold text-gray-800 mb-2">{t('noInvoices')}</h3>
+                <p className="text-gray-600 text-lg">{t('noInvoicesHint')}</p>
               </div>
             ) : (
               <div className="space-y-4">
@@ -537,7 +541,7 @@ export default function FacturasPage() {
                           <div className="text-sm text-gray-600">
                             <div className="flex items-center">
                               <Calendar className="w-4 h-4 mr-1 text-blue-600" />
-                              {new Date(factura.fecha_emision).toLocaleDateString('es-ES')}
+                              {new Date(factura.fecha_emision).toLocaleDateString(locale)}
                             </div>
                           </div>
                           <div className="text-sm">
@@ -558,7 +562,7 @@ export default function FacturasPage() {
                           className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 text-blue-700 hover:from-blue-100 hover:to-indigo-100 hover:border-blue-300 rounded-xl shadow-sm transition-all duration-200 hover:shadow-md"
                         >
                           <Download className="w-4 h-4 mr-1" />
-                          PDF
+                          {t('pdf')}
                         </Button>
                         <Button
                           size="sm"

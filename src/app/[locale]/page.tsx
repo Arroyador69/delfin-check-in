@@ -7,12 +7,13 @@ import AdminLayout from '@/components/AdminLayout';
 import { ArrowUpCircle } from 'lucide-react';
 import { getRoomNumber } from '@/lib/db';
 import UnitLimitWarning from '@/components/UnitLimitWarning';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 
 type FilterPeriod = 'total' | 'annual' | 'today' | 'thisWeek' | 'last7Days' | 'thisMonth' | 'last30Days' | 'custom';
 
 export default function HomePage() {
   const t = useTranslations('dashboard');
+  const locale = useLocale();
   const [rooms, setRooms] = useState<any[]>([]);
   const [reservations, setReservations] = useState<any[]>([]);
   const [tenant, setTenant] = useState<any>(null);
@@ -299,10 +300,10 @@ export default function HomePage() {
   const getPeriodLabel = () => {
     const dateRange = getDateRange(filterPeriod);
     const formatDate = (dateStr: string) => {
-      if (!dateStr) return 'Fecha no seleccionada';
+      if (!dateStr) return t('periodFilters.selectDateRange');
       const date = new Date(dateStr);
-      if (isNaN(date.getTime())) return 'Fecha inválida';
-      return date.toLocaleDateString('es-ES', { 
+      if (isNaN(date.getTime())) return t('periodFilters.selectDateRange');
+      return date.toLocaleDateString(locale, { 
         day: '2-digit', 
         month: '2-digit', 
         year: 'numeric' 
@@ -311,26 +312,26 @@ export default function HomePage() {
     
     switch (filterPeriod) {
       case 'total':
-        return 'Total (desde 2020)';
+        return t('periodFilters.totalSince2020');
       case 'annual':
-        return 'Año actual';
+        return t('periodFilters.currentYear');
       case 'today':
-        return 'Hoy';
+        return t('periodFilters.today');
       case 'thisWeek':
-        return 'Esta semana';
+        return t('periodFilters.thisWeek');
       case 'last7Days':
-        return 'Últimos 7 días';
+        return t('periodFilters.last7Days');
       case 'thisMonth':
-        return 'Este mes';
+        return t('periodFilters.thisMonth');
       case 'last30Days':
-        return 'Últimos 30 días';
+        return t('periodFilters.last30Days');
       case 'custom':
         if (!customDateRange.from || !customDateRange.to) {
-          return 'Selecciona un rango de fechas';
+          return t('periodFilters.selectDateRange');
         }
         return `${formatDate(dateRange.from)} - ${formatDate(dateRange.to)}`;
       default:
-        return 'Total (desde 2020)';
+        return t('periodFilters.totalSince2020');
     }
   };
 
@@ -437,7 +438,9 @@ export default function HomePage() {
               </div>
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div className="text-left sm:text-right">
-                  <div className="text-xs sm:text-sm text-gray-600">Uso de habitaciones</div>
+                  <div className="text-xs sm:text-sm text-gray-600">
+                    {t('roomUsage')}
+                  </div>
                   <div className="text-base sm:text-lg font-bold text-gray-900">
                     {tenant.stats?.rooms_used || 0}/{tenant.tenant?.max_rooms === -1 ? '∞' : (tenant.tenant?.max_rooms || 2)}
                   </div>
@@ -461,24 +464,42 @@ export default function HomePage() {
                       {tenant.limits.rooms_usage_percentage >= 100 ? (
                         <div className="p-2 bg-red-50 border border-red-200 rounded-md">
                           <p className="text-xs sm:text-sm text-red-800 font-medium">
-                            ⚠️ Límite alcanzado: Has usado todas las habitaciones de tu plan ({tenant.stats?.rooms_used || 0}/{tenant.tenant.max_rooms}).
+                            {t('limitReached', {
+                              used: tenant.stats?.rooms_used || 0,
+                              max: tenant.tenant.max_rooms
+                            })}
                           </p>
                           <p className="text-xs text-red-700 mt-1">
-                            Para añadir más habitaciones, actualiza tu plan desde la página de <Link href="/upgrade-plan" className="underline font-semibold">Mejora de Plan</Link>.
+                            {t('limitReachedAction')}{' '}
+                            <Link href="/upgrade-plan" className="underline font-semibold">
+                              {t('upgradeLink')}
+                            </Link>.
                           </p>
                         </div>
                       ) : tenant.limits.rooms_usage_percentage >= 80 ? (
                         <div className="p-2 bg-orange-50 border border-orange-200 rounded-md">
                           <p className="text-xs sm:text-sm text-orange-800">
-                            ⚡ Estás cerca del límite: {tenant.stats?.rooms_used || 0}/{tenant.tenant.max_rooms} habitaciones ({tenant.limits.rooms_usage_percentage}% usado).
+                            {t('nearLimit', {
+                              used: tenant.stats?.rooms_used || 0,
+                              max: tenant.tenant.max_rooms,
+                              percentage: tenant.limits.rooms_usage_percentage
+                            })}
                           </p>
                           <p className="text-xs text-orange-700 mt-1">
-                            Te quedan {tenant.stats?.rooms_remaining || 0} habitaciones disponibles. Considera <Link href="/upgrade-plan" className="underline font-semibold">actualizar tu plan</Link> si necesitas más capacidad.
+                            {t('nearLimitRemaining', {
+                              remaining: tenant.stats?.rooms_remaining || 0
+                            })}{' '}
+                            <Link href="/upgrade-plan" className="underline font-semibold">
+                              {t('nearLimitAction')}
+                            </Link>{' '}
+                            {t('nearLimitSuffix')}
                           </p>
                         </div>
                       ) : tenant.stats?.rooms_remaining !== undefined && tenant.stats.rooms_remaining > 0 && (
                         <p className="text-xs text-gray-600 mt-1">
-                          ✅ {tenant.stats.rooms_remaining} habitaciones disponibles para añadir
+                          {t('roomsAvailableToAdd', {
+                            remaining: tenant.stats.rooms_remaining
+                          })}
                         </p>
                       )}
                     </div>
@@ -490,7 +511,7 @@ export default function HomePage() {
                     className="px-3 sm:px-4 py-2 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-md hover:from-orange-600 hover:to-red-600 transition-all duration-200 flex items-center justify-center space-x-2 text-sm sm:text-base shadow-md"
                   >
                     <ArrowUpCircle className="w-4 h-4" />
-                    <span className="font-medium">Actualizar Plan</span>
+                    <span className="font-medium">{t('updatePlan')}</span>
                   </Link>
                 )}
               </div>
@@ -505,10 +526,10 @@ export default function HomePage() {
               <div className="text-2xl sm:text-3xl">🎥</div>
               <div className="flex-1">
                 <h2 className="text-base sm:text-lg font-semibold text-gray-900">
-                  Video Tutorial - Panel de Usuario
+                  {t('videoTutorial.title')}
                 </h2>
                 <p className="text-xs sm:text-sm text-gray-600 mt-1">
-                  Aprende a usar todas las funcionalidades de Delfín Check-in
+                  {t('videoTutorial.description')}
                 </p>
               </div>
             </div>
@@ -524,7 +545,7 @@ export default function HomePage() {
                   borderRadius: '12px'
                 }}
                 src="https://www.youtube.com/embed/Ttr6aefFLbg"
-                title="Video Tutorial - Panel de Usuario Delfín Check-in"
+                title={t('videoTutorial.title')}
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
               ></iframe>
@@ -536,7 +557,7 @@ export default function HomePage() {
                 rel="noopener noreferrer"
                 className="text-sm text-blue-600 hover:text-blue-700 font-medium inline-flex items-center gap-1"
               >
-                Ver en YouTube
+                {t('videoTutorial.watchOnYouTube')}
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                 </svg>
@@ -549,9 +570,12 @@ export default function HomePage() {
         <div className="card mb-6 sm:mb-8">
           <div className="flex flex-col gap-4">
             <div>
-              <h2 className="text-base sm:text-lg font-semibold text-black mb-2">📊 Filtros de Período</h2>
+              <h2 className="text-base sm:text-lg font-semibold text-black mb-2">
+                {t('periodFilters.title')}
+              </h2>
               <p className="text-xs sm:text-sm text-black">
-                Mostrando datos para: <span className="font-bold text-black">{getPeriodLabel()}</span>
+                {t('periodFilters.showing')}{' '}
+                <span className="font-bold text-black">{getPeriodLabel()}</span>
               </p>
             </div>
             
@@ -565,7 +589,7 @@ export default function HomePage() {
                     : 'bg-white text-black border-gray-300 hover:bg-gray-50'
                 }`}
               >
-                📊 Total
+                {t('periodFilters.total')}
               </button>
               
               <button
@@ -576,7 +600,7 @@ export default function HomePage() {
                     : 'bg-white text-black border-gray-300 hover:bg-gray-50'
                 }`}
               >
-                📅 Anual
+                {t('periodFilters.annual')}
               </button>
               
               <button
@@ -587,7 +611,7 @@ export default function HomePage() {
                     : 'bg-white text-black border-gray-300 hover:bg-gray-50'
                 }`}
               >
-                📅 Hoy
+                {t('periodFilters.today')}
               </button>
               
               <button
@@ -598,7 +622,7 @@ export default function HomePage() {
                     : 'bg-white text-black border-gray-300 hover:bg-gray-50'
                 }`}
               >
-                📆 Esta semana
+                {t('periodFilters.thisWeek')}
               </button>
               
               <button
@@ -609,7 +633,7 @@ export default function HomePage() {
                     : 'bg-white text-black border-gray-300 hover:bg-gray-50'
                 }`}
               >
-                ⏰ Últimos 7 días
+                {t('periodFilters.last7Days')}
               </button>
               
               <button
@@ -620,7 +644,7 @@ export default function HomePage() {
                     : 'bg-white text-black border-gray-300 hover:bg-gray-50'
                 }`}
               >
-                🗓️ Este mes
+                {t('periodFilters.thisMonth')}
               </button>
               
               <button
@@ -631,7 +655,7 @@ export default function HomePage() {
                     : 'bg-white text-black border-gray-300 hover:bg-gray-50'
                 }`}
               >
-                📈 Últimos 30 días
+                {t('periodFilters.last30Days')}
               </button>
               
               <button
@@ -642,7 +666,7 @@ export default function HomePage() {
                     : 'bg-white text-black border-gray-300 hover:bg-gray-50'
                 }`}
               >
-                🎯 Personalizado
+                {t('periodFilters.custom')}
               </button>
             </div>
           </div>
@@ -653,7 +677,7 @@ export default function HomePage() {
               <div className="flex flex-col sm:flex-row gap-4">
                 <div className="flex-1">
                   <label className="block text-sm font-bold text-black mb-1">
-                    📅 Fecha desde
+                    {t('periodFilters.dateFrom')}
                   </label>
                   <input
                     type="date"
@@ -664,7 +688,7 @@ export default function HomePage() {
                 </div>
                 <div className="flex-1">
                   <label className="block text-sm font-bold text-black mb-1">
-                    📅 Fecha hasta
+                    {t('periodFilters.dateTo')}
                   </label>
                   <input
                     type="date"
@@ -681,7 +705,7 @@ export default function HomePage() {
                     }}
                     className="px-4 py-2 bg-gray-100 text-black rounded-lg hover:bg-gray-200 transition-colors"
                   >
-                    🔄 Reset
+                    {t('periodFilters.resetButton')}
                   </button>
               </div>
             </div>
@@ -699,8 +723,8 @@ export default function HomePage() {
               {tenant && (
                 <div className="text-xs text-gray-600 mt-1">
                   {tenant.limits.rooms_remaining === -1 
-                    ? 'Ilimitadas' 
-                    : `${tenant.limits.rooms_remaining} disponibles`
+                    ? t('unlimited') 
+                    : t('available', { count: tenant.limits.rooms_remaining })
                   }
                 </div>
               )}
@@ -765,10 +789,10 @@ export default function HomePage() {
               <div className="flex items-center justify-between">
                 <div className="flex-1 min-w-0">
                   <h3 className="text-base sm:text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
-                    Reservas
+                    {t('quickActions.reservations.title')}
                   </h3>
                   <p className="text-xs sm:text-sm text-gray-600 mt-1">
-                    Gestionar reservas y calendario
+                    {t('quickActions.reservations.description')}
                   </p>
                 </div>
               <div className="text-xl sm:text-2xl flex-shrink-0 ml-2">📅</div>
@@ -778,10 +802,10 @@ export default function HomePage() {
               <div className="flex items-center justify-between">
                 <div className="flex-1 min-w-0">
                   <h3 className="text-base sm:text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
-                    Registros de formularios
+                    {t('quickActions.guestRegistrations.title')}
                   </h3>
                   <p className="text-xs sm:text-sm text-gray-600 mt-1">
-                    Ver registros y generar XML
+                    {t('quickActions.guestRegistrations.description')}
                   </p>
                 </div>
               <div className="text-xl sm:text-2xl flex-shrink-0 ml-2">🇪🇸</div>
@@ -791,10 +815,10 @@ export default function HomePage() {
             <div className="flex items-center justify-between">
               <div className="flex-1 min-w-0">
                 <h3 className="text-base sm:text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
-                  Calculadora de Costos
+                  {t('quickActions.costCalculator.title')}
                 </h3>
                 <p className="text-xs sm:text-sm text-gray-600 mt-1">
-                  Calcular costos reales por huésped
+                  {t('quickActions.costCalculator.description')}
                 </p>
               </div>
               <div className="text-xl sm:text-2xl flex-shrink-0 ml-2">🧮</div>
@@ -804,10 +828,10 @@ export default function HomePage() {
             <div className="flex items-center justify-between">
               <div className="flex-1 min-w-0">
                 <h3 className="text-base sm:text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
-                  Exportar AEAT
+                  {t('quickActions.exportAEAT.title')}
                 </h3>
                 <p className="text-xs sm:text-sm text-gray-600 mt-1">
-                  Generar archivos para Hacienda
+                  {t('quickActions.exportAEAT.description')}
                 </p>
               </div>
               <div className="text-xl sm:text-2xl flex-shrink-0 ml-2">🏛️</div>
@@ -835,7 +859,7 @@ export default function HomePage() {
             </h3>
             {reservations.length === 0 ? (
               <div className="text-center py-6">
-                <p className="text-gray-500">No hay reservas</p>
+                <p className="text-gray-500">{t('currentReservations.noReservations')}</p>
               </div>
             ) : (
               <div className="space-y-3">
@@ -857,19 +881,39 @@ export default function HomePage() {
                           {reservation.guest_name}
                         </p>
                         <div className="flex items-center space-x-4 text-xs text-gray-600 mt-1">
-                          <span>👥 {reservation.guest_count || 'N/A'} personas</span>
-                          <span>🏨 Hab. {getRoomNumber(reservation.room_id)}</span>
+                          <span>
+                            👥 {t('currentReservations.people', {
+                              count: reservation.guest_count || 0
+                            })}
+                          </span>
+                          <span>
+                            🏨 {t('currentReservations.room', {
+                              number: getRoomNumber(reservation.room_id)
+                            })}
+                          </span>
                         </div>
                         <p className="text-xs text-gray-500 mt-1">
-                          🟢 Check-in: {new Date(reservation.check_in).toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                          {t('currentReservations.checkIn')}{' '}
+                          {new Date(reservation.check_in).toLocaleDateString(locale, { 
+                            weekday: 'long', 
+                            year: 'numeric', 
+                            month: 'long', 
+                            day: 'numeric' 
+                          })}
                         </p>
                         <p className="text-xs text-gray-500">
-                          🔴 Check-out: {new Date(reservation.check_out).toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                          {t('currentReservations.checkOut')}{' '}
+                          {new Date(reservation.check_out).toLocaleDateString(locale, { 
+                            weekday: 'long', 
+                            year: 'numeric', 
+                            month: 'long', 
+                            day: 'numeric' 
+                          })}
                         </p>
                       </div>
                     </div>
                   ))}
-                {reservations.filter(r => {
+                {reservations.filter((r) => {
                   const checkIn = new Date(r.check_in);
                   const checkOut = new Date(r.check_out);
                   const now = new Date();
@@ -878,7 +922,7 @@ export default function HomePage() {
                   return checkIn <= now && checkOut > now && r.status === 'confirmed';
                 }).length === 0 && (
                   <div className="text-center py-6">
-                    <p className="text-gray-500">No hay huéspedes actuales</p>
+                    <p className="text-gray-500">{t('currentReservations.noCurrentGuests')}</p>
                   </div>
                 )}
               </div>
@@ -902,7 +946,7 @@ export default function HomePage() {
             </h3>
             {reservations.length === 0 ? (
               <div className="text-center py-6">
-                <p className="text-gray-500">No hay reservas</p>
+                <p className="text-gray-500">{t('upcomingReservations.noReservations')}</p>
               </div>
             ) : (
               <div className="space-y-3">
@@ -924,12 +968,20 @@ export default function HomePage() {
                           {reservation.guest_name}
                         </p>
                         <div className="flex items-center space-x-4 text-xs text-gray-600 mt-1">
-                          <span>👥 {reservation.guest_count || 'N/A'} personas</span>
-                          <span>🏨 Hab. {getRoomNumber(reservation.room_id)}</span>
-                          <span>🚪 Check-in: 16:00</span>
+                          <span>
+                            👥 {t('upcomingReservations.people', {
+                              count: reservation.guest_count || 0
+                            })}
+                          </span>
+                          <span>
+                            🏨 {t('upcomingReservations.room', {
+                              number: getRoomNumber(reservation.room_id)
+                            })}
+                          </span>
+                          <span>{t('upcomingReservations.checkInTime')}</span>
                         </div>
                         <p className="text-xs text-gray-500 mt-1">
-                          {new Date(reservation.check_in).toLocaleDateString('es-ES', { 
+                          {new Date(reservation.check_in).toLocaleDateString(locale, { 
                             weekday: 'long', 
                             year: 'numeric', 
                             month: 'long', 
@@ -937,7 +989,8 @@ export default function HomePage() {
                           })}
                       </p>
                         <p className="text-xs text-gray-500">
-                          🔴 Check-out: {new Date(reservation.check_out).toLocaleDateString('es-ES', { 
+                          {t('upcomingReservations.checkOutLabel')}{' '}
+                          {new Date(reservation.check_out).toLocaleDateString(locale, { 
                             weekday: 'long', 
                             year: 'numeric', 
                             month: 'long', 
@@ -947,15 +1000,15 @@ export default function HomePage() {
                     </div>
                   </div>
                 ))}
-                {reservations.filter(r => {
+                    {reservations.filter((r) => {
                   const checkIn = new Date(r.check_in);
                   const now = new Date();
                   
                   // Reserva futura: check-in es después de ahora
                   return checkIn > now && r.status === 'confirmed';
-                }).length === 0 && (
+                    }).length === 0 && (
                   <div className="text-center py-6">
-                    <p className="text-gray-500">No hay reservas próximas</p>
+                    <p className="text-gray-500">{t('upcomingReservations.noUpcomingReservations')}</p>
                   </div>
                 )}
               </div>

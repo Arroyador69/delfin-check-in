@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 
 interface OnboardingData {
   // Paso 1: Cambiar contraseña
@@ -36,6 +37,7 @@ interface OnboardingData {
 }
 
 export default function OnboardingPage() {
+  const t = useTranslations('onboarding');
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -110,7 +112,7 @@ export default function OnboardingPage() {
     switch (step) {
       case 1: // Cambiar contraseña
         if (!formData.passwordChanged) {
-          setError('Debes cambiar tu contraseña antes de continuar');
+          setError(t('errors.mustChangePassword'));
           return false;
         }
         return true;
@@ -118,7 +120,7 @@ export default function OnboardingPage() {
         if (!formData.nombreEmpresa || !formData.nifEmpresa || !formData.direccionEmpresa ||
             !formData.codigoPostal || !formData.ciudad || !formData.provincia || 
             !formData.pais || !formData.telefono || !formData.email || !formData.fechaCreacion) {
-          setError('Todos los campos marcados con * son obligatorios');
+          setError(t('errors.allFieldsRequired'));
           return false;
         }
         return true;
@@ -126,7 +128,7 @@ export default function OnboardingPage() {
         return true;
       case 4: // Añadir propiedad
         if (!formData.propertyAdded) {
-          setError('Debes añadir al menos una propiedad antes de continuar');
+          setError(t('errors.mustAddProperty'));
           return false;
         }
         return true;
@@ -175,19 +177,19 @@ export default function OnboardingPage() {
     setLoading(true);
 
     if (!formData.currentPassword || !formData.newPassword || !formData.confirmPassword) {
-      setError('Todos los campos son obligatorios');
+      setError(t('errors.allFieldsRequiredShort'));
       setLoading(false);
       return;
     }
 
     if (formData.newPassword !== formData.confirmPassword) {
-      setError('Las contraseñas nuevas no coinciden');
+      setError(t('errors.passwordsDoNotMatch'));
       setLoading(false);
       return;
     }
 
     if (formData.newPassword.length < 8) {
-      setError('La nueva contraseña debe tener al menos 8 caracteres');
+      setError(t('errors.passwordMinLength'));
       setLoading(false);
       return;
     }
@@ -206,7 +208,7 @@ export default function OnboardingPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        setError(data.message || 'Error al cambiar la contraseña');
+        setError(data.message || t('errors.changePasswordFailed'));
         setLoading(false);
         return;
       }
@@ -257,7 +259,7 @@ export default function OnboardingPage() {
     setLoading(true);
 
     if (!formData.propertyName.trim()) {
-      setError('El nombre de la propiedad es obligatorio');
+      setError(t('errors.propertyNameRequired'));
       setLoading(false);
       return;
     }
@@ -275,7 +277,7 @@ export default function OnboardingPage() {
       const roomsData = await roomsResponse.json();
 
       if (!roomsResponse.ok || !roomsData.success) {
-        setError(roomsData.error || 'Error al crear la propiedad');
+        setError(roomsData.error || t('errors.createPropertyFailed'));
         setLoading(false);
         return;
       }
@@ -284,7 +286,7 @@ export default function OnboardingPage() {
       setError('');
       await loadRooms();
     } catch (error) {
-      setError('Error al añadir la propiedad');
+      setError(t('errors.addPropertyFailed'));
     } finally {
       setLoading(false);
     }
@@ -328,7 +330,7 @@ export default function OnboardingPage() {
       router.push('/');
     } catch (error) {
       console.error('Error:', error);
-      setError('Error al completar el onboarding. Por favor, inténtalo de nuevo.');
+      setError(t('errors.completeFailed'));
     } finally {
       setLoading(false);
     }
@@ -339,16 +341,16 @@ export default function OnboardingPage() {
     <div className="max-w-4xl mx-auto p-6">
       <div className="bg-white rounded-lg shadow-lg p-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-6">
-          🔐 Cambiar Contraseña
+          {t('step1.title')}
         </h1>
         
         <p className="text-gray-600 mb-6">
-          Por seguridad, debes cambiar tu contraseña temporal antes de continuar.
+          {t('step1.intro')}
         </p>
 
         {formData.passwordChanged && (
           <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
-            <p className="text-green-800 font-semibold">✅ Contraseña cambiada exitosamente</p>
+            <p className="text-green-800 font-semibold">{t('step1.passwordChangedSuccess')}</p>
           </div>
         )}
 
@@ -361,7 +363,7 @@ export default function OnboardingPage() {
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Contraseña Actual *
+              {t('step1.currentPassword')}
             </label>
             <input
               type="password"
@@ -375,7 +377,7 @@ export default function OnboardingPage() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Nueva Contraseña *
+              {t('step1.newPassword')}
             </label>
             <input
               type="password"
@@ -386,12 +388,12 @@ export default function OnboardingPage() {
               disabled={formData.passwordChanged}
               minLength={8}
             />
-            <p className="text-xs text-gray-500 mt-1">Mínimo 8 caracteres</p>
+            <p className="text-xs text-gray-500 mt-1">{t('step1.minChars')}</p>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Confirmar Nueva Contraseña *
+              {t('step1.confirmPassword')}
             </label>
             <input
               type="password"
@@ -410,7 +412,7 @@ export default function OnboardingPage() {
             disabled={loading || formData.passwordChanged}
             className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
           >
-            {loading ? 'Cambiando...' : formData.passwordChanged ? 'Contraseña Cambiada' : 'Cambiar Contraseña'}
+            {loading ? t('step1.changing') : formData.passwordChanged ? t('step1.passwordChanged') : t('step1.changePassword')}
           </button>
         </div>
       </div>
@@ -422,11 +424,11 @@ export default function OnboardingPage() {
     <div className="max-w-4xl mx-auto p-6">
       <div className="bg-white rounded-lg shadow-lg p-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-6">
-          📋 Datos de la Empresa
+          {t('step2.title')}
         </h1>
         
         <p className="text-gray-600 mb-6">
-          Complete los datos de su empresa o alojamiento. Esta información se utilizará para las facturas y el formulario público de huéspedes.
+          {t('step2.intro')}
         </p>
 
         {error && (
@@ -438,7 +440,7 @@ export default function OnboardingPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Nombre de la Empresa *
+              {t('step2.companyName')}
             </label>
             <input
               type="text"
@@ -451,7 +453,7 @@ export default function OnboardingPage() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              NIF/CIF *
+              {t('step2.nif')}
             </label>
             <input
               type="text"
@@ -464,7 +466,7 @@ export default function OnboardingPage() {
 
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Dirección *
+              {t('step2.address')}
             </label>
             <input
               type="text"
@@ -477,7 +479,7 @@ export default function OnboardingPage() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Código Postal *
+              {t('step2.postalCode')}
             </label>
             <input
               type="text"
@@ -490,7 +492,7 @@ export default function OnboardingPage() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Ciudad *
+              {t('step2.city')}
             </label>
             <input
               type="text"
@@ -503,7 +505,7 @@ export default function OnboardingPage() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Provincia *
+              {t('step2.province')}
             </label>
             <input
               type="text"
@@ -516,7 +518,7 @@ export default function OnboardingPage() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              País *
+              {t('step2.country')}
             </label>
             <input
               type="text"
@@ -529,7 +531,7 @@ export default function OnboardingPage() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Fecha de Creación de la Empresa *
+              {t('step2.companyCreationDate')}
             </label>
             <input
               type="date"
@@ -542,7 +544,7 @@ export default function OnboardingPage() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Teléfono *
+              {t('step2.phone')}
             </label>
             <input
               type="tel"
@@ -555,7 +557,7 @@ export default function OnboardingPage() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Email *
+              {t('step2.email')}
             </label>
             <input
               type="email"
@@ -568,7 +570,7 @@ export default function OnboardingPage() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Sitio Web
+              {t('step2.website')}
             </label>
             <input
               type="url"
@@ -584,13 +586,13 @@ export default function OnboardingPage() {
             onClick={handlePrevious}
             className="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600"
           >
-            Anterior
+            {t('step2.previous')}
           </button>
           <button
             onClick={handleNext}
             className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
           >
-            Continuar
+            {t('step2.continue')}
           </button>
         </div>
       </div>
@@ -602,63 +604,62 @@ export default function OnboardingPage() {
     <div className="max-w-4xl mx-auto p-6">
       <div className="bg-white rounded-lg shadow-lg p-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-6">
-          🔐 Configuración MIR (Opcional)
+          {t('step3.title')}
         </h1>
         
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-6">
           <h2 className="text-lg font-semibold text-yellow-800 mb-2">
-            ⚠️ Información Importante
+            {t('step3.importantTitle')}
           </h2>
           <p className="text-yellow-700 mb-3">
-            Para poder enviar las comunicaciones al Ministerio del Interior, necesita configurar sus credenciales MIR. 
-            Estas credenciales las obtiene al registrarse en el Sistema de Hospedajes (SES-Hospedajes) del MIR.
+            {t('step3.importantText')}
           </p>
         </div>
 
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
           <h2 className="text-lg font-semibold text-blue-800 mb-2">
-            💰 Módulo MIR - Solo 8€/mes
+            {t('step3.moduleTitle')}
           </h2>
           <p className="text-blue-700 mb-2">
-            <strong>Recordatorio:</strong> El envío automático de formularios de huéspedes al Ministerio del Interior es <strong>obligatorio</strong> en España.
+            <strong>{t('step3.reminder')}</strong> {t('step3.reminderText')} <strong>{t('step3.reminderBold')}</strong> {t('step3.reminderLocation')}
           </p>
           <p className="text-blue-700">
-            Por solo <strong>8€/mes (+ IVA)</strong> puedes tener el módulo MIR activado, que incluye:
+            {t('step3.priceText')} <strong>{t('step3.priceBold')}</strong> {t('step3.priceSuffix')}
           </p>
           <ul className="list-disc list-inside text-blue-800 mt-2 space-y-1">
-            <li>Check-in digital automático</li>
-            <li>Envío automático de formularios al gobierno</li>
-            <li>Cumplimiento legal garantizado</li>
-            <li>Sin preocupaciones por multas o sanciones</li>
+            <li>{t('step3.feature1')}</li>
+            <li>{t('step3.feature2')}</li>
+            <li>{t('step3.feature3')}</li>
+            <li>{t('step3.feature4')}</li>
           </ul>
           <Link 
             href="/upgrade-plan"
             className="inline-block mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-semibold"
           >
-            Activar Módulo MIR por 8€/mes
+            {t('step3.activateModule')}
           </Link>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Usuario MIR
+              {t('step3.userMir')}
             </label>
             <input
               type="text"
               value={formData.usuarioMir}
               onChange={(e) => handleInputChange('usuarioMir', e.target.value)}
-              placeholder="Formato: CIF---WS"
+              placeholder={t('step3.userMirPlaceholder')}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
             />
             <p className="text-xs text-gray-500 mt-1">
-              Formato: CIF---WS (ejemplo: B12345678---WS)
+              {t('step3.userMirHint')}
             </p>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Contraseña MIR
+              {t('step3.passwordMir')}
             </label>
             <input
               type="password"
@@ -670,7 +671,7 @@ export default function OnboardingPage() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Código de Arrendador
+              {t('step3.landlordCode')}
             </label>
             <input
               type="text"
@@ -682,7 +683,7 @@ export default function OnboardingPage() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Código de Establecimiento
+              {t('step3.establishmentCode')}
             </label>
             <input
               type="text"
@@ -698,13 +699,13 @@ export default function OnboardingPage() {
             onClick={handlePrevious}
             className="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600"
           >
-            Anterior
+            {t('step3.previous')}
           </button>
           <button
             onClick={handleNext}
             className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
           >
-            Continuar (Opcional)
+            {t('step3.continueOptional')}
           </button>
         </div>
       </div>
@@ -716,16 +717,16 @@ export default function OnboardingPage() {
     <div className="max-w-4xl mx-auto p-6">
       <div className="bg-white rounded-lg shadow-lg p-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-6">
-          🏠 Añadir Propiedad
+          {t('step4.title')}
         </h1>
         
         <p className="text-gray-600 mb-6">
-          Añade al menos una propiedad o habitación para comenzar a gestionar tus reservas.
+          {t('step4.intro')}
         </p>
 
         {formData.propertyAdded && (
           <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
-            <p className="text-green-800 font-semibold">✅ Propiedad añadida exitosamente</p>
+            <p className="text-green-800 font-semibold">{t('step4.propertyAddedSuccess')}</p>
           </div>
         )}
 
@@ -737,7 +738,7 @@ export default function OnboardingPage() {
 
         {rooms.length > 0 && (
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-            <h3 className="font-semibold text-blue-900 mb-2">Propiedades existentes:</h3>
+            <h3 className="font-semibold text-blue-900 mb-2">{t('step4.existingProperties')}</h3>
             <ul className="list-disc list-inside text-blue-800">
               {rooms.map(room => (
                 <li key={room.id}>{room.name}</li>
@@ -749,13 +750,13 @@ export default function OnboardingPage() {
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Nombre de la Propiedad/Habitación *
+              {t('step4.propertyName')}
             </label>
             <input
               type="text"
               value={formData.propertyName}
               onChange={(e) => handleInputChange('propertyName', e.target.value)}
-              placeholder="Ej: Habitación 1, Apartamento Vista al Mar, etc."
+              placeholder={t('step4.propertyNamePlaceholder')}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
               required
               disabled={formData.propertyAdded}
@@ -768,7 +769,7 @@ export default function OnboardingPage() {
               disabled={loading || !formData.propertyName.trim()}
               className="w-full bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
             >
-              {loading ? 'Añadiendo...' : 'Añadir Propiedad'}
+              {loading ? t('step4.adding') : t('step4.addProperty')}
             </button>
           )}
         </div>
@@ -778,14 +779,14 @@ export default function OnboardingPage() {
             onClick={handlePrevious}
             className="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600"
           >
-            Anterior
+            {t('step4.previous')}
           </button>
           <button
             onClick={handleSubmit}
             disabled={loading || !formData.propertyAdded}
             className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
           >
-            {loading ? 'Completando...' : 'Completar Configuración'}
+            {loading ? t('step4.completing') : t('step4.completeSetup')}
           </button>
         </div>
       </div>
@@ -799,10 +800,10 @@ export default function OnboardingPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <span className="text-2xl">🐬</span>
-              <h1 className="text-xl font-bold text-gray-900">Delfín Check-in</h1>
+              <h1 className="text-xl font-bold text-gray-900">{t('appName')}</h1>
             </div>
             <div className="text-sm text-gray-500">
-              Paso {currentStep} de 4
+              {t('stepOf', { currentStep })}
             </div>
           </div>
           

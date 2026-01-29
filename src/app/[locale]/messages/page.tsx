@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { MessageSquare, Save, Trash2, Send, Settings, Eye, EyeOff } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import { MessageSquare, Save, Trash2, Settings, Eye, EyeOff } from 'lucide-react';
 
 // Tipo para plantillas de mensajes
 interface MessageTemplate {
@@ -47,6 +48,7 @@ interface WhatsAppConfig {
 }
 
 export default function MessagesPage() {
+  const t = useTranslations('messages');
   const router = useRouter();
   useEffect(() => {
     router.replace('/');
@@ -144,13 +146,13 @@ export default function MessagesPage() {
         });
         setEditingTemplate(null);
         fetchData();
-        alert(editingTemplate ? 'Plantilla actualizada' : 'Plantilla creada');
+        alert(editingTemplate ? t('templates.saved') : t('templates.created'));
       } else {
-        alert(`Error: ${result.error}`);
+        alert(`${t('alerts.errorPrefix')} ${result.error}`);
       }
     } catch (error) {
       console.error('Error saving template:', error);
-      alert('Error al guardar la plantilla');
+      alert(t('templates.saveError'));
     }
   };
 
@@ -168,7 +170,7 @@ export default function MessagesPage() {
   };
 
   const handleDelete = async (templateId: number) => {
-    if (!confirm('¿Estás seguro de que quieres eliminar esta plantilla?')) return;
+    if (!confirm(t('templates.deleteConfirm'))) return;
 
     try {
       const response = await fetch(`/api/messages/templates?id=${templateId}`, {
@@ -179,13 +181,13 @@ export default function MessagesPage() {
       
       if (result.success) {
         fetchData();
-        alert('Plantilla eliminada');
+        alert(t('templates.deleted'));
       } else {
-        alert(`Error: ${result.error}`);
+        alert(`${t('alerts.errorPrefix')} ${result.error}`);
       }
     } catch (error) {
       console.error('Error deleting template:', error);
-      alert('Error al eliminar la plantilla');
+      alert(t('templates.deleteError'));
     }
   };
 
@@ -211,7 +213,7 @@ export default function MessagesPage() {
       if (result.success) {
         fetchData();
       } else {
-        alert(`Error: ${result.error}`);
+        alert(`${t('alerts.errorPrefix')} ${result.error}`);
       }
     } catch (error) {
       console.error('Error updating template:', error);
@@ -232,46 +234,38 @@ export default function MessagesPage() {
       
       if (result.success) {
         fetchData();
-        alert('Configuración actualizada exitosamente');
+        alert(t('config.saved'));
       } else {
-        alert(`Error: ${result.error}`);
+        alert(`${t('alerts.errorPrefix')} ${result.error}`);
       }
     } catch (error) {
       console.error('Error updating config:', error);
-      alert('Error al actualizar configuración');
+      alert(t('config.saveError'));
     }
   };
 
   const getTriggerText = (trigger: string) => {
-    switch (trigger) {
-      case 'reservation_confirmed': return 'Reserva Confirmada';
-      case 't_minus_7_days': return '7 días antes';
-      case 't_minus_24_hours': return '24h antes';
-      case 'post_checkout': return 'Post check-out';
-      case 'checkin_instructions': return 'Instrucciones Check-in';
-      case 'send_form': return 'Envío Formulario';
-      default: return trigger;
-    }
+    const key = trigger as keyof typeof triggerKeys;
+    if (triggerKeys[key]) return t(`triggers.${trigger}`);
+    return trigger;
+  };
+  const triggerKeys: Record<string, boolean> = {
+    reservation_confirmed: true,
+    t_minus_7_days: true,
+    t_minus_24_hours: true,
+    post_checkout: true,
+    checkin_instructions: true,
+    send_form: true,
   };
 
   const getChannelText = (channel: string) => {
-    switch (channel) {
-      case 'telegram': return 'Telegram';
-      case 'email': return 'Email';
-      case 'whatsapp': return 'WhatsApp';
-      default: return channel;
-    }
+    if (channel === 'telegram' || channel === 'email' || channel === 'whatsapp') return t(`channels.${channel}`);
+    return channel;
   };
 
   const getStatusText = (status: string) => {
-    switch (status) {
-      case 'pending': return 'Pendiente';
-      case 'sent': return 'Enviado';
-      case 'delivered': return 'Entregado';
-      case 'read': return 'Leído';
-      case 'failed': return 'Fallido';
-      default: return status;
-    }
+    if (status === 'pending' || status === 'sent' || status === 'delivered' || status === 'read' || status === 'failed') return t(`sent.${status}`);
+    return status;
   };
 
   const getStatusColor = (status: string) => {
@@ -290,7 +284,7 @@ export default function MessagesPage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Cargando mensajes...</p>
+          <p className="mt-4 text-gray-600">{t('loading')}</p>
         </div>
       </div>
     );
@@ -301,16 +295,14 @@ export default function MessagesPage() {
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Layout responsivo: stack en móvil, side-by-side en desktop */}
           <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center py-3 gap-3">
             <div className="flex items-center">
               <MessageSquare className="h-6 w-6 text-blue-600 mr-2 flex-shrink-0" />
               <div>
-                <h1 className="text-lg font-bold text-gray-900">Mensajes Automáticos</h1>
-                <p className="text-xs text-gray-600 hidden sm:block">Configura plantillas para comunicación automática por WhatsApp</p>
+                <h1 className="text-lg font-bold text-gray-900">{t('title')}</h1>
+                <p className="text-xs text-gray-600 hidden sm:block">{t('subtitle')}</p>
               </div>
             </div>
-            
           </div>
         </div>
       </header>
@@ -327,7 +319,7 @@ export default function MessagesPage() {
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
-              Plantillas
+              {t('tabs.templates')}
             </button>
             <button
               onClick={() => setActiveTab('sent')}
@@ -337,7 +329,7 @@ export default function MessagesPage() {
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
-              Mensajes Enviados
+              {t('tabs.sent')}
             </button>
             <button
               onClick={() => setActiveTab('config')}
@@ -347,16 +339,15 @@ export default function MessagesPage() {
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
-              Configuración
+              {t('tabs.config')}
             </button>
           </nav>
         </div>
 
-        {/* Botones de acción - Ahora más accesibles */}
         <div className="py-4 bg-gray-50 border-b border-gray-200">
           <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
             <div className="text-sm font-medium text-gray-700">
-              🔧 Acciones de configuración:
+              🔧 {t('actions')}:
             </div>
             <div className="flex flex-col sm:flex-row gap-2">
               <button
@@ -365,19 +356,19 @@ export default function MessagesPage() {
                     const response = await fetch('/api/database/setup-whatsapp');
                     const result = await response.json();
                     if (result.success) {
-                      alert('✅ Base de datos de WhatsApp inicializada correctamente\n\nDetalles:\n' + result.steps.join('\n'));
-                      fetchData(); // Recargar datos
+                      alert('✅ ' + t('alerts.initDbSuccess') + '\n\n' + (result.steps ? result.steps.join('\n') : ''));
+                      fetchData();
                     } else {
-                      alert(`❌ Error: ${result.error}\n\nDetalles:\n${result.steps ? result.steps.join('\n') : result.details}`);
+                      alert(`❌ ${t('alerts.errorPrefix')} ${result.error}\n\n${result.steps ? result.steps.join('\n') : result.details || ''}`);
                     }
                   } catch (error) {
-                    alert('❌ Error al inicializar la base de datos: ' + error);
+                    alert('❌ ' + t('alerts.errorPrefix') + ' ' + String(error));
                   }
                 }}
                 className="flex items-center justify-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 text-sm font-medium shadow-sm transition-colors duration-200"
               >
                 <Settings className="h-4 w-4 mr-2 flex-shrink-0" />
-                <span>Inicializar BD</span>
+                <span>{t('buttons.initDb')}</span>
               </button>
               
               <button
@@ -386,20 +377,20 @@ export default function MessagesPage() {
                     const response = await fetch('/api/whatsapp/init-config', { method: 'POST' });
                     const result = await response.json();
                     if (result.success) {
-                      alert('✅ Configuración de WhatsApp inicializada\n\nTu número +34 617 555 255 está configurado\n\nAhora puedes configurar tu token de acceso');
-                      fetchData(); // Recargar datos
-                      setActiveTab('config'); // Ir a la pestaña de configuración
+                      alert('✅ ' + t('alerts.initWhatsAppSuccess'));
+                      fetchData();
+                      setActiveTab('config');
                     } else {
-                      alert(`❌ Error: ${result.error}`);
+                      alert(`❌ ${t('alerts.errorPrefix')} ${result.error}`);
                     }
                   } catch (error) {
-                    alert('❌ Error al inicializar configuración: ' + error);
+                    alert('❌ ' + t('alerts.errorPrefix') + ' ' + String(error));
                   }
                 }}
                 className="flex items-center justify-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm font-medium shadow-sm transition-colors duration-200"
               >
                 <Settings className="h-4 w-4 mr-2 flex-shrink-0" />
-                <span>Inicializar WhatsApp</span>
+                <span>{t('buttons.initWhatsApp')}</span>
               </button>
               
               <button
@@ -407,7 +398,7 @@ export default function MessagesPage() {
                 className="flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-medium shadow-sm transition-colors duration-200"
               >
                 <Settings className="h-4 w-4 mr-2 flex-shrink-0" />
-                <span>Configurar WhatsApp</span>
+                <span>{t('buttons.configureWhatsApp')}</span>
               </button>
             </div>
           </div>
@@ -420,27 +411,27 @@ export default function MessagesPage() {
             {/* Formulario */}
             <div className="bg-white rounded-lg shadow p-4">
               <h2 className="text-md font-semibold text-gray-900 mb-3">
-                {editingTemplate ? 'Editar Plantilla' : 'Nueva Plantilla'}
+                {editingTemplate ? t('templates.editTemplate') : t('templates.newTemplate')}
               </h2>
               
               <form onSubmit={handleSubmit} className="space-y-3">
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">
-                    Nombre de la Plantilla
+                    {t('templates.templateName')}
                   </label>
                   <input
                     type="text"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     className="w-full px-2 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                    placeholder="Ej: Confirmación de Reserva"
+                    placeholder={t('templates.templateNamePlaceholder')}
                     required
                   />
                 </div>
 
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">
-                    Trigger (Cuándo enviar)
+                    {t('templates.triggerWhen')}
                   </label>
                   <select
                     value={formData.trigger_type}
@@ -448,19 +439,19 @@ export default function MessagesPage() {
                     className="w-full px-2 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                     required
                   >
-                    <option value="">Seleccionar trigger</option>
-                    <option value="reservation_confirmed">Reserva Confirmada</option>
-                    <option value="t_minus_7_days">7 días antes del check-in</option>
-                    <option value="t_minus_24_hours">24h antes del check-in</option>
-                    <option value="checkin_instructions">Instrucciones de Check-in</option>
-                    <option value="send_form">Envío de Formulario</option>
-                    <option value="post_checkout">Post check-out</option>
+                    <option value="">{t('templates.selectTrigger')}</option>
+                    <option value="reservation_confirmed">{t('triggers.reservation_confirmed')}</option>
+                    <option value="t_minus_7_days">{t('triggers.t_minus_7_days')}</option>
+                    <option value="t_minus_24_hours">{t('triggers.t_minus_24_hours')}</option>
+                    <option value="checkin_instructions">{t('triggers.checkin_instructions')}</option>
+                    <option value="send_form">{t('triggers.send_form')}</option>
+                    <option value="post_checkout">{t('triggers.post_checkout')}</option>
                   </select>
                 </div>
 
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">
-                    Idioma
+                    {t('templates.language')}
                   </label>
                   <select
                     value={formData.language}
@@ -475,14 +466,14 @@ export default function MessagesPage() {
 
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">
-                    Plantilla del Mensaje
+                    {t('templates.messageTemplateLabel')}
                   </label>
                   <textarea
                     value={formData.template_content}
                     onChange={(e) => setFormData({ ...formData, template_content: e.target.value })}
                     rows={5}
                     className="w-full px-2 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                    placeholder="Escribe tu mensaje aquí. Usa variables como: {{guest_name}}, {{room_number}}, {{room_code}}, {{check_in}}, {{check_out}}"
+                    placeholder={t('templates.messagePlaceholder')}
                     required
                   />
                 </div>
@@ -496,7 +487,7 @@ export default function MessagesPage() {
                     className="h-3 w-3 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                   />
                   <label htmlFor="is_active" className="ml-2 block text-xs text-gray-900">
-                    Plantilla activa
+                    {t('templates.templateActive')}
                   </label>
                 </div>
 
@@ -506,7 +497,7 @@ export default function MessagesPage() {
                     className="flex items-center px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                   >
                     <Save className="h-3 w-3 mr-1" />
-                    {editingTemplate ? 'Actualizar' : 'Crear'}
+                    {editingTemplate ? t('templates.update') : t('templates.create')}
                   </button>
                   
                   {editingTemplate && (
@@ -526,7 +517,7 @@ export default function MessagesPage() {
                       }}
                       className="px-3 py-1.5 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                     >
-                      Cancelar
+                      {t('templates.cancel')}
                     </button>
                   )}
                 </div>
@@ -536,13 +527,13 @@ export default function MessagesPage() {
             {/* Lista de plantillas */}
             <div className="bg-white rounded-lg shadow">
               <div className="px-4 py-2 border-b border-gray-200">
-                <h2 className="text-md font-semibold text-gray-900">Tus Plantillas</h2>
+                <h2 className="text-md font-semibold text-gray-900">{t('templates.yourTemplates')}</h2>
               </div>
               
               <div className="p-3">
                 {templates.length === 0 ? (
                   <p className="text-gray-500 text-center py-8">
-                    No hay plantillas configuradas. Crea tu primera plantilla automática.
+                    {t('templates.noTemplates')}. {t('templates.noTemplatesDescription')}
                   </p>
                 ) : (
                   <div className="space-y-4">
@@ -557,7 +548,7 @@ export default function MessagesPage() {
                               <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                                 template.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
                               }`}>
-                                {template.is_active ? 'Activo' : 'Inactivo'}
+                                {template.is_active ? t('templates.active') : t('templates.inactive')}
                               </span>
                             </div>
                             <div className="flex items-center space-x-4 text-sm text-gray-600">
@@ -610,13 +601,13 @@ export default function MessagesPage() {
         {activeTab === 'sent' && (
           <div className="bg-white rounded-lg shadow">
             <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-900">Mensajes Enviados</h2>
+              <h2 className="text-lg font-semibold text-gray-900">{t('sent.title')}</h2>
             </div>
             
             <div className="p-6">
               {sentMessages.length === 0 ? (
                 <p className="text-gray-500 text-center py-8">
-                  No hay mensajes enviados aún.
+                  {t('sent.noMessages')}. {t('sent.noMessagesDescription')}
                 </p>
               ) : (
                 <div className="overflow-x-auto">
@@ -624,19 +615,19 @@ export default function MessagesPage() {
                     <thead className="bg-gray-50">
                       <tr>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Huésped
+                          {t('sent.guestName')}
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Plantilla
+                          {t('sent.template')}
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Estado
+                          {t('sent.status')}
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Enviado
+                          {t('sent.sentAt')}
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Mensaje
+                          {t('sent.message')}
                         </th>
                       </tr>
                     </thead>
@@ -715,13 +706,13 @@ export default function MessagesPage() {
 
             {/* Configuración de WhatsApp */}
             <div className="bg-white rounded-lg shadow-lg border-2 border-blue-200 p-4">
-              <div className="flex items-center mb-4">
+                <div className="flex items-center mb-4">
                 <div className="bg-blue-100 p-1.5 rounded-lg mr-2">
                   <Settings className="h-4 w-4 text-blue-600" />
                 </div>
                 <div>
-                  <h2 className="text-md font-bold text-gray-900">Configuración de WhatsApp Business</h2>
-                  <p className="text-xs text-gray-600">Tu número +34 617 555 255 está configurado. Completa los siguientes pasos:</p>
+                  <h2 className="text-md font-bold text-gray-900">{t('config.title')}</h2>
+                  <p className="text-xs text-gray-600">{t('config.description')}</p>
                 </div>
               </div>
 
@@ -742,7 +733,7 @@ export default function MessagesPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-medium text-gray-700 mb-1">
-                        Número de Teléfono
+                        {t('config.phoneNumber')}
                       </label>
                       <input
                         type="text"
@@ -765,7 +756,7 @@ export default function MessagesPage() {
                           className="h-3 w-3 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                         />
                         <span className="ml-2 text-xs text-gray-900">
-                          WhatsApp activo
+                          {t('config.isActive')}
                         </span>
                       </div>
                     </div>
@@ -773,7 +764,7 @@ export default function MessagesPage() {
 
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">
-                      Access Token (WhatsApp Business API)
+                      {t('config.accessToken')}
                     </label>
                     <input
                       type="password"
@@ -789,7 +780,7 @@ export default function MessagesPage() {
 
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">
-                      Webhook Verify Token
+                      {t('config.webhookToken')}
                     </label>
                     <input
                       type="text"
@@ -806,7 +797,7 @@ export default function MessagesPage() {
                     className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium shadow-md hover:shadow-lg transition-all duration-200 text-sm"
                   >
                     <Save className="h-4 w-4 mr-2" />
-                    Guardar Configuración de WhatsApp
+                    {t('config.save')}
                   </button>
                   <p className="text-xs text-gray-500 mt-2">
                     Una vez guardado, podrás enviar mensajes automáticos a tus huéspedes

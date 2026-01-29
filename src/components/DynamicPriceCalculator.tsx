@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { ArrowUpCircle } from 'lucide-react';
 
 interface DynamicPriceCalculatorProps {
@@ -20,6 +21,7 @@ export default function DynamicPriceCalculator({
   className = '',
   onCheckout
 }: DynamicPriceCalculatorProps) {
+  const t = useTranslations('settings.billing.calculator');
   const [properties, setProperties] = useState(currentProperties);
   const [isYearlyPlan, setIsYearlyPlan] = useState(isYearly);
 
@@ -78,7 +80,7 @@ export default function DynamicPriceCalculator({
       {/* Contador de propiedades */}
       <div className="mb-6">
         <label className="block text-sm font-semibold text-gray-900 mb-3">
-          🏠 Número de propiedades
+          🏠 {t('numberOfProperties')}
         </label>
         
         <div className="relative flex items-center justify-center space-x-4">
@@ -103,7 +105,7 @@ export default function DynamicPriceCalculator({
               readOnly
             />
             <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-xs text-gray-500 whitespace-nowrap">
-              {properties === 1 ? 'propiedad' : 'propiedades'}
+              {properties === 1 ? t('property') : t('properties')}
             </div>
           </div>
           
@@ -121,7 +123,7 @@ export default function DynamicPriceCalculator({
       {/* Selector de plan */}
       <div className="mb-6">
         <label className="block text-sm font-semibold text-gray-900 mb-3">
-          📅 Tipo de plan
+          📅 {t('planType')}
         </label>
         <div className="grid grid-cols-2 gap-3">
           <button
@@ -132,7 +134,7 @@ export default function DynamicPriceCalculator({
                 : 'border-gray-300 bg-white text-gray-600 hover:border-gray-400'
             }`}
           >
-            💳 Mensual
+            💳 {t('monthly')}
           </button>
           <button
             onClick={() => setIsYearlyPlan(true)}
@@ -142,12 +144,12 @@ export default function DynamicPriceCalculator({
                 : 'border-gray-300 bg-white text-gray-600 hover:border-gray-400'
             }`}
           >
-            🎯 Anual
+            🎯 {t('yearly')}
           </button>
         </div>
         {isYearlyPlan && (
           <p className="text-xs text-green-600 mt-2 font-medium">
-            ✓ Ahorras {calculateSavings().toFixed(2)}€ al año con descuento del 16.7%
+            ✓ {t('savingsPerYear', { amount: calculateSavings().toFixed(2) })}
           </p>
         )}
       </div>
@@ -159,18 +161,18 @@ export default function DynamicPriceCalculator({
             {(total * 1.21).toFixed(2)}€
           </div>
           <div className="text-sm text-gray-600 mb-2">
-            {isYearlyPlan ? 'por año' : 'por mes'} <span className="text-xs text-gray-500">(IVA incluido)</span>
+            {isYearlyPlan ? t('perYear') : t('perMonth')} <span className="text-xs text-gray-500">{t('vatIncluded')}</span>
           </div>
           <div className="text-xs text-gray-500 mb-3 space-y-1">
-            <div>Base: {total.toFixed(2)}€</div>
-            <div>IVA (21%): {(total * 0.21).toFixed(2)}€</div>
+            <div>{t('base')} {total.toFixed(2)}€</div>
+            <div>{t('vat21')} {(total * 0.21).toFixed(2)}€</div>
           </div>
           
           {/* Descuento por volumen */}
           {discount > 0 && (
             <div className="inline-flex items-center px-4 py-2 bg-green-100 text-green-700 rounded-full text-sm font-semibold mb-3">
               <span className="mr-1">🎉</span>
-              Descuento {discount.toFixed(0)}% por volumen
+              {t('volumeDiscount', { percent: discount.toFixed(0) })}
             </div>
           )}
           
@@ -178,17 +180,17 @@ export default function DynamicPriceCalculator({
           <div className="mt-4 pt-4 border-t border-blue-200">
             <div className="text-sm text-gray-700 space-y-1">
               <div className="flex justify-between">
-                <span>Precio por propiedad:</span>
+                <span>{t('pricePerProperty')}</span>
                 <span className="font-semibold">{getVolumePrice(properties).toFixed(2)}€</span>
               </div>
               <div className="flex justify-between">
-                <span>Propiedades:</span>
+                <span>{t('propertiesLabel')}</span>
                 <span className="font-semibold">{properties}</span>
               </div>
               {isYearlyPlan && (
                 <div className="flex justify-between text-green-600 pt-2 border-t border-green-200">
-                  <span className="font-semibold">Ahorras:</span>
-                  <span className="font-bold">{savings.toFixed(2)}€ al año</span>
+                  <span className="font-semibold">{t('youSave')}</span>
+                  <span className="font-bold">{savings.toFixed(2)}€ {t('savePerYear')}</span>
                 </div>
               )}
             </div>
@@ -209,7 +211,7 @@ export default function DynamicPriceCalculator({
           className="w-full mt-6 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold py-4 px-6 rounded-xl hover:from-purple-700 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center space-x-2"
         >
           <ArrowUpCircle className="w-6 h-6" />
-          <span>Contratar {properties} {properties === 1 ? 'propiedad' : 'propiedades'}</span>
+          <span>{t('hireButton', { count: properties, propertyLabel: properties === 1 ? t('property') : t('properties') })}</span>
         </button>
       )}
     </div>

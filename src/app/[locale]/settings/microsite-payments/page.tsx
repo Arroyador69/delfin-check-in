@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
+import { useLocale } from 'next-intl';
 import { Wallet, Plus, CheckCircle, XCircle, Download, CreditCard, Calendar, AlertCircle } from 'lucide-react';
 
 interface BankAccount {
@@ -28,6 +30,8 @@ interface Payment {
 }
 
 export default function MicrositePaymentsPage() {
+  const t = useTranslations('settings.micrositePayments');
+  const locale = useLocale();
   const [loading, setLoading] = useState(true);
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
@@ -67,7 +71,7 @@ export default function MicrositePaymentsPage() {
       }
     } catch (error) {
       console.error('Error cargando datos:', error);
-      setMessage({ type: 'error', text: 'Error cargando datos' });
+      setMessage({ type: 'error', text: t('errorLoading') });
     } finally {
       setLoading(false);
     }
@@ -88,23 +92,23 @@ export default function MicrositePaymentsPage() {
       const data = await response.json();
 
       if (data.success) {
-        setMessage({ type: 'success', text: 'Cuenta bancaria añadida correctamente. Stripe verificará la cuenta en breve.' });
+        setMessage({ type: 'success', text: t('addAccountSuccess') });
         setShowAddBank(false);
         setNewAccount({ iban: '', bank_name: '', account_holder_name: '' });
         loadData();
       } else {
-        setMessage({ type: 'error', text: data.error || 'Error añadiendo cuenta bancaria' });
+        setMessage({ type: 'error', text: data.error || t('errorAddAccount') });
       }
     } catch (error) {
       console.error('Error añadiendo cuenta:', error);
-      setMessage({ type: 'error', text: 'Error añadiendo cuenta bancaria' });
+      setMessage({ type: 'error', text: t('errorAddAccount') });
     } finally {
       setSaving(false);
     }
   };
 
   const handleDeleteBankAccount = async (id: number) => {
-    if (!confirm('¿Estás seguro de que quieres eliminar esta cuenta bancaria?')) {
+    if (!confirm(t('deleteConfirm'))) {
       return;
     }
 
@@ -116,14 +120,14 @@ export default function MicrositePaymentsPage() {
       const data = await response.json();
 
       if (data.success) {
-        setMessage({ type: 'success', text: 'Cuenta bancaria eliminada correctamente' });
+        setMessage({ type: 'success', text: t('deleteSuccess') });
         loadData();
       } else {
-        setMessage({ type: 'error', text: data.error || 'Error eliminando cuenta' });
+        setMessage({ type: 'error', text: data.error || t('errorDelete') });
       }
     } catch (error) {
       console.error('Error eliminando cuenta:', error);
-      setMessage({ type: 'error', text: 'Error eliminando cuenta bancaria' });
+      setMessage({ type: 'error', text: t('errorDeleteAccount') });
     }
   };
 
@@ -142,20 +146,20 @@ export default function MicrositePaymentsPage() {
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
       } else {
-        setMessage({ type: 'error', text: 'Error generando reporte' });
+        setMessage({ type: 'error', text: t('errorReport') });
       }
     } catch (error) {
       console.error('Error descargando reporte:', error);
-      setMessage({ type: 'error', text: 'Error descargando reporte' });
+      setMessage({ type: 'error', text: t('errorDownloadReport') });
     }
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(amount);
+    return new Intl.NumberFormat(locale, { style: 'currency', currency: 'EUR' }).format(amount);
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('es-ES', {
+    return new Date(dateString).toLocaleDateString(locale, {
       year: 'numeric',
       month: 'long',
       day: 'numeric'
@@ -177,10 +181,10 @@ export default function MicrositePaymentsPage() {
         <div>
           <h2 className="text-2xl font-bold text-gray-900 flex items-center">
             <Wallet className="w-6 h-6 mr-2 text-blue-600" />
-            Pagos Microsite
+            {t('title')}
           </h2>
           <p className="text-sm text-gray-600 mt-1">
-            Gestiona tu cuenta bancaria para recibir pagos automáticos
+            {t('subtitle')}
           </p>
         </div>
       </div>
@@ -206,13 +210,13 @@ export default function MicrositePaymentsPage() {
       {/* Cuentas Bancarias */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-lg font-semibold text-gray-900">Cuentas Bancarias</h3>
+          <h3 className="text-lg font-semibold text-gray-900">{t('bankAccounts')}</h3>
           <button
             onClick={() => setShowAddBank(!showAddBank)}
             className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
             <Plus className="w-4 h-4 mr-2" />
-            Añadir cuenta
+            {t('addAccount')}
           </button>
         </div>
 
@@ -222,39 +226,39 @@ export default function MicrositePaymentsPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  IBAN *
+                  {t('ibanLabel')}
                 </label>
                 <input
                   type="text"
                   required
                   value={newAccount.iban}
                   onChange={(e) => setNewAccount({ ...newAccount, iban: e.target.value.toUpperCase() })}
-                  placeholder="ES91 2100 0418 4502 0005 1332"
+                  placeholder={t('ibanPlaceholder')}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Nombre del titular *
+                  {t('holderLabel')}
                 </label>
                 <input
                   type="text"
                   required
                   value={newAccount.account_holder_name}
                   onChange={(e) => setNewAccount({ ...newAccount, account_holder_name: e.target.value })}
-                  placeholder="Juan Pérez García"
+                  placeholder={t('holderPlaceholder')}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Nombre del banco
+                  {t('bankNameLabel')}
                 </label>
                 <input
                   type="text"
                   value={newAccount.bank_name}
                   onChange={(e) => setNewAccount({ ...newAccount, bank_name: e.target.value })}
-                  placeholder="Banco Santander"
+                  placeholder={t('bankNamePlaceholder')}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
@@ -266,14 +270,14 @@ export default function MicrositePaymentsPage() {
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 flex items-center"
               >
                 <CreditCard className="w-4 h-4 mr-2" />
-                {saving ? 'Guardando...' : 'Guardar cuenta'}
+                {saving ? t('saving') : t('saveAccount')}
               </button>
               <button
                 type="button"
                 onClick={() => setShowAddBank(false)}
                 className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
               >
-                Cancelar
+                {t('cancel')}
               </button>
             </div>
           </form>
@@ -304,17 +308,17 @@ export default function MicrositePaymentsPage() {
                     {account.verification_status === 'verified' ? (
                       <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
                         <CheckCircle className="w-3 h-3 mr-1" />
-                        Verificada
+                        {t('verified')}
                       </span>
                     ) : account.verification_status === 'pending' ? (
                       <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
                         <AlertCircle className="w-3 h-3 mr-1" />
-                        Pendiente
+                        {t('pending')}
                       </span>
                     ) : (
                       <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
                         <XCircle className="w-3 h-3 mr-1" />
-                        Fallida
+                        {t('failed')}
                       </span>
                     )}
                   </div>
@@ -322,7 +326,7 @@ export default function MicrositePaymentsPage() {
                     onClick={() => handleDeleteBankAccount(account.id)}
                     className="text-red-600 hover:text-red-700 p-2"
                   >
-                    Eliminar
+                    {t('delete')}
                   </button>
                 </div>
               </div>
@@ -331,8 +335,8 @@ export default function MicrositePaymentsPage() {
         ) : (
           <div className="text-center py-8 text-gray-500">
             <CreditCard className="w-12 h-12 mx-auto mb-2 text-gray-400" />
-            <p>No hay cuentas bancarias registradas</p>
-            <p className="text-sm">Añade una cuenta para recibir pagos automáticos</p>
+            <p>{t('noAccounts')}</p>
+            <p className="text-sm">{t('noAccountsHint')}</p>
           </div>
         )}
       </div>
@@ -340,13 +344,13 @@ export default function MicrositePaymentsPage() {
       {/* Historial de Pagos */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-lg font-semibold text-gray-900">Historial de Pagos</h3>
+          <h3 className="text-lg font-semibold text-gray-900">{t('paymentHistory')}</h3>
           <button
             onClick={handleDownloadReport}
             className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
           >
             <Download className="w-4 h-4 mr-2" />
-            Descargar Reporte
+            {t('downloadReport')}
           </button>
         </div>
 
@@ -355,13 +359,13 @@ export default function MicrositePaymentsPage() {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Código Reserva</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fechas</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total Reserva</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Comisión Stripe</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Comisión Delfin</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Pago Recibido</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('reservationCode')}</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('dates')}</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('totalReservation')}</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('stripeFee')}</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('delfinFee')}</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('amountReceived')}</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('status')}</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -390,12 +394,12 @@ export default function MicrositePaymentsPage() {
                       {payment.status === 'completed' ? (
                         <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
                           <CheckCircle className="w-3 h-3 mr-1" />
-                          Pagado
+                          {t('paid')}
                         </span>
                       ) : (
                         <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
                           <Calendar className="w-3 h-3 mr-1" />
-                          Pendiente
+                          {t('pending')}
                         </span>
                       )}
                     </td>
@@ -407,7 +411,7 @@ export default function MicrositePaymentsPage() {
         ) : (
           <div className="text-center py-8 text-gray-500">
             <Wallet className="w-12 h-12 mx-auto mb-2 text-gray-400" />
-            <p>No hay pagos registrados aún</p>
+            <p>{t('noPayments')}</p>
           </div>
         )}
 
@@ -415,19 +419,19 @@ export default function MicrositePaymentsPage() {
         {payments.length > 0 && (
           <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4 pt-6 border-t border-gray-200">
             <div className="bg-gray-50 p-4 rounded-lg">
-              <p className="text-sm text-gray-600 mb-1">Total Reservas</p>
+              <p className="text-sm text-gray-600 mb-1">{t('summaryTotal')}</p>
               <p className="text-2xl font-bold text-gray-900">
                 {formatCurrency(payments.reduce((sum, p) => sum + p.total_amount, 0))}
               </p>
             </div>
             <div className="bg-orange-50 p-4 rounded-lg">
-              <p className="text-sm text-gray-600 mb-1">Comisiones Delfin</p>
+              <p className="text-sm text-gray-600 mb-1">{t('summaryCommissions')}</p>
               <p className="text-2xl font-bold text-orange-600">
                 {formatCurrency(payments.reduce((sum, p) => sum + p.delfin_commission_amount, 0))}
               </p>
             </div>
             <div className="bg-green-50 p-4 rounded-lg">
-              <p className="text-sm text-gray-600 mb-1">Total Recibido</p>
+              <p className="text-sm text-gray-600 mb-1">{t('summaryReceived')}</p>
               <p className="text-2xl font-bold text-green-600">
                 {formatCurrency(payments.reduce((sum, p) => sum + p.property_owner_amount, 0))}
               </p>
@@ -441,12 +445,12 @@ export default function MicrositePaymentsPage() {
         <div className="flex items-start">
           <AlertCircle className="w-5 h-5 text-blue-600 mr-3 flex-shrink-0 mt-0.5" />
           <div className="text-sm text-blue-900">
-            <p className="font-medium mb-1">Información importante:</p>
+            <p className="font-medium mb-1">{t('infoTitle')}</p>
             <ul className="list-disc list-inside space-y-1">
-              <li>Los pagos se procesan automáticamente el día del check-in de cada reserva</li>
-              <li>La comisión de Stripe (1.65€) se deduce del total antes de aplicar tu 9%</li>
-              <li>Las transferencias a cuentas bancarias europeas son gratuitas</li>
-              <li>Puedes descargar un reporte completo para declaraciones fiscales</li>
+              <li>{t('info1')}</li>
+              <li>{t('info2')}</li>
+              <li>{t('info3')}</li>
+              <li>{t('info4')}</li>
             </ul>
           </div>
         </div>

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Calendar as CalendarIcon, CalendarDays, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 
 type Availability = {
   property_id: number
@@ -36,6 +36,7 @@ function formatDate(d: Date) {
 
 export default function CalendarPage() {
   const t = useTranslations('calendar');
+  const locale = useLocale();
   const [tenantId, setTenantId] = useState('')
   const [propertyId, setPropertyId] = useState('')
   const [start, setStart] = useState<string>(() => {
@@ -238,7 +239,7 @@ export default function CalendarPage() {
               ) : (
                 <>
                   <CalendarIcon className="w-5 h-5" />
-                  <span>Cargar</span>
+                  <span>{t('loadButton')}</span>
                 </>
               )}
             </button>
@@ -253,7 +254,7 @@ export default function CalendarPage() {
               <ChevronLeft className="w-6 h-6" />
             </button>
             <span className="text-lg font-bold text-gray-800">
-              {new Date(start).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
+              {new Date(start).toLocaleDateString(locale, { month: 'long', year: 'numeric' })}
             </span>
             <button
               onClick={nextMonth}
@@ -269,9 +270,9 @@ export default function CalendarPage() {
           {/* Contenedor con scroll horizontal en móvil */}
           <div className="overflow-x-auto -mx-2 sm:mx-0 -my-2 sm:my-0 lg:overflow-x-visible">
             <div className="inline-grid grid-cols-7 gap-2 sm:gap-3 min-w-full sm:min-w-0 w-max sm:w-full">
-              {['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map(day => (
-                <div key={day} className="text-center font-bold text-gray-700 py-2 text-sm sm:text-base px-1">
-                  {day}
+              {[0,1,2,3,4,5,6].map(index => (
+                <div key={index} className="text-center font-bold text-gray-700 py-2 text-sm sm:text-base px-1">
+                  {t(`weekdayShort.${index}` as const)}
                 </div>
               ))}
               {days.map((day, idx) => {
@@ -306,7 +307,7 @@ export default function CalendarPage() {
                     </div>
                     {blocked && (
                       <div className="text-[11px] text-red-700 font-semibold bg-white px-1 py-0.5 rounded mb-1">
-                        🚫 {a?.blocked_reason || 'Bloqueado'}
+                        🚫 {a?.blocked_reason || t('blockedDefault')}
                       </div>
                     )}
                     {evs.map((ev, i) => (
@@ -339,24 +340,32 @@ export default function CalendarPage() {
         <div className="mt-6 bg-white rounded-xl shadow-lg border border-blue-200 p-4 sm:p-6">
           <h3 className="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
             <CalendarDays className="w-6 h-6 text-blue-600" />
-            <span>Leyenda</span>
+            <span>{t('legend.title')}</span>
           </h3>
           <div className="flex flex-wrap gap-4 sm:gap-6">
             <div className="flex items-center">
               <div className="inline-block w-4 h-4 mr-2 align-middle bg-gradient-to-r from-green-100 to-emerald-100 border-2 border-green-300 rounded"></div>
-              <span className="text-sm font-medium text-gray-700">✅ Reservas (borde izq = check-in)</span>
+              <span className="text-sm font-medium text-gray-700">
+                {t('legend.reservations')}
+              </span>
             </div>
             <div className="flex items-center">
               <div className="inline-block w-4 h-4 mr-2 align-middle bg-amber-200 border-2 border-amber-300 rounded"></div>
-              <span className="text-sm font-medium text-gray-700">🚪 Checkout (día de salida)</span>
+              <span className="text-sm font-medium text-gray-700">
+                {t('legend.checkout')}
+              </span>
             </div>
             <div className="flex items-center">
               <div className="inline-block w-4 h-4 mr-2 align-middle bg-gradient-to-r from-red-50 to-pink-50 border-2 border-red-300 rounded"></div>
-              <span className="text-sm font-medium text-gray-700">🚫 Bloqueo/Indisponibilidad</span>
+              <span className="text-sm font-medium text-gray-700">
+                {t('legend.blocked')}
+              </span>
             </div>
             <div className="flex items-center">
               <div className="inline-block w-4 h-4 mr-2 align-middle bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-400 rounded"></div>
-              <span className="text-sm font-medium text-gray-700">📅 Hoy</span>
+              <span className="text-sm font-medium text-gray-700">
+                {t('legend.today')}
+              </span>
             </div>
           </div>
         </div>
@@ -372,7 +381,7 @@ export default function CalendarPage() {
                 <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 flex items-center gap-2">
                   <span className="text-3xl sm:text-4xl" style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>👁️</span>
                   <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                    Ver Reserva
+                    {t('modal.title')}
                   </span>
                 </h3>
                 <button onClick={()=>setViewEvent(null)} className="text-gray-400 hover:text-gray-600 transition-all hover:scale-110">
@@ -387,15 +396,15 @@ export default function CalendarPage() {
               <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-5 rounded-xl border border-blue-200 mb-4">
                 <h4 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
                   <span style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>🏠</span>
-                  Información de la Reserva
+                  {t('modal.reservationSection')}
                 </h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <p className="text-sm text-gray-600 mb-1">Habitación</p>
+                    <p className="text-sm text-gray-600 mb-1">{t('modal.roomLabel')}</p>
                     <p className="text-base font-bold text-gray-900">{viewEvent.room_name || viewEvent.room_id}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600 mb-1">Huésped</p>
+                    <p className="text-sm text-gray-600 mb-1">{t('modal.guestLabel')}</p>
                     <p className="text-base font-bold text-gray-900">{viewEvent.guest_name || viewEvent.event_title?.replace(/^Reserva\s+/,'')}</p>
                   </div>
                 </div>
@@ -405,16 +414,20 @@ export default function CalendarPage() {
               <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-5 rounded-xl border border-green-200 mb-4">
                 <h4 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
                   <span style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>📅</span>
-                  Fechas de Estancia
+                  {t('modal.staySection')}
                 </h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <p className="text-sm text-gray-600 mb-1">Check-in</p>
-                    <p className="text-base font-bold text-gray-900">{new Date(viewEvent.start_date).toLocaleDateString('es-ES')}</p>
+                    <p className="text-sm text-gray-600 mb-1">{t('modal.checkInLabel')}</p>
+                    <p className="text-base font-bold text-gray-900">
+                      {new Date(viewEvent.start_date).toLocaleDateString(locale)}
+                    </p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600 mb-1">Check-out</p>
-                    <p className="text-base font-bold text-gray-900">{new Date(viewEvent.end_date).toLocaleDateString('es-ES')}</p>
+                    <p className="text-sm text-gray-600 mb-1">{t('modal.checkOutLabel')}</p>
+                    <p className="text-base font-bold text-gray-900">
+                      {new Date(viewEvent.end_date).toLocaleDateString(locale)}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -423,22 +436,22 @@ export default function CalendarPage() {
               <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-5 rounded-xl border border-purple-200 mb-4">
                 <h4 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
                   <span style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>ℹ️</span>
-                  Detalles Adicionales
+                  {t('modal.additionalSection')}
                 </h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <p className="text-sm text-gray-600 mb-1">Personas</p>
+                    <p className="text-sm text-gray-600 mb-1">{t('modal.peopleLabel')}</p>
                     <p className="text-base font-bold text-gray-900">{viewEvent.guest_count ?? '-'}</p>
                   </div>
                   {viewEvent.channel && (
                     <div>
-                      <p className="text-sm text-gray-600 mb-1">Canal</p>
+                      <p className="text-sm text-gray-600 mb-1">{t('modal.channelLabel')}</p>
                       <p className="text-base font-bold text-gray-900">{viewEvent.channel}</p>
                     </div>
                   )}
                   {viewEvent.reservation_id && (
                     <div className="sm:col-span-2">
-                      <p className="text-sm text-gray-600 mb-1">ID Reserva</p>
+                      <p className="text-sm text-gray-600 mb-1">{t('modal.reservationIdLabel')}</p>
                       <p className="text-xs text-gray-600 font-mono bg-white px-3 py-2 rounded-lg border border-gray-200 break-all">{viewEvent.reservation_id}</p>
                     </div>
                   )}
@@ -451,7 +464,7 @@ export default function CalendarPage() {
                   onClick={()=>setViewEvent(null)} 
                   className="px-8 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 font-semibold shadow-lg transition-all duration-200 transform hover:scale-105 flex items-center gap-2"
                 >
-                  ✨ Cerrar
+                  ✨ {t('modal.closeButton')}
                 </button>
               </div>
             </div>

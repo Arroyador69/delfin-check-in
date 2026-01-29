@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 
 interface ExportButtonProps {
   solicitud: any;
@@ -303,7 +304,7 @@ export default function ExportButton({ solicitud, onSuccess, onError }: ExportBu
       disabled={loading} 
       className="px-4 py-2 bg-blue-600 text-white rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-700 transition-colors"
     >
-      {loading ? 'Generando XML...' : 'Descargar XML MIR'}
+      {loading ? t('generatingXml') : t('downloadXmlMir')}
     </button>
   );
 }

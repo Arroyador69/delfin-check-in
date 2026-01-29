@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations, useLocale } from 'next-intl';
 import { CalendarDays, TrendingUp, Target, Zap, AlertCircle, CheckCircle, Settings, MapPin, RefreshCw, Wrench } from 'lucide-react';
 
 interface PriceRecommendation {
@@ -41,6 +42,8 @@ const ROOMS = [
 ];
 
 export default function PricingDashboard() {
+  const t = useTranslations('pricing');
+  const locale = useLocale();
   const router = useRouter();
   useEffect(() => {
     router.replace('/');
@@ -133,7 +136,7 @@ export default function PricingDashboard() {
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
-    return date.toLocaleDateString('es-ES', { 
+    return date.toLocaleDateString(locale === 'es' ? 'es-ES' : locale === 'en' ? 'en-GB' : locale, { 
       weekday: 'short', 
       day: 'numeric', 
       month: 'short' 
@@ -163,8 +166,8 @@ export default function PricingDashboard() {
             <div className="flex items-center">
               <TrendingUp className="h-8 w-8 text-blue-600 mr-3" />
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Precios Dinámicos</h1>
-                <p className="text-sm text-gray-600">Gestión inteligente de precios basada en mercado y eventos</p>
+                <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
+                <p className="text-sm text-gray-600">{t('subtitle')}</p>
               </div>
             </div>
             
@@ -188,7 +191,7 @@ export default function PricingDashboard() {
                 className="flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 text-sm font-medium shadow-sm transition-colors duration-200"
               >
                 <Wrench className="h-4 w-4 mr-2" />
-                Reparar BD
+                {t('fixDb')}
               </button>
               
               <button
@@ -239,7 +242,7 @@ export default function PricingDashboard() {
                 className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 text-sm font-medium shadow-sm transition-colors duration-200"
               >
                 <Settings className="h-4 w-4 mr-2" />
-                Inicializar BD
+                {t('initDb')}
               </button>
               
               <button
@@ -294,7 +297,7 @@ export default function PricingDashboard() {
                 className="flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm font-medium shadow-sm transition-colors duration-200"
               >
                 <RefreshCw className="h-4 w-4 mr-2" />
-                Scrapear
+                {t('scrape')}
               </button>
             </div>
           </div>
@@ -307,7 +310,7 @@ export default function PricingDashboard() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Habitación
+                {t('room')}
               </label>
               <select
                 value={selectedRoom}
@@ -324,7 +327,7 @@ export default function PricingDashboard() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Desde
+                {t('from')}
               </label>
               <input
                 type="date"
@@ -336,7 +339,7 @@ export default function PricingDashboard() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Hasta
+                {t('to')}
               </label>
               <input
                 type="date"
@@ -353,24 +356,24 @@ export default function PricingDashboard() {
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8">
             <div className="flex items-center mb-4">
               <MapPin className="h-6 w-6 text-blue-600 mr-2" />
-              <h3 className="text-lg font-semibold text-blue-900">Datos de Competencia Local - Fuengirola</h3>
+              <h3 className="text-lg font-semibold text-blue-900">{t('localDataTitle')}</h3>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="text-center">
                 <p className="text-2xl font-bold text-blue-700">{scraperStats.totalCompetitors}</p>
-                <p className="text-sm text-blue-600">Competidores</p>
+                <p className="text-sm text-blue-600">{t('competitorsCount')}</p>
               </div>
               <div className="text-center">
                 <p className="text-2xl font-bold text-blue-700">€{scraperStats.avgPrice?.toFixed(2) || '45.00'}</p>
-                <p className="text-sm text-blue-600">Precio Promedio</p>
+                <p className="text-sm text-blue-600">{t('avgPrice')}</p>
               </div>
               <div className="text-center">
                 <p className="text-2xl font-bold text-blue-700">€{scraperStats.priceRange?.min || '35'}-{scraperStats.priceRange?.max || '65'}</p>
-                <p className="text-sm text-blue-600">Rango de Precios</p>
+                <p className="text-sm text-blue-600">{t('priceRange')}</p>
               </div>
               <div className="text-center">
-                <p className="text-sm font-bold text-blue-700">{scraperStats.lastScrapedFormatted || 'Nunca'}</p>
-                <p className="text-sm text-blue-600">Último Scraping</p>
+                <p className="text-sm font-bold text-blue-700">{scraperStats.lastScrapedFormatted || t('never')}</p>
+                <p className="text-sm text-blue-600">{t('lastScraped')}</p>
               </div>
             </div>
           </div>
@@ -383,7 +386,7 @@ export default function PricingDashboard() {
               <div className="flex items-center">
                 <CalendarDays className="h-8 w-8 text-blue-600" />
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Días analizados</p>
+                  <p className="text-sm font-medium text-gray-600">{t('daysAnalyzed')}</p>
                   <p className="text-2xl font-bold text-gray-900">{stats.totalDays}</p>
                 </div>
               </div>
@@ -393,7 +396,7 @@ export default function PricingDashboard() {
               <div className="flex items-center">
                 <TrendingUp className="h-8 w-8 text-green-600" />
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Precio promedio</p>
+                  <p className="text-sm font-medium text-gray-600">{t('avgRecommendedPrice')}</p>
                   <p className="text-2xl font-bold text-gray-900">€{stats.avgRecommendedPrice}</p>
                 </div>
               </div>
@@ -403,7 +406,7 @@ export default function PricingDashboard() {
               <div className="flex items-center">
                 <Target className="h-8 w-8 text-yellow-600" />
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Confianza promedio</p>
+                  <p className="text-sm font-medium text-gray-600">{t('avgConfidence')}</p>
                   <p className="text-2xl font-bold text-gray-900">{Math.round(stats.avgConfidence * 100)}%</p>
                 </div>
               </div>
@@ -413,7 +416,7 @@ export default function PricingDashboard() {
               <div className="flex items-center">
                 <CheckCircle className="h-8 w-8 text-purple-600" />
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Aplicadas</p>
+                  <p className="text-sm font-medium text-gray-600">{t('applied')}</p>
                   <p className="text-2xl font-bold text-gray-900">{stats.appliedCount}</p>
                 </div>
               </div>
@@ -426,14 +429,14 @@ export default function PricingDashboard() {
           <div className="px-6 py-4 border-b border-gray-200">
             <div className="flex justify-between items-center">
               <h3 className="text-lg font-medium text-gray-900">
-                Recomendaciones para {selectedRoomData?.name}
+                {t('recommendationsFor')} {selectedRoomData?.name}
               </h3>
               <button
                 onClick={loadRecommendations}
                 disabled={loading}
                 className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
               >
-                {loading ? 'Cargando...' : 'Actualizar'}
+                {loading ? t('loading') : t('update')}
               </button>
             </div>
           </div>
@@ -443,25 +446,25 @@ export default function PricingDashboard() {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Fecha
+                    {t('date')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Precio Actual
+                    {t('currentPrice')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Recomendado
+                    {t('recommended')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Mercado P40
+                    {t('marketP40')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Factores
+                    {t('factors')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Confianza
+                    {t('confidence')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Acción
+                    {t('action')}
                   </th>
                 </tr>
               </thead>
@@ -510,7 +513,7 @@ export default function PricingDashboard() {
                       {rec.applied ? (
                         <span className="text-green-600 flex items-center">
                           <CheckCircle className="h-4 w-4 mr-1" />
-                          Aplicado
+                          {t('appliedLabel')}
                         </span>
                       ) : (
                         <button
@@ -518,7 +521,7 @@ export default function PricingDashboard() {
                           disabled={applying === `${rec.roomId}-${rec.date}`}
                           className="text-blue-600 hover:text-blue-900 disabled:opacity-50"
                         >
-                          {applying === `${rec.roomId}-${rec.date}` ? 'Aplicando...' : 'Aplicar'}
+                          {applying === `${rec.roomId}-${rec.date}` ? t('applying') : t('apply')}
                         </button>
                       )}
                     </td>
@@ -531,24 +534,24 @@ export default function PricingDashboard() {
 
         {/* Información adicional */}
         <div className="mt-8 bg-blue-50 rounded-lg p-6">
-          <h3 className="text-lg font-medium text-blue-900 mb-4">💡 Cómo funciona el sistema</h3>
+          <h3 className="text-lg font-medium text-blue-900 mb-4">{t('howItWorks')}</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm text-blue-700">
             <div>
-              <h4 className="font-medium text-blue-800 mb-2">Factores considerados:</h4>
+              <h4 className="font-medium text-blue-800 mb-2">{t('factorsConsidered')}</h4>
               <ul className="space-y-1">
-                <li>• <strong>Mercado:</strong> Percentil 40 de precios de competencia</li>
-                <li>• <strong>Eventos:</strong> Impacto de eventos locales (+3% por nivel)</li>
-                <li>• <strong>Ocupación:</strong> Demanda actual de tus habitaciones</li>
-                <li>• <strong>Fin de semana:</strong> +12% para viernes y sábados</li>
-                <li>• <strong>Antelación:</strong> Ajuste según días de reserva</li>
+                <li>• {t('factorMarket')}</li>
+                <li>• {t('factorEvents')}</li>
+                <li>• {t('factorOccupancy')}</li>
+                <li>• {t('factorWeekend')}</li>
+                <li>• {t('factorLeadTime')}</li>
               </ul>
             </div>
             <div>
-              <h4 className="font-medium text-blue-800 mb-2">Iconos de factores:</h4>
+              <h4 className="font-medium text-blue-800 mb-2">{t('factorIcons')}</h4>
               <ul className="space-y-1">
-                <li>• <TrendingUp className="h-3 w-3 text-green-500 inline mr-1" /> Factor &gt; 1.05 (precio sube)</li>
-                <li>• <TrendingUp className="h-3 w-3 text-red-500 inline mr-1 rotate-180" /> Factor &lt; 0.95 (precio baja)</li>
-                <li>• <Target className="h-3 w-3 text-gray-500 inline mr-1" /> Factor neutral (0.95-1.05)</li>
+                <li>• <TrendingUp className="h-3 w-3 text-green-500 inline mr-1" /> {t('factorUp')}</li>
+                <li>• <TrendingUp className="h-3 w-3 text-red-500 inline mr-1 rotate-180" /> {t('factorDown')}</li>
+                <li>• <Target className="h-3 w-3 text-gray-500 inline mr-1" /> {t('factorNeutral')}</li>
               </ul>
             </div>
           </div>

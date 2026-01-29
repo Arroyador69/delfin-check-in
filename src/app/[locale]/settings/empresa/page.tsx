@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
 import { Building2, Save, AlertCircle } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 interface EmpresaConfig {
   id?: number;
@@ -24,6 +25,7 @@ interface EmpresaConfig {
 }
 
 export default function EmpresaConfigPage() {
+  const t = useTranslations('settings.empresa');
   const [config, setConfig] = useState<EmpresaConfig>({
     tenant_id: '',
     nombre_empresa: '',
@@ -63,7 +65,7 @@ export default function EmpresaConfigPage() {
       }
     } catch (error) {
       console.error('Error al cargar configuración:', error);
-      setMessage({ type: 'error', text: 'Error al cargar la configuración' });
+      setMessage({ type: 'error', text: t('errorLoad') });
     } finally {
       setLoading(false);
     }
@@ -91,7 +93,7 @@ export default function EmpresaConfigPage() {
         if (uploadResponse.ok) {
           logoUrl = uploadData.logoUrl;
         } else {
-          setMessage({ type: 'error', text: uploadData.error || 'Error al subir el logo' });
+          setMessage({ type: 'error', text: uploadData.error || t('errorUploadLogo') });
           setSaving(false);
           return;
         }
@@ -112,15 +114,15 @@ export default function EmpresaConfigPage() {
       const data = await response.json();
 
       if (response.ok) {
-        setMessage({ type: 'success', text: 'Configuración guardada correctamente' });
+        setMessage({ type: 'success', text: t('successSave') });
         setConfig(data.config);
         setLogoFile(null); // Limpiar archivo después de guardar
       } else {
-        setMessage({ type: 'error', text: data.error || 'Error al guardar la configuración' });
+        setMessage({ type: 'error', text: data.error || t('errorSave') });
       }
     } catch (error) {
       console.error('Error al guardar configuración:', error);
-      setMessage({ type: 'error', text: 'Error al guardar la configuración' });
+      setMessage({ type: 'error', text: t('errorSave') });
     } finally {
       setSaving(false);
     }
@@ -135,13 +137,13 @@ export default function EmpresaConfigPage() {
     if (file) {
       // Validar tipo de archivo
       if (!file.type.startsWith('image/')) {
-        setMessage({ type: 'error', text: 'Por favor selecciona un archivo de imagen válido' });
+        setMessage({ type: 'error', text: t('invalidImage') });
         return;
       }
       
       // Validar tamaño (máximo 2MB)
       if (file.size > 2 * 1024 * 1024) {
-        setMessage({ type: 'error', text: 'El archivo debe ser menor a 2MB' });
+        setMessage({ type: 'error', text: t('fileTooBig') });
         return;
       }
       
@@ -161,7 +163,7 @@ export default function EmpresaConfigPage() {
       <div className="flex items-center justify-center py-12">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-2 text-gray-600">Cargando configuración...</p>
+          <p className="mt-2 text-gray-600">{t('loading')}</p>
         </div>
       </div>
     );
@@ -173,9 +175,9 @@ export default function EmpresaConfigPage() {
         <div className="text-center">
           <h1 className="text-4xl font-bold mb-4">
             <span className="text-5xl mr-3" style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>🏢</span>
-            <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Datos de la Empresa</span>
+            <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">{t('title')}</span>
           </h1>
-          <p className="text-gray-600 text-lg">Configura los datos de tu empresa para generar facturas</p>
+          <p className="text-gray-600 text-lg">{t('subtitle')}</p>
         </div>
 
       {message && (
@@ -194,28 +196,28 @@ export default function EmpresaConfigPage() {
           <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-200 shadow-sm">
             <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
               <span className="text-2xl mr-3" style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>📋</span>
-              Información Básica
+              {t('basicInfo')}
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="nombre_empresa" className="text-gray-700 font-semibold text-base mb-2 block">Nombre de la Empresa *</Label>
+                <Label htmlFor="nombre_empresa" className="text-gray-700 font-semibold text-base mb-2 block">{t('companyName')}</Label>
                 <Input
                   id="nombre_empresa"
                   value={config.nombre_empresa}
                   onChange={(e) => handleInputChange('nombre_empresa', e.target.value)}
-                  placeholder="Ej: Hotel Delfín"
+                  placeholder={t('companyNamePlaceholder')}
                   className="text-gray-900 placeholder:text-gray-400"
                   style={{ color: '#111827' }}
                   required
                 />
               </div>
               <div>
-                <Label htmlFor="nif_empresa" className="text-gray-700 font-semibold text-base mb-2 block">NIF/CIF (DNI, NIE, CIF) *</Label>
+                <Label htmlFor="nif_empresa" className="text-gray-700 font-semibold text-base mb-2 block">{t('nifCif')}</Label>
                 <Input
                   id="nif_empresa"
                   value={config.nif_empresa}
                   onChange={(e) => handleInputChange('nif_empresa', e.target.value)}
-                  placeholder="Ej: B12345678"
+                  placeholder={t('nifPlaceholder')}
                   className="text-gray-900 placeholder:text-gray-400"
                   style={{ color: '#111827' }}
                   required
@@ -227,16 +229,16 @@ export default function EmpresaConfigPage() {
           <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-6 rounded-xl border border-purple-200 shadow-sm">
             <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
               <span className="text-2xl mr-3" style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>📍</span>
-              Dirección
+              {t('address')}
             </h2>
             <div className="space-y-4">
               <div>
-                <Label htmlFor="direccion_empresa" className="text-gray-700 font-semibold text-base mb-2 block">Dirección *</Label>
+                <Label htmlFor="direccion_empresa" className="text-gray-700 font-semibold text-base mb-2 block">{t('addressLabel')}</Label>
                 <Input
                   id="direccion_empresa"
                   value={config.direccion_empresa}
                   onChange={(e) => handleInputChange('direccion_empresa', e.target.value)}
-                  placeholder="Calle, número, piso, puerta"
+                  placeholder={t('addressPlaceholder')}
                   className="text-gray-900 placeholder:text-gray-400"
                   style={{ color: '#111827' }}
                   required
@@ -244,46 +246,46 @@ export default function EmpresaConfigPage() {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <Label htmlFor="codigo_postal" className="text-gray-700 font-semibold text-base mb-2 block">Código Postal</Label>
+                  <Label htmlFor="codigo_postal" className="text-gray-700 font-semibold text-base mb-2 block">{t('postalCode')}</Label>
                   <Input
                     id="codigo_postal"
                     value={config.codigo_postal}
                     onChange={(e) => handleInputChange('codigo_postal', e.target.value)}
-                    placeholder="29640"
+                    placeholder={t('postalPlaceholder')}
                     className="text-gray-900 placeholder:text-gray-400"
                   style={{ color: '#111827' }}
                   />
                 </div>
                 <div>
-                  <Label htmlFor="ciudad" className="text-gray-700 font-semibold text-base mb-2 block">Ciudad</Label>
+                  <Label htmlFor="ciudad" className="text-gray-700 font-semibold text-base mb-2 block">{t('city')}</Label>
                   <Input
                     id="ciudad"
                     value={config.ciudad}
                     onChange={(e) => handleInputChange('ciudad', e.target.value)}
-                    placeholder="Fuengirola"
+                    placeholder={t('cityPlaceholder')}
                     className="text-gray-900 placeholder:text-gray-400"
                   style={{ color: '#111827' }}
                   />
                 </div>
                 <div>
-                  <Label htmlFor="provincia" className="text-gray-700 font-semibold text-base mb-2 block">Provincia</Label>
+                  <Label htmlFor="provincia" className="text-gray-700 font-semibold text-base mb-2 block">{t('province')}</Label>
                   <Input
                     id="provincia"
                     value={config.provincia}
                     onChange={(e) => handleInputChange('provincia', e.target.value)}
-                    placeholder="Málaga"
+                    placeholder={t('provincePlaceholder')}
                     className="text-gray-900 placeholder:text-gray-400"
                   style={{ color: '#111827' }}
                   />
                 </div>
               </div>
               <div>
-                <Label htmlFor="pais" className="text-gray-700 font-semibold text-base mb-2 block">País</Label>
+                <Label htmlFor="pais" className="text-gray-700 font-semibold text-base mb-2 block">{t('country')}</Label>
                 <Input
                   id="pais"
                   value={config.pais}
                   onChange={(e) => handleInputChange('pais', e.target.value)}
-                  placeholder="España"
+                  placeholder={t('countryPlaceholder')}
                   className="text-gray-900 placeholder:text-gray-400"
                   style={{ color: '#111827' }}
                 />
@@ -294,40 +296,40 @@ export default function EmpresaConfigPage() {
           <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-6 rounded-xl border border-green-200 shadow-sm">
             <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
               <span className="text-2xl mr-3" style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>📞</span>
-              Contacto
+              {t('contact')}
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="telefono" className="text-gray-700 font-semibold text-base mb-2 block">Teléfono</Label>
+                <Label htmlFor="telefono" className="text-gray-700 font-semibold text-base mb-2 block">{t('phone')}</Label>
                   <Input
                     id="telefono"
                     value={config.telefono}
                     onChange={(e) => handleInputChange('telefono', e.target.value)}
-                    placeholder="+34 952 123 456"
+                    placeholder={t('phonePlaceholder')}
                     className="text-gray-900 placeholder:text-gray-400"
                   style={{ color: '#111827' }}
                   />
               </div>
               <div>
-                <Label htmlFor="email" className="text-gray-700 font-semibold text-base mb-2 block">Email</Label>
+                <Label htmlFor="email" className="text-gray-700 font-semibold text-base mb-2 block">{t('email')}</Label>
                   <Input
                     id="email"
                     type="email"
                     value={config.email}
                     onChange={(e) => handleInputChange('email', e.target.value)}
-                    placeholder="info@hoteldelfin.com"
+                    placeholder={t('emailPlaceholder')}
                     className="text-gray-900 placeholder:text-gray-400"
                   style={{ color: '#111827' }}
                   />
               </div>
             </div>
             <div className="mt-4">
-              <Label htmlFor="web" className="text-gray-700 font-semibold text-base mb-2 block">Sitio Web</Label>
+              <Label htmlFor="web" className="text-gray-700 font-semibold text-base mb-2 block">{t('website')}</Label>
               <Input
                 id="web"
                 value={config.web}
                 onChange={(e) => handleInputChange('web', e.target.value)}
-                placeholder="https://www.hoteldelfin.com"
+                placeholder={t('websitePlaceholder')}
                 className="text-gray-900 placeholder:text-gray-400"
               />
             </div>
@@ -336,11 +338,11 @@ export default function EmpresaConfigPage() {
           <div className="bg-gradient-to-r from-orange-50 to-yellow-50 p-6 rounded-xl border border-orange-200 shadow-sm">
             <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
               <span className="text-2xl mr-3" style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>🎨</span>
-              Logo
+              {t('logo')}
             </h2>
             <div className="space-y-4">
               <div>
-                <Label htmlFor="logo_file" className="text-gray-700 font-semibold text-base mb-2 block">Subir Logo</Label>
+                <Label htmlFor="logo_file" className="text-gray-700 font-semibold text-base mb-2 block">{t('uploadLogo')}</Label>
                 <Input
                   id="logo_file"
                   type="file"
@@ -350,7 +352,7 @@ export default function EmpresaConfigPage() {
                   style={{ color: '#111827' }}
                 />
                 <p className="text-sm text-gray-500 mt-1">
-                  Formatos recomendados: PNG, JPG, SVG. Tamaño máximo: 2MB. Dimensiones recomendadas: 200x100px
+                  {t('logoHint')}
                 </p>
               </div>
               
@@ -368,17 +370,17 @@ export default function EmpresaConfigPage() {
               )}
               
               <div>
-                <Label htmlFor="logo_url" className="text-gray-700 font-semibold text-base mb-2 block">O URL del Logo (alternativa)</Label>
+                <Label htmlFor="logo_url" className="text-gray-700 font-semibold text-base mb-2 block">{t('logoUrlLabel')}</Label>
                 <Input
                   id="logo_url"
                   value={config.logo_url}
                   onChange={(e) => handleInputChange('logo_url', e.target.value)}
-                  placeholder="https://ejemplo.com/logo.png"
+                  placeholder={t('logoUrlPlaceholder')}
                   className="text-gray-900 placeholder:text-gray-400"
                   style={{ color: '#111827' }}
                 />
                 <p className="text-sm text-gray-500 mt-1">
-                  Si prefieres usar una URL en lugar de subir un archivo
+                  {t('logoUrlHint')}
                 </p>
               </div>
             </div>
@@ -387,7 +389,7 @@ export default function EmpresaConfigPage() {
           <div className="pt-6 border-t border-gray-200">
             <div className="mb-4">
               <p className="text-sm text-gray-600">
-                Completa los campos obligatorios (*) y haz clic en "Guardar Configuración" para guardar los datos en la base de datos.
+                {t('saveHint')}
               </p>
             </div>
             <Button 
@@ -398,12 +400,12 @@ export default function EmpresaConfigPage() {
               {saving ? (
                 <>
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                  Guardando...
+                  {t('saving')}
                 </>
               ) : (
                 <>
                   <Save className="w-5 h-5 mr-2" />
-                  Guardar Configuración
+                  {t('saveConfiguration')}
                 </>
               )}
             </Button>

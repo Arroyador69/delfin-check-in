@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Check, Crown, Zap, Loader2, Calculator, Info } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import { ArrowLeft, Check, Crown, Zap, Loader2, Calculator } from 'lucide-react';
 import Link from 'next/link';
 import AdminLayout from '@/components/AdminLayout';
 import { loadStripe } from '@stripe/stripe-js';
@@ -16,7 +17,7 @@ interface Plan {
   id: PlanId;
   name: string;
   description: string;
-  basePrice: number; // Sin IVA
+  basePrice: number;
   maxRooms: number;
   maxRoomsIncluded: number;
   extraRoomPrice?: number;
@@ -28,13 +29,11 @@ interface Plan {
   icon: any;
 }
 
-const PLANS: Plan[] = [
+const UPGRADE_PLANS_CONFIG: (Omit<Plan, 'name' | 'description' | 'features'> & { featuresKeys: string[] })[] = [
   {
     id: 'checkin',
-    name: 'Plan Check-in',
-    description: 'PMS con check-in digital automático',
-    basePrice: 8, // Sin IVA
-    maxRooms: -1, // Ilimitado
+    basePrice: 8,
+    maxRooms: -1,
     maxRoomsIncluded: 2,
     extraRoomPrice: 4,
     color: 'green',
@@ -42,40 +41,28 @@ const PLANS: Plan[] = [
     popular: true,
     adsEnabled: true,
     legalModule: true,
-    features: [
-      'Habitaciones ilimitadas',
-      'Check-in digital automático (MIR)',
-      'Registro de viajeros ilimitado',
-      'PMS completo',
-      'Reservas directas (9% fee)',
-      'Anuncios discretos',
-      'Soporte prioritario'
-    ]
+    featuresKeys: ['checkinF0', 'checkinF1', 'checkinF2', 'checkinF3', 'checkinF4', 'checkinF5', 'checkinF6']
   },
   {
     id: 'pro',
-    name: 'Plan Pro',
-    description: 'PMS completo sin anuncios',
-    basePrice: 29.99, // Sin IVA
-    maxRooms: -1, // Ilimitado
+    basePrice: 29.99,
+    maxRooms: -1,
     maxRoomsIncluded: 6,
     extraRoomPrice: 5,
     color: 'purple',
     icon: Crown,
     adsEnabled: false,
     legalModule: true,
-    features: [
-      'Hasta 6 habitaciones incluidas',
-      'Habitaciones adicionales: 5€/mes',
-      'Check-in digital automático (MIR)',
-      'Sin anuncios',
-      'PMS completo',
-      'Reservas directas (9% fee)',
-      'Soporte prioritario',
-      'Backup automático'
-    ]
+    featuresKeys: ['proF0', 'proF1', 'proF2', 'proF3', 'proF4', 'proF5', 'proF6', 'proF7']
   }
 ];
+
+function getPlanName(t: (k: string) => string, planId: string | null): string {
+  if (!planId || planId === 'free') return t('freePlanName');
+  if (planId === 'checkin') return t('checkinPlanName');
+  if (planId === 'pro') return t('proPlanName');
+  return '';
+}
 
 function CheckoutForm({ 
   planId, 
@@ -95,6 +82,7 @@ function CheckoutForm({
   onSuccess: () => void;
   onError: (error: string) => void;
 }) {
+  const t = useTranslations('plans');
   const stripe = useStripe();
   const elements = useElements();
   const [loading, setLoading] = useState(false);
@@ -113,20 +101,18 @@ function CheckoutForm({
     try {
       const cardElement = elements.getElement(CardElement);
       if (!cardElement) {
-        throw new Error('Elemento de tarjeta no encontrado');
+        throw new Error(t('errorCardNotFound'));
       }
 
-      // Crear payment method
       const { error: pmError, paymentMethod } = await stripe.createPaymentMethod({
         type: 'card',
         card: cardElement,
       });
 
       if (pmError || !paymentMethod) {
-        throw new Error(pmError?.message || 'Error creando método de pago');
+        throw new Error(pmError?.message || t('errorPaymentMethod'));
       }
 
-      // Crear suscripción
       const response = await fetch('/api/stripe/create-subscription', {
         method: 'POST',
         headers: {
@@ -142,12 +128,12 @@ function CheckoutForm({
       const data = await response.json();
 
       if (!data.success) {
-        throw new Error(data.error || 'Error creando suscripción');
+        throw new Error(data.error || t('errorSubscription'));
       }
 
       onSuccess();
     } catch (err: any) {
-      const errorMessage = err.message || 'Error procesando pago';
+      const errorMessage = err.message || t('errorProcessingPayment');
       setError(errorMessage);
       onError(errorMessage);
     } finally {
@@ -160,15 +146,15 @@ function CheckoutForm({
       <div className="bg-gray-50 p-4 rounded-lg">
         <div className="space-y-2 text-sm">
           <div className="flex justify-between">
-            <span>Precio base:</span>
+            <span>{t('basePrice')}</span>
             <span>{pricing.base_price.toFixed(2)}€</span>
           </div>
           <div className="flex justify-between">
-            <span>IVA ({pricing.vat_rate}%):</span>
+            <span>{t('vat', { rate: pricing.vat_rate })}</span>
             <span>{pricing.vat_amount.toFixed(2)}€</span>
           </div>
           <div className="flex justify-between font-bold text-lg pt-2 border-t">
-            <span>Total:</span>
+            <span>{t('totalPerMonth')}</span>
             <span>{pricing.total.toFixed(2)}€/mes</span>
           </div>
         </div>
@@ -204,11 +190,11 @@ function CheckoutForm({
         {loading ? (
           <>
             <Loader2 className="animate-spin" size={20} />
-            Procesando...
+            {t('processing')}
           </>
         ) : (
           <>
-            Suscribirse por {pricing.total.toFixed(2)}€/mes
+            {t('subscribePerMonth', { total: pricing.total.toFixed(2) })}
           </>
         )}
       </button>
@@ -217,11 +203,12 @@ function CheckoutForm({
 }
 
 function PlanCalculator({ planId, onPriceChange }: { planId: PlanId; onPriceChange: (pricing: any) => void }) {
+  const t = useTranslations('plans');
   const [roomCount, setRoomCount] = useState(2);
   const [pricing, setPricing] = useState<any>(null);
   const [loading, setLoading] = useState(false);
 
-  const plan = PLANS.find(p => p.id === planId);
+  const plan = UPGRADE_PLANS_CONFIG.find(p => p.id === planId);
   if (!plan) return null;
 
   useEffect(() => {
@@ -249,13 +236,13 @@ function PlanCalculator({ planId, onPriceChange }: { planId: PlanId; onPriceChan
     <div className="bg-gray-50 p-6 rounded-lg border-2 border-dashed border-gray-300">
       <div className="flex items-center gap-2 mb-4">
         <Calculator className="text-blue-600" size={20} />
-        <h3 className="font-semibold text-lg">Calculadora de Precio</h3>
+        <h3 className="font-semibold text-lg">{t('priceCalculator')}</h3>
       </div>
 
       <div className="space-y-4">
         <div>
           <label className="block text-sm font-medium mb-2">
-            Número de habitaciones:
+            {t('numberOfRooms')}
           </label>
           <input
             type="number"
@@ -265,8 +252,8 @@ function PlanCalculator({ planId, onPriceChange }: { planId: PlanId; onPriceChan
             className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
           />
           <p className="text-xs text-gray-500 mt-1">
-            {plan.maxRoomsIncluded} habitaciones incluidas en el precio base
-            {plan.extraRoomPrice && `, ${plan.extraRoomPrice}€/mes por cada adicional`}
+            {t('roomsIncludedHint', { count: plan.maxRoomsIncluded })}
+            {plan.extraRoomPrice != null && t('extraPerRoom', { price: plan.extraRoomPrice })}
           </p>
         </div>
 
@@ -274,25 +261,25 @@ function PlanCalculator({ planId, onPriceChange }: { planId: PlanId; onPriceChan
           <div className="bg-white p-4 rounded-lg border">
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
-                <span>Precio base:</span>
+                <span>{t('basePrice')}</span>
                 <span>{pricing.base_price.toFixed(2)}€</span>
               </div>
               {pricing.extra_rooms_price > 0 && (
                 <div className="flex justify-between text-sm text-gray-600">
-                  <span>Habitaciones extra ({pricing.extra_rooms || 0}):</span>
+                  <span>{t('extraRooms', { count: pricing.extra_rooms || 0 })}</span>
                   <span>+{pricing.extra_rooms_price.toFixed(2)}€</span>
                 </div>
               )}
               <div className="flex justify-between text-sm">
-                <span>Subtotal:</span>
+                <span>{t('subtotal')}</span>
                 <span>{pricing.subtotal.toFixed(2)}€</span>
               </div>
               <div className="flex justify-between text-sm text-gray-600">
-                <span>IVA ({pricing.vat.vat_rate}%):</span>
+                <span>{t('vat', { rate: pricing.vat.vat_rate })}</span>
                 <span>+{pricing.vat.vat_amount.toFixed(2)}€</span>
               </div>
               <div className="flex justify-between font-bold text-lg pt-2 border-t">
-                <span>Total mensual:</span>
+                <span>{t('totalMonthly')}</span>
                 <span className="text-blue-600">{pricing.total.toFixed(2)}€</span>
               </div>
             </div>
@@ -310,6 +297,8 @@ function PlanCalculator({ planId, onPriceChange }: { planId: PlanId; onPriceChan
 }
 
 export default function UpgradePlanPage() {
+  const tPlans = useTranslations('plans');
+  const tUpgrade = useTranslations('upgradePlan');
   const router = useRouter();
   const [currentPlan, setCurrentPlan] = useState<string | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<PlanId | null>(null);
@@ -351,17 +340,14 @@ export default function UpgradePlanPage() {
   };
 
   const handleSuccess = () => {
-    alert('¡Plan actualizado exitosamente!');
+    alert(tUpgrade('successUpgrade'));
     router.push('/');
     router.refresh();
   };
 
-  // Filtrar planes según el plan actual
-  // Si tiene CHECKIN, solo mostrar PRO
-  // Si tiene FREE, mostrar CHECKIN y PRO
   const availablePlans = currentPlan === 'checkin' 
-    ? PLANS.filter(p => p.id === 'pro')
-    : PLANS;
+    ? UPGRADE_PLANS_CONFIG.filter(p => p.id === 'pro')
+    : UPGRADE_PLANS_CONFIG;
 
   if (loading) {
     return (
@@ -387,12 +373,10 @@ export default function UpgradePlanPage() {
                 <ArrowLeft className="w-5 h-5 text-gray-600" />
               </Link>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Mejorar Plan</h1>
+                <h1 className="text-2xl font-bold text-gray-900">{tUpgrade('title')}</h1>
                 <p className="text-sm text-gray-600">
-                  Plan actual: <span className="font-semibold">
-                    {currentPlan === 'free' ? 'Plan Gratis' : 
-                     currentPlan === 'checkin' ? 'Plan Check-in' : 
-                     currentPlan === 'pro' ? 'Plan Pro' : 'Desconocido'}
+                  {tUpgrade('currentPlan')}: <span className="font-semibold">
+                    {currentPlan ? getPlanName(tPlans, currentPlan) || tUpgrade('unknownPlan') : tUpgrade('unknownPlan')}
                   </span>
                 </p>
               </div>
@@ -412,11 +396,11 @@ export default function UpgradePlanPage() {
                   className="text-gray-600 hover:text-gray-900 mb-6 flex items-center gap-2"
                 >
                   <ArrowLeft className="w-4 h-4" />
-                  Volver a planes
+                  {tUpgrade('backToPlans')}
                 </button>
 
                 <h2 className="text-2xl font-bold mb-4">
-                  Suscribirse a {PLANS.find(p => p.id === selectedPlan)?.name}
+                  {tPlans('subscribeTo')} {selectedPlan ? getPlanName(tPlans, selectedPlan) : ''}
                 </h2>
 
                 <PlanCalculator 
@@ -442,10 +426,10 @@ export default function UpgradePlanPage() {
           ) : (
             <div className="text-center mb-12">
               <h2 className="text-3xl font-bold text-gray-900 mb-4">
-                Mejora tu Plan
+                {tUpgrade('title')}
               </h2>
               <p className="text-xl text-gray-600">
-                Elige el plan que mejor se adapte a tus necesidades
+                {tUpgrade('subtitleChoose')}
               </p>
             </div>
           )}
@@ -466,7 +450,7 @@ export default function UpgradePlanPage() {
                     {plan.popular && (
                       <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
                         <span className="bg-blue-600 text-white px-4 py-1 rounded-full text-sm font-semibold">
-                          Más Popular
+                          {tPlans('mostPopular')}
                         </span>
                       </div>
                     )}
@@ -474,7 +458,7 @@ export default function UpgradePlanPage() {
                     {isCurrent && (
                       <div className="absolute top-4 right-4">
                         <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-semibold">
-                          Plan Actual
+                          {tPlans('currentPlanBadge')}
                         </span>
                       </div>
                     )}
@@ -484,30 +468,32 @@ export default function UpgradePlanPage() {
                         <Icon className={`text-${plan.color}-600`} size={32} />
                       </div>
                       <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                        {plan.name}
+                        {getPlanName(tPlans, plan.id)}
                       </h3>
-                      <p className="text-gray-600 mb-4">{plan.description}</p>
+                      <p className="text-gray-600 mb-4">
+                        {plan.id === 'checkin' ? tPlans('checkinPlanDesc') : tPlans('proPlanDesc')}
+                      </p>
                       <div className="mb-4">
                         <span className="text-4xl font-bold text-gray-900">
                           {plan.basePrice}€
                         </span>
-                        <span className="text-gray-600">/mes</span>
+                        <span className="text-gray-600">{tPlans('perMonth')}</span>
                         <p className="text-xs text-gray-500 mt-1">
-                          + IVA (21%)
+                          {tUpgrade('vatLabel')}
                         </p>
                       </div>
-                      {plan.extraRoomPrice && (
+                      {plan.extraRoomPrice != null && (
                         <p className="text-sm text-gray-500">
-                          +{plan.extraRoomPrice}€/mes por habitación adicional
+                          {tPlans('extraRoomPerMonth', { price: plan.extraRoomPrice })}
                         </p>
                       )}
                     </div>
 
                     <ul className="space-y-3 mb-8">
-                      {plan.features.map((feature, index) => (
+                      {plan.featuresKeys.map((key, index) => (
                         <li key={index} className="flex items-start gap-2">
                           <Check className="text-green-500 flex-shrink-0 mt-0.5" size={20} />
-                          <span className="text-gray-700">{feature}</span>
+                          <span className="text-gray-700">{tPlans(key)}</span>
                         </li>
                       ))}
                     </ul>
@@ -524,8 +510,8 @@ export default function UpgradePlanPage() {
                       }`}
                     >
                       {isCurrent
-                        ? 'Plan Actual'
-                        : 'Seleccionar Plan'}
+                        ? tPlans('currentPlanBadge')
+                        : tPlans('selectPlan')}
                     </button>
                   </div>
                 );

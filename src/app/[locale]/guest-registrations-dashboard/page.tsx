@@ -1,4 +1,4 @@
-"use client";
+\"use client\";
 
 import { useState, useEffect } from 'react';
 import { Download, Eye, Users, FileText, Calendar, Search, Filter, CheckSquare, Square, Trash2, AlertTriangle, Copy, ExternalLink } from 'lucide-react';
@@ -6,14 +6,7 @@ import AdminLayout from '@/components/AdminLayout';
 import ExportButton, { normalizeData } from './ExportButton';
 import { useTenant, hasLegalModule } from '@/hooks/useTenant';
 import { useRouter } from 'next/navigation';
-
-const COUNTRIES: Record<string, string> = {
-  'ES': 'España',
-  'IT': 'Italia',
-  'PT': 'Portugal',
-  'FR': 'Francia',
-  'DE': 'Alemania',
-};
+import { useTranslations, useLocale } from 'next-intl';
 
 interface ComunicacionPayload {
   codigoEstablecimiento: string;
@@ -158,6 +151,9 @@ const getTravelerData = (registration: GuestRegistration) => {
 };
 
 export default function GuestRegistrationsDashboard() {
+  const t = useTranslations('guestRegistrations');
+  const tCommon = useTranslations('common');
+  const locale = useLocale();
   const { tenant, loading: tenantLoading } = useTenant();
   const router = useRouter();
   const [registrations, setRegistrations] = useState<GuestRegistration[]>([]);
@@ -213,7 +209,7 @@ export default function GuestRegistrationsDashboard() {
   const copyToClipboard = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
-      alert('URL copiada al portapapeles');
+      alert(t('urlCopied'));
     } catch (error) {
       console.error('Error copiando:', error);
     }
@@ -232,10 +228,10 @@ export default function GuestRegistrationsDashboard() {
       if (hash) {
         window.open(`/api/audit?entityId=${hash}`, '_blank');
       } else {
-        alert('No se pudo calcular el hash del registro');
+        alert(t('auditHashError'));
       }
     } catch (e) {
-      alert('No se pudo abrir la bitácora');
+      alert(t('auditOpenError'));
     }
   };
 
@@ -329,7 +325,7 @@ export default function GuestRegistrationsDashboard() {
       console.error('Error cargando registros:', error);
       // En caso de error, mostrar datos de ejemplo para desarrollo
       setRegistrations([]);
-      alert(`Error al cargar registros: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+      alert(t('loadError', { message: error instanceof Error ? error.message : 'Error desconocido' }));
     } finally {
       setLoading(false);
     }
@@ -352,7 +348,7 @@ export default function GuestRegistrationsDashboard() {
   // Función simplificada para XML conjunto que usa el nuevo endpoint robusto
   const generateConjuntoXML = async () => {
     if (selectedRegistrations.size === 0) {
-      alert("Por favor, selecciona al menos un registro para generar XML conjunto");
+      alert(t('selectOneForXml'));
       return;
     }
 
@@ -425,11 +421,11 @@ export default function GuestRegistrationsDashboard() {
       a.remove();
       URL.revokeObjectURL(url);
 
-      alert("XML conjunto generado y descargado correctamente");
+      alert(t('xmlConjuntoGenerated'));
       setSelectedRegistrations(new Set()); // Reset selección
     } catch (error) {
       console.error('Error generando XML conjunto:', error);
-      alert(`Error al generar XML conjunto:\n${error instanceof Error ? error.message : 'Error desconocido'}`);
+      alert(t('xmlConjuntoError') + '\n' + (error instanceof Error ? error.message : 'Error desconocido'));
     } finally {
       setGeneratingXML(false);
     }
@@ -518,14 +514,14 @@ export default function GuestRegistrationsDashboard() {
       
       // Mostrar mensaje de éxito
       const message = type === 'single' 
-        ? 'Registro eliminado correctamente'
-        : `${result.deletedCount} registros eliminados correctamente`;
+        ? t('delete.successSingle')
+        : t('delete.successMultiple', { count: result.deletedCount });
       
       alert(message);
 
     } catch (error) {
       console.error('❌ Error eliminando registros:', error);
-      alert(`Error al eliminar registros:\n${error instanceof Error ? error.message : 'Error desconocido'}`);
+      alert(t('deleteErrorWithMessage', { message: error instanceof Error ? error.message : 'Error desconocido' }));
     } finally {
       setDeleting(false);
       setConfirmDelete(null);
@@ -556,8 +552,8 @@ export default function GuestRegistrationsDashboard() {
           <div className="text-center">
             <div className="text-6xl mb-4">🐬</div>
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Cargando registros de viajeros...</p>
-            <p className="text-sm text-gray-500 mt-2">Conectando con la base de datos</p>
+            <p className="mt-4 text-gray-600">{t('loading')}</p>
+            <p className="text-sm text-gray-500 mt-2">{t('loadingDatabase')}</p>
           </div>
         </div>
       </AdminLayout>
@@ -575,19 +571,23 @@ export default function GuestRegistrationsDashboard() {
               <div className="text-2xl mr-2">📋</div>
               <div>
                 <div className="flex items-center gap-3">
-                  <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Registros de Formularios</h1>
+                  <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                    {t('title')}
+                  </h1>
                   {tenant?.country_code && (
                     <span className="px-3 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full border border-blue-200">
-                      🌍 {COUNTRIES[tenant.country_code] || tenant.country_code}
+                      🌍 {t('countries.' + tenant.country_code as any) || tenant.country_code}
                     </span>
                   )}
                   {tenant?.plan_type === 'pro' && (
                     <span className="px-3 py-1 bg-purple-100 text-purple-800 text-xs font-semibold rounded-full border border-purple-200">
-                      ⭐ PRO - Todos los países
+                      ⭐ PRO - {t('proBadgeAllCountries')}
                     </span>
                   )}
                 </div>
-                <p className="text-xs sm:text-sm text-gray-600">🏛️ Gestión y generación de XML para Ministerio del Interior</p>
+                <p className="text-xs sm:text-sm text-gray-600">
+                  🏛️ {t('subtitle')}
+                </p>
               </div>
             </div>
             <div className="flex items-center space-x-4">
@@ -596,7 +596,7 @@ export default function GuestRegistrationsDashboard() {
                 className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-xl hover:from-blue-700 hover:to-purple-700 transition-colors flex items-center space-x-2 font-semibold shadow"
               >
                 <span>📤</span>
-                <span>Estado Envíos MIR</span>
+                <span>{t('mirStatusLink')}</span>
               </a>
             </div>
           </div>
@@ -610,9 +610,11 @@ export default function GuestRegistrationsDashboard() {
             <div className="flex items-center space-x-4">
               <div className="text-3xl">🔗</div>
               <div>
-                <h2 className="text-lg font-semibold text-gray-900">URL de tu formulario</h2>
+                <h2 className="text-lg font-semibold text-gray-900">
+                  {t('formUrl')}
+                </h2>
                 <p className="text-sm text-gray-600">
-                  Comparte este enlace con tus clientes para que puedan contactarte
+                  {t('formUrlDescription')}
                 </p>
               </div>
             </div>
@@ -625,12 +627,12 @@ export default function GuestRegistrationsDashboard() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-sm font-mono"
                 />
               </div>
-              <button
+                <button
                 onClick={() => copyToClipboard(formUrl)}
                 className="px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 transition-colors flex items-center space-x-2 shadow"
               >
                 <Copy className="w-4 h-4" />
-                <span>Copiar</span>
+                  <span>{t('copyUrl')}</span>
               </button>
               <a
                 href={formUrl}
@@ -639,7 +641,7 @@ export default function GuestRegistrationsDashboard() {
                 className="px-4 py-2 bg-gradient-to-r from-emerald-600 to-green-600 text-white rounded-xl hover:from-emerald-700 hover:to-green-700 transition-colors flex items-center space-x-2 shadow"
               >
                 <ExternalLink className="w-4 h-4" />
-                <span>Ver</span>
+                <span>{t('viewForm')}</span>
               </a>
             </div>
           </div>
@@ -655,11 +657,15 @@ export default function GuestRegistrationsDashboard() {
                 onChange={(e) => setShowAllRegistrations(e.target.checked)}
                 className="rounded border-gray-300"
               />
-              <label className="text-sm font-medium text-gray-700">Mostrar todos los registros</label>
+              <label className="text-sm font-medium text-gray-700">
+                {t('filters.showAll')}
+              </label>
             </div>
             {!showAllRegistrations && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Fecha específica</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  {t('filters.specificDate')}
+                </label>
                 <input
                   type="date"
                   value={selectedDate}
@@ -669,25 +675,29 @@ export default function GuestRegistrationsDashboard() {
               </div>
             )}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Establecimiento</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                {t('filters.establishment')}
+              </label>
               <select
                 value={filterEstablishment}
                 onChange={(e) => setFilterEstablishment(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="">Todos</option>
+                <option value="">{t('filters.allEstablishments')}</option>
                 {uniqueEstablishments.map(est => (
                   <option key={est} value={est}>{est}</option>
                 ))}
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Búsqueda</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                {t('filters.search')}
+              </label>
               <div className="relative">
                 <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
                 <input
                   type="text"
-                  placeholder="Referencia, nombre, apellido..."
+                  placeholder={t('searchPlaceholder')}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -697,7 +707,9 @@ export default function GuestRegistrationsDashboard() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Fecha Check-in</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                {t('filters.checkInDate')}
+              </label>
               <input
                 type="date"
                 value={filterCheckIn}
@@ -706,7 +718,9 @@ export default function GuestRegistrationsDashboard() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Fecha Check-out</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                {t('filters.checkOutDate')}
+              </label>
               <input
                 type="date"
                 value={filterCheckOut}
@@ -715,12 +729,14 @@ export default function GuestRegistrationsDashboard() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Habitación</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                {t('filters.roomNumber')}
+              </label>
               <input
                 type="number"
                 value={filterRoom}
                 onChange={(e) => setFilterRoom(e.target.value)}
-                placeholder="Nº de habitación"
+                placeholder={t('filters.roomPlaceholder')}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
@@ -730,7 +746,7 @@ export default function GuestRegistrationsDashboard() {
                 className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <Filter className="h-4 w-4 inline mr-2" />
-                Filtrar
+                {t('filters.applyFilters')}
               </button>
             </div>
           </div>
@@ -744,7 +760,9 @@ export default function GuestRegistrationsDashboard() {
                 <FileText className="h-6 w-6 text-blue-600" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Registros</p>
+                <p className="text-sm font-medium text-gray-600">
+                  {t('stats.totalRegistrations')}
+                </p>
                 <p className="text-2xl font-bold text-gray-900">{filteredRegistrations.length}</p>
               </div>
             </div>
@@ -755,7 +773,9 @@ export default function GuestRegistrationsDashboard() {
                 <Users className="h-6 w-6 text-green-600" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Viajeros</p>
+                <p className="text-sm font-medium text-gray-600">
+                  {t('stats.totalTravelers')}
+                </p>
                 <p className="text-2xl font-bold text-gray-900">
                   {filteredRegistrations.length}
                 </p>
@@ -768,7 +788,9 @@ export default function GuestRegistrationsDashboard() {
                 <Calendar className="h-6 w-6 text-yellow-600" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Registros Seleccionados</p>
+                <p className="text-sm font-medium text-gray-600">
+                  {t('stats.selected')}
+                </p>
                 <p className="text-2xl font-bold text-gray-900">{selectedRegistrations.size}</p>
               </div>
             </div>
@@ -779,7 +801,7 @@ export default function GuestRegistrationsDashboard() {
                 <Download className="h-6 w-6 text-purple-600" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Establecimientos</p>
+                <p className="text-sm font-medium text-gray-600">{t('stats.establishments')}</p>
                 <p className="text-2xl font-bold text-gray-900">{uniqueEstablishments.length}</p>
               </div>
             </div>
@@ -790,21 +812,21 @@ export default function GuestRegistrationsDashboard() {
                 <CheckSquare className="h-6 w-6 text-indigo-600" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Acciones</p>
+                <p className="text-sm font-medium text-gray-600">{t('stats.actions')}</p>
                 <div className="space-y-1">
                   <button
                     onClick={generateConjuntoXML}
                     disabled={generatingXML || selectedRegistrations.size === 0}
                     className="text-xs px-2 py-1 bg-blue-600 text-white rounded disabled:opacity-50 block w-full"
                   >
-                    {generatingXML ? "Generando..." : "XML Conjunto"}
+                    {generatingXML ? t('generating') : t('exportXMLConjuntoShort')}
                   </button>
                   <button
                     onClick={deleteSelectedRegistrations}
                     disabled={deleting || selectedRegistrations.size === 0}
                     className="text-xs px-2 py-1 bg-red-600 text-white rounded disabled:opacity-50 block w-full"
                   >
-                    {deleting ? "Eliminando..." : `Eliminar (${selectedRegistrations.size})`}
+                    {deleting ? t('list.deleting') : t('list.deleteCount', { count: selectedRegistrations.size })}
                   </button>
                 </div>
               </div>
@@ -818,8 +840,8 @@ export default function GuestRegistrationsDashboard() {
           <div className="bg-white px-6 py-4 border-b border-gray-200">
             <div className="flex justify-between items-center">
               <div>
-                <h2 className="text-lg font-semibold text-gray-900">Registros de Viajeros</h2>
-                <p className="text-sm text-gray-600 mt-1">{filteredRegistrations.length} registros encontrados</p>
+                <h2 className="text-lg font-semibold text-gray-900">{t('list.title')}</h2>
+                <p className="text-sm text-gray-600 mt-1">{t('totalRegistrations', { count: filteredRegistrations.length })}</p>
               </div>
               {filteredRegistrations.length > 0 && (
                 <div className="flex items-center space-x-4">
@@ -827,7 +849,7 @@ export default function GuestRegistrationsDashboard() {
                     onClick={toggleAllRegistrations}
                     className="text-sm text-blue-600 hover:text-blue-800 font-medium"
                   >
-                    {selectedRegistrations.size === filteredRegistrations.length ? "Deseleccionar todo" : "Seleccionar todo"}
+                    {selectedRegistrations.size === filteredRegistrations.length ? t('list.deselectAll') : t('list.selectAll')}
                   </button>
                   {selectedRegistrations.size > 0 && (
                     <div className="flex space-x-2">
@@ -837,7 +859,7 @@ export default function GuestRegistrationsDashboard() {
                         className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50"
                       >
                         <Download className="h-4 w-4 inline mr-2" />
-                        {generatingXML ? "Generando..." : `Generar XML Conjunto (${selectedRegistrations.size})`}
+                        {generatingXML ? t('generating') : t('exportXMLConjunto', { count: selectedRegistrations.size })}
                       </button>
                       <button
                         onClick={deleteSelectedRegistrations}
@@ -845,7 +867,7 @@ export default function GuestRegistrationsDashboard() {
                         className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50"
                       >
                         <Trash2 className="h-4 w-4 inline mr-2" />
-                        {deleting ? "Eliminando..." : `Eliminar Seleccionados (${selectedRegistrations.size})`}
+                        {deleting ? t('list.deleting') : t('list.deleteSelectedLabel', { count: selectedRegistrations.size })}
                       </button>
                     </div>
                   )}
@@ -862,18 +884,18 @@ export default function GuestRegistrationsDashboard() {
                   <div className="text-6xl mb-4">🐬</div>
                   <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                   <h3 className="text-lg font-medium text-gray-900 mb-2">
-                    {registrations.length === 0 ? 'No hay registros aún' : 'No hay registros para los filtros seleccionados'}
+                    {registrations.length === 0 ? t('noRegistrations') : t('noRegistrationsFiltered')}
                   </h3>
                   <p className="text-gray-500 mb-4">
                     {registrations.length === 0 
-                      ? 'Los clientes pueden enviar registros desde el formulario público'
-                      : 'Intenta ajustar los filtros de búsqueda'
+                      ? t('noRegistrationsDescription')
+                      : t('noRegistrationsFilteredDescription')
                     }
                   </p>
                   <div className="space-y-2 text-sm text-gray-400">
-                    <p>• Los registros aparecerán aquí cuando los clientes completen el formulario</p>
-                    <p>• Puedes generar XML individual o conjunto para enviar al Ministerio del Interior</p>
-                    <p>• Usa los filtros para encontrar registros específicos</p>
+                    <p>• {t('infoCards.card1')}</p>
+                    <p>• {t('infoCards.card2')}</p>
+                    <p>• {t('infoCards.card3')}</p>
                   </div>
                 </div>
               ) : (
@@ -891,19 +913,19 @@ export default function GuestRegistrationsDashboard() {
                           <div className="text-2xl">📋</div>
                           <div>
                             <h4 className="font-semibold text-gray-900">
-                              Referencia: {registration.contrato.referencia}
+                              {t('list.reference')}: {registration.contrato.referencia}
                             </h4>
                             <p className="text-sm text-gray-600">
-                              Establecimiento: {registration.contrato.codigoEstablecimiento} | 
-                              Habitación: {registration.contrato.numHabitaciones} | 
-                              Fecha registro: {new Date(registration.created_at).toLocaleDateString('es-ES')}
+                              {t('list.establishment')}: {registration.contrato.codigoEstablecimiento} | 
+                              {t('list.room')}: {registration.contrato.numHabitaciones} | 
+                              {t('list.registrationDate')}: {new Date(registration.created_at).toLocaleDateString(locale)}
                             </p>
                             <p className="text-sm text-gray-500">
-                              Viajero: {registration.viajero.nombre} {registration.viajero.apellido1}
+                              {t('list.traveler')}: {registration.viajero.nombre} {registration.viajero.apellido1}
                             </p>
                             <p className="text-sm text-gray-500">
-                              Check-in: {new Date(registration.fecha_entrada).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })} | 
-                              Check-out: {new Date(registration.fecha_salida).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                              {t('checkIn')}: {new Date(registration.fecha_entrada).toLocaleDateString(locale, { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })} | 
+                              {t('checkOut')}: {new Date(registration.fecha_salida).toLocaleDateString(locale, { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                             </p>
                           </div>
                         </div>
@@ -913,12 +935,12 @@ export default function GuestRegistrationsDashboard() {
                             className="px-3 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500"
                           >
                             <Eye className="h-4 w-4 inline mr-1" />
-                            Ver
+                            {t('list.view')}
                           </button>
                           <ExportButton
                             solicitud={prepareSolicitudData(registration)}
-                            onSuccess={() => alert("XML generado y descargado correctamente")}
-                            onError={(error) => alert(`Error al generar XML:\n${error}`)}
+                            onSuccess={() => alert(t('xmlGenerated'))}
+                            onError={(error) => alert(t('exportError') + '\n' + error)}
                           />
                           <button
                             onClick={() => deleteRegistration(registration.id)}
@@ -926,7 +948,7 @@ export default function GuestRegistrationsDashboard() {
                             className="px-3 py-2 bg-red-100 text-red-700 rounded-md hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50"
                           >
                             <Trash2 className="h-4 w-4 inline mr-1" />
-                            Eliminar
+                            {t('list.delete')}
                           </button>
                         </div>
                       </div>
@@ -949,15 +971,15 @@ export default function GuestRegistrationsDashboard() {
                   <AlertTriangle className="h-6 w-6 text-red-600" />
                 </div>
                 <h3 className="text-lg font-semibold text-gray-900">
-                  Confirmar Eliminación
+                  {t('delete.title')}
                 </h3>
               </div>
             </div>
             <div className="px-6 py-4">
               <p className="text-gray-700 mb-4">
                 {confirmDelete.type === 'single' 
-                  ? '¿Estás seguro de que quieres eliminar este registro?'
-                  : `¿Estás seguro de que quieres eliminar ${confirmDelete.ids.length} registros?`
+                  ? t('delete.messageSingle')
+                  : t('delete.messageMultiple', { count: confirmDelete.ids.length })
                 }
               </p>
               <div className="bg-gray-50 rounded-lg p-3 max-h-32 overflow-y-auto">
@@ -972,10 +994,10 @@ export default function GuestRegistrationsDashboard() {
                   <AlertTriangle className="h-5 w-5 text-yellow-600 mr-2 mt-0.5" />
                   <div>
                     <p className="text-sm font-medium text-yellow-800">
-                      ⚠️ Esta acción no se puede deshacer
+                      ⚠️ {t('delete.warning')}
                     </p>
                     <p className="text-sm text-yellow-700 mt-1">
-                      Los registros eliminados no podrán ser recuperados.
+                      {t('delete.warningDescription')}
                     </p>
                   </div>
                 </div>
@@ -987,7 +1009,7 @@ export default function GuestRegistrationsDashboard() {
                 disabled={deleting}
                 className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 disabled:opacity-50"
               >
-                Cancelar
+                {t('delete.cancel')}
               </button>
               <button
                 onClick={confirmDeletion}
@@ -998,7 +1020,7 @@ export default function GuestRegistrationsDashboard() {
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                 )}
                 <Trash2 className="h-4 w-4 mr-2" />
-                {deleting ? 'Eliminando...' : 'Eliminar'}
+                {deleting ? t('delete.deleting') : t('delete.confirm')}
               </button>
             </div>
           </div>
@@ -1011,7 +1033,7 @@ export default function GuestRegistrationsDashboard() {
           <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
               <h3 className="text-lg font-semibold text-gray-900">
-                Detalles del Registro - {selectedRegistration.contrato.referencia}
+                {t('modal.title', { reference: selectedRegistration.contrato.referencia })}
               </h3>
               <button
                 onClick={() => setSelectedRegistration(null)}
@@ -1023,67 +1045,67 @@ export default function GuestRegistrationsDashboard() {
             <div className="p-6">
               {/* Información del contrato */}
               <div className="mb-6">
-                <h4 className="font-semibold text-gray-900 mb-3">Información del Contrato</h4>
+                <h4 className="font-semibold text-gray-900 mb-3">{t('modal.contractInfo')}</h4>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                   <div>
-                    <span className="font-medium text-gray-600">Referencia:</span>
+                    <span className="font-medium text-gray-600">{t('modal.reference')}:</span>
                     <p className="text-gray-900">{selectedRegistration.contrato.referencia}</p>
                   </div>
                   <div>
-                    <span className="font-medium text-gray-600">Establecimiento:</span>
+                    <span className="font-medium text-gray-600">{t('modal.establishment')}:</span>
                     <p className="text-gray-900">{selectedRegistration.contrato.codigoEstablecimiento}</p>
                   </div>
                   <div>
-                    <span className="font-medium text-gray-600">Fecha Registro:</span>
-                    <p className="text-gray-900">{new Date(selectedRegistration.created_at).toLocaleDateString('es-ES')}</p>
+                    <span className="font-medium text-gray-600">{t('modal.registrationDate')}:</span>
+                    <p className="text-gray-900">{new Date(selectedRegistration.created_at).toLocaleDateString(locale)}</p>
                   </div>
                   <div>
-                    <span className="font-medium text-gray-600">Nº Habitaciones:</span>
+                    <span className="font-medium text-gray-600">{t('modal.rooms')}:</span>
                     <p className="text-gray-900">{selectedRegistration.contrato.numHabitaciones}</p>
                   </div>
                   <div>
-                    <span className="font-medium text-gray-600">Entrada:</span>
-                    <p className="text-gray-900">{new Date(selectedRegistration.fecha_entrada).toLocaleString('es-ES')}</p>
+                    <span className="font-medium text-gray-600">{t('modal.checkIn')}:</span>
+                    <p className="text-gray-900">{new Date(selectedRegistration.fecha_entrada).toLocaleString(locale)}</p>
                   </div>
                   <div>
-                    <span className="font-medium text-gray-600">Salida:</span>
-                    <p className="text-gray-900">{new Date(selectedRegistration.fecha_salida).toLocaleString('es-ES')}</p>
+                    <span className="font-medium text-gray-600">{t('modal.checkOut')}:</span>
+                    <p className="text-gray-900">{new Date(selectedRegistration.fecha_salida).toLocaleString(locale)}</p>
                   </div>
                   <div>
-                    <span className="font-medium text-gray-600">Tipo Pago:</span>
+                    <span className="font-medium text-gray-600">{t('modal.paymentType')}:</span>
                     <p className="text-gray-900">{selectedRegistration.contrato.tipoPago}</p>
                   </div>
                   <div>
-                    <span className="font-medium text-gray-600">Internet:</span>
-                    <p className="text-gray-900">{selectedRegistration.contrato.internet ? "Sí" : "No"}</p>
+                    <span className="font-medium text-gray-600">{t('modal.internet')}:</span>
+                    <p className="text-gray-900">{selectedRegistration.contrato.internet ? t('modal.yes') : t('modal.no')}</p>
                   </div>
                 </div>
               </div>
 
               {/* Bitácora */}
               <div className="mb-6 bg-gray-50 border rounded-lg p-4">
-                <h4 className="font-semibold text-gray-900 mb-2">Bitácora</h4>
+                <h4 className="font-semibold text-gray-900 mb-2">{t('modal.audit')}</h4>
                 <div className="flex items-center justify-between">
                   <p className="text-xs text-gray-600 break-all">
-                    Hash: {selectedRegistration?.data?.audit_hash || 'calculando…'}
+                    {t('modal.auditHash')}: {selectedRegistration?.data?.audit_hash || '…'}
                   </p>
                   <button
                     onClick={() => openAuditFor(selectedRegistration)}
                     className="px-3 py-1.5 bg-white border text-gray-700 rounded-md hover:bg-gray-50 text-sm"
                   >
-                    Ver bitácora
+                    {t('modal.viewAudit')}
                   </button>
                 </div>
               </div>
 
               {/* Información del viajero (editable) */}
               <div>
-                <h4 className="font-semibold text-gray-900 mb-3">Información del Viajero</h4>
+                <h4 className="font-semibold text-gray-900 mb-3">{t('modal.travelerInfo')}</h4>
                 
                 {/* Mostrar datos actuales del viajero */}
                 <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
                   <h5 className="font-semibold text-blue-900 mb-3 flex items-center">
-                    📋 Datos Actuales del Viajero
+                    📋 {t('modal.currentData')}
                   </h5>
                   {(() => {
                     const travelerData = getTravelerData(selectedRegistration);
@@ -1092,66 +1114,66 @@ export default function GuestRegistrationsDashboard() {
                       <>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                           <div>
-                            <span className="font-bold text-gray-700">Nombre:</span>
-                            <p className="font-bold text-gray-900">{travelerData.nombre || 'No especificado'}</p>
+                            <span className="font-bold text-gray-700">{t('modal.name')}:</span>
+                            <p className="font-bold text-gray-900">{travelerData.nombre || t('modal.notSpecified')}</p>
                           </div>
                           <div>
-                            <span className="font-bold text-gray-700">Apellido 1:</span>
-                            <p className="font-bold text-gray-900">{travelerData.apellido1 || 'No especificado'}</p>
+                            <span className="font-bold text-gray-700">{t('modal.firstSurname')}:</span>
+                            <p className="font-bold text-gray-900">{travelerData.apellido1 || t('modal.notSpecified')}</p>
                           </div>
                           <div>
-                            <span className="font-bold text-gray-700">Apellido 2:</span>
-                            <p className="font-bold text-gray-900">{travelerData.apellido2 || 'No especificado'}</p>
+                            <span className="font-bold text-gray-700">{t('modal.secondSurname')}:</span>
+                            <p className="font-bold text-gray-900">{travelerData.apellido2 || t('modal.notSpecified')}</p>
                           </div>
                           <div>
-                            <span className="font-bold text-gray-700">Tipo Documento:</span>
-                            <p className="font-bold text-gray-900">{travelerData.tipoDocumento || 'No especificado'}</p>
+                            <span className="font-bold text-gray-700">{t('modal.docType')}:</span>
+                            <p className="font-bold text-gray-900">{travelerData.tipoDocumento || t('modal.notSpecified')}</p>
                           </div>
                           <div>
-                            <span className="font-bold text-gray-700">Número Documento:</span>
-                            <p className="font-bold text-gray-900">{travelerData.numeroDocumento || 'No especificado'}</p>
+                            <span className="font-bold text-gray-700">{t('modal.docNumber')}:</span>
+                            <p className="font-bold text-gray-900">{travelerData.numeroDocumento || t('modal.notSpecified')}</p>
                           </div>
                           <div>
-                            <span className="font-bold text-gray-700">Nacionalidad:</span>
-                            <p className="font-bold text-gray-900">{travelerData.nacionalidad || 'No especificado'}</p>
+                            <span className="font-bold text-gray-700">{t('modal.nationality')}:</span>
+                            <p className="font-bold text-gray-900">{travelerData.nacionalidad || t('modal.notSpecified')}</p>
                           </div>
                           <div>
-                            <span className="font-bold text-gray-700">Teléfono:</span>
-                            <p className="font-bold text-gray-900">{travelerData.telefono || 'No especificado'}</p>
+                            <span className="font-bold text-gray-700">{t('modal.phone')}:</span>
+                            <p className="font-bold text-gray-900">{travelerData.telefono || t('modal.notSpecified')}</p>
                           </div>
                           <div>
-                            <span className="font-bold text-gray-700">Correo:</span>
-                            <p className="font-bold text-gray-900">{travelerData.correo || 'No especificado'}</p>
+                            <span className="font-bold text-gray-700">{t('modal.email')}:</span>
+                            <p className="font-bold text-gray-900">{travelerData.correo || t('modal.notSpecified')}</p>
                           </div>
                           <div>
-                            <span className="font-bold text-gray-700">Fecha Nacimiento:</span>
-                            <p className="font-bold text-gray-900">{travelerData.fechaNacimiento || 'No especificado'}</p>
+                            <span className="font-bold text-gray-700">{t('modal.birthDate')}:</span>
+                            <p className="font-bold text-gray-900">{travelerData.fechaNacimiento || t('modal.notSpecified')}</p>
                           </div>
                         </div>
                         
                         {/* Dirección */}
                         <div className="mt-4 pt-4 border-t border-blue-300">
-                          <h6 className="font-bold text-blue-900 mb-2">📍 Dirección</h6>
+                          <h6 className="font-bold text-blue-900 mb-2">📍 {t('modal.addressTitle')}</h6>
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                             <div>
-                              <span className="font-bold text-gray-700">Dirección:</span>
-                              <p className="font-bold text-gray-900">{travelerData.direccion?.direccion || 'No especificado'}</p>
+                              <span className="font-bold text-gray-700">{t('modal.address')}:</span>
+                              <p className="font-bold text-gray-900">{travelerData.direccion?.direccion || t('modal.notSpecified')}</p>
                             </div>
                             <div>
-                              <span className="font-bold text-gray-700">Código Postal:</span>
-                              <p className="font-bold text-gray-900">{travelerData.direccion?.codigoPostal || 'No especificado'}</p>
+                              <span className="font-bold text-gray-700">{t('modal.postalCode')}:</span>
+                              <p className="font-bold text-gray-900">{travelerData.direccion?.codigoPostal || t('modal.notSpecified')}</p>
                             </div>
                             <div>
-                              <span className="font-bold text-gray-700">País:</span>
-                              <p className="font-bold text-gray-900">{travelerData.direccion?.pais || 'No especificado'}</p>
+                              <span className="font-bold text-gray-700">{t('modal.country')}:</span>
+                              <p className="font-bold text-gray-900">{travelerData.direccion?.pais || t('modal.notSpecified')}</p>
                             </div>
                             <div>
-                              <span className="font-bold text-gray-700">Nombre Municipio:</span>
-                              <p className="font-bold text-gray-900">{travelerData.direccion?.nombreMunicipio || 'No especificado'}</p>
+                              <span className="font-bold text-gray-700">{t('modal.municipality')}:</span>
+                              <p className="font-bold text-gray-900">{travelerData.direccion?.nombreMunicipio || t('modal.notSpecified')}</p>
                             </div>
                             <div>
-                              <span className="font-bold text-gray-700">Código Municipio:</span>
-                              <p className="font-bold text-gray-900">{travelerData.direccion?.codigoMunicipio || 'No especificado'}</p>
+                              <span className="font-bold text-gray-700">{t('modal.municipalityCode')}:</span>
+                              <p className="font-bold text-gray-900">{travelerData.direccion?.codigoMunicipio || t('modal.notSpecified')}</p>
                             </div>
                           </div>
                         </div>
@@ -1163,7 +1185,7 @@ export default function GuestRegistrationsDashboard() {
                 {/* Formulario de edición */}
                 <div className="border rounded-lg p-4 bg-gray-50">
                   <h5 className="font-semibold text-gray-900 mb-3 flex items-center">
-                    ✏️ Editar Información del Viajero
+                    ✏️ {t('modal.editData')}
                   </h5>
                   {(() => {
                     const travelerData = getTravelerData(selectedRegistration);
@@ -1172,12 +1194,12 @@ export default function GuestRegistrationsDashboard() {
                         e.preventDefault();
                         if (!selectedRegistration) return;
                         const submitButton = e.currentTarget.querySelector('button[type="submit"]') as HTMLButtonElement;
-                        const originalText = submitButton.textContent;
+                        const originalText = t('modal.saveChanges');
                         
                         try {
                           // Mostrar estado de carga
                           submitButton.disabled = true;
-                          submitButton.textContent = 'Guardando...';
+                          submitButton.textContent = t('modal.saving');
                           
                           console.log('🔄 Iniciando actualización de registro:', selectedRegistration.id);
                           
@@ -1222,7 +1244,7 @@ export default function GuestRegistrationsDashboard() {
                           console.log('📥 Respuesta del servidor:', json);
                           
                           if (!res.ok || !json.ok) {
-                            throw new Error(json.error || 'Error al guardar cambios');
+                            throw new Error(json.error || t('modal.saveError'));
                           }
                           
                           alert('✅ Cambios guardados exitosamente');
@@ -1231,7 +1253,7 @@ export default function GuestRegistrationsDashboard() {
                           
                         } catch (err: any) {
                           console.error('❌ Error al guardar:', err);
-                          alert(`❌ Error al guardar: ${err.message || 'Error desconocido'}`);
+                          alert(t('modal.saveError') + ': ' + (err.message || 'Error desconocido'));
                         } finally {
                           // Restaurar botón
                           submitButton.disabled = false;
@@ -1239,64 +1261,64 @@ export default function GuestRegistrationsDashboard() {
                         }
                       }}>
                         <div>
-                          <label className="block text-gray-600 mb-1">Nombre</label>
+                          <label className="block text-gray-600 mb-1">{t('modal.name')}</label>
                           <input id="edit_nombre" defaultValue={travelerData.nombre} className="border rounded px-2 py-1 w-full text-gray-900 font-medium" />
                         </div>
                         <div>
-                          <label className="block text-gray-600 mb-1">Apellido 1</label>
+                          <label className="block text-gray-600 mb-1">{t('modal.firstSurname')}</label>
                           <input id="edit_apellido1" defaultValue={travelerData.apellido1} className="border rounded px-2 py-1 w-full text-gray-900 font-medium" />
                         </div>
                         <div>
-                          <label className="block text-gray-600 mb-1">Fecha nacimiento (AAAA-MM-DD)</label>
+                          <label className="block text-gray-600 mb-1">{t('modal.birthDate')} (AAAA-MM-DD)</label>
                           <input id="edit_fechaNacimiento" type="date" defaultValue={travelerData.fechaNacimiento} className="border rounded px-2 py-1 w-full text-gray-900 font-medium" />
                         </div>
                         <div>
-                          <label className="block text-gray-600 mb-1">Tipo documento</label>
+                          <label className="block text-gray-600 mb-1">{t('modal.docType')}</label>
                           <input id="edit_tipoDocumento" defaultValue={travelerData.tipoDocumento} className="border rounded px-2 py-1 w-full text-gray-900 font-medium" />
                         </div>
                         <div>
-                          <label className="block text-gray-600 mb-1">Número documento</label>
+                          <label className="block text-gray-600 mb-1">{t('modal.docNumber')}</label>
                           <input id="edit_numeroDocumento" defaultValue={travelerData.numeroDocumento} className="border rounded px-2 py-1 w-full text-gray-900 font-medium" />
                         </div>
                         <div>
-                          <label className="block text-gray-600 mb-1">Nacionalidad (ISO-3 o nombre)</label>
+                          <label className="block text-gray-600 mb-1">{t('modal.nationality')} (ISO-3 o nombre)</label>
                           <input id="edit_nacionalidad" defaultValue={travelerData.nacionalidad} className="border rounded px-2 py-1 w-full text-gray-900 font-medium" />
                         </div>
                         <div>
-                          <label className="block text-gray-600 mb-1">Teléfono</label>
+                          <label className="block text-gray-600 mb-1">{t('modal.phone')}</label>
                           <input id="edit_telefono" defaultValue={travelerData.telefono} className="border rounded px-2 py-1 w-full text-gray-900 font-medium" />
                         </div>
                         <div>
-                          <label className="block text-gray-600 mb-1">Correo</label>
+                          <label className="block text-gray-600 mb-1">{t('modal.email')}</label>
                           <input id="edit_correo" defaultValue={travelerData.correo} className="border rounded px-2 py-1 w-full text-gray-900 font-medium" />
                         </div>
                         <div className="md:col-span-3 pt-2">
-                          <h5 className="font-medium text-gray-700 mb-2">Dirección</h5>
+                          <h5 className="font-medium text-gray-700 mb-2">{t('modal.addressTitle')}</h5>
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div>
-                              <label className="block text-gray-600 mb-1">Dirección</label>
+                              <label className="block text-gray-600 mb-1">{t('modal.address')}</label>
                               <input id="edit_direccion" defaultValue={travelerData.direccion?.direccion || ''} className="border rounded px-2 py-1 w-full text-gray-900 font-medium" />
                             </div>
                             <div>
-                              <label className="block text-gray-600 mb-1">Código Postal</label>
+                              <label className="block text-gray-600 mb-1">{t('modal.postalCode')}</label>
                               <input id="edit_codigoPostal" defaultValue={travelerData.direccion?.codigoPostal || ''} className="border rounded px-2 py-1 w-full text-gray-900 font-medium" />
                             </div>
                             <div>
-                              <label className="block text-gray-600 mb-1">País (ISO-3 o nombre)</label>
+                              <label className="block text-gray-600 mb-1">{t('modal.country')} (ISO-3 o nombre)</label>
                               <input id="edit_pais" defaultValue={travelerData.direccion?.pais || ''} className="border rounded px-2 py-1 w-full text-gray-900 font-medium" />
                             </div>
                             <div>
-                              <label className="block text-gray-600 mb-1">Nombre Municipio</label>
+                              <label className="block text-gray-600 mb-1">{t('modal.municipality')}</label>
                               <input id="edit_nombreMunicipio" defaultValue={travelerData.direccion?.nombreMunicipio || ''} className="border rounded px-2 py-1 w-full text-gray-900 font-medium" />
                             </div>
                             <div>
-                              <label className="block text-gray-600 mb-1">Código Municipio (INE 5 dígitos)</label>
+                              <label className="block text-gray-600 mb-1">{t('modal.municipalityCode')}</label>
                               <input id="edit_codigoMunicipio" defaultValue={travelerData.direccion?.codigoMunicipio || ''} className="border rounded px-2 py-1 w-full text-gray-900 font-medium" />
                             </div>
                           </div>
                         </div>
                         <div className="md:col-span-3 flex justify-end">
-                          <button type="submit" className="px-3 py-2 bg-blue-600 text-white rounded">Guardar cambios</button>
+                          <button type="submit" className="px-3 py-2 bg-blue-600 text-white rounded">{t('modal.saveChanges')}</button>
                         </div>
                       </form>
                     );
@@ -1306,7 +1328,7 @@ export default function GuestRegistrationsDashboard() {
 
               {/* Status del envío al MIR */}
               <div className="mb-6">
-                <h4 className="font-semibold text-gray-900 mb-3">Estado del Envío al MIR</h4>
+                <h4 className="font-semibold text-gray-900 mb-3">{t('modal.mirStatus')}</h4>
                 <div className="bg-gray-50 border rounded-lg p-4">
                   {(() => {
                     const mirStatus = selectedRegistration?.data?.mir_status || {};
@@ -1316,7 +1338,7 @@ export default function GuestRegistrationsDashboard() {
                       return (
                         <div className="flex items-center text-gray-600">
                           <div className="w-3 h-3 bg-gray-400 rounded-full mr-3"></div>
-                          <span>No se ha enviado al MIR</span>
+                          <span>{t('modal.mirNotSent')}</span>
                         </div>
                       );
                     }
@@ -1326,10 +1348,10 @@ export default function GuestRegistrationsDashboard() {
                         <div className="flex items-center text-red-600">
                           <div className="w-3 h-3 bg-red-500 rounded-full mr-3"></div>
                           <div>
-                            <span className="font-medium">Error en el envío</span>
+                            <span className="font-medium">{t('modal.mirError')}</span>
                             <p className="text-sm text-red-500 mt-1">{mirStatus.error}</p>
                             {mirStatus.lote && (
-                              <p className="text-xs text-gray-500 mt-1">Lote: {mirStatus.lote}</p>
+                              <p className="text-xs text-gray-500 mt-1">{t('modal.mirBatch')}: {mirStatus.lote}</p>
                             )}
                           </div>
                         </div>
@@ -1341,13 +1363,13 @@ export default function GuestRegistrationsDashboard() {
                         <div className="flex items-center text-green-600">
                           <div className="w-3 h-3 bg-green-500 rounded-full mr-3"></div>
                           <div>
-                            <span className="font-medium">Enviado correctamente</span>
-                            <p className="text-sm text-green-600 mt-1">Código: {mirStatus.codigoComunicacion}</p>
+                            <span className="font-medium">{t('modal.mirSuccess')}</span>
+                            <p className="text-sm text-green-600 mt-1">{t('modal.mirCode')}: {mirStatus.codigoComunicacion}</p>
                             {mirStatus.lote && (
-                              <p className="text-xs text-gray-500 mt-1">Lote: {mirStatus.lote}</p>
+                              <p className="text-xs text-gray-500 mt-1">{t('modal.mirBatch')}: {mirStatus.lote}</p>
                             )}
                             {mirStatus.fechaEnvio && (
-                              <p className="text-xs text-gray-500 mt-1">Enviado: {new Date(mirStatus.fechaEnvio).toLocaleString('es-ES')}</p>
+                              <p className="text-xs text-gray-500 mt-1">{t('modal.mirSentDate')}: {new Date(mirStatus.fechaEnvio).toLocaleString(locale)}</p>
                             )}
                           </div>
                         </div>
@@ -1359,10 +1381,10 @@ export default function GuestRegistrationsDashboard() {
                         <div className="flex items-center text-yellow-600">
                           <div className="w-3 h-3 bg-yellow-500 rounded-full mr-3"></div>
                           <div>
-                            <span className="font-medium">Enviado - Pendiente de confirmación</span>
-                            <p className="text-sm text-yellow-600 mt-1">Lote: {mirStatus.lote}</p>
+                            <span className="font-medium">{t('modal.mirPending')}</span>
+                            <p className="text-sm text-yellow-600 mt-1">{t('modal.mirBatch')}: {mirStatus.lote}</p>
                             {mirStatus.fechaEnvio && (
-                              <p className="text-xs text-gray-500 mt-1">Enviado: {new Date(mirStatus.fechaEnvio).toLocaleString('es-ES')}</p>
+                              <p className="text-xs text-gray-500 mt-1">{t('modal.mirSentDate')}: {new Date(mirStatus.fechaEnvio).toLocaleString(locale)}</p>
                             )}
                           </div>
                         </div>
@@ -1372,7 +1394,7 @@ export default function GuestRegistrationsDashboard() {
                     return (
                       <div className="flex items-center text-gray-600">
                         <div className="w-3 h-3 bg-gray-400 rounded-full mr-3"></div>
-                        <span>Estado desconocido</span>
+                        <span>{t('modal.mirUnknown')}</span>
                       </div>
                     );
                   })()}
@@ -1384,15 +1406,15 @@ export default function GuestRegistrationsDashboard() {
                 onClick={() => setSelectedRegistration(null)}
                 className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200"
               >
-                Cerrar
+                {t('modal.close')}
               </button>
               <ExportButton
                 solicitud={prepareSolicitudData(selectedRegistration)}
                 onSuccess={() => {
-                  alert("XML generado y descargado correctamente");
+                  alert(t('xmlGenerated'));
                   setSelectedRegistration(null);
                 }}
-                onError={(error) => alert(`Error al generar XML:\n${error}`)}
+                onError={(error) => alert(t('exportError') + '\n' + error)}
               />
             </div>
           </div>
@@ -1401,32 +1423,28 @@ export default function GuestRegistrationsDashboard() {
 
       {/* Instructions */}
       <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
-        <h3 className="text-lg font-semibold text-blue-900 mb-4">💡 Cómo usar tu formulario</h3>
+        <h3 className="text-lg font-semibold text-blue-900 mb-4">💡 {t('instructions.title')}</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <h4 className="font-medium text-blue-800 mb-2">1. Comparte la URL</h4>
+            <h4 className="font-medium text-blue-800 mb-2">{t('instructions.step1Title')}</h4>
             <p className="text-sm text-blue-700 mb-4">
-              Copia y comparte la URL de tu formulario con tus clientes. Puedes añadirla a tu sitio web, 
-              enviarla por email o compartirla en redes sociales.
+              {t('instructions.step1Description')}
             </p>
             
-            <h4 className="font-medium text-blue-800 mb-2">2. Personaliza el formulario</h4>
+            <h4 className="font-medium text-blue-800 mb-2">{t('instructions.step2Title')}</h4>
             <p className="text-sm text-blue-700">
-              El formulario se adapta automáticamente a la información de tu propiedad. 
-              Los clientes verán el nombre de tu establecimiento y tus datos de contacto.
+              {t('instructions.step2Description')}
             </p>
           </div>
           <div>
-            <h4 className="font-medium text-blue-800 mb-2">3. Recibe consultas</h4>
+            <h4 className="font-medium text-blue-800 mb-2">{t('instructions.step3Title')}</h4>
             <p className="text-sm text-blue-700 mb-4">
-              Todas las consultas aparecerán en esta página. Puedes ver los datos de contacto, 
-              fechas de interés y mensajes de tus clientes.
+              {t('instructions.step3Description')}
             </p>
             
-            <h4 className="font-medium text-blue-800 mb-2">4. Responde a tus clientes</h4>
+            <h4 className="font-medium text-blue-800 mb-2">{t('instructions.step4Title')}</h4>
             <p className="text-sm text-blue-700">
-              Usa la información de contacto para responder directamente a tus clientes 
-              y convertir las consultas en reservas.
+              {t('instructions.step4Description')}
             </p>
           </div>
         </div>

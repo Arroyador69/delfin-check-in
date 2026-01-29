@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Plus, X, Calendar, User, Bed, Euro, CreditCard, Download, Phone, Users, Globe, Edit } from 'lucide-react';
 import { getRoomNumber } from '@/lib/db';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 // Base de datos: Neon PostgreSQL
 
 interface Reservation {
@@ -37,6 +37,7 @@ interface Room {
 export default function ReservationsPage() {
   const t = useTranslations('reservations');
   const tCommon = useTranslations('common');
+  const locale = useLocale();
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [rooms, setRooms] = useState<Room[]>([]);
   const [loading, setLoading] = useState(true);
@@ -213,17 +214,17 @@ export default function ReservationsPage() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Error al crear la reserva');
+        throw new Error(errorData.error || t('createErrorDefault'));
       }
 
       const newReservation = await response.json();
       setReservations(prev => [newReservation, ...prev]);
       setShowCreateModal(false);
       resetForm();
-      alert('Reserva creada exitosamente');
+      alert(t('createSuccess'));
     } catch (error: any) {
       console.error('Error creating reservation:', error);
-      alert(`Error al crear la reserva: ${error.message}`);
+      alert(t('createError', { message: String(error.message || error) }));
     } finally {
       setCreating(false);
     }
@@ -286,7 +287,7 @@ export default function ReservationsPage() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Error al actualizar la reserva');
+        throw new Error(errorData.error || t('updateErrorDefault'));
       }
 
       const updatedReservation = await response.json();
@@ -301,11 +302,10 @@ export default function ReservationsPage() {
       setShowEditModal(false);
       setReservationToEdit(null);
       resetForm();
-      
-      alert('✅ Reserva actualizada correctamente');
+      alert(t('updateSuccess'));
     } catch (error: any) {
       console.error('Error updating reservation:', error);
-      alert(`❌ Error al actualizar la reserva: ${error.message}`);
+      alert(t('updateError', { message: String(error.message || error) }));
     } finally {
       setUpdating(false);
     }
@@ -327,7 +327,7 @@ export default function ReservationsPage() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Error al eliminar la reserva');
+        throw new Error(errorData.error || t('deleteErrorDefault'));
       }
 
       // Eliminar de la lista local
@@ -335,10 +335,10 @@ export default function ReservationsPage() {
       setShowDeleteModal(false);
       setReservationToDelete(null);
       setConfirmDelete(false);
-      alert('Reserva eliminada exitosamente');
+      alert(t('deleteSuccess'));
     } catch (error: any) {
       console.error('Error deleting reservation:', error);
-      alert(`Error al eliminar la reserva: ${error.message}`);
+      alert(t('deleteError', { message: String(error.message || error) }));
     } finally {
       setDeleting(null);
     }
@@ -351,7 +351,7 @@ export default function ReservationsPage() {
   };
 
   const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString('es-ES');
+    return new Date(date).toLocaleDateString(locale);
   };
 
   const getStatusColor = (status: string) => {
@@ -365,18 +365,18 @@ export default function ReservationsPage() {
 
   const getStatusText = (status: string) => {
     switch (status) {
-      case 'confirmed': return 'Confirmada';
-      case 'cancelled': return 'Cancelada';
-      case 'completed': return 'Completada';
+      case 'confirmed': return t('statusConfirmed');
+      case 'cancelled': return t('statusCancelled');
+      case 'completed': return t('statusCompleted');
       default: return status;
     }
   };
 
   const getChannelText = (channel: string) => {
     switch (channel) {
-      case 'airbnb': return 'Airbnb';
-      case 'booking': return 'Booking.com';
-      case 'manual': return 'Manual';
+      case 'airbnb': return t('channelAirbnb');
+      case 'booking': return t('channelBooking');
+      case 'manual': return t('channelManual');
       default: return channel;
     }
   };
@@ -466,14 +466,14 @@ export default function ReservationsPage() {
           <div className="flex items-center justify-between mb-3 sm:mb-4">
             <h3 className="text-base sm:text-lg font-bold text-gray-900 flex items-center gap-2">
               <span style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>🔍</span>
-              Buscar Reservas
+              {t('searchTitle')}
             </h3>
             {isSearching && (
               <button
                 onClick={clearSearch}
                 className="text-xs sm:text-sm text-blue-600 hover:text-blue-800 underline"
               >
-                Limpiar búsqueda
+                {t('clearSearch')}
               </button>
             )}
           </div>
@@ -481,14 +481,14 @@ export default function ReservationsPage() {
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 sm:items-end">
             <div className="flex-1">
               <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
-                Buscar por nombre, teléfono, email, habitación, booking, airbnb...
+                {t('searchLabel')}
               </label>
               <input
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                placeholder="Ej: Juan, +34612345678, habitación 1, booking123..."
+                placeholder={t('searchPlaceholder')}
                 className="w-full px-3 sm:px-4 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
@@ -501,14 +501,15 @@ export default function ReservationsPage() {
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
-              Buscar
+              {tCommon('search')}
             </button>
           </div>
           
           {isSearching && (
             <div className="mt-4 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
               <p className="text-sm text-blue-800 font-semibold">
-                <span style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>🔍</span> Búsqueda activa: "{searchTerm}" - {filteredReservations.length} resultado{filteredReservations.length !== 1 ? 's' : ''} encontrado{filteredReservations.length !== 1 ? 's' : ''}
+                <span style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>🔍</span>{' '}
+                {t('searchActive', { term: searchTerm, count: filteredReservations.length })}
               </p>
             </div>
           )}
@@ -519,13 +520,17 @@ export default function ReservationsPage() {
             <div>
               <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
                 <span style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>📋</span>
-                Gestión de Reservas
+                {t('managementTitle')}
               </h2>
-              <p className="text-sm text-gray-600 font-medium">Crear y gestionar reservas de clientes</p>
+              <p className="text-sm text-gray-600 font-medium">
+                {t('managementSubtitle')}
+              </p>
               {displayReservations.length > 0 && (
                 <p className="text-xs text-blue-700 mt-1 font-semibold">
-                  {displayReservations.length} reserva{displayReservations.length !== 1 ? 's' : ''} encontrada{displayReservations.length !== 1 ? 's' : ''}
-                  {isSearching && ` (de ${reservations.length} total)`}
+                  {t('resultsCount', {
+                    count: displayReservations.length,
+                    total: reservations.length,
+                  })}
                 </p>
               )}
             </div>
@@ -534,7 +539,7 @@ export default function ReservationsPage() {
               className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-xl hover:from-blue-700 hover:to-purple-700 flex items-center space-x-2 font-semibold transition-all duration-200 transform hover:scale-105 shadow-lg"
             >
               <Plus className="h-5 w-5" />
-              <span>Nueva Reserva</span>
+              <span>{t('createReservation')}</span>
             </button>
           </div>
           <div className="overflow-x-auto max-h-[70vh] overflow-y-auto">
@@ -542,40 +547,40 @@ export default function ReservationsPage() {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                    🏠 Habitación
+                    🏠 {t('columns.room')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                    👤 Huésped
+                    👤 {t('columns.guest')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                    📞 Teléfono
+                    📞 {t('columns.phone')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                    👥 Personas
+                    👥 {t('columns.guests')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                    📅 Llegada
+                    📅 {t('columns.arrival')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                    📤 Salida
+                    📤 {t('columns.departure')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                    🎯 Estado
+                    🎯 {t('columns.status')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                    💰 Pagó Huésped
+                    💰 {t('columns.guestPaid')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                    💎 Comisión
+                    💎 {t('columns.commission')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                    💵 Tu Ganancia
+                    💵 {t('columns.netIncome')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                    🌐 Canal
+                    🌐 {t('columns.channel')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                    ⚙️ Acciones
+                    ⚙️ {t('columns.actions')}
                   </th>
                 </tr>
               </thead>
@@ -589,19 +594,23 @@ export default function ReservationsPage() {
                       <div className="text-gray-700">
                         {isSearching ? (
                           <>
-                            <h3 className="text-xl sm:text-2xl font-semibold text-gray-800 mb-2">No se encontraron resultados</h3>
-                            <p className="text-gray-600 text-sm sm:text-base mb-4">No hay reservas que coincidan con "{searchTerm}"</p>
+                            <h3 className="text-xl sm:text-2xl font-semibold text-gray-800 mb-2">
+                              {t('noResultsTitle')}
+                            </h3>
+                            <p className="text-gray-600 text-sm sm:text-base mb-4">
+                              {t('noResultsDescription', { term: searchTerm })}
+                            </p>
                             <button
                               onClick={clearSearch}
                               className="mt-3 text-blue-600 hover:text-blue-800 underline"
                             >
-                              Ver todas las reservas
+                              {t('noResultsShowAll')}
                             </button>
                           </>
                         ) : (
                           <>
-                            <div className="text-lg mb-2">No hay reservas disponibles</div>
-                            <div className="text-sm">Las reservas aparecerán aquí cuando las crees</div>
+                            <div className="text-lg mb-2">{t('emptyTitle')}</div>
+                            <div className="text-sm">{t('emptyDescription')}</div>
                           </>
                         )}
                       </div>
@@ -611,7 +620,8 @@ export default function ReservationsPage() {
                   displayReservations.map((reservation) => (
                   <tr key={reservation.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {rooms.find(r => r.id === reservation.room_id)?.name || `Habitación ${getRoomNumber(reservation.room_id)}`}
+                      {rooms.find(r => r.id === reservation.room_id)?.name ||
+                        t('roomFallback', { number: getRoomNumber(reservation.room_id) })}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       <div>
@@ -656,25 +666,25 @@ export default function ReservationsPage() {
                       <button
                         onClick={() => handleEditClick(reservation)}
                         className="text-gray-700 hover:text-gray-900 mr-3"
-                        title="Ver/editar reserva"
+                        title={t('actions.viewTitle')}
                       >
-                        Ver
+                        {t('actions.view')}
                       </button>
                       {/* Botón Check-in retirado a petición del usuario */}
                       <button
                         onClick={() => handleEditClick(reservation)}
                         className="bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-700 hover:from-blue-100 hover:to-indigo-100 px-3 py-1.5 rounded-lg mr-2 flex items-center transition-all duration-200 transform hover:scale-105 font-semibold text-sm"
-                        title="Editar reserva"
+                        title={t('actions.editTitle')}
                       >
                         <Edit className="h-4 w-4 mr-1" />
-                        Editar
+                        {t('actions.edit')}
                       </button>
                       <button 
                         onClick={() => handleDeleteClick(reservation)}
                         disabled={deleting === reservation.id}
                         className="bg-gradient-to-r from-red-50 to-pink-50 text-red-700 hover:from-red-100 hover:to-pink-100 px-3 py-1.5 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-105 font-semibold text-sm"
                       >
-                        {deleting === reservation.id ? 'Eliminando...' : 'Eliminar'}
+                        {deleting === reservation.id ? t('actions.deleting') : t('actions.delete')}
                       </button>
                     </td>
                   </tr>
@@ -687,14 +697,18 @@ export default function ReservationsPage() {
 
         {displayReservations.length === 0 && !error && !isSearching && (
           <div className="text-center py-12 bg-white">
-            <div className="text-black text-lg mb-4 font-medium">No hay reservas disponibles</div>
-            <p className="text-black mb-6">Las reservas aparecerán aquí cuando se sincronicen desde Airbnb y Booking.com o las crees manualmente</p>
+            <div className="text-black text-lg mb-4 font-medium">
+              {t('emptyTitle')}
+            </div>
+            <p className="text-black mb-6">
+              {t('emptySyncDescription')}
+            </p>
             <button 
               onClick={() => setShowCreateModal(true)}
               className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 flex items-center space-x-2 mx-auto"
             >
               <Plus className="h-5 w-5" />
-              <span>Crear Primera Reserva</span>
+              <span>{t('emptyPrimaryCta')}</span>
             </button>
           </div>
         )}
@@ -708,7 +722,7 @@ export default function ReservationsPage() {
               <h3 className="text-2xl font-bold text-gray-900 flex items-center">
                 <span className="text-3xl mr-2" style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>➕</span>
                 <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  Nueva Reserva Manual
+                  {t('createModal.title')}
                 </span>
               </h3>
               <button
@@ -727,12 +741,12 @@ export default function ReservationsPage() {
               <div className="bg-gradient-to-br from-blue-50 to-indigo-100 p-4 rounded-xl border-2 border-blue-200">
                 <h4 className="text-sm font-bold text-gray-700 mb-3 flex items-center">
                   <span className="text-lg mr-2">🏠</span>
-                  Información de la Reserva
+                  {t('createModal.reservationSection')}
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      🛏️ Habitación *
+                      🛏️ {t('form.roomLabel')}
                     </label>
                     <select
                       required
@@ -740,10 +754,10 @@ export default function ReservationsPage() {
                       onChange={(e) => setFormData({...formData, room_id: e.target.value})}
                       className="w-full px-3 py-2 border-2 border-blue-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white font-medium transition-all"
                     >
-                      <option value="">Seleccionar habitación</option>
+                      <option value="">{t('form.roomPlaceholder')}</option>
                       {rooms.map(room => (
                         <option key={room.id} value={room.id}>
-                          {room.name} - €{room.basePrice}/noche
+                          {room.name} - €{room.basePrice}/night
                         </option>
                       ))}
                     </select>
@@ -751,7 +765,7 @@ export default function ReservationsPage() {
                   
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      ✅ Estado *
+                      ✅ {t('form.statusLabel')}
                     </label>
                     <select
                       required
@@ -759,9 +773,9 @@ export default function ReservationsPage() {
                       onChange={(e) => setFormData({...formData, status: e.target.value as any})}
                       className="w-full px-3 py-2 border-2 border-blue-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white font-medium transition-all"
                     >
-                      <option value="confirmed">✅ Confirmada</option>
-                      <option value="completed">✨ Completada</option>
-                      <option value="cancelled">❌ Cancelada</option>
+                      <option value="confirmed">✅ {getStatusText('confirmed')}</option>
+                      <option value="completed">✨ {getStatusText('completed')}</option>
+                      <option value="cancelled">❌ {getStatusText('cancelled')}</option>
                     </select>
                   </div>
                 </div>
@@ -771,32 +785,32 @@ export default function ReservationsPage() {
               <div className="bg-gradient-to-br from-green-50 to-emerald-100 p-4 rounded-xl border-2 border-green-200">
                 <h4 className="text-sm font-bold text-gray-700 mb-3 flex items-center">
                   <span className="text-lg mr-2">👤</span>
-                  Información del Huésped
+                  {t('form.guestSectionTitle')}
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      👤 Nombre del huésped *
+                      👤 {t('form.guestNameLabel')}
                     </label>
                     <input
                       type="text"
                       required
                       value={formData.guest_name}
                       onChange={(e) => setFormData({...formData, guest_name: e.target.value})}
-                      placeholder="Nombre completo"
+                      placeholder={t('form.guestNamePlaceholder')}
                       className="w-full px-3 py-2 border-2 border-green-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white font-medium transition-all"
                     />
                   </div>
                   
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      📧 Email del huésped
+                      📧 {t('form.guestEmailLabel')}
                     </label>
                     <input
                       type="email"
                       value={formData.guest_email}
                       onChange={(e) => setFormData({...formData, guest_email: e.target.value})}
-                      placeholder="email@ejemplo.com"
+                      placeholder={t('form.guestEmailPlaceholder')}
                       className="w-full px-3 py-2 border-2 border-green-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white font-medium text-black placeholder-gray-500 transition-all"
                     />
                   </div>
@@ -806,20 +820,20 @@ export default function ReservationsPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      📞 Teléfono del huésped
+                      📞 {t('form.guestPhoneLabel')}
                     </label>
                     <input
                       type="tel"
                       value={formData.guest_phone}
                       onChange={(e) => setFormData({...formData, guest_phone: e.target.value})}
-                      placeholder="+34 600 000 000"
+                      placeholder={t('form.guestPhonePlaceholder')}
                       className="w-full px-3 py-2 border-2 border-green-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white font-medium text-black placeholder-gray-500 transition-all"
                     />
                   </div>
                   
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      👥 Número de personas *
+                      👥 {t('form.guestCountLabel')}
                     </label>
                     <input
                       type="number"
@@ -838,12 +852,12 @@ export default function ReservationsPage() {
               <div className="bg-gradient-to-br from-orange-50 to-amber-100 p-4 rounded-xl border-2 border-orange-200">
                 <h4 className="text-sm font-bold text-gray-700 mb-3 flex items-center">
                   <span className="text-lg mr-2">📅</span>
-                  Fechas de Estancia
+                  {t('form.datesSectionTitle')}
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      📥 Fecha de llegada *
+                      📥 {t('form.checkInLabel')}
                     </label>
                     <input
                       type="date"
@@ -856,7 +870,7 @@ export default function ReservationsPage() {
                   
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      📤 Fecha de salida *
+                      📤 {t('form.checkOutLabel')}
                     </label>
                     <input
                       type="date"
@@ -873,12 +887,12 @@ export default function ReservationsPage() {
               <div className="bg-gradient-to-br from-yellow-50 to-orange-100 p-4 rounded-xl border-2 border-yellow-200">
                 <h4 className="text-sm font-bold text-gray-700 mb-3 flex items-center">
                   <span className="text-lg mr-2">💰</span>
-                  Información Financiera
+                  {t('form.financialSectionTitle')}
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      💵 Precio total
+                      💵 {t('form.totalPriceLabel')}
                     </label>
                     <input
                       type="number"
@@ -892,7 +906,7 @@ export default function ReservationsPage() {
                   
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      💳 Pagó huésped
+                      💳 {t('form.guestPaidLabel')}
                     </label>
                     <input
                       type="number"
@@ -906,7 +920,7 @@ export default function ReservationsPage() {
                   
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      💎 Comisión plataforma
+                      💎 {t('form.platformCommissionLabel')}
                     </label>
                     <input
                       type="number"
@@ -924,12 +938,12 @@ export default function ReservationsPage() {
               <div className="bg-gradient-to-br from-indigo-50 to-blue-100 p-4 rounded-xl border-2 border-indigo-200">
                 <h4 className="text-sm font-bold text-gray-700 mb-3 flex items-center">
                   <span className="text-lg mr-2">🌐</span>
-                  Configuración de Reserva
+                  {t('form.configSectionTitle')}
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      📡 Canal de reserva *
+                      📡 {t('form.channelLabel')}
                     </label>
                     <select
                       required
@@ -937,15 +951,15 @@ export default function ReservationsPage() {
                       onChange={(e) => setFormData({...formData, channel: e.target.value as 'airbnb' | 'booking' | 'manual'})}
                       className="w-full px-3 py-2 border-2 border-indigo-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white font-medium transition-all"
                     >
-                      <option value="manual">📝 Manual</option>
-                      <option value="airbnb">🏠 Airbnb</option>
-                      <option value="booking">🌐 Booking.com</option>
+                      <option value="manual">📝 {t('channelManual')}</option>
+                      <option value="airbnb">🏠 {t('channelAirbnb')}</option>
+                      <option value="booking">🌐 {t('channelBooking')}</option>
                     </select>
                   </div>
                   
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      💱 Moneda
+                      💱 {t('form.currencyLabel')}
                     </label>
                     <select
                       value={formData.currency}
@@ -970,7 +984,7 @@ export default function ReservationsPage() {
                   }}
                   className="px-6 py-2 border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 font-semibold transition-all duration-200 transform hover:scale-105"
                 >
-                  ❌ Cancelar
+                  ❌ {t('form.cancel')}
                 </button>
                 <button
                   type="submit"
@@ -980,12 +994,12 @@ export default function ReservationsPage() {
                   {creating ? (
                     <>
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Creando...
+                      {t('form.creating')}
                     </>
                   ) : (
                     <>
                       <span className="text-lg mr-2">✨</span>
-                      Crear Reserva
+                      {t('form.createSubmit')}
                     </>
                   )}
                 </button>
@@ -1002,9 +1016,9 @@ export default function ReservationsPage() {
             <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-t-2xl">
               <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 flex items-center">
                 <span className="text-3xl sm:text-4xl mr-2" style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>✏️</span>
-                <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  Editar Reserva
-                </span>
+                  <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                    {t('editModal.title')}
+                  </span>
               </h2>
               <button
                 onClick={() => {
@@ -1023,13 +1037,13 @@ export default function ReservationsPage() {
               <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-200">
                 <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
                   <span style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>🏠</span>
-                  Información de la Reserva
+                  {t('editModal.reservationSection')}
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       <Bed className="h-4 w-4 inline mr-2" />
-                      Habitación *
+                      {t('form.roomLabel')}
                     </label>
                     <select
                       required
@@ -1037,10 +1051,10 @@ export default function ReservationsPage() {
                       onChange={(e) => setFormData({...formData, room_id: e.target.value})}
                       className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white"
                     >
-                      <option value="">Seleccionar habitación</option>
+                      <option value="">{t('form.roomPlaceholder')}</option>
                       {rooms.map(room => (
                         <option key={room.id} value={room.id}>
-                          {room.name} - €{room.basePrice}/noche
+                          {room.name} - €{room.basePrice}/night
                         </option>
                       ))}
                     </select>
@@ -1049,7 +1063,7 @@ export default function ReservationsPage() {
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       <User className="h-4 w-4 inline mr-2" />
-                      Estado *
+                      {t('form.statusLabel')}
                     </label>
                     <select
                       required
@@ -1057,9 +1071,9 @@ export default function ReservationsPage() {
                       onChange={(e) => setFormData({...formData, status: e.target.value as any})}
                       className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white"
                     >
-                      <option value="confirmed">Confirmada</option>
-                      <option value="completed">Completada</option>
-                      <option value="cancelled">Cancelada</option>
+                      <option value="confirmed">{getStatusText('confirmed')}</option>
+                      <option value="completed">{getStatusText('completed')}</option>
+                      <option value="cancelled">{getStatusText('cancelled')}</option>
                     </select>
                   </div>
                 </div>
@@ -1069,20 +1083,20 @@ export default function ReservationsPage() {
               <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-6 rounded-xl border border-green-200">
                 <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
                   <span style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>👤</span>
-                  Información del Huésped
+                  {t('form.guestSectionTitle')}
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       <User className="h-4 w-4 inline mr-2" />
-                      Nombre del huésped *
+                      {t('form.guestNameLabel')}
                     </label>
                     <input
                       type="text"
                       required
                       value={formData.guest_name}
                       onChange={(e) => setFormData({...formData, guest_name: e.target.value})}
-                      placeholder="Nombre completo"
+                      placeholder={t('form.guestNamePlaceholder')}
                       className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white"
                     />
                   </div>
@@ -1090,13 +1104,13 @@ export default function ReservationsPage() {
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       <User className="h-4 w-4 inline mr-2" />
-                      Email del huésped
+                      {t('form.guestEmailLabel')}
                     </label>
                     <input
                       type="email"
                       value={formData.guest_email}
                       onChange={(e) => setFormData({...formData, guest_email: e.target.value})}
-                      placeholder="email@ejemplo.com"
+                      placeholder={t('form.guestEmailPlaceholder')}
                       className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white"
                     />
                   </div>
@@ -1107,19 +1121,19 @@ export default function ReservationsPage() {
               <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-6 rounded-xl border border-purple-200">
                 <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
                   <span style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>📞</span>
-                  Información Adicional
+                  {t('form.additionalInfoSectionTitle')}
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       <Phone className="h-4 w-4 inline mr-2" />
-                      Teléfono del huésped
+                      {t('form.guestPhoneLabel')}
                     </label>
                     <input
                       type="tel"
                       value={formData.guest_phone}
                       onChange={(e) => setFormData({...formData, guest_phone: e.target.value})}
-                      placeholder="+34 600 000 000"
+                      placeholder={t('form.guestPhonePlaceholder')}
                       className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white"
                     />
                   </div>
@@ -1127,7 +1141,7 @@ export default function ReservationsPage() {
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       <Users className="h-4 w-4 inline mr-2" />
-                      Número de personas *
+                      {t('form.guestCountLabel')}
                     </label>
                     <input
                       type="number"
@@ -1146,13 +1160,13 @@ export default function ReservationsPage() {
               <div className="bg-gradient-to-r from-orange-50 to-amber-50 p-6 rounded-xl border border-orange-200">
                 <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
                   <span style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>📅</span>
-                  Fechas de Estancia
+                  {t('form.datesSectionTitle')}
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       <Calendar className="h-4 w-4 inline mr-2" />
-                      Fecha de llegada *
+                      {t('form.checkInLabel')}
                     </label>
                     <input
                       type="date"
@@ -1166,7 +1180,7 @@ export default function ReservationsPage() {
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       <Calendar className="h-4 w-4 inline mr-2" />
-                      Fecha de salida *
+                      {t('form.checkOutLabel')}
                     </label>
                     <input
                       type="date"
@@ -1183,13 +1197,13 @@ export default function ReservationsPage() {
               <div className="bg-gradient-to-r from-yellow-50 to-orange-50 p-6 rounded-xl border border-yellow-200">
                 <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
                   <span style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>💰</span>
-                  Información Financiera
+                  {t('form.financialSectionTitle')}
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       <Euro className="h-4 w-4 inline mr-2" />
-                      Precio total
+                      {t('form.totalPriceLabel')}
                     </label>
                     <input
                       type="number"
@@ -1204,7 +1218,7 @@ export default function ReservationsPage() {
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       <CreditCard className="h-4 w-4 inline mr-2" />
-                      Pagó huésped
+                      {t('form.guestPaidLabel')}
                     </label>
                     <input
                       type="number"
@@ -1219,7 +1233,7 @@ export default function ReservationsPage() {
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       <Euro className="h-4 w-4 inline mr-2" />
-                      Comisión plataforma
+                      {t('form.platformCommissionLabel')}
                     </label>
                     <input
                       type="number"
@@ -1237,13 +1251,13 @@ export default function ReservationsPage() {
               <div className="bg-gradient-to-r from-indigo-50 to-blue-50 p-6 rounded-xl border border-indigo-200">
                 <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
                   <span style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>🌐</span>
-                  Configuración de Reserva
+                  {t('form.configSectionTitle')}
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       <Globe className="h-4 w-4 inline mr-2" />
-                      Canal de reserva *
+                      {t('form.channelLabel')}
                     </label>
                     <select
                       required
@@ -1251,16 +1265,16 @@ export default function ReservationsPage() {
                       onChange={(e) => setFormData({...formData, channel: e.target.value as 'airbnb' | 'booking' | 'manual'})}
                       className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white"
                     >
-                      <option value="manual">📝 Manual</option>
-                      <option value="airbnb">🏠 Airbnb</option>
-                      <option value="booking">🌐 Booking.com</option>
+                      <option value="manual">📝 {t('channelManual')}</option>
+                      <option value="airbnb">🏠 {t('channelAirbnb')}</option>
+                      <option value="booking">🌐 {t('channelBooking')}</option>
                     </select>
                   </div>
                   
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       <Euro className="h-4 w-4 inline mr-2" />
-                      Moneda
+                      {t('form.currencyLabel')}
                     </label>
                     <select
                       value={formData.currency}
@@ -1286,7 +1300,7 @@ export default function ReservationsPage() {
                   }}
                   className="px-6 sm:px-8 py-3 border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 font-semibold transition-all duration-200"
                 >
-                  Cancelar
+                  {t('form.cancel')}
                 </button>
                 <button
                   type="submit"
@@ -1296,12 +1310,12 @@ export default function ReservationsPage() {
                   {updating ? (
                     <>
                       <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                      Actualizando...
+                      {t('form.updating')}
                     </>
                   ) : (
                     <>
                       <Edit className="h-5 w-5 mr-2" />
-                      ✨ Actualizar Reserva
+                      ✨ {t('form.updateSubmit')}
                     </>
                   )}
                 </button>
@@ -1320,14 +1334,14 @@ export default function ReservationsPage() {
                 <svg className="h-6 w-6 mr-2 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 18.5c-.77.833.192 2.5 1.732 2.5z" />
                 </svg>
-                Confirmar Eliminación
+                {t('deleteModal.title')}
               </h3>
             </div>
             
             <div className="p-6">
               <div className="mb-4">
                 <p className="text-gray-700 mb-2">
-                  ¿Estás seguro de que quieres eliminar esta reserva?
+                  {t('deleteModal.question')}
                 </p>
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <p className="font-medium text-gray-900">{reservationToDelete.guest_name}</p>
@@ -1336,7 +1350,9 @@ export default function ReservationsPage() {
                     {formatDate(reservationToDelete.check_in)} - {formatDate(reservationToDelete.check_out)}
                   </p>
                   <p className="text-sm text-gray-600">
-                    Habitación: {rooms.find(r => r.id === reservationToDelete.room_id)?.name || reservationToDelete.room_id}
+                    {t('deleteModal.roomLine', {
+                      room: rooms.find(r => r.id === reservationToDelete.room_id)?.name || reservationToDelete.room_id
+                    })}
                   </p>
                 </div>
               </div>
@@ -1347,9 +1363,9 @@ export default function ReservationsPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 18.5c-.77.833.192 2.5 1.732 2.5z" />
                   </svg>
                   <div className="ml-3">
-                    <h4 className="text-sm font-medium text-red-800">Esta acción no se puede deshacer</h4>
+                    <h4 className="text-sm font-medium text-red-800">{t('deleteModal.irreversibleTitle')}</h4>
                     <p className="text-sm text-red-700 mt-1">
-                      La reserva será eliminada permanentemente de la base de datos.
+                      {t('deleteModal.irreversibleDescription')}
                     </p>
                   </div>
                 </div>
@@ -1365,9 +1381,11 @@ export default function ReservationsPage() {
                     className="mt-1 h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded"
                   />
                   <span className="text-sm text-gray-700">
-                    <span className="font-medium text-red-600">Confirmo que quiero eliminar esta reserva</span>
+                    <span className="font-medium text-red-600">
+                      {t('deleteModal.checkboxMain')}
+                    </span>
                     <span className="block text-gray-500 mt-1">
-                      Marca esta casilla para habilitar el botón de eliminación
+                      {t('deleteModal.checkboxSub')}
                     </span>
                   </span>
                 </label>
@@ -1380,7 +1398,7 @@ export default function ReservationsPage() {
                 disabled={deleting === reservationToDelete.id}
                 className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 disabled:opacity-50"
               >
-                Cancelar
+                {t('form.cancel')}
               </button>
               <button
                 onClick={handleDeleteConfirm}
@@ -1390,14 +1408,14 @@ export default function ReservationsPage() {
                 {deleting === reservationToDelete.id ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Eliminando...
+                    {t('deleteModal.deleting')}
                   </>
                 ) : (
                   <>
                     <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1 1v3M4 7h16" />
                     </svg>
-                    Eliminar Reserva
+                    {t('deleteModal.confirm')}
                   </>
                 )}
               </button>

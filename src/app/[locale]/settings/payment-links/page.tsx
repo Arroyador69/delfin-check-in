@@ -1,7 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, Copy, ExternalLink, Calendar, Euro, Users, Home, Bed, X, CheckCircle, Link as LinkIcon } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import { useLocale } from 'next-intl';
+import { Plus, Trash2, Copy, ExternalLink, Home, Bed, X, CheckCircle, Link as LinkIcon } from 'lucide-react';
 
 interface PaymentLink {
   id: number;
@@ -41,6 +43,8 @@ interface Property {
 }
 
 export default function PaymentLinksPage() {
+  const t = useTranslations('settings.paymentLinks');
+  const locale = useLocale();
   const [links, setLinks] = useState<PaymentLink[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -85,7 +89,7 @@ export default function PaymentLinksPage() {
       }
     } catch (error) {
       console.error('Error cargando enlaces:', error);
-      setMessage({ type: 'error', text: 'Error cargando enlaces de pago' });
+      setMessage({ type: 'error', text: t('errorLoading') });
     } finally {
       setLoading(false);
     }
@@ -130,20 +134,20 @@ export default function PaymentLinksPage() {
 
       const data = await response.json();
       if (data.success) {
-        setMessage({ type: 'success', text: 'Enlace de pago creado correctamente' });
+        setMessage({ type: 'success', text: t('createSuccess') });
         setShowForm(false);
         resetForm();
         loadLinks();
       } else {
-        setMessage({ type: 'error', text: data.error || 'Error creando enlace' });
+        setMessage({ type: 'error', text: data.error || t('errorCreate') });
       }
     } catch (error: any) {
-      setMessage({ type: 'error', text: error.message || 'Error creando enlace' });
+      setMessage({ type: 'error', text: error.message || t('errorCreate') });
     }
   };
 
   const handleDelete = async (linkCode: string) => {
-    if (!confirm('¿Estás seguro de que quieres desactivar este enlace de pago?')) {
+    if (!confirm(t('deleteConfirm'))) {
       return;
     }
 
@@ -154,13 +158,13 @@ export default function PaymentLinksPage() {
 
       const data = await response.json();
       if (data.success) {
-        setMessage({ type: 'success', text: 'Enlace desactivado correctamente' });
+        setMessage({ type: 'success', text: t('deactivateSuccess') });
         loadLinks();
       } else {
-        setMessage({ type: 'error', text: data.error || 'Error desactivando enlace' });
+        setMessage({ type: 'error', text: data.error || t('errorDeactivate') });
       }
     } catch (error: any) {
-      setMessage({ type: 'error', text: error.message || 'Error desactivando enlace' });
+      setMessage({ type: 'error', text: error.message || t('errorDeactivate') });
     }
   };
 
@@ -192,7 +196,7 @@ export default function PaymentLinksPage() {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('es-ES', {
+    return new Date(dateString).toLocaleDateString(locale, {
       year: 'numeric',
       month: 'long',
       day: 'numeric'
@@ -200,7 +204,7 @@ export default function PaymentLinksPage() {
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-ES', {
+    return new Intl.NumberFormat(locale, {
       style: 'currency',
       currency: 'EUR'
     }).format(amount);
@@ -212,10 +216,10 @@ export default function PaymentLinksPage() {
         <div>
           <h1 className="text-3xl font-bold text-gray-900 flex items-center">
             <LinkIcon className="w-8 h-8 mr-3 text-blue-600" />
-            Enlaces de Pago
+            {t('title')}
           </h1>
           <p className="text-gray-600 mt-2">
-            Crea enlaces personalizados para que tus clientes puedan realizar pagos directamente
+            {t('subtitle')}
           </p>
         </div>
         <button
@@ -223,7 +227,7 @@ export default function PaymentLinksPage() {
           className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
         >
           <Plus className="w-5 h-5 mr-2" />
-          Nuevo Enlace
+          {t('newLink')}
         </button>
       </div>
 
@@ -250,25 +254,25 @@ export default function PaymentLinksPage() {
 
       {showForm && (
         <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
-          <h2 className="text-xl font-semibold mb-4">Crear Nuevo Enlace de Pago</h2>
+          <h2 className="text-xl font-semibold mb-4">{t('createFormTitle')}</h2>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Nombre del enlace (opcional)
+                  {t('linkNameLabel')}
                 </label>
                 <input
                   type="text"
                   value={formData.link_name}
                   onChange={(e) => setFormData({ ...formData, link_name: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  placeholder="Ej: Reserva Navidad 2024"
+                  placeholder={t('linkNamePlaceholder')}
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Tipo de recurso *
+                  {t('resourceTypeLabel')}
                 </label>
                 <select
                   value={formData.resource_type}
@@ -276,14 +280,14 @@ export default function PaymentLinksPage() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   required
                 >
-                  <option value="room">Slot de Habitación</option>
-                  <option value="property">Propiedad</option>
+                  <option value="room">{t('resourceRoom')}</option>
+                  <option value="property">{t('resourceProperty')}</option>
                 </select>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {formData.resource_type === 'room' ? 'Habitación *' : 'Propiedad *'}
+                  {formData.resource_type === 'room' ? t('roomLabel') : t('propertyLabel')}
                 </label>
                 <select
                   value={formData.resource_id}
@@ -291,7 +295,7 @@ export default function PaymentLinksPage() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   required
                 >
-                  <option value="">Selecciona...</option>
+                  <option value="">{t('selectPlaceholder')}</option>
                   {formData.resource_type === 'room' ? (
                     slots.map((slot) => (
                       <option key={slot.room_id} value={slot.room_id}>
@@ -310,7 +314,7 @@ export default function PaymentLinksPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Fecha de entrada *
+                  {t('checkInLabel')}
                 </label>
                 <input
                   type="date"
@@ -323,7 +327,7 @@ export default function PaymentLinksPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Fecha de salida *
+                  {t('checkOutLabel')}
                 </label>
                 <input
                   type="date"
@@ -336,7 +340,7 @@ export default function PaymentLinksPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Precio total (€) *
+                  {t('totalPriceLabel')}
                 </label>
                 <input
                   type="number"
@@ -350,7 +354,7 @@ export default function PaymentLinksPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Precio por noche (€) (opcional)
+                  {t('pricePerNightLabel')}
                 </label>
                 <input
                   type="number"
@@ -363,7 +367,7 @@ export default function PaymentLinksPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Tarifa de limpieza (€)
+                  {t('cleaningFeeLabel')}
                 </label>
                 <input
                   type="number"
@@ -376,7 +380,7 @@ export default function PaymentLinksPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Huéspedes esperados
+                  {t('expectedGuestsLabel')}
                 </label>
                 <input
                   type="number"
@@ -389,7 +393,7 @@ export default function PaymentLinksPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Fecha de expiración (opcional)
+                  {t('expiryLabel')}
                 </label>
                 <input
                   type="datetime-local"
@@ -407,7 +411,7 @@ export default function PaymentLinksPage() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Notas internas (opcional)
+                {t('internalNotesLabel')}
               </label>
               <textarea
                 value={formData.internal_notes}
@@ -422,7 +426,7 @@ export default function PaymentLinksPage() {
                 type="submit"
                 className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
               >
-                Crear Enlace
+                {t('createLink')}
               </button>
               <button
                 type="button"
@@ -432,7 +436,7 @@ export default function PaymentLinksPage() {
                 }}
                 className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
               >
-                Cancelar
+                {t('cancel')}
               </button>
             </div>
           </form>
@@ -446,13 +450,13 @@ export default function PaymentLinksPage() {
       ) : links.length === 0 ? (
         <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-12 text-center">
           <LinkIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">No hay enlaces de pago</h3>
-          <p className="text-gray-600 mb-6">Crea tu primer enlace de pago para empezar</p>
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">{t('noLinks')}</h3>
+          <p className="text-gray-600 mb-6">{t('noLinksHint')}</p>
           <button
             onClick={() => setShowForm(true)}
             className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
-            Crear Enlace
+            {t('createLink')}
           </button>
         </div>
       ) : (
@@ -462,25 +466,25 @@ export default function PaymentLinksPage() {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Nombre / Código
+                    {t('tableNameCode')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Recurso
+                    {t('tableResource')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Fechas
+                    {t('tableDates')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Precio
+                    {t('tablePrice')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Estado / Pago
+                    {t('tableStatusPayment')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Usos / Fecha pago
+                    {t('tableUsesDate')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Acciones
+                    {t('tableActions')}
                   </th>
                 </tr>
               </thead>
@@ -500,12 +504,12 @@ export default function PaymentLinksPage() {
                         ) : (
                           <Home className="w-4 h-4 mr-2 text-green-600" />
                         )}
-                        {link.resource_type === 'room' ? 'Habitación' : 'Propiedad'}
+                        {link.resource_type === 'room' ? t('room') : t('property')}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       <div>{formatDate(link.check_in_date)}</div>
-                      <div className="text-xs text-gray-500">hasta {formatDate(link.check_out_date)}</div>
+                      <div className="text-xs text-gray-500">{t('until')} {formatDate(link.check_out_date)}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       {formatCurrency(link.total_price)}
@@ -517,12 +521,12 @@ export default function PaymentLinksPage() {
                             ? 'bg-green-100 text-green-800'
                             : 'bg-gray-100 text-gray-800'
                         }`}>
-                          {link.is_active ? 'Activo' : 'Inactivo'}
+                          {link.is_active ? t('active') : t('inactive')}
                         </span>
                         {link.payment_completed && (
                           <div className="flex items-center text-xs text-green-700">
                             <CheckCircle className="w-3 h-3 mr-1" />
-                            Pagado
+                            {t('paid')}
                           </div>
                         )}
                       </div>
@@ -533,7 +537,7 @@ export default function PaymentLinksPage() {
                       </div>
                       {link.payment_completed_at && (
                         <div className="text-xs text-gray-500">
-                          {new Date(link.payment_completed_at).toLocaleDateString('es-ES')}
+                          {new Date(link.payment_completed_at).toLocaleDateString(locale)}
                         </div>
                       )}
                     </td>
@@ -542,7 +546,7 @@ export default function PaymentLinksPage() {
                         <button
                           onClick={() => copyToClipboard(link.link_url || '', link.link_code)}
                           className="text-blue-600 hover:text-blue-900"
-                          title="Copiar enlace"
+                          title={t('copyLink')}
                         >
                           {copiedLink === link.link_code ? (
                             <CheckCircle className="w-5 h-5" />
@@ -555,14 +559,14 @@ export default function PaymentLinksPage() {
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-green-600 hover:text-green-900"
-                          title="Abrir enlace"
+                          title={t('openLink')}
                         >
                           <ExternalLink className="w-5 h-5" />
                         </a>
                         <button
                           onClick={() => handleDelete(link.link_code)}
                           className="text-red-600 hover:text-red-900"
-                          title="Desactivar"
+                          title={t('deactivate')}
                         >
                           <Trash2 className="w-5 h-5" />
                         </button>

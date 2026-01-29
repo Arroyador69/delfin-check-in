@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { useTranslations, useLocale } from 'next-intl';
 
 interface OutboxItem {
   id: string;
@@ -12,6 +13,8 @@ interface OutboxItem {
 }
 
 export default function OfflineQueuePage() {
+  const t = useTranslations('offlineQueue');
+  const locale = useLocale();
   const [items, setItems] = useState<OutboxItem[]>([]);
   const [loading, setLoading] = useState(false);
   const channelRef = useRef<MessagePort | null>(null);
@@ -100,23 +103,23 @@ export default function OfflineQueuePage() {
         <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 flex items-center gap-3">
           <span className="text-4xl sm:text-5xl md:text-6xl" style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>📦</span>
           <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            Cola Offline
+            {t('title')}
           </span>
         </h1>
         <p className="text-gray-700 text-base sm:text-lg mb-4">
-          Gestiona las peticiones pendientes cuando la conexión se restablezca
+          {t('subtitle')}
         </p>
       </div>
 
       {/* Botones de acción */}
       <div className="flex flex-wrap items-center gap-3 mb-6">
-        <h1 className="sr-only">Cola offline</h1>
+        <h1 className="sr-only">{t('title')}</h1>
         <button 
           onClick={() => (window as any).__requestOutboxList?.()} 
           className="px-5 py-3 bg-gradient-to-r from-gray-600 to-gray-700 text-white rounded-xl hover:from-gray-700 hover:to-gray-800 font-semibold shadow-lg transition-all duration-200 transform hover:scale-105 flex items-center gap-2"
         >
           <span>🔄</span>
-          Actualizar
+          {t('btnRefresh')}
         </button>
         <button 
           onClick={flushAll} 
@@ -126,12 +129,12 @@ export default function OfflineQueuePage() {
           {loading ? (
             <>
               <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-              Reintentando...
+              {t('retrying')}
             </>
           ) : (
             <>
               <span>⚡</span>
-              Reintentar Todo
+              {t('btnRetryAll')}
             </>
           )}
         </button>
@@ -140,7 +143,7 @@ export default function OfflineQueuePage() {
           className="px-5 py-3 bg-white border-2 border-gray-300 text-gray-700 rounded-xl hover:border-blue-500 hover:text-blue-600 font-semibold transition-all duration-200 flex items-center gap-2"
         >
           <span>🏠</span>
-          Volver
+          {t('btnBack')}
         </Link>
       </div>
 
@@ -149,8 +152,8 @@ export default function OfflineQueuePage() {
         {items.length === 0 ? (
           <div className="p-12 text-center">
             <div className="text-6xl mb-4" style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>✅</div>
-            <p className="text-xl text-gray-700 font-semibold">No hay elementos en la cola</p>
-            <p className="text-gray-600 mt-2">La cola está vacía. ¡Todo sincronizado!</p>
+            <p className="text-xl text-gray-700 font-semibold">{t('emptyTitle')}</p>
+            <p className="text-gray-600 mt-2">{t('emptyHint')}</p>
           </div>
         ) : (
           <>
@@ -159,7 +162,7 @@ export default function OfflineQueuePage() {
               <div className="flex items-center gap-2">
                 <span className="text-2xl" style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>📋</span>
                 <h2 className="text-lg font-bold text-gray-900">
-                  {items.length} elemento{items.length !== 1 ? 's' : ''} en la cola
+                  {items.length === 1 ? t('itemsInQueueOne') : t('itemsInQueueMany', { count: items.length })}
                 </h2>
               </div>
             </div>
@@ -169,19 +172,19 @@ export default function OfflineQueuePage() {
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                      🆔 ID
+                      🆔 {t('colId')}
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                      🔗 URL
+                      🔗 {t('colUrl')}
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                      📤 Método
+                      📤 {t('colMethod')}
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                      📅 Fecha
+                      📅 {t('colDate')}
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                      ⚙️ Acciones
+                      ⚙️ {t('colActions')}
                     </th>
                   </tr>
                 </thead>
@@ -195,7 +198,7 @@ export default function OfflineQueuePage() {
                           {it.method || 'POST'}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-700">{it.ts ? new Date(it.ts).toLocaleString() : '-'}</td>
+                      <td className="px-6 py-4 text-sm text-gray-700">{it.ts ? new Date(it.ts).toLocaleString(locale) : '-'}</td>
                       <td className="px-6 py-4 text-sm">
                         <div className="flex gap-2">
                           <button 
@@ -203,14 +206,14 @@ export default function OfflineQueuePage() {
                             className="px-4 py-2 bg-gradient-to-r from-emerald-600 to-green-600 text-white rounded-xl hover:from-emerald-700 hover:to-green-700 font-semibold text-xs shadow-md transition-all duration-200 transform hover:scale-105 flex items-center gap-1"
                           >
                             <span>📤</span>
-                            Reenviar
+                            {t('btnResend')}
                           </button>
                           <button 
                             onClick={() => deleteOne(it.id)} 
                             className="px-4 py-2 bg-gradient-to-r from-red-600 to-rose-600 text-white rounded-xl hover:from-red-700 hover:to-rose-700 font-semibold text-xs shadow-md transition-all duration-200 transform hover:scale-105 flex items-center gap-1"
                           >
                             <span>🗑️</span>
-                            Borrar
+                            {t('btnDelete')}
                           </button>
                         </div>
                       </td>

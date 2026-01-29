@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { useTenant } from '@/hooks/useTenant';
+import { useTranslations } from 'next-intl';
 import { 
   CheckCircle, 
   XCircle, 
@@ -33,15 +34,10 @@ interface MirConfig {
   activo: boolean;
 }
 
-const COUNTRIES = [
-  { code: 'ES', name: 'España' },
-  { code: 'IT', name: 'Italia' },
-  { code: 'PT', name: 'Portugal' },
-  { code: 'FR', name: 'Francia' },
-  { code: 'DE', name: 'Alemania' },
-];
+const COUNTRY_CODES = ['ES', 'IT', 'PT', 'FR', 'DE'] as const;
 
 export default function MirSettingsPage() {
+  const t = useTranslations('settings.mir');
   const { tenant } = useTenant();
   const [config, setConfig] = useState<MirConfig>({
     usuario: '',
@@ -85,7 +81,7 @@ export default function MirSettingsPage() {
 
   const guardarCountryCode = async () => {
     if (!countryCode) {
-      setError('Selecciona un país');
+      setError(t('selectCountry'));
       return;
     }
 
@@ -103,13 +99,13 @@ export default function MirSettingsPage() {
       const data = await response.json();
 
       if (data.success) {
-        setSuccess('✅ País configurado correctamente');
+        setSuccess(`✅ ${t('countrySaved')}`);
         setTimeout(() => setSuccess(null), 3000);
       } else {
-        setError(`❌ ${data.error || 'Error guardando país'}`);
+        setError(`❌ ${data.error || t('errorSavingCountry')}`);
       }
     } catch (err) {
-      setError('Error de conexión');
+      setError(t('connectionError'));
       console.error('Error guardando país:', err);
     } finally {
       setSavingCountry(false);
@@ -156,12 +152,12 @@ export default function MirSettingsPage() {
       const data = await response.json();
       
       if (data.success) {
-        setSuccess('✅ Configuración MIR guardada correctamente');
+        setSuccess(`✅ ${t('configSaved')}`);
       } else {
-        setError(`❌ ${data.message || 'Error guardando configuración'}`);
+        setError(`❌ ${data.message || t('errorSavingConfig')}`);
       }
     } catch (err) {
-      setError('Error de conexión');
+      setError(t('connectionError'));
       console.error('Error guardando configuración:', err);
     } finally {
       setLoading(false);
@@ -185,12 +181,12 @@ export default function MirSettingsPage() {
       setTestResult(data);
       
       if (data.success) {
-        setSuccess('✅ Conexión con MIR exitosa');
+        setSuccess(`✅ ${t('connectionSuccess')}`);
       } else {
-        setError(`❌ Error en la conexión: ${data.message}`);
+        setError(`❌ ${t('connectionTestError', { message: data.message || '' })}`);
       }
     } catch (err) {
-      setError('Error de conexión');
+      setError(t('connectionError'));
       console.error('Error probando conexión:', err);
     } finally {
       setLoading(false);
@@ -201,7 +197,7 @@ export default function MirSettingsPage() {
     const hasRequired = config.usuario && config.contraseña && config.codigoArrendador;
     return {
       hasRequired,
-      status: hasRequired ? 'Completa' : 'Incompleta',
+      status: hasRequired ? t('statusComplete') : t('statusIncomplete'),
       variant: hasRequired ? 'default' : 'destructive' as const
     };
   };
@@ -215,9 +211,9 @@ export default function MirSettingsPage() {
         <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-8 transition-all duration-500 hover:shadow-2xl hover:scale-[1.02]">
           <h2 className="text-3xl font-bold mb-4 text-center">
             <span className="text-4xl mr-3" style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>🏛️</span>
-            <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Configuración MIR</span>
+            <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">{t('title')}</span>
           </h2>
-          <p className="text-gray-700 font-medium text-lg">Configura las credenciales para el envío de comunicaciones al Ministerio del Interior</p>
+          <p className="text-gray-700 font-medium text-lg">{t('subtitle')}</p>
         </div>
 
         {/* Banner Recordatorio MIR - Solo si no tiene módulo activado */}
@@ -226,26 +222,26 @@ export default function MirSettingsPage() {
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div className="flex-1">
                 <h3 className="text-xl font-bold text-blue-900 mb-2">
-                  💰 Módulo MIR - Solo 8€/mes (+ IVA)
+                  💰 {t('moduleBannerTitle')}
                 </h3>
                 <p className="text-base text-blue-800 mb-2">
-                  <strong>Recordatorio:</strong> El envío automático de formularios de huéspedes al Ministerio del Interior es <strong>obligatorio</strong> en España.
+                  {t('moduleBannerReminder')}
                 </p>
                 <p className="text-sm text-blue-700 mb-2">
-                  Por solo <strong>8€/mes (+ IVA 21%)</strong> puedes tener el módulo MIR activado, que incluye:
+                  {t('moduleBannerPrice')}
                 </p>
                 <ul className="list-disc list-inside text-blue-800 text-sm space-y-1">
-                  <li>Check-in digital automático</li>
-                  <li>Envío automático de formularios al gobierno</li>
-                  <li>Cumplimiento legal garantizado</li>
-                  <li>Sin preocupaciones por multas o sanciones</li>
+                  <li>{t('moduleBannerItem1')}</li>
+                  <li>{t('moduleBannerItem2')}</li>
+                  <li>{t('moduleBannerItem3')}</li>
+                  <li>{t('moduleBannerItem4')}</li>
                 </ul>
               </div>
               <Link
                 href="/upgrade-plan"
                 className="whitespace-nowrap bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 font-semibold transition-colors shadow-md hover:shadow-lg"
               >
-                Activar Módulo MIR
+                {t('activateModule')}
               </Link>
             </div>
           </div>
@@ -255,11 +251,11 @@ export default function MirSettingsPage() {
         <Card className="bg-white/90 backdrop-blur-sm border-white/30 shadow-xl transition-all duration-500 hover:shadow-2xl hover:scale-[1.02]">
           <CardHeader>
             <CardTitle className="flex items-center justify-between text-gray-900 font-bold">
-              📊 Estado de Configuración
+              📊 {t('configStatusTitle')}
               <Badge variant={status.variant}>{status.status}</Badge>
             </CardTitle>
             <CardDescription className="text-gray-700 font-medium">
-              Verifica que todas las credenciales estén configuradas correctamente
+              {t('configStatusDescription')}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -270,7 +266,7 @@ export default function MirSettingsPage() {
               ) : (
                 <XCircle className="h-5 w-5 text-red-500" />
               )}
-              <span className="text-sm font-semibold text-gray-800">Usuario MIR</span>
+              <span className="text-sm font-semibold text-gray-800">{t('userMir')}</span>
             </div>
             <div className="flex items-center space-x-2">
               {config.contraseña ? (
@@ -278,7 +274,7 @@ export default function MirSettingsPage() {
               ) : (
                 <XCircle className="h-5 w-5 text-red-500" />
               )}
-              <span className="text-sm font-semibold text-gray-800">Contraseña MIR</span>
+              <span className="text-sm font-semibold text-gray-800">{t('passwordMir')}</span>
             </div>
             <div className="flex items-center space-x-2">
               {config.codigoArrendador ? (
@@ -286,7 +282,7 @@ export default function MirSettingsPage() {
               ) : (
                 <XCircle className="h-5 w-5 text-red-500" />
               )}
-              <span className="text-sm font-semibold text-gray-800">Código Arrendador</span>
+              <span className="text-sm font-semibold text-gray-800">{t('codigoArrendador')}</span>
             </div>
           </div>
         </CardContent>
@@ -311,19 +307,19 @@ export default function MirSettingsPage() {
         <Card className="bg-white/90 backdrop-blur-sm border-white/30 shadow-xl transition-all duration-500 hover:shadow-2xl hover:scale-[1.02]">
           <CardHeader>
             <CardTitle className="text-gray-900 font-bold flex items-center">
-              🔐 Credenciales MIR
+              🔐 {t('credentialsTitle')}
             </CardTitle>
             <CardDescription className="text-gray-700 font-medium">
-              Introduce las credenciales proporcionadas por el Ministerio del Interior
+              {t('credentialsDescription')}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="usuario" className="text-gray-800 font-semibold">Usuario MIR *</Label>
+              <Label htmlFor="usuario" className="text-gray-800 font-semibold">{t('userLabel')}</Label>
               <Input
                 id="usuario"
-                placeholder="ejemplo12345678TWS"
+                placeholder={t('userPlaceholder')}
                 value={hasConfig && !editingUsuario && config.usuario ? "•••••••••••" : config.usuario}
                 onChange={(e) => {
                   if (e.target.value !== "•••••••••••") {
@@ -345,17 +341,17 @@ export default function MirSettingsPage() {
                 className="text-gray-900"
               />
               <p className="text-xs text-gray-600 font-medium">
-                Formato: DNI/CIF + letra + WS (ejemplo: ejemplo12345678TWS)
+                {t('userHint')}
               </p>
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="contraseña" className="text-gray-800 font-semibold">Contraseña MIR *</Label>
+              <Label htmlFor="contraseña" className="text-gray-800 font-semibold">{t('passwordLabel')}</Label>
               <div className="relative">
                 <Input
                   id="contraseña"
                   type={showPassword ? "text" : "password"}
-                  placeholder="ejemplo_contraseña_segura"
+                  placeholder={t('passwordPlaceholder')}
                   value={
                     hasConfig && !editingContraseña && config.contraseña && !showPassword
                       ? "••••••••"
@@ -398,35 +394,35 @@ export default function MirSettingsPage() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="codigoArrendador" className="text-gray-800 font-semibold">Código de Arrendador *</Label>
+            <Label htmlFor="codigoArrendador" className="text-gray-800 font-semibold">{t('codigoArrendadorLabel')}</Label>
             <Input
               id="codigoArrendador"
-              placeholder="0000256653"
+              placeholder={t('codigoArrendadorPlaceholder')}
               value={config.codigoArrendador}
               onChange={(e) => setConfig({...config, codigoArrendador: e.target.value})}
               className="text-gray-900"
             />
             <p className="text-xs text-gray-600 font-medium">
-              Código único asignado por el MIR para autenticación
+              {t('codigoArrendadorHint')}
             </p>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="codigoEstablecimiento" className="text-gray-800 font-semibold">Código de Establecimiento *</Label>
+            <Label htmlFor="codigoEstablecimiento" className="text-gray-800 font-semibold">{t('codigoEstablecimientoLabel')}</Label>
             <Input
               id="codigoEstablecimiento"
-              placeholder="0000256653"
+              placeholder={t('codigoEstablecimientoPlaceholder')}
               value={config.codigoEstablecimiento}
               onChange={(e) => setConfig({...config, codigoEstablecimiento: e.target.value})}
               className="text-gray-900"
             />
             <p className="text-xs text-gray-600 font-medium">
-              Código específico del establecimiento para las comunicaciones MIR
+              {t('codigoEstablecimientoHint')}
             </p>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="baseUrl" className="text-gray-800 font-semibold">URL del Servicio MIR</Label>
+            <Label htmlFor="baseUrl" className="text-gray-800 font-semibold">{t('baseUrlLabel')}</Label>
             <Input
               id="baseUrl"
               value={config.baseUrl}
@@ -434,12 +430,12 @@ export default function MirSettingsPage() {
               className="text-gray-900 bg-gray-50"
             />
             <p className="text-xs text-gray-600 font-medium">
-              URL oficial del servicio de comunicaciones MIR (no editable)
+              {t('baseUrlHint')}
             </p>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="aplicacion" className="text-gray-800 font-semibold">Nombre de la Aplicación</Label>
+            <Label htmlFor="aplicacion" className="text-gray-800 font-semibold">{t('appNameLabel')}</Label>
             <Input
               id="aplicacion"
               value={config.aplicacion}
@@ -447,7 +443,7 @@ export default function MirSettingsPage() {
               className="text-gray-900 bg-gray-50"
             />
             <p className="text-xs text-gray-600 font-medium">
-              Nombre fijo de la aplicación (no editable)
+              {t('appNameHint')}
             </p>
           </div>
 
@@ -459,7 +455,7 @@ export default function MirSettingsPage() {
               onChange={(e) => setConfig({...config, simulacion: e.target.checked})}
               className="rounded"
             />
-            <Label htmlFor="simulacion" className="text-gray-800 font-semibold">Modo simulación (solo para pruebas)</Label>
+            <Label htmlFor="simulacion" className="text-gray-800 font-semibold">{t('simulacionLabel')}</Label>
           </div>
         </CardContent>
       </Card>
@@ -470,34 +466,34 @@ export default function MirSettingsPage() {
           <CardHeader>
             <CardTitle className="text-gray-900 font-bold flex items-center">
               <Globe className="h-5 w-5 mr-2" />
-              País del Módulo Legal
+              {t('countryCardTitle')}
             </CardTitle>
             <CardDescription className="text-gray-700 font-medium">
               {tenant?.plan_type === 'pro' 
-                ? 'Plan PRO: Tienes acceso a todos los países. El módulo legal se adaptará automáticamente según el país del viajero.'
-                : 'Plan FREE+LEGAL: Selecciona el país para el que está configurado tu módulo legal. Solo podrás registrar viajeros de este país.'}
+                ? t('countryCardDescriptionPro')
+                : t('countryCardDescriptionFree')}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {tenant?.plan_type === 'free_legal' ? (
               <>
                 <div className="space-y-2">
-                  <Label htmlFor="country_code" className="text-gray-800 font-semibold">País *</Label>
+                  <Label htmlFor="country_code" className="text-gray-800 font-semibold">{t('countryLabel')}</Label>
                   <select
                     id="country_code"
                     value={countryCode}
                     onChange={(e) => setCountryCode(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 bg-white"
                   >
-                    <option value="">Selecciona un país</option>
-                    {COUNTRIES.map(country => (
-                      <option key={country.code} value={country.code}>
-                        {country.name} ({country.code})
+                    <option value="">{t('selectCountry')}</option>
+                    {COUNTRY_CODES.map(code => (
+                      <option key={code} value={code}>
+                        {t(`countries.${code}`)} ({code})
                       </option>
                     ))}
                   </select>
                   <p className="text-xs text-gray-600 font-medium">
-                    Solo podrás registrar viajeros de este país. Para acceder a todos los países, actualiza a PRO.
+                    {t('countryHint')}
                   </p>
                 </div>
                 <Button
@@ -506,17 +502,17 @@ export default function MirSettingsPage() {
                   className="w-full sm:w-auto"
                 >
                   <Save className="h-4 w-4 mr-2" />
-                  {savingCountry ? 'Guardando...' : 'Guardar País'}
+                  {savingCountry ? t('saving') : t('saveCountry')}
                 </Button>
               </>
             ) : (
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <p className="text-sm text-blue-900">
-                  <strong>Plan PRO:</strong> Tienes acceso a todos los países. El módulo legal se adaptará automáticamente según el país del viajero en cada registro.
+                  <strong>{t('planProInfo')}</strong>
                 </p>
                 {countryCode && (
                   <p className="text-xs text-blue-700 mt-2">
-                    País configurado actualmente: <strong>{COUNTRIES.find(c => c.code === countryCode)?.name || countryCode}</strong>
+                    {t('countryConfigured', { name: t(`countries.${countryCode}`) || countryCode })}
                   </p>
                 )}
               </div>
@@ -530,24 +526,24 @@ export default function MirSettingsPage() {
           <CardHeader>
             <CardTitle className="flex items-center text-gray-900 font-bold">
               <Info className="h-5 w-5 mr-2" />
-              ℹ️ Información Importante
+              ℹ️ {t('infoTitle')}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
           <div className="text-sm text-gray-600">
-            <p><strong>¿Cómo obtener las credenciales?</strong></p>
+            <p><strong>{t('infoHowToTitle')}</strong></p>
             <ol className="list-decimal list-inside space-y-1 mt-2">
-              <li>Regístrate en el portal MIR: <a href="https://hospedajes.ses.mir.es" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">hospedajes.ses.mir.es</a></li>
-              <li>Marca la casilla "Envío de comunicaciones por servicio web"</li>
-              <li>Obtén tu usuario (formato: CIF---WS), contraseña y código de arrendador</li>
-              <li>Configura estas credenciales en este formulario</li>
+              <li>{t('infoStep1')} <a href="https://hospedajes.ses.mir.es" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">hospedajes.ses.mir.es</a></li>
+              <li>{t('infoStep2')}</li>
+              <li>{t('infoStep3')}</li>
+              <li>{t('infoStep4')}</li>
             </ol>
           </div>
           
           <div className="flex items-start space-x-2">
             <AlertTriangle className="h-4 w-4 text-orange-500 mt-0.5" />
             <p className="text-sm text-orange-600">
-              <strong>Importante:</strong> Las credenciales son sensibles. Asegúrate de que estén configuradas correctamente antes de usar el sistema en producción.
+              <strong>{t('infoWarning')}</strong>
             </p>
           </div>
         </CardContent>
@@ -561,7 +557,7 @@ export default function MirSettingsPage() {
             className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold px-8 py-4 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg"
           >
             <Save className="h-5 w-5 mr-2" />
-            {loading ? '⏳ Guardando...' : '💾 Guardar Configuración'}
+            {loading ? `⏳ ${t('saving')}` : `💾 ${t('saveConfig')}`}
           </Button>
           
           <Button 
@@ -571,7 +567,7 @@ export default function MirSettingsPage() {
             className="flex-1 border-2 border-blue-600 text-blue-600 hover:bg-blue-50 font-semibold px-8 py-4 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg"
           >
             <TestTube className="h-5 w-5 mr-2" />
-            {loading ? '⏳ Probando...' : '🧪 Probar Conexión'}
+            {loading ? `⏳ ${t('testing')}` : `🧪 ${t('testConnection')}`}
           </Button>
           
           <Button 
@@ -580,7 +576,7 @@ export default function MirSettingsPage() {
             className="flex-1 border-2 border-green-600 text-green-600 hover:bg-green-50 font-semibold px-8 py-4 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg"
           >
             <ExternalLink className="h-5 w-5 mr-2" />
-            🌐 Ir al Panel MIR
+            🌐 {t('goToPanel')}
           </Button>
         </div>
 
@@ -588,8 +584,8 @@ export default function MirSettingsPage() {
         {testResult && (
           <Card className="bg-white/90 backdrop-blur-sm border-white/30 shadow-xl transition-all duration-500 hover:shadow-2xl hover:scale-[1.02]">
             <CardHeader>
-              <CardTitle className="text-gray-900 font-bold flex items-center">
-                📋 Resultado de la Prueba
+                <CardTitle className="text-gray-900 font-bold flex items-center">
+                📋 {t('testResultTitle')}
               </CardTitle>
             </CardHeader>
             <CardContent>

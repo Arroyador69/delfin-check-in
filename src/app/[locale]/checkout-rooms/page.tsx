@@ -2,6 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { ArrowLeft, Loader2, CreditCard, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
 import AdminLayout from '@/components/AdminLayout';
@@ -10,6 +11,18 @@ import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '');
+
+function CheckoutLoadingFallback() {
+  const t = useTranslations('checkoutRooms');
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+      <div className="text-center">
+        <div className="loading mx-auto"></div>
+        <p className="mt-4 text-gray-600">{t('loading')}</p>
+      </div>
+    </div>
+  );
+}
 
 function CheckoutRoomsForm({ 
   roomCount, 
@@ -24,6 +37,7 @@ function CheckoutRoomsForm({
   onSuccess: () => void;
   onError: (error: string) => void;
 }) {
+  const t = useTranslations('checkoutRooms');
   const stripe = useStripe();
   const elements = useElements();
   const [processing, setProcessing] = useState(false);
@@ -35,12 +49,12 @@ function CheckoutRoomsForm({
     e.preventDefault();
 
     if (!stripe || !elements || !name || !email) {
-      onError('Por favor completa todos los campos');
+      onError(t('errorCompleteFields'));
       return;
     }
 
     if (!termsAccepted) {
-      onError('Debes aceptar los términos y condiciones');
+      onError(t('errorAcceptTerms'));
       return;
     }
 
@@ -49,7 +63,7 @@ function CheckoutRoomsForm({
     try {
       const cardElement = elements.getElement(CardElement);
       if (!cardElement) {
-        throw new Error('Tarjeta no encontrada');
+        throw new Error(t('errorCardNotFound'));
       }
 
       // Crear payment method
@@ -78,7 +92,7 @@ function CheckoutRoomsForm({
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Error procesando el pago');
+        throw new Error(data.error || t('errorProcessingPayment'));
       }
 
       onSuccess();
@@ -95,7 +109,7 @@ function CheckoutRoomsForm({
       <div className="space-y-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Nombre completo *
+            {t('fullNameLabel')}
           </label>
           <input
             type="text"
@@ -103,13 +117,13 @@ function CheckoutRoomsForm({
             onChange={(e) => setName(e.target.value)}
             required
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            placeholder="Juan Pérez"
+            placeholder={t('fullNamePlaceholder')}
           />
         </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Email *
+            {t('emailLabel')}
           </label>
           <input
             type="email"
@@ -117,13 +131,13 @@ function CheckoutRoomsForm({
             onChange={(e) => setEmail(e.target.value)}
             required
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            placeholder="juan@ejemplo.com"
+            placeholder={t('emailPlaceholder')}
           />
         </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Información de tarjeta *
+            {t('cardInfoLabel')}
           </label>
           <div className="p-4 border border-gray-300 rounded-lg bg-white">
             <CardElement
@@ -153,7 +167,7 @@ function CheckoutRoomsForm({
             className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
           />
           <label htmlFor="terms" className="text-sm text-gray-700 cursor-pointer">
-            ☐ Acepto los Términos y Condiciones y la Política de Privacidad
+            ☐ {t('termsLabel')}
           </label>
         </div>
       </div>
@@ -166,12 +180,12 @@ function CheckoutRoomsForm({
         {processing ? (
           <>
             <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-            Procesando...
+            {t('processing')}
           </>
         ) : (
           <>
             <CreditCard className="w-5 h-5 mr-2" />
-            Pagar {totalPrice.toFixed(2)}€ {isYearly ? 'anual' : 'mensual'}
+            {t('payButton', { amount: totalPrice.toFixed(2), period: isYearly ? t('periodAnnual') : t('periodMonthly') })}
           </>
         )}
       </button>
@@ -180,6 +194,7 @@ function CheckoutRoomsForm({
 }
 
 function CheckoutRoomsContent() {
+  const t = useTranslations('checkoutRooms');
   const router = useRouter();
   const searchParams = useSearchParams();
   const [roomCount, setRoomCount] = useState(1);
@@ -249,10 +264,10 @@ function CheckoutRoomsContent() {
               className="inline-flex items-center text-blue-600 hover:text-blue-700 mb-4"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Volver a facturación
+              {t('backToBilling')}
             </Link>
-            <h1 className="text-3xl font-bold text-gray-900">Contratar servicio</h1>
-            <p className="text-gray-600 mt-2">Selecciona el número de habitaciones y completa el pago</p>
+            <h1 className="text-3xl font-bold text-gray-900">{t('title')}</h1>
+            <p className="text-gray-600 mt-2">{t('subtitle')}</p>
           </div>
 
           {/* Success Message */}
@@ -260,7 +275,7 @@ function CheckoutRoomsContent() {
             <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center">
               <CheckCircle className="w-5 h-5 text-green-600 mr-3" />
               <p className="text-green-800">
-                ¡Pago exitoso! Redirigiendo a facturación...
+                {t('successMessage')}
               </p>
             </div>
           )}
@@ -286,30 +301,30 @@ function CheckoutRoomsContent() {
             {/* Checkout */}
             <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
               <h2 className="text-2xl font-bold text-gray-900 mb-6">
-                Finalizar pago
+                {t('finalizePayment')}
               </h2>
 
               {/* Resumen */}
               <div className="mb-6 p-4 bg-gray-50 rounded-lg space-y-2">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Habitaciones:</span>
-                  <span className="font-semibold">{roomCount} {roomCount === 1 ? 'habitación' : 'habitaciones'}</span>
+                  <span className="text-gray-600">{t('rooms')}</span>
+                  <span className="font-semibold">{roomCount} {roomCount === 1 ? t('room') : t('roomsCount')}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Frecuencia:</span>
-                  <span className="font-semibold">{isYearly ? 'Anual' : 'Mensual'}</span>
+                  <span className="text-gray-600">{t('frequency')}</span>
+                  <span className="font-semibold">{isYearly ? t('annual') : t('monthly')}</span>
                 </div>
                 <div className="pt-2 border-t border-gray-300 space-y-2">
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Base imponible:</span>
+                    <span className="text-gray-600">{t('baseAmount')}</span>
                     <span className="font-semibold text-gray-900">{totalPrice.toFixed(2)}€</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">IVA (21%):</span>
+                    <span className="text-gray-600">{t('vat21')}</span>
                     <span className="font-semibold text-gray-900">{(totalPrice * 0.21).toFixed(2)}€</span>
                   </div>
                   <div className="pt-2 border-t border-gray-300 flex justify-between">
-                    <span className="font-semibold text-gray-900">Total:</span>
+                    <span className="font-semibold text-gray-900">{t('total')}</span>
                     <span className="text-2xl font-bold text-blue-600">{(totalPrice * 1.21).toFixed(2)}€</span>
                   </div>
                 </div>
@@ -327,7 +342,7 @@ function CheckoutRoomsContent() {
               </Elements>
 
               <p className="text-xs text-gray-500 text-center mt-4">
-                🔒 Pago 100% seguro procesado por Stripe
+                🔒 {t('securePayment')}
               </p>
             </div>
           </div>
@@ -339,14 +354,7 @@ function CheckoutRoomsContent() {
 
 export default function CheckoutRoomsPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="loading mx-auto"></div>
-          <p className="mt-4 text-gray-600">Cargando...</p>
-        </div>
-      </div>
-    }>
+    <Suspense fallback={<CheckoutLoadingFallback />}>
       <CheckoutRoomsContent />
     </Suspense>
   );

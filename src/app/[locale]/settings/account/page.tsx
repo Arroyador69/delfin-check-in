@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { User, Shield } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 export default function AccountPage() {
+  const t = useTranslations('settings.account');
   const [loading, setLoading] = useState(false);
   
   // Estados para la gestión de cuenta
@@ -59,17 +61,17 @@ export default function AccountPage() {
     try {
       // Validaciones
       if (!accountData.currentPassword || !accountData.newPassword || !accountData.confirmPassword) {
-        setMessage({ type: 'error', text: 'Todos los campos son obligatorios' });
+        setMessage({ type: 'error', text: t('allFieldsRequired') });
         return;
       }
 
       if (accountData.newPassword !== accountData.confirmPassword) {
-        setMessage({ type: 'error', text: 'Las contraseñas nuevas no coinciden' });
+        setMessage({ type: 'error', text: t('passwordMismatch') });
         return;
       }
 
       if (accountData.newPassword.length < 8) {
-        setMessage({ type: 'error', text: 'La nueva contraseña debe tener al menos 8 caracteres' });
+        setMessage({ type: 'error', text: t('passwordTooShort') });
         return;
       }
 
@@ -89,14 +91,13 @@ export default function AccountPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        setMessage({ type: 'error', text: data.message || 'Error al cambiar la contraseña' });
+        setMessage({ type: 'error', text: data.message || t('errorChangingPassword') });
         return;
       }
 
-      // Mostrar mensaje de éxito
       setMessage({ 
         type: 'success', 
-        text: 'Contraseña actualizada exitosamente en la base de datos' 
+        text: t('passwordUpdatedSuccess') 
       });
       
       // Limpiar formulario
@@ -108,7 +109,7 @@ export default function AccountPage() {
       }));
 
     } catch (error) {
-      setMessage({ type: 'error', text: 'Error al cambiar la contraseña' });
+      setMessage({ type: 'error', text: t('errorChangingPassword') });
     } finally {
       setPasswordChangeLoading(false);
     }
@@ -122,7 +123,7 @@ export default function AccountPage() {
 
     try {
       if (!accountData.username.trim()) {
-        setMessage({ type: 'error', text: 'El nombre no puede estar vacío' });
+        setMessage({ type: 'error', text: t('nameCannotBeEmpty') });
         setLoading(false);
         return;
       }
@@ -146,16 +147,16 @@ export default function AccountPage() {
         if (response.status === 429 && data.daysRemaining) {
           setMessage({ 
             type: 'error', 
-            text: data.error || `Debes esperar ${data.daysRemaining} día(s) más` 
+            text: data.error || t('waitDays', { days: data.daysRemaining }) 
           });
         } else {
-          setMessage({ type: 'error', text: data.error || 'Error al cambiar el nombre' });
+          setMessage({ type: 'error', text: data.error || t('errorChangingName') });
         }
         setLoading(false);
         return;
       }
 
-      setMessage({ type: 'success', text: 'Nombre actualizado exitosamente en la base de datos' });
+      setMessage({ type: 'success', text: t('nameUpdatedSuccess') });
 
       // Recargar los datos del tenant para mostrar el nuevo nombre
       setTimeout(() => {
@@ -163,7 +164,7 @@ export default function AccountPage() {
       }, 1500);
 
     } catch (error) {
-      setMessage({ type: 'error', text: 'Error al actualizar el nombre' });
+      setMessage({ type: 'error', text: t('errorUpdatingName') });
       setLoading(false);
     }
   };
@@ -176,7 +177,7 @@ export default function AccountPage() {
         <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-8 transition-all duration-500 hover:shadow-2xl hover:scale-[1.02]">
           <h3 className="text-3xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent flex items-center">
             <User className="mr-3 h-8 w-8 text-blue-600" />
-            Gestión de Cuenta
+            {t('accountManagement')}
           </h3>
         </div>
         
@@ -195,19 +196,19 @@ export default function AccountPage() {
         <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-white/30 p-6 transition-all duration-500 hover:shadow-2xl hover:scale-[1.02]">
           <h4 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
             <User className="mr-3 h-6 w-6 text-blue-600" />
-            Cambiar Nombre de Usuario
+            {t('changeUsername')}
           </h4>
           <form onSubmit={handleUsernameChange} className="space-y-6">
             <div>
               <label className="block text-sm font-semibold text-gray-800 mb-2">
-                Nombre de Usuario
+                {t('username')}
               </label>
               <input
                 type="text"
                 value={accountData.username}
                 onChange={(e) => setAccountData(prev => ({ ...prev, username: e.target.value }))}
                 className="mt-1 block w-full border-2 border-gray-200 rounded-xl p-4 shadow-sm focus:ring-blue-500 focus:border-blue-500 transition-all duration-300"
-                placeholder="admin"
+                placeholder={t('usernamePlaceholder')}
                 required
               />
             </div>
@@ -216,7 +217,7 @@ export default function AccountPage() {
               disabled={loading}
               className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-4 rounded-xl hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed font-semibold text-lg transition-all duration-300 hover:scale-105 hover:shadow-lg"
             >
-              {loading ? '⏳ Guardando...' : '💾 Actualizar Usuario'}
+              {loading ? `⏳ ${t('saving')}` : `💾 ${t('updateUser')}`}
             </button>
           </form>
         </div>
@@ -225,46 +226,46 @@ export default function AccountPage() {
         <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-white/30 p-6 transition-all duration-500 hover:shadow-2xl hover:scale-[1.02]">
           <h4 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
             <Shield className="mr-3 h-6 w-6 text-blue-600" />
-            Cambiar Contraseña
+            {t('changePasswordTitle')}
           </h4>
           <form onSubmit={handlePasswordChange} className="space-y-6">
             <div>
               <label className="block text-sm font-semibold text-gray-800 mb-2">
-                Contraseña Actual
+                {t('currentPassword')}
               </label>
               <input
                 type="password"
                 value={accountData.currentPassword}
                 onChange={(e) => setAccountData(prev => ({ ...prev, currentPassword: e.target.value }))}
                 className="mt-1 block w-full border-2 border-gray-200 rounded-xl p-4 shadow-sm focus:ring-blue-500 focus:border-blue-500 transition-all duration-300"
-                placeholder="Contraseña actual"
+                placeholder={t('currentPasswordPlaceholder')}
                 required
               />
             </div>
             <div>
               <label className="block text-sm font-semibold text-gray-800 mb-2">
-                Nueva Contraseña
+                {t('newPassword')}
               </label>
               <input
                 type="password"
                 value={accountData.newPassword}
                 onChange={(e) => setAccountData(prev => ({ ...prev, newPassword: e.target.value }))}
                 className="mt-1 block w-full border-2 border-gray-200 rounded-xl p-4 shadow-sm focus:ring-blue-500 focus:border-blue-500 transition-all duration-300"
-                placeholder="Nueva contraseña (mín. 6 caracteres)"
+                placeholder={t('newPasswordPlaceholder')}
                 required
                 minLength={6}
               />
             </div>
             <div>
               <label className="block text-sm font-semibold text-gray-800 mb-2">
-                Confirmar Nueva Contraseña
+                {t('confirmPassword')}
               </label>
               <input
                 type="password"
                 value={accountData.confirmPassword}
                 onChange={(e) => setAccountData(prev => ({ ...prev, confirmPassword: e.target.value }))}
                 className="mt-1 block w-full border-2 border-gray-200 rounded-xl p-4 shadow-sm focus:ring-blue-500 focus:border-blue-500 transition-all duration-300"
-                placeholder="Confirmar nueva contraseña"
+                placeholder={t('confirmPasswordPlaceholder')}
                 required
               />
             </div>
@@ -273,7 +274,7 @@ export default function AccountPage() {
               disabled={passwordChangeLoading}
               className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-4 rounded-xl hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed font-semibold text-lg transition-all duration-300 hover:scale-105 hover:shadow-lg"
             >
-              {passwordChangeLoading ? '⏳ Cambiando...' : '🔐 Cambiar Contraseña'}
+              {passwordChangeLoading ? `⏳ ${t('changing')}` : `🔐 ${t('changePasswordTitle')}`}
             </button>
           </form>
         </div>
@@ -288,17 +289,17 @@ export default function AccountPage() {
             </div>
             <div className="ml-4">
               <h3 className="text-lg font-semibold text-blue-800 mb-3">
-                🔒 Información de Seguridad
+                🔒 {t('securityInfo')}
               </h3>
               <div className="text-sm text-blue-700 space-y-2">
                 <p className="flex items-center">
-                  <span className="mr-2">✅</span> Las contraseñas se almacenan de forma segura
+                  <span className="mr-2">✅</span> {t('securityStored')}
                 </p>
                 <p className="flex items-center">
-                  <span className="mr-2">✅</span> El email de recuperación te permitirá restablecer tu contraseña
+                  <span className="mr-2">✅</span> {t('securityRecovery')}
                 </p>
                 <p className="flex items-center">
-                  <span className="mr-2">✅</span> Mantén tu información de contacto actualizada
+                  <span className="mr-2">✅</span> {t('securityContact')}
                 </p>
               </div>
             </div>

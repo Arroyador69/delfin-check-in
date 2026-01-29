@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { Settings } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 export default function SettingsPage() {
+  const t = useTranslations('settings');
   const [loading, setLoading] = useState(false);
   
   // Estados para configuración de habitaciones/apartamentos
@@ -58,9 +60,9 @@ export default function SettingsPage() {
         <div className="text-center">
           <h1 className="text-2xl sm:text-4xl font-bold mb-2 sm:mb-4">
             <span className="text-3xl sm:text-5xl mr-2 sm:mr-3" style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>⚙️</span>
-            <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Configuración General</span>
+            <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">{t('general.title')}</span>
           </h1>
-          <p className="text-gray-600 text-sm sm:text-lg">Gestiona la configuración de tu cuenta</p>
+          <p className="text-gray-600 text-sm sm:text-lg">{t('subtitle')}</p>
         </div>
       
       {/* Mensaje de estado */}
@@ -79,10 +81,10 @@ export default function SettingsPage() {
       <div className="bg-white shadow-xl rounded-xl border border-blue-200 p-4 sm:p-8">
         <h4 className="text-lg sm:text-xl font-semibold text-gray-800 mb-3 sm:mb-4 flex items-center">
           <span className="text-xl sm:text-2xl mr-2 sm:mr-3" style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>🏨</span>
-          Habitaciones/Apartamentos
+          {t('rooms.title')}
         </h4>
         <p className="text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4">
-          Configura los nombres de tus habitaciones o apartamentos. Estos nombres aparecerán en el dashboard y al crear nuevas reservas.
+          {t('rooms.description')}
         </p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
           {roomsConfig.map((room, index) => (
@@ -97,7 +99,7 @@ export default function SettingsPage() {
                   onChange={(e) => setRoomsConfig(prev => 
                     prev.map(r => r.id === room.id ? { ...r, name: e.target.value } : r)
                   )}
-                  placeholder={`Habitación ${index + 1}`}
+                  placeholder={t('rooms.roomNumber', { number: index + 1 })}
                   className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
@@ -105,7 +107,7 @@ export default function SettingsPage() {
                 <button
                   onClick={() => setRoomsConfig(prev => prev.filter(r => r.id !== room.id))}
                   className="flex-shrink-0 text-red-600 hover:text-red-800"
-                  title="Eliminar"
+                  title={t('rooms.remove')}
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -120,11 +122,11 @@ export default function SettingsPage() {
             onClick={() => {
               if (roomsConfig.length < tenantLimits.maxRooms) {
                 const newId = Math.max(...roomsConfig.map(r => r.id), 0) + 1;
-                setRoomsConfig([...roomsConfig, { id: newId, name: `Habitación ${newId}` }]);
+                setRoomsConfig([...roomsConfig, { id: newId, name: t('rooms.roomNumber', { number: newId }) }]);
               } else {
                 setMessage({ 
                   type: 'error', 
-                  text: `⚠️ Límite alcanzado: Has usado todas las ${tenantLimits.maxRooms} habitaciones incluidas en tu plan actual. Para añadir más habitaciones, visita la página de Mejora de Plan.` 
+                  text: t('rooms.limitReachedDescription', { max: tenantLimits.maxRooms }) 
                 });
                 setTimeout(() => setMessage({ type: '', text: '' }), 8000);
               }
@@ -135,7 +137,7 @@ export default function SettingsPage() {
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
-            <span>Añadir</span>
+            <span>{t('rooms.addRoom')}</span>
           </button>
           <button
             onClick={async () => {
@@ -151,12 +153,12 @@ export default function SettingsPage() {
                 const data = await response.json();
                 
                 if (data.success) {
-                  setMessage({ type: 'success', text: 'Configuración de habitaciones guardada exitosamente' });
+                  setMessage({ type: 'success', text: t('rooms.saved') });
                 } else {
-                  setMessage({ type: 'error', text: data.message || 'Error guardando configuración' });
+                  setMessage({ type: 'error', text: data.message || t('rooms.saveError') });
                 }
               } catch (error) {
-                setMessage({ type: 'error', text: 'Error de conexión' });
+                setMessage({ type: 'error', text: t('integrations.connectionError') });
               } finally {
                 setLoading(false);
                 setTimeout(() => setMessage({ type: '', text: '' }), 5000);
@@ -168,15 +170,15 @@ export default function SettingsPage() {
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
-            <span>{loading ? 'Guardando...' : 'Guardar Configuración'}</span>
+            <span>{loading ? t('rooms.saving') : t('rooms.saveConfiguration')}</span>
           </button>
         </div>
         <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-3">
           <p className="text-xs text-blue-700">
-            💡 <strong>Nota:</strong> Los nombres que configures aquí aparecerán en todo el sistema: dashboard, creación de reservas, calendarios, etc.
+            💡 <strong>{t('rooms.note')}:</strong> {t('rooms.noteDescription')}
           </p>
           <p className="text-xs text-blue-700 mt-1">
-            📊 <strong>Límite de tu plan:</strong> Puedes configurar hasta {tenantLimits.maxRooms === -1 ? 'habitaciones ilimitadas' : `${tenantLimits.maxRooms} habitaciones/apartamentos`} según tu plan actual.
+            📊 <strong>{t('rooms.planLimit')}:</strong> {tenantLimits.maxRooms === -1 ? t('rooms.planLimitUnlimited') : t('rooms.planLimitDescription', { max: tenantLimits.maxRooms })}.
           </p>
           {/* Mostrar información de uso actual */}
           {roomsConfig.length > 0 && tenantLimits.maxRooms !== -1 && (
@@ -195,19 +197,14 @@ export default function SettingsPage() {
                   : 'text-green-800'
               }`}>
                 {roomsConfig.length >= tenantLimits.maxRooms ? (
-                  <>
-                    ⚠️ <strong>Límite alcanzado:</strong> Has configurado {roomsConfig.length}/{tenantLimits.maxRooms} habitaciones. 
-                    Para añadir más, <a href="/upgrade-plan" className="underline font-bold">actualiza tu plan</a>.
-                  </>
+                  <>⚠️ {t('rooms.usageLimitReached', { current: roomsConfig.length, max: tenantLimits.maxRooms })}</>
                 ) : roomsConfig.length >= Math.floor(tenantLimits.maxRooms * 0.8) ? (
                   <>
-                    ⚡ <strong>Cerca del límite:</strong> Has configurado {roomsConfig.length}/{tenantLimits.maxRooms} habitaciones ({Math.round((roomsConfig.length / tenantLimits.maxRooms) * 100)}% usado).
-                    Te quedan {tenantLimits.maxRooms - roomsConfig.length} habitaciones disponibles.
+                    ⚡ {t('rooms.usageNearLimit', { current: roomsConfig.length, max: tenantLimits.maxRooms, percentage: Math.round((roomsConfig.length / tenantLimits.maxRooms) * 100), remaining: tenantLimits.maxRooms - roomsConfig.length })}
                   </>
                 ) : (
                   <>
-                    ✅ <strong>Uso actual:</strong> {roomsConfig.length}/{tenantLimits.maxRooms} habitaciones configuradas ({Math.round((roomsConfig.length / tenantLimits.maxRooms) * 100)}% usado).
-                    Puedes añadir hasta {tenantLimits.maxRooms - roomsConfig.length} habitaciones más.
+                    ✅ {t('rooms.usageNormal', { current: roomsConfig.length, max: tenantLimits.maxRooms, percentage: Math.round((roomsConfig.length / tenantLimits.maxRooms) * 100), remaining: tenantLimits.maxRooms - roomsConfig.length })}
                   </>
                 )}
               </p>

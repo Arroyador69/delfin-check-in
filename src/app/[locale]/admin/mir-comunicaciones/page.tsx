@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations, useLocale } from 'next-intl';
 import AdminLayout from '@/components/AdminLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -23,14 +24,6 @@ import {
   Eye,
   Download
 } from 'lucide-react';
-
-const COUNTRIES: Record<string, string> = {
-  'ES': 'España',
-  'IT': 'Italia',
-  'PT': 'Portugal',
-  'FR': 'Francia',
-  'DE': 'Alemania',
-};
 
 interface Comunicacion {
   id: number;
@@ -59,6 +52,8 @@ interface ConsultaResult {
 }
 
 export default function MirComunicacionesPage() {
+  const t = useTranslations('mirComunicaciones');
+  const locale = useLocale();
   const { tenant, loading: tenantLoading } = useTenant();
   const router = useRouter();
   const [comunicaciones, setComunicaciones] = useState<Comunicacion[]>([]);
@@ -131,12 +126,18 @@ export default function MirComunicacionesPage() {
         ];
         
         setComunicaciones(todosRegistros);
-        setSuccess(`Consulta realizada correctamente. Encontrados ${data.estadisticas.total} registros (${data.estadisticas.pendientes} pendientes, ${data.estadisticas.enviados} enviados, ${data.estadisticas.confirmados} confirmados, ${data.estadisticas.errores} errores)`);
+        setSuccess(t('successLoad', {
+          total: data.estadisticas.total,
+          pendientes: data.estadisticas.pendientes,
+          enviados: data.estadisticas.enviados,
+          confirmados: data.estadisticas.confirmados,
+          errores: data.estadisticas.errores
+        }));
       } else {
-        setError(data.message || 'Error cargando registros');
+        setError(data.message || t('errorLoad'));
       }
     } catch (err) {
-      setError('Error de conexión');
+      setError(t('errorConexion'));
       console.error('Error cargando registros:', err);
     } finally {
       setLoading(false);
@@ -146,7 +147,7 @@ export default function MirComunicacionesPage() {
 
   const consultarComunicaciones = async () => {
     if (!codigosConsulta.trim()) {
-      setError('Debe proporcionar al menos un código de comunicación');
+      setError(t('errorCodigoRequerido'));
       return;
     }
     
@@ -168,7 +169,7 @@ export default function MirComunicacionesPage() {
       
       if (data.success && data.resultados && data.resultados.length > 0) {
         setResultadosConsulta(data.resultados);
-        setSuccess(`✅ Consulta completada. Encontrados ${data.resultados.length} resultados`);
+        setSuccess(`✅ ${t('successConsultaCount', { count: data.resultados.length })}`);
       } else {
         // Si no se encuentran resultados, crear resultados de error para cada código
         const resultadosError = codigos.map(codigo => ({
@@ -177,10 +178,10 @@ export default function MirComunicacionesPage() {
           estado: 'no_encontrado',
           referencia: codigo,
           fechaAlta: 'N/A',
-          nombreReserva: 'No encontrado',
+          nombreReserva: t('noEncontrado'),
           interpretacion: {
-            tipoDescripcion: 'Comunicación no encontrada',
-            estadoDescripcion: 'No existe en el sistema'
+            tipoDescripcion: t('comunicacionNoEncontrada'),
+            estadoDescripcion: t('noExisteEnSistema')
           },
           detalles: {
             establecimiento: 'N/A',
@@ -190,10 +191,10 @@ export default function MirComunicacionesPage() {
           }
         }));
         setResultadosConsulta(resultadosError);
-        setSuccess(`⚠️ Consulta completada. ${codigos.length} códigos procesados (no encontrados)`);
+        setSuccess(`⚠️ ${t('successConsultaNotFound', { count: codigos.length })}`);
       }
     } catch (err) {
-      setError('Error de conexión');
+      setError(t('errorConexion'));
       console.error('Error consultando:', err);
     } finally {
       setLoading(false);
@@ -202,7 +203,7 @@ export default function MirComunicacionesPage() {
 
   const anularLote = async () => {
     if (!loteAnulacion.trim()) {
-      setError('Debe proporcionar el código de lote');
+      setError(t('errorLoteRequerido'));
       return;
     }
     
@@ -228,10 +229,10 @@ export default function MirComunicacionesPage() {
         setLoteAnulacion('');
         setReferenciaAnulacion('');
       } else {
-        setError(`❌ ${data.message || 'Error en la anulación'}`);
+        setError(`❌ ${data.message || t('errorAnulacion')}`);
       }
     } catch (err) {
-      setError('Error de conexión');
+      setError(t('errorConexion'));
       console.error('Error anulando:', err);
     } finally {
       setLoading(false);
@@ -240,7 +241,7 @@ export default function MirComunicacionesPage() {
 
   const consultarCatalogo = async () => {
     if (!catalogoConsulta.trim()) {
-      setError('Debe proporcionar el nombre del catálogo');
+      setError(t('errorCatalogoRequerido'));
       return;
     }
     
@@ -260,13 +261,13 @@ export default function MirComunicacionesPage() {
       if (data.ok) {
         setResultadosCatalogo(data.catalogo.elementos || []);
         setResultadoCatalogoCompleto(data);
-        setSuccess(`✅ Catálogo '${data.catalogo.nombre}' consultado correctamente. Encontrados ${data.catalogo.totalElementos} elementos`);
+        setSuccess(`✅ ${t('successCatalogo', { name: data.catalogo.nombre, count: data.catalogo.totalElementos })}`);
       } else {
-        setError(`❌ ${data.error || 'Error en la consulta de catálogo'}`);
+        setError(`❌ ${data.error || t('errorCatalogo')}`);
         setResultadoCatalogoCompleto(null);
       }
     } catch (err) {
-      setError('Error de conexión');
+      setError(t('errorConexion'));
       console.error('Error consultando catálogo:', err);
     } finally {
       setLoading(false);
@@ -282,6 +283,11 @@ export default function MirComunicacionesPage() {
       case 'pendiente': return <Clock className="h-4 w-4 text-yellow-500" />;
       default: return <AlertTriangle className="h-4 w-4 text-orange-500" />;
     }
+  };
+
+  const getEstadoLabel = (estado: string) => {
+    const key = estado === 'confirmado' ? 'statusConfirmado' : estado === 'enviado' ? 'statusEnviado' : estado === 'error' ? 'statusError' : estado === 'anulado' ? 'statusAnulado' : 'statusPendiente';
+    return t(key);
   };
 
   const getEstadoBadge = (estado: string) => {
@@ -307,7 +313,7 @@ export default function MirComunicacionesPage() {
         variant={config.variant}
         className={config.className}
       >
-        {estado.toUpperCase()}
+        {getEstadoLabel(estado)}
       </Badge>
     );
   };
@@ -323,20 +329,20 @@ export default function MirComunicacionesPage() {
                 <div className="text-3xl mr-3">🏛️</div>
                 <div>
                   <div className="flex items-center gap-3">
-                    <h1 className="text-2xl font-bold text-gray-900">Estado Envíos MIR</h1>
+                    <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
                     {tenant?.country_code && (
                       <span className="px-3 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full border border-blue-200">
-                        🌍 {COUNTRIES[tenant.country_code] || tenant.country_code}
+                        🌍 {t('countries.' + tenant.country_code as any) || tenant.country_code}
                       </span>
                     )}
                     {tenant?.plan_type === 'pro' && (
                       <span className="px-3 py-1 bg-purple-100 text-purple-800 text-xs font-semibold rounded-full border border-purple-200">
-                        ⭐ PRO - Todos los países
+                        ⭐ PRO - {t('proBadge')}
                       </span>
                     )}
                   </div>
-                  <p className="text-sm text-gray-600">Gestión de comunicaciones con el Ministerio del Interior</p>
-                  <p className="text-xs text-gray-500">Envío, consulta y anulación de comunicaciones oficiales</p>
+                  <p className="text-sm text-gray-600">{t('subtitle')}</p>
+                  <p className="text-xs text-gray-500">{t('subtitleDetail')}</p>
                 </div>
               </div>
               <div className="flex items-center space-x-4">
@@ -378,7 +384,7 @@ export default function MirComunicacionesPage() {
                       const result = await response.json();
                       
                       if (result.success) {
-                        setSuccess(`✅ Consulta en tiempo real completada - ${result.lotesConsultados} lotes consultados, ${result.actualizados} actualizados según MIR oficial`);
+                        setSuccess(`✅ ${t('successTiempoReal', { lotes: result.lotesConsultados, actualizados: result.actualizados })}`);
                         
                         // Recargar datos después de la actualización
                         setTimeout(() => {
@@ -389,7 +395,7 @@ export default function MirComunicacionesPage() {
                       }
                     } catch (error) {
                       console.error('❌ Error en consulta tiempo real:', error);
-                      setError(`❌ Error consultando MIR: ${error instanceof Error ? error.message : 'Error de conexión'}`);
+                      setError(`❌ ${t('errorConsultandoMir')}: ${error instanceof Error ? error.message : t('errorConexion')}`);
                     } finally {
                       setLoading(false);
                     }
@@ -398,7 +404,7 @@ export default function MirComunicacionesPage() {
                   className="bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-3 shadow-lg"
                 >
                   <RefreshCw className={`h-5 w-5 mr-2 ${loading ? 'animate-spin' : ''}`} />
-                  Consulta Tiempo Real MIR
+                  {t('consultaTiempoReal')}
                 </Button>
               </div>
             </div>
@@ -423,35 +429,35 @@ export default function MirComunicacionesPage() {
 
       <Tabs defaultValue="comunicaciones" className="space-y-4">
         <TabsList className="bg-gray-100">
-          <TabsTrigger value="comunicaciones" className="text-gray-800 font-semibold data-[state=active]:bg-blue-600 data-[state=active]:text-white">Comunicaciones</TabsTrigger>
-          <TabsTrigger value="consulta" className="text-gray-800 font-semibold data-[state=active]:bg-blue-600 data-[state=active]:text-white">Consulta</TabsTrigger>
-          <TabsTrigger value="catalogo" className="text-gray-800 font-semibold data-[state=active]:bg-blue-600 data-[state=active]:text-white">Catálogos</TabsTrigger>
-          <TabsTrigger value="anulacion" className="text-gray-800 font-semibold data-[state=active]:bg-blue-600 data-[state=active]:text-white">Anulación</TabsTrigger>
+          <TabsTrigger value="comunicaciones" className="text-gray-800 font-semibold data-[state=active]:bg-blue-600 data-[state=active]:text-white">{t('tabComunicaciones')}</TabsTrigger>
+          <TabsTrigger value="consulta" className="text-gray-800 font-semibold data-[state=active]:bg-blue-600 data-[state=active]:text-white">{t('tabConsulta')}</TabsTrigger>
+          <TabsTrigger value="catalogo" className="text-gray-800 font-semibold data-[state=active]:bg-blue-600 data-[state=active]:text-white">{t('tabCatalogo')}</TabsTrigger>
+          <TabsTrigger value="anulacion" className="text-gray-800 font-semibold data-[state=active]:bg-blue-600 data-[state=active]:text-white">{t('tabAnulacion')}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="comunicaciones" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle className="text-gray-900 font-bold text-xl">Comunicaciones Enviadas</CardTitle>
+              <CardTitle className="text-gray-900 font-bold text-xl">{t('comunicacionesTitle')}</CardTitle>
               <CardDescription className="text-gray-700 font-medium">
-                Lista de todas las comunicaciones enviadas al MIR
+                {t('comunicacionesDescription')}
               </CardDescription>
             </CardHeader>
             <CardContent>
               {loading ? (
                 <div className="flex items-center justify-center p-8">
                   <RefreshCw className="h-6 w-6 animate-spin mr-2" />
-                  Cargando comunicaciones...
+                  {t('loading')}
                 </div>
               ) : comunicaciones.length === 0 ? (
                 <div className="text-center p-8 text-gray-600 font-semibold">
-                  No hay comunicaciones registradas
+                  {t('noComunicaciones')}
                 </div>
               ) : (
                 <div className="space-y-4">
                   {comunicaciones.map((registro) => {
                     // Los datos vienen del nuevo endpoint estado-envios
-                    const nombreCompleto = registro.nombreCompleto || 'Datos no disponibles';
+                    const nombreCompleto = registro.nombreCompleto || t('datosNoDisponibles');
                     const habitacion = 'N/A'; // Se puede extraer de registro.datos si es necesario
                     const yaEnviado = registro.estado !== 'pendiente';
                     const estado = registro.estado;
@@ -470,19 +476,19 @@ export default function MirComunicacionesPage() {
                             {/* Información del registro organizada */}
                             <div className="text-sm text-gray-700 font-medium">
                               <div className="flex items-center gap-4">
-                                <span>🏨 Habitación: <strong>{habitacion}</strong></span>
-                                <span>📋 Tipo: <strong>{registro.tipo || 'PV'}</strong></span>
-                                <span>🆔 Ref: <strong>{registro.referencia}</strong></span>
+                                <span>🏨 {t('habitacion')} <strong>{habitacion}</strong></span>
+                                <span>📋 {t('tipo')} <strong>{registro.tipo || 'PV'}</strong></span>
+                                <span>🆔 {t('ref')} <strong>{registro.referencia}</strong></span>
                               </div>
                               <div className="mt-1 text-sm text-blue-600">
-                                📦 Lote: <strong>{registro.lote || 'Sin lote asignado'}</strong>
+                                📦 {t('lote')} <strong>{registro.lote || t('sinLote')}</strong>
                               </div>
                               <div className="mt-1">
-                                📅 Registrado: <strong>{new Date(registro.timestamp).toLocaleString('es-ES')}</strong>
-                                {registro.fechaEnvio && <span className="ml-4">📤 Enviado: <strong>{new Date(registro.fechaEnvio).toLocaleString('es-ES')}</strong></span>}
+                                📅 {t('registrado')} <strong>{new Date(registro.timestamp).toLocaleString(locale)}</strong>
+                                {registro.fechaEnvio && <span className="ml-4">📤 {t('enviado')} <strong>{new Date(registro.fechaEnvio).toLocaleString(locale)}</strong></span>}
                               </div>
                               {registro.error && (
-                                <div className="text-red-600 font-semibold mt-2">❌ Error: {registro.error}</div>
+                                <div className="text-red-600 font-semibold mt-2">❌ {t('errorLabel')} {registro.error}</div>
                               )}
                             </div>
                           </div>
@@ -493,11 +499,11 @@ export default function MirComunicacionesPage() {
                                   size="sm" 
                                   className="bg-green-600 hover:bg-green-700 text-white font-semibold"
                                   onClick={() => {
-                                    alert(`Estado: ${estado}\nLote: ${registro.lote || 'N/A'}\nReferencia: ${registro.referencia}`);
+                                    alert(`${t('estadoLabel')} ${estado}\n${t('lote')} ${registro.lote || 'N/A'}\n${t('referencia')} ${registro.referencia}`);
                                   }}
                                 >
                                   <Eye className="h-4 w-4 mr-1" />
-                                  Ver Estado
+                                  {t('verEstado')}
                                 </Button>
                                 <Button 
                                   size="sm" 
@@ -511,20 +517,20 @@ export default function MirComunicacionesPage() {
                                       });
                                       const result = await response.json();
                                       if (result.success) {
-                                        alert(`✅ Consulta en tiempo real completada\n\nLotes consultados: ${result.lotesConsultados}\nActualizados: ${result.actualizados}\n\nEstado actualizado según MIR oficial`);
+                                        alert(`✅ ${t('successTiempoRealAlert', { lotes: result.lotesConsultados, actualizados: result.actualizados })}`);
                                         cargarComunicaciones();
                                       } else {
                                         alert(`❌ Error: ${result.message || result.error}`);
                                       }
                                     } catch (error) {
-                                      alert('❌ Error consultando MIR en tiempo real');
+                                      alert(`❌ ${t('errorConsultandoMir')}`);
                                     } finally {
                                       setLoading(false);
                                     }
                                   }}
                                 >
                                   <RefreshCw className="h-4 w-4 mr-1" />
-                                  Consulta Tiempo Real MIR
+                                  {t('consultaTiempoReal')}
                                 </Button>
                               </>
                             ) : (
@@ -547,28 +553,28 @@ export default function MirComunicacionesPage() {
                                       
                                       const result = await response.json();
                                       if (result.success) {
-                                        alert('✅ Registro enviado al MIR correctamente');
+                                        alert(`✅ ${t('successEnviado')}`);
                                         cargarComunicaciones(); // Recargar lista
                                       } else {
                                         alert(`❌ Error: ${result.message}`);
                                       }
                                     } catch (error) {
-                                      alert('❌ Error enviando al MIR');
+                                      alert(`❌ ${t('errorEnviandoMir')}`);
                                     }
                                   }}
                                 >
                                   <Send className="h-4 w-4 mr-1" />
-                                  Enviar al MIR
+                                  {t('enviarAlMir')}
                                 </Button>
                                 <Button 
                                   size="sm" 
                                   className="bg-blue-600 hover:bg-blue-700 text-white font-semibold"
                                   onClick={() => {
-                                    alert(`Registro: ${registro.referencia}\nEstado: ${estado}\nID: ${registro.id}`);
+                                    alert(`${t('referencia')}: ${registro.referencia}\n${t('estadoLabel')}: ${estado}\nID: ${registro.id}`);
                                   }}
                                 >
                                   <Eye className="h-4 w-4 mr-1" />
-                                  Info
+                                  {t('info')}
                                 </Button>
                                 <Button 
                                   size="sm" 
@@ -594,18 +600,18 @@ export default function MirComunicacionesPage() {
                                           document.body.removeChild(a);
                                           URL.revokeObjectURL(url);
                                         } else {
-                                          alert('No hay XML disponible para descargar');
+                                          alert(t('noXmlDisponible'));
                                         }
                                       } else {
-                                        alert('Error obteniendo el XML');
+                                        alert(t('errorObteniendoXml'));
                                       }
                                     } catch (error) {
-                                      alert('Error descargando XML');
+                                      alert(t('errorDescargandoXml'));
                                     }
                                   }}
                                 >
                                   <Download className="h-4 w-4 mr-1" />
-                                  XML
+                                  {t('xml')}
                                 </Button>
                               </>
                             )}
@@ -623,35 +629,35 @@ export default function MirComunicacionesPage() {
 
         <TabsContent value="consulta" className="space-y-4">
           <Card>
-            <CardHeader>
-              <CardTitle className="text-gray-900 font-bold text-xl">Consultar Comunicaciones</CardTitle>
-              <CardDescription className="text-gray-700 font-medium">
-                Consulta el estado de comunicaciones específicas en el MIR
-              </CardDescription>
+<CardHeader>
+            <CardTitle className="text-gray-900 font-bold text-xl">{t('consultaTitle')}</CardTitle>
+            <CardDescription className="text-gray-700 font-medium">
+              {t('consultaDescription')}
+            </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="codigos" className="text-gray-800 font-semibold">Códigos de Comunicación</Label>
+                <Label htmlFor="codigos" className="text-gray-800 font-semibold">{t('codigosLabel')}</Label>
                 <Input
                   id="codigos"
-                  placeholder="REF-e95a19f7-b576-4378-953a-95784fd33ce3-1761250365, REF-11bb82f6-8c65-4bc1..."
+                  placeholder={t('codigosPlaceholder')}
                   value={codigosConsulta}
                   onChange={(e) => setCodigosConsulta(e.target.value)}
                   className="font-semibold text-gray-800"
                 />
                 <p className="text-sm text-gray-600 font-medium">
-                  Separa múltiples códigos con comas
+                  {t('codigosHint')}
                 </p>
               </div>
               
               <Button onClick={consultarComunicaciones} disabled={loading || !codigosConsulta.trim()} className="bg-blue-600 hover:bg-blue-700 text-white font-semibold">
                 <Search className="h-4 w-4 mr-2" />
-                {loading ? 'Consultando...' : 'Consultar'}
+                {loading ? t('consultando') : t('consultar')}
               </Button>
 
               {resultadosConsulta.length > 0 && (
                 <div className="space-y-4 mt-4">
-                  <h4 className="font-bold text-xl text-gray-900">Resultados de la Consulta</h4>
+                  <h4 className="font-bold text-xl text-gray-900">{t('resultadosTitle')}</h4>
                   {resultadosConsulta.map((resultado, index) => (
                     <Card key={index} className="p-6 border-2 border-green-300 bg-white shadow-lg">
                       <div className="space-y-3">
@@ -662,28 +668,28 @@ export default function MirComunicacionesPage() {
                             {resultado.estado.toUpperCase()}
                           </Badge>
                         </div>
-                        {resultado.nombreReserva && resultado.nombreReserva !== 'No encontrado' && (
+                        {resultado.nombreReserva && resultado.nombreReserva !== t('noEncontrado') && (
                           <div className="flex items-center gap-2">
-                            <span className="font-bold text-gray-900">👤 Huésped:</span>
+                            <span className="font-bold text-gray-900">👤 {t('huesped')}</span>
                             <span className="text-gray-700 font-semibold">{resultado.nombreReserva}</span>
                           </div>
                         )}
                         <div className="text-sm text-gray-800 space-y-2 bg-gray-50 p-4 rounded-lg">
                           <div className="flex items-center gap-2">
-                            <span className="font-bold text-gray-900">Tipo:</span>
+                            <span className="font-bold text-gray-900">{t('tipoLabel')}</span>
                             <span className="text-gray-700">{resultado.interpretacion.tipoDescripcion}</span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <span className="font-bold text-gray-900">Estado:</span>
+                            <span className="font-bold text-gray-900">{t('estadoLabel')}</span>
                             <span className="text-gray-700">{resultado.interpretacion.estadoDescripcion}</span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <span className="font-bold text-gray-900">Referencia:</span>
+                            <span className="font-bold text-gray-900">{t('referencia')}</span>
                             <span className="text-gray-700 font-mono text-xs">{resultado.referencia}</span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <span className="font-bold text-gray-900">Fecha Alta:</span>
-                            <span className="text-gray-700">{new Date(resultado.fechaAlta).toLocaleString('es-ES')}</span>
+                            <span className="font-bold text-gray-900">{t('fechaAlta')}</span>
+                            <span className="text-gray-700">{new Date(resultado.fechaAlta).toLocaleString(locale)}</span>
                           </div>
                         </div>
                       </div>
@@ -697,37 +703,37 @@ export default function MirComunicacionesPage() {
 
         <TabsContent value="catalogo" className="space-y-4">
           <Card>
-            <CardHeader>
-              <CardTitle className="text-gray-900 font-bold text-xl">Consultar Catálogos MIR</CardTitle>
-              <CardDescription className="text-gray-700 font-medium">
-                Consulta las tablas maestras del MIR (tipos de documento, tipos de pago, etc.)
-              </CardDescription>
+<CardHeader>
+            <CardTitle className="text-gray-900 font-bold text-xl">{t('catalogoTitle')}</CardTitle>
+            <CardDescription className="text-gray-700 font-medium">
+              {t('catalogoDescription')}
+            </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="catalogo" className="text-gray-800 font-semibold">Nombre del Catálogo</Label>
+                <Label htmlFor="catalogo" className="text-gray-800 font-semibold">{t('nombreCatalogo')}</Label>
                 <Input
                   id="catalogo"
-                  placeholder="TIPOS_DOCUMENTO, TIPOS_PAGO, PAISES, etc."
+                  placeholder={t('catalogoPlaceholder')}
                   value={catalogoConsulta}
                   onChange={(e) => setCatalogoConsulta(e.target.value)}
                   className="font-semibold text-gray-800"
                 />
                 <p className="text-sm text-gray-600 font-medium">
-                  Catálogos disponibles: TIPOS_DOCUMENTO, TIPOS_PAGO, PAISES, MUNICIPIOS, TIPOS_ESTABLECIMIENTO, ROLES_PERSONA
+                  {t('catalogoHint')}
                 </p>
               </div>
               
               <Button onClick={consultarCatalogo} disabled={loading || !catalogoConsulta.trim()} className="bg-blue-600 hover:bg-blue-700 text-white font-semibold">
                 <Search className="h-4 w-4 mr-2" />
-                {loading ? 'Consultando...' : 'Consultar Catálogo'}
+                {loading ? t('consultando') : t('consultarCatalogo')}
               </Button>
 
               {/* Resultado completo del catálogo */}
               {resultadoCatalogoCompleto && (
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-gray-900 font-bold text-lg">Resultado de la Consulta</CardTitle>
+                    <CardTitle className="text-gray-900 font-bold text-lg">{t('resultadoConsulta')}</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     {/* Información del catálogo */}
@@ -736,11 +742,10 @@ export default function MirComunicacionesPage() {
                         <CheckCircle className="h-5 w-5 text-blue-600" />
                         <div>
                           <p className="font-semibold text-blue-800">
-                            ✅ Conexión Exitosa
+                            ✅ {t('conexionExitosa')}
                           </p>
                           <p className="text-sm text-blue-700">
-                            Catálogo '{resultadoCatalogoCompleto.catalogo?.nombre}' consultado correctamente. 
-                            Encontrados {resultadoCatalogoCompleto.catalogo?.totalElementos} elementos
+                            {t('catalogoConsultado', { name: resultadoCatalogoCompleto.catalogo?.nombre || '', count: resultadoCatalogoCompleto.catalogo?.totalElementos || 0 })}
                           </p>
                           {resultadoCatalogoCompleto.catalogo?.descripcion && (
                             <p className="text-xs text-blue-600 mt-1">
@@ -754,7 +759,7 @@ export default function MirComunicacionesPage() {
                     {/* Elementos del catálogo si los hay */}
                     {resultadosCatalogo.length > 0 && (
                       <div className="space-y-2">
-                        <h4 className="font-medium text-gray-900">Elementos del Catálogo ({resultadosCatalogo.length})</h4>
+                        <h4 className="font-medium text-gray-900">{t('elementosCatalogo', { count: resultadosCatalogo.length })}</h4>
                         <div className="grid gap-2 max-h-96 overflow-y-auto">
                           {resultadosCatalogo.map((elemento, index) => (
                             <Card key={index} className="p-3 border border-gray-200">
@@ -764,13 +769,13 @@ export default function MirComunicacionesPage() {
                                     <span className="font-semibold text-gray-900">{elemento.codigo}</span>
                                     {elemento.activo !== false && (
                                       <Badge variant="default" className="bg-green-100 text-green-800 text-xs">
-                                        Activo
+                                        {t('activo')}
                                       </Badge>
                                     )}
                                   </div>
                                   <p className="text-sm text-gray-600 mt-1">{elemento.descripcion}</p>
                                   {elemento.provincia && (
-                                    <p className="text-xs text-gray-500 mt-1">Provincia: {elemento.provincia}</p>
+                                    <p className="text-xs text-gray-500 mt-1">{t('provincia')} {elemento.provincia}</p>
                                   )}
                                 </div>
                               </div>
@@ -783,7 +788,7 @@ export default function MirComunicacionesPage() {
                     {/* JSON técnico expandible */}
                     <details className="group">
                       <summary className="cursor-pointer text-sm font-medium text-gray-700 hover:text-gray-900">
-                        📋 Ver detalles técnicos (JSON)
+                        📋 {t('verDetallesTecnicos')}
                       </summary>
                       <div className="mt-2 p-4 bg-gray-50 rounded-lg">
                         <pre className="text-xs text-gray-900 font-mono overflow-auto max-h-96">
@@ -800,25 +805,25 @@ export default function MirComunicacionesPage() {
 
         <TabsContent value="anulacion" className="space-y-4">
           <Card>
-            <CardHeader>
-              <CardTitle className="text-gray-900 font-bold text-xl">Anular Lote</CardTitle>
-              <CardDescription className="text-gray-700 font-medium">
-                Anula un lote completo de comunicaciones en el MIR
-              </CardDescription>
+<CardHeader>
+            <CardTitle className="text-gray-900 font-bold text-xl">{t('anulacionTitle')}</CardTitle>
+            <CardDescription className="text-gray-700 font-medium">
+              {t('anulacionDescription')}
+            </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <Alert variant="destructive">
                 <AlertTriangle className="h-4 w-4" />
                 <AlertDescription className="text-red-800 font-semibold">
-                  ⚠️ Esta acción anulará permanentemente el lote en el MIR. Esta operación no se puede deshacer.
+                  ⚠️ {t('anulacionWarning')}
                 </AlertDescription>
               </Alert>
               
               <div className="space-y-2">
-                <Label htmlFor="lote" className="text-gray-800 font-semibold">Código de Lote</Label>
+                <Label htmlFor="lote" className="text-gray-800 font-semibold">{t('codigoLote')}</Label>
                 <Input
                   id="lote"
-                  placeholder="Código del lote a anular"
+                  placeholder={t('lotePlaceholder')}
                   value={loteAnulacion}
                   onChange={(e) => setLoteAnulacion(e.target.value)}
                   className="font-semibold text-gray-800"
@@ -826,16 +831,16 @@ export default function MirComunicacionesPage() {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="referencia" className="text-gray-800 font-semibold">Referencia (Opcional)</Label>
+                <Label htmlFor="referencia" className="text-gray-800 font-semibold">{t('referenciaOpcional')}</Label>
                 <Input
                   id="referencia"
-                  placeholder="Referencia para actualizar en BD"
+                  placeholder={t('referenciaPlaceholder')}
                   value={referenciaAnulacion}
                   onChange={(e) => setReferenciaAnulacion(e.target.value)}
                   className="font-semibold text-gray-800"
                 />
                 <p className="text-sm text-gray-600 font-medium">
-                  Si se proporciona, se actualizará el estado en la base de datos local
+                  {t('referenciaHint')}
                 </p>
               </div>
               
@@ -846,7 +851,7 @@ export default function MirComunicacionesPage() {
                 className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold"
               >
                 <X className="h-4 w-4 mr-2" />
-                {loading ? 'Anulando...' : 'Anular Lote'}
+                {loading ? t('anulando') : t('anularLote')}
               </Button>
             </CardContent>
           </Card>

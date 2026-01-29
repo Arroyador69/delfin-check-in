@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { useTranslations, useLocale } from 'next-intl';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -54,25 +55,35 @@ type EstadoEnvio = {
   timestamp: string;
 };
 
-const ESTADO_BADGE: Record<string, { color: string; label: string; icon: typeof CheckCircle }> = {
-  '1': { color: 'bg-green-100 text-green-800', label: 'Confirmado', icon: CheckCircle },
-  '4': { color: 'bg-yellow-100 text-yellow-800', label: 'Pendiente', icon: Clock },
-  '5': { color: 'bg-red-100 text-red-800', label: 'Error', icon: XCircle },
-  '6': { color: 'bg-gray-100 text-gray-800', label: 'Anulado', icon: XCircle }
+const ESTADO_BADGE_KEYS: Record<string, 'statusConfirmed' | 'statusPending' | 'statusError' | 'statusAnulado'> = {
+  '1': 'statusConfirmed',
+  '4': 'statusPending',
+  '5': 'statusError',
+  '6': 'statusAnulado'
 };
 
-function formatearFecha(valor: string) {
-  return new Date(valor).toLocaleString('es-ES', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit'
-  });
-}
+const ESTADO_BADGE: Record<string, { color: string; icon: typeof CheckCircle }> = {
+  '1': { color: 'bg-green-100 text-green-800', icon: CheckCircle },
+  '4': { color: 'bg-yellow-100 text-yellow-800', icon: Clock },
+  '5': { color: 'bg-red-100 text-red-800', icon: XCircle },
+  '6': { color: 'bg-gray-100 text-gray-800', icon: XCircle }
+};
 
 export default function EstadoEnviosMIRPage() {
+  const t = useTranslations('estadoEnviosMir');
+  const locale = useLocale();
+
+  function formatearFecha(valor: string) {
+    return new Date(valor).toLocaleString(locale, {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
+  }
+
   const [estadoEnvio, setEstadoEnvio] = useState<EstadoEnvio | null>(null);
   const [loading, setLoading] = useState(false);
   const [consultandoLotes, setConsultandoLotes] = useState(false);
@@ -104,14 +115,14 @@ export default function EstadoEnviosMIRPage() {
         setEstadoEnvio(data);
         setUltimaActualizacion(new Date());
         if (!silencioso) {
-          setSuccess(`Estado actualizado correctamente · ${data.estadisticas.total} comunicaciones`);
+          setSuccess(t('successUpdated', { count: data.estadisticas.total }));
         }
       } else {
-        setError(data.message || 'Error al cargar el estado de envíos');
+        setError(data.message || t('errorLoad'));
       }
     } catch (err) {
       console.error('Error cargando estado MIR:', err);
-      setError('Error de conexión al cargar el estado');
+      setError(t('errorConexion'));
     } finally {
       if (!silencioso) setLoading(false);
     }
@@ -130,35 +141,30 @@ export default function EstadoEnviosMIRPage() {
 
       if (data.success) {
         await cargarEstadoEnvios();
-        setSuccess(`Consulta MIR completada · ${data.lotesConsultados || 0} lotes consultados`);
+        setSuccess(t('successConsulta', { count: data.lotesConsultados || 0 }));
       } else {
-        setError(data.message || 'Error consultando el MIR');
+        setError(data.message || t('errorConsulta'));
       }
     } catch (err) {
       console.error('Error consultando MIR:', err);
-      setError('Error de conexión al consultar el MIR');
+      setError(t('errorConexionConsulta'));
     } finally {
       setConsultandoLotes(false);
     }
   };
 
   const renderEstadoBadge = (estado: EstadoComunicacion, codigo?: string) => {
-    const fallback =
-      estado === 'confirmado'
-        ? ESTADO_BADGE['1']
-        : estado === 'enviado'
-        ? ESTADO_BADGE['4']
-        : estado === 'error'
-        ? ESTADO_BADGE['5']
-        : ESTADO_BADGE['4'];
-
-    const config = (codigo && ESTADO_BADGE[codigo]) || fallback;
-    const Icon = config.icon;
+    const fallbackKey =
+      estado === 'confirmado' ? '1' : estado === 'enviado' ? '4' : estado === 'error' ? '5' : '4';
+    const badgeKey = (codigo && ESTADO_BADGE[codigo]) ? codigo : fallbackKey;
+    const badge = ESTADO_BADGE[badgeKey] || ESTADO_BADGE['4'];
+    const labelKey = ESTADO_BADGE_KEYS[badgeKey] || 'statusPending';
+    const Icon = badge.icon;
 
     return (
-      <Badge className={`${config.color} border-0 font-semibold px-3 py-1 rounded-lg`}> 
+      <Badge className={`${badge.color} border-0 font-semibold px-3 py-1 rounded-lg`}>
         <Icon className="w-3 h-3 mr-1" />
-        {config.label}
+        {t(labelKey)}
       </Badge>
     );
   };
@@ -168,8 +174,8 @@ export default function EstadoEnviosMIRPage() {
       return (
         <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-indigo-200 bg-indigo-50/50 py-16 text-center">
           <span className="text-5xl">🔍</span>
-          <p className="text-lg font-semibold text-gray-700">No hay comunicaciones {titulo.toLowerCase()}</p>
-          <p className="text-sm text-gray-500">Cuando existan registros aparecerán automáticamente aquí.</p>
+          <p className="text-lg font-semibold text-gray-700">{t('noComms', { tab: titulo.toLowerCase() })}</p>
+          <p className="text-sm text-gray-500">{t('noCommsDescription')}</p>
         </div>
       );
     }
@@ -226,15 +232,15 @@ export default function EstadoEnviosMIRPage() {
 
               <div className="grid grid-cols-1 gap-4 rounded-xl border border-gray-200 bg-gradient-to-br from-gray-50 to-blue-50 p-4 text-sm md:grid-cols-3">
                 <div>
-                  <span className="mb-1 flex items-center gap-1 font-semibold text-gray-700">📦 Lote MIR:</span>
+                  <span className="mb-1 flex items-center gap-1 font-semibold text-gray-700">📦 {t('loteMir')}</span>
                   <span className="block rounded-lg border border-blue-200 bg-white px-3 py-2 font-mono font-semibold text-blue-700">
-                    {com.lote || 'Sin lote asignado'}
+                    {com.lote || t('sinLote')}
                   </span>
                 </div>
 
                 {com.fechaEnvio && (
                   <div>
-                    <span className="mb-1 flex items-center gap-1 font-semibold text-gray-700">📅 Fecha envío:</span>
+                    <span className="mb-1 flex items-center gap-1 font-semibold text-gray-700">📅 {t('fechaEnvio')}</span>
                     <span className="block rounded-lg border border-gray-200 bg-white px-3 py-2 font-medium text-gray-700">
                       {formatearFecha(com.fechaEnvio)}
                     </span>
@@ -242,9 +248,9 @@ export default function EstadoEnviosMIRPage() {
                 )}
 
                 <div>
-                  <span className="mb-1 flex items-center gap-1 font-semibold text-gray-700">🏛️ Estado MIR:</span>
+                  <span className="mb-1 flex items-center gap-1 font-semibold text-gray-700">🏛️ {t('estadoMir')}</span>
                   <span className="block rounded-lg border border-gray-200 bg-white px-3 py-2 font-medium text-gray-700">
-                    {com.codigoEstado ? `Código ${com.codigoEstado}` : 'No consultado'}
+                    {com.codigoEstado ? t('codigoLabel', { code: com.codigoEstado }) : t('noConsultado')}
                     {com.descEstado && <span className="mt-1 block text-xs text-gray-600">{com.descEstado}</span>}
                   </span>
                 </div>
@@ -253,7 +259,7 @@ export default function EstadoEnviosMIRPage() {
               {com.error && (
                 <div className="rounded-xl border border-red-200 bg-gradient-to-br from-red-50 to-rose-50 p-4">
                   <p className="mb-1 flex items-center gap-2 font-semibold text-rose-700">
-                    <AlertTriangle className="h-5 w-5" /> Error detectado
+                    <AlertTriangle className="h-5 w-5" /> {t('errorDetectado')}
                   </p>
                   <p className="text-sm font-medium text-rose-800">{com.error}</p>
                 </div>
@@ -261,7 +267,7 @@ export default function EstadoEnviosMIRPage() {
 
               {com.ultimaConsulta && (
                 <span className="inline-flex items-center gap-2 rounded-lg bg-gray-100 px-3 py-2 text-xs font-medium text-gray-600">
-                  🔄 Última consulta: {formatearFecha(com.ultimaConsulta)}
+                  🔄 {t('ultimaConsulta')} {formatearFecha(com.ultimaConsulta)}
                 </span>
               )}
             </CardContent>
@@ -279,11 +285,11 @@ export default function EstadoEnviosMIRPage() {
             <span className="text-4xl sm:text-5xl">🏛️</span>
             <div>
               <h1 className="text-3xl font-bold text-transparent sm:text-4xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text">
-                Estado Envíos MIR
+                {t('title')}
               </h1>
-              <p className="text-xs text-gray-600 sm:text-sm">Monitorización visual de comunicaciones al Ministerio del Interior.</p>
+              <p className="text-xs text-gray-600 sm:text-sm">{t('subtitle')}</p>
               {ultimaActualizacion && (
-                <p className="mt-1 text-xs text-gray-500">Última actualización: {formatearFecha(ultimaActualizacion.toISOString())}</p>
+                <p className="mt-1 text-xs text-gray-500">{t('lastUpdate', { date: formatearFecha(ultimaActualizacion.toISOString()) })}</p>
               )}
             </div>
           </div>
@@ -296,7 +302,7 @@ export default function EstadoEnviosMIRPage() {
               className="rounded-xl border-2 border-blue-100 text-sm font-semibold text-gray-700 shadow-sm hover:border-blue-200 hover:bg-blue-50"
             >
               <Bell className={`mr-2 h-4 w-4 ${autoRefresh ? 'text-green-600' : 'text-gray-400'}`} />
-              {autoRefresh ? 'Auto-actualizando' : 'Pausado'}
+              {autoRefresh ? t('autoUpdating') : t('paused')}
             </Button>
 
             <Button
@@ -305,7 +311,7 @@ export default function EstadoEnviosMIRPage() {
               className="w-full rounded-xl bg-gradient-to-r from-emerald-500 via-green-500 to-emerald-600 font-semibold text-white shadow-lg shadow-emerald-200/60 transition-all hover:from-emerald-600 hover:to-emerald-700 sm:w-auto"
             >
               <Activity className={`mr-2 h-4 w-4 ${consultandoLotes ? 'animate-spin' : ''}`} />
-              {consultandoLotes ? 'Consultando MIR…' : 'Consultar estado real'}
+              {consultandoLotes ? t('consulting') : t('consultReal')}
             </Button>
 
             <Button
@@ -314,7 +320,7 @@ export default function EstadoEnviosMIRPage() {
               className="w-full rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 font-semibold text-white shadow-lg shadow-blue-200/60 transition-all hover:from-blue-700 hover:to-purple-700 sm:w-auto"
             >
               <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-              Actualizar resumen
+              {t('updateSummary')}
             </Button>
           </div>
         </div>
@@ -327,14 +333,14 @@ export default function EstadoEnviosMIRPage() {
               <aside className="order-2 flex flex-col gap-6 xl:order-1">
                 <Card className="rounded-2xl border-2 border-blue-200/80 bg-white/85 backdrop-blur shadow-xl">
                   <CardHeader className="pb-3">
-                    <CardTitle className="flex items-center gap-2 text-lg font-bold text-blue-800">📊 Resumen de comunicaciones</CardTitle>
+                    <CardTitle className="flex items-center gap-2 text-lg font-bold text-blue-800">📊 {t('summaryTitle')}</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                       <div className="rounded-xl border-2 border-blue-200 bg-gradient-to-br from-blue-50 via-indigo-50 to-blue-100 p-4 shadow-sm">
                         <div className="flex items-center justify-between">
                           <div>
-                            <p className="text-xs font-semibold uppercase tracking-wide text-gray-600">Total</p>
+                            <p className="text-xs font-semibold uppercase tracking-wide text-gray-600">{t('total')}</p>
                             <p className="text-3xl font-bold text-blue-700">{estadoEnvio.estadisticas.total}</p>
                           </div>
                           <Database className="h-10 w-10 text-blue-600 opacity-80" />
@@ -343,7 +349,7 @@ export default function EstadoEnviosMIRPage() {
                       <div className="rounded-xl border-2 border-yellow-200 bg-gradient-to-br from-yellow-50 via-amber-50 to-yellow-100 p-4 shadow-sm">
                         <div className="flex items-center justify-between">
                           <div>
-                            <p className="text-xs font-semibold uppercase tracking-wide text-gray-600">Pendientes</p>
+                            <p className="text-xs font-semibold uppercase tracking-wide text-gray-600">{t('pendientes')}</p>
                             <p className="text-3xl font-bold text-amber-600">{estadoEnvio.estadisticas.pendientes}</p>
                           </div>
                           <Clock className="h-10 w-10 text-amber-500 opacity-80" />
@@ -352,7 +358,7 @@ export default function EstadoEnviosMIRPage() {
                       <div className="rounded-xl border-2 border-orange-200 bg-gradient-to-br from-orange-50 via-amber-50 to-orange-100 p-4 shadow-sm">
                         <div className="flex items-center justify-between">
                           <div>
-                            <p className="text-xs font-semibold uppercase tracking-wide text-gray-600">Enviados</p>
+                            <p className="text-xs font-semibold uppercase tracking-wide text-gray-600">{t('enviados')}</p>
                             <p className="text-3xl font-bold text-orange-600">{estadoEnvio.estadisticas.enviados}</p>
                           </div>
                           <Send className="h-10 w-10 text-orange-500 opacity-80" />
@@ -361,7 +367,7 @@ export default function EstadoEnviosMIRPage() {
                       <div className="rounded-xl border-2 border-green-200 bg-gradient-to-br from-green-50 via-emerald-50 to-green-100 p-4 shadow-sm">
                         <div className="flex items-center justify-between">
                           <div>
-                            <p className="text-xs font-semibold uppercase tracking-wide text-gray-600">Confirmados</p>
+                            <p className="text-xs font-semibold uppercase tracking-wide text-gray-600">{t('confirmados')}</p>
                             <p className="text-3xl font-bold text-emerald-600">{estadoEnvio.estadisticas.confirmados}</p>
                           </div>
                           <CheckCircle className="h-10 w-10 text-emerald-500 opacity-80" />
@@ -372,7 +378,7 @@ export default function EstadoEnviosMIRPage() {
                     <div className="rounded-xl border-2 border-red-200 bg-gradient-to-br from-red-50 via-rose-50 to-red-100 p-4 shadow-sm">
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="text-xs font-semibold uppercase tracking-wide text-gray-600">Errores</p>
+                          <p className="text-xs font-semibold uppercase tracking-wide text-gray-600">{t('errores')}</p>
                           <p className="text-3xl font-bold text-rose-600">{estadoEnvio.estadisticas.errores}</p>
                         </div>
                         <XCircle className="h-10 w-10 text-rose-500 opacity-80" />
@@ -400,9 +406,9 @@ export default function EstadoEnviosMIRPage() {
                 <div className="flex h-[68vh] flex-col rounded-2xl border-2 border-blue-200 bg-white/90 backdrop-blur shadow-2xl sm:h-[72vh]">
                   <div className="border-b-2 border-blue-200 bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 px-6 py-5">
                     <h2 className="flex items-center gap-2 text-xl font-bold text-transparent bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text">
-                      📬 Historial de comunicaciones MIR
+                      📬 {t('historialTitle')}
                     </h2>
-                    <p className="text-sm text-gray-600">Revisa cada comunicación sin abandonar la vista gracias al panel con scroll.</p>
+                    <p className="text-sm text-gray-600">{t('historialSubtitle')}</p>
                   </div>
 
                   <Tabs defaultValue="pendientes" className="flex h-full flex-col">
@@ -410,19 +416,19 @@ export default function EstadoEnviosMIRPage() {
                       <TabsList className="grid w-full grid-cols-2 gap-2 rounded-xl border border-blue-100 bg-white p-1 text-xs sm:grid-cols-4 sm:text-sm">
                         <TabsTrigger value="pendientes" className="flex items-center justify-center gap-2 rounded-lg font-semibold transition-all hover:bg-yellow-50 data-[state=active]:border data-[state=active]:border-yellow-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-50 data-[state=active]:to-amber-50">
                           <Clock className="h-4 w-4" />
-                          <span>⏳ Pendientes ({estadoEnvio.estadisticas.pendientes})</span>
+                          <span>⏳ {t('tabPendientes')} ({estadoEnvio.estadisticas.pendientes})</span>
                         </TabsTrigger>
                         <TabsTrigger value="enviados" className="flex items-center justify-center gap-2 rounded-lg font-semibold transition-all hover:bg-orange-50 data-[state=active]:border data-[state=active]:border-orange-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-50 data-[state=active]:to-amber-50">
                           <Send className="h-4 w-4" />
-                          <span>✉️ Enviados ({estadoEnvio.estadisticas.enviados})</span>
+                          <span>✉️ {t('tabEnviados')} ({estadoEnvio.estadisticas.enviados})</span>
                         </TabsTrigger>
                         <TabsTrigger value="confirmados" className="flex items-center justify-center gap-2 rounded-lg font-semibold transition-all hover:bg-green-50 data-[state=active]:border data-[state=active]:border-green-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-50 data-[state=active]:to-emerald-50">
                           <CheckCircle className="h-4 w-4" />
-                          <span>✅ Confirmados ({estadoEnvio.estadisticas.confirmados})</span>
+                          <span>✅ {t('tabConfirmados')} ({estadoEnvio.estadisticas.confirmados})</span>
                         </TabsTrigger>
                         <TabsTrigger value="errores" className="flex items-center justify-center gap-2 rounded-lg font-semibold transition-all hover:bg-red-50 data-[state=active]:border data-[state=active]:border-rose-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-red-50 data-[state=active]:to-rose-50">
                           <XCircle className="h-4 w-4" />
-                          <span>❌ Errores ({estadoEnvio.estadisticas.errores})</span>
+                          <span>❌ {t('tabErrores')} ({estadoEnvio.estadisticas.errores})</span>
                         </TabsTrigger>
                       </TabsList>
                     </div>
@@ -431,33 +437,33 @@ export default function EstadoEnviosMIRPage() {
                       <TabsContent value="pendientes" className="m-0 h-full overflow-y-auto px-4 py-6">
                         <div className="mb-6 flex items-center gap-2 text-amber-600">
                           <Clock className="h-6 w-6" />
-                          <h3 className="text-lg font-bold">Pendientes de envío</h3>
+                          <h3 className="text-lg font-bold">{t('sectionPendientes')}</h3>
                         </div>
-                        {renderTarjetas(estadoEnvio.comunicaciones.pendientes, 'pendientes')}
+                        {renderTarjetas(estadoEnvio.comunicaciones.pendientes, t('tabPendientes'))}
                       </TabsContent>
 
                       <TabsContent value="enviados" className="m-0 h-full overflow-y-auto px-4 py-6">
                         <div className="mb-6 flex items-center gap-2 text-orange-600">
                           <Send className="h-6 w-6" />
-                          <h3 className="text-lg font-bold">Comunicaciones enviadas</h3>
+                          <h3 className="text-lg font-bold">{t('sectionEnviados')}</h3>
                         </div>
-                        {renderTarjetas(estadoEnvio.comunicaciones.enviados, 'enviadas')}
+                        {renderTarjetas(estadoEnvio.comunicaciones.enviados, t('tabEnviados'))}
                       </TabsContent>
 
                       <TabsContent value="confirmados" className="m-0 h-full overflow-y-auto px-4 py-6">
                         <div className="mb-6 flex items-center gap-2 text-emerald-600">
                           <CheckCircle className="h-6 w-6" />
-                          <h3 className="text-lg font-bold">Comunicaciones confirmadas</h3>
+                          <h3 className="text-lg font-bold">{t('sectionConfirmados')}</h3>
                         </div>
-                        {renderTarjetas(estadoEnvio.comunicaciones.confirmados, 'confirmadas')}
+                        {renderTarjetas(estadoEnvio.comunicaciones.confirmados, t('tabConfirmados'))}
                       </TabsContent>
 
                       <TabsContent value="errores" className="m-0 h-full overflow-y-auto px-4 py-6">
                         <div className="mb-6 flex items-center gap-2 text-rose-600">
                           <XCircle className="h-6 w-6" />
-                          <h3 className="text-lg font-bold">Comunicaciones con errores</h3>
+                          <h3 className="text-lg font-bold">{t('sectionErrores')}</h3>
                         </div>
-                        {renderTarjetas(estadoEnvio.comunicaciones.errores, 'con errores')}
+                        {renderTarjetas(estadoEnvio.comunicaciones.errores, t('tabErrores'))}
                       </TabsContent>
                     </div>
                   </Tabs>
@@ -467,8 +473,8 @@ export default function EstadoEnviosMIRPage() {
           ) : (
             <div className="flex min-h-[50vh] flex-col items-center justify-center text-center">
               <span className="mb-3 text-5xl animate-pulse">🔄</span>
-              <p className="text-lg font-semibold text-gray-700">Cargando estado de envíos MIR…</p>
-              <p className="text-sm text-gray-500">Obteniendo la información más reciente.</p>
+              <p className="text-lg font-semibold text-gray-700">{t('loading')}</p>
+              <p className="text-sm text-gray-500">{t('loadingSubtitle')}</p>
             </div>
           )}
         </div>

@@ -3,12 +3,17 @@
 import { useState, useEffect } from 'react';
 import { Calendar, Users, Euro, CreditCard, CheckCircle, XCircle, Clock, TrendingUp, Eye, Home, Bed } from 'lucide-react';
 import { DirectReservation, ReservationStats } from '@/lib/direct-reservations-types';
+import { useTranslations, useLocale } from 'next-intl';
 
 export default function DirectReservationsDashboard() {
+  const t = useTranslations('directReservations');
+  const tCommon = useTranslations('common');
+  const locale = useLocale();
+
   const [reservations, setReservations] = useState<DirectReservation[]>([]);
   const [stats, setStats] = useState<ReservationStats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('all'); // all, confirmed, pending, cancelled
+  const [filter, setFilter] = useState<'all' | 'confirmed' | 'pending' | 'cancelled'>('all');
   const [selectedReservation, setSelectedReservation] = useState<DirectReservation | null>(null);
 
   useEffect(() => {
@@ -19,18 +24,14 @@ export default function DirectReservationsDashboard() {
   const loadReservations = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/tenant/direct-reservations', {
-        headers: {
-          'x-tenant-id': 'default' // TODO: Obtener del contexto de usuario
-        }
-      });
+      const response = await fetch('/api/tenant/direct-reservations');
       
       const data = await response.json();
       if (data.success) {
         setReservations(data.reservations);
       }
     } catch (error) {
-      console.error('Error cargando reservas:', error);
+      console.error('Error loading direct reservations:', error);
     } finally {
       setLoading(false);
     }
@@ -38,18 +39,14 @@ export default function DirectReservationsDashboard() {
 
   const loadStats = async () => {
     try {
-      const response = await fetch('/api/tenant/reservation-stats', {
-        headers: {
-          'x-tenant-id': 'default'
-        }
-      });
+      const response = await fetch('/api/tenant/reservation-stats');
       
       const data = await response.json();
       if (data.success) {
         setStats(data.stats);
       }
     } catch (error) {
-      console.error('Error cargando estadísticas:', error);
+      console.error('Error loading direct reservation stats:', error);
     }
   };
 
@@ -98,7 +95,7 @@ export default function DirectReservationsDashboard() {
   });
 
   const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString('es-ES', {
+    return new Date(date).toLocaleDateString(locale, {
       year: 'numeric',
       month: 'short',
       day: 'numeric'
@@ -110,7 +107,7 @@ export default function DirectReservationsDashboard() {
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 text-lg font-medium">Cargando reservas...</p>
+          <p className="text-gray-600 text-lg font-medium">{t('loading')}</p>
         </div>
       </div>
     );
@@ -124,10 +121,12 @@ export default function DirectReservationsDashboard() {
           <h1 className="text-3xl sm:text-5xl font-bold mb-2 sm:mb-4">
             <span className="text-4xl sm:text-6xl mr-2 sm:mr-3" style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>🏠</span>
             <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              Reservas Directas
+              {t('title')}
             </span>
           </h1>
-          <p className="text-gray-600 text-sm sm:text-lg">Gestiona las reservas directas de tus propiedades</p>
+          <p className="text-gray-600 text-sm sm:text-lg">
+            {t('subtitle')}
+          </p>
         </div>
 
         {/* Botón Ver Propiedades */}
@@ -137,7 +136,7 @@ export default function DirectReservationsDashboard() {
             className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-xl shadow-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 transform hover:scale-105 flex items-center gap-2 sm:gap-3 font-semibold text-sm sm:text-base"
           >
             <Eye className="w-5 h-5 sm:w-6 sm:h-6" />
-            <span>Ver Propiedades</span>
+            <span>{t('viewPropertiesButton')}</span>
           </button>
         </div>
 
@@ -150,7 +149,9 @@ export default function DirectReservationsDashboard() {
                   <Calendar className="w-8 h-8 text-blue-600" />
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">📊 Total Reservas</p>
+                  <p className="text-sm font-medium text-gray-600">
+                    {t('stats.totalReservations')}
+                  </p>
                   <p className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">{stats.total_reservations}</p>
                 </div>
               </div>
@@ -162,7 +163,9 @@ export default function DirectReservationsDashboard() {
                   <Euro className="w-8 h-8 text-green-600" />
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">💰 Ingresos Totales</p>
+                  <p className="text-sm font-medium text-gray-600">
+                    {t('stats.totalRevenue')}
+                  </p>
                   <p className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">{stats.total_revenue.toFixed(2)}€</p>
                 </div>
               </div>
@@ -174,7 +177,9 @@ export default function DirectReservationsDashboard() {
                   <TrendingUp className="w-8 h-8 text-purple-600" />
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">💎 Comisión Delfin</p>
+                  <p className="text-sm font-medium text-gray-600">
+                    {t('stats.totalCommission')}
+                  </p>
                   <p className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">{stats.total_commission.toFixed(2)}€</p>
                 </div>
               </div>
@@ -186,7 +191,9 @@ export default function DirectReservationsDashboard() {
                   <Users className="w-8 h-8 text-orange-600" />
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">✅ Reservas Confirmadas</p>
+                  <p className="text-sm font-medium text-gray-600">
+                    {t('stats.confirmedReservations')}
+                  </p>
                   <p className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent">{stats.confirmed_reservations}</p>
                 </div>
               </div>
@@ -205,7 +212,7 @@ export default function DirectReservationsDashboard() {
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              🌐 Todas ({reservations.length})
+              🌐 {t('filters.all', { count: reservations.length })}
             </button>
             <button
               onClick={() => setFilter('confirmed')}
@@ -215,7 +222,9 @@ export default function DirectReservationsDashboard() {
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              ✅ Confirmadas ({reservations.filter(r => r.reservation_status === 'confirmed').length})
+              ✅ {t('filters.confirmed', {
+                count: reservations.filter(r => r.reservation_status === 'confirmed').length
+              })}
             </button>
             <button
               onClick={() => setFilter('pending')}
@@ -225,7 +234,9 @@ export default function DirectReservationsDashboard() {
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              ⏳ Pendientes ({reservations.filter(r => r.reservation_status === 'pending').length})
+              ⏳ {t('filters.pending', {
+                count: reservations.filter(r => r.reservation_status === 'pending').length
+              })}
             </button>
             <button
               onClick={() => setFilter('cancelled')}
@@ -235,7 +246,9 @@ export default function DirectReservationsDashboard() {
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              ❌ Canceladas ({reservations.filter(r => r.reservation_status === 'cancelled').length})
+              ❌ {t('filters.cancelled', {
+                count: reservations.filter(r => r.reservation_status === 'cancelled').length
+              })}
             </button>
           </div>
         </div>
@@ -247,25 +260,25 @@ export default function DirectReservationsDashboard() {
               <thead className="bg-gradient-to-r from-blue-50 to-indigo-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                    📋 Reserva
+                    📋 {t('table.headers.reservation')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                    👤 Huésped
+                    👤 {t('table.headers.guest')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                    📅 Fechas
+                    📅 {t('table.headers.dates')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                    🎯 Estado
+                    🎯 {t('table.headers.status')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                    💳 Pago
+                    💳 {t('table.headers.payment')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                    💰 Total
+                    💰 {t('table.headers.total')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                    ⚙️ Acciones
+                    ⚙️ {t('table.headers.actions')}
                   </th>
                 </tr>
               </thead>
@@ -276,8 +289,12 @@ export default function DirectReservationsDashboard() {
                       <div className="bg-gradient-to-r from-blue-100 to-purple-100 p-8 rounded-full w-24 h-24 mx-auto mb-6 flex items-center justify-center">
                         <Bed className="w-12 h-12 text-blue-600" />
                       </div>
-                      <h3 className="text-xl sm:text-2xl font-semibold text-gray-800 mb-2">No hay reservas</h3>
-                      <p className="text-gray-600 text-sm sm:text-base">Las reservas aparecerán aquí cuando los clientes reserven</p>
+                      <h3 className="text-xl sm:text-2xl font-semibold text-gray-800 mb-2">
+                        {t('table.emptyTitle')}
+                      </h3>
+                      <p className="text-gray-600 text-sm sm:text-base">
+                        {t('table.emptyDescription')}
+                      </p>
                     </td>
                   </tr>
                 ) : (
@@ -314,17 +331,17 @@ export default function DirectReservationsDashboard() {
                           {formatDate(reservation.check_out_date)}
                         </div>
                         <div className="text-xs text-gray-400 font-medium">
-                          {reservation.nights} noches
+                          {t('table.nights', { count: reservation.nights })}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(reservation.reservation_status)}`}>
-                          {reservation.reservation_status}
+                          {t(`statuses.${reservation.reservation_status}` as const)}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getPaymentStatusColor(reservation.payment_status)}`}>
-                          {reservation.payment_status}
+                          {t(`paymentStatuses.${reservation.payment_status}` as const)}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -332,7 +349,9 @@ export default function DirectReservationsDashboard() {
                           {reservation.total_amount.toFixed(2)}€
                         </div>
                         <div className="text-xs text-gray-500">
-                          Tu parte: {reservation.property_owner_amount.toFixed(2)}€
+                          {t('table.ownerShare', {
+                            amount: reservation.property_owner_amount.toFixed(2)
+                          })}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -340,7 +359,7 @@ export default function DirectReservationsDashboard() {
                           onClick={() => setSelectedReservation(reservation)}
                           className="bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-700 hover:from-blue-100 hover:to-indigo-100 px-3 py-2 rounded-lg transition-all duration-200 transform hover:scale-105 font-semibold"
                         >
-                          👁️ Ver detalles
+                          👁️ {t('table.viewDetails')}
                         </button>
                       </td>
                     </tr>
@@ -360,7 +379,7 @@ export default function DirectReservationsDashboard() {
                   <h2 className="text-2xl sm:text-3xl font-bold">
                     <span className="text-3xl sm:text-4xl mr-2" style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>📋</span>
                     <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                      Detalles de la Reserva
+                      {t('details.title')}
                     </span>
                   </h2>
                   <button
@@ -376,28 +395,40 @@ export default function DirectReservationsDashboard() {
                   <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-200">
                     <h3 className="text-lg sm:text-xl font-semibold mb-3 flex items-center gap-2">
                       <span className="text-xl sm:text-2xl" style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>ℹ️</span>
-                      Información de la Reserva
+                      {t('details.basicInfoSection')}
                     </h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                       <div>
-                        <span className="font-semibold text-gray-700">Código:</span> 
-                        <span className="ml-2 text-gray-900 font-bold">{selectedReservation.reservation_code}</span>
+                        <span className="font-semibold text-gray-700">
+                          {t('details.codeLabel')}:
+                        </span>
+                        <span className="ml-2 text-gray-900 font-bold">
+                          {selectedReservation.reservation_code}
+                        </span>
                       </div>
                       <div>
-                        <span className="font-semibold text-gray-700">Estado:</span> 
+                        <span className="font-semibold text-gray-700">
+                          {t('details.statusLabel')}:
+                        </span>
                         <span className={`ml-2 px-2 py-1 rounded-full text-xs font-semibold ${getStatusColor(selectedReservation.reservation_status)}`}>
-                          {selectedReservation.reservation_status}
+                          {t(`statuses.${selectedReservation.reservation_status}` as const)}
                         </span>
                       </div>
                       <div>
-                        <span className="font-semibold text-gray-700">Pago:</span> 
+                        <span className="font-semibold text-gray-700">
+                          {t('details.paymentLabel')}:
+                        </span>
                         <span className={`ml-2 px-2 py-1 rounded-full text-xs font-semibold ${getPaymentStatusColor(selectedReservation.payment_status)}`}>
-                          {selectedReservation.payment_status}
+                          {t(`paymentStatuses.${selectedReservation.payment_status}` as const)}
                         </span>
                       </div>
                       <div>
-                        <span className="font-semibold text-gray-700">Fecha creación:</span> 
-                        <span className="ml-2 text-gray-900">{formatDate(selectedReservation.created_at)}</span>
+                        <span className="font-semibold text-gray-700">
+                          {t('details.createdAtLabel')}:
+                        </span>
+                        <span className="ml-2 text-gray-900">
+                          {formatDate(selectedReservation.created_at)}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -406,24 +437,40 @@ export default function DirectReservationsDashboard() {
                   <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-6 rounded-xl border border-green-200">
                     <h3 className="text-lg sm:text-xl font-semibold mb-3 flex items-center gap-2">
                       <span className="text-xl sm:text-2xl" style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>👤</span>
-                      Información del Huésped
+                      {t('details.guestSection')}
                     </h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                       <div>
-                        <span className="font-semibold text-gray-700">Nombre:</span> 
-                        <span className="ml-2 text-gray-900 font-bold">{selectedReservation.guest_name}</span>
+                        <span className="font-semibold text-gray-700">
+                          {t('details.guestNameLabel')}:
+                        </span>
+                        <span className="ml-2 text-gray-900 font-bold">
+                          {selectedReservation.guest_name}
+                        </span>
                       </div>
                       <div>
-                        <span className="font-semibold text-gray-700">Email:</span> 
-                        <span className="ml-2 text-gray-900">{selectedReservation.guest_email}</span>
+                        <span className="font-semibold text-gray-700">
+                          {t('details.guestEmailLabel')}:
+                        </span>
+                        <span className="ml-2 text-gray-900">
+                          {selectedReservation.guest_email}
+                        </span>
                       </div>
                       <div>
-                        <span className="font-semibold text-gray-700">Teléfono:</span> 
-                        <span className="ml-2 text-gray-900">{selectedReservation.guest_phone || 'No proporcionado'}</span>
+                        <span className="font-semibold text-gray-700">
+                          {t('details.guestPhoneLabel')}:
+                        </span>
+                        <span className="ml-2 text-gray-900">
+                          {selectedReservation.guest_phone || t('details.notProvided')}
+                        </span>
                       </div>
                       <div>
-                        <span className="font-semibold text-gray-700">Nacionalidad:</span> 
-                        <span className="ml-2 text-gray-900">{selectedReservation.guest_nationality || 'No especificada'}</span>
+                        <span className="font-semibold text-gray-700">
+                          {t('details.guestNationalityLabel')}:
+                        </span>
+                        <span className="ml-2 text-gray-900">
+                          {selectedReservation.guest_nationality || t('details.notSpecified')}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -432,24 +479,40 @@ export default function DirectReservationsDashboard() {
                   <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-6 rounded-xl border border-purple-200">
                     <h3 className="text-lg sm:text-xl font-semibold mb-3 flex items-center gap-2">
                       <span className="text-xl sm:text-2xl" style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>🏨</span>
-                      Detalles de la Estancia
+                      {t('details.staySection')}
                     </h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                       <div>
-                        <span className="font-semibold text-gray-700">Check-in:</span> 
-                        <span className="ml-2 text-gray-900 font-bold">{formatDate(selectedReservation.check_in_date)}</span>
+                        <span className="font-semibold text-gray-700">
+                          {t('details.checkInLabel')}:
+                        </span>
+                        <span className="ml-2 text-gray-900 font-bold">
+                          {formatDate(selectedReservation.check_in_date)}
+                        </span>
                       </div>
                       <div>
-                        <span className="font-semibold text-gray-700">Check-out:</span> 
-                        <span className="ml-2 text-gray-900 font-bold">{formatDate(selectedReservation.check_out_date)}</span>
+                        <span className="font-semibold text-gray-700">
+                          {t('details.checkOutLabel')}:
+                        </span>
+                        <span className="ml-2 text-gray-900 font-bold">
+                          {formatDate(selectedReservation.check_out_date)}
+                        </span>
                       </div>
                       <div>
-                        <span className="font-semibold text-gray-700">Noches:</span> 
-                        <span className="ml-2 text-gray-900 font-bold">{selectedReservation.nights}</span>
+                        <span className="font-semibold text-gray-700">
+                          {t('details.nightsLabel')}:
+                        </span>
+                        <span className="ml-2 text-gray-900 font-bold">
+                          {selectedReservation.nights}
+                        </span>
                       </div>
                       <div>
-                        <span className="font-semibold text-gray-700">Huéspedes:</span> 
-                        <span className="ml-2 text-gray-900 font-bold">{selectedReservation.guests}</span>
+                        <span className="font-semibold text-gray-700">
+                          {t('details.guestsLabel')}:
+                        </span>
+                        <span className="ml-2 text-gray-900 font-bold">
+                          {selectedReservation.guests}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -458,30 +521,42 @@ export default function DirectReservationsDashboard() {
                   <div className="bg-gradient-to-r from-yellow-50 to-orange-50 p-6 rounded-xl border border-yellow-200">
                     <h3 className="text-lg sm:text-xl font-semibold mb-3 flex items-center gap-2">
                       <span className="text-xl sm:text-2xl" style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>💰</span>
-                      Desglose de Precios
+                      {t('details.pricesSection')}
                     </h3>
                     <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
                       <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
-                          <span className="text-gray-700">Precio base ({selectedReservation.nights} noches):</span>
-                          <span className="font-semibold text-gray-900">{(selectedReservation.base_price * selectedReservation.nights).toFixed(2)}€</span>
+                          <span className="text-gray-700">
+                            {t('details.basePriceLine', { nights: selectedReservation.nights })}
+                          </span>
+                          <span className="font-semibold text-gray-900">
+                            {(selectedReservation.base_price * selectedReservation.nights).toFixed(2)}€
+                          </span>
                         </div>
                         {selectedReservation.cleaning_fee > 0 && (
                           <div className="flex justify-between">
-                            <span className="text-gray-700">Tarifa de limpieza:</span>
-                            <span className="font-semibold text-gray-900">{selectedReservation.cleaning_fee.toFixed(2)}€</span>
+                            <span className="text-gray-700">
+                              {t('details.cleaningFeeLabel')}
+                            </span>
+                            <span className="font-semibold text-gray-900">
+                              {selectedReservation.cleaning_fee.toFixed(2)}€
+                            </span>
                           </div>
                         )}
                         <div className="flex justify-between font-bold border-t pt-2 text-gray-900">
-                          <span>Subtotal:</span>
+                          <span>{t('details.subtotalLabel')}</span>
                           <span>{selectedReservation.subtotal.toFixed(2)}€</span>
                         </div>
                         <div className="flex justify-between text-red-600 font-semibold">
-                          <span>Comisión Delfin ({(selectedReservation.delfin_commission_rate * 100).toFixed(1)}%):</span>
+                          <span>
+                            {t('details.commissionLine', {
+                              percent: (selectedReservation.delfin_commission_rate * 100).toFixed(1)
+                            })}
+                          </span>
                           <span>-{selectedReservation.delfin_commission_amount.toFixed(2)}€</span>
                         </div>
                         <div className="flex justify-between text-green-600 font-bold border-t pt-2 text-lg">
-                          <span>Tu parte:</span>
+                          <span>{t('details.ownerShareLabel')}</span>
                           <span>{selectedReservation.property_owner_amount.toFixed(2)}€</span>
                         </div>
                       </div>
@@ -493,7 +568,7 @@ export default function DirectReservationsDashboard() {
                     <div className="bg-gradient-to-r from-indigo-50 to-blue-50 p-6 rounded-xl border border-indigo-200">
                       <h3 className="text-lg sm:text-xl font-semibold mb-3 flex items-center gap-2">
                         <span className="text-xl sm:text-2xl" style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>💬</span>
-                        Solicitudes Especiales
+                        {t('details.specialRequestsSection')}
                       </h3>
                       <p className="text-sm text-gray-700 bg-white p-4 rounded-lg border border-gray-200">
                         {selectedReservation.special_requests}
@@ -507,7 +582,7 @@ export default function DirectReservationsDashboard() {
                     onClick={() => setSelectedReservation(null)}
                     className="px-6 sm:px-8 py-3 bg-gradient-to-r from-gray-600 to-slate-600 text-white rounded-xl hover:from-gray-700 hover:to-slate-700 font-semibold shadow-lg transition-all duration-200 transform hover:scale-105"
                   >
-                    Cerrar
+                    {tCommon('close')}
                   </button>
                 </div>
               </div>
