@@ -1,4 +1,4 @@
-\"use client\";
+'use client';
 
 import { useState, useEffect } from 'react';
 import { Download, Eye, Users, FileText, Calendar, Search, Filter, CheckSquare, Square, Trash2, AlertTriangle, Copy, ExternalLink } from 'lucide-react';
