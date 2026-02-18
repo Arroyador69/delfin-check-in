@@ -122,6 +122,52 @@ VALUES (
   'Delfín Check-in'
 );
 
+-- ---------- Artículo: Registro de huéspedes por comunidad autónoma 2026 ----------
+DELETE FROM blog_articles
+WHERE slug = 'registro-huespedes-viviendas-turisticas-diferencias-comunidad-autonoma-2026';
+
+INSERT INTO blog_articles (
+  slug, title, meta_description, meta_keywords, content, excerpt,
+  canonical_url, schema_json, status, is_published, published_at, author_name
+)
+VALUES (
+  'registro-huespedes-viviendas-turisticas-diferencias-comunidad-autonoma-2026',
+  'Registro de huéspedes en viviendas turísticas: diferencias por comunidad autónoma (2026)',
+  'Guía 2026 del registro de viajeros por comunidad: Andalucía, Cataluña y Madrid. SES, Ministerio del Interior, obligaciones y checklist para cumplir.',
+  'registro viajeros andalucía, registro huéspedes cataluña, normativa alquiler turístico madrid, SES hospedajes, Ministerio del Interior, registro de viajeros España, alquiler vacacional 2026',
+  '<p>Guía 2026: diferencias por comunidad (Andalucía, Cataluña, Madrid) y obligaciones comunes del SES (Ministerio del Interior). Incluye tablas, ejemplos, checklist y FAQ.</p>',
+  'Diferencias por comunidad (Andalucía, Cataluña, Madrid) y obligaciones comunes del SES (Interior) para registrar huéspedes en viviendas turísticas. Guía 2026 con checklist.',
+  'https://delfincheckin.com/articulos/registro-huespedes-viviendas-turisticas-diferencias-comunidad-autonoma-2026.html',
+  '{"@context":"https://schema.org","@type":"Article","headline":"Registro de huéspedes en viviendas turísticas: diferencias por comunidad autónoma (2026)","datePublished":"2026-01-29","dateModified":"2026-01-29"}'::jsonb,
+  'published',
+  true,
+  '2026-01-29'::timestamptz,
+  'Delfín Check-in'
+);
+
+-- ---------- Artículo: Registro de viajeros sin errores checklist definitivo 2026 ----------
+DELETE FROM blog_articles
+WHERE slug = 'registro-viajeros-sin-errores-checklist-definitivo-2026';
+
+INSERT INTO blog_articles (
+  slug, title, meta_description, meta_keywords, content, excerpt,
+  canonical_url, schema_json, status, is_published, published_at, author_name
+)
+VALUES (
+  'registro-viajeros-sin-errores-checklist-definitivo-2026',
+  'Registro de viajeros sin errores: checklist definitivo para 2026',
+  'Guía 2026: errores registro viajeros, validar datos huéspedes y evitar rechazo SES. Checklist, ejemplos y respuestas claras para cumplir con el Ministerio del Interior.',
+  'errores registro viajeros, validar datos huéspedes, evitar rechazo ses, registro viajeros sin errores, checklist registro huéspedes 2026, SES Ministerio del Interior, normativa alquiler vacacional España',
+  '<p>Guía para evitar errores en el registro de viajeros: validar datos huéspedes, evitar rechazo SES, checklist y casos prácticos. Ministerio del Interior y alquiler vacacional 2026.</p>',
+  'Errores registro viajeros, validar datos huéspedes y evitar rechazo SES. Checklist definitivo y ejemplos para 2026.',
+  'https://delfincheckin.com/articulos/registro-viajeros-sin-errores-checklist-definitivo-2026.html',
+  '{"@context":"https://schema.org","@type":"Article","headline":"Registro de viajeros sin errores: checklist definitivo para 2026","datePublished":"2026-01-29","dateModified":"2026-01-29"}'::jsonb,
+  'published',
+  true,
+  '2026-01-29'::timestamptz,
+  'Delfín Check-in'
+);
+
 -- =====================================================
 -- FIN
 -- =====================================================
