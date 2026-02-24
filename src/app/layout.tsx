@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { NextIntlClientProvider } from "next-intl";
 import "./globals.css";
 import ConditionalNavigation from "@/components/ConditionalNavigation";
 import ConditionalMainPadding from "@/components/ConditionalMainPadding";
@@ -24,11 +25,14 @@ export const metadata: Metadata = {
   manifest: "/manifest.json",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Provider por defecto en español para Navigation/Footer (evita Application error)
+  const defaultMessages = (await import('../../messages/es.json')).default;
+
   return (
     <html lang="es">
       <head>
@@ -43,20 +47,22 @@ export default function RootLayout({
         />
       </head>
       <body className={inter.className}>
-        <div className="min-h-screen bg-gray-50 flex flex-col">
-          <SWRegister />
-          <ConditionalNavigation />
-          <AdsBanner />
-          <PWAInstallGuide />
-          {/* Detector de AdBlock - bloquea la página si está activo */}
-          <AdBlockDetector />
-          {/* Padding condicional: solo aplicar pt-16 si hay header */}
-          <ConditionalMainPadding>
-            {children}
-          </ConditionalMainPadding>
-          <ConditionalFooter />
-          <CookieConsentModal />
-        </div>
+        <NextIntlClientProvider locale="es" messages={defaultMessages}>
+          <div className="min-h-screen bg-gray-50 flex flex-col">
+            <SWRegister />
+            <ConditionalNavigation />
+            <AdsBanner />
+            <PWAInstallGuide />
+            {/* Detector de AdBlock - bloquea la página si está activo */}
+            <AdBlockDetector />
+            {/* Padding condicional: solo aplicar pt-16 si hay header */}
+            <ConditionalMainPadding>
+              {children}
+            </ConditionalMainPadding>
+            <ConditionalFooter />
+            <CookieConsentModal />
+          </div>
+        </NextIntlClientProvider>
       </body>
     </html>
   );
