@@ -5,12 +5,20 @@
       "schedule": "0 9,17 * * *"
     },
     {
+      "path": "/api/superadmin/programmatic/cron-articles",
+      "schedule": "0 8 * * *"
+    },
+    {
       "path": "/api/cron/daily-report",
       "schedule": "0 7 * * *"
     },
     {
       "path": "/api/cron/weekly-report",
       "schedule": "0 7 * * 0"
+    },
+    {
+      "path": "/api/superadmin/programmatic/cron-articles",
+      "schedule": "0 17 * * *"
     }
   ]
 }

@@ -3,6 +3,53 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 
+function CronArticlesCard() {
+  const [loading, setLoading] = useState(false)
+  const [result, setResult] = useState<{ created: number; failed: number; articles: Array<{ slug: string; title: string; url: string; error?: string }> } | null>(null)
+
+  const runCron = async () => {
+    setLoading(true)
+    setResult(null)
+    try {
+      const r = await fetch('/api/superadmin/programmatic/cron-articles', { method: 'POST' })
+      const data = await r.json()
+      if (data.success) setResult(data)
+      else setResult({ created: 0, failed: 2, articles: [{ slug: '', title: '', url: '', error: data.error }] })
+    } catch (e) {
+      setResult({ created: 0, failed: 2, articles: [{ slug: '', title: '', url: '', error: String(e) }] })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="bg-white rounded-lg shadow p-6 border-l-4 border-green-500">
+      <h2 className="text-xl font-bold mb-2 text-gray-900">📝 Cron de artículos SEO</h2>
+      <p className="text-sm text-gray-600 mb-4">
+        2 artículos/día (1600–2000 palabras) sobre alquiler vacacional, registro de viajeros y PMS. Se publican en <strong>articulos/*.html</strong> con header, footer, popup, waitlist y FAQ. Aparecen en Gestión de Artículos y aquí en Páginas Programáticas (tipo &quot;article&quot;). Cron automático: 8:00 UTC.
+      </p>
+      <button
+        onClick={runCron}
+        disabled={loading}
+        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+      >
+        {loading ? 'Generando...' : 'Generar 2 artículos ahora'}
+      </button>
+      {result && (
+        <div className="mt-4 p-3 bg-gray-50 rounded text-sm">
+          <p><strong>Creados:</strong> {result.created} · <strong>Fallidos:</strong> {result.failed}</p>
+          {result.articles.map((a, i) => (
+            <div key={i} className="mt-2">
+              {a.url ? <a href={a.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">{a.title}</a> : a.title}
+              {a.error && <span className="text-red-600 ml-2">{a.error}</span>}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 interface KPI {
   totalPages: number
   publishedPages: number
@@ -111,15 +158,26 @@ export default function ProgrammaticPage() {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <h1 className="text-3xl font-bold text-gray-900">📄 Páginas Programáticas</h1>
-        <Link
-          href="/superadmin/programmatic/manage"
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-        >
-          Gestionar Plantillas
-        </Link>
+        <div className="flex gap-2">
+          <Link
+            href="/superadmin/programmatic/manage"
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            Gestionar Plantillas
+          </Link>
+          <Link
+            href="/superadmin/blog-manager"
+            className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+          >
+            Artículos / Blog
+          </Link>
+        </div>
       </div>
+
+      {/* Cron de artículos SEO: 2 artículos/día con OpenAI */}
+      <CronArticlesCard />
 
       {/* KPIs */}
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
