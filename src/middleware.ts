@@ -326,7 +326,7 @@ export async function middleware(req: NextRequest) {
 
 export const config = {
   matcher: [
-    // No ejecutar middleware en raíz ni login para que Next sirva la página (evitar 404)
-    '/((?!_next/static|_next/image|favicon.ico|admin-login|forgot-password|$).*)',
+    // Incluir todas las rutas; /, /admin-login y /forgot-password hacen next() al inicio
+    '/((?!_next/static|_next/image|favicon.ico).*)',
   ],
 }
