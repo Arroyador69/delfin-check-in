@@ -1,71 +1,40 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 
 type ProgressStep = { step: string; message: string; topic?: string; article?: { slug: string; title: string; url: string } }
 
-function ProbarArticuloCard({ onCreated }: { onCreated?: () => void }) {
-  const [loading, setLoading] = useState(false)
-  const [steps, setSteps] = useState<ProgressStep[]>([])
-  const [article, setArticle] = useState<{ slug: string; title: string; url: string } | null>(null)
-  const [error, setError] = useState<string | null>(null)
-
-  const probar = async () => {
-    setLoading(true)
-    setSteps([])
-    setArticle(null)
-    setError(null)
-    try {
-      const r = await fetch('/api/superadmin/programmatic/cron-articles', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ stream: true, count: 1 }),
-      })
-      if (!r.ok || !r.body) {
-        const data = await r.json().catch(() => ({}))
-        setError(data.error || `Error ${r.status}`)
-        return
-      }
-      const reader = r.body.getReader()
-      const decoder = new TextDecoder()
-      let buffer = ''
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-        buffer += decoder.decode(value, { stream: true })
-        const lines = buffer.split('\n')
-        buffer = lines.pop() || ''
-        for (const line of lines) {
-          if (!line.trim()) continue
-          try {
-            const ev = JSON.parse(line) as ProgressStep & { step?: string }
-            setSteps((prev) => [...prev, { step: ev.step || '', message: ev.message || '', topic: ev.topic, article: ev.article }])
-            if (ev.step === 'done' && ev.article) {
-                setArticle(ev.article)
-                onCreated?.()
-              }
-            if (ev.step === 'error') setError(ev.message)
-          } catch (_) {}
-        }
-      }
-    } catch (e) {
-      setError(String(e))
-    } finally {
-      setLoading(false)
-    }
-  }
+function ProbarArticuloCard({
+  loading,
+  steps,
+  article,
+  error,
+  onProbar,
+  onCreated,
+}: {
+  loading: boolean
+  steps: ProgressStep[]
+  article: { slug: string; title: string; url: string } | null
+  error: string | null
+  onProbar: () => void
+  onCreated?: () => void
+}) {
+  // Cuando hay artículo creado, notificar para refrescar rastro
+  useEffect(() => {
+    if (article) onCreated?.()
+  }, [article, onCreated])
 
   return (
-    <div className="bg-white rounded-lg shadow p-6 border-l-4 border-green-500">
+    <div className="bg-white rounded-lg shadow-lg p-6 border-l-4 border-green-500 ring-2 ring-green-100">
       <h2 className="text-xl font-bold mb-2 text-gray-900">📝 Probar creación de artículo</h2>
       <p className="text-sm text-gray-600 mb-4">
         Crea <strong>1 artículo</strong> (1600–2000 palabras) con un tema aleatorio de los 10 definidos en código. Se publica en <strong>articulos/*.html</strong> con header, footer, popup, waitlist y FAQ. Verás el progreso paso a paso.
       </p>
       <button
-        onClick={probar}
+        onClick={onProbar}
         disabled={loading}
-        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 font-medium"
+        className="px-5 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 font-semibold text-base shadow"
       >
         {loading ? 'Creando artículo...' : 'Probar: crear 1 artículo'}
       </button>
@@ -232,6 +201,52 @@ export default function ProgrammaticPage() {
   const [metrics, setMetrics] = useState<Metrics | null>(null)
   const [metricsLoading, setMetricsLoading] = useState(true)
   const [rastroRefresh, setRastroRefresh] = useState(0)
+  const [probarLoading, setProbarLoading] = useState(false)
+  const [probarSteps, setProbarSteps] = useState<ProgressStep[]>([])
+  const [probarArticle, setProbarArticle] = useState<{ slug: string; title: string; url: string } | null>(null)
+  const [probarError, setProbarError] = useState<string | null>(null)
+
+  const runProbar = useCallback(async () => {
+    setProbarLoading(true)
+    setProbarSteps([])
+    setProbarArticle(null)
+    setProbarError(null)
+    try {
+      const r = await fetch('/api/superadmin/programmatic/cron-articles', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ stream: true, count: 1 }),
+      })
+      if (!r.ok || !r.body) {
+        const data = await r.json().catch(() => ({}))
+        setProbarError(data.error || `Error ${r.status}`)
+        return
+      }
+      const reader = r.body.getReader()
+      const decoder = new TextDecoder()
+      let buffer = ''
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop() || ''
+        for (const line of lines) {
+          if (!line.trim()) continue
+          try {
+            const ev = JSON.parse(line) as ProgressStep & { step?: string; article?: { slug: string; title: string; url: string } }
+            setProbarSteps((prev) => [...prev, { step: ev.step || '', message: ev.message || '', topic: ev.topic, article: ev.article }])
+            if (ev.step === 'done' && ev.article) setProbarArticle(ev.article)
+            if (ev.step === 'error') setProbarError(ev.message || '')
+          } catch (_) {}
+        }
+      }
+    } catch (e) {
+      setProbarError(String(e))
+    } finally {
+      setProbarLoading(false)
+    }
+  }, [])
 
   useEffect(() => {
     fetchMetrics()
@@ -256,16 +271,33 @@ export default function ProgrammaticPage() {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-4">
+      {/* Primera línea: título + botón Probar bien visible (sin Gestionar Plantillas) */}
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <h1 className="text-3xl font-bold text-gray-900">📄 Páginas Programáticas</h1>
-        <Link href="/superadmin/blog-manager" className="text-sm text-gray-600 hover:text-blue-600">
-          Ver artículos en Blog →
-        </Link>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={runProbar}
+            disabled={probarLoading}
+            className="px-5 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 font-semibold shadow"
+          >
+            {probarLoading ? 'Creando...' : 'Probar: crear 1 artículo'}
+          </button>
+          <Link href="/superadmin/blog-manager" className="text-sm text-gray-600 hover:text-blue-600">
+            Ver artículos en Blog →
+          </Link>
+        </div>
       </div>
 
-      {/* Siempre visible: Probar + Rastro (no dependen de métricas) */}
+      {/* Siempre visible: Probar (card con progreso) + Rastro */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <ProbarArticuloCard onCreated={() => setRastroRefresh((n) => n + 1)} />
+        <ProbarArticuloCard
+          loading={probarLoading}
+          steps={probarSteps}
+          article={probarArticle}
+          error={probarError}
+          onProbar={runProbar}
+          onCreated={() => setRastroRefresh((n) => n + 1)}
+        />
         <RastroArticulosCard key={rastroRefresh} />
       </div>
 
