@@ -5,7 +5,7 @@ import Link from 'next/link'
 
 type ProgressStep = { step: string; message: string; topic?: string; article?: { slug: string; title: string; url: string } }
 
-function ProbarArticuloCard() {
+function ProbarArticuloCard({ onCreated }: { onCreated?: () => void }) {
   const [loading, setLoading] = useState(false)
   const [steps, setSteps] = useState<ProgressStep[]>([])
   const [article, setArticle] = useState<{ slug: string; title: string; url: string } | null>(null)
@@ -41,7 +41,10 @@ function ProbarArticuloCard() {
           try {
             const ev = JSON.parse(line) as ProgressStep & { step?: string }
             setSteps((prev) => [...prev, { step: ev.step || '', message: ev.message || '', topic: ev.topic, article: ev.article }])
-            if (ev.step === 'done' && ev.article) setArticle(ev.article)
+            if (ev.step === 'done' && ev.article) {
+                setArticle(ev.article)
+                onCreated?.()
+              }
             if (ev.step === 'error') setError(ev.message)
           } catch (_) {}
         }
@@ -164,21 +167,81 @@ interface Metrics {
   }>
 }
 
+interface ProgrammaticPageRow {
+  id: string
+  slug: string
+  title: string
+  type: string
+  status: string
+  published_at: string | null
+  created_at: string
+  canonical_url: string | null
+}
+
+function RastroArticulosCard() {
+  const [pages, setPages] = useState<ProgrammaticPageRow[]>([])
+  const [loading, setLoading] = useState(true)
+  useEffect(() => {
+    const fetchPages = async () => {
+      try {
+        const r = await fetch('/api/superadmin/programmatic/pages?type=article&limit=20')
+        if (r.ok) {
+          const data = await r.json()
+          setPages(data.pages || [])
+        }
+      } catch (_) {}
+      finally { setLoading(false) }
+    }
+    fetchPages()
+  }, [])
+
+  return (
+    <div className="bg-white rounded-lg shadow p-6 border-l-4 border-blue-500">
+      <div className="flex items-center justify-between flex-wrap gap-2 mb-4">
+        <h2 className="text-xl font-bold text-gray-900">📋 Rastro de artículos creados</h2>
+        <Link href="/superadmin/blog-manager" className="text-sm font-medium text-blue-600 hover:text-blue-700">
+          Ver todos en Monitoreo de artículos →
+        </Link>
+      </div>
+      <p className="text-sm text-gray-600 mb-4">
+        Los artículos generados aquí (Probar o cron) se guardan en <strong>blog_articles</strong> y <strong>programmatic_pages</strong> y aparecen también en <strong>Monitoreo de artículos / Blog</strong> para edición y seguimiento.
+      </p>
+      {loading ? (
+        <p className="text-sm text-gray-500">Cargando listado...</p>
+      ) : pages.length === 0 ? (
+        <p className="text-sm text-gray-500">Aún no hay artículos programáticos (tipo article). Usa &quot;Probar: crear 1 artículo&quot; para crear el primero.</p>
+      ) : (
+        <ul className="space-y-2 max-h-64 overflow-y-auto">
+          {pages.map((p) => (
+            <li key={p.id} className="flex items-center justify-between gap-2 text-sm border-b border-gray-100 pb-2">
+              <a href={p.canonical_url || `https://delfincheckin.com/articulos/${p.slug}.html`} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline truncate flex-1">
+                {p.title}
+              </a>
+              <span className="text-gray-400 shrink-0">
+                {p.published_at ? new Date(p.published_at).toLocaleDateString() : new Date(p.created_at).toLocaleDateString()}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  )
+}
+
 export default function ProgrammaticPage() {
   const [metrics, setMetrics] = useState<Metrics | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [metricsLoading, setMetricsLoading] = useState(true)
+  const [rastroRefresh, setRastroRefresh] = useState(0)
 
   useEffect(() => {
     fetchMetrics()
-    
-    // Auto-refresh cada 5 minutos
     const interval = setInterval(fetchMetrics, 5 * 60 * 1000)
     return () => clearInterval(interval)
   }, [])
 
   const fetchMetrics = async () => {
     try {
-      setLoading(true)
+      setMetricsLoading(true)
       const response = await fetch('/api/superadmin/programmatic/metrics?days=30')
       if (response.ok) {
         const data = await response.json()
@@ -187,24 +250,8 @@ export default function ProgrammaticPage() {
     } catch (error) {
       console.error('Error obteniendo métricas:', error)
     } finally {
-      setLoading(false)
+      setMetricsLoading(false)
     }
-  }
-
-  if (loading) {
-    return (
-      <div className="container mx-auto p-6">
-        <div className="text-center">Cargando métricas...</div>
-      </div>
-    )
-  }
-
-  if (!metrics) {
-    return (
-      <div className="container mx-auto p-6">
-        <div className="text-center text-red-600">Error cargando métricas</div>
-      </div>
-    )
   }
 
   return (
@@ -216,8 +263,19 @@ export default function ProgrammaticPage() {
         </Link>
       </div>
 
-      {/* Probar: crear 1 artículo con progreso en vivo */}
-      <ProbarArticuloCard />
+      {/* Siempre visible: Probar + Rastro (no dependen de métricas) */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <ProbarArticuloCard onCreated={() => setRastroRefresh((n) => n + 1)} />
+        <RastroArticulosCard key={rastroRefresh} />
+      </div>
+
+      {/* Métricas: cargando o contenido */}
+      {metricsLoading ? (
+        <div className="text-center py-8 text-gray-500">Cargando métricas...</div>
+      ) : !metrics ? (
+        <div className="text-center py-8 text-red-600">Error cargando métricas</div>
+      ) : (
+        <>
 
       {/* KPIs */}
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -419,6 +477,8 @@ export default function ProgrammaticPage() {
           </p>
         </div>
       </div>
+        </>
+      )}
     </div>
   )
 }
