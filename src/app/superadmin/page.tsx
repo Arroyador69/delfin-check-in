@@ -277,6 +277,17 @@ export default function SuperAdminDashboard() {
               </a>
 
               <a 
+                href="/superadmin/programmatic/crear-articulo"
+                className="flex items-center p-4 border border-green-200 rounded-lg hover:bg-green-50 transition bg-green-50/50"
+              >
+                <span className="text-2xl mr-3">📝</span>
+                <div>
+                  <p className="font-semibold text-gray-900">Crear 1 artículo (Probar)</p>
+                  <p className="text-sm text-gray-700">Generar artículo con OpenAI y ver progreso</p>
+                </div>
+              </a>
+
+              <a 
                 href="/superadmin/radar-reach"
                 className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition"
               >

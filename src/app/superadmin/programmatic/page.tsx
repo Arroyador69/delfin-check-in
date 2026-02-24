@@ -271,10 +271,10 @@ export default function ProgrammaticPage() {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      {/* Primera línea: título + botón Probar bien visible (sin Gestionar Plantillas) */}
+      {/* Primera línea: título + botón Probar + enlace a página dedicada */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <h1 className="text-3xl font-bold text-gray-900">📄 Páginas Programáticas</h1>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <button
             onClick={runProbar}
             disabled={probarLoading}
@@ -282,6 +282,12 @@ export default function ProgrammaticPage() {
           >
             {probarLoading ? 'Creando...' : 'Probar: crear 1 artículo'}
           </button>
+          <Link
+            href="/superadmin/programmatic/crear-articulo"
+            className="px-4 py-2 border-2 border-green-600 text-green-700 rounded-lg hover:bg-green-50 font-medium"
+          >
+            Página solo Crear artículo
+          </Link>
           <Link href="/superadmin/blog-manager" className="text-sm text-gray-600 hover:text-blue-600">
             Ver artículos en Blog →
           </Link>

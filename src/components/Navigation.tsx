@@ -103,6 +103,7 @@ export default function Navigation() {
     { name: 'Tenants', href: '/superadmin/tenants', icon: Users },
     { name: 'Analytics', href: '/superadmin/analytics', icon: TrendingUp },
     { name: 'Páginas Programáticas', href: '/superadmin/programmatic', icon: FileText },
+    { name: 'Crear artículo (Probar)', href: '/superadmin/programmatic/crear-articulo', icon: FileText },
     { name: 'Radar Reach', href: '/superadmin/radar-reach', icon: Target },
     { name: 'Logs', href: '/superadmin/logs', icon: Shield },
   ];
