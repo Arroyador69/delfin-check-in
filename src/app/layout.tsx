@@ -21,7 +21,7 @@ export const dynamic = 'force-dynamic';
 export const metadata: Metadata = {
   title: "Delfín Check-in 🐬",
   description: "Gestión inteligente de habitaciones Airbnb y Booking.com",
-  manifest: "/manifest.json",
+  manifest: "/api/manifest",
 };
 
 export default function RootLayout({

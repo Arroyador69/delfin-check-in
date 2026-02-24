@@ -3,8 +3,7 @@ const CACHE_NAME = 'delfin-checkin-v2';
 const urlsToCache = [
   '/',
   '/manifest.json',
-  '/next.svg',
-  '/vercel.svg'
+  '/next.svg'
 ];
 
 // Instalación del service worker
@@ -250,7 +249,7 @@ self.addEventListener('push', (event) => {
   const options = {
     body: event.data ? event.data.text() : 'Nueva notificación de Delfín Check-in',
     icon: '/next.svg',
-    badge: '/vercel.svg',
+    badge: '/next.svg',
     vibrate: [100, 50, 100],
     data: {
       dateOfArrival: Date.now(),

@@ -182,6 +182,7 @@ export async function middleware(req: NextRequest) {
   
   // Rutas completamente públicas - no requieren autenticación
   const isPublicRoute = (
+    pathname === '/api/manifest' ||
     pathname === '/admin-login' ||
     pathname === '/forgot-password' ||
     pathname.startsWith('/book/') ||
