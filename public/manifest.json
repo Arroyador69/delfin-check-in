@@ -14,7 +14,7 @@
       "purpose": "any"
     },
     {
-      "src": "/vercel.svg",
+      "src": "/next.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"

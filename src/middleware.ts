@@ -45,6 +45,8 @@ export async function middleware(req: NextRequest) {
     pathname === '/robots.txt' ||
     pathname.startsWith('/icon') ||
     pathname.startsWith('/sw.js') ||
+    pathname === '/vercel.svg' ||
+    pathname === '/next.svg' ||
     pathname === '/landing-tracking.js' ||
     pathname.endsWith('.js') && pathname.startsWith('/landing-')
   ) {
