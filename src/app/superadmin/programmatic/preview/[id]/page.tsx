@@ -104,7 +104,7 @@ export default function PreviewPage() {
           <p>{error || 'Página no encontrada'}</p>
         </div>
         <Link
-          href="/superadmin/programmatic/manage"
+          href="/superadmin/programmatic"
           className="mt-4 inline-block text-blue-600 hover:underline"
         >
           ← Volver a Plantillas
@@ -121,7 +121,7 @@ export default function PreviewPage() {
           <div className="flex items-center justify-between">
             <div>
               <Link
-                href="/superadmin/programmatic/manage"
+                href="/superadmin/programmatic"
                 className="text-blue-600 hover:underline text-sm"
               >
                 ← Volver a Plantillas

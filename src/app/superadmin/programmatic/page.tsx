@@ -3,20 +3,51 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 
-function CronArticlesCard() {
-  const [loading, setLoading] = useState(false)
-  const [result, setResult] = useState<{ created: number; failed: number; articles: Array<{ slug: string; title: string; url: string; error?: string }> } | null>(null)
+type ProgressStep = { step: string; message: string; topic?: string; article?: { slug: string; title: string; url: string } }
 
-  const runCron = async () => {
+function ProbarArticuloCard() {
+  const [loading, setLoading] = useState(false)
+  const [steps, setSteps] = useState<ProgressStep[]>([])
+  const [article, setArticle] = useState<{ slug: string; title: string; url: string } | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  const probar = async () => {
     setLoading(true)
-    setResult(null)
+    setSteps([])
+    setArticle(null)
+    setError(null)
     try {
-      const r = await fetch('/api/superadmin/programmatic/cron-articles', { method: 'POST' })
-      const data = await r.json()
-      if (data.success) setResult(data)
-      else setResult({ created: 0, failed: 2, articles: [{ slug: '', title: '', url: '', error: data.error }] })
+      const r = await fetch('/api/superadmin/programmatic/cron-articles', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ stream: true, count: 1 }),
+      })
+      if (!r.ok || !r.body) {
+        const data = await r.json().catch(() => ({}))
+        setError(data.error || `Error ${r.status}`)
+        return
+      }
+      const reader = r.body.getReader()
+      const decoder = new TextDecoder()
+      let buffer = ''
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop() || ''
+        for (const line of lines) {
+          if (!line.trim()) continue
+          try {
+            const ev = JSON.parse(line) as ProgressStep & { step?: string }
+            setSteps((prev) => [...prev, { step: ev.step || '', message: ev.message || '', topic: ev.topic, article: ev.article }])
+            if (ev.step === 'done' && ev.article) setArticle(ev.article)
+            if (ev.step === 'error') setError(ev.message)
+          } catch (_) {}
+        }
+      }
     } catch (e) {
-      setResult({ created: 0, failed: 2, articles: [{ slug: '', title: '', url: '', error: String(e) }] })
+      setError(String(e))
     } finally {
       setLoading(false)
     }
@@ -24,26 +55,46 @@ function CronArticlesCard() {
 
   return (
     <div className="bg-white rounded-lg shadow p-6 border-l-4 border-green-500">
-      <h2 className="text-xl font-bold mb-2 text-gray-900">📝 Cron de artículos SEO</h2>
+      <h2 className="text-xl font-bold mb-2 text-gray-900">📝 Probar creación de artículo</h2>
       <p className="text-sm text-gray-600 mb-4">
-        2 artículos/día (1600–2000 palabras) sobre alquiler vacacional, registro de viajeros y PMS. Se publican en <strong>articulos/*.html</strong> con header, footer, popup, waitlist y FAQ. Aparecen en Gestión de Artículos y aquí en Páginas Programáticas (tipo &quot;article&quot;). Cron automático: 8:00 UTC.
+        Crea <strong>1 artículo</strong> (1600–2000 palabras) con un tema aleatorio de los 10 definidos en código. Se publica en <strong>articulos/*.html</strong> con header, footer, popup, waitlist y FAQ. Verás el progreso paso a paso.
       </p>
       <button
-        onClick={runCron}
+        onClick={probar}
         disabled={loading}
-        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 font-medium"
       >
-        {loading ? 'Generando...' : 'Generar 2 artículos ahora'}
+        {loading ? 'Creando artículo...' : 'Probar: crear 1 artículo'}
       </button>
-      {result && (
-        <div className="mt-4 p-3 bg-gray-50 rounded text-sm">
-          <p><strong>Creados:</strong> {result.created} · <strong>Fallidos:</strong> {result.failed}</p>
-          {result.articles.map((a, i) => (
-            <div key={i} className="mt-2">
-              {a.url ? <a href={a.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">{a.title}</a> : a.title}
-              {a.error && <span className="text-red-600 ml-2">{a.error}</span>}
-            </div>
-          ))}
+
+      {steps.length > 0 && (
+        <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+          <p className="text-sm font-semibold text-gray-700 mb-2">Progreso:</p>
+          <ul className="space-y-1 text-sm">
+            {steps.map((s, i) => (
+              <li key={i} className="flex items-center gap-2">
+                <span className="text-green-600">✓</span>
+                <span className="text-gray-700">{s.message}</span>
+                {s.topic && <span className="text-gray-500">— {s.topic}</span>}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {error && (
+        <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded text-sm text-red-700">
+          {error}
+        </div>
+      )}
+
+      {article && (
+        <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+          <p className="text-sm font-semibold text-green-800 mb-1">Artículo creado y publicado</p>
+          <a href={article.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline font-medium">
+            {article.title}
+          </a>
+          <p className="text-xs text-gray-600 mt-1">{article.url}</p>
         </div>
       )}
     </div>
@@ -160,24 +211,13 @@ export default function ProgrammaticPage() {
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-4">
         <h1 className="text-3xl font-bold text-gray-900">📄 Páginas Programáticas</h1>
-        <div className="flex gap-2">
-          <Link
-            href="/superadmin/programmatic/manage"
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-          >
-            Gestionar Plantillas
-          </Link>
-          <Link
-            href="/superadmin/blog-manager"
-            className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
-          >
-            Artículos / Blog
-          </Link>
-        </div>
+        <Link href="/superadmin/blog-manager" className="text-sm text-gray-600 hover:text-blue-600">
+          Ver artículos en Blog →
+        </Link>
       </div>
 
-      {/* Cron de artículos SEO: 2 artículos/día con OpenAI */}
-      <CronArticlesCard />
+      {/* Probar: crear 1 artículo con progreso en vivo */}
+      <ProbarArticuloCard />
 
       {/* KPIs */}
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">

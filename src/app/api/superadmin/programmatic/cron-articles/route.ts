@@ -111,7 +111,15 @@ export async function POST(req: NextRequest) {
     const { error } = await verifySuperAdmin(req);
     if (error) return error;
 
-    const result = await runCronArticles();
+    const body = await req.json().catch(() => ({}));
+    const stream = body.stream === true;
+    const count = Math.min(Math.max(1, parseInt(body.count, 10) || ARTICLES_PER_RUN), 10);
+
+    if (stream && count === 1) {
+      return streamOneArticle();
+    }
+
+    const result = await runCronArticles(count);
     return NextResponse.json({ success: true, ...result });
   } catch (error: any) {
     console.error('❌ Cron artículos:', error);
@@ -122,7 +130,108 @@ export async function POST(req: NextRequest) {
   }
 }
 
-async function runCronArticles(): Promise<{
+/** Respuesta en stream NDJSON para ver progreso al crear 1 artículo (Probar) */
+function streamOneArticle(): Response {
+  const encoder = new TextEncoder();
+  function push(obj: object) {
+    return encoder.encode(JSON.stringify(obj) + '\n');
+  }
+
+  const stream = new ReadableStream({
+    async start(controller) {
+      try {
+        const today = getTodayISO();
+        const readTimeMin = 8;
+        const topics = pickRandomTopics(1);
+        const topic = topics[0];
+
+        controller.enqueue(push({ step: 'topic', message: 'Tema elegido', topic: topic.title }));
+
+        controller.enqueue(push({ step: 'openai', message: 'Generando artículo con OpenAI (1–2 min)...' }));
+        const generated = await generateArticleWithOpenAI(topic);
+        controller.enqueue(push({ step: 'openai_done', message: `Generado: ${generated.word_count} palabras` }));
+
+        controller.enqueue(push({ step: 'slug', message: 'Comprobando slug único...' }));
+        const slug = await ensureUniqueSlug(generated.slug);
+        const canonicalUrl = `https://delfincheckin.com/articulos/${slug}.html`;
+
+        const schemaJson = {
+          '@context': 'https://schema.org',
+          '@type': 'Article',
+          headline: generated.title,
+          datePublished: today,
+          dateModified: today,
+          author: { '@type': 'Organization', name: 'Delfín Check-in' },
+        };
+
+        controller.enqueue(push({ step: 'db', message: 'Guardando en blog_articles y programmatic_pages...' }));
+        await sql`
+          INSERT INTO blog_articles (
+            slug, title, meta_description, meta_keywords, content, excerpt,
+            canonical_url, schema_json, status, is_published, published_at, author_name
+          ) VALUES (
+            ${slug}, ${generated.title}, ${generated.meta_description}, ${generated.meta_keywords},
+            ${generated.content_html}, ${generated.excerpt},
+            ${canonicalUrl}, ${JSON.stringify(schemaJson)}::jsonb,
+            'published', true, ${today}::timestamptz, 'Delfín Check-in'
+          )
+        `;
+        await sql`
+          INSERT INTO programmatic_pages (
+            template_id, type, slug, canonical_url, title, meta_description,
+            content_html, content_jsonld, variables_used, word_count, status, published_at
+          ) VALUES (
+            NULL, 'article', ${slug}, ${canonicalUrl}, ${generated.title}, ${generated.meta_description},
+            ${generated.content_html}, ${JSON.stringify(schemaJson)}::jsonb,
+            ${JSON.stringify({ topic_id: topic.id, topic_title: topic.title })}::jsonb,
+            ${generated.word_count || 0}, 'published', ${today}::timestamptz
+          )
+        `;
+        controller.enqueue(push({ step: 'db_done', message: 'Guardado en BD' }));
+
+        controller.enqueue(push({ step: 'github', message: 'Publicando en GitHub (articulos/)...' }));
+        const fullHtml = buildFullArticleHTML({
+          slug,
+          title: generated.title,
+          meta_description: generated.meta_description,
+          meta_keywords: generated.meta_keywords,
+          content_html: generated.content_html,
+          published_date: today,
+          read_time_min: readTimeMin,
+          faq: generated.faq || [],
+        });
+        const publishResult = await publishArticleToGitHub(slug, fullHtml, generated.title);
+
+        if (publishResult.success) {
+          controller.enqueue(push({
+            step: 'done',
+            message: 'Artículo creado y publicado',
+            article: { slug, title: generated.title, url: canonicalUrl },
+          }));
+        } else {
+          controller.enqueue(push({
+            step: 'error',
+            message: publishResult.error || 'Error al publicar en GitHub',
+            article: { slug, title: generated.title, url: canonicalUrl },
+          }));
+        }
+      } catch (err: any) {
+        controller.enqueue(push({ step: 'error', message: err.message || 'Error interno' }));
+      } finally {
+        controller.close();
+      }
+    },
+  });
+
+  return new Response(stream, {
+    headers: {
+      'Content-Type': 'application/x-ndjson',
+      'Cache-Control': 'no-store',
+    },
+  });
+}
+
+async function runCronArticles(count: number = ARTICLES_PER_RUN): Promise<{
   created: number;
   failed: number;
   articles: Array<{ slug: string; title: string; url: string; error?: string }>;
@@ -133,7 +242,7 @@ async function runCronArticles(): Promise<{
   let created = 0;
   let failed = 0;
 
-  const topics = pickRandomTopics(ARTICLES_PER_RUN);
+  const topics = pickRandomTopics(count);
 
   for (const topic of topics) {
     try {
