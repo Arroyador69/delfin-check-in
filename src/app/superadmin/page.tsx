@@ -74,9 +74,23 @@ export default function SuperAdminDashboard() {
 
   return (
     <div className="container mx-auto p-6">
-      <div className="mb-8">
+      <div className="mb-6">
         <h1 className="text-3xl font-bold text-gray-900">👑 SuperAdmin Dashboard</h1>
         <p className="text-gray-700 mt-2">Gestión central de la plataforma Delfín Check-in</p>
+      </div>
+
+      {/* Bloque fijo: Crear 1 artículo — siempre visible, primera acción */}
+      <div className="mb-8 rounded-xl border-2 border-green-500 bg-green-50 p-6 shadow">
+        <h2 className="text-lg font-bold text-gray-900 mb-2">📝 Crear 1 artículo (Probar)</h2>
+        <p className="text-gray-700 text-sm mb-4">
+          Genera un artículo SEO con OpenAI (tema aleatorio de los 10 definidos). Se publica en delfincheckin.com/articulos y en Monitoreo de artículos.
+        </p>
+        <a
+          href="/superadmin/programmatic/crear-articulo"
+          className="inline-flex items-center px-6 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 shadow"
+        >
+          Probar: crear 1 artículo →
+        </a>
       </div>
 
       {stats.loading ? (
@@ -133,6 +147,16 @@ export default function SuperAdminDashboard() {
           <div className="bg-white rounded-lg shadow p-6 mb-8">
             <h2 className="text-xl font-bold mb-4 text-gray-900">⚡ Acciones Rápidas</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <a 
+                href="/superadmin/programmatic/crear-articulo"
+                className="flex items-center p-4 border-2 border-green-400 rounded-lg bg-green-50 hover:bg-green-100 transition"
+              >
+                <span className="text-2xl mr-3">📝</span>
+                <div>
+                  <p className="font-semibold text-gray-900">Crear 1 artículo (Probar)</p>
+                  <p className="text-sm text-gray-700">Generar artículo con OpenAI y ver progreso</p>
+                </div>
+              </a>
               <a 
                 href="/superadmin/metrics"
                 className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition"
@@ -273,17 +297,6 @@ export default function SuperAdminDashboard() {
                 <div>
                   <p className="font-semibold text-gray-900">Páginas Programáticas</p>
                   <p className="text-sm text-gray-700">SEO y métricas</p>
-                </div>
-              </a>
-
-              <a 
-                href="/superadmin/programmatic/crear-articulo"
-                className="flex items-center p-4 border border-green-200 rounded-lg hover:bg-green-50 transition bg-green-50/50"
-              >
-                <span className="text-2xl mr-3">📝</span>
-                <div>
-                  <p className="font-semibold text-gray-900">Crear 1 artículo (Probar)</p>
-                  <p className="text-sm text-gray-700">Generar artículo con OpenAI y ver progreso</p>
                 </div>
               </a>
 
