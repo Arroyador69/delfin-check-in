@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
@@ -31,6 +31,13 @@ export default function AdminLoginPage() {
   } | null>(null)
   
   const router = useRouter()
+
+  // Si ya hay sesión, ir a Reservas (evita quedarse en login al venir desde /)
+  useEffect(() => {
+    fetch('/api/tenant', { credentials: 'include' })
+      .then((r) => { if (r.ok) router.replace('/reservations') })
+      .catch(() => {})
+  }, [router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -77,14 +84,14 @@ export default function AdminLoginPage() {
         setEmail('')
         setPassword('')
         
-        // Redirigir al dashboard (replace para evitar volver al login)
+        // Redirigir a Reservas (dashboard); la raíz puede 404 en producción
+        const target = '/reservations'
         setTimeout(() => {
-          router.replace('/')
+          router.replace(target)
         }, 300)
-        // Fallback duro por si el enrutador no navega en algunos navegadores
         setTimeout(() => {
-          if (typeof window !== 'undefined' && window.location.pathname !== '/') {
-            window.location.replace('/')
+          if (typeof window !== 'undefined' && window.location.pathname === '/admin-login') {
+            window.location.replace(target)
           }
         }, 1200)
         

@@ -31,6 +31,12 @@ const nextConfig: NextConfig = {
     };
     return config;
   },
+  // Si la raíz devuelve 404 en producción, redirigir a login para que el usuario pueda entrar
+  async redirects() {
+    return [
+      { source: '/', destination: '/admin-login', permanent: false },
+    ];
+  },
   // Configuración PWA simplificada
   async headers() {
     return [
