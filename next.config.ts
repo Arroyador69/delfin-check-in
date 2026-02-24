@@ -1,10 +1,14 @@
 import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 import createNextIntlPlugin from 'next-intl/plugin';
+import path from 'path';
 
 const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 
 const nextConfig: NextConfig = {
+  // Evita que Next infiera la raíz del workspace (p.ej. $HOME) por múltiples lockfiles.
+  // Esto mejora el output file tracing y previene errores en runtime en Vercel.
+  outputFileTracingRoot: path.resolve(__dirname),
   // output: 'standalone' REMOVIDO - causaba conflictos con next-intl
   // Usamos dynamic: 'force-dynamic' en layouts en su lugar
   serverExternalPackages: ['pdfkit'],
