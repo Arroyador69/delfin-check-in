@@ -33,10 +33,15 @@ export async function middleware(req: NextRequest) {
   // Preflight CORS
   if (req.method === 'OPTIONS') return NextResponse.next();
 
+  // Raíz y login: no pasar por auth en edge para evitar 404; Next.js los sirve directo
+  if (pathname === '/' || pathname === '/admin-login' || pathname === '/forgot-password') {
+    return NextResponse.next();
+  }
+
   // Archivos estáticos y rutas especiales de Next.js - siempre permitir
   if (
     pathname.startsWith('/_next') ||
-    pathname === '/_not-found' || // Ruta especial de Next.js 404
+    pathname === '/_not-found' ||
     pathname.startsWith('/static') ||
     pathname.startsWith('/images') ||
     pathname.startsWith('/fonts') ||
@@ -321,6 +326,7 @@ export async function middleware(req: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico).*)',
+    // No ejecutar middleware en raíz ni login para que Next sirva la página (evitar 404)
+    '/((?!_next/static|_next/image|favicon.ico|admin-login|forgot-password|$).*)',
   ],
 }
