@@ -42,6 +42,7 @@ export default function BlogManagerPage() {
   const [generateTopic, setGenerateTopic] = useState('');
   const [generateStep, setGenerateStep] = useState<'idle' | 'enviando' | 'generando' | 'guardando'>('idle');
   const [publishingToGitHubSlug, setPublishingToGitHubSlug] = useState<string | null>(null);
+  const [lastPublishedUrl, setLastPublishedUrl] = useState<string | null>(null);
 
   useEffect(() => {
     fetchArticles();
@@ -196,6 +197,7 @@ export default function BlogManagerPage() {
       });
       const data = await response.json();
       if (!data.success) throw new Error(data.error);
+      setLastPublishedUrl(null);
       setMessage({ type: 'success', text: `"${article.title}" está ahora publicado.` });
       fetchArticles();
     } catch (err: any) {
@@ -215,12 +217,16 @@ export default function BlogManagerPage() {
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Error al publicar en GitHub');
+      const url = data.url || `https://delfincheckin.com/articulos/${article.slug}.html`;
+      setLastPublishedUrl(url);
       setMessage({
         type: 'success',
-        text: data.message || `Artículo subido al repo. URL: ${data.url || 'delfincheckin.com/articulos/' + article.slug + '.html'}`
+        text: data.message || `Artículo subido al repo. En unos minutos estará en la web.`
       });
+      if (data.url) window.open(data.url, '_blank');
     } catch (err: any) {
       setMessage({ type: 'error', text: err.message || 'Error al publicar en GitHub' });
+      setLastPublishedUrl(null);
     } finally {
       setPublishingToGitHubSlug(null);
     }
@@ -266,6 +272,7 @@ export default function BlogManagerPage() {
       if (!response.ok) {
         throw new Error(data.error || 'Error al generar');
       }
+      setLastPublishedUrl(null);
       setMessage({ type: 'success', text: data.message || 'Artículo creado como borrador.' });
       setGenerateTopic('');
       await fetchArticles();
@@ -433,7 +440,17 @@ export default function BlogManagerPage() {
             ? 'bg-green-50 border-green-200 text-green-800'
             : 'bg-red-50 border-red-200 text-red-800'
         }`}>
-          {message.text}
+          <p>{message.text}</p>
+          {message.type === 'success' && lastPublishedUrl && (
+            <a
+              href={lastPublishedUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block mt-2 font-semibold underline"
+            >
+              Abrir página en la web →
+            </a>
+          )}
         </div>
       )}
 
@@ -610,7 +627,7 @@ export default function BlogManagerPage() {
       {/* Aclaración: Publicar = BD; En GitHub = repo landing */}
       {!showForm && articles.length > 0 && (
         <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-900">
-          <strong>Para que el artículo aparezca en delfincheckin.com:</strong> primero <strong>Publicar</strong> (guarda en la base de datos) y luego <strong>🚀 En GitHub</strong> (sube el HTML al repo de la landing). Así la URL pública dejará de dar 404. <strong>Ver</strong> abre la vista previa en el admin.
+          <strong>Para que el artículo aparezca en la web:</strong> primero <strong>Publicar</strong> (guarda en la BD) y luego <strong>🚀 En GitHub</strong> (sube el HTML al repo). Al pulsar En GitHub se abrirá la página en una nueva pestaña. <strong>Ver en web</strong> abre la URL pública en delfincheckin.com.
         </div>
       )}
 
@@ -670,12 +687,12 @@ export default function BlogManagerPage() {
                             ✏️ Editar
                           </button>
                           <a
-                            href={`/superadmin/blog-manager/preview/${article.slug}`}
+                            href={`https://delfincheckin.com/articulos/${article.slug}.html`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="px-3 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200 text-sm font-semibold"
                           >
-                            👁️ Ver
+                            👁️ Ver en web
                           </a>
                           {!article.is_published && article.status !== 'archived' && (
                             <button
