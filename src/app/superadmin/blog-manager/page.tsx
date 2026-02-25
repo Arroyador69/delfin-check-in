@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 
 interface Article {
   id: string;
@@ -21,6 +22,7 @@ interface Article {
 }
 
 export default function BlogManagerPage() {
+  const searchParams = useSearchParams();
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -42,6 +44,12 @@ export default function BlogManagerPage() {
   useEffect(() => {
     fetchArticles();
   }, []);
+
+  useEffect(() => {
+    if (searchParams.get('crear') === '1' && !loading) {
+      setShowForm(true);
+    }
+  }, [searchParams, loading]);
 
   const fetchArticles = async () => {
     try {

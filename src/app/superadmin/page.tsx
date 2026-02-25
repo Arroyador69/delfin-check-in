@@ -161,6 +161,22 @@ export default function SuperAdminDashboard() {
             </div>
           </div>
 
+          {/* Botón destacado: Crear artículo */}
+          <div className="bg-white rounded-lg shadow p-6 mb-6 border-2 border-blue-200">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-bold text-gray-900">📝 Crear artículo del blog</h2>
+                <p className="text-sm text-gray-600 mt-1">Redactar y publicar un nuevo artículo en el blog</p>
+              </div>
+              <a
+                href="/superadmin/blog-manager?crear=1"
+                className="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold shadow-md"
+              >
+                ➕ Crear artículo
+              </a>
+            </div>
+          </div>
+
           {/* Acciones Rápidas */}
           <div className="bg-white rounded-lg shadow p-6 mb-8">
             <h2 className="text-xl font-bold mb-4 text-gray-900">⚡ Acciones Rápidas</h2>
