@@ -169,7 +169,7 @@ export default function SuperAdminDashboard() {
                 <p className="text-sm text-gray-600 mt-1">Redactar y publicar un nuevo artículo en el blog</p>
               </div>
               <a
-                href="/superadmin/blog-manager?crear=1"
+                href="/superadmin/blog-manager"
                 className="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold shadow-md"
               >
                 ➕ Crear artículo
