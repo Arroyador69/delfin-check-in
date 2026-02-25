@@ -40,6 +40,8 @@ export default function BlogManagerPage() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
   const [importing, setImporting] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [generateTopic, setGenerateTopic] = useState('');
 
   useEffect(() => {
     fetchArticles();
@@ -187,6 +189,48 @@ export default function BlogManagerPage() {
     setMessage(null);
   };
 
+  const TEMAS_SUGERIDOS = [
+    'Plazo para registrar viajeros y consecuencias de retraso',
+    'Declaración informativa alquileres corta duración 2026',
+    'Diferencias por comunidad autónoma en registro de huéspedes',
+    'Errores frecuentes al enviar datos al SES',
+    'Mejor software de registro de huéspedes España 2026',
+    'Automatizar el registro de viajeros con un PMS',
+    'Nueva normativa alquiler turístico 2027 y registro viajeros',
+    'Check-in digital obligatorio y envío al Ministerio del Interior',
+    'Multas por no registrar en Airbnb y Booking (actualizado 2026)',
+    '¿Quién debe registrar: propietario o plataforma?'
+  ];
+
+  const handleGenerateArticle = async (topic: string) => {
+    const t = (topic || generateTopic || '').trim();
+    if (!t) {
+      setMessage({ type: 'error', text: 'Escribe o elige un tema para el artículo.' });
+      return;
+    }
+    setMessage(null);
+    setGenerating(true);
+    try {
+      const response = await fetch('/api/superadmin/blog/generate-article', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ topic: t })
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Error al generar');
+      }
+      setMessage({ type: 'success', text: data.message || 'Artículo creado como borrador.' });
+      setGenerateTopic('');
+      fetchArticles();
+    } catch (err: any) {
+      setMessage({ type: 'error', text: err.message || 'Error al generar el artículo.' });
+    } finally {
+      setGenerating(false);
+    }
+  };
+
   const importFirstArticle = async () => {
     if (!confirm('¿Importar el artículo "Multas por no registrar viajeros" a la base de datos?')) {
       return;
@@ -262,6 +306,47 @@ export default function BlogManagerPage() {
             >
               {importing ? 'Importando...' : 'Importar Ahora'}
             </button>
+          </div>
+        )}
+
+        {/* Generar artículo con IA: solo eliges tema, sin escribir nada */}
+        {!showForm && (
+          <div className="mt-6 bg-gradient-to-r from-violet-50 to-indigo-50 border border-violet-200 rounded-xl p-6">
+            <h3 className="text-lg font-bold text-gray-900 mb-2">🤖 Generar artículo con IA</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Elige un tema relacionado con registro de viajeros, Ministerio del Interior, multas, declaración informativa, etc. El artículo se crea como borrador (waitlist, popup y estilo como el resto).
+            </p>
+            <div className="flex flex-wrap gap-2 mb-4">
+              {TEMAS_SUGERIDOS.map((tema) => (
+                <button
+                  key={tema}
+                  type="button"
+                  onClick={() => handleGenerateArticle(tema)}
+                  disabled={generating}
+                  className="px-4 py-2 bg-white border border-violet-200 rounded-lg text-sm font-medium text-gray-800 hover:bg-violet-100 hover:border-violet-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {tema}
+                </button>
+              ))}
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <input
+                type="text"
+                value={generateTopic}
+                onChange={(e) => setGenerateTopic(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleGenerateArticle(generateTopic))}
+                placeholder="Otro tema (ej: sanciones por no enviar el parte a tiempo)"
+                className="flex-1 min-w-[200px] px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
+              />
+              <button
+                type="button"
+                onClick={() => handleGenerateArticle(generateTopic)}
+                disabled={generating}
+                className="px-5 py-2 bg-violet-600 text-white rounded-lg font-semibold hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {generating ? 'Generando...' : 'Generar y crear borrador'}
+              </button>
+            </div>
           </div>
         )}
       </div>
