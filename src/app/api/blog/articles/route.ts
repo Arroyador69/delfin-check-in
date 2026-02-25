@@ -220,25 +220,29 @@ export async function PUT(req: NextRequest) {
       const existing = await sql`
         SELECT is_published FROM blog_articles WHERE id = ${id}::uuid
       `;
-      
       if (existing.rows.length > 0 && !existing.rows[0].is_published) {
         updates.published_at = new Date().toISOString();
       }
     }
 
-    // Construir query dinámica de actualización
-    const fields = Object.keys(updates);
-    const setClause = fields.map((field, index) => {
-      const value = updates[field];
-      if (field === 'schema_json' && value) {
-        return sql`${sql(field)} = ${JSON.stringify(value)}::jsonb`;
-      }
-      return sql`${sql(field)} = ${value}`;
-    }).join(', ');
-
+    // Actualizar solo columnas permitidas con consultas explícitas (evita sql.unsafe/sql(field) que fallan en @vercel/postgres)
+    const now = new Date().toISOString();
     const result = await sql`
       UPDATE blog_articles
-      SET ${sql.unsafe(setClause)}
+      SET
+        slug = COALESCE(${updates.slug ?? null}, slug),
+        title = COALESCE(${updates.title ?? null}, title),
+        meta_description = COALESCE(${updates.meta_description ?? null}, meta_description),
+        meta_keywords = COALESCE(${updates.meta_keywords ?? null}, meta_keywords),
+        content = COALESCE(${updates.content ?? null}, content),
+        excerpt = COALESCE(${updates.excerpt ?? null}, excerpt),
+        status = COALESCE(${updates.status ?? null}, status),
+        is_published = COALESCE(${updates.is_published ?? null}, is_published),
+        published_at = COALESCE(${updates.published_at ?? null}, published_at),
+        author_name = COALESCE(${updates.author_name ?? null}, author_name),
+        canonical_url = COALESCE(${updates.canonical_url ?? null}, canonical_url),
+        schema_json = COALESCE(${updates.schema_json != null ? JSON.stringify(updates.schema_json) : null}::jsonb, schema_json),
+        updated_at = ${now}
       WHERE id = ${id}::uuid
       RETURNING *
     `;
