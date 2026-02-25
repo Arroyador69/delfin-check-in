@@ -40,6 +40,7 @@ export default function BlogManagerPage() {
   const [importing, setImporting] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [generateTopic, setGenerateTopic] = useState('');
+  const [generateStep, setGenerateStep] = useState<'idle' | 'enviando' | 'generando' | 'guardando'>('idle');
 
   useEffect(() => {
     fetchArticles();
@@ -202,6 +203,11 @@ export default function BlogManagerPage() {
     }
     setMessage(null);
     setGenerating(true);
+    setGenerateStep('enviando');
+
+    // Mostrar progreso por pasos (visual)
+    const t1 = setTimeout(() => setGenerateStep('generando'), 1200);
+
     try {
       const response = await fetch('/api/superadmin/blog/generate-article', {
         method: 'POST',
@@ -209,17 +215,22 @@ export default function BlogManagerPage() {
         credentials: 'include',
         body: JSON.stringify({ topic: t })
       });
+
+      setGenerateStep('guardando');
+
       const data = await response.json();
       if (!response.ok) {
         throw new Error(data.error || 'Error al generar');
       }
       setMessage({ type: 'success', text: data.message || 'Artículo creado como borrador.' });
       setGenerateTopic('');
-      fetchArticles();
+      await fetchArticles();
     } catch (err: any) {
       setMessage({ type: 'error', text: err.message || 'Error al generar el artículo.' });
     } finally {
+      clearTimeout(t1);
       setGenerating(false);
+      setGenerateStep('idle');
     }
   };
 
@@ -298,6 +309,34 @@ export default function BlogManagerPage() {
             >
               {importing ? 'Importando...' : 'Importar Ahora'}
             </button>
+          </div>
+        )}
+
+        {/* Progreso visible al generar artículo */}
+        {generating && (
+          <div className="mt-6 bg-white border-2 border-violet-300 rounded-xl p-6 shadow-lg">
+            <div className="flex items-center gap-4">
+              <div className="flex-shrink-0 w-12 h-12 rounded-full border-4 border-violet-200 border-t-violet-600 animate-spin" />
+              <div>
+                <h3 className="text-lg font-bold text-gray-900">Generando artículo</h3>
+                <p className="text-gray-600 mt-1">
+                  {generateStep === 'enviando' && 'Enviando tema a la IA...'}
+                  {generateStep === 'generando' && 'Generando título, contenido y SEO (puede tardar unos segundos)...'}
+                  {generateStep === 'guardando' && 'Guardando borrador en la base de datos...'}
+                </p>
+              </div>
+            </div>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium ${generateStep === 'enviando' ? 'bg-violet-100 text-violet-800' : generateStep === 'generando' || generateStep === 'guardando' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-500'}`}>
+                {(generateStep === 'generando' || generateStep === 'guardando') ? '✓' : '1'} Enviar
+              </span>
+              <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium ${generateStep === 'generando' ? 'bg-violet-100 text-violet-800' : generateStep === 'guardando' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-500'}`}>
+                {generateStep === 'guardando' ? '✓' : '2'} Generar contenido
+              </span>
+              <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium ${generateStep === 'guardando' ? 'bg-violet-100 text-violet-800' : 'bg-gray-100 text-gray-500'}`}>
+                3 Guardar borrador
+              </span>
+            </div>
           </div>
         )}
 
