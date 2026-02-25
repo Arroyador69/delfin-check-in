@@ -583,6 +583,13 @@ export default function BlogManagerPage() {
         </div>
       )}
 
+      {/* Aclaración: Publicar = BD; web pública = repo landing */}
+      {!showForm && articles.length > 0 && (
+        <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-900">
+          <strong>¿Por qué «Ver» a veces da 404 en delfincheckin.com?</strong> Al pulsar <strong>Publicar</strong> el artículo se guarda como publicado en la <strong>base de datos</strong>. La web delfincheckin.com es un <strong>repo aparte (GitHub Pages)</strong> con HTML estáticos; para que una URL aparezca ahí hay que tener el archivo en ese repo. Aquí <strong>Ver</strong> abre la vista previa en el admin (siempre funciona); el enlace a delfincheckin.com puede dar 404 hasta que el artículo exista en el repo de la landing.
+        </div>
+      )}
+
       {/* Lista de Artículos */}
       {!showForm && (
         <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
@@ -639,7 +646,7 @@ export default function BlogManagerPage() {
                             ✏️ Editar
                           </button>
                           <a
-                            href={`https://delfincheckin.com/articulos/${article.slug}.html`}
+                            href={`/superadmin/blog-manager/preview/${article.slug}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="px-3 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200 text-sm font-semibold"
