@@ -182,6 +182,26 @@ export default function BlogManagerPage() {
     setMessage(null);
   };
 
+  const handlePublish = async (article: Article) => {
+    try {
+      const response = await fetch('/api/blog/articles', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: article.id,
+          is_published: true,
+          status: 'published'
+        })
+      });
+      const data = await response.json();
+      if (!data.success) throw new Error(data.error);
+      setMessage({ type: 'success', text: `"${article.title}" está ahora publicado.` });
+      fetchArticles();
+    } catch (err: any) {
+      setMessage({ type: 'error', text: err.message || 'Error al publicar' });
+    }
+  };
+
   const TEMAS_SUGERIDOS = [
     'Plazo para registrar viajeros y consecuencias de retraso',
     'Declaración informativa alquileres corta duración 2026',
@@ -611,22 +631,28 @@ export default function BlogManagerPage() {
                           : new Date(article.created_at).toLocaleDateString('es-ES')}
                       </td>
                       <td className="py-4 px-6 text-right">
-                        <div className="flex gap-2 justify-end">
+                        <div className="flex flex-wrap gap-2 justify-end">
                           <button
                             onClick={() => handleEdit(article)}
                             className="px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 text-sm font-semibold"
                           >
                             ✏️ Editar
                           </button>
-                          {article.is_published && (
-                            <a
-                              href={`https://delfincheckin.com/articulos/${article.slug}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="px-3 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200 text-sm font-semibold"
+                          <a
+                            href={`https://delfincheckin.com/articulos/${article.slug}.html`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-3 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200 text-sm font-semibold"
+                          >
+                            👁️ Ver
+                          </a>
+                          {!article.is_published && article.status !== 'archived' && (
+                            <button
+                              onClick={() => handlePublish(article)}
+                              className="px-3 py-1 bg-emerald-100 text-emerald-800 rounded hover:bg-emerald-200 text-sm font-semibold"
                             >
-                              👁️ Ver
-                            </a>
+                              📤 Publicar
+                            </button>
                           )}
                           <button
                             onClick={() => handleDelete(article.id, article.title)}
