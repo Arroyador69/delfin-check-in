@@ -41,6 +41,7 @@ export default function BlogManagerPage() {
   const [generating, setGenerating] = useState(false);
   const [generateTopic, setGenerateTopic] = useState('');
   const [generateStep, setGenerateStep] = useState<'idle' | 'enviando' | 'generando' | 'guardando'>('idle');
+  const [publishingToGitHubSlug, setPublishingToGitHubSlug] = useState<string | null>(null);
 
   useEffect(() => {
     fetchArticles();
@@ -199,6 +200,29 @@ export default function BlogManagerPage() {
       fetchArticles();
     } catch (err: any) {
       setMessage({ type: 'error', text: err.message || 'Error al publicar' });
+    }
+  };
+
+  const handlePublishToGitHub = async (article: Article) => {
+    setMessage(null);
+    setPublishingToGitHubSlug(article.slug);
+    try {
+      const response = await fetch('/api/superadmin/blog/publish-to-github', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ slug: article.slug })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Error al publicar en GitHub');
+      setMessage({
+        type: 'success',
+        text: data.message || `Artículo subido al repo. URL: ${data.url || 'delfincheckin.com/articulos/' + article.slug + '.html'}`
+      });
+    } catch (err: any) {
+      setMessage({ type: 'error', text: err.message || 'Error al publicar en GitHub' });
+    } finally {
+      setPublishingToGitHubSlug(null);
     }
   };
 
@@ -583,10 +607,10 @@ export default function BlogManagerPage() {
         </div>
       )}
 
-      {/* Aclaración: Publicar = BD; web pública = repo landing */}
+      {/* Aclaración: Publicar = BD; En GitHub = repo landing */}
       {!showForm && articles.length > 0 && (
         <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-900">
-          <strong>¿Por qué «Ver» a veces da 404 en delfincheckin.com?</strong> Al pulsar <strong>Publicar</strong> el artículo se guarda como publicado en la <strong>base de datos</strong>. La web delfincheckin.com es un <strong>repo aparte (GitHub Pages)</strong> con HTML estáticos; para que una URL aparezca ahí hay que tener el archivo en ese repo. Aquí <strong>Ver</strong> abre la vista previa en el admin (siempre funciona); el enlace a delfincheckin.com puede dar 404 hasta que el artículo exista en el repo de la landing.
+          <strong>Para que el artículo aparezca en delfincheckin.com:</strong> primero <strong>Publicar</strong> (guarda en la base de datos) y luego <strong>🚀 En GitHub</strong> (sube el HTML al repo de la landing). Así la URL pública dejará de dar 404. <strong>Ver</strong> abre la vista previa en el admin.
         </div>
       )}
 
@@ -661,6 +685,14 @@ export default function BlogManagerPage() {
                               📤 Publicar
                             </button>
                           )}
+                          <button
+                            onClick={() => handlePublishToGitHub(article)}
+                            disabled={publishingToGitHubSlug !== null}
+                            title="Subir HTML al repo delfincheckin.com para que aparezca en la web"
+                            className="px-3 py-1 bg-slate-100 text-slate-800 rounded hover:bg-slate-200 text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {publishingToGitHubSlug === article.slug ? 'Subiendo...' : '🚀 En GitHub'}
+                          </button>
                           <button
                             onClick={() => handleDelete(article.id, article.title)}
                             className="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 text-sm font-semibold"
