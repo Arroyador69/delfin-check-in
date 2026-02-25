@@ -15,9 +15,17 @@ export default function SuperAdminDashboard() {
   const [radarReachStats, setRadarReachStats] = useState<any>(null)
   const [loadingRadarReach, setLoadingRadarReach] = useState(true)
 
+  const [cronCreations, setCronCreations] = useState<{
+    stats: { status: string; count: string; today_count: string; published_today: string }[];
+    scheduled_today: number;
+  } | null>(null)
+  const [loadingCronCreations, setLoadingCronCreations] = useState(true)
+  const [errorCronCreations, setErrorCronCreations] = useState<string | null>(null)
+
   useEffect(() => {
     fetchStats()
     fetchRadarReachStats()
+    fetchCronCreations()
   }, [])
 
   const fetchStats = async () => {
@@ -69,6 +77,30 @@ export default function SuperAdminDashboard() {
       })
     } finally {
       setLoadingRadarReach(false)
+    }
+  }
+
+  const fetchCronCreations = async () => {
+    setErrorCronCreations(null)
+    setLoadingCronCreations(true)
+    try {
+      const response = await fetch('/api/superadmin/programmatic/cron?action=status', { credentials: 'include' })
+      if (!response.ok) {
+        const errText = await response.text()
+        setCronCreations(null)
+        setErrorCronCreations(errText || `Error ${response.status}`)
+        return
+      }
+      const data = await response.json()
+      setCronCreations({
+        stats: data.stats || [],
+        scheduled_today: typeof data.scheduled_today === 'number' ? data.scheduled_today : parseInt(data.scheduled_today, 10) || 0
+      })
+    } catch (e: any) {
+      setCronCreations(null)
+      setErrorCronCreations(e?.message || 'Error al conectar')
+    } finally {
+      setLoadingCronCreations(false)
     }
   }
 
@@ -287,6 +319,75 @@ export default function SuperAdminDashboard() {
                 </div>
               </a>
             </div>
+          </div>
+
+          {/* Tarjeta: Estado del cron - Creaciones programáticas */}
+          <div className="bg-white rounded-lg shadow p-6 mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-gray-900">🔄 Creaciones programáticas (Cron)</h2>
+              <a
+                href="/superadmin/programmatic"
+                className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+              >
+                Ir a Páginas programáticas →
+              </a>
+            </div>
+
+            {loadingCronCreations ? (
+              <div className="text-center py-8">
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+                <p className="mt-4 text-gray-600">Cargando estado del cron...</p>
+              </div>
+            ) : errorCronCreations ? (
+              <div className="text-center py-8">
+                <p className="text-gray-600">No se pudo cargar el estado del cron.</p>
+                <p className="text-sm text-gray-500 mt-1">{errorCronCreations}</p>
+                <button
+                  type="button"
+                  onClick={fetchCronCreations}
+                  className="mt-4 px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300"
+                >
+                  Reintentar
+                </button>
+              </div>
+            ) : cronCreations ? (
+              <>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                  <div className="bg-amber-50 rounded-lg p-4 border border-amber-200">
+                    <p className="text-xs text-gray-600 mb-1">Programadas hoy</p>
+                    <p className="text-2xl font-bold text-gray-900">{cronCreations.scheduled_today}</p>
+                  </div>
+                  {(cronCreations.stats && cronCreations.stats.length > 0) ? cronCreations.stats.map((row: any) => (
+                    <div
+                      key={row.status}
+                      className={`rounded-lg p-4 border ${
+                        row.status === 'published' ? 'bg-green-50 border-green-200' :
+                        row.status === 'scheduled' ? 'bg-blue-50 border-blue-200' :
+                        row.status === 'draft' ? 'bg-gray-50 border-gray-200' :
+                        'bg-slate-50 border-slate-200'
+                      }`}
+                    >
+                      <p className="text-xs text-gray-600 mb-1">{row.status}</p>
+                      <p className="text-2xl font-bold text-gray-900">{row.count}</p>
+                      {(row.published_today !== undefined && parseInt(row.published_today, 10) > 0) && (
+                        <p className="text-xs text-gray-500 mt-1">Publicadas hoy: {row.published_today}</p>
+                      )}
+                    </div>
+                  )) : (
+                    <div className="col-span-3 text-sm text-gray-500 py-2">
+                      Aún no hay páginas en la base de datos. Crea páginas en Páginas programáticas.
+                    </div>
+                  )}
+                </div>
+                <p className="text-sm text-gray-500">
+                  El cron publica páginas a las 9:00 y 17:00 UTC. Aquí ves cuántas hay por estado y cuántas se programaron para hoy.
+                </p>
+              </>
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                Sin datos de creaciones programáticas.
+              </div>
+            )}
           </div>
 
           {/* Radar Reach Stats - SIEMPRE VISIBLE */}
