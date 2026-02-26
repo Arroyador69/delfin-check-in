@@ -1,8 +1,16 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+
+/** Redirigir solo a rutas internas (evita open redirect). */
+function getSafeRedirect(redirect: string | null): string {
+  if (!redirect || typeof redirect !== 'string') return '/'
+  const decoded = decodeURIComponent(redirect.trim())
+  if (decoded.startsWith('/') && !decoded.startsWith('//') && !decoded.includes(':')) return decoded
+  return '/'
+}
 
 /**
  * 🔐 PÁGINA DE LOGIN MULTI-TENANT
@@ -31,13 +39,20 @@ export default function AdminLoginPage() {
   } | null>(null)
   
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const redirectParam = searchParams.get('redirect')
 
-  // Si ya hay sesión, ir a Reservas (evita quedarse en login al venir desde /)
+  // Si ya hay sesión, ir al Dashboard (/) o a la URL guardada en ?redirect=
   useEffect(() => {
     fetch('/api/tenant', { credentials: 'include' })
-      .then((r) => { if (r.ok) router.replace('/reservations') })
+      .then((r) => {
+        if (r.ok) {
+          const target = getSafeRedirect(redirectParam)
+          router.replace(target)
+        }
+      })
       .catch(() => {})
-  }, [router])
+  }, [router, redirectParam])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -79,13 +94,11 @@ export default function AdminLoginPage() {
       const data = await response.json()
 
       if (response.ok) {
-        // Login exitoso
+        // Login exitoso: ir al Dashboard (/) o a la URL guardada en ?redirect=
         setSuccess(true)
         setEmail('')
         setPassword('')
-        
-        // Redirigir a Reservas (dashboard); la raíz puede 404 en producción
-        const target = '/reservations'
+        const target = getSafeRedirect(redirectParam)
         setTimeout(() => {
           router.replace(target)
         }, 300)

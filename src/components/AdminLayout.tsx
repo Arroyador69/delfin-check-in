@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 
 /**
  * 🎨 LAYOUT ADMINISTRATIVO
@@ -20,6 +20,7 @@ export default function AdminLayout({ children, showHeader = true }: AdminLayout
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const router = useRouter()
+  const pathname = usePathname()
 
   useEffect(() => {
     checkAuth()
@@ -51,20 +52,24 @@ export default function AdminLayout({ children, showHeader = true }: AdminLayout
           if (refreshed) {
             setIsAuthenticated(true)
           } else {
-            router.push('/admin-login')
+            const redirect = (pathname && pathname !== '/admin-login') ? encodeURIComponent(pathname) : ''
+            router.push(redirect ? `/admin-login?redirect=${redirect}` : '/admin-login')
             return
           }
         } else {
-          router.push('/admin-login')
+          const redirect = (pathname && pathname !== '/admin-login') ? encodeURIComponent(pathname) : ''
+          router.push(redirect ? `/admin-login?redirect=${redirect}` : '/admin-login')
           return
         }
       } else {
-        router.push('/admin-login')
+        const redirect = (pathname && pathname !== '/admin-login') ? encodeURIComponent(pathname) : ''
+        router.push(redirect ? `/admin-login?redirect=${redirect}` : '/admin-login')
         return
       }
     } catch (error) {
       console.error('Error checking auth:', error)
-      router.push('/admin-login')
+      const redirect = (pathname && pathname !== '/admin-login') ? encodeURIComponent(pathname) : ''
+      router.push(redirect ? `/admin-login?redirect=${redirect}` : '/admin-login')
       return
     } finally {
       setIsLoading(false)
