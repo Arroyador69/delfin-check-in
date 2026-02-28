@@ -281,24 +281,22 @@ export async function POST(req: NextRequest) {
       }
     });
     
-    // Cookie de access token (2 horas)
+    // Cookie de access token (2 horas). Sin domain = host-only (se envía siempre al mismo host que setea la cookie)
     response.cookies.set(AUTH_CONFIG.cookieName, accessToken, {
       httpOnly: true,
-      secure: isProduction, // Usar HTTPS en producción
-      sameSite: 'lax', // Mejor compatibilidad
-      maxAge: 60 * 60 * 2, // 2 horas en segundos
+      secure: isProduction,
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 2,
       path: '/',
-      domain: isProduction ? '.delfincheckin.com' : undefined, // Dominio para producción
     });
     
     // Cookie de refresh token (7 días)
     response.cookies.set(AUTH_CONFIG.refreshCookieName, refreshToken, {
       httpOnly: true,
-      secure: isProduction, // Usar HTTPS en producción
-      sameSite: 'lax', // Mejor compatibilidad
-      maxAge: 60 * 60 * 24 * 7, // 7 días en segundos
-      path: '/api/auth', // Solo accesible en rutas de auth
-      domain: isProduction ? '.delfincheckin.com' : undefined, // Dominio para producción
+      secure: isProduction,
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 7,
+      path: '/api/auth',
     });
 
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

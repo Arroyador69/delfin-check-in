@@ -195,6 +195,7 @@ export async function middleware(req: NextRequest) {
     pathname.startsWith('/api/check-') ||
     pathname.startsWith('/api/onboarding/') ||
     pathname.startsWith('/api/admin/login') ||
+    pathname.startsWith('/api/auth/verify') ||
     pathname.startsWith('/api/auth/mobile-login') ||
     pathname.startsWith('/api/auth/refresh') ||
     pathname.startsWith('/api/create-payment-intent') ||
@@ -271,8 +272,10 @@ export async function middleware(req: NextRequest) {
         pathname.startsWith('/api/check-') ||
         pathname.startsWith('/api/onboarding/') ||
         pathname.startsWith('/api/admin/login') ||
+        pathname.startsWith('/api/auth/verify') ||
         pathname.startsWith('/api/auth/mobile-login') ||
         pathname.startsWith('/api/auth/refresh') ||
+        pathname === '/api/tenant' ||
         pathname.startsWith('/api/stripe/webhook') ||
         pathname.startsWith('/api/create-payment-intent') ||
         pathname.startsWith('/api/blog/analytics/') ||

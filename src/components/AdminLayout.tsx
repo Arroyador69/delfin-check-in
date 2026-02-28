@@ -42,35 +42,37 @@ export default function AdminLayout({ children, showHeader = true }: AdminLayout
 
       if (response.ok) {
         setIsAuthenticated(true)
-      } else if (response.status === 401) {
-        const data = await response.json()
-        
-        // Si el token expiró, intentar renovarlo
-        if (data.expired) {
-          const refreshed = await tryRefreshToken()
-          
-          if (refreshed) {
-            setIsAuthenticated(true)
-          } else {
-            const redirect = (pathname && pathname !== '/admin-login') ? encodeURIComponent(pathname) : ''
-            router.push(redirect ? `/admin-login?redirect=${redirect}` : '/admin-login')
-            return
-          }
-        } else {
-          const redirect = (pathname && pathname !== '/admin-login') ? encodeURIComponent(pathname) : ''
-          router.push(redirect ? `/admin-login?redirect=${redirect}` : '/admin-login')
-          return
-        }
-      } else {
-        const redirect = (pathname && pathname !== '/admin-login') ? encodeURIComponent(pathname) : ''
-        router.push(redirect ? `/admin-login?redirect=${redirect}` : '/admin-login')
         return
       }
-    } catch (error) {
-      console.error('Error checking auth:', error)
+
+      if (response.status === 401) {
+        const data = await response.json().catch(() => ({}))
+        if (data.expired) {
+          const refreshed = await tryRefreshToken()
+          if (refreshed) {
+            setIsAuthenticated(true)
+            return
+          }
+        }
+        // Fallback: si verify falla, comprobar con /api/tenant (misma cookie)
+        const tenantRes = await fetch('/api/tenant', { method: 'GET', credentials: 'include' })
+        if (tenantRes.ok) {
+          setIsAuthenticated(true)
+          return
+        }
+      }
+
       const redirect = (pathname && pathname !== '/admin-login') ? encodeURIComponent(pathname) : ''
       router.push(redirect ? `/admin-login?redirect=${redirect}` : '/admin-login')
-      return
+    } catch (error) {
+      console.error('Error checking auth:', error)
+      const tenantRes = await fetch('/api/tenant', { method: 'GET', credentials: 'include' }).catch(() => null)
+      if (tenantRes?.ok) {
+        setIsAuthenticated(true)
+        return
+      }
+      const redirect = (pathname && pathname !== '/admin-login') ? encodeURIComponent(pathname) : ''
+      router.push(redirect ? `/admin-login?redirect=${redirect}` : '/admin-login')
     } finally {
       setIsLoading(false)
     }

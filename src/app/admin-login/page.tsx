@@ -47,7 +47,7 @@ export default function AdminLoginPage() {
     fetch('/api/tenant', { credentials: 'include' })
       .then((r) => {
         if (r.ok) {
-          const target = getSafeRedirect(redirectParam)
+          const target = getSafeRedirect(redirectParam) === '/' ? '/reservations' : getSafeRedirect(redirectParam)
           router.replace(target)
         }
       })
@@ -82,9 +82,10 @@ export default function AdminLoginPage() {
     }
 
     try {
-      // Llamar a la API de login
+      // Llamar a la API de login (credentials: 'include' para que el navegador guarde las cookies Set-Cookie)
       const response = await fetch('/api/admin/login', {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -94,11 +95,11 @@ export default function AdminLoginPage() {
       const data = await response.json()
 
       if (response.ok) {
-        // Login exitoso: ir al Dashboard (/) o a la URL guardada en ?redirect=
+        // Login exitoso: ir a Reservas por defecto (ruta estable) o a ?redirect= si viene
         setSuccess(true)
         setEmail('')
         setPassword('')
-        const target = getSafeRedirect(redirectParam)
+        const target = getSafeRedirect(redirectParam) === '/' ? '/reservations' : getSafeRedirect(redirectParam)
         setTimeout(() => {
           router.replace(target)
         }, 300)

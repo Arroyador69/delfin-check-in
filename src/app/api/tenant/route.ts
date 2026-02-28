@@ -1,19 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
+import { verifyToken, AUTH_CONFIG } from '@/lib/auth';
 
 /**
- * API para obtener información del tenant actual
- * Usado por el dashboard para mostrar límites y configuración del plan
+ * API para obtener información del tenant actual.
+ * Acepta x-tenant-id (middleware) o cookie auth_token (fallback).
  */
 export async function GET(req: NextRequest) {
   try {
-    // Obtener tenant_id del header (enviado por el middleware)
-    const tenantId = req.headers.get('x-tenant-id');
-    
+    let tenantId = req.headers.get('x-tenant-id');
+    if (!tenantId) {
+      const authToken = req.cookies.get(AUTH_CONFIG.cookieName)?.value;
+      if (authToken) {
+        const payload = verifyToken(authToken);
+        if (payload?.tenantId) tenantId = payload.tenantId;
+      }
+    }
     if (!tenantId) {
       return NextResponse.json(
         { error: 'No se pudo identificar el tenant' },
-        { status: 400 }
+        { status: 401 }
       );
     }
 
