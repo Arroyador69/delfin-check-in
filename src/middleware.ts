@@ -122,6 +122,7 @@ export async function middleware(req: NextRequest) {
     pathname === '/admin-login' ||
     pathname === '/forgot-password' ||
     pathname === '/' || // Ruta raíz
+    pathname.startsWith('/dashboard') ||
     pathname.startsWith('/reservations') ||
     pathname.startsWith('/calendar') ||
     pathname.startsWith('/settings') ||

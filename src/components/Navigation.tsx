@@ -61,9 +61,9 @@ export default function Navigation() {
       .catch(err => console.error('Error fetching user:', err));
   }, []);
 
-  // Menú de Tenant (normal) - Filtrar según plan
+  // Menú de Tenant. Dashboard en /dashboard (protegido por middleware como /reservations)
   const allTenantNavigation = [
-    { name: t('dashboard'), href: '/', icon: Home, requiresLegal: false },
+    { name: t('dashboard'), href: '/dashboard', icon: Home, requiresLegal: false },
     { name: t('reservations'), href: '/reservations', icon: Calendar, requiresLegal: false },
     { name: t('directReservations'), href: '/admin/direct-reservations', icon: Calendar, requiresLegal: false },
     { name: t('calendar'), href: '/calendar', icon: Calendar, requiresLegal: false },
@@ -116,7 +116,7 @@ export default function Navigation() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center">
-            <Link href="/" className="flex-shrink-0 flex items-center">
+            <Link href="/dashboard" className="flex-shrink-0 flex items-center">
               <span className="text-2xl mr-2">🐬</span>
               <span className="text-xl font-bold text-gray-900">Delfín Check-in</span>
             </Link>

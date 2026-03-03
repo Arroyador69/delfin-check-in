@@ -23,8 +23,8 @@ export default function AdminLayout({ children, showHeader = true }: AdminLayout
   const pathname = usePathname()
 
   useEffect(() => {
-    // En la ruta / (dashboard), dar un breve margen para que la cookie esté disponible tras la navegación
-    const isDashboard = pathname === '/' || pathname === ''
+    // En dashboard (/ o /dashboard), dar un breve margen para que la cookie esté disponible
+    const isDashboard = pathname === '/' || pathname === '' || pathname === '/dashboard'
     const delay = isDashboard ? 400 : 0
     const t = setTimeout(() => {
       checkAuth()
@@ -63,8 +63,8 @@ export default function AdminLayout({ children, showHeader = true }: AdminLayout
           setIsAuthenticated(true)
           return
         }
-        // Solo en dashboard (/): varios reintentos para que la validación pase y se muestre el dashboard
-        if (pathname === '/' || pathname === '') {
+        // Solo en dashboard (/ o /dashboard): varios reintentos para que se muestre el contenido
+        if (pathname === '/' || pathname === '' || pathname === '/dashboard') {
           for (const delayMs of [500, 1000]) {
             await new Promise((r) => setTimeout(r, delayMs))
             const retryVerify = await fetch('/api/auth/verify', { method: 'GET', credentials: 'include' })

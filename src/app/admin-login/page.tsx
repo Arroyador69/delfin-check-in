@@ -42,13 +42,13 @@ export default function AdminLoginPage() {
   const searchParams = useSearchParams()
   const redirectParam = searchParams.get('redirect')
 
-  // Si ya hay sesión, ir al panel. Por defecto /reservations (entrada estable); si hay ?redirect= válido, allí.
+  // Si ya hay sesión, ir al panel. Por defecto /dashboard; si hay ?redirect= válido, allí.
   useEffect(() => {
     fetch('/api/tenant', { credentials: 'include' })
       .then((r) => {
         if (r.ok) {
           const raw = getSafeRedirect(redirectParam)
-          const target = raw === '/' ? '/reservations' : raw
+          const target = raw === '/' ? '/dashboard' : raw
           router.replace(target)
         }
       })
@@ -96,12 +96,12 @@ export default function AdminLoginPage() {
       const data = await response.json()
 
       if (response.ok) {
-        // Login exitoso: ir a /reservations (entrada estable; evita bucle con /) o a ?redirect= si viene
+        // Login exitoso: ir a /dashboard (vídeo y resúmenes) o a ?redirect= si viene
         setSuccess(true)
         setEmail('')
         setPassword('')
         const raw = getSafeRedirect(redirectParam)
-        const target = raw === '/' ? '/reservations' : raw
+        const target = raw === '/' ? '/dashboard' : raw
         setTimeout(() => {
           router.replace(target)
         }, 300)
