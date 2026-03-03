@@ -47,7 +47,7 @@ export default function AdminLoginPage() {
     fetch('/api/tenant', { credentials: 'include' })
       .then((r) => {
         if (r.ok) {
-          const target = getSafeRedirect(redirectParam) === '/' ? '/reservations' : getSafeRedirect(redirectParam)
+          const target = getSafeRedirect(redirectParam)
           router.replace(target)
         }
       })
@@ -95,11 +95,11 @@ export default function AdminLoginPage() {
       const data = await response.json()
 
       if (response.ok) {
-        // Login exitoso: ir a Reservas por defecto (ruta estable) o a ?redirect= si viene
+        // Login exitoso: ir al Dashboard (/) o a la URL guardada en ?redirect=
         setSuccess(true)
         setEmail('')
         setPassword('')
-        const target = getSafeRedirect(redirectParam) === '/' ? '/reservations' : getSafeRedirect(redirectParam)
+        const target = getSafeRedirect(redirectParam)
         setTimeout(() => {
           router.replace(target)
         }, 300)
