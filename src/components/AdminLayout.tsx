@@ -60,6 +60,20 @@ export default function AdminLayout({ children, showHeader = true }: AdminLayout
           setIsAuthenticated(true)
           return
         }
+        // Solo en la página principal (/): reintentar una vez tras un breve retraso (la cookie a veces tarda en enviarse al navegar)
+        if (pathname === '/' || pathname === '') {
+          await new Promise((r) => setTimeout(r, 500))
+          const retryVerify = await fetch('/api/auth/verify', { method: 'GET', credentials: 'include' })
+          if (retryVerify.ok) {
+            setIsAuthenticated(true)
+            return
+          }
+          const retryTenant = await fetch('/api/tenant', { method: 'GET', credentials: 'include' })
+          if (retryTenant?.ok) {
+            setIsAuthenticated(true)
+            return
+          }
+        }
       }
 
       const redirect = (pathname && pathname !== '/admin-login') ? encodeURIComponent(pathname) : ''
