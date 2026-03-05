@@ -268,6 +268,7 @@
     "step4": {
       "title": "🏠 Aggiungi Proprietà",
       "intro": "Aggiungi almeno una proprietà o camera per iniziare a gestire le prenotazioni.",
+      "optionalForOtherTenants": "Puoi aggiungere proprietà più avanti in Impostazioni. Puoi continuare senza aggiungerne per ora.",
       "propertyAddedSuccess": "✅ Proprietà aggiunta con successo",
       "existingProperties": "Proprietà esistenti:",
       "propertyName": "Nome Proprietà/Camera *",

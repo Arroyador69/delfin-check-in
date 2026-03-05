@@ -43,6 +43,7 @@ export default function OnboardingPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>('');
   const [rooms, setRooms] = useState<Array<{id: number, name: string}>>([]);
+  const [tenant, setTenant] = useState<{ email?: string } | null>(null);
   
   const [formData, setFormData] = useState<OnboardingData>({
     currentPassword: '',
@@ -79,7 +80,7 @@ export default function OnboardingPage() {
     try {
       const tenantResponse = await fetch('/api/tenant');
       const tenantData = await tenantResponse.json();
-      
+      if (tenantData.tenant) setTenant(tenantData.tenant);
       if (tenantData.tenant?.onboarding_status === 'completed') {
         router.push('/');
         return;
@@ -126,8 +127,8 @@ export default function OnboardingPage() {
         return true;
       case 3: // MIR (opcional, puede saltarse)
         return true;
-      case 4: // Añadir propiedad
-        if (!formData.propertyAdded) {
+      case 4: // Añadir propiedad (obligatorio solo para tenant contacto@delfincheckin.com)
+        if (tenant?.email === 'contacto@delfincheckin.com' && !formData.propertyAdded) {
           setError(t('errors.mustAddProperty'));
           return false;
         }
@@ -724,6 +725,12 @@ export default function OnboardingPage() {
           {t('step4.intro')}
         </p>
 
+        {tenant?.email !== 'contacto@delfincheckin.com' && (
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
+            <p className="text-amber-800">{t('step4.optionalForOtherTenants')}</p>
+          </div>
+        )}
+
         {formData.propertyAdded && (
           <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
             <p className="text-green-800 font-semibold">{t('step4.propertyAddedSuccess')}</p>
@@ -783,7 +790,7 @@ export default function OnboardingPage() {
           </button>
           <button
             onClick={handleSubmit}
-            disabled={loading || !formData.propertyAdded}
+            disabled={loading || (tenant?.email === 'contacto@delfincheckin.com' && !formData.propertyAdded)}
             className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
           >
             {loading ? t('step4.completing') : t('step4.completeSetup')}

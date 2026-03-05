@@ -136,10 +136,24 @@ export async function POST(req: NextRequest) {
     const parsed = PublicGuestRegistrationSchema.safeParse(json);
     
     if (!parsed.success) {
-      console.error('❌ Error de validación:', parsed.error.flatten());
+      const flattened = parsed.error.flatten();
+      const formErrors = flattened.formErrors || [];
+      const fieldErrorsObj = flattened.fieldErrors as Record<string, string[]>;
+      const fieldErrorsList: { field: string; message: string }[] = [];
+      for (const [path, messages] of Object.entries(fieldErrorsObj)) {
+        if (Array.isArray(messages) && messages[0]) {
+          fieldErrorsList.push({ field: path, message: messages[0] });
+        }
+      }
+      const firstForm = formErrors[0];
+      const firstField = fieldErrorsList[0];
+      const message = firstForm || (firstField ? `${firstField.field}: ${firstField.message}` : 'Revisa los datos del formulario.');
+      console.error('❌ Error de validación:', flattened);
       return NextResponse.json({ 
         error: 'Datos del formulario inválidos',
-        details: parsed.error.flatten() 
+        message: typeof message === 'string' ? message : 'Revisa los datos del formulario.',
+        fieldErrors: fieldErrorsList,
+        details: flattened
       }, { 
         status: 422,
         headers

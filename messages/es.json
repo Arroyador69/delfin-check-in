@@ -268,6 +268,7 @@
     "step4": {
       "title": "🏠 Añadir Propiedad",
       "intro": "Añade al menos una propiedad o habitación para comenzar a gestionar tus reservas.",
+      "optionalForOtherTenants": "Puedes añadir propiedades más adelante en Ajustes. Si lo prefieres, puedes continuar sin añadir ninguna ahora.",
       "propertyAddedSuccess": "✅ Propiedad añadida exitosamente",
       "existingProperties": "Propiedades existentes:",
       "propertyName": "Nombre de la Propiedad/Habitación *",

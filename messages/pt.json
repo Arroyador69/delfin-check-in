@@ -160,6 +160,7 @@
     "step4": {
       "title": "🏠 Adicionar propriedade",
       "intro": "Adicione pelo menos uma propriedade ou quarto para começar a gerir as suas reservas.",
+      "optionalForOtherTenants": "Pode adicionar propriedades mais tarde em Definições. Pode continuar sem adicionar nenhuma agora.",
       "propertyAddedSuccess": "✅ Propriedade adicionada com sucesso",
       "existingProperties": "Propriedades existentes:",
       "propertyName": "Nome da propriedade/quarto *",
