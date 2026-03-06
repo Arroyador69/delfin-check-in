@@ -661,6 +661,7 @@
     "viewXML": "Ver XML",
     "downloadForm": "Descargar formulario",
     "searchPlaceholder": "Referencia, nombre, apellido...",
+    "freePlanBanner": "En tu plan gratuito el envío automático al Ministerio del Interior no está incluido. Los datos se guardan aquí y puedes descargar el XML para subirlo manualmente al Ministerio.",
     "formUrl": "URL de tu formulario",
     "formUrlDescription": "Comparte este enlace con tus clientes para que puedan contactarte",
     "copyUrl": "Copiar",

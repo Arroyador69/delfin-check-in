@@ -625,6 +625,7 @@
     "viewXML": "View XML",
     "downloadForm": "Download form",
     "searchPlaceholder": "Reference, name, surname...",
+    "freePlanBanner": "On the free plan, automatic submission to the Ministry of the Interior is not included. Data is saved here and you can download the XML to upload it manually to the Ministry.",
     "formUrl": "Your form URL",
     "formUrlDescription": "Share this link with your clients so they can contact you",
     "copyUrl": "Copy",

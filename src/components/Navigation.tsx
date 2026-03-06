@@ -78,7 +78,7 @@ export default function Navigation() {
     { name: t('reservations'), href: '/reservations', icon: Calendar, requiresLegal: false },
     { name: t('directReservations'), href: '/admin/direct-reservations', icon: Calendar, requiresLegal: false },
     { name: t('calendar'), href: '/calendar', icon: Calendar, requiresLegal: false },
-    { name: t('guestRegistrations'), href: '/guest-registrations-dashboard', icon: Users, requiresLegal: true },
+    { name: t('guestRegistrations'), href: '/guest-registrations-dashboard', icon: Users, requiresLegal: false },
     { name: t('invoices'), href: '/facturas', icon: Receipt, requiresLegal: false },
     { name: t('mirStatus'), href: '/admin/mir-comunicaciones', icon: TrendingUp, requiresLegal: true },
     { name: t('costCalculator'), href: '/cost-calculator', icon: Calculator, requiresLegal: false },

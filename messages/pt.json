@@ -338,6 +338,7 @@
     "xmlGenerated": "XML gerado e transferido com sucesso",
     "xmlConjuntoGenerated": "XML conjunto gerado e transferido com sucesso",
     "exportError": "Erro ao exportar ficheiro",
+    "freePlanBanner": "No plano gratuito o envio automático ao Ministério do Interior não está incluído. Os dados são guardados aqui e pode descarregar o XML para submissão manual ao Ministério.",
     "formUrl": "URL do seu formulário",
     "formUrlDescription": "Partilhe este link com os seus clientes para que possam contactá-lo",
     "copyUrl": "Copiar",

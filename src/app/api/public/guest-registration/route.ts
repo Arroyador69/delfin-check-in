@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { insertGuestRegistration } from '@/lib/db';
+import { insertGuestRegistration, sql } from '@/lib/db';
 import { logError } from '@/lib/error-logger';
+import { getTenantById, hasLegalModuleAccess } from '@/lib/tenant';
 
 // Configuración CORS robusta - Fix definitivo
 const ALLOWED_ORIGINS = new Set([
@@ -214,27 +215,10 @@ export async function POST(req: NextRequest) {
         );
       }
       
-      // Validar acceso al módulo legal
-      // Extraer país del formulario si está disponible (para validación específica)
-      const countryCode = parsed.data.comunicaciones[0]?.personas[0]?.direccion?.pais;
-      const countryCodeISO = countryCode ? countryCode.substring(0, 2).toUpperCase() : undefined;
-      
-      const { validateLegalModuleAccess } = await import('@/lib/permissions');
-      const legalValidation = await validateLegalModuleAccess(req, countryCodeISO);
-      
-      if (!legalValidation.success) {
-        return NextResponse.json(
-          { 
-            error: legalValidation.error,
-            code: 'LEGAL_MODULE_REQUIRED',
-            suggestion: 'El módulo de registro de viajeros requiere un plan FREE+LEGAL o PRO. Actualiza tu plan para acceder.'
-          },
-          { status: legalValidation.status || 403, headers }
-        );
-      }
+      // Plan básico (gratuito) puede usar formulario + guardar datos; el envío automático MIR solo si legal_module
     }
 
-    // Guardar en base de datos Postgres con tenant_id
+    // Guardar en base de datos Postgres con tenant_id (todos los planes activos pueden guardar)
     const id = await insertGuestRegistration({
       reserva_ref,
       fecha_entrada,
@@ -245,8 +229,15 @@ export async function POST(req: NextRequest) {
 
     console.log('✅ Registro guardado en DB con ID:', id);
 
-    // 🚀 AUTO-ENVÍO AL MIR
+    // Solo planes con módulo legal (FREE+LEGAL, PRO) envían automáticamente al MIR. Plan básico solo guarda y puede descargar XML.
+    const countryCodeISO = parsed.data.comunicaciones[0]?.personas[0]?.direccion?.pais
+      ? String(parsed.data.comunicaciones[0].personas[0].direccion.pais).substring(0, 2).toUpperCase()
+      : undefined;
+    let tenant = (tenantId && tenantId !== 'default') ? await getTenantById(tenantId) : null;
+    const shouldSendToMir = tenant ? hasLegalModuleAccess(tenant, countryCodeISO) : false;
+
     let resultadoMIR = null;
+    if (shouldSendToMir) {
     try {
       console.log('🚀 Iniciando auto-envío al MIR...');
       
@@ -405,10 +396,13 @@ export async function POST(req: NextRequest) {
       
       console.log('✅ Error MIR guardado en el registro');
     }
+    }
 
     return NextResponse.json({ 
       success: true, 
-      message: 'Registro guardado correctamente en base de datos y enviado al MIR',
+      message: shouldSendToMir
+        ? 'Registro guardado correctamente en base de datos y enviado al MIR'
+        : 'Registro guardado correctamente. Descarga el XML desde el panel para subida manual al Ministerio del Interior.',
       id: id,
       reserva_ref: reserva_ref,
       date: new Date().toISOString().split('T')[0],

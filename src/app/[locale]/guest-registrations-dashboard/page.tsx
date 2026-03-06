@@ -177,34 +177,7 @@ export default function GuestRegistrationsDashboard() {
   const [filterRoom, setFilterRoom] = useState("");
   const [formUrl, setFormUrl] = useState('');
 
-  // Verificar acceso al módulo legal (excepto superadmins)
-  useEffect(() => {
-    if (!tenantLoading && tenant) {
-      // Verificar si es superadmin - SI ES SUPERADMIN, PERMITIR ACCESO COMPLETO
-      fetch('/api/auth/me')
-        .then(res => res.json())
-        .then(data => {
-          const isSuperAdmin = data.success && data.data?.isPlatformAdmin;
-          // Superadmins SIEMPRE tienen acceso, sin importar el plan
-          if (isSuperAdmin) {
-            console.log('👑 SuperAdmin: Acceso completo al módulo legal concedido');
-            return; // No hacer nada, permitir acceso
-          }
-          // Solo para usuarios normales, verificar legal_module
-          if (!hasLegalModule(tenant)) {
-            router.push('/upgrade-plan?reason=legal_module');
-          }
-        })
-        .catch(() => {
-          // Si falla la verificación, verificar si es superadmin de otra forma
-          // Por seguridad, si no podemos verificar, permitir acceso si tiene legal_module
-          if (!hasLegalModule(tenant)) {
-            // Solo bloquear si definitivamente no tiene legal_module
-            router.push('/upgrade-plan?reason=legal_module');
-          }
-        });
-    }
-  }, [tenant, tenantLoading, router]);
+  // Todos los planes (incl. básico gratuito) pueden ver registros y descargar XML; solo los con legal_module tienen envío automático MIR
 
   const copyToClipboard = async (text: string) => {
     try {
@@ -590,20 +563,27 @@ export default function GuestRegistrationsDashboard() {
                 </p>
               </div>
             </div>
-            <div className="flex items-center space-x-4">
-              <a 
-                href="/admin/mir-comunicaciones" 
-                className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-xl hover:from-blue-700 hover:to-purple-700 transition-colors flex items-center space-x-2 font-semibold shadow"
-              >
-                <span>📤</span>
-                <span>{t('mirStatusLink')}</span>
-              </a>
-            </div>
+            {tenant && hasLegalModule(tenant) && (
+              <div className="flex items-center space-x-4">
+                <a 
+                  href="/admin/mir-comunicaciones" 
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-xl hover:from-blue-700 hover:to-purple-700 transition-colors flex items-center space-x-2 font-semibold shadow"
+                >
+                  <span>📤</span>
+                  <span>{t('mirStatusLink')}</span>
+                </a>
+              </div>
+            )}
           </div>
         </div>
       </header>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {tenant && !hasLegalModule(tenant) && (
+          <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-sm">
+            ℹ️ {t('freePlanBanner')}
+          </div>
+        )}
         {/* Form URL Section */}
         <div className="bg-white rounded-xl shadow-lg border border-blue-200 p-6 mb-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">

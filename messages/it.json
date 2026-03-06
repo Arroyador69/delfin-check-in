@@ -661,6 +661,7 @@
     "viewXML": "Visualizza XML",
     "downloadForm": "Scarica modulo",
     "searchPlaceholder": "Riferimento, nome, cognome...",
+    "freePlanBanner": "Nel piano gratuito l'invio automatico al Ministero dell'Interno non è incluso. I dati vengono salvati qui e puoi scaricare l'XML per caricarlo manualmente al Ministero.",
     "formUrl": "URL del tuo modulo",
     "formUrlDescription": "Condividi questo link con i tuoi clienti per contattarti",
     "copyUrl": "Copia",

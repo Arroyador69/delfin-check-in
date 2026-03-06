@@ -339,6 +339,7 @@
     "xmlGenerated": "XML généré et téléchargé avec succès",
     "xmlConjuntoGenerated": "XML groupé généré et téléchargé avec succès",
     "exportError": "Erreur lors de l'exportation du fichier",
+    "freePlanBanner": "Sur le forfait gratuit, l'envoi automatique au Ministère de l'Intérieur n'est pas inclus. Les données sont enregistrées ici et vous pouvez télécharger le XML pour l'envoyer manuellement au Ministère.",
     "formUrl": "URL de votre formulaire",
     "formUrlDescription": "Partagez ce lien avec vos clients pour qu'ils puissent vous contacter",
     "copyUrl": "Copier",

@@ -270,29 +270,18 @@ export async function GET(req: NextRequest) {
       }
     }
     
-    const { validateLegalModuleAccess } = await import('@/lib/permissions');
-    const legalValidation = await validateLegalModuleAccess(req);
+    const { validateTenantActive } = await import('@/lib/permissions');
+    const activeValidation = await validateTenantActive(req);
     
-    console.log('📋 Resultado de validación legal:', {
-      success: legalValidation.success,
-      error: legalValidation.success ? undefined : legalValidation.error,
-      status: legalValidation.success ? undefined : legalValidation.status
-    });
-    
-    if (!legalValidation.success) {
-      console.warn('⚠️ Validación legal falló:', legalValidation.error);
+    if (!activeValidation.success) {
+      console.warn('⚠️ Validación tenant activo falló:', activeValidation.error);
       return NextResponse.json(
-        { 
-          ok: false, 
-          error: legalValidation.error,
-          code: 'LEGAL_MODULE_REQUIRED',
-          suggestion: 'El módulo de registro de viajeros requiere un plan FREE+LEGAL o PRO. Actualiza tu plan para acceder.'
-        },
-        { status: legalValidation.status || 403 }
+        { ok: false, error: activeValidation.error, code: 'TENANT_INACTIVE' },
+        { status: activeValidation.status || 403 }
       );
     }
     
-    console.log('✅ Validación legal pasada, continuando...');
+    console.log('✅ Tenant activo, listando registros...');
     
     const url = new URL(req.url);
     const limit = Math.min(parseInt(url.searchParams.get("limit") || "200"), 500);
