@@ -8,6 +8,13 @@ import dynamic from 'next/dynamic';
 import { useTenant, hasLegalModule } from '@/hooks/useTenant';
 import { useTranslations } from 'next-intl';
 import LanguageSwitcher from './LanguageSwitcher';
+import { locales, defaultLocale, type Locale } from '@/i18n/config';
+
+function getLocaleFromPathname(pathname: string): Locale {
+  const segment = pathname.split('/').filter(Boolean)[0];
+  if (segment && (locales as readonly string[]).includes(segment)) return segment as Locale;
+  return defaultLocale;
+}
 
 const PWAInstallButton = dynamic(() => import('./PWAInstallButton'), { ssr: false });
 const AdMenu = dynamic(() => import('./AdMenu'), { ssr: false });
@@ -30,6 +37,8 @@ function useSafeTranslations(namespace: string) {
     'referrals': 'Referidos',
     'settings': 'Configuración',
     'superAdminDashboardTitle': '👑 SuperAdmin Dashboard',
+    'viewMyTenantPanel': 'Ver Mi Panel Tenant',
+    'menu': 'Menú',
     'logout': 'Cerrar Sesión',
   };
   
@@ -61,7 +70,9 @@ export default function Navigation() {
       .catch(err => console.error('Error fetching user:', err));
   }, []);
 
-  // Menú de Tenant. Dashboard en /dashboard (protegido por middleware como /reservations)
+  const locale = getLocaleFromPathname(pathname ?? '');
+
+  // Menú de Tenant; enlaces con prefijo de idioma (/es/dashboard, /en/reservations...)
   const allTenantNavigation = [
     { name: t('dashboard'), href: '/dashboard', icon: Home, requiresLegal: false },
     { name: t('reservations'), href: '/reservations', icon: Calendar, requiresLegal: false },
@@ -107,16 +118,16 @@ export default function Navigation() {
     { name: 'Logs', href: '/superadmin/logs', icon: Shield },
   ];
 
-  // Decidir qué menú mostrar
-  const isInSuperAdmin = pathname.startsWith('/superadmin');
+  const isInSuperAdmin = pathname?.startsWith('/superadmin');
   const navigation = isInSuperAdmin && isPlatformAdmin ? superAdminNavigation : tenantNavigation;
+  const prefix = isInSuperAdmin ? '' : `/${locale}`;
 
   return (
     <nav className="bg-white shadow-lg fixed w-full top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center">
-            <Link href="/dashboard" className="flex-shrink-0 flex items-center">
+            <Link href={isInSuperAdmin ? '/superadmin' : `/${locale}/dashboard`} className="flex-shrink-0 flex items-center">
               <span className="text-2xl mr-2">🐬</span>
               <span className="text-xl font-bold text-gray-900">Delfín Check-in</span>
             </Link>
@@ -148,11 +159,12 @@ export default function Navigation() {
             <AdMenu />
             
             {navigation.map((item) => {
-              const isActive = pathname === item.href;
+              const fullHref = prefix ? `${prefix}${item.href}` : item.href;
+              const isActive = pathname === fullHref;
               return (
                 <Link
                   key={item.name}
-                  href={item.href}
+                  href={fullHref}
                   onClick={() => setMobileMenuOpen(false)}
                   className={`flex items-center px-3 py-2 rounded-md text-base font-medium transition-colors ${
                     isActive

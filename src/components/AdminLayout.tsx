@@ -24,7 +24,7 @@ export default function AdminLayout({ children, showHeader = true }: AdminLayout
 
   useEffect(() => {
     // En dashboard (/ o /dashboard), dar un breve margen para que la cookie esté disponible
-    const isDashboard = pathname === '/' || pathname === '' || pathname === '/dashboard'
+    const isDashboard = pathname === '/' || pathname === '' || pathname === '/dashboard' || pathname?.endsWith('/dashboard')
     const delay = isDashboard ? 400 : 0
     const t = setTimeout(() => {
       checkAuth()
@@ -64,7 +64,7 @@ export default function AdminLayout({ children, showHeader = true }: AdminLayout
           return
         }
         // Solo en dashboard (/ o /dashboard): varios reintentos para que se muestre el contenido
-        if (pathname === '/' || pathname === '' || pathname === '/dashboard') {
+        if (pathname === '/' || pathname === '' || pathname === '/dashboard' || pathname?.endsWith('/dashboard')) {
           for (const delayMs of [500, 1000]) {
             await new Promise((r) => setTimeout(r, delayMs))
             const retryVerify = await fetch('/api/auth/verify', { method: 'GET', credentials: 'include' })

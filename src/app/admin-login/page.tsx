@@ -12,6 +12,14 @@ function getSafeRedirect(redirect: string | null): string {
   return '/'
 }
 
+/** Dashboard con locale para que el idioma se mantenga tras el login. */
+function getDashboardPath(): string {
+  if (typeof window === 'undefined') return '/es/dashboard'
+  const loc = localStorage.getItem('preferred-locale')
+  if (loc && ['es', 'en', 'it', 'pt', 'fr'].includes(loc)) return `/${loc}/dashboard`
+  return '/es/dashboard'
+}
+
 /**
  * 🔐 PÁGINA DE LOGIN MULTI-TENANT
  * 
@@ -42,13 +50,13 @@ export default function AdminLoginPage() {
   const searchParams = useSearchParams()
   const redirectParam = searchParams.get('redirect')
 
-  // Si ya hay sesión, ir al panel. Por defecto /dashboard; si hay ?redirect= válido, allí.
+  // Si ya hay sesión, ir al panel. Por defecto /{locale}/dashboard; si hay ?redirect= válido, allí.
   useEffect(() => {
     fetch('/api/tenant', { credentials: 'include' })
       .then((r) => {
         if (r.ok) {
           const raw = getSafeRedirect(redirectParam)
-          const target = raw === '/' ? '/dashboard' : raw
+          const target = raw === '/' ? getDashboardPath() : raw
           router.replace(target)
         }
       })
@@ -96,12 +104,12 @@ export default function AdminLoginPage() {
       const data = await response.json()
 
       if (response.ok) {
-        // Login exitoso: ir a /dashboard (vídeo y resúmenes) o a ?redirect= si viene
+        // Login exitoso: ir a /{locale}/dashboard o a ?redirect= si viene
         setSuccess(true)
         setEmail('')
         setPassword('')
         const raw = getSafeRedirect(redirectParam)
-        const target = raw === '/' ? '/dashboard' : raw
+        const target = raw === '/' ? getDashboardPath() : raw
         setTimeout(() => {
           router.replace(target)
         }, 300)

@@ -2,15 +2,21 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { locales } from '@/i18n/config';
+import Navigation from '@/components/Navigation';
+import ConditionalMainPadding from '@/components/ConditionalMainPadding';
+import ConditionalFooter from '@/components/ConditionalFooter';
+import CookieConsentModal from '@/components/CookieConsentModal';
+import AdsBanner from '@/components/AdsBanner';
+import PWAInstallGuide from '@/components/PWAInstallGuide';
+import AdBlockDetector from '@/components/AdBlockDetector';
 
 /**
  * 🌍 LAYOUT PARA RUTAS INTERNACIONALIZADAS
- * 
- * Este layout envuelve todas las páginas del tenant admin con el provider de i18n.
- * Las rutas bajo [locale]/ tendrán acceso a traducciones.
+ *
+ * Incluye el shell completo (nav, footer, anuncios) para que el idioma del
+ * selector se aplique a toda la UI (menú, enlaces, etc.).
  */
 
-// Forzar rendering dinámico para TODAS las páginas bajo [locale]
 export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
@@ -21,21 +27,25 @@ export default async function LocaleLayout({
   children: React.ReactNode;
   params: { locale: string };
 }) {
-  console.log(`🌍 [LocaleLayout] Iniciando con locale: ${locale}`);
-  
-  // Validar que el locale sea soportado
   if (!locales.includes(locale as any)) {
-    console.error(`❌ [LocaleLayout] Locale no soportado: ${locale}`);
     notFound();
   }
 
-  // Cargar mensajes del locale
   const messages = await getMessages();
-  console.log(`✅ [LocaleLayout] Mensajes cargados. Keys: ${Object.keys(messages).length > 0 ? Object.keys(messages).join(', ') : 'VACÍO'}`);
 
   return (
     <NextIntlClientProvider messages={messages} locale={locale}>
-      {children}
+      <div className="min-h-screen bg-gray-50 flex flex-col">
+        <Navigation />
+        <AdsBanner />
+        <PWAInstallGuide />
+        <AdBlockDetector />
+        <ConditionalMainPadding>
+          {children}
+        </ConditionalMainPadding>
+        <ConditionalFooter />
+        <CookieConsentModal />
+      </div>
     </NextIntlClientProvider>
   );
 }
