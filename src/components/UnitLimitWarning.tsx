@@ -3,12 +3,16 @@
 import { useTenant } from '@/hooks/useTenant';
 import { AlertTriangle, ArrowUpCircle } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { useTranslations, useLocale } from 'next-intl';
+import Link from 'next/link';
 
 /**
  * Componente que muestra advertencia cuando se está cerca del límite de unidades
- * o cuando se alcanza el límite
+ * o cuando se alcanza el límite. Usa traducciones según el idioma seleccionado.
  */
 export default function UnitLimitWarning() {
+  const t = useTranslations('dashboard');
+  const locale = useLocale();
   const { tenant, loading } = useTenant();
   const [currentCount, setCurrentCount] = useState<number | null>(null);
   const [dismissed, setDismissed] = useState(false);
@@ -59,37 +63,34 @@ export default function UnitLimitWarning() {
           <h3 className={`font-semibold mb-1 ${
             isAtLimit ? 'text-red-900' : 'text-yellow-900'
           }`}>
-            {isAtLimit ? '⚠️ Límite de unidades alcanzado' : '⚠️ Cerca del límite de unidades'}
+            {isAtLimit ? t('unitLimitBannerTitleAtLimit') : t('unitLimitBannerTitleNear')}
           </h3>
           <p className={`text-sm mb-3 ${
             isAtLimit ? 'text-red-700' : 'text-yellow-700'
           }`}>
-            {isAtLimit ? (
-              <>
-                Has alcanzado el límite de <strong>{maxUnits} unidades</strong> de tu plan actual. 
-                No puedes crear más unidades hasta que actualices tu plan.
-              </>
-            ) : (
-              <>
-                Estás usando <strong>{current} de {maxUnits} unidades</strong> ({Math.round(usagePercent)}%). 
-                Te quedan <strong>{maxUnits - current} unidades</strong> disponibles.
-              </>
-            )}
+            {isAtLimit
+              ? t('unitLimitBannerAtLimit', { max: maxUnits })
+              : t('unitLimitBannerNear', {
+                  current,
+                  max: maxUnits,
+                  percent: Math.round(usagePercent),
+                  remaining: maxUnits - current,
+                })}
           </p>
           <div className="flex flex-wrap gap-2">
-            <a
-              href="/upgrade-plan"
+            <Link
+              href={`/${locale}/upgrade-plan`}
               className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors"
             >
               <ArrowUpCircle className="w-4 h-4" />
-              Actualizar a PRO
-            </a>
+              {t('unitLimitUpgradeToPro')}
+            </Link>
             {!isAtLimit && (
               <button
                 onClick={() => setDismissed(true)}
                 className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 transition-colors"
               >
-                Recordar más tarde
+                {t('unitLimitDismiss')}
               </button>
             )}
           </div>

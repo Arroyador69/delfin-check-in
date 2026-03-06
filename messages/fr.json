@@ -80,7 +80,13 @@
   },
   "dashboard": {
     "title": "Delfín Check-in",
-    "subtitle": "Gestion intelligente de chambres"
+    "subtitle": "Gestion intelligente de chambres",
+    "unitLimitBannerTitleAtLimit": "⚠️ Limite d'unités atteint",
+    "unitLimitBannerTitleNear": "⚠️ Proche de la limite d'unités",
+    "unitLimitBannerAtLimit": "Vous avez atteint la limite de {max} unités de votre forfait. Vous ne pouvez pas créer plus d'unités sans améliorer votre forfait.",
+    "unitLimitBannerNear": "Vous utilisez {current} sur {max} unités ({percent}%). Il vous reste {remaining} unités disponibles.",
+    "unitLimitUpgradeToPro": "Passer à PRO",
+    "unitLimitDismiss": "Me rappeler plus tard"
   },
   "auth": {
     "loginTitle": "Se Connecter",

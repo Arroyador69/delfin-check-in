@@ -1,5 +1,4 @@
 import { NextIntlClientProvider } from 'next-intl';
-import { getMessages } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { locales } from '@/i18n/config';
 import Navigation from '@/components/Navigation';
@@ -13,8 +12,8 @@ import AdBlockDetector from '@/components/AdBlockDetector';
 /**
  * 🌍 LAYOUT PARA RUTAS INTERNACIONALIZADAS
  *
- * Incluye el shell completo (nav, footer, anuncios) para que el idioma del
- * selector se aplique a toda la UI (menú, enlaces, etc.).
+ * Carga los mensajes según el segmento [locale] de la URL para que el idioma
+ * seleccionado se aplique a toda la UI (dashboard, menú, etc.).
  */
 
 export const dynamic = 'force-dynamic';
@@ -22,16 +21,17 @@ export const dynamicParams = true;
 
 export default async function LocaleLayout({
   children,
-  params: { locale }
+  params
 }: {
   children: React.ReactNode;
-  params: { locale: string };
+  params: { locale: string } | Promise<{ locale: string }>;
 }) {
+  const { locale } = await Promise.resolve(params);
   if (!locales.includes(locale as any)) {
     notFound();
   }
 
-  const messages = await getMessages();
+  const messages = (await import(`../../../messages/${locale}.json`)).default;
 
   return (
     <NextIntlClientProvider messages={messages} locale={locale}>

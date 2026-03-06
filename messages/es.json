@@ -99,6 +99,12 @@
     "roomsAvailableToAdd": "✅ {remaining} habitaciones disponibles para añadir",
     "upgradeLink": "Mejora de Plan",
     "updatePlan": "Actualizar Plan",
+    "unitLimitBannerTitleAtLimit": "⚠️ Límite de unidades alcanzado",
+    "unitLimitBannerTitleNear": "⚠️ Cerca del límite de unidades",
+    "unitLimitBannerAtLimit": "Has alcanzado el límite de {max} unidades de tu plan actual. No puedes crear más unidades hasta que actualices tu plan.",
+    "unitLimitBannerNear": "Estás usando {current} de {max} unidades ({percent}%). Te quedan {remaining} unidades disponibles.",
+    "unitLimitUpgradeToPro": "Actualizar a PRO",
+    "unitLimitDismiss": "Recordar más tarde",
     "mirModule": {
       "title": "💰 Módulo MIR - Solo 8€/mes (+ IVA)",
       "reminder": "Recordatorio:",

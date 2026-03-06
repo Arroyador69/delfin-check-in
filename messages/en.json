@@ -99,6 +99,12 @@
     "roomsAvailableToAdd": "✅ {remaining} rooms available to add",
     "upgradeLink": "Plan Upgrade",
     "updatePlan": "Update Plan",
+    "unitLimitBannerTitleAtLimit": "⚠️ Unit limit reached",
+    "unitLimitBannerTitleNear": "⚠️ Near unit limit",
+    "unitLimitBannerAtLimit": "You've reached the limit of {max} units in your current plan. You cannot create more units until you upgrade your plan.",
+    "unitLimitBannerNear": "You're using {current} of {max} units ({percent}%). You have {remaining} units left.",
+    "unitLimitUpgradeToPro": "Upgrade to PRO",
+    "unitLimitDismiss": "Remind me later",
     "mirModule": {
       "title": "💰 MIR Module - Only €8/month (+ VAT)",
       "reminder": "Reminder:",
