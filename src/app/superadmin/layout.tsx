@@ -22,6 +22,6 @@ export default async function SuperAdminLayout({
     redirect('/')
   }
 
-  return <>{children}</>
+  return <div className="pt-16">{children}</div>
 }
 

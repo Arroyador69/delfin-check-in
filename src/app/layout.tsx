@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import "./globals.css";
 import SWRegister from "@/components/SWRegister";
+import ConditionalNavigation from "@/components/ConditionalNavigation";
 
 // Importar Sentry
 import '@sentry/nextjs';
@@ -40,6 +41,7 @@ export default async function RootLayout({
       <body className={inter.className}>
         <NextIntlClientProvider locale="es" messages={defaultMessages}>
           <SWRegister />
+          <ConditionalNavigation />
           {children}
         </NextIntlClientProvider>
       </body>

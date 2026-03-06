@@ -6,20 +6,21 @@ import Navigation from './Navigation';
 export default function ConditionalNavigation() {
   const pathname = usePathname();
   
-  // Páginas que NO deben tener navegación (formularios independientes, login, etc.)
+  // Páginas que NO deben tener navegación (login, etc.)
   const INDEPENDENT_PAGES: string[] = [
-    '/admin-login',      // Página de login - sin header
-    '/forgot-password',  // Página de recuperación de contraseña - sin header
-    // Formularios eliminados - ya no se usan
-    // '/guest-registration', - Eliminado: se usa form.delfincheckin.com
-    // '/reservations-form'   - Eliminado: no se utiliza
+    '/admin-login',
+    '/forgot-password',
   ];
-  
-  // Si es una página independiente, no mostrar navegación
-  if (INDEPENDENT_PAGES.includes(pathname)) {
+  if (INDEPENDENT_PAGES.includes(pathname ?? '')) {
     return null;
   }
-  
-  // Para todas las demás páginas, mostrar navegación
+
+  // Rutas con idioma (/es/, /en/, etc.): la navegación la lleva el layout [locale], no duplicar aquí
+  const localePrefix = /^\/(es|en|it|pt|fr)(\/|$)/;
+  if (pathname && localePrefix.test(pathname)) {
+    return null;
+  }
+
+  // SuperAdmin y resto de rutas sin locale: mostrar menú aquí
   return <Navigation />;
 }
