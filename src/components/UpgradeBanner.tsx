@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { X, Zap, Crown, ArrowRight } from 'lucide-react';
 
 interface UpgradeBannerProps {
-  currentPlan: 'free' | 'checkin' | 'pro';
+  currentPlan: 'free' | 'checkin' | 'standard' | 'pro';
   feature?: string;
   suggestedPlan?: 'checkin' | 'pro';
   dismissible?: boolean;
@@ -26,13 +26,13 @@ export default function UpgradeBanner({
     return null;
   }
 
-  // Determinar plan sugerido si no se especifica
+  // Determinar plan sugerido si no se especifica (free -> checkin, checkin/standard -> pro)
   const targetPlan = suggestedPlan || (currentPlan === 'free' ? 'checkin' : 'pro');
   
   const planInfo = {
     checkin: {
       name: 'Plan Check-in',
-      price: '8€/mes',
+      price: '2€/mes + 2€/prop',
       icon: Zap,
       color: 'green',
       description: 'Desbloquea el check-in digital automático'

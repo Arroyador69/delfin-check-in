@@ -86,6 +86,14 @@ export default function SuperAdminReferrals() {
     }
   }
 
+  const getPlanBadge = (planType: string | undefined) => {
+    const p = (planType || 'free').toLowerCase()
+    if (p === 'pro') return <span className="px-2 py-1 text-xs rounded bg-purple-100 text-purple-700">Pro</span>
+    if (p === 'standard') return <span className="px-2 py-1 text-xs rounded bg-amber-100 text-amber-700">Standard</span>
+    if (p === 'checkin') return <span className="px-2 py-1 text-xs rounded bg-blue-100 text-blue-700">Check-in</span>
+    return <span className="px-2 py-1 text-xs rounded bg-gray-100 text-gray-700">Gratis</span>
+  }
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'registered':
@@ -280,9 +288,7 @@ export default function SuperAdminReferrals() {
                     {getStatusBadge(referral.status)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="px-2 py-1 text-xs rounded bg-gray-100 text-gray-700">
-                      {referral.referredCurrentPlan || referral.referredPlanType || 'free'}
-                    </span>
+                    {getPlanBadge(referral.referredCurrentPlan || referral.referredPlanType)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                     {referral.monthsPaidCompleted}

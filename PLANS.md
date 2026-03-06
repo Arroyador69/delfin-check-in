@@ -111,4 +111,4 @@ Documento de referencia de los 4 planes del sistema. Usar en landing, onboarding
 
 ## Landing (delfincheckin.com)
 
-- La landing principal está en el repo **delfincheckin.com** (GitHub Pages). Ahí conviene actualizar la sección de precios/planes para mostrar los **4 planes** (Básico, Check-in, Standard, Pro) y los textos de este documento, en lugar de los planes antiguos.
+- La landing principal (carpeta **delfincheckin.com** / repo delfincheckin.com) está actualizada con los **4 planes**: Básico (0€), Check-in (2€+2€/prop), Standard (9,99€/mes, 4 incl.), Pro (29,99€/mes, 6 incl., 5% comisión). Sección de precios, meta tags, FAQ y CTA de registro alineados con este documento.

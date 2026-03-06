@@ -6,7 +6,7 @@ import UpgradeBanner from './UpgradeBanner';
 
 interface FeatureLockedProps {
   feature: string;
-  currentPlan: 'free' | 'checkin' | 'pro';
+  currentPlan: 'free' | 'checkin' | 'standard' | 'pro';
   requiredPlan: 'checkin' | 'pro';
   children?: React.ReactNode;
   showBanner?: boolean;
@@ -23,7 +23,7 @@ export default function FeatureLocked({
 }: FeatureLockedProps) {
   // Si el usuario tiene el plan requerido o superior, mostrar contenido
   const hasAccess = 
-    (requiredPlan === 'checkin' && (currentPlan === 'checkin' || currentPlan === 'pro')) ||
+    (requiredPlan === 'checkin' && (currentPlan === 'checkin' || currentPlan === 'standard' || currentPlan === 'pro')) ||
     (requiredPlan === 'pro' && currentPlan === 'pro');
 
   if (hasAccess) {
@@ -33,7 +33,7 @@ export default function FeatureLocked({
   const planInfo = {
     checkin: {
       name: 'Plan Check-in',
-      price: '8€/mes',
+      price: '2€/mes + 2€/prop',
       icon: Zap,
       color: 'green'
     },

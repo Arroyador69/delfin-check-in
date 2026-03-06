@@ -445,7 +445,7 @@ export async function handleReferralPlanUpdated(
             referrerInfo.rows[0].email,
             referrerInfo.rows[0].name || 'Propietario',
             referredInfo.rows[0].name || 'Nuevo usuario',
-            newPlanType as 'checkin' | 'pro'
+            newPlanType as 'checkin' | 'standard' | 'pro'
           );
         } catch (emailError) {
           console.warn('Error enviando email de plan activado:', emailError);

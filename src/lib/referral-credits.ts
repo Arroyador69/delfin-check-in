@@ -129,8 +129,8 @@ export async function applyCreditsBeforePayment(tenantId: string): Promise<{
       };
     }
 
-    // Si tiene Plan Check-in y créditos Check-in: aplicar Check-in
-    if (planType === 'checkin' && checkinCredits > 0) {
+    // Si tiene Plan Check-in o Standard y créditos Check-in: aplicar Check-in
+    if ((planType === 'checkin' || planType === 'standard') && checkinCredits > 0) {
       // Aplicar 1 mes de crédito Check-in
       await sql`
         UPDATE tenants
@@ -176,9 +176,9 @@ export async function applyCreditsBeforePayment(tenantId: string): Promise<{
       };
     }
 
-    // Si tiene Plan Check-in pero tiene créditos Pro: no aplicar
+    // Si tiene Plan Check-in o Standard pero tiene créditos Pro: no aplicar
     // (solo Pro cuando hace upgrade)
-    if (planType === 'checkin' && proCredits > 0) {
+    if ((planType === 'checkin' || planType === 'standard') && proCredits > 0) {
       return { applied: false };
     }
 

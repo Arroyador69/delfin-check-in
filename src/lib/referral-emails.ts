@@ -13,10 +13,10 @@ export async function sendNewReferralEmail(
   referrerEmail: string,
   referrerName: string,
   referredName: string,
-  referredPlan: 'free' | 'checkin' | 'pro'
+  referredPlan: 'free' | 'checkin' | 'standard' | 'pro'
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const planName = referredPlan === 'free' ? 'Plan Gratis' : referredPlan === 'checkin' ? 'Plan Check-in' : 'Plan Pro';
+    const planName = referredPlan === 'free' ? 'Plan Gratis' : referredPlan === 'checkin' ? 'Plan Check-in' : referredPlan === 'standard' ? 'Plan Standard' : 'Plan Pro';
     
     const html = `
       <!DOCTYPE html>
@@ -76,10 +76,10 @@ export async function sendReferralActivatedPlanEmail(
   referrerEmail: string,
   referrerName: string,
   referredName: string,
-  planType: 'checkin' | 'pro'
+  planType: 'checkin' | 'standard' | 'pro'
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const planName = planType === 'checkin' ? 'Plan Check-in' : 'Plan Pro';
+    const planName = planType === 'checkin' ? 'Plan Check-in' : planType === 'standard' ? 'Plan Standard' : 'Plan Pro';
     
     const html = `
       <!DOCTYPE html>
@@ -107,7 +107,7 @@ export async function sendReferralActivatedPlanEmail(
               <div class="highlight">
                 <p><strong>💰 Esto te acerca más a conseguir recompensas:</strong></p>
                 <ul>
-                  ${planType === 'checkin' ? '<li>1 referido que paga Check-in = 1 mes gratis de Plan Check-in</li>' : ''}
+                  ${(planType === 'checkin' || planType === 'standard') ? '<li>1 referido que paga Check-in o Standard = 1 mes gratis de Plan Check-in</li>' : ''}
                   <li>3 referidos activos en Check-in = 1 mes gratis de Plan Pro</li>
                   <li>5 referidos activos en Pro = 2 meses gratis de Plan Pro</li>
                 </ul>

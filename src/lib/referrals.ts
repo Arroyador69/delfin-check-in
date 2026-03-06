@@ -9,7 +9,7 @@ export interface ReferralData {
   referredTenantId: string;
   referralLevel: number;
   referralCodeUsed: string;
-  referredPlanType: 'free' | 'checkin' | 'pro';
+  referredPlanType: 'free' | 'checkin' | 'standard' | 'pro';
 }
 
 /**
@@ -128,7 +128,7 @@ export async function associateTenantWithReferrer(
   referredTenantId: string,
   referrerTenantId: string,
   referralCodeUsed: string,
-  referredPlanType: 'free' | 'checkin' | 'pro' = 'free'
+  referredPlanType: 'free' | 'checkin' | 'standard' | 'pro' = 'free'
 ): Promise<{ success: boolean; referralId?: string; error?: string }> {
   try {
     // Verificar que el referente existe y tiene código de referido
@@ -173,7 +173,7 @@ export async function associateTenantWithReferrer(
         ${referredTenantId},
         ${referralLevel},
         ${referralCodeUsed},
-        ${referredPlanType === 'free' ? 'registered' : referredPlanType === 'checkin' ? 'active_checkin' : 'active_pro'},
+        ${referredPlanType === 'free' ? 'registered' : (referredPlanType === 'checkin' || referredPlanType === 'standard') ? 'active_checkin' : 'active_pro'},
         ${referredPlanType},
         NOW()
       ) RETURNING id
