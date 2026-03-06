@@ -1381,7 +1381,7 @@
       "summaryReceived": "Total reçu",
       "infoTitle": "Informations importantes :",
       "info1": "Les paiements sont traités automatiquement le jour du check-in de chaque réservation",
-      "info2": "La commission Stripe (1,65€) est déduite du total avant d'appliquer vos 9%",
+      "info2": "La commission Stripe (1,65€) est déduite du total avant d'appliquer vos {percent}%",
       "info3": "Les virements vers les comptes bancaires européens sont gratuits",
       "info4": "Vous pouvez télécharger un rapport complet pour les déclarations fiscales"
     },

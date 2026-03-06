@@ -240,7 +240,7 @@ export async function POST(request: NextRequest) {
                   WHERE id = ${tenantId}
                   LIMIT 1
                 `;
-                const planType = (tenantInfo.rows[0]?.plan_type || 'free') as 'free' | 'checkin' | 'pro';
+                const planType = (tenantInfo.rows[0]?.plan_type || 'free') as 'free' | 'checkin' | 'standard' | 'pro';
                 
                 await associateTenantWithReferrer(
                   tenantId,

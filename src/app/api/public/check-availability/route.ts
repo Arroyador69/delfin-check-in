@@ -59,12 +59,13 @@ export async function POST(req: NextRequest) {
       return response;
     }
 
-    // Obtener información de la propiedad
+    // Obtener información de la propiedad y plan (comisión: Pro 5%, resto 9%)
     const propertyResult = await sql`
       SELECT 
-        tp.*, tcs.commission_rate, tcs.stripe_fee_rate
+        tp.*, tcs.commission_rate, tcs.stripe_fee_rate, t.plan_type as tenant_plan_type
       FROM tenant_properties tp
       LEFT JOIN tenant_commission_settings tcs ON tp.tenant_id = tcs.tenant_id
+      LEFT JOIN tenants t ON tp.tenant_id = t.id
       WHERE tp.id = ${property_id} AND tp.is_active = true
     `;
 
@@ -175,7 +176,10 @@ export async function POST(req: NextRequest) {
     const basePrice = parseFloat(String(property.base_price || 0));
     const cleaningFee = parseFloat(String(property.cleaning_fee || 0));
     const subtotal = (basePrice * nights) + cleaningFee;
-    const commissionRate = parseFloat(String(property.commission_rate || 0.09));
+    const { getDirectReservationCommissionRate } = await import('@/lib/plan-pricing');
+    const commissionRate = property.commission_rate != null
+      ? parseFloat(String(property.commission_rate))
+      : getDirectReservationCommissionRate(property.tenant_plan_type);
     const stripeFeeRate = parseFloat(String(property.stripe_fee_rate || 0.014));
     
     const commission = calculateCommission(subtotal, commissionRate, stripeFeeRate);

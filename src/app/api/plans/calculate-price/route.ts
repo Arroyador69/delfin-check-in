@@ -12,10 +12,10 @@ import { getTenantFromRequest } from '@/lib/permissions';
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const planId = searchParams.get('planId') as 'free' | 'checkin' | 'pro' | null;
+    const planId = searchParams.get('planId') as 'free' | 'checkin' | 'standard' | 'pro' | null;
     const roomCountParam = searchParams.get('roomCount');
 
-    if (!planId || !['free', 'checkin', 'pro'].includes(planId)) {
+    if (!planId || !['free', 'checkin', 'standard', 'pro'].includes(planId)) {
       return NextResponse.json(
         { success: false, error: 'Plan inválido' },
         { status: 400 }

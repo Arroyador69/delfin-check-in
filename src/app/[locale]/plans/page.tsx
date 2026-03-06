@@ -10,7 +10,7 @@ import { Elements, CardElement, useStripe, useElements } from '@stripe/react-str
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '');
 
-type PlanId = 'free' | 'checkin' | 'pro';
+type PlanId = 'free' | 'checkin' | 'standard' | 'pro';
 
 interface Plan {
   id: PlanId;
@@ -42,10 +42,10 @@ const PLANS_CONFIG: (Omit<Plan, 'name' | 'description' | 'features'> & { feature
   },
   {
     id: 'checkin',
-    basePrice: 8,
+    basePrice: 2,
     maxRooms: -1,
-    maxRoomsIncluded: 2,
-    extraRoomPrice: 4,
+    maxRoomsIncluded: 1,
+    extraRoomPrice: 2,
     adsEnabled: true,
     legalModule: true,
     color: 'green',
@@ -54,11 +54,23 @@ const PLANS_CONFIG: (Omit<Plan, 'name' | 'description' | 'features'> & { feature
     featuresKeys: ['checkinF0', 'checkinF1', 'checkinF2', 'checkinF3', 'checkinF4', 'checkinF5', 'checkinF6']
   },
   {
+    id: 'standard',
+    basePrice: 9.99,
+    maxRooms: -1,
+    maxRoomsIncluded: 4,
+    extraRoomPrice: 2,
+    adsEnabled: false,
+    legalModule: true,
+    color: 'amber',
+    icon: Check,
+    featuresKeys: ['standardF0', 'standardF1', 'standardF2', 'standardF3', 'standardF4', 'standardF5']
+  },
+  {
     id: 'pro',
     basePrice: 29.99,
     maxRooms: -1,
     maxRoomsIncluded: 6,
-    extraRoomPrice: 5,
+    extraRoomPrice: 2,
     adsEnabled: false,
     legalModule: true,
     color: 'purple',
@@ -302,12 +314,14 @@ function PlanCalculator({ planId, onPriceChange }: { planId: PlanId; onPriceChan
 function getPlanName(t: (k: string) => string, planId: PlanId): string {
   if (planId === 'free') return t('freePlanName');
   if (planId === 'checkin') return t('checkinPlanName');
+  if (planId === 'standard') return t('standardPlanName');
   return t('proPlanName');
 }
 
 function getPlanDesc(t: (k: string) => string, planId: PlanId): string {
   if (planId === 'free') return t('freePlanDesc');
   if (planId === 'checkin') return t('checkinPlanDesc');
+  if (planId === 'standard') return t('standardPlanDesc');
   return t('proPlanDesc');
 }
 
@@ -346,7 +360,7 @@ export default function PlansPage() {
     }
     setSelectedPlan(planId);
     setShowCheckout(true);
-    setRoomCount(planId === 'checkin' ? 2 : planId === 'pro' ? 6 : 2);
+    setRoomCount(planId === 'checkin' ? 2 : planId === 'standard' ? 4 : planId === 'pro' ? 6 : 2);
   };
 
   const handlePriceChange = (newPricing: any) => {
@@ -425,7 +439,7 @@ export default function PlansPage() {
             </div>
           </div>
         ) : (
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
             {PLANS_CONFIG.map((plan) => {
               const Icon = plan.icon;
               const isCurrent = plan.id === currentPlan;

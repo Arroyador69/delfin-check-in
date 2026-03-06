@@ -7,7 +7,7 @@ export interface Tenant {
   name: string;
   email: string;
   plan_id: 'basic' | 'standard' | 'premium' | 'enterprise' | 'free' | 'checkin' | 'pro';
-  plan_type?: 'free' | 'checkin' | 'pro';
+  plan_type?: 'free' | 'checkin' | 'standard' | 'pro';
   max_rooms: number; // También usado como max_units_allowed
   current_rooms: number; // También usado como current_units_count
   ads_enabled?: boolean;
@@ -376,13 +376,24 @@ export function canCreateUnit(tenant: Tenant, currentCount?: number): {
     return { canCreate: true };
   }
   
-  // Plan CHECKIN: ilimitado (pero con precio por habitación adicional)
+  // Plan CHECKIN: ilimitado (2 €/mes por cada propiedad)
   if (planType === 'checkin') {
-    // Puede crear ilimitadas, pero se cobrará 4€/mes por cada una adicional
+    return { canCreate: true };
+  }
+
+  // Plan STANDARD: 4 incluidas, luego 2 €/mes por cada extra
+  if (planType === 'standard') {
+    const maxIncluded = tenant.max_rooms_included ?? 4;
+    if (currentUnits >= maxIncluded) {
+      return {
+        canCreate: true,
+        reason: `Has alcanzado las ${maxIncluded} propiedades incluidas. Las adicionales tendrán un coste de 2 €/mes.`
+      };
+    }
     return { canCreate: true };
   }
   
-  // Plan PRO: hasta 6 habitaciones incluidas, luego precio adicional
+  // Plan PRO: hasta 6 habitaciones incluidas, luego 2 €/mes por extra
   if (planType === 'pro') {
     const maxIncluded = tenant.max_rooms_included || 6;
     if (currentUnits >= maxIncluded) {
@@ -423,9 +434,10 @@ export function hasAdsEnabled(tenant: Tenant): boolean {
   if (tenant.ads_enabled !== undefined) {
     return tenant.ads_enabled;
   }
-  
-  // Fallback: PRO no tiene anuncios, los demás sí
-  return tenant.plan_type !== 'pro' && tenant.plan_id !== 'pro';
+  // Solo Básico y Check-in tienen anuncios; Standard y Pro no
+  const noAds = tenant.plan_type === 'pro' || tenant.plan_type === 'standard' ||
+    tenant.plan_id === 'pro' || tenant.plan_id === 'enterprise';
+  return !noAds;
 }
 
 /**
@@ -434,15 +446,15 @@ export function hasAdsEnabled(tenant: Tenant): boolean {
  * @returns Configuración del plan
  */
 export function getPlanConfig(tenant: Tenant): {
-  planType: 'free' | 'free_legal' | 'pro';
+  planType: 'free' | 'free_legal' | 'checkin' | 'standard' | 'pro';
   adsEnabled: boolean;
   legalModule: boolean;
   maxUnits: number;
   countryCode?: string;
 } {
-  const planType = tenant.plan_type || 
-    (tenant.plan_id === 'pro' ? 'pro' : 
-     tenant.plan_id === 'premium' ? 'free_legal' : 'free');
+  const planType = (tenant.plan_type ||
+    (tenant.plan_id === 'pro' || tenant.plan_id === 'enterprise' ? 'pro' :
+     tenant.plan_id === 'premium' ? 'checkin' : 'free')) as 'free' | 'free_legal' | 'checkin' | 'standard' | 'pro';
   
   return {
     planType,

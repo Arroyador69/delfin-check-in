@@ -1564,7 +1564,7 @@
       "summaryReceived": "Totale ricevuto",
       "infoTitle": "Informazioni importanti:",
       "info1": "I pagamenti vengono elaborati automaticamente il giorno del check-in di ogni prenotazione",
-      "info2": "La commissione Stripe (1,65€) viene detratta dal totale prima di applicare il tuo 9%",
+      "info2": "La commissione Stripe (1,65€) viene detratta dal totale prima di applicare il tuo {percent}%",
       "info3": "I bonifici verso conti bancari europei sono gratuiti",
       "info4": "Puoi scaricare un report completo per le dichiarazioni fiscali"
     },

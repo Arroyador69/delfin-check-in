@@ -562,9 +562,10 @@ export async function POST(req: NextRequest) {
               let planType = tenant.plan_type || 'free';
               
               if (planTypeFromMetadata) {
-                // Mapear plan_id a plan_type si es necesario
                 if (planTypeFromMetadata === 'checkin' || planTypeFromMetadata === 'check-in') {
                   planType = 'checkin';
+                } else if (planTypeFromMetadata === 'standard') {
+                  planType = 'standard';
                 } else if (planTypeFromMetadata === 'pro') {
                   planType = 'pro';
                 }
@@ -581,7 +582,7 @@ export async function POST(req: NextRequest) {
               // Manejar referidos: actualizar estado según plan
               try {
                 const { handleReferralPlanUpdated } = await import('@/lib/referral-webhooks');
-                await handleReferralPlanUpdated(tenant.id, planType as 'free' | 'checkin' | 'pro');
+                await handleReferralPlanUpdated(tenant.id, planType as 'free' | 'checkin' | 'standard' | 'pro');
               } catch (refError) {
                 console.warn('⚠️ Error manejando referidos en actualización de suscripción:', refError);
                 // No es crítico, continuar

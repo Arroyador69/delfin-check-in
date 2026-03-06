@@ -340,7 +340,7 @@ export async function handleReferralCancelled(
  */
 export async function handleReferralPlanUpdated(
   tenantId: string,
-  newPlanType: 'free' | 'checkin' | 'pro'
+  newPlanType: 'free' | 'checkin' | 'standard' | 'pro'
 ): Promise<void> {
   try {
     // Buscar si este tenant es un referido
@@ -371,6 +371,8 @@ export async function handleReferralPlanUpdated(
     let newStatus = 'registered';
     if (newPlanType === 'checkin') {
       newStatus = 'active_checkin';
+    } else if (newPlanType === 'standard') {
+      newStatus = 'active_checkin'; // Standard tratado como plan de pago igual que checkin
     } else if (newPlanType === 'pro') {
       newStatus = 'active_pro';
     }
@@ -421,8 +423,8 @@ export async function handleReferralPlanUpdated(
       )
     `;
 
-    // Si activó un plan de pago (Check-in o Pro), enviar email y recalcular
-    if ((newPlanType === 'checkin' || newPlanType === 'pro') && previousPlanType === 'free') {
+    // Si activó un plan de pago (Check-in, Standard o Pro), enviar email y recalcular
+    if ((newPlanType === 'checkin' || newPlanType === 'standard' || newPlanType === 'pro') && previousPlanType === 'free') {
       const referrerInfo = await sql`
         SELECT email, name 
         FROM tenants 

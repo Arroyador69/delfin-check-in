@@ -246,10 +246,12 @@ export default function TenantCostsPage() {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
                           tenant.plan_type === 'pro' ? 'bg-purple-100 text-purple-800' :
+                          tenant.plan_type === 'standard' ? 'bg-amber-100 text-amber-800' :
                           tenant.plan_type === 'checkin' ? 'bg-green-100 text-green-800' :
                           'bg-blue-100 text-blue-800'
                         }`}>
                           {tenant.plan_type === 'pro' ? 'Pro' :
+                           tenant.plan_type === 'standard' ? 'Standard' :
                            tenant.plan_type === 'checkin' ? 'Check-in' :
                            'Gratis'}
                         </span>

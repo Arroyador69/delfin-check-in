@@ -6,6 +6,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { sql } from '@vercel/postgres';
 import { generateReservationCode, calculateCommission } from '@/lib/direct-reservations-utils';
+import { getDirectReservationCommissionRate } from '@/lib/plan-pricing';
 
 const stripeKey = process.env.STRIPE_SECRET_KEY;
 if (!stripeKey) {
@@ -71,14 +72,16 @@ export async function POST(
       return response;
     }
 
-    // Obtener información del enlace
+    // Obtener información del enlace y plan del tenant (comisión: Pro 5%, resto 9%)
     const linkResult = await sql`
       SELECT 
         pl.*,
         tcs.commission_rate,
-        tcs.stripe_fee_rate
+        tcs.stripe_fee_rate,
+        t.plan_type as tenant_plan_type
       FROM payment_links pl
       LEFT JOIN tenant_commission_settings tcs ON pl.tenant_id = tcs.tenant_id
+      LEFT JOIN tenants t ON pl.tenant_id = t.id
       WHERE pl.link_code = ${linkCode} AND pl.is_active = true
     `;
 
@@ -234,9 +237,11 @@ export async function POST(
       return response;
     }
 
-    // Calcular comisiones
+    // Calcular comisiones (Pro 5%, resto 9%)
     const subtotal = parseFloat(String(link.total_price));
-    const commissionRate = parseFloat(String(link.commission_rate || 0.09));
+    const commissionRate = link.commission_rate != null
+      ? parseFloat(String(link.commission_rate))
+      : getDirectReservationCommissionRate(link.tenant_plan_type);
     const stripeFeeRate = parseFloat(String(link.stripe_fee_rate || 0.014));
     const commission = calculateCommission(subtotal, commissionRate, stripeFeeRate);
 

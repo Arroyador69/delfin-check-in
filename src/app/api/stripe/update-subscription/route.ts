@@ -66,8 +66,8 @@ export async function POST(req: NextRequest) {
     // Obtener suscripción actual de Stripe
     const existingSubscription = await stripe.subscriptions.retrieve(tenant.stripe_subscription_id);
     
-    // Calcular nuevo precio con IVA
-    const pricing = await calculatePlanPrice(planType as 'checkin' | 'pro', roomCount, tenant.country_code);
+    // Calcular nuevo precio con IVA (checkin, standard, pro)
+    const pricing = await calculatePlanPrice(planType as 'checkin' | 'standard' | 'pro', roomCount, tenant.country_code);
     
     console.log('🔄 Actualizando suscripción:', {
       subscriptionId: existingSubscription.id,
@@ -77,7 +77,7 @@ export async function POST(req: NextRequest) {
       newPricing: pricing
     });
 
-    // Crear nuevo price en Stripe
+    const planNames: Record<string, string> = { checkin: 'Plan Check-in', standard: 'Plan Standard', pro: 'Plan Pro' };
     const priceAmount = Math.round(pricing.subtotal * 100);
     
     const newPrice = await stripe.prices.create({
@@ -85,8 +85,8 @@ export async function POST(req: NextRequest) {
       currency: 'eur',
       recurring: { interval: 'month' },
       product_data: {
-        name: `Delfín Check-in - ${planType === 'checkin' ? 'Plan Check-in' : 'Plan Pro'}`,
-        description: `${planType === 'checkin' ? 'Plan Check-in' : 'Plan Pro'}: ${roomCount} habitaciones`,
+        name: `Delfín Check-in - ${planNames[planType] || planType}`,
+        description: `${planNames[planType] || planType}: ${roomCount} propiedades`,
       },
       metadata: {
         plan_id: planType,
@@ -140,7 +140,7 @@ export async function POST(req: NextRequest) {
       SET 
         subscription_price = ${pricing.total},
         base_plan_price = ${pricing.subtotal},
-        extra_room_price = ${pricing.extraRoomPrice || NULL},
+        extra_room_price = ${pricing.extraRoomsPrice ?? 2},
         subscription_current_period_end = ${new Date(updatedSubscription.current_period_end * 1000)},
         updated_at = NOW()
       WHERE id = ${tenantId}

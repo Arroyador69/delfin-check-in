@@ -7,7 +7,7 @@ import { sql } from '@/lib/db';
  * POST /api/referrals/associate
  * Endpoint para asociar un nuevo tenant con su referente durante el registro/onboarding
  * 
- * Body: { tenant_id: string, plan_type?: 'free' | 'checkin' | 'pro' }
+ * Body: { tenant_id: string, plan_type?: 'free' | 'checkin' | 'standard' | 'pro' }
  * 
  * O también puede leer la cookie de referido desde el request
  */
@@ -95,7 +95,7 @@ export async function POST(req: NextRequest) {
       tenant_id,
       referrerTenantId,
       referralCodeUsed,
-      plan_type as 'free' | 'checkin' | 'pro'
+      plan_type as 'free' | 'checkin' | 'standard' | 'pro'
     );
 
     if (!result.success) {

@@ -30,10 +30,10 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { planId, paymentMethodId, roomCount = 2 } = body;
 
-    // Validar plan
-    if (!planId || !['checkin', 'pro'].includes(planId)) {
+    // Validar plan (checkin, standard, pro)
+    if (!planId || !['checkin', 'standard', 'pro'].includes(planId)) {
       return NextResponse.json(
-        { success: false, error: 'Plan inválido. Debe ser "checkin" o "pro"' },
+        { success: false, error: 'Plan inválido. Debe ser "checkin", "standard" o "pro"' },
         { status: 400 }
       );
     }
@@ -99,15 +99,18 @@ export async function POST(req: NextRequest) {
     // Crear price en Stripe (en centavos, sin IVA - Stripe maneja impuestos después)
     const priceAmount = Math.round(pricing.subtotal * 100); // Convertir a centavos
     
+    const planNames: Record<string, string> = {
+      checkin: 'Plan Check-in',
+      standard: 'Plan Standard',
+      pro: 'Plan Pro'
+    };
     const price = await stripe.prices.create({
       unit_amount: priceAmount,
       currency: 'eur',
       recurring: { interval: 'month' },
       product_data: {
-        name: `Delfín Check-in - ${planId === 'checkin' ? 'Plan Check-in' : 'Plan Pro'}`,
-        description: planId === 'checkin' 
-          ? `Plan Check-in: ${roomCount} habitaciones (${pricing.subtotal}€/mes + IVA)`
-          : `Plan Pro: ${roomCount} habitaciones (${pricing.subtotal}€/mes + IVA)`,
+        name: `Delfín Check-in - ${planNames[planId] || planId}`,
+        description: `${planNames[planId] || planId}: ${roomCount} propiedades (${pricing.subtotal}€/mes + IVA)`,
       },
       metadata: {
         plan_id: planId,
@@ -162,17 +165,17 @@ export async function POST(req: NextRequest) {
       UPDATE tenants
       SET 
         plan_type = ${planId},
-        plan_id = ${planId},
+        plan_id = ${planId === 'checkin' ? 'premium' : planId === 'standard' ? 'standard' : 'enterprise'},
         stripe_subscription_id = ${subscription.id},
         subscription_price = ${pricing.total},
         base_plan_price = ${pricing.subtotal},
         vat_rate = ${pricing.vat.vatRate},
-        extra_room_price = ${pricing.extraRoomPrice || NULL},
-        max_rooms_included = ${planId === 'checkin' ? 2 : planId === 'pro' ? 6 : 2},
+        extra_room_price = ${pricing.extraRoomsPrice ?? 2},
+        max_rooms_included = ${planId === 'checkin' ? 0 : planId === 'standard' ? 4 : 6},
         subscription_status = ${subscription.status},
         subscription_current_period_end = ${new Date(subscription.current_period_end * 1000)},
-        ads_enabled = ${planId === 'pro' ? false : true},
-        legal_module = ${planId !== 'free' ? true : false},
+        ads_enabled = ${planId === 'pro' || planId === 'standard' ? false : true},
+        legal_module = true,
         status = 'active',
         updated_at = NOW()
       WHERE id = ${tenantId}

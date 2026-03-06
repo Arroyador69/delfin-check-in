@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { ArrowLeft, Check, Crown, Zap, Loader2, Calculator } from 'lucide-react';
+import { ArrowLeft, Check, Crown, Zap, Loader2, Calculator, Star } from 'lucide-react';
 import Link from 'next/link';
 import AdminLayout from '@/components/AdminLayout';
 import { loadStripe } from '@stripe/stripe-js';
@@ -11,7 +11,7 @@ import { Elements, CardElement, useStripe, useElements } from '@stripe/react-str
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '');
 
-type PlanId = 'checkin' | 'pro';
+type PlanId = 'checkin' | 'standard' | 'pro';
 
 interface Plan {
   id: PlanId;
@@ -32,10 +32,10 @@ interface Plan {
 const UPGRADE_PLANS_CONFIG: (Omit<Plan, 'name' | 'description' | 'features'> & { featuresKeys: string[] })[] = [
   {
     id: 'checkin',
-    basePrice: 8,
+    basePrice: 2,
     maxRooms: -1,
-    maxRoomsIncluded: 2,
-    extraRoomPrice: 4,
+    maxRoomsIncluded: 1,
+    extraRoomPrice: 2,
     color: 'green',
     icon: Zap,
     popular: true,
@@ -44,11 +44,23 @@ const UPGRADE_PLANS_CONFIG: (Omit<Plan, 'name' | 'description' | 'features'> & {
     featuresKeys: ['checkinF0', 'checkinF1', 'checkinF2', 'checkinF3', 'checkinF4', 'checkinF5', 'checkinF6']
   },
   {
+    id: 'standard',
+    basePrice: 9.99,
+    maxRooms: -1,
+    maxRoomsIncluded: 4,
+    extraRoomPrice: 2,
+    color: 'amber',
+    icon: Star,
+    adsEnabled: false,
+    legalModule: true,
+    featuresKeys: ['standardF0', 'standardF1', 'standardF2', 'standardF3', 'standardF4', 'standardF5']
+  },
+  {
     id: 'pro',
     basePrice: 29.99,
     maxRooms: -1,
     maxRoomsIncluded: 6,
-    extraRoomPrice: 5,
+    extraRoomPrice: 2,
     color: 'purple',
     icon: Crown,
     adsEnabled: false,
@@ -60,6 +72,7 @@ const UPGRADE_PLANS_CONFIG: (Omit<Plan, 'name' | 'description' | 'features'> & {
 function getPlanName(t: (k: string) => string, planId: string | null): string {
   if (!planId || planId === 'free') return t('freePlanName');
   if (planId === 'checkin') return t('checkinPlanName');
+  if (planId === 'standard') return t('standardPlanName');
   if (planId === 'pro') return t('proPlanName');
   return '';
 }
@@ -332,7 +345,7 @@ export default function UpgradePlanPage() {
     }
     setSelectedPlan(planId);
     setShowCheckout(true);
-    setRoomCount(planId === 'checkin' ? 2 : planId === 'pro' ? 6 : 2);
+    setRoomCount(planId === 'checkin' ? 2 : planId === 'standard' ? 4 : planId === 'pro' ? 6 : 2);
   };
 
   const handlePriceChange = (newPricing: any) => {

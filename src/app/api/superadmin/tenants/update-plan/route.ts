@@ -5,7 +5,7 @@ import { verifyToken } from '@/lib/auth';
 /**
  * Endpoint para actualizar el plan de un tenant (solo SuperAdmin)
  * PUT /api/superadmin/tenants/update-plan
- * Body: { tenant_id: string, plan_type: 'free' | 'checkin' | 'pro' }
+ * Body: { tenant_id: string, plan_type: 'free' | 'checkin' | 'standard' | 'pro' }
  */
 export async function PUT(req: NextRequest) {
   try {
@@ -39,14 +39,14 @@ export async function PUT(req: NextRequest) {
       );
     }
 
-    if (!['free', 'checkin', 'pro'].includes(plan_type)) {
+    if (!['free', 'checkin', 'standard', 'pro'].includes(plan_type)) {
       return NextResponse.json(
-        { success: false, error: 'plan_type debe ser: free, checkin o pro' },
+        { success: false, error: 'plan_type debe ser: free, checkin, standard o pro' },
         { status: 400 }
       );
     }
 
-    // Configuración según el plan
+    // Configuración según el plan (ver PLANS.md)
     const planConfig = {
       free: {
         plan_id: 'basic',
@@ -54,26 +54,35 @@ export async function PUT(req: NextRequest) {
         legal_module: false,
         max_rooms: 2,
         max_rooms_included: 2,
-        base_plan_price: 0.00,
+        base_plan_price: 0,
         extra_room_price: null,
       },
       checkin: {
         plan_id: 'premium',
         ads_enabled: true,
         legal_module: true,
-        max_rooms: 2,
-        max_rooms_included: 2,
-        base_plan_price: 8.00,
-        extra_room_price: 4.00,
+        max_rooms: -1,
+        max_rooms_included: 0,
+        base_plan_price: 2.00,
+        extra_room_price: 2.00,
+      },
+      standard: {
+        plan_id: 'standard',
+        ads_enabled: false,
+        legal_module: true,
+        max_rooms: -1,
+        max_rooms_included: 4,
+        base_plan_price: 9.99,
+        extra_room_price: 2.00,
       },
       pro: {
         plan_id: 'enterprise',
         ads_enabled: false,
         legal_module: true,
-        max_rooms: 6,
+        max_rooms: -1,
         max_rooms_included: 6,
         base_plan_price: 29.99,
-        extra_room_price: null,
+        extra_room_price: 2.00,
       },
     };
 

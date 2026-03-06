@@ -192,11 +192,13 @@ export async function POST(req: NextRequest) {
       
       // Mensajes personalizados según el plan
       if (planType === 'free' && finalCount > 2) {
-        errorMessage = 'Has alcanzado el límite de 2 habitaciones del Plan Gratis. Actualiza a Plan Check-in (8€/mes) o Plan Pro (29,99€/mes) para añadir más habitaciones.';
+        errorMessage = 'Has alcanzado el límite de 2 propiedades del Plan Básico. Actualiza a Check-in, Standard o Pro para añadir más.';
       } else if (planType === 'checkin') {
-        errorMessage = `Puedes añadir más habitaciones, pero cada una adicional costará 4€/mes. Actualmente tienes ${finalCount} habitaciones.`;
+        errorMessage = `Puedes añadir más propiedades; cada una adicional son 2€/mes. Actualmente tienes ${finalCount}.`;
+      } else if (planType === 'standard' && finalCount > 4) {
+        errorMessage = `Has superado las 4 propiedades incluidas en Standard. Las adicionales son 2€/mes cada una.`;
       } else if (planType === 'pro' && finalCount > 6) {
-        errorMessage = `Has alcanzado las 6 habitaciones incluidas en Plan Pro. Las habitaciones adicionales tendrán un coste extra de 5€/mes cada una.`;
+        errorMessage = `Has superado las 6 propiedades incluidas en Pro. Las adicionales son 2€/mes cada una.`;
       }
       
       console.error(`❌ [POST /api/tenant/rooms] Validación fallida:`, errorMessage);
@@ -204,7 +206,7 @@ export async function POST(req: NextRequest) {
         success: false,
         error: errorMessage,
         current_usage: finalCount,
-        max_included: planType === 'free' ? 2 : planType === 'pro' ? 6 : null,
+        max_included: planType === 'free' ? 2 : planType === 'standard' ? 4 : planType === 'pro' ? 6 : null,
         plan_type: planType,
         needs_upgrade: validation.needsUpgrade || false,
         upgrade_plan: validation.upgradePlan || null

@@ -6,7 +6,7 @@ export interface TenantInfo {
   id: string;
   name: string;
   email: string;
-  plan_type?: 'free' | 'free_legal' | 'pro';
+  plan_type?: 'free' | 'free_legal' | 'checkin' | 'standard' | 'pro';
   plan_id: string;
   ads_enabled?: boolean;
   legal_module?: boolean;
@@ -76,8 +76,7 @@ export function hasAds(tenant: TenantInfo | null): boolean {
   if (tenant.ads_enabled !== undefined) {
     return tenant.ads_enabled;
   }
-  // Fallback: FREE y CHECKIN tienen anuncios, PRO no
-  // plan_type puede ser 'free', 'checkin', 'pro'
+  // Solo Básico y Check-in tienen anuncios; Standard y Pro no
   return tenant.plan_type === 'free' || tenant.plan_type === 'checkin';
 }
 
@@ -87,14 +86,17 @@ export function hasAds(tenant: TenantInfo | null): boolean {
 export function getPlanName(tenant: TenantInfo | null): string {
   if (!tenant) return 'Desconocido';
   
-  const planType = tenant.plan_type || 
-    (tenant.plan_id === 'pro' ? 'pro' : 
-     tenant.plan_id === 'premium' ? 'free_legal' : 'free');
+  const planType = tenant.plan_type ||
+    (tenant.plan_id === 'pro' || tenant.plan_id === 'enterprise' ? 'pro' :
+     tenant.plan_id === 'standard' ? 'standard' :
+     tenant.plan_id === 'premium' ? 'checkin' : 'free');
   
   const planNames: Record<string, string> = {
-    free: 'FREE',
+    free: 'Básico',
     free_legal: 'FREE + LEGAL',
-    pro: 'PRO'
+    checkin: 'Check-in',
+    standard: 'Standard',
+    pro: 'Pro'
   };
   
   return planNames[planType] || planType;

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { useLocale } from 'next-intl';
 import { Wallet, Plus, CheckCircle, XCircle, Download, CreditCard, Calendar, AlertCircle } from 'lucide-react';
+import { useTenant } from '@/hooks/useTenant';
 
 interface BankAccount {
   id: number;
@@ -32,6 +33,8 @@ interface Payment {
 export default function MicrositePaymentsPage() {
   const t = useTranslations('settings.micrositePayments');
   const locale = useLocale();
+  const { tenant } = useTenant();
+  const commissionPercent = tenant?.plan_type === 'pro' ? 5 : 9;
   const [loading, setLoading] = useState(true);
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
@@ -448,7 +451,7 @@ export default function MicrositePaymentsPage() {
             <p className="font-medium mb-1">{t('infoTitle')}</p>
             <ul className="list-disc list-inside space-y-1">
               <li>{t('info1')}</li>
-              <li>{t('info2')}</li>
+              <li>{t('info2', { percent: commissionPercent })}</li>
               <li>{t('info3')}</li>
               <li>{t('info4')}</li>
             </ul>
