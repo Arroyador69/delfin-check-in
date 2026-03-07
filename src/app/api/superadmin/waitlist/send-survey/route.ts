@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 })
     }
 
-    let body: { testEmail?: string } = {}
+    let body: { testEmail?: string; testName?: string } = {}
     try {
       body = await req.json()
     } catch {
@@ -68,7 +68,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: false, error: 'No se pudo crear el tracking' }, { status: 500 })
       }
       const { html, text, subject } = getWaitlistSurveyEmail({
-        userName: 'Prueba',
+        userName: (body.testName && body.testName.trim()) ? body.testName.trim() : 'Prueba',
         trackingId,
         adminBaseUrl,
       })

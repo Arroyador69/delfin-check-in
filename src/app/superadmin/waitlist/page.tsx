@@ -33,6 +33,7 @@ export default function SuperAdminWaitlist() {
   const [surveySending, setSurveySending] = useState(false);
   const [testEmail, setTestEmail] = useState('');
   const [testSending, setTestSending] = useState(false);
+  const [surveySendingTo, setSurveySendingTo] = useState<string | null>(null);
   const [campaigns, setCampaigns] = useState<Array<{ campaign_key: string; sent_count: number; opened_count: number; clicked_count: number; completed_count: number }>>([]);
   const [campaignDetail, setCampaignDetail] = useState<Array<{ email: string; sent_at: string; opened: boolean; clicked: boolean; completed: boolean }>>([]);
   const [selectedCampaignKey, setSelectedCampaignKey] = useState<string | null>(null);
@@ -131,6 +132,30 @@ export default function SuperAdminWaitlist() {
       alert('Error al enviar email de prueba');
     } finally {
       setTestSending(false);
+    }
+  };
+
+  const handleSendSurveyToOne = async (email: string, name?: string | null) => {
+    setSurveySendingTo(email);
+    try {
+      const res = await fetch('/api/superadmin/waitlist/send-survey', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ testEmail: email, testName: name || undefined }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert(`✅ Encuesta enviada a ${email}. Verás el tracking (abierto, clic, rellenado) en la campaña.`);
+        fetchSurveyCampaigns();
+        if (data.campaign_key) fetchCampaignDetail(data.campaign_key);
+      } else {
+        alert(`❌ ${data.error || 'Error al enviar'}`);
+      }
+    } catch (e) {
+      console.error(e);
+      alert('Error al enviar encuesta');
+    } finally {
+      setSurveySendingTo(null);
     }
   };
 
@@ -549,7 +574,22 @@ export default function SuperAdminWaitlist() {
                       </div>
                     </div>
                   </div>
-                  <div className="ml-4 flex gap-2">
+                  <div className="ml-4 flex flex-wrap gap-2">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleSendSurveyToOne(entry.email, entry.name);
+                      }}
+                      disabled={surveySendingTo === entry.email || activating.has(entry.id) || cleaning.has(entry.email)}
+                      className={`px-3 py-2 rounded-lg font-medium transition-colors text-sm ${
+                        surveySendingTo === entry.email || activating.has(entry.id) || cleaning.has(entry.email)
+                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                          : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                      }`}
+                      title="Enviar solo a este email el correo de la encuesta (con tracking)"
+                    >
+                      {surveySendingTo === entry.email ? 'Enviando...' : '📋 Enviar encuesta'}
+                    </button>
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
