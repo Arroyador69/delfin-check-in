@@ -286,3 +286,57 @@ El equipo de Delfín Check-in
     subject: '🎉 ¡Tu cuenta de Delfín Check-in está lista! - Early Adopter'
   };
 }
+
+/**
+ * Email: Encuesta para la waitlist (con tracking open/click)
+ */
+export function getWaitlistSurveyEmail(params: {
+  userName: string;
+  trackingId: string;
+  adminBaseUrl: string;
+}): { html: string; text: string; subject: string } {
+  const { userName, trackingId, adminBaseUrl } = params;
+  const openPixelUrl = `${adminBaseUrl}/api/track/email-open?tid=${trackingId}`;
+  const surveyUrl = `https://delfincheckin.com/encuesta?tid=${encodeURIComponent(trackingId)}`;
+  const clickTrackUrl = `${adminBaseUrl}/api/track/email-click?tid=${encodeURIComponent(trackingId)}&url=${encodeURIComponent(surveyUrl)}`;
+
+  const content = `
+    <img src="${openPixelUrl}" width="1" height="1" alt="" style="display:block;width:1px;height:1px;border:0;" />
+    <h2 style="color: #1d4ed8; margin-top: 0;">¡Hola ${userName}! Nos importa tu opinión</h2>
+
+    <p>Estás en la lista de espera de Delfín Check-in y estamos a punto de abrir el acceso. Para adaptar el software a lo que necesitas, nos ayudaría mucho que respondieras esta <strong>breve encuesta</strong> (menos de 2 minutos).</p>
+
+    <p>Podrás decirnos:</p>
+    <ul style="line-height: 1.8;">
+      <li>Si te gustaría probar el software en acceso avanzado y darnos feedback</li>
+      <li>Cuántas propiedades u habitaciones gestionas</li>
+      <li>Qué software usas ahora y qué te gustaría que tuviera Delfín</li>
+      <li>Qué plan te encajaría mejor (Básico, Check-in, Standard, Pro) y si el precio te parece adecuado</li>
+    </ul>
+
+    <p style="text-align: center; margin: 28px 0;">
+      <a href="${clickTrackUrl}" style="display: inline-block; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white; padding: 16px 32px; text-decoration: none; border-radius: 12px; font-weight: 700; font-size: 18px;">📋 Ir a la encuesta</a>
+    </p>
+
+    <p>Gracias por ayudarnos a mejorar. Si tienes dudas, escríbenos a <a href="mailto:contacto@delfincheckin.com" style="color: #2563eb;">contacto@delfincheckin.com</a>.</p>
+
+    <p style="margin-top: 30px;">El equipo de Delfín Check-in</p>
+  `;
+
+  const html = getBaseEmailTemplate(content);
+  const text = `
+¡Hola ${userName}! Nos importa tu opinión
+
+Estás en la lista de espera de Delfín Check-in. Responde esta breve encuesta (menos de 2 minutos) para ayudarnos a adaptar el software a lo que necesitas:
+
+${surveyUrl}
+
+Gracias. El equipo de Delfín Check-in
+  `.trim();
+
+  return {
+    html,
+    text,
+    subject: '📋 Encuesta Delfín Check-in – 2 minutos y nos ayudas mucho'
+  };
+}

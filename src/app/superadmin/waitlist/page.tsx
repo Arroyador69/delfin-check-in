@@ -30,10 +30,76 @@ export default function SuperAdminWaitlist() {
   });
   const [activating, setActivating] = useState<Set<string>>(new Set());
   const [cleaning, setCleaning] = useState<Set<string>>(new Set());
+  const [surveySending, setSurveySending] = useState(false);
+  const [campaigns, setCampaigns] = useState<Array<{ campaign_key: string; sent_count: number; opened_count: number; clicked_count: number; completed_count: number }>>([]);
+  const [campaignDetail, setCampaignDetail] = useState<Array<{ email: string; sent_at: string; opened: boolean; clicked: boolean; completed: boolean }>>([]);
+  const [selectedCampaignKey, setSelectedCampaignKey] = useState<string | null>(null);
+  const [surveyResponses, setSurveyResponses] = useState<Array<{ id: string; email: string; responded_at: string; answers: Record<string, unknown> }>>([]);
+  const [responsesCampaignKey, setResponsesCampaignKey] = useState<string | null>(null);
 
   useEffect(() => {
     fetchWaitlist();
+    fetchSurveyCampaigns();
   }, []);
+
+  const fetchSurveyCampaigns = async () => {
+    try {
+      const res = await fetch('/api/superadmin/waitlist/survey/campaigns');
+      const data = await res.json();
+      if (data.success && data.campaigns) setCampaigns(data.campaigns);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const fetchCampaignDetail = async (key: string) => {
+    try {
+      const res = await fetch(`/api/superadmin/waitlist/survey/campaigns?campaign_key=${encodeURIComponent(key)}`);
+      const data = await res.json();
+      if (data.success && data.detail) {
+        setCampaignDetail(data.detail);
+        setSelectedCampaignKey(key);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const fetchSurveyResponses = async (key?: string) => {
+    try {
+      const url = key ? `/api/superadmin/waitlist/survey/responses?campaign_key=${encodeURIComponent(key)}` : '/api/superadmin/waitlist/survey/responses';
+      const res = await fetch(url);
+      const data = await res.json();
+      if (data.success && data.responses) {
+        setSurveyResponses(data.responses);
+        setResponsesCampaignKey(data.campaign_key || null);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleSendSurveyToAll = async () => {
+    if (!confirm(`¿Enviar la encuesta a los ${pendingEntries.length} pendientes de la waitlist? No se enviará hasta que confirmes.`)) return;
+    setSurveySending(true);
+    try {
+      const res = await fetch('/api/superadmin/waitlist/send-survey', { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        alert(`✅ ${data.message}`);
+        fetchWaitlist();
+        fetchSurveyCampaigns();
+        if (data.campaign_key) fetchCampaignDetail(data.campaign_key);
+      } else {
+        alert(`❌ ${data.error || 'Error al enviar'}`);
+      }
+    } catch (e) {
+      console.error(e);
+      alert('Error al enviar encuesta');
+    } finally {
+      setSurveySending(false);
+    }
+  };
 
   const fetchWaitlist = async () => {
     try {
@@ -265,6 +331,117 @@ export default function SuperAdminWaitlist() {
           </button>
         </div>
       </div>
+
+      {/* Encuesta waitlist */}
+      <div className="bg-white rounded-lg shadow p-6 mb-6 border-2 border-indigo-100">
+        <h2 className="text-xl font-bold text-gray-900 mb-2">📋 Encuesta waitlist</h2>
+        <p className="text-gray-600 text-sm mb-4">
+          Envía la encuesta a todos los pendientes. Antes puedes ver cómo se ve la encuesta en la landing (estilo Delfín).
+        </p>
+        <div className="flex flex-wrap items-center gap-3 mb-4">
+          <a
+            href="https://delfincheckin.com/encuesta"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+          >
+            👁️ Ver encuesta (preview)
+          </a>
+          <button
+            onClick={handleSendSurveyToAll}
+            disabled={surveySending || pendingEntries.length === 0}
+            className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {surveySending ? 'Enviando...' : `Enviar encuesta a todos (${pendingEntries.length})`}
+          </button>
+        </div>
+        {campaigns.length > 0 && (
+          <div className="mt-4 pt-4 border-t border-gray-200">
+            <h3 className="font-semibold text-gray-800 mb-2">Campañas de encuesta</h3>
+            <div className="space-y-2">
+              {campaigns.map((c) => (
+                <div key={c.campaign_key} className="flex items-center gap-4 flex-wrap">
+                  <button
+                    type="button"
+                    onClick={() => fetchCampaignDetail(c.campaign_key)}
+                    className="text-left px-3 py-2 rounded-lg bg-gray-50 hover:bg-gray-100 border border-gray-200"
+                  >
+                    <span className="font-medium">{c.campaign_key}</span>
+                    <span className="text-gray-500 text-sm ml-2">
+                      · {c.sent_count} enviados · {c.opened_count} abrieron · {c.clicked_count} clic · {c.completed_count} rellenaron
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => fetchSurveyResponses(c.campaign_key)}
+                    className="text-sm text-indigo-600 hover:underline"
+                  >
+                    Ver respuestas
+                  </button>
+                </div>
+              ))}
+            </div>
+            {selectedCampaignKey && campaignDetail.length > 0 && (
+              <div className="mt-4 overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-gray-200">
+                      <th className="text-left py-2">Email</th>
+                      <th className="text-left py-2">Enviado</th>
+                      <th className="text-left py-2">Abierto</th>
+                      <th className="text-left py-2">Clic</th>
+                      <th className="text-left py-2">Rellenado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {campaignDetail.map((r) => (
+                      <tr key={r.email} className="border-b border-gray-100">
+                        <td className="py-2">{r.email}</td>
+                        <td className="py-2">{new Date(r.sent_at).toLocaleString('es-ES')}</td>
+                        <td className="py-2">{r.opened ? '✅' : '—'}</td>
+                        <td className="py-2">{r.clicked ? '✅' : '—'}</td>
+                        <td className="py-2">{r.completed ? '✅' : '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Respuestas de la encuesta */}
+      {(surveyResponses.length > 0 || responsesCampaignKey) && (
+        <div className="bg-white rounded-lg shadow p-6 mb-6">
+          <h2 className="text-xl font-bold text-gray-900 mb-2">Respuestas de la encuesta</h2>
+          {responsesCampaignKey && (
+            <p className="text-gray-600 text-sm mb-4">Campaña: {responsesCampaignKey}</p>
+          )}
+          <div className="space-y-4">
+            {surveyResponses.map((r) => (
+              <div key={r.id} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                <div className="flex justify-between items-start mb-2">
+                  <span className="font-medium text-gray-900">{r.email}</span>
+                  <span className="text-xs text-gray-500">{new Date(r.responded_at).toLocaleString('es-ES')}</span>
+                </div>
+                <dl className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+                  {typeof r.answers.want_beta === 'boolean' && <><dt className="text-gray-500">Quiere beta</dt><dd>{r.answers.want_beta ? 'Sí' : 'No'}</dd></>}
+                  {r.answers.properties_count && <><dt className="text-gray-500">Propiedades/hab.</dt><dd>{String(r.answers.properties_count)}</dd></>}
+                  {r.answers.accommodation_type && <><dt className="text-gray-500">Tipo alojamiento</dt><dd>{String(r.answers.accommodation_type)}</dd></>}
+                  {r.answers.has_direct_reservations && <><dt className="text-gray-500">Reservas directas</dt><dd>{String(r.answers.has_direct_reservations)}</dd></>}
+                  {r.answers.current_software && <><dt className="text-gray-500">Software actual</dt><dd>{String(r.answers.current_software)}</dd></>}
+                  {r.answers.current_monthly_pay && <><dt className="text-gray-500">Pago mensual actual</dt><dd>{String(r.answers.current_monthly_pay)}</dd></>}
+                  {r.answers.plan_choice && <><dt className="text-gray-500">Plan elegido</dt><dd>{String(r.answers.plan_choice)}</dd></>}
+                  {r.answers.price_perception && <><dt className="text-gray-500">Precio</dt><dd>{String(r.answers.price_perception)}</dd></>}
+                  {r.answers.what_features && <><dt className="text-gray-500 col-span-2">Qué le gustaría</dt><dd className="col-span-2">{String(r.answers.what_features)}</dd></>}
+                  {r.answers.comments && <><dt className="text-gray-500 col-span-2">Comentarios</dt><dd className="col-span-2">{String(r.answers.comments)}</dd></>}
+                </dl>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Lista de pendientes */}
       <div className="bg-white rounded-lg shadow mb-6">
