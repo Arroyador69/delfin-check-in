@@ -51,7 +51,7 @@ export function calculateCheckinPrice(roomCount: number): {
 }
 
 /**
- * Plan Standard: 9,99 € base, 4 propiedades incluidas, luego 2 €/propiedad extra
+ * Plan Standard: 9,99 € base (1 propiedad incluida), luego 2 €/propiedad extra
  */
 export function calculateStandardPrice(roomCount: number): {
   basePrice: number;
@@ -60,7 +60,7 @@ export function calculateStandardPrice(roomCount: number): {
   subtotal: number;
 } {
   const BASE_PRICE = 9.99;
-  const ROOMS_INCLUDED = 4;
+  const ROOMS_INCLUDED = 1;
   if (roomCount <= ROOMS_INCLUDED) {
     return { basePrice: BASE_PRICE, extraRooms: 0, extraRoomsPrice: 0, subtotal: BASE_PRICE };
   }
@@ -76,7 +76,7 @@ export function calculateStandardPrice(roomCount: number): {
 }
 
 /**
- * Plan Pro: 29,99 € base, 6 propiedades incluidas, luego 2 €/propiedad extra
+ * Plan Pro: 29,99 € base (1 propiedad incluida), luego 2 €/propiedad extra
  */
 export function calculateProPrice(roomCount: number): {
   basePrice: number;
@@ -85,7 +85,7 @@ export function calculateProPrice(roomCount: number): {
   subtotal: number;
 } {
   const BASE_PRICE = 29.99;
-  const ROOMS_INCLUDED = 6;
+  const ROOMS_INCLUDED = 1;
   if (roomCount <= ROOMS_INCLUDED) {
     return { basePrice: BASE_PRICE, extraRooms: 0, extraRoomsPrice: 0, subtotal: BASE_PRICE };
   }

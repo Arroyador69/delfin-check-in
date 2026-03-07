@@ -381,26 +381,25 @@ export function canCreateUnit(tenant: Tenant, currentCount?: number): {
     return { canCreate: true };
   }
 
-  // Plan STANDARD: 4 incluidas, luego 2 €/mes por cada extra
+  // Plan STANDARD: 1 incluida en la cuota, luego 2 €/mes por cada extra (igual que Check-in)
   if (planType === 'standard') {
-    const maxIncluded = tenant.max_rooms_included ?? 4;
+    const maxIncluded = tenant.max_rooms_included ?? 1;
     if (currentUnits >= maxIncluded) {
       return {
         canCreate: true,
-        reason: `Has alcanzado las ${maxIncluded} propiedades incluidas. Las adicionales tendrán un coste de 2 €/mes.`
+        reason: `Incluye 1 propiedad en la cuota. Las adicionales son 2 €/mes cada una.`
       };
     }
     return { canCreate: true };
   }
   
-  // Plan PRO: hasta 6 habitaciones incluidas, luego 2 €/mes por extra
+  // Plan PRO: 1 incluida en la cuota, luego 2 €/mes por cada extra (igual que Check-in y Standard)
   if (planType === 'pro') {
-    const maxIncluded = tenant.max_rooms_included || 6;
+    const maxIncluded = tenant.max_rooms_included ?? 1;
     if (currentUnits >= maxIncluded) {
-      // Puede crear más, pero se cobrará precio adicional
-      return { 
+      return {
         canCreate: true,
-        reason: `Has alcanzado las ${maxIncluded} habitaciones incluidas. Las habitaciones adicionales tendrán un coste extra.`
+        reason: `Incluye 1 propiedad en la cuota. Las adicionales son 2 €/mes cada una.`
       };
     }
     return { canCreate: true };

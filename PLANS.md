@@ -48,34 +48,32 @@ Documento de referencia de los 4 planes del sistema. Usar en landing, onboarding
 ## 3. Standard
 
 - **ID en sistema:** `standard` / `plan_type: 'standard'`
-- **Precio:** **9,99 €/mes** + **2 € por cada propiedad/habitación adicional** (por encima de las incluidas)
-  - Propiedades incluidas en la cuota: **4**
-  - A partir de la 5.ª propiedad: 2 €/mes cada una
-  - Ejemplo: 4 propiedades = 9,99 €; 6 propiedades = 9,99 + 4 € = 13,99 €
-- **Propiedades:** 4 incluidas, luego 2 €/mes por cada una extra
+- **Precio:** **9,99 €/mes** (1 propiedad/habitación incluida) + **2 € por cada propiedad/habitación adicional**
+  - Igual que Check-in: el precio base incluye 1 unidad; cada nueva son 2 €/mes
+  - Ejemplo: 1 propiedad = 9,99 €; 3 propiedades = 9,99 + 4 € = 13,99 €; 5 = 9,99 + 8 € = 17,99 €
+- **Propiedades:** 1 incluida en la cuota, luego 2 €/mes por cada una extra
 - **Anuncios:** **No**
 - **Registro de viajeros:** Sí, con envío automático MIR
 - **Reservas directas:** Sí (comisión **9%**)
 - **Envío automático MIR:** Sí
 
-**Ideal para:** Quien quiere quitar anuncios y tener un pack de 4 propiedades a precio fijo.
+**Ideal para:** Quien quiere quitar anuncios; misma lógica de precio por propiedad que Check-in (1 incluida + 2 €/adicional).
 
 ---
 
 ## 4. Pro
 
 - **ID en sistema:** `pro` / `plan_type: 'pro'`
-- **Precio:** **29,99 €/mes** + **2 € por cada propiedad/habitación adicional** (por encima de las incluidas)
-  - Propiedades incluidas en la cuota: **6**
-  - A partir de la 7.ª propiedad: 2 €/mes cada una
-  - Ejemplo: 6 propiedades = 29,99 €; 8 propiedades = 29,99 + 4 € = 33,99 €
-- **Propiedades:** 6 incluidas, luego 2 €/mes por cada una extra
+- **Precio:** **29,99 €/mes** (1 propiedad/habitación incluida) + **2 € por cada propiedad/habitación adicional**
+  - Igual que Check-in y Standard: precio base = 1 unidad; cada nueva son 2 €/mes
+  - Ejemplo: 1 propiedad = 29,99 €; 3 propiedades = 29,99 + 4 € = 33,99 €; 5 = 29,99 + 8 € = 37,99 €
+- **Propiedades:** 1 incluida en la cuota, luego 2 €/mes por cada una extra
 - **Anuncios:** **No**
 - **Registro de viajeros:** Sí, con envío automático MIR
 - **Reservas directas:** Sí (comisión **5%** — reducida respecto al resto de planes)
 - **Envío automático MIR:** Sí
 
-**Ideal para:** Máximo servicio, sin anuncios y comisión mínima en reservas directas.
+**Ideal para:** Máximo servicio, sin anuncios y comisión mínima en reservas directas; misma lógica 1 incluida + 2 €/adicional.
 
 ---
 
@@ -84,9 +82,9 @@ Documento de referencia de los 4 planes del sistema. Usar en landing, onboarding
 | Plan     | Precio        | Anuncios | MIR auto | Comisión reservas directas | Propiedades |
 |----------|---------------|----------|----------|----------------------------|-------------|
 | Básico   | 0 €           | Sí       | No       | 9%                         | 2 (límite)  |
-| Check-in | 2 € + 2 €/prop| Sí       | Sí       | 9%                         | Ilimitadas (2 €/cada una) |
-| Standard | 9,99 € + 2 €/prop extra | No | Sí | 9% | 4 incl. + 2 €/extra |
-| Pro      | 29,99 € + 2 €/prop extra | No | Sí | **5%** | 6 incl. + 2 €/extra |
+| Check-in | 2 € + 2 €/prop| Sí       | Sí       | 9%                         | 1 incl. + 2 €/adicional |
+| Standard | 9,99 € + 2 €/prop| No   | Sí       | 9%                         | 1 incl. + 2 €/adicional |
+| Pro      | 29,99 € + 2 €/prop| No    | Sí       | **5%**                     | 1 incl. + 2 €/adicional |
 
 ---
 
@@ -111,4 +109,4 @@ Documento de referencia de los 4 planes del sistema. Usar en landing, onboarding
 
 ## Landing (delfincheckin.com)
 
-- La landing principal (carpeta **delfincheckin.com** / repo delfincheckin.com) está actualizada con los **4 planes**: Básico (0€), Check-in (2€+2€/prop), Standard (9,99€/mes, 4 incl.), Pro (29,99€/mes, 6 incl., 5% comisión). Sección de precios, meta tags, FAQ y CTA de registro alineados con este documento.
+- La landing principal (carpeta **delfincheckin.com** / repo delfincheckin.com) está actualizada con los **4 planes**: Básico (0€), Check-in (2€+2€/prop), Standard (9,99€/mes, 1 incl. +2€/prop), Pro (29,99€/mes, 1 incl. +2€/prop, 5% comisión). En todos los planes de pago: 1 propiedad incluida en el precio base y 2 €/mes por cada propiedad o habitación adicional.

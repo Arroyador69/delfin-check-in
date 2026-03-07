@@ -31,6 +31,8 @@ export default function SuperAdminWaitlist() {
   const [activating, setActivating] = useState<Set<string>>(new Set());
   const [cleaning, setCleaning] = useState<Set<string>>(new Set());
   const [surveySending, setSurveySending] = useState(false);
+  const [testEmail, setTestEmail] = useState('');
+  const [testSending, setTestSending] = useState(false);
   const [campaigns, setCampaigns] = useState<Array<{ campaign_key: string; sent_count: number; opened_count: number; clicked_count: number; completed_count: number }>>([]);
   const [campaignDetail, setCampaignDetail] = useState<Array<{ email: string; sent_at: string; opened: boolean; clicked: boolean; completed: boolean }>>([]);
   const [selectedCampaignKey, setSelectedCampaignKey] = useState<string | null>(null);
@@ -98,6 +100,37 @@ export default function SuperAdminWaitlist() {
       alert('Error al enviar encuesta');
     } finally {
       setSurveySending(false);
+    }
+  };
+
+  const handleSendTestSurvey = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const email = testEmail.trim();
+    if (!email) {
+      alert('Escribe un email para la prueba');
+      return;
+    }
+    setTestSending(true);
+    try {
+      const res = await fetch('/api/superadmin/waitlist/send-survey', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ testEmail: email }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert(`✅ ${data.message}`);
+        setTestEmail('');
+        fetchSurveyCampaigns();
+        if (data.campaign_key) fetchCampaignDetail(data.campaign_key);
+      } else {
+        alert(`❌ ${data.error || 'Error al enviar'}`);
+      }
+    } catch (e) {
+      console.error(e);
+      alert('Error al enviar email de prueba');
+    } finally {
+      setTestSending(false);
     }
   };
 
@@ -335,8 +368,11 @@ export default function SuperAdminWaitlist() {
       {/* Encuesta waitlist */}
       <div className="bg-white rounded-lg shadow p-6 mb-6 border-2 border-indigo-100">
         <h2 className="text-xl font-bold text-gray-900 mb-2">📋 Encuesta waitlist</h2>
-        <p className="text-gray-600 text-sm mb-4">
+        <p className="text-gray-600 text-sm mb-2">
           Envía la encuesta a todos los pendientes. Antes puedes ver cómo se ve la encuesta en la landing (estilo Delfín).
+        </p>
+        <p className="text-gray-500 text-xs mb-4">
+          Después de enviar: haz clic en la campaña para ver <strong>quién abrió el mail</strong>, <strong>quién hizo clic</strong> y <strong>quién rellenó</strong> la encuesta. Usa &quot;Ver respuestas&quot; para leer lo que contestó cada uno.
         </p>
         <div className="flex flex-wrap items-center gap-3 mb-4">
           <a
@@ -355,6 +391,24 @@ export default function SuperAdminWaitlist() {
             {surveySending ? 'Enviando...' : `Enviar encuesta a todos (${pendingEntries.length})`}
           </button>
         </div>
+        <form onSubmit={handleSendTestSurvey} className="flex flex-wrap items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+          <label htmlFor="test-email" className="text-sm font-medium text-amber-800">Enviar prueba a mi email:</label>
+          <input
+            id="test-email"
+            type="email"
+            value={testEmail}
+            onChange={(e) => setTestEmail(e.target.value)}
+            placeholder="tu@email.com"
+            className="px-3 py-2 border border-amber-300 rounded-lg text-sm w-56"
+          />
+          <button
+            type="submit"
+            disabled={testSending}
+            className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 text-sm font-medium disabled:opacity-50"
+          >
+            {testSending ? 'Enviando...' : 'Enviar encuesta de prueba'}
+          </button>
+        </form>
         {campaigns.length > 0 && (
           <div className="mt-4 pt-4 border-t border-gray-200">
             <h3 className="font-semibold text-gray-800 mb-2">Campañas de encuesta</h3>
