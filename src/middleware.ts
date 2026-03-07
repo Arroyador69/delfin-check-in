@@ -181,6 +181,7 @@ export async function middleware(req: NextRequest) {
     pathname.startsWith('/api/create-payment-intent') ||
     pathname.startsWith('/api/landing/') ||
     pathname.startsWith('/api/waitlist') ||
+    pathname.startsWith('/api/track/') ||
     pathname.startsWith('/api/blog/analytics/') ||
     pathname.startsWith('/api/blog/waitlist') ||
     pathname.startsWith('/api/cron/') ||
@@ -258,6 +259,8 @@ export async function middleware(req: NextRequest) {
         pathname === '/api/tenant' ||
         pathname.startsWith('/api/stripe/webhook') ||
         pathname.startsWith('/api/create-payment-intent') ||
+        pathname.startsWith('/api/waitlist') ||
+        pathname.startsWith('/api/track/') ||
         pathname.startsWith('/api/blog/analytics/') ||
         pathname.startsWith('/api/blog/waitlist') ||
         pathname.startsWith('/api/cron/') ||
