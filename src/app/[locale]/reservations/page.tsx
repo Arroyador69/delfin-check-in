@@ -34,10 +34,57 @@ interface Room {
   basePrice: number;
 }
 
+// Fallbacks en español para el formulario de reserva (si las traducciones no se resuelven)
+const RESERVATION_FORM_FALLBACKS: Record<string, string> = {
+  'createModal.title': 'Nueva reserva manual',
+  'createModal.reservationSection': 'Información de la reserva',
+  'editModal.title': 'Editar reserva',
+  'editModal.reservationSection': 'Información de la reserva',
+  'form.roomLabel': 'Habitación *',
+  'form.roomPlaceholder': 'Seleccionar habitación',
+  'form.statusLabel': 'Estado *',
+  'form.guestSectionTitle': 'Información del huésped',
+  'form.guestNameLabel': 'Nombre del huésped *',
+  'form.guestNamePlaceholder': 'Nombre completo',
+  'form.guestEmailLabel': 'Email del huésped',
+  'form.guestEmailPlaceholder': 'email@ejemplo.com',
+  'form.guestPhoneLabel': 'Teléfono del huésped',
+  'form.guestPhonePlaceholder': '+34 600 000 000',
+  'form.guestCountLabel': 'Número de personas *',
+  'form.additionalInfoSectionTitle': 'Información adicional',
+  'form.datesSectionTitle': 'Fechas de estancia',
+  'form.checkInLabel': 'Fecha de llegada *',
+  'form.checkOutLabel': 'Fecha de salida *',
+  'form.financialSectionTitle': 'Información financiera',
+  'form.totalPriceLabel': 'Precio total',
+  'form.guestPaidLabel': 'Pagó huésped',
+  'form.platformCommissionLabel': 'Comisión plataforma',
+  'form.configSectionTitle': 'Configuración de reserva',
+  'form.channelLabel': 'Canal de reserva *',
+  'form.currencyLabel': 'Moneda',
+  'form.cancel': 'Cancelar',
+  'form.creating': 'Creando...',
+  'form.createSubmit': 'Crear reserva',
+  'form.updating': 'Actualizando...',
+  'form.updateSubmit': 'Actualizar reserva',
+  'channelManual': 'Manual',
+  'channelAirbnb': 'Airbnb',
+  'channelBooking': 'Booking.com',
+};
+
 export default function ReservationsPage() {
   const t = useTranslations('reservations');
   const tCommon = useTranslations('common');
   const locale = useLocale();
+
+  const safeT = (key: string): string => {
+    try {
+      const value = t(key);
+      if (typeof value === 'string' && !value.includes('reservations.') && value !== key) return value;
+    } catch {}
+    return RESERVATION_FORM_FALLBACKS[key] ?? key;
+  };
+
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [rooms, setRooms] = useState<Room[]>([]);
   const [loading, setLoading] = useState(true);
@@ -722,7 +769,7 @@ export default function ReservationsPage() {
               <h3 className="text-2xl font-bold text-gray-900 flex items-center">
                 <span className="text-3xl mr-2" style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>➕</span>
                 <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  {t('createModal.title')}
+                  {safeT('createModal.title')}
                 </span>
               </h3>
               <button
@@ -741,12 +788,12 @@ export default function ReservationsPage() {
               <div className="bg-gradient-to-br from-blue-50 to-indigo-100 p-4 rounded-xl border-2 border-blue-200">
                 <h4 className="text-sm font-bold text-gray-700 mb-3 flex items-center">
                   <span className="text-lg mr-2">🏠</span>
-                  {t('createModal.reservationSection')}
+                  {safeT('createModal.reservationSection')}
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      🛏️ {t('form.roomLabel')}
+                      🛏️ {safeT('form.roomLabel')}
                     </label>
                     <select
                       required
@@ -754,7 +801,7 @@ export default function ReservationsPage() {
                       onChange={(e) => setFormData({...formData, room_id: e.target.value})}
                       className="w-full px-3 py-2 border-2 border-blue-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white font-medium transition-all"
                     >
-                      <option value="">{t('form.roomPlaceholder')}</option>
+                      <option value="">{safeT('form.roomPlaceholder')}</option>
                       {rooms.map(room => (
                         <option key={room.id} value={room.id}>
                           {room.name} - €{room.basePrice}/night
@@ -765,7 +812,7 @@ export default function ReservationsPage() {
                   
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      ✅ {t('form.statusLabel')}
+                      ✅ {safeT('form.statusLabel')}
                     </label>
                     <select
                       required
@@ -785,32 +832,32 @@ export default function ReservationsPage() {
               <div className="bg-gradient-to-br from-green-50 to-emerald-100 p-4 rounded-xl border-2 border-green-200">
                 <h4 className="text-sm font-bold text-gray-700 mb-3 flex items-center">
                   <span className="text-lg mr-2">👤</span>
-                  {t('form.guestSectionTitle')}
+                  {safeT('form.guestSectionTitle')}
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      👤 {t('form.guestNameLabel')}
+                      👤 {safeT('form.guestNameLabel')}
                     </label>
                     <input
                       type="text"
                       required
                       value={formData.guest_name}
                       onChange={(e) => setFormData({...formData, guest_name: e.target.value})}
-                      placeholder={t('form.guestNamePlaceholder')}
+                      placeholder={safeT('form.guestNamePlaceholder')}
                       className="w-full px-3 py-2 border-2 border-green-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white font-medium transition-all"
                     />
                   </div>
                   
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      📧 {t('form.guestEmailLabel')}
+                      📧 {safeT('form.guestEmailLabel')}
                     </label>
                     <input
                       type="email"
                       value={formData.guest_email}
                       onChange={(e) => setFormData({...formData, guest_email: e.target.value})}
-                      placeholder={t('form.guestEmailPlaceholder')}
+                      placeholder={safeT('form.guestEmailPlaceholder')}
                       className="w-full px-3 py-2 border-2 border-green-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white font-medium text-black placeholder-gray-500 transition-all"
                     />
                   </div>
@@ -820,20 +867,20 @@ export default function ReservationsPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      📞 {t('form.guestPhoneLabel')}
+                      📞 {safeT('form.guestPhoneLabel')}
                     </label>
                     <input
                       type="tel"
                       value={formData.guest_phone}
                       onChange={(e) => setFormData({...formData, guest_phone: e.target.value})}
-                      placeholder={t('form.guestPhonePlaceholder')}
+                      placeholder={safeT('form.guestPhonePlaceholder')}
                       className="w-full px-3 py-2 border-2 border-green-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white font-medium text-black placeholder-gray-500 transition-all"
                     />
                   </div>
                   
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      👥 {t('form.guestCountLabel')}
+                      👥 {safeT('form.guestCountLabel')}
                     </label>
                     <input
                       type="number"
@@ -852,12 +899,12 @@ export default function ReservationsPage() {
               <div className="bg-gradient-to-br from-orange-50 to-amber-100 p-4 rounded-xl border-2 border-orange-200">
                 <h4 className="text-sm font-bold text-gray-700 mb-3 flex items-center">
                   <span className="text-lg mr-2">📅</span>
-                  {t('form.datesSectionTitle')}
+                  {safeT('form.datesSectionTitle')}
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      📥 {t('form.checkInLabel')}
+                      📥 {safeT('form.checkInLabel')}
                     </label>
                     <input
                       type="date"
@@ -870,7 +917,7 @@ export default function ReservationsPage() {
                   
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      📤 {t('form.checkOutLabel')}
+                      📤 {safeT('form.checkOutLabel')}
                     </label>
                     <input
                       type="date"
@@ -887,12 +934,12 @@ export default function ReservationsPage() {
               <div className="bg-gradient-to-br from-yellow-50 to-orange-100 p-4 rounded-xl border-2 border-yellow-200">
                 <h4 className="text-sm font-bold text-gray-700 mb-3 flex items-center">
                   <span className="text-lg mr-2">💰</span>
-                  {t('form.financialSectionTitle')}
+                  {safeT('form.financialSectionTitle')}
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      💵 {t('form.totalPriceLabel')}
+                      💵 {safeT('form.totalPriceLabel')}
                     </label>
                     <input
                       type="number"
@@ -906,7 +953,7 @@ export default function ReservationsPage() {
                   
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      💳 {t('form.guestPaidLabel')}
+                      💳 {safeT('form.guestPaidLabel')}
                     </label>
                     <input
                       type="number"
@@ -920,7 +967,7 @@ export default function ReservationsPage() {
                   
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      💎 {t('form.platformCommissionLabel')}
+                      💎 {safeT('form.platformCommissionLabel')}
                     </label>
                     <input
                       type="number"
@@ -938,12 +985,12 @@ export default function ReservationsPage() {
               <div className="bg-gradient-to-br from-indigo-50 to-blue-100 p-4 rounded-xl border-2 border-indigo-200">
                 <h4 className="text-sm font-bold text-gray-700 mb-3 flex items-center">
                   <span className="text-lg mr-2">🌐</span>
-                  {t('form.configSectionTitle')}
+                  {safeT('form.configSectionTitle')}
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      📡 {t('form.channelLabel')}
+                      📡 {safeT('form.channelLabel')}
                     </label>
                     <select
                       required
@@ -951,15 +998,15 @@ export default function ReservationsPage() {
                       onChange={(e) => setFormData({...formData, channel: e.target.value as 'airbnb' | 'booking' | 'manual'})}
                       className="w-full px-3 py-2 border-2 border-indigo-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white font-medium transition-all"
                     >
-                      <option value="manual">📝 {t('channelManual')}</option>
-                      <option value="airbnb">🏠 {t('channelAirbnb')}</option>
-                      <option value="booking">🌐 {t('channelBooking')}</option>
+                      <option value="manual">📝 {safeT('channelManual')}</option>
+                      <option value="airbnb">🏠 {safeT('channelAirbnb')}</option>
+                      <option value="booking">🌐 {safeT('channelBooking')}</option>
                     </select>
                   </div>
                   
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      💱 {t('form.currencyLabel')}
+                      💱 {safeT('form.currencyLabel')}
                     </label>
                     <select
                       value={formData.currency}
@@ -984,7 +1031,7 @@ export default function ReservationsPage() {
                   }}
                   className="px-6 py-2 border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 font-semibold transition-all duration-200 transform hover:scale-105"
                 >
-                  ❌ {t('form.cancel')}
+                  ❌ {safeT('form.cancel')}
                 </button>
                 <button
                   type="submit"
@@ -994,12 +1041,12 @@ export default function ReservationsPage() {
                   {creating ? (
                     <>
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      {t('form.creating')}
+                      {safeT('form.creating')}
                     </>
                   ) : (
                     <>
                       <span className="text-lg mr-2">✨</span>
-                      {t('form.createSubmit')}
+                      {safeT('form.createSubmit')}
                     </>
                   )}
                 </button>
@@ -1017,7 +1064,7 @@ export default function ReservationsPage() {
               <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 flex items-center">
                 <span className="text-3xl sm:text-4xl mr-2" style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>✏️</span>
                   <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                    {t('editModal.title')}
+                    {safeT('editModal.title')}
                   </span>
               </h2>
               <button
@@ -1037,13 +1084,13 @@ export default function ReservationsPage() {
               <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-200">
                 <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
                   <span style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>🏠</span>
-                  {t('editModal.reservationSection')}
+                  {safeT('editModal.reservationSection')}
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       <Bed className="h-4 w-4 inline mr-2" />
-                      {t('form.roomLabel')}
+                      {safeT('form.roomLabel')}
                     </label>
                     <select
                       required
@@ -1051,7 +1098,7 @@ export default function ReservationsPage() {
                       onChange={(e) => setFormData({...formData, room_id: e.target.value})}
                       className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white"
                     >
-                      <option value="">{t('form.roomPlaceholder')}</option>
+                      <option value="">{safeT('form.roomPlaceholder')}</option>
                       {rooms.map(room => (
                         <option key={room.id} value={room.id}>
                           {room.name} - €{room.basePrice}/night
@@ -1063,7 +1110,7 @@ export default function ReservationsPage() {
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       <User className="h-4 w-4 inline mr-2" />
-                      {t('form.statusLabel')}
+                      {safeT('form.statusLabel')}
                     </label>
                     <select
                       required
@@ -1083,20 +1130,20 @@ export default function ReservationsPage() {
               <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-6 rounded-xl border border-green-200">
                 <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
                   <span style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>👤</span>
-                  {t('form.guestSectionTitle')}
+                  {safeT('form.guestSectionTitle')}
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       <User className="h-4 w-4 inline mr-2" />
-                      {t('form.guestNameLabel')}
+                      {safeT('form.guestNameLabel')}
                     </label>
                     <input
                       type="text"
                       required
                       value={formData.guest_name}
                       onChange={(e) => setFormData({...formData, guest_name: e.target.value})}
-                      placeholder={t('form.guestNamePlaceholder')}
+                      placeholder={safeT('form.guestNamePlaceholder')}
                       className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white"
                     />
                   </div>
@@ -1104,13 +1151,13 @@ export default function ReservationsPage() {
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       <User className="h-4 w-4 inline mr-2" />
-                      {t('form.guestEmailLabel')}
+                      {safeT('form.guestEmailLabel')}
                     </label>
                     <input
                       type="email"
                       value={formData.guest_email}
                       onChange={(e) => setFormData({...formData, guest_email: e.target.value})}
-                      placeholder={t('form.guestEmailPlaceholder')}
+                      placeholder={safeT('form.guestEmailPlaceholder')}
                       className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white"
                     />
                   </div>
@@ -1121,19 +1168,19 @@ export default function ReservationsPage() {
               <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-6 rounded-xl border border-purple-200">
                 <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
                   <span style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>📞</span>
-                  {t('form.additionalInfoSectionTitle')}
+                  {safeT('form.additionalInfoSectionTitle')}
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       <Phone className="h-4 w-4 inline mr-2" />
-                      {t('form.guestPhoneLabel')}
+                      {safeT('form.guestPhoneLabel')}
                     </label>
                     <input
                       type="tel"
                       value={formData.guest_phone}
                       onChange={(e) => setFormData({...formData, guest_phone: e.target.value})}
-                      placeholder={t('form.guestPhonePlaceholder')}
+                      placeholder={safeT('form.guestPhonePlaceholder')}
                       className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white"
                     />
                   </div>
@@ -1141,7 +1188,7 @@ export default function ReservationsPage() {
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       <Users className="h-4 w-4 inline mr-2" />
-                      {t('form.guestCountLabel')}
+                      {safeT('form.guestCountLabel')}
                     </label>
                     <input
                       type="number"
@@ -1160,13 +1207,13 @@ export default function ReservationsPage() {
               <div className="bg-gradient-to-r from-orange-50 to-amber-50 p-6 rounded-xl border border-orange-200">
                 <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
                   <span style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>📅</span>
-                  {t('form.datesSectionTitle')}
+                  {safeT('form.datesSectionTitle')}
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       <Calendar className="h-4 w-4 inline mr-2" />
-                      {t('form.checkInLabel')}
+                      {safeT('form.checkInLabel')}
                     </label>
                     <input
                       type="date"
@@ -1180,7 +1227,7 @@ export default function ReservationsPage() {
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       <Calendar className="h-4 w-4 inline mr-2" />
-                      {t('form.checkOutLabel')}
+                      {safeT('form.checkOutLabel')}
                     </label>
                     <input
                       type="date"
@@ -1197,13 +1244,13 @@ export default function ReservationsPage() {
               <div className="bg-gradient-to-r from-yellow-50 to-orange-50 p-6 rounded-xl border border-yellow-200">
                 <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
                   <span style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>💰</span>
-                  {t('form.financialSectionTitle')}
+                  {safeT('form.financialSectionTitle')}
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       <Euro className="h-4 w-4 inline mr-2" />
-                      {t('form.totalPriceLabel')}
+                      {safeT('form.totalPriceLabel')}
                     </label>
                     <input
                       type="number"
@@ -1218,7 +1265,7 @@ export default function ReservationsPage() {
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       <CreditCard className="h-4 w-4 inline mr-2" />
-                      {t('form.guestPaidLabel')}
+                      {safeT('form.guestPaidLabel')}
                     </label>
                     <input
                       type="number"
@@ -1233,7 +1280,7 @@ export default function ReservationsPage() {
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       <Euro className="h-4 w-4 inline mr-2" />
-                      {t('form.platformCommissionLabel')}
+                      {safeT('form.platformCommissionLabel')}
                     </label>
                     <input
                       type="number"
@@ -1251,13 +1298,13 @@ export default function ReservationsPage() {
               <div className="bg-gradient-to-r from-indigo-50 to-blue-50 p-6 rounded-xl border border-indigo-200">
                 <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
                   <span style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>🌐</span>
-                  {t('form.configSectionTitle')}
+                  {safeT('form.configSectionTitle')}
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       <Globe className="h-4 w-4 inline mr-2" />
-                      {t('form.channelLabel')}
+                      {safeT('form.channelLabel')}
                     </label>
                     <select
                       required
@@ -1265,16 +1312,16 @@ export default function ReservationsPage() {
                       onChange={(e) => setFormData({...formData, channel: e.target.value as 'airbnb' | 'booking' | 'manual'})}
                       className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white"
                     >
-                      <option value="manual">📝 {t('channelManual')}</option>
-                      <option value="airbnb">🏠 {t('channelAirbnb')}</option>
-                      <option value="booking">🌐 {t('channelBooking')}</option>
+                      <option value="manual">📝 {safeT('channelManual')}</option>
+                      <option value="airbnb">🏠 {safeT('channelAirbnb')}</option>
+                      <option value="booking">🌐 {safeT('channelBooking')}</option>
                     </select>
                   </div>
                   
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       <Euro className="h-4 w-4 inline mr-2" />
-                      {t('form.currencyLabel')}
+                      {safeT('form.currencyLabel')}
                     </label>
                     <select
                       value={formData.currency}
@@ -1300,7 +1347,7 @@ export default function ReservationsPage() {
                   }}
                   className="px-6 sm:px-8 py-3 border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 font-semibold transition-all duration-200"
                 >
-                  {t('form.cancel')}
+                  {safeT('form.cancel')}
                 </button>
                 <button
                   type="submit"
@@ -1310,12 +1357,12 @@ export default function ReservationsPage() {
                   {updating ? (
                     <>
                       <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                      {t('form.updating')}
+                      {safeT('form.updating')}
                     </>
                   ) : (
                     <>
                       <Edit className="h-5 w-5 mr-2" />
-                      ✨ {t('form.updateSubmit')}
+                      ✨ {safeT('form.updateSubmit')}
                     </>
                   )}
                 </button>
@@ -1398,7 +1445,7 @@ export default function ReservationsPage() {
                 disabled={deleting === reservationToDelete.id}
                 className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 disabled:opacity-50"
               >
-                {t('form.cancel')}
+                {safeT('form.cancel')}
               </button>
               <button
                 onClick={handleDeleteConfirm}
