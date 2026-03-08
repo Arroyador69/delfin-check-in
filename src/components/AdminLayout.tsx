@@ -26,12 +26,12 @@ export default function AdminLayout({ children, showHeader = true }: AdminLayout
     // En dashboard (/ o /dashboard), dar un breve margen para que la cookie esté disponible
     const isDashboard = pathname === '/' || pathname === '' || pathname === '/dashboard' || pathname?.endsWith('/dashboard')
     const delay = isDashboard ? 400 : 0
-    const t = setTimeout(() => {
+    const timeoutId = setTimeout(() => {
       checkAuth()
     }, delay)
     const interval = setInterval(() => checkAuth(), 5 * 60 * 1000)
     return () => {
-      clearTimeout(t)
+      clearTimeout(timeoutId)
       clearInterval(interval)
     }
   }, [pathname])
