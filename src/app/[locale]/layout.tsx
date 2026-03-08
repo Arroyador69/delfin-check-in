@@ -1,4 +1,5 @@
 import { NextIntlClientProvider } from 'next-intl';
+import { getMessages } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { locales } from '@/i18n/config';
 import Navigation from '@/components/Navigation';
@@ -12,8 +13,8 @@ import AdBlockDetector from '@/components/AdBlockDetector';
 /**
  * 🌍 LAYOUT PARA RUTAS INTERNACIONALIZADAS
  *
- * Carga los mensajes según el segmento [locale] de la URL para que el idioma
- * seleccionado se aplique a toda la UI (dashboard, menú, etc.).
+ * Usa getMessages() de next-intl para cargar los mensajes desde i18n/request.ts
+ * (misma fuente que el plugin), así las traducciones se resuelven en idioma humano.
  */
 
 export const dynamic = 'force-dynamic';
@@ -31,7 +32,7 @@ export default async function LocaleLayout({
     notFound();
   }
 
-  const messages = (await import(`../../../messages/${locale}.json`)).default;
+  const messages = await getMessages();
 
   return (
     <NextIntlClientProvider messages={messages} locale={locale}>
