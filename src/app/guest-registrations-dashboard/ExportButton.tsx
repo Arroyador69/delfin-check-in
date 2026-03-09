@@ -244,8 +244,8 @@ async function exportXML(payload: any): Promise<void> {
       error = { ...error, ...j };
     } catch {
       try {
-        const t = await res.text();
-        error.error = t || error.error;
+        const errorText = await res.text();
+        error.error = errorText || error.error;
       } catch {}
     }
     

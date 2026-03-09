@@ -81,27 +81,24 @@ export function useClientTranslations(namespace: string) {
       return key;
     }
 
-    // Buscar en el namespace
+    // Buscar en el namespace (estructura anidada: form.roomLabel → ns.form.roomLabel)
     const keys = key.split('.');
     let value: any = messages[namespace];
-    
     for (const k of keys) {
       value = value?.[k];
     }
+    if (value && typeof value === 'string') return value;
 
-    if (value && typeof value === 'string') {
-      return value;
-    }
+    // Claves planas en el JSON (ej. "form.roomLabel" dentro de reservations)
+    value = messages[namespace]?.[key];
+    if (value && typeof value === 'string') return value;
 
-    // Si no encuentra, buscar en el objeto completo (para claves sin namespace)
+    // Buscar en el objeto completo (para claves sin namespace)
     value = messages;
     for (const k of [namespace, ...keys]) {
       value = value?.[k];
     }
-
-    if (value && typeof value === 'string') {
-      return value;
-    }
+    if (value && typeof value === 'string') return value;
 
     return key; // Fallback a la key
   };

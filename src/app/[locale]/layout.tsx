@@ -12,8 +12,8 @@ import AdBlockDetector from '@/components/AdBlockDetector';
 /**
  * 🌍 LAYOUT PARA RUTAS INTERNACIONALIZADAS
  *
- * Carga los mensajes según el segmento [locale] de la URL para que el idioma
- * seleccionado se aplique a toda la UI (dashboard, menú, etc.).
+ * Carga mensajes explícitamente por locale desde params para garantizar que
+ * las traducciones (reservas, registro de formularios, etc.) se muestren en idioma humano.
  */
 
 export const dynamic = 'force-dynamic';

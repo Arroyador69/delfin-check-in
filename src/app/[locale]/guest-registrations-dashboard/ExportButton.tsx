@@ -245,8 +245,8 @@ async function exportXML(payload: any): Promise<void> {
       error = { ...error, ...j };
     } catch {
       try {
-        const t = await res.text();
-        error.error = t || error.error;
+        const text = await res.text();
+        error.error = text || error.error;
       } catch {}
     }
     
@@ -272,6 +272,7 @@ async function exportXML(payload: any): Promise<void> {
 }
 
 export default function ExportButton({ solicitud, onSuccess, onError }: ExportButtonProps) {
+  const t = useTranslations('guestRegistrations');
   const [loading, setLoading] = useState(false);
 
   const handleExport = async () => {
