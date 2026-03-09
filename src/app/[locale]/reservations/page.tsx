@@ -78,9 +78,10 @@ export default function ReservationsPage() {
   const locale = useLocale();
 
   const safeT = (key: string): string => {
+    if (key in RESERVATION_FORM_FALLBACKS) return RESERVATION_FORM_FALLBACKS[key];
     try {
       const value = t(key);
-      if (typeof value === 'string' && !value.includes('reservations.') && value !== key) return value;
+      if (typeof value === 'string' && value !== key && !/^[\w.]+\.[\w.]+$/.test(value)) return value;
     } catch {}
     return RESERVATION_FORM_FALLBACKS[key] ?? key;
   };
