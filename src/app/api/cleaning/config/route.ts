@@ -138,7 +138,7 @@ export async function POST(req: NextRequest) {
 
     const result = await sql`
       UPDATE cleaning_config
-      SET ical_token = encode(gen_random_bytes(32), 'hex'),
+      SET ical_token = md5(gen_random_uuid()::text || now()::text || random()::text),
           updated_at = NOW()
       WHERE tenant_id = ${tenantId}::uuid AND room_id = ${String(room_id)}
       RETURNING ical_token
