@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Bed, Calendar, Users, Settings, Menu, X, TrendingUp, FileText, Download, Shield, Calculator, Send, Receipt, Crown, Target, UserPlus } from 'lucide-react';
+import { Home, Bed, Calendar, Users, Settings, Menu, X, TrendingUp, FileText, Download, Shield, Calculator, Send, Receipt, Crown, Target, UserPlus, BarChart3 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { useTenant, hasLegalModule } from '@/hooks/useTenant';
@@ -34,6 +34,7 @@ function useSafeTranslations(namespace: string) {
     'exportAEAT': 'Exportar AEAT',
     'offlineQueue': 'Cola offline',
     'audit': 'Bitácora',
+    'marketIntelligence': 'Inteligencia de Mercado',
     'referrals': 'Referidos',
     'settings': 'Configuración',
     'superAdminDashboardTitle': '👑 SuperAdmin Dashboard',
@@ -85,6 +86,7 @@ export default function Navigation() {
     { name: t('exportAEAT'), href: '/aeat', icon: FileText, requiresLegal: false },
     { name: t('offlineQueue'), href: '/offline-queue', icon: Download, requiresLegal: false },
     { name: t('audit'), href: '/audit', icon: Shield, requiresLegal: false },
+    { name: t('marketIntelligence'), href: '/market-intelligence', icon: BarChart3, requiresLegal: false },
     { name: t('referrals'), href: '/referrals', icon: UserPlus, requiresLegal: false },
     { name: t('settings'), href: '/settings', icon: Settings, requiresLegal: false },
   ];
