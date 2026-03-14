@@ -391,7 +391,11 @@
       "creating": "Creating...",
       "createSubmit": "Create reservation",
       "updating": "Updating...",
-      "updateSubmit": "Update reservation"
+      "updateSubmit": "Update reservation",
+      "perNight": "/night",
+      "currencyEUR": "EUR (Euro)",
+      "currencyUSD": "USD (Dollar)",
+      "currencyGBP": "GBP (Pound)"
     },
     "deleteModal": {
       "title": "Confirm deletion",

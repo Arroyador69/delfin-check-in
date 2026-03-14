@@ -316,7 +316,11 @@
       "creating": "Création...",
       "createSubmit": "Créer la réservation",
       "updating": "Mise à jour...",
-      "updateSubmit": "Mettre à jour la réservation"
+      "updateSubmit": "Mettre à jour la réservation",
+      "perNight": "/nuit",
+      "currencyEUR": "EUR (Euro)",
+      "currencyUSD": "USD (Dollar)",
+      "currencyGBP": "GBP (Livre)"
     },
     "deleteModal": {
       "title": "Confirmer la suppression",

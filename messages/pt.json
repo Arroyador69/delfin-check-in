@@ -316,7 +316,11 @@
       "creating": "A criar...",
       "createSubmit": "Criar reserva",
       "updating": "A atualizar...",
-      "updateSubmit": "Atualizar reserva"
+      "updateSubmit": "Atualizar reserva",
+      "perNight": "/noite",
+      "currencyEUR": "EUR (Euro)",
+      "currencyUSD": "USD (Dólar)",
+      "currencyGBP": "GBP (Libra)"
     },
     "deleteModal": {
       "title": "Confirmar eliminação",

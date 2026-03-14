@@ -426,7 +426,11 @@
       "creating": "Creazione...",
       "createSubmit": "Crea prenotazione",
       "updating": "Aggiornamento...",
-      "updateSubmit": "Aggiorna prenotazione"
+      "updateSubmit": "Aggiorna prenotazione",
+      "perNight": "/notte",
+      "currencyEUR": "EUR (Euro)",
+      "currencyUSD": "USD (Dollaro)",
+      "currencyGBP": "GBP (Sterlina)"
     },
     "deleteModal": {
       "title": "Conferma eliminazione",

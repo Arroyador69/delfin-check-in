@@ -70,6 +70,10 @@ const RESERVATION_FORM_FALLBACKS: Record<string, string> = {
   'channelManual': 'Manual',
   'channelAirbnb': 'Airbnb',
   'channelBooking': 'Booking.com',
+  'form.perNight': '/noche',
+  'form.currencyEUR': 'EUR (Euro)',
+  'form.currencyUSD': 'USD (Dólar)',
+  'form.currencyGBP': 'GBP (Libra)',
 };
 
 export default function ReservationsPage() {
@@ -78,7 +82,6 @@ export default function ReservationsPage() {
   const locale = useLocale();
 
   const safeT = (key: string): string => {
-    if (key in RESERVATION_FORM_FALLBACKS) return RESERVATION_FORM_FALLBACKS[key];
     try {
       const value = t(key);
       if (typeof value === 'string' && value !== key && !/^[\w.]+\.[\w.]+$/.test(value)) return value;
@@ -805,7 +808,7 @@ export default function ReservationsPage() {
                       <option value="">{safeT('form.roomPlaceholder')}</option>
                       {rooms.map(room => (
                         <option key={room.id} value={room.id}>
-                          {room.name} - €{room.basePrice}/night
+                          {room.name} - €{room.basePrice}{safeT('form.perNight')}
                         </option>
                       ))}
                     </select>
@@ -988,37 +991,20 @@ export default function ReservationsPage() {
                   <span className="text-lg mr-2">🌐</span>
                   {safeT('form.configSectionTitle')}
                 </h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      📡 {safeT('form.channelLabel')}
-                    </label>
-                    <select
-                      required
-                      value={formData.channel}
-                      onChange={(e) => setFormData({...formData, channel: e.target.value as 'airbnb' | 'booking' | 'manual'})}
-                      className="w-full px-3 py-2 border-2 border-indigo-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white font-medium transition-all"
-                    >
-                      <option value="manual">📝 {safeT('channelManual')}</option>
-                      <option value="airbnb">🏠 {safeT('channelAirbnb')}</option>
-                      <option value="booking">🌐 {safeT('channelBooking')}</option>
-                    </select>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      💱 {safeT('form.currencyLabel')}
-                    </label>
-                    <select
-                      value={formData.currency}
-                      onChange={(e) => setFormData({...formData, currency: e.target.value})}
-                      className="w-full px-3 py-2 border-2 border-indigo-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white font-medium transition-all"
-                    >
-                      <option value="EUR">🇪🇺 EUR (Euro)</option>
-                      <option value="USD">🇺🇸 USD (Dólar)</option>
-                      <option value="GBP">🇬🇧 GBP (Libra)</option>
-                    </select>
-                  </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    📡 {safeT('form.channelLabel')}
+                  </label>
+                  <select
+                    required
+                    value={formData.channel}
+                    onChange={(e) => setFormData({...formData, channel: e.target.value as 'airbnb' | 'booking' | 'manual'})}
+                    className="w-full px-3 py-2 border-2 border-indigo-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white font-medium transition-all"
+                  >
+                    <option value="manual">📝 {safeT('channelManual')}</option>
+                    <option value="airbnb">🏠 {safeT('channelAirbnb')}</option>
+                    <option value="booking">🌐 {safeT('channelBooking')}</option>
+                  </select>
                 </div>
               </div>
 
@@ -1102,7 +1088,7 @@ export default function ReservationsPage() {
                       <option value="">{safeT('form.roomPlaceholder')}</option>
                       {rooms.map(room => (
                         <option key={room.id} value={room.id}>
-                          {room.name} - €{room.basePrice}/night
+                          {room.name} - €{room.basePrice}{safeT('form.perNight')}
                         </option>
                       ))}
                     </select>
@@ -1301,39 +1287,21 @@ export default function ReservationsPage() {
                   <span style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>🌐</span>
                   {safeT('form.configSectionTitle')}
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      <Globe className="h-4 w-4 inline mr-2" />
-                      {safeT('form.channelLabel')}
-                    </label>
-                    <select
-                      required
-                      value={formData.channel}
-                      onChange={(e) => setFormData({...formData, channel: e.target.value as 'airbnb' | 'booking' | 'manual'})}
-                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white"
-                    >
-                      <option value="manual">📝 {safeT('channelManual')}</option>
-                      <option value="airbnb">🏠 {safeT('channelAirbnb')}</option>
-                      <option value="booking">🌐 {safeT('channelBooking')}</option>
-                    </select>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      <Euro className="h-4 w-4 inline mr-2" />
-                      {safeT('form.currencyLabel')}
-                    </label>
-                    <select
-                      value={formData.currency}
-                      onChange={(e) => setFormData({...formData, currency: e.target.value})}
-                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white"
-                    >
-                      <option value="EUR">EUR (Euro)</option>
-                      <option value="USD">USD (Dólar)</option>
-                      <option value="GBP">GBP (Libra)</option>
-                    </select>
-                  </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <Globe className="h-4 w-4 inline mr-2" />
+                    {safeT('form.channelLabel')}
+                  </label>
+                  <select
+                    required
+                    value={formData.channel}
+                    onChange={(e) => setFormData({...formData, channel: e.target.value as 'airbnb' | 'booking' | 'manual'})}
+                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white"
+                  >
+                    <option value="manual">📝 {safeT('channelManual')}</option>
+                    <option value="airbnb">🏠 {safeT('channelAirbnb')}</option>
+                    <option value="booking">🌐 {safeT('channelBooking')}</option>
+                  </select>
                 </div>
               </div>
 
