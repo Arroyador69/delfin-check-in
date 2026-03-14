@@ -71,7 +71,7 @@ export default function OnboardingPage() {
 
   useEffect(() => {
     checkOnboardingStatus();
-    if (currentStep === 4) {
+    if (currentStep === 4 || currentStep === 5) {
       loadRooms();
     }
   }, [currentStep]);
@@ -150,7 +150,7 @@ export default function OnboardingPage() {
       await saveCompanyData();
     }
 
-    if (currentStep < 4) {
+    if (currentStep < 5) {
       if (currentStep === 1) {
         try {
           await fetch('/api/tenant/onboarding-status', {
@@ -297,11 +297,6 @@ export default function OnboardingPage() {
     setError('');
     setLoading(true);
 
-    if (!validateStep(4)) {
-      setLoading(false);
-      return;
-    }
-
     try {
       // Guardar datos MIR si se proporcionaron (opcional)
       if (formData.usuarioMir && formData.contraseñaMir && formData.codigoArrendador && formData.codigoEstablecimiento) {
@@ -321,6 +316,27 @@ export default function OnboardingPage() {
         });
       }
 
+      // Guardar configuración de limpieza si se proporcionó
+      for (const room of rooms) {
+        const config = cleaningConfigs[room.id];
+        if (config) {
+          await fetch('/api/cleaning/config', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+              room_id: String(room.id),
+              checkout_time: config.checkoutTime,
+              checkin_time: config.checkinTime,
+              cleaning_duration_minutes: config.duration,
+              cleaning_trigger: 'on_checkout',
+              same_day_alert: true,
+              ical_enabled: true,
+            })
+          });
+        }
+      }
+
       // Marcar onboarding como completado
       await fetch('/api/tenant/onboarding-status', {
         method: 'PUT',
@@ -336,6 +352,8 @@ export default function OnboardingPage() {
       setLoading(false);
     }
   };
+
+  const [cleaningConfigs, setCleaningConfigs] = useState<Record<number, { checkoutTime: string; checkinTime: string; duration: number }>>({});
 
   // Paso 1: Cambiar contraseña
   const renderPasswordStep = () => (
@@ -789,11 +807,11 @@ export default function OnboardingPage() {
             {t('step4.previous')}
           </button>
           <button
-            onClick={handleSubmit}
+            onClick={handleNext}
             disabled={loading || (tenant?.email === 'contacto@delfincheckin.com' && !formData.propertyAdded)}
-            className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
           >
-            {loading ? t('step4.completing') : t('step4.completeSetup')}
+            {t('step4.next')}
           </button>
         </div>
       </div>
@@ -816,7 +834,7 @@ export default function OnboardingPage() {
           
           <div className="mt-4">
             <div className="flex space-x-2">
-              {[1, 2, 3, 4].map((step) => (
+              {[1, 2, 3, 4, 5].map((step) => (
                 <div
                   key={step}
                   className={`h-2 flex-1 rounded-full ${
@@ -833,6 +851,130 @@ export default function OnboardingPage() {
       {currentStep === 2 && renderEmpresaStep()}
       {currentStep === 3 && renderMIRStep()}
       {currentStep === 4 && renderPropertyStep()}
+      {currentStep === 5 && renderCleaningStep()}
     </div>
   );
+
+  function renderCleaningStep() {
+    return (
+      <div className="max-w-4xl mx-auto p-6">
+        <div className="bg-white rounded-lg shadow-lg p-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            🧹 {t('step5.title')}
+          </h1>
+          <p className="text-gray-600 mb-6">{t('step5.intro')}</p>
+
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <p className="text-blue-800 text-sm">{t('step5.optional')}</p>
+          </div>
+
+          {rooms.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <p>{t('step5.noRooms')}</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {rooms.map(room => {
+                const config = cleaningConfigs[room.id] || { checkoutTime: '11:00', checkinTime: '16:00', duration: 120 };
+                const isConfigured = !!cleaningConfigs[room.id];
+
+                return (
+                  <div key={room.id} className={`border-2 rounded-xl p-5 transition-all ${isConfigured ? 'border-green-300 bg-green-50' : 'border-gray-200'}`}>
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="font-semibold text-gray-800 text-lg">{room.name}</h3>
+                      {!isConfigured ? (
+                        <button
+                          onClick={() => setCleaningConfigs(prev => ({
+                            ...prev,
+                            [room.id]: { checkoutTime: '11:00', checkinTime: '16:00', duration: 120 }
+                          }))}
+                          className="text-sm bg-blue-600 text-white px-4 py-1.5 rounded-lg hover:bg-blue-700"
+                        >
+                          {t('step5.configure')}
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => setCleaningConfigs(prev => {
+                            const next = { ...prev };
+                            delete next[room.id];
+                            return next;
+                          })}
+                          className="text-sm text-red-600 hover:text-red-800"
+                        >
+                          {t('step5.remove')}
+                        </button>
+                      )}
+                    </div>
+
+                    {isConfigured && (
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">{t('step5.checkoutTime')}</label>
+                          <input
+                            type="time"
+                            value={config.checkoutTime}
+                            onChange={e => setCleaningConfigs(prev => ({
+                              ...prev,
+                              [room.id]: { ...prev[room.id], checkoutTime: e.target.value }
+                            }))}
+                            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">{t('step5.checkinTime')}</label>
+                          <input
+                            type="time"
+                            value={config.checkinTime}
+                            onChange={e => setCleaningConfigs(prev => ({
+                              ...prev,
+                              [room.id]: { ...prev[room.id], checkinTime: e.target.value }
+                            }))}
+                            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">{t('step5.duration')}</label>
+                          <select
+                            value={config.duration}
+                            onChange={e => setCleaningConfigs(prev => ({
+                              ...prev,
+                              [room.id]: { ...prev[room.id], duration: parseInt(e.target.value) }
+                            }))}
+                            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                          >
+                            <option value={60}>1h</option>
+                            <option value={90}>1h 30min</option>
+                            <option value={120}>2h</option>
+                            <option value={150}>2h 30min</option>
+                            <option value={180}>3h</option>
+                            <option value={240}>4h</option>
+                          </select>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          <div className="flex justify-between mt-8">
+            <button
+              onClick={handlePrevious}
+              className="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600"
+            >
+              {t('step5.previous')}
+            </button>
+            <button
+              onClick={handleSubmit}
+              disabled={loading}
+              className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+            >
+              {loading ? t('step5.completing') : t('step5.completeSetup')}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 }

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Settings } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import CleaningCalendarSettings from '@/components/CleaningCalendarSettings';
 
 export default function SettingsPage() {
   const t = useTranslations('settings');
@@ -212,6 +213,9 @@ export default function SettingsPage() {
           )}
         </div>
       </div>
+
+      {/* Calendario de limpieza */}
+      <CleaningCalendarSettings rooms={roomsConfig} t={t} />
 
         </div>
       </div>
