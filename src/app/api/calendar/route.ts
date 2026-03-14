@@ -164,11 +164,25 @@ export async function GET(req: NextRequest) {
       guest_count: r.guest_count || null
     }))
 
+    const calendarOnlyEvents = events.rows.filter(
+      (ev: any) => ev.event_type !== 'reservation'
+    )
+
+    const allEvents = [...calendarOnlyEvents, ...reservationEvents]
+    const seen = new Set<string>()
+    const dedupedEvents = allEvents.filter((ev: any) => {
+      if (!ev.reservation_id) return true
+      const key = String(ev.reservation_id)
+      if (seen.has(key)) return false
+      seen.add(key)
+      return true
+    })
+
     return NextResponse.json({
       success: true,
       range: { from: fromDate.toISOString().slice(0,10), to: toDate.toISOString().slice(0,10) },
       availability: availability.rows,
-      events: [...events.rows, ...reservationEvents]
+      events: dedupedEvents
     })
   } catch (e: any) {
     console.error('[calendar] fatal error:', e?.message || e)

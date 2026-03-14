@@ -148,9 +148,20 @@ export default function CalendarPage() {
     return map
   }, [availability])
 
+  const uniqueEvents = useMemo(() => {
+    const seen = new Set<string>()
+    return events.filter(ev => {
+      if (!ev.reservation_id) return true
+      const key = String(ev.reservation_id)
+      if (seen.has(key)) return false
+      seen.add(key)
+      return true
+    })
+  }, [events])
+
   const eventsByDate = useMemo(() => {
     const map = new Map<string, CalendarEvent[]>()
-    events.forEach(ev => {
+    uniqueEvents.forEach(ev => {
       const s = new Date(ev.start_date)
       const e = new Date(ev.end_date)
       for (let d = new Date(s); d < e; d.setDate(d.getDate() + 1)) {
@@ -160,17 +171,17 @@ export default function CalendarPage() {
       }
     })
     return map
-  }, [events])
+  }, [uniqueEvents])
 
   const checkoutByDate = useMemo(() => {
     const map = new Map<string, CalendarEvent[]>()
-    events.forEach(ev => {
+    uniqueEvents.forEach(ev => {
       const key = formatDate(new Date(ev.end_date))
       if (!map.has(key)) map.set(key, [])
       map.get(key)!.push(ev)
     })
     return map
-  }, [events])
+  }, [uniqueEvents])
 
   const currentMonth = useMemo(() => {
     const s = new Date(start)
