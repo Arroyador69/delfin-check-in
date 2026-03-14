@@ -218,13 +218,14 @@ export async function POST(req: NextRequest) {
       // Plan básico (gratuito) puede usar formulario + guardar datos; el envío automático MIR solo si legal_module
     }
 
-    // Guardar en base de datos Postgres con tenant_id (todos los planes activos pueden guardar)
     const id = await insertGuestRegistration({
       reserva_ref,
       fecha_entrada,
       fecha_salida,
       data: dataWithDefaults,
-      tenant_id: tenantId
+      tenant_id: tenantId,
+      signature_data: json.firma || null,
+      signature_date: json.firma_fecha || null,
     });
 
     console.log('✅ Registro guardado en DB con ID:', id);

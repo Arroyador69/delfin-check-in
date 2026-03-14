@@ -73,6 +73,8 @@ interface GuestRegistration {
     tipoPago: string;
   };
   data: ComunicacionPayload;
+  signature_data?: string;
+  signature_date?: string;
 }
 
 // Función helper para extraer datos del viajero - VERSIÓN CORRECTA BASADA EN ANÁLISIS PROFUNDO
@@ -1161,6 +1163,27 @@ export default function GuestRegistrationsDashboard() {
                     );
                   })()}
                 </div>
+
+                {/* Firma del huésped */}
+                {selectedRegistration.signature_data && (
+                  <div className="mb-6 bg-green-50 border border-green-200 rounded-lg p-4">
+                    <h5 className="font-semibold text-green-900 mb-2 flex items-center">
+                      ✍️ {t('modal.signature') || 'Firma del huésped'}
+                    </h5>
+                    <div className="bg-white border rounded p-2 inline-block">
+                      <img
+                        src={selectedRegistration.signature_data}
+                        alt="Firma del huésped"
+                        className="h-20 w-auto"
+                      />
+                    </div>
+                    {selectedRegistration.signature_date && (
+                      <p className="text-xs text-green-700 mt-1">
+                        {t('modal.signedOn') || 'Firmado el'}: {new Date(selectedRegistration.signature_date).toLocaleString(locale)}
+                      </p>
+                    )}
+                  </div>
+                )}
 
                 {/* Formulario de edición */}
                 <div className="border rounded-lg p-4 bg-gray-50">

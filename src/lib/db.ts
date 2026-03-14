@@ -155,7 +155,9 @@ export async function insertGuestRegistration(data: {
   fecha_entrada: string;
   fecha_salida: string;
   data: any;
-  tenant_id?: string | null; // ⚠️ CRÍTICO: tenant_id para aislamiento multi-tenant
+  tenant_id?: string | null;
+  signature_data?: string | null;
+  signature_date?: string | null;
 }): Promise<string> {
   // Extraer documento de identidad para detectar duplicados
   const documento = data.data?.comunicaciones?.[0]?.personas?.[0]?.numeroDocumento;
@@ -230,15 +232,19 @@ export async function insertGuestRegistration(data: {
     ? (data.tenant_id.includes('-') ? data.tenant_id : null) // Si ya es UUID, usarlo; si no, null
     : null;
 
-  // Insertar nuevo registro con tenant_id
+  const sigData = data.signature_data || null;
+  const sigDate = data.signature_date || null;
+
   const result = await sql`
-    INSERT INTO guest_registrations (reserva_ref, fecha_entrada, fecha_salida, data, tenant_id)
+    INSERT INTO guest_registrations (reserva_ref, fecha_entrada, fecha_salida, data, tenant_id, signature_data, signature_date)
     VALUES (
       ${data.reserva_ref}, 
       ${data.fecha_entrada}, 
       ${data.fecha_salida}, 
       ${JSON.stringify(data.data)}::jsonb,
-      ${tenantIdUuid}::uuid
+      ${tenantIdUuid}::uuid,
+      ${sigData},
+      ${sigDate}::timestamptz
     )
     RETURNING id;
   `;
@@ -276,7 +282,7 @@ export async function getGuestRegistrations(limit: number = 200, tenantId?: stri
     // Intentar con UUID primero
     try {
       const result = await sql`
-        SELECT id, reserva_ref, fecha_entrada, fecha_salida, data, created_at, updated_at, tenant_id
+        SELECT id, reserva_ref, fecha_entrada, fecha_salida, data, created_at, updated_at, tenant_id, signature_data, signature_date
         FROM guest_registrations
         WHERE tenant_id = ${tenantId}::uuid
         ORDER BY created_at DESC
@@ -296,7 +302,7 @@ export async function getGuestRegistrations(limit: number = 200, tenantId?: stri
       // Si falla con UUID, intentar con string
       try {
         const result = await sql`
-          SELECT id, reserva_ref, fecha_entrada, fecha_salida, data, created_at, updated_at, tenant_id
+          SELECT id, reserva_ref, fecha_entrada, fecha_salida, data, created_at, updated_at, tenant_id, signature_data, signature_date
           FROM guest_registrations
           WHERE tenant_id::text = ${tenantId}
           ORDER BY created_at DESC
@@ -315,7 +321,7 @@ export async function getGuestRegistrations(limit: number = 200, tenantId?: stri
         console.error('❌ [getGuestRegistrations] Error con ambos métodos:', stringError.message);
         // Como último recurso, devolver todos (pero esto no debería pasar)
         const result = await sql`
-          SELECT id, reserva_ref, fecha_entrada, fecha_salida, data, created_at, updated_at, tenant_id
+          SELECT id, reserva_ref, fecha_entrada, fecha_salida, data, created_at, updated_at, tenant_id, signature_data, signature_date
           FROM guest_registrations
           ORDER BY created_at DESC
           LIMIT ${limit};
@@ -326,10 +332,9 @@ export async function getGuestRegistrations(limit: number = 200, tenantId?: stri
     }
   }
   
-  // Si no se proporciona tenantId, devolver todos (para compatibilidad, pero mejor siempre pasar tenantId)
   console.warn('⚠️ getGuestRegistrations llamado sin tenantId - devolviendo todos los registros');
   const result = await sql`
-    SELECT id, reserva_ref, fecha_entrada, fecha_salida, data, created_at, updated_at, tenant_id
+    SELECT id, reserva_ref, fecha_entrada, fecha_salida, data, created_at, updated_at, tenant_id, signature_data, signature_date
     FROM guest_registrations
     ORDER BY created_at DESC
     LIMIT ${limit};

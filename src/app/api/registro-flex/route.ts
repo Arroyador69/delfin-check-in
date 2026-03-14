@@ -562,13 +562,14 @@ export async function POST(req: NextRequest) {
     console.log('💾 Guardando en base de datos...');
     console.log('🔍 Debug - Datos finales que se van a guardar:', JSON.stringify(dbData, null, 2));
     
-    // Guardar en base de datos con tenant_id y referencia única
     const id = await insertGuestRegistration({
-      reserva_ref: reserva_ref, // Usar referencia única, NO ESTABLISHMENT_REFERENCE
+      reserva_ref: reserva_ref,
       fecha_entrada: c.entrada.split('T')[0],
       fecha_salida: c.salida.split('T')[0],
       data: dbData,
-      tenant_id: tenantId
+      tenant_id: tenantId,
+      signature_data: json.firma || null,
+      signature_date: json.firma_fecha || null,
     });
 
     console.log('✅ Registro guardado en guest_registrations con ID:', id);

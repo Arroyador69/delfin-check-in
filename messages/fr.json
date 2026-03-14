@@ -447,6 +447,8 @@
       "no": "Non",
       "travelerInfo": "Informations du Voyageur",
       "currentData": "Données Actuelles du Voyageur",
+      "signature": "Signature du voyageur",
+      "signedOn": "Signé le",
       "editData": "Modifier les Informations du Voyageur",
       "name": "Nom",
       "firstSurname": "Premier Prénom",

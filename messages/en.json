@@ -737,6 +737,8 @@
       "viewAudit": "View audit log",
       "travelerInfo": "Traveler Information",
       "currentData": "Current Traveler Data",
+      "signature": "Guest signature",
+      "signedOn": "Signed on",
       "editData": "Edit Traveler Information",
       "name": "Name",
       "firstSurname": "First Surname",

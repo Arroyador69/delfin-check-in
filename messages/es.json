@@ -770,6 +770,8 @@
       "viewAudit": "Ver bitácora",
       "travelerInfo": "Información del Viajero",
       "currentData": "Datos Actuales del Viajero",
+      "signature": "Firma del huésped",
+      "signedOn": "Firmado el",
       "editData": "Editar Información del Viajero",
       "name": "Nombre",
       "firstSurname": "Apellido 1",

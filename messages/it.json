@@ -771,6 +771,8 @@
       "viewAudit": "Visualizza registro audit",
       "travelerInfo": "Informazioni Viaggiatore",
       "currentData": "Dati Attuali del Viaggiatore",
+      "signature": "Firma dell'ospite",
+      "signedOn": "Firmato il",
       "editData": "Modifica Informazioni Viaggiatore",
       "name": "Nome",
       "firstSurname": "Primo Cognome",
