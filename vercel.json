@@ -4,6 +4,7 @@
   "crons": [
     {"path":"/api/superadmin/programmatic/cron","schedule":"0 9,17 * * *"},
     {"path":"/api/cron/daily-report","schedule":"0 7 * * *"},
-    {"path":"/api/cron/weekly-report","schedule":"0 7 * * 0"}
+    {"path":"/api/cron/weekly-report","schedule":"0 7 * * 0"},
+    {"path":"/api/cron/sync-calendars","schedule":"*/15 * * * *"}
   ]
 }
