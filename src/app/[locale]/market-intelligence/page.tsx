@@ -73,6 +73,26 @@ interface Analysis {
   roomPerformance: RoomPerformance[];
 }
 
+interface GeocodeResult {
+  display_name: string;
+  lat: number;
+  lon: number;
+  city: string;
+  province: string;
+  postcode: string;
+  country: string;
+  community: string;
+}
+
+interface SavedZone {
+  address: string;
+  lat: number | null;
+  lon: number | null;
+  city: string;
+  province: string;
+  community: string;
+}
+
 const COMMUNITIES: Record<string, string> = {
   'ES-AN': 'Andalucía',
   'ES-AR': 'Aragón',
@@ -141,6 +161,12 @@ export default function MarketIntelligencePage() {
     title: '', description: '', startsAt: '', endsAt: '',
     venue: '', city: '', category: 'festival', impactLevel: 3, url: '',
   });
+  const [addressInput, setAddressInput] = useState('');
+  const [savedZone, setSavedZone] = useState<SavedZone | null>(null);
+  const [geocodeResults, setGeocodeResults] = useState<GeocodeResult[]>([]);
+  const [geocodeLoading, setGeocodeLoading] = useState(false);
+  const [zoneSaving, setZoneSaving] = useState(false);
+  const [selectedResult, setSelectedResult] = useState<GeocodeResult | null>(null);
 
   const loadHolidays = useCallback(async () => {
     try {
@@ -174,11 +200,82 @@ export default function MarketIntelligencePage() {
     }
   }, []);
 
+  const loadZone = useCallback(async () => {
+    try {
+      const res = await fetch('/api/market/zone');
+      const data = await res.json();
+      if (data.success && data.zone) {
+        setSavedZone(data.zone);
+        if (data.zone.community) setCommunity(data.zone.community);
+      }
+    } catch (e) {
+      console.error('Error loading zone:', e);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadZone();
+  }, [loadZone]);
+
   useEffect(() => {
     setLoading(true);
     Promise.all([loadHolidays(), loadEvents(), loadAnalysis()])
       .finally(() => setLoading(false));
   }, [loadHolidays, loadEvents, loadAnalysis]);
+
+  const handleSearchAddress = async () => {
+    const q = addressInput.trim();
+    if (q.length < 3) return;
+    setGeocodeLoading(true);
+    setGeocodeResults([]);
+    setSelectedResult(null);
+    try {
+      const res = await fetch(`/api/market/geocode?q=${encodeURIComponent(q)}`);
+      const data = await res.json();
+      if (data.success && data.results?.length) {
+        setGeocodeResults(data.results);
+        const first = data.results[0];
+        setSelectedResult(first);
+        setCommunity(first.community);
+      }
+    } catch (e) {
+      console.error('Geocode error:', e);
+    } finally {
+      setGeocodeLoading(false);
+    }
+  };
+
+  const handleSelectResult = (r: GeocodeResult) => {
+    setSelectedResult(r);
+    setCommunity(r.community);
+  };
+
+  const handleSaveZone = async () => {
+    if (!selectedResult) return;
+    setZoneSaving(true);
+    try {
+      const res = await fetch('/api/market/zone', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          address: selectedResult.display_name,
+          lat: selectedResult.lat,
+          lon: selectedResult.lon,
+          city: selectedResult.city,
+          province: selectedResult.province,
+          community: selectedResult.community,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setSavedZone(data.zone);
+      }
+    } catch (e) {
+      console.error('Save zone error:', e);
+    } finally {
+      setZoneSaving(false);
+    }
+  };
 
   const holidaysByDate = useMemo(() => {
     const map = new Map<string, Holiday[]>();
@@ -323,25 +420,97 @@ export default function MarketIntelligencePage() {
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div className="flex items-center">
-              <BarChart3 className="h-8 w-8 text-blue-600 mr-3" />
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
-                <p className="text-sm text-gray-600">{t('subtitle')}</p>
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <div className="flex items-center">
+                <BarChart3 className="h-8 w-8 text-blue-600 mr-3" />
+                <div>
+                  <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
+                  <p className="text-sm text-gray-600">{t('subtitle')}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <label className="text-sm text-gray-600">{t('community')}:</label>
+                <select
+                  value={community}
+                  onChange={e => setCommunity(e.target.value)}
+                  className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                >
+                  {Object.entries(COMMUNITIES).map(([code, name]) => (
+                    <option key={code} value={code}>{name}</option>
+                  ))}
+                </select>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <label className="text-sm text-gray-600">{t('community')}:</label>
-              <select
-                value={community}
-                onChange={e => setCommunity(e.target.value)}
-                className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
-              >
-                {Object.entries(COMMUNITIES).map(([code, name]) => (
-                  <option key={code} value={code}>{name}</option>
-                ))}
-              </select>
+
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+              <h3 className="text-sm font-semibold text-blue-900 mb-2 flex items-center">
+                <MapPin className="h-4 w-4 mr-1.5" />
+                {t('yourLocation')}
+              </h3>
+              <div className="flex flex-wrap gap-2 items-end">
+                <div className="flex-1 min-w-[200px]">
+                  <input
+                    type="text"
+                    value={addressInput}
+                    onChange={e => setAddressInput(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && handleSearchAddress()}
+                    placeholder={t('addressPlaceholder')}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={handleSearchAddress}
+                  disabled={geocodeLoading || addressInput.trim().length < 3}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+                >
+                  {geocodeLoading ? t('searching') : t('search')}
+                </button>
+              </div>
+              {geocodeResults.length > 0 && (
+                <div className="mt-3 space-y-1">
+                  <p className="text-xs font-medium text-blue-800">{t('selectResult')}</p>
+                  {geocodeResults.map((r, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => handleSelectResult(r)}
+                      className={`block w-full text-left px-3 py-2 rounded-lg text-sm border transition-colors ${
+                        selectedResult === r
+                          ? 'border-blue-500 bg-blue-100 text-blue-900'
+                          : 'border-gray-200 bg-white hover:bg-gray-50'
+                      }`}
+                    >
+                      {r.display_name}
+                      <span className="ml-2 text-xs text-gray-500">
+                        {COMMUNITIES[r.community] || r.community}
+                      </span>
+                    </button>
+                  ))}
+                  {selectedResult && (
+                    <button
+                      type="button"
+                      onClick={handleSaveZone}
+                      disabled={zoneSaving}
+                      className="mt-2 text-sm text-blue-700 hover:underline font-medium"
+                    >
+                      {zoneSaving ? t('saving') : t('saveAsMyZone')}
+                    </button>
+                  )}
+                </div>
+              )}
+              {(savedZone?.city || savedZone?.address) && (
+                <p className="mt-2 text-sm text-blue-800">
+                  <span className="font-medium">{t('yourZone')}:</span>{' '}
+                  {savedZone.city && savedZone.province
+                    ? `${savedZone.city}, ${savedZone.province}`
+                    : savedZone.address}
+                  {savedZone.community && (
+                    <span className="text-blue-600"> · {COMMUNITIES[savedZone.community] || savedZone.community}</span>
+                  )}
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -810,14 +979,21 @@ export default function MarketIntelligencePage() {
             </div>
 
             {/* Tip section */}
-            <div className="mt-8 bg-blue-50 border border-blue-200 rounded-xl p-5">
-              <h4 className="font-medium text-blue-900 mb-2">{t('tipTitle')}</h4>
-              <ul className="text-sm text-blue-700 space-y-1">
-                <li>• {t('tip1')}</li>
-                <li>• {t('tip2')}</li>
-                <li>• {t('tip3')}</li>
-                <li>• {t('tip4')}</li>
-              </ul>
+            <div className="mt-8 space-y-4">
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                <p className="text-sm text-amber-800">
+                  <strong>{t('pricesNoteTitle')}</strong> {t('pricesNoteBody')}
+                </p>
+              </div>
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-5">
+                <h4 className="font-medium text-blue-900 mb-2">{t('tipTitle')}</h4>
+                <ul className="text-sm text-blue-700 space-y-1">
+                  <li>• {t('tip1')}</li>
+                  <li>• {t('tip2')}</li>
+                  <li>• {t('tip3')}</li>
+                  <li>• {t('tip4')}</li>
+                </ul>
+              </div>
             </div>
           </div>
         )}
