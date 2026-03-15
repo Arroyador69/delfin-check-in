@@ -1164,26 +1164,40 @@ export default function GuestRegistrationsDashboard() {
                   })()}
                 </div>
 
-                {/* Firma del huésped */}
-                {selectedRegistration.signature_data && (
-                  <div className="mb-6 bg-green-50 border border-green-200 rounded-lg p-4">
-                    <h5 className="font-semibold text-green-900 mb-2 flex items-center">
-                      ✍️ {t('modal.signature') || 'Firma del huésped'}
-                    </h5>
-                    <div className="bg-white border rounded p-2 inline-block">
-                      <img
-                        src={selectedRegistration.signature_data}
-                        alt="Firma del huésped"
-                        className="h-20 w-auto"
-                      />
+                {/* Firma(s) del huésped (una por viajero) */}
+                {selectedRegistration.signature_data && (() => {
+                  let signatures: string[] = [];
+                  try {
+                    const raw = selectedRegistration.signature_data;
+                    signatures = typeof raw === 'string' && raw.startsWith('[') ? JSON.parse(raw) : [raw];
+                  } catch {
+                    signatures = [selectedRegistration.signature_data];
+                  }
+                  return (
+                    <div className="mb-6 bg-green-50 border border-green-200 rounded-lg p-4">
+                      <h5 className="font-semibold text-green-900 mb-2 flex items-center">
+                        ✍️ {t('modal.signature') || 'Firma del huésped'}
+                      </h5>
+                      <div className="flex flex-wrap gap-4">
+                        {signatures.map((src, i) => (
+                          <div key={i} className="bg-white border rounded p-2">
+                            {signatures.length > 1 && (
+                              <p className="text-xs text-green-800 mb-1 font-medium">
+                                {t('modal.traveler') || 'Viajero'} {i + 1}
+                              </p>
+                            )}
+                            <img src={src} alt={`Firma viajero ${i + 1}`} className="h-20 w-auto" />
+                          </div>
+                        ))}
+                      </div>
+                      {selectedRegistration.signature_date && (
+                        <p className="text-xs text-green-700 mt-1">
+                          {t('modal.signedOn') || 'Firmado el'}: {new Date(selectedRegistration.signature_date).toLocaleString(locale)}
+                        </p>
+                      )}
                     </div>
-                    {selectedRegistration.signature_date && (
-                      <p className="text-xs text-green-700 mt-1">
-                        {t('modal.signedOn') || 'Firmado el'}: {new Date(selectedRegistration.signature_date).toLocaleString(locale)}
-                      </p>
-                    )}
-                  </div>
-                )}
+                  );
+                })()}
 
                 {/* Formulario de edición */}
                 <div className="border rounded-lg p-4 bg-gray-50">

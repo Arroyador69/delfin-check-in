@@ -218,14 +218,19 @@ export async function POST(req: NextRequest) {
       // Plan básico (gratuito) puede usar formulario + guardar datos; el envío automático MIR solo si legal_module
     }
 
+    const firmas = json.firmas && Array.isArray(json.firmas) ? json.firmas : (json.firma ? [json.firma] : null);
+    const firmaFechas = json.firma_fechas && Array.isArray(json.firma_fechas) ? json.firma_fechas : (json.firma_fecha ? [json.firma_fecha] : null);
+    const signature_data = firmas && firmas.length ? JSON.stringify(firmas) : null;
+    const signature_date = firmaFechas && firmaFechas[0] ? firmaFechas[0] : json.firma_fecha || null;
+
     const id = await insertGuestRegistration({
       reserva_ref,
       fecha_entrada,
       fecha_salida,
       data: dataWithDefaults,
       tenant_id: tenantId,
-      signature_data: json.firma || null,
-      signature_date: json.firma_fecha || null,
+      signature_data,
+      signature_date,
     });
 
     console.log('✅ Registro guardado en DB con ID:', id);

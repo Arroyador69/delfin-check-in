@@ -123,14 +123,38 @@ export function calculateRecommendedPrice(params: PricingFactors): {
 }
 
 /**
- * Obtiene datos de mercado (percentiles) para un rango de fechas
- * Prioriza competidores locales de Fuengirola
+ * Obtiene datos de mercado (percentiles) para un rango de fechas.
+ * Si zone está definida, filtra por esa zona; si no, usa competidores fuengirola_local (retrocompatibilidad).
  */
 export async function getMarketData(
   startDate: string,
   endDate: string,
-  roomType: string = 'standard'
+  roomType: string = 'standard',
+  zone?: string | null
 ): Promise<MarketData[]> {
+  if (zone && zone.trim()) {
+    const result = await sql`
+      SELECT 
+        cdp.date,
+        PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY cdp.price) as p25,
+        PERCENTILE_CONT(0.40) WITHIN GROUP (ORDER BY cdp.price) as p40,
+        PERCENTILE_CONT(0.50) WITHIN GROUP (ORDER BY cdp.price) as p50,
+        PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY cdp.price) as p75,
+        COUNT(*) as sample_size
+      FROM competitor_daily_prices cdp
+      JOIN competitor_listings cl ON cdp.listing_id = cl.id
+      WHERE cdp.date BETWEEN ${startDate} AND ${endDate}
+        AND cdp.room_type = ${roomType}
+        AND cdp.price IS NOT NULL
+        AND cdp.availability = true
+        AND cl.is_active = true
+        AND TRIM(cl.zone) = TRIM(${zone})
+      GROUP BY cdp.date
+      ORDER BY cdp.date
+    `;
+    return result.rows as MarketData[];
+  }
+
   const result = await sql`
     SELECT 
       cdp.date,
@@ -145,12 +169,26 @@ export async function getMarketData(
       AND cdp.room_type = ${roomType}
       AND cdp.price IS NOT NULL
       AND cdp.availability = true
-      AND cl.source = 'fuengirola_local'  -- Priorizar competidores locales
+      AND cl.is_active = true
+      AND cl.source = 'fuengirola_local'
     GROUP BY cdp.date
     ORDER BY cdp.date
   `;
 
   return result.rows as MarketData[];
+}
+
+/**
+ * Lista zonas con datos de competencia (zone no nulo en competitor_listings activos)
+ */
+export async function getAvailableZones(): Promise<string[]> {
+  const result = await sql`
+    SELECT DISTINCT TRIM(cl.zone) as zone
+    FROM competitor_listings cl
+    WHERE cl.zone IS NOT NULL AND TRIM(cl.zone) <> '' AND cl.is_active = true
+    ORDER BY 1
+  `;
+  return (result.rows as { zone: string }[]).map(r => r.zone);
 }
 
 /**

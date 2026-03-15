@@ -147,7 +147,7 @@ export default function MarketIntelligencePage() {
   const t = useTranslations('marketIntelligence');
   const locale = useLocale();
 
-  const [activeTab, setActiveTab] = useState<'calendar' | 'analytics' | 'events'>('calendar');
+  const [activeTab, setActiveTab] = useState<'calendar' | 'analytics' | 'events' | 'prices'>('calendar');
   const [community, setCommunity] = useState('ES-AN');
   const [holidays, setHolidays] = useState<Holiday[]>([]);
   const [events, setEvents] = useState<LocalEvent[]>([]);
@@ -167,6 +167,16 @@ export default function MarketIntelligencePage() {
   const [geocodeLoading, setGeocodeLoading] = useState(false);
   const [zoneSaving, setZoneSaving] = useState(false);
   const [selectedResult, setSelectedResult] = useState<GeocodeResult | null>(null);
+  // Precios competencia por zona
+  const [zones, setZones] = useState<string[]>([]);
+  const [zoneForPrices, setZoneForPrices] = useState('');
+  const [priceFrom, setPriceFrom] = useState('');
+  const [priceTo, setPriceTo] = useState('');
+  const [competitorPrices, setCompetitorPrices] = useState<{
+    data: { date: string; p25: number; p40: number; p50: number; p75: number; sampleSize: number }[];
+    meta: { zone: string; avgP40: number | null; avgP50: number | null; totalDays: number; avgSampleSize: number };
+  } | null>(null);
+  const [competitorPricesLoading, setCompetitorPricesLoading] = useState(false);
 
   const loadHolidays = useCallback(async () => {
     try {
@@ -213,9 +223,40 @@ export default function MarketIntelligencePage() {
     }
   }, []);
 
+  const loadZones = useCallback(async () => {
+    try {
+      const res = await fetch('/api/market/zones');
+      const data = await res.json();
+      if (data.success && Array.isArray(data.zones)) setZones(data.zones);
+    } catch (e) {
+      console.error('Error loading zones:', e);
+    }
+  }, []);
+
+  const loadCompetitorPrices = useCallback(async () => {
+    if (!zoneForPrices.trim() || !priceFrom || !priceTo) return;
+    setCompetitorPricesLoading(true);
+    setCompetitorPrices(null);
+    try {
+      const res = await fetch(
+        `/api/market/competitor-prices?zone=${encodeURIComponent(zoneForPrices)}&from=${priceFrom}&to=${priceTo}`
+      );
+      const data = await res.json();
+      if (data.success) setCompetitorPrices({ data: data.data, meta: data.meta });
+    } catch (e) {
+      console.error('Error loading competitor prices:', e);
+    } finally {
+      setCompetitorPricesLoading(false);
+    }
+  }, [zoneForPrices, priceFrom, priceTo]);
+
   useEffect(() => {
     loadZone();
   }, [loadZone]);
+
+  useEffect(() => {
+    if (activeTab === 'prices' && zones.length === 0) loadZones();
+  }, [activeTab, zones.length, loadZones]);
 
   useEffect(() => {
     setLoading(true);
@@ -520,7 +561,7 @@ export default function MarketIntelligencePage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
         <div className="border-b border-gray-200">
           <nav className="flex space-x-8">
-            {(['calendar', 'analytics', 'events'] as const).map(tab => (
+            {(['calendar', 'analytics', 'events', 'prices'] as const).map(tab => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -533,6 +574,7 @@ export default function MarketIntelligencePage() {
                 {tab === 'calendar' && <CalendarDays className="inline h-4 w-4 mr-1.5" />}
                 {tab === 'analytics' && <TrendingUp className="inline h-4 w-4 mr-1.5" />}
                 {tab === 'events' && <PartyPopper className="inline h-4 w-4 mr-1.5" />}
+                {tab === 'prices' && <DollarSign className="inline h-4 w-4 mr-1.5" />}
                 {t(`tabs.${tab}`)}
               </button>
             ))}
@@ -652,6 +694,9 @@ export default function MarketIntelligencePage() {
                   {holidays.filter(h => h.date >= today).length === 0 && (
                     <p className="text-sm text-gray-400">{t('noHolidays')}</p>
                   )}
+                <p className="text-xs text-gray-500 mt-3 pt-2 border-t border-gray-100">
+                  {t('holidaysClarification')}
+                </p>
                 </div>
               </div>
 
@@ -699,6 +744,107 @@ export default function MarketIntelligencePage() {
                 </div>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* ===================== PRECIOS POR ZONA TAB ===================== */}
+        {activeTab === 'prices' && (
+          <div>
+            <div className="bg-white rounded-xl shadow p-5 mb-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2 flex items-center">
+                <DollarSign className="h-5 w-5 text-green-600 mr-2" />
+                {t('pricesTab.title')}
+              </h3>
+              <p className="text-sm text-gray-600 mb-4">{t('pricesTab.description')}</p>
+              <div className="flex flex-wrap gap-4 items-end">
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">{t('pricesTab.zone')}</label>
+                  <select
+                    value={zoneForPrices}
+                    onChange={e => setZoneForPrices(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 min-w-[180px]"
+                  >
+                    <option value="">{t('pricesTab.selectZone')}</option>
+                    {zones.map(z => (
+                      <option key={z} value={z}>{z}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">{t('pricesTab.from')}</label>
+                  <input
+                    type="date"
+                    value={priceFrom}
+                    onChange={e => setPriceFrom(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">{t('pricesTab.to')}</label>
+                  <input
+                    type="date"
+                    value={priceTo}
+                    onChange={e => setPriceTo(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={loadCompetitorPrices}
+                  disabled={competitorPricesLoading || !zoneForPrices.trim() || !priceFrom || !priceTo}
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50"
+                >
+                  {competitorPricesLoading ? t('pricesTab.loading') : t('pricesTab.showPrices')}
+                </button>
+              </div>
+              {zones.length === 0 && !competitorPricesLoading && (
+                <p className="text-sm text-amber-700 mt-3">{t('pricesTab.noZones')}</p>
+              )}
+            </div>
+            {competitorPrices && (
+              <div className="bg-white rounded-xl shadow overflow-hidden">
+                <div className="p-4 border-b bg-gray-50">
+                  <h4 className="font-semibold text-gray-900">{t('pricesTab.resultsFor')} {competitorPrices.meta.zone}</h4>
+                  <p className="text-sm text-gray-600 mt-1">
+                    {t('pricesTab.avgP40')}: {competitorPrices.meta.avgP40 != null ? formatCurrency(competitorPrices.meta.avgP40) : '-'} · 
+                    {t('pricesTab.avgP50')}: {competitorPrices.meta.avgP50 != null ? formatCurrency(competitorPrices.meta.avgP50) : '-'} · 
+                    {competitorPrices.meta.totalDays} {t('pricesTab.days')} · 
+                    {t('pricesTab.sampleSize')} ~{competitorPrices.meta.avgSampleSize}
+                  </p>
+                </div>
+                <div className="overflow-x-auto max-h-[400px] overflow-y-auto">
+                  <table className="min-w-full text-sm">
+                    <thead className="bg-gray-100 sticky top-0">
+                      <tr>
+                        <th className="px-4 py-2 text-left font-medium text-gray-700">{t('pricesTab.date')}</th>
+                        <th className="px-4 py-2 text-right font-medium text-gray-700">P25</th>
+                        <th className="px-4 py-2 text-right font-medium text-gray-700">P40</th>
+                        <th className="px-4 py-2 text-right font-medium text-gray-700">P50</th>
+                        <th className="px-4 py-2 text-right font-medium text-gray-700">P75</th>
+                        <th className="px-4 py-2 text-right font-medium text-gray-700">{t('pricesTab.n')}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {competitorPrices.data.map((row, i) => (
+                        <tr key={i} className="border-b border-gray-100 hover:bg-gray-50">
+                          <td className="px-4 py-2 text-gray-900">
+                            {new Date(row.date + 'T00:00:00').toLocaleDateString(locale === 'es' ? 'es-ES' : locale, { weekday: 'short', day: 'numeric', month: 'short' })}
+                          </td>
+                          <td className="px-4 py-2 text-right">{row.p25 != null ? formatCurrency(row.p25) : '-'}</td>
+                          <td className="px-4 py-2 text-right font-medium">{row.p40 != null ? formatCurrency(row.p40) : '-'}</td>
+                          <td className="px-4 py-2 text-right">{row.p50 != null ? formatCurrency(row.p50) : '-'}</td>
+                          <td className="px-4 py-2 text-right">{row.p75 != null ? formatCurrency(row.p75) : '-'}</td>
+                          <td className="px-4 py-2 text-right text-gray-500">{row.sampleSize ?? 0}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <p className="text-xs text-gray-500 p-4 border-t bg-gray-50">
+                  {t('holidaysClarification')}
+                </p>
+              </div>
+            )}
           </div>
         )}
 

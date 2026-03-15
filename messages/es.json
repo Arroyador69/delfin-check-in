@@ -771,6 +771,7 @@
       "travelerInfo": "Información del Viajero",
       "currentData": "Datos Actuales del Viajero",
       "signature": "Firma del huésped",
+      "traveler": "Viajero",
       "signedOn": "Firmado el",
       "editData": "Editar Información del Viajero",
       "name": "Nombre",
@@ -2259,7 +2260,27 @@
     "tabs": {
       "calendar": "Calendario",
       "analytics": "Analítica",
-      "events": "Eventos locales"
+      "events": "Eventos locales",
+      "prices": "Precios por zona"
+    },
+    "holidaysClarification": "Festivos nacionales y de la comunidad autónoma seleccionada. Las fiestas locales por municipio no están incluidas.",
+    "pricesTab": {
+      "title": "Precios de la competencia por zona",
+      "description": "Elige una zona con datos y un rango de fechas para ver la media y percentiles (P25, P40, P50, P75) de precios de alojamientos en esa zona.",
+      "zone": "Zona",
+      "selectZone": "Seleccionar zona",
+      "from": "Desde",
+      "to": "Hasta",
+      "showPrices": "Ver precios",
+      "loading": "Cargando...",
+      "noZones": "No hay zonas con datos de competencia. Añade competidores con zona en Precios para ver medias por fechas.",
+      "resultsFor": "Resultados para",
+      "avgP40": "Media P40",
+      "avgP50": "Media P50",
+      "days": "días",
+      "sampleSize": "muestra/día",
+      "date": "Fecha",
+      "n": "N"
     },
     "legend": {
       "holiday": "Festivo",

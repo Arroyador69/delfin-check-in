@@ -738,6 +738,7 @@
       "travelerInfo": "Traveler Information",
       "currentData": "Current Traveler Data",
       "signature": "Guest signature",
+      "traveler": "Traveler",
       "signedOn": "Signed on",
       "editData": "Edit Traveler Information",
       "name": "Name",
@@ -2146,7 +2147,27 @@
     "tabs": {
       "calendar": "Calendar",
       "analytics": "Analytics",
-      "events": "Local Events"
+      "events": "Local Events",
+      "prices": "Prices by zone"
+    },
+    "holidaysClarification": "National and regional (autonomous community) holidays. Local municipal holidays are not included.",
+    "pricesTab": {
+      "title": "Competitor prices by zone",
+      "description": "Select a zone with data and a date range to see average and percentiles (P25, P40, P50, P75) of accommodation prices in that zone.",
+      "zone": "Zone",
+      "selectZone": "Select zone",
+      "from": "From",
+      "to": "To",
+      "showPrices": "Show prices",
+      "loading": "Loading...",
+      "noZones": "No zones with competitor data. Add competitors with a zone in Pricing to see averages by date.",
+      "resultsFor": "Results for",
+      "avgP40": "Avg P40",
+      "avgP50": "Avg P50",
+      "days": "days",
+      "sampleSize": "sample/day",
+      "date": "Date",
+      "n": "N"
     },
     "legend": {
       "holiday": "Holiday",
