@@ -8,6 +8,7 @@ import CookieConsentModal from '@/components/CookieConsentModal';
 import AdsBanner from '@/components/AdsBanner';
 import PWAInstallGuide from '@/components/PWAInstallGuide';
 import AdBlockDetector from '@/components/AdBlockDetector';
+import SupportAssistantWidget from '@/components/SupportAssistantWidget';
 
 /**
  * 🌍 LAYOUT PARA RUTAS INTERNACIONALIZADAS
@@ -45,6 +46,7 @@ export default async function LocaleLayout({
         </ConditionalMainPadding>
         <ConditionalFooter />
         <CookieConsentModal />
+        <SupportAssistantWidget />
       </div>
     </NextIntlClientProvider>
   );

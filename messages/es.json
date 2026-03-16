@@ -2344,6 +2344,19 @@
     "tip3": "Los fines de semana de eventos con impacto 4-5 pueden justificar subidas del 25-30%",
     "tip4": "Revisa los patrones de ocupación por día de la semana para optimizar precios mínimos en días flojos"
   },
+  "supportAssistant": {
+    "title": "Asistente Delfín Check-in",
+    "subtitle": "Ayuda sobre uso del software (sin datos privados)",
+    "button": "Asistente",
+    "open": "Abrir asistente",
+    "close": "Cerrar",
+    "send": "Enviar",
+    "placeholder": "Escribe tu pregunta...",
+    "greeting": "Soy el Asistente de Delfín Check-in. Te ayudo con el uso del software (MIR, registros, propiedades, etc.). ¿Qué quieres hacer?",
+    "hint": "Consejo: di en qué pantalla estás y qué quieres conseguir (ej. \"Configurar MIR\").",
+    "genericError": "No se pudo responder ahora. Inténtalo de nuevo en unos segundos.",
+    "rateLimited": "Demasiadas consultas seguidas. Espera unos segundos y prueba otra vez."
+  },
   "partes": {
     "title": "Generar XML del día",
     "date": "Fecha",
