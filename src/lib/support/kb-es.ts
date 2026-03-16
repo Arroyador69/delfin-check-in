@@ -35,11 +35,11 @@ export const KB_ES: SupportKB = {
     },
     {
       q: '¿Dónde consigo el usuario del MIR?',
-      a: 'En el portal del MIR. Suele ser tu CIF/NIF/NIE seguido de “---WS” (ejemplo: B12345678---WS).',
+      a: 'En el portal oficial de hospedajes del MIR: https://hospedajes.ses.mir.es (ses.hospedajes). Al darte de alta como establecimiento con envío por web service, el MIR te asigna usuario y contraseña. El usuario suele ser tu CIF/NIF/NIE seguido de “---WS” (ejemplo: B12345678---WS).',
     },
     {
       q: '¿Qué es el “código de arrendador” del MIR?',
-      a: 'Es un identificador que te asigna el MIR al registrar el establecimiento. Es obligatorio para que los envíos se acepten.',
+      a: 'Es un identificador único que te asigna el MIR al registrar el establecimiento en el portal de hospedajes (https://hospedajes.ses.mir.es). Lo ves en la ficha de tu alojamiento dentro del portal. Es obligatorio configurarlo en Delfín para que los envíos se acepten.',
     },
     {
       q: '¿Cómo sé si el MIR está en simulación o envío real?',
@@ -163,7 +163,7 @@ export const KB_ES: SupportKB = {
     },
     {
       q: 'Quiero soporte, ¿cómo contacto?',
-      a: 'Si estás en demo, contacta por el canal acordado (WhatsApp/Telegram/email). En producción, habrá un canal de soporte dentro del panel o email de soporte.',
+      a: 'Para soporte general escribe a contacto@delfincheckin.com explicando tu duda o problema (idealmente con capturas de pantalla y el email de tu cuenta). Usamos ese correo como canal principal de soporte para la herramienta.',
     },
     {
       q: '¿Qué puedo enseñar en una demo rápida?',
