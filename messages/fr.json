@@ -82,12 +82,109 @@
   "dashboard": {
     "title": "Delfín Check-in",
     "subtitle": "Gestion intelligente de chambres",
+    "connected": "Connecté",
+    "upgradePlan": "Améliorer le forfait",
+    "logout": "Déconnexion",
+    "loadingDashboard": "Chargement du tableau de bord...",
+    "planInfo": "Forfait {planName}",
+    "monthlyPrice": "€{price}/mois",
+    "roomUsage": "Utilisation des chambres",
+    "unlimited": "Illimité",
+    "available": "{count} disponibles",
+    "limitReached": "⚠️ Limite atteinte : vous avez utilisé toutes les chambres de votre forfait ({used}/{max}).",
+    "limitReachedAction": "Pour ajouter des chambres, mettez à jour votre forfait depuis la page",
+    "nearLimit": "⚡ Vous approchez de la limite : {used}/{max} chambres ({percentage}% utilisées).",
+    "nearLimitRemaining": "Il vous reste {remaining} chambres disponibles. Pensez à",
+    "nearLimitAction": "améliorer votre forfait",
+    "nearLimitSuffix": "si vous avez besoin de plus de capacité.",
+    "roomsAvailableToAdd": "✅ {remaining} chambres disponibles à ajouter",
+    "upgradeLink": "Amélioration du forfait",
+    "updatePlan": "Mettre à jour le forfait",
     "unitLimitBannerTitleAtLimit": "⚠️ Limite d'unités atteint",
     "unitLimitBannerTitleNear": "⚠️ Proche de la limite d'unités",
     "unitLimitBannerAtLimit": "Vous avez atteint la limite de {max} unités de votre forfait. Vous ne pouvez pas créer plus d'unités sans améliorer votre forfait.",
     "unitLimitBannerNear": "Vous utilisez {current} sur {max} unités ({percent}%). Il vous reste {remaining} unités disponibles.",
     "unitLimitUpgradeToPro": "Passer à PRO",
-    "unitLimitDismiss": "Me rappeler plus tard"
+    "unitLimitDismiss": "Me rappeler plus tard",
+    "mirModule": {
+      "title": "💰 Module MIR - Seulement 8€/mois (+ TVA)",
+      "reminder": "Rappel :",
+      "mandatory": "La transmission automatique des formulaires des voyageurs au Ministère de l'Intérieur est",
+      "mandatoryBold": "obligatoire",
+      "mandatoryLocation": "en Espagne.",
+      "description": "Pour seulement",
+      "priceBold": "8€/mois (+ TVA 21%)",
+      "descriptionSuffix": "vous pouvez activer le module MIR, qui inclut l'enregistrement numérique automatique et l'envoi automatique des formulaires au gouvernement.",
+      "activateButton": "Activer le module MIR"
+    },
+    "videoTutorial": {
+      "title": "Video Tutorial - Panel Utilisateur",
+      "description": "Apprenez à utiliser toutes les fonctionnalités de Delfín Check-in",
+      "watchOnYouTube": "Voir sur YouTube"
+    },
+    "periodFilters": {
+      "title": "📊 Filtres de période",
+      "showing": "Affichage des données pour :",
+      "total": "📊 Total",
+      "annual": "📅 Annuel",
+      "today": "📅 Aujourd'hui",
+      "thisWeek": "📆 Cette semaine",
+      "last7Days": "⏰ 7 derniers jours",
+      "thisMonth": "🗓️ Ce mois",
+      "last30Days": "📈 30 derniers jours",
+      "custom": "🎯 Personnalisé",
+      "dateFrom": "📅 Date de début",
+      "dateTo": "📅 Date de fin",
+      "resetButton": "🔄 Réinitialiser",
+      "selectDateRange": "Sélectionnez une plage de dates",
+      "totalSince2020": "Total (depuis 2020)",
+      "currentYear": "Année en cours"
+    },
+    "kpis": {
+      "rooms": "Chambres",
+      "guestsToday": "Voyageurs aujourd'hui",
+      "activeReservations": "Réservations actives",
+      "occupancy": "Taux d'occupation",
+      "revenue": "Chiffre d'affaires",
+      "commissionsPaid": "Commissions payées",
+      "netIncome": "Revenu net"
+    },
+    "quickActions": {
+      "reservations": {
+        "title": "Réservations",
+        "description": "Gérer les réservations et le calendrier"
+      },
+      "guestRegistrations": {
+        "title": "Registres des voyageurs",
+        "description": "Voir les registres et générer le XML"
+      },
+      "costCalculator": {
+        "title": "Calculateur de coûts",
+        "description": "Calculer les coûts réels par voyageur"
+      },
+      "exportAEAT": {
+        "title": "Exporter AEAT",
+        "description": "Générer les fichiers pour les impôts"
+      }
+    },
+    "currentReservations": {
+      "title": "Réservations en cours",
+      "noReservations": "Aucune réservation",
+      "noCurrentGuests": "Aucun voyageur actuel",
+      "people": "{count} personnes",
+      "room": "Chambre {number}",
+      "checkIn": "🟢 Arrivée :",
+      "checkOut": "🔴 Départ :"
+    },
+    "upcomingReservations": {
+      "title": "Prochaines réservations",
+      "noReservations": "Aucune réservation",
+      "noUpcomingReservations": "Aucune réservation à venir",
+      "people": "{count} personnes",
+      "room": "Chambre {number}",
+      "checkInTime": "🚪 Arrivée : 16h00",
+      "checkOutLabel": "🔴 Départ :"
+    }
   },
   "auth": {
     "loginTitle": "Se Connecter",

@@ -82,12 +82,109 @@
   "dashboard": {
     "title": "Delfín Check-in",
     "subtitle": "Gestão inteligente de quartos",
+    "connected": "Ligado",
+    "upgradePlan": "Melhorar plano",
+    "logout": "Terminar sessão",
+    "loadingDashboard": "A carregar painel...",
+    "planInfo": "Plano {planName}",
+    "monthlyPrice": "€{price}/mês",
+    "roomUsage": "Uso de quartos",
+    "unlimited": "Ilimitado",
+    "available": "{count} disponíveis",
+    "limitReached": "⚠️ Limite atingido: utilizou todos os quartos do seu plano ({used}/{max}).",
+    "limitReachedAction": "Para adicionar mais quartos, atualize o seu plano na página de",
+    "nearLimit": "⚡ Está perto do limite: {used}/{max} quartos ({percentage}% utilizados).",
+    "nearLimitRemaining": "Tem {remaining} quartos disponíveis. Considere",
+    "nearLimitAction": "melhorar o seu plano",
+    "nearLimitSuffix": "se precisar de mais capacidade.",
+    "roomsAvailableToAdd": "✅ {remaining} quartos disponíveis para adicionar",
+    "upgradeLink": "Melhoria de plano",
+    "updatePlan": "Atualizar plano",
     "unitLimitBannerTitleAtLimit": "⚠️ Limite de unidades atingido",
     "unitLimitBannerTitleNear": "⚠️ Perto do limite de unidades",
     "unitLimitBannerAtLimit": "Atingiu o limite de {max} unidades do seu plano. Não pode criar mais unidades até atualizar o plano.",
     "unitLimitBannerNear": "Está a usar {current} de {max} unidades ({percent}%). Tem {remaining} unidades disponíveis.",
     "unitLimitUpgradeToPro": "Atualizar para PRO",
-    "unitLimitDismiss": "Lembrar mais tarde"
+    "unitLimitDismiss": "Lembrar mais tarde",
+    "mirModule": {
+      "title": "💰 Módulo MIR - Apenas 8€/mês (+ IVA)",
+      "reminder": "Lembrete:",
+      "mandatory": "O envio automático dos formulários dos hóspedes ao Ministério do Interior é",
+      "mandatoryBold": "obrigatório",
+      "mandatoryLocation": "em Espanha.",
+      "description": "Por apenas",
+      "priceBold": "8€/mês (+ IVA 21%)",
+      "descriptionSuffix": "pode ativar o módulo MIR, que inclui check-in digital automático e envio automático de formulários ao governo.",
+      "activateButton": "Ativar Módulo MIR"
+    },
+    "videoTutorial": {
+      "title": "Video Tutorial - Painel de Utilizador",
+      "description": "Aprenda a usar todas as funcionalidades do Delfín Check-in",
+      "watchOnYouTube": "Ver no YouTube"
+    },
+    "periodFilters": {
+      "title": "📊 Filtros de período",
+      "showing": "A mostrar dados de:",
+      "total": "📊 Total",
+      "annual": "📅 Anual",
+      "today": "📅 Hoje",
+      "thisWeek": "📆 Esta semana",
+      "last7Days": "⏰ Últimos 7 dias",
+      "thisMonth": "🗓️ Este mês",
+      "last30Days": "📈 Últimos 30 dias",
+      "custom": "🎯 Personalizado",
+      "dateFrom": "📅 Data de",
+      "dateTo": "📅 Data até",
+      "resetButton": "🔄 Repor",
+      "selectDateRange": "Selecione um intervalo de datas",
+      "totalSince2020": "Total (desde 2020)",
+      "currentYear": "Ano atual"
+    },
+    "kpis": {
+      "rooms": "Quartos",
+      "guestsToday": "Hóspedes hoje",
+      "activeReservations": "Reservas ativas",
+      "occupancy": "Ocupação",
+      "revenue": "Faturação",
+      "commissionsPaid": "Comissões pagas",
+      "netIncome": "Lucro líquido"
+    },
+    "quickActions": {
+      "reservations": {
+        "title": "Reservas",
+        "description": "Gerir reservas e calendário"
+      },
+      "guestRegistrations": {
+        "title": "Registos de hóspedes",
+        "description": "Ver registos e gerar XML"
+      },
+      "costCalculator": {
+        "title": "Calculadora de custos",
+        "description": "Calcular custos reais por hóspede"
+      },
+      "exportAEAT": {
+        "title": "Exportar AEAT",
+        "description": "Gerar ficheiros para as Finanças"
+      }
+    },
+    "currentReservations": {
+      "title": "Reservas atuais",
+      "noReservations": "Sem reservas",
+      "noCurrentGuests": "Sem hóspedes atuais",
+      "people": "{count} pessoas",
+      "room": "Quarto {number}",
+      "checkIn": "🟢 Check-in:",
+      "checkOut": "🔴 Check-out:"
+    },
+    "upcomingReservations": {
+      "title": "Próximas reservas",
+      "noReservations": "Sem reservas",
+      "noUpcomingReservations": "Sem reservas próximas",
+      "people": "{count} pessoas",
+      "room": "Quarto {number}",
+      "checkInTime": "🚪 Check-in: 16:00",
+      "checkOutLabel": "🔴 Check-out:"
+    }
   },
   "auth": {
     "loginTitle": "Iniciar Sessão",
