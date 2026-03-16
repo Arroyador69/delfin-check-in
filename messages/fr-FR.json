@@ -1,0 +1,4 @@
+{
+  "$schema": "fr-FR.json uses same content as fr.json",
+  "extends": "./fr.json"
+}
