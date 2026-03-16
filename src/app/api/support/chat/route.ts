@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { verifyToken } from '@/lib/auth';
 import { KB_ES } from '@/lib/support/kb-es';
+import { getUsage, incrementUsage, MONTHLY_LIMIT } from '@/lib/support/usage';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -100,6 +101,23 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'No autorizado' }, { status: 401 });
     }
 
+    let usage: Awaited<ReturnType<typeof getUsage>> | null = null;
+    try {
+      usage = await getUsage(payload.tenantId);
+      if (usage.remaining <= 0) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: `Has alcanzado el límite de ${MONTHLY_LIMIT} mensajes este mes. Se reinicia en ${usage.resetLabel}.`,
+            code: 'MONTHLY_LIMIT',
+          },
+          { status: 429 }
+        );
+      }
+    } catch (e) {
+      console.warn('[support/chat] usage check failed (table may not exist):', e);
+    }
+
     const ip = getIp(req);
     const rateKey = `${payload.tenantId}:${ip}`;
     const rl = checkRateLimit(rateKey);
@@ -130,6 +148,7 @@ export async function POST(req: NextRequest) {
         text: cached.text,
         cached: true,
         model: process.env.OPENAI_SUPPORT_MODEL || 'gpt-4o-mini',
+        ...(usage && { usage: { remaining: usage.remaining, limit: usage.limit, resetLabel: usage.resetLabel } }),
       });
     }
 
@@ -173,11 +192,25 @@ export async function POST(req: NextRequest) {
 
     responseCache.set(cacheKey, { text, createdAt: Date.now() });
 
+    let newUsage: Awaited<ReturnType<typeof getUsage>> | null = null;
+    try {
+      newUsage = await incrementUsage(payload.tenantId);
+    } catch (e) {
+      console.warn('[support/chat] increment usage failed:', e);
+    }
+
     return NextResponse.json({
       success: true,
       text,
       cached: false,
       model,
+      ...(newUsage && {
+        usage: {
+          remaining: newUsage.remaining,
+          limit: newUsage.limit,
+          resetLabel: newUsage.resetLabel,
+        },
+      }),
     });
   } catch (error) {
     console.error('[support/chat] error:', error);

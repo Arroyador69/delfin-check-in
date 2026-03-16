@@ -2355,7 +2355,11 @@
     "greeting": "Soy el Asistente de Delfín Check-in. Te ayudo con el uso del software (MIR, registros, propiedades, etc.). ¿Qué quieres hacer?",
     "hint": "Consejo: di en qué pantalla estás y qué quieres conseguir (ej. \"Configurar MIR\").",
     "genericError": "No se pudo responder ahora. Inténtalo de nuevo en unos segundos.",
-    "rateLimited": "Demasiadas consultas seguidas. Espera unos segundos y prueba otra vez."
+    "rateLimited": "Demasiadas consultas seguidas. Espera unos segundos y prueba otra vez.",
+    "usageRemaining": "Quedan",
+    "usageUntil": "mensajes hasta",
+    "usageWarning": "Te quedan pocos mensajes este mes. ",
+    "usageLimitReached": "Límite mensual alcanzado. Se reinicia el próximo mes."
   },
   "partes": {
     "title": "Generar XML del día",

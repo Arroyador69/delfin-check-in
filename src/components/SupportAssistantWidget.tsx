@@ -6,6 +6,12 @@ import { MessageCircle, X, Send } from 'lucide-react';
 
 type ChatMsg = { role: 'user' | 'assistant'; text: string };
 
+type UsageInfo = {
+  remaining: number;
+  limit: number;
+  resetLabel: string;
+} | null;
+
 function getScreenHint(): string {
   try {
     if (typeof window === 'undefined') return '';
@@ -24,6 +30,7 @@ export default function SupportAssistantWidget() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [msgs, setMsgs] = useState<ChatMsg[]>([]);
+  const [usage, setUsage] = useState<UsageInfo>(null);
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
   const greeting = useMemo(
@@ -38,6 +45,22 @@ export default function SupportAssistantWidget() {
       setMsgs([{ role: 'assistant', text: greeting }]);
     }
   }, [open, msgs.length, greeting]);
+
+  useEffect(() => {
+    if (!open) return;
+    fetch('/api/support/usage')
+      .then(r => r.json())
+      .then(data => {
+        if (data?.success && data.remaining !== undefined) {
+          setUsage({
+            remaining: data.remaining,
+            limit: data.limit,
+            resetLabel: data.resetLabel || '',
+          });
+        }
+      })
+      .catch(() => setUsage(null));
+  }, [open]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -68,7 +91,19 @@ export default function SupportAssistantWidget() {
           (res.status === 429 ? t('rateLimited') : t('genericError')) ||
           'No se pudo responder ahora.';
         setMsgs(prev => [...prev, { role: 'assistant', text: String(err) }]);
+        if (data?.code === 'MONTHLY_LIMIT' || res.status === 429) {
+          fetch('/api/support/usage').then(r => r.json()).then(d => {
+            if (d?.success) setUsage({ remaining: d.remaining, limit: d.limit, resetLabel: d.resetLabel || '' });
+          }).catch(() => {});
+        }
         return;
+      }
+      if (data?.usage) {
+        setUsage({
+          remaining: data.usage.remaining,
+          limit: data.usage.limit,
+          resetLabel: data.usage.resetLabel || '',
+        });
       }
       setMsgs(prev => [...prev, { role: 'assistant', text: String(data.text) }]);
     } catch (e) {
@@ -103,6 +138,19 @@ export default function SupportAssistantWidget() {
               <p className="text-xs text-gray-500 truncate">
                 {t('subtitle') || 'Ayuda sobre uso del software (sin datos privados)'}
               </p>
+              {usage !== null && (
+                <p className="text-[11px] text-gray-600 mt-1">
+                  {usage.remaining <= 50 && usage.remaining > 0 && (
+                    <span className="text-amber-600 font-medium">
+                      {t('usageWarning') || 'Te quedan pocos mensajes este mes. '}
+                    </span>
+                  )}
+                  {t('usageRemaining') || 'Quedan'}{' '}
+                  <strong>{usage.remaining}</strong>{' '}
+                  {t('usageUntil') || 'mensajes hasta'}{' '}
+                  {usage.resetLabel}.
+                </p>
+              )}
             </div>
             <button
               type="button"
@@ -154,6 +202,11 @@ export default function SupportAssistantWidget() {
                 <Send className="h-4 w-4" />
               </button>
             </div>
+            {usage !== null && usage.remaining <= 0 && (
+              <p className="mt-2 text-[11px] text-amber-600 font-medium">
+                {t('usageLimitReached') || 'Límite mensual alcanzado. Se reinicia el próximo mes.'}
+              </p>
+            )}
             <p className="mt-2 text-[11px] text-gray-500">
               {t('hint') ||
                 'Consejo: di en qué pantalla estás y qué quieres conseguir (ej. “Configurar MIR”).'}
