@@ -2278,6 +2278,23 @@
     "tip3": "I fine settimana con eventi impatto 4-5 possono giustificare aumenti del 25-30%",
     "tip4": "Analizza i pattern di occupazione per giorno per ottimizzare i prezzi minimi nei giorni fiacchi"
   },
+  "supportAssistant": {
+    "title": "Assistente Delfín Check-in",
+    "subtitle": "Aiuto sull'uso del software (nessun dato privato)",
+    "button": "Assistente",
+    "open": "Apri assistente",
+    "close": "Chiudi",
+    "send": "Invia",
+    "placeholder": "Scrivi la tua domanda...",
+    "greeting": "Sono l'Assistente di Delfín Check-in. Ti aiuto a usare il software (MIR, registrazioni, proprietà, ecc.). Cosa vuoi fare?",
+    "hint": "Suggerimento: indica in quale schermata sei e cosa vuoi ottenere (es. \"Configurare il MIR\").",
+    "genericError": "Impossibile rispondere ora. Riprova tra qualche secondo.",
+    "rateLimited": "Troppe richieste. Attendi qualche secondo e riprova.",
+    "usageRemaining": "Ti restano",
+    "usageUntil": "messaggi fino a",
+    "usageWarning": "Ti restano pochi messaggi questo mese. ",
+    "usageLimitReached": "Limite mensile raggiunto. Si reintegra il mese prossimo."
+  },
   "partes": {
     "title": "Genera XML del giorno",
     "date": "Data",

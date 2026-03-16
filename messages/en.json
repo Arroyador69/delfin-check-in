@@ -2231,6 +2231,23 @@
     "tip3": "Weekends with impact 4-5 events can justify 25-30% price increases",
     "tip4": "Review occupancy patterns by day of week to optimise minimum prices on slow days"
   },
+  "supportAssistant": {
+    "title": "Delfín Check-in Assistant",
+    "subtitle": "Help with using the software (no private data)",
+    "button": "Assistant",
+    "open": "Open assistant",
+    "close": "Close",
+    "send": "Send",
+    "placeholder": "Type your question...",
+    "greeting": "I'm the Delfín Check-in Assistant. I help you use the software (MIR, registrations, properties, and more). What would you like to do?",
+    "hint": "Tip: say which screen you're on and what you want to achieve (e.g. \"Configure MIR\").",
+    "genericError": "Couldn't answer right now. Please try again in a few seconds.",
+    "rateLimited": "Too many requests. Wait a few seconds and try again.",
+    "usageRemaining": "You have",
+    "usageUntil": "messages left until",
+    "usageWarning": "You have few messages left this month. ",
+    "usageLimitReached": "Monthly limit reached. It resets next month."
+  },
   "partes": {
     "title": "Generate day XML",
     "date": "Date",

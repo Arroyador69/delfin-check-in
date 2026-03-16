@@ -2048,6 +2048,23 @@
     "tip3": "Les week-ends avec événements impact 4-5 peuvent justifier des hausses de 25-30%",
     "tip4": "Analysez les tendances d'occupation par jour pour optimiser les prix minimum en basse saison"
   },
+  "supportAssistant": {
+    "title": "Assistant Delfín Check-in",
+    "subtitle": "Aide à l'utilisation du logiciel (aucune donnée privée)",
+    "button": "Assistant",
+    "open": "Ouvrir l'assistant",
+    "close": "Fermer",
+    "send": "Envoyer",
+    "placeholder": "Écrivez votre question...",
+    "greeting": "Je suis l'Assistant Delfín Check-in. Je vous aide à utiliser le logiciel (MIR, enregistrements, propriétés, etc.). Que souhaitez-vous faire ?",
+    "hint": "Conseil : indiquez sur quel écran vous êtes et ce que vous voulez faire (ex. \"Configurer le MIR\").",
+    "genericError": "Impossible de répondre pour l'instant. Réessayez dans quelques secondes.",
+    "rateLimited": "Trop de requêtes. Attendez quelques secondes puis réessayez.",
+    "usageRemaining": "Il vous reste",
+    "usageUntil": "messages jusqu'au",
+    "usageWarning": "Il vous reste peu de messages ce mois-ci. ",
+    "usageLimitReached": "Limite mensuelle atteinte. Réinitialisation le mois prochain."
+  },
   "partes": {
     "title": "Générer le XML du jour",
     "date": "Date",
