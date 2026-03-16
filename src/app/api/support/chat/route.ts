@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { verifyToken } from '@/lib/auth';
-import { KB_ES } from '@/lib/support/kb-es';
+import { getKBForLocale } from '@/lib/support';
 import { getUsage, incrementUsage, MONTHLY_LIMIT } from '@/lib/support/usage';
 
 export const runtime = 'nodejs';
@@ -53,11 +53,11 @@ function checkRateLimit(key: string): { ok: boolean; retryAfterSec?: number } {
   return { ok: true };
 }
 
-function getFaqContext(question: string): string {
+function getFaqContext(question: string, kb = getKBForLocale('es')): string {
   const q = normalizeQuestion(question);
   const hits: Array<{ score: number; q: string; a: string }> = [];
 
-  for (const item of KB_ES.faqs) {
+  for (const item of kb.faqs) {
     const nq = normalizeQuestion(item.q);
     let score = 0;
     for (const token of q.split(' ')) {
@@ -152,15 +152,15 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const faqContext = getFaqContext(message);
+    const kb = getKBForLocale(locale);
+    const faqContext = getFaqContext(message, kb);
     const model = process.env.OPENAI_SUPPORT_MODEL || 'gpt-4o-mini';
 
     const systemPrompt =
-      `${KB_ES.intro}\n\n` +
-      `Estilo:\n` +
-      `- Responde en español.\n` +
+      `${kb.intro}\n\n` +
+      `Style / Estilo:\n` +
       `- Máximo 8-12 líneas.\n` +
-      `- Usa pasos numerados.\n` +
+      `- Usa pasos numerados claros.\n` +
       `- Si la pregunta es ambigua, pide solo: pantalla actual y objetivo.\n` +
       `Prohibiciones:\n` +
       `- No menciones código, ficheros ni rutas internas.\n` +

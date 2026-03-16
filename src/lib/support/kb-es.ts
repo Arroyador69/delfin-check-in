@@ -1,9 +1,4 @@
-export type SupportKB = {
-  version: string;
-  language: 'es';
-  intro: string;
-  faqs: Array<{ q: string; a: string }>;
-};
+import type { SupportKB } from './types';
 
 export const KB_ES: SupportKB = {
   version: '2026-03-16',
