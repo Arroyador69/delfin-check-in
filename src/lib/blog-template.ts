@@ -83,7 +83,8 @@ function extractJson(raw: string): string {
   throw new Error('No se pudo extraer JSON de la respuesta de OpenAI')
 }
 
-function validateContentHtml(content: string): string[] {
+/** Errores de estructura HTML del cuerpo (para plantilla landing / GitHub). */
+export function validateBlogArticleContentHtml(content: string): string[] {
   const errors: string[] = []
   const html = String(content ?? '')
 
@@ -149,7 +150,7 @@ export function parseAndValidateBlogOpenAIResponse(raw: string): BlogOpenAIRespo
   const parsed = JSON.parse(jsonStr)
   const result = BLOG_OPENAI_RESPONSE_SCHEMA.parse(parsed)
 
-  const contentErrors = validateContentHtml(result.content)
+  const contentErrors = validateBlogArticleContentHtml(result.content)
   if (contentErrors.length > 0) {
     throw new Error(`content_html inválido: ${contentErrors.join(' | ')}`)
   }
@@ -161,5 +162,32 @@ export function parseAndValidateBlogOpenAIResponse(raw: string): BlogOpenAIRespo
     ...result,
     meta_description
   }
+}
+
+export type BlogValidationResult =
+  | { valid: true; errors: []; data: BlogOpenAIResponse }
+  | { valid: false; errors: string[] }
+
+/** Validación estricta (mismo criterio que OpenAI / generador). */
+export function validateBlogArticleStrictPayload(data: unknown): BlogValidationResult {
+  const r = BLOG_OPENAI_RESPONSE_SCHEMA.safeParse(data)
+  if (!r.success) {
+    const errs = r.error.issues.map((i) => `${i.path.join('.') || 'root'}: ${i.message}`)
+    return { valid: false, errors: errs.length ? errs : ['Payload inválido'] }
+  }
+  const contentErrors = validateBlogArticleContentHtml(r.data.content)
+  if (contentErrors.length) return { valid: false, errors: contentErrors }
+  return {
+    valid: true,
+    errors: [],
+    data: { ...r.data, meta_description: r.data.meta_description.slice(0, 160) }
+  }
+}
+
+/** Solo HTML del cuerpo (publicación GitHub / edición manual). */
+export function validateBlogContentOnly(content: unknown): { valid: boolean; errors: string[] } {
+  const html = typeof content === 'string' ? content : ''
+  const errs = validateBlogArticleContentHtml(html)
+  return errs.length ? { valid: false, errors: errs } : { valid: true, errors: [] }
 }
 

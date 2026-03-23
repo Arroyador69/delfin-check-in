@@ -1,12 +1,21 @@
 /**
- * Lógica compartida para el cron de publicación diaria del blog:
- * generar artículo con OpenAI (~1600 palabras, SEO) y publicar en GitHub (misma plantilla: waitlist, FAQ, header, footer).
+ * Lógica compartida para el cron del blog:
+ * genera con OpenAI (~1600 palabras, SEO) y guarda en BD como borrador.
+ * La subida a GitHub la hace Superadmin (revisión) vía /api/superadmin/blog/publish-to-github
+ * o esta función publishBlogArticleToGitHub si se invoca desde otro flujo.
  */
 
 import { sql } from '@/lib/db';
 import OpenAI from 'openai';
 import { Octokit } from '@octokit/rest';
-import { parseAndValidateBlogOpenAIResponse } from '@/lib/blog-template';
+import { parseAndValidateBlogOpenAIResponse, validateBlogContentOnly } from '@/lib/blog-template';
+import {
+  buildLandingArticleHtml,
+  fetchLandingArticleTemplate,
+  GITHUB_BRANCH,
+  GITHUB_OWNER,
+  GITHUB_REPO
+} from '@/lib/blog-github-html';
 
 const BLOG_SYSTEM_PROMPT = `Eres un redactor SEO experto en contenido para Delfín Check-in (PMS y software de registro de viajeros para alquiler vacacional en España).
 
@@ -38,25 +47,6 @@ REQUISITOS IMPORTANTES PARA "content" (ARTICLE_CONTENT):
 - Usa HTML consistente: <p>, <h2>, <h3>, <ul>/<ol>/<li>, <strong>/<em>, <blockquote>.
 - Si usas cajas, usa exactamente: <div class="highlight-box"> o <div class="warning-box">.
 `;
-
-const GITHUB_OWNER = 'Arroyador69';
-const GITHUB_REPO = 'delfincheckin.com';
-const GITHUB_BRANCH = 'main';
-const TEMPLATE_URL = `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/${GITHUB_BRANCH}/articulos/_template.html`;
-
-function escapeAttr(s: string): string {
-  return String(s)
-    .replace(/&/g, '&amp;')
-    .replace(/"/g, '&quot;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
-}
-
-function estimateReadTimeMinutes(htmlContent: string): number {
-  const text = htmlContent.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
-  const words = text ? text.split(/\s+/).length : 0;
-  return Math.max(1, Math.round(words / 200));
-}
 
 export async function generateBlogArticle(
   topic: string,
@@ -141,7 +131,6 @@ El artículo debe ser útil para propietarios de alquiler vacacional en España 
     finalSlug = `${slug}-${Date.now().toString(36)}`;
   }
 
-  const now = new Date().toISOString();
   await sql`
     INSERT INTO blog_articles (
       slug, title, meta_description, meta_keywords,
@@ -151,7 +140,7 @@ El artículo debe ser útil para propietarios de alquiler vacacional en España 
       ${finalSlug}, ${title}, ${meta_description}, ${meta_keywords},
       ${content}, ${excerpt}, ${`https://delfincheckin.com/articulos/${finalSlug}.html`},
       ${JSON.stringify(schema_json)}::jsonb,
-      'published', true, ${now}, 'Delfín Check-in'
+      'draft', false, null, 'Delfín Check-in (cron)'
     )
   `;
 
@@ -169,34 +158,21 @@ export async function publishBlogArticleToGitHub(slug: string): Promise<{ url: s
   if (articleResult.rows.length === 0) throw new Error('Artículo no encontrado');
   const article = articleResult.rows[0] as any;
 
-  const publishedAt = article.published_at ? new Date(article.published_at) : new Date();
-  const updatedAt = article.updated_at ? new Date(article.updated_at) : publishedAt;
-  const publishedDate = publishedAt.toISOString().split('T')[0];
-  const modifiedDate = updatedAt.toISOString().split('T')[0];
-  const readTime = estimateReadTimeMinutes(article.content || '');
-
-  const res = await fetch(TEMPLATE_URL, { cache: 'no-store' });
-  if (!res.ok) throw new Error('No se pudo descargar la plantilla');
-  let html = await res.text();
-
-  const replacements: [string, string][] = [
-    ['{{ARTICLE_TITLE}}', escapeAttr(article.title || '')],
-    ['{{META_DESCRIPTION}}', escapeAttr(article.meta_description || '')],
-    ['{{META_KEYWORDS}}', escapeAttr(article.meta_keywords || '')],
-    ['{{ARTICLE_SLUG}}', article.slug],
-    ['{{PUBLISHED_DATE}}', publishedDate],
-    ['{{MODIFIED_DATE}}', modifiedDate],
-    ['{{PUBLISH_DATE}}', publishedDate],
-    ['{{READ_TIME}}', String(readTime)],
-    ['{{ARTICLE_CONTENT}}', article.content || ''],
-  ];
-  for (const [from, to] of replacements) {
-    html = html.split(from).join(to);
+  const contentCheck = validateBlogContentOnly(article.content || '');
+  if (!contentCheck.valid) {
+    throw new Error(`HTML inválido: ${contentCheck.errors.join(' | ')}`);
   }
-  const scriptSlugLiteral = "const ARTICLE_SLUG = 'multas-por-no-registrar-viajeros-espana';";
-  if (html.includes(scriptSlugLiteral)) {
-    html = html.replace(scriptSlugLiteral, `const ARTICLE_SLUG = '${article.slug}';`);
-  }
+
+  const templateHtml = await fetchLandingArticleTemplate();
+  const html = buildLandingArticleHtml(templateHtml, {
+    slug: article.slug,
+    title: article.title,
+    meta_description: article.meta_description,
+    meta_keywords: article.meta_keywords,
+    content: article.content,
+    published_at: article.published_at,
+    updated_at: article.updated_at
+  });
 
   const octokit = new Octokit({ auth: token });
   const filePath = `articulos/${article.slug}.html`;

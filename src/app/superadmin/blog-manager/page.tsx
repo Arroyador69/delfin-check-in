@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { BlogTemplatePreview } from '@/components/blog/BlogTemplatePreview';
 
 interface Article {
   id: string;
@@ -10,7 +11,7 @@ interface Article {
   excerpt: string;
   meta_description: string;
   meta_keywords: string;
-  content: string;
+  content?: string;
   status: 'draft' | 'published' | 'archived';
   is_published: boolean;
   published_at: string;
@@ -43,6 +44,11 @@ export default function BlogManagerPage() {
   const [generateStep, setGenerateStep] = useState<'idle' | 'enviando' | 'generando' | 'guardando'>('idle');
   const [publishingToGitHubSlug, setPublishingToGitHubSlug] = useState<string | null>(null);
   const [lastPublishedUrl, setLastPublishedUrl] = useState<string | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewHtml, setPreviewHtml] = useState<string | null>(null);
+  const [previewTitle, setPreviewTitle] = useState('Vista previa con plantilla');
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [validationHints, setValidationHints] = useState<string[] | null>(null);
 
   useEffect(() => {
     fetchArticles();
@@ -126,17 +132,30 @@ export default function BlogManagerPage() {
     }
   };
 
-  const handleEdit = (article: Article) => {
-    setEditingArticle(article);
+  const handleEdit = async (article: Article) => {
+    setValidationHints(null);
+    let full: Article = article;
+    try {
+      const response = await fetch(
+        `/api/blog/articles?slug=${encodeURIComponent(article.slug)}`
+      );
+      const data = await response.json();
+      if (data.success && data.article) {
+        full = data.article as Article;
+      }
+    } catch (e) {
+      console.error('No se pudo cargar el contenido del artículo:', e);
+    }
+    setEditingArticle(full);
     setFormData({
-      slug: article.slug,
-      title: article.title,
-      excerpt: article.excerpt || '',
-      meta_description: article.meta_description || '',
-      meta_keywords: article.meta_keywords || '',
-      content: article.content,
-      status: article.status,
-      is_published: article.is_published
+      slug: full.slug,
+      title: full.title,
+      excerpt: full.excerpt || '',
+      meta_description: full.meta_description || '',
+      meta_keywords: full.meta_keywords || '',
+      content: full.content || '',
+      status: full.status,
+      is_published: full.is_published
     });
     setShowForm(true);
   };
@@ -182,6 +201,7 @@ export default function BlogManagerPage() {
     setEditingArticle(null);
     resetForm();
     setMessage(null);
+    setValidationHints(null);
   };
 
   const handlePublish = async (article: Article) => {
@@ -205,6 +225,93 @@ export default function BlogManagerPage() {
     }
   };
 
+  const closePreview = () => {
+    setPreviewOpen(false);
+    setPreviewHtml(null);
+  };
+
+  const loadPreviewBySlug = async (slug: string) => {
+    setPreviewLoading(true);
+    setPreviewTitle('Vista previa (plantilla landing)');
+    try {
+      const response = await fetch('/api/superadmin/blog/preview-html', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ slug })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Error al generar vista previa');
+      setPreviewHtml(data.html || null);
+      setPreviewOpen(true);
+    } catch (err: any) {
+      setMessage({ type: 'error', text: err.message || 'Error en vista previa' });
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
+
+  const loadPreviewFromForm = async () => {
+    if (!formData.slug?.trim() || !formData.title?.trim()) {
+      setMessage({ type: 'error', text: 'Rellena al menos slug y título para la vista previa.' });
+      return;
+    }
+    setPreviewLoading(true);
+    setPreviewTitle('Vista previa borrador (plantilla landing)');
+    try {
+      const response = await fetch('/api/superadmin/blog/preview-html', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          slug: formData.slug.trim(),
+          title: formData.title,
+          meta_description: formData.meta_description,
+          meta_keywords: formData.meta_keywords,
+          content: formData.content
+        })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Error al generar vista previa');
+      setPreviewHtml(data.html || null);
+      setPreviewOpen(true);
+    } catch (err: any) {
+      setMessage({ type: 'error', text: err.message || 'Error en vista previa' });
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
+
+  const validateCurrentContent = async (content: string) => {
+    setMessage(null);
+    setValidationHints(null);
+    try {
+      const response = await fetch('/api/superadmin/blog/validate-article', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ mode: 'content', content })
+      });
+      const data = await response.json();
+      if (!data.success) throw new Error(data.error || 'Error al validar');
+      if (data.valid) {
+        setValidationHints([]);
+        setMessage({
+          type: 'success',
+          text: 'El HTML del cuerpo cumple las reglas para publicar en GitHub (H2/H3, listas, sin tags prohibidos).'
+        });
+      } else {
+        setValidationHints(data.errors || []);
+        setMessage({
+          type: 'error',
+          text: 'Hay problemas en el HTML del artículo. Revisa la lista debajo del editor.'
+        });
+      }
+    } catch (err: any) {
+      setMessage({ type: 'error', text: err.message || 'Error al validar' });
+    }
+  };
+
   const handlePublishToGitHub = async (article: Article) => {
     setMessage(null);
     setPublishingToGitHubSlug(article.slug);
@@ -216,7 +323,13 @@ export default function BlogManagerPage() {
         body: JSON.stringify({ slug: article.slug })
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Error al publicar en GitHub');
+      if (!response.ok) {
+        const extra =
+          Array.isArray(data.validation_errors) && data.validation_errors.length
+            ? '\n• ' + data.validation_errors.join('\n• ')
+            : '';
+        throw new Error((data.error || 'Error al publicar en GitHub') + extra);
+      }
       const url = data.url || `https://delfincheckin.com/articulos/${article.slug}.html`;
       setLastPublishedUrl(url);
       setMessage({
@@ -567,6 +680,30 @@ export default function BlogManagerPage() {
               <p className="text-xs text-gray-500 mt-1">
                 Escribe el contenido en HTML. Puedes usar h2, h3, p, ul, ol, strong, em, blockquote, etc.
               </p>
+              {validationHints && validationHints.length > 0 && (
+                <ul className="mt-2 list-disc rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+                  {validationHints.map((h, i) => (
+                    <li key={i}>{h}</li>
+                  ))}
+                </ul>
+              )}
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => validateCurrentContent(formData.content)}
+                  className="rounded-lg bg-amber-100 px-4 py-2 text-sm font-semibold text-amber-900 hover:bg-amber-200"
+                >
+                  ✓ Validar HTML (GitHub)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => loadPreviewFromForm()}
+                  disabled={previewLoading}
+                  className="rounded-lg bg-indigo-100 px-4 py-2 text-sm font-semibold text-indigo-900 hover:bg-indigo-200 disabled:opacity-50"
+                >
+                  {previewLoading ? 'Cargando…' : '👁 Vista previa plantilla'}
+                </button>
+              </div>
             </div>
 
             {/* Estado y Publicación */}
@@ -604,7 +741,7 @@ export default function BlogManagerPage() {
             </div>
 
             {/* Botones */}
-            <div className="flex gap-4">
+            <div className="flex flex-wrap gap-4">
               <button
                 type="submit"
                 disabled={saving}
@@ -627,7 +764,7 @@ export default function BlogManagerPage() {
       {/* Aclaración: Publicar = BD; En GitHub = repo landing */}
       {!showForm && articles.length > 0 && (
         <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-900">
-          <strong>Para que el artículo aparezca en la web:</strong> primero <strong>Publicar</strong> (guarda en la BD) y luego <strong>🚀 En GitHub</strong> (sube el HTML al repo). Al pulsar En GitHub se abrirá la página en una nueva pestaña. <strong>Ver en web</strong> abre la URL pública en delfincheckin.com.
+          <strong>Flujo recomendado:</strong> los borradores del <strong>cron</strong> llegan sin subir a la web. Revisa con <strong>Vista previa</strong>, corrige si hace falta, y usa <strong>🚀 En GitHub</strong> cuando el HTML sea válido (misma plantilla que la landing: waitlist, FAQ, etc.). <strong>Publicar</strong> en la BD es aparte (visibilidad interna/listados). <strong>Ver en web</strong> solo funciona tras subir a GitHub.
         </div>
       )}
 
@@ -703,6 +840,14 @@ export default function BlogManagerPage() {
                             </button>
                           )}
                           <button
+                            type="button"
+                            onClick={() => loadPreviewBySlug(article.slug)}
+                            disabled={previewLoading}
+                            className="px-3 py-1 bg-indigo-100 text-indigo-800 rounded hover:bg-indigo-200 text-sm font-semibold disabled:opacity-50"
+                          >
+                            {previewLoading ? '…' : '👁 Vista previa'}
+                          </button>
+                          <button
                             onClick={() => handlePublishToGitHub(article)}
                             disabled={publishingToGitHubSlug !== null}
                             title="Subir HTML al repo delfincheckin.com para que aparezca en la web"
@@ -742,6 +887,13 @@ export default function BlogManagerPage() {
           ← Volver al Dashboard
         </Link>
       </div>
+
+      <BlogTemplatePreview
+        html={previewHtml}
+        open={previewOpen}
+        onClose={closePreview}
+        title={previewTitle}
+      />
     </div>
   );
 }

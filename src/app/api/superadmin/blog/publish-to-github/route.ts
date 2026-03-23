@@ -1,32 +1,21 @@
 /**
  * POST /api/superadmin/blog/publish-to-github
  * Genera el HTML del artículo desde la plantilla de la landing y lo sube al repo delfincheckin.com (GitHub).
- * Así el artículo queda en la web pública y deja de dar 404.
+ * Exige que el HTML del cuerpo cumpla las mismas reglas que el generador/cron.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { verifySuperAdmin } from '@/lib/auth-superadmin';
 import { sql } from '@/lib/db';
 import { Octokit } from '@octokit/rest';
-
-const GITHUB_OWNER = 'Arroyador69';
-const GITHUB_REPO = 'delfincheckin.com';
-const GITHUB_BRANCH = 'main';
-const TEMPLATE_URL = `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/${GITHUB_BRANCH}/articulos/_template.html`;
-
-function escapeAttr(s: string): string {
-  return String(s)
-    .replace(/&/g, '&amp;')
-    .replace(/"/g, '&quot;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
-}
-
-function estimateReadTimeMinutes(htmlContent: string): number {
-  const text = htmlContent.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
-  const words = text ? text.split(/\s+/).length : 0;
-  return Math.max(1, Math.round(words / 200));
-}
+import { validateBlogContentOnly } from '@/lib/blog-template';
+import {
+  buildLandingArticleHtml,
+  fetchLandingArticleTemplate,
+  GITHUB_BRANCH,
+  GITHUB_OWNER,
+  GITHUB_REPO
+} from '@/lib/blog-github-html';
 
 export async function POST(req: NextRequest) {
   try {
@@ -65,17 +54,20 @@ export async function POST(req: NextRequest) {
     }
     const article = articleResult.rows[0] as any;
 
-    const publishedAt = article.published_at ? new Date(article.published_at) : new Date();
-    const updatedAt = article.updated_at ? new Date(article.updated_at) : publishedAt;
-    const publishedDate = publishedAt.toISOString().split('T')[0];
-    const modifiedDate = updatedAt.toISOString().split('T')[0];
-    const readTime = estimateReadTimeMinutes(article.content || '');
+    const contentCheck = validateBlogContentOnly(article.content || '');
+    if (!contentCheck.valid) {
+      return NextResponse.json(
+        {
+          error: 'El HTML del contenido no cumple la plantilla. Corrige antes de publicar en GitHub.',
+          validation_errors: contentCheck.errors
+        },
+        { status: 400 }
+      );
+    }
 
     let templateHtml: string;
     try {
-      const res = await fetch(TEMPLATE_URL, { cache: 'no-store' });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      templateHtml = await res.text();
+      templateHtml = await fetchLandingArticleTemplate();
     } catch (e: any) {
       console.error('Error fetching template:', e);
       return NextResponse.json(
@@ -84,25 +76,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const replacements: [string, string][] = [
-      ['{{ARTICLE_TITLE}}', escapeAttr(article.title || '')],
-      ['{{META_DESCRIPTION}}', escapeAttr(article.meta_description || '')],
-      ['{{META_KEYWORDS}}', escapeAttr(article.meta_keywords || '')],
-      ['{{ARTICLE_SLUG}}', article.slug],
-      ['{{PUBLISHED_DATE}}', publishedDate],
-      ['{{MODIFIED_DATE}}', modifiedDate],
-      ['{{PUBLISH_DATE}}', publishedDate],
-      ['{{READ_TIME}}', String(readTime)],
-      ['{{ARTICLE_CONTENT}}', article.content || ''],
-    ];
-    let html = templateHtml;
-    for (const [from, to] of replacements) {
-      html = html.split(from).join(to);
-    }
-    const scriptSlugLiteral = "const ARTICLE_SLUG = 'multas-por-no-registrar-viajeros-espana';";
-    if (html.includes(scriptSlugLiteral)) {
-      html = html.replace(scriptSlugLiteral, `const ARTICLE_SLUG = '${article.slug}';`);
-    }
+    const html = buildLandingArticleHtml(templateHtml, {
+      slug: article.slug,
+      title: article.title,
+      meta_description: article.meta_description,
+      meta_keywords: article.meta_keywords,
+      content: article.content,
+      published_at: article.published_at,
+      updated_at: article.updated_at
+    });
 
     const octokit = new Octokit({ auth: token });
     const filePath = `articulos/${article.slug}.html`;

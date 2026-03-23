@@ -1,11 +1,11 @@
 /**
- * CRON: Publicar 2 artículos del blog al día.
- * Genera con OpenAI (~1600 palabras, temas SEO), guarda en BD y sube a GitHub (misma plantilla: waitlist, FAQ, header, footer).
- * Vercel Cron llama con CRON_SECRET.
+ * CRON: Generar 2 borradores de blog al día.
+ * OpenAI (~1600 palabras, temas SEO) → BD como borrador. Superadmin revisa y pulsa "En GitHub".
+ * Vercel Cron (o Bearer CRON_SECRET).
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { generateBlogArticle, publishBlogArticleToGitHub } from '@/lib/blog-daily';
+import { generateBlogArticle } from '@/lib/blog-daily';
 
 const CRON_ARTICLES_PER_DAY = 2;
 const TARGET_WORDS = 1600;
@@ -79,19 +79,18 @@ export async function GET(req: NextRequest) {
 
     for (const topic of topics) {
       try {
-        const { slug, title } = await generateBlogArticle(topic, TARGET_WORDS);
-        const { url } = await publishBlogArticleToGitHub(slug);
-        results.push({ topic, slug, url });
+        const { slug } = await generateBlogArticle(topic, TARGET_WORDS);
+        results.push({ topic, slug, url: undefined });
       } catch (err: any) {
         console.error(`Cron blog: error con tema "${topic}":`, err);
         results.push({ topic, error: err?.message || 'Error' });
       }
     }
 
-    const published = results.filter((r) => r.url);
+    const ok = results.filter((r) => r.slug);
     return NextResponse.json({
       success: true,
-      message: `Publicados ${published.length}/${CRON_ARTICLES_PER_DAY} artículos.`,
+      message: `Borradores creados ${ok.length}/${CRON_ARTICLES_PER_DAY}. Revisa en Superadmin → Gestión de artículos y publica en GitHub.`,
       results,
     });
   } catch (err: any) {
