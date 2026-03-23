@@ -2,6 +2,7 @@
   "framework": "nextjs",
   "buildCommand": "npm run build",
   "crons": [
+    {"path":"/api/cron/publish-blog-articles","schedule":"0 9 * * *"},
     {"path":"/api/superadmin/programmatic/cron","schedule":"0 9,17 * * *"},
     {"path":"/api/cron/daily-report","schedule":"0 7 * * *"},
     {"path":"/api/cron/weekly-report","schedule":"0 7 * * 0"},
