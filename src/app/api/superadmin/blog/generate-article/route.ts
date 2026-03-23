@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifySuperAdmin } from '@/lib/auth-superadmin';
 import { sql } from '@/lib/db';
 import OpenAI from 'openai';
+import { parseAndValidateBlogOpenAIResponse } from '@/lib/blog-template';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -31,7 +32,17 @@ Debes responder ÚNICAMENTE con un JSON válido (sin markdown, sin \`\`\`), con 
   "meta_keywords": "palabra1, palabra2, palabra3, ...",
   "excerpt": "Resumen breve 1-2 frases para listados",
   "content": "<p>...</p><h2>...</h2><p>...</p>..."
-}`;
+}
+
+REQUISITOS IMPORTANTES PARA "content" (ARTICLE_CONTENT):
+- content debe ser SOLO un fragmento HTML (NO incluyas <html>, <head>, <body>, <header>, <footer>, <script>, <style>).
+- content NO debe incluir <h1>.
+- content debe incluir jerarquía clara: al menos 2 secciones con <h2> y al menos 1 <h3>.
+- content debe incluir al menos 1 lista (<ul> o <ol>).
+- Usa HTML consistente: <p>, <h2>, <h3>, <ul>/<ol>/<li>, <strong>/<em>, <blockquote>.
+- Si usas cajas, usa exactamente: <div class="highlight-box"> o <div class="warning-box">.
+
+Si la salida no cumple, REINTENTA UNA VEZ corrigiendo SOLO el HTML del campo "content" (manteniendo el JSON válido).`;
 
 export async function POST(req: NextRequest) {
   try {
@@ -58,52 +69,64 @@ export async function POST(req: NextRequest) {
 
 El artículo debe ser útil para propietarios de alquiler vacacional en España (registro de viajeros, normativa, Ministerio del Interior, multas, etc.). Mismo estilo y profundidad que nuestros otros artículos. Entre 600 y 1000 palabras de contenido. Responde solo con el JSON.`;
 
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [
-        { role: 'system', content: BLOG_SYSTEM_PROMPT },
-        { role: 'user', content: userPrompt }
-      ],
-      temperature: 0.6,
-      max_tokens: 4000
-    });
+    let validated: any = null;
+    let lastError: any = null;
 
-    const raw = completion.choices[0]?.message?.content?.trim() || '';
-    if (!raw) {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const prompt =
+        attempt === 0
+          ? userPrompt
+          : `${userPrompt}\n\nVALIDACION_PREVIA_FALLIDA: ${String(lastError?.message || lastError)}\n\nCorrige SOLO el campo "content" para cumplir el esquema y la validación (mantén el JSON válido).`;
+
+      const completion = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: BLOG_SYSTEM_PROMPT },
+          { role: 'user', content: prompt }
+        ],
+        temperature: 0.6,
+        max_tokens: 4000
+      });
+
+      const raw = completion.choices[0]?.message?.content?.trim() || '';
+      if (!raw) {
+        lastError = new Error('OpenAI no devolvió contenido');
+        continue;
+      }
+
+      // Extraer JSON (por si viene envuelto en ```json ... ```)
+      let jsonStr = raw;
+      const codeBlock = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
+      if (codeBlock) jsonStr = codeBlock[1].trim();
+
+      try {
+        validated = parseAndValidateBlogOpenAIResponse(jsonStr);
+        break;
+      } catch (e: any) {
+        lastError = e;
+        console.error('Validación OpenAI falló (intento ' + (attempt + 1) + '):', raw.slice(0, 500));
+      }
+    }
+
+    if (!validated) {
       return NextResponse.json(
-        { error: 'OpenAI no devolvió contenido. Intenta con otro tema.' },
+        { error: `Validación OpenAI falló: ${String(lastError?.message || lastError || 'error desconocido')}` },
         { status: 502 }
       );
     }
 
-    // Extraer JSON (por si viene envuelto en ```json ... ```)
-    let jsonStr = raw;
-    const codeBlock = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
-    if (codeBlock) jsonStr = codeBlock[1].trim();
-
-    let data: { slug?: string; title?: string; meta_description?: string; meta_keywords?: string; excerpt?: string; content?: string };
-    try {
-      data = JSON.parse(jsonStr);
-    } catch (e) {
-      console.error('OpenAI response (first 500 chars):', raw.slice(0, 500));
-      return NextResponse.json(
-        { error: 'La respuesta de OpenAI no es un JSON válido. Intenta de nuevo o con otro tema.' },
-        { status: 502 }
-      );
-    }
-
-    const slug = (data.slug || '')
+    const slug = (validated.slug || '')
       .toLowerCase()
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '')
       .replace(/[^a-z0-9-]/g, '-')
       .replace(/-+/g, '-')
       .replace(/^-|-$/g, '') || `articulo-${Date.now()}`;
-    const title = (data.title || topic).slice(0, 500);
-    const meta_description = (data.meta_description || '').slice(0, 500);
-    const meta_keywords = (data.meta_keywords || '').slice(0, 1000);
-    const excerpt = (data.excerpt || '').slice(0, 1000);
-    const content = (data.content || '<p>Contenido pendiente.</p>');
+    const title = (validated.title || topic).slice(0, 500);
+    const meta_description = (validated.meta_description || '').slice(0, 160);
+    const meta_keywords = (validated.meta_keywords || '').slice(0, 1000);
+    const excerpt = (validated.excerpt || '').slice(0, 1000);
+    const content = (validated.content || '<p>Contenido pendiente.</p>');
 
     const schema_json = {
       '@context': 'https://schema.org',
