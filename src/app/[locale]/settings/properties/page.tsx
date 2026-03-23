@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
+import { UnitLimitUsageBanner } from '@/components/tenant/UnitLimitUsageBanner';
 import { Plus, Edit, Trash2, Camera, Euro, Users, Bed, Bath, Upload, X, Image as ImageIcon, Copy, Link as LinkIcon } from 'lucide-react';
 import { TenantProperty, CreatePropertyRequest } from '@/lib/direct-reservations-types';
 
@@ -201,7 +202,15 @@ export default function PropertiesManagement() {
         resetForm();
         alert(editingProperty ? t('updateSuccess') : t('saveSuccess'));
       } else {
-        alert('Error: ' + data.error);
+        const parts = [data.error];
+        if (data.suggestion) parts.push(data.suggestion);
+        if (data.current_usage != null && data.max_allowed != null) {
+          parts.push(`Uso actual: ${data.current_usage} / ${data.max_allowed} unidades.`);
+        }
+        if (data.upgrade_href) {
+          parts.push(`Abre ${window.location.origin}/${locale}${data.upgrade_href} para cambiar de plan.`);
+        }
+        alert(parts.filter(Boolean).join('\n\n'));
       }
     } catch (error) {
       console.error('Error guardando propiedad:', error);
@@ -310,6 +319,10 @@ export default function PropertiesManagement() {
             </span>
           </h1>
           <p className="text-gray-600 text-sm sm:text-lg">{t('subtitle')}</p>
+        </div>
+
+        <div className="mb-8 max-w-3xl mx-auto">
+          <UnitLimitUsageBanner upgradeHref={`/${locale}/upgrade-plan`} />
         </div>
 
         {/* Botón Nueva Propiedad */}

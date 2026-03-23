@@ -174,7 +174,8 @@ export async function POST(req: NextRequest) {
         { 
           success: false, 
           error: unitValidation.error,
-          suggestion: 'Para añadir más unidades, actualiza a PRO o crea otra cuenta.',
+          suggestion: 'Para añadir más unidades, actualiza tu plan (Check-in, Standard o Pro) desde Mejora de plan.',
+          upgrade_href: '/upgrade-plan',
           current_usage: unitValidation.tenant?.current_rooms || 0,
           max_allowed: unitValidation.tenant?.max_rooms || 2,
           plan_type: unitValidation.tenant?.plan_type || 'free'

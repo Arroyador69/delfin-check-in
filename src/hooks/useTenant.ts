@@ -16,8 +16,20 @@ export interface TenantInfo {
   status: string;
 }
 
+export interface TenantLimitsInfo {
+  can_add_rooms: boolean;
+  rooms_usage_percentage: number;
+  rooms_remaining: number;
+  limit_message: null | {
+    type: string;
+    message: string;
+    suggestion: string;
+  };
+}
+
 export function useTenant() {
   const [tenant, setTenant] = useState<TenantInfo | null>(null);
+  const [limits, setLimits] = useState<TenantLimitsInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -37,17 +49,21 @@ export function useTenant() {
               hasAds: data.tenant.plan_type === 'free' || data.tenant.plan_type === 'checkin'
             });
             setTenant(data.tenant);
+            setLimits(data.limits ?? null);
           } else {
             console.warn('⚠️ [useTenant] Respuesta sin tenant:', data);
             setError('No se pudo obtener información del tenant');
+            setLimits(null);
           }
         } else {
           console.error('❌ [useTenant] Error en respuesta:', response.status, response.statusText);
           setError('Error al obtener información del tenant');
+          setLimits(null);
         }
       } catch (err) {
         console.error('❌ [useTenant] Error fetching tenant:', err);
         setError('Error de conexión');
+        setLimits(null);
       } finally {
         setLoading(false);
       }
@@ -56,7 +72,7 @@ export function useTenant() {
     fetchTenant();
   }, []);
 
-  return { tenant, loading, error };
+  return { tenant, limits, loading, error };
 }
 
 /**

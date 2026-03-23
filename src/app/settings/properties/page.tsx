@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Plus, Edit, Trash2, Camera, Euro, Users, Bed, Bath, Upload, X, Image as ImageIcon, Copy, Link as LinkIcon } from 'lucide-react';
 import { TenantProperty, CreatePropertyRequest } from '@/lib/direct-reservations-types';
+import { UnitLimitUsageBanner } from '@/components/tenant/UnitLimitUsageBanner';
 
 export default function PropertiesManagement() {
   const [properties, setProperties] = useState<TenantProperty[]>([]);
@@ -191,7 +192,15 @@ export default function PropertiesManagement() {
         resetForm();
         alert(editingProperty ? 'Propiedad actualizada ✅' : 'Propiedad creada ✅');
       } else {
-        alert('Error: ' + data.error);
+        const parts = [data.error];
+        if (data.suggestion) parts.push(data.suggestion);
+        if (data.current_usage != null && data.max_allowed != null) {
+          parts.push(`Uso actual: ${data.current_usage} / ${data.max_allowed} unidades.`);
+        }
+        if (data.upgrade_href) {
+          parts.push(`Abre ${window.location.origin}${data.upgrade_href} para cambiar de plan.`);
+        }
+        alert(parts.filter(Boolean).join('\n\n'));
       }
     } catch (error) {
       console.error('Error guardando propiedad:', error);
@@ -299,6 +308,10 @@ export default function PropertiesManagement() {
             </span>
           </h1>
           <p className="text-gray-600 text-sm sm:text-lg">Administra tus propiedades para reservas directas</p>
+        </div>
+
+        <div className="mb-8 max-w-3xl mx-auto">
+          <UnitLimitUsageBanner />
         </div>
 
         {/* Botón Nueva Propiedad */}
