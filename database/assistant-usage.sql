@@ -1,4 +1,4 @@
--- Uso mensual del Asistente por tenant (límite ej. 400 mensajes/mes)
+-- Uso mensual del Asistente por tenant (límite en app: getAssistantMonthlyLimit / ASSISTANT_MONTHLY_LIMIT, por defecto 30/mes)
 CREATE TABLE IF NOT EXISTS assistant_usage (
   tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
   month_key TEXT NOT NULL,

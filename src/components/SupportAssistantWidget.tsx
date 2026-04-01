@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
+import { usePathname } from 'next/navigation';
 import { MessageCircle, X, Send } from 'lucide-react';
 
 type ChatMsg = { role: 'user' | 'assistant'; text: string };
@@ -24,7 +25,9 @@ function getScreenHint(): string {
 
 export default function SupportAssistantWidget() {
   const locale = useLocale();
+  const pathname = usePathname() || '';
   const t = useTranslations('supportAssistant');
+  const onboardingContext = pathname.includes('/onboarding');
 
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState('');
@@ -82,6 +85,7 @@ export default function SupportAssistantWidget() {
           message: text,
           locale,
           screen: getScreenHint(),
+          context: onboardingContext ? 'onboarding' : undefined,
         }),
       });
       const data = await res.json();
@@ -140,7 +144,8 @@ export default function SupportAssistantWidget() {
               </p>
               {usage !== null && (
                 <p className="text-[11px] text-gray-600 mt-1">
-                  {usage.remaining <= 50 && usage.remaining > 0 && (
+                  {usage.remaining > 0 &&
+                    usage.remaining <= Math.max(2, Math.min(20, Math.ceil(usage.limit * 0.15))) && (
                     <span className="text-amber-600 font-medium">
                       {t('usageWarning') || 'Te quedan pocos mensajes este mes. '}
                     </span>

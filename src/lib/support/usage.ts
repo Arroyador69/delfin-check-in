@@ -1,6 +1,20 @@
 import { sql } from '@/lib/db';
 
-export const MONTHLY_LIMIT = 400;
+/**
+ * Límite mensual de mensajes del Asistente por tenant.
+ * Neon solo almacena contadores en `assistant_usage`; el tope lo define la app.
+ * Override: ASSISTANT_MONTHLY_LIMIT (1–500 recomendado; máx. 10000).
+ * Por defecto 30 para controlar coste de tokens en planes gratuitos / waitlist.
+ */
+export function getAssistantMonthlyLimit(): number {
+  const raw = process.env.ASSISTANT_MONTHLY_LIMIT;
+  if (raw != null && raw !== '') {
+    const n = parseInt(raw, 10);
+    if (!Number.isNaN(n) && n >= 1 && n <= 10000) return n;
+  }
+  return 30;
+}
+
 
 function getMonthKey(): string {
   const now = new Date();
@@ -25,7 +39,7 @@ export type UsageResult = {
 
 export async function getUsage(tenantId: string): Promise<UsageResult> {
   const monthKey = getMonthKey();
-  const limit = MONTHLY_LIMIT;
+  const limit = getAssistantMonthlyLimit();
 
   const result = await sql`
     SELECT message_count

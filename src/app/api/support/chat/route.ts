@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { verifyToken } from '@/lib/auth';
 import { getKBForLocale } from '@/lib/support';
-import { getUsage, incrementUsage, MONTHLY_LIMIT } from '@/lib/support/usage';
+import { sql } from '@/lib/db';
+import { kbForTenantCountry } from '@/lib/support/kb-country';
+import { getAssistantMonthlyLimit, getUsage, incrementUsage } from '@/lib/support/usage';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -16,7 +18,7 @@ type CacheEntry = { text: string; createdAt: number };
 // Cache y rate-limit en memoria (suficiente para demo; en prod usar KV/Redis)
 const responseCache = new Map<string, CacheEntry>();
 const RATE_WINDOW_MS = 60_000;
-const RATE_MAX = 12; // mensajes / minuto
+const RATE_MAX = 5; // mensajes / minuto (anti abuso y coste)
 const rateMap = new Map<string, { count: number; windowStart: number }>();
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24h
 
@@ -105,10 +107,11 @@ export async function POST(req: NextRequest) {
     try {
       usage = await getUsage(payload.tenantId);
       if (usage.remaining <= 0) {
+        const cap = getAssistantMonthlyLimit();
         return NextResponse.json(
           {
             success: false,
-            error: `Has alcanzado el límite de ${MONTHLY_LIMIT} mensajes este mes. Se reinicia en ${usage.resetLabel}.`,
+            error: `Has alcanzado el límite de ${cap} mensajes este mes. Se reinicia en ${usage.resetLabel}.`,
             code: 'MONTHLY_LIMIT',
           },
           { status: 429 }
@@ -132,6 +135,7 @@ export async function POST(req: NextRequest) {
     const message = typeof body?.message === 'string' ? body.message.trim() : '';
     const locale = typeof body?.locale === 'string' ? body.locale : 'es';
     const screen = typeof body?.screen === 'string' ? body.screen.trim() : '';
+    const context = typeof body?.context === 'string' ? body.context.trim() : '';
 
     if (!message || message.length < 2) {
       return NextResponse.json(
@@ -140,7 +144,17 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const cacheKey = `${locale}:${normalizeQuestion(message)}`;
+    let tenantCountry: string | null = null;
+    try {
+      const cr = await sql`
+        SELECT country_code FROM tenants WHERE id = ${payload.tenantId} LIMIT 1
+      `;
+      tenantCountry = cr.rows[0]?.country_code ?? null;
+    } catch {
+      tenantCountry = null;
+    }
+
+    const cacheKey = `${locale}:${tenantCountry || 'XX'}:${normalizeQuestion(message)}`;
     const cached = responseCache.get(cacheKey);
     if (cached && Date.now() - cached.createdAt < CACHE_TTL_MS) {
       return NextResponse.json({
@@ -152,20 +166,41 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const kb = getKBForLocale(locale);
+    const kbBase = getKBForLocale(locale);
+    const kb = kbForTenantCountry(kbBase, tenantCountry);
     const faqContext = getFaqContext(message, kb);
     const model = process.env.OPENAI_SUPPORT_MODEL || 'gpt-4o-mini';
 
+    const onboardingRules =
+      context === 'onboarding'
+        ? `\nOnboarding guiado:\n` +
+          `- El usuario está en el asistente de alta (pasos 1–5). No recomiendes como primer paso ir a Propiedades ni a ajustes avanzados del panel.\n` +
+          `- Prioriza explicar: país y datos de contacto, nombre y dirección del alojamiento, habitaciones/unidades, check-in y MIR solo si el país es España, revisión final.\n` +
+          `- Si preguntan por el teléfono: contacto operativo y avisos del servicio.\n` +
+          `- Pueden usar "Saltar por ahora" (pasos 2–5) y completar después en Ajustes.\n`
+        : '';
+
+    const supportContact =
+      process.env.NEXT_PUBLIC_SUPPORT_EMAIL ||
+      process.env.SUPPORT_CONTACT_EMAIL ||
+      'soporte';
+
     const systemPrompt =
       `${kb.intro}\n\n` +
+      `Alcance obligatorio:\n` +
+      `- Solo respondes sobre el USO del producto Delfín Check-in (panel, reservas, calendario, MIR en España, formularios, propiedades, check-in, facturación en la medida en que esté en el panel).\n` +
+      `- Si la pregunta no tiene que ver con el uso del software (vida personal, política, legal general, otros negocios, temas ajenos): responde en 2-3 líneas que no puedes ayudar con eso y vuelve al uso del producto.\n` +
+      `- Si el usuario describe una incidencia técnica real (no envían formularios, error del sistema, datos que no cuadran): indica brevemente que eso requiere revisión humana; pide pantalla y qué intentaba hacer; sugiere contactar a soporte (${supportContact}) o el canal de incidencias del servicio cuando exista.\n` +
+      `- No des asesoramiento legal, fiscal ni médico.\n\n` +
       `Style / Estilo:\n` +
-      `- Máximo 8-12 líneas.\n` +
+      `- Máximo 6-10 líneas salvo que hagan falta pasos muy concretos.\n` +
       `- Usa pasos numerados claros.\n` +
       `- Si la pregunta es ambigua, pide solo: pantalla actual y objetivo.\n` +
       `Prohibiciones:\n` +
       `- No menciones código, ficheros ni rutas internas.\n` +
       `- No inventes datos.\n` +
-      `- No pidas datos personales del huésped.\n`;
+      `- No pidas datos personales del huésped.\n` +
+      onboardingRules;
 
     const userContent =
       `Pregunta del usuario:\n${message}\n\n` +
@@ -175,7 +210,7 @@ export async function POST(req: NextRequest) {
     const completion = await openai.chat.completions.create({
       model,
       temperature: 0.2,
-      max_tokens: 320,
+      max_tokens: 220,
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userContent },

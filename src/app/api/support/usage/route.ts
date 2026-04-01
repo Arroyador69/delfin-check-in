@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/auth';
-import { getUsage } from '@/lib/support/usage';
+import { getAssistantMonthlyLimit, getUsage } from '@/lib/support/usage';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -31,11 +31,12 @@ export async function GET(req: NextRequest) {
       const now = new Date();
       const next = new Date(now.getFullYear(), now.getMonth() + 1, 1);
       const resetLabel = next.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+      const limit = getAssistantMonthlyLimit();
       return NextResponse.json({
         success: true,
         used: 0,
-        limit: 400,
-        remaining: 400,
+        limit,
+        remaining: limit,
         resetLabel,
       });
     }
