@@ -1,8 +1,10 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useClientTranslations } from '@/hooks/useClientTranslations'
 
 export default function SuperAdminDashboard() {
+  const tSupport = useClientTranslations('superadminSupport')
   const [stats, setStats] = useState({
     totalTenants: 0,
     activeTenants: 0,
@@ -299,6 +301,17 @@ export default function SuperAdminDashboard() {
                 <div>
                   <p className="font-semibold text-gray-900">Analytics Global</p>
                   <p className="text-sm text-gray-700">Métricas detalladas</p>
+                </div>
+              </a>
+
+              <a 
+                href="/superadmin/support"
+                className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition"
+              >
+                <span className="text-2xl mr-3">🛟</span>
+                <div>
+                  <p className="font-semibold text-gray-900">{tSupport('dashboardLinkTitle')}</p>
+                  <p className="text-sm text-gray-700">{tSupport('dashboardLinkDesc')}</p>
                 </div>
               </a>
 

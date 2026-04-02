@@ -76,8 +76,31 @@
     "programmaticPages": "Páginas Programáticas",
     "radarReach": "Radar Reach",
     "logs": "Logs",
+    "customerSupport": "Soporte clientes",
     "viewMyTenantPanel": "Ver Mi Panel Tenant",
     "superAdminDashboardTitle": "👑 SuperAdmin Dashboard"
+  },
+  "superadminSupport": {
+    "title": "Soporte técnico (clientes)",
+    "subtitle": "Incidencias sobre el software enviadas desde la configuración de cada establecimiento.",
+    "filterAllStatuses": "Todos los estados",
+    "refreshTitle": "Actualizar",
+    "backToDashboard": "← Dashboard",
+    "empty": "No hay incidencias.",
+    "colEstablishment": "Establecimiento",
+    "colSubject": "Asunto",
+    "colCategory": "Categoría",
+    "colStatus": "Estado",
+    "colDate": "Fecha",
+    "detailTooltip": "Ver detalle",
+    "senderLabel": "Remitente",
+    "statusLabel": "Estado",
+    "internalNotesLabel": "Notas internas (solo superadmin)",
+    "save": "Guardar cambios",
+    "saving": "Guardando…",
+    "dash": "—",
+    "dashboardLinkTitle": "Soporte técnico (clientes)",
+    "dashboardLinkDesc": "Ver y gestionar incidencias de los establecimientos"
   },
   "dashboard": {
     "title": "Delfín Check-in",
@@ -1261,6 +1284,7 @@
       "billing": "Facturación",
       "micrositePayments": "Pagos Microsite",
       "paymentLinks": "Enlaces de Pago",
+      "support": "Soporte técnico",
       "account": "Cuenta",
       "payments": "Pagos"
     },
@@ -1279,6 +1303,38 @@
       "pendingInvoicesTitle": "Facturas Pendientes",
       "pendingInvoicesCountOne": "Tienes 1 factura pendiente de pago.",
       "pendingInvoicesCountMany": "Tienes {count} facturas pendientes de pago."
+    },
+    "support": {
+      "title": "Soporte técnico del software",
+      "intro": "Este canal está pensado para incidencias graves o bloqueos relacionados con el funcionamiento de Delfín Check-in (errores, integraciones, acceso al sistema u otros problemas técnicos). Nuestro equipo revisará cada caso con prioridad según impacto.",
+      "notFor": "No utilices este formulario para dudas comerciales genéricas ni para soporte a huéspedes finales; en esos casos usa los canales habituales o el correo de contacto general.",
+      "subjectLabel": "Asunto",
+      "subjectPlaceholder": "Resume el problema en una frase clara",
+      "subjectHint": "Entre 10 y 200 caracteres.",
+      "categoryLabel": "Tipo de incidencia",
+      "bodyLabel": "Descripción detallada",
+      "bodyPlaceholder": "Incluye qué estabas haciendo, qué esperabas, qué ocurrió en su lugar, mensajes de error y el navegador o dispositivo si aplica.",
+      "bodyHint": "Mínimo 50 caracteres. Cuanta más información técnica coherente, antes podremos ayudarte.",
+      "submit": "Enviar incidencia",
+      "submitting": "Enviando…",
+      "submitSuccess": "Tu incidencia se ha registrado. Te daremos respuesta por el correo de tu cuenta cuando haya novedades.",
+      "submitError": "No se pudo enviar la incidencia. Inténtalo de nuevo o escribe a soporte.",
+      "historyTitle": "Tus incidencias recientes",
+      "historyEmpty": "Aún no has enviado incidencias por este canal.",
+      "loading": "Cargando…",
+      "categories": {
+        "software_issue": "Fallo o comportamiento incorrecto en la aplicación",
+        "integration_error": "Integración (pagos, MIR u otra conexión técnica)",
+        "data_export": "Datos, exportaciones o informes",
+        "account_access": "Acceso a la cuenta o permisos",
+        "other_technical": "Otro asunto técnico grave"
+      },
+      "status": {
+        "open": "Recibida",
+        "in_review": "En revisión",
+        "resolved": "Resuelta",
+        "closed": "Cerrada"
+      }
     },
     "general": {
       "title": "Configuración General",

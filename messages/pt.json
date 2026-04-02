@@ -76,8 +76,31 @@
     "programmaticPages": "Páginas Programáticas",
     "radarReach": "Radar Reach",
     "logs": "Registos",
+    "customerSupport": "Suporte a clientes",
     "viewMyTenantPanel": "Ver Meu Painel de Inquilino",
     "superAdminDashboardTitle": "👑 Painel SuperAdmin"
+  },
+  "superadminSupport": {
+    "title": "Suporte técnico (clientes)",
+    "subtitle": "Incidências sobre o software enviadas a partir das definições de cada estabelecimento.",
+    "filterAllStatuses": "Todos os estados",
+    "refreshTitle": "Atualizar",
+    "backToDashboard": "← Painel",
+    "empty": "Não há pedidos de suporte.",
+    "colEstablishment": "Estabelecimento",
+    "colSubject": "Assunto",
+    "colCategory": "Categoria",
+    "colStatus": "Estado",
+    "colDate": "Data",
+    "detailTooltip": "Ver detalhe",
+    "senderLabel": "Remetente",
+    "statusLabel": "Estado",
+    "internalNotesLabel": "Notas internas (apenas superadmin)",
+    "save": "Guardar alterações",
+    "saving": "A guardar…",
+    "dash": "—",
+    "dashboardLinkTitle": "Suporte técnico (clientes)",
+    "dashboardLinkDesc": "Ver e gerir incidências dos estabelecimentos"
   },
   "dashboard": {
     "title": "Delfín Check-in",
@@ -1160,6 +1183,7 @@
       "billing": "Faturação",
       "micrositePayments": "Pagamentos Microsite",
       "paymentLinks": "Links de Pagamento",
+      "support": "Suporte técnico",
       "account": "Conta",
       "payments": "Pagamentos"
     },
@@ -1178,6 +1202,38 @@
       "pendingInvoicesTitle": "Faturas Pendentes",
       "pendingInvoicesCountOne": "Tem 1 fatura pendente de pagamento.",
       "pendingInvoicesCountMany": "Tem {count} faturas pendentes de pagamento."
+    },
+    "support": {
+      "title": "Suporte técnico do software",
+      "intro": "Para incidentes graves ou bloqueios no funcionamento do Delfín Check-in. Analisamos cada pedido consoante o impacto.",
+      "notFor": "Não utilize para questões comerciais genéricas nem para suporte a hóspedes finais.",
+      "subjectLabel": "Assunto",
+      "subjectPlaceholder": "Resuma o problema numa frase",
+      "subjectHint": "Entre 10 e 200 caracteres.",
+      "categoryLabel": "Tipo de incidente",
+      "bodyLabel": "Descrição detalhada",
+      "bodyPlaceholder": "Contexto, comportamento esperado, erros, browser se relevante.",
+      "bodyHint": "Mínimo 50 caracteres.",
+      "submit": "Enviar incidente",
+      "submitting": "A enviar…",
+      "submitSuccess": "Incidente registado. Responderemos por email.",
+      "submitError": "Não foi possível enviar. Tente novamente.",
+      "historyTitle": "Os seus incidentes recentes",
+      "historyEmpty": "Ainda não enviou incidentes por este canal.",
+      "loading": "A carregar…",
+      "categories": {
+        "software_issue": "Erro ou comportamento incorreto na aplicação",
+        "integration_error": "Integração (pagamentos, MIR, etc.)",
+        "data_export": "Dados ou exportações",
+        "account_access": "Acesso ou permissões",
+        "other_technical": "Outro problema técnico grave"
+      },
+      "status": {
+        "open": "Recebido",
+        "in_review": "Em análise",
+        "resolved": "Resolvido",
+        "closed": "Fechado"
+      }
     },
     "rooms": {
       "title": "Quartos/Apartamentos",

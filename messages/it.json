@@ -76,8 +76,31 @@
     "programmaticPages": "Pagine Programmatiche",
     "radarReach": "Radar Reach",
     "logs": "Log",
+    "customerSupport": "Assistenza clienti",
     "viewMyTenantPanel": "Visualizza Il Mio Pannello Tenant",
     "superAdminDashboardTitle": "👑 Dashboard SuperAdmin"
+  },
+  "superadminSupport": {
+    "title": "Supporto tecnico (clienti)",
+    "subtitle": "Segnalazioni sul software inviate dalle impostazioni di ogni struttura.",
+    "filterAllStatuses": "Tutti gli stati",
+    "refreshTitle": "Aggiorna",
+    "backToDashboard": "← Dashboard",
+    "empty": "Nessun ticket.",
+    "colEstablishment": "Struttura",
+    "colSubject": "Oggetto",
+    "colCategory": "Categoria",
+    "colStatus": "Stato",
+    "colDate": "Data",
+    "detailTooltip": "Vedi dettaglio",
+    "senderLabel": "Mittente",
+    "statusLabel": "Stato",
+    "internalNotesLabel": "Note interne (solo superadmin)",
+    "save": "Salva modifiche",
+    "saving": "Salvataggio…",
+    "dash": "—",
+    "dashboardLinkTitle": "Supporto tecnico (clienti)",
+    "dashboardLinkDesc": "Visualizza e gestisci le segnalazioni delle strutture"
   },
   "dashboard": {
     "title": "Delfín Check-in",
@@ -1223,6 +1246,7 @@
       "billing": "Fatturazione",
       "micrositePayments": "Pagamenti Microsite",
       "paymentLinks": "Link di Pagamento",
+      "support": "Supporto tecnico",
       "account": "Account",
       "payments": "Pagamenti"
     },
@@ -1241,6 +1265,38 @@
       "pendingInvoicesTitle": "Fatture Pendenti",
       "pendingInvoicesCountOne": "Hai 1 fattura pendente da pagare.",
       "pendingInvoicesCountMany": "Hai {count} fatture pendenti da pagare."
+    },
+    "support": {
+      "title": "Supporto tecnico software",
+      "intro": "Per problemi gravi o blocchi nel funzionamento di Delfín Check-in. Valutiamo ogni segnalazione in base all'impatto.",
+      "notFor": "Non utilizzare per domande commerciali generiche o supporto agli ospiti finali.",
+      "subjectLabel": "Oggetto",
+      "subjectPlaceholder": "Riassumi il problema in una frase",
+      "subjectHint": "Tra 10 e 200 caratteri.",
+      "categoryLabel": "Tipo di problema",
+      "bodyLabel": "Descrizione dettagliata",
+      "bodyPlaceholder": "Contesto, comportamento atteso, errori, browser se utile.",
+      "bodyHint": "Minimo 50 caratteri.",
+      "submit": "Invia segnalazione",
+      "submitting": "Invio in corso…",
+      "submitSuccess": "Segnalazione registrata. Risponderemo via email.",
+      "submitError": "Impossibile inviare. Riprova.",
+      "historyTitle": "Le tue segnalazioni recenti",
+      "historyEmpty": "Nessuna segnalazione inviata da questo canale.",
+      "loading": "Caricamento…",
+      "categories": {
+        "software_issue": "Bug o comportamento errato nell'app",
+        "integration_error": "Integrazione (pagamenti, MIR, ecc.)",
+        "data_export": "Dati o esportazioni",
+        "account_access": "Accesso o permessi",
+        "other_technical": "Altro problema tecnico grave"
+      },
+      "status": {
+        "open": "Ricevuta",
+        "in_review": "In lavorazione",
+        "resolved": "Risolta",
+        "closed": "Chiusa"
+      }
     },
     "general": {
       "title": "Impostazioni Generali",

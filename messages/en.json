@@ -76,8 +76,31 @@
     "programmaticPages": "Programmatic Pages",
     "radarReach": "Radar Reach",
     "logs": "Logs",
+    "customerSupport": "Customer support",
     "viewMyTenantPanel": "View My Tenant Panel",
     "superAdminDashboardTitle": "👑 SuperAdmin Dashboard"
+  },
+  "superadminSupport": {
+    "title": "Technical support (customers)",
+    "subtitle": "Software issues submitted from each property's settings.",
+    "filterAllStatuses": "All statuses",
+    "refreshTitle": "Refresh",
+    "backToDashboard": "← Dashboard",
+    "empty": "No tickets yet.",
+    "colEstablishment": "Property",
+    "colSubject": "Subject",
+    "colCategory": "Category",
+    "colStatus": "Status",
+    "colDate": "Date",
+    "detailTooltip": "View details",
+    "senderLabel": "From",
+    "statusLabel": "Status",
+    "internalNotesLabel": "Internal notes (superadmin only)",
+    "save": "Save changes",
+    "saving": "Saving…",
+    "dash": "—",
+    "dashboardLinkTitle": "Technical support (customers)",
+    "dashboardLinkDesc": "View and manage property tickets"
   },
   "dashboard": {
     "title": "Delfín Check-in",
@@ -1195,6 +1218,7 @@
       "billing": "Billing",
       "micrositePayments": "Microsite Payments",
       "paymentLinks": "Payment Links",
+      "support": "Technical support",
       "account": "Account",
       "payments": "Payments"
     },
@@ -1213,6 +1237,38 @@
       "pendingInvoicesTitle": "Pending Invoices",
       "pendingInvoicesCountOne": "You have 1 pending invoice to pay.",
       "pendingInvoicesCountMany": "You have {count} pending invoices to pay."
+    },
+    "support": {
+      "title": "Software technical support",
+      "intro": "This channel is for serious issues affecting Delfín Check-in (bugs, integrations, system access or other technical blockers). We review each ticket by impact.",
+      "notFor": "Do not use this form for generic commercial questions or end‑guest support; use the usual channels or the general contact email.",
+      "subjectLabel": "Subject",
+      "subjectPlaceholder": "Summarise the issue in one clear sentence",
+      "subjectHint": "Between 10 and 200 characters.",
+      "categoryLabel": "Issue type",
+      "bodyLabel": "Detailed description",
+      "bodyPlaceholder": "What were you doing, what did you expect, what happened instead, any error messages, browser or device if relevant.",
+      "bodyHint": "Minimum 50 characters. Clear technical detail helps us respond faster.",
+      "submit": "Submit ticket",
+      "submitting": "Sending…",
+      "submitSuccess": "Your ticket was registered. We will follow up via your account email when there are updates.",
+      "submitError": "Could not submit the ticket. Try again or contact support.",
+      "historyTitle": "Your recent tickets",
+      "historyEmpty": "You have not submitted any tickets through this channel yet.",
+      "loading": "Loading…",
+      "categories": {
+        "software_issue": "Application bug or incorrect behaviour",
+        "integration_error": "Integration (payments, MIR or other technical connection)",
+        "data_export": "Data, exports or reports",
+        "account_access": "Account access or permissions",
+        "other_technical": "Other serious technical issue"
+      },
+      "status": {
+        "open": "Received",
+        "in_review": "In review",
+        "resolved": "Resolved",
+        "closed": "Closed"
+      }
     },
     "general": {
       "title": "General Settings",

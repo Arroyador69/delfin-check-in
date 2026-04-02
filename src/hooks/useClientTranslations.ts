@@ -43,9 +43,9 @@ async function loadMessages(locale: Locale): Promise<TranslationMessages> {
 }
 
 /**
- * Obtiene el locale actual del usuario
+ * Obtiene el locale actual del usuario (p. ej. rutas sin prefijo /superadmin).
  */
-function getCurrentLocale(): Locale {
+export function getCurrentLocale(): Locale {
   if (typeof window === 'undefined') return defaultLocale;
   
   const stored = localStorage.getItem('preferred-locale');

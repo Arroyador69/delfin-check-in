@@ -2,11 +2,12 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Bed, Calendar, Users, Settings, Menu, X, TrendingUp, FileText, Download, Shield, Calculator, Send, Receipt, Crown, Target, UserPlus, BarChart3 } from 'lucide-react';
+import { Home, Bed, Calendar, Users, Settings, Menu, X, TrendingUp, FileText, Download, Shield, Calculator, Send, Receipt, Crown, Target, UserPlus, BarChart3, LifeBuoy } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { useTenant, hasLegalModule } from '@/hooks/useTenant';
 import { useTranslations } from 'next-intl';
+import { useClientTranslations } from '@/hooks/useClientTranslations';
 import LanguageSwitcher from './LanguageSwitcher';
 import { locales, defaultLocale, type Locale } from '@/i18n/config';
 
@@ -58,6 +59,7 @@ export default function Navigation() {
   const [isPlatformAdmin, setIsPlatformAdmin] = useState(false);
   const { tenant } = useTenant();
   const t = useSafeTranslations('navigation');
+  const tc = useClientTranslations('navigation');
 
   useEffect(() => {
     // Obtener información del usuario para saber si es superadmin
@@ -105,19 +107,20 @@ export default function Navigation() {
     return true;
   });
 
-  // Menú de SuperAdmin (NO traducir - siempre en español)
+  // SuperAdmin: textos según preferred-locale (localStorage), como /superadmin sin prefijo de idioma
   const superAdminNavigation = [
-    { name: 'Dashboard SuperAdmin', href: '/superadmin', icon: Crown },
-    { name: 'Métricas', href: '/superadmin/metrics', icon: TrendingUp },
-    { name: 'Afiliados', href: '/superadmin/affiliates', icon: Users },
-    { name: 'Referidos', href: '/superadmin/referrals', icon: Users },
-    { name: 'Emails', href: '/superadmin/emails', icon: FileText },
-    { name: 'Investor Mode', href: '/superadmin/investor-mode', icon: Target },
-    { name: 'Tenants', href: '/superadmin/tenants', icon: Users },
-    { name: 'Analytics', href: '/superadmin/analytics', icon: TrendingUp },
-    { name: 'Páginas Programáticas', href: '/superadmin/programmatic', icon: FileText },
-    { name: 'Radar Reach', href: '/superadmin/radar-reach', icon: Target },
-    { name: 'Logs', href: '/superadmin/logs', icon: Shield },
+    { name: tc('superAdminDashboard'), href: '/superadmin', icon: Crown },
+    { name: tc('metrics'), href: '/superadmin/metrics', icon: TrendingUp },
+    { name: tc('affiliates'), href: '/superadmin/affiliates', icon: Users },
+    { name: tc('referrals'), href: '/superadmin/referrals', icon: Users },
+    { name: tc('emails'), href: '/superadmin/emails', icon: FileText },
+    { name: tc('investorMode'), href: '/superadmin/investor-mode', icon: Target },
+    { name: tc('tenants'), href: '/superadmin/tenants', icon: Users },
+    { name: tc('analytics'), href: '/superadmin/analytics', icon: TrendingUp },
+    { name: tc('programmaticPages'), href: '/superadmin/programmatic', icon: FileText },
+    { name: tc('radarReach'), href: '/superadmin/radar-reach', icon: Target },
+    { name: tc('customerSupport'), href: '/superadmin/support', icon: LifeBuoy },
+    { name: tc('logs'), href: '/superadmin/logs', icon: Shield },
   ];
 
   const isInSuperAdmin = pathname?.startsWith('/superadmin');

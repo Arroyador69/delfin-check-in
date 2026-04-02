@@ -76,8 +76,31 @@
     "programmaticPages": "Pages Programmatiques",
     "radarReach": "Radar Reach",
     "logs": "Journaux",
+    "customerSupport": "Support clients",
     "viewMyTenantPanel": "Voir Mon Panneau Locataire",
     "superAdminDashboardTitle": "👑 Tableau de bord SuperAdmin"
+  },
+  "superadminSupport": {
+    "title": "Support technique (clients)",
+    "subtitle": "Incidents logiciel envoyés depuis les réglages de chaque établissement.",
+    "filterAllStatuses": "Tous les statuts",
+    "refreshTitle": "Actualiser",
+    "backToDashboard": "← Tableau de bord",
+    "empty": "Aucun ticket.",
+    "colEstablishment": "Établissement",
+    "colSubject": "Objet",
+    "colCategory": "Catégorie",
+    "colStatus": "Statut",
+    "colDate": "Date",
+    "detailTooltip": "Voir le détail",
+    "senderLabel": "Expéditeur",
+    "statusLabel": "Statut",
+    "internalNotesLabel": "Notes internes (superadmin uniquement)",
+    "save": "Enregistrer les modifications",
+    "saving": "Enregistrement…",
+    "dash": "—",
+    "dashboardLinkTitle": "Support technique (clients)",
+    "dashboardLinkDesc": "Voir et gérer les incidents des établissements"
   },
   "dashboard": {
     "title": "Delfín Check-in",
@@ -1159,6 +1182,7 @@
       "billing": "Facturation",
       "micrositePayments": "Paiements Microsite",
       "paymentLinks": "Liens de Paiement",
+      "support": "Support technique",
       "account": "Compte",
       "payments": "Paiements"
     },
@@ -1177,6 +1201,38 @@
       "pendingInvoicesTitle": "Factures en Attente",
       "pendingInvoicesCountOne": "Vous avez 1 facture en attente de paiement.",
       "pendingInvoicesCountMany": "Vous avez {count} factures en attente de paiement."
+    },
+    "support": {
+      "title": "Support technique logiciel",
+      "intro": "Pour incidents graves ou blocages liés au fonctionnement de Delfín Check-in. Nous traitons chaque demande selon son impact.",
+      "notFor": "Ne pas utiliser pour des questions commerciales générales ni pour le support aux voyageurs finaux.",
+      "subjectLabel": "Objet",
+      "subjectPlaceholder": "Résumez le problème en une phrase",
+      "subjectHint": "Entre 10 et 200 caractères.",
+      "categoryLabel": "Type d'incident",
+      "bodyLabel": "Description détaillée",
+      "bodyPlaceholder": "Contexte, comportement attendu, erreurs affichées, navigateur si utile.",
+      "bodyHint": "Minimum 50 caractères.",
+      "submit": "Envoyer",
+      "submitting": "Envoi…",
+      "submitSuccess": "Incident enregistré. Nous vous répondrons par email.",
+      "submitError": "Échec de l'envoi. Réessayez.",
+      "historyTitle": "Vos incidents récents",
+      "historyEmpty": "Aucun incident envoyé pour l'instant.",
+      "loading": "Chargement…",
+      "categories": {
+        "software_issue": "Défaut ou comportement incorrect",
+        "integration_error": "Intégration (paiements, MIR, etc.)",
+        "data_export": "Données ou exports",
+        "account_access": "Accès ou droits",
+        "other_technical": "Autre problème technique sérieux"
+      },
+      "status": {
+        "open": "Reçu",
+        "in_review": "En cours",
+        "resolved": "Résolu",
+        "closed": "Fermé"
+      }
     },
     "rooms": {
       "title": "Chambres/Appartements",
