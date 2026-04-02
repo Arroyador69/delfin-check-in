@@ -22,7 +22,7 @@ if (!stripeKey) {
 }
 
 const stripe = new Stripe(stripeKey!, {
-  apiVersion: '2024-06-20',
+  apiVersion: '2025-08-27.basil',
 });
 
 function corsHeaders(origin: string | null) {

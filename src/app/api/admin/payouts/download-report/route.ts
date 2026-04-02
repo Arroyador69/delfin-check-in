@@ -82,7 +82,7 @@ export async function GET(req: NextRequest) {
 
     // Título
     doc.setFontSize(20);
-    doc.setTextColor(...primaryColor);
+    doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
     doc.text('Reporte de Pagos Microsite', 20, 30);
 
     // Información del propietario
@@ -100,7 +100,7 @@ export async function GET(req: NextRequest) {
     let yPos = 90;
 
     // Cabecera de tabla
-    doc.setFillColor(...lightGrayColor);
+    doc.setFillColor(lightGrayColor[0], lightGrayColor[1], lightGrayColor[2]);
     doc.rect(20, yPos, 170, 10, 'F');
     doc.setFontSize(10);
     doc.setTextColor(0, 0, 0);
@@ -154,7 +154,7 @@ export async function GET(req: NextRequest) {
 
     // Totales
     yPos += 5;
-    doc.setFillColor(...lightGrayColor);
+    doc.setFillColor(lightGrayColor[0], lightGrayColor[1], lightGrayColor[2]);
     doc.rect(20, yPos, 170, 10, 'F');
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
@@ -169,7 +169,7 @@ export async function GET(req: NextRequest) {
     yPos += 20;
     doc.setFontSize(8);
     doc.setFont('helvetica', 'normal');
-    doc.setTextColor(...grayColor);
+    doc.setTextColor(grayColor[0], grayColor[1], grayColor[2]);
     doc.text('Este documento es un resumen de las comisiones aplicadas a las reservas directas de tu microsite.', 20, yPos);
     doc.text('Para más información, contacta con soporte@delfincheckin.com', 20, yPos + 5);
 

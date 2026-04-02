@@ -21,71 +21,85 @@ export async function GET(req: NextRequest) {
     const startDate = searchParams.get('start');
     const endDate = searchParams.get('end');
 
-    let query = sql`
-      SELECT 
-        dr.reservation_code,
-        dr.check_in_date,
-        dr.check_out_date,
-        dr.total_amount,
-        dr.stripe_fee_amount,
-        dr.delfin_commission_amount,
-        dr.property_owner_amount,
-        ct.status,
-        ct.stripe_transfer_id,
-        ct.processed_at
-      FROM direct_reservations dr
-      LEFT JOIN commission_transactions ct ON dr.id = ct.reservation_id
-      WHERE dr.tenant_id = ${tenantId}
-        AND dr.reservation_status IN ('confirmed', 'completed')
-        AND dr.payment_status = 'paid'
-    `;
-
-    if (startDate) {
-      query = sql`
-        SELECT 
-          dr.reservation_code,
-          dr.check_in_date,
-          dr.check_out_date,
-          dr.total_amount,
-          dr.stripe_fee_amount,
-          dr.delfin_commission_amount,
-          dr.property_owner_amount,
-          ct.status,
-          ct.stripe_transfer_id,
-          ct.processed_at
-        FROM direct_reservations dr
-        LEFT JOIN commission_transactions ct ON dr.id = ct.reservation_id
-        WHERE dr.tenant_id = ${tenantId}
-          AND dr.reservation_status IN ('confirmed', 'completed')
-          AND dr.payment_status = 'paid'
-          AND dr.check_in_date >= ${startDate}
-      `;
-    }
-
-    if (endDate) {
-      query = sql`
-        SELECT 
-          dr.reservation_code,
-          dr.check_in_date,
-          dr.check_out_date,
-          dr.total_amount,
-          dr.stripe_fee_amount,
-          dr.delfin_commission_amount,
-          dr.property_owner_amount,
-          ct.status,
-          ct.stripe_transfer_id,
-          ct.processed_at
-        FROM direct_reservations dr
-        LEFT JOIN commission_transactions ct ON dr.id = ct.reservation_id
-        WHERE dr.tenant_id = ${tenantId}
-          AND dr.reservation_status IN ('confirmed', 'completed')
-          AND dr.payment_status = 'paid'
-          ${startDate ? sql`AND dr.check_in_date >= ${startDate}` : sql``}
-          AND dr.check_in_date <= ${endDate}
-      `;
-    }
-
-    const result = await query;
+    const result = startDate && endDate
+      ? await sql`
+          SELECT 
+            dr.reservation_code,
+            dr.check_in_date,
+            dr.check_out_date,
+            dr.total_amount,
+            dr.stripe_fee_amount,
+            dr.delfin_commission_amount,
+            dr.property_owner_amount,
+            ct.status,
+            ct.stripe_transfer_id,
+            ct.processed_at
+          FROM direct_reservations dr
+          LEFT JOIN commission_transactions ct ON dr.id = ct.reservation_id
+          WHERE dr.tenant_id = ${tenantId}
+            AND dr.reservation_status IN ('confirmed', 'completed')
+            AND dr.payment_status = 'paid'
+            AND dr.check_in_date >= ${startDate}
+            AND dr.check_in_date <= ${endDate}
+        `
+      : startDate
+        ? await sql`
+            SELECT 
+              dr.reservation_code,
+              dr.check_in_date,
+              dr.check_out_date,
+              dr.total_amount,
+              dr.stripe_fee_amount,
+              dr.delfin_commission_amount,
+              dr.property_owner_amount,
+              ct.status,
+              ct.stripe_transfer_id,
+              ct.processed_at
+            FROM direct_reservations dr
+            LEFT JOIN commission_transactions ct ON dr.id = ct.reservation_id
+            WHERE dr.tenant_id = ${tenantId}
+              AND dr.reservation_status IN ('confirmed', 'completed')
+              AND dr.payment_status = 'paid'
+              AND dr.check_in_date >= ${startDate}
+          `
+        : endDate
+          ? await sql`
+              SELECT 
+                dr.reservation_code,
+                dr.check_in_date,
+                dr.check_out_date,
+                dr.total_amount,
+                dr.stripe_fee_amount,
+                dr.delfin_commission_amount,
+                dr.property_owner_amount,
+                ct.status,
+                ct.stripe_transfer_id,
+                ct.processed_at
+              FROM direct_reservations dr
+              LEFT JOIN commission_transactions ct ON dr.id = ct.reservation_id
+              WHERE dr.tenant_id = ${tenantId}
+                AND dr.reservation_status IN ('confirmed', 'completed')
+                AND dr.payment_status = 'paid'
+                AND dr.check_in_date <= ${endDate}
+            `
+          : await sql`
+              SELECT 
+                dr.reservation_code,
+                dr.check_in_date,
+                dr.check_out_date,
+                dr.total_amount,
+                dr.stripe_fee_amount,
+                dr.delfin_commission_amount,
+                dr.property_owner_amount,
+                ct.status,
+                ct.stripe_transfer_id,
+                ct.processed_at
+              FROM direct_reservations dr
+              LEFT JOIN commission_transactions ct ON dr.id = ct.reservation_id
+              WHERE dr.tenant_id = ${tenantId}
+                AND dr.reservation_status IN ('confirmed', 'completed')
+                AND dr.payment_status = 'paid'
+            `;
 
     const payments = result.rows.map(row => ({
       reservation_code: row.reservation_code,

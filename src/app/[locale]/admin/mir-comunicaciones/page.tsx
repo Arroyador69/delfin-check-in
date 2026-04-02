@@ -37,6 +37,13 @@ interface Comunicacion {
   xml_respuesta?: string;
   created_at: string;
   updated_at?: string;
+  /** Campos del listado agregado (estado-envíos / huéspedes) */
+  nombreCompleto?: string;
+  timestamp?: string | number | Date;
+  fechaEnvio?: string | number | Date;
+  fecha_entrada?: string;
+  fecha_salida?: string;
+  datos?: unknown;
 }
 
 interface ConsultaResult {
@@ -49,7 +56,21 @@ interface ConsultaResult {
     tipoDescripcion: string;
     estadoDescripcion: string;
   };
+  nombreReserva?: string;
+  detalles?: {
+    establecimiento?: string;
+    fechaEntrada?: string;
+    fechaSalida?: string;
+    numPersonas?: number;
+  };
 }
+
+type CatalogoListItem = {
+  codigo: string;
+  descripcion: string;
+  activo?: boolean;
+  provincia?: string;
+};
 
 export default function MirComunicacionesPage() {
   const t = useTranslations('mirComunicaciones');
@@ -100,7 +121,7 @@ export default function MirComunicacionesPage() {
   
   // Estados para catálogo
   const [catalogoConsulta, setCatalogoConsulta] = useState('');
-  const [resultadosCatalogo, setResultadosCatalogo] = useState<Array<{codigo: string; descripcion: string}>>([]);
+  const [resultadosCatalogo, setResultadosCatalogo] = useState<CatalogoListItem[]>([]);
   const [resultadoCatalogoCompleto, setResultadoCatalogoCompleto] = useState<any>(null);
 
   // Cargar comunicaciones al montar el componente
@@ -484,8 +505,8 @@ export default function MirComunicacionesPage() {
                                 📦 {t('lote')} <strong>{registro.lote || t('sinLote')}</strong>
                               </div>
                               <div className="mt-1">
-                                📅 {t('registrado')} <strong>{new Date(registro.timestamp).toLocaleString(locale)}</strong>
-                                {registro.fechaEnvio && <span className="ml-4">📤 {t('enviado')} <strong>{new Date(registro.fechaEnvio).toLocaleString(locale)}</strong></span>}
+                                📅 {t('registrado')} <strong>{registro.timestamp != null ? new Date(registro.timestamp).toLocaleString(locale) : '—'}</strong>
+                                {registro.fechaEnvio != null && <span className="ml-4">📤 {t('enviado')} <strong>{new Date(registro.fechaEnvio).toLocaleString(locale)}</strong></span>}
                               </div>
                               {registro.error && (
                                 <div className="text-red-600 font-semibold mt-2">❌ {t('errorLabel')} {registro.error}</div>
@@ -547,7 +568,9 @@ export default function MirComunicacionesPage() {
                                           referencia: registro.referencia,
                                           fechaEntrada: registro.fecha_entrada,
                                           fechaSalida: registro.fecha_salida,
-                                          personas: registro.datos?.comunicaciones?.[0]?.personas || []
+                                          personas:
+                                            (registro.datos as { comunicaciones?: { personas?: unknown[] }[] } | undefined)
+                                              ?.comunicaciones?.[0]?.personas || []
                                         })
                                       });
                                       

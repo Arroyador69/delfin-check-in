@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
     let accountInfo = null
     
     try {
-      const stripe = new Stripe(secretKey, { apiVersion: '2023-10-16' })
+      const stripe = new Stripe(secretKey, { apiVersion: '2025-08-27.basil' })
       
       // Intentar obtener información de la cuenta
       const account = await stripe.account.retrieve()

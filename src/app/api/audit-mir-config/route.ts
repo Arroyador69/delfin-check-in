@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
       credencialesConfiguradas,
       urlValida,
       modoSimulacion,
-      problemas: []
+      problemas: [] as string[],
     };
     
     if (!credencialesConfiguradas) {

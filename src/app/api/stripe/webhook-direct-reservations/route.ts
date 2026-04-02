@@ -9,7 +9,7 @@ import { sendReservationEmails, sendCheckinInstructionsEmail } from '@/lib/email
 import { DirectReservation, TenantProperty } from '@/lib/direct-reservations-types';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-06-20',
+  apiVersion: '2025-08-27.basil',
 });
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_DIRECT_RESERVATIONS_SECRET!;

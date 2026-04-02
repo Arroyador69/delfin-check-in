@@ -9,6 +9,7 @@ const nextConfig: NextConfig = {
   // Evita que Next infiera la raíz del workspace (p.ej. $HOME) por múltiples lockfiles.
   // Esto mejora el output file tracing y previene errores en runtime en Vercel.
   outputFileTracingRoot: path.resolve(__dirname),
+  productionBrowserSourceMaps: false,
   // output: 'standalone' REMOVIDO - causaba conflictos con next-intl
   // Usamos dynamic: 'force-dynamic' en layouts en su lugar
   serverExternalPackages: ['pdfkit'],
@@ -77,8 +78,10 @@ export default withSentryConfig(configWithIntl, {
   // Note: Check that this configured value matches your `publicPath` if you're using Apex Charts or similar libraries.
   // tunnelRoute: "/monitoring",
 
-  // Hides source maps from generated client bundles
-  hideSourceMaps: true,
+  // Sustituye hideSourceMaps (SDK v10+): control de source maps vía SentryBuildOptions
+  sourcemaps: {
+    deleteSourcemapsAfterUpload: true,
+  },
 
   // Automatically tree-shake Sentry logger statements to reduce bundle size
   disableLogger: true,

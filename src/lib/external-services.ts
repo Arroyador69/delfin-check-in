@@ -4,7 +4,7 @@ export const getStripeClient = () => {
     throw new Error('STRIPE_SECRET_KEY no configurada');
   }
   return new (require('stripe'))(process.env.STRIPE_SECRET_KEY, {
-    apiVersion: '2023-10-16',
+    apiVersion: '2025-08-27.basil',
   });
 };
 

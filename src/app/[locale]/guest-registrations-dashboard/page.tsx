@@ -10,6 +10,13 @@ import { useTranslations, useLocale } from 'next-intl';
 
 interface ComunicacionPayload {
   codigoEstablecimiento: string;
+  audit_hash?: string;
+  mir_status?: {
+    lote?: string;
+    error?: string;
+    codigoComunicacion?: string;
+    fechaEnvio?: string;
+  };
   contrato?: {
     referencia: string;
     fechaContrato: string;
@@ -49,6 +56,8 @@ interface ComunicacionPayload {
     viajeros?: any[];
   }>;
 }
+
+type ComunicacionItem = NonNullable<ComunicacionPayload['comunicaciones']>[number];
 
 interface GuestRegistration {
   id: string;
@@ -1242,9 +1251,12 @@ export default function GuestRegistrationsDashboard() {
                           p.direccion.codigoMunicipio = (document.getElementById('edit_codigoMunicipio') as HTMLInputElement)?.value || p.direccion.codigoMunicipio;
                           
                           // Actualizar estructura de datos
-                          if (!updated.comunicaciones) updated.comunicaciones = [{ contrato: {}, personas: [p] }];
-                          else {
-                            if (!updated.comunicaciones[0]) updated.comunicaciones[0] = { contrato: {}, personas: [p] } as any;
+                          if (!updated.comunicaciones) {
+                            updated.comunicaciones = [{ contrato: {} as ComunicacionItem['contrato'], personas: [p] }];
+                          } else {
+                            if (!updated.comunicaciones[0]) {
+                              updated.comunicaciones[0] = { contrato: {} as ComunicacionItem['contrato'], personas: [p] };
+                            }
                             if (!updated.comunicaciones[0].personas) updated.comunicaciones[0].personas = [p];
                             else updated.comunicaciones[0].personas[0] = p;
                           }

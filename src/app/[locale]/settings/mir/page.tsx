@@ -198,7 +198,7 @@ export default function MirSettingsPage() {
     return {
       hasRequired,
       status: hasRequired ? t('statusComplete') : t('statusIncomplete'),
-      variant: hasRequired ? 'default' : 'destructive' as const
+      variant: hasRequired ? ('default' as const) : ('destructive' as const),
     };
   };
 

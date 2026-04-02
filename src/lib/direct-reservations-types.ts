@@ -72,7 +72,7 @@ export interface DirectReservation {
   payment_method?: string;
   
   // Estado de la reserva
-  reservation_status: 'confirmed' | 'cancelled' | 'completed';
+  reservation_status: 'confirmed' | 'cancelled' | 'completed' | 'pending';
   special_requests?: string;
   internal_notes?: string;
   

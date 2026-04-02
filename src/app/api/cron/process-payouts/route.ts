@@ -9,7 +9,7 @@ import Stripe from 'stripe';
 import { sendPayoutNotificationEmail } from '@/lib/email-notifications';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-06-20',
+  apiVersion: '2025-08-27.basil',
 });
 
 export async function GET(req: NextRequest) {
@@ -68,11 +68,28 @@ export async function GET(req: NextRequest) {
 
     console.log(`📊 [CRON] Encontradas ${reservations.length} reservas pendientes de pago`);
 
-    const results = {
+    type PayoutDetail =
+      | { reservation_code: string; status: 'skipped'; reason: string }
+      | {
+          reservation_code: string;
+          tenant_name: string;
+          amount: string | number;
+          status: string;
+          transfer_id: string;
+          iban?: string;
+        }
+      | { reservation_code: string; status: string; error: string };
+
+    const results: {
+      processed: number;
+      failed: number;
+      skipped: number;
+      details: PayoutDetail[];
+    } = {
       processed: 0,
       failed: 0,
       skipped: 0,
-      details: []
+      details: [],
     };
 
     // Procesar cada reserva

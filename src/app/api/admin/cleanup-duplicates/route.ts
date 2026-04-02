@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
       const registros = await sql`
         SELECT id, data, created_at
         FROM guest_registrations 
-        WHERE id = ANY(${ids})
+        WHERE id = ANY(${ids as any})
         ORDER BY created_at DESC
       `;
       
@@ -71,7 +71,7 @@ export async function POST(req: NextRequest) {
         if (idsAEliminar.length > 0) {
           await sql`
             DELETE FROM guest_registrations 
-            WHERE id = ANY(${idsAEliminar})
+            WHERE id = ANY(${idsAEliminar as any})
           `;
           
           totalEliminados += idsAEliminar.length;

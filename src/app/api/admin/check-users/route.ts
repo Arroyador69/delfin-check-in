@@ -1,6 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
 
+type CheckUsersRow = {
+  tenant_id: string;
+  tenant_name: string;
+  tenant_email: string | null;
+  telegram_chat_id: string | null;
+  telegram_enabled: boolean | null;
+  user_id: string | null;
+  user_email: string | null;
+  role: string | null;
+  has_token: boolean | null;
+};
+
+type TenantUsersGroup = {
+  tenant_id: string;
+  tenant_name: string;
+  tenant_email: string | null;
+  telegram_chat_id: string | null;
+  telegram_enabled: boolean | null;
+  users: Array<{ user_id: string; user_email: string; role: string; has_token: boolean }>;
+};
+
 // GET: Verificar usuarios por tenant
 export async function GET(request: NextRequest) {
   try {
@@ -25,9 +46,9 @@ export async function GET(request: NextRequest) {
     `;
     
     // Agrupar por tenant
-    const tenantsMap = new Map();
-    
-    for (const row of result.rows) {
+    const tenantsMap = new Map<string, TenantUsersGroup>();
+
+    for (const row of result.rows as CheckUsersRow[]) {
       const tenantId = row.tenant_id;
       
       if (!tenantsMap.has(tenantId)) {
@@ -41,12 +62,12 @@ export async function GET(request: NextRequest) {
         });
       }
       
-      if (row.user_id) {
-        tenantsMap.get(tenantId).users.push({
+      if (row.user_id && row.user_email && row.role != null && row.has_token != null) {
+        tenantsMap.get(tenantId)!.users.push({
           user_id: row.user_id,
           user_email: row.user_email,
           role: row.role,
-          has_token: row.has_token
+          has_token: row.has_token,
         });
       }
     }
