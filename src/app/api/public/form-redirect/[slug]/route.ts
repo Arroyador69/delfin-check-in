@@ -2,7 +2,20 @@ import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
 
 /**
- * API para redirigir al formulario público existente con parámetros del tenant
+ * URL base del HTML del formulario (sin querystring).
+ * - Por defecto: mismo origen que esta petición + /index.html (misma versión que el admin en Vercel).
+ * - Opcional: NEXT_PUBLIC_TRAVELER_FORM_BASE_URL=https://form.delfincheckin.com (p. ej. GitHub Pages).
+ */
+function getTravelerFormBaseUrl(req: NextRequest): string {
+  const configured = process.env.NEXT_PUBLIC_TRAVELER_FORM_BASE_URL?.trim();
+  if (configured) {
+    return configured.replace(/\/$/, '');
+  }
+  return `${req.nextUrl.origin}/index.html`;
+}
+
+/**
+ * API para redirigir al formulario público con parámetros del tenant
  * URL: /api/public/form-redirect/[slug]
  */
 export async function GET(
@@ -41,9 +54,13 @@ export async function GET(
 
     const tenant = result.rows[0];
 
-    // URL del formulario existente en GitHub Pages
-    const formUrl = 'https://form.delfincheckin.com';
-    
+    const apiOrigin = (
+      process.env.NEXT_PUBLIC_APP_URL?.trim() ||
+      req.nextUrl.origin
+    ).replace(/\/$/, '');
+
+    const formBase = getTravelerFormBaseUrl(req);
+
     // Parámetros del tenant para personalizar el formulario
     const tenantParams = new URLSearchParams({
       tenant_id: tenant.id,
@@ -53,11 +70,11 @@ export async function GET(
       tenant_address: tenant.config?.address || '',
       tenant_city: tenant.config?.city || '',
       tenant_country: tenant.config?.country || '',
-      api_endpoint: `${process.env.NEXT_PUBLIC_APP_URL || 'https://admin.delfincheckin.com'}/api/public/form/${tenant.id}/submit`
+      api_endpoint: `${apiOrigin}/api/public/form/${tenant.id}/submit`
     });
 
-    // Redirigir al formulario con parámetros
-    const redirectUrl = `${formUrl}?${tenantParams.toString()}`;
+    const sep = formBase.includes('?') ? '&' : '?';
+    const redirectUrl = `${formBase}${sep}${tenantParams.toString()}`;
     
     return NextResponse.redirect(redirectUrl);
 

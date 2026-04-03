@@ -63,7 +63,7 @@ export async function middleware(req: NextRequest) {
   const hostname = req.headers.get('host') || '';
   const isStaging = hostname.includes('staging.delfincheckin.com') || 
                     hostname.includes('staging-delfincheckin.vercel.app');
-  
+
   if (isStaging) {
     const stagingUser = process.env.STAGING_USER;
     const stagingPassword = process.env.STAGING_PASSWORD;
@@ -107,6 +107,11 @@ export async function middleware(req: NextRequest) {
         });
       }
     }
+  }
+
+  // Formulario estático MIR / registro de viajeros (huéspedes, sin sesión ni /es/)
+  if (pathname === '/index.html') {
+    return NextResponse.next();
   }
 
   // ==============================================
