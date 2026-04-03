@@ -2,16 +2,27 @@ import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
 
 /**
- * URL base del HTML del formulario (sin querystring).
- * - Por defecto: mismo origen que esta petición + /index.html (misma versión que el admin en Vercel).
- * - Opcional: NEXT_PUBLIC_TRAVELER_FORM_BASE_URL=https://form.delfincheckin.com (p. ej. GitHub Pages).
+ * URL base del HTML del formulario (sin querystring). Cada tenant sigue usando la misma página;
+ * el desambiguado va en la query (tenant_id, api_endpoint, etc.).
+ *
+ * - NEXT_PUBLIC_TRAVELER_FORM_BASE_URL: forzar URL (p. ej. preview o dominio alternativo).
+ * - Producción sin env: https://form.delfincheckin.com (subdominio público).
+ * - Localhost: mismo origen /index.html para desarrollo sin CORS extra.
  */
 function getTravelerFormBaseUrl(req: NextRequest): string {
   const configured = process.env.NEXT_PUBLIC_TRAVELER_FORM_BASE_URL?.trim();
   if (configured) {
     return configured.replace(/\/$/, '');
   }
-  return `${req.nextUrl.origin}/index.html`;
+  const host = (req.headers.get('host') || '').split(':')[0].toLowerCase();
+  if (
+    host === 'localhost' ||
+    host === '127.0.0.1' ||
+    host.endsWith('.local')
+  ) {
+    return `${req.nextUrl.origin}/index.html`;
+  }
+  return 'https://form.delfincheckin.com';
 }
 
 /**
