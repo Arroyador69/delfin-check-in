@@ -572,8 +572,8 @@
                                     />
                                     <div id="municipioResults1" class="absolute z-10 w-full bg-white border border-gray-300 rounded-md shadow-lg hidden max-h-48 overflow-y-auto"></div>
                                 </div>
-                                <p class="text-xs text-gray-500 mt-1" data-i18n="travelers.municipalityHelp">
-                                    <span id="ineHelp1">
+                                <p class="text-xs text-gray-500 mt-1">
+                                    <span id="ineHelp1" data-i18n="travelers.municipalityHelp" data-i18n-html>
                                         <strong>SOLO para españoles:</strong> Escribe el nombre de tu municipio arriba y se asignará automáticamente el código INE<br>
                                         Ejemplo: escribe "Fuengirola" → aparece código 29042 arriba<br>
                                         <strong>IMPORTANTE:</strong> Este NO es el código postal, sino el código INE del municipio (5 dígitos: 2 de provincia + 3 de municipio)
@@ -592,8 +592,10 @@
                                     class="form-input"
                                     placeholder="Helsinki, Paris, London..."
                                 />
-                                <p class="text-xs text-gray-500 mt-1" data-i18n="travelers.municipalityNameHelp">
+                                <p class="text-xs text-gray-500 mt-1">
+                                    <span data-i18n="travelers.municipalityNameHelp" data-i18n-html>
                                     <strong class="text-green-600">Solo para extranjeros:</strong> Nombre de la ciudad/municipio donde resides
+                                    </span>
                                 </p>
                             </div>
                         </div>
@@ -796,8 +798,8 @@
                                     />
                                     <div id="municipioResults2" class="absolute z-10 w-full bg-white border border-gray-300 rounded-md shadow-lg hidden max-h-48 overflow-y-auto"></div>
                                 </div>
-                                <p class="text-xs text-gray-500 mt-1" data-i18n="travelers.municipalityHelp">
-                                    <span id="ineHelp2">
+                                <p class="text-xs text-gray-500 mt-1">
+                                    <span id="ineHelp2" data-i18n="travelers.municipalityHelp" data-i18n-html>
                                         <strong>SOLO para españoles:</strong> Escribe el nombre de tu municipio arriba y se asignará automáticamente el código INE<br>
                                         Ejemplo: escribe "Fuengirola" → aparece código 29042 arriba<br>
                                         <strong>IMPORTANTE:</strong> Este NO es el código postal, sino el código INE del municipio (5 dígitos: 2 de provincia + 3 de municipio)
@@ -816,8 +818,10 @@
                                     class="form-input"
                                     placeholder="Helsinki, Paris, London..."
                                 />
-                                <p class="text-xs text-gray-500 mt-1" data-i18n="travelers.municipalityNameHelp">
+                                <p class="text-xs text-gray-500 mt-1">
+                                    <span data-i18n="travelers.municipalityNameHelp" data-i18n-html>
                                     <strong class="text-green-600">Solo para extranjeros:</strong> Nombre de la ciudad/municipio donde resides
+                                    </span>
                                 </p>
                             </div>
                         </div>
@@ -864,7 +868,7 @@
                         <div class="ml-3">
                             <p class="text-sm font-medium">
                                 <strong data-i18n="messages.error.title">Error al enviar el registro.</strong> 
-                                <span id="errorDetails" class="block mt-1 font-normal">Por favor, inténtelo de nuevo.</span>
+                                <span id="errorDetails" class="block mt-1 font-normal whitespace-pre-wrap">Por favor, inténtelo de nuevo.</span>
                             </p>
                         </div>
                     </div>
@@ -1639,6 +1643,16 @@
             return translation;
         }
 
+        /** Aplica texto plano o HTML según data-i18n-html (solo cadenas de nuestro diccionario i18n). */
+        function applyI18nToElement(element, text) {
+            if (!element) return;
+            if (element.hasAttribute && element.hasAttribute('data-i18n-html')) {
+                element.innerHTML = text;
+            } else {
+                element.textContent = text;
+            }
+        }
+
         // Lista completa de países con códigos ISO3 oficiales para MIR - 272 países
         const COUNTRIES_DATA = [
           { "iso3": "AFG", "name": { "es": "Afganistán", "en": "Afghanistan", "fr": "Afghanistan", "ru": "Афганистан" } },
@@ -2020,7 +2034,7 @@
                 const key = element.dataset.i18n;
                 const translation = getTranslation(key);
                 console.log(`🔍 Traduciendo "${key}": "${element.textContent}" -> "${translation}"`);
-                element.textContent = translation;
+                applyI18nToElement(element, translation);
             });
             
             // Poblar selects de países con el nuevo idioma
@@ -11463,6 +11477,76 @@
             return String(str || '').toUpperCase().slice(0, 3);
         }
 
+        /** Resume cuerpos JSON de error de la API (issues, details, etc.) para mostrarlos en pantalla. */
+        function formatServerErrorMessage(errorData, status, statusText, rawBodyText) {
+            const fallback = ('Error ' + status + ': ' + (statusText || '')).trim();
+            const raw = (rawBodyText || '').trim();
+            if (!errorData || typeof errorData !== 'object') {
+                if (raw.length > 4000) return raw.slice(0, 4000) + '…';
+                return raw || fallback;
+            }
+            const lines = [];
+            const seen = new Set();
+            function addLine(s) {
+                if (s == null || s === '') return;
+                const t = String(s).trim();
+                if (!t || seen.has(t)) return;
+                seen.add(t);
+                lines.push(t);
+            }
+            const arrays = [
+                errorData.issues,
+                errorData.details,
+                errorData.errors,
+                errorData.validation
+            ].filter(function (a) { return Array.isArray(a); });
+            for (let i = 0; i < arrays.length; i++) {
+                const arr = arrays[i];
+                for (let j = 0; j < arr.length; j++) {
+                    const item = arr[j];
+                    if (item == null) continue;
+                    if (typeof item === 'string') {
+                        addLine(item);
+                    } else if (typeof item === 'object') {
+                        const m = item.message || item.msg || item.detail || item.description;
+                        const p = item.path != null ? item.path : (item.field != null ? item.field : item.instancePath);
+                        if (m) addLine(p ? p + ': ' + m : m);
+                    }
+                }
+            }
+            let top = errorData.message;
+            if (top == null && typeof errorData.error === 'string') top = errorData.error;
+            if (top == null) top = errorData.detail || errorData.description;
+            if (typeof top !== 'string') top = top != null ? String(top) : '';
+            top = top.trim();
+            let out = '';
+            if (lines.length) {
+                const bullet = lines.map(function (l) { return '• ' + l; }).join('\n');
+                if (top && top !== 'Validación fallida' && lines.join('\n').indexOf(top) === -1) {
+                    out = top + '\n\n' + bullet;
+                } else {
+                    out = bullet;
+                }
+            } else if (top) {
+                out = top;
+            } else if (typeof errorData.error === 'string' && errorData.error.trim()) {
+                out = errorData.error.trim();
+            } else if (errorData.error && typeof errorData.error === 'object' && errorData.error.message) {
+                out = String(errorData.error.message);
+            } else {
+                try {
+                    const j = JSON.stringify(errorData);
+                    if (j && j !== '{}') out = j;
+                } catch (_) {}
+            }
+            if (!out) {
+                if (raw.length > 4000) return raw.slice(0, 4000) + '…';
+                return raw || fallback;
+            }
+            if (out.length > 8000) return out.slice(0, 8000) + '…';
+            return out;
+        }
+
         // ---- Validaciones extra robustas MIR ----
         function showError(msg, fieldNameOrId = null) {
             const detailText = typeof msg === 'string'
@@ -11514,7 +11598,7 @@
                 if (element.id === 'errorDetails') return;
                 const key = element.getAttribute('data-i18n');
                 if (translations[currentLang] && translations[currentLang][key]) {
-                    element.textContent = translations[currentLang][key];
+                    applyI18nToElement(element, translations[currentLang][key]);
                 }
             });
         }
@@ -11641,11 +11725,11 @@
             
             const submitButton = document.getElementById('submitButton');
             const successMessage = document.getElementById('successMessage');
-            const errorMessage = document.getElementById('errorMessage');
+            const errorMessageEl = document.getElementById('errorMessage');
             
             // Ocultar mensajes anteriores
             successMessage.style.display = 'none';
-            errorMessage.style.display = 'none';
+            errorMessageEl.style.display = 'none';
             
             // Deshabilitar botón y mostrar estado de envío
             submitButton.disabled = true;
@@ -12039,64 +12123,36 @@
                   console.error('═══════════════════════════════════════════════');
                   console.error('❌ Status:', response.status);
                   console.error('❌ Status Text:', response.statusText);
-                  
-                  let errorMessage = `Error ${response.status}: ${response.statusText}`;
-                  let rawText = '';
-                  try {
-                    const ct = response.headers.get('content-type') || '';
-                    console.error('❌ Content-Type:', ct);
-                    if (ct.includes('application/json')) {
-                      const errorData = await response.json();
-                      console.error('❌ Error data:', errorData);
-                      if (isDebug()) {
-                        const dr = document.getElementById('debugResponse');
-                        if (dr) dr.textContent = 'Response JSON (error):\n' + JSON.stringify(errorData, null, 2);
-                      }
-                      const candidates = [];
-                      if (errorData) {
-                        if (Array.isArray(errorData.details)) candidates.push(...errorData.details);
-                        if (Array.isArray(errorData.errors)) candidates.push(...errorData.errors);
-                        if (Array.isArray(errorData.issues)) candidates.push(...errorData.issues);
-                        if (errorData.validation && Array.isArray(errorData.validation)) candidates.push(...errorData.validation);
-                      }
-                      const first = candidates.find(x => x && (x.message || x.msg || x.detail));
-                      if (first) {
-                        errorMessage = first.message || first.msg || first.detail;
-                      } else if (errorData && (errorData.message || errorData.error || errorData.detail || errorData.description)) {
-                        errorMessage = errorData.message || errorData.error || errorData.detail || errorData.description;
-                      } else {
-                        errorMessage = JSON.stringify(errorData);
-                      }
-                    } else {
-                      rawText = await response.text();
-                      console.error('❌ Error text:', rawText);
-                      if (isDebug()) {
-                        const dr = document.getElementById('debugResponse');
-                        if (dr) dr.textContent = 'Response TEXT (error):\n' + rawText;
-                      }
-                      if (rawText) errorMessage = rawText;
-                    }
-                  } catch (err) {
-                    console.error('❌ Error parseando respuesta:', err);
-                    if (isDebug()) {
-                      const dr = document.getElementById('debugResponse');
-                      if (dr) dr.textContent = 'Response parse error: ' + (err && err.message ? err.message : String(err));
+                  console.error('❌ Error data (parsed):', responseBodyJson);
+                  console.error('❌ Body raw:', responseBodyText);
+                  if (isDebug()) {
+                    const dr = document.getElementById('debugResponse');
+                    if (dr) {
+                      dr.textContent = responseBodyJson != null
+                        ? 'Response JSON (error):\n' + JSON.stringify(responseBodyJson, null, 2)
+                        : 'Response TEXT (error):\n' + responseBodyText;
                     }
                   }
+                  const errUserText = formatServerErrorMessage(
+                    responseBodyJson,
+                    response.status,
+                    response.statusText,
+                    responseBodyText
+                  );
                   console.error('═══════════════════════════════════════════════');
-                  throw new Error(errorMessage);
+                  throw new Error(errUserText);
                 }
                 
                 // Mostrar mensaje de éxito y ocultar cualquier error previo
                 successMessage.style.display = 'block';
-                if (errorMessage) errorMessage.style.display = 'none';
+                if (errorMessageEl) errorMessageEl.style.display = 'none';
                 
                 // Aplicar traducciones al mensaje de éxito
                 const currentLang = document.documentElement.getAttribute('lang') || 'es';
                 document.querySelectorAll('#successMessage [data-i18n]').forEach(element => {
                     const key = element.getAttribute('data-i18n');
                     if (translations[currentLang] && translations[currentLang][key]) {
-                        element.textContent = translations[currentLang][key];
+                        applyI18nToElement(element, translations[currentLang][key]);
                     }
                 });
                 
