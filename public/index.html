@@ -700,13 +700,13 @@
                                     maxlength="5"
                                     pattern="\d{5}"
                                     title="Debe ser exactamente 5 dígitos"
-                                    placeholder="29042 (Código INE de tu municipio)"
+                                    placeholder="29054 (Código INE de tu municipio)"
                                 />
                                 <p class="text-xs text-blue-600 mt-1 font-medium" data-i18n="travelers.municipalityHelp">
                                     <span id="ineHelp2">
                                         <strong>⚠️ OBLIGATORIO para residentes en España:</strong><br>
                                         Código INE del municipio donde resides (5 dígitos: 2 de provincia + 3 de municipio)<br>
-                                        <strong>Ejemplos:</strong> 29042 (Fuengirola), 29067 (Málaga), 28079 (Madrid), 08019 (Barcelona)<br>
+                                        <strong>Ejemplos:</strong> 29054 (Fuengirola), 29067 (Málaga), 28079 (Madrid), 08019 (Barcelona)<br>
                                         <strong class="text-green-600">¿Eres extranjero?</strong> Este campo se ocultará automáticamente al seleccionar tu país
                                     </span>
                                 </p>
@@ -773,8 +773,8 @@
                         </div>
                         <div class="ml-3">
                             <p class="text-sm font-medium">
-                                <strong data-i18n="messages.error.title">Error al enviar el registro.</strong> 
-                                <span id="errorDetails" data-i18n="messages.error.body">Por favor, inténtelo de nuevo.</span>
+                                <strong data-i18n="messages.error.title">Error al enviar el registro.</strong>
+                                <span id="errorDetails" class="block mt-1 font-normal">Por favor, inténtelo de nuevo.</span>
                             </p>
                         </div>
                     </div>
@@ -851,7 +851,7 @@
                 "travelers.country": "País de residencia *",
                 "travelers.countryHelp": "Escriba el país en su idioma natural (ej: España, Francia). Se convertirá automáticamente al código ISO3.",
                 "travelers.municipalityCode": "Código municipio INE (5)",
-                "travelers.municipalityHelp": "<strong>SOLO para españoles:</strong> Código INE del municipio (5 dígitos: 2 de provincia + 3 de municipio)<br>Ejemplo: 29042 (Fuengirola), 29045 (Málaga), 28001 (Madrid), 08001 (Barcelona)<br><strong class=\"text-green-600\">Para extranjeros:</strong> Dejar vacío y rellenar solo \"Nombre del municipio\" abajo",
+                "travelers.municipalityHelp": "<strong>SOLO para españoles:</strong> Código INE del municipio (5 dígitos: 2 de provincia + 3 de municipio)<br>Ejemplo: 29054 (Fuengirola), 29067 (Málaga), 28001 (Madrid), 08001 (Barcelona)<br><strong class=\"text-green-600\">Para extranjeros:</strong> Dejar vacío y rellenar solo \"Nombre del municipio\" abajo",
                 "travelers.municipalityName": "Nombre del municipio",
                 "travelers.municipalityNameHelp": "<strong class=\"text-green-600\">Solo para extranjeros:</strong> Nombre de la ciudad/municipio donde resides",
                 "travelers.documents.dni": "DNI",
@@ -873,7 +873,7 @@
                 "travelers.countries.italy": "Italia",
                 "travelers.countries.portugal": "Portugal",
                 "travelers.municipalityCode": "Código municipio INE (5) *",
-                "travelers.municipalityHelp": "Ejemplo: 29042 (Fuengirola), 29045 (Málaga), 28001 (Madrid), 08001 (Barcelona)<br><strong>IMPORTANTE:</strong> Este NO es el código postal, sino el código INE del municipio (5 dígitos: 2 de provincia + 3 de municipio)",
+                "travelers.municipalityHelp": "Ejemplo: 29054 (Fuengirola), 29067 (Málaga), 28001 (Madrid), 08001 (Barcelona)<br><strong>IMPORTANTE:</strong> Este NO es el código postal, sino el código INE del municipio (5 dígitos: 2 de provincia + 3 de municipio)",
                 "messages.success.title": "¡Registro enviado correctamente!",
                 "messages.success.body": "Los datos han sido enviados al dashboard del administrador.",
                 "messages.success.thanks": "¡Gracias por completar el registro!",
@@ -882,7 +882,11 @@
                 "submit.button": "Enviar Registro",
                 "submit.sending": "Enviando...",
                 "validation.documentRequired": "Si selecciona tipo de documento, debe proporcionar el número",
-                "validation.documentEmpty": "El número de documento no puede estar vacío"
+                "validation.documentEmpty": "El número de documento no puede estar vacío",
+                "validation.postal5": "El código postal debe tener exactamente 5 dígitos numéricos (sin letras ni espacios).",
+                "validation.ine5": "El código INE del municipio debe tener 5 dígitos (no es el código postal).",
+                "validation.ineNotPostal": "El código INE del municipio no puede ser igual al código postal: son dos datos distintos.",
+                "validation.cpIneProvinceMismatch": "El código postal ({cp}) empieza por {pCp}, pero el municipio elegido tiene INE {ine} (provincia {pIne}). Los dos primeros dígitos del CP y del INE tienen que coincidir. Si el municipio es de Málaga, el CP suele empezar por 29 (p. ej. 29640 en Fuengirola). Revisa que no falte ningún dígito al escribir el CP."
             },
             en: {
                 "header.title": "Delfín Check-in",
@@ -944,7 +948,7 @@
                 "travelers.country": "Country of Residence *",
                 "travelers.countryHelp": "Write the country in natural language (e.g: Spain, France). Will automatically convert to ISO3 code.",
                 "travelers.municipalityCode": "INE Municipality Code (5)",
-                "travelers.municipalityHelp": "<strong>ONLY for Spanish:</strong> INE municipality code (5 digits: 2 province + 3 municipality)<br>Example: 29042 (Fuengirola), 29045 (Málaga), 28001 (Madrid), 08001 (Barcelona)<br><strong class=\"text-green-600\">For foreigners:</strong> Leave empty and fill only \"Municipality name\" below",
+                "travelers.municipalityHelp": "<strong>ONLY for Spanish:</strong> INE municipality code (5 digits: 2 province + 3 municipality)<br>Example: 29054 (Fuengirola), 29067 (Málaga), 28001 (Madrid), 08001 (Barcelona)<br><strong class=\"text-green-600\">For foreigners:</strong> Leave empty and fill only \"Municipality name\" below",
                 "travelers.municipalityName": "Municipality Name",
                 "travelers.municipalityNameHelp": "<strong class=\"text-green-600\">Only for foreigners:</strong> Name of the city/municipality where you reside",
                 "travelers.documentNumber": "Document number",
@@ -965,7 +969,7 @@
                 "travelers.countries.italy": "Italy",
                 "travelers.countries.portugal": "Portugal",
                 "travelers.municipalityCode": "Municipality INE code (5) *",
-                "travelers.municipalityHelp": "Example: 29042 (Fuengirola), 29045 (Málaga), 28001 (Madrid), 08001 (Barcelona)<br><strong>IMPORTANT:</strong> This is NOT the postal code, but the INE municipality code (5 digits: 2 for province + 3 for municipality)",
+                "travelers.municipalityHelp": "Example: 29054 (Fuengirola), 29067 (Málaga), 28001 (Madrid), 08001 (Barcelona)<br><strong>IMPORTANT:</strong> This is NOT the postal code, but the INE municipality code (5 digits: 2 for province + 3 for municipality)",
                 "messages.success.title": "Registration sent successfully!",
                 "messages.success.body": "Data has been sent to the admin dashboard.",
                 "messages.success.thanks": "Thank you for completing the registration!",
@@ -974,7 +978,11 @@
                 "submit.button": "Send Registration",
                 "submit.sending": "Sending...",
                 "validation.documentRequired": "If you select document type, you must provide the number",
-                "validation.documentEmpty": "Document number cannot be empty"
+                "validation.documentEmpty": "Document number cannot be empty",
+                "validation.postal5": "The postcode must be exactly 5 digits (numbers only).",
+                "validation.ine5": "The INE municipality code must be 5 digits (not the postcode).",
+                "validation.ineNotPostal": "The INE code cannot be the same as the postcode; they are different fields.",
+                "validation.cpIneProvinceMismatch": "Postcode {cp} starts with {pCp}, but the selected municipality has INE {ine} (province {pIne}). The first two digits of the postcode and INE must match. For Málaga province, postcodes usually start with 29. Check you did not miss a digit."
             },
             fr: {
                 "header.title": "Delfín Check-in",
@@ -1036,7 +1044,7 @@
                 "travelers.country": "Pays de résidence *",
                 "travelers.countryHelp": "Écrivez le pays dans sa langue naturelle (ex: Espagne, France). Se convertira automatiquement en code ISO3.",
                 "travelers.municipalityCode": "Code municipalité INE (5)",
-                "travelers.municipalityHelp": "<strong>SEULEMENT pour les Espagnols:</strong> Code INE de la municipalité (5 chiffres: 2 province + 3 municipalité)<br>Exemple: 29042 (Fuengirola), 29045 (Málaga), 28001 (Madrid), 08001 (Barcelona)<br><strong class=\"text-green-600\">Pour les étrangers:</strong> Laisser vide et remplir seulement \"Nom de la municipalité\" ci-dessous",
+                "travelers.municipalityHelp": "<strong>SEULEMENT pour les Espagnols:</strong> Code INE de la municipalité (5 chiffres: 2 province + 3 municipalité)<br>Exemple: 29054 (Fuengirola), 29067 (Málaga), 28001 (Madrid), 08001 (Barcelona)<br><strong class=\"text-green-600\">Pour les étrangers:</strong> Laisser vide et remplir seulement \"Nom de la municipalité\" ci-dessous",
                 "travelers.municipalityName": "Nom de la municipalité",
                 "travelers.municipalityNameHelp": "<strong class=\"text-green-600\">Seulement pour les étrangers:</strong> Nom de la ville/municipalité où vous résidez",
                 "travelers.documentNumber": "Numéro de document",
@@ -1057,7 +1065,7 @@
                 "travelers.countries.italy": "Italie",
                 "travelers.countries.portugal": "Portugal",
                 "travelers.municipalityCode": "Code municipal INE (5) *",
-                "travelers.municipalityHelp": "Exemple: 29042 (Fuengirola), 29045 (Málaga), 28001 (Madrid), 08001 (Barcelona)<br><strong>IMPORTANT:</strong> Ceci n'est PAS le code postal, mais le code INE de la municipalité (5 chiffres: 2 pour la province + 3 pour la municipalité)",
+                "travelers.municipalityHelp": "Exemple: 29054 (Fuengirola), 29067 (Málaga), 28001 (Madrid), 08001 (Barcelona)<br><strong>IMPORTANT:</strong> Ceci n'est PAS le code postal, mais le code INE de la municipalité (5 chiffres: 2 pour la province + 3 pour la municipalité)",
                 "messages.success.title": "Enregistrement envoyé avec succès !",
                 "messages.success.body": "Les données ont été envoyées au tableau de bord administrateur.",
                 "messages.success.thanks": "Merci d'avoir complété l'enregistrement !",
@@ -1066,7 +1074,11 @@
                 "submit.button": "Envoyer l'Enregistrement",
                 "submit.sending": "Envoi en cours...",
                 "validation.documentRequired": "Si vous sélectionnez un type de document, vous devez fournir le numéro",
-                "validation.documentEmpty": "Le numéro de document ne peut pas être vide"
+                "validation.documentEmpty": "Le numéro de document ne peut pas être vide",
+                "validation.postal5": "Le code postal doit comporter exactement 5 chiffres.",
+                "validation.ine5": "Le code INE de la commune doit comporter 5 chiffres (ce n'est pas le code postal).",
+                "validation.ineNotPostal": "Le code INE ne peut pas être identique au code postal.",
+                "validation.cpIneProvinceMismatch": "Le code postal ({cp}) commence par {pCp}, mais la commune sélectionnée a l'INE {ine} (province {pIne}). Les deux premiers chiffres doivent correspondre. Vérifiez que vous n'avez pas oublié un chiffre."
             },
             ru: {
                 "header.title": "Delfín Check-in",
@@ -1119,7 +1131,7 @@
                 "travelers.country": "Страна проживания *",
                 "travelers.countryHelp": "Напишите страну на естественном языке (например: Россия, Франция). Автоматически преобразуется в код ISO3.",
                 "travelers.municipalityCode": "Код муниципалитета INE (5)",
-                "travelers.municipalityHelp": "<strong>ТОЛЬКО для испанцев:</strong> Код INE муниципалитета (5 цифр: 2 провинции + 3 муниципалитета)<br>Пример: 29042 (Фуэнхирола), 29045 (Малага), 28001 (Мадрид), 08001 (Барселона)<br><strong class=\"text-green-600\">Для иностранцев:</strong> Оставить пустым и заполнить только \"Название муниципалитета\" ниже",
+                "travelers.municipalityHelp": "<strong>ТОЛЬКО для испанцев:</strong> Код INE муниципалитета (5 цифр: 2 провинции + 3 муниципалитета)<br>Пример: 29054 (Фуэнхирола), 29067 (Малага), 28001 (Мадрид), 08001 (Барселона)<br><strong class=\"text-green-600\">Для иностранцев:</strong> Оставить пустым и заполнить только \"Название муниципалитета\" ниже",
                 "travelers.municipalityName": "Название муниципалитета",
                 "travelers.municipalityNameHelp": "<strong class=\"text-green-600\">Только для иностранцев:</strong> Название города/муниципалитета, где проживаете",
                 "travelers.addSecond": "Добавить второго путешественника",
@@ -1145,7 +1157,7 @@
                 "travelers.country": "Страна проживания *",
                 "travelers.countryHelp": "Напишите страну на естественном языке (например: Россия, Франция). Автоматически преобразуется в код ISO3.",
                 "travelers.municipalityCode": "Код муниципалитета INE (5)",
-                "travelers.municipalityHelp": "<strong>ТОЛЬКО для испанцев:</strong> Код INE муниципалитета (5 цифр: 2 провинции + 3 муниципалитета)<br>Пример: 29042 (Фуэнхирола), 29045 (Малага), 28001 (Мадрид), 08001 (Барселона)<br><strong class=\"text-green-600\">Для иностранцев:</strong> Оставить пустым и заполнить только \"Название муниципалитета\" ниже",
+                "travelers.municipalityHelp": "<strong>ТОЛЬКО для испанцев:</strong> Код INE муниципалитета (5 цифр: 2 провинции + 3 муниципалитета)<br>Пример: 29054 (Фуэнхирола), 29067 (Малага), 28001 (Мадрид), 08001 (Барселона)<br><strong class=\"text-green-600\">Для иностранцев:</strong> Оставить пустым и заполнить только \"Название муниципалитета\" ниже",
                 "travelers.municipalityName": "Название муниципалитета",
                 "travelers.municipalityNameHelp": "<strong class=\"text-green-600\">Только для иностранцев:</strong> Название города/муниципалитета, где проживаете",
                 "travelers.gender.male": "Мужской",
@@ -1158,7 +1170,11 @@
                 "submit.button": "Отправить Регистрацию",
                 "submit.sending": "Отправка...",
                 "validation.documentRequired": "Если выбран тип документа, необходимо указать номер",
-                "validation.documentEmpty": "Номер документа не может быть пустым"
+                "validation.documentEmpty": "Номер документа не может быть пустым",
+                "validation.postal5": "Почтовый индекс должен содержать ровно 5 цифр.",
+                "validation.ine5": "Код INE муниципалитета — 5 цифр (это не почтовый индекс).",
+                "validation.ineNotPostal": "Код INE не может совпадать с почтовым индексом.",
+                "validation.cpIneProvinceMismatch": "Почтовый индекс ({cp}) начинается с {pCp}, а выбранный муниципалитет имеет INE {ine} (провинция {pIne}). Первые две цифры должны совпадать."
             }
         };
 
@@ -1268,8 +1284,8 @@
 
         // Catálogo de municipios españoles con códigos INE
         const MUNICIPIOS_INE = [
-            {c:'29067',n:'Málaga',p:'Málaga'},{c:'29042',n:'Fuengirola',p:'Málaga'},{c:'29069',n:'Marbella',p:'Málaga'},
-            {c:'29094',n:'Torremolinos',p:'Málaga'},{c:'29015',n:'Benalmádena',p:'Málaga'},{c:'29054',n:'Mijas',p:'Málaga'},
+            {c:'29067',n:'Málaga',p:'Málaga'},{c:'29054',n:'Fuengirola',p:'Málaga'},{c:'29069',n:'Marbella',p:'Málaga'},
+            {c:'29094',n:'Torremolinos',p:'Málaga'},{c:'29015',n:'Benalmádena',p:'Málaga'},{c:'29070',n:'Mijas',p:'Málaga'},
             {c:'28079',n:'Madrid',p:'Madrid'},{c:'28065',n:'Móstoles',p:'Madrid'},{c:'28047',n:'Alcalá de Henares',p:'Madrid'},
             {c:'08019',n:'Barcelona',p:'Barcelona'},{c:'08101',n:'Hospitalet de Llobregat',p:'Barcelona'},{c:'08015',n:'Badalona',p:'Barcelona'},
             {c:'46250',n:'Valencia',p:'Valencia'},{c:'41091',n:'Sevilla',p:'Sevilla'},{c:'03014',n:'Alicante',p:'Alicante'},
@@ -1853,26 +1869,23 @@
 
         // ---- Validaciones extra robustas MIR ----
         function showError(msg) {
-            const errorDetails = document.getElementById('errorDetails');
-            if (errorDetails) errorDetails.textContent = msg;
-            
             const errorMessage = document.getElementById('errorMessage');
-            errorMessage.style.display = 'block';
+            const errorDetails = document.getElementById('errorDetails');
+            const currentLang = document.documentElement.getAttribute('lang') || 'es';
 
-            // Asegurar que el mensaje de éxito no quede visible a la vez
+            // Solo el título lleva i18n; el detalle debe ser el mensaje concreto (validación, API, etc.)
+            const titleEl = errorMessage && errorMessage.querySelector('strong[data-i18n="messages.error.title"]');
+            if (titleEl && translations[currentLang] && translations[currentLang]['messages.error.title']) {
+                titleEl.textContent = translations[currentLang]['messages.error.title'];
+            }
+            if (errorDetails) errorDetails.textContent = msg;
+
+            if (errorMessage) errorMessage.style.display = 'block';
+
             try {
               const successMessage = document.getElementById('successMessage');
               if (successMessage) successMessage.style.display = 'none';
             } catch {}
-            
-            // Aplicar traducciones al mensaje de error
-            const currentLang = document.documentElement.getAttribute('lang') || 'es';
-            document.querySelectorAll('#errorMessage [data-i18n]').forEach(element => {
-                const key = element.getAttribute('data-i18n');
-                if (translations[currentLang] && translations[currentLang][key]) {
-                    element.textContent = translations[currentLang][key];
-                }
-            });
         }
 
         // Aviso si se abre como archivo local (file://) — esto rompe CORS y produce "Failed to fetch"
@@ -1931,14 +1944,49 @@
             return null;
         }
         function sameProvince(cp, ine) {
-            return String(cp || '').slice(0,2) === String(ine || '').slice(0,2);
+            return String(cp || '').slice(0, 2) === String(ine || '').slice(0, 2);
         }
         function validateMunicipioVsCP(cp, ine) {
-            if (!isFiveDigits(cp)) return 'Código postal debe tener 5 dígitos';
-            if (!isFiveDigits(ine)) return 'Código INE del municipio debe tener 5 dígitos (no es el código postal)';
-            if (cp === ine) return 'El código INE del municipio debe ser diferente al código postal';
-            if (!sameProvince(cp, ine)) return 'Los dos primeros dígitos del INE deben coincidir con la provincia del código postal';
+            if (!isFiveDigits(cp)) {
+                return getTranslation('validation.postal5') || 'El código postal debe tener exactamente 5 dígitos numéricos (sin letras).';
+            }
+            if (!isFiveDigits(ine)) {
+                return getTranslation('validation.ine5') || 'El código INE del municipio debe tener 5 dígitos (no es el código postal).';
+            }
+            if (cp === ine) {
+                return getTranslation('validation.ineNotPostal') || 'El código INE del municipio no puede ser igual al código postal. Son dos cosas distintas.';
+            }
+            if (!sameProvince(cp, ine)) {
+                const pCp = cp.slice(0, 2);
+                const pIne = ine.slice(0, 2);
+                let base = getTranslation('validation.cpIneProvinceMismatch') || '';
+                if (!base) {
+                    return 'Código postal ' + cp + ' (provincia ' + pCp + ') no coincide con el municipio INE ' + ine + ' (provincia ' + pIne + '). Los dos primeros dígitos del código postal y del INE deben ser iguales. Ejemplo en Málaga: CP 29640 con INE 29054 (Fuengirola).';
+                }
+                return base
+                    .replace(/\{cp\}/g, cp)
+                    .replace(/\{ine\}/g, ine)
+                    .replace(/\{pCp\}/g, pCp)
+                    .replace(/\{pIne\}/g, pIne);
+            }
             return null;
+        }
+
+        /** ISO3 del país de residencia del viajero (viajero 1) para reglas España vs extranjero */
+        function getPaisResidenciaISO3FromForm(formData) {
+            const input = document.querySelector('[name="pais"]');
+            if (input && input.dataset && input.dataset.iso3) {
+                return String(input.dataset.iso3).toUpperCase().slice(0, 3);
+            }
+            return convertToISO3(String(formData.get('pais') || '')) || '';
+        }
+
+        function getPaisResidenciaISO3Viajero2(formData) {
+            const input = document.querySelector('[name="pais2"]');
+            if (input && input.dataset && input.dataset.iso3) {
+                return String(input.dataset.iso3).toUpperCase().slice(0, 3);
+            }
+            return convertToISO3(String(formData.get('pais2') || '')) || '';
         }
         function validateCardExpiry(exp) {
             if (!exp) return null;
@@ -1984,9 +2032,9 @@
                 const birthISO = toISODate(formData.get('fechaNacimiento'));
                 if (!birthISO) { showError('Fecha de nacimiento requerida (AAAA-MM-DD)'); return; }
 
-                // Solo validar INE vs CP para españoles
-                const paisValue = String(formData.get('pais') || '').toLowerCase().trim();
-                const esEspanol = paisValue === 'españa' || paisValue === 'spain' || paisValue === 'es' || paisValue === 'esp' || paisValue === 'espana';
+                // Solo validar INE vs CP para residentes en España (ISO3 más fiable que el texto del input)
+                const iso3Pais = getPaisResidenciaISO3FromForm(formData);
+                const esEspanol = iso3Pais === 'ESP';
                 
                 if (esEspanol) {
                     const muniErr = validateMunicipioVsCP(
@@ -2000,6 +2048,27 @@
                     if (!nombreMunicipio) {
                         showError('Para extranjeros es obligatorio el nombre del municipio');
                         return;
+                    }
+                }
+
+                const nombre2 = String(formData.get('nombre2') || '').trim();
+                if (nombre2) {
+                    const iso3p2 = getPaisResidenciaISO3Viajero2(formData);
+                    if (iso3p2 === 'ESP') {
+                        const muniErr2 = validateMunicipioVsCP(
+                            pad5(formData.get('codigoPostal2')),
+                            pad5(formData.get('codigoMunicipio2'))
+                        );
+                        if (muniErr2) {
+                            showError('Viajero 2: ' + muniErr2);
+                            return;
+                        }
+                    } else {
+                        const nm2 = String(formData.get('nombreMunicipio2') || '').trim();
+                        if (!nm2) {
+                            showError('Viajero 2: para extranjeros es obligatorio el nombre del municipio');
+                            return;
+                        }
                     }
                 }
 
@@ -2314,7 +2383,7 @@
           errors.push('⚠️ CÓDIGO INE OBLIGATORIO: Para residentes en España es obligatorio el código INE del municipio (5 dígitos). Busca en Google "código INE + tu ciudad"');
         }
         if (ine && cp && ine === cp) {
-          errors.push('❌ ERROR: El INE NO es el código postal. El INE es el código de municipio (5 dígitos diferentes). Ejemplo: 29042 para Fuengirola, no 29640');
+          errors.push('❌ ERROR: El INE NO es el código postal. El INE es el código de municipio (5 dígitos diferentes). Ejemplo: 29054 para Fuengirola, no 29640');
         }
         // Validación adicional: verificar que realmente sean 5 dígitos numéricos
         if (ine && ine.length !== 5) {
@@ -2370,43 +2439,8 @@
 
   window.addEventListener('online', flushLocal);
   document.addEventListener('DOMContentLoaded', function(){
-    const form = document.getElementById('guestRegistrationForm');
-    if(!form) return;
-    form.addEventListener('submit', async function(ev){
-      ev.preventDefault();
-      const parte = formToParte(form);
-      const errs = validateBasic(parte);
-      const msg = document.getElementById('submitMessage') || (function(){
-        const p = document.createElement('div');
-        p.id = 'submitMessage'; p.className = 'mt-4 text-sm';
-        form.appendChild(p); return p; })();
-      if(errs.length){
-        msg.className = 'mt-4 text-sm text-red-600';
-        msg.textContent = 'Corrige: ' + errs.join(' · ');
-        return;
-      }
-      try{
-        const res = await sendParte(parte);
-        if(res.status===201 || res.status===200){
-          msg.className = 'mt-4 text-sm text-green-600';
-          msg.textContent = '✅ Parte enviado correctamente';
-          form.reset();
-        }else if(res.status===400){
-          const j = await res.json().catch(()=>({}));
-          msg.className = 'mt-4 text-sm text-red-600';
-          msg.textContent = 'Validación servidor: ' + (j.error || res.statusText);
-        }else{
-          enqueueLocal(parte);
-          msg.className = 'mt-4 text-sm text-yellow-700';
-          msg.textContent = 'Sin conexión o error temporal. Guardado para reintento automático.';
-        }
-      }catch(e){
-        enqueueLocal(parte);
-        msg.className = 'mt-4 text-sm text-yellow-700';
-        msg.textContent = 'Sin conexión. Guardado para reintento.';
-      }
-    });
-    // Intento de flush al abrir
+    // El envío del formulario lo gestiona un único listener (buildPayloadDefensive + validación INE/CP).
+    // Este bloque solo reintenta envíos guardados en cola offline.
     flushLocal();
   });
 })();
