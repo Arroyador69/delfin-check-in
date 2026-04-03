@@ -384,6 +384,7 @@
                                 <input
                                     type="text"
                                     name="numeroDocumento"
+                                    required
                                     class="form-input"
                                 />
                             </div>
@@ -396,6 +397,7 @@
                                     type="text"
                                     name="nacionalidad"
                                     value="España"
+                                    required
                                     class="form-input nationality-input"
                                     placeholder="Ej: España, Francia, Italia..."
                                 />
@@ -425,6 +427,7 @@
                                 <input
                                     type="tel"
                                     name="telefono"
+                                    required
                                     class="form-input"
                                 />
                             </div>
@@ -436,6 +439,7 @@
                                 <input
                                     type="email"
                                     name="correo"
+                                    required
                                     class="form-input"
                                 />
                             </div>
@@ -907,7 +911,13 @@
                 "validation.dateCheckInAfterCheckOut": "La fecha de entrada no puede ser posterior a la fecha de salida.",
                 "validation.dateBirthAfterCheckIn": "La fecha de nacimiento no puede ser posterior a la fecha de entrada del alojamiento.",
                 "validation.datePayAfterCheckOut": "La fecha de pago no puede ser posterior a la fecha de salida.",
-                "validation.cardExpiryInvalid": "Si indica caducidad de tarjeta, use el formato MM/AAAA."
+                "validation.cardExpiryInvalid": "Si indica caducidad de tarjeta, use el formato MM/AAAA.",
+                "validation.phoneRequired": "El teléfono es obligatorio para el primer viajero.",
+                "validation.emailRequired": "El correo electrónico es obligatorio para el primer viajero.",
+                "validation.emailInvalid": "El correo no tiene un formato válido.",
+                "validation.nationalityRequired": "Seleccione o escriba la nacionalidad para que se reconozca el país (se usará código ISO3).",
+                "validation.secondSurnameSpain": "Para nacionalidad española, el segundo apellido es obligatorio.",
+                "validation.traveler2Incomplete": "Si añade un segundo viajero, debe completar al menos apellidos, documento, fechas y país de residencia."
             },
             en: {
                 "header.title": "Delfín Check-in",
@@ -1017,7 +1027,13 @@
                 "validation.dateCheckInAfterCheckOut": "Check-in cannot be after check-out.",
                 "validation.dateBirthAfterCheckIn": "Date of birth cannot be after the check-in date.",
                 "validation.datePayAfterCheckOut": "Payment date cannot be after the check-out date.",
-                "validation.cardExpiryInvalid": "If you enter card expiry, use MM/YYYY format."
+                "validation.cardExpiryInvalid": "If you enter card expiry, use MM/YYYY format.",
+                "validation.phoneRequired": "Phone is required for the first traveler.",
+                "validation.emailRequired": "Email is required for the first traveler.",
+                "validation.emailInvalid": "The email format is not valid.",
+                "validation.nationalityRequired": "Enter or select nationality so the country is recognized (ISO3).",
+                "validation.secondSurnameSpain": "For Spanish nationality, the second surname is required.",
+                "validation.traveler2Incomplete": "If you add a second traveler, complete surnames, document, dates and country of residence."
             },
             fr: {
                 "header.title": "Delfín Check-in",
@@ -1127,7 +1143,13 @@
                 "validation.dateCheckInAfterCheckOut": "L'arrivée ne peut pas être postérieure au départ.",
                 "validation.dateBirthAfterCheckIn": "La date de naissance ne peut pas être postérieure à l'arrivée.",
                 "validation.datePayAfterCheckOut": "La date de paiement ne peut pas être postérieure au départ.",
-                "validation.cardExpiryInvalid": "Pour la carte, indiquez la date d'expiration au format MM/AAAA."
+                "validation.cardExpiryInvalid": "Pour la carte, indiquez la date d'expiration au format MM/AAAA.",
+                "validation.phoneRequired": "Le téléphone est obligatoire pour le premier voyageur.",
+                "validation.emailRequired": "L'e-mail est obligatoire pour le premier voyageur.",
+                "validation.emailInvalid": "L'e-mail n'est pas valide.",
+                "validation.nationalityRequired": "Indiquez la nationalité pour que le pays soit reconnu (ISO3).",
+                "validation.secondSurnameSpain": "Pour la nationalité espagnole, le deuxième nom de famille est obligatoire.",
+                "validation.traveler2Incomplete": "Si vous ajoutez un 2e voyageur, complétez noms, document, dates et pays de résidence."
             },
             ru: {
                 "header.title": "Delfín Check-in",
@@ -1237,7 +1259,13 @@
                 "validation.dateCheckInAfterCheckOut": "Заезд не может быть позже выезда.",
                 "validation.dateBirthAfterCheckIn": "Дата рождения не может быть позже даты заезда.",
                 "validation.datePayAfterCheckOut": "Дата оплаты не может быть позже даты выезда.",
-                "validation.cardExpiryInvalid": "Для срока действия карты используйте формат ММ/ГГГГ."
+                "validation.cardExpiryInvalid": "Для срока действия карты используйте формат ММ/ГГГГ.",
+                "validation.phoneRequired": "Телефон обязателен для первого путешественника.",
+                "validation.emailRequired": "Электронная почта обязательна для первого путешественника.",
+                "validation.emailInvalid": "Неверный формат e-mail.",
+                "validation.nationalityRequired": "Укажите гражданство, чтобы страна определилась (ISO3).",
+                "validation.secondSurnameSpain": "При испанском гражданстве обязательна вторая фамилия.",
+                "validation.traveler2Incomplete": "Если добавлен второй путешественник, заполните фамилии, документ, даты и страну проживания."
             }
         };
 
@@ -1730,9 +1758,19 @@
                 return convertToISO3(value) || 'ESP';
             }
 
+            /** ISO3 de nacionalidad sin forzar ESP (el API valida v.nacionalidad en ISO3). */
+            function getNationalityISO3(inputName) {
+                const input = document.querySelector(`[name="${inputName}"]`);
+                if (input && input.dataset && input.dataset.iso3) {
+                    return String(input.dataset.iso3).toUpperCase().slice(0, 3);
+                }
+                return convertToISO3(String(formData.get(inputName) || '')) || '';
+            }
+
             const viajeros = [];
             
             // Viajero 1 (obligatorio)
+            const nat1 = getNationalityISO3('nacionalidad');
             const viajero1 = {
                 nombre: String(formData.get('nombre')||'').trim(),
                 primerApellido: String(formData.get('apellido1')||'').trim(),
@@ -1741,8 +1779,10 @@
                 tipoDocumento: mapDocType(formData.get('tipoDocumento')),
                 numeroDocumento: String((formData.get('numeroDocumento')||'').toUpperCase().replace(/\s+/g,'')),
                 sexo: mapSexo(formData.get('sexo')),
-                nacionalidadISO2: iso3to2(getISO3FromInput('nacionalidad')),
+                nacionalidad: nat1,
+                nacionalidadISO2: nat1 ? iso3to2(nat1) : '',
                 telefono: String(formData.get('telefono')||'').replace(/\s+/g,''),
+                correo: String(formData.get('correo')||'').trim().toLowerCase(),
                 email: String(formData.get('correo')||'').trim().toLowerCase(),
                 direccion: String(formData.get('direccion')||'').trim(),
                 cp: (() => {
@@ -1778,6 +1818,7 @@
             // Viajero 2 (opcional)
             const nombre2 = String(formData.get('nombre2')||'').trim();
             if (nombre2) {
+                const nat2 = getNationalityISO3('nacionalidad2');
                 const viajero2 = {
                     nombre: nombre2,
                     primerApellido: String(formData.get('apellido1_2')||'').trim(),
@@ -1786,8 +1827,10 @@
                     tipoDocumento: mapDocType(formData.get('tipoDocumento2')),
                     numeroDocumento: String((formData.get('numeroDocumento2')||'').toUpperCase().replace(/\s+/g,'')),
                     sexo: mapSexo(formData.get('sexo2')),
-                    nacionalidadISO2: iso3to2(getISO3FromInput('nacionalidad2')),
+                    nacionalidad: nat2,
+                    nacionalidadISO2: nat2 ? iso3to2(nat2) : '',
                     telefono: String(formData.get('telefono2')||'').replace(/\s+/g,''),
+                    correo: String(formData.get('correo2')||'').trim().toLowerCase(),
                     email: String(formData.get('correo2')||'').trim().toLowerCase(),
                     direccion: String(formData.get('direccion2')||'').trim(),
                     cp: (() => {
@@ -2066,6 +2109,8 @@
             fechaSalida: 'contract.checkOut',
             fechaPago: 'contract.paymentDate',
             tipoPago: 'contract.paymentType',
+            numHabitaciones: 'contract.rooms',
+            medioPago: 'contract.paymentMedium',
             caducidadTarjeta: 'contract.expiry',
             nombre: 'travelers.firstName',
             apellido1: 'travelers.firstSurname',
@@ -2123,6 +2168,153 @@
             if (!form || !name) return null;
             var esc = (window.CSS && window.CSS.escape) ? window.CSS.escape(name) : String(name).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
             return form.querySelector('[name="' + esc + '"]');
+        }
+
+        function mapApiIssuePathToForm(pathStr) {
+            if (!pathStr || typeof pathStr !== 'string') {
+                return { fieldNames: [], traveler2: false };
+            }
+            var path = pathStr.replace(/^\//, '');
+            if (path === 'viajeros') {
+                return { fieldNames: [], traveler2: false };
+            }
+            var mContrato = path.match(/^contrato\.(.+)$/);
+            if (mContrato) {
+                var ck = mContrato[1];
+                var cMap = {
+                    fechaContrato: 'fechaContrato',
+                    entrada: 'fechaEntrada',
+                    salida: 'fechaSalida',
+                    tipoPago: 'tipoPago',
+                    nHabitaciones: 'numHabitaciones',
+                    internet: 'internet',
+                    fechaPago: 'fechaPago',
+                    medioPago: 'medioPago'
+                };
+                var fn = cMap[ck] || ck;
+                return { fieldNames: fn ? [fn] : [], traveler2: false };
+            }
+            var mV = path.match(/^viajeros\[(\d+)\]\.(.+)$/);
+            if (mV) {
+                var idx = parseInt(mV[1], 10);
+                var key = mV[2];
+                var traveler2 = idx >= 1;
+                var vMap = {
+                    nombre: traveler2 ? 'nombre2' : 'nombre',
+                    primerApellido: traveler2 ? 'apellido1_2' : 'apellido1',
+                    segundoApellido: traveler2 ? 'apellido2_2' : 'apellido2',
+                    fechaNacimiento: traveler2 ? 'fechaNacimiento2' : 'fechaNacimiento',
+                    tipoDocumento: traveler2 ? 'tipoDocumento2' : 'tipoDocumento',
+                    numeroDocumento: traveler2 ? 'numeroDocumento2' : 'numeroDocumento',
+                    sexo: traveler2 ? 'sexo2' : 'sexo',
+                    nacionalidad: traveler2 ? 'nacionalidad2' : 'nacionalidad',
+                    telefono: traveler2 ? 'telefono2' : 'telefono',
+                    correo: traveler2 ? 'correo2' : 'correo',
+                    email: traveler2 ? 'correo2' : 'correo',
+                    direccion: traveler2 ? 'direccion2' : 'direccion',
+                    cp: traveler2 ? 'codigoPostal2' : 'codigoPostal',
+                    codigoPostal: traveler2 ? 'codigoPostal2' : 'codigoPostal',
+                    ine: traveler2 ? 'codigoMunicipio2' : 'municipioBusqueda',
+                    nombreMunicipio: traveler2 ? 'nombreMunicipio2' : 'nombreMunicipio',
+                    paisResidencia: traveler2 ? 'pais2' : 'pais'
+                };
+                var name = vMap[key];
+                if (!name) return { fieldNames: [], traveler2: traveler2 };
+                if (key === 'ine' && !traveler2) {
+                    return { fieldNames: ['municipioBusqueda', 'codigoMunicipio'], traveler2: false };
+                }
+                if (key === 'ine' && traveler2) {
+                    return { fieldNames: ['codigoMunicipio2'], traveler2: true };
+                }
+                return { fieldNames: [name], traveler2: traveler2 };
+            }
+            return { fieldNames: [], traveler2: false };
+        }
+
+        function mergeApiIssuesToFields(issues) {
+            var names = [];
+            var msgs = [];
+            var t2 = false;
+            if (!issues || !issues.length) return { fieldNames: [], message: '', traveler2: false };
+            issues.forEach(function (issue) {
+                if (!issue) return;
+                var m = mapApiIssuePathToForm(issue.path || '');
+                if (m.traveler2) t2 = true;
+                m.fieldNames.forEach(function (fn) {
+                    if (fn && names.indexOf(fn) < 0) names.push(fn);
+                });
+                var msg = issue.message || issue.msg || issue.detail;
+                if (msg && msgs.indexOf(msg) < 0) msgs.push(msg);
+            });
+            return { fieldNames: names, message: msgs.join(' · '), traveler2: t2 };
+        }
+
+        function clearInlineErrorForElement(el) {
+            if (!el || !el.classList) return;
+            el.classList.remove('form-input--error');
+            el.removeAttribute('aria-invalid');
+            var ne = el.nextElementSibling;
+            if (ne && ne.classList && ne.classList.contains('field-inline-error')) {
+                ne.remove();
+            }
+        }
+
+        function getNacionalidadISO3ForValidation(form, formData, inputName) {
+            var el = pickFieldElement(form, inputName);
+            if (el && el.dataset && el.dataset.iso3) {
+                return String(el.dataset.iso3).toUpperCase().slice(0, 3);
+            }
+            return convertToISO3(String(formData.get(inputName) || '')) || '';
+        }
+
+        function validateMirRequiredAligned(formEl, formData) {
+            var tel = String(formData.get('telefono') || '').replace(/\s+/g, '');
+            if (!tel) {
+                return { fieldNames: ['telefono'], message: getTranslation('validation.phoneRequired'), traveler2: false };
+            }
+            var em = String(formData.get('correo') || '').trim();
+            if (!em) {
+                return { fieldNames: ['correo'], message: getTranslation('validation.emailRequired'), traveler2: false };
+            }
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) {
+                return { fieldNames: ['correo'], message: getTranslation('validation.emailInvalid'), traveler2: false };
+            }
+            var nat = getNacionalidadISO3ForValidation(formEl, formData, 'nacionalidad');
+            if (!nat) {
+                return { fieldNames: ['nacionalidad'], message: getTranslation('validation.nationalityRequired'), traveler2: false };
+            }
+            if (nat === 'ESP' && !String(formData.get('apellido2') || '').trim()) {
+                return { fieldNames: ['apellido2'], message: getTranslation('validation.secondSurnameSpain'), traveler2: false };
+            }
+            var nombre2 = String(formData.get('nombre2') || '').trim();
+            if (nombre2) {
+                if (!String(formData.get('apellido1_2') || '').trim()) {
+                    return { fieldNames: ['apellido1_2'], message: getTranslation('validation.traveler2Incomplete'), traveler2: true };
+                }
+                if (!toISODate(formData.get('fechaNacimiento2'))) {
+                    return { fieldNames: ['fechaNacimiento2'], message: getTranslation('validation.traveler2Incomplete'), traveler2: true };
+                }
+                if (!String(formData.get('numeroDocumento2') || '').trim()) {
+                    return { fieldNames: ['numeroDocumento2'], message: getTranslation('validation.traveler2Incomplete'), traveler2: true };
+                }
+                if (!String(formData.get('direccion2') || '').trim()) {
+                    return { fieldNames: ['direccion2'], message: getTranslation('validation.traveler2Incomplete'), traveler2: true };
+                }
+                if (!String(formData.get('codigoPostal2') || '').trim()) {
+                    return { fieldNames: ['codigoPostal2'], message: getTranslation('validation.traveler2Incomplete'), traveler2: true };
+                }
+                if (!String(formData.get('pais2') || '').trim()) {
+                    return { fieldNames: ['pais2'], message: getTranslation('validation.traveler2Incomplete'), traveler2: true };
+                }
+                var nat2 = getNacionalidadISO3ForValidation(formEl, formData, 'nacionalidad2');
+                if (!nat2) {
+                    return { fieldNames: ['nacionalidad2'], message: getTranslation('validation.nationalityRequired'), traveler2: true };
+                }
+                if (nat2 === 'ESP' && !String(formData.get('apellido2_2') || '').trim()) {
+                    return { fieldNames: ['apellido2_2'], message: getTranslation('validation.secondSurnameSpain'), traveler2: true };
+                }
+            }
+            return null;
         }
 
         function highlightFormFields(form, fieldNames, hint) {
@@ -2188,6 +2380,19 @@
             return null;
         }
 
+        (function setupFormFieldErrorClear() {
+            var form = document.getElementById('guestRegistrationForm');
+            if (!form) return;
+            ['input', 'change'].forEach(function (evName) {
+                form.addEventListener(evName, function (ev) {
+                    var t = ev.target;
+                    if (!t || !t.getAttribute || !t.getAttribute('name')) return;
+                    if (!t.classList || !t.classList.contains('form-input')) return;
+                    clearInlineErrorForElement(t);
+                }, true);
+            });
+        })();
+
         document.getElementById('guestRegistrationForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
@@ -2226,6 +2431,12 @@
                 }
 
                 const formData = new FormData(formEl);
+
+                const mirPre = validateMirRequiredAligned(formEl, formData);
+                if (mirPre) {
+                    showValidationError(formEl, mirPre);
+                    return;
+                }
 
                 const fechaContrato = formatDateForMIR(formData.get('fechaContrato'));
                 const fechaEntrada = formatDateForMIR(formData.get('fechaEntrada'));
@@ -2395,31 +2606,42 @@
                 
                 if (!response.ok) {
                   let errorMessage = `Error ${response.status}: ${response.statusText}`;
+                  const errorDataJson = responseBodyJson;
+                  let apiIssues = [];
+                  if (errorDataJson && Array.isArray(errorDataJson.issues)) {
+                    apiIssues = errorDataJson.issues;
+                  }
+                  if (apiIssues.length > 0) {
+                    const merged = mergeApiIssuesToFields(apiIssues);
+                    const err = new Error(merged.message || errorMessage);
+                    err.__apiFieldErrors = merged;
+                    err.__formEl = formEl;
+                    throw err;
+                  }
                   let rawText = '';
                   try {
                     const ct = response.headers.get('content-type') || '';
-                    if (ct.includes('application/json')) {
-                      const errorData = await response.json();
+                    if (ct.includes('application/json') && errorDataJson) {
                       if (isDebug()) {
                         const dr = document.getElementById('debugResponse');
-                        if (dr) dr.textContent = 'Response JSON (error):\n' + JSON.stringify(errorData, null, 2);
+                        if (dr) dr.textContent = 'Response JSON (error):\n' + JSON.stringify(errorDataJson, null, 2);
                       }
                       const candidates = [];
-                      if (errorData) {
-                        if (Array.isArray(errorData.details)) candidates.push(...errorData.details);
-                        if (Array.isArray(errorData.errors)) candidates.push(...errorData.errors);
-                        if (Array.isArray(errorData.issues)) candidates.push(...errorData.issues);
-                        if (errorData.validation && Array.isArray(errorData.validation)) candidates.push(...errorData.validation);
+                      if (errorDataJson) {
+                        if (Array.isArray(errorDataJson.details)) candidates.push(...errorDataJson.details);
+                        if (Array.isArray(errorDataJson.errors)) candidates.push(...errorDataJson.errors);
+                        if (Array.isArray(errorDataJson.issues)) candidates.push(...errorDataJson.issues);
+                        if (errorDataJson.validation && Array.isArray(errorDataJson.validation)) candidates.push(...errorDataJson.validation);
                       }
                       const first = candidates.find(x => x && (x.message || x.msg || x.detail));
                       if (first) {
                         errorMessage = first.message || first.msg || first.detail;
-                      } else if (errorData && (errorData.message || errorData.error || errorData.detail || errorData.description)) {
-                        errorMessage = errorData.message || errorData.error || errorData.detail || errorData.description;
+                      } else if (errorDataJson.message || errorDataJson.error || errorDataJson.detail || errorDataJson.description) {
+                        errorMessage = errorDataJson.message || errorDataJson.error || errorDataJson.detail || errorDataJson.description;
                       } else {
-                        errorMessage = JSON.stringify(errorData);
+                        errorMessage = JSON.stringify(errorDataJson);
                       }
-                    } else {
+                    } else if (!ct.includes('application/json')) {
                       rawText = await response.text();
                       if (isDebug()) {
                         const dr = document.getElementById('debugResponse');
@@ -2456,18 +2678,23 @@
                 
             } catch (error) {
                 console.error('Error:', error);
-                clearFormFieldErrors(document.getElementById('guestRegistrationForm'));
-                let msg = error && error.message ? String(error.message) : 'Error desconocido';
-                if (/fecha|date|datetime/i.test(msg)) {
-                  msg += ' · Revisa formatos: contrato YYYY-MM-DD, entrada/salida YYYY-MM-DDThh:mm:ss.';
+                const formCatch = document.getElementById('guestRegistrationForm');
+                if (error && error.__apiFieldErrors && formCatch) {
+                    showValidationError(error.__formEl || formCatch, error.__apiFieldErrors);
+                } else {
+                    clearFormFieldErrors(formCatch);
+                    let msg = error && error.message ? String(error.message) : 'Error desconocido';
+                    if (/fecha|date|datetime/i.test(msg)) {
+                      msg += ' · Revisa formatos: contrato YYYY-MM-DD, entrada/salida YYYY-MM-DDThh:mm:ss.';
+                    }
+                    if (/municipio|postal|\bINE\b/i.test(msg)) {
+                      msg += ' · Recuerda: INE (5 dígitos) debe ser distinto al CP y compartir provincia (dos primeros dígitos).';
+                    }
+                    if (/invalido|inválid|invalid/i.test(msg)) {
+                      msg += ' · Si el mensaje no especifica el campo, añade ?debug=1 a la URL para ver la respuesta exacta del servidor.';
+                    }
+                    showError(msg);
                 }
-                if (/municipio|postal|\bINE\b/i.test(msg)) {
-                  msg += ' · Recuerda: INE (5 dígitos) debe ser distinto al CP y compartir provincia (dos primeros dígitos).';
-                }
-                if (/invalido|inválid|invalid/i.test(msg)) {
-                  msg += ' · Si el mensaje no especifica el campo, añade ?debug=1 a la URL para ver la respuesta exacta del servidor.';
-                }
-                showError(msg);
             } finally {
                 // Restaurar botón
                 submitButton.disabled = false;
