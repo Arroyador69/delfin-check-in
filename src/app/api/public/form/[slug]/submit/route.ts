@@ -8,6 +8,26 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Tenant-ID, X-Tenant-Name',
 };
 
+/** Reenvía el cuerpo de error tal cual (JSON) para que el formulario pueda leer `issues`, `message`, etc. */
+async function forwardUpstreamError(
+  upstream: Response,
+  cors: typeof corsHeaders
+): Promise<NextResponse> {
+  const errorText = await upstream.text();
+  try {
+    const parsed = JSON.parse(errorText) as unknown;
+    if (parsed !== null && typeof parsed === 'object') {
+      return NextResponse.json(parsed, { status: upstream.status, headers: cors });
+    }
+  } catch {
+    /* cuerpo no JSON */
+  }
+  return NextResponse.json(
+    { error: errorText || 'Error desconocido', code: 'UPSTREAM_ERROR' },
+    { status: upstream.status, headers: cors }
+  );
+}
+
 /**
  * Manejar preflight OPTIONS request
  */
@@ -90,11 +110,7 @@ export async function POST(
         const result = await registroFlexHandler(internalReq);
         
         if (!result.ok) {
-          const errorText = await result.text();
-          return NextResponse.json(
-            { error: `Error en registro-flex: ${errorText}` },
-            { status: result.status, headers: corsHeaders }
-          );
+          return forwardUpstreamError(result, corsHeaders);
         }
 
         const resultData = await result.json();
@@ -133,12 +149,8 @@ export async function POST(
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        console.log('❌ Fallback MIR falló:', errorText);
-        return NextResponse.json(
-          { error: `Error en registro-flex (fallback): ${errorText}` },
-          { status: response.status, headers: corsHeaders }
-        );
+        console.log('❌ Fallback MIR falló (se reenvía cuerpo JSON sin envolver)');
+        return forwardUpstreamError(response, corsHeaders);
       }
 
       const result = await response.json();

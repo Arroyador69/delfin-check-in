@@ -11477,11 +11477,137 @@
             return String(str || '').toUpperCase().slice(0, 3);
         }
 
+        /** Si un proxy antiguo envolvió el JSON de registro-flex en `error: "Error en registro-flex: {...}"`, recupera el objeto interno. */
+        function tryUnwrapProxiedError(errorData) {
+            if (!errorData || typeof errorData !== 'object') return errorData;
+            const e = errorData.error;
+            if (typeof e !== 'string') return errorData;
+            const idx = e.indexOf('{');
+            if (idx === -1) return errorData;
+            try {
+                const inner = JSON.parse(e.slice(idx));
+                if (inner && typeof inner === 'object' && (inner.issues != null || inner.code != null || inner.message != null)) {
+                    return inner;
+                }
+            } catch (_) {}
+            return errorData;
+        }
+
+        /** Convierte path estilo Zod (["viajeros",0,"segundoApellido"]) a viajeros[0].segundoApellido */
+        function formatIssuePathForDisplay(p) {
+            if (p == null) return '';
+            if (Array.isArray(p)) {
+                let s = '';
+                for (let i = 0; i < p.length; i++) {
+                    const seg = p[i];
+                    const isIndex = typeof seg === 'number' || (typeof seg === 'string' && /^\d+$/.test(seg));
+                    if (isIndex) {
+                        s += '[' + parseInt(String(seg), 10) + ']';
+                    } else if (s === '') {
+                        s = String(seg);
+                    } else {
+                        s += '.' + String(seg);
+                    }
+                }
+                return s;
+            }
+            return String(p);
+        }
+
+        /** Mapea ruta MIR (viajeros[0].segundoApellido, contrato.fechaContrato) al atributo name del formulario. */
+        function mirPathToFormFieldName(pathStr) {
+            if (!pathStr) return null;
+            let p = String(pathStr).trim();
+            if (p.indexOf('body.') === 0) p = p.slice(5);
+            if (p.indexOf('contrato.') === 0) {
+                const c = p.slice('contrato.'.length);
+                const cm = {
+                    fechaContrato: 'fechaContrato',
+                    entrada: 'fechaEntrada',
+                    salida: 'fechaSalida',
+                    tipoPago: 'tipoPago',
+                    nHabitaciones: 'numHabitaciones',
+                    numHabitaciones: 'numHabitaciones',
+                    fechaPago: 'fechaPago',
+                    medioPago: 'medioPago'
+                };
+                return cm[c] || null;
+            }
+            const vm = p.match(/^viajeros\[(\d+)\]\.(.+)$/);
+            if (!vm) return null;
+            const idx = parseInt(vm[1], 10);
+            const field = vm[2];
+            const t2 = idx >= 1;
+            const map0 = {
+                nombre: 'nombre',
+                primerApellido: 'apellido1',
+                segundoApellido: 'apellido2',
+                fechaNacimiento: 'fechaNacimiento',
+                tipoDocumento: 'tipoDocumento',
+                numeroDocumento: 'numeroDocumento',
+                direccion: 'direccion',
+                cp: 'codigoPostal',
+                nacionalidad: 'nacionalidad',
+                sexo: 'sexo',
+                telefono: 'telefono',
+                correo: 'correo',
+                ine: 'codigoMunicipio',
+                nombreMunicipio: 'nombreMunicipio',
+                paisResidencia: 'pais'
+            };
+            const map1 = {
+                nombre: 'nombre2',
+                primerApellido: 'apellido1_2',
+                segundoApellido: 'apellido2_2',
+                fechaNacimiento: 'fechaNacimiento2',
+                tipoDocumento: 'tipoDocumento2',
+                numeroDocumento: 'numeroDocumento2',
+                direccion: 'direccion2',
+                cp: 'codigoPostal2',
+                nacionalidad: 'nacionalidad2',
+                sexo: 'sexo2',
+                telefono: 'telefono2',
+                correo: 'correo2',
+                ine: 'codigoMunicipio2',
+                nombreMunicipio: 'nombreMunicipio2',
+                paisResidencia: 'pais2'
+            };
+            const M = t2 ? map1 : map0;
+            return M[field] || null;
+        }
+
+        function extractFocusFieldFromErrorPayload(errorData) {
+            const data = tryUnwrapProxiedError(errorData);
+            if (!data || typeof data !== 'object') return null;
+            const arrays = [
+                data.issues,
+                data.details,
+                data.errors,
+                data.validation
+            ].filter(function (a) { return Array.isArray(a); });
+            for (let i = 0; i < arrays.length; i++) {
+                const arr = arrays[i];
+                for (let j = 0; j < arr.length; j++) {
+                    const item = arr[j];
+                    if (!item || typeof item !== 'object') continue;
+                    if (item.path == null) continue;
+                    const pathStr = formatIssuePathForDisplay(item.path);
+                    const field = mirPathToFormFieldName(pathStr);
+                    if (field) return field;
+                }
+            }
+            return null;
+        }
+
         /** Resume cuerpos JSON de error de la API (issues, details, etc.) para mostrarlos en pantalla. */
         function formatServerErrorMessage(errorData, status, statusText, rawBodyText) {
             const fallback = ('Error ' + status + ': ' + (statusText || '')).trim();
             const raw = (rawBodyText || '').trim();
-            if (!errorData || typeof errorData !== 'object') {
+            let data = errorData;
+            if (data && typeof data === 'object') {
+                data = tryUnwrapProxiedError(data);
+            }
+            if (!data || typeof data !== 'object') {
                 if (raw.length > 4000) return raw.slice(0, 4000) + '…';
                 return raw || fallback;
             }
@@ -11495,10 +11621,10 @@
                 lines.push(t);
             }
             const arrays = [
-                errorData.issues,
-                errorData.details,
-                errorData.errors,
-                errorData.validation
+                data.issues,
+                data.details,
+                data.errors,
+                data.validation
             ].filter(function (a) { return Array.isArray(a); });
             for (let i = 0; i < arrays.length; i++) {
                 const arr = arrays[i];
@@ -11508,15 +11634,18 @@
                     if (typeof item === 'string') {
                         addLine(item);
                     } else if (typeof item === 'object') {
-                        const m = item.message || item.msg || item.detail || item.description;
-                        const p = item.path != null ? item.path : (item.field != null ? item.field : item.instancePath);
-                        if (m) addLine(p ? p + ': ' + m : m);
+                        const m = item.message || item.msg || item.detail || item.description || (typeof item.code === 'string' ? item.code : '');
+                        const pRaw = item.path != null ? item.path : (item.field != null ? item.field : item.instancePath);
+                        const pDisp = pRaw != null ? formatIssuePathForDisplay(pRaw) : '';
+                        const humanField = pDisp ? mirPathToFormFieldName(pDisp) : null;
+                        const labelExtra = humanField ? ' (campo del formulario: «' + humanField + '»)' : '';
+                        if (m) addLine((pDisp ? pDisp + ': ' + m : m) + labelExtra);
                     }
                 }
             }
-            let top = errorData.message;
-            if (top == null && typeof errorData.error === 'string') top = errorData.error;
-            if (top == null) top = errorData.detail || errorData.description;
+            let top = data.message;
+            if (top == null && typeof data.error === 'string') top = data.error;
+            if (top == null) top = data.detail || data.description;
             if (typeof top !== 'string') top = top != null ? String(top) : '';
             top = top.trim();
             let out = '';
@@ -11529,13 +11658,13 @@
                 }
             } else if (top) {
                 out = top;
-            } else if (typeof errorData.error === 'string' && errorData.error.trim()) {
-                out = errorData.error.trim();
-            } else if (errorData.error && typeof errorData.error === 'object' && errorData.error.message) {
-                out = String(errorData.error.message);
+            } else if (typeof data.error === 'string' && data.error.trim()) {
+                out = data.error.trim();
+            } else if (data.error && typeof data.error === 'object' && data.error.message) {
+                out = String(data.error.message);
             } else {
                 try {
-                    const j = JSON.stringify(errorData);
+                    const j = JSON.stringify(data);
                     if (j && j !== '{}') out = j;
                 } catch (_) {}
             }
@@ -12139,8 +12268,11 @@
                     response.statusText,
                     responseBodyText
                   );
+                  const focusField = extractFocusFieldFromErrorPayload(responseBodyJson);
                   console.error('═══════════════════════════════════════════════');
-                  throw new Error(errUserText);
+                  const submitErr = new Error(errUserText);
+                  if (focusField) submitErr.focusField = focusField;
+                  throw submitErr;
                 }
                 
                 // Mostrar mensaje de éxito y ocultar cualquier error previo
@@ -12171,6 +12303,7 @@
                 console.error('═══════════════════════════════════════════════');
                 
                 let msg = error && error.message ? String(error.message) : 'Error desconocido';
+                let serverFocusField = (error && error.focusField) ? error.focusField : null;
                 
                 // Añadir sugerencias según el tipo de error
                 if (/fecha|date|datetime/i.test(msg)) {
@@ -12186,7 +12319,7 @@
                   msg += ' · Asegúrate de marcar el checkbox de aceptación de términos y condiciones.';
                 }
                 
-                showError(msg);
+                showError(msg, serverFocusField);
             } finally {
                 // Restaurar botón
                 submitButton.disabled = false;
