@@ -98,6 +98,14 @@
             border-color: #ef4444 !important;
             border-style: solid !important;
         }
+        /* Errores de validación devueltos por el servidor (bajo cada campo) */
+        .server-field-error-msg {
+            color: #b91c1c;
+            font-size: 0.8125rem;
+            line-height: 1.35;
+            margin-top: 0.35rem;
+            margin-bottom: 0;
+        }
         .signature-pad-wrapper canvas {
             width: 100%;
             height: 160px;
@@ -11676,8 +11684,81 @@
             return out;
         }
 
+        function clearServerValidationFieldHints() {
+            var form = document.getElementById('guestRegistrationForm');
+            if (!form) return;
+            form.querySelectorAll('.server-field-error-msg').forEach(function (el) { el.remove(); });
+            form.querySelectorAll('[data-server-error-bound="1"]').forEach(function (el) {
+                el.removeAttribute('data-server-error-bound');
+                el.removeAttribute('aria-invalid');
+                el.removeAttribute('aria-describedby');
+            });
+        }
+
+        function clearServerErrorForTarget(ev) {
+            var t = ev.target;
+            if (!t || !t.getAttribute || t.getAttribute('data-server-error-bound') !== '1') return;
+            t.classList.remove('field-error');
+            t.removeAttribute('aria-invalid');
+            var id = t.getAttribute('aria-describedby');
+            if (id) {
+                var desc = document.getElementById(id);
+                if (desc && desc.classList.contains('server-field-error-msg')) desc.remove();
+                t.removeAttribute('aria-describedby');
+            }
+            t.removeAttribute('data-server-error-bound');
+        }
+
+        function bindServerErrorClearOnInput() {
+            var form = document.getElementById('guestRegistrationForm');
+            if (!form || form.dataset.serverValidationListen === '1') return;
+            form.dataset.serverValidationListen = '1';
+            form.addEventListener('input', clearServerErrorForTarget, true);
+            form.addEventListener('change', clearServerErrorForTarget, true);
+        }
+
+        /** Marca inputs y muestra texto bajo el campo según issues del backend (VALIDATION_ERROR). */
+        function applyServerFieldErrorsFromPayload(payload) {
+            if (!payload || !Array.isArray(payload.issues) || payload.issues.length === 0) return;
+            var form = document.getElementById('guestRegistrationForm');
+            if (!form) return;
+            clearServerValidationFieldHints();
+            var byField = {};
+            payload.issues.forEach(function (issue) {
+                if (!issue || typeof issue !== 'object') return;
+                var m = String(issue.message || issue.msg || issue.detail || '').trim();
+                if (!m) return;
+                var pathStr = formatIssuePathForDisplay(issue.path != null ? issue.path : '');
+                var fieldName = mirPathToFormFieldName(pathStr);
+                if (!fieldName) return;
+                if (!byField[fieldName]) byField[fieldName] = [];
+                if (byField[fieldName].indexOf(m) === -1) byField[fieldName].push(m);
+            });
+            var idx = 0;
+            Object.keys(byField).forEach(function (fieldName) {
+                var esc = (window.CSS && window.CSS.escape)
+                    ? window.CSS.escape(fieldName)
+                    : String(fieldName).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+                var field = form.querySelector('[name="' + esc + '"]');
+                if (!field) return;
+                field.classList.add('field-error');
+                field.setAttribute('aria-invalid', 'true');
+                var errId = 'srv-err-' + (++idx) + '-' + String(fieldName).replace(/[^a-zA-Z0-9_-]/g, '');
+                var hint = document.createElement('p');
+                hint.id = errId;
+                hint.className = 'server-field-error-msg';
+                hint.setAttribute('role', 'alert');
+                hint.textContent = byField[fieldName].join(' · ');
+                field.parentNode.appendChild(hint);
+                field.setAttribute('aria-describedby', errId);
+                field.setAttribute('data-server-error-bound', '1');
+            });
+            bindServerErrorClearOnInput();
+        }
+
         // ---- Validaciones extra robustas MIR ----
         function showError(msg, fieldNameOrId = null) {
+            clearServerValidationFieldHints();
             const detailText = typeof msg === 'string'
                 ? msg
                 : (msg && typeof msg.message === 'string' ? msg.message : String(msg || ''));
@@ -12269,9 +12350,15 @@
                     responseBodyText
                   );
                   const focusField = extractFocusFieldFromErrorPayload(responseBodyJson);
+                  const payloadForUi = tryUnwrapProxiedError(responseBodyJson);
                   console.error('═══════════════════════════════════════════════');
                   const submitErr = new Error(errUserText);
                   if (focusField) submitErr.focusField = focusField;
+                  if (payloadForUi && typeof payloadForUi === 'object') {
+                    submitErr.validationPayload = payloadForUi;
+                  } else if (responseBodyJson && typeof responseBodyJson === 'object') {
+                    submitErr.validationPayload = responseBodyJson;
+                  }
                   throw submitErr;
                 }
                 
@@ -12289,6 +12376,7 @@
                 });
                 
                 // Limpiar formulario pero mantener idioma seleccionado
+                clearServerValidationFieldHints();
                 document.getElementById('guestRegistrationForm').reset();
                 if (typeof window.hideTraveler2 === 'function') window.hideTraveler2();
                 document.documentElement.setAttribute('lang', currentLang);
@@ -12304,6 +12392,10 @@
                 
                 let msg = error && error.message ? String(error.message) : 'Error desconocido';
                 let serverFocusField = (error && error.focusField) ? error.focusField : null;
+                const validationPayload = error && error.validationPayload ? error.validationPayload : null;
+                if (validationPayload && validationPayload.code === 'VALIDATION_ERROR' && Array.isArray(validationPayload.issues) && validationPayload.issues.length) {
+                  msg = 'Hay errores que revisar en el formulario (campos marcados en rojo abajo).\n\n' + msg;
+                }
                 
                 // Añadir sugerencias según el tipo de error
                 if (/fecha|date|datetime/i.test(msg)) {
@@ -12320,6 +12412,7 @@
                 }
                 
                 showError(msg, serverFocusField);
+                if (validationPayload) applyServerFieldErrorsFromPayload(validationPayload);
             } finally {
                 // Restaurar botón
                 submitButton.disabled = false;
