@@ -167,6 +167,23 @@ export async function middleware(req: NextRequest) {
   // ==============================================
   // 4. AUTENTICACIÓN JWT PARA RUTAS PROTEGIDAS
   // ==============================================
+
+  /**
+   * Enlaces de pago usados desde book.delfincheckin.com sin sesión del admin.
+   * Sin esto el middleware devolvía 401 sin CORS y el fetch fallaba en el navegador.
+   * NO incluye: POST /api/payment-links (crear), GET /api/payment-links (listar), DELETE …/[code].
+   */
+  if (pathname.startsWith('/api/payment-links/')) {
+    const suffix = pathname.slice('/api/payment-links/'.length)
+    const parts = suffix.split('/').filter(Boolean)
+    const m = req.method
+    if (parts.length === 1 && ['GET', 'HEAD', 'OPTIONS'].includes(m)) {
+      return NextResponse.next()
+    }
+    if (parts.length === 2 && parts[1] === 'process' && ['POST', 'OPTIONS'].includes(m)) {
+      return NextResponse.next()
+    }
+  }
   
   // Rutas completamente públicas - no requieren autenticación
   const isPublicRoute = (
