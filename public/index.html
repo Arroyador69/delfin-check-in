@@ -917,7 +917,10 @@
                 "validation.emailInvalid": "El correo no tiene un formato válido.",
                 "validation.nationalityRequired": "Seleccione o escriba la nacionalidad para que se reconozca el país (se usará código ISO3).",
                 "validation.secondSurnameSpain": "Para nacionalidad española, el segundo apellido es obligatorio.",
-                "validation.traveler2Incomplete": "Si añade un segundo viajero, debe completar al menos apellidos, documento, fechas y país de residencia."
+                "validation.traveler2Incomplete": "Si añade un segundo viajero, debe completar al menos apellidos, documento, fechas y país de residencia.",
+                "validation.cardPaymentMedioRequired": "Con pago por tarjeta, indique el medio (p. ej. últimos 4 dígitos o tipo de tarjeta) en «Medio de pago».",
+                "validation.cardPaymentHolderRequired": "Con pago por tarjeta, indique el titular de la tarjeta.",
+                "validation.cardPaymentExpiryRequired": "Con pago por tarjeta, indique la caducidad en formato MM/AAAA."
             },
             en: {
                 "header.title": "Delfín Check-in",
@@ -1033,7 +1036,10 @@
                 "validation.emailInvalid": "The email format is not valid.",
                 "validation.nationalityRequired": "Enter or select nationality so the country is recognized (ISO3).",
                 "validation.secondSurnameSpain": "For Spanish nationality, the second surname is required.",
-                "validation.traveler2Incomplete": "If you add a second traveler, complete surnames, document, dates and country of residence."
+                "validation.traveler2Incomplete": "If you add a second traveler, complete surnames, document, dates and country of residence.",
+                "validation.cardPaymentMedioRequired": "For card payment, fill «Payment method» (e.g. last 4 digits or card type).",
+                "validation.cardPaymentHolderRequired": "For card payment, enter the cardholder name.",
+                "validation.cardPaymentExpiryRequired": "For card payment, enter expiry as MM/YYYY."
             },
             fr: {
                 "header.title": "Delfín Check-in",
@@ -1149,7 +1155,10 @@
                 "validation.emailInvalid": "L'e-mail n'est pas valide.",
                 "validation.nationalityRequired": "Indiquez la nationalité pour que le pays soit reconnu (ISO3).",
                 "validation.secondSurnameSpain": "Pour la nationalité espagnole, le deuxième nom de famille est obligatoire.",
-                "validation.traveler2Incomplete": "Si vous ajoutez un 2e voyageur, complétez noms, document, dates et pays de résidence."
+                "validation.traveler2Incomplete": "Si vous ajoutez un 2e voyageur, complétez noms, document, dates et pays de résidence.",
+                "validation.cardPaymentMedioRequired": "Pour un paiement par carte, remplissez le « Moyen de paiement » (ex. 4 derniers chiffres).",
+                "validation.cardPaymentHolderRequired": "Pour un paiement par carte, indiquez le titulaire de la carte.",
+                "validation.cardPaymentExpiryRequired": "Pour un paiement par carte, indiquez la date d’expiration MM/AAAA."
             },
             ru: {
                 "header.title": "Delfín Check-in",
@@ -1265,7 +1274,10 @@
                 "validation.emailInvalid": "Неверный формат e-mail.",
                 "validation.nationalityRequired": "Укажите гражданство, чтобы страна определилась (ISO3).",
                 "validation.secondSurnameSpain": "При испанском гражданстве обязательна вторая фамилия.",
-                "validation.traveler2Incomplete": "Если добавлен второй путешественник, заполните фамилии, документ, даты и страну проживания."
+                "validation.traveler2Incomplete": "Если добавлен второй путешественник, заполните фамилии, документ, даты и страну проживания.",
+                "validation.cardPaymentMedioRequired": "При оплате картой укажите способ оплаты (например, последние 4 цифры).",
+                "validation.cardPaymentHolderRequired": "При оплате картой укажите держателя карты.",
+                "validation.cardPaymentExpiryRequired": "При оплате картой укажите срок действия в формате ММ/ГГГГ."
             }
         };
 
@@ -1987,7 +1999,13 @@
             }
             if (errorDetails) errorDetails.textContent = msg;
 
-            if (errorMessage) errorMessage.style.display = 'block';
+            if (errorMessage) {
+                errorMessage.style.display = 'block';
+                errorMessage.setAttribute('role', 'alert');
+                try {
+                    errorMessage.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                } catch (_) {}
+            }
 
             try {
               const successMessage = document.getElementById('successMessage');
@@ -2099,7 +2117,12 @@
             const names = [];
             if (!fieldKeys || !fieldKeys.length) return names;
             if (fieldKeys.includes('postal')) names.push(traveler2 ? 'codigoPostal2' : 'codigoPostal');
-            if (fieldKeys.includes('ine')) names.push(traveler2 ? 'codigoMunicipio2' : 'municipioBusqueda');
+            if (fieldKeys.includes('ine')) {
+                if (traveler2) names.push('codigoMunicipio2');
+                else {
+                    names.push('municipioBusqueda', 'codigoMunicipio');
+                }
+            }
             return names;
         }
 
@@ -2111,6 +2134,7 @@
             tipoPago: 'contract.paymentType',
             numHabitaciones: 'contract.rooms',
             medioPago: 'contract.paymentMedium',
+            titular: 'contract.cardholder',
             caducidadTarjeta: 'contract.expiry',
             nombre: 'travelers.firstName',
             apellido1: 'travelers.firstSurname',
@@ -2380,6 +2404,27 @@
             return null;
         }
 
+        /** Si el pago es TARJT (tarjeta MIR), exige medio, titular y caducidad coherente con el Ministerio. */
+        function validateTarjetaPaymentIfNeeded(formData) {
+            var tipo = String(formData.get('tipoPago') || '').trim().toUpperCase();
+            if (tipo !== 'TARJT') return null;
+            var medio = String(formData.get('medioPago') || '').trim();
+            var tit = String(formData.get('titular') || '').trim();
+            var cad = String(formData.get('caducidadTarjeta') || '').trim();
+            if (!medio) {
+                return { fieldNames: ['medioPago'], message: getTranslation('validation.cardPaymentMedioRequired') };
+            }
+            if (!tit) {
+                return { fieldNames: ['titular'], message: getTranslation('validation.cardPaymentHolderRequired') };
+            }
+            if (!cad) {
+                return { fieldNames: ['caducidadTarjeta'], message: getTranslation('validation.cardPaymentExpiryRequired') };
+            }
+            var fmtErr = validateCardExpiry(cad);
+            if (fmtErr) return { fieldNames: ['caducidadTarjeta'], message: fmtErr };
+            return null;
+        }
+
         (function setupFormFieldErrorClear() {
             var form = document.getElementById('guestRegistrationForm');
             if (!form) return;
@@ -2522,10 +2567,18 @@
                     return;
                 }
 
-                const cardErr = validateCardExpiry(formData.get('caducidadTarjeta'));
-                if (cardErr) {
-                    showValidationError(formEl, { fieldNames: ['caducidadTarjeta'], message: cardErr });
+                const tarjetaErr = validateTarjetaPaymentIfNeeded(formData);
+                if (tarjetaErr) {
+                    showValidationError(formEl, tarjetaErr);
                     return;
+                }
+                var tipoPagoVal = String(formData.get('tipoPago') || '').trim().toUpperCase();
+                if (tipoPagoVal !== 'TARJT') {
+                    var cardErrLoose = validateCardExpiry(formData.get('caducidadTarjeta'));
+                    if (cardErrLoose) {
+                        showValidationError(formEl, { fieldNames: ['caducidadTarjeta'], message: cardErrLoose });
+                        return;
+                    }
                 }
 
                 // ===== USAR BUILDER DEFENSIVO =====
