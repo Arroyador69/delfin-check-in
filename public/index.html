@@ -72,6 +72,13 @@
             color: white;
             border-color: #2563eb;
         }
+        .form-input--error {
+            border-color: #dc2626 !important;
+            box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.2);
+        }
+        .field-inline-error {
+            display: block;
+        }
     </style>
 </head>
 <body class="min-h-screen bg-gray-50">
@@ -883,10 +890,24 @@
                 "submit.sending": "Enviando...",
                 "validation.documentRequired": "Si selecciona tipo de documento, debe proporcionar el número",
                 "validation.documentEmpty": "El número de documento no puede estar vacío",
+                "validation.docNifInvalid": "El NIF debe tener 7 u 8 dígitos seguidos de una letra.",
+                "validation.docNieInvalid": "El NIE debe empezar por X, Y o Z, 7 dígitos y una letra.",
+                "validation.docPasInvalid": "El pasaporte debe tener entre 3 y 15 caracteres alfanuméricos.",
                 "validation.postal5": "El código postal debe tener exactamente 5 dígitos numéricos (sin letras ni espacios).",
                 "validation.ine5": "El código INE del municipio debe tener 5 dígitos (no es el código postal).",
                 "validation.ineNotPostal": "El código INE del municipio no puede ser igual al código postal: son dos datos distintos.",
-                "validation.cpIneProvinceMismatch": "El código postal ({cp}) empieza por {pCp}, pero el municipio elegido tiene INE {ine} (provincia {pIne}). Los dos primeros dígitos del CP y del INE tienen que coincidir. Si el municipio es de Málaga, el CP suele empezar por 29 (p. ej. 29640 en Fuengirola). Revisa que no falte ningún dígito al escribir el CP."
+                "validation.cpIneProvinceMismatch": "El código postal ({cp}) empieza por {pCp}, pero el municipio elegido tiene INE {ine} (provincia {pIne}). Los dos primeros dígitos del CP y del INE tienen que coincidir. Si el municipio es de Málaga, el CP suele empezar por 29 (p. ej. 29640 en Fuengirola). Revisa que no falte ningún dígito al escribir el CP.",
+                "validation.fieldPrefix": "Campo",
+                "validation.traveler2Prefix": "Viajero 2",
+                "validation.birthRequired": "Indica la fecha de nacimiento en formato AAAA-MM-DD.",
+                "validation.municipalityIneMissing": "Selecciona tu municipio en la lista o escribe hasta elegir uno: falta el código INE (5 dígitos).",
+                "validation.foreignMunicipalityRequired": "Si no resides en España, indica el nombre de tu ciudad o municipio de residencia.",
+                "validation.dateEntryExitRequired": "La fecha y hora de entrada y la de salida son obligatorias y deben ser válidas.",
+                "validation.dateContractAfterCheckIn": "La fecha de contrato no puede ser posterior a la fecha de entrada.",
+                "validation.dateCheckInAfterCheckOut": "La fecha de entrada no puede ser posterior a la fecha de salida.",
+                "validation.dateBirthAfterCheckIn": "La fecha de nacimiento no puede ser posterior a la fecha de entrada del alojamiento.",
+                "validation.datePayAfterCheckOut": "La fecha de pago no puede ser posterior a la fecha de salida.",
+                "validation.cardExpiryInvalid": "Si indica caducidad de tarjeta, use el formato MM/AAAA."
             },
             en: {
                 "header.title": "Delfín Check-in",
@@ -979,10 +1000,24 @@
                 "submit.sending": "Sending...",
                 "validation.documentRequired": "If you select document type, you must provide the number",
                 "validation.documentEmpty": "Document number cannot be empty",
+                "validation.docNifInvalid": "NIF must be 7–8 digits followed by one letter.",
+                "validation.docNieInvalid": "NIE must start with X, Y or Z, then 7 digits and one letter.",
+                "validation.docPasInvalid": "Passport must be 3–15 alphanumeric characters.",
                 "validation.postal5": "The postcode must be exactly 5 digits (numbers only).",
                 "validation.ine5": "The INE municipality code must be 5 digits (not the postcode).",
                 "validation.ineNotPostal": "The INE code cannot be the same as the postcode; they are different fields.",
-                "validation.cpIneProvinceMismatch": "Postcode {cp} starts with {pCp}, but the selected municipality has INE {ine} (province {pIne}). The first two digits of the postcode and INE must match. For Málaga province, postcodes usually start with 29. Check you did not miss a digit."
+                "validation.cpIneProvinceMismatch": "Postcode {cp} starts with {pCp}, but the selected municipality has INE {ine} (province {pIne}). The first two digits of the postcode and INE must match. For Málaga province, postcodes usually start with 29. Check you did not miss a digit.",
+                "validation.fieldPrefix": "Field",
+                "validation.traveler2Prefix": "Traveler 2",
+                "validation.birthRequired": "Enter date of birth as YYYY-MM-DD.",
+                "validation.municipalityIneMissing": "Choose your municipality from the suggestions so the 5-digit INE code is filled in.",
+                "validation.foreignMunicipalityRequired": "If you do not reside in Spain, enter your city or municipality of residence.",
+                "validation.dateEntryExitRequired": "Check-in and check-out date-times are required and must be valid.",
+                "validation.dateContractAfterCheckIn": "Contract date cannot be after the check-in date.",
+                "validation.dateCheckInAfterCheckOut": "Check-in cannot be after check-out.",
+                "validation.dateBirthAfterCheckIn": "Date of birth cannot be after the check-in date.",
+                "validation.datePayAfterCheckOut": "Payment date cannot be after the check-out date.",
+                "validation.cardExpiryInvalid": "If you enter card expiry, use MM/YYYY format."
             },
             fr: {
                 "header.title": "Delfín Check-in",
@@ -1075,10 +1110,24 @@
                 "submit.sending": "Envoi en cours...",
                 "validation.documentRequired": "Si vous sélectionnez un type de document, vous devez fournir le numéro",
                 "validation.documentEmpty": "Le numéro de document ne peut pas être vide",
+                "validation.docNifInvalid": "Le NIF doit comporter 7 ou 8 chiffres suivis d'une lettre.",
+                "validation.docNieInvalid": "Le NIE doit commencer par X, Y ou Z, puis 7 chiffres et une lettre.",
+                "validation.docPasInvalid": "Le passeport doit comporter entre 3 et 15 caractères alphanumériques.",
                 "validation.postal5": "Le code postal doit comporter exactement 5 chiffres.",
                 "validation.ine5": "Le code INE de la commune doit comporter 5 chiffres (ce n'est pas le code postal).",
                 "validation.ineNotPostal": "Le code INE ne peut pas être identique au code postal.",
-                "validation.cpIneProvinceMismatch": "Le code postal ({cp}) commence par {pCp}, mais la commune sélectionnée a l'INE {ine} (province {pIne}). Les deux premiers chiffres doivent correspondre. Vérifiez que vous n'avez pas oublié un chiffre."
+                "validation.cpIneProvinceMismatch": "Le code postal ({cp}) commence par {pCp}, mais la commune sélectionnée a l'INE {ine} (province {pIne}). Les deux premiers chiffres doivent correspondre. Vérifiez que vous n'avez pas oublié un chiffre.",
+                "validation.fieldPrefix": "Champ",
+                "validation.traveler2Prefix": "Voyageur 2",
+                "validation.birthRequired": "Indiquez la date de naissance au format AAAA-MM-JJ.",
+                "validation.municipalityIneMissing": "Choisissez votre commune dans la liste pour que le code INE (5 chiffres) soit renseigné.",
+                "validation.foreignMunicipalityRequired": "Si vous ne résidez pas en Espagne, indiquez le nom de votre ville ou commune de résidence.",
+                "validation.dateEntryExitRequired": "Les dates et heures d'arrivée et de départ sont obligatoires et doivent être valides.",
+                "validation.dateContractAfterCheckIn": "La date du contrat ne peut pas être postérieure à l'arrivée.",
+                "validation.dateCheckInAfterCheckOut": "L'arrivée ne peut pas être postérieure au départ.",
+                "validation.dateBirthAfterCheckIn": "La date de naissance ne peut pas être postérieure à l'arrivée.",
+                "validation.datePayAfterCheckOut": "La date de paiement ne peut pas être postérieure au départ.",
+                "validation.cardExpiryInvalid": "Pour la carte, indiquez la date d'expiration au format MM/AAAA."
             },
             ru: {
                 "header.title": "Delfín Check-in",
@@ -1171,10 +1220,24 @@
                 "submit.sending": "Отправка...",
                 "validation.documentRequired": "Если выбран тип документа, необходимо указать номер",
                 "validation.documentEmpty": "Номер документа не может быть пустым",
+                "validation.docNifInvalid": "NIF: 7–8 цифр и одна буква.",
+                "validation.docNieInvalid": "NIE: X, Y или Z, 7 цифр и одна буква.",
+                "validation.docPasInvalid": "Паспорт: 3–15 букв или цифр.",
                 "validation.postal5": "Почтовый индекс должен содержать ровно 5 цифр.",
                 "validation.ine5": "Код INE муниципалитета — 5 цифр (это не почтовый индекс).",
                 "validation.ineNotPostal": "Код INE не может совпадать с почтовым индексом.",
-                "validation.cpIneProvinceMismatch": "Почтовый индекс ({cp}) начинается с {pCp}, а выбранный муниципалитет имеет INE {ine} (провинция {pIne}). Первые две цифры должны совпадать."
+                "validation.cpIneProvinceMismatch": "Почтовый индекс ({cp}) начинается с {pCp}, а выбранный муниципалитет имеет INE {ine} (провинция {pIne}). Первые две цифры должны совпадать.",
+                "validation.fieldPrefix": "Поле",
+                "validation.traveler2Prefix": "Путешественник 2",
+                "validation.birthRequired": "Укажите дату рождения в формате ГГГГ-ММ-ДД.",
+                "validation.municipalityIneMissing": "Выберите муниципалитет из списка, чтобы был указан 5-значный код INE.",
+                "validation.foreignMunicipalityRequired": "Если вы не проживаете в Испании, укажите название города или муниципалитета проживания.",
+                "validation.dateEntryExitRequired": "Обязательны корректные дата и время заезда и выезда.",
+                "validation.dateContractAfterCheckIn": "Дата договора не может быть позже даты заезда.",
+                "validation.dateCheckInAfterCheckOut": "Заезд не может быть позже выезда.",
+                "validation.dateBirthAfterCheckIn": "Дата рождения не может быть позже даты заезда.",
+                "validation.datePayAfterCheckOut": "Дата оплаты не может быть позже даты выезда.",
+                "validation.cardExpiryInvalid": "Для срока действия карты используйте формат ММ/ГГГГ."
             }
         };
 
@@ -1860,6 +1923,7 @@
 
         function pad5(str) {
             const digits = String(str || '').replace(/\D/g, '');
+            if (!digits) return '';
             return digits.padStart(5, '0').slice(0, 5);
         }
 
@@ -1921,55 +1985,185 @@
             const dNacimiento = parseDateOnly(fechaNacimiento);
             const dPago = fechaPago ? parseDateOnly(fechaPago) : null;
 
-            if (!dEntrada || !dSalida) return 'Fechas de entrada y salida son obligatorias';
-            if (dContrato && dEntrada && dContrato > dEntrada) return 'La fecha de contrato no puede ser posterior a la entrada';
-            if (dEntrada && dSalida && dEntrada > dSalida) return 'La fecha de entrada no puede ser posterior a la salida';
-            if (dNacimiento && dEntrada && dNacimiento > dEntrada) return 'La fecha de nacimiento no puede ser posterior a la fecha de entrada';
-            if (dPago && dSalida && dPago > dSalida) return 'La fecha de pago no puede ser posterior a la salida';
+            if (!dEntrada || !dSalida) {
+                return { message: getTranslation('validation.dateEntryExitRequired'), fieldNames: ['fechaEntrada', 'fechaSalida'] };
+            }
+            if (dContrato && dEntrada && dContrato > dEntrada) {
+                return { message: getTranslation('validation.dateContractAfterCheckIn'), fieldNames: ['fechaContrato', 'fechaEntrada'] };
+            }
+            if (dEntrada && dSalida && dEntrada > dSalida) {
+                return { message: getTranslation('validation.dateCheckInAfterCheckOut'), fieldNames: ['fechaEntrada', 'fechaSalida'] };
+            }
+            if (dNacimiento && dEntrada && dNacimiento > dEntrada) {
+                return { message: getTranslation('validation.dateBirthAfterCheckIn'), fieldNames: ['fechaNacimiento', 'fechaEntrada'] };
+            }
+            if (dPago && dSalida && dPago > dSalida) {
+                return { message: getTranslation('validation.datePayAfterCheckOut'), fieldNames: ['fechaPago', 'fechaSalida'] };
+            }
             return null;
         }
         function validateDoc(tipo, numero) {
-            if (!tipo && !numero) return null; // ambos vacíos, permitido
+            if (!tipo && !numero) return null;
             if (tipo && !numero) return getTranslation('validation.documentRequired');
             const n = String(numero).trim();
             if (!n) return getTranslation('validation.documentEmpty');
-            // Reglas mínimas por tipo
             if (tipo === 'NIF') {
-                if (!/^\d{7,8}[A-Za-z]$/.test(n)) return 'Formato de NIF inválido (7-8 dígitos + letra)';
+                if (!/^\d{7,8}[A-Za-z]$/.test(n)) return getTranslation('validation.docNifInvalid');
             } else if (tipo === 'NIE') {
-                if (!/^[XYZxyz]\d{7}[A-Za-z]$/.test(n)) return 'Formato de NIE inválido (X/Y/Z + 7 dígitos + letra)';
+                if (!/^[XYZxyz]\d{7}[A-Za-z]$/.test(n)) return getTranslation('validation.docNieInvalid');
             } else if (tipo === 'PAS') {
-                if (!/^[A-Za-z0-9]{3,15}$/.test(n)) return 'Pasaporte inválido (3-15 caracteres alfanuméricos)';
+                if (!/^[A-Za-z0-9]{3,15}$/.test(n)) return getTranslation('validation.docPasInvalid');
             }
             return null;
         }
         function sameProvince(cp, ine) {
             return String(cp || '').slice(0, 2) === String(ine || '').slice(0, 2);
         }
+        /** Devuelve { message, fieldKeys: ['postal'|'ine', ...] } o null si todo correcto */
         function validateMunicipioVsCP(cp, ine) {
             if (!isFiveDigits(cp)) {
-                return getTranslation('validation.postal5') || 'El código postal debe tener exactamente 5 dígitos numéricos (sin letras).';
+                return { message: getTranslation('validation.postal5') || 'El código postal debe tener exactamente 5 dígitos numéricos (sin letras).', fieldKeys: ['postal'] };
             }
             if (!isFiveDigits(ine)) {
-                return getTranslation('validation.ine5') || 'El código INE del municipio debe tener 5 dígitos (no es el código postal).';
+                return { message: getTranslation('validation.ine5') || 'El código INE del municipio debe tener 5 dígitos (no es el código postal).', fieldKeys: ['ine'] };
             }
             if (cp === ine) {
-                return getTranslation('validation.ineNotPostal') || 'El código INE del municipio no puede ser igual al código postal. Son dos cosas distintas.';
+                return { message: getTranslation('validation.ineNotPostal') || 'El código INE del municipio no puede ser igual al código postal. Son dos cosas distintas.', fieldKeys: ['postal', 'ine'] };
             }
             if (!sameProvince(cp, ine)) {
                 const pCp = cp.slice(0, 2);
                 const pIne = ine.slice(0, 2);
                 let base = getTranslation('validation.cpIneProvinceMismatch') || '';
                 if (!base) {
-                    return 'Código postal ' + cp + ' (provincia ' + pCp + ') no coincide con el municipio INE ' + ine + ' (provincia ' + pIne + '). Los dos primeros dígitos del código postal y del INE deben ser iguales. Ejemplo en Málaga: CP 29640 con INE 29054 (Fuengirola).';
+                    return {
+                        message: 'Código postal ' + cp + ' (provincia ' + pCp + ') no coincide con el municipio INE ' + ine + ' (provincia ' + pIne + ').',
+                        fieldKeys: ['postal', 'ine']
+                    };
                 }
-                return base
-                    .replace(/\{cp\}/g, cp)
-                    .replace(/\{ine\}/g, ine)
-                    .replace(/\{pCp\}/g, pCp)
-                    .replace(/\{pIne\}/g, pIne);
+                return {
+                    message: base
+                        .replace(/\{cp\}/g, cp)
+                        .replace(/\{ine\}/g, ine)
+                        .replace(/\{pCp\}/g, pCp)
+                        .replace(/\{pIne\}/g, pIne),
+                    fieldKeys: ['postal', 'ine']
+                };
             }
             return null;
+        }
+
+        function muniKeysToFieldNames(traveler2, fieldKeys) {
+            const names = [];
+            if (!fieldKeys || !fieldKeys.length) return names;
+            if (fieldKeys.includes('postal')) names.push(traveler2 ? 'codigoPostal2' : 'codigoPostal');
+            if (fieldKeys.includes('ine')) names.push(traveler2 ? 'codigoMunicipio2' : 'municipioBusqueda');
+            return names;
+        }
+
+        const FIELD_LABEL_I18N = {
+            fechaContrato: 'contract.contractDate',
+            fechaEntrada: 'contract.checkIn',
+            fechaSalida: 'contract.checkOut',
+            fechaPago: 'contract.paymentDate',
+            tipoPago: 'contract.paymentType',
+            caducidadTarjeta: 'contract.expiry',
+            nombre: 'travelers.firstName',
+            apellido1: 'travelers.firstSurname',
+            apellido2: 'travelers.secondSurname',
+            fechaNacimiento: 'travelers.birthDate',
+            tipoDocumento: 'travelers.documentType',
+            numeroDocumento: 'travelers.documentNumber',
+            nacionalidad: 'travelers.nationality',
+            sexo: 'travelers.gender',
+            telefono: 'travelers.phone',
+            correo: 'travelers.email',
+            direccion: 'travelers.address',
+            codigoPostal: 'travelers.postalCode',
+            pais: 'travelers.country',
+            municipioBusqueda: 'travelers.municipalityCode',
+            codigoMunicipio: 'travelers.municipalityCode',
+            nombreMunicipio: 'travelers.municipalityName',
+            nombre2: 'travelers.firstName',
+            apellido1_2: 'travelers.firstSurname',
+            apellido2_2: 'travelers.secondSurname',
+            fechaNacimiento2: 'travelers.birthDate',
+            tipoDocumento2: 'travelers.documentType',
+            numeroDocumento2: 'travelers.documentNumber',
+            nacionalidad2: 'travelers.nationality',
+            sexo2: 'travelers.gender',
+            telefono2: 'travelers.phone',
+            correo2: 'travelers.email',
+            direccion2: 'travelers.address',
+            codigoPostal2: 'travelers.postalCode',
+            pais2: 'travelers.country',
+            codigoMunicipio2: 'travelers.municipalityCode',
+            nombreMunicipio2: 'travelers.municipalityName'
+        };
+
+        function stripLabelText(htmlOrText) {
+            return String(htmlOrText || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().replace(/\s*\*+\s*$/,'').trim();
+        }
+
+        function getFieldDisplayLabel(fieldName) {
+            const key = FIELD_LABEL_I18N[fieldName];
+            if (!key) return fieldName || '';
+            return stripLabelText(getTranslation(key));
+        }
+
+        function clearFormFieldErrors(form) {
+            if (!form) return;
+            form.querySelectorAll('.form-input--error').forEach(function (el) {
+                el.classList.remove('form-input--error');
+                el.removeAttribute('aria-invalid');
+            });
+            form.querySelectorAll('.field-inline-error').forEach(function (el) { el.remove(); });
+        }
+
+        function pickFieldElement(form, name) {
+            if (!form || !name) return null;
+            var esc = (window.CSS && window.CSS.escape) ? window.CSS.escape(name) : String(name).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+            return form.querySelector('[name="' + esc + '"]');
+        }
+
+        function highlightFormFields(form, fieldNames, hint) {
+            if (!form || !fieldNames || !fieldNames.length) return;
+            var hintText = hint || '';
+            fieldNames.forEach(function (name, idx) {
+                var el = pickFieldElement(form, name);
+                if (!el) return;
+                el.classList.add('form-input--error');
+                el.setAttribute('aria-invalid', 'true');
+                var parent = el.parentElement;
+                var hintEl = parent && parent.querySelector(':scope > .field-inline-error');
+                if (!hintEl) {
+                    hintEl = document.createElement('p');
+                    hintEl.className = 'field-inline-error text-xs text-red-600 mt-1';
+                    el.insertAdjacentElement('afterend', hintEl);
+                }
+                hintEl.textContent = hintText;
+                if (idx === 0) {
+                    try {
+                        el.focus({ preventScroll: true });
+                        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    } catch (_) {}
+                }
+            });
+        }
+
+        /** message + campos resaltados + banner #errorDetails */
+        function showValidationError(form, options) {
+            var fieldNames = options.fieldNames || [];
+            var message = options.message || '';
+            var traveler2 = !!options.traveler2;
+            clearFormFieldErrors(form);
+            var labels = fieldNames.map(getFieldDisplayLabel).filter(Boolean);
+            var prefix = getTranslation('validation.fieldPrefix');
+            var headline = labels.length ? (prefix + ': ' + labels.join(' · ') + ' — ' + message) : message;
+            if (traveler2) {
+                headline = getTranslation('validation.traveler2Prefix') + ': ' + headline;
+            }
+            showError(headline);
+            highlightFormFields(form, fieldNames, message);
         }
 
         /** ISO3 del país de residencia del viajero (viajero 1) para reglas España vs extranjero */
@@ -1990,7 +2184,7 @@
         }
         function validateCardExpiry(exp) {
             if (!exp) return null;
-            if (!/^(0[1-9]|1[0-2])\/\d{4}$/.test(exp)) return 'Caducidad de tarjeta debe ser MM/AAAA';
+            if (!/^(0[1-9]|1[0-2])\/\d{4}$/.test(exp)) return getTranslation('validation.cardExpiryInvalid');
             return null;
         }
 
@@ -2015,38 +2209,63 @@
             `;
             
             try {
-                // Validaciones mínimas requeridas por el MIR
-                const formData = new FormData(e.target);
-                
-                // Normalizar y validar fechas
+                const formEl = e.target;
+                clearFormFieldErrors(formEl);
+
+                // Primero: restricciones HTML5 (required, type=email, etc.) con campo concreto
+                if (!formEl.checkValidity()) {
+                    const firstInvalid = formEl.querySelector(':invalid');
+                    if (firstInvalid) {
+                        const nm = firstInvalid.getAttribute('name') || firstInvalid.id || '';
+                        const reason = firstInvalid.validationMessage || getTranslation('main.required');
+                        showValidationError(formEl, { fieldNames: nm ? [nm] : [], message: reason });
+                        return;
+                    }
+                    showValidationError(formEl, { fieldNames: [], message: getTranslation('main.required') });
+                    return;
+                }
+
+                const formData = new FormData(formEl);
+
                 const fechaContrato = formatDateForMIR(formData.get('fechaContrato'));
                 const fechaEntrada = formatDateForMIR(formData.get('fechaEntrada'));
                 const fechaSalida = formatDateForMIR(formData.get('fechaSalida'));
                 const fechaPago = formatDateForMIR(formData.get('fechaPago'));
 
-                // --- Validaciones robustas previas ---
                 const docErr = validateDoc(formData.get('tipoDocumento'), formData.get('numeroDocumento'));
-                if (docErr) { showError(docErr); return; }
+                if (docErr) {
+                    showValidationError(formEl, { fieldNames: ['numeroDocumento', 'tipoDocumento'], message: docErr });
+                    return;
+                }
 
-                // Validar fecha de nacimiento obligatoria (formato ISO)
                 const birthISO = toISODate(formData.get('fechaNacimiento'));
-                if (!birthISO) { showError('Fecha de nacimiento requerida (AAAA-MM-DD)'); return; }
+                if (!birthISO) {
+                    showValidationError(formEl, { fieldNames: ['fechaNacimiento'], message: getTranslation('validation.birthRequired') });
+                    return;
+                }
 
-                // Solo validar INE vs CP para residentes en España (ISO3 más fiable que el texto del input)
                 const iso3Pais = getPaisResidenciaISO3FromForm(formData);
                 const esEspanol = iso3Pais === 'ESP';
-                
+
                 if (esEspanol) {
-                    const muniErr = validateMunicipioVsCP(
+                    const muniRes = validateMunicipioVsCP(
                         pad5(formData.get('codigoPostal')),
                         pad5(formData.get('codigoMunicipio'))
                     );
-                    if (muniErr) { showError(muniErr); return; }
+                    if (muniRes) {
+                        showValidationError(formEl, {
+                            fieldNames: muniKeysToFieldNames(false, muniRes.fieldKeys),
+                            message: muniRes.message
+                        });
+                        return;
+                    }
                 } else {
-                    // Para extranjeros, asegurar que el nombre del municipio esté presente
                     const nombreMunicipio = String(formData.get('nombreMunicipio') || '').trim();
                     if (!nombreMunicipio) {
-                        showError('Para extranjeros es obligatorio el nombre del municipio');
+                        showValidationError(formEl, {
+                            fieldNames: ['nombreMunicipio'],
+                            message: getTranslation('validation.foreignMunicipalityRequired')
+                        });
                         return;
                     }
                 }
@@ -2055,18 +2274,26 @@
                 if (nombre2) {
                     const iso3p2 = getPaisResidenciaISO3Viajero2(formData);
                     if (iso3p2 === 'ESP') {
-                        const muniErr2 = validateMunicipioVsCP(
+                        const muniRes2 = validateMunicipioVsCP(
                             pad5(formData.get('codigoPostal2')),
                             pad5(formData.get('codigoMunicipio2'))
                         );
-                        if (muniErr2) {
-                            showError('Viajero 2: ' + muniErr2);
+                        if (muniRes2) {
+                            showValidationError(formEl, {
+                                fieldNames: muniKeysToFieldNames(true, muniRes2.fieldKeys),
+                                message: muniRes2.message,
+                                traveler2: true
+                            });
                             return;
                         }
                     } else {
                         const nm2 = String(formData.get('nombreMunicipio2') || '').trim();
                         if (!nm2) {
-                            showError('Viajero 2: para extranjeros es obligatorio el nombre del municipio');
+                            showValidationError(formEl, {
+                                fieldNames: ['nombreMunicipio2'],
+                                message: getTranslation('validation.foreignMunicipalityRequired'),
+                                traveler2: true
+                            });
                             return;
                         }
                     }
@@ -2079,10 +2306,16 @@
                     fechaNacimiento: formData.get('fechaNacimiento'),
                     fechaPago
                 });
-                if (orderErr) { showError(orderErr); return; }
+                if (orderErr) {
+                    showValidationError(formEl, { fieldNames: orderErr.fieldNames, message: orderErr.message });
+                    return;
+                }
 
                 const cardErr = validateCardExpiry(formData.get('caducidadTarjeta'));
-                if (cardErr) { showError(cardErr); return; }
+                if (cardErr) {
+                    showValidationError(formEl, { fieldNames: ['caducidadTarjeta'], message: cardErr });
+                    return;
+                }
 
                 // ===== USAR BUILDER DEFENSIVO =====
                 const cleanData = buildPayloadDefensive(formData);
@@ -2217,11 +2450,13 @@
                 });
                 
                 // Limpiar formulario pero mantener idioma seleccionado
+                clearFormFieldErrors(formEl);
                 document.getElementById('guestRegistrationForm').reset();
                 document.documentElement.setAttribute('lang', currentLang);
                 
             } catch (error) {
                 console.error('Error:', error);
+                clearFormFieldErrors(document.getElementById('guestRegistrationForm'));
                 let msg = error && error.message ? String(error.message) : 'Error desconocido';
                 if (/fecha|date|datetime/i.test(msg)) {
                   msg += ' · Revisa formatos: contrato YYYY-MM-DD, entrada/salida YYYY-MM-DDThh:mm:ss.';
