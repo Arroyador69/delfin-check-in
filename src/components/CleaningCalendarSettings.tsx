@@ -1,7 +1,17 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Calendar, Clock, ChevronDown, ChevronUp, MessageSquare, RefreshCw } from 'lucide-react';
+import { useLocale } from 'next-intl';
+import {
+  Calendar,
+  Check,
+  Clock,
+  ChevronDown,
+  ChevronUp,
+  MessageSquare,
+  RefreshCw,
+  Trash2,
+} from 'lucide-react';
 import CleaningPublicLinksSection from '@/components/CleaningPublicLinksSection';
 
 interface Room {
@@ -34,18 +44,29 @@ interface CleaningNote {
   created_at: string;
 }
 
+function sortRoomNotes(list: CleaningNote[]): CleaningNote[] {
+  return [...list].sort((a, b) => {
+    const aUnread = a.author_type === 'cleaner' && !a.read_at;
+    const bUnread = b.author_type === 'cleaner' && !b.read_at;
+    if (aUnread !== bUnread) return aUnread ? -1 : 1;
+    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+  });
+}
+
 interface Props {
   rooms: Room[];
   t: (key: string, values?: Record<string, any>) => string;
 }
 
 export default function CleaningCalendarSettings({ rooms, t }: Props) {
+  const locale = useLocale();
   const [configs, setConfigs] = useState<CleaningConfig[]>([]);
   const [notes, setNotes] = useState<CleaningNote[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
   const [expandedRoom, setExpandedRoom] = useState<string | null>(null);
   const [message, setMessage] = useState({ type: '', text: '' });
+  const [deleteFlow, setDeleteFlow] = useState<{ noteId: string; step: 1 | 2 } | null>(null);
 
   const loadConfigs = useCallback(async () => {
     try {
@@ -61,7 +82,7 @@ export default function CleaningCalendarSettings({ rooms, t }: Props) {
 
   const loadNotes = useCallback(async () => {
     try {
-      const res = await fetch('/api/cleaning/notes?unread=true&limit=20', { credentials: 'include' });
+      const res = await fetch('/api/cleaning/notes?limit=100', { credentials: 'include' });
       const data = await res.json();
       if (data.success) setNotes(data.notes);
     } catch (err) {
@@ -123,12 +144,37 @@ export default function CleaningCalendarSettings({ rooms, t }: Props) {
         credentials: 'include',
         body: JSON.stringify({ note_ids: noteIds }),
       });
-      setNotes(prev => prev.filter(n => !noteIds.includes(n.id)));
+      await loadNotes();
     } catch {}
+  };
+
+  const deleteNote = async (noteId: string) => {
+    try {
+      const res = await fetch(`/api/cleaning/notes?id=${encodeURIComponent(noteId)}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      const data = await res.json();
+      if (data.success) {
+        setDeleteFlow(null);
+        setMessage({ type: 'success', text: t('cleaning.noteDeleted') });
+        await loadNotes();
+        setTimeout(() => setMessage({ type: '', text: '' }), 4000);
+      } else {
+        setMessage({ type: 'error', text: t('cleaning.noteDeleteError') });
+        setTimeout(() => setMessage({ type: '', text: '' }), 5000);
+      }
+    } catch {
+      setMessage({ type: 'error', text: t('cleaning.noteDeleteError') });
+      setTimeout(() => setMessage({ type: '', text: '' }), 5000);
+    }
   };
 
   const unreadByRoom = (roomId: string) =>
     notes.filter(n => n.room_id === roomId && n.author_type === 'cleaner' && !n.read_at);
+
+  const notesForRoom = (roomId: string) =>
+    sortRoomNotes(notes.filter(n => n.room_id === roomId));
 
   if (loading) {
     return (
@@ -140,6 +186,7 @@ export default function CleaningCalendarSettings({ rooms, t }: Props) {
   }
 
   return (
+    <>
     <div className="bg-white shadow-xl rounded-xl border border-blue-200 p-4 sm:p-8">
       <h4 className="text-lg sm:text-xl font-semibold text-gray-800 mb-1 flex items-center">
         <span className="text-xl sm:text-2xl mr-2 sm:mr-3" style={{ fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif' }}>🧹</span>
@@ -166,6 +213,7 @@ export default function CleaningCalendarSettings({ rooms, t }: Props) {
           const config = getConfigForRoom(room.id);
           const isExpanded = expandedRoom === String(room.id);
           const unread = unreadByRoom(String(room.id));
+          const roomNotesList = notesForRoom(String(room.id));
 
           return (
             <div key={room.id} className="border-2 border-gray-200 rounded-xl overflow-hidden transition-all hover:border-blue-300">
@@ -202,27 +250,102 @@ export default function CleaningCalendarSettings({ rooms, t }: Props) {
               {/* Expanded content */}
               {isExpanded && (
                 <div className="p-4 sm:p-6 space-y-5 border-t border-gray-200">
-                  {/* Notas sin leer de la limpiadora */}
-                  {unread.length > 0 && (
-                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-                      <h5 className="font-semibold text-amber-800 mb-2 flex items-center gap-2">
-                        <MessageSquare className="w-4 h-4" />
-                        {t('cleaning.unreadNotes', { count: unread.length })}
+                  {/* Notas de limpieza (historial por habitación) */}
+                  {roomNotesList.length > 0 && (
+                    <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
+                      <h5 className="font-semibold text-slate-800 mb-3 flex items-center gap-2">
+                        <MessageSquare className="w-4 h-4 text-slate-600" />
+                        {t('cleaning.notesSectionTitle')}
+                        {unread.length > 0 && (
+                          <span className="text-xs font-normal text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">
+                            {t('cleaning.unreadNotes', { count: unread.length })}
+                          </span>
+                        )}
                       </h5>
-                      {unread.map(n => (
-                        <div key={n.id} className="bg-white rounded-lg p-3 mb-2 border border-amber-100">
-                          <p className="text-sm text-gray-800">{n.note}</p>
-                          <p className="text-xs text-gray-400 mt-1">
-                            {new Date(n.created_at).toLocaleDateString('es-ES')} · {new Date(n.created_at).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
-                          </p>
-                        </div>
-                      ))}
-                      <button
-                        onClick={() => markNotesRead(unread.map(n => n.id))}
-                        className="text-sm text-amber-700 hover:text-amber-900 font-medium mt-1"
-                      >
-                        {t('cleaning.markAsRead')}
-                      </button>
+                      <div className="space-y-3">
+                        {roomNotesList.map(n => {
+                          const isCleaner = n.author_type === 'cleaner';
+                          const isPending = isCleaner && !n.read_at;
+                          return (
+                            <div
+                              key={n.id}
+                              className={`rounded-lg p-3 border ${
+                                isPending
+                                  ? 'bg-amber-50/80 border-amber-200'
+                                  : 'bg-white border-slate-100'
+                              }`}
+                            >
+                              <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
+                                <span
+                                  className={`text-xs font-semibold uppercase tracking-wide ${
+                                    isCleaner ? 'text-emerald-700' : 'text-blue-700'
+                                  }`}
+                                >
+                                  {isCleaner ? t('cleaning.authorCleaner') : t('cleaning.authorOwner')}
+                                </span>
+                                {isCleaner && (
+                                  <span
+                                    className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                                      isPending
+                                        ? 'bg-amber-200 text-amber-900'
+                                        : 'bg-emerald-100 text-emerald-800'
+                                    }`}
+                                  >
+                                    {isPending ? t('cleaning.noteStatusPending') : t('cleaning.noteStatusDone')}
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-sm text-gray-800 whitespace-pre-wrap">{n.note}</p>
+                              <p className="text-xs text-gray-500 mt-2">
+                                {t('cleaning.cleaningDateLabel', {
+                                  date: new Date(n.cleaning_date + 'T12:00:00').toLocaleDateString(locale, {
+                                    weekday: 'short',
+                                    day: 'numeric',
+                                    month: 'short',
+                                  }),
+                                })}{' '}
+                                · {t('cleaning.sentAt', {
+                                  date: new Date(n.created_at).toLocaleString(locale, {
+                                    day: 'numeric',
+                                    month: 'short',
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                  }),
+                                })}
+                              </p>
+                              <div className="flex flex-wrap gap-2 mt-3">
+                                {isCleaner && isPending && (
+                                  <button
+                                    type="button"
+                                    onClick={() => markNotesRead([n.id])}
+                                    className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-medium px-3 py-1.5 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700"
+                                  >
+                                    <Check className="w-3.5 h-3.5" />
+                                    {t('cleaning.markDone')}
+                                  </button>
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={() => setDeleteFlow({ noteId: n.id, step: 1 })}
+                                  className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-medium px-3 py-1.5 rounded-lg border border-red-200 text-red-700 bg-white hover:bg-red-50"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                  {t('cleaning.deleteNote')}
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      {unread.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => markNotesRead(unread.map(n => n.id))}
+                          className="text-sm text-slate-600 hover:text-slate-900 font-medium mt-3 underline-offset-2 hover:underline"
+                        >
+                          {t('cleaning.markAllDone')}
+                        </button>
+                      )}
                     </div>
                   )}
 
@@ -346,5 +469,65 @@ export default function CleaningCalendarSettings({ rooms, t }: Props) {
         </div>
       )}
     </div>
+
+    {deleteFlow && (
+      <div
+        className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="cleaning-delete-title"
+      >
+        <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 border border-gray-200">
+          {deleteFlow.step === 1 ? (
+            <>
+              <h3 id="cleaning-delete-title" className="text-lg font-semibold text-gray-900 mb-2">
+                {t('cleaning.deleteStep1Title')}
+              </h3>
+              <p className="text-sm text-gray-600 mb-6">{t('cleaning.deleteStep1Body')}</p>
+              <div className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-end">
+                <button
+                  type="button"
+                  onClick={() => setDeleteFlow(null)}
+                  className="px-4 py-2.5 rounded-xl border border-gray-300 text-gray-700 font-medium hover:bg-gray-50"
+                >
+                  {t('cleaning.deleteCancel')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDeleteFlow({ noteId: deleteFlow.noteId, step: 2 })}
+                  className="px-4 py-2.5 rounded-xl bg-gray-900 text-white font-medium hover:bg-gray-800"
+                >
+                  {t('cleaning.deleteContinue')}
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <h3 className="text-lg font-semibold text-red-800 mb-2">
+                {t('cleaning.deleteStep2Title')}
+              </h3>
+              <p className="text-sm text-gray-600 mb-6">{t('cleaning.deleteStep2Body')}</p>
+              <div className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-end">
+                <button
+                  type="button"
+                  onClick={() => setDeleteFlow({ noteId: deleteFlow.noteId, step: 1 })}
+                  className="px-4 py-2.5 rounded-xl border border-gray-300 text-gray-700 font-medium hover:bg-gray-50"
+                >
+                  {t('cleaning.deleteBack')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => deleteNote(deleteFlow.noteId)}
+                  className="px-4 py-2.5 rounded-xl bg-red-600 text-white font-medium hover:bg-red-700"
+                >
+                  {t('cleaning.deleteFinal')}
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    )}
+    </>
   );
 }

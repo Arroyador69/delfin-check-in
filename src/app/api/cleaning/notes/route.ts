@@ -21,12 +21,13 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const roomId = searchParams.get('room_id');
     const unreadOnly = searchParams.get('unread') === 'true';
-    const limit = Math.min(parseInt(searchParams.get('limit') || '50'), 100);
+    const authorFilter = searchParams.get('author'); // 'cleaner' | 'owner' | omit = all
+    const limit = Math.min(parseInt(searchParams.get('limit') || '100'), 100);
 
     let query = `
       SELECT cn.*, r.name AS room_name
       FROM cleaning_notes cn
-      LEFT JOIN "Room" r ON r.id = cn.room_id
+      LEFT JOIN "Room" r ON r.id::text = cn.room_id
       WHERE cn.tenant_id = $1::uuid
     `;
     const params: any[] = [tenantId];
@@ -37,6 +38,11 @@ export async function GET(req: NextRequest) {
     }
     if (unreadOnly) {
       query += ` AND cn.read_at IS NULL AND cn.author_type = 'cleaner'`;
+    }
+    if (authorFilter === 'cleaner') {
+      query += ` AND cn.author_type = 'cleaner'`;
+    } else if (authorFilter === 'owner') {
+      query += ` AND cn.author_type = 'owner'`;
     }
 
     params.push(limit);
@@ -102,6 +108,36 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('[cleaning/notes] PATCH error:', error);
+    return NextResponse.json({ success: false, error: (error as Error).message }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const tenantId = await resolveTenantId(req);
+    if (!tenantId) {
+      return NextResponse.json({ success: false, error: 'No tenant' }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get('id');
+    if (!id) {
+      return NextResponse.json({ success: false, error: 'id requerido' }, { status: 400 });
+    }
+
+    const result = await sql`
+      DELETE FROM cleaning_notes
+      WHERE tenant_id = ${tenantId}::uuid AND id = ${id}::uuid
+      RETURNING id
+    `;
+
+    if (result.rows.length === 0) {
+      return NextResponse.json({ success: false, error: 'Nota no encontrada' }, { status: 404 });
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('[cleaning/notes] DELETE error:', error);
     return NextResponse.json({ success: false, error: (error as Error).message }, { status: 500 });
   }
 }
