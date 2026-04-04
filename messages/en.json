@@ -1309,6 +1309,8 @@
     },
     "cleaning": {
       "title": "Cleaning Calendar",
+      "notesAdminHintTitle": "Where do cleaning notes appear in the dashboard?",
+      "notesAdminHintBody": "On this same Settings page under «Cleaning calendar»: expand each room to see the «Cleaning notes» block (history, mark as done, delete). With SMTP configured, you also get them by email.",
       "description": "Create a link for each cleaner or team: share only the link (no Delfín account). It updates as reservations change for the rooms you include. Below, set times and rules per room.",
       "perRoomHint": "Per-room times and rules: the calendar uses these to schedule each cleaning.",
       "publicLinksTitle": "Links for cleaners",

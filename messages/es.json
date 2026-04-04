@@ -1375,6 +1375,8 @@
     },
     "cleaning": {
       "title": "Calendario de Limpieza",
+      "notesAdminHintTitle": "¿Dónde ves las notas de limpieza en el panel?",
+      "notesAdminHintBody": "En esta misma página de Ajustes, en «Calendario de limpieza»: despliega cada habitación y verás el bloque «Notas de limpieza» (historial, marcar como hecha, eliminar). Si tienes SMTP configurado, también te llegan por correo.",
       "description": "Crea un enlace para cada limpiadora o equipo: comparte solo el enlace (sin cuenta en Delfín). Se actualiza solo con las reservas de las habitaciones que incluyas. Aquí debajo ajustas horarios y reglas por habitación.",
       "perRoomHint": "Horarios y reglas por habitación: úsalos para que el calendario calcule bien cada limpieza.",
       "publicLinksTitle": "Enlaces para limpiadoras",

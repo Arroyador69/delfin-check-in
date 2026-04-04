@@ -57,11 +57,13 @@ export default function LimpiezaPublicPage() {
     return new Date(n.getFullYear(), n.getMonth(), 1);
   });
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [didSnapCalendarMonth, setDidSnapCalendarMonth] = useState(false);
 
   const load = useCallback(async () => {
     if (!token) return;
     setLoading(true);
     setError(null);
+    setDidSnapCalendarMonth(false);
     try {
       const res = await fetch(`/api/cleaning/public-view/${token}`, { cache: 'no-store' });
       const data = await res.json();
@@ -85,14 +87,25 @@ export default function LimpiezaPublicPage() {
     load();
   }, [load]);
 
+  useEffect(() => {
+    setDidSnapCalendarMonth(false);
+  }, [token]);
+
+  /** Solo desde hoy (dispositivo local): alineado con la API que ya filtra por Madrid. */
+  const displayTasks = useMemo(() => {
+    const n = new Date();
+    const todayStr = toISODate(n.getFullYear(), n.getMonth(), n.getDate());
+    return tasks.filter(task => task.date >= todayStr);
+  }, [tasks]);
+
   const tasksByDate = useMemo(() => {
     const m = new Map<string, Task[]>();
-    for (const t of tasks) {
+    for (const t of displayTasks) {
       if (!m.has(t.date)) m.set(t.date, []);
       m.get(t.date)!.push(t);
     }
     return m;
-  }, [tasks]);
+  }, [displayTasks]);
 
   const byDate = useMemo(() => {
     const keys = Array.from(tasksByDate.keys()).sort();
@@ -109,10 +122,19 @@ export default function LimpiezaPublicPage() {
     setCalendarMonth(d => new Date(d.getFullYear(), d.getMonth() + delta, 1));
   };
 
+  /** Al cargar tareas, centrar el calendario en el mes de la primera limpieza próxima. */
   useEffect(() => {
-    if (viewMode !== 'calendar' || tasks.length === 0) return;
+    if (loading || didSnapCalendarMonth || displayTasks.length === 0) return;
+    const first = displayTasks[0].date;
+    const [y, mo] = first.split('-').map(Number);
+    setCalendarMonth(new Date(y, mo - 1, 1));
+    setDidSnapCalendarMonth(true);
+  }, [loading, displayTasks, didSnapCalendarMonth]);
+
+  useEffect(() => {
+    if (viewMode !== 'calendar' || displayTasks.length === 0) return;
     const prefix = `${year}-${pad2(month + 1)}`;
-    const inMonth = tasks.filter(t => t.date.startsWith(prefix)).map(t => t.date);
+    const inMonth = displayTasks.filter(t => t.date.startsWith(prefix)).map(t => t.date);
     if (inMonth.length === 0) {
       setSelectedDate(null);
       return;
@@ -127,7 +149,7 @@ export default function LimpiezaPublicPage() {
       }
       return sorted[0];
     });
-  }, [viewMode, year, month, tasks]);
+  }, [viewMode, year, month, displayTasks]);
 
   const formatRange = (start: string, end: string) => {
     const s = new Date(start);
@@ -267,6 +289,9 @@ export default function LimpiezaPublicPage() {
               Calendario
             </button>
           </div>
+          <p className="text-xs text-slate-500 mt-3 leading-relaxed">
+            Solo se muestran limpiezas desde hoy en adelante (no aparecen fechas pasadas).
+          </p>
         </div>
       </header>
 
@@ -283,10 +308,13 @@ export default function LimpiezaPublicPage() {
           </div>
         )}
 
-        {!loading && !error && tasks.length === 0 && (
+        {!loading && !error && displayTasks.length === 0 && (
           <div className="text-center py-16 text-slate-600">
             <CalendarDays className="w-14 h-14 mx-auto mb-3 text-slate-300" />
-            <p className="text-sm">No hay tareas en el rango mostrado. Vuelve más tarde o pulsa actualizar.</p>
+            <p className="text-sm font-medium text-slate-800">No hay limpiezas programadas desde hoy</p>
+            <p className="text-sm mt-2">
+              Si tenías reservas antiguas, ya no se listan. Cuando tengas nuevas entradas/salidas, aparecerán aquí.
+            </p>
           </div>
         )}
 
@@ -300,7 +328,7 @@ export default function LimpiezaPublicPage() {
             </section>
           ))}
 
-        {viewMode === 'calendar' && !loading && !error && tasks.length > 0 && (
+        {viewMode === 'calendar' && !loading && !error && displayTasks.length > 0 && (
           <div className="space-y-4 pb-4">
             <div className="flex items-center justify-between gap-2">
               <button

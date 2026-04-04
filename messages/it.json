@@ -1337,6 +1337,8 @@
     },
     "cleaning": {
       "title": "Calendario pulizie",
+      "notesAdminHintTitle": "Dove vedi le note delle pulizie nel pannello?",
+      "notesAdminHintBody": "In questa stessa pagina Impostazioni, sezione «Calendario pulizie»: espandi ogni camera per il blocco «Note pulizie» (cronologia, segna come completata, elimina). Con SMTP configurato, le ricevi anche via email.",
       "description": "Crea un link per ogni team di pulizie: condividi solo il link (nessun account Delfín). Si aggiorna con le prenotazioni delle camere incluse. Sotto, orari e regole per camera.",
       "perRoomHint": "Orari e regole per camera: il calendario li usa per ogni pulizia.",
       "publicLinksTitle": "Link per le pulizie",

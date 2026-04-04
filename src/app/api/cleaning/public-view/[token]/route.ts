@@ -7,6 +7,7 @@ import {
   type ReservationRow,
 } from '@/lib/cleaning-tasks';
 import { getCleaningPublicBaseUrlFromRequest } from '@/lib/cleaning-public-base-url';
+import { getYmdInTimeZone } from '@/lib/calendar-date';
 
 type TaskJson = CleaningTaskEvent & { note_url: string };
 
@@ -170,11 +171,15 @@ export async function GET(
 
     allTasks.sort((a, b) => new Date(a.start_iso).getTime() - new Date(b.start_iso).getTime());
 
+    /** Solo limpiezas desde hoy (Europa/Madrid): no mostrar meses pasados ya ejecutados. */
+    const todayMadrid = getYmdInTimeZone(new Date(), 'Europe/Madrid');
+    const upcoming = allTasks.filter(t => t.date >= todayMadrid);
+
     return NextResponse.json({
       success: true,
       label: link.label,
       tenant_name: tenantName,
-      tasks: allTasks,
+      tasks: upcoming,
     });
   } catch (error: unknown) {
     const msg = (error as Error).message || '';

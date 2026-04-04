@@ -1260,6 +1260,8 @@
     },
     "cleaning": {
       "title": "Calendrier de nettoyage",
+      "notesAdminHintTitle": "Où voir les notes de nettoyage dans le tableau de bord ?",
+      "notesAdminHintBody": "Sur cette même page Paramètres, section « Calendrier de nettoyage » : développez chaque chambre pour voir le bloc « Notes de nettoyage » (historique, marquer comme traitée, supprimer). Avec SMTP configuré, vous les recevez aussi par e-mail.",
       "description": "Créez un lien pour chaque équipe de nettoyage : partagez uniquement le lien (sans compte Delfín). Il se met à jour avec les réservations des chambres incluses. Ci-dessous : horaires et règles par chambre.",
       "perRoomHint": "Horaires et règles par chambre : le calendrier s’appuie sur ces réglages.",
       "publicLinksTitle": "Liens pour les équipes de ménage",

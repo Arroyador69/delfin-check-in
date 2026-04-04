@@ -194,6 +194,11 @@ export default function CleaningCalendarSettings({ rooms, t }: Props) {
       </h4>
       <p className="text-xs sm:text-sm text-gray-600 mb-4 sm:mb-6">{t('cleaning.description')}</p>
 
+      <div className="mb-4 sm:mb-6 rounded-xl border border-blue-100 bg-blue-50/80 px-3 py-3 sm:px-4 text-xs sm:text-sm text-slate-700 leading-relaxed">
+        <span className="font-semibold text-slate-800">{t('cleaning.notesAdminHintTitle')}</span>{' '}
+        {t('cleaning.notesAdminHintBody')}
+      </div>
+
       <CleaningPublicLinksSection rooms={rooms} t={t} />
 
       <p className="text-xs text-gray-500 mb-4 border-t border-gray-100 pt-4">{t('cleaning.perRoomHint')}</p>

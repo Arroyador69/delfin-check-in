@@ -1261,6 +1261,8 @@
     },
     "cleaning": {
       "title": "Calendário de limpeza",
+      "notesAdminHintTitle": "Onde ver as notas de limpeza no painel?",
+      "notesAdminHintBody": "Nesta mesma página de Definições, em «Calendário de limpeza»: expanda cada quarto para ver o bloco «Notas de limpeza» (histórico, marcar como concluída, eliminar). Com SMTP configurado, também recebe por e-mail.",
       "description": "Crie um link para cada equipa de limpeza: partilhe só o link (sem conta Delfín). Atualiza-se com as reservas dos quartos que incluir. Abaixo, defina horários e regras por quarto.",
       "perRoomHint": "Horários e regras por quarto: o calendário usa estes dados para cada limpeza.",
       "publicLinksTitle": "Links para limpeza",
