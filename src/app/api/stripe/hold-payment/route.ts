@@ -8,11 +8,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
-import Stripe from 'stripe';
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2025-08-27.basil',
-});
+import { getStripeServer } from '@/lib/stripe-server';
 
 export async function POST(req: NextRequest) {
   try {
@@ -36,7 +32,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Obtener Payment Intent de Stripe
-    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+    const paymentIntent = await getStripeServer().paymentIntents.retrieve(paymentIntentId);
 
     // Si ya está capturado, no hacer nada
     if (paymentIntent.status === 'succeeded') {
@@ -49,7 +45,7 @@ export async function POST(req: NextRequest) {
 
     // Si el Payment Intent no tiene capture_method: 'manual', actualizarlo
     if (paymentIntent.capture_method !== 'manual') {
-      await stripe.paymentIntents.update(paymentIntentId, {
+      await getStripeServer().paymentIntents.update(paymentIntentId, {
         capture_method: 'manual',
       });
     }

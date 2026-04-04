@@ -321,8 +321,8 @@ export default function SuperAdminDashboard() {
               >
                 <span className="text-2xl mr-3">🚨</span>
                 <div>
-                  <p className="font-semibold text-gray-900">Logs & Errores</p>
-                  <p className="text-sm text-gray-700">Errores del sistema</p>
+                  <p className="font-semibold text-gray-900">Errores (Sentry)</p>
+                  <p className="text-sm text-gray-700">Incidencias error/fatal sin resolver</p>
                 </div>
               </a>
 

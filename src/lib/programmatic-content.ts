@@ -1,9 +1,5 @@
-import OpenAI from 'openai';
 import { sql } from '@/lib/db';
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+import { getOpenAI } from '@/lib/openai-server';
 
 export interface ContentTemplate {
   id: string;
@@ -165,7 +161,7 @@ export async function generateContentWithOpenAI(
   prompt = prompt.replace(/{sin_garantia}/g, variables.sin_garantia === false ? 'false' : 'true');
 
   try {
-    const completion = await openai.chat.completions.create({
+    const completion = await getOpenAI().chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
         {

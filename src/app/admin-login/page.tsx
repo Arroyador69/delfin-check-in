@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 
@@ -35,7 +35,7 @@ function getDashboardPath(): string {
  * al sistema. Una vez autenticado, el usuario verá el PMS en su idioma.
  */
 
-export default function AdminLoginPage() {
+function AdminLoginContent() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -303,5 +303,21 @@ export default function AdminLoginPage() {
 
       </div>
     </div>
+  )
+}
+
+function AdminLoginFallback() {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center p-4">
+      <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600" aria-hidden />
+    </div>
+  )
+}
+
+export default function AdminLoginPage() {
+  return (
+    <Suspense fallback={<AdminLoginFallback />}>
+      <AdminLoginContent />
+    </Suspense>
   )
 }

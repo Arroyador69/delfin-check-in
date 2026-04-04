@@ -26,6 +26,7 @@ type ApiResponse = {
   issues: SentryIssueRow[];
   org?: string;
   project?: string;
+  queryUsed?: string;
 };
 
 export default function SuperadminLogsPage() {
@@ -81,10 +82,11 @@ export default function SuperadminLogsPage() {
             <span className="text-3xl" aria-hidden>
               🚨
             </span>
-            Logs & errores (Sentry)
+            Errores (Sentry)
           </h1>
           <p className="text-gray-600 mt-1 text-sm sm:text-base">
-            Incidencias sin resolver recientes del proyecto en Sentry. Solo visible para superadmin.
+            Solo incidencias de nivel error o fatal, sin resolver, de los últimos días. Visible solo para
+            superadmin.
           </p>
         </div>
         <button
@@ -101,7 +103,7 @@ export default function SuperadminLogsPage() {
       {loading && !data && (
         <div className="text-center py-16 text-gray-600">
           <RefreshCw className="w-10 h-10 animate-spin mx-auto mb-3 text-blue-600" />
-          Cargando desde Sentry…
+          Cargando errores desde Sentry…
         </div>
       )}
 
@@ -137,7 +139,7 @@ export default function SuperadminLogsPage() {
 
       {data && data.configured && data.issues && data.issues.length === 0 && !data.error && (
         <div className="rounded-xl border border-green-200 bg-green-50 p-8 text-center text-green-900">
-          <p className="font-medium">No hay issues sin resolver en el periodo (o Sentry devolvió lista vacía).</p>
+          <p className="font-medium">No hay errores sin resolver en el periodo (o Sentry devolvió lista vacía).</p>
           {data.org && data.project && (
             <p className="text-sm mt-2 text-green-800">
               Proyecto: {data.org} / {data.project}
@@ -155,7 +157,9 @@ export default function SuperadminLogsPage() {
                 <th className="text-left py-3 px-3 font-semibold text-gray-700 hidden md:table-cell">
                   Origen
                 </th>
-                <th className="text-left py-3 px-3 font-semibold text-gray-700">Nivel</th>
+                <th className="text-left py-3 px-3 font-semibold text-gray-700 hidden sm:table-cell">
+                  Tipo
+                </th>
                 <th className="text-right py-3 px-3 font-semibold text-gray-700">Eventos</th>
                 <th className="text-left py-3 px-3 font-semibold text-gray-700 hidden lg:table-cell">
                   Última vez
@@ -175,17 +179,9 @@ export default function SuperadminLogsPage() {
                   <td className="py-3 px-3 align-top text-gray-600 hidden md:table-cell max-w-xs truncate">
                     {issue.culprit || '—'}
                   </td>
-                  <td className="py-3 px-3 align-top">
-                    <span
-                      className={`inline-block rounded px-2 py-0.5 text-xs font-medium ${
-                        issue.level === 'error' || issue.level === 'fatal'
-                          ? 'bg-red-100 text-red-800'
-                          : issue.level === 'warning'
-                            ? 'bg-amber-100 text-amber-900'
-                            : 'bg-slate-100 text-slate-700'
-                      }`}
-                    >
-                      {issue.level || '—'}
+                  <td className="py-3 px-3 align-top hidden sm:table-cell">
+                    <span className="inline-block rounded px-2 py-0.5 text-xs font-medium bg-red-100 text-red-800 uppercase">
+                      {issue.level === 'fatal' ? 'fatal' : 'error'}
                     </span>
                   </td>
                   <td className="py-3 px-3 align-top text-right tabular-nums">{issue.count}</td>
@@ -217,7 +213,9 @@ export default function SuperadminLogsPage() {
       {data && data.configured && data.org && (
         <p className="text-xs text-gray-500 mt-6">
           Origen API: organización <strong>{data.org}</strong>, proyecto <strong>{data.project}</strong>. Consulta
-          filtro <code className="bg-gray-100 px-1 rounded">is:unresolved</code> últimos 14 días.
+          usada:{' '}
+          <code className="bg-gray-100 px-1 rounded">{data.queryUsed || 'is:unresolved level:error'}</code>, últimos
+          14 días.
         </p>
       )}
     </div>

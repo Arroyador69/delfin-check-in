@@ -1,10 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
-import Stripe from 'stripe';
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2025-08-27.basil',
-});
+import { getStripeServer } from '@/lib/stripe-server';
 
 const PLAN_PRICES: Record<string, { amount: number; max_rooms: number }> = {
   basic: { amount: 1499, max_rooms: 1 },        // 14.99€ por 1 propiedad
@@ -76,7 +72,7 @@ export async function POST(req: NextRequest) {
       let customerId = tenant.stripe_customer_id;
       
       if (!customerId) {
-        const customer = await stripe.customers.create({
+        const customer = await getStripeServer().customers.create({
           email: tenant.email,
           name: tenant.name,
           metadata: {
@@ -94,12 +90,12 @@ export async function POST(req: NextRequest) {
       }
 
       // Attach payment method al customer
-      await stripe.paymentMethods.attach(paymentMethodId, {
+      await getStripeServer().paymentMethods.attach(paymentMethodId, {
         customer: customerId,
       });
 
       // Configurar como método de pago por defecto
-      await stripe.customers.update(customerId, {
+      await getStripeServer().customers.update(customerId, {
         invoice_settings: {
           default_payment_method: paymentMethodId,
         },
@@ -107,7 +103,7 @@ export async function POST(req: NextRequest) {
 
       // Crear price en Stripe (o usar price_id existente)
       const totalAmount = newPlanInfo.amount * propertiesCount;
-      const price = await stripe.prices.create({
+      const price = await getStripeServer().prices.create({
         unit_amount: totalAmount,
         currency: 'eur',
         recurring: { interval: 'month' },
@@ -117,7 +113,7 @@ export async function POST(req: NextRequest) {
       });
 
       // Crear suscripción
-      const subscription = await stripe.subscriptions.create({
+      const subscription = await getStripeServer().subscriptions.create({
         customer: customerId,
         items: [{ price: price.id }],
         metadata: {
@@ -148,7 +144,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Caso 2: Tenant tiene suscripción existente (actualizar)
-    const subscription = await stripe.subscriptions.retrieve(tenant.stripe_subscription_id);
+    const subscription = await getStripeServer().subscriptions.retrieve(tenant.stripe_subscription_id);
 
     if (!subscription || subscription.items.data.length === 0) {
       return NextResponse.json(
@@ -159,7 +155,7 @@ export async function POST(req: NextRequest) {
 
     // Crear nuevo price
     const totalAmount = newPlanInfo.amount * propertiesCount;
-    const newPrice = await stripe.prices.create({
+    const newPrice = await getStripeServer().prices.create({
       unit_amount: totalAmount,
       currency: 'eur',
       recurring: { interval: 'month' },
@@ -169,7 +165,7 @@ export async function POST(req: NextRequest) {
     });
 
     // Actualizar suscripción
-    const updatedSubscription = await stripe.subscriptions.update(
+    const updatedSubscription = await getStripeServer().subscriptions.update(
       tenant.stripe_subscription_id,
       {
         items: [{

@@ -57,20 +57,39 @@ export async function GET(req: NextRequest) {
     }
 
     const { searchParams } = new URL(req.url);
-    const query = searchParams.get('query') || 'is:unresolved';
+    /** Solo errores/fatal sin resolver. Override con ?query=. */
+    const queryFromClient = searchParams.get('query');
     const limit = Math.min(parseInt(searchParams.get('limit') || '50', 10), 100);
     const statsPeriod = searchParams.get('statsPeriod') || '14d';
 
     const base = getSentryApiBase();
-    const url = `${base}/projects/${encodeURIComponent(org)}/${encodeURIComponent(project)}/issues/?query=${encodeURIComponent(query)}&limit=${limit}&statsPeriod=${encodeURIComponent(statsPeriod)}`;
+    const buildIssuesUrl = (q: string) =>
+      `${base}/projects/${encodeURIComponent(org)}/${encodeURIComponent(project)}/issues/?query=${encodeURIComponent(q)}&limit=${limit}&statsPeriod=${encodeURIComponent(statsPeriod)}`;
 
-    const res = await fetch(url, {
+    let effectiveQuery =
+      queryFromClient ||
+      'is:unresolved (level:error OR level:fatal)';
+    let url = buildIssuesUrl(effectiveQuery);
+    let res = await fetch(url, {
       headers: {
         Authorization: `Bearer ${token}`,
         Accept: 'application/json',
       },
       cache: 'no-store',
     });
+
+    // Algunas regiones/versiones de Sentry rechazan el OR en la query; probamos sin paréntesis.
+    if (!res.ok && res.status === 400 && !queryFromClient) {
+      effectiveQuery = 'is:unresolved level:error';
+      url = buildIssuesUrl(effectiveQuery);
+      res = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/json',
+        },
+        cache: 'no-store',
+      });
+    }
 
     if (!res.ok) {
       const text = await res.text();
@@ -88,7 +107,14 @@ export async function GET(req: NextRequest) {
 
     const raw = (await res.json()) as Record<string, unknown>[];
 
-    const issues: SentryIssueRow[] = raw.map((row) => ({
+    const isErrorLevel = (level: unknown) => {
+      const lv = String(level ?? '').toLowerCase();
+      return lv === 'error' || lv === 'fatal';
+    };
+
+    const issues: SentryIssueRow[] = raw
+      .filter((row) => isErrorLevel(row.level))
+      .map((row) => ({
       id: String(row.id ?? ''),
       title: String(row.title ?? '(sin título)'),
       shortId: row.shortId != null ? String(row.shortId) : null,
@@ -108,6 +134,7 @@ export async function GET(req: NextRequest) {
       issues,
       org,
       project,
+      queryUsed: effectiveQuery,
     });
   } catch (e) {
     console.error('[sentry-issues]', e);

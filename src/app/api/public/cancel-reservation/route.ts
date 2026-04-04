@@ -4,11 +4,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
-import Stripe from 'stripe';
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-08-27.basil',
-});
+import { getStripeServer } from '@/lib/stripe-server';
 
 function corsHeaders(origin: string | null) {
   const allowedOrigins = [
@@ -141,7 +137,7 @@ export async function POST(req: NextRequest) {
     // Obtener el Payment Intent de Stripe para verificar estado
     let paymentIntent;
     try {
-      paymentIntent = await stripe.paymentIntents.retrieve(reservation.stripe_payment_intent_id);
+      paymentIntent = await getStripeServer().paymentIntents.retrieve(reservation.stripe_payment_intent_id);
     } catch (error) {
       console.error('❌ Error obteniendo Payment Intent:', error);
       const response = NextResponse.json(
@@ -162,7 +158,7 @@ export async function POST(req: NextRequest) {
     try {
       if (isPaymentHeld) {
         // Pago retenido: simplemente cancelarlo (no se cobró nada)
-        await stripe.paymentIntents.cancel(reservation.stripe_payment_intent_id, {
+        await getStripeServer().paymentIntents.cancel(reservation.stripe_payment_intent_id, {
           cancellation_reason: 'requested_by_customer',
         });
         paymentAction = 'cancelled';
@@ -179,7 +175,7 @@ export async function POST(req: NextRequest) {
         }
 
         if (chargeId && typeof chargeId === 'string') {
-          refund = await stripe.refunds.create({
+          refund = await getStripeServer().refunds.create({
             charge: chargeId,
             amount: refundAmount,
             reason: 'requested_by_customer',
@@ -193,7 +189,7 @@ export async function POST(req: NextRequest) {
           });
         } else {
           // Fallback: crear refund usando el payment intent
-          refund = await stripe.refunds.create({
+          refund = await getStripeServer().refunds.create({
             payment_intent: reservation.stripe_payment_intent_id,
             amount: refundAmount,
             reason: 'requested_by_customer',

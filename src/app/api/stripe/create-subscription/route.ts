@@ -8,13 +8,9 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
-import Stripe from 'stripe';
 import { calculatePlanPrice } from '@/lib/plan-pricing';
 import { getTenantById } from '@/lib/tenant';
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2025-08-27.basil',
-});
+import { getStripeServer } from '@/lib/stripe-server';
 
 export async function POST(req: NextRequest) {
   try {
@@ -68,7 +64,7 @@ export async function POST(req: NextRequest) {
     let customerId = tenant.stripe_customer_id;
     
     if (!customerId) {
-      const customer = await stripe.customers.create({
+      const customer = await getStripeServer().customers.create({
         email: tenant.email,
         name: tenant.name,
         metadata: {
@@ -85,12 +81,12 @@ export async function POST(req: NextRequest) {
     }
 
     // Attach payment method
-    await stripe.paymentMethods.attach(paymentMethodId, {
+    await getStripeServer().paymentMethods.attach(paymentMethodId, {
       customer: customerId,
     });
 
     // Configurar como método de pago por defecto
-    await stripe.customers.update(customerId, {
+    await getStripeServer().customers.update(customerId, {
       invoice_settings: {
         default_payment_method: paymentMethodId,
       },
@@ -104,7 +100,7 @@ export async function POST(req: NextRequest) {
       standard: 'Plan Standard',
       pro: 'Plan Pro'
     };
-    const price = await stripe.prices.create({
+    const price = await getStripeServer().prices.create({
       unit_amount: priceAmount,
       currency: 'eur',
       recurring: { interval: 'month' },
@@ -121,7 +117,7 @@ export async function POST(req: NextRequest) {
     });
 
     // Crear suscripción
-    const subscription = await stripe.subscriptions.create({
+    const subscription = await getStripeServer().subscriptions.create({
       customer: customerId,
       items: [{ price: price.id }],
       metadata: {

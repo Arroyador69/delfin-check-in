@@ -3,27 +3,10 @@
 // =====================================================
 
 import { NextRequest, NextResponse } from 'next/server';
-import Stripe from 'stripe';
 import { sql } from '@vercel/postgres';
 import { generateReservationCode, calculateCommission } from '@/lib/direct-reservations-utils';
 import { getDirectReservationCommissionRate } from '@/lib/plan-pricing';
-
-// Inicializar Stripe con logging para diagnóstico
-const stripeKey = process.env.STRIPE_SECRET_KEY;
-if (!stripeKey) {
-  console.error('❌ [STRIPE] STRIPE_SECRET_KEY no configurada');
-} else {
-  console.log('✅ [STRIPE] Clave secreta configurada:', {
-    prefix: stripeKey.substring(0, 7), // Mostrar solo el prefijo (sk_test_ o sk_live_)
-    length: stripeKey.length,
-    isTest: stripeKey.startsWith('sk_test_'),
-    isLive: stripeKey.startsWith('sk_live_')
-  });
-}
-
-const stripe = new Stripe(stripeKey!, {
-  apiVersion: '2025-08-27.basil',
-});
+import { getStripeServer } from '@/lib/stripe-server';
 
 function corsHeaders(origin: string | null) {
   const allowedOrigins = [
@@ -216,7 +199,7 @@ export async function POST(req: NextRequest) {
     const daysUntilCheckIn = Math.ceil((checkInDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
     const shouldHoldPayment = daysUntilCheckIn > 0; // Retener si el check-in es en el futuro
 
-    const paymentIntent = await stripe.paymentIntents.create({
+    const paymentIntent = await getStripeServer().paymentIntents.create({
       amount: paymentAmount,
       currency: 'eur',
       // Retener pago hasta check-in si es en el futuro

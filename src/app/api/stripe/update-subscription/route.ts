@@ -8,13 +8,9 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
-import Stripe from 'stripe';
 import { calculatePlanPrice } from '@/lib/plan-pricing';
 import { getTenantById } from '@/lib/tenant';
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2025-08-27.basil',
-});
+import { getStripeServer } from '@/lib/stripe-server';
 
 export async function POST(req: NextRequest) {
   try {
@@ -64,7 +60,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Obtener suscripción actual de Stripe
-    const existingSubscription = await stripe.subscriptions.retrieve(tenant.stripe_subscription_id);
+    const existingSubscription = await getStripeServer().subscriptions.retrieve(tenant.stripe_subscription_id);
     
     // Calcular nuevo precio con IVA (checkin, standard, pro)
     const pricing = await calculatePlanPrice(planType as 'checkin' | 'standard' | 'pro', roomCount, tenant.country_code);
@@ -80,7 +76,7 @@ export async function POST(req: NextRequest) {
     const planNames: Record<string, string> = { checkin: 'Plan Check-in', standard: 'Plan Standard', pro: 'Plan Pro' };
     const priceAmount = Math.round(pricing.subtotal * 100);
     
-    const newPrice = await stripe.prices.create({
+    const newPrice = await getStripeServer().prices.create({
       unit_amount: priceAmount,
       currency: 'eur',
       recurring: { interval: 'month' },
@@ -97,7 +93,7 @@ export async function POST(req: NextRequest) {
     });
 
     // Actualizar suscripción en Stripe
-    const updatedSubscription = await stripe.subscriptions.update(
+    const updatedSubscription = await getStripeServer().subscriptions.update(
       tenant.stripe_subscription_id,
       {
         items: [{

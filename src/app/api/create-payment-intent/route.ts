@@ -1,9 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import Stripe from 'stripe'
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2025-08-27.basil',
-})
+import { getStripeServer } from '@/lib/stripe-server'
 
 // Orígenes permitidos para CORS
 const getAllowedOrigin = (origin: string | null): string => {
@@ -91,7 +87,7 @@ export async function POST(req: NextRequest) {
     if (email) {
       try {
         // Buscar customer existente por email
-        const existingCustomers = await stripe.customers.list({
+        const existingCustomers = await getStripeServer().customers.list({
           email: email,
           limit: 1
         })
@@ -101,7 +97,7 @@ export async function POST(req: NextRequest) {
           console.log('✅ Customer existente encontrado:', customerId)
         } else {
           // Crear nuevo customer
-          const customer = await stripe.customers.create({
+          const customer = await getStripeServer().customers.create({
             email: email,
             name: name,
             metadata: {
@@ -152,7 +148,7 @@ export async function POST(req: NextRequest) {
       properties
     })
     
-    const paymentIntent = await stripe.paymentIntents.create(paymentIntentParams)
+    const paymentIntent = await getStripeServer().paymentIntents.create(paymentIntentParams)
     
     console.log('✅ Payment Intent creado:', {
       id: paymentIntent.id,

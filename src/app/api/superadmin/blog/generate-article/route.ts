@@ -8,9 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifySuperAdmin } from '@/lib/auth-superadmin';
 import { sql } from '@/lib/db';
-import OpenAI from 'openai';
-
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+import { getOpenAI } from '@/lib/openai-server';
 
 const BLOG_SYSTEM_PROMPT = `Eres un redactor SEO experto en contenido para Delfín Check-in (PMS y software de registro de viajeros para alquiler vacacional en España).
 
@@ -58,7 +56,7 @@ export async function POST(req: NextRequest) {
 
 El artículo debe ser útil para propietarios de alquiler vacacional en España (registro de viajeros, normativa, Ministerio del Interior, multas, etc.). Mismo estilo y profundidad que nuestros otros artículos. Entre 600 y 1000 palabras de contenido. Responde solo con el JSON.`;
 
-    const completion = await openai.chat.completions.create({
+    const completion = await getOpenAI().chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
         { role: 'system', content: BLOG_SYSTEM_PROMPT },

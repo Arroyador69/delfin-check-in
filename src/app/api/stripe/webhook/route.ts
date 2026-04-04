@@ -17,6 +17,7 @@ import {
   restoreTenantServices,
   findTenantByStripeCustomerId 
 } from '@/lib/payment-tracking'
+import { getStripeServer } from '@/lib/stripe-server'
 
 export const config = {
   api: {
@@ -24,12 +25,8 @@ export const config = {
   },
 }
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2025-08-27.basil',
-})
-
 async function readRawBody(req: Request): Promise<Buffer> {
-const arrayBuffer = await req.arrayBuffer()
+  const arrayBuffer = await req.arrayBuffer()
   return Buffer.from(arrayBuffer)
 }
 
@@ -61,7 +58,7 @@ async function resolveEmailFromPaymentIntent(pi: Stripe.PaymentIntent): Promise<
 
   // 2) Intentar desde el cargo asociado
   try {
-    const expanded = await stripe.paymentIntents.retrieve(pi.id, { expand: ['charges.data.billing_details'] })
+    const expanded = await getStripeServer().paymentIntents.retrieve(pi.id, { expand: ['charges.data.billing_details'] })
     const chargeEmail = expanded.charges?.data?.[0]?.billing_details?.email
     if (chargeEmail) return String(chargeEmail)
   } catch {}
@@ -69,7 +66,7 @@ async function resolveEmailFromPaymentIntent(pi: Stripe.PaymentIntent): Promise<
   // 3) Intentar desde el customer
   if (pi.customer) {
     try {
-      const customer = await stripe.customers.retrieve(String(pi.customer))
+      const customer = await getStripeServer().customers.retrieve(String(pi.customer))
       // @ts-ignore - Stripe types
       if (customer && 'email' in customer && customer.email) {
         return String((customer as any).email)
@@ -369,7 +366,7 @@ export async function POST(req: NextRequest) {
     let event: Stripe.Event
 
     try {
-      event = stripe.webhooks.constructEvent(rawBody, sig, webhookSecret)
+      event = getStripeServer().webhooks.constructEvent(rawBody, sig, webhookSecret)
     } catch (err: any) {
       return new NextResponse(`Firma inválida: ${err.message}`, { status: 400 })
     }

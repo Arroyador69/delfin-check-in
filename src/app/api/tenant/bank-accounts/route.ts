@@ -4,12 +4,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
-import Stripe from 'stripe';
 import { getTenantId } from '@/lib/tenant';
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-08-27.basil',
-});
+import { getStripeServer } from '@/lib/stripe-server';
 
 // =====================================================
 // GET: Obtener cuentas bancarias del tenant
@@ -114,7 +110,7 @@ export async function POST(req: NextRequest) {
         SELECT name, email FROM tenants WHERE id = ${tenantId}
       `;
 
-      const customer = await stripe.customers.create({
+      const customer = await getStripeServer().customers.create({
         name: customerData.rows[0].name,
         email: customerData.rows[0].email,
         metadata: {
@@ -136,7 +132,7 @@ export async function POST(req: NextRequest) {
     const countryCode = cleanIban.substring(0, 2);
 
     // Crear External Account en Stripe
-    const externalAccount = await stripe.customers.createSource(
+    const externalAccount = await getStripeServer().customers.createSource(
       stripeCustomerId,
       {
         source: {
@@ -242,7 +238,7 @@ export async function DELETE(req: NextRequest) {
 
     // Eliminar External Account de Stripe
     if (account.stripe_account_id) {
-      await stripe.customers.deleteSource(
+      await getStripeServer().customers.deleteSource(
         account.stripe_customer_id,
         account.stripe_account_id
       );

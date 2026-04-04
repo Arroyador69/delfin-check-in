@@ -1,10 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
-import Stripe from 'stripe';
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2025-08-27.basil',
-});
+import { getStripeServer } from '@/lib/stripe-server';
 
 /**
  * API para cancelar la suscripción del tenant
@@ -55,7 +51,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Cancelar la suscripción al final del período
-    const subscription = await stripe.subscriptions.update(
+    const subscription = await getStripeServer().subscriptions.update(
       tenant.stripe_subscription_id,
       {
         cancel_at_period_end: true,

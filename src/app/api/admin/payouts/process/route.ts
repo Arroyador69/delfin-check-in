@@ -5,12 +5,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
-import Stripe from 'stripe';
 import { sendPayoutNotificationEmail } from '@/lib/email-notifications';
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-08-27.basil',
-});
+import { getStripeServer } from '@/lib/stripe-server';
 
 // =====================================================
 // POST: Procesar pagos pendientes para hoy
@@ -137,7 +133,7 @@ export async function POST(req: NextRequest) {
         const amountInCents = Math.round(reservation.property_owner_amount * 100);
 
         // Crear transferencia en Stripe
-        const transfer = await stripe.transfers.create({
+        const transfer = await getStripeServer().transfers.create({
           amount: amountInCents,
           currency: 'eur',
           destination: reservation.stripe_account_id,

@@ -1,9 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import Stripe from 'stripe'
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2025-08-27.basil',
-})
+import { getStripeServer } from '@/lib/stripe-server'
 
 // Manejar CORS preflight
 export async function OPTIONS(req: NextRequest) {
@@ -44,7 +40,7 @@ export async function POST(req: NextRequest) {
     })
 
     // Primero, recuperar el Payment Intent para verificar su estado
-    let paymentIntent = await stripe.paymentIntents.retrieve(payment_intent_id)
+    let paymentIntent = await getStripeServer().paymentIntents.retrieve(payment_intent_id)
     
     console.log('📋 [CONFIRM PAYMENT INTENT] Estado actual del Payment Intent:', {
       id: paymentIntent.id,
@@ -55,12 +51,12 @@ export async function POST(req: NextRequest) {
     // Si el Payment Intent ya tiene un payment method diferente, primero actualizarlo
     if (paymentIntent.payment_method && paymentIntent.payment_method !== payment_method_id) {
       console.log('🔄 [CONFIRM PAYMENT INTENT] Actualizando Payment Method...')
-      paymentIntent = await stripe.paymentIntents.update(payment_intent_id, {
+      paymentIntent = await getStripeServer().paymentIntents.update(payment_intent_id, {
         payment_method: payment_method_id,
       })
     } else if (!paymentIntent.payment_method) {
       console.log('🔄 [CONFIRM PAYMENT INTENT] Adjuntando Payment Method...')
-      paymentIntent = await stripe.paymentIntents.update(payment_intent_id, {
+      paymentIntent = await getStripeServer().paymentIntents.update(payment_intent_id, {
         payment_method: payment_method_id,
       })
     }
@@ -85,7 +81,7 @@ export async function POST(req: NextRequest) {
     // Si requiere confirmación, confirmarlo
     if (paymentIntent.status === 'requires_confirmation' || paymentIntent.status === 'requires_payment_method') {
       console.log('✅ [CONFIRM PAYMENT INTENT] Confirmando Payment Intent...')
-      paymentIntent = await stripe.paymentIntents.confirm(payment_intent_id, {
+      paymentIntent = await getStripeServer().paymentIntents.confirm(payment_intent_id, {
         payment_method: payment_method_id,
       })
 

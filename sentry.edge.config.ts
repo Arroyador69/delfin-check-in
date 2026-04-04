@@ -4,6 +4,7 @@
  * Configuración de Sentry para Edge Runtime
  */
 import * as Sentry from '@sentry/nextjs'
+import { isNextJsNavigationControlError } from '@/lib/sentry-filter-next-navigation'
 
 Sentry.init({
   dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
@@ -14,6 +15,13 @@ Sentry.init({
   
   // Debug mode
   debug: process.env.NODE_ENV === 'development',
+
+  beforeSend(_event, hint) {
+    if (isNextJsNavigationControlError(hint.originalException)) {
+      return null;
+    }
+    return _event;
+  },
   
   // Tags adicionales
   environment: process.env.NODE_ENV || 'production',

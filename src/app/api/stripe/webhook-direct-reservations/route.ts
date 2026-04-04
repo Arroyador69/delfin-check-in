@@ -7,10 +7,7 @@ import Stripe from 'stripe';
 import { sql } from '@vercel/postgres';
 import { sendReservationEmails, sendCheckinInstructionsEmail } from '@/lib/email-notifications';
 import { DirectReservation, TenantProperty } from '@/lib/direct-reservations-types';
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-08-27.basil',
-});
+import { getStripeServer } from '@/lib/stripe-server';
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_DIRECT_RESERVATIONS_SECRET!;
 
@@ -40,7 +37,7 @@ export async function POST(req: NextRequest) {
     let event: Stripe.Event;
 
     try {
-      event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
+      event = getStripeServer().webhooks.constructEvent(body, signature, webhookSecret);
       console.log('✅ [WEBHOOK RESERVAS] Webhook verificado correctamente:', event.type);
     } catch (err: any) {
       console.error('❌ [WEBHOOK RESERVAS] Error verificando webhook:', {

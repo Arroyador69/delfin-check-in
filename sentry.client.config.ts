@@ -4,6 +4,7 @@
  * Configuración de Sentry para el lado del cliente
  */
 import * as Sentry from '@sentry/nextjs'
+import { isNextJsNavigationControlError } from '@/lib/sentry-filter-next-navigation'
 
 Sentry.init({
   dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
@@ -26,6 +27,9 @@ Sentry.init({
   
   // Filtrado de errores
   beforeSend(event, hint) {
+    if (isNextJsNavigationControlError(hint.originalException)) {
+      return null;
+    }
     // Filtrar errores que no son importantes
     if (event.exception) {
       const error = hint.originalException || hint.syntheticException;

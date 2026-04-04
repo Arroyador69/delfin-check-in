@@ -8,11 +8,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
-import Stripe from 'stripe';
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2025-08-27.basil',
-});
+import { getStripeServer } from '@/lib/stripe-server';
 
 export async function POST(req: NextRequest) {
   try {
@@ -36,12 +32,12 @@ export async function POST(req: NextRequest) {
     }
 
     // Obtener Payment Intent de Stripe
-    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+    const paymentIntent = await getStripeServer().paymentIntents.retrieve(paymentIntentId);
 
     // Si ya está capturado, hacer reembolso
     if (paymentIntent.status === 'succeeded') {
       // Buscar el charge para hacer reembolso
-      const charges = await stripe.charges.list({
+      const charges = await getStripeServer().charges.list({
         payment_intent: paymentIntentId,
         limit: 1,
       });
@@ -50,7 +46,7 @@ export async function POST(req: NextRequest) {
         const charge = charges.data[0];
         
         // Crear reembolso completo
-        const refund = await stripe.refunds.create({
+        const refund = await getStripeServer().refunds.create({
           charge: charge.id,
           reason: 'requested_by_customer',
           metadata: {
@@ -87,7 +83,7 @@ export async function POST(req: NextRequest) {
       }
     } else if (paymentIntent.status === 'requires_capture') {
       // Si está retenido pero no capturado, simplemente cancelarlo
-      const cancelled = await stripe.paymentIntents.cancel(paymentIntentId, {
+      const cancelled = await getStripeServer().paymentIntents.cancel(paymentIntentId, {
         cancellation_reason: 'requested_by_customer',
       });
 

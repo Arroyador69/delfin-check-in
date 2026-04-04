@@ -3,19 +3,10 @@
 // =====================================================
 
 import { NextRequest, NextResponse } from 'next/server';
-import Stripe from 'stripe';
 import { sql } from '@vercel/postgres';
 import { generateReservationCode, calculateCommission } from '@/lib/direct-reservations-utils';
 import { getDirectReservationCommissionRate } from '@/lib/plan-pricing';
-
-const stripeKey = process.env.STRIPE_SECRET_KEY;
-if (!stripeKey) {
-  console.error('❌ [STRIPE] STRIPE_SECRET_KEY no configurada');
-}
-
-const stripe = new Stripe(stripeKey!, {
-  apiVersion: '2025-08-27.basil',
-});
+import { getStripeServer } from '@/lib/stripe-server';
 
 function corsHeaders(origin: string | null) {
   const allowedOrigins = [
@@ -251,7 +242,7 @@ export async function POST(
     // Crear Payment Intent en Stripe
     const paymentAmount = Math.round(commission.total_amount * 100); // Convertir a centavos
     
-    const paymentIntent = await stripe.paymentIntents.create({
+    const paymentIntent = await getStripeServer().paymentIntents.create({
       amount: paymentAmount,
       currency: 'eur',
       metadata: {

@@ -7,12 +7,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
-import Stripe from 'stripe';
 import { getTenantById } from '@/lib/tenant';
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2025-08-27.basil',
-});
+import { getStripeServer } from '@/lib/stripe-server';
 
 export async function POST(req: NextRequest) {
   try {
@@ -49,10 +45,10 @@ export async function POST(req: NextRequest) {
     
     if (cancelImmediately) {
       // Cancelar inmediatamente
-      canceledSubscription = await stripe.subscriptions.cancel(tenant.stripe_subscription_id);
+      canceledSubscription = await getStripeServer().subscriptions.cancel(tenant.stripe_subscription_id);
     } else {
       // Cancelar al final del período actual
-      canceledSubscription = await stripe.subscriptions.update(
+      canceledSubscription = await getStripeServer().subscriptions.update(
         tenant.stripe_subscription_id,
         {
           cancel_at_period_end: true,

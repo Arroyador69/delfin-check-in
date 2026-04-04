@@ -1,9 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import Stripe from 'stripe'
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2025-08-27.basil',
-})
+import { getStripeServer } from '@/lib/stripe-server'
 
 // Manejar CORS preflight
 export async function OPTIONS(req: NextRequest) {
@@ -44,7 +40,7 @@ export async function POST(req: NextRequest) {
     })
 
     // Actualizar el payment intent con el payment method
-    const paymentIntent = await stripe.paymentIntents.update(payment_intent_id, {
+    const paymentIntent = await getStripeServer().paymentIntents.update(payment_intent_id, {
       payment_method: payment_method_id,
     })
 
