@@ -316,7 +316,7 @@ export default function SuperAdminDashboard() {
               </a>
 
               <a 
-                href="/superadmin/logs"
+                href="/superadmin/sentry"
                 className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition"
               >
                 <span className="text-2xl mr-3">🚨</span>

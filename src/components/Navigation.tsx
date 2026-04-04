@@ -120,7 +120,7 @@ export default function Navigation() {
     { name: tc('programmaticPages'), href: '/superadmin/programmatic', icon: FileText },
     { name: tc('radarReach'), href: '/superadmin/radar-reach', icon: Target },
     { name: tc('customerSupport'), href: '/superadmin/support', icon: LifeBuoy },
-    { name: tc('logs'), href: '/superadmin/logs', icon: Shield },
+    { name: tc('logs'), href: '/superadmin/sentry', icon: Shield },
   ];
 
   const isInSuperAdmin = pathname?.startsWith('/superadmin');

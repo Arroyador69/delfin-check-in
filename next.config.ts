@@ -44,6 +44,7 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       { source: '/', destination: '/admin-login', permanent: false },
+      { source: '/superadmin/logs', destination: '/superadmin/sentry', permanent: false },
     ];
   },
   // Configuración PWA simplificada
