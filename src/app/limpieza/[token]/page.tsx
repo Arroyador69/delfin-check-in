@@ -178,21 +178,22 @@ export default function LimpiezaPublicPage() {
               Turnover el mismo día: siguiente entrada · {task.next_guest_count ?? '?'} pers.
             </p>
           )}
-          {task.owner_note && (
-            <p className="text-xs text-slate-600 bg-slate-50 rounded-lg px-2 py-1.5 border border-slate-100">
-              <span className="font-medium text-slate-700">Nota del propietario:</span> {task.owner_note}
-            </p>
-          )}
+                      {task.owner_note && (
+                        <p className="text-xs text-slate-600 bg-slate-50 rounded-lg px-2 py-1.5 border border-slate-100">
+                          <span className="font-medium text-slate-700">Aviso: </span>
+                          {task.owner_note}
+                        </p>
+                      )}
         </div>
-        <a
-          href={task.note_url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-blue-700"
-        >
-          <MessageSquare className="w-4 h-4" />
-          Dejar nota para el propietario
-        </a>
+                    <a
+                      href={task.note_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-blue-700"
+                    >
+                      <MessageSquare className="w-4 h-4" />
+                      Dejar nota
+                    </a>
       </div>
     </li>
   );

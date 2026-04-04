@@ -114,7 +114,7 @@ export async function GET(
     if (existingNotes.rows.length > 0) {
       notesHtml = '<div style="margin-bottom:24px"><h3 style="margin-bottom:8px">Notas del día</h3>';
       for (const n of existingNotes.rows) {
-        const who = n.author_type === 'owner' ? '👤 Propietario' : '🧹 Limpiadora';
+        const who = n.author_type === 'owner' ? '👤 Alojamiento' : '🧹 Limpieza';
         const time = new Date(n.created_at as string).toLocaleTimeString('es-ES', {
           hour: '2-digit',
           minute: '2-digit',
@@ -218,7 +218,7 @@ export async function POST(
                 <p style="margin:0;font-size:16px">${escapeHtml(note.trim())}</p>
               </div>
               <p style="color:#9ca3af;font-size:13px;margin-top:16px">
-                Puedes ver y responder desde tu panel de administración.
+                El alojamiento puede verla en su panel de Delfín Check-in.
               </p>
             </div>
           `,
@@ -235,7 +235,7 @@ export async function POST(
       `<div style="text-align:center;padding:40px 0">
         <div style="font-size:64px;margin-bottom:16px">✅</div>
         <h2 style="color:#1f2937;margin:0 0 8px">Nota enviada</h2>
-        <p style="color:#6b7280">Tu nota para <strong>${escapeHtml(resolved.room_name)}</strong> del ${formatDate(date)} ha sido enviada al propietario.</p>
+        <p style="color:#6b7280">Tu nota para <strong>${escapeHtml(resolved.room_name)}</strong> (${formatDate(date)}) se ha enviado correctamente.</p>
         <a href="${redirectUrl.pathname}?room_id=${encodeURIComponent(roomId)}&date=${date}" style="display:inline-block;margin-top:24px;padding:12px 24px;background:linear-gradient(to right,#3b82f6,#8b5cf6);color:white;text-decoration:none;border-radius:12px;font-weight:600">
           Volver
         </a>
