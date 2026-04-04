@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Calendar, Clock, ChevronDown, ChevronUp, MessageSquare } from 'lucide-react';
+import { Calendar, Clock, ChevronDown, ChevronUp, MessageSquare, RefreshCw } from 'lucide-react';
 import CleaningPublicLinksSection from '@/components/CleaningPublicLinksSection';
 
 interface Room {
