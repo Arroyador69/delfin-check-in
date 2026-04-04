@@ -15,6 +15,11 @@ export default function ConditionalNavigation() {
     return null;
   }
 
+  // Vista pública de limpieza (sin menú tipo dashboard)
+  if (pathname?.startsWith('/limpieza')) {
+    return null;
+  }
+
   // Rutas con idioma (/es/, /en/, etc.): la navegación la lleva el layout [locale], no duplicar aquí
   const localePrefix = /^\/(es|en|it|pt|fr)(\/|$)/;
   if (pathname && localePrefix.test(pathname)) {
