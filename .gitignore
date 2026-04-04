@@ -1,3 +1,6 @@
+# Local clone of marketing site (separate repo: delfincheckin.com)
+_landing_clone/
+
 # Dependencies
 node_modules/
 npm-debug.log*

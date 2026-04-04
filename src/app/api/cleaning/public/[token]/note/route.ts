@@ -1,13 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
-import nodemailer from 'nodemailer';
-
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: parseInt(process.env.SMTP_PORT || '587'),
-  secure: process.env.SMTP_SECURE === 'true',
-  auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
-});
+import {
+  getCleaningNotifyFrom,
+  getCleaningNotifyTransporter,
+} from '@/lib/cleaning-notify-email';
 
 export async function GET(
   req: NextRequest,
@@ -141,9 +137,15 @@ export async function POST(
     `;
 
     if (config.tenant_email) {
+      const transport = getCleaningNotifyTransporter();
+      if (!transport) {
+        console.warn(
+          '[cleaning/public/note] SMTP no configurado (SMTP_HOST / SMTP_USER / SMTP_PASS o SMTP_PASSWORD); no se envía correo al alojamiento'
+        );
+      } else {
       try {
-        await transporter.sendMail({
-          from: `"Delfín Check-in" <${process.env.SMTP_USER || 'no-reply@delfincheckin.com'}>`,
+        await transport.sendMail({
+          from: getCleaningNotifyFrom(),
           to: config.tenant_email,
           subject: `🧹 Nueva nota de limpieza - ${roomName}`,
           html: `
@@ -162,6 +164,7 @@ export async function POST(
         });
       } catch (emailErr) {
         console.warn('[cleaning/public/note] Email failed:', (emailErr as Error).message);
+      }
       }
     }
 
