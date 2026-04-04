@@ -6,6 +6,14 @@ import path from 'path';
 const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 
 const nextConfig: NextConfig = {
+  // En Vercel define CLEANING_PUBLIC_BASE_URL (p. ej. https://clean.delfincheckin.com).
+  // Nombre propio para no mezclar con NEXT_PUBLIC_APP_URL. Se inyecta al cliente en build.
+  env: {
+    NEXT_PUBLIC_CLEANING_PUBLIC_BASE_URL:
+      process.env.CLEANING_PUBLIC_BASE_URL?.trim() ||
+      process.env.NEXT_PUBLIC_CLEANING_PUBLIC_BASE_URL?.trim() ||
+      '',
+  },
   // Evita que Next infiera la raíz del workspace (p.ej. $HOME) por múltiples lockfiles.
   // Esto mejora el output file tracing y previene errores en runtime en Vercel.
   outputFileTracingRoot: path.resolve(__dirname),
