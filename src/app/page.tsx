@@ -8,8 +8,21 @@ import { ArrowUpCircle } from 'lucide-react';
 import { getRoomNumber } from '@/lib/db';
 import UnitLimitWarning from '@/components/UnitLimitWarning';
 import { useClientTranslations } from '@/hooks/useClientTranslations';
+import {
+  type DashboardFilterPeriod,
+  getDateRangeForFilter,
+  clipMetricRangeToToday,
+  inclusiveDaysBetween,
+  overlapNights,
+  prorationFactor,
+  reservationOverlapsPeriod,
+  stayNights,
+  safeNum,
+  safeGuestCount,
+  localTodayYMD,
+} from '@/lib/dashboard-period';
 
-type FilterPeriod = 'total' | 'annual' | 'today' | 'thisWeek' | 'last7Days' | 'thisMonth' | 'last30Days' | 'custom';
+type FilterPeriod = DashboardFilterPeriod;
 
 export default function HomePage() {
   const t = useClientTranslations('dashboard');
@@ -27,12 +40,6 @@ export default function HomePage() {
   useEffect(() => {
     loadData();
   }, []);
-
-  // Recalcular cuando cambie el filtro
-  useEffect(() => {
-    // Forzar re-render cuando cambie el filtro
-    console.log(`🔄 Filtro cambiado a: ${filterPeriod}`);
-  }, [filterPeriod, customDateRange]);
 
   const loadData = async () => {
     try {
@@ -88,113 +95,20 @@ export default function HomePage() {
     }
   };
 
-  // Función para obtener el rango de fechas según el filtro
-  const getDateRange = (period: FilterPeriod) => {
-    const today = new Date();
-    const todayStr = today.toISOString().split('T')[0];
-    
-    switch (period) {
-      case 'total':
-        return { from: '2020-01-01', to: todayStr }; // Desde el inicio hasta hoy
-      
-      case 'annual':
-        const startOfYear = new Date(today.getFullYear(), 0, 1);
-        const endOfYear = new Date(today.getFullYear(), 11, 31);
-        return { 
-          from: startOfYear.toISOString().split('T')[0], 
-          to: endOfYear.toISOString().split('T')[0] 
-        };
-      
-      case 'today':
-        return { from: todayStr, to: todayStr };
-      
-      case 'thisWeek':
-        const startOfWeek = new Date(today);
-        startOfWeek.setDate(today.getDate() - today.getDay());
-        const endOfWeek = new Date(startOfWeek);
-        endOfWeek.setDate(startOfWeek.getDate() + 6);
-        return { 
-          from: startOfWeek.toISOString().split('T')[0], 
-          to: endOfWeek.toISOString().split('T')[0] 
-        };
-      
-      case 'last7Days':
-        const last7Days = new Date(today);
-        last7Days.setDate(today.getDate() - 7);
-        return { 
-          from: last7Days.toISOString().split('T')[0], 
-          to: todayStr 
-        };
-      
-      case 'thisMonth':
-        const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-        const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-        return { 
-          from: startOfMonth.toISOString().split('T')[0], 
-          to: endOfMonth.toISOString().split('T')[0] 
-        };
-      
-      case 'last30Days':
-        const last30Days = new Date(today);
-        last30Days.setDate(today.getDate() - 30);
-        return { 
-          from: last30Days.toISOString().split('T')[0], 
-          to: todayStr 
-        };
-      
-      case 'custom':
-        return customDateRange;
-      
-      default:
-        return { from: '2020-01-01', to: todayStr };
-    }
-  };
+  const getDateRange = (period: FilterPeriod) =>
+    getDateRangeForFilter(period, customDateRange);
 
-  // Filtrar reservas según el período seleccionado
   const getFilteredReservations = () => {
-    // Para "Total", mostrar TODAS las reservas sin filtrar
     if (filterPeriod === 'total') {
-      console.log(`🔍 Filtro: ${filterPeriod} - MOSTRANDO TODAS LAS RESERVAS`);
-      console.log(`📊 Total reservas: ${reservations.length}`);
       return reservations;
     }
-    
     if (filterPeriod === 'custom' && (!customDateRange.from || !customDateRange.to)) {
-      console.log(`🔍 Filtro: ${filterPeriod} - RANGO PERSONALIZADO VACÍO, MOSTRANDO TODAS`);
       return reservations;
     }
-    
-    const dateRange = getDateRange(filterPeriod);
-    
-    // Debug: Mostrar información del filtro
-    console.log(`🔍 Filtro: ${filterPeriod}`);
-    console.log(`📅 Rango: ${dateRange.from} - ${dateRange.to}`);
-    console.log(`📊 Total reservas: ${reservations.length}`);
-    
-    const filtered = reservations.filter(reservation => {
-      const checkIn = new Date(reservation.check_in);
-      const checkOut = new Date(reservation.check_out);
-      const fromDate = new Date(dateRange.from);
-      const toDate = new Date(dateRange.to);
-      
-      // Ajustar fechas para comparación correcta (solo fecha, sin hora)
-      fromDate.setHours(0, 0, 0, 0);
-      toDate.setHours(23, 59, 59, 999);
-      checkIn.setHours(0, 0, 0, 0);
-      checkOut.setHours(23, 59, 59, 999);
-      
-      // Incluir reservas que se solapan con el rango de fechas
-      const overlaps = checkIn <= toDate && checkOut >= fromDate;
-      
-      if (overlaps) {
-        console.log(`✅ Reserva incluida: ${reservation.guest_name} (${reservation.check_in} - ${reservation.check_out})`);
-      }
-      
-      return overlaps;
-    });
-    
-    console.log(`✅ Reservas filtradas: ${filtered.length}`);
-    return filtered;
+    const dateRange = getDateRangeForFilter(filterPeriod, customDateRange);
+    return reservations.filter((reservation) =>
+      reservationOverlapsPeriod(reservation.check_in, reservation.check_out, dateRange.from, dateRange.to)
+    );
   };
 
   const filteredReservations = getFilteredReservations();
@@ -227,73 +141,84 @@ export default function HomePage() {
     }
   };
 
-  // Calcular estadísticas basadas en reservas filtradas
-  // Usar el número real de habitaciones del tenant (stats.rooms_used) o el array de habitaciones
   const totalRooms = tenant?.stats?.rooms_used || rooms.length || 0;
   const totalReservations = filteredReservations.length;
-  const confirmedReservations = filteredReservations.filter(r => r.status === 'confirmed').length;
-  const today = new Date().toISOString().split('T')[0];
-  
-  const guestsToday = filteredReservations.filter(r => {
-    const checkIn = new Date(r.check_in);
-    const checkOut = new Date(r.check_out);
-    const now = new Date();
-    
-    // Huéspedes actuales: check-in ya pasó Y check-out es después de ahora
-    return checkIn <= now && checkOut > now && r.status === 'confirmed';
-  }).length;
+  const confirmedReservations = filteredReservations.filter((r) => r.status === 'confirmed').length;
 
-  // Calcular ocupación basada en el período filtrado
-  const dateRange = getDateRange(filterPeriod);
-  const daysInPeriod = Math.ceil((new Date(dateRange.to).getTime() - new Date(dateRange.from).getTime()) / (1000 * 60 * 60 * 24)) + 1;
-  
-  // Calcular ocupación basada en el período filtrado
-  let occupancyRate;
+  const rawRange = getDateRangeForFilter(filterPeriod, customDateRange);
+  const metricRange =
+    filterPeriod === 'total'
+      ? rawRange
+      : clipMetricRangeToToday(rawRange.from, rawRange.to);
+  const daysInPeriod = Math.max(1, inclusiveDaysBetween(metricRange.from, metricRange.to));
+
+  const confirmed = filteredReservations.filter((r) => r.status === 'confirmed');
+
+  let guestsKpi: number;
   if (filterPeriod === 'total') {
-    // Para Total, calcular ocupación promedio anual (más realista)
-    const yearsInPeriod = Math.max(1, Math.ceil(daysInPeriod / 365));
-    const totalOccupiedDays = filteredReservations.filter(r => r.status === 'confirmed').reduce((sum, r) => {
-      const checkIn = new Date(r.check_in);
-      const checkOut = new Date(r.check_out);
-      const days = Math.max(0, Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24)));
-      return sum + days;
-    }, 0);
-    
-    const avgOccupiedDaysPerYear = totalOccupiedDays / yearsInPeriod;
-    const totalRoomDaysPerYear = totalRooms * 365;
-    occupancyRate = totalRoomDaysPerYear > 0 ? Math.round((avgOccupiedDaysPerYear / totalRoomDaysPerYear) * 100) : 0;
-    
-    console.log(`📊 Total - Años: ${yearsInPeriod}, Días ocupados total: ${totalOccupiedDays}, Promedio anual: ${avgOccupiedDaysPerYear}, Ocupación: ${occupancyRate}%`);
+    const now = new Date();
+    guestsKpi = reservations
+      .filter((r) => {
+        if (r.status !== 'confirmed') return false;
+        const checkIn = new Date(r.check_in);
+        const checkOut = new Date(r.check_out);
+        return checkIn <= now && checkOut > now;
+      })
+      .reduce((sum, r) => sum + safeGuestCount(r), 0);
   } else {
-    // Para otros períodos, usar el cálculo normal
-    const totalRoomDays = totalRooms * daysInPeriod;
-    const occupiedRoomDays = filteredReservations.filter(r => r.status === 'confirmed').reduce((sum, r) => {
-      const checkIn = new Date(r.check_in);
-      const checkOut = new Date(r.check_out);
-      const fromDate = new Date(dateRange.from);
-      const toDate = new Date(dateRange.to);
-      
-      
-      const start = checkIn > fromDate ? checkIn : fromDate;
-      const end = checkOut < toDate ? checkOut : toDate;
-      const days = Math.max(0, Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)));
-      return sum + days;
-    }, 0);
-    
-    occupancyRate = totalRoomDays > 0 ? Math.round((occupiedRoomDays / totalRoomDays) * 100) : 0;
-    console.log(`📊 ${filterPeriod} - Días período: ${daysInPeriod}, Días ocupados: ${occupiedRoomDays}, Ocupación: ${occupancyRate}%`);
+    const guestNights = confirmed.reduce(
+      (sum, r) =>
+        sum + safeGuestCount(r) * overlapNights(r.check_in, r.check_out, metricRange.from, metricRange.to),
+      0
+    );
+    guestsKpi = Math.round(guestNights / daysInPeriod);
   }
 
-  // Calcular datos financieros con validación segura
-  const safeNumber = (value: any) => {
-    if (value === null || value === undefined || value === '') return 0;
-    const num = parseFloat(String(value));
-    return isNaN(num) ? 0 : num;
-  };
+  let occupancyRate: number;
+  if (filterPeriod === 'total') {
+    const yearsInPeriod = Math.max(1, Math.ceil(inclusiveDaysBetween(rawRange.from, rawRange.to) / 365));
+    const totalOccupiedDays = confirmed.reduce((sum, r) => sum + stayNights(r.check_in, r.check_out), 0);
+    const avgOccupiedDaysPerYear = totalOccupiedDays / yearsInPeriod;
+    const totalRoomDaysPerYear = totalRooms * 365;
+    occupancyRate =
+      totalRoomDaysPerYear > 0 ? Math.round((avgOccupiedDaysPerYear / totalRoomDaysPerYear) * 100) : 0;
+  } else {
+    const occupiedRoomDays = confirmed.reduce(
+      (sum, r) => sum + overlapNights(r.check_in, r.check_out, metricRange.from, metricRange.to),
+      0
+    );
+    const totalRoomDays = totalRooms * daysInPeriod;
+    occupancyRate =
+      totalRoomDays > 0 ? Math.round((occupiedRoomDays / totalRoomDays) * 100) : 0;
+  }
 
-  const totalRevenue = filteredReservations.reduce((sum, r) => sum + safeNumber(r.guest_paid), 0);
-  const totalCommissions = filteredReservations.reduce((sum, r) => sum + safeNumber(r.platform_commission), 0);
-  const totalNetIncome = filteredReservations.reduce((sum, r) => sum + safeNumber(r.net_income), 0);
+  const totalRevenue =
+    filterPeriod === 'total'
+      ? confirmed.reduce((sum, r) => sum + safeNum(r.guest_paid), 0)
+      : confirmed.reduce(
+          (sum, r) =>
+            sum + safeNum(r.guest_paid) * prorationFactor(r.check_in, r.check_out, metricRange.from, metricRange.to),
+          0
+        );
+  const totalCommissions =
+    filterPeriod === 'total'
+      ? confirmed.reduce((sum, r) => sum + safeNum(r.platform_commission), 0)
+      : confirmed.reduce(
+          (sum, r) =>
+            sum +
+            safeNum(r.platform_commission) *
+              prorationFactor(r.check_in, r.check_out, metricRange.from, metricRange.to),
+          0
+        );
+  const totalNetIncome =
+    filterPeriod === 'total'
+      ? confirmed.reduce((sum, r) => sum + safeNum(r.net_income), 0)
+      : confirmed.reduce(
+          (sum, r) =>
+            sum +
+            safeNum(r.net_income) * prorationFactor(r.check_in, r.check_out, metricRange.from, metricRange.to),
+          0
+        );
 
   // Función para formatear el período seleccionado
   const getPeriodLabel = () => {
@@ -676,7 +601,7 @@ export default function HomePage() {
                 <div className="flex items-end">
                   <button
                     onClick={() => {
-                      const today = new Date().toISOString().split('T')[0];
+                      const today = localTodayYMD();
                       setCustomDateRange({ from: today, to: today });
                     }}
                     className="px-4 py-2 bg-gray-100 text-black rounded-lg hover:bg-gray-200 transition-colors"
@@ -710,8 +635,12 @@ export default function HomePage() {
           <div className="kpi">
             <div className="ic" style={{background:'#dcfce7'}}>👥</div>
             <div>
-              <div className="meta">{t('kpis.guestsToday')}</div>
-              <div className="value">{guestsToday}</div>
+              <div className="meta">
+                {filterPeriod === 'total' || filterPeriod === 'today'
+                  ? t('kpis.guestsToday')
+                  : t('kpis.guestsAvgPerDay')}
+              </div>
+              <div className="value">{guestsKpi}</div>
             </div>
           </div>
 

@@ -165,7 +165,8 @@
     },
     "kpis": {
       "rooms": "Chambres",
-      "guestsToday": "Voyageurs aujourd'hui",
+      "guestsToday": "Voyageurs (aujourd'hui)",
+      "guestsAvgPerDay": "Moy. voyageurs/jour",
       "activeReservations": "Réservations actives",
       "occupancy": "Taux d'occupation",
       "revenue": "Chiffre d'affaires",

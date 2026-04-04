@@ -165,7 +165,8 @@
     },
     "kpis": {
       "rooms": "Rooms",
-      "guestsToday": "Guests Today",
+      "guestsToday": "Guests (today)",
+      "guestsAvgPerDay": "Avg. guests per day",
       "activeReservations": "Active Reservations",
       "occupancy": "Occupancy",
       "revenue": "Revenue",

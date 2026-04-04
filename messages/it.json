@@ -165,7 +165,8 @@
     },
     "kpis": {
       "rooms": "Camere",
-      "guestsToday": "Ospiti Oggi",
+      "guestsToday": "Ospiti (oggi)",
+      "guestsAvgPerDay": "Media ospiti/giorno",
       "activeReservations": "Prenotazioni Attive",
       "occupancy": "Occupazione",
       "revenue": "Fatturato",
