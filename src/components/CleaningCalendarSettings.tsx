@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Calendar, Copy, RefreshCw, Check, Clock, ChevronDown, ChevronUp, MessageSquare, ExternalLink } from 'lucide-react';
+import { Calendar, Clock, ChevronDown, ChevronUp, MessageSquare } from 'lucide-react';
+import CleaningPublicLinksSection from '@/components/CleaningPublicLinksSection';
 
 interface Room {
   id: number;
@@ -43,11 +44,8 @@ export default function CleaningCalendarSettings({ rooms, t }: Props) {
   const [notes, setNotes] = useState<CleaningNote[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
-  const [copiedToken, setCopiedToken] = useState<string | null>(null);
   const [expandedRoom, setExpandedRoom] = useState<string | null>(null);
   const [message, setMessage] = useState({ type: '', text: '' });
-
-  const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://admin.delfincheckin.com';
 
   const loadConfigs = useCallback(async () => {
     try {
@@ -117,33 +115,6 @@ export default function CleaningCalendarSettings({ rooms, t }: Props) {
     }
   };
 
-  const regenerateToken = async (roomId: number) => {
-    if (!confirm(t('cleaning.regenerateConfirm'))) return;
-    try {
-      const res = await fetch('/api/cleaning/config', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ room_id: String(roomId) }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        await loadConfigs();
-        setMessage({ type: 'success', text: t('cleaning.tokenRegenerated') });
-      }
-    } catch {
-      setMessage({ type: 'error', text: t('cleaning.saveError') });
-    }
-    setTimeout(() => setMessage({ type: '', text: '' }), 4000);
-  };
-
-  const copyLink = (token: string) => {
-    const url = `${baseUrl}/api/ical/cleaning/${token}`;
-    navigator.clipboard.writeText(url);
-    setCopiedToken(token);
-    setTimeout(() => setCopiedToken(null), 2000);
-  };
-
   const markNotesRead = async (noteIds: string[]) => {
     try {
       await fetch('/api/cleaning/notes', {
@@ -176,6 +147,10 @@ export default function CleaningCalendarSettings({ rooms, t }: Props) {
       </h4>
       <p className="text-xs sm:text-sm text-gray-600 mb-4 sm:mb-6">{t('cleaning.description')}</p>
 
+      <CleaningPublicLinksSection rooms={rooms} t={t} />
+
+      <p className="text-xs text-gray-500 mb-4 border-t border-gray-100 pt-4">{t('cleaning.perRoomHint')}</p>
+
       {message.text && (
         <div className={`p-3 rounded-xl mb-4 text-sm font-medium ${
           message.type === 'success'
@@ -191,7 +166,6 @@ export default function CleaningCalendarSettings({ rooms, t }: Props) {
           const config = getConfigForRoom(room.id);
           const isExpanded = expandedRoom === String(room.id);
           const unread = unreadByRoom(String(room.id));
-          const icalUrl = config ? `${baseUrl}/api/ical/cleaning/${config.ical_token}` : null;
 
           return (
             <div key={room.id} className="border-2 border-gray-200 rounded-xl overflow-hidden transition-all hover:border-blue-300">
@@ -346,59 +320,7 @@ export default function CleaningCalendarSettings({ rooms, t }: Props) {
                       />
                       <span className="text-sm text-gray-700">{t('cleaning.sameDayAlert')}</span>
                     </label>
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={config?.ical_enabled ?? true}
-                        onChange={e => saveConfig(room.id, { ical_enabled: e.target.checked })}
-                        className="w-4 h-4 text-blue-600 rounded"
-                      />
-                      <span className="text-sm text-gray-700">{t('cleaning.calendarEnabled')}</span>
-                    </label>
                   </div>
-
-                  {/* Enlace iCal */}
-                  {config?.ical_enabled && icalUrl && (
-                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-200">
-                      <p className="text-sm font-medium text-gray-700 mb-2">{t('cleaning.icalLink')}</p>
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="text"
-                          readOnly
-                          value={icalUrl}
-                          className="flex-1 text-xs bg-white border border-gray-300 rounded-lg px-3 py-2 text-gray-600 font-mono"
-                        />
-                        <button
-                          onClick={() => copyLink(config.ical_token)}
-                          className="flex-shrink-0 p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                          title={t('cleaning.copy')}
-                        >
-                          {copiedToken === config.ical_token ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                        </button>
-                      </div>
-                      <div className="flex items-center gap-3 mt-3">
-                        <a
-                          href={icalUrl}
-                          target="_blank"
-                          rel="noopener"
-                          className="text-xs text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1"
-                        >
-                          <ExternalLink className="w-3 h-3" />
-                          {t('cleaning.preview')}
-                        </a>
-                        <button
-                          onClick={() => regenerateToken(room.id)}
-                          className="text-xs text-red-600 hover:text-red-800 font-medium flex items-center gap-1"
-                        >
-                          <RefreshCw className="w-3 h-3" />
-                          {t('cleaning.regenerateToken')}
-                        </button>
-                      </div>
-                      <p className="text-xs text-gray-500 mt-2">
-                        {t('cleaning.icalInstructions')}
-                      </p>
-                    </div>
-                  )}
 
                   {/* Quick setup si no hay config */}
                   {!config && (

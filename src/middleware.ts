@@ -124,6 +124,7 @@ export async function middleware(req: NextRequest) {
     pathname.startsWith('/api/') ||
     pathname.startsWith('/superadmin') ||
     pathname.startsWith('/book/') ||
+    pathname.startsWith('/limpieza') ||
     pathname === '/admin-login' ||
     pathname === '/forgot-password' ||
     pathname === '/' ||
@@ -190,6 +191,9 @@ export async function middleware(req: NextRequest) {
     pathname === '/admin-login' ||
     pathname === '/forgot-password' ||
     pathname.startsWith('/book/') ||
+    pathname.startsWith('/limpieza') ||
+    pathname.startsWith('/api/cleaning/public-view/') ||
+    pathname.startsWith('/api/cleaning/public-link/') ||
     pathname.startsWith('/api/public/') ||
     pathname.startsWith('/api/direct-reservations/') ||
     pathname.startsWith('/api/test-') ||
