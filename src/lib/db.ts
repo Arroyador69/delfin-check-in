@@ -758,6 +758,71 @@ export async function ensureFacturasTables(): Promise<void> {
       END$$;
     `;
 
+    // Recibos de pago (acreditación de cobro; IVA opcional en el PDF)
+    await sql`
+      CREATE TABLE IF NOT EXISTS recibos (
+        id SERIAL PRIMARY KEY,
+        tenant_id VARCHAR(255) NOT NULL,
+        numero_recibo VARCHAR(50) NOT NULL,
+        fecha_emision DATE NOT NULL DEFAULT CURRENT_DATE,
+        cliente_nombre VARCHAR(255) NOT NULL,
+        cliente_nif VARCHAR(20),
+        cliente_direccion TEXT,
+        cliente_codigo_postal VARCHAR(10),
+        cliente_ciudad VARCHAR(100),
+        cliente_provincia VARCHAR(100),
+        cliente_pais VARCHAR(100) DEFAULT 'España',
+        concepto VARCHAR(500) NOT NULL,
+        descripcion TEXT,
+        fecha_pago DATE,
+        fecha_estancia_desde DATE,
+        fecha_estancia_hasta DATE,
+        importe_total DECIMAL(10,2) NOT NULL,
+        incluir_iva BOOLEAN DEFAULT FALSE,
+        iva_porcentaje DECIMAL(5,2) DEFAULT 0,
+        base_imponible DECIMAL(10,2) DEFAULT 0,
+        iva_importe DECIMAL(10,2) DEFAULT 0,
+        forma_pago VARCHAR(100),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(tenant_id, numero_recibo)
+      )
+    `;
+    await sql`CREATE INDEX IF NOT EXISTS idx_recibos_tenant_id ON recibos(tenant_id)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_recibos_fecha_emision ON recibos(fecha_emision)`;
+    await sql`
+      CREATE OR REPLACE FUNCTION generar_numero_recibo(p_tenant_id VARCHAR(255))
+      RETURNS VARCHAR(50) AS $$
+      DECLARE
+        ultimo_numero INTEGER;
+        nuevo_numero VARCHAR(50);
+      BEGIN
+        SELECT COALESCE(MAX(CAST(SUBSTRING(numero_recibo FROM '[0-9]+$') AS INTEGER)), 0)
+        INTO ultimo_numero
+        FROM recibos
+        WHERE tenant_id = p_tenant_id;
+        nuevo_numero := 'REC-' || EXTRACT(YEAR FROM CURRENT_DATE)::TEXT || '-' || LPAD((ultimo_numero + 1)::TEXT, 4, '0');
+        RETURN nuevo_numero;
+      END;
+      $$ LANGUAGE plpgsql
+    `;
+    await sql`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM pg_trigger WHERE tgname = 'update_recibos_updated_at'
+        ) THEN
+          CREATE TRIGGER update_recibos_updated_at
+          BEFORE UPDATE ON recibos
+          FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+        END IF;
+      END$$;
+    `;
+
+    await sql`ALTER TABLE recibos ADD COLUMN IF NOT EXISTS fecha_pago DATE`;
+    await sql`ALTER TABLE recibos ADD COLUMN IF NOT EXISTS fecha_estancia_desde DATE`;
+    await sql`ALTER TABLE recibos ADD COLUMN IF NOT EXISTS fecha_estancia_hasta DATE`;
+
   } catch (error) {
     console.error('Error al crear tablas de facturas:', error);
     throw error;
@@ -922,6 +987,108 @@ export async function actualizarPdfFactura(
 export async function eliminarFactura(id: number, tenantId: string): Promise<boolean> {
   const result = await sql`
     DELETE FROM facturas 
+    WHERE id = ${id} AND tenant_id = ${tenantId}
+    RETURNING id;
+  `;
+  return result.rows.length > 0;
+}
+
+// ========================================
+// RECIBOS DE PAGO
+// ========================================
+
+export async function generarNumeroRecibo(tenantId: string): Promise<string> {
+  const result = await sql`
+    SELECT generar_numero_recibo(${tenantId}) as numero_recibo;
+  `;
+  return result.rows[0].numero_recibo;
+}
+
+export async function crearRecibo(data: {
+  tenant_id: string;
+  cliente_nombre: string;
+  cliente_nif?: string;
+  cliente_direccion?: string;
+  cliente_codigo_postal?: string;
+  cliente_ciudad?: string;
+  cliente_provincia?: string;
+  cliente_pais?: string;
+  concepto: string;
+  descripcion?: string;
+  fecha_pago?: string | null;
+  fecha_estancia_desde?: string | null;
+  fecha_estancia_hasta?: string | null;
+  importe_total: number;
+  incluir_iva?: boolean;
+  iva_porcentaje?: number;
+  forma_pago?: string;
+}): Promise<any> {
+  const importeTotal = Number(data.importe_total);
+  const incluirIva = Boolean(data.incluir_iva);
+  const ivaPct = incluirIva ? Number(data.iva_porcentaje ?? 21) : 0;
+  let baseImponible = importeTotal;
+  let ivaImporte = 0;
+  if (incluirIva && ivaPct > 0) {
+    baseImponible = importeTotal / (1 + ivaPct / 100);
+    ivaImporte = importeTotal - baseImponible;
+  }
+
+  const numeroRecibo = await generarNumeroRecibo(data.tenant_id);
+
+  const fechaPago =
+    data.fecha_pago?.trim() || null;
+  const fechaEstDesde =
+    data.fecha_estancia_desde?.trim() || null;
+  const fechaEstHasta =
+    data.fecha_estancia_hasta?.trim() || null;
+
+  const result = await sql`
+    INSERT INTO recibos (
+      tenant_id, numero_recibo, fecha_emision,
+      cliente_nombre, cliente_nif, cliente_direccion, cliente_codigo_postal,
+      cliente_ciudad, cliente_provincia, cliente_pais,
+      concepto, descripcion, fecha_pago, fecha_estancia_desde, fecha_estancia_hasta,
+      importe_total, incluir_iva,
+      iva_porcentaje, base_imponible, iva_importe, forma_pago
+    )
+    VALUES (
+      ${data.tenant_id}, ${numeroRecibo}, CURRENT_DATE,
+      ${data.cliente_nombre}, ${data.cliente_nif || ''}, ${data.cliente_direccion || ''},
+      ${data.cliente_codigo_postal || ''}, ${data.cliente_ciudad || ''},
+      ${data.cliente_provincia || ''}, ${data.cliente_pais || 'España'},
+      ${data.concepto}, ${data.descripcion || ''},
+      ${fechaPago}, ${fechaEstDesde}, ${fechaEstHasta},
+      ${importeTotal}, ${incluirIva},
+      ${incluirIva ? ivaPct : 0}, ${baseImponible}, ${ivaImporte},
+      ${data.forma_pago || ''}
+    )
+    RETURNING *;
+  `;
+  return result.rows[0];
+}
+
+export async function getRecibos(tenantId: string, limit: number = 50): Promise<any[]> {
+  const result = await sql`
+    SELECT * FROM recibos
+    WHERE tenant_id = ${tenantId}
+    ORDER BY fecha_emision DESC, numero_recibo DESC
+    LIMIT ${limit}
+  `;
+  return result.rows;
+}
+
+export async function getReciboById(id: number, tenantId: string): Promise<any | null> {
+  const result = await sql`
+    SELECT * FROM recibos
+    WHERE id = ${id} AND tenant_id = ${tenantId}
+    LIMIT 1
+  `;
+  return result.rows[0] ?? null;
+}
+
+export async function eliminarRecibo(id: number, tenantId: string): Promise<boolean> {
+  const result = await sql`
+    DELETE FROM recibos
     WHERE id = ${id} AND tenant_id = ${tenantId}
     RETURNING id;
   `;
