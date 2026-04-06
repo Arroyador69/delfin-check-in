@@ -47,21 +47,30 @@ export function generarPdfRecibo(recibo: Record<string, unknown>, empresaConfig:
   doc.setTextColor(0, 0, 0);
   doc.text('EMISOR', 20, 56);
 
+  const lineStep = 10;
+  let leftY = 66;
   doc.setFontSize(fontSize.normal);
-  doc.text(safeStr(empresaConfig.nombre_empresa), 20, 66);
-  doc.text(`NIF: ${safeStr(empresaConfig.nif_empresa)}`, 20, 76);
-  doc.text(safeStr(empresaConfig.direccion_empresa), 20, 86);
+  doc.text(safeStr(empresaConfig.nombre_empresa), 20, leftY);
+  leftY += lineStep;
+  doc.text(`NIF: ${safeStr(empresaConfig.nif_empresa)}`, 20, leftY);
+  leftY += lineStep;
+  doc.text(safeStr(empresaConfig.direccion_empresa), 20, leftY);
+  leftY += lineStep;
   if (empresaConfig.codigo_postal && empresaConfig.ciudad) {
-    doc.text(`${safeStr(empresaConfig.codigo_postal)} ${safeStr(empresaConfig.ciudad)}`, 20, 96);
+    doc.text(`${safeStr(empresaConfig.codigo_postal)} ${safeStr(empresaConfig.ciudad)}`, 20, leftY);
+    leftY += lineStep;
   }
   if (empresaConfig.provincia) {
-    doc.text(safeStr(empresaConfig.provincia), 20, 106);
+    doc.text(safeStr(empresaConfig.provincia), 20, leftY);
+    leftY += lineStep;
   }
   if (empresaConfig.telefono) {
-    doc.text(`Tel: ${safeStr(empresaConfig.telefono)}`, 20, 116);
+    doc.text(`Tel: ${safeStr(empresaConfig.telefono)}`, 20, leftY);
+    leftY += lineStep;
   }
   if (empresaConfig.email) {
-    doc.text(`Email: ${safeStr(empresaConfig.email)}`, 20, 126);
+    doc.text(`Email: ${safeStr(empresaConfig.email)}`, 20, leftY);
+    leftY += lineStep;
   }
 
   doc.setFontSize(fontSize.subtitle);
@@ -69,33 +78,39 @@ export function generarPdfRecibo(recibo: Record<string, unknown>, empresaConfig:
   doc.setFontSize(fontSize.normal);
   let cy = 66;
   doc.text(safeStr(recibo.cliente_nombre), 110, cy);
-  cy += 10;
+  cy += lineStep;
   if (recibo.cliente_nif) {
     doc.text(`NIF: ${safeStr(recibo.cliente_nif)}`, 110, cy);
-    cy += 10;
+    cy += lineStep;
   }
   if (recibo.cliente_direccion) {
     doc.text(safeStr(recibo.cliente_direccion), 110, cy);
-    cy += 10;
+    cy += lineStep;
   }
   if (recibo.cliente_codigo_postal && recibo.cliente_ciudad) {
     doc.text(`${safeStr(recibo.cliente_codigo_postal)} ${safeStr(recibo.cliente_ciudad)}`, 110, cy);
-    cy += 10;
+    cy += lineStep;
   }
   if (recibo.cliente_provincia) {
     doc.text(safeStr(recibo.cliente_provincia), 110, cy);
-    cy += 10;
+    cy += lineStep;
   }
 
-  let detailY = cy + 8;
-  doc.setFontSize(fontSize.normal);
-  doc.setTextColor(...grayColor);
-  if (recibo.fecha_pago) {
-    doc.text(`Fecha del pago: ${fmtDateEs(recibo.fecha_pago)}`, 20, detailY);
-    detailY += 8;
-  }
+  /** Debajo de la columna más alta (emisor y cliente no deben solaparse con pago/estancia) */
+  const colsBottom = Math.max(leftY, cy);
   const stayFrom = recibo.fecha_estancia_desde;
   const stayTo = recibo.fecha_estancia_hasta;
+  const hasPaymentMeta = Boolean(recibo.fecha_pago || stayFrom || stayTo);
+
+  let detailY = colsBottom + (hasPaymentMeta ? 12 : 6);
+  doc.setFontSize(fontSize.normal);
+  doc.setTextColor(...grayColor);
+  const metaLineHeight = 6;
+
+  if (recibo.fecha_pago) {
+    doc.text(`Fecha del pago: ${fmtDateEs(recibo.fecha_pago)}`, 20, detailY);
+    detailY += metaLineHeight;
+  }
   if (stayFrom || stayTo) {
     let stayLine = 'Reserva / estancia: ';
     if (stayFrom && stayTo) {
@@ -105,13 +120,18 @@ export function generarPdfRecibo(recibo: Record<string, unknown>, empresaConfig:
     } else {
       stayLine += `hasta ${fmtDateEs(stayTo)}`;
     }
-    doc.text(stayLine, 20, detailY);
-    detailY += 8;
+    const stayLines = doc.splitTextToSize(stayLine, 172);
+    doc.text(stayLines, 20, detailY);
+    detailY += stayLines.length * metaLineHeight;
+  }
+  if (hasPaymentMeta) {
+    detailY += 4;
   }
 
-  const tableY = Math.max(148, detailY + 6);
+  const tableY = Math.max(148, detailY + 8);
+  const separatorY = tableY - 5;
   doc.setDrawColor(...lightGrayColor);
-  doc.line(20, 140, 190, 140);
+  doc.line(20, separatorY, 190, separatorY);
 
   doc.setFillColor(...lightGrayColor);
   doc.rect(20, tableY, 170, 10, 'F');
