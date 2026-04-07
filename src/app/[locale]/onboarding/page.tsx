@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 
@@ -39,11 +39,17 @@ interface OnboardingData {
 export default function OnboardingPage() {
   const t = useTranslations('onboarding');
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>('');
   const [rooms, setRooms] = useState<Array<{id: number, name: string}>>([]);
   const [tenant, setTenant] = useState<{ email?: string } | null>(null);
+  const [bootstrappingSession, setBootstrappingSession] = useState(false);
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   
   const [formData, setFormData] = useState<OnboardingData>({
     currentPassword: '',
@@ -70,11 +76,55 @@ export default function OnboardingPage() {
   });
 
   useEffect(() => {
-    checkOnboardingStatus();
+    bootstrapSessionFromToken();
     if (currentStep === 4 || currentStep === 5) {
       loadRooms();
     }
   }, [currentStep]);
+
+  const getLocaleFromPath = () => {
+    const parts = (pathname || '').split('/').filter(Boolean);
+    const maybeLocale = parts[0];
+    return maybeLocale && ['es', 'en', 'it', 'pt', 'fr'].includes(maybeLocale) ? maybeLocale : 'es';
+  };
+
+  const bootstrapSessionFromToken = async () => {
+    // Si venimos desde email con token, intercambiarlo por cookies de sesión
+    const token = searchParams?.get('token');
+    const email = searchParams?.get('email');
+
+    // Si no hay token/email, solo verificar status normal
+    if (!token || !email) {
+      await checkOnboardingStatus();
+      return;
+    }
+
+    setBootstrappingSession(true);
+    setError('');
+    try {
+      const res = await fetch('/api/onboarding/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ token, email }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data?.success) {
+        setError(data?.error || 'No se pudo validar el enlace de onboarding');
+        return;
+      }
+
+      // Limpiar query params para evitar reintentos y dejar URL limpia
+      const locale = getLocaleFromPath();
+      router.replace(`/${locale}/onboarding`);
+      // Luego revisar status ya autenticado
+      await checkOnboardingStatus();
+    } catch (e) {
+      setError('Error validando el enlace de onboarding');
+    } finally {
+      setBootstrappingSession(false);
+    }
+  };
 
   const checkOnboardingStatus = async () => {
     try {
@@ -384,29 +434,49 @@ export default function OnboardingPage() {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               {t('step1.currentPassword')}
             </label>
-            <input
-              type="password"
-              value={formData.currentPassword}
-              onChange={(e) => handleInputChange('currentPassword', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-              required
-              disabled={formData.passwordChanged}
-            />
+            <div className="relative">
+              <input
+                type={showCurrentPassword ? 'text' : 'password'}
+                value={formData.currentPassword}
+                onChange={(e) => handleInputChange('currentPassword', e.target.value)}
+                className="w-full px-3 py-2 pr-12 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                required
+                disabled={formData.passwordChanged || bootstrappingSession}
+              />
+              <button
+                type="button"
+                onClick={() => setShowCurrentPassword((v) => !v)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-semibold text-gray-600 hover:text-gray-900"
+                disabled={formData.passwordChanged || bootstrappingSession}
+              >
+                {showCurrentPassword ? 'Ocultar' : 'Ver'}
+              </button>
+            </div>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               {t('step1.newPassword')}
             </label>
-            <input
-              type="password"
-              value={formData.newPassword}
-              onChange={(e) => handleInputChange('newPassword', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-              required
-              disabled={formData.passwordChanged}
-              minLength={8}
-            />
+            <div className="relative">
+              <input
+                type={showNewPassword ? 'text' : 'password'}
+                value={formData.newPassword}
+                onChange={(e) => handleInputChange('newPassword', e.target.value)}
+                className="w-full px-3 py-2 pr-12 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                required
+                disabled={formData.passwordChanged || bootstrappingSession}
+                minLength={8}
+              />
+              <button
+                type="button"
+                onClick={() => setShowNewPassword((v) => !v)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-semibold text-gray-600 hover:text-gray-900"
+                disabled={formData.passwordChanged || bootstrappingSession}
+              >
+                {showNewPassword ? 'Ocultar' : 'Ver'}
+              </button>
+            </div>
             <p className="text-xs text-gray-500 mt-1">{t('step1.minChars')}</p>
           </div>
 
@@ -414,21 +484,31 @@ export default function OnboardingPage() {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               {t('step1.confirmPassword')}
             </label>
-            <input
-              type="password"
-              value={formData.confirmPassword}
-              onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-              required
-              disabled={formData.passwordChanged}
-            />
+            <div className="relative">
+              <input
+                type={showConfirmPassword ? 'text' : 'password'}
+                value={formData.confirmPassword}
+                onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
+                className="w-full px-3 py-2 pr-12 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                required
+                disabled={formData.passwordChanged || bootstrappingSession}
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword((v) => !v)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-semibold text-gray-600 hover:text-gray-900"
+                disabled={formData.passwordChanged || bootstrappingSession}
+              >
+                {showConfirmPassword ? 'Ocultar' : 'Ver'}
+              </button>
+            </div>
           </div>
         </div>
 
         <div className="flex justify-end mt-8">
           <button
             onClick={handlePasswordChange}
-            disabled={loading || formData.passwordChanged}
+            disabled={loading || formData.passwordChanged || bootstrappingSession}
             className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
           >
             {loading ? t('step1.changing') : formData.passwordChanged ? t('step1.passwordChanged') : t('step1.changePassword')}

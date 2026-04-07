@@ -61,6 +61,11 @@ export default function Navigation() {
   const t = useSafeTranslations('navigation');
   const tc = useClientTranslations('navigation');
 
+  // En onboarding no mostramos navegación para forzar completar el flujo.
+  if (pathname?.includes('/onboarding')) {
+    return null;
+  }
+
   useEffect(() => {
     // Obtener información del usuario para saber si es superadmin
     fetch('/api/auth/me')
