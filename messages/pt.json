@@ -321,6 +321,8 @@
       "intro": "Configure os horários de limpeza por quarto. Será gerado um calendário automático para a equipa de limpeza.",
       "optional": "Este passo é opcional. Pode configurar ou alterar isto mais tarde nas Definições.",
       "noRooms": "Nenhum quarto configurado. Pode voltar ao passo anterior para adicionar um.",
+      "apiLoadError": "Não foi possível carregar os quartos. Verifique o separador Rede (/api/tenant/rooms) ou volte ao passo anterior e crie as unidades outra vez.",
+      "reloadRooms": "Recarregar quartos",
       "configure": "Configurar",
       "remove": "Remover",
       "checkoutTime": "Hora de checkout",

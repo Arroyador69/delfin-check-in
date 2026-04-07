@@ -2,6 +2,119 @@ import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
 import { getTenantId } from '@/lib/tenant';
 
+async function selectRoomsWithFallbacks(tenantId: string): Promise<{ rows: { id: unknown; name: string }[] }> {
+  let result = await sql`
+      SELECT DISTINCT r.id, r.name
+      FROM "Room" r
+      INNER JOIN tenants t ON t.id = ${tenantId}::uuid
+      WHERE r."lodgingId"::text = t.id::text
+         OR (
+           t.lodging_id IS NOT NULL
+           AND BTRIM(t.lodging_id::text) <> ''
+           AND r."lodgingId"::text = BTRIM(t.lodging_id::text)
+         )
+      ORDER BY r.id::text ASC
+    `;
+
+  if (result.rows.length > 0) {
+    return result;
+  }
+
+  const attempts: Array<{ label: string; run: () => Promise<{ rows: { id: unknown; name: string }[] }> }> = [
+    {
+      label: 'lodgingId_eq_tenantId',
+      run: () => sql`
+        SELECT id, name
+        FROM "Room"
+        WHERE "lodgingId"::text = ${tenantId}
+        ORDER BY id::text ASC
+      `,
+    },
+    {
+      label: 'via_Lodging_tenant_id',
+      run: () => sql`
+        SELECT DISTINCT r.id, r.name
+        FROM "Room" r
+        INNER JOIN "Lodging" l ON r."lodgingId"::text = l.id::text
+        WHERE l.id::text = ${tenantId}
+           OR (l.tenant_id IS NOT NULL AND l.tenant_id::text = ${tenantId})
+        ORDER BY r.id::text ASC
+      `,
+    },
+    {
+      label: 'Room.tenant_id',
+      run: () => sql`
+        SELECT id, name
+        FROM "Room"
+        WHERE tenant_id = ${tenantId}::uuid
+        ORDER BY id::text ASC
+      `,
+    },
+    {
+      label: 'property_room_map',
+      run: () => sql`
+        SELECT DISTINCT r.id, r.name
+        FROM "Room" r
+        INNER JOIN property_room_map m
+          ON m.tenant_id = ${tenantId}::uuid
+          AND m.room_id::text = r.id::text
+        ORDER BY r.id::text ASC
+      `,
+    },
+  ];
+
+  for (const { label, run } of attempts) {
+    try {
+      const r = await run();
+      if (r.rows.length > 0) {
+        console.warn(
+          `⚠️ [GET /api/tenant/rooms] Fallback "${label}" → ${r.rows.length} habitación(es)`
+        );
+        return r;
+      }
+    } catch (e) {
+      console.warn(`⚠️ [GET /api/tenant/rooms] Fallback "${label}" no aplicable:`, e);
+    }
+  }
+
+  return result;
+}
+
+async function insertRoomForTenant(
+  room: { id: string; name: string },
+  lodgingId: string,
+  tenantId: string
+) {
+  const variants = [
+    () => sql`
+      INSERT INTO "Room" (id, name, "lodgingId", tenant_id, created_at, updated_at)
+      VALUES (gen_random_uuid()::text, ${room.name}, ${lodgingId}, ${tenantId}::uuid, NOW(), NOW())
+    `,
+    () => sql`
+      INSERT INTO "Room" (id, name, "lodgingId", created_at, updated_at)
+      VALUES (gen_random_uuid()::text, ${room.name}, ${lodgingId}, NOW(), NOW())
+    `,
+    () => sql`
+      INSERT INTO "Room" (id, name, "lodgingId", created_at, updated_at)
+      VALUES (gen_random_uuid(), ${room.name}, ${lodgingId}, NOW(), NOW())
+    `,
+    () => sql`
+      INSERT INTO "Room" (id, name, "lodgingId", created_at, updated_at)
+      VALUES (${room.id}, ${room.name}, ${lodgingId}, NOW(), NOW())
+    `,
+  ];
+  let last: unknown;
+  for (const v of variants) {
+    try {
+      await v();
+      return;
+    } catch (e) {
+      last = e;
+    }
+  }
+  throw last;
+}
+
 export async function GET(req: NextRequest) {
   try {
     // Priorizar tenant_id desde JWT; si no está, caer al header (middleware)
@@ -17,41 +130,7 @@ export async function GET(req: NextRequest) {
       }, { status: 401 });
     }
 
-    // Una sola consulta: habitaciones bajo el UUID del tenant O bajo tenants.lodging_id (p. ej. cuid legado).
-    // Así el paso 6 coincide con lo creado en el paso 5 aunque lodging_id y Lodging.id no estén alineados.
-    let result = await sql`
-      SELECT DISTINCT r.id, r.name
-      FROM "Room" r
-      INNER JOIN tenants t ON t.id = ${tenantId}::uuid
-      WHERE r."lodgingId"::text = t.id::text
-         OR (
-           t.lodging_id IS NOT NULL
-           AND BTRIM(t.lodging_id::text) <> ''
-           AND r."lodgingId"::text = BTRIM(t.lodging_id::text)
-         )
-      ORDER BY r.id::text ASC
-    `;
-
-    if (result.rows.length === 0) {
-      try {
-        const mapped = await sql`
-          SELECT DISTINCT r.id, r.name
-          FROM "Room" r
-          INNER JOIN property_room_map m
-            ON m.tenant_id = ${tenantId}::uuid
-            AND m.room_id::text = r.id::text
-          ORDER BY r.id::text ASC
-        `;
-        if (mapped.rows.length > 0) {
-          console.warn(
-            `⚠️ [GET /api/tenant/rooms] Habitaciones resueltas vía property_room_map (${mapped.rows.length})`
-          );
-          result = mapped;
-        }
-      } catch {
-        /* property_room_map puede no existir en todas las BDs */
-      }
-    }
+    const result = await selectRoomsWithFallbacks(tenantId);
 
     const rooms = result.rows.map((row) => ({
       id: typeof row.id === 'number' ? row.id : parseInt(String(row.id), 10) || row.id,
@@ -460,14 +539,10 @@ export async function POST(req: NextRequest) {
     `;
     console.log(`🗑️ Eliminadas ${existingRooms.rows.length} habitaciones existentes para recrearlas`);
 
-    // Insertar habitaciones. Muchas BDs tienen Room.id como UUID; el onboarding envía "1","2".
-    // Usar gen_random_uuid() evita fallos silenciosos en paso 5 y lista vacía en paso 6.
+    // Probar variantes de esquema: Room.id UUID vs VARCHAR, columna tenant_id opcional, ids legacy "1","2".
     for (let i = 0; i < rooms.length; i++) {
       const room = rooms[i];
-      await sql`
-        INSERT INTO "Room" (id, name, "lodgingId", created_at, updated_at)
-        VALUES (gen_random_uuid(), ${room.name}, ${lodgingId}, NOW(), NOW())
-      `;
+      await insertRoomForTenant(room, lodgingId, tenantId);
       console.log(`✅ Habitación guardada: ${room.name} (lodging ${lodgingId})`);
     }
 

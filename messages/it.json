@@ -332,6 +332,8 @@
       "intro": "Configura gli orari di pulizia per stanza. Verrà generato un calendario automatico per il personale di pulizia.",
       "optional": "Questo passaggio è opzionale. Puoi configurarlo o modificarlo successivamente nelle Impostazioni.",
       "noRooms": "Nessuna stanza configurata. Puoi tornare al passaggio precedente per aggiungerne una.",
+      "apiLoadError": "Impossibile caricare le stanze. Controlla la scheda Rete (/api/tenant/rooms) o torna al passo precedente e crea di nuovo le unità.",
+      "reloadRooms": "Ricarica stanze",
       "configure": "Configura",
       "remove": "Rimuovi",
       "checkoutTime": "Orario di check-out",

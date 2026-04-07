@@ -58,6 +58,7 @@ export default function OnboardingPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>('');
   const [rooms, setRooms] = useState<Array<{ id: number | string; name: string }>>([]);
+  const [roomsApiError, setRoomsApiError] = useState<string | null>(null);
   const [tenant, setTenant] = useState<{ email?: string } | null>(null);
   const [bootstrappingSession, setBootstrappingSession] = useState(false);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
@@ -192,6 +193,12 @@ export default function OnboardingPage() {
   }, [currentStep]);
 
   useEffect(() => {
+    if (currentStep !== 6) return;
+    const t = window.setTimeout(() => loadRooms(), 800);
+    return () => window.clearTimeout(t);
+  }, [currentStep]);
+
+  useEffect(() => {
     // Recuperar selección tras volver de Stripe
     try {
       const raw = localStorage.getItem('onboarding_plan_selection');
@@ -280,19 +287,25 @@ export default function OnboardingPage() {
   const loadRooms = async () => {
     try {
       const response = await fetch('/api/tenant/rooms', { credentials: 'include' });
-      const data = await response.json();
+      const data = await response.json().catch(() => ({}));
       if (data.success) {
+        setRoomsApiError(null);
         const list = data.rooms || [];
         setRooms(list);
-        // localStorage puede marcar propertyAdded sin filas en BD (otra cuenta, BD reseteada, fallo al guardar).
         if (list.length === 0) {
           setFormData((prev) =>
             prev.propertyAdded ? { ...prev, propertyAdded: false } : prev
           );
         }
+      } else {
+        const detail =
+          data?.message || data?.error || `HTTP ${response.status}`;
+        setRoomsApiError(detail);
+        console.warn('[onboarding] /api/tenant/rooms no OK:', detail, data);
       }
     } catch (error) {
       console.error('Error cargando habitaciones:', error);
+      setRoomsApiError('network');
     }
   };
 
@@ -567,7 +580,7 @@ export default function OnboardingPage() {
 
       // Guardar configuración de limpieza si se proporcionó
       for (const room of rooms) {
-        const config = cleaningConfigs[room.id];
+        const config = cleaningConfigs[String(room.id)];
         if (config) {
           await fetch('/api/cleaning/config', {
             method: 'PUT',
@@ -1184,6 +1197,22 @@ export default function OnboardingPage() {
             <p className="text-blue-800 text-sm">{t('step5.optional')}</p>
           </div>
 
+          {roomsApiError && (
+            <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+              <p className="font-medium">{t('step5.apiLoadError')}</p>
+              {roomsApiError !== 'network' && (
+                <p className="mt-1 font-mono text-xs opacity-90">{roomsApiError}</p>
+              )}
+              <button
+                type="button"
+                onClick={() => loadRooms()}
+                className="mt-3 rounded-lg bg-amber-700 px-4 py-2 text-white hover:bg-amber-800"
+              >
+                {t('step5.reloadRooms')}
+              </button>
+            </div>
+          )}
+
           {rooms.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               <p>{t('step5.noRooms')}</p>
@@ -1191,18 +1220,19 @@ export default function OnboardingPage() {
           ) : (
             <div className="space-y-4">
               {rooms.map(room => {
-                const config = cleaningConfigs[room.id] || { checkoutTime: '11:00', checkinTime: '16:00', duration: 120 };
-                const isConfigured = !!cleaningConfigs[room.id];
+                const rk = String(room.id);
+                const config = cleaningConfigs[rk] || { checkoutTime: '11:00', checkinTime: '16:00', duration: 120 };
+                const isConfigured = !!cleaningConfigs[rk];
 
                 return (
-                  <div key={room.id} className={`border-2 rounded-xl p-5 transition-all ${isConfigured ? 'border-green-300 bg-green-50' : 'border-gray-200'}`}>
+                  <div key={rk} className={`border-2 rounded-xl p-5 transition-all ${isConfigured ? 'border-green-300 bg-green-50' : 'border-gray-200'}`}>
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="font-semibold text-gray-800 text-lg">{room.name}</h3>
                       {!isConfigured ? (
                         <button
                           onClick={() => setCleaningConfigs(prev => ({
                             ...prev,
-                            [room.id]: { checkoutTime: '11:00', checkinTime: '16:00', duration: 120 }
+                            [rk]: { checkoutTime: '11:00', checkinTime: '16:00', duration: 120 }
                           }))}
                           className="text-sm bg-blue-600 text-white px-4 py-1.5 rounded-lg hover:bg-blue-700"
                         >
@@ -1212,7 +1242,7 @@ export default function OnboardingPage() {
                         <button
                           onClick={() => setCleaningConfigs(prev => {
                             const next = { ...prev };
-                            delete next[room.id];
+                            delete next[rk];
                             return next;
                           })}
                           className="text-sm text-red-600 hover:text-red-800"
@@ -1231,7 +1261,7 @@ export default function OnboardingPage() {
                             value={config.checkoutTime}
                             onChange={e => setCleaningConfigs(prev => ({
                               ...prev,
-                              [room.id]: { ...prev[room.id], checkoutTime: e.target.value }
+                              [rk]: { ...prev[rk], checkoutTime: e.target.value }
                             }))}
                             className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
                           />
@@ -1243,7 +1273,7 @@ export default function OnboardingPage() {
                             value={config.checkinTime}
                             onChange={e => setCleaningConfigs(prev => ({
                               ...prev,
-                              [room.id]: { ...prev[room.id], checkinTime: e.target.value }
+                              [rk]: { ...prev[rk], checkinTime: e.target.value }
                             }))}
                             className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
                           />
@@ -1254,7 +1284,7 @@ export default function OnboardingPage() {
                             value={config.duration}
                             onChange={e => setCleaningConfigs(prev => ({
                               ...prev,
-                              [room.id]: { ...prev[room.id], duration: parseInt(e.target.value) }
+                              [rk]: { ...prev[rk], duration: parseInt(e.target.value) }
                             }))}
                             className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
                           >

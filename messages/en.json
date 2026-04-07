@@ -332,6 +332,8 @@
       "intro": "Set up cleaning schedules per room. An automatic calendar will be generated for your cleaning staff.",
       "optional": "This step is optional. You can configure or change this later in Settings.",
       "noRooms": "No rooms configured. You can go back to the previous step to add one.",
+      "apiLoadError": "Could not load rooms. Check the Network tab for /api/tenant/rooms or go back to the previous step and tap «Create units» again.",
+      "reloadRooms": "Reload rooms",
       "configure": "Configure",
       "remove": "Remove",
       "checkoutTime": "Checkout time",

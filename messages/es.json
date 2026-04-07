@@ -332,6 +332,8 @@
       "intro": "Configura los horarios de limpieza por habitación. Se generará un calendario automático para tus limpiadoras.",
       "optional": "Este paso es opcional. Puedes configurar o modificar esto más adelante en Configuración.",
       "noRooms": "No hay habitaciones configuradas. Puedes volver al paso anterior para añadir una.",
+      "apiLoadError": "No se pudieron cargar las habitaciones. Comprueba la consola de red (petición a /api/tenant/rooms) o vuelve al paso anterior y pulsa de nuevo «Crear unidades».",
+      "reloadRooms": "Recargar habitaciones",
       "configure": "Configurar",
       "remove": "Quitar",
       "checkoutTime": "Hora de checkout",

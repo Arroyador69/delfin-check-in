@@ -321,6 +321,8 @@
       "intro": "Configurez les horaires de nettoyage par chambre. Un calendrier automatique sera généré pour votre personnel de nettoyage.",
       "optional": "Cette étape est optionnelle. Vous pouvez configurer ou modifier cela plus tard dans les Paramètres.",
       "noRooms": "Aucune chambre configurée. Vous pouvez revenir à l'étape précédente pour en ajouter une.",
+      "apiLoadError": "Impossible de charger les chambres. Vérifiez l'onglet Réseau (/api/tenant/rooms) ou revenez à l'étape précédent et recréez les unités.",
+      "reloadRooms": "Recharger les chambres",
       "configure": "Configurer",
       "remove": "Supprimer",
       "checkoutTime": "Heure de départ",
