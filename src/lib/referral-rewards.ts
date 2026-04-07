@@ -44,7 +44,7 @@ export const REWARD_RULES: RewardRule[] = [
   {
     id: '1_checkin_paid',
     name: '1 Referido que Paga Check-in',
-    description: 'Cuando un referido paga Plan Check-in, consigues 1 mes gratis de Plan Check-in',
+    description: 'Cuando un referido paga Plan Check-in o Standard, consigues 1 mes gratis de Plan Check-in',
     condition: (stats) => stats.activeCheckin >= 1 && stats.paidReferrals >= 1,
     reward: {
       type: 'checkin_month',
@@ -54,7 +54,7 @@ export const REWARD_RULES: RewardRule[] = [
   {
     id: '3_active_checkin',
     name: '3 Referidos Activos en Check-in',
-    description: 'Con 3 referidos activos en Plan Check-in, consigues 1 mes gratis de Plan Pro',
+    description: 'Con 3 referidos activos en Plan Check-in o Standard, consigues 1 mes gratis de Plan Pro',
     condition: (stats) => stats.activeCheckin >= 3,
     reward: {
       type: 'pro_month',

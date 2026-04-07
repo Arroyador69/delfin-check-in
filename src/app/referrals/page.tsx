@@ -200,6 +200,8 @@ export default function ReferralsPage() {
   }
 
   const referralLink = `https://delfincheckin.com/?ref=${stats.referralCode}`;
+  const clamp01 = (n: number) => Math.max(0, Math.min(1, n));
+  const progressPct = (current: number, goal: number) => `${Math.round(clamp01(goal <= 0 ? 0 : current / goal) * 100)}%`;
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -236,6 +238,75 @@ export default function ReferralsPage() {
               <Share2 className="w-4 h-4" />
               Compartir
             </button>
+          </div>
+        </div>
+
+        {/* Cómo funciona + Objetivos */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <h2 className="text-xl font-semibold mb-2">Cómo funciona</h2>
+            <p className="text-gray-600 mb-4">Comparte tu enlace y gana créditos cuando tus referidos avanzan.</p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="rounded-lg border border-gray-200 p-4">
+                <p className="text-sm font-semibold text-gray-900 mb-1">Comparte tu enlace</p>
+                <p className="text-sm text-gray-600">Envíalo por WhatsApp, email o redes.</p>
+              </div>
+              <div className="rounded-lg border border-gray-200 p-4">
+                <p className="text-sm font-semibold text-gray-900 mb-1">Se registran</p>
+                <p className="text-sm text-gray-600">Si entran con tu enlace, quedan asociados a ti.</p>
+              </div>
+              <div className="rounded-lg border border-gray-200 p-4">
+                <p className="text-sm font-semibold text-gray-900 mb-1">Se activan y ganas</p>
+                <p className="text-sm text-gray-600">Cuando están activos en Check-in/Standard o en Pro, acumulas meses gratis.</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <h2 className="text-xl font-semibold mb-4">Objetivos y recompensas</h2>
+            <div className="space-y-4">
+              {[
+                {
+                  title: '5 referidos registrados',
+                  desc: '1 mes gratis de Plan Check-in',
+                  current: stats.registeredCount,
+                  goal: 5,
+                },
+                {
+                  title: '1 referido que paga Check-in o Standard',
+                  desc: '1 mes gratis de Plan Check-in',
+                  current: stats.paidReferralsCount,
+                  goal: 1,
+                },
+                {
+                  title: '3 referidos activos en Check-in o Standard',
+                  desc: '1 mes gratis de Plan Pro',
+                  current: stats.activeCheckinCount,
+                  goal: 3,
+                },
+                {
+                  title: '5 referidos activos en Pro',
+                  desc: '2 meses gratis de Plan Pro',
+                  current: stats.activeProCount,
+                  goal: 5,
+                },
+              ].map((g) => (
+                <div key={g.title} className="rounded-lg border border-gray-200 p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="font-semibold text-gray-900">{g.title}</p>
+                      <p className="text-sm text-gray-600">{g.desc}</p>
+                    </div>
+                    <div className="flex-shrink-0 text-sm font-semibold text-gray-700">
+                      {Math.min(g.current, g.goal)}/{g.goal}
+                    </div>
+                  </div>
+                  <div className="mt-3 h-2 w-full bg-gray-100 rounded-full overflow-hidden">
+                    <div className="h-2 bg-blue-600 rounded-full" style={{ width: progressPct(g.current, g.goal) }} />
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 

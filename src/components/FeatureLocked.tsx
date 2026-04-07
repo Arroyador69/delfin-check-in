@@ -33,7 +33,7 @@ export default function FeatureLocked({
   const planInfo = {
     checkin: {
       name: 'Plan Check-in',
-      price: '2€/mes + 2€/prop',
+      price: '2€/mes + 2€/unidad extra',
       icon: Zap,
       color: 'green'
     },

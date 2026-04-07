@@ -201,6 +201,8 @@ export default function ReferralsPage() {
   }
 
   const referralLink = `https://delfincheckin.com/?ref=${stats.referralCode}`;
+  const clamp01 = (n: number) => Math.max(0, Math.min(1, n));
+  const progressPct = (current: number, goal: number) => `${Math.round(clamp01(goal <= 0 ? 0 : current / goal) * 100)}%`;
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -237,6 +239,75 @@ export default function ReferralsPage() {
               <Share2 className="w-4 h-4" />
               {t('btnShare')}
             </button>
+          </div>
+        </div>
+
+        {/* Cómo funciona + Objetivos */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <h2 className="text-xl font-semibold mb-2">{t('howItWorksTitle')}</h2>
+            <p className="text-gray-600 mb-4">{t('howItWorksSubtitle')}</p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="rounded-lg border border-gray-200 p-4">
+                <p className="text-sm font-semibold text-gray-900 mb-1">{t('howStep1Title')}</p>
+                <p className="text-sm text-gray-600">{t('howStep1Text')}</p>
+              </div>
+              <div className="rounded-lg border border-gray-200 p-4">
+                <p className="text-sm font-semibold text-gray-900 mb-1">{t('howStep2Title')}</p>
+                <p className="text-sm text-gray-600">{t('howStep2Text')}</p>
+              </div>
+              <div className="rounded-lg border border-gray-200 p-4">
+                <p className="text-sm font-semibold text-gray-900 mb-1">{t('howStep3Title')}</p>
+                <p className="text-sm text-gray-600">{t('howStep3Text')}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <h2 className="text-xl font-semibold mb-4">{t('goalsTitle')}</h2>
+            <div className="space-y-4">
+              {[
+                {
+                  title: t('goalRegisteredTitle'),
+                  desc: t('goalRegisteredDesc'),
+                  current: stats.registeredCount,
+                  goal: 5,
+                },
+                {
+                  title: t('goalPaidTitle'),
+                  desc: t('goalPaidDesc'),
+                  current: stats.paidReferralsCount,
+                  goal: 1,
+                },
+                {
+                  title: t('goalActiveCheckinTitle'),
+                  desc: t('goalActiveCheckinDesc'),
+                  current: stats.activeCheckinCount,
+                  goal: 3,
+                },
+                {
+                  title: t('goalActiveProTitle'),
+                  desc: t('goalActiveProDesc'),
+                  current: stats.activeProCount,
+                  goal: 5,
+                },
+              ].map((g) => (
+                <div key={g.title} className="rounded-lg border border-gray-200 p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="font-semibold text-gray-900">{g.title}</p>
+                      <p className="text-sm text-gray-600">{g.desc}</p>
+                    </div>
+                    <div className="flex-shrink-0 text-sm font-semibold text-gray-700">
+                      {t('progress', { current: Math.min(g.current, g.goal), goal: g.goal })}
+                    </div>
+                  </div>
+                  <div className="mt-3 h-2 w-full bg-gray-100 rounded-full overflow-hidden">
+                    <div className="h-2 bg-blue-600 rounded-full" style={{ width: progressPct(g.current, g.goal) }} />
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 

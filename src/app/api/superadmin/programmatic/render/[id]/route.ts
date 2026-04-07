@@ -408,7 +408,7 @@ function generateFooterHTML(): string {
         <a href="https://delfincheckin.com/aviso-legal.html" style="color: var(--brand); margin: 0 8px;">Aviso Legal</a>
         <br style="margin: 8px 0;">
         <span style="font-size: 11px; display: block; margin-top: 8px;">
-          El Plan Gratuito se financia con anuncios elegantes y discretos. El Plan Check-in tiene un coste de 2€/mes (+ IVA 21%). Sin costes ocultos.
+          El Plan Básico (gratis) se financia con anuncios elegantes y discretos. El Plan Check-in cuesta 2€/mes + 2€/unidad extra (+ IVA 21%). Sin costes ocultos.
         </span>
       </p>
     </div>
@@ -424,24 +424,23 @@ function generateWaitlistSectionHTML(): string {
     <div style="font-size: 64px; margin-bottom: 16px;">🐬</div>
     <h2 style="color: white; margin-bottom: 16px; font-size: 42px; font-weight: 900; text-shadow: 0 4px 12px rgba(0,0,0,0.2);">El software de gestión hotelera (PMS) que estabas esperando</h2>
     <p class="lead" style="color: rgba(255,255,255,0.95); font-size: 22px; line-height: 1.6; margin-bottom: 16px; font-weight: 600;">
-      <strong>Gratis para siempre si te apuntas ya.</strong> De propietarios, para propietarios.
+      <strong>Plan Básico gratis para siempre.</strong> De propietarios, para propietarios.
     </p>
     <p style="color: rgba(255,255,255,0.9); font-size: 18px; margin-top: 12px; line-height: 1.6;">
-      Estamos en la fase final de desarrollo. <strong style="font-size: 20px; text-decoration: underline;">⚠️ URGENTE: Solo los primeros en registrarse tendrán el software completo gratis para siempre.</strong>
-      <br><strong style="font-size: 20px;">Regístrate ahora antes de que se agoten las plazas gratuitas.</strong>
-      <br><span style="font-size: 16px; opacity: 0.9;">El módulo de check-in digital (envío al Ministerio del Interior) siempre costará 2€/mes (+ IVA 21%).</span>
+      Empieza en minutos con el Plan Básico (0€). Si necesitas el envío automático al Ministerio del Interior (MIR), activa el Plan Check-in.
+      <br><span style="font-size: 16px; opacity: 0.9;">El Plan Check-in cuesta 2€/mes + 2€/unidad extra (+ IVA 21%).</span>
     </p>
     <div style="margin-top: 24px; padding: 16px; background: rgba(255,255,255,0.15); border-radius: 12px; backdrop-filter: blur(10px);">
-      <p style="margin: 0; font-size: 16px; font-weight: 600;">📱 Apps móviles en desarrollo | 💯 PMS 100% Gratis | 💰 Check-in: 2€/mes (+ IVA 21%)</p>
+      <p style="margin: 0; font-size: 16px; font-weight: 600;">📱 Apps móviles en desarrollo | 💯 Plan Básico gratis | 💰 Check-in (MIR): 2€/mes + 2€/unidad extra (+ IVA 21%)</p>
     </div>
   </div>
   
   <div class="card" style="background: white; max-width: 600px; margin: 0 auto; padding: 32px; border-radius: 16px;">
     <div style="text-align: center; margin-bottom: 24px;">
       <div style="font-size: 48px; margin-bottom: 12px;">🎯</div>
-      <h3 style="color: #0f172a; font-size: 28px; font-weight: 800; margin-bottom: 8px;">Consigue el plan gratis para siempre</h3>
+      <h3 style="color: #0f172a; font-size: 28px; font-weight: 800; margin-bottom: 8px;">Empieza gratis con el Plan Básico</h3>
       <p style="color: #64748b; font-size: 18px; line-height: 1.6;">
-        Únete a la lista de espera y recibe acceso prioritario cuando lancemos. Los primeros usuarios tendrán el Plan Gratuito para siempre.
+        Regístrate y crea tu cuenta. El Plan Básico es gratis para siempre y puedes mejorar de plan cuando quieras.
       </p>
     </div>
     
@@ -476,7 +475,7 @@ function generateWaitlistSectionHTML(): string {
         onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(37, 99, 235, 0.4)'"
         onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(37, 99, 235, 0.3)'"
       >
-        <span id="waitlistSubmitText">🎁 ¡Quiero gratis para siempre</span>
+        <span id="waitlistSubmitText">🚀 Empezar gratis</span>
         <span id="waitlistLoading" style="display: none;">Enviando...</span>
       </button>
       <div id="waitlistMessage" style="margin: 0; padding: 0; border-radius: 8px; display: none; text-align: left;"></div>
@@ -498,14 +497,9 @@ function generateWaitlistSectionHTML(): string {
             <li><strong>✅ Microsite para reservas directas</strong> - Crea en minutos una página pública para tu alojamiento, comparte el enlace en redes o con tus huéspedes y recibe reservas directas. Con pagos directos las comisiones se reducen y el dinero entra en tu cuenta sin esperas.</li>
             <li><strong>💡 Financiado con anuncios</strong> - Elegantes y discretos, sin coste para ti</li>
           </ul>
-          <div style="margin-top: 16px; padding: 16px; background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-radius: 8px; border: 2px solid #f59e0b;">
-            <p style="margin: 0; color: #92400e; font-size: 15px; font-weight: 700;">
-              🎁 Los primeros usuarios: tendrás el software con el plan gratis para siempre
-            </p>
-          </div>
           <div style="margin-top: 16px; padding: 16px; background: #fef2f2; border-radius: 8px; border: 2px solid #ef4444;">
             <p style="margin: 0; color: #991b1b; font-size: 15px; font-weight: 700;">
-              ❌ No incluye: Check-in digital (2€/mes + IVA 21%) ni envío al Ministerio del Interior
+              ❌ No incluye: Check-in digital (MIR) — 2€/mes + 2€/unidad extra (+ IVA 21%)
             </p>
           </div>
         </div>
