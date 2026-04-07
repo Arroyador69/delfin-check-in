@@ -17,22 +17,45 @@ export async function GET(req: NextRequest) {
       }, { status: 401 });
     }
 
-    // Obtener lodging_id (usar tenant_id como fallback si no existe)
+    // Resolver lodging_id: a veces queda un valor viejo (p. ej. cuid) y el onboarding crea
+    // Lodging/Room bajo el UUID del tenant; sin fallback el paso 6 ve 0 habitaciones.
     const lodgingResult = await sql`
-      SELECT lodging_id FROM tenants WHERE id = ${tenantId}
+      SELECT lodging_id FROM tenants WHERE id = ${tenantId}::uuid
     `;
-    const lodgingId = lodgingResult.rows[0]?.lodging_id || tenantId;
-    
-    const result = await sql`
+    const storedLodgingId = lodgingResult.rows[0]?.lodging_id;
+    const primaryLodgingId =
+      storedLodgingId != null && String(storedLodgingId).trim() !== ''
+        ? String(storedLodgingId).trim()
+        : tenantId;
+
+    let result = await sql`
       SELECT id, name
       FROM "Room"
-      WHERE "lodgingId" = ${lodgingId}
+      WHERE "lodgingId"::text = ${primaryLodgingId}
       ORDER BY id ASC
     `;
 
-    const rooms = result.rows.map(row => ({
-      id: parseInt(row.id),
-      name: row.name
+    if (
+      result.rows.length === 0 &&
+      primaryLodgingId !== tenantId
+    ) {
+      const fallback = await sql`
+        SELECT id, name
+        FROM "Room"
+        WHERE "lodgingId"::text = ${tenantId}
+        ORDER BY id ASC
+      `;
+      if (fallback.rows.length > 0) {
+        console.warn(
+          `⚠️ [GET /api/tenant/rooms] Sin habitaciones para lodging_id=${primaryLodgingId}; usando tenantId=${tenantId} (${fallback.rows.length} filas). Revisa tenants.lodging_id.`
+        );
+        result = fallback;
+      }
+    }
+
+    const rooms = result.rows.map((row) => ({
+      id: typeof row.id === 'number' ? row.id : parseInt(String(row.id), 10) || row.id,
+      name: row.name,
     }));
 
     return NextResponse.json({

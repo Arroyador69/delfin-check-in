@@ -57,7 +57,7 @@ export default function OnboardingPage() {
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>('');
-  const [rooms, setRooms] = useState<Array<{id: number, name: string}>>([]);
+  const [rooms, setRooms] = useState<Array<{ id: number | string; name: string }>>([]);
   const [tenant, setTenant] = useState<{ email?: string } | null>(null);
   const [bootstrappingSession, setBootstrappingSession] = useState(false);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
@@ -279,7 +279,7 @@ export default function OnboardingPage() {
 
   const loadRooms = async () => {
     try {
-      const response = await fetch('/api/tenant/rooms');
+      const response = await fetch('/api/tenant/rooms', { credentials: 'include' });
       const data = await response.json();
       if (data.success) {
         setRooms(data.rooms || []);
@@ -510,6 +510,7 @@ export default function OnboardingPage() {
       const roomsResponse = await fetch('/api/tenant/rooms', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
           rooms: payloadRooms,
           lodgingType: formData.lodgingType,
@@ -594,7 +595,9 @@ export default function OnboardingPage() {
     }
   };
 
-  const [cleaningConfigs, setCleaningConfigs] = useState<Record<number, { checkoutTime: string; checkinTime: string; duration: number }>>({});
+  const [cleaningConfigs, setCleaningConfigs] = useState<
+    Record<string, { checkoutTime: string; checkinTime: string; duration: number }>
+  >({});
 
   // Paso 1: Cambiar contraseña
   const renderPasswordStep = () => (
