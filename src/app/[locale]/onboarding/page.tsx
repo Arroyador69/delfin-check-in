@@ -49,6 +49,7 @@ interface OnboardingData {
 
 export default function OnboardingPage() {
   const t = useTranslations('onboarding');
+  const tPlans = useTranslations('plans');
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -1289,6 +1290,55 @@ export default function OnboardingPage() {
     const locale = getLocaleFromPath();
     const checkoutFlag = searchParams?.get('checkout');
 
+    const PLAN_CARDS: Array<{
+      id: PlanId;
+      name: string;
+      desc: string;
+      badge?: string;
+      basePrice: number;
+      color: string;
+      featuresKeys: string[];
+      defaultUnits: number;
+    }> = [
+      {
+        id: 'free',
+        name: tPlans('freePlanName'),
+        desc: tPlans('freePlanDesc'),
+        basePrice: 0,
+        color: 'blue',
+        featuresKeys: ['freeF0', 'freeF1', 'freeF2', 'freeF3', 'freeF4'],
+        defaultUnits: 1,
+      },
+      {
+        id: 'checkin',
+        name: tPlans('checkinPlanName'),
+        desc: tPlans('checkinPlanDesc'),
+        badge: tPlans('mostPopular'),
+        basePrice: 2,
+        color: 'green',
+        featuresKeys: ['checkinF0', 'checkinF1', 'checkinF2', 'checkinF3', 'checkinF4', 'checkinF5', 'checkinF6'],
+        defaultUnits: 2,
+      },
+      {
+        id: 'standard',
+        name: tPlans('standardPlanName'),
+        desc: tPlans('standardPlanDesc'),
+        basePrice: 9.99,
+        color: 'amber',
+        featuresKeys: ['standardF0', 'standardF1', 'standardF2', 'standardF3', 'standardF4', 'standardF5'],
+        defaultUnits: 4,
+      },
+      {
+        id: 'pro',
+        name: tPlans('proPlanName'),
+        desc: tPlans('proPlanDesc'),
+        basePrice: 29.99,
+        color: 'purple',
+        featuresKeys: ['proF0', 'proF1', 'proF2', 'proF3', 'proF4', 'proF5', 'proF6', 'proF7'],
+        defaultUnits: 6,
+      },
+    ];
+
     const onPay = async () => {
       setError('');
       if (formData.selectedPlanId === 'free') {
@@ -1346,6 +1396,64 @@ export default function OnboardingPage() {
         <div className="bg-white rounded-lg shadow-lg p-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">💳 Plan y pago</h1>
           <p className="text-gray-600 mb-6">Elige tu plan, unidades y si prefieres pago mensual o anual.</p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            {PLAN_CARDS.map((p) => {
+              const isSelected = formData.selectedPlanId === p.id;
+              const isPaid = p.id !== 'free';
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => {
+                    setError('');
+                    setFormData((prev) => ({
+                      ...prev,
+                      selectedPlanId: p.id,
+                      unitCount: p.id === 'free' ? 1 : Math.max(prev.unitCount || 1, p.defaultUnits),
+                      checkoutCompleted: p.id === 'free' ? true : false,
+                    }));
+                    loadPricing({ selectedPlanId: p.id });
+                  }}
+                  className={`text-left border rounded-xl p-4 transition-all ${
+                    isSelected ? 'border-blue-600 ring-2 ring-blue-200' : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-bold text-gray-900 truncate">{p.name}</h3>
+                        {p.badge && (
+                          <span className="text-xs font-semibold bg-blue-600 text-white px-2 py-0.5 rounded-full">
+                            {p.badge}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-sm text-gray-600 mt-1">{p.desc}</p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div className="text-xl font-extrabold text-gray-900">
+                        {p.basePrice === 0 ? tPlans('free') : `${p.basePrice}€`}
+                      </div>
+                      <div className="text-xs text-gray-500">{p.basePrice === 0 ? tPlans('freePlan') : tPlans('perMonth')}</div>
+                      {isPaid && <div className="text-[11px] text-gray-500 mt-1">+ IVA</div>}
+                    </div>
+                  </div>
+                  <ul className="mt-3 space-y-1 text-sm text-gray-700">
+                    {p.featuresKeys.slice(0, 5).map((k) => (
+                      <li key={k} className="flex items-start gap-2">
+                        <span className="mt-1 h-1.5 w-1.5 rounded-full bg-green-500" />
+                        <span>{tPlans(k)}</span>
+                      </li>
+                    ))}
+                    {p.featuresKeys.length > 5 && (
+                      <li className="text-xs text-gray-500">+ {p.featuresKeys.length - 5} más</li>
+                    )}
+                  </ul>
+                </button>
+              );
+            })}
+          </div>
 
           {checkoutFlag === 'cancel' && (
             <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
