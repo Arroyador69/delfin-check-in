@@ -93,6 +93,10 @@ export async function POST(req: NextRequest) {
     // Importante: en Neon puede existir una tabla Lodging con distinto schema; por eso evitamos
     // insertar columnas opcionales (created_at/updated_at) para no romper compatibilidad.
     let lodgingId: string;
+    // Opcional: permitir que el cliente indique tipo de alojamiento si el schema lo soporta.
+    // Ejemplos deseados: 'hostal' | 'apartamentos' (dependiendo de enum/texto en BD).
+    const body = await req.json().catch(() => ({}));
+    const requestedLodgingType = typeof body?.lodgingType === 'string' ? body.lodgingType.trim() : '';
     
     try {
       // Primero, intentar crear la tabla Lodging si no existe (schema mínimo)
@@ -103,6 +107,59 @@ export async function POST(req: NextRequest) {
         )
       `;
       console.log(`✅ Tabla Lodging verificada/creada`);
+
+      // Detectar si existe columna "type" en Lodging (algunas BD la tienen como NOT NULL)
+      const typeColumn = await sql`
+        SELECT
+          is_nullable,
+          data_type,
+          udt_name
+        FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'Lodging'
+          AND column_name = 'type'
+        LIMIT 1
+      `;
+
+      const hasTypeColumn = typeColumn.rows.length > 0;
+      const typeUdtName = hasTypeColumn ? String(typeColumn.rows[0].udt_name || '') : '';
+      const typeDataType = hasTypeColumn ? String(typeColumn.rows[0].data_type || '') : '';
+      // const typeIsNullable = hasTypeColumn ? String(typeColumn.rows[0].is_nullable || '') : '';
+
+      // Si "type" es enum, leer valores para elegir uno válido.
+      let enumTypeValues: string[] = [];
+      if (hasTypeColumn && typeDataType === 'USER-DEFINED' && typeUdtName) {
+        try {
+          const enumRows = await sql`
+            SELECT e.enumlabel
+            FROM pg_type t
+            JOIN pg_enum e ON t.oid = e.enumtypid
+            JOIN pg_namespace n ON n.oid = t.typnamespace
+            WHERE n.nspname = 'public'
+              AND t.typname = ${typeUdtName}
+            ORDER BY e.enumsortorder ASC
+          `;
+          enumTypeValues = enumRows.rows.map((r: any) => String(r.enumlabel));
+        } catch (e) {
+          // No es crítico; si falla, tratamos como texto y usamos requestedLodgingType si viene.
+          enumTypeValues = [];
+        }
+      }
+
+      const preferredTypeCandidates = [
+        requestedLodgingType,
+        'hostal',
+        'hostel',
+        'hotel',
+        'apartamentos',
+        'apartments',
+        'apartment',
+      ].filter(Boolean) as string[];
+
+      const chosenType =
+        enumTypeValues.length > 0
+          ? (preferredTypeCandidates.find((c) => enumTypeValues.includes(c)) || enumTypeValues[0])
+          : (preferredTypeCandidates[0] || '');
       
       // Verificar si ya existe un registro en Lodging para este tenant
       const existingLodging = await sql`
@@ -117,12 +174,19 @@ export async function POST(req: NextRequest) {
         console.log(`✅ Encontrado registro existente en Lodging: ${lodgingId}`);
       } else {
         // Crear el registro en Lodging
-        const insertResult = await sql`
-          INSERT INTO "Lodging" (id, name)
-          VALUES (${tenantId}::uuid, ${tenant.name || 'Mi Propiedad'})
-          ON CONFLICT (id) DO UPDATE SET name = ${tenant.name || 'Mi Propiedad'}
-          RETURNING id
-        `;
+        const insertResult = hasTypeColumn && chosenType
+          ? await sql`
+              INSERT INTO "Lodging" (id, name, type)
+              VALUES (${tenantId}::uuid, ${tenant.name || 'Mi Propiedad'}, ${chosenType})
+              ON CONFLICT (id) DO UPDATE SET name = ${tenant.name || 'Mi Propiedad'}
+              RETURNING id
+            `
+          : await sql`
+              INSERT INTO "Lodging" (id, name)
+              VALUES (${tenantId}::uuid, ${tenant.name || 'Mi Propiedad'})
+              ON CONFLICT (id) DO UPDATE SET name = ${tenant.name || 'Mi Propiedad'}
+              RETURNING id
+            `;
         
         if (insertResult.rows.length > 0) {
           lodgingId = insertResult.rows[0].id;
