@@ -282,7 +282,14 @@ export default function OnboardingPage() {
       const response = await fetch('/api/tenant/rooms', { credentials: 'include' });
       const data = await response.json();
       if (data.success) {
-        setRooms(data.rooms || []);
+        const list = data.rooms || [];
+        setRooms(list);
+        // localStorage puede marcar propertyAdded sin filas en BD (otra cuenta, BD reseteada, fallo al guardar).
+        if (list.length === 0) {
+          setFormData((prev) =>
+            prev.propertyAdded ? { ...prev, propertyAdded: false } : prev
+          );
+        }
       }
     } catch (error) {
       console.error('Error cargando habitaciones:', error);

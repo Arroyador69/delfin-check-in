@@ -17,39 +17,39 @@ export async function GET(req: NextRequest) {
       }, { status: 401 });
     }
 
-    // Resolver lodging_id: a veces queda un valor viejo (p. ej. cuid) y el onboarding crea
-    // Lodging/Room bajo el UUID del tenant; sin fallback el paso 6 ve 0 habitaciones.
-    const lodgingResult = await sql`
-      SELECT lodging_id FROM tenants WHERE id = ${tenantId}::uuid
-    `;
-    const storedLodgingId = lodgingResult.rows[0]?.lodging_id;
-    const primaryLodgingId =
-      storedLodgingId != null && String(storedLodgingId).trim() !== ''
-        ? String(storedLodgingId).trim()
-        : tenantId;
-
+    // Una sola consulta: habitaciones bajo el UUID del tenant O bajo tenants.lodging_id (p. ej. cuid legado).
+    // Así el paso 6 coincide con lo creado en el paso 5 aunque lodging_id y Lodging.id no estén alineados.
     let result = await sql`
-      SELECT id, name
-      FROM "Room"
-      WHERE "lodgingId"::text = ${primaryLodgingId}
-      ORDER BY id ASC
+      SELECT DISTINCT r.id, r.name
+      FROM "Room" r
+      INNER JOIN tenants t ON t.id = ${tenantId}::uuid
+      WHERE r."lodgingId"::text = t.id::text
+         OR (
+           t.lodging_id IS NOT NULL
+           AND BTRIM(t.lodging_id::text) <> ''
+           AND r."lodgingId"::text = BTRIM(t.lodging_id::text)
+         )
+      ORDER BY r.id::text ASC
     `;
 
-    if (
-      result.rows.length === 0 &&
-      primaryLodgingId !== tenantId
-    ) {
-      const fallback = await sql`
-        SELECT id, name
-        FROM "Room"
-        WHERE "lodgingId"::text = ${tenantId}
-        ORDER BY id ASC
-      `;
-      if (fallback.rows.length > 0) {
-        console.warn(
-          `⚠️ [GET /api/tenant/rooms] Sin habitaciones para lodging_id=${primaryLodgingId}; usando tenantId=${tenantId} (${fallback.rows.length} filas). Revisa tenants.lodging_id.`
-        );
-        result = fallback;
+    if (result.rows.length === 0) {
+      try {
+        const mapped = await sql`
+          SELECT DISTINCT r.id, r.name
+          FROM "Room" r
+          INNER JOIN property_room_map m
+            ON m.tenant_id = ${tenantId}::uuid
+            AND m.room_id::text = r.id::text
+          ORDER BY r.id::text ASC
+        `;
+        if (mapped.rows.length > 0) {
+          console.warn(
+            `⚠️ [GET /api/tenant/rooms] Habitaciones resueltas vía property_room_map (${mapped.rows.length})`
+          );
+          result = mapped;
+        }
+      } catch {
+        /* property_room_map puede no existir en todas las BDs */
       }
     }
 
@@ -460,52 +460,15 @@ export async function POST(req: NextRequest) {
     `;
     console.log(`🗑️ Eliminadas ${existingRooms.rows.length} habitaciones existentes para recrearlas`);
 
-    // Insertar todas las habitaciones nuevas
+    // Insertar habitaciones. Muchas BDs tienen Room.id como UUID; el onboarding envía "1","2".
+    // Usar gen_random_uuid() evita fallos silenciosos en paso 5 y lista vacía en paso 6.
     for (let i = 0; i < rooms.length; i++) {
       const room = rooms[i];
-      const roomId = String(room.id);
-      
-      try {
-        // Usar INSERT con ON CONFLICT para evitar duplicados
-        await sql`
-          INSERT INTO "Room" (id, name, "lodgingId", created_at, updated_at)
-          VALUES (${roomId}, ${room.name}, ${lodgingId}, NOW(), NOW())
-          ON CONFLICT (id) DO UPDATE
-          SET name = ${room.name}, updated_at = NOW(), "lodgingId" = ${lodgingId}
-        `;
-        console.log(`✅ Habitación ${roomId} guardada: ${room.name}`);
-      } catch (insertError: any) {
-        console.error(`❌ Error insertando habitación ${roomId}:`, insertError);
-        // Si falla, intentar actualizar
-        try {
-          await sql`
-            UPDATE "Room"
-            SET name = ${room.name}, updated_at = NOW(), "lodgingId" = ${lodgingId}
-            WHERE id = ${roomId}
-          `;
-          console.log(`✅ Habitación ${roomId} actualizada: ${room.name}`);
-        } catch (updateError: any) {
-          console.error(`❌ Error también al actualizar habitación ${roomId}:`, updateError);
-          throw new Error(`No se pudo guardar la habitación ${roomId}: ${insertError.message}`);
-        }
-      }
-    }
-
-    // Eliminar habitaciones que excedan el límite del plan (si es necesario)
-    // Solo eliminar si el usuario tiene menos habitaciones que el máximo permitido
-    const maxRoomsAllowed = tenant.max_rooms === -1 ? Infinity : tenant.max_rooms;
-    if (rooms.length < existingRooms.rows.length && maxRoomsAllowed !== Infinity) {
-      // Eliminar habitaciones que excedan el límite
-      const roomsToDelete = await sql`
-        DELETE FROM "Room"
-        WHERE "lodgingId" = ${lodgingId}
-        AND id::integer > ${rooms.length}
-        RETURNING id, name
+      await sql`
+        INSERT INTO "Room" (id, name, "lodgingId", created_at, updated_at)
+        VALUES (gen_random_uuid(), ${room.name}, ${lodgingId}, NOW(), NOW())
       `;
-      
-      if (roomsToDelete.rows.length > 0) {
-        console.log('🗑️ Habitaciones eliminadas:', roomsToDelete.rows);
-      }
+      console.log(`✅ Habitación guardada: ${room.name} (lodging ${lodgingId})`);
     }
 
     if (requestedLodgingType === 'hostal' || requestedLodgingType === 'apartamentos') {
