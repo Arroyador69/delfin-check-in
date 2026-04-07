@@ -142,6 +142,27 @@ export async function POST(req: NextRequest) {
       const typeDataType = hasTypeColumn ? String(typeColumn.rows[0].data_type || '') : '';
       // const typeIsNullable = hasTypeColumn ? String(typeColumn.rows[0].is_nullable || '') : '';
 
+      // Algunas BDs usan timestamps camelCase (createdAt/updatedAt) y pueden ser NOT NULL sin default.
+      // Detectamos si existen para incluirlos en el INSERT/UPDATE.
+      const createdAtColumn = await sql`
+        SELECT data_type
+        FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'Lodging'
+          AND column_name = 'createdAt'
+        LIMIT 1
+      `;
+      const updatedAtColumn = await sql`
+        SELECT data_type
+        FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'Lodging'
+          AND column_name = 'updatedAt'
+        LIMIT 1
+      `;
+      const hasCreatedAtColumn = createdAtColumn.rows.length > 0;
+      const hasUpdatedAtColumn = updatedAtColumn.rows.length > 0;
+
       // Si "type" es enum, leer valores para elegir uno válido.
       let enumTypeValues: string[] = [];
       if (hasTypeColumn && typeDataType === 'USER-DEFINED' && typeUdtName) {
@@ -204,36 +225,108 @@ export async function POST(req: NextRequest) {
         // Crear el registro en Lodging
         const insertResult =
           hasTypeColumn && hasDescriptionColumn && chosenType
-            ? await sql`
-                INSERT INTO "Lodging" (id, name, type, description)
-                VALUES (${tenantId}::uuid, ${tenant.name || 'Mi Propiedad'}, ${chosenType}, ${defaultDescription})
-                ON CONFLICT (id) DO UPDATE
-                SET
-                  name = ${tenant.name || 'Mi Propiedad'},
-                  type = COALESCE("Lodging".type, ${chosenType}),
-                  description = COALESCE("Lodging".description, ${defaultDescription})
-                RETURNING id
-              `
-            : hasTypeColumn && chosenType
+            ? hasCreatedAtColumn && hasUpdatedAtColumn
               ? await sql`
-                  INSERT INTO "Lodging" (id, name, type)
-                  VALUES (${tenantId}::uuid, ${tenant.name || 'Mi Propiedad'}, ${chosenType})
-                  ON CONFLICT (id) DO UPDATE SET name = ${tenant.name || 'Mi Propiedad'}
+                  INSERT INTO "Lodging" (id, name, type, description, "createdAt", "updatedAt")
+                  VALUES (${tenantId}::uuid, ${tenant.name || 'Mi Propiedad'}, ${chosenType}, ${defaultDescription}, NOW(), NOW())
+                  ON CONFLICT (id) DO UPDATE
+                  SET
+                    name = ${tenant.name || 'Mi Propiedad'},
+                    type = COALESCE("Lodging".type, ${chosenType}),
+                    description = COALESCE("Lodging".description, ${defaultDescription}),
+                    "updatedAt" = NOW()
                   RETURNING id
                 `
-              : hasDescriptionColumn
+              : hasUpdatedAtColumn
                 ? await sql`
-                    INSERT INTO "Lodging" (id, name, description)
-                    VALUES (${tenantId}::uuid, ${tenant.name || 'Mi Propiedad'}, ${defaultDescription})
-                    ON CONFLICT (id) DO UPDATE SET name = ${tenant.name || 'Mi Propiedad'}
+                    INSERT INTO "Lodging" (id, name, type, description, "updatedAt")
+                    VALUES (${tenantId}::uuid, ${tenant.name || 'Mi Propiedad'}, ${chosenType}, ${defaultDescription}, NOW())
+                    ON CONFLICT (id) DO UPDATE
+                    SET
+                      name = ${tenant.name || 'Mi Propiedad'},
+                      type = COALESCE("Lodging".type, ${chosenType}),
+                      description = COALESCE("Lodging".description, ${defaultDescription}),
+                      "updatedAt" = NOW()
                     RETURNING id
                   `
                 : await sql`
-                    INSERT INTO "Lodging" (id, name)
-                    VALUES (${tenantId}::uuid, ${tenant.name || 'Mi Propiedad'})
-                    ON CONFLICT (id) DO UPDATE SET name = ${tenant.name || 'Mi Propiedad'}
+                    INSERT INTO "Lodging" (id, name, type, description)
+                    VALUES (${tenantId}::uuid, ${tenant.name || 'Mi Propiedad'}, ${chosenType}, ${defaultDescription})
+                    ON CONFLICT (id) DO UPDATE
+                    SET
+                      name = ${tenant.name || 'Mi Propiedad'},
+                      type = COALESCE("Lodging".type, ${chosenType}),
+                      description = COALESCE("Lodging".description, ${defaultDescription})
                     RETURNING id
-                  `;
+                  `
+            : hasTypeColumn && chosenType
+              ? hasCreatedAtColumn && hasUpdatedAtColumn
+                ? await sql`
+                    INSERT INTO "Lodging" (id, name, type, "createdAt", "updatedAt")
+                    VALUES (${tenantId}::uuid, ${tenant.name || 'Mi Propiedad'}, ${chosenType}, NOW(), NOW())
+                    ON CONFLICT (id) DO UPDATE
+                    SET name = ${tenant.name || 'Mi Propiedad'}, "updatedAt" = NOW()
+                    RETURNING id
+                  `
+                : hasUpdatedAtColumn
+                  ? await sql`
+                      INSERT INTO "Lodging" (id, name, type, "updatedAt")
+                      VALUES (${tenantId}::uuid, ${tenant.name || 'Mi Propiedad'}, ${chosenType}, NOW())
+                      ON CONFLICT (id) DO UPDATE
+                      SET name = ${tenant.name || 'Mi Propiedad'}, "updatedAt" = NOW()
+                      RETURNING id
+                    `
+                  : await sql`
+                      INSERT INTO "Lodging" (id, name, type)
+                      VALUES (${tenantId}::uuid, ${tenant.name || 'Mi Propiedad'}, ${chosenType})
+                      ON CONFLICT (id) DO UPDATE SET name = ${tenant.name || 'Mi Propiedad'}
+                      RETURNING id
+                    `
+              : hasDescriptionColumn
+                ? hasCreatedAtColumn && hasUpdatedAtColumn
+                  ? await sql`
+                      INSERT INTO "Lodging" (id, name, description, "createdAt", "updatedAt")
+                      VALUES (${tenantId}::uuid, ${tenant.name || 'Mi Propiedad'}, ${defaultDescription}, NOW(), NOW())
+                      ON CONFLICT (id) DO UPDATE
+                      SET name = ${tenant.name || 'Mi Propiedad'}, "updatedAt" = NOW()
+                      RETURNING id
+                    `
+                  : hasUpdatedAtColumn
+                    ? await sql`
+                        INSERT INTO "Lodging" (id, name, description, "updatedAt")
+                        VALUES (${tenantId}::uuid, ${tenant.name || 'Mi Propiedad'}, ${defaultDescription}, NOW())
+                        ON CONFLICT (id) DO UPDATE
+                        SET name = ${tenant.name || 'Mi Propiedad'}, "updatedAt" = NOW()
+                        RETURNING id
+                      `
+                    : await sql`
+                        INSERT INTO "Lodging" (id, name, description)
+                        VALUES (${tenantId}::uuid, ${tenant.name || 'Mi Propiedad'}, ${defaultDescription})
+                        ON CONFLICT (id) DO UPDATE SET name = ${tenant.name || 'Mi Propiedad'}
+                        RETURNING id
+                      `
+                : hasCreatedAtColumn && hasUpdatedAtColumn
+                  ? await sql`
+                      INSERT INTO "Lodging" (id, name, "createdAt", "updatedAt")
+                      VALUES (${tenantId}::uuid, ${tenant.name || 'Mi Propiedad'}, NOW(), NOW())
+                      ON CONFLICT (id) DO UPDATE
+                      SET name = ${tenant.name || 'Mi Propiedad'}, "updatedAt" = NOW()
+                      RETURNING id
+                    `
+                  : hasUpdatedAtColumn
+                    ? await sql`
+                        INSERT INTO "Lodging" (id, name, "updatedAt")
+                        VALUES (${tenantId}::uuid, ${tenant.name || 'Mi Propiedad'}, NOW())
+                        ON CONFLICT (id) DO UPDATE
+                        SET name = ${tenant.name || 'Mi Propiedad'}, "updatedAt" = NOW()
+                        RETURNING id
+                      `
+                    : await sql`
+                        INSERT INTO "Lodging" (id, name)
+                        VALUES (${tenantId}::uuid, ${tenant.name || 'Mi Propiedad'})
+                        ON CONFLICT (id) DO UPDATE SET name = ${tenant.name || 'Mi Propiedad'}
+                        RETURNING id
+                      `;
         
         if (insertResult.rows.length > 0) {
           lodgingId = insertResult.rows[0].id;

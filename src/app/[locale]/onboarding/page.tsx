@@ -1583,7 +1583,7 @@ export default function OnboardingPage() {
               <p className="text-xs text-gray-500 mt-1">
                 {formData.selectedPlanId === 'free'
                   ? 'En Básico es 1 unidad.'
-                  : 'Hasta 500.'}
+                  : ''}
               </p>
             </div>
           </div>
