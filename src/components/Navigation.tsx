@@ -6,7 +6,6 @@ import { Home, Bed, Calendar, Users, Settings, Menu, X, TrendingUp, FileText, Do
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { useTenant, hasLegalModule } from '@/hooks/useTenant';
-import { useTranslations } from 'next-intl';
 import { useClientTranslations } from '@/hooks/useClientTranslations';
 import LanguageSwitcher from './LanguageSwitcher';
 import { locales, defaultLocale, type Locale } from '@/i18n/config';
@@ -20,46 +19,30 @@ function getLocaleFromPathname(pathname: string): Locale {
 const PWAInstallButton = dynamic(() => import('./PWAInstallButton'), { ssr: false });
 const AdMenu = dynamic(() => import('./AdMenu'), { ssr: false });
 
-// Hook seguro que no falla si no hay provider
-function useSafeTranslations(namespace: string) {
-  // Textos hardcoded en español para cuando NO hay provider de i18n
-  const fallbackTexts: Record<string, string> = {
-    'dashboard': 'Dashboard',
-    'reservations': 'Reservas',
-    'directReservations': 'Reservas Directas',
-    'calendar': 'Calendario',
-    'guestRegistrations': 'Registros de formularios',
-    'invoices': 'Facturas',
-    'mirStatus': 'Estado Envíos MIR',
-    'costCalculator': 'Calculadora de Costos',
-    'exportAEAT': 'Exportar AEAT',
-    'offlineQueue': 'Cola offline',
-    'audit': 'Bitácora',
-    'marketIntelligence': 'Inteligencia de Mercado',
-    'referrals': 'Referidos',
-    'settings': 'Configuración',
-    'superAdminDashboardTitle': '👑 SuperAdmin Dashboard',
-    'viewMyTenantPanel': 'Ver Mi Panel Tenant',
-    'menu': 'Menú',
-    'logout': 'Cerrar Sesión',
-  };
-  
-  try {
-    return useTranslations(namespace);
-  } catch (error) {
-    // Si no hay provider, devolver función que retorna texto en español
-    console.log("ℹ️ [Navigation] Sin provider i18n, usando textos en español");
-    return (key: string) => fallbackTexts[key] || key;
-  }
-}
-
 export default function Navigation() {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isPlatformAdmin, setIsPlatformAdmin] = useState(false);
   const { tenant } = useTenant();
-  const t = useSafeTranslations('navigation');
-  const tc = useClientTranslations('navigation');
+  // Usamos siempre el mismo hook (client translations) para evitar variaciones de hooks
+  // entre rutas con/sin provider y entre renders.
+  const t = useClientTranslations('navigation');
+  const tc = t;
+
+  useEffect(() => {
+    // En onboarding no necesitamos cargar /api/auth/me
+    if (pathname?.includes('/onboarding')) return;
+
+    // Obtener información del usuario para saber si es superadmin
+    fetch('/api/auth/me')
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.data.isPlatformAdmin) {
+          setIsPlatformAdmin(true);
+        }
+      })
+      .catch(err => console.error('Error fetching user:', err));
+  }, [pathname]);
 
   // En onboarding mostramos solo el logo (sin navegación) y NO debe navegar al dashboard.
   if (pathname?.includes('/onboarding')) {
@@ -81,18 +64,6 @@ export default function Navigation() {
       </nav>
     );
   }
-
-  useEffect(() => {
-    // Obtener información del usuario para saber si es superadmin
-    fetch('/api/auth/me')
-      .then(res => res.json())
-      .then(data => {
-        if (data.success && data.data.isPlatformAdmin) {
-          setIsPlatformAdmin(true);
-        }
-      })
-      .catch(err => console.error('Error fetching user:', err));
-  }, []);
 
   const locale = getLocaleFromPathname(pathname ?? '');
 
