@@ -69,13 +69,29 @@ export async function POST(req: NextRequest) {
     
     console.log('🏢 [POST /api/tenant/rooms] Tenant identificado:', tenantId);
     const body = await req.json().catch(() => ({}));
-    const rooms = body?.rooms;
+    const rawRooms = body?.rooms;
 
-    if (!Array.isArray(rooms)) {
+    if (!Array.isArray(rawRooms)) {
       return NextResponse.json({
         success: false,
         message: 'Formato de datos inválido'
       }, { status: 400 });
+    }
+
+    // Normalizar rooms: el cliente puede mandar [{ name }] (sin id) durante onboarding.
+    // Internamente usamos ids consecutivos desde 1.
+    const rooms = rawRooms
+      .map((r: any, idx: number) => ({
+        id: r?.id != null && String(r.id).trim() !== '' ? String(r.id) : String(idx + 1),
+        name: String(r?.name || '').trim(),
+      }))
+      .filter((r: any) => r.name);
+
+    if (rooms.length === 0) {
+      return NextResponse.json(
+        { success: false, message: 'Debes enviar al menos una propiedad/habitación válida' },
+        { status: 400 }
+      );
     }
 
     // Validar límite por plan usando el nuevo sistema de permisos
@@ -160,6 +176,18 @@ export async function POST(req: NextRequest) {
         enumTypeValues.length > 0
           ? (preferredTypeCandidates.find((c) => enumTypeValues.includes(c)) || enumTypeValues[0])
           : (preferredTypeCandidates[0] || '');
+
+      // Algunas BDs tienen Lodging.description NOT NULL
+      const descColumn = await sql`
+        SELECT data_type
+        FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'Lodging'
+          AND column_name = 'description'
+        LIMIT 1
+      `;
+      const hasDescriptionColumn = descColumn.rows.length > 0;
+      const defaultDescription = tenant.name ? `Alojamiento de ${tenant.name}` : 'Alojamiento';
       
       // Verificar si ya existe un registro en Lodging para este tenant
       const existingLodging = await sql`
@@ -174,19 +202,35 @@ export async function POST(req: NextRequest) {
         console.log(`✅ Encontrado registro existente en Lodging: ${lodgingId}`);
       } else {
         // Crear el registro en Lodging
-        const insertResult = hasTypeColumn && chosenType
-          ? await sql`
-              INSERT INTO "Lodging" (id, name, type)
-              VALUES (${tenantId}::uuid, ${tenant.name || 'Mi Propiedad'}, ${chosenType})
-              ON CONFLICT (id) DO UPDATE SET name = ${tenant.name || 'Mi Propiedad'}
-              RETURNING id
-            `
-          : await sql`
-              INSERT INTO "Lodging" (id, name)
-              VALUES (${tenantId}::uuid, ${tenant.name || 'Mi Propiedad'})
-              ON CONFLICT (id) DO UPDATE SET name = ${tenant.name || 'Mi Propiedad'}
-              RETURNING id
-            `;
+        const insertResult =
+          hasTypeColumn && hasDescriptionColumn && chosenType
+            ? await sql`
+                INSERT INTO "Lodging" (id, name, type, description)
+                VALUES (${tenantId}::uuid, ${tenant.name || 'Mi Propiedad'}, ${chosenType}, ${defaultDescription})
+                ON CONFLICT (id) DO UPDATE
+                SET name = ${tenant.name || 'Mi Propiedad'}
+                RETURNING id
+              `
+            : hasTypeColumn && chosenType
+              ? await sql`
+                  INSERT INTO "Lodging" (id, name, type)
+                  VALUES (${tenantId}::uuid, ${tenant.name || 'Mi Propiedad'}, ${chosenType})
+                  ON CONFLICT (id) DO UPDATE SET name = ${tenant.name || 'Mi Propiedad'}
+                  RETURNING id
+                `
+              : hasDescriptionColumn
+                ? await sql`
+                    INSERT INTO "Lodging" (id, name, description)
+                    VALUES (${tenantId}::uuid, ${tenant.name || 'Mi Propiedad'}, ${defaultDescription})
+                    ON CONFLICT (id) DO UPDATE SET name = ${tenant.name || 'Mi Propiedad'}
+                    RETURNING id
+                  `
+                : await sql`
+                    INSERT INTO "Lodging" (id, name)
+                    VALUES (${tenantId}::uuid, ${tenant.name || 'Mi Propiedad'})
+                    ON CONFLICT (id) DO UPDATE SET name = ${tenant.name || 'Mi Propiedad'}
+                    RETURNING id
+                  `;
         
         if (insertResult.rows.length > 0) {
           lodgingId = insertResult.rows[0].id;
@@ -254,8 +298,8 @@ export async function POST(req: NextRequest) {
       let errorMessage = validation.reason || 'No puedes crear más habitaciones';
       
       // Mensajes personalizados según el plan
-      if (planType === 'free' && finalCount > 2) {
-        errorMessage = 'Has alcanzado el límite de 2 propiedades del Plan Básico. Actualiza a Check-in, Standard o Pro para añadir más.';
+      if (planType === 'free' && finalCount > 1) {
+        errorMessage = 'Has alcanzado el límite de 1 propiedad del Plan Básico. Actualiza a Check-in, Standard o Pro para añadir más.';
       } else if (planType === 'checkin') {
         errorMessage = `Puedes añadir más propiedades; cada una adicional son 2€/mes. Actualmente tienes ${finalCount}.`;
       } else if (planType === 'standard' && finalCount > 1) {
@@ -269,7 +313,7 @@ export async function POST(req: NextRequest) {
         success: false,
         error: errorMessage,
         current_usage: finalCount,
-        max_included: planType === 'free' ? 2 : planType === 'standard' || planType === 'pro' ? 1 : null,
+        max_included: planType === 'free' ? 1 : planType === 'standard' || planType === 'pro' ? 1 : null,
         plan_type: planType,
         needs_upgrade: validation.needsUpgrade || false,
         upgrade_plan: validation.upgradePlan || null
@@ -300,7 +344,7 @@ export async function POST(req: NextRequest) {
     // Insertar todas las habitaciones nuevas
     for (let i = 0; i < rooms.length; i++) {
       const room = rooms[i];
-      const roomId = room.id.toString();
+      const roomId = String(room.id);
       
       try {
         // Usar INSERT con ON CONFLICT para evitar duplicados
