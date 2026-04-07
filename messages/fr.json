@@ -1314,6 +1314,7 @@
       "saving": "Enregistrement...",
       "saved": "Configuration des chambres enregistrée avec succès",
       "saveError": "Erreur lors de l'enregistrement de la configuration",
+      "saveBlockedOverLimit": "Vous avez plus de chambres que votre forfait ne l'autorise ({max} max). Supprimez l'excédent avant d'enregistrer.",
       "roomNumber": "Chambre {number}",
       "placeholder": "Chambre {number}",
       "remove": "Retirer",

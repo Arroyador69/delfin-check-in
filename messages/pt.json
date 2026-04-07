@@ -1315,6 +1315,7 @@
       "saving": "A guardar...",
       "saved": "Configuração de quartos guardada com sucesso",
       "saveError": "Erro ao guardar configuração",
+      "saveBlockedOverLimit": "Tem mais quartos do que o seu plano permite (máx. {max}). Remova os extra antes de guardar.",
       "roomNumber": "Quarto {number}",
       "placeholder": "Quarto {number}",
       "remove": "Remover",

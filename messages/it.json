@@ -1391,6 +1391,7 @@
       "saving": "Salvataggio...",
       "saved": "Configurazione camere salvata con successo",
       "saveError": "Errore nel salvataggio della configurazione",
+      "saveBlockedOverLimit": "Hai più camere di quanto consentito dal piano (max {max}). Rimuovi le eccedenze prima di salvare.",
       "roomNumber": "Camera {number}",
       "placeholder": "Camera {number}",
       "remove": "Rimuovi",

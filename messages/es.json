@@ -1429,6 +1429,7 @@
       "saving": "Guardando...",
       "saved": "Configuración de habitaciones guardada exitosamente",
       "saveError": "Error guardando configuración",
+      "saveBlockedOverLimit": "Tienes más habitaciones ({max} máx. según tu plan). Elimina las que sobren antes de guardar.",
       "roomNumber": "Habitación {number}",
       "placeholder": "Habitación {number}",
       "remove": "Eliminar",

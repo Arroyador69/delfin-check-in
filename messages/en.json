@@ -1363,6 +1363,7 @@
       "saving": "Saving...",
       "saved": "Room configuration saved successfully",
       "saveError": "Error saving configuration",
+      "saveBlockedOverLimit": "You have more rooms than your plan allows ({max} max). Remove the extra ones before saving.",
       "roomNumber": "Room {number}",
       "placeholder": "Room {number}",
       "remove": "Remove",

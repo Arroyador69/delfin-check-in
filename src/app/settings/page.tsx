@@ -11,7 +11,7 @@ export default function SettingsPage() {
   // Estados para configuración de habitaciones/apartamentos
   const [roomsConfig, setRoomsConfig] = useState<Array<{id: number, name: string}>>([]);
   const [tenantLimits, setTenantLimits] = useState({ 
-    maxRooms: 2, // Default para plan FREE
+    maxRooms: 1,
     maxReservations: 100, 
     maxGuests: 50 
   });
@@ -42,11 +42,7 @@ export default function SettingsPage() {
         }
       } catch (error) {
         console.error('Error cargando datos:', error);
-        // Fallback a configuración por defecto (2 habitaciones para plan FREE)
-        setRoomsConfig([
-          { id: 1, name: 'Habitación 1' },
-          { id: 2, name: 'Habitación 2' }
-        ]);
+        setRoomsConfig([{ id: 1, name: 'Habitación 1' }]);
       }
     };
     
@@ -103,9 +99,14 @@ export default function SettingsPage() {
                   className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
-              {roomsConfig.length > 1 && (
+              {(roomsConfig.length > 1 ||
+                (tenantLimits.maxRooms !== -1 && roomsConfig.length > tenantLimits.maxRooms)) && (
                 <button
-                  onClick={() => setRoomsConfig(prev => prev.filter(r => r.id !== room.id))}
+                  onClick={() =>
+                    setRoomsConfig((prev) =>
+                      prev.length <= 1 ? prev : prev.filter((r) => r.id !== room.id)
+                    )
+                  }
                   className="flex-shrink-0 text-red-600 hover:text-red-800"
                   title="Eliminar"
                 >
@@ -120,7 +121,8 @@ export default function SettingsPage() {
         <div className="mt-3 sm:mt-4 flex flex-col sm:flex-row gap-2 sm:gap-3">
           <button
             onClick={() => {
-              if (roomsConfig.length < tenantLimits.maxRooms) {
+              const cap = tenantLimits.maxRooms;
+              if (cap === -1 || roomsConfig.length < cap) {
                 const newId = Math.max(...roomsConfig.map(r => r.id), 0) + 1;
                 setRoomsConfig([...roomsConfig, { id: newId, name: `Habitación ${newId}` }]);
               } else {
@@ -131,7 +133,7 @@ export default function SettingsPage() {
                 setTimeout(() => setMessage({ type: '', text: '' }), 8000);
               }
             }}
-            disabled={roomsConfig.length >= tenantLimits.maxRooms}
+            disabled={tenantLimits.maxRooms !== -1 && roomsConfig.length >= tenantLimits.maxRooms}
             className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-xl shadow-lg transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center space-x-2 text-sm sm:text-base"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -141,6 +143,14 @@ export default function SettingsPage() {
           </button>
           <button
             onClick={async () => {
+              if (tenantLimits.maxRooms !== -1 && roomsConfig.length > tenantLimits.maxRooms) {
+                setMessage({
+                  type: 'error',
+                  text: t('rooms.saveBlockedOverLimit', { max: tenantLimits.maxRooms }),
+                });
+                setTimeout(() => setMessage({ type: '', text: '' }), 8000);
+                return;
+              }
               setLoading(true);
               try {
                 const response = await fetch('/api/tenant/rooms', {
@@ -164,7 +174,10 @@ export default function SettingsPage() {
                 setTimeout(() => setMessage({ type: '', text: '' }), 5000);
               }
             }}
-            disabled={loading}
+            disabled={
+              loading ||
+              (tenantLimits.maxRooms !== -1 && roomsConfig.length > tenantLimits.maxRooms)
+            }
             className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 py-3 rounded-xl shadow-lg transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:transform-none flex items-center space-x-2"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
