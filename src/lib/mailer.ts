@@ -56,7 +56,7 @@ export async function sendOnboardingEmail(params: {
         .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; }
         .header h1 { margin: 0; font-size: 28px; }
         .content { padding: 30px; }
-        .button { display: inline-block; background: #2563eb; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: bold; margin: 20px 0; }
+        .button { display: inline-block; background: #2563eb; color: #ffffff !important; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: bold; margin: 20px 0; }
         .button:hover { background: #1d4ed8; }
         .footer { background: #f8f9fa; padding: 20px; text-align: center; color: #666; font-size: 14px; border-top: 1px solid #e5e7eb; }
         .password-box { background: #f8f9fa; border-left: 4px solid #2563eb; padding: 15px; margin: 20px 0; border-radius: 4px; }
@@ -73,7 +73,7 @@ export async function sendOnboardingEmail(params: {
           <h2>¡Bienvenido a Delfín Check-in!</h2>
           <p>Tu cuenta ha sido creada exitosamente. Para completar tu configuración inicial y acceder a tu panel de administración, haz clic en el siguiente botón:</p>
           <p style="text-align: center;">
-            <a href="${params.onboardingUrl}" class="button">Comenzar Onboarding</a>
+            <a href="${params.onboardingUrl}" class="button" style="color:#ffffff !important;">Comenzar Onboarding</a>
           </p>
           ${params.tempPassword ? `
           <div class="password-box">

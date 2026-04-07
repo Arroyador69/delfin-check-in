@@ -138,7 +138,7 @@ export async function POST(req: NextRequest) {
               </ul>
               
               <p style="background: #f0f9ff; padding: 16px; border-radius: 8px; border-left: 4px solid #2563eb; margin: 20px 0;">
-                <strong>💡 Nota importante:</strong> El módulo de check-in digital (envío al Ministerio del Interior) tendrá un coste de 8€/mes, pero el PMS completo (a excepción del envío al Ministerio del Interior) será gratis para siempre.
+                <strong>💡 Nota importante:</strong> El módulo de check-in digital (envío al Ministerio del Interior) tendrá un coste de 2€/mes (+ IVA 21%), pero el PMS completo (a excepción del envío al Ministerio del Interior) será gratis para siempre.
               </p>
               
               <p>Te notificaremos por email en cuanto el PMS esté listo para que puedas empezar a usarlo como early adopter.</p>

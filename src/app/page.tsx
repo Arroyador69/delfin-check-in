@@ -326,13 +326,13 @@ export default function HomePage() {
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div className="flex-1">
                 <h3 className="text-lg sm:text-xl font-bold text-blue-900 mb-2">
-                  💰 Módulo MIR - Solo 8€/mes (+ IVA)
+                  💰 Módulo MIR - Solo 2€/mes (+ IVA)
                 </h3>
                 <p className="text-sm sm:text-base text-blue-800 mb-2">
                   <strong>Recordatorio:</strong> El envío automático de formularios de huéspedes al Ministerio del Interior es <strong>obligatorio</strong> en España.
                 </p>
                 <p className="text-sm sm:text-base text-blue-700">
-                  Por solo <strong>8€/mes (+ IVA 21%)</strong> puedes tener el módulo MIR activado, que incluye check-in digital automático y envío automático de formularios al gobierno.
+                  Por solo <strong>2€/mes (+ IVA 21%)</strong> puedes tener el módulo MIR activado, que incluye check-in digital automático y envío automático de formularios al gobierno.
                 </p>
               </div>
               <Link

@@ -609,7 +609,7 @@ function generateFooterHTML(): string {
         <a href="https://delfincheckin.com/aviso-legal.html" style="color: var(--brand); margin: 0 8px;">Aviso Legal</a>
         <br style="margin: 8px 0;">
         <span style="font-size: 11px; display: block; margin-top: 8px;">
-          El Plan Gratuito se financia con anuncios elegantes y discretos. El Plan Check-in tiene un coste de 8€/mes. Sin costes ocultos.
+          El Plan Gratuito se financia con anuncios elegantes y discretos. El Plan Check-in tiene un coste de 2€/mes (+ IVA 21%). Sin costes ocultos.
         </span>
       </p>
     </div>
@@ -630,10 +630,10 @@ function generateWaitlistSectionHTML(): string {
     <p style="color: rgba(255,255,255,0.9); font-size: 18px; margin-top: 12px; line-height: 1.6;">
       Estamos en la fase final de desarrollo. <strong style="font-size: 20px; text-decoration: underline;">⚠️ URGENTE: Solo los primeros en registrarse tendrán el software completo gratis para siempre.</strong>
       <br><strong style="font-size: 20px;">Regístrate ahora antes de que se agoten las plazas gratuitas.</strong>
-      <br><span style="font-size: 16px; opacity: 0.9;">El módulo de check-in digital (envío al Ministerio del Interior) siempre costará 8€/mes.</span>
+      <br><span style="font-size: 16px; opacity: 0.9;">El módulo de check-in digital (envío al Ministerio del Interior) siempre costará 2€/mes (+ IVA 21%).</span>
     </p>
     <div style="margin-top: 24px; padding: 16px; background: rgba(255,255,255,0.15); border-radius: 12px; backdrop-filter: blur(10px);">
-      <p style="margin: 0; font-size: 16px; font-weight: 600;">📱 Apps móviles en desarrollo | 💯 PMS 100% Gratis | 💰 Check-in: 8€/mes</p>
+      <p style="margin: 0; font-size: 16px; font-weight: 600;">📱 Apps móviles en desarrollo | 💯 PMS 100% Gratis | 💰 Check-in: 2€/mes (+ IVA 21%)</p>
     </div>
   </div>
   
@@ -706,7 +706,7 @@ function generateWaitlistSectionHTML(): string {
           </div>
           <div style="margin-top: 16px; padding: 16px; background: #fef2f2; border-radius: 8px; border: 2px solid #ef4444;">
             <p style="margin: 0; color: #991b1b; font-size: 15px; font-weight: 700;">
-              ❌ No incluye: Check-in digital (8€/mes) ni envío al Ministerio del Interior
+              ❌ No incluye: Check-in digital (2€/mes + IVA 21%) ni envío al Ministerio del Interior
             </p>
           </div>
         </div>

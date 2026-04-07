@@ -226,13 +226,13 @@ export default function MirSettingsPage() {
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div className="flex-1">
                 <h3 className="text-xl font-bold text-blue-900 mb-2">
-                  💰 Módulo MIR - Solo 8€/mes (+ IVA)
+                  💰 Módulo MIR - Solo 2€/mes (+ IVA)
                 </h3>
                 <p className="text-base text-blue-800 mb-2">
                   <strong>Recordatorio:</strong> El envío automático de formularios de huéspedes al Ministerio del Interior es <strong>obligatorio</strong> en España.
                 </p>
                 <p className="text-sm text-blue-700 mb-2">
-                  Por solo <strong>8€/mes (+ IVA 21%)</strong> puedes tener el módulo MIR activado, que incluye:
+                  Por solo <strong>2€/mes (+ IVA 21%)</strong> puedes tener el módulo MIR activado, que incluye:
                 </p>
                 <ul className="list-disc list-inside text-blue-800 text-sm space-y-1">
                   <li>Check-in digital automático</li>

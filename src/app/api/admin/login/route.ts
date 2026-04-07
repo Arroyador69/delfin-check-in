@@ -102,7 +102,8 @@ export async function POST(req: NextRequest) {
         status,
         plan_id,
         max_rooms,
-        current_rooms
+        current_rooms,
+        onboarding_status
       FROM tenants 
       WHERE email = $1
       LIMIT 1
@@ -297,6 +298,16 @@ export async function POST(req: NextRequest) {
       sameSite: 'lax',
       maxAge: 60 * 60 * 24 * 7,
       path: '/api/auth',
+    });
+
+    // Cookie de estado de onboarding (para redirección en middleware Edge)
+    // Nota: httpOnly para que no dependa de JS y no sea manipulable en cliente.
+    response.cookies.set('onboarding_status', tenant.onboarding_status || 'pending', {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 30, // 30 días
+      path: '/',
     });
 
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

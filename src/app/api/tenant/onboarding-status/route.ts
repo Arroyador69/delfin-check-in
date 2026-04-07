@@ -33,11 +33,23 @@ export async function PUT(req: NextRequest) {
       WHERE id = ${tenantId}
     `;
 
-    return NextResponse.json({
+    const isProduction = process.env.NODE_ENV === 'production';
+    const res = NextResponse.json({
       success: true,
       message: 'Estado de onboarding actualizado',
       onboarding_status
     });
+
+    // Mantener cookie sincronizada para el middleware Edge
+    res.cookies.set('onboarding_status', onboarding_status, {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 30,
+      path: '/',
+    });
+
+    return res;
 
   } catch (error: any) {
     console.error('Error actualizando onboarding_status:', error);

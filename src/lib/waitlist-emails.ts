@@ -82,7 +82,7 @@ export function getWaitlistEmail7Days(params: WaitlistEmailParams): { html: stri
     </ul>
     
     <div class="info-box">
-      <p style="margin: 0;"><strong>💡 Nota importante:</strong> El módulo de check-in digital (envío al Ministerio del Interior) tendrá un coste de 8€/mes, pero el PMS completo será gratis para siempre.</p>
+      <p style="margin: 0;"><strong>💡 Nota importante:</strong> El módulo de check-in digital (envío al Ministerio del Interior) tendrá un coste de 2€/mes (+ IVA 21%), pero el PMS completo será gratis para siempre.</p>
     </div>
     
     <p>Te enviaremos otro email cuando falten 48 horas para que estés preparado. ¡Estamos muy emocionados de tenerte con nosotros!</p>
@@ -107,7 +107,7 @@ Esto es lo que te espera cuando lancemos:
 ✅ Sin costes ocultos - El plan gratuito se financia con anuncios elegantes y discretos
 ✅ App móvil - Próximamente disponible para iOS y Android
 
-Nota importante: El módulo de check-in digital (envío al Ministerio del Interior) tendrá un coste de 8€/mes, pero el PMS completo será gratis para siempre.
+Nota importante: El módulo de check-in digital (envío al Ministerio del Interior) tendrá un coste de 2€/mes (+ IVA 21%), pero el PMS completo será gratis para siempre.
 
 Te enviaremos otro email cuando falten 48 horas para que estés preparado. ¡Estamos muy emocionados de tenerte con nosotros!
 
@@ -163,7 +163,7 @@ export function getWaitlistEmail48Hours(params: WaitlistEmailParams): { html: st
     </ul>
     
     <div class="info-box">
-      <p style="margin: 0;"><strong>💡 Recordatorio:</strong> El módulo de check-in digital (envío al Ministerio del Interior) tendrá un coste de 8€/mes, pero el PMS completo será gratis para siempre.</p>
+      <p style="margin: 0;"><strong>💡 Recordatorio:</strong> El módulo de check-in digital (envío al Ministerio del Interior) tendrá un coste de 2€/mes (+ IVA 21%), pero el PMS completo será gratis para siempre.</p>
     </div>
     
     <p>Si tienes alguna pregunta antes del lanzamiento, no dudes en contactarnos en <a href="mailto:contacto@delfincheckin.com" style="color: #2563eb;">contacto@delfincheckin.com</a></p>
@@ -191,7 +191,7 @@ Cuando recibas el email de activación, podrás:
 ✅ Empezar a gestionar tus reservas inmediatamente
 ✅ Configurar tus habitaciones y precios
 
-Recordatorio: El módulo de check-in digital (envío al Ministerio del Interior) tendrá un coste de 8€/mes, pero el PMS completo será gratis para siempre.
+Recordatorio: El módulo de check-in digital (envío al Ministerio del Interior) tendrá un coste de 2€/mes (+ IVA 21%), pero el PMS completo será gratis para siempre.
 
 Si tienes alguna pregunta antes del lanzamiento, no dudes en contactarnos en contacto@delfincheckin.com
 
@@ -231,7 +231,7 @@ export function getWaitlistActivationEmail(params: {
     </div>
     
     <p style="text-align: center;">
-      <a href="${onboardingUrl}" class="button">Comenzar Onboarding</a>
+      <a href="${onboardingUrl}" class="button" style="color:#ffffff !important;">Comenzar Onboarding</a>
     </p>
     
     <div class="info-box">

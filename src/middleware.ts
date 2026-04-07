@@ -26,6 +26,10 @@ export async function middleware(req: NextRequest) {
   const url = req.nextUrl
   const pathname = url.pathname
   
+  // Extraer locale si existe en el pathname (/es/..., /en/...)
+  const pathParts = pathname.split('/').filter(Boolean);
+  const localeFromPath = pathParts.length > 0 && isValidLocale(pathParts[0]) ? pathParts[0] : null;
+
   // ==============================================
   // 1. ARCHIVOS ESTÁTICOS - SIEMPRE PERMITIR
   // ==============================================
@@ -323,6 +327,26 @@ export async function middleware(req: NextRequest) {
       const requestHeaders = new Headers(req.headers);
       requestHeaders.set('x-tenant-id', payload.tenantId);
       console.log(`🔐 Tenant_id extraído del JWT para página: ${payload.tenantId}`);
+
+      // ==============================================
+      // 5. GATING DE ONBOARDING (primer acceso)
+      // ==============================================
+      // Si el onboarding no está completado, forzar /{locale}/onboarding
+      // Evitar bucles permitiendo la propia ruta de onboarding.
+      const onboardingCookie = req.cookies.get('onboarding_status')?.value;
+      // Si no existe cookie todavía (usuarios antiguos), no forzar para evitar bucles.
+      const onboardingStatus = onboardingCookie || 'unknown';
+      const isOnboardingPath =
+        pathname === '/onboarding' ||
+        (localeFromPath ? pathname === `/${localeFromPath}/onboarding` : false) ||
+        (localeFromPath ? pathname.startsWith(`/${localeFromPath}/onboarding/`) : false);
+
+      if ((onboardingStatus === 'pending' || onboardingStatus === 'in_progress') && !isOnboardingPath) {
+        const targetLocale = localeFromPath || defaultLocale;
+        const onboardingUrl = new URL(`/${targetLocale}/onboarding`, req.url);
+        return NextResponse.redirect(onboardingUrl);
+      }
+
       return NextResponse.next({ request: { headers: requestHeaders } });
     } else {
       console.log('🔒 Token sin tenantId, redirigiendo al login');
