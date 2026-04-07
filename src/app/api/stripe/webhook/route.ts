@@ -703,10 +703,10 @@ export async function POST(req: NextRequest) {
                 subscription_price = NULL,
                 base_plan_price = 0.00,
                 extra_room_price = NULL,
-                max_rooms_included = 2,
+                max_rooms_included = 1,
                 ads_enabled = true,
                 legal_module = false,
-                max_rooms = 2,
+                max_rooms = 1,
                 updated_at = NOW()
               WHERE id = ${tenantId}::uuid
             `;

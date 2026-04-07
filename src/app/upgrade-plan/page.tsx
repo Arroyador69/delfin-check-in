@@ -34,17 +34,18 @@ const PLANS: Plan[] = [
     id: 'checkin',
     name: 'Plan Check-in',
     description: 'PMS con check-in digital automático',
-    basePrice: 8, // Sin IVA
+    basePrice: 2, // Sin IVA
     maxRooms: -1, // Ilimitado
-    maxRoomsIncluded: 2,
-    extraRoomPrice: 4,
+    maxRoomsIncluded: 1,
+    extraRoomPrice: 2,
     color: 'green',
     icon: Zap,
     popular: true,
     adsEnabled: true,
     legalModule: true,
     features: [
-      'Habitaciones ilimitadas',
+      'Incluye 1 unidad',
+      'Unidades adicionales: 2€/mes',
       'Check-in digital automático (MIR)',
       'Registro de viajeros ilimitado',
       'PMS completo',
@@ -59,15 +60,15 @@ const PLANS: Plan[] = [
     description: 'PMS completo sin anuncios',
     basePrice: 29.99, // Sin IVA
     maxRooms: -1, // Ilimitado
-    maxRoomsIncluded: 6,
-    extraRoomPrice: 5,
+    maxRoomsIncluded: 1,
+    extraRoomPrice: 2,
     color: 'purple',
     icon: Crown,
     adsEnabled: false,
     legalModule: true,
     features: [
-      'Hasta 6 habitaciones incluidas',
-      'Habitaciones adicionales: 5€/mes',
+      'Incluye 1 unidad',
+      'Unidades adicionales: 2€/mes',
       'Check-in digital automático (MIR)',
       'Sin anuncios',
       'PMS completo',
