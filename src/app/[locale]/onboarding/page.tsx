@@ -92,6 +92,82 @@ export default function OnboardingPage() {
     checkoutCompleted: false
   });
 
+  // Persistencia de onboarding para que, si el usuario sale y vuelve, continúe donde estaba.
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('onboarding_progress_v1');
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      if (parsed?.currentStep && typeof parsed.currentStep === 'number') {
+        setCurrentStep(Math.max(1, Math.min(TOTAL_STEPS, parsed.currentStep)));
+      }
+      if (parsed?.formData && typeof parsed.formData === 'object') {
+        // No restauramos passwords por seguridad, pero sí el flag de passwordChanged.
+        setFormData(prev => ({
+          ...prev,
+          passwordChanged: !!parsed.formData.passwordChanged,
+          nombreEmpresa: parsed.formData.nombreEmpresa ?? prev.nombreEmpresa,
+          nifEmpresa: parsed.formData.nifEmpresa ?? prev.nifEmpresa,
+          direccionEmpresa: parsed.formData.direccionEmpresa ?? prev.direccionEmpresa,
+          codigoPostal: parsed.formData.codigoPostal ?? prev.codigoPostal,
+          ciudad: parsed.formData.ciudad ?? prev.ciudad,
+          provincia: parsed.formData.provincia ?? prev.provincia,
+          pais: parsed.formData.pais ?? prev.pais,
+          telefono: parsed.formData.telefono ?? prev.telefono,
+          email: parsed.formData.email ?? prev.email,
+          web: parsed.formData.web ?? prev.web,
+          fechaCreacion: parsed.formData.fechaCreacion ?? prev.fechaCreacion,
+          usuarioMir: parsed.formData.usuarioMir ?? prev.usuarioMir,
+          contraseñaMir: parsed.formData.contraseñaMir ?? prev.contraseñaMir,
+          codigoArrendador: parsed.formData.codigoArrendador ?? prev.codigoArrendador,
+          codigoEstablecimiento: parsed.formData.codigoEstablecimiento ?? prev.codigoEstablecimiento,
+          propertyName: parsed.formData.propertyName ?? prev.propertyName,
+          propertyAdded: !!parsed.formData.propertyAdded,
+          selectedPlanId: parsed.formData.selectedPlanId ?? prev.selectedPlanId,
+          billingInterval: parsed.formData.billingInterval ?? prev.billingInterval,
+          unitCount: parsed.formData.unitCount ?? prev.unitCount,
+          checkoutCompleted: !!parsed.formData.checkoutCompleted,
+        }));
+      }
+    } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        'onboarding_progress_v1',
+        JSON.stringify({
+          currentStep,
+          formData: {
+            passwordChanged: formData.passwordChanged,
+            nombreEmpresa: formData.nombreEmpresa,
+            nifEmpresa: formData.nifEmpresa,
+            direccionEmpresa: formData.direccionEmpresa,
+            codigoPostal: formData.codigoPostal,
+            ciudad: formData.ciudad,
+            provincia: formData.provincia,
+            pais: formData.pais,
+            telefono: formData.telefono,
+            email: formData.email,
+            web: formData.web,
+            fechaCreacion: formData.fechaCreacion,
+            usuarioMir: formData.usuarioMir,
+            contraseñaMir: formData.contraseñaMir,
+            codigoArrendador: formData.codigoArrendador,
+            codigoEstablecimiento: formData.codigoEstablecimiento,
+            propertyName: formData.propertyName,
+            propertyAdded: formData.propertyAdded,
+            selectedPlanId: formData.selectedPlanId,
+            billingInterval: formData.billingInterval,
+            unitCount: formData.unitCount,
+            checkoutCompleted: formData.checkoutCompleted,
+          },
+        })
+      );
+    } catch {}
+  }, [currentStep, formData]);
+
   useEffect(() => {
     bootstrapSessionFromToken();
     if (currentStep === 4 || currentStep === 5) {
@@ -787,12 +863,19 @@ export default function OnboardingPage() {
             <li>{t('step3.feature3')}</li>
             <li>{t('step3.feature4')}</li>
           </ul>
-          <Link 
-            href="/upgrade-plan"
+          <button
+            type="button"
+            onClick={() => {
+              // Mantener al usuario dentro del onboarding: preseleccionar plan y llevar al paso de pago.
+              setFormData(prev => ({ ...prev, selectedPlanId: 'checkin' }));
+              setCurrentStep(6);
+              // Hacemos scroll al inicio por UX
+              try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch {}
+            }}
             className="inline-block mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-semibold"
           >
             {t('step3.activateModule')}
-          </Link>
+          </button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
