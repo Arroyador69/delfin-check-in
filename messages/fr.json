@@ -1562,7 +1562,16 @@
       "perMonth": "par mois",
       "vatExcluded": "TVA non comprise",
       "monthlyPrice": "Prix mensuel",
+      "priceExVat": "Sous-total HT",
+      "vatAmount": "TVA ({rate}%)",
+      "totalWithVat": "Total TTC",
+      "perMonthShort": "/mois",
+      "billingPeriodYearly": "Facturation annuelle",
+      "billingPeriodMonthly": "Facturation mensuelle",
       "nextCharge": "Prochain prélèvement",
+      "nextChargeNa": "N/A",
+      "nextChargeUnknown": "En attente de synchronisation",
+      "billedUnits": "Unités facturées : {count}",
       "willCancelAtEnd": "Sera annulé à la fin de la période",
       "customerSince": "Client depuis :",
       "reactivateSubscription": "Réactiver l'abonnement",
@@ -1637,7 +1646,10 @@
         "propertiesLabel": "Propriétés:",
         "youSave": "Vous économisez:",
         "savePerYear": "par an",
-        "hireButton": "Souscrire {count} {propertyLabel}"
+        "hireButton": "Souscrire {count} {propertyLabel}",
+        "choosePlan": "Choisir le plan",
+        "annualDiscountHint": "Inclut une réduction d'environ {percent}% par rapport à 12 mois au prix mensuel",
+        "goToUpgrade": "Voir les plans et souscrire"
       },
       "plans": {
         "basic": {

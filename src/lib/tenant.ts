@@ -27,11 +27,17 @@ export interface Tenant {
   max_rooms_included?: number; // Habitaciones incluidas en precio base
   subscription_status?: 'active' | 'trialing' | 'past_due' | 'canceled' | 'unpaid';
   subscription_current_period_end?: Date;
+  payment_retry_count?: number;
+  last_payment_failed_at?: Date | string;
+  last_payment_succeeded_at?: Date | string;
+  subscription_suspended_at?: Date | string;
+  next_payment_attempt_at?: Date | string;
   config: {
     propertyName?: string;
     timezone?: string;
     language?: string;
     currency?: string;
+    lodgingType?: string;
   };
   created_at: Date;
   updated_at: Date;

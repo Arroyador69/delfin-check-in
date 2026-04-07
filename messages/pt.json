@@ -1563,7 +1563,16 @@
       "perMonth": "por mês",
       "vatExcluded": "IVA não incluído",
       "monthlyPrice": "Preço mensal",
+      "priceExVat": "Subtotal sem IVA",
+      "vatAmount": "IVA ({rate}%)",
+      "totalWithVat": "Total com IVA",
+      "perMonthShort": "/mês",
+      "billingPeriodYearly": "Faturação anual",
+      "billingPeriodMonthly": "Faturação mensal",
       "nextCharge": "Próximo débito",
+      "nextChargeNa": "N/A",
+      "nextChargeUnknown": "Pendente de sincronização",
+      "billedUnits": "Unidades faturadas: {count}",
       "willCancelAtEnd": "Será cancelado no final do período",
       "customerSince": "Cliente desde:",
       "reactivateSubscription": "Reativar subscrição",
@@ -1638,7 +1647,10 @@
         "propertiesLabel": "Propriedades:",
         "youSave": "Poupa:",
         "savePerYear": "por ano",
-        "hireButton": "Contratar {count} {propertyLabel}"
+        "hireButton": "Contratar {count} {propertyLabel}",
+        "choosePlan": "Escolher plano",
+        "annualDiscountHint": "Inclui desconto aproximado de {percent}% face a 12 meses ao preço mensal",
+        "goToUpgrade": "Ir aos planos e subscrever"
       },
       "plans": {
         "basic": {

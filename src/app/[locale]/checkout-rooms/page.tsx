@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, Suspense, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { ArrowLeft, Loader2, CreditCard, CheckCircle } from 'lucide-react';
@@ -174,7 +174,7 @@ function CheckoutRoomsForm({
 
       <button
         type="submit"
-        disabled={!stripe || processing || !termsAccepted}
+        disabled={!stripe || processing || !termsAccepted || totalPrice <= 0}
         className="w-full bg-blue-600 text-white py-4 px-6 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed font-semibold text-lg"
       >
         {processing ? (
@@ -199,7 +199,8 @@ function CheckoutRoomsContent() {
   const searchParams = useSearchParams();
   const [roomCount, setRoomCount] = useState(1);
   const [isYearly, setIsYearly] = useState(false);
-  const [totalPrice, setTotalPrice] = useState(14.99);
+  const [subtotalExVat, setSubtotalExVat] = useState(0);
+  const [totalWithVat, setTotalWithVat] = useState(0);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
 
@@ -211,34 +212,20 @@ function CheckoutRoomsContent() {
     if (yearlyParam === 'true') setIsYearly(true);
   }, [searchParams]);
 
-  useEffect(() => {
-    // Recalcular precio cuando cambian los parámetros
-    const getRoomPrice = (count: number): number => {
-      if (count === 1) return 14.99;
-      if (count === 2) return 13.49;
-      if (count >= 3 && count <= 4) return 12.74;
-      if (count >= 5 && count <= 9) return 11.99;
-      if (count >= 10) return 11.24;
-      return 14.99;
-    };
-
-    const pricePerRoom = getRoomPrice(roomCount);
-    let total = pricePerRoom * roomCount;
-
-    if (isYearly) {
-      const yearlyTotal = total * 12;
-      const discount = yearlyTotal * 0.167;
-      total = yearlyTotal - discount;
-    }
-
-    setTotalPrice(total);
-  }, [roomCount, isYearly]);
-
-  const handlePlanChange = (plan: string, rooms: number, price: number) => {
-    setIsYearly(plan === 'yearly');
-    setRoomCount(rooms);
-    setTotalPrice(price);
-  };
+  const handleQuoteChange = useCallback(
+    (quote: {
+      roomCount: number;
+      isYearly: boolean;
+      subtotalExVat: number;
+      totalWithVat: number;
+    }) => {
+      setRoomCount(quote.roomCount);
+      setIsYearly(quote.isYearly);
+      setSubtotalExVat(quote.subtotalExVat);
+      setTotalWithVat(quote.totalWithVat);
+    },
+    []
+  );
 
   const handleSuccess = () => {
     setSuccess(true);
@@ -291,10 +278,10 @@ function CheckoutRoomsContent() {
             {/* Calculadora */}
             <div>
               <DynamicPriceCalculator
-                currentProperties={roomCount}
-                isYearly={isYearly}
-                onPlanChange={handlePlanChange}
-                showUpgradeButton={false}
+                currentRoomCount={roomCount}
+                defaultPlanId="standard"
+                showGoToUpgrade={false}
+                onQuoteChange={handleQuoteChange}
               />
             </div>
 
@@ -317,15 +304,17 @@ function CheckoutRoomsContent() {
                 <div className="pt-2 border-t border-gray-300 space-y-2">
                   <div className="flex justify-between">
                     <span className="text-gray-600">{t('baseAmount')}</span>
-                    <span className="font-semibold text-gray-900">{totalPrice.toFixed(2)}€</span>
+                    <span className="font-semibold text-gray-900">{subtotalExVat.toFixed(2)}€</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">{t('vat21')}</span>
-                    <span className="font-semibold text-gray-900">{(totalPrice * 0.21).toFixed(2)}€</span>
+                    <span className="font-semibold text-gray-900">
+                      {Math.max(0, totalWithVat - subtotalExVat).toFixed(2)}€
+                    </span>
                   </div>
                   <div className="pt-2 border-t border-gray-300 flex justify-between">
                     <span className="font-semibold text-gray-900">{t('total')}</span>
-                    <span className="text-2xl font-bold text-blue-600">{(totalPrice * 1.21).toFixed(2)}€</span>
+                    <span className="text-2xl font-bold text-blue-600">{totalWithVat.toFixed(2)}€</span>
                   </div>
                 </div>
               </div>
@@ -335,7 +324,7 @@ function CheckoutRoomsContent() {
                 <CheckoutRoomsForm
                   roomCount={roomCount}
                   isYearly={isYearly}
-                  totalPrice={totalPrice}
+                  totalPrice={totalWithVat}
                   onSuccess={handleSuccess}
                   onError={handleError}
                 />

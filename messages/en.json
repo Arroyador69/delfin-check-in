@@ -1620,7 +1620,16 @@
       "perMonth": "per month",
       "vatExcluded": "VAT not included",
       "monthlyPrice": "Monthly price",
+      "priceExVat": "Subtotal (ex. VAT)",
+      "vatAmount": "VAT ({rate}%)",
+      "totalWithVat": "Total incl. VAT",
+      "perMonthShort": "/month",
+      "billingPeriodYearly": "Annual billing",
+      "billingPeriodMonthly": "Monthly billing",
       "nextCharge": "Next charge",
+      "nextChargeNa": "N/A",
+      "nextChargeUnknown": "Pending sync",
+      "billedUnits": "Billed units: {count}",
       "willCancelAtEnd": "Will cancel at end of period",
       "customerSince": "Customer since:",
       "reactivateSubscription": "Reactivate subscription",
@@ -1695,7 +1704,10 @@
         "propertiesLabel": "Properties:",
         "youSave": "You save:",
         "savePerYear": "per year",
-        "hireButton": "Subscribe to {count} {propertyLabel}"
+        "hireButton": "Subscribe to {count} {propertyLabel}",
+        "choosePlan": "Choose plan",
+        "annualDiscountHint": "Includes an approximate {percent}% discount vs. 12 monthly payments",
+        "goToUpgrade": "Go to plans and subscribe"
       },
       "plans": {
         "basic": {

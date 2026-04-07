@@ -6,14 +6,47 @@ import { useLocale } from 'next-intl';
 import { CreditCard, TrendingUp, Calendar, AlertCircle, CheckCircle, Download, ExternalLink } from 'lucide-react';
 import DynamicPriceCalculator from '@/components/DynamicPriceCalculator';
 
+type BillingPlanType = 'free' | 'checkin' | 'standard' | 'pro';
+type PaidPlanId = 'checkin' | 'standard' | 'pro';
+
+const PLAN_FEATURE_KEYS: Record<BillingPlanType, string[]> = {
+  free: ['freeF0', 'freeF1', 'freeF2', 'freeF3', 'freeF4'],
+  checkin: ['checkinF0', 'checkinF1', 'checkinF2', 'checkinF3', 'checkinF4', 'checkinF5', 'checkinF6'],
+  standard: ['standardF0', 'standardF1', 'standardF2', 'standardF3', 'standardF4', 'standardF5'],
+  pro: ['proF0', 'proF1', 'proF2', 'proF3', 'proF4', 'proF5', 'proF6', 'proF7'],
+};
+
+const PLAN_BADGE_CLASS: Record<BillingPlanType, string> = {
+  free: 'bg-gray-100 text-gray-800',
+  checkin: 'bg-green-100 text-green-800',
+  standard: 'bg-amber-100 text-amber-900',
+  pro: 'bg-purple-100 text-purple-900',
+};
+
+function getPlanName(tPlans: (key: string) => string, planId: string | null | undefined): string {
+  if (!planId || planId === 'free') {
+    return tPlans('freePlanName');
+  }
+  if (planId === 'checkin') {
+    return tPlans('checkinPlanName');
+  }
+  if (planId === 'standard') {
+    return tPlans('standardPlanName');
+  }
+  if (planId === 'pro') {
+    return tPlans('proPlanName');
+  }
+  return tPlans('freePlanName');
+}
+
 interface BillingInfo {
   tenant: {
     id: string;
     name: string;
     email: string;
     plan_id: string;
+    plan_type?: BillingPlanType;
     plan_name: string;
-    plan_price: number;
     status: string;
     subscription_status?: string;
     payment_retry_count?: number;
@@ -25,12 +58,22 @@ interface BillingInfo {
     stripe_subscription_id?: string;
     created_at: string;
   };
+  plan?: {
+    effective_type: BillingPlanType;
+    billing_rooms: number;
+    price_ex_vat: number;
+    vat_rate: number;
+    vat_amount: number;
+    price_total: number;
+    features: string[];
+  };
   subscription?: {
     id: string;
     status: string;
-    current_period_start: string;
-    current_period_end: string;
+    current_period_start: string | null;
+    current_period_end: string | null;
     cancel_at_period_end: boolean;
+    billing_interval?: 'month' | 'year' | null;
   };
   invoices: Array<{
     id: string;
@@ -56,16 +99,9 @@ interface BillingInfo {
   }>;
 }
 
-type PlanId = 'basic' | 'basic_yearly' | 'standard' | 'premium' | 'enterprise';
-
-const PLANS: Array<{ id: PlanId; price: number; rooms: number; color: string; popular?: boolean; featureCount: number }> = [
-  { id: 'basic', price: 14.99, rooms: 1, color: 'blue', featureCount: 5 },
-  { id: 'basic_yearly', price: 149.90, rooms: 1, color: 'blue', popular: true, featureCount: 5 },
-  { id: 'standard', price: 26.98, rooms: 2, color: 'green', featureCount: 4 }
-];
-
 export default function BillingPage() {
   const t = useTranslations('settings.billing');
+  const tPlans = useTranslations('plans');
   const tLayout = useTranslations('settings.layout');
   const locale = useLocale();
   const [loading, setLoading] = useState(true);
@@ -73,8 +109,6 @@ export default function BillingPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [currentRooms, setCurrentRooms] = useState(1);
-  const [showCheckout, setShowCheckout] = useState(false);
-  const [checkoutData, setCheckoutData] = useState<{rooms: number; yearly: boolean; price: number} | null>(null);
 
   useEffect(() => {
     loadBillingInfo();
@@ -173,18 +207,6 @@ export default function BillingPage() {
     }).format(amount);
   };
 
-  const getCurrentPlan = () => {
-    return PLANS.find(p => p.id === billingInfo?.tenant.plan_id) || PLANS[0];
-  };
-
-  const handleCheckout = async (rooms: number, isYearly: boolean, totalPrice: number) => {
-    console.log('💰 Iniciando checkout:', { rooms, isYearly, totalPrice });
-    setCheckoutData({ rooms, yearly: isYearly, price: totalPrice });
-    setShowCheckout(true);
-    // Redirigir a la página de checkout de habitaciones
-    window.location.href = `/checkout-rooms?rooms=${rooms}&yearly=${isYearly}`;
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -207,9 +229,34 @@ export default function BillingPage() {
     );
   }
 
-  const currentPlan = getCurrentPlan();
-  const currentPlanName = t(`plans.${currentPlan.id}.name`);
-  const currentPlanFeatures = Array.from({ length: currentPlan.featureCount }, (_, i) => t(`plans.${currentPlan.id}.f${i}`));
+  const effectivePlan: BillingPlanType = billingInfo.plan?.effective_type
+    || billingInfo.tenant.plan_type
+    || 'free';
+  const badgeClass = PLAN_BADGE_CLASS[effectivePlan] || PLAN_BADGE_CLASS.free;
+  const planTitle = getPlanName(tPlans, effectivePlan);
+  const featureKeys = PLAN_FEATURE_KEYS[effectivePlan] || PLAN_FEATURE_KEYS.free;
+  const currentPlanFeatures = featureKeys.map((key) => tPlans(key as never));
+
+  const priceExVat = billingInfo.plan?.price_ex_vat ?? 0;
+  const vatRate = billingInfo.plan?.vat_rate ?? 21;
+  const vatAmount = billingInfo.plan?.vat_amount ?? 0;
+  const priceTotal = billingInfo.plan?.price_total ?? 0;
+  const billingRooms = billingInfo.plan?.billing_rooms ?? 1;
+
+  const periodEnd = billingInfo.subscription?.current_period_end;
+  const nextChargeDisplay =
+    effectivePlan === 'free'
+      ? t('nextChargeNa')
+      : periodEnd
+        ? formatDate(periodEnd)
+        : t('nextChargeUnknown');
+
+  const calculatorDefaultPlan: PaidPlanId =
+    effectivePlan === 'checkin' || effectivePlan === 'standard' || effectivePlan === 'pro'
+      ? effectivePlan
+      : 'standard';
+
+  const showSubscriptionActions = Boolean(billingInfo.tenant.stripe_subscription_id);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -381,25 +428,48 @@ export default function BillingPage() {
 
           {/* Current Plan */}
           <div className="card">
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
               <div>
                 <h2 className="text-xl font-bold text-gray-900">{t('currentPlan')}</h2>
                 <p className="text-sm text-gray-600">{t('currentPlanSubtitle')}</p>
+                <p className="text-xs text-gray-500 mt-2">{t('billedUnits', { count: billingRooms })}</p>
               </div>
-              <div className={`px-4 py-2 bg-${currentPlan.color}-100 text-${currentPlan.color}-800 rounded-full font-semibold`}>
-                {currentPlanName}
+              <div className="flex flex-col items-start sm:items-end gap-1">
+                <div className={`px-4 py-2 rounded-full font-semibold ${badgeClass}`}>
+                  {planTitle}
+                </div>
+                {billingInfo.subscription?.billing_interval === 'year' && (
+                  <span className="text-xs text-gray-500">{t('billingPeriodYearly')}</span>
+                )}
+                {billingInfo.subscription?.billing_interval === 'month' && (
+                  <span className="text-xs text-gray-500">{t('billingPeriodMonthly')}</span>
+                )}
               </div>
             </div>
 
             <div className="grid md:grid-cols-2 gap-6">
-              <div className="p-4 bg-gray-50 rounded-lg">
-                <div className="flex items-center mb-2">
+              <div className="p-4 bg-gray-50 rounded-lg space-y-2">
+                <div className="flex items-center mb-1">
                   <CreditCard className="w-5 h-5 text-gray-600 mr-2" />
                   <span className="text-sm font-medium text-gray-700">{t('monthlyPrice')}</span>
                 </div>
-                <p className="text-2xl font-bold text-gray-900">{formatCurrency(currentPlan.price)}</p>
-                <p className="text-xs text-gray-500 mt-1">{t('perMonth')}</p>
-                <p className="text-xs text-gray-400 mt-1"><strong>{t('vatExcluded')}</strong></p>
+                <div className="space-y-1 text-sm text-gray-800">
+                  <div className="flex justify-between gap-4">
+                    <span>{t('priceExVat')}</span>
+                    <span className="font-semibold tabular-nums">{formatCurrency(priceExVat)}</span>
+                  </div>
+                  <div className="flex justify-between gap-4 text-gray-600">
+                    <span>{t('vatAmount', { rate: vatRate })}</span>
+                    <span className="tabular-nums">{formatCurrency(vatAmount)}</span>
+                  </div>
+                  <div className="flex justify-between gap-4 pt-2 border-t border-gray-200 text-base">
+                    <span className="font-medium">{t('totalWithVat')}</span>
+                    <span className="font-bold text-gray-900 tabular-nums">
+                      {formatCurrency(priceTotal)}
+                      <span className="text-xs font-normal text-gray-500">{t('perMonthShort')}</span>
+                    </span>
+                  </div>
+                </div>
               </div>
 
               <div className="p-4 bg-gray-50 rounded-lg">
@@ -407,11 +477,7 @@ export default function BillingPage() {
                   <Calendar className="w-5 h-5 text-gray-600 mr-2" />
                   <span className="text-sm font-medium text-gray-700">{t('nextCharge')}</span>
                 </div>
-                <p className="text-lg font-bold text-gray-900">
-                  {billingInfo.subscription?.current_period_end 
-                    ? formatDate(billingInfo.subscription.current_period_end)
-                    : 'N/A'}
-                </p>
+                <p className="text-lg font-bold text-gray-900">{nextChargeDisplay}</p>
                 {billingInfo.subscription?.cancel_at_period_end && (
                   <p className="text-xs text-orange-600 mt-1">⚠️ {t('willCancelAtEnd')}</p>
                 )}
@@ -442,23 +508,27 @@ export default function BillingPage() {
                 )}
               </div>
               
-              <div className="flex space-x-3">
-                {billingInfo.subscription?.cancel_at_period_end ? (
-                  <button
-                    onClick={handleReactivateSubscription}
-                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-                  >
-                    {t('reactivateSubscription')}
-                  </button>
-                ) : (
-                  <button
-                    onClick={handleCancelSubscription}
-                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-                  >
-                    {t('cancelSubscription')}
-                  </button>
-                )}
-              </div>
+              {showSubscriptionActions && (
+                <div className="flex space-x-3">
+                  {billingInfo.subscription?.cancel_at_period_end ? (
+                    <button
+                      type="button"
+                      onClick={handleReactivateSubscription}
+                      className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                    >
+                      {t('reactivateSubscription')}
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleCancelSubscription}
+                      className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                    >
+                      {t('cancelSubscription')}
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 
@@ -474,10 +544,8 @@ export default function BillingPage() {
 
             <div className="max-w-2xl mx-auto">
               <DynamicPriceCalculator
-                currentProperties={currentRooms}
-                isYearly={billingInfo?.tenant.plan_id === 'basic_yearly'}
-                showUpgradeButton={true}
-                onCheckout={handleCheckout}
+                currentRoomCount={currentRooms}
+                defaultPlanId={calculatorDefaultPlan}
               />
             </div>
           </div>

@@ -2,85 +2,61 @@ import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
 import Stripe from 'stripe';
 import { getPendingInvoices } from '@/lib/payment-tracking';
+import { getTenantById } from '@/lib/tenant';
+import type { Tenant } from '@/lib/tenant';
+import { getTenantPlanPresentation } from '@/lib/tenant-plan-billing';
 
-const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: '2025-08-27.basil',
-}) : null;
+const stripe = process.env.STRIPE_SECRET_KEY
+  ? new Stripe(process.env.STRIPE_SECRET_KEY, {
+      apiVersion: '2025-08-27.basil',
+    })
+  : null;
 
 /**
  * API para obtener información de facturación del tenant
  */
 export async function GET(req: NextRequest) {
   try {
-    // Verificar que Stripe esté disponible
-    if (!stripe) {
-      return NextResponse.json({ 
-        error: 'Servicio de facturación no disponible - STRIPE_SECRET_KEY no configurada' 
-      }, { status: 503 });
-    }
-
-    // Obtener tenant_id del header (enviado por el middleware)
     const tenantId = req.headers.get('x-tenant-id');
-    
+
     if (!tenantId) {
-      return NextResponse.json(
-        { error: 'No se pudo identificar el tenant' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'No se pudo identificar el tenant' }, { status: 400 });
     }
 
-    // Obtener información del tenant (incluyendo campos de pago)
-    const result = await sql`
-      SELECT 
-        id,
-        name,
-        email,
-        plan_id,
-        stripe_customer_id,
-        stripe_subscription_id,
-        status,
-        subscription_status,
-        payment_retry_count,
-        last_payment_failed_at,
-        last_payment_succeeded_at,
-        subscription_suspended_at,
-        next_payment_attempt_at,
-        created_at
-      FROM tenants 
-      WHERE id = ${tenantId}
+    const tenant = await getTenantById(tenantId);
+
+    if (!tenant) {
+      return NextResponse.json({ error: 'Tenant no encontrado' }, { status: 404 });
+    }
+
+    const t = tenant as Tenant & { lodging_id?: string | null };
+    const lodgingId =
+      t.lodging_id && String(t.lodging_id).trim() !== ''
+        ? String(t.lodging_id)
+        : String(tenant.id);
+
+    const roomsResult = await sql`
+      SELECT id
+      FROM "Room"
+      WHERE "lodgingId" = ${lodgingId}
     `;
+    const roomsUsed = roomsResult.rows.length;
 
-    if (result.rows.length === 0) {
-      return NextResponse.json(
-        { error: 'Tenant no encontrado' },
-        { status: 404 }
-      );
-    }
-
-    const tenant = result.rows[0];
-
-    // Mapear plan_id a nombres y precios
-    const planDetails: Record<string, { name: string; price: number }> = {
-      basic: { name: 'Básico', price: 29 },
-      standard: { name: 'Estándar', price: 49 },
-      premium: { name: 'Premium', price: 79 },
-      enterprise: { name: 'Enterprise', price: 149 },
-    };
-
-    const planInfo = planDetails[tenant.plan_id] || planDetails.basic;
-
-    // Obtener facturas pendientes de la base de datos
+    const presentation = await getTenantPlanPresentation(tenant as Tenant, roomsUsed);
     const pendingInvoices = await getPendingInvoices(tenantId);
 
-    // Preparar respuesta base
-    const billingInfo: any = {
+    const periodEndDb = tenant.subscription_current_period_end
+      ? new Date(tenant.subscription_current_period_end).toISOString()
+      : null;
+
+    const billingInfo: Record<string, unknown> = {
       tenant: {
         id: tenant.id,
         name: tenant.name,
         email: tenant.email,
         plan_id: tenant.plan_id,
-        plan_name: planInfo.name,
-        plan_price: planInfo.price,
+        plan_type: presentation.effective_plan_type,
+        plan_name: presentation.plan_name,
         status: tenant.status,
         subscription_status: tenant.subscription_status || 'active',
         payment_retry_count: tenant.payment_retry_count || 0,
@@ -88,13 +64,23 @@ export async function GET(req: NextRequest) {
         last_payment_succeeded_at: tenant.last_payment_succeeded_at,
         subscription_suspended_at: tenant.subscription_suspended_at,
         next_payment_attempt_at: tenant.next_payment_attempt_at,
-        is_suspended: tenant.status === 'suspended' || (tenant.payment_retry_count || 0) >= 3,
+        is_suspended:
+          tenant.status === 'suspended' || (tenant.payment_retry_count || 0) >= 3,
         stripe_customer_id: tenant.stripe_customer_id,
         stripe_subscription_id: tenant.stripe_subscription_id,
         created_at: tenant.created_at,
       },
-      invoices: [],
-      pending_invoices: pendingInvoices.map(inv => ({
+      plan: {
+        effective_type: presentation.effective_plan_type,
+        billing_rooms: presentation.billing_rooms,
+        price_ex_vat: presentation.plan_price_ex_vat,
+        vat_rate: presentation.plan_vat_rate,
+        vat_amount: presentation.plan_vat_amount,
+        price_total: presentation.plan_price_total,
+        features: presentation.plan_features,
+      },
+      invoices: [] as unknown[],
+      pending_invoices: pendingInvoices.map((inv) => ({
         id: inv.stripe_invoice_id,
         invoice_number: inv.invoice_number,
         amount_due: Number(inv.amount_due),
@@ -111,43 +97,88 @@ export async function GET(req: NextRequest) {
       })),
     };
 
-    // Si tiene Stripe subscription, obtener información adicional
-    if (tenant.stripe_subscription_id && process.env.STRIPE_SECRET_KEY) {
+    let subscriptionPayload: {
+      id: string;
+      status: string;
+      current_period_start: string | null;
+      current_period_end: string | null;
+      cancel_at_period_end: boolean;
+      billing_interval: 'month' | 'year' | null;
+    } | null = null;
+
+    if (tenant.stripe_subscription_id && stripe) {
       try {
-        // Obtener información de la suscripción
-        const subscription = await stripe.subscriptions.retrieve(tenant.stripe_subscription_id);
-        
-        billingInfo.subscription = {
+        const subscription = (await stripe.subscriptions.retrieve(
+          tenant.stripe_subscription_id
+        )) as unknown as {
+          id: string;
+          status: string;
+          current_period_start: number;
+          current_period_end: number;
+          cancel_at_period_end: boolean;
+          items?: { data?: Array<{ price?: { recurring?: { interval?: string | null } | null } | null }> };
+        };
+        const firstItem = subscription.items?.data?.[0];
+        const recurring = firstItem?.price?.recurring;
+        const billingInterval =
+          recurring?.interval === 'year'
+            ? 'year'
+            : recurring?.interval === 'month'
+              ? 'month'
+              : null;
+
+        subscriptionPayload = {
           id: subscription.id,
           status: subscription.status,
-          current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-          current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+          current_period_start: new Date(
+            subscription.current_period_start * 1000
+          ).toISOString(),
+          current_period_end: new Date(
+            subscription.current_period_end * 1000
+          ).toISOString(),
           cancel_at_period_end: subscription.cancel_at_period_end,
+          billing_interval: billingInterval,
         };
-
-        // Obtener facturas del cliente
-        if (tenant.stripe_customer_id) {
-          const invoices = await stripe.invoices.list({
-            customer: tenant.stripe_customer_id,
-            limit: 10,
-          });
-
-          billingInfo.invoices = invoices.data.map(invoice => ({
-            id: invoice.id,
-            amount: invoice.amount_paid,
-            status: invoice.status,
-            date: new Date(invoice.created * 1000).toISOString(),
-            invoice_pdf: invoice.invoice_pdf,
-          }));
-        }
       } catch (stripeError) {
         console.error('Error obteniendo información de Stripe:', stripeError);
-        // Continuar sin información de Stripe
+      }
+    }
+
+    if (!subscriptionPayload && periodEndDb && tenant.stripe_subscription_id) {
+      subscriptionPayload = {
+        id: tenant.stripe_subscription_id,
+        status: tenant.subscription_status || 'active',
+        current_period_start: null,
+        current_period_end: periodEndDb,
+        cancel_at_period_end: false,
+        billing_interval: null,
+      };
+    }
+
+    if (subscriptionPayload) {
+      billingInfo.subscription = subscriptionPayload;
+    }
+
+    if (tenant.stripe_customer_id && stripe) {
+      try {
+        const invoices = await stripe.invoices.list({
+          customer: tenant.stripe_customer_id,
+          limit: 10,
+        });
+
+        billingInfo.invoices = invoices.data.map((invoice) => ({
+          id: invoice.id,
+          amount: invoice.amount_paid,
+          status: invoice.status,
+          date: new Date(invoice.created * 1000).toISOString(),
+          invoice_pdf: invoice.invoice_pdf,
+        }));
+      } catch (e) {
+        console.error('Error listando facturas Stripe:', e);
       }
     }
 
     return NextResponse.json(billingInfo);
-
   } catch (error) {
     console.error('Error obteniendo información de facturación:', error);
     return NextResponse.json(
@@ -156,4 +187,3 @@ export async function GET(req: NextRequest) {
     );
   }
 }
-
