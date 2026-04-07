@@ -73,6 +73,9 @@ export default function Navigation() {
                 <span className="text-xl font-bold text-gray-900">Delfín Check-in</span>
               </div>
             </div>
+            <div className="flex items-center">
+              <LanguageSwitcher />
+            </div>
           </div>
         </div>
       </nav>

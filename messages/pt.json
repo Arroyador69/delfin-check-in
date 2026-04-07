@@ -230,6 +230,10 @@
   "onboarding": {
     "appName": "Delfín Check-in",
     "stepOf": "Passo {currentStep} de 4",
+    "common": {
+      "show": "Ver",
+      "hide": "Ocultar"
+    },
     "step1": {
       "title": "🔐 Alterar palavra-passe",
       "intro": "Por segurança, deve alterar a sua palavra-passe temporária antes de continuar.",

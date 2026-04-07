@@ -241,6 +241,10 @@
   "onboarding": {
     "appName": "Delfín Check-in",
     "stepOf": "Step {currentStep} of 4",
+    "common": {
+      "show": "Show",
+      "hide": "Hide"
+    },
     "step1": {
       "title": "🔐 Change Password",
       "intro": "For security, you must change your temporary password before continuing.",

@@ -449,7 +449,7 @@ export default function OnboardingPage() {
                 className="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-semibold text-gray-600 hover:text-gray-900"
                 disabled={formData.passwordChanged || bootstrappingSession}
               >
-                {showCurrentPassword ? 'Ocultar' : 'Ver'}
+                  {showCurrentPassword ? t('common.hide') : t('common.show')}
               </button>
             </div>
           </div>
@@ -474,7 +474,7 @@ export default function OnboardingPage() {
                 className="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-semibold text-gray-600 hover:text-gray-900"
                 disabled={formData.passwordChanged || bootstrappingSession}
               >
-                {showNewPassword ? 'Ocultar' : 'Ver'}
+                  {showNewPassword ? t('common.hide') : t('common.show')}
               </button>
             </div>
             <p className="text-xs text-gray-500 mt-1">{t('step1.minChars')}</p>
@@ -499,7 +499,7 @@ export default function OnboardingPage() {
                 className="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-semibold text-gray-600 hover:text-gray-900"
                 disabled={formData.passwordChanged || bootstrappingSession}
               >
-                {showConfirmPassword ? 'Ocultar' : 'Ver'}
+                  {showConfirmPassword ? t('common.hide') : t('common.show')}
               </button>
             </div>
           </div>
