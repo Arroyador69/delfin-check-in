@@ -78,10 +78,6 @@ export async function POST(req: NextRequest) {
       recurring: { interval },
       product_data: {
         name: `Delfín Check-in - ${planNames[planId] || planId}`,
-        description:
-          interval === 'year'
-            ? `${planNames[planId] || planId}: ${roomCount} unidades (anual, IVA incl.)`
-            : `${planNames[planId] || planId}: ${roomCount} unidades (mensual, IVA incl.)`,
       },
       metadata: {
         plan_id: planId,

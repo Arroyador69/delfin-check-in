@@ -32,8 +32,8 @@ const PLANS_CONFIG: (Omit<Plan, 'name' | 'description' | 'features'> & { feature
   {
     id: 'free',
     basePrice: 0,
-    maxRooms: 2,
-    maxRoomsIncluded: 2,
+    maxRooms: 1,
+    maxRoomsIncluded: 1,
     adsEnabled: true,
     legalModule: false,
     color: 'blue',
