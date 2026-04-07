@@ -68,7 +68,8 @@ export async function POST(req: NextRequest) {
     }
     
     console.log('🏢 [POST /api/tenant/rooms] Tenant identificado:', tenantId);
-    const { rooms } = await req.json();
+    const body = await req.json().catch(() => ({}));
+    const rooms = body?.rooms;
 
     if (!Array.isArray(rooms)) {
       return NextResponse.json({
@@ -95,7 +96,6 @@ export async function POST(req: NextRequest) {
     let lodgingId: string;
     // Opcional: permitir que el cliente indique tipo de alojamiento si el schema lo soporta.
     // Ejemplos deseados: 'hostal' | 'apartamentos' (dependiendo de enum/texto en BD).
-    const body = await req.json().catch(() => ({}));
     const requestedLodgingType = typeof body?.lodgingType === 'string' ? body.lodgingType.trim() : '';
     
     try {
