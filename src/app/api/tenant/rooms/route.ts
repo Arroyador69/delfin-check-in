@@ -485,6 +485,18 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    if (requestedLodgingType === 'hostal' || requestedLodgingType === 'apartamentos') {
+      try {
+        await sql`
+          UPDATE tenants
+          SET config = COALESCE(config, '{}'::jsonb) || jsonb_build_object('lodgingType', ${requestedLodgingType})
+          WHERE id = ${tenantId}::uuid
+        `;
+      } catch (cfgErr) {
+        console.warn('⚠️ No se pudo persistir lodgingType en tenants.config:', cfgErr);
+      }
+    }
+
     return NextResponse.json({
       success: true,
       message: 'Configuración de habitaciones guardada correctamente',

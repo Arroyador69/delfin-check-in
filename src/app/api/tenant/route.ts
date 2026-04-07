@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
 import { verifyToken, AUTH_CONFIG } from '@/lib/auth';
+import type { Tenant } from '@/lib/tenant';
+import { getTenantPlanPresentation } from '@/lib/tenant-plan-billing';
 
 /**
  * API para obtener información del tenant actual.
@@ -140,15 +142,9 @@ export async function GET(req: NextRequest) {
       console.log('⚠️ Algunas tablas no existen aún, usando valores por defecto');
     }
 
-    // Información del plan
-    const planInfo = {
-      basic: { name: 'Básico', max_rooms: 2, price: 29, features: ['Hasta 2 habitaciones', 'Soporte básico'] },
-      standard: { name: 'Estándar', max_rooms: 4, price: 49, features: ['Hasta 4 habitaciones', 'Soporte prioritario'] },
-      premium: { name: 'Premium', max_rooms: 6, price: 79, features: ['Hasta 6 habitaciones', 'Soporte prioritario', 'Analytics avanzados'] },
-      enterprise: { name: 'Empresa', max_rooms: -1, price: 149, features: ['Habitaciones ilimitadas', 'Soporte 24/7', 'Analytics avanzados', 'API personalizada'] }
-    };
-
-    const currentPlan = planInfo[tenant.plan_id as keyof typeof planInfo];
+    const roomsUsed = parseInt(String(stats.total_rooms || 0), 10) || 0;
+    const planPresent = await getTenantPlanPresentation(tenant as unknown as Tenant, roomsUsed);
+    const maxRoomsUi = planPresent.max_rooms_effective;
 
     const response = {
       tenant: {
@@ -156,11 +152,16 @@ export async function GET(req: NextRequest) {
         name: empresaNombre, // Usar nombre de la empresa en lugar del nombre del tenant
         email: tenant.email,
         plan_id: tenant.plan_id,
-        plan_type: tenant.plan_type || (tenant.plan_id === 'pro' || tenant.plan_id === 'enterprise' ? 'pro' : tenant.plan_id === 'standard' ? 'standard' : tenant.plan_id === 'premium' ? 'checkin' : 'free'),
-        plan_name: currentPlan.name,
-        plan_price: currentPlan.price,
-        plan_features: currentPlan.features,
-        max_rooms: tenant.max_rooms,
+        plan_type: planPresent.effective_plan_type,
+        plan_name: planPresent.plan_name,
+        plan_price: planPresent.plan_price_total,
+        plan_price_ex_vat: planPresent.plan_price_ex_vat,
+        plan_vat_rate: planPresent.plan_vat_rate,
+        plan_vat_amount: planPresent.plan_vat_amount,
+        plan_price_total: planPresent.plan_price_total,
+        plan_features: planPresent.plan_features,
+        billing_rooms: planPresent.billing_rooms,
+        max_rooms: maxRoomsUi,
         current_rooms: parseInt(stats.total_rooms),
         ads_enabled: tenant.ads_enabled !== undefined ? tenant.ads_enabled : (tenant.plan_type !== 'pro' && tenant.plan_type !== 'standard' && tenant.plan_id !== 'pro' && tenant.plan_id !== 'enterprise'),
         legal_module: tenant.legal_module || false,
@@ -181,25 +182,26 @@ export async function GET(req: NextRequest) {
         total_guests: parseInt(stats.total_guests),
         total_registrations: parseInt(stats.total_registrations),
         rooms_used: parseInt(stats.total_rooms),
-        rooms_remaining: tenant.max_rooms === -1 ? -1 : Math.max(0, tenant.max_rooms - parseInt(stats.total_rooms))
+        rooms_remaining: maxRoomsUi === -1 ? -1 : Math.max(0, maxRoomsUi - parseInt(stats.total_rooms))
       },
       limits: {
-        can_add_rooms: tenant.max_rooms === -1 || parseInt(stats.total_rooms) < tenant.max_rooms,
-        rooms_usage_percentage: tenant.max_rooms === -1 ? 0 : Math.round((parseInt(stats.total_rooms) / tenant.max_rooms) * 100),
-        rooms_remaining: tenant.max_rooms === -1 ? -1 : Math.max(0, tenant.max_rooms - parseInt(stats.total_rooms)),
-        limit_message: tenant.max_rooms === -1 
+        can_add_rooms: maxRoomsUi === -1 || parseInt(stats.total_rooms) < maxRoomsUi,
+        rooms_usage_percentage:
+          maxRoomsUi === -1 ? 0 : Math.round((parseInt(stats.total_rooms) / maxRoomsUi) * 100),
+        rooms_remaining: maxRoomsUi === -1 ? -1 : Math.max(0, maxRoomsUi - parseInt(stats.total_rooms)),
+        limit_message: maxRoomsUi === -1 
           ? null 
-          : parseInt(stats.total_rooms) >= tenant.max_rooms
+          : parseInt(stats.total_rooms) >= maxRoomsUi
           ? {
               type: 'error',
-              message: `⚠️ Límite alcanzado: Has usado todas las ${tenant.max_rooms} habitaciones de tu plan ${currentPlan.name}.`,
+              message: `⚠️ Límite alcanzado: Has usado todas las ${maxRoomsUi} unidades de tu plan ${planPresent.plan_name}.`,
               suggestion: 'Para añadir más habitaciones, actualiza tu plan desde la página de Mejora de Plan.'
             }
-          : Math.round((parseInt(stats.total_rooms) / tenant.max_rooms) * 100) >= 80
+          : Math.round((parseInt(stats.total_rooms) / maxRoomsUi) * 100) >= 80
           ? {
               type: 'warning',
-              message: `⚡ Estás cerca del límite: ${parseInt(stats.total_rooms)}/${tenant.max_rooms} habitaciones (${Math.round((parseInt(stats.total_rooms) / tenant.max_rooms) * 100)}% usado).`,
-              suggestion: `Te quedan ${tenant.max_rooms - parseInt(stats.total_rooms)} habitaciones disponibles. Considera actualizar tu plan si necesitas más capacidad.`
+              message: `⚡ Estás cerca del límite: ${parseInt(stats.total_rooms)}/${maxRoomsUi} unidades (${Math.round((parseInt(stats.total_rooms) / maxRoomsUi) * 100)}% usado).`,
+              suggestion: `Te quedan ${maxRoomsUi - parseInt(stats.total_rooms)} unidades disponibles. Considera actualizar tu plan si necesitas más capacidad.`
             }
           : null
       }

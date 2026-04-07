@@ -584,7 +584,7 @@ export async function POST(req: NextRequest) {
 
             const adsEnabled = planId === 'free' || planId === 'checkin'
             const legalModule = planId !== 'free'
-            const maxRoomsIncluded = planId === 'free' ? 2 : 1
+            const maxRoomsIncluded = 1
 
             // Upsert suscripción
             await sql`

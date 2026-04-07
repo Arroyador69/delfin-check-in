@@ -41,6 +41,13 @@ export async function GET(req: NextRequest) {
     // Calcular precio
     const pricing = await calculatePlanPriceWithInterval(planId, roomCount, interval, countryCode);
 
+    const vat = pricing.vat;
+    const vatNormalized = {
+      ...vat,
+      vat_rate: vat.vatRate,
+      vat_amount: vat.vatAmount,
+    };
+
     return NextResponse.json({
       success: true,
       pricing: {
@@ -48,7 +55,9 @@ export async function GET(req: NextRequest) {
         extra_rooms: pricing.extraRooms || 0,
         extra_rooms_price: pricing.extraRoomsPrice || 0,
         subtotal: pricing.subtotal,
-        vat: pricing.vat,
+        vat: vatNormalized,
+        vat_rate: vat.vatRate,
+        vat_amount: vat.vatAmount,
         total: pricing.total,
         interval,
         yearly_discount_rate: pricing.yearlyDiscountRate ?? null,

@@ -353,16 +353,47 @@ export default function HomePage() {
                 <div className="text-2xl sm:text-3xl">🏢</div>
                 <div className="flex-1 min-w-0">
                   <h2 className="text-base sm:text-lg font-semibold text-gray-900 truncate">
-                    {tenant.tenant?.name || 'Admin Default'} - Plan {tenant.tenant?.plan_name || 'Básico'}
+                    {tenant.tenant?.name || 'Admin Default'} —{' '}
+                    {(
+                      {
+                        free: 'Plan Básico (Gratis)',
+                        checkin: 'Plan Check-in',
+                        standard: 'Plan Standard',
+                        pro: 'Plan Pro',
+                      } as const
+                    )[
+                      ['free', 'checkin', 'standard', 'pro'].includes(String(tenant.tenant?.plan_type))
+                        ? (tenant.tenant?.plan_type as 'free' | 'checkin' | 'standard' | 'pro')
+                        : 'free'
+                    ]}
                   </h2>
                   <p className="text-xs sm:text-sm text-gray-600 break-words">
-                    €{tenant.tenant?.plan_price || 29}/mes • {tenant.tenant?.plan_features?.join(' • ') || 'Características básicas'}
+                    {(() => {
+                      const pt = tenant.tenant?.plan_type || 'free';
+                      const ex = tenant.tenant?.plan_price_ex_vat;
+                      const vatRate = tenant.tenant?.plan_vat_rate ?? 21;
+                      const vatAmt = tenant.tenant?.plan_vat_amount;
+                      const total = tenant.tenant?.plan_price_total ?? tenant.tenant?.plan_price ?? 0;
+                      const line =
+                        pt === 'free' || Number(total) === 0
+                          ? '0 €/mes (sin cargo) · sin IVA'
+                          : `${Number(ex ?? 0).toFixed(2)} €/mes (sin IVA) + IVA ${vatRate}%: ${Number(vatAmt ?? 0).toFixed(2)} € → Total ${Number(total).toFixed(2)} €/mes (IVA incl.)`;
+                      const feats =
+                        tenant.tenant?.plan_features?.join(' • ') ||
+                        'Consulta Mejorar plan para ampliar funciones';
+                      return `${line} • ${feats}`;
+                    })()}
                   </p>
                 </div>
               </div>
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div className="text-left sm:text-right">
-                  <div className="text-xs sm:text-sm text-gray-600">Uso de habitaciones</div>
+                  <div className="text-xs sm:text-sm text-gray-600">
+                    {(tenant.tenant?.config as { lodgingType?: string } | undefined)?.lodgingType ===
+                    'apartamentos'
+                      ? 'Uso de apartamentos'
+                      : 'Uso de habitaciones'}
+                  </div>
                   <div className="text-base sm:text-lg font-bold text-gray-900">
                     {tenant.stats?.rooms_used || 0}/{tenant.tenant?.max_rooms === -1 ? '∞' : (tenant.tenant?.max_rooms || 2)}
                   </div>
@@ -403,7 +434,7 @@ export default function HomePage() {
                         </div>
                       ) : tenant.stats?.rooms_remaining !== undefined && tenant.stats.rooms_remaining > 0 && (
                         <p className="text-xs text-gray-600 mt-1">
-                          ✅ {tenant.stats.rooms_remaining} habitaciones disponibles para añadir
+                          ✅ {tenant.stats.rooms_remaining} unidades disponibles para añadir
                         </p>
                       )}
                     </div>
