@@ -30,6 +30,20 @@ export function getTransport() {
   return transporter;
 }
 
+function escapeHtmlAttr(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;');
+}
+
+function escapeHtmlText(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
 export async function sendOnboardingEmail(params: {
   to: string;
   onboardingUrl: string;
@@ -42,59 +56,92 @@ export async function sendOnboardingEmail(params: {
     // Email específico para onboarding de propietarios (admin)
     const from = process.env.SMTP_FROM_ONBOARDING || process.env.SMTP_FROM || `Delfín Check-in <noreply@delfincheckin.com>`;
 
-    // HTML mejorado similar al de booking para evitar spam
-    const html = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <meta charset="utf-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Bienvenido a Delfín Check-in</title>
-      <style>
-        body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f5f5f5; }
-        .container { max-width: 600px; margin: 20px auto; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; }
-        .header h1 { margin: 0; font-size: 28px; }
-        .content { padding: 30px; }
-        .button { display: inline-block; background: #2563eb; color: #ffffff !important; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: bold; margin: 20px 0; }
-        .button:hover { background: #1d4ed8; }
-        .footer { background: #f8f9fa; padding: 20px; text-align: center; color: #666; font-size: 14px; border-top: 1px solid #e5e7eb; }
-        .password-box { background: #f8f9fa; border-left: 4px solid #2563eb; padding: 15px; margin: 20px 0; border-radius: 4px; }
-        .warning { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; border-radius: 4px; color: #856404; }
-      </style>
-    </head>
-    <body>
-      <div class="container">
-        <div class="header">
-          <h1>🐬 Bienvenido a Delfín Check-in</h1>
-          <p style="margin: 10px 0 0 0; opacity: 0.9;">Tu plataforma de gestión de alojamientos</p>
-        </div>
-        <div class="content">
-          <h2>¡Bienvenido a Delfín Check-in!</h2>
-          <p>Tu cuenta ha sido creada exitosamente. Para completar tu configuración inicial y acceder a tu panel de administración, haz clic en el siguiente botón:</p>
-          <p style="text-align: center;">
-            <a href="${params.onboardingUrl}" class="button" style="color:#ffffff !important;">Comenzar Onboarding</a>
-          </p>
-          ${params.tempPassword ? `
-          <div class="password-box">
-            <p style="margin: 0 0 10px 0;"><strong>🔑 Contraseña temporal:</strong></p>
-            <p style="margin: 0; font-size: 18px; font-family: monospace; letter-spacing: 2px;"><strong>${params.tempPassword}</strong></p>
-            <p style="margin: 10px 0 0 0; font-size: 12px; color: #666;">Podrás cambiarla durante el proceso de onboarding.</p>
-          </div>
-          ` : ''}
-          <div class="warning">
-            <p style="margin: 0;"><strong>⚠️ Importante:</strong> Si no ves este correo en tu bandeja de entrada, revisa la carpeta <strong>Spam/Correo no deseado</strong> y márcalo como <strong>No es spam</strong>.</p>
-          </div>
-          <p>Si tienes problemas para acceder, puedes usar este enlace directo:</p>
-          <p style="word-break: break-all; color: #2563eb; font-size: 12px;">${params.onboardingUrl}</p>
-        </div>
-        <div class="footer">
-          <p style="margin: 0;">Este es un email automático, por favor no respondas a este mensaje.</p>
-          <p style="margin: 5px 0 0 0;">© ${new Date().getFullYear()} Delfín Check-in. Todos los derechos reservados.</p>
-        </div>
-      </div>
-    </body>
-    </html>`;
+    const href = escapeHtmlAttr(params.onboardingUrl);
+    const plainUrlText = escapeHtmlText(params.onboardingUrl);
+    const pwdBlock = params.tempPassword
+      ? `
+          <tr>
+            <td style="padding:0 32px 24px 32px;">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color:#f8f9fa;border-left:4px solid #2563eb;border-radius:4px;">
+                <tr>
+                  <td style="padding:16px 20px;font-family:Arial,Helvetica,sans-serif;font-size:15px;color:#333333;line-height:1.5;">
+                    <p style="margin:0 0 8px 0;"><strong>Contraseña temporal:</strong></p>
+                    <p style="margin:0;font-size:18px;font-family:Consolas,Monaco,monospace;letter-spacing:1px;"><strong>${escapeHtmlText(params.tempPassword)}</strong></p>
+                    <p style="margin:12px 0 0 0;font-size:12px;color:#666666;">Podrás cambiarla durante el proceso de onboarding.</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>`
+      : '';
+
+    // Plantilla en tablas + estilos inline: Gmail y Outlook suelen romper div+margin y <style> en <head>
+    const html = `<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>Bienvenido a Delfín Check-in</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f5f5f5;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color:#f5f5f5;">
+    <tr>
+      <td align="center" style="padding:24px 12px;">
+        <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" style="width:100%;max-width:600px;background-color:#ffffff;border-radius:10px;overflow:hidden;border:1px solid #e5e7eb;">
+          <tr>
+            <td align="center" style="padding:32px 24px;background-color:#5b63d9;">
+              <h1 style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:26px;line-height:1.25;color:#ffffff;font-weight:bold;">Bienvenido a Delfín Check-in</h1>
+              <p style="margin:12px 0 0 0;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.4;color:#e8e9ff;">Tu plataforma de gestión de alojamientos</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:32px 32px 8px 32px;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.6;color:#333333;">
+              <h2 style="margin:0 0 16px 0;font-size:20px;line-height:1.3;color:#111827;">¡Listo para empezar!</h2>
+              <p style="margin:0 0 16px 0;">Tu cuenta ha sido creada correctamente. Para completar la configuración inicial y entrar en tu panel, usa el botón siguiente:</p>
+            </td>
+          </tr>
+          <tr>
+            <td align="center" style="padding:8px 32px 24px 32px;">
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center">
+                <tr>
+                  <td align="center" bgcolor="#2563eb" style="background-color:#2563eb;border-radius:8px;">
+                    <a href="${href}" target="_blank" rel="noopener noreferrer" style="display:inline-block;padding:14px 28px;font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:bold;color:#ffffff !important;text-decoration:none;border-radius:8px;">Comenzar onboarding</a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          ${pwdBlock}
+          <tr>
+            <td style="padding:0 32px 24px 32px;">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color:#fff8e6;border-left:4px solid #e6a800;border-radius:4px;">
+                <tr>
+                  <td style="padding:16px 20px;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;color:#6d5200;">
+                    <strong>Importante:</strong> si no ves este correo en la bandeja de entrada, revisa <strong>Spam</strong> o <strong>Promociones</strong> y márcalo como correo deseado.
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:0 32px 32px 32px;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;color:#4b5563;">
+              <p style="margin:0 0 8px 0;">Si el botón no funciona, copia y pega este enlace en el navegador:</p>
+              <p style="margin:0;word-break:break-all;font-size:13px;color:#2563eb;">${plainUrlText}</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:20px 24px;background-color:#f8f9fa;border-top:1px solid #e5e7eb;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.5;color:#6b7280;text-align:center;">
+              <p style="margin:0;">Este mensaje es automático; por favor no respondas a este correo.</p>
+              <p style="margin:8px 0 0 0;">© ${new Date().getFullYear()} Delfín Check-in</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
 
     console.log('📧 [SEND ONBOARDING EMAIL] Intentando enviar email:', {
       to: params.to,

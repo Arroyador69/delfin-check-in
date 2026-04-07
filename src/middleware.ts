@@ -282,6 +282,7 @@ export async function middleware(req: NextRequest) {
         pathname.startsWith('/api/debug-') ||
         pathname.startsWith('/api/check-') ||
         pathname.startsWith('/api/onboarding/') ||
+        pathname === '/api/admin/recover-onboarding' ||
         pathname.startsWith('/api/admin/login') ||
         pathname.startsWith('/api/auth/verify') ||
         pathname.startsWith('/api/auth/mobile-login') ||
@@ -307,6 +308,31 @@ export async function middleware(req: NextRequest) {
     }
     
     return NextResponse.next({ request: { headers: requestHeaders } });
+  }
+
+  // Onboarding con enlace del correo (?token=&email=): hay que servir la página sin JWT para que
+  // el cliente llame a POST /api/onboarding/login y reciba auth_token + onboarding_status.
+  // Sin esto, incógnito / primer clic cae en /admin-login y el magic link parece "roto".
+  if (!pathname.startsWith('/api/')) {
+    const magicToken = url.searchParams.get('token');
+    const magicEmail = url.searchParams.get('email');
+    const hasMagicLinkParams =
+      typeof magicToken === 'string' &&
+      magicToken.trim().length >= 16 &&
+      typeof magicEmail === 'string' &&
+      magicEmail.trim().includes('@');
+
+    const isOnboardingPage =
+      pathname === '/onboarding' ||
+      locales.some(
+        (l) =>
+          pathname === `/${l}/onboarding` ||
+          pathname.startsWith(`/${l}/onboarding/`)
+      );
+
+    if (hasMagicLinkParams && isOnboardingPage) {
+      return NextResponse.next();
+    }
   }
 
   // Para rutas de páginas, verificar autenticación
