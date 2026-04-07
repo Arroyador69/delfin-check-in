@@ -6,6 +6,7 @@ import {
   ensureTenantTables, 
   createTenant, 
   createTenantUser, 
+  getTenantById,
   findTenantByEmail,
   findTenantByStripeCustomer,
   updateTenantStripeInfo
@@ -18,6 +19,7 @@ import {
   findTenantByStripeCustomerId 
 } from '@/lib/payment-tracking'
 import { getStripeServer } from '@/lib/stripe-server'
+import { calculatePlanPriceWithInterval, type BillingInterval, type PlanId } from '@/lib/plan-pricing'
 
 export const config = {
   api: {
@@ -550,36 +552,104 @@ export async function POST(req: NextRequest) {
         try {
           const updatedSub = event.data.object as Stripe.Subscription
           console.log('🔄 Suscripción actualizada:', updatedSub.id, 'Status:', updatedSub.status)
-          // Actualizar estado de suscripción del tenant
-          if (updatedSub.customer) {
-            const tenant = await findTenantByStripeCustomerId(String(updatedSub.customer))
-            if (tenant) {
-              // Obtener plan_type desde metadata o desde el producto
-              const planTypeFromMetadata = updatedSub.metadata?.plan_id || updatedSub.metadata?.plan_type;
-              let planType = tenant.plan_type || 'free';
-              
-              if (planTypeFromMetadata) {
-                if (planTypeFromMetadata === 'checkin' || planTypeFromMetadata === 'check-in') {
-                  planType = 'checkin';
-                } else if (planTypeFromMetadata === 'standard') {
-                  planType = 'standard';
-                } else if (planTypeFromMetadata === 'pro') {
-                  planType = 'pro';
-                }
-              }
+          // Actualizar estado de suscripción del tenant + sincronizar pricing/flags
+          const planFromMetadata = (updatedSub.metadata?.plan_id || updatedSub.metadata?.plan_type || '') as string
+          const planId: PlanId =
+            planFromMetadata === 'checkin' || planFromMetadata === 'check-in'
+              ? 'checkin'
+              : planFromMetadata === 'standard'
+                ? 'standard'
+                : planFromMetadata === 'pro'
+                  ? 'pro'
+                  : 'free'
 
-              await sql`
-                UPDATE tenants 
-                SET 
-                  subscription_status = ${updatedSub.status},
-                  plan_type = ${planType}
-                WHERE id = ${tenant.id}
-              `
+          const roomCount = Math.max(1, parseInt(String(updatedSub.metadata?.room_count || '1'), 10) || 1)
+          const intervalMeta = String(updatedSub.metadata?.billing_interval || 'month').toLowerCase()
+          const billingInterval: BillingInterval = intervalMeta === 'year' || intervalMeta === 'annual' || intervalMeta === 'yearly' ? 'year' : 'month'
+
+          let tenant = null as any
+          if (updatedSub.metadata?.tenant_id) {
+            tenant = await getTenantById(String(updatedSub.metadata.tenant_id))
+          } else if (updatedSub.customer) {
+            tenant = await findTenantByStripeCustomerId(String(updatedSub.customer))
+          }
+
+          if (tenant) {
+            const pricing = await calculatePlanPriceWithInterval(
+              planId,
+              roomCount,
+              billingInterval,
+              tenant.country_code || 'ES'
+            )
+
+            const adsEnabled = planId === 'free' || planId === 'checkin'
+            const legalModule = planId !== 'free'
+            const maxRoomsIncluded = planId === 'free' ? 2 : 1
+
+            // Upsert suscripción
+            await sql`
+              INSERT INTO subscriptions (
+                tenant_id, plan_id, stripe_subscription_id, stripe_customer_id,
+                status, current_period_start, current_period_end,
+                base_price, vat_rate, vat_amount, total_price, currency,
+                room_count, extra_rooms_price, metadata
+              ) VALUES (
+                ${tenant.id}::uuid,
+                ${planId},
+                ${updatedSub.id},
+                ${String(updatedSub.customer || '')},
+                ${updatedSub.status},
+                ${new Date(updatedSub.current_period_start * 1000)},
+                ${new Date(updatedSub.current_period_end * 1000)},
+                ${pricing.subtotal},
+                ${pricing.vat.vatRate},
+                ${pricing.vat.vatAmount},
+                ${pricing.total},
+                'EUR',
+                ${roomCount},
+                ${pricing.extraRoomsPrice || 0},
+                ${JSON.stringify(updatedSub.metadata || {})}::jsonb
+              )
+              ON CONFLICT (stripe_subscription_id) DO UPDATE SET
+                plan_id = EXCLUDED.plan_id,
+                status = EXCLUDED.status,
+                current_period_start = EXCLUDED.current_period_start,
+                current_period_end = EXCLUDED.current_period_end,
+                base_price = EXCLUDED.base_price,
+                vat_rate = EXCLUDED.vat_rate,
+                vat_amount = EXCLUDED.vat_amount,
+                total_price = EXCLUDED.total_price,
+                room_count = EXCLUDED.room_count,
+                extra_rooms_price = EXCLUDED.extra_rooms_price,
+                metadata = EXCLUDED.metadata,
+                updated_at = NOW()
+            `
+
+            // Actualizar tenant
+            await sql`
+              UPDATE tenants 
+              SET 
+                subscription_status = ${updatedSub.status},
+                stripe_subscription_id = ${updatedSub.id},
+                subscription_current_period_end = ${new Date(updatedSub.current_period_end * 1000)},
+                plan_type = ${planId},
+                plan_id = ${planId},
+                subscription_price = ${pricing.total},
+                base_plan_price = ${pricing.subtotal},
+                vat_rate = ${pricing.vat.vatRate},
+                extra_room_price = ${planId === 'free' ? null : 2},
+                max_rooms_included = ${maxRoomsIncluded},
+                ads_enabled = ${adsEnabled},
+                legal_module = ${legalModule},
+                status = 'active',
+                updated_at = NOW()
+              WHERE id = ${tenant.id}
+            `
               
               // Manejar referidos: actualizar estado según plan
               try {
                 const { handleReferralPlanUpdated } = await import('@/lib/referral-webhooks');
-                await handleReferralPlanUpdated(tenant.id, planType as 'free' | 'checkin' | 'standard' | 'pro');
+                await handleReferralPlanUpdated(tenant.id, planId as 'free' | 'checkin' | 'standard' | 'pro');
               } catch (refError) {
                 console.warn('⚠️ Error manejando referidos en actualización de suscripción:', refError);
                 // No es crítico, continuar
@@ -601,7 +671,6 @@ export async function POST(req: NextRequest) {
                 await restoreTenantServices(tenant.id)
               }
             }
-          }
         } catch (e) {
           console.error('❌ Error procesando customer.subscription.updated:', e)
         }

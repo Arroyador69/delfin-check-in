@@ -6,7 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { calculatePlanPrice } from '@/lib/plan-pricing';
+import { calculatePlanPriceWithInterval } from '@/lib/plan-pricing';
 import { getTenantFromRequest } from '@/lib/permissions';
 
 export async function GET(req: NextRequest) {
@@ -14,6 +14,10 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const planId = searchParams.get('planId') as 'free' | 'checkin' | 'standard' | 'pro' | null;
     const roomCountParam = searchParams.get('roomCount');
+    const intervalParam = (searchParams.get('interval') || 'month').toLowerCase();
+    const interval = intervalParam === 'year' || intervalParam === 'annual' || intervalParam === 'yearly'
+      ? 'year'
+      : 'month';
 
     if (!planId || !['free', 'checkin', 'standard', 'pro'].includes(planId)) {
       return NextResponse.json(
@@ -35,7 +39,7 @@ export async function GET(req: NextRequest) {
     const countryCode = tenantData?.tenant?.country_code || 'ES';
 
     // Calcular precio
-    const pricing = await calculatePlanPrice(planId, roomCount, countryCode);
+    const pricing = await calculatePlanPriceWithInterval(planId, roomCount, interval, countryCode);
 
     return NextResponse.json({
       success: true,
@@ -46,6 +50,8 @@ export async function GET(req: NextRequest) {
         subtotal: pricing.subtotal,
         vat: pricing.vat,
         total: pricing.total,
+        interval,
+        yearly_discount_rate: pricing.yearlyDiscountRate ?? null,
         currency: 'EUR'
       }
     });

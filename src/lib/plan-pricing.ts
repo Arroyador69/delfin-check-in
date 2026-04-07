@@ -10,12 +10,16 @@ import { calculateVAT, VATCalculation } from './vat';
 
 export type PlanId = 'free' | 'checkin' | 'standard' | 'pro';
 
+export type BillingInterval = 'month' | 'year';
+
 export interface PlanPricing {
   planId: PlanId;
   basePrice: number; // Precio base sin IVA
   roomCount: number; // Número de propiedades/habitaciones
   extraRooms?: number; // Propiedades adicionales (por encima de las incluidas)
   extraRoomsPrice?: number; // Precio de propiedades extra (2 €/mes cada una)
+  billingInterval?: BillingInterval; // month (default) | year
+  yearlyDiscountRate?: number; // solo si interval=year (ej. 0.1667 = 2 meses gratis)
   subtotal: number; // Precio total sin IVA
   vat: VATCalculation; // Cálculo de IVA
   total: number; // Precio total con IVA
@@ -158,6 +162,39 @@ export async function calculatePlanPrice(
     subtotal,
     vat,
     total: vat.totalPrice
+  };
+}
+
+/**
+ * Calcula precio completo de un plan con IVA en mensual o anual.
+ *
+ * Convención anual: "2 meses gratis" por defecto (paga 10/12 del anual).
+ */
+export async function calculatePlanPriceWithInterval(
+  planId: PlanId,
+  roomCount: number,
+  billingInterval: BillingInterval,
+  countryCode?: string | null,
+  yearlyDiscountRate: number = 2 / 12
+): Promise<PlanPricing> {
+  const monthly = await calculatePlanPrice(planId, roomCount, countryCode);
+  if (billingInterval === 'month') {
+    return { ...monthly, billingInterval: 'month' };
+  }
+
+  // Annual: multiplicar por 12 y aplicar descuento
+  const annualSubtotalRaw = monthly.subtotal * 12;
+  const discount = Math.max(0, Math.min(0.5, yearlyDiscountRate)); // guardrail
+  const annualSubtotal = Math.round((annualSubtotalRaw * (1 - discount)) * 100) / 100;
+  const annualVat = await calculateVAT(annualSubtotal, countryCode);
+
+  return {
+    ...monthly,
+    billingInterval: 'year',
+    yearlyDiscountRate: discount,
+    subtotal: annualSubtotal,
+    vat: annualVat,
+    total: annualVat.totalPrice
   };
 }
 

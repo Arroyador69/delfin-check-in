@@ -5,6 +5,9 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 
+type PlanId = 'free' | 'checkin' | 'standard' | 'pro';
+type BillingInterval = 'month' | 'year';
+
 interface OnboardingData {
   // Paso 1: Cambiar contraseña
   currentPassword: string;
@@ -34,6 +37,12 @@ interface OnboardingData {
   // Paso 4: Añadir propiedad
   propertyName: string;
   propertyAdded: boolean;
+
+  // Paso 6: Plan y pago
+  selectedPlanId: PlanId;
+  billingInterval: BillingInterval;
+  unitCount: number;
+  checkoutCompleted: boolean;
 }
 
 export default function OnboardingPage() {
@@ -41,6 +50,7 @@ export default function OnboardingPage() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const TOTAL_STEPS = 6;
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>('');
@@ -50,6 +60,9 @@ export default function OnboardingPage() {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [pricing, setPricing] = useState<any>(null);
+  const [pricingLoading, setPricingLoading] = useState(false);
+  const [creatingCheckout, setCreatingCheckout] = useState(false);
   
   const [formData, setFormData] = useState<OnboardingData>({
     currentPassword: '',
@@ -72,7 +85,11 @@ export default function OnboardingPage() {
     codigoArrendador: '',
     codigoEstablecimiento: '',
     propertyName: '',
-    propertyAdded: false
+    propertyAdded: false,
+    selectedPlanId: 'checkin',
+    billingInterval: 'month',
+    unitCount: 1,
+    checkoutCompleted: false
   });
 
   useEffect(() => {
@@ -81,6 +98,34 @@ export default function OnboardingPage() {
       loadRooms();
     }
   }, [currentStep]);
+
+  useEffect(() => {
+    // Recuperar selección tras volver de Stripe
+    try {
+      const raw = localStorage.getItem('onboarding_plan_selection');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed?.selectedPlanId) {
+          setFormData(prev => ({
+            ...prev,
+            selectedPlanId: parsed.selectedPlanId,
+            billingInterval: parsed.billingInterval || prev.billingInterval,
+            unitCount: parsed.unitCount || prev.unitCount,
+          }));
+        }
+      }
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    if (currentStep !== 6) return;
+    loadPricing();
+    const checkoutFlag = searchParams?.get('checkout');
+    if (checkoutFlag === 'success' && formData.selectedPlanId !== 'free') {
+      pollCheckoutCompletion(formData.selectedPlanId);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentStep, formData.selectedPlanId, formData.billingInterval, formData.unitCount, searchParams]);
 
   const getLocaleFromPath = () => {
     const parts = (pathname || '').split('/').filter(Boolean);
@@ -183,6 +228,17 @@ export default function OnboardingPage() {
           return false;
         }
         return true;
+      case 6: // Plan y pago
+        if (!formData.selectedPlanId) return true;
+        if (formData.unitCount < 1 || formData.unitCount > 500) {
+          setError('El número de unidades debe estar entre 1 y 500');
+          return false;
+        }
+        if (formData.selectedPlanId !== 'free' && !formData.checkoutCompleted) {
+          setError('Completa el pago del plan seleccionado para continuar');
+          return false;
+        }
+        return true;
       default:
         return true;
     }
@@ -200,7 +256,7 @@ export default function OnboardingPage() {
       await saveCompanyData();
     }
 
-    if (currentStep < 5) {
+    if (currentStep < TOTAL_STEPS) {
       if (currentStep === 1) {
         try {
           await fetch('/api/tenant/onboarding-status', {
@@ -908,13 +964,13 @@ export default function OnboardingPage() {
               <h1 className="text-xl font-bold text-gray-900">{t('appName')}</h1>
             </div>
             <div className="text-sm text-gray-500">
-              {t('stepOf', { currentStep })}
+              {t('stepOf', { currentStep, totalSteps: TOTAL_STEPS })}
             </div>
           </div>
           
           <div className="mt-4">
             <div className="flex space-x-2">
-              {[1, 2, 3, 4, 5].map((step) => (
+              {Array.from({ length: TOTAL_STEPS }, (_, i) => i + 1).map((step) => (
                 <div
                   key={step}
                   className={`h-2 flex-1 rounded-full ${
@@ -932,6 +988,7 @@ export default function OnboardingPage() {
       {currentStep === 3 && renderMIRStep()}
       {currentStep === 4 && renderPropertyStep()}
       {currentStep === 5 && renderCleaningStep()}
+      {currentStep === 6 && renderPlanAndPaymentStep()}
     </div>
   );
 
@@ -1046,13 +1103,253 @@ export default function OnboardingPage() {
               {t('step5.previous')}
             </button>
             <button
-              onClick={handleSubmit}
+              onClick={handleNext}
               disabled={loading}
-              className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
             >
-              {loading ? t('step5.completing') : t('step5.completeSetup')}
+              {loading ? t('step5.completing') : 'Continuar'}
             </button>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  async function loadPricing(next?: Partial<Pick<OnboardingData, 'selectedPlanId' | 'billingInterval' | 'unitCount'>>) {
+    const planId = (next?.selectedPlanId ?? formData.selectedPlanId) as PlanId;
+    const interval = (next?.billingInterval ?? formData.billingInterval) as BillingInterval;
+    const unitCount = Number(next?.unitCount ?? formData.unitCount);
+    if (!planId || planId === 'free') {
+      setPricing(null);
+      return;
+    }
+    setPricingLoading(true);
+    try {
+      const res = await fetch(`/api/plans/calculate-price?planId=${planId}&roomCount=${unitCount}&interval=${interval}`, {
+        credentials: 'include',
+      });
+      const data = await res.json();
+      if (data?.success) setPricing(data.pricing);
+    } finally {
+      setPricingLoading(false);
+    }
+  }
+
+  async function pollCheckoutCompletion(targetPlan: PlanId) {
+    const start = Date.now();
+    while (Date.now() - start < 25000) {
+      try {
+        const res = await fetch('/api/tenant', { credentials: 'include' });
+        const data = await res.json();
+        const planType = data?.tenant?.plan_type || 'free';
+        const subStatus = data?.tenant?.subscription_status || '';
+        if (planType === targetPlan && (subStatus === 'active' || subStatus === 'trialing' || subStatus === 'past_due')) {
+          setFormData(prev => ({ ...prev, checkoutCompleted: true }));
+          return;
+        }
+      } catch {}
+      await new Promise(r => setTimeout(r, 2000));
+    }
+  }
+
+  function renderPlanAndPaymentStep() {
+    const locale = getLocaleFromPath();
+    const checkoutFlag = searchParams?.get('checkout');
+
+    const onPay = async () => {
+      setError('');
+      if (formData.selectedPlanId === 'free') {
+        setFormData(prev => ({ ...prev, checkoutCompleted: true }));
+        return;
+      }
+      if (formData.unitCount < 1 || formData.unitCount > 500) {
+        setError('El número de unidades debe estar entre 1 y 500');
+        return;
+      }
+
+      try {
+        localStorage.setItem(
+          'onboarding_plan_selection',
+          JSON.stringify({
+            selectedPlanId: formData.selectedPlanId,
+            billingInterval: formData.billingInterval,
+            unitCount: formData.unitCount,
+          })
+        );
+      } catch {}
+
+      setCreatingCheckout(true);
+      try {
+        const res = await fetch('/api/stripe/create-checkout-session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            planId: formData.selectedPlanId,
+            roomCount: formData.unitCount,
+            interval: formData.billingInterval,
+            locale,
+          }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data?.success || !data?.url) {
+          setError(data?.error || 'No se pudo iniciar el pago');
+          return;
+        }
+        window.location.href = data.url;
+      } finally {
+        setCreatingCheckout(false);
+      }
+    };
+
+    const canFinish =
+      formData.selectedPlanId === 'free'
+        ? true
+        : !!formData.checkoutCompleted;
+
+    return (
+      <div className="max-w-4xl mx-auto p-6">
+        <div className="bg-white rounded-lg shadow-lg p-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">💳 Plan y pago</h1>
+          <p className="text-gray-600 mb-6">Elige tu plan, unidades y si prefieres pago mensual o anual.</p>
+
+          {checkoutFlag === 'cancel' && (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
+              <p className="text-amber-800">Pago cancelado. Puedes intentarlo de nuevo cuando quieras.</p>
+            </div>
+          )}
+
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+              <p className="text-red-800">{error}</p>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Plan</label>
+              <select
+                value={formData.selectedPlanId}
+                onChange={(e) => {
+                  const v = e.target.value as PlanId;
+                  setFormData(prev => ({ ...prev, selectedPlanId: v, checkoutCompleted: v === 'free' ? true : false }));
+                  loadPricing({ selectedPlanId: v });
+                }}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="free">Básico (Gratis)</option>
+                <option value="checkin">Check-in</option>
+                <option value="standard">Standard</option>
+                <option value="pro">Pro</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Facturación</label>
+              <select
+                value={formData.billingInterval}
+                onChange={(e) => {
+                  const v = e.target.value as BillingInterval;
+                  setFormData(prev => ({ ...prev, billingInterval: v, checkoutCompleted: false }));
+                  loadPricing({ billingInterval: v });
+                }}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="month">Mensual</option>
+                <option value="year">Anual (2 meses gratis)</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Unidades</label>
+              <input
+                type="number"
+                min={1}
+                max={500}
+                value={formData.unitCount}
+                onChange={(e) => {
+                  const n = Math.max(1, Math.min(500, parseInt(e.target.value || '1', 10)));
+                  setFormData(prev => ({ ...prev, unitCount: n, checkoutCompleted: false }));
+                  loadPricing({ unitCount: n });
+                }}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+              />
+              <p className="text-xs text-gray-500 mt-1">Hasta 500 (habitaciones o alojamientos completos).</p>
+            </div>
+          </div>
+
+          <div className="mt-6">
+            {pricingLoading && (
+              <div className="text-sm text-gray-500">Calculando precio…</div>
+            )}
+            {formData.selectedPlanId !== 'free' && pricing && (
+              <div className="bg-gray-50 border rounded-lg p-4">
+                <div className="flex justify-between text-sm">
+                  <span>Subtotal (sin IVA)</span>
+                  <span>{Number(pricing.subtotal).toFixed(2)}€</span>
+                </div>
+                <div className="flex justify-between text-sm text-gray-600">
+                  <span>IVA ({pricing.vat?.vat_rate ?? pricing.vat?.vatRate ?? 21}%)</span>
+                  <span>+{Number(pricing.vat?.vat_amount ?? pricing.vat?.vatAmount ?? 0).toFixed(2)}€</span>
+                </div>
+                <div className="flex justify-between font-bold text-lg pt-2 border-t mt-2">
+                  <span>Total {formData.billingInterval === 'year' ? 'anual' : 'mensual'}</span>
+                  <span className="text-blue-700">{Number(pricing.total).toFixed(2)}€</span>
+                </div>
+              </div>
+            )}
+            {formData.selectedPlanId === 'free' && (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <p className="text-green-800 font-semibold">Plan Básico seleccionado (sin pago).</p>
+              </div>
+            )}
+          </div>
+
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-8">
+            <button
+              onClick={handlePrevious}
+              className="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600"
+            >
+              Volver
+            </button>
+
+            <div className="flex flex-col sm:flex-row gap-3">
+              {formData.selectedPlanId !== 'free' && (
+                <button
+                  onClick={onPay}
+                  disabled={creatingCheckout}
+                  className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                >
+                  {creatingCheckout ? 'Redirigiendo a Stripe…' : 'Pagar selección'}
+                </button>
+              )}
+              {formData.selectedPlanId === 'free' && (
+                <button
+                  onClick={onPay}
+                  className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
+                >
+                  Continuar con Básico
+                </button>
+              )}
+              <button
+                onClick={async () => {
+                  setError('');
+                  if (!validateStep(6)) return;
+                  await handleSubmit();
+                }}
+                disabled={loading || !canFinish}
+                className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+              >
+                {loading ? 'Finalizando…' : 'Finalizar'}
+              </button>
+            </div>
+          </div>
+
+          {formData.selectedPlanId !== 'free' && !formData.checkoutCompleted && (
+            <p className="text-xs text-gray-500 mt-4">
+              Si ya pagaste y aún no se refleja, espera unos segundos: el sistema confirma el pago vía webhook.
+            </p>
+          )}
         </div>
       </div>
     );

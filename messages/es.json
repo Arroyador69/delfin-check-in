@@ -240,7 +240,7 @@
   },
   "onboarding": {
     "appName": "Delfín Check-in",
-    "stepOf": "Paso {currentStep} de 5",
+    "stepOf": "Paso {currentStep} de {totalSteps}",
     "common": {
       "show": "Ver",
       "hide": "Ocultar"
