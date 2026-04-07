@@ -244,7 +244,8 @@
       "minChars": "Minimum 8 caractères",
       "changing": "Changement...",
       "passwordChanged": "Mot de passe changé",
-      "changePassword": "Changer le mot de passe"
+      "changePassword": "Changer le mot de passe",
+      "continueNext": "Continuer à l'étape suivante"
     },
     "step2": {
       "title": "📋 Données de l'hébergement",

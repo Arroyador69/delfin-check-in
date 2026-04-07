@@ -255,7 +255,8 @@
       "minChars": "Minimum 8 characters",
       "changing": "Changing...",
       "passwordChanged": "Password Changed",
-      "changePassword": "Change Password"
+      "changePassword": "Change Password",
+      "continueNext": "Continue to next step"
     },
     "step2": {
       "title": "📋 Accommodation details",

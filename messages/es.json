@@ -255,7 +255,8 @@
       "minChars": "Mínimo 8 caracteres",
       "changing": "Cambiando...",
       "passwordChanged": "Contraseña Cambiada",
-      "changePassword": "Cambiar Contraseña"
+      "changePassword": "Cambiar Contraseña",
+      "continueNext": "Continuar al siguiente paso"
     },
     "step2": {
       "title": "📋 Datos del alojamiento",

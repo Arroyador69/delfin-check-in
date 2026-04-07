@@ -244,7 +244,8 @@
       "minChars": "Mínimo 8 caracteres",
       "changing": "A alterar...",
       "passwordChanged": "Palavra-passe alterada",
-      "changePassword": "Alterar palavra-passe"
+      "changePassword": "Alterar palavra-passe",
+      "continueNext": "Continuar para o passo seguinte"
     },
     "step2": {
       "title": "📋 Dados do alojamento",

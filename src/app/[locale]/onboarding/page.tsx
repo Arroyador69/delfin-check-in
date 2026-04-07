@@ -102,8 +102,17 @@ export default function OnboardingPage() {
       const raw = localStorage.getItem('onboarding_progress_v1');
       if (!raw) return;
       const parsed = JSON.parse(raw);
+      const storedPasswordChanged =
+        !!(parsed?.formData &&
+          typeof parsed.formData === 'object' &&
+          parsed.formData.passwordChanged);
       if (parsed?.currentStep && typeof parsed.currentStep === 'number') {
-        setCurrentStep(Math.max(1, Math.min(TOTAL_STEPS, parsed.currentStep)));
+        let step = Math.max(1, Math.min(TOTAL_STEPS, parsed.currentStep));
+        // Evitar quedar bloqueado en paso 1 tras éxito guardado sin avanzar de paso (p. ej. recarga a mitad del delay).
+        if (storedPasswordChanged && step === 1) {
+          step = 2;
+        }
+        setCurrentStep(step);
       }
       if (parsed?.formData && typeof parsed.formData === 'object') {
         // No restauramos passwords por seguridad, pero sí el flag de passwordChanged.
@@ -287,6 +296,19 @@ export default function OnboardingPage() {
     }));
   };
 
+  const advancePastPasswordStep = async () => {
+    try {
+      await fetch('/api/tenant/onboarding-status', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ onboarding_status: 'in_progress' }),
+      });
+    } catch (error) {
+      console.error('Error actualizando onboarding_status:', error);
+    }
+    setCurrentStep(2);
+  };
+
   const validateStep = (step: number): boolean => {
     switch (step) {
       case 1: // Cambiar contraseña
@@ -345,17 +367,10 @@ export default function OnboardingPage() {
 
     if (currentStep < TOTAL_STEPS) {
       if (currentStep === 1) {
-        try {
-          await fetch('/api/tenant/onboarding-status', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ onboarding_status: 'in_progress' })
-          });
-        } catch (error) {
-          console.error('Error actualizando onboarding_status:', error);
-        }
+        await advancePastPasswordStep();
+      } else {
+        setCurrentStep(currentStep + 1);
       }
-      setCurrentStep(currentStep + 1);
     }
   };
 
@@ -363,6 +378,17 @@ export default function OnboardingPage() {
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1);
       setError('');
+    }
+  };
+
+  const handleContinueFromPasswordStep = async () => {
+    if (loading || bootstrappingSession) return;
+    setLoading(true);
+    setError('');
+    try {
+      await handleNext();
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -409,10 +435,7 @@ export default function OnboardingPage() {
 
       setFormData(prev => ({ ...prev, passwordChanged: true }));
       setError('');
-      // Auto-avanzar al siguiente paso
-      setTimeout(() => {
-        setCurrentStep(2);
-      }, 1000);
+      await advancePastPasswordStep();
     } catch (error) {
       setError('Error al cambiar la contraseña');
     } finally {
@@ -673,14 +696,26 @@ export default function OnboardingPage() {
           </div>
         </div>
 
-        <div className="flex justify-end mt-8">
-          <button
-            onClick={handlePasswordChange}
-            disabled={loading || formData.passwordChanged || bootstrappingSession}
-            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
-          >
-            {loading ? t('step1.changing') : formData.passwordChanged ? t('step1.passwordChanged') : t('step1.changePassword')}
-          </button>
+        <div className="flex justify-end mt-8 gap-3">
+          {!formData.passwordChanged ? (
+            <button
+              type="button"
+              onClick={handlePasswordChange}
+              disabled={loading || bootstrappingSession}
+              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+            >
+              {loading ? t('step1.changing') : t('step1.changePassword')}
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => void handleContinueFromPasswordStep()}
+              disabled={loading || bootstrappingSession}
+              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+            >
+              {loading ? t('step1.changing') : t('step1.continueNext')}
+            </button>
+          )}
         </div>
       </div>
     </div>

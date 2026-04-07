@@ -255,7 +255,8 @@
       "minChars": "Minimo 8 caratteri",
       "changing": "Cambio in corso...",
       "passwordChanged": "Password Cambiata",
-      "changePassword": "Cambia Password"
+      "changePassword": "Cambia Password",
+      "continueNext": "Continua al passaggio successivo"
     },
     "step2": {
       "title": "📋 Dati dell'alloggio",
