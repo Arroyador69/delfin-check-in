@@ -302,7 +302,16 @@ export async function POST(req: NextRequest) {
 
     // Cookie de estado de onboarding (para redirección en middleware Edge)
     // Nota: httpOnly para que no dependa de JS y no sea manipulable en cliente.
-    response.cookies.set('onboarding_status', tenant.onboarding_status || 'pending', {
+    //
+    // Importante (legacy): para tenants antiguos (antes de existir onboarding_status),
+    // el valor puede venir NULL. En ese caso NO debemos forzar onboarding, así que lo
+    // tratamos como 'completed' para no bloquear cuentas existentes.
+    const onboardingStatusForCookie =
+      tenant.onboarding_status === null || tenant.onboarding_status === undefined
+        ? 'completed'
+        : tenant.onboarding_status;
+
+    response.cookies.set('onboarding_status', onboardingStatusForCookie, {
       httpOnly: true,
       secure: isProduction,
       sameSite: 'lax',

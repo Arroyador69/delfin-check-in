@@ -165,7 +165,12 @@ export async function GET(req: NextRequest) {
         ads_enabled: tenant.ads_enabled !== undefined ? tenant.ads_enabled : (tenant.plan_type !== 'pro' && tenant.plan_type !== 'standard' && tenant.plan_id !== 'pro' && tenant.plan_id !== 'enterprise'),
         legal_module: tenant.legal_module || false,
         country_code: tenant.country_code || null,
-        onboarding_status: tenant.onboarding_status || 'pending',
+        // Legacy: si onboarding_status es NULL (tenants creados antes de este campo),
+        // asumimos 'completed' para no forzar onboarding en cuentas existentes.
+        onboarding_status:
+          tenant.onboarding_status === null || tenant.onboarding_status === undefined
+            ? 'completed'
+            : tenant.onboarding_status,
         status: tenant.status,
         config: tenant.config,
         created_at: tenant.created_at
