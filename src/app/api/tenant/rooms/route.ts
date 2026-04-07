@@ -208,7 +208,10 @@ export async function POST(req: NextRequest) {
                 INSERT INTO "Lodging" (id, name, type, description)
                 VALUES (${tenantId}::uuid, ${tenant.name || 'Mi Propiedad'}, ${chosenType}, ${defaultDescription})
                 ON CONFLICT (id) DO UPDATE
-                SET name = ${tenant.name || 'Mi Propiedad'}
+                SET
+                  name = ${tenant.name || 'Mi Propiedad'},
+                  type = COALESCE("Lodging".type, ${chosenType}),
+                  description = COALESCE("Lodging".description, ${defaultDescription})
                 RETURNING id
               `
             : hasTypeColumn && chosenType

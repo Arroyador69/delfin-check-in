@@ -23,11 +23,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'No se pudo identificar el tenant' }, { status: 401 });
     }
 
-    const body = await req.json();
+    const body = await req.json().catch(() => ({}));
     const planId = body.planId as PlanId | undefined;
     const roomCount = Number(body.roomCount ?? 1);
     const interval = normalizeInterval(body.interval);
     const locale = String(body.locale || 'es');
+    const lodgingType = String(body.lodgingType || '');
 
     if (!planId || !['free', 'checkin', 'standard', 'pro'].includes(planId)) {
       return NextResponse.json({ success: false, error: 'Plan inválido' }, { status: 400 });
@@ -109,6 +110,7 @@ export async function POST(req: NextRequest) {
           plan_id: planId,
           room_count: String(roomCount),
           billing_interval: interval,
+          lodging_type: lodgingType,
           subtotal_ex_vat: String(pricing.subtotal),
           vat_rate: String(pricing.vat.vatRate),
           vat_amount: String(pricing.vat.vatAmount),
@@ -122,6 +124,7 @@ export async function POST(req: NextRequest) {
         plan_id: planId,
         room_count: String(roomCount),
         billing_interval: interval,
+        lodging_type: lodgingType,
         source: 'onboarding_checkout',
       },
     });

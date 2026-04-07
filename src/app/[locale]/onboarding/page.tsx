@@ -7,6 +7,7 @@ import { useTranslations } from 'next-intl';
 
 type PlanId = 'free' | 'checkin' | 'standard' | 'pro';
 type BillingInterval = 'month' | 'year';
+type LodgingType = 'hostal' | 'apartamentos';
 
 interface OnboardingData {
   // Paso 1: Cambiar contraseña
@@ -38,11 +39,12 @@ interface OnboardingData {
   propertyName: string;
   propertyAdded: boolean;
 
-  // Paso 6: Plan y pago
+  // Paso 3: Plan + tipo + unidades
   selectedPlanId: PlanId;
   billingInterval: BillingInterval;
   unitCount: number;
   checkoutCompleted: boolean;
+  lodgingType: LodgingType;
 }
 
 export default function OnboardingPage() {
@@ -89,7 +91,8 @@ export default function OnboardingPage() {
     selectedPlanId: 'checkin',
     billingInterval: 'month',
     unitCount: 1,
-    checkoutCompleted: false
+    checkoutCompleted: false,
+    lodgingType: 'hostal',
   });
 
   // Persistencia de onboarding para que, si el usuario sale y vuelve, continúe donde estaba.
@@ -127,6 +130,7 @@ export default function OnboardingPage() {
           billingInterval: parsed.formData.billingInterval ?? prev.billingInterval,
           unitCount: parsed.formData.unitCount ?? prev.unitCount,
           checkoutCompleted: !!parsed.formData.checkoutCompleted,
+          lodgingType: parsed.formData.lodgingType ?? prev.lodgingType,
         }));
       }
     } catch {}
@@ -162,6 +166,7 @@ export default function OnboardingPage() {
             billingInterval: formData.billingInterval,
             unitCount: formData.unitCount,
             checkoutCompleted: formData.checkoutCompleted,
+            lodgingType: formData.lodgingType,
           },
         })
       );
@@ -170,7 +175,8 @@ export default function OnboardingPage() {
 
   useEffect(() => {
     bootstrapSessionFromToken();
-    if (currentStep === 4 || currentStep === 5) {
+    // Cargar habitaciones cuando toque crear unidades o configurar limpieza
+    if (currentStep === 5 || currentStep === 6) {
       loadRooms();
     }
   }, [currentStep]);
@@ -194,7 +200,7 @@ export default function OnboardingPage() {
   }, []);
 
   useEffect(() => {
-    if (currentStep !== 6) return;
+    if (currentStep !== 3) return;
     loadPricing();
     const checkoutFlag = searchParams?.get('checkout');
     if (checkoutFlag === 'success' && formData.selectedPlanId !== 'free') {
@@ -296,22 +302,26 @@ export default function OnboardingPage() {
           return false;
         }
         return true;
-      case 3: // MIR (opcional, puede saltarse)
-        return true;
-      case 4: // Añadir propiedad (obligatorio solo para tenant contacto@delfincheckin.com)
-        if (tenant?.email === 'contacto@delfincheckin.com' && !formData.propertyAdded) {
-          setError(t('errors.mustAddProperty'));
-          return false;
-        }
-        return true;
-      case 6: // Plan y pago
+      case 3: // Plan y pago
         if (!formData.selectedPlanId) return true;
         if (formData.unitCount < 1 || formData.unitCount > 500) {
           setError('El número de unidades debe estar entre 1 y 500');
           return false;
         }
+        if (formData.selectedPlanId === 'free' && formData.unitCount !== 1) {
+          setError('El Plan Básico permite 1 unidad. Para más unidades, selecciona un plan de pago.');
+          return false;
+        }
         if (formData.selectedPlanId !== 'free' && !formData.checkoutCompleted) {
           setError('Completa el pago del plan seleccionado para continuar');
+          return false;
+        }
+        return true;
+      case 4: // MIR (opcional, puede saltarse)
+        return true;
+      case 5: // Crear unidades (obligatorio)
+        if (!formData.propertyAdded) {
+          setError('Crea tus unidades para continuar');
           return false;
         }
         return true;
@@ -437,23 +447,48 @@ export default function OnboardingPage() {
     }
   };
 
+  const generateDefaultUnits = (count: number, lodgingType: LodgingType) => {
+    const base = lodgingType === 'apartamentos' ? 'Apartamento' : 'Habitación';
+    return Array.from({ length: count }, (_, i) => ({
+      id: String(i + 1),
+      name: `${base} ${i + 1}`,
+    }));
+  };
+
+  const [unitNames, setUnitNames] = useState<Array<{ id: string; name: string }>>(() =>
+    generateDefaultUnits(1, 'hostal')
+  );
+
+  useEffect(() => {
+    // Mantener unitNames alineado con el número/tipo de unidades elegidas
+    setUnitNames((prev) => {
+      const next = generateDefaultUnits(formData.unitCount, formData.lodgingType);
+      // Mantener nombres ya editados si coinciden ids
+      const map = new Map(prev.map((u) => [u.id, u.name]));
+      return next.map((u) => ({ ...u, name: map.get(u.id) ?? u.name }));
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData.unitCount, formData.lodgingType]);
+
   const handleAddProperty = async () => {
     setError('');
     setLoading(true);
 
-    if (!formData.propertyName.trim()) {
-      setError(t('errors.propertyNameRequired'));
+    // Si el usuario no tocó nombres, al menos habrá defaults
+    const payloadRooms = (unitNames || []).map((u) => ({ id: u.id, name: u.name })).filter((u) => u.name.trim());
+    if (payloadRooms.length === 0) {
+      setError('Indica al menos una unidad');
       setLoading(false);
       return;
     }
 
     try {
-      // Crear habitación primero
       const roomsResponse = await fetch('/api/tenant/rooms', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          rooms: [{ name: formData.propertyName }]
+          rooms: payloadRooms,
+          lodgingType: formData.lodgingType,
         })
       });
 
@@ -866,10 +901,9 @@ export default function OnboardingPage() {
           <button
             type="button"
             onClick={() => {
-              // Mantener al usuario dentro del onboarding: preseleccionar plan y llevar al paso de pago.
+              // Mantener al usuario dentro del onboarding: preseleccionar plan y llevar al pago.
               setFormData(prev => ({ ...prev, selectedPlanId: 'checkin' }));
-              setCurrentStep(6);
-              // Hacemos scroll al inicio por UX
+              setCurrentStep(3);
               try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch {}
             }}
             className="inline-block mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-semibold"
@@ -950,7 +984,7 @@ export default function OnboardingPage() {
     </div>
   );
 
-  // Paso 4: Añadir propiedad
+  // Paso 5: Crear unidades (obligatorio)
   const renderPropertyStep = () => (
     <div className="max-w-4xl mx-auto p-6">
       <div className="bg-white rounded-lg shadow-lg p-8">
@@ -992,28 +1026,44 @@ export default function OnboardingPage() {
         )}
 
         <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              {t('step4.propertyName')}
-            </label>
-            <input
-              type="text"
-              value={formData.propertyName}
-              onChange={(e) => handleInputChange('propertyName', e.target.value)}
-              placeholder={t('step4.propertyNamePlaceholder')}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-              required
-              disabled={formData.propertyAdded}
-            />
+          <div className="bg-gray-50 border rounded-lg p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-semibold text-gray-900">Unidades a crear</p>
+                <p className="text-xs text-gray-600">
+                  {formData.unitCount} {formData.lodgingType === 'apartamentos' ? 'apartamentos' : 'habitaciones'}
+                </p>
+              </div>
+            </div>
+            <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+              {unitNames.map((u, idx) => (
+                <div key={u.id}>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                    {formData.lodgingType === 'apartamentos' ? 'Apartamento' : 'Habitación'} {idx + 1}
+                  </label>
+                  <input
+                    type="text"
+                    value={u.name}
+                    onChange={(e) =>
+                      setUnitNames((prev) =>
+                        prev.map((x) => (x.id === u.id ? { ...x, name: e.target.value } : x))
+                      )
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                    disabled={formData.propertyAdded}
+                  />
+                </div>
+              ))}
+            </div>
           </div>
 
           {!formData.propertyAdded && (
             <button
               onClick={handleAddProperty}
-              disabled={loading || !formData.propertyName.trim()}
+              disabled={loading}
               className="w-full bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
             >
-              {loading ? t('step4.adding') : t('step4.addProperty')}
+              {loading ? t('step4.adding') : `Crear ${formData.unitCount} unidades`}
             </button>
           )}
         </div>
@@ -1027,7 +1077,7 @@ export default function OnboardingPage() {
           </button>
           <button
             onClick={handleNext}
-            disabled={loading || (tenant?.email === 'contacto@delfincheckin.com' && !formData.propertyAdded)}
+            disabled={loading || !formData.propertyAdded}
             className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
           >
             {t('step4.next')}
@@ -1068,10 +1118,10 @@ export default function OnboardingPage() {
 
       {currentStep === 1 && renderPasswordStep()}
       {currentStep === 2 && renderEmpresaStep()}
-      {currentStep === 3 && renderMIRStep()}
-      {currentStep === 4 && renderPropertyStep()}
-      {currentStep === 5 && renderCleaningStep()}
-      {currentStep === 6 && renderPlanAndPaymentStep()}
+      {currentStep === 3 && renderPlanAndPaymentStep()}
+      {currentStep === 4 && renderMIRStep()}
+      {currentStep === 5 && renderPropertyStep()}
+      {currentStep === 6 && renderCleaningStep()}
     </div>
   );
 
@@ -1272,6 +1322,7 @@ export default function OnboardingPage() {
             roomCount: formData.unitCount,
             interval: formData.billingInterval,
             locale,
+            lodgingType: formData.lodgingType,
           }),
         });
         const data = await res.json().catch(() => ({}));
@@ -1308,14 +1359,19 @@ export default function OnboardingPage() {
             </div>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Plan</label>
               <select
                 value={formData.selectedPlanId}
                 onChange={(e) => {
                   const v = e.target.value as PlanId;
-                  setFormData(prev => ({ ...prev, selectedPlanId: v, checkoutCompleted: v === 'free' ? true : false }));
+                  setFormData(prev => ({
+                    ...prev,
+                    selectedPlanId: v,
+                    checkoutCompleted: v === 'free' ? true : false,
+                    unitCount: v === 'free' ? 1 : prev.unitCount,
+                  }));
                   loadPricing({ selectedPlanId: v });
                 }}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
@@ -1324,6 +1380,21 @@ export default function OnboardingPage() {
                 <option value="checkin">Check-in</option>
                 <option value="standard">Standard</option>
                 <option value="pro">Pro</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Tipo</label>
+              <select
+                value={formData.lodgingType}
+                onChange={(e) => {
+                  const v = e.target.value as LodgingType;
+                  setFormData(prev => ({ ...prev, lodgingType: v }));
+                }}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="hostal">Hostal (habitaciones)</option>
+                <option value="apartamentos">Apartamentos</option>
               </select>
             </div>
 
@@ -1344,7 +1415,9 @@ export default function OnboardingPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Unidades</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Unidades ({formData.lodgingType === 'apartamentos' ? 'apartamentos' : 'habitaciones'})
+              </label>
               <input
                 type="number"
                 min={1}
@@ -1352,12 +1425,21 @@ export default function OnboardingPage() {
                 value={formData.unitCount}
                 onChange={(e) => {
                   const n = Math.max(1, Math.min(500, parseInt(e.target.value || '1', 10)));
-                  setFormData(prev => ({ ...prev, unitCount: n, checkoutCompleted: false }));
+                  setFormData(prev => ({
+                    ...prev,
+                    unitCount: prev.selectedPlanId === 'free' ? 1 : n,
+                    checkoutCompleted: prev.selectedPlanId === 'free' ? true : false,
+                  }));
                   loadPricing({ unitCount: n });
                 }}
+                disabled={formData.selectedPlanId === 'free'}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
               />
-              <p className="text-xs text-gray-500 mt-1">Hasta 500 (habitaciones o alojamientos completos).</p>
+              <p className="text-xs text-gray-500 mt-1">
+                {formData.selectedPlanId === 'free'
+                  ? 'En Básico es 1 unidad.'
+                  : 'Hasta 500.'}
+              </p>
             </div>
           </div>
 
