@@ -106,6 +106,7 @@ function CheckoutForm({
   const elements = useElements();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const money = (v: any) => Number(v ?? 0);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -166,15 +167,15 @@ function CheckoutForm({
         <div className="space-y-2 text-sm">
           <div className="flex justify-between">
             <span>{t('basePrice')}</span>
-            <span>{pricing.base_price.toFixed(2)}€</span>
+            <span>{money((pricing as any)?.base_price).toFixed(2)}€</span>
           </div>
           <div className="flex justify-between">
             <span>{t('vat', { rate: pricing.vat_rate })}</span>
-            <span>{pricing.vat_amount.toFixed(2)}€</span>
+            <span>{money((pricing as any)?.vat_amount).toFixed(2)}€</span>
           </div>
           <div className="flex justify-between font-bold text-lg pt-2 border-t">
             <span>{t('totalPerMonth')}</span>
-            <span>{pricing.total.toFixed(2)}€/mes</span>
+            <span>{money((pricing as any)?.total).toFixed(2)}€/mes</span>
           </div>
         </div>
       </div>
@@ -213,7 +214,7 @@ function CheckoutForm({
           </>
         ) : (
           <>
-            {t('subscribePerMonth', { total: pricing.total.toFixed(2) })}
+            {t('subscribePerMonth', { total: money((pricing as any)?.total).toFixed(2) })}
           </>
         )}
       </button>
@@ -226,6 +227,7 @@ function PlanCalculator({ planId, onPriceChange }: { planId: PlanId; onPriceChan
   const [roomCount, setRoomCount] = useState(2);
   const [pricing, setPricing] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const money = (v: any) => Number(v ?? 0);
 
   const plan = UPGRADE_PLANS_CONFIG.find(p => p.id === planId);
   if (!plan) return null;
@@ -281,25 +283,25 @@ function PlanCalculator({ planId, onPriceChange }: { planId: PlanId; onPriceChan
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span>{t('basePrice')}</span>
-                <span>{pricing.base_price.toFixed(2)}€</span>
+                <span>{money(pricing.base_price).toFixed(2)}€</span>
               </div>
-              {pricing.extra_rooms_price > 0 && (
+              {money(pricing.extra_rooms_price) > 0 && (
                 <div className="flex justify-between text-sm text-gray-600">
                   <span>{t('extraRooms', { count: pricing.extra_rooms || 0 })}</span>
-                  <span>+{pricing.extra_rooms_price.toFixed(2)}€</span>
+                  <span>+{money(pricing.extra_rooms_price).toFixed(2)}€</span>
                 </div>
               )}
               <div className="flex justify-between text-sm">
                 <span>{t('subtotal')}</span>
-                <span>{pricing.subtotal.toFixed(2)}€</span>
+                <span>{money(pricing.subtotal).toFixed(2)}€</span>
               </div>
               <div className="flex justify-between text-sm text-gray-600">
-                <span>{t('vat', { rate: pricing.vat.vat_rate })}</span>
-                <span>+{pricing.vat.vat_amount.toFixed(2)}€</span>
+                <span>{t('vat', { rate: pricing?.vat?.vat_rate ?? pricing?.vat_rate ?? 21 })}</span>
+                <span>+{money(pricing?.vat?.vat_amount ?? pricing?.vat_amount).toFixed(2)}€</span>
               </div>
               <div className="flex justify-between font-bold text-lg pt-2 border-t">
                 <span>{t('totalMonthly')}</span>
-                <span className="text-blue-600">{pricing.total.toFixed(2)}€</span>
+                <span className="text-blue-600">{money(pricing.total).toFixed(2)}€</span>
               </div>
             </div>
           </div>

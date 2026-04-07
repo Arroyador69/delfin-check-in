@@ -1272,11 +1272,11 @@ export default function OnboardingPage() {
               {t('step5.previous')}
             </button>
             <button
-              onClick={handleNext}
+              onClick={handleSubmit}
               disabled={loading}
               className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
             >
-              {loading ? t('step5.completing') : 'Continuar'}
+              {loading ? t('step5.completing') : t('step5.completeSetup')}
             </button>
           </div>
         </div>
@@ -1378,6 +1378,8 @@ export default function OnboardingPage() {
       setError('');
       if (formData.selectedPlanId === 'free') {
         setFormData(prev => ({ ...prev, checkoutCompleted: true }));
+        // En plan gratis no hay pago: continuar con el onboarding
+        await handleNext();
         return;
       }
       if (formData.unitCount < 1 || formData.unitCount > 500) {
@@ -1622,34 +1624,32 @@ export default function OnboardingPage() {
             </button>
 
             <div className="flex flex-col sm:flex-row gap-3">
-              {formData.selectedPlanId !== 'free' && (
-                <button
-                  onClick={onPay}
-                  disabled={creatingCheckout}
-                  className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
-                >
-                  {creatingCheckout ? 'Redirigiendo a Stripe…' : 'Pagar selección'}
-                </button>
-              )}
-              {formData.selectedPlanId === 'free' && (
+              {formData.selectedPlanId !== 'free' ? (
+                formData.checkoutCompleted ? (
+                  <button
+                    type="button"
+                    onClick={() => void handleNext()}
+                    className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
+                  >
+                    Continuar
+                  </button>
+                ) : (
+                  <button
+                    onClick={onPay}
+                    disabled={creatingCheckout}
+                    className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                  >
+                    {creatingCheckout ? 'Iniciando pago…' : 'Pagar plan'}
+                  </button>
+                )
+              ) : (
                 <button
                   onClick={onPay}
                   className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
                 >
-                  Continuar con Básico
+                  Continuar
                 </button>
               )}
-              <button
-                onClick={async () => {
-                  setError('');
-                  if (!validateStep(6)) return;
-                  await handleSubmit();
-                }}
-                disabled={loading || !canFinish}
-                className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
-              >
-                {loading ? 'Finalizando…' : 'Finalizar'}
-              </button>
             </div>
           </div>
 
