@@ -229,7 +229,7 @@
   },
   "onboarding": {
     "appName": "Delfín Check-in",
-    "stepOf": "Étape {currentStep} sur 4",
+    "stepOf": "Étape {currentStep} sur 5",
     "common": {
       "show": "Afficher",
       "hide": "Masquer"
@@ -247,16 +247,16 @@
       "changePassword": "Changer le mot de passe"
     },
     "step2": {
-      "title": "📋 Données de l'entreprise",
-      "intro": "Complétez les données de votre entreprise ou hébergement. Ces informations seront utilisées pour les factures et le formulaire public des voyageurs.",
-      "companyName": "Nom de l'entreprise *",
+      "title": "📋 Données de l'hébergement",
+      "intro": "Complétez les données de votre hébergement. Ces informations seront utilisées pour les factures et le formulaire public des voyageurs.",
+      "companyName": "Nom de l'hébergement *",
       "nif": "N° TVA / SIRET *",
       "address": "Adresse *",
       "postalCode": "Code postal *",
       "city": "Ville *",
       "province": "Province *",
       "country": "Pays *",
-      "companyCreationDate": "Date de création de l'entreprise *",
+      "companyCreationDate": "Date de début de l'hébergement *",
       "phone": "Téléphone *",
       "email": "Email *",
       "website": "Site web",

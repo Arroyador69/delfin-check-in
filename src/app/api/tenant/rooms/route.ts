@@ -89,18 +89,17 @@ export async function POST(req: NextRequest) {
       }, { status: 404 });
     }
 
-    // SIEMPRE verificar y crear el registro en Lodging antes de insertar habitaciones
-    // Esto asegura que el foreign key constraint se satisfaga
+    // Verificar/crear registro en Lodging antes de insertar habitaciones.
+    // Importante: en Neon puede existir una tabla Lodging con distinto schema; por eso evitamos
+    // insertar columnas opcionales (created_at/updated_at) para no romper compatibilidad.
     let lodgingId: string;
     
     try {
-      // Primero, intentar crear la tabla Lodging si no existe
+      // Primero, intentar crear la tabla Lodging si no existe (schema mínimo)
       await sql`
         CREATE TABLE IF NOT EXISTS "Lodging" (
           id UUID PRIMARY KEY,
-          name VARCHAR(255) NOT NULL,
-          created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-          updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+          name VARCHAR(255) NOT NULL
         )
       `;
       console.log(`✅ Tabla Lodging verificada/creada`);
@@ -119,9 +118,9 @@ export async function POST(req: NextRequest) {
       } else {
         // Crear el registro en Lodging
         const insertResult = await sql`
-          INSERT INTO "Lodging" (id, name, created_at, updated_at)
-          VALUES (${tenantId}::uuid, ${tenant.name || 'Mi Propiedad'}, NOW(), NOW())
-          ON CONFLICT (id) DO UPDATE SET name = ${tenant.name || 'Mi Propiedad'}, updated_at = NOW()
+          INSERT INTO "Lodging" (id, name)
+          VALUES (${tenantId}::uuid, ${tenant.name || 'Mi Propiedad'})
+          ON CONFLICT (id) DO UPDATE SET name = ${tenant.name || 'Mi Propiedad'}
           RETURNING id
         `;
         

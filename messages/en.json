@@ -240,7 +240,7 @@
   },
   "onboarding": {
     "appName": "Delfín Check-in",
-    "stepOf": "Step {currentStep} of 4",
+    "stepOf": "Step {currentStep} of 5",
     "common": {
       "show": "Show",
       "hide": "Hide"
@@ -258,16 +258,16 @@
       "changePassword": "Change Password"
     },
     "step2": {
-      "title": "📋 Company Data",
-      "intro": "Complete your company or accommodation details. This information will be used for invoices and the public guest form.",
-      "companyName": "Company Name *",
+      "title": "📋 Accommodation details",
+      "intro": "Complete your accommodation details. This information will be used for invoices and the public guest form.",
+      "companyName": "Accommodation name *",
       "nif": "Tax ID / VAT *",
       "address": "Address *",
       "postalCode": "Postal Code *",
       "city": "City *",
       "province": "Province *",
       "country": "Country *",
-      "companyCreationDate": "Company Creation Date *",
+      "companyCreationDate": "Accommodation start date *",
       "phone": "Phone *",
       "email": "Email *",
       "website": "Website",
