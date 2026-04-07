@@ -61,9 +61,22 @@ export default function Navigation() {
   const t = useSafeTranslations('navigation');
   const tc = useClientTranslations('navigation');
 
-  // En onboarding no mostramos navegación para forzar completar el flujo.
+  // En onboarding mostramos solo el logo (sin navegación) y NO debe navegar al dashboard.
   if (pathname?.includes('/onboarding')) {
-    return null;
+    return (
+      <nav className="bg-white shadow-lg fixed w-full top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between h-16">
+            <div className="flex items-center">
+              <div className="flex-shrink-0 flex items-center select-none cursor-default">
+                <span className="text-2xl mr-2">🐬</span>
+                <span className="text-xl font-bold text-gray-900">Delfín Check-in</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </nav>
+    );
   }
 
   useEffect(() => {
