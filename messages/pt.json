@@ -314,7 +314,8 @@
       "previous": "Anterior",
       "next": "Seguinte",
       "completing": "A completar...",
-      "completeSetup": "Completar configuração"
+      "completeSetup": "Completar configuração",
+      "cleaningHint": "O calendário de limpeza e os horários por quarto pode configurá-los quando quiser em Definições; não é necessário agora."
     },
     "step5": {
       "title": "Calendário de limpeza",

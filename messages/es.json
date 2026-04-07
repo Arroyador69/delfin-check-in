@@ -325,7 +325,8 @@
       "previous": "Anterior",
       "next": "Siguiente",
       "completing": "Completando...",
-      "completeSetup": "Completar Configuración"
+      "completeSetup": "Completar Configuración",
+      "cleaningHint": "El calendario de limpieza y los horarios por habitación los configuras cuando quieras en Configuración; no hace falta hacerlo ahora."
     },
     "step5": {
       "title": "Calendario de Limpieza",

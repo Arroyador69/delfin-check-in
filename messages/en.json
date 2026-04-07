@@ -325,7 +325,8 @@
       "previous": "Previous",
       "next": "Next",
       "completing": "Completing...",
-      "completeSetup": "Complete Setup"
+      "completeSetup": "Complete Setup",
+      "cleaningHint": "You can set up the cleaning calendar and per-room schedules anytime in Settings—no need to do it now."
     },
     "step5": {
       "title": "Cleaning Calendar",

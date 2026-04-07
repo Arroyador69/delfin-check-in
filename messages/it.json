@@ -325,7 +325,8 @@
       "previous": "Indietro",
       "next": "Avanti",
       "completing": "Completamento...",
-      "completeSetup": "Completa Configurazione"
+      "completeSetup": "Completa Configurazione",
+      "cleaningHint": "Calendario pulizie e orari per stanza li imposti quando vuoi in Impostazioni; non serve farlo adesso."
     },
     "step5": {
       "title": "Calendario pulizie",

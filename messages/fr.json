@@ -314,7 +314,8 @@
       "previous": "Précédent",
       "next": "Suivant",
       "completing": "Finalisation...",
-      "completeSetup": "Terminer la configuration"
+      "completeSetup": "Terminer la configuration",
+      "cleaningHint": "Le calendrier de ménage et les horaires par chambre se configurent quand vous voulez dans Paramètres ; ce n’est pas nécessaire maintenant."
     },
     "step5": {
       "title": "Calendrier de nettoyage",
