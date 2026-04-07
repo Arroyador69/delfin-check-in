@@ -77,6 +77,12 @@ function getPlanName(t: (k: string) => string, planId: string | null): string {
   return '';
 }
 
+function getPlanDesc(t: (k: string) => string, planId: PlanId): string {
+  if (planId === 'checkin') return t('checkinPlanDesc');
+  if (planId === 'standard') return t('standardPlanDesc');
+  return t('proPlanDesc');
+}
+
 function CheckoutForm({ 
   planId, 
   roomCount, 
@@ -484,7 +490,7 @@ export default function UpgradePlanPage() {
                         {getPlanName(tPlans, plan.id)}
                       </h3>
                       <p className="text-gray-600 mb-4">
-                        {plan.id === 'checkin' ? tPlans('checkinPlanDesc') : tPlans('proPlanDesc')}
+                        {getPlanDesc(tPlans, plan.id)}
                       </p>
                       <div className="mb-4">
                         <span className="text-4xl font-bold text-gray-900">
