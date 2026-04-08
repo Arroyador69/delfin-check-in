@@ -4,10 +4,10 @@ import { sql } from '@vercel/postgres';
 // GET: Obtener configuración MIR específica de un propietario
 export async function GET(
   req: NextRequest,
-  { params }: { params: { propietarioId: string } }
+  { params }: { params: Promise<{ propietarioId: string }> }
 ) {
   try {
-    const { propietarioId } = params;
+    const { propietarioId } = await params;
     
     if (!propietarioId) {
       return NextResponse.json({
@@ -80,10 +80,10 @@ export async function GET(
 // PUT: Actualizar configuración MIR específica de un propietario
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { propietarioId: string } }
+  { params }: { params: Promise<{ propietarioId: string }> }
 ) {
   try {
-    const { propietarioId } = params;
+    const { propietarioId } = await params;
     const json = await req.json().catch(() => undefined);
     
     if (!propietarioId) {
@@ -233,10 +233,10 @@ export async function PUT(
 // DELETE: Eliminar configuración MIR específica de un propietario
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { propietarioId: string } }
+  { params }: { params: Promise<{ propietarioId: string }> }
 ) {
   try {
-    const { propietarioId } = params;
+    const { propietarioId } = await params;
     
     if (!propietarioId) {
       return NextResponse.json({

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
 import crypto from 'crypto';
 import { logAudit } from '@/lib/audit';
+import { getTenantId } from '@/lib/tenant';
 
 type Row = {
   id: string;
@@ -36,6 +37,15 @@ function toCsv(rows: Array<Record<string, any>>): string {
 
 export async function GET(request: NextRequest) {
   try {
+    // 🔒 Aislamiento multi-tenant: este export SIEMPRE es por tenant autenticado
+    let tenantId = await getTenantId(request);
+    if (!tenantId || tenantId.trim() === '') {
+      tenantId = request.headers.get('x-tenant-id') || '';
+    }
+    if (!tenantId || tenantId === 'default' || tenantId.trim() === '') {
+      return NextResponse.json({ success: false, error: 'No autorizado - tenant_id requerido' }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
     const from = searchParams.get('from');
     const to = searchParams.get('to');
@@ -72,6 +82,7 @@ export async function GET(request: NextRequest) {
     await sql`
       CREATE TABLE IF NOT EXISTS reservations (
         id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+        tenant_id UUID NOT NULL,
         external_id VARCHAR(100) UNIQUE NOT NULL,
         room_id VARCHAR(50) NOT NULL,
         guest_name VARCHAR(255) NOT NULL,
@@ -92,9 +103,17 @@ export async function GET(request: NextRequest) {
       );
     `;
 
+    // En instalaciones existentes, asegurar columna tenant_id e índices/constraints mínimos
+    await sql`ALTER TABLE reservations ADD COLUMN IF NOT EXISTS tenant_id UUID`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_reservations_tenant_id ON reservations(tenant_id)`;
+    // external_id era UNIQUE global; en multi-tenant debe ser único por tenant.
+    // Si ya existe una constraint UNIQUE(external_id), no la tocamos aquí (evitamos errores en runtime).
+    // El filtrado por tenant_id evita fugas aunque la constraint siga siendo global.
+
     // Construcción dinámica con parámetros seguros
     const where: string[] = [];
     const params: any[] = [];
+    where.push(`tenant_id = $${params.length + 1}::uuid`); params.push(tenantId);
     where.push(`${dateField} >= $${params.length + 1}::date`); params.push(from);
     where.push(`${dateField} < ($${params.length + 1}::date + INTERVAL '1 day')`); params.push(to);
     where.push(`status != 'cancelled'`);

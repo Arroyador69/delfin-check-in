@@ -11,11 +11,18 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
+    const tenantId = request.headers.get('x-tenant-id');
     
     if (!id) {
       return NextResponse.json(
         { error: 'ID de reserva requerido' },
         { status: 400 }
+      );
+    }
+    if (!tenantId || tenantId === 'default' || tenantId.trim() === '') {
+      return NextResponse.json(
+        { error: 'No se pudo identificar el tenant' },
+        { status: 401 }
       );
     }
 
@@ -25,7 +32,7 @@ export async function DELETE(
     const existingReservation = await sql`
       SELECT id, guest_name, room_id, check_in, check_out
       FROM reservations
-      WHERE id = ${id}
+      WHERE id = ${id} AND tenant_id = ${tenantId}::uuid
     `;
 
     if (existingReservation.rows.length === 0) {
@@ -40,7 +47,7 @@ export async function DELETE(
     // Eliminar la reserva
     const result = await sql`
       DELETE FROM reservations
-      WHERE id = ${id}
+      WHERE id = ${id} AND tenant_id = ${tenantId}::uuid
       RETURNING id, guest_name, room_id, check_in, check_out;
     `;
 

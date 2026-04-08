@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
+import { getTenantId } from '@/lib/tenant';
 
 interface MirConfig {
   propietarioId: string;
@@ -17,17 +18,24 @@ interface MirConfig {
 // GET: Obtener configuración MIR de un propietario
 export async function GET(req: NextRequest) {
   try {
+    // 🔒 Aislamiento multi-tenant: solo puede leer su propia config
+    let tenantId = await getTenantId(req);
+    if (!tenantId || tenantId.trim() === '') {
+      tenantId = req.headers.get('x-tenant-id') || '';
+    }
+    if (!tenantId || tenantId === 'default' || tenantId.trim() === '') {
+      return NextResponse.json({ success: false, error: 'No autorizado' }, { status: 401 });
+    }
+
     const { searchParams } = new URL(req.url);
     const propietarioId = searchParams.get('propietarioId');
     
-    if (!propietarioId) {
-      return NextResponse.json({
-        success: false,
-        error: 'propietarioId requerido'
-      }, { status: 400 });
+    // Si llega un propietarioId explícito, debe coincidir con el tenant actual
+    if (propietarioId && propietarioId !== tenantId) {
+      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
     }
 
-    console.log('📋 Obteniendo configuración MIR para propietario:', propietarioId);
+    console.log('📋 Obteniendo configuración MIR para tenant:', tenantId);
 
     // Obtener configuración de la base de datos
     const result = await sql`
@@ -43,7 +51,7 @@ export async function GET(req: NextRequest) {
         created_at,
         updated_at
       FROM mir_configuraciones 
-      WHERE propietario_id = ${propietarioId}
+      WHERE propietario_id = ${tenantId}
     `;
 
     if (result.rows.length === 0) {
@@ -92,6 +100,15 @@ export async function GET(req: NextRequest) {
 // POST: Crear o actualizar configuración MIR de un propietario
 export async function POST(req: NextRequest) {
   try {
+    // 🔒 Aislamiento multi-tenant: solo puede guardar su propia config
+    let tenantId = await getTenantId(req);
+    if (!tenantId || tenantId.trim() === '') {
+      tenantId = req.headers.get('x-tenant-id') || '';
+    }
+    if (!tenantId || tenantId === 'default' || tenantId.trim() === '') {
+      return NextResponse.json({ success: false, error: 'No autorizado' }, { status: 401 });
+    }
+
     const json = await req.json().catch(() => undefined);
     
     if (!json) {
@@ -102,7 +119,6 @@ export async function POST(req: NextRequest) {
     }
 
     const {
-      propietarioId,
       usuario,
       contraseña,
       codigoArrendador,
@@ -113,20 +129,20 @@ export async function POST(req: NextRequest) {
     } = json;
 
     // Validaciones
-    if (!propietarioId || !usuario || !contraseña || !codigoArrendador) {
+    if (!usuario || !contraseña || !codigoArrendador) {
       return NextResponse.json({
         success: false,
         error: 'Datos requeridos faltantes',
-        message: 'propietarioId, usuario, contraseña y codigoArrendador son obligatorios'
+        message: 'usuario, contraseña y codigoArrendador son obligatorios'
       }, { status: 400 });
     }
 
-    console.log('💾 Guardando configuración MIR para propietario:', propietarioId);
+    console.log('💾 Guardando configuración MIR para tenant:', tenantId);
 
     // Verificar si ya existe configuración
     const existingConfig = await sql`
       SELECT propietario_id FROM mir_configuraciones 
-      WHERE propietario_id = ${propietarioId}
+      WHERE propietario_id = ${tenantId}
     `;
 
     if (existingConfig.rows.length > 0) {
@@ -142,10 +158,10 @@ export async function POST(req: NextRequest) {
           simulacion = ${simulacion},
           activo = ${activo},
           updated_at = NOW()
-        WHERE propietario_id = ${propietarioId}
+        WHERE propietario_id = ${tenantId}
       `;
       
-      console.log('✅ Configuración MIR actualizada para propietario:', propietarioId);
+      console.log('✅ Configuración MIR actualizada para tenant:', tenantId);
     } else {
       // Crear nueva configuración
       await sql`
@@ -161,7 +177,7 @@ export async function POST(req: NextRequest) {
           created_at,
           updated_at
         ) VALUES (
-          ${propietarioId},
+          ${tenantId},
           ${usuario},
           ${contraseña},
           ${codigoArrendador},
@@ -174,13 +190,13 @@ export async function POST(req: NextRequest) {
         )
       `;
       
-      console.log('✅ Configuración MIR creada para propietario:', propietarioId);
+      console.log('✅ Configuración MIR creada para tenant:', tenantId);
     }
 
     return NextResponse.json({
       success: true,
       message: 'Configuración MIR guardada correctamente',
-      propietarioId,
+      propietarioId: tenantId,
       config: {
         usuario,
         codigoArrendador,
@@ -208,21 +224,27 @@ export async function POST(req: NextRequest) {
 // DELETE: Eliminar configuración MIR de un propietario
 export async function DELETE(req: NextRequest) {
   try {
+    // 🔒 Aislamiento multi-tenant: solo puede borrar su propia config
+    let tenantId = await getTenantId(req);
+    if (!tenantId || tenantId.trim() === '') {
+      tenantId = req.headers.get('x-tenant-id') || '';
+    }
+    if (!tenantId || tenantId === 'default' || tenantId.trim() === '') {
+      return NextResponse.json({ success: false, error: 'No autorizado' }, { status: 401 });
+    }
+
     const { searchParams } = new URL(req.url);
     const propietarioId = searchParams.get('propietarioId');
     
-    if (!propietarioId) {
-      return NextResponse.json({
-        success: false,
-        error: 'propietarioId requerido'
-      }, { status: 400 });
+    if (propietarioId && propietarioId !== tenantId) {
+      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
     }
 
-    console.log('🗑️ Eliminando configuración MIR para propietario:', propietarioId);
+    console.log('🗑️ Eliminando configuración MIR para tenant:', tenantId);
 
     const result = await sql`
       DELETE FROM mir_configuraciones 
-      WHERE propietario_id = ${propietarioId}
+      WHERE propietario_id = ${tenantId}
     `;
 
     if (result.rowCount === 0) {
@@ -236,7 +258,7 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({
       success: true,
       message: 'Configuración MIR eliminada correctamente',
-      propietarioId
+      propietarioId: tenantId
     });
 
   } catch (error) {

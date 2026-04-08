@@ -5,13 +5,13 @@ import { marked } from 'marked'
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { error } = await verifySuperAdmin(req)
     if (error) return error
 
-    const pageId = params.id
+    const { id: pageId } = await params
     const result = await sql`SELECT * FROM programmatic_pages WHERE id = ${pageId}`
     if (result.rows.length === 0) {
       return NextResponse.json({ error: 'Página no encontrada' }, { status: 404 })

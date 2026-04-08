@@ -4,7 +4,7 @@ import { getTenantId } from '@/lib/tenant';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const tenantId = await getTenantId(request);
@@ -12,7 +12,8 @@ export async function GET(
       return NextResponse.json({ error: 'Tenant ID no encontrado' }, { status: 401 });
     }
 
-    const id = parseInt(params.id);
+    const { id: idParam } = await params;
+    const id = parseInt(idParam, 10);
     if (isNaN(id)) {
       return NextResponse.json({ error: 'ID de factura inválido' }, { status: 400 });
     }
@@ -35,7 +36,7 @@ export async function GET(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const tenantId = await getTenantId(request);
@@ -43,7 +44,8 @@ export async function DELETE(
       return NextResponse.json({ error: 'Tenant ID no encontrado' }, { status: 401 });
     }
 
-    const id = parseInt(params.id);
+    const { id: idParam } = await params;
+    const id = parseInt(idParam, 10);
     if (isNaN(id)) {
       return NextResponse.json({ error: 'ID de factura inválido' }, { status: 400 });
     }

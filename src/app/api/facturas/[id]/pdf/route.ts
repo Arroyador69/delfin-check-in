@@ -5,7 +5,7 @@ import jsPDF from 'jspdf';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const tenantId = await getTenantId(request);
@@ -16,7 +16,8 @@ export async function GET(
     // Asegurar que las tablas existan
     await ensureFacturasTables();
 
-    const id = parseInt(params.id);
+    const { id: idParam } = await params;
+    const id = parseInt(idParam, 10);
     if (isNaN(id)) {
       return NextResponse.json({ error: 'ID de factura inválido' }, { status: 400 });
     }

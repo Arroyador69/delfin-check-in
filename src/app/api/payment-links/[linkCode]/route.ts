@@ -32,11 +32,11 @@ export async function OPTIONS(req: NextRequest) {
 // GET: Obtener información de un enlace de pago (público)
 export async function GET(
   req: NextRequest,
-  { params }: { params: { linkCode: string } }
+  { params }: { params: Promise<{ linkCode: string }> }
 ) {
   try {
     const origin = req.headers.get('origin');
-    const { linkCode } = params;
+    const { linkCode } = await params;
 
     const linkResult = await sql`
       SELECT 
@@ -135,7 +135,7 @@ export async function GET(
 // DELETE: Eliminar o desactivar enlace de pago
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { linkCode: string } }
+  { params }: { params: Promise<{ linkCode: string }> }
 ) {
   try {
     const tenantId = await getTenantId(req);
@@ -146,7 +146,7 @@ export async function DELETE(
       );
     }
 
-    const { linkCode } = params;
+    const { linkCode } = await params;
 
     // Verificar que el enlace pertenece al tenant
     const linkResult = await sql`

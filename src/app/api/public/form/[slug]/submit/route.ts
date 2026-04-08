@@ -41,10 +41,10 @@ export async function OPTIONS(req: NextRequest) {
  */
 export async function POST(
   req: NextRequest,
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
-    const slug = params.slug;
+    const { slug } = await params;
     const body = await req.json();
     
     // Debug: Log del payload recibido

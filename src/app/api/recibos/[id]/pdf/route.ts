@@ -5,7 +5,7 @@ import { generarPdfRecibo } from '@/lib/pdf-recibo';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> | { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const tenantId = await getTenantId(request);
@@ -15,7 +15,7 @@ export async function GET(
 
     await ensureFacturasTables();
 
-    const { id: idParam } = await Promise.resolve(params);
+    const { id: idParam } = await params;
     const id = parseInt(idParam, 10);
     if (Number.isNaN(id)) {
       return NextResponse.json({ error: 'ID de recibo inválido' }, { status: 400 });

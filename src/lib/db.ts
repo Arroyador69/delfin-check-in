@@ -386,6 +386,7 @@ export async function deleteGuestRegistrationsByIds(ids: string[]): Promise<numb
 
 // Función helper para insertar una reserva
 export async function insertReservation(data: {
+  tenant_id: string;
   external_id: string;
   room_id: string;
   guest_name: string;
@@ -404,12 +405,12 @@ export async function insertReservation(data: {
 }): Promise<any> {
   const result = await sql`
     INSERT INTO reservations (
-      external_id, room_id, guest_name, guest_email, guest_phone, guest_count,
+      tenant_id, external_id, room_id, guest_name, guest_email, guest_phone, guest_count,
       check_in, check_out, channel, total_price, 
       guest_paid, platform_commission, net_income, currency, status
     )
     VALUES (
-      ${data.external_id}, ${data.room_id}, ${data.guest_name}, ${data.guest_email || ''}, ${data.guest_phone || ''}, ${data.guest_count || 1}, 
+      ${data.tenant_id}::uuid, ${data.external_id}, ${data.room_id}, ${data.guest_name}, ${data.guest_email || ''}, ${data.guest_phone || ''}, ${data.guest_count || 1}, 
       ${data.check_in}::timestamp, ${data.check_out}::timestamp, ${data.channel}, ${data.total_price}, 
       ${data.guest_paid || data.total_price}, ${data.platform_commission || 0}, ${data.net_income || data.total_price}, 
       ${data.currency || 'EUR'}, ${data.status}
@@ -434,6 +435,17 @@ export async function getReservations(limit: number = 200): Promise<any[]> {
     LIMIT ${limit};
   `;
   
+  return result.rows;
+}
+
+export async function getReservationsByTenant(tenantId: string, limit: number = 200): Promise<any[]> {
+  const result = await sql`
+    SELECT r.*
+    FROM reservations r
+    WHERE r.tenant_id = ${tenantId}::uuid
+    ORDER BY r.check_in DESC
+    LIMIT ${limit};
+  `;
   return result.rows;
 }
 

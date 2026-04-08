@@ -80,18 +80,10 @@ export default function IntegrationsSettingsPage() {
           const data = await response.json();
           if (data?.tenant?.id) {
             setTenantId(data.tenant.id);
-          } else {
-            // Fallback: el middleware inyecta el tenant_id por defecto
-            setTenantId('870e589f-d313-4a5a-901f-f25fd4e7240a');
           }
-        } else {
-          // Fallback: el middleware inyecta el tenant_id por defecto
-          setTenantId('870e589f-d313-4a5a-901f-f25fd4e7240a');
         }
       } catch (error) {
         console.error('Error obteniendo tenant ID:', error);
-        // Fallback: el middleware inyecta el tenant_id por defecto
-        setTenantId('870e589f-d313-4a5a-901f-f25fd4e7240a');
       }
     };
     getTenantId();

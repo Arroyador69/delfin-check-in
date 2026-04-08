@@ -22,10 +22,10 @@ export async function OPTIONS(req: NextRequest) {
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { key: string } }
+  { params }: { params: Promise<{ key: string }> }
 ) {
   try {
-    const adapterKey = params.key;
+    const { key: adapterKey } = await params;
     const adapter = getAdapter(adapterKey);
 
     if (!adapter) {

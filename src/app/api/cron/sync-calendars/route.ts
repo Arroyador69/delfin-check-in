@@ -136,7 +136,7 @@ function extractDateValue(line: string): string {
   return line.slice(colonIdx + 1).trim();
 }
 
-export function parseICalFeed(icalData: string) {
+function parseICalFeed(icalData: string) {
   const lines = unfoldICalLines(icalData);
   const events: Array<{ uid: string; summary: string; description: string; start_date: string; end_date: string }> = [];
   let cur: any = null;

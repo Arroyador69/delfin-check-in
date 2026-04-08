@@ -104,7 +104,12 @@ export default function PaymentLinksPage() {
       const propsRes = await fetch('/api/tenant/properties');
       const propsData = await propsRes.json();
       if (propsRes.ok && propsData.success) {
-        setProperties(propsData.properties || []);
+        const raw = (propsData.properties || []) as any[];
+        const realProps = raw
+          .filter((p) => p && p.id != null && Number.isFinite(Number(p.id)))
+          .map((p) => ({ id: Number(p.id), property_name: String(p.property_name || '') }))
+          .filter((p) => p.property_name.trim().length > 0);
+        setProperties(realProps);
       }
     } catch (error) {
       console.error('Error cargando recursos:', error);
@@ -277,8 +282,13 @@ export default function PaymentLinksPage() {
                   required
                 >
                   <option value="room">Slot de Habitación</option>
-                  <option value="property">Propiedad</option>
+                  <option value="property" disabled={properties.length === 0}>Propiedad</option>
                 </select>
+                {properties.length === 0 && (
+                  <p className="mt-1 text-xs text-gray-500">
+                    No tienes propiedades configuradas para crear enlaces por propiedad.
+                  </p>
+                )}
               </div>
 
               <div>
@@ -300,7 +310,7 @@ export default function PaymentLinksPage() {
                     ))
                   ) : (
                     properties.map((prop) => (
-                      <option key={prop.id} value={prop.id.toString()}>
+                      <option key={prop.id} value={String(prop.id)}>
                         {prop.property_name}
                       </option>
                     ))

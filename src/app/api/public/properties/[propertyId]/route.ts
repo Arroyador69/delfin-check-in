@@ -31,10 +31,11 @@ export async function OPTIONS(req: NextRequest) {
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { propertyId: string } }
+  { params }: { params: Promise<{ propertyId: string }> }
 ) {
   try {
     const origin = req.headers.get('origin');
+    const { propertyId } = await params;
     const { searchParams } = new URL(req.url);
     const tenantId = searchParams.get('tenant_id');
     
@@ -49,7 +50,7 @@ export async function GET(
       return response;
     }
 
-    console.log('🏠 Obteniendo propiedad pública:', { propertyId: params.propertyId, tenantId });
+    console.log('🏠 Obteniendo propiedad pública:', { propertyId, tenantId });
     
     const result = await sql`
       SELECT 
@@ -58,7 +59,7 @@ export async function GET(
         security_deposit, minimum_nights, maximum_nights,
         availability_rules, is_active, created_at, updated_at
       FROM tenant_properties 
-      WHERE id = ${params.propertyId} AND tenant_id = ${tenantId} AND is_active = true
+      WHERE id = ${propertyId} AND tenant_id = ${tenantId} AND is_active = true
     `;
     
     if (result.rows.length === 0) {

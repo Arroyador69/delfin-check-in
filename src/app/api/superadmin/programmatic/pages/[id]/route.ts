@@ -4,13 +4,13 @@ import { sql } from '@/lib/db';
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { error } = await verifySuperAdmin(req);
     if (error) return error;
 
-    const pageId = params.id;
+    const { id: pageId } = await params;
 
     const result = await sql`
       SELECT 

@@ -33,11 +33,11 @@ export async function OPTIONS(req: NextRequest) {
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { linkCode: string } }
+  { params }: { params: Promise<{ linkCode: string }> }
 ) {
   try {
     const origin = req.headers.get('origin');
-    const { linkCode } = params;
+    const { linkCode } = await params;
     const data = await req.json();
     const {
       guest_name,

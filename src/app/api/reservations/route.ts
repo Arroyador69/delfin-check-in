@@ -47,7 +47,8 @@ export async function GET(req: NextRequest) {
       await sql`
         CREATE TABLE IF NOT EXISTS reservations (
           id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-          external_id VARCHAR(100) UNIQUE NOT NULL,
+          tenant_id UUID NOT NULL,
+          external_id VARCHAR(100) NOT NULL,
           room_id VARCHAR(50) NOT NULL,
           guest_name VARCHAR(255) NOT NULL,
           guest_email VARCHAR(255),
@@ -68,6 +69,7 @@ export async function GET(req: NextRequest) {
       `;
       
       // Crear índices
+      await sql`CREATE INDEX IF NOT EXISTS idx_reservations_tenant_id ON reservations(tenant_id)`;
       await sql`
         CREATE INDEX IF NOT EXISTS idx_reservations_check_in 
         ON reservations(check_in);
@@ -82,9 +84,23 @@ export async function GET(req: NextRequest) {
         CREATE INDEX IF NOT EXISTS idx_reservations_external_id 
         ON reservations(external_id);
       `;
+
+      // Unicidad por tenant
+      await sql`
+        CREATE UNIQUE INDEX IF NOT EXISTS uq_reservations_tenant_external_id
+        ON reservations(tenant_id, external_id);
+      `;
       
       console.log('✅ Tabla reservations creada correctamente');
     }
+
+    // Hardening para DB existente (evita fugas y errores si la tabla ya existía sin tenant_id)
+    await sql`ALTER TABLE reservations ADD COLUMN IF NOT EXISTS tenant_id UUID`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_reservations_tenant_id ON reservations(tenant_id)`;
+    await sql`
+      CREATE UNIQUE INDEX IF NOT EXISTS uq_reservations_tenant_external_id
+      ON reservations(tenant_id, external_id);
+    `;
     
     // Obtener reservas desde la base de datos filtradas por tenant_id
     const result = await sql`
@@ -164,7 +180,8 @@ export async function POST(request: NextRequest) {
       await sql`
         CREATE TABLE IF NOT EXISTS reservations (
           id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-          external_id VARCHAR(100) UNIQUE NOT NULL,
+          tenant_id UUID NOT NULL,
+          external_id VARCHAR(100) NOT NULL,
           room_id VARCHAR(50) NOT NULL,
           guest_name VARCHAR(255) NOT NULL,
           guest_email VARCHAR(255),
@@ -185,6 +202,7 @@ export async function POST(request: NextRequest) {
       `;
       
       // Crear índices
+      await sql`CREATE INDEX IF NOT EXISTS idx_reservations_tenant_id ON reservations(tenant_id)`;
       await sql`
         CREATE INDEX IF NOT EXISTS idx_reservations_check_in 
         ON reservations(check_in);
@@ -199,9 +217,22 @@ export async function POST(request: NextRequest) {
         CREATE INDEX IF NOT EXISTS idx_reservations_external_id 
         ON reservations(external_id);
       `;
+
+      await sql`
+        CREATE UNIQUE INDEX IF NOT EXISTS uq_reservations_tenant_external_id
+        ON reservations(tenant_id, external_id);
+      `;
       
       console.log('✅ Tabla reservations creada correctamente');
     }
+
+    // Hardening para DB existente
+    await sql`ALTER TABLE reservations ADD COLUMN IF NOT EXISTS tenant_id UUID`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_reservations_tenant_id ON reservations(tenant_id)`;
+    await sql`
+      CREATE UNIQUE INDEX IF NOT EXISTS uq_reservations_tenant_external_id
+      ON reservations(tenant_id, external_id);
+    `;
     
     // Validar datos requeridos
     if (!body.guest_name || !body.room_id || !body.check_in || !body.check_out) {
@@ -247,10 +278,11 @@ export async function POST(request: NextRequest) {
     // Insertar en PostgreSQL directamente con tenant_id
     const result = await sql`
       INSERT INTO reservations (
-        external_id, room_id, guest_name, guest_email, guest_phone, 
+        tenant_id, external_id, room_id, guest_name, guest_email, guest_phone, 
         guest_count, check_in, check_out, channel, total_price, 
-        guest_paid, platform_commission, net_income, currency, status, tenant_id
+        guest_paid, platform_commission, net_income, currency, status
       ) VALUES (
+        ${reservationData.tenant_id},
         ${reservationData.external_id},
         ${reservationData.room_id},
         ${reservationData.guest_name},
@@ -265,8 +297,7 @@ export async function POST(request: NextRequest) {
         ${reservationData.platform_commission},
         ${reservationData.net_income},
         ${reservationData.currency},
-        ${reservationData.status},
-        ${reservationData.tenant_id}
+        ${reservationData.status}
       ) RETURNING *
     `;
     
