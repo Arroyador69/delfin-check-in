@@ -101,7 +101,11 @@ export async function GET(req: NextRequest) {
       return res;
     }
 
-    // Recopilar días bloqueados desde 3 fuentes
+    // Recopilar días bloqueados desde 4 fuentes:
+    // - reservations (operacional)
+    // - direct_reservations (reservas directas confirmadas)
+    // - property_availability (bloqueos manuales)
+    // - calendar_events (bloqueos iCal sincronizados)
     const result = await sql`
       WITH rango AS (
         SELECT ${from}::date AS f, ${to}::date AS t
@@ -123,6 +127,15 @@ export async function GET(req: NextRequest) {
           AND dr.check_in_date  < g.t
           AND dr.check_out_date > g.f
       ),
+      ical AS (
+        SELECT generate_series(ce.start_date::date, (ce.end_date::date - INTERVAL '1 day'), '1 day')::date AS d
+        FROM calendar_events ce, rango g
+        WHERE ce.tenant_id = ${tenantId}::uuid
+          AND ce.property_id = ${propertyId}::int
+          AND ce.is_blocked = TRUE
+          AND ce.start_date < g.t
+          AND ce.end_date > g.f
+      ),
       pa AS (
         SELECT pa.date::date AS d
         FROM property_availability pa, rango g
@@ -134,6 +147,8 @@ export async function GET(req: NextRequest) {
         SELECT d FROM op
         UNION
         SELECT d FROM direct
+        UNION
+        SELECT d FROM ical
         UNION
         SELECT d FROM pa
       )

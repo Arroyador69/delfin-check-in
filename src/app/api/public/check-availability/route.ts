@@ -130,6 +130,7 @@ export async function POST(req: NextRequest) {
     // - reservations (operacional) por room_id mapeado
     // - direct_reservations confirmadas por property_id
     // - property_availability con available = FALSE
+    // - calendar_events (bloqueos iCal sincronizados)
     // Primero resolvemos el room_id del slot
     const overlap = await sql`
       WITH map AS (
@@ -153,6 +154,14 @@ export async function POST(req: NextRequest) {
           AND dr.reservation_status = 'confirmed'
           AND dr.check_in_date  < ${check_out_date}::date
           AND dr.check_out_date > ${check_in_date}::date
+        UNION ALL
+        SELECT 1
+        FROM calendar_events ce
+        WHERE ce.tenant_id = ${property.tenant_id}::uuid
+          AND ce.property_id = ${property_id}::int
+          AND ce.is_blocked = TRUE
+          AND ce.start_date < ${check_out_date}::date
+          AND ce.end_date > ${check_in_date}::date
         UNION ALL
         SELECT 1
         FROM property_availability pa
