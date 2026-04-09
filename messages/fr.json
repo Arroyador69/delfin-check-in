@@ -1335,6 +1335,19 @@
         "closed": "Fermé"
       }
     },
+    "general": {
+      "title": "Paramètres généraux",
+      "businessName": "Nom de l'établissement",
+      "contactEmail": "E-mail de contact",
+      "contactPhone": "Téléphone",
+      "address": "Adresse",
+      "taxId": "Identifiant fiscal",
+      "language": "Langue",
+      "timezone": "Fuseau horaire",
+      "currency": "Devise",
+      "dateFormat": "Format de date",
+      "timeFormat": "Format de l'heure"
+    },
     "rooms": {
       "title": "Chambres/Appartements",
       "description": "Configurez les noms de vos chambres ou appartements. Ces noms apparaîtront dans le tableau de bord et lors de la création de nouvelles réservations.",

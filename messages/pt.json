@@ -1334,6 +1334,19 @@
         "closed": "Fechado"
       }
     },
+    "general": {
+      "title": "Definições gerais",
+      "businessName": "Nome do negócio",
+      "contactEmail": "Email de contacto",
+      "contactPhone": "Telefone de contacto",
+      "address": "Morada",
+      "taxId": "NIF/NIPC",
+      "language": "Idioma",
+      "timezone": "Fuso horário",
+      "currency": "Moeda",
+      "dateFormat": "Formato de data",
+      "timeFormat": "Formato de hora"
+    },
     "rooms": {
       "title": "Quartos/Apartamentos",
       "description": "Configure os nomes dos seus quartos ou apartamentos. Estes nomes aparecerão no painel e ao criar novas reservas.",
