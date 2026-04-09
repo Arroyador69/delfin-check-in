@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
+import { useRouter } from '@/i18n/navigation';
 import { toIntlDateLocale, type Locale as AppLocale } from '@/i18n/config';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -79,6 +80,7 @@ function formatReciboDateOnly(value: string | null | undefined, loc: string): st
 export default function FacturasPage() {
   const t = useTranslations('facturas');
   const locale = useLocale();
+  const router = useRouter();
   const intlDateLocale = toIntlDateLocale(locale as AppLocale);
 
   const [facturas, setFacturas] = useState<Factura[]>([]);
@@ -502,7 +504,7 @@ export default function FacturasPage() {
                   {t('configMessage')}
                 </p>
                 <Button 
-                  onClick={() => { window.location.href = `/${locale}/settings/empresa`; }}
+                  onClick={() => router.push('/settings/empresa')}
                   className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-3 px-6 rounded-xl shadow-lg transition-all duration-200 transform hover:scale-105"
                 >
                   {t('goToSettings')}
@@ -811,7 +813,7 @@ export default function FacturasPage() {
                     <h3 className="text-lg font-semibold text-gray-900 mb-2">{t('configRequired')}</h3>
                     <p className="text-gray-600 mb-4">{t('configMessage')}</p>
                     <Button
-                      onClick={() => (window.location.href = `/${locale}/settings/empresa`)}
+                      onClick={() => router.push('/settings/empresa')}
                       className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white"
                     >
                       {t('goToSettings')}

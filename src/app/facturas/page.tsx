@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useClientTranslations } from '@/hooks/useClientTranslations';
+import { defaultLocale, isValidLocale, type Locale } from '@/i18n/config';
 import { 
   FileText, 
   Plus, 
@@ -301,7 +302,11 @@ export default function FacturasPage() {
                   Necesitas configurar los datos de tu empresa antes de generar facturas.
                 </p>
                 <Button 
-                  onClick={() => window.location.href = '/settings/empresa'}
+                  onClick={() => {
+                    const stored = typeof window !== 'undefined' ? localStorage.getItem('preferred-locale') : null;
+                    const loc: Locale = stored && isValidLocale(stored) ? stored : defaultLocale;
+                    window.location.href = `/${loc}/settings/empresa`;
+                  }}
                   className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-3 px-6 rounded-xl shadow-lg transition-all duration-200 transform hover:scale-105"
                 >
                   Ir a Configuración

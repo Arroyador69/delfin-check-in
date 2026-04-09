@@ -147,10 +147,14 @@ export async function middleware(req: NextRequest) {
     // Si NO tiene locale, aplicar intlMiddleware para detectar y redirect
     // NOTA: La ruta raíz "/" ya está excluida arriba, así que esto solo aplica a otras rutas
     if (!pathnameHasLocale) {
-      // Detectar idioma preferido del navegador
       const acceptLanguage = req.headers.get('accept-language') || '';
-      const detectedLocale = getLocaleFromRequest(acceptLanguage);
-      
+      const cookiePreferred = req.cookies.get('preferred_locale')?.value;
+      const cookieNextIntl = req.cookies.get('NEXT_LOCALE')?.value;
+      const detectedLocale =
+        (cookiePreferred && isValidLocale(cookiePreferred) ? cookiePreferred : null) ??
+        (cookieNextIntl && isValidLocale(cookieNextIntl) ? cookieNextIntl : null) ??
+        getLocaleFromRequest(acceptLanguage);
+
       // Redirigir a la URL con prefijo de locale
       const newUrl = new URL(`/${detectedLocale}${pathname}${url.search}`, req.url);
       console.log(`🌍 Redirigiendo a: ${newUrl.pathname}`);

@@ -26,6 +26,9 @@ export default function HtmlLangSync() {
       if (stored && isValidLocale(stored)) appLocale = stored as Locale;
     }
     document.documentElement.lang = toIntlDateLocale(appLocale);
+    // El middleware usa esta cookie si alguien entra sin prefijo (/facturas, /settings/…);
+    // así no se pierde el idioma elegido frente a Accept-Language.
+    document.cookie = `preferred_locale=${appLocale};path=/;max-age=31536000;SameSite=Lax`;
   }, [pathname]);
 
   return null;
