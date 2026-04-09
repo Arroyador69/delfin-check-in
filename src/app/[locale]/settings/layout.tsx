@@ -2,8 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import AdminLayout from '@/components/AdminLayout';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { Link, usePathname } from '@/i18n/navigation';
 import { Settings, FileText, CreditCard, User, LinkIcon, Home, Calendar, Wallet, AlertCircle, ExternalLink, LifeBuoy } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { useTranslations, useLocale } from 'next-intl';
@@ -23,22 +22,32 @@ export default function SettingsLayout({
   const [billingInfo, setBillingInfo] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  const settingsSections = useMemo(() => {
-    const p = (path: string) => `/${locale}${path}`;
-    return [
-      { id: 'general', tabKey: 'general', icon: Settings, href: p('/settings') },
-      { id: 'empresa', tabKey: 'empresa', icon: FileText, href: p('/settings/empresa') },
-      { id: 'mir', tabKey: 'mir', icon: FileText, href: p('/settings/mir') },
-      { id: 'properties', tabKey: 'properties', icon: Home, href: p('/settings/properties') },
-      { id: 'checkinInstructions', tabKey: 'checkinInstructions', icon: FileText, href: p('/settings/checkin-instructions') },
-      { id: 'integrations', tabKey: 'integrations', icon: Calendar, href: p('/settings/integrations') },
-      { id: 'billing', tabKey: 'billing', icon: CreditCard, href: p('/settings/billing') },
-      { id: 'microsite-payments', tabKey: 'micrositePayments', icon: Wallet, href: p('/settings/microsite-payments') },
-      { id: 'payment-links', tabKey: 'paymentLinks', icon: LinkIcon, href: p('/settings/payment-links') },
-      { id: 'support', tabKey: 'support', icon: LifeBuoy, href: p('/settings/support') },
-      { id: 'account', tabKey: 'account', icon: User, href: p('/settings/account') },
-    ];
-  }, [locale]);
+  const settingsSections = useMemo(
+    () => [
+      { id: 'general', tabKey: 'general', icon: Settings, href: '/settings' as const },
+      { id: 'empresa', tabKey: 'empresa', icon: FileText, href: '/settings/empresa' as const },
+      { id: 'mir', tabKey: 'mir', icon: FileText, href: '/settings/mir' as const },
+      { id: 'properties', tabKey: 'properties', icon: Home, href: '/settings/properties' as const },
+      {
+        id: 'checkinInstructions',
+        tabKey: 'checkinInstructions',
+        icon: FileText,
+        href: '/settings/checkin-instructions' as const,
+      },
+      { id: 'integrations', tabKey: 'integrations', icon: Calendar, href: '/settings/integrations' as const },
+      { id: 'billing', tabKey: 'billing', icon: CreditCard, href: '/settings/billing' as const },
+      {
+        id: 'microsite-payments',
+        tabKey: 'micrositePayments',
+        icon: Wallet,
+        href: '/settings/microsite-payments' as const,
+      },
+      { id: 'payment-links', tabKey: 'paymentLinks', icon: LinkIcon, href: '/settings/payment-links' as const },
+      { id: 'support', tabKey: 'support', icon: LifeBuoy, href: '/settings/support' as const },
+      { id: 'account', tabKey: 'account', icon: User, href: '/settings/account' as const },
+    ],
+    []
+  );
 
   useEffect(() => {
     const loadBillingInfo = async () => {
@@ -106,7 +115,7 @@ export default function SettingsLayout({
                         {t('layout.suspendedHint')}
                       </p>
                       <Link
-                        href={`/${locale}/settings/billing`}
+                        href="/settings/billing"
                         className="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-medium"
                       >
                         {t('layout.viewPendingInvoices')}
@@ -135,7 +144,7 @@ export default function SettingsLayout({
                           : t('layout.paymentFailedHintMany', { remaining: 3 - (billingInfo.tenant.payment_retry_count || 0) })}
                       </p>
                       <Link
-                        href={`/${locale}/settings/billing`}
+                        href="/settings/billing"
                         className="inline-flex items-center px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors text-sm font-medium"
                       >
                         {t('layout.updatePaymentMethod')}
@@ -163,7 +172,7 @@ export default function SettingsLayout({
                           : t('layout.pendingInvoicesCountMany', { count: billingInfo.pending_invoices.length })}
                       </p>
                       <Link
-                        href={`/${locale}/settings/billing`}
+                        href="/settings/billing"
                         className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
                       >
                         {t('layout.viewPendingInvoices')}
@@ -180,28 +189,29 @@ export default function SettingsLayout({
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
             {/* Sidebar */}
-            <div className="lg:col-span-1">
-              <nav className="space-y-2">
+            <div className="lg:col-span-1 relative z-20 pb-28">
+              <nav className="space-y-2 relative z-20" aria-label={t('layout.headerTitle')}>
                 {settingsSections.map((section) => {
                   const isActive = pathname === section.href;
                   return (
                     <Link
                       key={section.id}
                       href={section.href}
+                      prefetch
                       className={`flex items-center px-4 py-3 rounded-lg transition-colors ${
                         isActive
                           ? 'bg-blue-600 text-white'
                           : 'bg-white text-gray-700 hover:bg-blue-50'
                       }`}
                     >
-                      <section.icon className="w-5 h-5 mr-3" />
+                      <section.icon className="w-5 h-5 mr-3 flex-shrink-0" />
                       <span className="font-medium">{t(`tabs.${section.tabKey}`)}</span>
                     </Link>
                   );
                 })}
               </nav>
               {/* Anuncio en sidebar - solo en settings, no crítico */}
-              <div className="mt-6">
+              <div className="mt-6 relative z-0 overflow-hidden">
                 <AdSidebar />
               </div>
             </div>
