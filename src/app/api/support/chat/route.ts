@@ -4,6 +4,7 @@ import { verifyToken } from '@/lib/auth';
 import { getKBForLocale } from '@/lib/support';
 import { getUsage, incrementUsage } from '@/lib/support/usage';
 import { getTenantById, getPlanConfig } from '@/lib/tenant';
+import { defaultLocale, isValidLocale, toIntlDateLocale } from '@/i18n/config';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -102,6 +103,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'No autorizado' }, { status: 401 });
     }
 
+    let body: Record<string, unknown> = {};
+    try {
+      const parsed = await req.json();
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        body = parsed as Record<string, unknown>;
+      }
+    } catch {
+      body = {};
+    }
+
+    const pathLocale =
+      typeof body.locale === 'string' && isValidLocale(body.locale) ? body.locale : defaultLocale;
+    const intlLocale = toIntlDateLocale(pathLocale);
+
     const tenant = await getTenantById(payload.tenantId);
     const planType = tenant ? getPlanConfig(tenant).planType : 'free';
     const eligible = planType === 'checkin' || planType === 'standard' || planType === 'pro';
@@ -112,7 +127,7 @@ export async function POST(req: NextRequest) {
           success: false,
           code: 'PLAN_REQUIRED',
           error: 'El asistente está disponible solo en el Plan Check-in o superior.',
-          upgradePath: '/es/plans',
+          upgradePath: `/${pathLocale}/plans`,
         },
         { status: 403 }
       );
@@ -120,7 +135,7 @@ export async function POST(req: NextRequest) {
 
     let usage: Awaited<ReturnType<typeof getUsage>> | null = null;
     try {
-      usage = await getUsage({ tenantId: payload.tenantId, userId: payload.userId, planType, locale: 'es-ES' });
+      usage = await getUsage({ tenantId: payload.tenantId, userId: payload.userId, planType, locale: intlLocale });
       if (usage.remainingDaily <= 0 || usage.remainingMonthly <= 0) {
         return NextResponse.json(
           {
@@ -148,9 +163,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const body = await req.json();
     const message = typeof body?.message === 'string' ? body.message.trim() : '';
-    const locale = typeof body?.locale === 'string' ? body.locale : 'es';
     const screen = typeof body?.screen === 'string' ? body.screen.trim() : '';
 
     if (!message || message.length < 2) {
@@ -160,7 +173,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const cacheKey = `${locale}:${normalizeQuestion(message)}`;
+    const cacheKey = `${pathLocale}:${normalizeQuestion(message)}`;
     const cached = responseCache.get(cacheKey);
     if (cached && Date.now() - cached.createdAt < CACHE_TTL_MS) {
       return NextResponse.json({
@@ -181,7 +194,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const kb = getKBForLocale(locale);
+    const kb = getKBForLocale(pathLocale);
     const faqContext = getFaqContext(message, kb);
     const model = process.env.OPENAI_SUPPORT_MODEL || 'gpt-4o-mini';
 
@@ -223,7 +236,12 @@ export async function POST(req: NextRequest) {
 
     let newUsage: Awaited<ReturnType<typeof getUsage>> | null = null;
     try {
-      newUsage = await incrementUsage({ tenantId: payload.tenantId, userId: payload.userId, planType, locale: 'es-ES' });
+      newUsage = await incrementUsage({
+        tenantId: payload.tenantId,
+        userId: payload.userId,
+        planType,
+        locale: intlLocale,
+      });
     } catch (e) {
       console.warn('[support/chat] increment usage failed:', e);
     }

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
+import { Link } from '@/i18n/navigation';
 import { MessageCircle, X, Send } from 'lucide-react';
 
 type ChatMsg = { role: 'user' | 'assistant'; text: string };
@@ -54,7 +55,8 @@ export default function SupportAssistantWidget() {
 
   useEffect(() => {
     if (!open) return;
-    fetch('/api/support/usage')
+    const qs = new URLSearchParams({ locale: String(locale) });
+    fetch(`/api/support/usage?${qs}`)
       .then(r => r.json())
       .then(data => {
         if (!data?.success) return;
@@ -71,7 +73,7 @@ export default function SupportAssistantWidget() {
         });
       })
       .catch(() => setUsage(null));
-  }, [open]);
+  }, [open, locale]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -103,8 +105,22 @@ export default function SupportAssistantWidget() {
           (res.status === 403 ? t('lockedBody') : res.status === 429 ? t('rateLimited') : t('genericError')) ||
           'No se pudo responder ahora.';
         setMsgs(prev => [...prev, { role: 'assistant', text: String(err) }]);
+        if (res.status === 403 && data?.upgradePath) {
+          setUsage(prev => ({
+            eligible: false,
+            planType: prev?.planType,
+            remainingDaily: prev?.remainingDaily ?? 0,
+            remainingMonthly: prev?.remainingMonthly ?? 0,
+            limitDaily: prev?.limitDaily ?? 0,
+            limitMonthly: prev?.limitMonthly ?? 0,
+            resetLabelDay: prev?.resetLabelDay ?? '',
+            resetLabelMonth: prev?.resetLabelMonth ?? '',
+            upgradePath: String(data.upgradePath),
+          }));
+        }
         if (data?.code === 'MONTHLY_LIMIT' || data?.code === 'DAILY_LIMIT' || res.status === 429) {
-          fetch('/api/support/usage').then(r => r.json()).then(d => {
+          const qs = new URLSearchParams({ locale: String(locale) });
+          fetch(`/api/support/usage?${qs}`).then(r => r.json()).then(d => {
             if (d?.success) {
               setUsage({
                 eligible: !!d.eligible,
@@ -220,12 +236,12 @@ export default function SupportAssistantWidget() {
               <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-xl p-3 text-sm">
                 <div className="font-semibold">{t('lockedTitle') || 'Disponible en Plan Check-in'}</div>
                 <div className="mt-1">{t('lockedBody') || 'Mejora tu plan para poder hablar con el asistente.'}</div>
-                <a
-                  href={usage.upgradePath || `/${locale}/plans`}
+                <Link
+                  href="/plans"
                   className="inline-flex mt-2 items-center justify-center px-3 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 text-sm font-medium"
                 >
                   {t('upgradeCta') || 'Ver planes'}
-                </a>
+                </Link>
               </div>
             )}
           </div>

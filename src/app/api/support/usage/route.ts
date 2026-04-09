@@ -2,6 +2,20 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/auth';
 import { getUsage } from '@/lib/support/usage';
 import { getTenantById, getPlanConfig } from '@/lib/tenant';
+import { defaultLocale, isValidLocale, toIntlDateLocale, type Locale } from '@/i18n/config';
+
+function resolveLocales(req: NextRequest): { pathLocale: Locale; intlLocale: string } {
+  const q = req.nextUrl.searchParams.get('locale');
+  if (q && isValidLocale(q)) {
+    return { pathLocale: q, intlLocale: toIntlDateLocale(q) };
+  }
+  const header = (req.headers.get('x-locale') || '').trim();
+  const short = header.split('-')[0].toLowerCase();
+  if (short && isValidLocale(short)) {
+    return { pathLocale: short, intlLocale: toIntlDateLocale(short) };
+  }
+  return { pathLocale: defaultLocale, intlLocale: toIntlDateLocale(defaultLocale) };
+}
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -22,8 +36,13 @@ export async function GET(req: NextRequest) {
     const planType = tenant ? getPlanConfig(tenant).planType : 'free';
     const eligible = planType === 'checkin' || planType === 'standard' || planType === 'pro';
 
-    const locale = (req.headers.get('x-locale') || 'es-ES').toString();
-    const usage = await getUsage({ tenantId: payload.tenantId, userId: payload.userId, planType, locale });
+    const { pathLocale, intlLocale } = resolveLocales(req);
+    const usage = await getUsage({
+      tenantId: payload.tenantId,
+      userId: payload.userId,
+      planType,
+      locale: intlLocale,
+    });
     return NextResponse.json({
       success: true,
       eligible,
@@ -36,7 +55,7 @@ export async function GET(req: NextRequest) {
       remainingMonthly: usage.remainingMonthly,
       resetLabelDay: usage.resetLabelDay,
       resetLabelMonth: usage.resetLabelMonth,
-      upgradePath: `/${locale.split('-')[0]}/plans`,
+      upgradePath: `/${pathLocale}/plans`,
     });
   } catch (error: unknown) {
     console.error('[support/usage] error:', error);

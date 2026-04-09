@@ -40,6 +40,18 @@ export function isValidLocale(locale: string): locale is Locale {
   return locales.includes(locale as Locale);
 }
 
+/** BCP-47 para formatear fechas (p. ej. etiquetas de reinicio de uso del asistente). */
+export function toIntlDateLocale(locale: Locale): string {
+  const map: Record<Locale, string> = {
+    es: 'es-ES',
+    en: 'en-GB',
+    it: 'it-IT',
+    pt: 'pt-PT',
+    fr: 'fr-FR',
+  };
+  return map[locale];
+}
+
 // Obtener locale desde request header o defaultLocale
 export function getLocaleFromRequest(acceptLanguage?: string): Locale {
   if (!acceptLanguage) return defaultLocale;
