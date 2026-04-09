@@ -154,7 +154,10 @@
     "videoTutorial": {
       "title": "Video Tutorial - Panel de Usuario",
       "description": "Aprende a usar todas las funcionalidades de Delfín Check-in",
-      "watchOnYouTube": "Ver en YouTube"
+      "watchOnYouTube": "Ver en YouTube",
+      "hide": "Ocultar",
+      "show": "Ver tutorial",
+      "collapsedHint": "Tutorial del dashboard"
     },
     "periodFilters": {
       "title": "📊 Filtros de Período",

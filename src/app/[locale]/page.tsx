@@ -31,6 +31,7 @@ export default function HomePage() {
   const [reservations, setReservations] = useState<any[]>([]);
   const [tenant, setTenant] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [videoDismissed, setVideoDismissed] = useState(false);
   const [filterPeriod, setFilterPeriod] = useState<FilterPeriod>('total');
   const [customDateRange, setCustomDateRange] = useState<{from: string, to: string}>({
     from: '',
@@ -41,6 +42,18 @@ export default function HomePage() {
   useEffect(() => {
     loadData();
   }, []);
+
+  // Recordar si el vídeo del dashboard ya fue ocultado
+  useEffect(() => {
+    try {
+      const tenantId = tenant?.tenant?.id || tenant?.id || 'anon';
+      const key = `dashboard:tutorialVideoDismissed:${tenantId}`;
+      const stored = localStorage.getItem(key);
+      if (stored === '1') setVideoDismissed(true);
+    } catch {
+      // noop
+    }
+  }, [tenant]);
 
   const loadData = async () => {
     try {
@@ -475,51 +488,98 @@ export default function HomePage() {
         )}
 
         {/* Video Tutorial */}
-        <div className="card mb-6 sm:mb-8 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
-          <div className="flex flex-col gap-4">
-            <div className="flex items-center space-x-3">
-              <div className="text-2xl sm:text-3xl">🎥</div>
-              <div className="flex-1">
-                <h2 className="text-base sm:text-lg font-semibold text-gray-900">
-                  {t('videoTutorial.title')}
-                </h2>
-                <p className="text-xs sm:text-sm text-gray-600 mt-1">
-                  {t('videoTutorial.description')}
-                </p>
+        {!videoDismissed ? (
+          <div className="card mb-6 sm:mb-8 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+            <div className="flex flex-col gap-4">
+              <div className="flex items-start gap-3">
+                <div className="text-2xl sm:text-3xl mt-0.5">🎥</div>
+                <div className="flex-1">
+                  <h2 className="text-base sm:text-lg font-semibold text-gray-900">
+                    {t('videoTutorial.title')}
+                  </h2>
+                  <p className="text-xs sm:text-sm text-gray-600 mt-1">
+                    {t('videoTutorial.description')}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    try {
+                      const tenantId = tenant?.tenant?.id || tenant?.id || 'anon';
+                      localStorage.setItem(`dashboard:tutorialVideoDismissed:${tenantId}`, '1');
+                    } catch {}
+                    setVideoDismissed(true);
+                  }}
+                  className="text-xs sm:text-sm px-3 py-1.5 rounded-lg bg-white/70 hover:bg-white border border-blue-200 text-blue-700 font-medium"
+                >
+                  {t('videoTutorial.hide') || 'Ocultar'}
+                </button>
+              </div>
+              <div
+                className="w-full"
+                style={{ position: 'relative', paddingBottom: '56.25%', height: 0, overflow: 'hidden', borderRadius: '12px' }}
+              >
+                <iframe
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%',
+                    border: 'none',
+                    borderRadius: '12px'
+                  }}
+                  src="https://www.youtube.com/embed/Ttr6aefFLbg"
+                  title={t('videoTutorial.title')}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                ></iframe>
+              </div>
+              <div className="text-center">
+                <a
+                  href="https://youtu.be/Ttr6aefFLbg"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-blue-600 hover:text-blue-700 font-medium inline-flex items-center gap-1"
+                >
+                  {t('videoTutorial.watchOnYouTube')}
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                </a>
               </div>
             </div>
-            <div className="w-full" style={{ position: 'relative', paddingBottom: '56.25%', height: 0, overflow: 'hidden', borderRadius: '12px' }}>
-              <iframe
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  width: '100%',
-                  height: '100%',
-                  border: 'none',
-                  borderRadius: '12px'
+          </div>
+        ) : (
+          <div className="card mb-6 sm:mb-8 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="text-xl">🎥</div>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-gray-900 truncate">
+                    {t('videoTutorial.title')}
+                  </p>
+                  <p className="text-xs text-gray-600 truncate">
+                    {t('videoTutorial.collapsedHint') || 'Tutorial del dashboard'}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  try {
+                    const tenantId = tenant?.tenant?.id || tenant?.id || 'anon';
+                    localStorage.removeItem(`dashboard:tutorialVideoDismissed:${tenantId}`);
+                  } catch {}
+                  setVideoDismissed(false);
                 }}
-                src="https://www.youtube.com/embed/Ttr6aefFLbg"
-                title={t('videoTutorial.title')}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              ></iframe>
-            </div>
-            <div className="text-center">
-              <a
-                href="https://youtu.be/Ttr6aefFLbg"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-sm text-blue-600 hover:text-blue-700 font-medium inline-flex items-center gap-1"
+                className="text-xs sm:text-sm px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium flex-shrink-0"
               >
-                {t('videoTutorial.watchOnYouTube')}
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                </svg>
-              </a>
+                {t('videoTutorial.show') || 'Ver tutorial'}
+              </button>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Filtros de Período */}
         <div className="card mb-6 sm:mb-8">
