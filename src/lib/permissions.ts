@@ -207,8 +207,7 @@ export async function validateUnitCreation(
   const countResult = await sql`
     SELECT COUNT(*) as count 
     FROM "Room" r
-    INNER JOIN "Lodging" l ON r."lodgingId" = l.id
-    WHERE l.tenant_id = ${tenant.id}::text
+    WHERE r."lodgingId" = ${tenant.id}::text
   `;
   
   const currentCount = parseInt(countResult.rows[0]?.count || '0', 10);
