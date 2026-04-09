@@ -2343,7 +2343,7 @@
     "usageWarning": "Il vous reste peu de messages ce mois-ci. ",
     "usageLimitReached": "Limite atteinte. Réinitialisation prochainement.",
     "lockedTitle": "Disponible avec le plan Check-in",
-    "lockedBody": "Avec le plan gratuit, vous pouvez le voir, mais pour discuter avec l’assistant vous devez passer à un plan payant.",
+    "lockedBody": "Pour discuter avec l’assistant, vous devez passer à un plan payant.",
     "upgradeCta": "Voir les plans"
   },
   "partes": {

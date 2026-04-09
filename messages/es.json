@@ -2542,7 +2542,7 @@
     "usageWarning": "Te quedan pocos mensajes este mes. ",
     "usageLimitReached": "Límite alcanzado. Se reinicia próximamente.",
     "lockedTitle": "Disponible en Plan Check-in",
-    "lockedBody": "En el Plan Gratis puedes verlo, pero para hablar con el asistente necesitas mejorar tu plan.",
+    "lockedBody": "Para hablar con el asistente necesitas mejorar tu plan.",
     "upgradeCta": "Ver planes"
   },
   "partes": {

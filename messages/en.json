@@ -2429,7 +2429,7 @@
     "usageWarning": "You have few messages left this month. ",
     "usageLimitReached": "Limit reached. It will reset soon.",
     "lockedTitle": "Available on Check-in plan",
-    "lockedBody": "On the Free plan you can see the assistant, but to chat with it you need to upgrade your plan.",
+    "lockedBody": "To chat with the assistant, you need to upgrade your plan.",
     "upgradeCta": "View plans"
   },
   "partes": {
