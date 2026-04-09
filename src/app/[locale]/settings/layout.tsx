@@ -128,7 +128,8 @@ export default function SettingsLayout({
             )}
 
             {/* Alerta de Pagos Fallidos (antes de suspensión) */}
-            {!billingInfo.tenant?.is_suspended && billingInfo.tenant?.payment_retry_count && billingInfo.tenant.payment_retry_count > 0 && (
+            {!billingInfo.tenant?.is_suspended &&
+              (billingInfo.tenant?.payment_retry_count ?? 0) > 0 && (
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
                 <div className="p-4 bg-yellow-50 border-l-4 border-yellow-500 rounded-lg shadow-sm">
                   <div className="flex items-start">

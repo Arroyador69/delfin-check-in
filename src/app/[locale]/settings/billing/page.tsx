@@ -328,7 +328,8 @@ export default function BillingPage() {
           )}
 
           {/* Alerta de Pagos Fallidos (antes de suspensión) */}
-          {!billingInfo.tenant.is_suspended && billingInfo.tenant.payment_retry_count && billingInfo.tenant.payment_retry_count > 0 && (
+          {!billingInfo.tenant.is_suspended &&
+            (billingInfo.tenant.payment_retry_count ?? 0) > 0 && (
             <div className="p-6 bg-yellow-50 border-l-4 border-yellow-500 rounded-lg">
               <div className="flex items-start">
                 <AlertCircle className="w-6 h-6 text-yellow-600 mr-3 mt-0.5" />
