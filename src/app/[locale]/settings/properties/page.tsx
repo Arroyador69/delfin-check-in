@@ -9,10 +9,15 @@ const AMENITY_KEYS = ['wifi', 'airConditioning', 'heating', 'kitchen', 'washingM
 
 export default function PropertiesManagement() {
   const t = useTranslations('settings.properties');
-  const [properties, setProperties] = useState<TenantProperty[]>([]);
+  type PropertyItem = Omit<TenantProperty, 'id'> & {
+    id: number | null;
+    room_id?: string | null;
+    is_placeholder?: boolean;
+  };
+  const [properties, setProperties] = useState<PropertyItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const [editingProperty, setEditingProperty] = useState<TenantProperty | null>(null);
+  const [editingProperty, setEditingProperty] = useState<PropertyItem | null>(null);
   const [uploadingImages, setUploadingImages] = useState(false);
   const [tenantId, setTenantId] = useState<string>('');
   const [copiedLink, setCopiedLink] = useState<number | null>(null);
@@ -66,7 +71,7 @@ export default function PropertiesManagement() {
       
       const data = await response.json();
       if (data.success) {
-        setProperties(data.properties);
+        setProperties((data.properties || []) as PropertyItem[]);
       }
       // Cargar slots para el formulario (solo placeholders y los mapeados)
       const slotsRes = await fetch('/api/tenant/property-slots', {
@@ -164,14 +169,25 @@ export default function PropertiesManagement() {
     e.preventDefault();
     
     try {
-      const url = editingProperty 
-        ? `/api/tenant/properties?id=${editingProperty.id}`
+      const isUpdate = !!editingProperty && editingProperty.id != null;
+      const url = isUpdate
+        ? `/api/tenant/properties?id=${editingProperty!.id}`
         : '/api/tenant/properties';
-      
-      const method = editingProperty ? 'PUT' : 'POST';
+      const method = isUpdate ? 'PUT' : 'POST';
+
+      // Evitar 413: no enviar imágenes base64 en el JSON (Vercel limita el tamaño de request).
+      const rawPhotos = (formData.photos || []) as string[];
+      const safePhotos = rawPhotos.filter((p) => typeof p === 'string' && !p.startsWith('data:'));
+      const removed = rawPhotos.length - safePhotos.length;
+      if (removed > 0) {
+        alert('⚠️ Se han omitido imágenes (muy grandes) para poder guardar. Añádelas más tarde como URLs.');
+      }
       
       const payload = {
         ...formData,
+        photos: safePhotos,
+        // Si estamos creando (incluye placeholders), necesitamos room_id para asignar el slot
+        room_id: isUpdate ? undefined : (formData as any).room_id,
         amenities: (formData.amenities || []).map((a) =>
           AMENITY_KEYS.includes(a as typeof AMENITY_KEYS[number]) ? t(`amenitiesList.${a}`) : a
         )
@@ -184,14 +200,17 @@ export default function PropertiesManagement() {
         body: JSON.stringify(payload)
       });
       
-      const data = await response.json();
+      const contentType = response.headers.get('content-type') || '';
+      const data = contentType.includes('application/json')
+        ? await response.json()
+        : { success: false, error: await response.text() };
       
       if (data.success) {
         await loadProperties();
         setShowForm(false);
         setEditingProperty(null);
         resetForm();
-        alert(editingProperty ? t('updateSuccess') : t('saveSuccess'));
+        alert(isUpdate ? t('updateSuccess') : t('saveSuccess'));
       } else {
         alert('Error: ' + data.error);
       }
@@ -201,7 +220,7 @@ export default function PropertiesManagement() {
     }
   };
 
-  const handleEdit = (property: TenantProperty) => {
+  const handleEdit = (property: PropertyItem) => {
     setEditingProperty(property);
     // Normalize amenities: API may return keys or legacy Spanish labels; keep as-is for display
     const amenities = property.amenities || [];
@@ -220,6 +239,10 @@ export default function PropertiesManagement() {
       maximum_nights: property.maximum_nights,
       availability_rules: property.availability_rules || {}
     });
+    // Si es placeholder (id null), permitir seleccionar el slot y guardar como creación.
+    if (property.id == null && property.room_id) {
+      setFormData((prev: any) => ({ ...prev, room_id: property.room_id }));
+    }
     setShowForm(true);
   };
 
@@ -531,7 +554,7 @@ export default function PropertiesManagement() {
                   </div>
 
                   {/* Selector de Slot (Room) */}
-                  {!editingProperty && (
+                  {(!editingProperty || editingProperty.id == null) && (
                     <div className="bg-white p-6 rounded-xl border border-blue-200 shadow-sm">
                       <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
                         <span className="text-xl sm:text-2xl" style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>🧩</span>

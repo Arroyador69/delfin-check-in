@@ -124,12 +124,17 @@ export default function MirSettingsPage() {
       if (data.success) {
         const hasUsuario = !!data.config.usuario;
         const hasContraseña = !!data.config.contraseña;
-        setHasConfig(hasUsuario || hasContraseña);
+        const hasAnySensitive =
+          hasUsuario ||
+          hasContraseña ||
+          !!data.config.codigoArrendador ||
+          !!data.config.codigoEstablecimiento;
+        setHasConfig(hasAnySensitive);
         setConfig({
-          usuario: data.config.usuario || '',
-          contraseña: data.config.contraseña || '',
-          codigoArrendador: data.config.codigoArrendador || '',
-          codigoEstablecimiento: data.config.codigoEstablecimiento || '',
+          usuario: '',
+          contraseña: '',
+          codigoArrendador: '',
+          codigoEstablecimiento: '',
           baseUrl: data.config.baseUrl || 'https://hospedajes.ses.mir.es/hospedajes-web/ws/v1/comunicacion',
           aplicacion: data.config.aplicacion || 'Delfin_Check_in',
           simulacion: data.config.simulacion || false,
