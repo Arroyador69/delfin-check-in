@@ -11,11 +11,11 @@ export async function GET() {
     theme_color: "#000000",
     icons: [
       {
-        src: "/next.svg",
+        src: "/vercel.svg",
         sizes: "any",
-        type: "image/svg+xml"
-      }
-    ]
+        type: "image/svg+xml",
+      },
+    ],
   };
 
   return NextResponse.json(manifest, {

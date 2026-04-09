@@ -1539,6 +1539,8 @@
       "active": "Attiva",
       "inactive": "Inattiva",
       "bookingLink": "Link Prenotazione Diretta",
+      "bookLinkPageLang": "Lingua pagina ospite",
+      "bookLinkPageLangHint": "Scegli ES o EN per il link da copiare (book.delfincheckin.com). L’ospite può cambiare lingua in alto a destra sul sito.",
       "copyLink": "Copia link",
       "linkCopied": "Link copiato",
       "deleteConfirm": "Sei sicuro di voler eliminare questa proprietà?",

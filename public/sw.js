@@ -1,9 +1,8 @@
 // Version bump para invalidar caché y forzar actualización en clientes
-const CACHE_NAME = 'delfin-checkin-v2';
+const CACHE_NAME = 'delfin-checkin-v3';
 const urlsToCache = [
   '/',
   '/manifest.json',
-  '/next.svg',
   '/vercel.svg'
 ];
 
@@ -249,7 +248,7 @@ async function flushOutbox() {
 self.addEventListener('push', (event) => {
   const options = {
     body: event.data ? event.data.text() : 'Nueva notificación de Delfín Check-in',
-    icon: '/next.svg',
+    icon: '/vercel.svg',
     badge: '/vercel.svg',
     vibrate: [100, 50, 100],
     data: {
@@ -260,12 +259,12 @@ self.addEventListener('push', (event) => {
       {
         action: 'explore',
         title: 'Ver detalles',
-        icon: '/next.svg'
+        icon: '/vercel.svg'
       },
       {
         action: 'close',
         title: 'Cerrar',
-        icon: '/next.svg'
+        icon: '/vercel.svg'
       }
     ]
   };

@@ -1509,6 +1509,8 @@
       "active": "Active",
       "inactive": "Inactive",
       "bookingLink": "Direct Booking Link",
+      "bookLinkPageLang": "Guest page language",
+      "bookLinkPageLangHint": "Pick ES or EN for the link you copy (book.delfincheckin.com). Guests can also switch language at the top-right on the site.",
       "copyLink": "Copy link",
       "linkCopied": "Link copied",
       "deleteConfirm": "Are you sure you want to delete this property?",

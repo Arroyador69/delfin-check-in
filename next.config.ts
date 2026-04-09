@@ -47,6 +47,14 @@ const nextConfig: NextConfig = {
       { source: '/superadmin/logs', destination: '/superadmin/sentry', permanent: false },
     ];
   },
+  /** Algunos navegadores resuelven iconos del manifest bajo /{locale}/… y piden /es/vercel.svg (404). */
+  async rewrites() {
+    const locales = ['es', 'en', 'it', 'fr', 'pt'];
+    return locales.flatMap((locale) => [
+      { source: `/${locale}/vercel.svg`, destination: '/vercel.svg' },
+      { source: `/${locale}/next.svg`, destination: '/vercel.svg' },
+    ]);
+  },
   // Configuración PWA simplificada
   async headers() {
     return [

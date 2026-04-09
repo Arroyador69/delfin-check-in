@@ -8,12 +8,6 @@
   "theme_color": "#000000",
   "icons": [
     {
-      "src": "/next.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any"
-    },
-    {
       "src": "/vercel.svg",
       "sizes": "any",
       "type": "image/svg+xml",

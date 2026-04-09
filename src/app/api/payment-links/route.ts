@@ -6,6 +6,22 @@ import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
 import { getTenantId } from '@/lib/tenant';
 
+function isMissingGuestLocaleColumn(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : String(err ?? '');
+  return msg.includes('guest_locale');
+}
+
+function responseGuestLocaleMigrationNeeded() {
+  return NextResponse.json(
+    {
+      success: false,
+      error:
+        'La base de datos no tiene la columna guest_locale. En Neon, ejecuta el SQL del archivo database/add-payment-links-guest-locale.sql (ALTER TABLE payment_links ADD COLUMN guest_locale …) y vuelve a crear el enlace.',
+    },
+    { status: 500 }
+  );
+}
+
 // GET: Listar todos los enlaces de pago del tenant
 export async function GET(req: NextRequest) {
   try {
@@ -50,8 +66,11 @@ export async function GET(req: NextRequest) {
       success: true,
       links: links.rows
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error listando enlaces de pago:', error);
+    if (isMissingGuestLocaleColumn(error)) {
+      return responseGuestLocaleMigrationNeeded();
+    }
     return NextResponse.json(
       { success: false, error: 'Error interno del servidor' },
       { status: 500 }
@@ -204,12 +223,13 @@ export async function POST(req: NextRequest) {
         link_url: linkUrl
       }
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error creando enlace de pago:', error);
-    return NextResponse.json(
-      { success: false, error: error.message || 'Error interno del servidor' },
-      { status: 500 }
-    );
+    if (isMissingGuestLocaleColumn(error)) {
+      return responseGuestLocaleMigrationNeeded();
+    }
+    const message = error instanceof Error ? error.message : 'Error interno del servidor';
+    return NextResponse.json({ success: false, error: message }, { status: 500 });
   }
 }
 

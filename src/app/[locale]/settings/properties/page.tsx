@@ -21,6 +21,10 @@ export default function PropertiesManagement() {
   const [uploadingImages, setUploadingImages] = useState(false);
   const [tenantId, setTenantId] = useState<string>('');
   const [copiedLink, setCopiedLink] = useState<number | null>(null);
+  /** Idioma del enlace público book.delfincheckin.com por propiedad (solo afecta URL copiada: ?lang=en). */
+  const [bookingLinkLangByProperty, setBookingLinkLangByProperty] = useState<
+    Record<number, 'es' | 'en'>
+  >({});
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [slots, setSlots] = useState<{ room_id: string; room_name: string; property_id: number|null; property_name: string|null; is_placeholder: boolean }[]>([]);
   const [formData, setFormData] = useState<CreatePropertyRequest>({
@@ -116,11 +120,16 @@ export default function PropertiesManagement() {
     }
   };
 
-  // Generar enlace de reserva directa
+  // Enlace de reserva directa (microsite book; ?lang=en para abrir en inglés)
   const getBookingLink = (propertyId: number) => {
     if (!tenantId) return '';
-    // Usar el subdominio público de reservas
-    return `https://book.delfincheckin.com/${tenantId}/${propertyId}`;
+    const base = `https://book.delfincheckin.com/${tenantId}/${propertyId}`;
+    const lang = bookingLinkLangByProperty[propertyId] ?? 'es';
+    return lang === 'en' ? `${base}?lang=en` : base;
+  };
+
+  const setBookingLinkLang = (propertyId: number, lang: 'es' | 'en') => {
+    setBookingLinkLangByProperty((prev) => ({ ...prev, [propertyId]: lang }));
   };
 
   // Función para convertir imágenes a base64
@@ -475,10 +484,42 @@ export default function PropertiesManagement() {
                     const pid = property.id as number;
                     return (
                     <div className="mt-4 pt-4 border-t border-gray-200">
-                      <label className="block text-xs font-semibold text-gray-700 mb-2 flex items-center gap-2">
-                        <LinkIcon className="w-4 h-4 text-blue-600" />
-                        {t('bookingLink')}
-                      </label>
+                      <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                        <label className="text-xs font-semibold text-gray-700 flex items-center gap-2">
+                          <LinkIcon className="w-4 h-4 text-blue-600" />
+                          {t('bookingLink')}
+                        </label>
+                        <div className="flex items-center gap-1.5" role="group" aria-label={t('bookLinkPageLang')}>
+                          <span className="text-[10px] text-gray-500 uppercase tracking-wide hidden sm:inline">
+                            {t('bookLinkPageLang')}
+                          </span>
+                          <div className="inline-flex rounded-lg border border-gray-200 overflow-hidden text-xs font-semibold shadow-sm">
+                            <button
+                              type="button"
+                              onClick={() => setBookingLinkLang(pid, 'es')}
+                              className={`px-2.5 py-1 transition-colors ${
+                                (bookingLinkLangByProperty[pid] ?? 'es') === 'es'
+                                  ? 'bg-blue-600 text-white'
+                                  : 'bg-white text-gray-600 hover:bg-gray-50'
+                              }`}
+                            >
+                              ES
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setBookingLinkLang(pid, 'en')}
+                              className={`px-2.5 py-1 transition-colors border-l border-gray-200 ${
+                                bookingLinkLangByProperty[pid] === 'en'
+                                  ? 'bg-blue-600 text-white'
+                                  : 'bg-white text-gray-600 hover:bg-gray-50'
+                              }`}
+                            >
+                              EN
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                      <p className="text-[11px] text-gray-500 mb-2 leading-snug">{t('bookLinkPageLangHint')}</p>
                       <div className="flex items-center gap-2 bg-gray-50 rounded-lg p-2 border border-gray-200">
                         <input
                           type="text"
