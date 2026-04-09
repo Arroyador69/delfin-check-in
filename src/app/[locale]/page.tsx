@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation';
+import NextLink from 'next/link';
 import { useRouter } from 'next/navigation';
 import AdminLayout from '@/components/AdminLayout';
 import { ArrowUpCircle } from 'lucide-react';
@@ -314,13 +315,13 @@ export default function HomePage() {
                 </span>
               </div>
               <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-                <Link
-                  href="/upgrade-plan"
+                <NextLink
+                  href={`/${locale}/upgrade-plan`}
                   className="px-3 sm:px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-md hover:from-purple-700 hover:to-blue-700 transition-all duration-200 flex items-center justify-center space-x-2 shadow-md hover:shadow-lg text-sm sm:text-base"
                 >
                   <ArrowUpCircle className="w-4 h-4 sm:w-5 sm:h-5" />
                   <span className="font-medium">{t('upgradePlan')}</span>
-                </Link>
+                </NextLink>
                 <button
                   onClick={handleLogout}
                   className="px-3 sm:px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors text-sm sm:text-base"
@@ -356,12 +357,12 @@ export default function HomePage() {
                   {t('mirModule.descriptionSuffix')}
                 </p>
               </div>
-              <Link
-                href="/upgrade-plan"
+              <NextLink
+                href={`/${locale}/upgrade-plan`}
                 className="whitespace-nowrap bg-blue-600 text-white px-4 py-2 sm:px-6 sm:py-3 rounded-lg hover:bg-blue-700 font-semibold text-sm sm:text-base transition-colors shadow-md hover:shadow-lg"
               >
                 {t('mirModule.activateButton')}
-              </Link>
+              </NextLink>
             </div>
           </div>
         )}
@@ -445,9 +446,9 @@ export default function HomePage() {
                           </p>
                           <p className="text-xs text-red-700 mt-1">
                             {t('limitReachedAction')}{' '}
-                            <Link href="/upgrade-plan" className="underline font-semibold">
+                            <NextLink href={`/${locale}/upgrade-plan`} className="underline font-semibold">
                               {t('upgradeLink')}
-                            </Link>.
+                            </NextLink>.
                           </p>
                         </div>
                       ) : tenant.limits.rooms_usage_percentage >= 80 ? (
@@ -463,9 +464,9 @@ export default function HomePage() {
                             {t('nearLimitRemaining', {
                               remaining: tenant.stats?.rooms_remaining || 0
                             })}{' '}
-                            <Link href="/upgrade-plan" className="underline font-semibold">
+                            <NextLink href={`/${locale}/upgrade-plan`} className="underline font-semibold">
                               {t('nearLimitAction')}
-                            </Link>{' '}
+                            </NextLink>{' '}
                             {t('nearLimitSuffix')}
                           </p>
                         </div>
@@ -480,13 +481,13 @@ export default function HomePage() {
                   )}
                 </div>
                 {tenant.limits && !tenant.limits.can_add_rooms && (
-                  <Link
-                    href="/upgrade-plan"
+                  <NextLink
+                    href={`/${locale}/upgrade-plan`}
                     className="px-3 sm:px-4 py-2 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-md hover:from-orange-600 hover:to-red-600 transition-all duration-200 flex items-center justify-center space-x-2 text-sm sm:text-base shadow-md"
                   >
                     <ArrowUpCircle className="w-4 h-4" />
                     <span className="font-medium">{t('updatePlan')}</span>
-                  </Link>
+                  </NextLink>
                 )}
               </div>
             </div>

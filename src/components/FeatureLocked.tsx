@@ -1,7 +1,8 @@
 'use client';
 
 import { Lock, Zap, Crown } from 'lucide-react';
-import { Link } from '@/i18n/navigation';
+import Link from 'next/link';
+import { useLocale } from 'next-intl';
 import UpgradeBanner from './UpgradeBanner';
 
 interface FeatureLockedProps {
@@ -21,6 +22,8 @@ export default function FeatureLocked({
   showBanner = true,
   className = ''
 }: FeatureLockedProps) {
+  const locale = useLocale();
+
   // Si el usuario tiene el plan requerido o superior, mostrar contenido
   const hasAccess = 
     (requiredPlan === 'checkin' && (currentPlan === 'checkin' || currentPlan === 'standard' || currentPlan === 'pro')) ||
@@ -66,7 +69,7 @@ export default function FeatureLocked({
           </p>
 
           <Link
-            href="/plans"
+            href={`/${locale}/plans`}
             className={`inline-flex items-center gap-2 bg-${info.color}-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-${info.color}-700 transition-colors`}
           >
             <Icon size={18} />

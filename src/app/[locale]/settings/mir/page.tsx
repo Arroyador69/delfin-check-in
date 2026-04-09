@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { useTenant } from '@/hooks/useTenant';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import { 
   CheckCircle, 
   XCircle, 
@@ -38,6 +38,7 @@ const COUNTRY_CODES = ['ES', 'IT', 'PT', 'FR', 'DE'] as const;
 
 export default function MirSettingsPage() {
   const t = useTranslations('settings.mir');
+  const locale = useLocale();
   const { tenant } = useTenant();
   const [config, setConfig] = useState<MirConfig>({
     usuario: '',
@@ -244,7 +245,7 @@ export default function MirSettingsPage() {
                 </ul>
               </div>
               <Link
-                href="/upgrade-plan"
+                href={`/${locale}/upgrade-plan`}
                 className="whitespace-nowrap bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 font-semibold transition-colors shadow-md hover:shadow-lg"
               >
                 {t('activateModule')}

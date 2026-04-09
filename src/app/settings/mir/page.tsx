@@ -2,6 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import type { Locale } from '@/i18n/config';
+import { defaultLocale } from '@/i18n/config';
+import { getCurrentLocale } from '@/hooks/useClientTranslations';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -64,6 +67,13 @@ export default function MirSettingsPage() {
   const [hasConfig, setHasConfig] = useState(false); // Para saber si hay datos configurados
   const [editingUsuario, setEditingUsuario] = useState(false);
   const [editingContraseña, setEditingContraseña] = useState(false);
+  const [navLocale, setNavLocale] = useState<Locale>(defaultLocale);
+
+  useEffect(() => {
+    setNavLocale(getCurrentLocale());
+  }, []);
+
+  const upgradePlanHref = `/${navLocale}/upgrade-plan`;
 
   // Cargar configuración actual
   useEffect(() => {
@@ -247,7 +257,7 @@ export default function MirSettingsPage() {
                 </ul>
               </div>
               <Link
-                href="/upgrade-plan"
+                href={upgradePlanHref}
                 className="whitespace-nowrap bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 font-semibold transition-colors shadow-md hover:shadow-lg"
               >
                 Activar Módulo MIR

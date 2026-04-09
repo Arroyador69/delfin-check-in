@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
-import { Link } from '@/i18n/navigation';
+import Link from 'next/link';
 import { MessageCircle, X, Send } from 'lucide-react';
 
 type ChatMsg = { role: 'user' | 'assistant'; text: string };
@@ -237,7 +237,7 @@ export default function SupportAssistantWidget() {
                 <div className="font-semibold">{t('lockedTitle') || 'Disponible en Plan Check-in'}</div>
                 <div className="mt-1">{t('lockedBody') || 'Mejora tu plan para poder hablar con el asistente.'}</div>
                 <Link
-                  href="/plans"
+                  href={usage?.upgradePath ?? `/${locale}/plans`}
                   className="inline-flex mt-2 items-center justify-center px-3 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 text-sm font-medium"
                 >
                   {t('upgradeCta') || 'Ver planes'}

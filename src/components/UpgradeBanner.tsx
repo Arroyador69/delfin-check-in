@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Link } from '@/i18n/navigation';
+import Link from 'next/link';
+import { useLocale } from 'next-intl';
 import { X, Zap, Crown, ArrowRight } from 'lucide-react';
 
 interface UpgradeBannerProps {
@@ -19,6 +20,7 @@ export default function UpgradeBanner({
   dismissible = true,
   className = ''
 }: UpgradeBannerProps) {
+  const locale = useLocale();
   const [dismissed, setDismissed] = useState(false);
 
   // No mostrar si ya está en el plan más alto
@@ -70,7 +72,7 @@ export default function UpgradeBanner({
                 {info.description} desde {info.price}
               </p>
               <Link
-                href="/plans"
+                href={`/${locale}/plans`}
                 className={`inline-flex items-center gap-1 text-sm font-medium text-${info.color}-700 hover:text-${info.color}-900 transition-colors`}
               >
                 Ver planes

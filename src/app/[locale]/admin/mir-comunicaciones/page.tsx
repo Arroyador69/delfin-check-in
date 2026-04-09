@@ -97,7 +97,7 @@ export default function MirComunicacionesPage() {
           }
           // Solo para usuarios normales, verificar legal_module
           if (!hasLegalModule(tenant)) {
-            router.push('/upgrade-plan?reason=legal_module');
+            router.push(`/${locale}/upgrade-plan?reason=legal_module`);
           }
         })
         .catch(() => {
@@ -105,11 +105,11 @@ export default function MirComunicacionesPage() {
           // Por seguridad, si no podemos verificar, permitir acceso si tiene legal_module
           if (!hasLegalModule(tenant)) {
             // Solo bloquear si definitivamente no tiene legal_module
-            router.push('/upgrade-plan?reason=legal_module');
+            router.push(`/${locale}/upgrade-plan?reason=legal_module`);
           }
         });
     }
-  }, [tenant, tenantLoading, router]);
+  }, [tenant, tenantLoading, router, locale]);
   
   // Estados para consulta
   const [codigosConsulta, setCodigosConsulta] = useState('');

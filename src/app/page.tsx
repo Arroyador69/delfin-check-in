@@ -7,7 +7,9 @@ import AdminLayout from '@/components/AdminLayout';
 import { ArrowUpCircle } from 'lucide-react';
 import { getRoomNumber } from '@/lib/db';
 import UnitLimitWarning from '@/components/UnitLimitWarning';
-import { useClientTranslations } from '@/hooks/useClientTranslations';
+import type { Locale } from '@/i18n/config';
+import { defaultLocale } from '@/i18n/config';
+import { useClientTranslations, getCurrentLocale } from '@/hooks/useClientTranslations';
 import {
   type DashboardFilterPeriod,
   getDateRangeForFilter,
@@ -37,10 +39,17 @@ export default function HomePage() {
     to: ''
   });
   const router = useRouter();
+  const [navLocale, setNavLocale] = useState<Locale>(defaultLocale);
+
+  useEffect(() => {
+    setNavLocale(getCurrentLocale());
+  }, []);
 
   useEffect(() => {
     loadData();
   }, []);
+
+  const upgradePlanHref = `/${navLocale}/upgrade-plan`;
 
   const loadData = async () => {
     try {
@@ -300,7 +309,7 @@ export default function HomePage() {
               </div>
               <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                 <Link
-                  href="/upgrade-plan"
+                  href={upgradePlanHref}
                   className="px-3 sm:px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-md hover:from-purple-700 hover:to-blue-700 transition-all duration-200 flex items-center justify-center space-x-2 shadow-md hover:shadow-lg text-sm sm:text-base"
                 >
                   <ArrowUpCircle className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -342,7 +351,7 @@ export default function HomePage() {
                 </p>
               </div>
               <Link
-                href="/upgrade-plan"
+                href={upgradePlanHref}
                 className="whitespace-nowrap bg-blue-600 text-white px-4 py-2 sm:px-6 sm:py-3 rounded-lg hover:bg-blue-700 font-semibold text-sm sm:text-base transition-colors shadow-md hover:shadow-lg"
               >
                 {t('mirModule.activateButton')}
@@ -426,7 +435,7 @@ export default function HomePage() {
                             ⚠️ Límite alcanzado: Has usado todas las habitaciones de tu plan ({tenant.stats?.rooms_used || 0}/{tenant.tenant.max_rooms}).
                           </p>
                           <p className="text-xs text-red-700 mt-1">
-                            Para añadir más habitaciones, actualiza tu plan desde la página de <Link href="/upgrade-plan" className="underline font-semibold">Mejora de Plan</Link>.
+                            Para añadir más habitaciones, actualiza tu plan desde la página de <Link href={upgradePlanHref} className="underline font-semibold">Mejora de Plan</Link>.
                           </p>
                         </div>
                       ) : tenant.limits.rooms_usage_percentage >= 80 ? (
@@ -435,7 +444,7 @@ export default function HomePage() {
                             ⚡ Estás cerca del límite: {tenant.stats?.rooms_used || 0}/{tenant.tenant.max_rooms} habitaciones ({tenant.limits.rooms_usage_percentage}% usado).
                           </p>
                           <p className="text-xs text-orange-700 mt-1">
-                            Te quedan {tenant.stats?.rooms_remaining || 0} habitaciones disponibles. Considera <Link href="/upgrade-plan" className="underline font-semibold">actualizar tu plan</Link> si necesitas más capacidad.
+                            Te quedan {tenant.stats?.rooms_remaining || 0} habitaciones disponibles. Considera <Link href={upgradePlanHref} className="underline font-semibold">actualizar tu plan</Link> si necesitas más capacidad.
                           </p>
                         </div>
                       ) : tenant.stats?.rooms_remaining !== undefined && tenant.stats.rooms_remaining > 0 && (
@@ -448,7 +457,7 @@ export default function HomePage() {
                 </div>
                 {tenant.limits && !tenant.limits.can_add_rooms && (
                   <Link
-                    href="/upgrade-plan"
+                    href={upgradePlanHref}
                     className="px-3 sm:px-4 py-2 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-md hover:from-orange-600 hover:to-red-600 transition-all duration-200 flex items-center justify-center space-x-2 text-sm sm:text-base shadow-md"
                   >
                     <ArrowUpCircle className="w-4 h-4" />

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useLocale } from 'next-intl';
 import { useTenant, hasAds } from '@/hooks/useTenant';
 import { X } from 'lucide-react';
 
@@ -9,6 +10,7 @@ import { X } from 'lucide-react';
  * Solo se muestra para planes FREE y CHECKIN (que tienen anuncios)
  */
 export default function AdBlockDetector() {
+  const locale = useLocale();
   const { tenant, loading } = useTenant();
   const [adBlockDetected, setAdBlockDetected] = useState(false);
   const [checking, setChecking] = useState(true);
@@ -130,7 +132,7 @@ export default function AdBlockDetector() {
             🔄 Recargar Página
           </button>
           <a
-            href="/upgrade-plan"
+            href={`/${locale}/upgrade-plan`}
             className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold px-8 py-4 rounded-xl shadow-lg transition-all duration-200 transform hover:scale-105 text-center"
           >
             💎 Actualizar a Plan PRO

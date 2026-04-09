@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { Settings } from 'lucide-react';
-import { useClientTranslations } from '@/hooks/useClientTranslations';
+import type { Locale } from '@/i18n/config';
+import { defaultLocale } from '@/i18n/config';
+import { useClientTranslations, getCurrentLocale } from '@/hooks/useClientTranslations';
 
 export default function SettingsPage() {
   const t = useClientTranslations('settings');
@@ -20,6 +22,13 @@ export default function SettingsPage() {
     status: 'active' 
   });
   const [message, setMessage] = useState({ type: '', text: '' });
+  const [navLocale, setNavLocale] = useState<Locale>(defaultLocale);
+
+  useEffect(() => {
+    setNavLocale(getCurrentLocale());
+  }, []);
+
+  const upgradePlanHref = `/${navLocale}/upgrade-plan`;
 
   // Cargar datos al montar el componente
   useEffect(() => {
@@ -212,7 +221,7 @@ export default function SettingsPage() {
                 {roomsConfig.length >= tenantLimits.maxRooms ? (
                   <>
                     ⚠️ <strong>Límite alcanzado:</strong> Has configurado {roomsConfig.length}/{tenantLimits.maxRooms} habitaciones. 
-                    Para añadir más, <a href="/upgrade-plan" className="underline font-bold">actualiza tu plan</a>.
+                    Para añadir más, <a href={upgradePlanHref} className="underline font-bold">actualiza tu plan</a>.
                   </>
                 ) : roomsConfig.length >= Math.floor(tenantLimits.maxRooms * 0.8) ? (
                   <>

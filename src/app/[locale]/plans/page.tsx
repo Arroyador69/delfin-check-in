@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { Check, Crown, Zap, Shield, Loader2, Calculator, Info } from 'lucide-react';
 import AdminLayout from '@/components/AdminLayout';
 import { loadStripe } from '@stripe/stripe-js';
@@ -327,6 +327,7 @@ function getPlanDesc(t: (k: string) => string, planId: PlanId): string {
 
 export default function PlansPage() {
   const t = useTranslations('plans');
+  const locale = useLocale();
   const router = useRouter();
   const [currentPlan, setCurrentPlan] = useState<PlanId | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<PlanId | null>(null);
@@ -369,7 +370,7 @@ export default function PlansPage() {
 
   const handleSuccess = () => {
     alert(t('successSubscription'));
-    router.push('/');
+    router.push(`/${locale}/dashboard`);
     router.refresh();
   };
 

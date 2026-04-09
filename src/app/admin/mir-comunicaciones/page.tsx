@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { useClientTranslations } from '@/hooks/useClientTranslations';
+import { useClientTranslations, getCurrentLocale } from '@/hooks/useClientTranslations';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useTenant, hasLegalModule } from '@/hooks/useTenant';
@@ -103,7 +103,7 @@ export default function MirComunicacionesPage() {
           }
           // Solo para usuarios normales, verificar legal_module
           if (!hasLegalModule(tenant)) {
-            router.push('/upgrade-plan?reason=legal_module');
+            router.push(`/${getCurrentLocale()}/upgrade-plan?reason=legal_module`);
           }
         })
         .catch(() => {
@@ -111,7 +111,7 @@ export default function MirComunicacionesPage() {
           // Por seguridad, si no podemos verificar, permitir acceso si tiene legal_module
           if (!hasLegalModule(tenant)) {
             // Solo bloquear si definitivamente no tiene legal_module
-            router.push('/upgrade-plan?reason=legal_module');
+            router.push(`/${getCurrentLocale()}/upgrade-plan?reason=legal_module`);
           }
         });
     }
