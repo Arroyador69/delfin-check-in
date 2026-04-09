@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
+import LocalizedDateInput from '@/components/LocalizedDateInput';
+import { toIntlDateLocale, type Locale as AppLocale } from '@/i18n/config';
 
 type Item = {
   id: string;
@@ -81,14 +83,12 @@ export default function AuditPage() {
             placeholder={t('placeholderType')} 
             className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white text-gray-900 placeholder-gray-500" 
           />
-          <input 
-            type="date" 
+          <LocalizedDateInput 
             value={from} 
             onChange={e=>setFrom(e.target.value)} 
             className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white text-gray-900" 
           />
-          <input 
-            type="date" 
+          <LocalizedDateInput 
             value={to} 
             onChange={e=>setTo(e.target.value)} 
             className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white text-gray-900" 
@@ -164,7 +164,7 @@ export default function AuditPage() {
               ) : (
                 items.map((it) => (
                   <tr key={it.id} className="hover:bg-blue-50 transition-colors duration-150">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-800">{new Date(it.at).toLocaleString(locale)}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-800">{new Date(it.at).toLocaleString(toIntlDateLocale(locale as AppLocale))}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 border border-blue-200">
                         {it.action}

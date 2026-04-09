@@ -3,6 +3,7 @@
 import { useTenant, hasAds } from '@/hooks/useTenant';
 import { X } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { isAdSenseConfigured, ADSENSE_CONFIG } from '@/lib/ads';
 
 /**
@@ -11,6 +12,7 @@ import { isAdSenseConfigured, ADSENSE_CONFIG } from '@/lib/ads';
  * Solo se muestra si ads_enabled = true
  */
 export default function AdsBanner() {
+  const t = useTranslations('pwa');
   const { tenant, loading } = useTenant();
   const [dismissed, setDismissed] = useState(false);
   const [adSenseReady, setAdSenseReady] = useState(false);
@@ -157,7 +159,7 @@ export default function AdsBanner() {
             <X className="w-4 h-4" />
           </button>
         </div>
-        <p className="text-xs text-gray-500 text-center mt-1">Publicidad</p>
+        <p className="text-xs text-gray-500 text-center mt-1">{t('adsLabel')}</p>
       </div>
     </div>
   );

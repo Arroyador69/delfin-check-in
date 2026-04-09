@@ -2,6 +2,7 @@
 
 import { useTenant, hasAds } from '@/hooks/useTenant';
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { isAdSenseConfigured, ADSENSE_CONFIG } from '@/lib/ads';
 
 /**
@@ -9,6 +10,7 @@ import { isAdSenseConfigured, ADSENSE_CONFIG } from '@/lib/ads';
  * Solo se muestra si ads_enabled = true
  */
 export default function AdSidebar() {
+  const t = useTranslations('pwa');
   const { tenant, loading } = useTenant();
   const [adSenseReady, setAdSenseReady] = useState(false);
 
@@ -91,7 +93,7 @@ export default function AdSidebar() {
         data-ad-format="auto"
         data-full-width-responsive="true"
       />
-      <p className="text-xs text-gray-500 text-center mt-2">Publicidad</p>
+      <p className="text-xs text-gray-500 text-center mt-2">{t('adsLabel')}</p>
     </div>
   );
 }

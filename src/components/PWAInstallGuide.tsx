@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslations } from 'next-intl';
 
 function isStandalone(): boolean {
   // iOS Safari
@@ -21,6 +22,7 @@ function detectPlatform() {
 }
 
 export default function PWAInstallGuide() {
+  const t = useTranslations('pwa');
   const [dismissed, setDismissed] = useState(false);
   const [installable, setInstallable] = useState(false);
   const [ready, setReady] = useState(false);
@@ -51,20 +53,20 @@ export default function PWAInstallGuide() {
         <div className="text-xs flex-1">
           {platform.ios ? (
             <>
-              <div className="font-bold mb-1 text-blue-900">📱 Instala la app en tu iPhone</div>
+              <div className="font-bold mb-1 text-blue-900">{t('guideIosTitle')}</div>
               <ol className="list-decimal list-inside space-y-0.5 text-blue-800">
-                <li>Abre el menú <span className="font-semibold">Compartir</span> en Safari.</li>
-                <li>Toca <span className="font-semibold">Añadir a pantalla de inicio</span>.</li>
-                <li>Confirma para crear el acceso directo.</li>
+                <li>{t('guideIosStep1')}</li>
+                <li>{t('guideIosStep2')}</li>
+                <li>{t('guideIosStep3')}</li>
               </ol>
             </>
           ) : (
             <>
-              <div className="font-bold mb-1 text-blue-900">📱 Instala la app en Android</div>
+              <div className="font-bold mb-1 text-blue-900">{t('guideAndroidTitle')}</div>
               <ol className="list-decimal list-inside space-y-0.5 text-blue-800">
-                <li>Abre el menú del navegador (⋮).</li>
-                <li>Toca <span className="font-semibold">Añadir a pantalla de inicio</span>.</li>
-                <li>Confirma para crear el icono.</li>
+                <li>{t('guideAndroidStep1')}</li>
+                <li>{t('guideAndroidStep2')}</li>
+                <li>{t('guideAndroidStep3')}</li>
               </ol>
             </>
           )}

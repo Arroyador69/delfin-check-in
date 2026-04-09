@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import LocalizedDateInput from '@/components/LocalizedDateInput';
 
 export default function AEATPage() {
   const t = useTranslations('aeat');
@@ -104,8 +105,7 @@ export default function AEATPage() {
             <label className="block text-sm font-semibold text-gray-700 mb-2">
               📅 {t('labelFrom')}
             </label>
-            <input 
-              type="date" 
+            <LocalizedDateInput 
               value={from} 
               onChange={e=>setFrom(e.target.value)} 
               className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white text-gray-900" 
@@ -115,8 +115,7 @@ export default function AEATPage() {
             <label className="block text-sm font-semibold text-gray-700 mb-2">
               📅 {t('labelTo')}
             </label>
-            <input 
-              type="date" 
+            <LocalizedDateInput 
               value={to} 
               onChange={e=>setTo(e.target.value)} 
               className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white text-gray-900" 

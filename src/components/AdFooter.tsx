@@ -2,6 +2,7 @@
 
 import { useTenant, hasAds } from '@/hooks/useTenant';
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { isAdSenseConfigured, ADSENSE_CONFIG } from '@/lib/ads';
 
 /**
@@ -94,7 +95,7 @@ export default function AdFooter() {
           data-ad-format="auto"
           data-full-width-responsive="true"
         />
-        <p className="text-xs text-gray-500 text-center mt-2">Publicidad</p>
+        <p className="text-xs text-gray-500 text-center mt-2">{t('adsLabel')}</p>
       </div>
     </div>
   );

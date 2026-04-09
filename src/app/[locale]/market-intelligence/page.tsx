@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
+import LocalizedDateInput from '@/components/LocalizedDateInput';
 import {
   CalendarDays, TrendingUp, BarChart3, MapPin, Plus, Trash2, Edit2,
   ChevronLeft, ChevronRight, Star, PartyPopper, Sun, X, Save, Eye,
@@ -776,8 +777,7 @@ export default function MarketIntelligencePage() {
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">{t('pricesTab.from')}</label>
-                  <input
-                    type="date"
+                  <LocalizedDateInput
                     value={priceFrom}
                     onChange={e => setPriceFrom(e.target.value)}
                     className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
@@ -785,8 +785,7 @@ export default function MarketIntelligencePage() {
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">{t('pricesTab.to')}</label>
-                  <input
-                    type="date"
+                  <LocalizedDateInput
                     value={priceTo}
                     onChange={e => setPriceTo(e.target.value)}
                     className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"

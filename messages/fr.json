@@ -80,6 +80,18 @@
     "viewMyTenantPanel": "Voir Mon Panneau Locataire",
     "superAdminDashboardTitle": "👑 Tableau de bord SuperAdmin"
   },
+  "pwa": {
+    "installButton": "Installer l'app",
+    "adsLabel": "Publicité",
+    "guideIosTitle": "📱 Installez l'app sur votre iPhone",
+    "guideIosStep1": "Ouvrez le menu Partager dans Safari.",
+    "guideIosStep2": "Appuyez sur Ajouter à l'écran d'accueil.",
+    "guideIosStep3": "Confirmez pour créer le raccourci.",
+    "guideAndroidTitle": "📱 Installez l'app sur Android",
+    "guideAndroidStep1": "Ouvrez le menu du navigateur (⋮).",
+    "guideAndroidStep2": "Appuyez sur Ajouter à l'écran d'accueil.",
+    "guideAndroidStep3": "Confirmez pour créer l'icône."
+  },
   "superadminSupport": {
     "title": "Support technique (clients)",
     "subtitle": "Incidents logiciel envoyés depuis les réglages de chaque établissement.",

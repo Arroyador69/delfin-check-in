@@ -7,6 +7,9 @@ import ExportButton, { normalizeData } from './ExportButton';
 import { useTenant, hasLegalModule } from '@/hooks/useTenant';
 import { useRouter } from 'next/navigation';
 import { useTranslations, useLocale } from 'next-intl';
+import LocalizedDateInput from '@/components/LocalizedDateInput';
+import { toIntlDateLocale, type Locale as AppLocale } from '@/i18n/config';
+import { Link } from '@/i18n/navigation';
 
 interface ComunicacionPayload {
   codigoEstablecimiento: string;
@@ -165,6 +168,7 @@ export default function GuestRegistrationsDashboard() {
   const t = useTranslations('guestRegistrations');
   const tCommon = useTranslations('common');
   const locale = useLocale();
+  const intlDateLocale = toIntlDateLocale(locale as AppLocale);
   const { tenant, loading: tenantLoading } = useTenant();
   const router = useRouter();
   const [registrations, setRegistrations] = useState<GuestRegistration[]>([]);
@@ -576,13 +580,13 @@ export default function GuestRegistrationsDashboard() {
             </div>
             {tenant && hasLegalModule(tenant) && (
               <div className="flex items-center space-x-4">
-                <a 
+                <Link 
                   href="/admin/mir-comunicaciones" 
                   className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-xl hover:from-blue-700 hover:to-purple-700 transition-colors flex items-center space-x-2 font-semibold shadow"
                 >
                   <span>📤</span>
                   <span>{t('mirStatusLink')}</span>
-                </a>
+                </Link>
               </div>
             )}
           </div>
@@ -657,8 +661,7 @@ export default function GuestRegistrationsDashboard() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   {t('filters.specificDate')}
                 </label>
-                <input
-                  type="date"
+                <LocalizedDateInput
                   value={selectedDate}
                   onChange={(e) => setSelectedDate(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -701,8 +704,7 @@ export default function GuestRegistrationsDashboard() {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 {t('filters.checkInDate')}
               </label>
-              <input
-                type="date"
+              <LocalizedDateInput
                 value={filterCheckIn}
                 onChange={(e) => setFilterCheckIn(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -712,8 +714,7 @@ export default function GuestRegistrationsDashboard() {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 {t('filters.checkOutDate')}
               </label>
-              <input
-                type="date"
+              <LocalizedDateInput
                 value={filterCheckOut}
                 onChange={(e) => setFilterCheckOut(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -909,14 +910,14 @@ export default function GuestRegistrationsDashboard() {
                             <p className="text-sm text-gray-600">
                               {t('list.establishment')}: {registration.contrato.codigoEstablecimiento} | 
                               {t('list.room')}: {registration.contrato.numHabitaciones} | 
-                              {t('list.registrationDate')}: {new Date(registration.created_at).toLocaleDateString(locale)}
+                              {t('list.registrationDate')}: {new Date(registration.created_at).toLocaleDateString(intlDateLocale)}
                             </p>
                             <p className="text-sm text-gray-500">
                               {t('list.traveler')}: {registration.viajero.nombre} {registration.viajero.apellido1}
                             </p>
                             <p className="text-sm text-gray-500">
-                              {t('checkIn')}: {new Date(registration.fecha_entrada).toLocaleDateString(locale, { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })} | 
-                              {t('checkOut')}: {new Date(registration.fecha_salida).toLocaleDateString(locale, { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                              {t('checkIn')}: {new Date(registration.fecha_entrada).toLocaleDateString(intlDateLocale, { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })} | 
+                              {t('checkOut')}: {new Date(registration.fecha_salida).toLocaleDateString(intlDateLocale, { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                             </p>
                           </div>
                         </div>
@@ -1048,7 +1049,7 @@ export default function GuestRegistrationsDashboard() {
                   </div>
                   <div>
                     <span className="font-medium text-gray-600">{t('modal.registrationDate')}:</span>
-                    <p className="text-gray-900">{new Date(selectedRegistration.created_at).toLocaleDateString(locale)}</p>
+                    <p className="text-gray-900">{new Date(selectedRegistration.created_at).toLocaleDateString(intlDateLocale)}</p>
                   </div>
                   <div>
                     <span className="font-medium text-gray-600">{t('modal.rooms')}:</span>
@@ -1056,11 +1057,11 @@ export default function GuestRegistrationsDashboard() {
                   </div>
                   <div>
                     <span className="font-medium text-gray-600">{t('modal.checkIn')}:</span>
-                    <p className="text-gray-900">{new Date(selectedRegistration.fecha_entrada).toLocaleString(locale)}</p>
+                    <p className="text-gray-900">{new Date(selectedRegistration.fecha_entrada).toLocaleString(intlDateLocale)}</p>
                   </div>
                   <div>
                     <span className="font-medium text-gray-600">{t('modal.checkOut')}:</span>
-                    <p className="text-gray-900">{new Date(selectedRegistration.fecha_salida).toLocaleString(locale)}</p>
+                    <p className="text-gray-900">{new Date(selectedRegistration.fecha_salida).toLocaleString(intlDateLocale)}</p>
                   </div>
                   <div>
                     <span className="font-medium text-gray-600">{t('modal.paymentType')}:</span>
@@ -1201,7 +1202,7 @@ export default function GuestRegistrationsDashboard() {
                       </div>
                       {selectedRegistration.signature_date && (
                         <p className="text-xs text-green-700 mt-1">
-                          {t('modal.signedOn') || 'Firmado el'}: {new Date(selectedRegistration.signature_date).toLocaleString(locale)}
+                          {t('modal.signedOn') || 'Firmado el'}: {new Date(selectedRegistration.signature_date).toLocaleString(intlDateLocale)}
                         </p>
                       )}
                     </div>
@@ -1299,7 +1300,7 @@ export default function GuestRegistrationsDashboard() {
                         </div>
                         <div>
                           <label className="block text-gray-600 mb-1">{t('modal.birthDate')} (AAAA-MM-DD)</label>
-                          <input id="edit_fechaNacimiento" type="date" defaultValue={travelerData.fechaNacimiento} className="border rounded px-2 py-1 w-full text-gray-900 font-medium" />
+                          <LocalizedDateInput id="edit_fechaNacimiento" defaultValue={travelerData.fechaNacimiento} className="border rounded px-2 py-1 w-full text-gray-900 font-medium" />
                         </div>
                         <div>
                           <label className="block text-gray-600 mb-1">{t('modal.docType')}</label>
@@ -1398,7 +1399,7 @@ export default function GuestRegistrationsDashboard() {
                               <p className="text-xs text-gray-500 mt-1">{t('modal.mirBatch')}: {mirStatus.lote}</p>
                             )}
                             {mirStatus.fechaEnvio && (
-                              <p className="text-xs text-gray-500 mt-1">{t('modal.mirSentDate')}: {new Date(mirStatus.fechaEnvio).toLocaleString(locale)}</p>
+                              <p className="text-xs text-gray-500 mt-1">{t('modal.mirSentDate')}: {new Date(mirStatus.fechaEnvio).toLocaleString(intlDateLocale)}</p>
                             )}
                           </div>
                         </div>
@@ -1413,7 +1414,7 @@ export default function GuestRegistrationsDashboard() {
                             <span className="font-medium">{t('modal.mirPending')}</span>
                             <p className="text-sm text-yellow-600 mt-1">{t('modal.mirBatch')}: {mirStatus.lote}</p>
                             {mirStatus.fechaEnvio && (
-                              <p className="text-xs text-gray-500 mt-1">{t('modal.mirSentDate')}: {new Date(mirStatus.fechaEnvio).toLocaleString(locale)}</p>
+                              <p className="text-xs text-gray-500 mt-1">{t('modal.mirSentDate')}: {new Date(mirStatus.fechaEnvio).toLocaleString(intlDateLocale)}</p>
                             )}
                           </div>
                         </div>

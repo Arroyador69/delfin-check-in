@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
+import LocalizedDateInput from '@/components/LocalizedDateInput';
 
 export default function PartesPage() {
   const t = useTranslations('partes');
@@ -39,7 +40,7 @@ export default function PartesPage() {
         <div className="bg-white rounded-lg shadow p-6 flex items-end gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">{t('date')}</label>
-            <input type="date" className="px-3 py-2 border border-gray-300 rounded-md" value={date} onChange={(e)=>setDate(e.target.value)} />
+            <LocalizedDateInput className="px-3 py-2 border border-gray-300 rounded-md" value={date} onChange={(e)=>setDate(e.target.value)} />
           </div>
           <button onClick={generarDia} disabled={loading} className="px-6 py-2 bg-blue-600 text-white rounded-md disabled:opacity-50">{loading ? t('generating') : t('generate')}</button>
         </div>

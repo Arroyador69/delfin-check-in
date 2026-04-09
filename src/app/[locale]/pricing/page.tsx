@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations, useLocale } from 'next-intl';
+import LocalizedDateInput from '@/components/LocalizedDateInput';
+import { toIntlDateLocale, type Locale as AppLocale } from '@/i18n/config';
 import { CalendarDays, TrendingUp, Target, Zap, AlertCircle, CheckCircle, Settings, MapPin, RefreshCw, Wrench } from 'lucide-react';
 
 interface PriceRecommendation {
@@ -136,7 +138,7 @@ export default function PricingDashboard() {
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
-    return date.toLocaleDateString(locale === 'es' ? 'es-ES' : locale === 'en' ? 'en-GB' : locale, { 
+    return date.toLocaleDateString(toIntlDateLocale(locale as AppLocale), { 
       weekday: 'short', 
       day: 'numeric', 
       month: 'short' 
@@ -329,8 +331,7 @@ export default function PricingDashboard() {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 {t('from')}
               </label>
-              <input
-                type="date"
+              <LocalizedDateInput
                 value={dateRange.from}
                 onChange={(e) => setDateRange(prev => ({ ...prev, from: e.target.value }))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -341,8 +342,7 @@ export default function PricingDashboard() {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 {t('to')}
               </label>
-              <input
-                type="date"
+              <LocalizedDateInput
                 value={dateRange.to}
                 onChange={(e) => setDateRange(prev => ({ ...prev, to: e.target.value }))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"

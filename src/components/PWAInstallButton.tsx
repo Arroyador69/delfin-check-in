@@ -1,8 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 
 export default function PWAInstallButton() {
+  const t = useTranslations('pwa');
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [installable, setInstallable] = useState(false);
 
@@ -28,7 +30,7 @@ export default function PWAInstallButton() {
 
   return (
     <button onClick={install} className="px-3 py-2 bg-indigo-600 text-white rounded-md text-sm hover:bg-indigo-700">
-      Instalar app
+      {t('installButton')}
     </button>
   );
 }

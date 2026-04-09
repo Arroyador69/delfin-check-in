@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Calendar, Users, Euro, CreditCard, CheckCircle, XCircle, Clock, TrendingUp, Eye, Home, Bed } from 'lucide-react';
 import { DirectReservation, ReservationStats } from '@/lib/direct-reservations-types';
 import { useTranslations, useLocale } from 'next-intl';
+import { toIntlDateLocale, type Locale as AppLocale } from '@/i18n/config';
 
 export default function DirectReservationsDashboard() {
   const t = useTranslations('directReservations');
@@ -95,7 +96,7 @@ export default function DirectReservationsDashboard() {
   });
 
   const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString(locale, {
+    return new Date(date).toLocaleDateString(toIntlDateLocale(locale as AppLocale), {
       year: 'numeric',
       month: 'short',
       day: 'numeric'
@@ -132,7 +133,7 @@ export default function DirectReservationsDashboard() {
         {/* Botón Ver Propiedades */}
         <div className="flex justify-center mb-8">
           <button
-            onClick={() => window.location.href = '/settings/properties'}
+            onClick={() => { window.location.href = `/${locale}/settings/properties`; }}
             className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-xl shadow-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 transform hover:scale-105 flex items-center gap-2 sm:gap-3 font-semibold text-sm sm:text-base"
           >
             <Eye className="w-5 h-5 sm:w-6 sm:h-6" />

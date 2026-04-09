@@ -80,6 +80,18 @@
     "viewMyTenantPanel": "View My Tenant Panel",
     "superAdminDashboardTitle": "👑 SuperAdmin Dashboard"
   },
+  "pwa": {
+    "installButton": "Install app",
+    "adsLabel": "Advertising",
+    "guideIosTitle": "📱 Install the app on your iPhone",
+    "guideIosStep1": "Open the Share menu in Safari.",
+    "guideIosStep2": "Tap Add to Home Screen.",
+    "guideIosStep3": "Confirm to create the shortcut.",
+    "guideAndroidTitle": "📱 Install the app on Android",
+    "guideAndroidStep1": "Open the browser menu (⋮).",
+    "guideAndroidStep2": "Tap Add to Home Screen.",
+    "guideAndroidStep3": "Confirm to create the icon."
+  },
   "superadminSupport": {
     "title": "Technical support (customers)",
     "subtitle": "Software issues submitted from each property's settings.",

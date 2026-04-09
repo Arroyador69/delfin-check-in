@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
+import { toIntlDateLocale, type Locale as AppLocale } from '@/i18n/config';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -78,6 +79,7 @@ function formatReciboDateOnly(value: string | null | undefined, loc: string): st
 export default function FacturasPage() {
   const t = useTranslations('facturas');
   const locale = useLocale();
+  const intlDateLocale = toIntlDateLocale(locale as AppLocale);
 
   const [facturas, setFacturas] = useState<Factura[]>([]);
   const [empresaConfig, setEmpresaConfig] = useState<EmpresaConfig | null>(null);
@@ -500,7 +502,7 @@ export default function FacturasPage() {
                   {t('configMessage')}
                 </p>
                 <Button 
-                  onClick={() => window.location.href = '/settings/empresa'}
+                  onClick={() => { window.location.href = `/${locale}/settings/empresa`; }}
                   className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-3 px-6 rounded-xl shadow-lg transition-all duration-200 transform hover:scale-105"
                 >
                   {t('goToSettings')}
@@ -738,7 +740,7 @@ export default function FacturasPage() {
                           <div className="text-sm text-gray-600">
                             <div className="flex items-center">
                               <Calendar className="w-4 h-4 mr-1 text-blue-600" />
-                              {new Date(factura.fecha_emision).toLocaleDateString(locale)}
+                              {new Date(factura.fecha_emision).toLocaleDateString(intlDateLocale)}
                             </div>
                           </div>
                           <div className="text-sm">
@@ -927,6 +929,7 @@ export default function FacturasPage() {
                           <Input
                             id="r_fecha_pago"
                             type="date"
+                            lang={intlDateLocale}
                             value={nuevoRecibo.fecha_pago}
                             onChange={(e) => setNuevoRecibo((p) => ({ ...p, fecha_pago: e.target.value }))}
                             className="text-gray-900"
@@ -937,6 +940,7 @@ export default function FacturasPage() {
                           <Input
                             id="r_est_desde"
                             type="date"
+                            lang={intlDateLocale}
                             value={nuevoRecibo.fecha_estancia_desde}
                             onChange={(e) =>
                               setNuevoRecibo((p) => ({ ...p, fecha_estancia_desde: e.target.value }))
@@ -949,6 +953,7 @@ export default function FacturasPage() {
                           <Input
                             id="r_est_hasta"
                             type="date"
+                            lang={intlDateLocale}
                             value={nuevoRecibo.fecha_estancia_hasta}
                             onChange={(e) =>
                               setNuevoRecibo((p) => ({ ...p, fecha_estancia_hasta: e.target.value }))
@@ -1069,13 +1074,13 @@ export default function FacturasPage() {
                           <p className="text-gray-700">{recibo.cliente_nombre}</p>
                           <p className="text-sm text-gray-600 flex items-center gap-1 mt-1">
                             <Calendar className="w-4 h-4" />
-                            {new Date(recibo.fecha_emision).toLocaleDateString(locale)}
+                            {new Date(recibo.fecha_emision).toLocaleDateString(intlDateLocale)}
                           </p>
                           <p className="text-sm text-gray-700 mt-1">{recibo.concepto}</p>
                           {recibo.fecha_pago && (
                             <p className="text-xs text-gray-600 mt-1">
                               {t('receiptHistoryPaymentLine', {
-                                date: formatReciboDateOnly(recibo.fecha_pago, locale),
+                                date: formatReciboDateOnly(recibo.fecha_pago, intlDateLocale),
                               })}
                             </p>
                           )}
@@ -1083,15 +1088,15 @@ export default function FacturasPage() {
                             <p className="text-xs text-gray-600">
                               {recibo.fecha_estancia_desde && recibo.fecha_estancia_hasta
                                 ? t('receiptHistoryStayRange', {
-                                    from: formatReciboDateOnly(recibo.fecha_estancia_desde, locale),
-                                    to: formatReciboDateOnly(recibo.fecha_estancia_hasta, locale),
+                                    from: formatReciboDateOnly(recibo.fecha_estancia_desde, intlDateLocale),
+                                    to: formatReciboDateOnly(recibo.fecha_estancia_hasta, intlDateLocale),
                                   })
                                 : recibo.fecha_estancia_desde
                                   ? t('receiptHistoryStayFromOnly', {
-                                      from: formatReciboDateOnly(recibo.fecha_estancia_desde, locale),
+                                      from: formatReciboDateOnly(recibo.fecha_estancia_desde, intlDateLocale),
                                     })
                                   : t('receiptHistoryStayToOnly', {
-                                      to: formatReciboDateOnly(recibo.fecha_estancia_hasta!, locale),
+                                      to: formatReciboDateOnly(recibo.fecha_estancia_hasta!, intlDateLocale),
                                     })}
                             </p>
                           )}

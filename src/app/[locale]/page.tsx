@@ -23,6 +23,8 @@ import {
   localTodayYMD,
 } from '@/lib/dashboard-period';
 import { localizedPlanFeatureSummary } from '@/lib/dashboard-plan-features';
+import LocalizedDateInput from '@/components/LocalizedDateInput';
+import { toIntlDateLocale, type Locale as AppLocale } from '@/i18n/config';
 
 type FilterPeriod = DashboardFilterPeriod;
 
@@ -244,7 +246,7 @@ export default function HomePage() {
       if (!dateStr) return t('periodFilters.selectDateRange');
       const date = new Date(dateStr);
       if (isNaN(date.getTime())) return t('periodFilters.selectDateRange');
-      return date.toLocaleDateString(locale, { 
+      return date.toLocaleDateString(toIntlDateLocale(locale as AppLocale), { 
         day: '2-digit', 
         month: '2-digit', 
         year: 'numeric' 
@@ -701,8 +703,7 @@ export default function HomePage() {
                   <label className="block text-sm font-bold text-black mb-1">
                     {t('periodFilters.dateFrom')}
                   </label>
-                  <input
-                    type="date"
+                  <LocalizedDateInput
                     value={customDateRange.from}
                     onChange={(e) => setCustomDateRange(prev => ({ ...prev, from: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -712,8 +713,7 @@ export default function HomePage() {
                   <label className="block text-sm font-bold text-black mb-1">
                     {t('periodFilters.dateTo')}
                   </label>
-                  <input
-                    type="date"
+                  <LocalizedDateInput
                     value={customDateRange.to}
                     onChange={(e) => setCustomDateRange(prev => ({ ...prev, to: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -920,7 +920,7 @@ export default function HomePage() {
                         </div>
                         <p className="text-xs text-gray-500 mt-1">
                           {t('currentReservations.checkIn')}{' '}
-                          {new Date(reservation.check_in).toLocaleDateString(locale, { 
+                          {new Date(reservation.check_in).toLocaleDateString(toIntlDateLocale(locale as AppLocale), { 
                             weekday: 'long', 
                             year: 'numeric', 
                             month: 'long', 
@@ -929,7 +929,7 @@ export default function HomePage() {
                         </p>
                         <p className="text-xs text-gray-500">
                           {t('currentReservations.checkOut')}{' '}
-                          {new Date(reservation.check_out).toLocaleDateString(locale, { 
+                          {new Date(reservation.check_out).toLocaleDateString(toIntlDateLocale(locale as AppLocale), { 
                             weekday: 'long', 
                             year: 'numeric', 
                             month: 'long', 
@@ -1007,7 +1007,7 @@ export default function HomePage() {
                           <span>{t('upcomingReservations.checkInTime')}</span>
                         </div>
                         <p className="text-xs text-gray-500 mt-1">
-                          {new Date(reservation.check_in).toLocaleDateString(locale, { 
+                          {new Date(reservation.check_in).toLocaleDateString(toIntlDateLocale(locale as AppLocale), { 
                             weekday: 'long', 
                             year: 'numeric', 
                             month: 'long', 
@@ -1016,7 +1016,7 @@ export default function HomePage() {
                       </p>
                         <p className="text-xs text-gray-500">
                           {t('upcomingReservations.checkOutLabel')}{' '}
-                          {new Date(reservation.check_out).toLocaleDateString(locale, { 
+                          {new Date(reservation.check_out).toLocaleDateString(toIntlDateLocale(locale as AppLocale), { 
                             weekday: 'long', 
                             year: 'numeric', 
                             month: 'long', 

@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
+import LocalizedDateInput from '@/components/LocalizedDateInput';
 
 type PlanId = 'free' | 'checkin' | 'standard' | 'pro';
 type BillingInterval = 'month' | 'year';
@@ -49,6 +50,7 @@ interface OnboardingData {
 export default function OnboardingPage() {
   const t = useTranslations('onboarding');
   const tPlans = useTranslations('plans');
+  const locale = useLocale();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -267,7 +269,7 @@ export default function OnboardingPage() {
       const tenantData = await tenantResponse.json();
       if (tenantData.tenant) setTenant(tenantData.tenant);
       if (tenantData.tenant?.onboarding_status === 'completed') {
-        router.push('/');
+        router.push(`/${locale}/dashboard`);
         return;
       }
     } catch (error) {
@@ -574,7 +576,7 @@ export default function OnboardingPage() {
         body: JSON.stringify({ onboarding_status: 'completed' })
       });
 
-      router.push('/');
+      router.push(`/${locale}/dashboard`);
     } catch (error) {
       console.error('Error:', error);
       setError(t('errors.completeFailed'));
@@ -822,8 +824,7 @@ export default function OnboardingPage() {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               {t('step2.companyCreationDate')}
             </label>
-            <input
-              type="date"
+            <LocalizedDateInput
               value={formData.fechaCreacion}
               onChange={(e) => handleInputChange('fechaCreacion', e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"

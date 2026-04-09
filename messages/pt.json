@@ -80,6 +80,18 @@
     "viewMyTenantPanel": "Ver Meu Painel de Inquilino",
     "superAdminDashboardTitle": "👑 Painel SuperAdmin"
   },
+  "pwa": {
+    "installButton": "Instalar app",
+    "adsLabel": "Publicidade",
+    "guideIosTitle": "📱 Instale a app no seu iPhone",
+    "guideIosStep1": "Abra o menu Partilhar no Safari.",
+    "guideIosStep2": "Toque em Adicionar ao ecrã principal.",
+    "guideIosStep3": "Confirme para criar o atalho.",
+    "guideAndroidTitle": "📱 Instale a app no Android",
+    "guideAndroidStep1": "Abra o menu do navegador (⋮).",
+    "guideAndroidStep2": "Toque em Adicionar ao ecrã principal.",
+    "guideAndroidStep3": "Confirme para criar o ícone."
+  },
   "superadminSupport": {
     "title": "Suporte técnico (clientes)",
     "subtitle": "Incidências sobre o software enviadas a partir das definições de cada estabelecimento.",

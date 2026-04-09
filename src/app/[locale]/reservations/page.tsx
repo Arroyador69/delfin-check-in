@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { Plus, X, Calendar, User, Bed, Euro, CreditCard, Download, Phone, Users, Globe, Edit } from 'lucide-react';
 import { getRoomNumber } from '@/lib/db';
 import { useTranslations, useLocale } from 'next-intl';
+import LocalizedDateInput from '@/components/LocalizedDateInput';
+import { toIntlDateLocale, type Locale as AppLocale } from '@/i18n/config';
 // Base de datos: Neon PostgreSQL
 
 interface Reservation {
@@ -402,7 +404,7 @@ export default function ReservationsPage() {
   };
 
   const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString(locale);
+    return new Date(date).toLocaleDateString(toIntlDateLocale(locale as AppLocale));
   };
 
   const getStatusColor = (status: string) => {
@@ -910,8 +912,7 @@ export default function ReservationsPage() {
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       📥 {safeT('form.checkInLabel')}
                     </label>
-                    <input
-                      type="date"
+                    <LocalizedDateInput
                       required
                       value={formData.check_in}
                       onChange={(e) => setFormData({...formData, check_in: e.target.value})}
@@ -923,8 +924,7 @@ export default function ReservationsPage() {
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       📤 {safeT('form.checkOutLabel')}
                     </label>
-                    <input
-                      type="date"
+                    <LocalizedDateInput
                       required
                       value={formData.check_out}
                       onChange={(e) => setFormData({...formData, check_out: e.target.value})}
@@ -1202,8 +1202,7 @@ export default function ReservationsPage() {
                       <Calendar className="h-4 w-4 inline mr-2" />
                       {safeT('form.checkInLabel')}
                     </label>
-                    <input
-                      type="date"
+                    <LocalizedDateInput
                       required
                       value={formData.check_in}
                       onChange={(e) => setFormData({...formData, check_in: e.target.value})}
@@ -1216,8 +1215,7 @@ export default function ReservationsPage() {
                       <Calendar className="h-4 w-4 inline mr-2" />
                       {safeT('form.checkOutLabel')}
                     </label>
-                    <input
-                      type="date"
+                    <LocalizedDateInput
                       required
                       value={formData.check_out}
                       onChange={(e) => setFormData({...formData, check_out: e.target.value})}

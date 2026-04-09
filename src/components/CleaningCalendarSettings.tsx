@@ -13,6 +13,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import CleaningPublicLinksSection from '@/components/CleaningPublicLinksSection';
+import { toIntlDateLocale, type Locale as AppLocale } from '@/i18n/config';
 
 interface Room {
   id: number;
@@ -60,6 +61,7 @@ interface Props {
 
 export default function CleaningCalendarSettings({ rooms, t }: Props) {
   const locale = useLocale();
+  const intlDateLocale = toIntlDateLocale(locale as AppLocale);
   const [configs, setConfigs] = useState<CleaningConfig[]>([]);
   const [notes, setNotes] = useState<CleaningNote[]>([]);
   const [loading, setLoading] = useState(true);
@@ -303,14 +305,14 @@ export default function CleaningCalendarSettings({ rooms, t }: Props) {
                               <p className="text-sm text-gray-800 whitespace-pre-wrap">{n.note}</p>
                               <p className="text-xs text-gray-500 mt-2">
                                 {t('cleaning.cleaningDateLabel', {
-                                  date: new Date(n.cleaning_date + 'T12:00:00').toLocaleDateString(locale, {
+                                  date: new Date(n.cleaning_date + 'T12:00:00').toLocaleDateString(intlDateLocale, {
                                     weekday: 'short',
                                     day: 'numeric',
                                     month: 'short',
                                   }),
                                 })}{' '}
                                 · {t('cleaning.sentAt', {
-                                  date: new Date(n.created_at).toLocaleString(locale, {
+                                  date: new Date(n.created_at).toLocaleString(intlDateLocale, {
                                     day: 'numeric',
                                     month: 'short',
                                     hour: '2-digit',

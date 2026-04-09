@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { Calendar as CalendarIcon, CalendarDays, RefreshCw, ChevronLeft, ChevronRight, Info } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useTranslations, useLocale } from 'next-intl'
+import LocalizedDateInput from '@/components/LocalizedDateInput'
+import { toIntlDateLocale, type Locale as AppLocale } from '@/i18n/config'
 
 type Availability = {
   property_id: number
@@ -232,14 +234,12 @@ export default function CalendarPage() {
         {/* Controles */}
         <div className="bg-white rounded-xl shadow-lg border border-blue-200 p-4 sm:p-6 mb-6">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-            <input 
-              type="date" 
+            <LocalizedDateInput 
               value={start} 
               onChange={e=>setStart(e.target.value)} 
               className="border-2 border-gray-300 p-3 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all font-semibold text-gray-800 placeholder-gray-500" 
             />
-            <input 
-              type="date" 
+            <LocalizedDateInput 
               value={end} 
               onChange={e=>setEnd(e.target.value)} 
               className="border-2 border-gray-300 p-3 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all font-semibold text-gray-800 placeholder-gray-500" 
@@ -272,7 +272,7 @@ export default function CalendarPage() {
               <ChevronLeft className="w-6 h-6" />
             </button>
             <span className="text-lg font-bold text-gray-800">
-              {new Date(start).toLocaleDateString(locale, { month: 'long', year: 'numeric' })}
+              {new Date(start).toLocaleDateString(toIntlDateLocale(locale as AppLocale), { month: 'long', year: 'numeric' })}
             </span>
             <button
               onClick={nextMonth}
@@ -438,13 +438,13 @@ export default function CalendarPage() {
                   <div>
                     <p className="text-sm text-gray-600 mb-1">{t('modal.checkInLabel')}</p>
                     <p className="text-base font-bold text-gray-900">
-                      {new Date(viewEvent.start_date).toLocaleDateString(locale)}
+                      {new Date(viewEvent.start_date).toLocaleDateString(toIntlDateLocale(locale as AppLocale))}
                     </p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-600 mb-1">{t('modal.checkOutLabel')}</p>
                     <p className="text-base font-bold text-gray-900">
-                      {new Date(viewEvent.end_date).toLocaleDateString(locale)}
+                      {new Date(viewEvent.end_date).toLocaleDateString(toIntlDateLocale(locale as AppLocale))}
                     </p>
                   </div>
                 </div>

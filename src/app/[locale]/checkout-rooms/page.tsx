@@ -2,9 +2,9 @@
 
 import { useState, useEffect, Suspense, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
+import { Link } from '@/i18n/navigation';
 import { ArrowLeft, Loader2, CreditCard, CheckCircle } from 'lucide-react';
-import Link from 'next/link';
 import AdminLayout from '@/components/AdminLayout';
 import DynamicPriceCalculator from '@/components/DynamicPriceCalculator';
 import { loadStripe } from '@stripe/stripe-js';
@@ -195,6 +195,7 @@ function CheckoutRoomsForm({
 
 function CheckoutRoomsContent() {
   const t = useTranslations('checkoutRooms');
+  const locale = useLocale();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [roomCount, setRoomCount] = useState(1);
@@ -230,7 +231,7 @@ function CheckoutRoomsContent() {
   const handleSuccess = () => {
     setSuccess(true);
     setTimeout(() => {
-      router.push('/settings/billing');
+      router.push(`/${locale}/settings/billing`);
     }, 2000);
   };
 

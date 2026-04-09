@@ -8,7 +8,8 @@ import { ArrowUpCircle } from 'lucide-react';
 import { getRoomNumber } from '@/lib/db';
 import UnitLimitWarning from '@/components/UnitLimitWarning';
 import type { Locale } from '@/i18n/config';
-import { defaultLocale } from '@/i18n/config';
+import { defaultLocale, toIntlDateLocale } from '@/i18n/config';
+import LocalizedDateInput from '@/components/LocalizedDateInput';
 import { useClientTranslations, getCurrentLocale } from '@/hooks/useClientTranslations';
 import {
   type DashboardFilterPeriod,
@@ -50,6 +51,7 @@ export default function HomePage() {
   }, []);
 
   const upgradePlanHref = `/${navLocale}/upgrade-plan`;
+  const dateLocaleBcp47 = toIntlDateLocale(navLocale);
 
   const loadData = async () => {
     try {
@@ -237,7 +239,7 @@ export default function HomePage() {
       if (!dateStr) return 'Fecha no seleccionada';
       const date = new Date(dateStr);
       if (isNaN(date.getTime())) return 'Fecha inválida';
-      return date.toLocaleDateString('es-ES', { 
+      return date.toLocaleDateString(dateLocaleBcp47, { 
         day: '2-digit', 
         month: '2-digit', 
         year: 'numeric' 
@@ -626,8 +628,8 @@ export default function HomePage() {
                   <label className="block text-sm font-bold text-black mb-1">
                     📅 Fecha desde
                   </label>
-                  <input
-                    type="date"
+                  <LocalizedDateInput
+                    localeBcp47={dateLocaleBcp47}
                     value={customDateRange.from}
                     onChange={(e) => setCustomDateRange(prev => ({ ...prev, from: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -637,8 +639,8 @@ export default function HomePage() {
                   <label className="block text-sm font-bold text-black mb-1">
                     📅 Fecha hasta
                   </label>
-                  <input
-                    type="date"
+                  <LocalizedDateInput
+                    localeBcp47={dateLocaleBcp47}
                     value={customDateRange.to}
                     onChange={(e) => setCustomDateRange(prev => ({ ...prev, to: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -836,10 +838,10 @@ export default function HomePage() {
                           <span>🏨 Hab. {getRoomNumber(reservation.room_id)}</span>
                         </div>
                         <p className="text-xs text-gray-500 mt-1">
-                          🟢 Check-in: {new Date(reservation.check_in).toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                          🟢 Check-in: {new Date(reservation.check_in).toLocaleDateString(dateLocaleBcp47, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                         </p>
                         <p className="text-xs text-gray-500">
-                          🔴 Check-out: {new Date(reservation.check_out).toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                          🔴 Check-out: {new Date(reservation.check_out).toLocaleDateString(dateLocaleBcp47, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                         </p>
                       </div>
                     </div>
@@ -904,7 +906,7 @@ export default function HomePage() {
                           <span>🚪 Check-in: 16:00</span>
                         </div>
                         <p className="text-xs text-gray-500 mt-1">
-                          {new Date(reservation.check_in).toLocaleDateString('es-ES', { 
+                          {new Date(reservation.check_in).toLocaleDateString(dateLocaleBcp47, { 
                             weekday: 'long', 
                             year: 'numeric', 
                             month: 'long', 
@@ -912,7 +914,7 @@ export default function HomePage() {
                           })}
                       </p>
                         <p className="text-xs text-gray-500">
-                          🔴 Check-out: {new Date(reservation.check_out).toLocaleDateString('es-ES', { 
+                          🔴 Check-out: {new Date(reservation.check_out).toLocaleDateString(dateLocaleBcp47, { 
                             weekday: 'long', 
                             year: 'numeric', 
                             month: 'long', 
