@@ -205,6 +205,9 @@ export async function middleware(req: NextRequest) {
     pathname.startsWith('/api/check-') ||
     pathname.startsWith('/api/onboarding/') ||
     pathname.startsWith('/api/admin/login') ||
+    pathname.startsWith('/api/auth/forgot-password') ||
+    pathname.startsWith('/api/auth/verify-recovery-code') ||
+    pathname.startsWith('/api/auth/reset-password') ||
     pathname.startsWith('/api/auth/verify') ||
     pathname.startsWith('/api/auth/mobile-login') ||
     pathname.startsWith('/api/auth/refresh') ||
@@ -284,6 +287,9 @@ export async function middleware(req: NextRequest) {
         pathname.startsWith('/api/onboarding/') ||
         pathname === '/api/admin/recover-onboarding' ||
         pathname.startsWith('/api/admin/login') ||
+        pathname.startsWith('/api/auth/forgot-password') ||
+        pathname.startsWith('/api/auth/verify-recovery-code') ||
+        pathname.startsWith('/api/auth/reset-password') ||
         pathname.startsWith('/api/auth/verify') ||
         pathname.startsWith('/api/auth/mobile-login') ||
         pathname.startsWith('/api/auth/refresh') ||
