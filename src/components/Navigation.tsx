@@ -9,6 +9,7 @@ import { useTenant, hasLegalModule } from '@/hooks/useTenant';
 import { useClientTranslations } from '@/hooks/useClientTranslations';
 import LanguageSwitcher from './LanguageSwitcher';
 import { locales, defaultLocale, type Locale } from '@/i18n/config';
+import { isMarketIntelligenceEnabled } from '@/lib/feature-flags';
 
 function getLocaleFromPathname(pathname: string): Locale {
   const segment = pathname.split('/').filter(Boolean)[0];
@@ -80,7 +81,9 @@ export default function Navigation() {
     { name: t('exportAEAT'), href: '/aeat', icon: FileText, requiresLegal: false },
     { name: t('offlineQueue'), href: '/offline-queue', icon: Download, requiresLegal: false },
     { name: t('audit'), href: '/audit', icon: Shield, requiresLegal: false },
-    { name: t('marketIntelligence'), href: '/market-intelligence', icon: BarChart3, requiresLegal: false },
+    ...(isMarketIntelligenceEnabled()
+      ? [{ name: t('marketIntelligence'), href: '/market-intelligence', icon: BarChart3, requiresLegal: false }]
+      : []),
     { name: t('referrals'), href: '/referrals', icon: UserPlus, requiresLegal: false },
     { name: t('settings'), href: '/settings', icon: Settings, requiresLegal: false },
   ];

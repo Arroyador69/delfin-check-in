@@ -7,6 +7,7 @@ import {
   ChevronLeft, ChevronRight, Star, PartyPopper, Sun, X, Save, Eye,
   DollarSign, Users, Percent, BedDouble, Calendar
 } from 'lucide-react';
+import { isMarketIntelligenceEnabled } from '@/lib/feature-flags';
 
 interface Holiday {
   date: string;
@@ -144,6 +145,9 @@ const MONTH_NAMES_ES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
   'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 
 export default function MarketIntelligencePage() {
+  if (!isMarketIntelligenceEnabled()) {
+    return null;
+  }
   const t = useTranslations('marketIntelligence');
   const locale = useLocale();
 
