@@ -78,4 +78,31 @@ export async function PUT(req: NextRequest) {
   }
 }
 
+export async function DELETE(req: NextRequest) {
+  try {
+    const tenantId = req.headers.get('x-tenant-id') || req.nextUrl.searchParams.get('tenant_id')
+    if (!tenantId) {
+      return NextResponse.json({ success: false, error: 'tenant_id requerido' }, { status: 400 })
+    }
+    await ensureTable()
+
+    const idRaw = req.nextUrl.searchParams.get('id')
+    const id = idRaw ? parseInt(idRaw, 10) : NaN
+    if (!Number.isFinite(id) || id <= 0) {
+      return NextResponse.json({ success: false, error: 'id inválido' }, { status: 400 })
+    }
+
+    const del = await sql`
+      DELETE FROM checkin_instructions
+      WHERE tenant_id = ${tenantId}::uuid AND id = ${id}
+    `
+    if (del.rowCount === 0) {
+      return NextResponse.json({ success: false, error: 'no encontrado' }, { status: 404 })
+    }
+    return NextResponse.json({ success: true })
+  } catch (e: any) {
+    console.error('❌ [checkin-instructions][DELETE]', e)
+    return NextResponse.json({ success: false, error: e.message || 'Error' }, { status: 500 })
+  }
+}
 

@@ -9,6 +9,7 @@ interface PaymentLink {
   id: number;
   link_code: string;
   link_name: string | null;
+  guest_locale?: string | null;
   resource_type: 'room' | 'property';
   resource_id: string;
   check_in_date: string;
@@ -65,7 +66,8 @@ export default function PaymentLinksPage() {
     expected_guests: '2',
     expires_at: '',
     max_uses: '',
-    internal_notes: ''
+    internal_notes: '',
+    guest_locale: 'es' as 'es' | 'en'
   });
 
   useEffect(() => {
@@ -81,10 +83,14 @@ export default function PaymentLinksPage() {
       if (data.success) {
         // Agregar URLs a los enlaces
         const baseUrl = process.env.NEXT_PUBLIC_BOOK_URL || 'https://book.delfincheckin.com';
-        const linksWithUrls = data.links.map((link: PaymentLink) => ({
-          ...link,
-          link_url: `${baseUrl}/pay/${link.link_code}`
-        }));
+        const linksWithUrls = data.links.map((link: PaymentLink) => {
+          const loc = link.guest_locale === 'en' ? 'en' : 'es';
+          const qs = loc === 'en' ? '?lang=en' : '';
+          return {
+            ...link,
+            link_url: `${baseUrl}/pay/${link.link_code}${qs}`
+          };
+        });
         setLinks(linksWithUrls);
       }
     } catch (error) {
@@ -198,7 +204,8 @@ export default function PaymentLinksPage() {
       expected_guests: '2',
       expires_at: '',
       max_uses: '',
-      internal_notes: ''
+      internal_notes: '',
+      guest_locale: 'es'
     });
   };
 
@@ -264,6 +271,21 @@ export default function PaymentLinksPage() {
           <h2 className="text-xl font-semibold mb-4">{t('createFormTitle')}</h2>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {t('guestLocaleLabel')}
+                </label>
+                <select
+                  value={formData.guest_locale}
+                  onChange={(e) => setFormData({ ...formData, guest_locale: e.target.value as 'es' | 'en' })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="es">{t('guestLocaleEs')}</option>
+                  <option value="en">{t('guestLocaleEn')}</option>
+                </select>
+                <p className="mt-1 text-xs text-gray-500">{t('guestLocaleHint')}</p>
+              </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   {t('linkNameLabel')}
@@ -483,6 +505,9 @@ export default function PaymentLinksPage() {
                     {t('tableNameCode')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    {t('tableGuestLocale')}
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     {t('tableResource')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -510,6 +535,9 @@ export default function PaymentLinksPage() {
                         {link.link_name || link.link_code}
                       </div>
                       <div className="text-xs text-gray-500">{link.link_code}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                      {link.guest_locale === 'en' ? t('guestLocaleEn') : t('guestLocaleEs')}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center text-sm text-gray-900">

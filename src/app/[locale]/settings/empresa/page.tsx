@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -43,6 +43,7 @@ export default function EmpresaConfigPage() {
   
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string>('');
+  const logoFileInputRef = useRef<HTMLInputElement>(null);
   
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -343,14 +344,27 @@ export default function EmpresaConfigPage() {
             <div className="space-y-4">
               <div>
                 <Label htmlFor="logo_file" className="text-gray-700 font-semibold text-base mb-2 block">{t('uploadLogo')}</Label>
-                <Input
+                <input
                   id="logo_file"
+                  ref={logoFileInputRef}
                   type="file"
                   accept="image/*"
                   onChange={handleLogoUpload}
-                  className="text-gray-900"
-                  style={{ color: '#111827' }}
+                  className="sr-only"
+                  aria-label={t('uploadLogo')}
                 />
+                <div className="flex flex-wrap items-center gap-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => logoFileInputRef.current?.click()}
+                  >
+                    {t('chooseFile')}
+                  </Button>
+                  <span className="text-sm text-gray-600">
+                    {logoFile ? logoFile.name : t('noFileSelected')}
+                  </span>
+                </div>
                 <p className="text-sm text-gray-500 mt-1">
                   {t('logoHint')}
                 </p>
@@ -358,11 +372,11 @@ export default function EmpresaConfigPage() {
               
               {logoPreview && (
                 <div>
-                  <Label className="text-gray-700 font-semibold text-base mb-2 block">Vista previa del logo:</Label>
+                  <Label className="text-gray-700 font-semibold text-base mb-2 block">{t('logoPreview')}</Label>
                   <div className="mt-2 p-4 border rounded-lg bg-gray-50">
                     <img 
                       src={logoPreview} 
-                      alt="Preview del logo" 
+                      alt="" 
                       className="max-h-20 max-w-40 object-contain"
                     />
                   </div>

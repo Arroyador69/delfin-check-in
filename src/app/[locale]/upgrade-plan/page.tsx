@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { ArrowLeft, Check, Crown, Zap, Loader2, Calculator, Star } from 'lucide-react';
@@ -222,36 +222,49 @@ function CheckoutForm({
   );
 }
 
-function PlanCalculator({ planId, onPriceChange }: { planId: PlanId; onPriceChange: (pricing: any) => void }) {
+function PlanCalculator({
+  planId,
+  roomCount,
+  onRoomCountChange,
+  onPriceChange,
+}: {
+  planId: PlanId;
+  roomCount: number;
+  onRoomCountChange: (n: number) => void;
+  onPriceChange: (pricing: any) => void;
+}) {
   const t = useTranslations('plans');
-  const [roomCount, setRoomCount] = useState(2);
   const [pricing, setPricing] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const money = (v: any) => Number(v ?? 0);
-
   const plan = UPGRADE_PLANS_CONFIG.find(p => p.id === planId);
-  if (!plan) return null;
 
   useEffect(() => {
-    calculatePrice();
-  }, [roomCount, planId]);
-
-  const calculatePrice = async () => {
-    setLoading(true);
-    try {
-      const response = await fetch(`/api/plans/calculate-price?planId=${planId}&roomCount=${roomCount}`);
-      const data = await response.json();
-      
-      if (data.success) {
-        setPricing(data.pricing);
-        onPriceChange(data.pricing);
+    if (!plan) return;
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      try {
+        const response = await fetch(`/api/plans/calculate-price?planId=${planId}&roomCount=${roomCount}`);
+        const data = await response.json();
+        if (!cancelled && data.success) {
+          setPricing(data.pricing);
+          onPriceChange(data.pricing);
+        }
+      } catch (error) {
+        console.error('Error calculando precio:', error);
+      } finally {
+        if (!cancelled) setLoading(false);
       }
-    } catch (error) {
-      console.error('Error calculando precio:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [roomCount, planId, plan, onPriceChange]);
+
+  if (!plan) return null;
+
+  const minRooms = Math.max(1, plan.maxRoomsIncluded);
 
   return (
     <div className="bg-gray-50 p-6 rounded-lg border-2 border-dashed border-gray-300">
@@ -267,9 +280,11 @@ function PlanCalculator({ planId, onPriceChange }: { planId: PlanId; onPriceChan
           </label>
           <input
             type="number"
-            min={plan.maxRoomsIncluded}
+            min={minRooms}
             value={roomCount}
-            onChange={(e) => setRoomCount(parseInt(e.target.value) || plan.maxRoomsIncluded)}
+            onChange={(e) =>
+              onRoomCountChange(Math.max(minRooms, parseInt(e.target.value, 10) || minRooms))
+            }
             className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
           />
           <p className="text-xs text-gray-500 mt-1">
@@ -327,6 +342,7 @@ export default function UpgradePlanPage() {
   const [pricing, setPricing] = useState<any>(null);
   const [roomCount, setRoomCount] = useState(2);
   const [loading, setLoading] = useState(true);
+  const appliedQueryRef = useRef(false);
 
   useEffect(() => {
     loadCurrentPlan();
@@ -339,6 +355,17 @@ export default function UpgradePlanPage() {
       
       if (data.success && data.tenant) {
         setCurrentPlan(data.tenant.plan_type || 'free');
+      }
+      try {
+        const roomsResponse = await fetch('/api/tenant/limits');
+        if (roomsResponse.ok) {
+          const roomsData = await roomsResponse.json();
+          if (roomsData.currentRooms && roomsData.currentRooms.length > 0) {
+            setRoomCount(Math.max(1, roomsData.currentRooms.length));
+          }
+        }
+      } catch {
+        /* ignore */
       }
     } catch (error) {
       console.error('Error cargando plan actual:', error);
@@ -353,12 +380,11 @@ export default function UpgradePlanPage() {
     }
     setSelectedPlan(planId);
     setShowCheckout(true);
-    setRoomCount(planId === 'checkin' ? 2 : planId === 'standard' ? 4 : planId === 'pro' ? 6 : 2);
   };
 
-  const handlePriceChange = (newPricing: any) => {
+  const handlePriceChange = useCallback((newPricing: any) => {
     setPricing(newPricing);
-  };
+  }, []);
 
   const handleSuccess = () => {
     alert(tUpgrade('successUpgrade'));
@@ -366,9 +392,31 @@ export default function UpgradePlanPage() {
     router.refresh();
   };
 
-  const availablePlans = currentPlan === 'checkin' 
-    ? UPGRADE_PLANS_CONFIG.filter(p => p.id === 'pro')
-    : UPGRADE_PLANS_CONFIG;
+  const availablePlans = useMemo(
+    () =>
+      currentPlan === 'checkin'
+        ? UPGRADE_PLANS_CONFIG.filter((p) => p.id === 'pro')
+        : UPGRADE_PLANS_CONFIG,
+    [currentPlan]
+  );
+
+  useEffect(() => {
+    if (loading || appliedQueryRef.current) return;
+    const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
+    const planParam = params.get('plan') as PlanId | null;
+    if (!planParam || !['checkin', 'standard', 'pro'].includes(planParam)) return;
+
+    const allowedIds = availablePlans.map((p) => p.id);
+    if (!allowedIds.includes(planParam) || planParam === currentPlan) return;
+
+    appliedQueryRef.current = true;
+    setSelectedPlan(planParam);
+    setShowCheckout(true);
+    const roomsParam = parseInt(params.get('rooms') || '', 10);
+    if (!Number.isNaN(roomsParam) && roomsParam >= 1) {
+      setRoomCount(roomsParam);
+    }
+  }, [loading, currentPlan, availablePlans]);
 
   if (loading) {
     return (
@@ -426,6 +474,8 @@ export default function UpgradePlanPage() {
 
                 <PlanCalculator 
                   planId={selectedPlan} 
+                  roomCount={roomCount}
+                  onRoomCountChange={setRoomCount}
                   onPriceChange={handlePriceChange}
                 />
 

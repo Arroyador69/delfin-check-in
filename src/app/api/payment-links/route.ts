@@ -38,6 +38,7 @@ export async function GET(req: NextRequest) {
         payment_completed_at,
         reservation_id,
         internal_notes,
+        guest_locale,
         created_at,
         updated_at
       FROM payment_links
@@ -82,8 +83,11 @@ export async function POST(req: NextRequest) {
       expected_guests = 2,
       expires_at,
       max_uses,
-      internal_notes
+      internal_notes,
+      guest_locale: guestLocaleRaw
     } = data;
+
+    const guest_locale = guestLocaleRaw === 'en' ? 'en' : 'es';
 
     // Los enlaces son siempre de un solo uso
     const finalMaxUses = 1;
@@ -161,6 +165,7 @@ export async function POST(req: NextRequest) {
         expires_at,
         max_uses,
         internal_notes,
+        guest_locale,
         is_active,
         payment_completed
       ) VALUES (
@@ -178,6 +183,7 @@ export async function POST(req: NextRequest) {
         ${expires_at ? `${expires_at}::timestamp with time zone` : null},
         ${finalMaxUses}::integer,
         ${internal_notes || null},
+        ${guest_locale},
         true,
         false
       )
@@ -186,9 +192,10 @@ export async function POST(req: NextRequest) {
 
     const newLink = result.rows[0];
 
-    // Construir URL del enlace
+    // Construir URL del enlace (lang en query por si el huésped abre antes de que la API devuelva locale)
     const baseUrl = process.env.NEXT_PUBLIC_BOOK_URL || 'https://book.delfincheckin.com';
-    const linkUrl = `${baseUrl}/pay/${newLink.link_code}`;
+    const langQs = guest_locale === 'en' ? '?lang=en' : '';
+    const linkUrl = `${baseUrl}/pay/${newLink.link_code}${langQs}`;
 
     return NextResponse.json({
       success: true,

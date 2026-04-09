@@ -699,7 +699,7 @@ export default function PropertiesManagement() {
 
                       <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-2">
-                          👤 Incluye (personas)
+                          👤 {t('form.includedGuestsLabel')}
                         </label>
                         <input
                           type="number"
@@ -783,7 +783,7 @@ export default function PropertiesManagement() {
 
                       <div>
                         <label className="block text-sm sm:text-base font-semibold text-gray-700 mb-2">
-                          👥 Precio por persona extra (€/noche)
+                          👥 {t('form.extraGuestFeeLabel')}
                         </label>
                         <input
                           type="number"
@@ -794,7 +794,7 @@ export default function PropertiesManagement() {
                           className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                         />
                         <p className="text-xs text-gray-500 mt-1">
-                          Se aplicará para huéspedes por encima de “Incluye”.
+                          {t('form.extraGuestFeeHint')}
                         </p>
                       </div>
                       

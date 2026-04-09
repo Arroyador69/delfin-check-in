@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import AdminLayout from '@/components/AdminLayout'
 import { useTranslations, useLocale } from 'next-intl'
+import { Trash2 } from 'lucide-react'
 
 interface SlotOption {
   id: string
@@ -20,6 +21,9 @@ export default function CheckinInstructionsPage() {
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<string>('')
   const [templates, setTemplates] = useState<Array<{ id:number; room_id:string|null; title:string|null; body_html:string; updated_at:string }>>([])
+  const [deleteFlow, setDeleteFlow] = useState<null | { id: number; label: string; room_id: string | null; phase: 1 | 2 }>(null)
+  const [deleteAck, setDeleteAck] = useState(false)
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
     const load = async () => {
@@ -99,6 +103,47 @@ export default function CheckinInstructionsPage() {
   const templateForRoom = (roomId: string) => templates.find(t => (t.room_id || '') === (roomId || ''))
   const hasTemplateSelected = !!templateForRoom(selectedRoomId)
 
+  const requestDeleteTemplate = (tpl: { id: number; room_id: string | null }) => {
+    const roomLabel = tpl.room_id
+      ? (slots.find(s => (s.room_id || '') === tpl.room_id)?.label || t('roomLabel', { id: tpl.room_id }))
+      : t('default')
+    setDeleteAck(false)
+    setDeleteFlow({ id: tpl.id, label: roomLabel, room_id: tpl.room_id, phase: 1 })
+  }
+
+  const executeDelete = async () => {
+    if (!deleteFlow || deleteFlow.phase !== 2 || !deleteAck) return
+    setDeleting(true)
+    setMessage('')
+    try {
+      const res = await fetch(`/api/settings/checkin-instructions?id=${deleteFlow.id}`, { method: 'DELETE' })
+      const data = await res.json()
+      if (data.success) {
+        setMessage(t('deleteSuccess'))
+        setDeleteFlow(null)
+        setDeleteAck(false)
+        const r = await fetch('/api/settings/checkin-instructions')
+        const d = await r.json()
+        if (d.success) {
+          setTemplates(d.items)
+          const sameSlot =
+            (deleteFlow.room_id || '') === (selectedRoomId || '') ||
+            (deleteFlow.room_id == null && selectedRoomId === '')
+          if (sameSlot) {
+            setTitle('')
+            setBody('')
+          }
+        }
+      } else {
+        setMessage(data.error || t('deleteError'))
+      }
+    } catch {
+      setMessage(t('deleteError'))
+    } finally {
+      setDeleting(false)
+    }
+  }
+
   return (
     <AdminLayout>
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
@@ -167,8 +212,12 @@ export default function CheckinInstructionsPage() {
                     </summary>
                     <div className="mt-2 p-3 bg-gray-50 rounded">
                       <div className="prose prose-sm max-w-none text-gray-800" dangerouslySetInnerHTML={{ __html: tpl.body_html.substring(0, 800) + (tpl.body_html.length>800?'…':'') }} />
-                      <div className="mt-2">
-                        <button onClick={() => { setSelectedRoomId(tpl.room_id || ''); setTitle(tpl.title || ''); setBody(tpl.body_html || ''); window.scrollTo({ top: 0, behavior: 'smooth' }) }} className="text-indigo-600 text-sm font-medium hover:underline">{t('editTemplate')}</button>
+                      <div className="mt-2 flex flex-wrap items-center gap-4">
+                        <button type="button" onClick={() => { setSelectedRoomId(tpl.room_id || ''); setTitle(tpl.title || ''); setBody(tpl.body_html || ''); window.scrollTo({ top: 0, behavior: 'smooth' }) }} className="text-indigo-600 text-sm font-medium hover:underline">{t('editTemplate')}</button>
+                        <button type="button" onClick={() => requestDeleteTemplate(tpl)} className="text-red-600 text-sm font-medium hover:underline inline-flex items-center gap-1">
+                          <Trash2 className="w-4 h-4" aria-hidden />
+                          {t('deleteTemplate')}
+                        </button>
                       </div>
                     </div>
                   </details>
@@ -178,6 +227,36 @@ export default function CheckinInstructionsPage() {
           </div>
         </div>
       </div>
+
+      {deleteFlow && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 space-y-4 border border-gray-200">
+            {deleteFlow.phase === 1 ? (
+              <>
+                <h3 className="text-lg font-semibold text-gray-900">{t('deleteStep1Title')}</h3>
+                <p className="text-sm text-gray-600">{t('deleteStep1Body', { label: deleteFlow.label })}</p>
+                <div className="flex justify-end gap-2 pt-2">
+                  <button type="button" className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50" onClick={() => { setDeleteFlow(null); setDeleteAck(false) }}>{t('deleteCancel')}</button>
+                  <button type="button" className="px-4 py-2 rounded-lg bg-amber-600 text-white hover:bg-amber-700" onClick={() => { setDeleteAck(false); setDeleteFlow({ ...deleteFlow, phase: 2 }) }}>{t('deleteStep1Continue')}</button>
+                </div>
+              </>
+            ) : (
+              <>
+                <h3 className="text-lg font-semibold text-gray-900">{t('deleteStep2Title')}</h3>
+                <p className="text-sm text-gray-600">{t('deleteStep2Body')}</p>
+                <label className="flex items-start gap-2 text-sm text-gray-800 cursor-pointer">
+                  <input type="checkbox" className="mt-1 rounded border-gray-300" checked={deleteAck} onChange={(e) => setDeleteAck(e.target.checked)} />
+                  <span>{t('deleteStep2Checkbox')}</span>
+                </label>
+                <div className="flex justify-end gap-2 pt-2">
+                  <button type="button" className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50" onClick={() => { setDeleteFlow({ ...deleteFlow, phase: 1 }); setDeleteAck(false) }}>{t('deleteCancel')}</button>
+                  <button type="button" disabled={!deleteAck || deleting} className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed" onClick={executeDelete}>{deleting ? t('deleting') : t('deleteStep2Submit')}</button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </AdminLayout>
   )
 }
