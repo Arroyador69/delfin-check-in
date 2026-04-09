@@ -11,6 +11,7 @@ import { isAdSenseConfigured, ADSENSE_CONFIG } from '@/lib/ads';
  */
 export default function AdFooter() {
   const { tenant, loading } = useTenant();
+  const t = useTranslations('pwa');
   const [adSenseReady, setAdSenseReady] = useState(false);
 
   // El script ya se carga en layout.tsx, solo verificar que esté listo
