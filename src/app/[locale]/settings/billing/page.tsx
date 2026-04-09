@@ -3,8 +3,9 @@
 import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { useLocale } from 'next-intl';
-import { CreditCard, TrendingUp, Calendar, AlertCircle, CheckCircle, Download, ExternalLink } from 'lucide-react';
+import { CreditCard, TrendingUp, Calendar, AlertCircle, CheckCircle, Download, ExternalLink, ChevronRight } from 'lucide-react';
 import DynamicPriceCalculator from '@/components/DynamicPriceCalculator';
+import { Link } from '@/i18n/navigation';
 
 type BillingPlanType = 'free' | 'checkin' | 'standard' | 'pro';
 type PaidPlanId = 'checkin' | 'standard' | 'pro';
@@ -697,13 +698,13 @@ export default function BillingPage() {
                 <p className="text-blue-800 text-sm mb-3">
                   {t('helpText')}
                 </p>
-                <a
-                  href="mailto:soporte@delfincheckin.com"
+                <Link
+                  href="/settings/support"
                   className="inline-flex items-center text-blue-600 hover:text-blue-700 font-medium text-sm"
                 >
                   {t('contactSupport')}
-                  <ExternalLink className="w-4 h-4 ml-1" />
-                </a>
+                  <ChevronRight className="w-4 h-4 ml-1" aria-hidden />
+                </Link>
               </div>
             </div>
           </div>
