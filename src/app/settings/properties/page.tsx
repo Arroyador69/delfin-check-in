@@ -87,7 +87,21 @@ export default function PropertiesManagement() {
   // Función para copiar al portapapeles
   const copyToClipboard = async (text: string, propertyId: number) => {
     try {
-      await navigator.clipboard.writeText(text);
+      if (navigator.clipboard?.writeText && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.position = 'fixed';
+        textarea.style.left = '-9999px';
+        textarea.style.top = '-9999px';
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+        const ok = document.execCommand('copy');
+        document.body.removeChild(textarea);
+        if (!ok) throw new Error('execCommand(copy) failed');
+      }
       setCopiedLink(propertyId);
       setTimeout(() => setCopiedLink(null), 2000);
     } catch (error) {
@@ -173,10 +187,7 @@ export default function PropertiesManagement() {
 
       const rawPhotos = (formData.photos || []) as string[];
       const safePhotos = rawPhotos.filter((p) => typeof p === 'string' && !p.startsWith('data:'));
-      const removed = rawPhotos.length - safePhotos.length;
-      if (removed > 0) {
-        alert('⚠️ Se han omitido imágenes (muy grandes) para poder guardar. Añádelas más tarde como URLs.');
-      }
+      const base64Photos = rawPhotos.filter((p) => typeof p === 'string' && p.startsWith('data:image/'));
       
       const response = await fetch(url, {
         method,
@@ -196,6 +207,28 @@ export default function PropertiesManagement() {
         : { success: false, error: await response.text() };
       
       if (data.success) {
+        const savedPropertyId = isUpdate ? editingProperty!.id : data.property_id;
+        if (base64Photos.length > 0 && savedPropertyId) {
+          const failed: number[] = [];
+          for (let i = 0; i < base64Photos.length; i++) {
+            const photo = base64Photos[i];
+            try {
+              const r = await fetch('/api/tenant/properties/photos', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ property_id: savedPropertyId, data_url: photo })
+              });
+              const ct = r.headers.get('content-type') || '';
+              const j = ct.includes('application/json') ? await r.json() : { success: false };
+              if (!r.ok || !j?.success) failed.push(i + 1);
+            } catch {
+              failed.push(i + 1);
+            }
+          }
+          if (failed.length > 0) {
+            alert(`⚠️ Algunas imágenes no se pudieron subir (${failed.join(', ')}). Prueba con imágenes más pequeñas.`);
+          }
+        }
         await loadProperties();
         setShowForm(false);
         setEditingProperty(null);
@@ -396,7 +429,10 @@ export default function PropertiesManagement() {
                         <Edit className="w-4 h-4" />
                       </button>
                       <button
-                        onClick={() => handleDelete(property.id)}
+                        onClick={() => {
+                          if (property.id != null) handleDelete(property.id);
+                        }}
+                        disabled={property.id == null}
                         className="p-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg transition-all duration-200 hover:scale-110"
                         title="Eliminar"
                       >
@@ -416,7 +452,7 @@ export default function PropertiesManagement() {
                   </div>
 
                   {/* Enlace de reserva directa */}
-                  {property.is_active && tenantId && (
+                  {property.is_active && tenantId && property.id != null && (
                     <div className="mt-4 pt-4 border-t border-gray-200">
                       <label className="block text-xs font-semibold text-gray-700 mb-2 flex items-center gap-2">
                         <LinkIcon className="w-4 h-4 text-blue-600" />
