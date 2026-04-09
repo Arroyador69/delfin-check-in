@@ -157,6 +157,14 @@ export async function POST(req: NextRequest) {
             AND dr.check_out_date > ${check_in_date}::date
           UNION ALL
           SELECT 1
+          FROM calendar_events ce
+          WHERE ce.tenant_id = ${tenantId}::uuid
+            AND ce.property_id = ${property_id}::int
+            AND ce.is_blocked = TRUE
+            AND ce.start_date < ${check_out_date}::date
+            AND ce.end_date > ${check_in_date}::date
+          UNION ALL
+          SELECT 1
           FROM property_availability pa
           WHERE pa.property_id = ${property_id}::int
             AND pa.date >= ${check_in_date}::date

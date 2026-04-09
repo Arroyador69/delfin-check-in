@@ -71,38 +71,27 @@ export async function GET(req: NextRequest) {
       return res;
     }
 
-    // Obtener tenant_id y room_id del slot
+    // tenant_id de la propiedad (no exigimos property_room_map para iCal / direct / manual)
     console.log('[availability-calendar] params', { propertyId, from, to });
     const mapping = await sql`
-      SELECT tp.tenant_id, prm.room_id
+      SELECT tp.tenant_id
       FROM tenant_properties tp
-      LEFT JOIN property_room_map prm
-        ON prm.tenant_id = tp.tenant_id AND prm.property_id = tp.id
       WHERE tp.id = ${propertyId}
       LIMIT 1
     `;
 
     if (mapping.rows.length === 0) {
-      console.warn('[availability-calendar] mapping not found for property', propertyId);
+      console.warn('[availability-calendar] property not found', propertyId);
       const res = NextResponse.json({ success: true, blockedDates: [] });
       Object.entries(corsHeaders(origin)).forEach(([k, v]) => res.headers.set(k, v));
       return res;
     }
 
     const tenantId = mapping.rows[0].tenant_id as string;
-    const roomId = mapping.rows[0].room_id ? String(mapping.rows[0].room_id) : null;
-    console.log('[availability-calendar] mapping', { tenantId, roomId });
-
-    // Si no hay roomId mapeado, no podemos calcular ocupación por reservations
-    if (!roomId) {
-      console.warn('[availability-calendar] roomId is null for property', propertyId);
-      const res = NextResponse.json({ success: true, blockedDates: [] });
-      Object.entries(corsHeaders(origin)).forEach(([k, v]) => res.headers.set(k, v));
-      return res;
-    }
+    console.log('[availability-calendar] tenant', { tenantId });
 
     // Recopilar días bloqueados desde 4 fuentes:
-    // - reservations (operacional)
+    // - reservations (operacional) vía property_room_map
     // - direct_reservations (reservas directas confirmadas)
     // - property_availability (bloqueos manuales)
     // - calendar_events (bloqueos iCal sincronizados)
@@ -112,9 +101,12 @@ export async function GET(req: NextRequest) {
       ),
       op AS (
         SELECT generate_series(r.check_in::date, (r.check_out::date - INTERVAL '1 day'), '1 day')::date AS d
-        FROM reservations r, rango g
-        WHERE r.tenant_id::uuid = ${tenantId}::uuid
-          AND r.room_id::text = ${roomId}::text
+        FROM reservations r
+        INNER JOIN property_room_map prm
+          ON prm.tenant_id = r.tenant_id AND prm.room_id = r.room_id
+        CROSS JOIN rango g
+        WHERE prm.property_id = ${propertyId}::int
+          AND r.tenant_id = ${tenantId}::uuid
           AND r.check_in  < g.t
           AND r.check_out > g.f
       ),

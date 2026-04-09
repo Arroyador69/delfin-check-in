@@ -286,7 +286,8 @@ export default function IntegrationsSettingsPage() {
           });
         }, 2000);
       } else {
-        alert(`❌ ${data.error || t('errorUnknown')}`);
+        const detail = typeof data.details === 'string' && data.details ? `: ${data.details}` : '';
+        alert(`❌ ${data.error || t('errorUnknown')}${detail}`);
       }
     } catch (error) {
       console.error('Error sincronizando calendario:', error);
@@ -330,6 +331,13 @@ export default function IntegrationsSettingsPage() {
             </div>
           </div>
         </div>
+
+        <Alert className="mb-6 border-amber-200 bg-amber-50/90">
+          <Info className="h-4 w-4 text-amber-800" />
+          <AlertDescription className="text-sm sm:text-base text-amber-950 font-medium leading-relaxed">
+            {t('icalBlocksMicrositeNotice')}
+          </AlertDescription>
+        </Alert>
 
         {/* Botón Agregar Calendario */}
         <div className="flex justify-center mb-6">

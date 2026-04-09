@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { Calendar as CalendarIcon, CalendarDays, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Calendar as CalendarIcon, CalendarDays, RefreshCw, ChevronLeft, ChevronRight, Info } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useClientTranslations } from '@/hooks/useClientTranslations'
 
@@ -208,6 +208,13 @@ export default function CalendarPage() {
             </span>
           </h1>
           <p className="text-gray-600 text-sm sm:text-lg">{t('subtitle') || 'Visualiza y gestiona la disponibilidad de tus propiedades'}</p>
+        </div>
+
+        <div className="mb-6 rounded-xl border border-blue-200 bg-blue-50/90 p-4 sm:p-5 shadow-sm">
+          <div className="flex gap-3">
+            <Info className="h-5 w-5 shrink-0 text-blue-700 mt-0.5" aria-hidden />
+            <p className="text-sm sm:text-base text-gray-800 leading-relaxed">{t('icalScopeNotice')}</p>
+          </div>
         </div>
 
         {/* Controles */}

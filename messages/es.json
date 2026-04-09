@@ -582,6 +582,7 @@
   "calendar": {
     "title": "Calendario",
     "subtitle": "Visualiza y gestiona la disponibilidad de tus propiedades",
+    "icalScopeNotice": "Este calendario muestra las reservas registradas en Delfín Check-in. Las reservas importadas desde calendarios externos (iCal) no aparecen aquí como ficha de reserva; su función es bloquear fechas en el micrositio de reservas y en los enlaces de pago.",
     "loading": "Cargando calendario...",
     "loadButton": "Cargar",
     "monthView": "Vista mensual",
@@ -1635,6 +1636,7 @@
       "copyHint": "Copia esta URL y úsala en Airbnb, Expedia, Booking.com u otras OTAs para sincronizar tus reservas directas.",
       "externalCalendarsTitle": "Calendarios Externos",
       "externalCalendarsDesc": "Calendarios de OTAs que sincronizan con tu sistema para bloquear fechas automáticamente",
+      "icalBlocksMicrositeNotice": "Los iCal que importas desde Airbnb, Booking u otras plataformas bloquean fechas en el micrositio público de reservas y en los enlaces de pago (reservas directas), para evitar reservas dobles. Esos bloqueos no se muestran como reservas completas en el calendario del panel.",
       "noExternalCalendars": "No hay calendarios externos",
       "noExternalCalendarsHint": "Agrega uno para sincronizar con OTAs",
       "propertyShort": "Propiedad {id}",

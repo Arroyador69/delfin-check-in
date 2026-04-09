@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
+import { fetchICalText, parseICalFeed } from '@/lib/ical';
 
 export const maxDuration = 60;
 export const dynamic = 'force-dynamic';
@@ -35,16 +36,7 @@ export async function GET(req: NextRequest) {
           WHERE id = ${cal.id}
         `;
 
-        const response = await fetch(cal.calendar_url, {
-          headers: { 'User-Agent': 'Delfin-Checkin-CalSync/2.0' },
-          signal: AbortSignal.timeout(15000),
-        });
-
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`);
-        }
-
-        const icalData = await response.text();
+        const icalData = await fetchICalText(cal.calendar_url, 20000);
         const events = parseICalFeed(icalData);
 
         await sql`
@@ -106,66 +98,4 @@ export async function GET(req: NextRequest) {
     console.error('[sync-calendars] Fatal:', error);
     return NextResponse.json({ success: false, error: (error as Error).message }, { status: 500 });
   }
-}
-
-function unfoldICalLines(raw: string): string[] {
-  const lines: string[] = [];
-  for (const line of raw.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n')) {
-    if (line.startsWith(' ') || line.startsWith('\t')) {
-      if (lines.length > 0) {
-        lines[lines.length - 1] += line.slice(1);
-      }
-    } else {
-      lines.push(line);
-    }
-  }
-  return lines;
-}
-
-function parseICalDate(raw: string): string {
-  const clean = raw.replace(/[^0-9T]/g, '').replace('T', '');
-  if (clean.length >= 8) {
-    return `${clean.slice(0, 4)}-${clean.slice(4, 6)}-${clean.slice(6, 8)}`;
-  }
-  return new Date().toISOString().slice(0, 10);
-}
-
-function extractDateValue(line: string): string {
-  const colonIdx = line.indexOf(':');
-  if (colonIdx === -1) return '';
-  return line.slice(colonIdx + 1).trim();
-}
-
-function parseICalFeed(icalData: string) {
-  const lines = unfoldICalLines(icalData);
-  const events: Array<{ uid: string; summary: string; description: string; start_date: string; end_date: string }> = [];
-  let cur: any = null;
-
-  for (const line of lines) {
-    const upper = line.toUpperCase();
-
-    if (upper === 'BEGIN:VEVENT') {
-      cur = { uid: '', summary: '', description: '', start_date: '', end_date: '' };
-    } else if (upper === 'END:VEVENT') {
-      if (cur && cur.uid && cur.start_date && cur.end_date) {
-        if (!cur.summary) cur.summary = 'Reserved';
-        events.push(cur);
-      }
-      cur = null;
-    } else if (cur) {
-      if (upper.startsWith('UID')) {
-        cur.uid = extractDateValue(line);
-      } else if (upper.startsWith('SUMMARY')) {
-        cur.summary = extractDateValue(line);
-      } else if (upper.startsWith('DESCRIPTION')) {
-        cur.description = extractDateValue(line);
-      } else if (upper.startsWith('DTSTART')) {
-        cur.start_date = parseICalDate(extractDateValue(line));
-      } else if (upper.startsWith('DTEND')) {
-        cur.end_date = parseICalDate(extractDateValue(line));
-      }
-    }
-  }
-
-  return events;
 }

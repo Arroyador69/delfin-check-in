@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useClientTranslations } from '@/hooks/useClientTranslations';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -43,6 +44,7 @@ interface ExternalCalendar {
 }
 
 export default function IntegrationsSettingsPage() {
+  const tSettings = useClientTranslations('settings');
   const [loading, setLoading] = useState(true);
   const [properties, setProperties] = useState<Property[]>([]);
   const [externalCalendars, setExternalCalendars] = useState<ExternalCalendar[]>([]);
@@ -284,7 +286,8 @@ export default function IntegrationsSettingsPage() {
           });
         }, 2000);
       } else {
-        alert(`❌ Error: ${data.error || 'Error desconocido'}`);
+        const detail = typeof data.details === 'string' && data.details ? `: ${data.details}` : '';
+        alert(`❌ Error: ${data.error || 'Error desconocido'}${detail}`);
       }
     } catch (error) {
       console.error('Error sincronizando calendario:', error);
@@ -330,6 +333,13 @@ export default function IntegrationsSettingsPage() {
             </div>
           </div>
         </div>
+
+        <Alert className="mb-6 border-amber-200 bg-amber-50/90">
+          <Info className="h-4 w-4 text-amber-800" />
+          <AlertDescription className="text-sm sm:text-base text-amber-950 font-medium leading-relaxed">
+            {tSettings('integrations.icalBlocksMicrositeNotice')}
+          </AlertDescription>
+        </Alert>
 
         {/* Botón Agregar Calendario */}
         <div className="flex justify-center mb-6">
