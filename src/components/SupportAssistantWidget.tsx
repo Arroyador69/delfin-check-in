@@ -7,9 +7,15 @@ import { MessageCircle, X, Send } from 'lucide-react';
 type ChatMsg = { role: 'user' | 'assistant'; text: string };
 
 type UsageInfo = {
-  remaining: number;
-  limit: number;
-  resetLabel: string;
+  eligible: boolean;
+  planType?: string;
+  remainingDaily: number;
+  remainingMonthly: number;
+  limitDaily: number;
+  limitMonthly: number;
+  resetLabelDay: string;
+  resetLabelMonth: string;
+  upgradePath?: string;
 } | null;
 
 function getScreenHint(): string {
@@ -51,13 +57,18 @@ export default function SupportAssistantWidget() {
     fetch('/api/support/usage')
       .then(r => r.json())
       .then(data => {
-        if (data?.success && data.remaining !== undefined) {
-          setUsage({
-            remaining: data.remaining,
-            limit: data.limit,
-            resetLabel: data.resetLabel || '',
-          });
-        }
+        if (!data?.success) return;
+        setUsage({
+          eligible: !!data.eligible,
+          planType: data.planType,
+          remainingDaily: Number(data.remainingDaily ?? 0),
+          remainingMonthly: Number(data.remainingMonthly ?? 0),
+          limitDaily: Number(data.limitDaily ?? 0),
+          limitMonthly: Number(data.limitMonthly ?? 0),
+          resetLabelDay: String(data.resetLabelDay ?? ''),
+          resetLabelMonth: String(data.resetLabelMonth ?? ''),
+          upgradePath: String(data.upgradePath ?? `/${locale}/plans`),
+        });
       })
       .catch(() => setUsage(null));
   }, [open]);
@@ -69,6 +80,7 @@ export default function SupportAssistantWidget() {
   const send = async () => {
     const text = input.trim();
     if (!text || loading) return;
+    if (usage && usage.eligible === false) return;
 
     setMsgs(prev => [...prev, { role: 'user', text }]);
     setInput('');
@@ -88,21 +100,37 @@ export default function SupportAssistantWidget() {
       if (!res.ok || !data?.success) {
         const err =
           data?.error ||
-          (res.status === 429 ? t('rateLimited') : t('genericError')) ||
+          (res.status === 403 ? t('lockedBody') : res.status === 429 ? t('rateLimited') : t('genericError')) ||
           'No se pudo responder ahora.';
         setMsgs(prev => [...prev, { role: 'assistant', text: String(err) }]);
-        if (data?.code === 'MONTHLY_LIMIT' || res.status === 429) {
+        if (data?.code === 'MONTHLY_LIMIT' || data?.code === 'DAILY_LIMIT' || res.status === 429) {
           fetch('/api/support/usage').then(r => r.json()).then(d => {
-            if (d?.success) setUsage({ remaining: d.remaining, limit: d.limit, resetLabel: d.resetLabel || '' });
+            if (d?.success) {
+              setUsage({
+                eligible: !!d.eligible,
+                planType: d.planType,
+                remainingDaily: Number(d.remainingDaily ?? 0),
+                remainingMonthly: Number(d.remainingMonthly ?? 0),
+                limitDaily: Number(d.limitDaily ?? 0),
+                limitMonthly: Number(d.limitMonthly ?? 0),
+                resetLabelDay: String(d.resetLabelDay ?? ''),
+                resetLabelMonth: String(d.resetLabelMonth ?? ''),
+                upgradePath: String(d.upgradePath ?? `/${locale}/plans`),
+              });
+            }
           }).catch(() => {});
         }
         return;
       }
       if (data?.usage) {
         setUsage({
-          remaining: data.usage.remaining,
-          limit: data.usage.limit,
-          resetLabel: data.usage.resetLabel || '',
+          ...(usage || { eligible: true, upgradePath: `/${locale}/plans` }),
+          remainingDaily: Number(data.usage.remainingDaily ?? usage?.remainingDaily ?? 0),
+          remainingMonthly: Number(data.usage.remainingMonthly ?? usage?.remainingMonthly ?? 0),
+          limitDaily: Number(data.usage.limitDaily ?? usage?.limitDaily ?? 0),
+          limitMonthly: Number(data.usage.limitMonthly ?? usage?.limitMonthly ?? 0),
+          resetLabelDay: String(data.usage.resetLabelDay ?? usage?.resetLabelDay ?? ''),
+          resetLabelMonth: String(data.usage.resetLabelMonth ?? usage?.resetLabelMonth ?? ''),
         });
       }
       setMsgs(prev => [...prev, { role: 'assistant', text: String(data.text) }]);
@@ -140,15 +168,23 @@ export default function SupportAssistantWidget() {
               </p>
               {usage !== null && (
                 <p className="text-[11px] text-gray-600 mt-1">
-                  {usage.remaining <= 50 && usage.remaining > 0 && (
+                  {usage.eligible === false ? (
+                    <span className="text-amber-600 font-medium">
+                      {t('lockedTitle') || 'Asistente bloqueado'}
+                    </span>
+                  ) : usage.remainingMonthly <= 20 && usage.remainingMonthly > 0 ? (
                     <span className="text-amber-600 font-medium">
                       {t('usageWarning') || 'Te quedan pocos mensajes este mes. '}
                     </span>
+                  ) : null}
+                  {usage.eligible !== false && (
+                    <>
+                      {t('usageRemaining') || 'Quedan'}{' '}
+                      <strong>{usage.remainingMonthly}</strong>{' '}
+                      {t('usageUntil') || 'mensajes hasta'}{' '}
+                      {usage.resetLabelMonth}.
+                    </>
                   )}
-                  {t('usageRemaining') || 'Quedan'}{' '}
-                  <strong>{usage.remaining}</strong>{' '}
-                  {t('usageUntil') || 'mensajes hasta'}{' '}
-                  {usage.resetLabel}.
                 </p>
               )}
             </div>
@@ -180,6 +216,18 @@ export default function SupportAssistantWidget() {
               </div>
             ))}
             <div ref={bottomRef} />
+            {usage?.eligible === false && (
+              <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-xl p-3 text-sm">
+                <div className="font-semibold">{t('lockedTitle') || 'Disponible en Plan Check-in'}</div>
+                <div className="mt-1">{t('lockedBody') || 'Mejora tu plan para poder hablar con el asistente.'}</div>
+                <a
+                  href={usage.upgradePath || `/${locale}/plans`}
+                  className="inline-flex mt-2 items-center justify-center px-3 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 text-sm font-medium"
+                >
+                  {t('upgradeCta') || 'Ver planes'}
+                </a>
+              </div>
+            )}
           </div>
 
           <div className="p-3 border-t bg-gray-50">
@@ -190,21 +238,21 @@ export default function SupportAssistantWidget() {
                 onKeyDown={e => e.key === 'Enter' && send()}
                 placeholder={t('placeholder') || 'Escribe tu pregunta...'}
                 className="flex-1 px-3 py-2 rounded-xl border border-gray-300 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                disabled={loading}
+                disabled={loading || usage?.eligible === false}
               />
               <button
                 type="button"
                 onClick={send}
-                disabled={loading || !input.trim()}
+                disabled={loading || usage?.eligible === false || !input.trim()}
                 className="px-3 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
                 aria-label={t('send') || 'Enviar'}
               >
                 <Send className="h-4 w-4" />
               </button>
             </div>
-            {usage !== null && usage.remaining <= 0 && (
+            {usage !== null && usage.eligible !== false && (usage.remainingDaily <= 0 || usage.remainingMonthly <= 0) && (
               <p className="mt-2 text-[11px] text-amber-600 font-medium">
-                {t('usageLimitReached') || 'Límite mensual alcanzado. Se reinicia el próximo mes.'}
+                {t('usageLimitReached') || 'Límite alcanzado. Se reinicia próximamente.'}
               </p>
             )}
             <p className="mt-2 text-[11px] text-gray-500">

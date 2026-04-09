@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { verifyToken } from '@/lib/auth';
 import { getKBForLocale } from '@/lib/support';
-import { getUsage, incrementUsage, MONTHLY_LIMIT } from '@/lib/support/usage';
+import { getUsage, incrementUsage } from '@/lib/support/usage';
+import { getTenantById, getPlanConfig } from '@/lib/tenant';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -97,19 +98,38 @@ export async function POST(req: NextRequest) {
     }
 
     const payload = verifyToken(authToken);
-    if (!payload?.tenantId) {
+    if (!payload?.tenantId || !payload?.userId) {
       return NextResponse.json({ success: false, error: 'No autorizado' }, { status: 401 });
+    }
+
+    const tenant = await getTenantById(payload.tenantId);
+    const planType = tenant ? getPlanConfig(tenant).planType : 'free';
+    const eligible = planType === 'checkin' || planType === 'standard' || planType === 'pro';
+
+    if (!eligible) {
+      return NextResponse.json(
+        {
+          success: false,
+          code: 'PLAN_REQUIRED',
+          error: 'El asistente está disponible solo en el Plan Check-in o superior.',
+          upgradePath: '/es/plans',
+        },
+        { status: 403 }
+      );
     }
 
     let usage: Awaited<ReturnType<typeof getUsage>> | null = null;
     try {
-      usage = await getUsage(payload.tenantId);
-      if (usage.remaining <= 0) {
+      usage = await getUsage({ tenantId: payload.tenantId, userId: payload.userId, planType, locale: 'es-ES' });
+      if (usage.remainingDaily <= 0 || usage.remainingMonthly <= 0) {
         return NextResponse.json(
           {
             success: false,
-            error: `Has alcanzado el límite de ${MONTHLY_LIMIT} mensajes este mes. Se reinicia en ${usage.resetLabel}.`,
-            code: 'MONTHLY_LIMIT',
+            error:
+              usage.remainingDaily <= 0
+                ? `Has alcanzado el límite diario. Se reinicia el ${usage.resetLabelDay}.`
+                : `Has alcanzado el límite mensual. Se reinicia en ${usage.resetLabelMonth}.`,
+            code: usage.remainingDaily <= 0 ? 'DAILY_LIMIT' : 'MONTHLY_LIMIT',
           },
           { status: 429 }
         );
@@ -148,7 +168,16 @@ export async function POST(req: NextRequest) {
         text: cached.text,
         cached: true,
         model: process.env.OPENAI_SUPPORT_MODEL || 'gpt-4o-mini',
-        ...(usage && { usage: { remaining: usage.remaining, limit: usage.limit, resetLabel: usage.resetLabel } }),
+        ...(usage && {
+          usage: {
+            remainingDaily: usage.remainingDaily,
+            remainingMonthly: usage.remainingMonthly,
+            limitDaily: usage.limitDaily,
+            limitMonthly: usage.limitMonthly,
+            resetLabelDay: usage.resetLabelDay,
+            resetLabelMonth: usage.resetLabelMonth,
+          },
+        }),
       });
     }
 
@@ -194,7 +223,7 @@ export async function POST(req: NextRequest) {
 
     let newUsage: Awaited<ReturnType<typeof getUsage>> | null = null;
     try {
-      newUsage = await incrementUsage(payload.tenantId);
+      newUsage = await incrementUsage({ tenantId: payload.tenantId, userId: payload.userId, planType, locale: 'es-ES' });
     } catch (e) {
       console.warn('[support/chat] increment usage failed:', e);
     }
@@ -206,9 +235,12 @@ export async function POST(req: NextRequest) {
       model,
       ...(newUsage && {
         usage: {
-          remaining: newUsage.remaining,
-          limit: newUsage.limit,
-          resetLabel: newUsage.resetLabel,
+          remainingDaily: newUsage.remainingDaily,
+          remainingMonthly: newUsage.remainingMonthly,
+          limitDaily: newUsage.limitDaily,
+          limitMonthly: newUsage.limitMonthly,
+          resetLabelDay: newUsage.resetLabelDay,
+          resetLabelMonth: newUsage.resetLabelMonth,
         },
       }),
     });

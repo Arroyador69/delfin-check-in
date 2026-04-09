@@ -2540,7 +2540,10 @@
     "usageRemaining": "Quedan",
     "usageUntil": "mensajes hasta",
     "usageWarning": "Te quedan pocos mensajes este mes. ",
-    "usageLimitReached": "Límite mensual alcanzado. Se reinicia el próximo mes."
+    "usageLimitReached": "Límite alcanzado. Se reinicia próximamente.",
+    "lockedTitle": "Disponible en Plan Check-in",
+    "lockedBody": "En el Plan Gratis puedes verlo, pero para hablar con el asistente necesitas mejorar tu plan.",
+    "upgradeCta": "Ver planes"
   },
   "partes": {
     "title": "Generar XML del día",

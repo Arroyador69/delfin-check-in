@@ -2474,7 +2474,10 @@
     "usageRemaining": "Ti restano",
     "usageUntil": "messaggi fino a",
     "usageWarning": "Ti restano pochi messaggi questo mese. ",
-    "usageLimitReached": "Limite mensile raggiunto. Si reintegra il mese prossimo."
+    "usageLimitReached": "Limite raggiunto. Si ripristina a breve.",
+    "lockedTitle": "Disponibile con il piano Check-in",
+    "lockedBody": "Con il piano gratuito puoi vederlo, ma per parlare con l’assistente devi passare a un piano a pagamento.",
+    "upgradeCta": "Vedi piani"
   },
   "partes": {
     "title": "Genera XML del giorno",

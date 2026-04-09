@@ -2342,7 +2342,10 @@
     "usageRemaining": "Restam-lhe",
     "usageUntil": "mensagens até",
     "usageWarning": "Restam-lhe poucas mensagens este mês. ",
-    "usageLimitReached": "Limite mensal atingido. Reinicia no próximo mês."
+    "usageLimitReached": "Limite atingido. Reinicia em breve.",
+    "lockedTitle": "Disponível no plano Check-in",
+    "lockedBody": "No plano gratuito pode vê-lo, mas para falar com o assistente precisa de atualizar o seu plano.",
+    "upgradeCta": "Ver planos"
   },
   "partes": {
     "title": "Gerar XML do dia",
