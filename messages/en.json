@@ -122,7 +122,27 @@
     "planCardPricingFree": "€0/mo (no charge) · no VAT",
     "planCardPricingPaid": "{ex} €/mo (ex. VAT) + VAT {rate}%: {vat} € → Total {total} €/mo (incl. VAT)",
     "planCardFeaturesFallback": "See Upgrade plan for more features",
-    "unitsAvailableToAdd": "✅ {remaining} units available to add",
+    "planFeatures": {
+      "unit": {
+        "roomSingular": "room",
+        "roomPlural": "rooms",
+        "apartmentSingular": "apartment",
+        "apartmentPlural": "apartments"
+      },
+      "free": {
+        "includedOneRoom": "1 room included",
+        "includedOneApartment": "1 apartment included",
+        "basicSupport": "Basic email support"
+      },
+      "paid": {
+        "subscription": "Subscription: {count} {units}",
+        "mirIncluded": "Digital guest registration (MIR) included",
+        "fullPms": "Full property management",
+        "noAds": "Ad-free experience",
+        "directBooking": "Direct bookings (lower platform fee)"
+      }
+    },
+    "unitsAvailableToAdd": "{remaining, plural, one {✅ # unit available to add} other {✅ # units available to add}}",
     "unlimited": "Unlimited",
     "available": "{count} available",
     "limitReached": "⚠️ Limit reached: You've used all units in your plan ({used}/{max}).",
@@ -141,20 +161,23 @@
     "unitLimitUpgradeToPro": "Upgrade to PRO",
     "unitLimitDismiss": "Remind me later",
     "mirModule": {
-      "title": "💰 MIR Module - Only €2/month (+ VAT)",
-      "reminder": "Reminder:",
-      "mandatory": "Automatic submission of guest forms to the Ministry of Interior is",
-      "mandatoryBold": "mandatory",
-      "mandatoryLocation": "in Spain.",
-      "description": "For only",
+      "title": "💰 MIR add-on — from €2/month (+ VAT)",
+      "reminder": "Heads-up:",
+      "mandatory": "In Spain, sending traveller registration data to the Ministry of the Interior is",
+      "mandatoryBold": "legally required",
+      "mandatoryLocation": "for tourist accommodation.",
+      "description": "For just",
       "priceBold": "€2/month (+ 21% VAT)",
-      "descriptionSuffix": "you can activate the MIR module, which includes automatic digital check-in and automatic submission of forms to the government.",
-      "activateButton": "Activate MIR Module"
+      "descriptionSuffix": "you can turn on the MIR add-on: digital check-in for guests and automatic filing with the authorities.",
+      "activateButton": "Enable MIR add-on"
     },
     "videoTutorial": {
-      "title": "Video Tutorial - User Panel",
-      "description": "Learn how to use all Delfín Check-in features",
-      "watchOnYouTube": "Watch on YouTube"
+      "title": "Video walkthrough",
+      "description": "A quick tour of the main tools in your Delfín Check-in panel.",
+      "watchOnYouTube": "Open on YouTube",
+      "hide": "Hide video",
+      "show": "Show video",
+      "collapsedHint": "The tutorial is minimised to save space. You can open it again any time."
     },
     "periodFilters": {
       "title": "📊 Period Filters",
@@ -642,9 +665,9 @@
       "item5": "Time zone: Europe/Madrid (CET/CEST)."
     }
   },
-  "guest Registrations": {
-    "title": "Form Records",
-    "subtitle": "Management and XML generation for Ministry of Interior",
+  "guestRegistrations": {
+    "title": "Guest registrations",
+    "subtitle": "Review traveller forms and download XML for the Spanish Ministry of the Interior",
     "loading": "Loading traveler records...",
     "loadingDatabase": "Connecting to database",
     "noRegistrations": "No records yet",
@@ -699,7 +722,7 @@
     "viewXML": "View XML",
     "downloadForm": "Download form",
     "searchPlaceholder": "Reference, name, surname...",
-    "freePlanBanner": "On the free plan, automatic submission to the Ministry of the Interior is not included. Data is saved here and you can download the XML to upload it manually to the Ministry.",
+    "freePlanBanner": "The free plan does not include automatic filing with the Spanish Ministry of the Interior. Registrations are still stored in Delfín—you can download the official XML whenever you need it and upload it through the government portal.",
     "formUrl": "Public traveler registration link",
     "formUrlDescription": "Share this link with your guests. It opens the official traveler registration form with your property context; validation errors appear next to each field in the language selected on the form (ES/EN/FR/RU).",
     "copyUrl": "Copy",

@@ -122,7 +122,27 @@
     "planCardPricingFree": "0 €/mes (sin cargo) · sin IVA",
     "planCardPricingPaid": "{ex} €/mes (sin IVA) + IVA {rate}%: {vat} € → Total {total} €/mes (IVA incl.)",
     "planCardFeaturesFallback": "Consulta Mejorar plan para ampliar funciones",
-    "unitsAvailableToAdd": "✅ {remaining} unidades disponibles para añadir",
+    "planFeatures": {
+      "unit": {
+        "roomSingular": "habitación",
+        "roomPlural": "habitaciones",
+        "apartmentSingular": "apartamento",
+        "apartmentPlural": "apartamentos"
+      },
+      "free": {
+        "includedOneRoom": "1 habitación incluida",
+        "includedOneApartment": "1 apartamento incluido",
+        "basicSupport": "Soporte básico por correo"
+      },
+      "paid": {
+        "subscription": "Suscripción: {count} {units}",
+        "mirIncluded": "Check-in digital (MIR) incluido",
+        "fullPms": "PMS completo",
+        "noAds": "Sin anuncios",
+        "directBooking": "Reservas directas (comisión reducida)"
+      }
+    },
+    "unitsAvailableToAdd": "{remaining, plural, one {✅ # unidad disponible para añadir} other {✅ # unidades disponibles para añadir}}",
     "unlimited": "Ilimitadas",
     "available": "{count} disponibles",
     "limitReached": "⚠️ Límite alcanzado: Has usado todas las unidades de tu plan ({used}/{max}).",
@@ -152,12 +172,12 @@
       "activateButton": "Activar Módulo MIR"
     },
     "videoTutorial": {
-      "title": "Video Tutorial - Panel de Usuario",
-      "description": "Aprende a usar todas las funcionalidades de Delfín Check-in",
-      "watchOnYouTube": "Ver en YouTube",
-      "hide": "Ocultar",
-      "show": "Ver tutorial",
-      "collapsedHint": "Tutorial del dashboard"
+      "title": "Video tutorial del panel",
+      "description": "Recorrido breve por las herramientas principales de Delfín Check-in.",
+      "watchOnYouTube": "Abrir en YouTube",
+      "hide": "Ocultar vídeo",
+      "show": "Mostrar vídeo",
+      "collapsedHint": "El tutorial está minimizado para no ocupar espacio. Puedes volver a abrirlo cuando quieras."
     },
     "periodFilters": {
       "title": "📊 Filtros de Período",
@@ -682,8 +702,8 @@
     }
   },
   "guestRegistrations": {
-    "title": "Registros de Formularios",
-    "subtitle": "Gestión y generación de XML para Ministerio del Interior",
+    "title": "Registro de viajeros",
+    "subtitle": "Consulta los partes de viajeros y genera los XML para el Ministerio del Interior",
     "loading": "Cargando registros de viajeros...",
     "loadingDatabase": "Conectando con la base de datos",
     "noRegistrations": "No hay registros aún",

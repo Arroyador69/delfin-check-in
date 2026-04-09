@@ -122,7 +122,27 @@
     "planCardPricingFree": "0 €/mês (sem custo) · sem IVA",
     "planCardPricingPaid": "{ex} €/mês (sem IVA) + IVA {rate}%: {vat} € → Total {total} €/mês (IVA incl.)",
     "planCardFeaturesFallback": "Veja Melhorar plano para mais funções",
-    "unitsAvailableToAdd": "✅ {remaining} unidades disponíveis para adicionar",
+    "planFeatures": {
+      "unit": {
+        "roomSingular": "quarto",
+        "roomPlural": "quartos",
+        "apartmentSingular": "apartamento",
+        "apartmentPlural": "apartamentos"
+      },
+      "free": {
+        "includedOneRoom": "1 quarto incluído",
+        "includedOneApartment": "1 apartamento incluído",
+        "basicSupport": "Apoio básico por email"
+      },
+      "paid": {
+        "subscription": "Subscrição: {count} {units}",
+        "mirIncluded": "Check-in digital (MIR) incluído",
+        "fullPms": "PMS completo",
+        "noAds": "Sem anúncios",
+        "directBooking": "Reservas diretas (comissão reduzida)"
+      }
+    },
+    "unitsAvailableToAdd": "{remaining, plural, one {✅ # unidade disponível para adicionar} other {✅ # unidades disponíveis para adicionar}}",
     "unlimited": "Ilimitado",
     "available": "{count} disponíveis",
     "limitReached": "⚠️ Limite atingido: utilizou todos os quartos do seu plano ({used}/{max}).",
@@ -152,9 +172,12 @@
       "activateButton": "Ativar Módulo MIR"
     },
     "videoTutorial": {
-      "title": "Video Tutorial - Painel de Utilizador",
-      "description": "Aprenda a usar todas as funcionalidades do Delfín Check-in",
-      "watchOnYouTube": "Ver no YouTube"
+      "title": "Vídeo de apresentação",
+      "description": "Um tour rápido pelas ferramentas principais do painel Delfín Check-in.",
+      "watchOnYouTube": "Abrir no YouTube",
+      "hide": "Ocultar vídeo",
+      "show": "Mostrar vídeo",
+      "collapsedHint": "O tutorial está minimizado para poupar espaço. Pode voltar a abri-lo quando quiser."
     },
     "periodFilters": {
       "title": "📊 Filtros de período",

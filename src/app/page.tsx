@@ -21,6 +21,7 @@ import {
   safeGuestCount,
   localTodayYMD,
 } from '@/lib/dashboard-period';
+import { localizedPlanFeatureSummary } from '@/lib/dashboard-plan-features';
 
 type FilterPeriod = DashboardFilterPeriod;
 
@@ -326,20 +327,25 @@ export default function HomePage() {
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div className="flex-1">
                 <h3 className="text-lg sm:text-xl font-bold text-blue-900 mb-2">
-                  💰 Módulo MIR - Solo 2€/mes (+ IVA)
+                  {t('mirModule.title')}
                 </h3>
                 <p className="text-sm sm:text-base text-blue-800 mb-2">
-                  <strong>Recordatorio:</strong> El envío automático de formularios de huéspedes al Ministerio del Interior es <strong>obligatorio</strong> en España.
+                  <strong>{t('mirModule.reminder')}</strong>{' '}
+                  {t('mirModule.mandatory')}{' '}
+                  <strong>{t('mirModule.mandatoryBold')}</strong>{' '}
+                  {t('mirModule.mandatoryLocation')}
                 </p>
                 <p className="text-sm sm:text-base text-blue-700">
-                  Por solo <strong>2€/mes (+ IVA 21%)</strong> puedes tener el módulo MIR activado, que incluye check-in digital automático y envío automático de formularios al gobierno.
+                  {t('mirModule.description')}{' '}
+                  <strong>{t('mirModule.priceBold')}</strong>{' '}
+                  {t('mirModule.descriptionSuffix')}
                 </p>
               </div>
               <Link
                 href="/upgrade-plan"
                 className="whitespace-nowrap bg-blue-600 text-white px-4 py-2 sm:px-6 sm:py-3 rounded-lg hover:bg-blue-700 font-semibold text-sm sm:text-base transition-colors shadow-md hover:shadow-lg"
               >
-                Activar Módulo MIR
+                {t('mirModule.activateButton')}
               </Link>
             </div>
           </div>
@@ -354,18 +360,13 @@ export default function HomePage() {
                 <div className="flex-1 min-w-0">
                   <h2 className="text-base sm:text-lg font-semibold text-gray-900 truncate">
                     {tenant.tenant?.name || 'Admin Default'} —{' '}
-                    {(
-                      {
-                        free: 'Plan Básico (Gratis)',
-                        checkin: 'Plan Check-in',
-                        standard: 'Plan Standard',
-                        pro: 'Plan Pro',
-                      } as const
-                    )[
-                      ['free', 'checkin', 'standard', 'pro'].includes(String(tenant.tenant?.plan_type))
-                        ? (tenant.tenant?.plan_type as 'free' | 'checkin' | 'standard' | 'pro')
-                        : 'free'
-                    ]}
+                    {t(
+                      `planTypeNames.${
+                        ['free', 'checkin', 'standard', 'pro'].includes(String(tenant.tenant?.plan_type))
+                          ? String(tenant.tenant?.plan_type)
+                          : 'free'
+                      }`
+                    )}
                   </h2>
                   <p className="text-xs sm:text-sm text-gray-600 break-words">
                     {(() => {
@@ -376,11 +377,16 @@ export default function HomePage() {
                       const total = tenant.tenant?.plan_price_total ?? tenant.tenant?.plan_price ?? 0;
                       const line =
                         pt === 'free' || Number(total) === 0
-                          ? '0 €/mes (sin cargo) · sin IVA'
-                          : `${Number(ex ?? 0).toFixed(2)} €/mes (sin IVA) + IVA ${vatRate}%: ${Number(vatAmt ?? 0).toFixed(2)} € → Total ${Number(total).toFixed(2)} €/mes (IVA incl.)`;
-                      const feats =
-                        tenant.tenant?.plan_features?.join(' • ') ||
-                        'Consulta Mejorar plan para ampliar funciones';
+                          ? t('planCardPricingFree')
+                          : t('planCardPricingPaid', {
+                              ex: Number(ex ?? 0).toFixed(2),
+                              rate: vatRate,
+                              vat: Number(vatAmt ?? 0).toFixed(2),
+                              total: Number(total).toFixed(2),
+                            });
+                      const feats = tenant.tenant
+                        ? localizedPlanFeatureSummary(t, tenant.tenant)
+                        : t('planCardFeaturesFallback');
                       return `${line} • ${feats}`;
                     })()}
                   </p>
@@ -391,8 +397,8 @@ export default function HomePage() {
                   <div className="text-xs sm:text-sm text-gray-600">
                     {(tenant.tenant?.config as { lodgingType?: string } | undefined)?.lodgingType ===
                     'apartamentos'
-                      ? 'Uso de apartamentos'
-                      : 'Uso de habitaciones'}
+                      ? t('roomUsageApartments')
+                      : t('roomUsage')}
                   </div>
                   <div className="text-base sm:text-lg font-bold text-gray-900">
                     {tenant.stats?.rooms_used || 0}/{tenant.tenant?.max_rooms === -1 ? '∞' : (tenant.tenant?.max_rooms || 2)}
@@ -461,10 +467,10 @@ export default function HomePage() {
               <div className="text-2xl sm:text-3xl">🎥</div>
               <div className="flex-1">
                 <h2 className="text-base sm:text-lg font-semibold text-gray-900">
-                  Video Tutorial - Panel de Usuario
+                  {t('videoTutorial.title')}
                 </h2>
                 <p className="text-xs sm:text-sm text-gray-600 mt-1">
-                  Aprende a usar todas las funcionalidades de Delfín Check-in
+                  {t('videoTutorial.description')}
                 </p>
               </div>
             </div>
@@ -480,7 +486,7 @@ export default function HomePage() {
                   borderRadius: '12px'
                 }}
                 src="https://www.youtube.com/embed/Ttr6aefFLbg"
-                title="Video Tutorial - Panel de Usuario Delfín Check-in"
+                title={t('videoTutorial.title')}
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
               ></iframe>
@@ -492,7 +498,7 @@ export default function HomePage() {
                 rel="noopener noreferrer"
                 className="text-sm text-blue-600 hover:text-blue-700 font-medium inline-flex items-center gap-1"
               >
-                Ver en YouTube
+                {t('videoTutorial.watchOnYouTube')}
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                 </svg>

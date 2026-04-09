@@ -21,6 +21,7 @@ import {
   safeGuestCount,
   localTodayYMD,
 } from '@/lib/dashboard-period';
+import { localizedPlanFeatureSummary } from '@/lib/dashboard-plan-features';
 
 type FilterPeriod = DashboardFilterPeriod;
 
@@ -341,20 +342,25 @@ export default function HomePage() {
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div className="flex-1">
                 <h3 className="text-lg sm:text-xl font-bold text-blue-900 mb-2">
-                  💰 Módulo MIR - Solo 2€/mes (+ IVA)
+                  {t('mirModule.title')}
                 </h3>
                 <p className="text-sm sm:text-base text-blue-800 mb-2">
-                  <strong>Recordatorio:</strong> El envío automático de formularios de huéspedes al Ministerio del Interior es <strong>obligatorio</strong> en España.
+                  <strong>{t('mirModule.reminder')}</strong>{' '}
+                  {t('mirModule.mandatory')}{' '}
+                  <strong>{t('mirModule.mandatoryBold')}</strong>{' '}
+                  {t('mirModule.mandatoryLocation')}
                 </p>
                 <p className="text-sm sm:text-base text-blue-700">
-                  Por solo <strong>2€/mes (+ IVA 21%)</strong> puedes tener el módulo MIR activado, que incluye check-in digital automático y envío automático de formularios al gobierno.
+                  {t('mirModule.description')}{' '}
+                  <strong>{t('mirModule.priceBold')}</strong>{' '}
+                  {t('mirModule.descriptionSuffix')}
                 </p>
               </div>
               <Link
                 href="/upgrade-plan"
                 className="whitespace-nowrap bg-blue-600 text-white px-4 py-2 sm:px-6 sm:py-3 rounded-lg hover:bg-blue-700 font-semibold text-sm sm:text-base transition-colors shadow-md hover:shadow-lg"
               >
-                Activar Módulo MIR
+                {t('mirModule.activateButton')}
               </Link>
             </div>
           </div>
@@ -393,8 +399,8 @@ export default function HomePage() {
                               vat: Number(vatAmt ?? 0).toFixed(2),
                               total: Number(total).toFixed(2),
                             });
-                      const feats = tenant.tenant?.plan_features?.length
-                        ? tenant.tenant.plan_features.join(' • ')
+                      const feats = tenant.tenant
+                        ? localizedPlanFeatureSummary(t, tenant.tenant)
                         : t('planCardFeaturesFallback');
                       return `${line} • ${feats}`;
                     })()}
@@ -512,7 +518,7 @@ export default function HomePage() {
                   }}
                   className="text-xs sm:text-sm px-3 py-1.5 rounded-lg bg-white/70 hover:bg-white border border-blue-200 text-blue-700 font-medium"
                 >
-                  {t('videoTutorial.hide') || 'Ocultar'}
+                  {t('videoTutorial.hide')}
                 </button>
               </div>
               <div
@@ -560,7 +566,7 @@ export default function HomePage() {
                     {t('videoTutorial.title')}
                   </p>
                   <p className="text-xs text-gray-600 truncate">
-                    {t('videoTutorial.collapsedHint') || 'Tutorial del dashboard'}
+                    {t('videoTutorial.collapsedHint')}
                   </p>
                 </div>
               </div>
@@ -575,7 +581,7 @@ export default function HomePage() {
                 }}
                 className="text-xs sm:text-sm px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium flex-shrink-0"
               >
-                {t('videoTutorial.show') || 'Ver tutorial'}
+                {t('videoTutorial.show')}
               </button>
             </div>
           </div>

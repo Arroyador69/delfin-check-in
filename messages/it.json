@@ -122,7 +122,27 @@
     "planCardPricingFree": "0 €/mese (senza costi) · nessuna IVA",
     "planCardPricingPaid": "{ex} €/mese (IVA esclusa) + IVA {rate}%: {vat} € → Totale {total} €/mese (IVA inclusa)",
     "planCardFeaturesFallback": "Vedi Migliora piano per altre funzioni",
-    "unitsAvailableToAdd": "✅ {remaining} unità disponibili da aggiungere",
+    "planFeatures": {
+      "unit": {
+        "roomSingular": "camera",
+        "roomPlural": "camere",
+        "apartmentSingular": "appartamento",
+        "apartmentPlural": "appartamenti"
+      },
+      "free": {
+        "includedOneRoom": "1 camera inclusa",
+        "includedOneApartment": "1 appartamento incluso",
+        "basicSupport": "Assistenza base via email"
+      },
+      "paid": {
+        "subscription": "Abbonamento: {count} {units}",
+        "mirIncluded": "Check-in digitale (MIR) incluso",
+        "fullPms": "PMS completo",
+        "noAds": "Senza pubblicità",
+        "directBooking": "Prenotazioni dirette (commissione ridotta)"
+      }
+    },
+    "unitsAvailableToAdd": "{remaining, plural, one {✅ # unità disponibile da aggiungere} other {✅ # unità disponibili da aggiungere}}",
     "unlimited": "Illimitate",
     "available": "{count} disponibili",
     "limitReached": "⚠️ Limite raggiunto: hai utilizzato tutte le unità del tuo piano ({used}/{max}).",
@@ -152,9 +172,12 @@
       "activateButton": "Attiva Modulo MIR"
     },
     "videoTutorial": {
-      "title": "Video Tutorial - Pannello Utente",
-      "description": "Scopri come utilizzare tutte le funzionalità di Delfín Check-in",
-      "watchOnYouTube": "Guarda su YouTube"
+      "title": "Video di presentazione",
+      "description": "Una panoramica veloce degli strumenti principali del pannello Delfín Check-in.",
+      "watchOnYouTube": "Apri su YouTube",
+      "hide": "Nascondi video",
+      "show": "Mostra video",
+      "collapsedHint": "Il tutorial è ridotto per risparmiare spazio. Puoi riaprirlo in qualsiasi momento."
     },
     "periodFilters": {
       "title": "📊 Filtri Periodo",

@@ -122,7 +122,27 @@
     "planCardPricingFree": "0 €/mois (sans frais) · pas de TVA",
     "planCardPricingPaid": "{ex} €/mois (HT) + TVA {rate}% : {vat} € → Total {total} €/mois (TTC)",
     "planCardFeaturesFallback": "Voir Améliorer le forfait pour plus de fonctions",
-    "unitsAvailableToAdd": "✅ {remaining} unités disponibles à ajouter",
+    "planFeatures": {
+      "unit": {
+        "roomSingular": "chambre",
+        "roomPlural": "chambres",
+        "apartmentSingular": "appartement",
+        "apartmentPlural": "appartements"
+      },
+      "free": {
+        "includedOneRoom": "1 chambre incluse",
+        "includedOneApartment": "1 appartement inclus",
+        "basicSupport": "Assistance de base par e-mail"
+      },
+      "paid": {
+        "subscription": "Abonnement : {count} {units}",
+        "mirIncluded": "Enregistrement des voyageurs (MIR) inclus",
+        "fullPms": "PMS complet",
+        "noAds": "Sans publicité",
+        "directBooking": "Réservations directes (commission réduite)"
+      }
+    },
+    "unitsAvailableToAdd": "{remaining, plural, one {✅ # unité disponible à ajouter} other {✅ # unités disponibles à ajouter}}",
     "unlimited": "Illimité",
     "available": "{count} disponibles",
     "limitReached": "⚠️ Limite atteinte : vous avez utilisé toutes les chambres de votre forfait ({used}/{max}).",
@@ -152,9 +172,12 @@
       "activateButton": "Activer le module MIR"
     },
     "videoTutorial": {
-      "title": "Video Tutorial - Panel Utilisateur",
-      "description": "Apprenez à utiliser toutes les fonctionnalités de Delfín Check-in",
-      "watchOnYouTube": "Voir sur YouTube"
+      "title": "Vidéo de présentation",
+      "description": "Un rapide tour d’horizon des outils principaux de votre espace Delfín Check-in.",
+      "watchOnYouTube": "Ouvrir sur YouTube",
+      "hide": "Masquer la vidéo",
+      "show": "Afficher la vidéo",
+      "collapsedHint": "La vidéo est réduite pour libérer de la place. Vous pouvez la rouvrir quand vous voulez."
     },
     "periodFilters": {
       "title": "📊 Filtres de période",
