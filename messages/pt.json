@@ -568,6 +568,11 @@
       "establishments": "Estabelecimentos",
       "actions": "Ações"
     },
+    "infoCards": {
+      "card1": "Os registos aparecerão aqui quando os clientes preencherem o formulário",
+      "card2": "Pode gerar XML individual ou conjunto para enviar ao Ministério do Interior",
+      "card3": "Use os filtros para encontrar registos específicos"
+    },
     "list": {
       "title": "Registos de Viajantes",
       "selectAll": "Selecionar tudo",
