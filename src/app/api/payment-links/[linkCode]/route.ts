@@ -64,8 +64,8 @@ export async function GET(
 
     const link = linkResult.rows[0];
 
-    // Verificar si el enlace está activo
-    if (!link.is_active) {
+    // Solo bloquear si está explícitamente desactivado (NULL o true = activo; evita falsos positivos si falta DEFAULT en BD)
+    if (link.is_active === false) {
       const response = NextResponse.json(
         { success: false, error: 'Este enlace de pago está desactivado' },
         { status: 403 }

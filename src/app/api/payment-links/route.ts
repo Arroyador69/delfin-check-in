@@ -144,7 +144,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Crear el enlace
+    // Crear el enlace (is_active explícito: evita NULL si la tabla no tiene DEFAULT en producción)
     const result = await sql`
       INSERT INTO payment_links (
         tenant_id,
@@ -157,26 +157,30 @@ export async function POST(req: NextRequest) {
         total_price,
         base_price_per_night,
         cleaning_fee,
-          expected_guests,
-          expires_at,
-          max_uses,
-          internal_notes
-        ) VALUES (
-          ${tenantId}::uuid,
-          ${linkCode},
-          ${link_name || null},
-          ${resource_type},
-          ${resource_id},
-          ${check_in_date}::date,
-          ${check_out_date}::date,
-          ${total_price}::decimal,
-          ${base_price_per_night || null}::decimal,
-          ${cleaning_fee}::decimal,
-          ${expected_guests}::integer,
-          ${expires_at ? `${expires_at}::timestamp with time zone` : null},
-          ${finalMaxUses}::integer,
-          ${internal_notes || null}
-        )
+        expected_guests,
+        expires_at,
+        max_uses,
+        internal_notes,
+        is_active,
+        payment_completed
+      ) VALUES (
+        ${tenantId}::uuid,
+        ${linkCode},
+        ${link_name || null},
+        ${resource_type},
+        ${resource_id},
+        ${check_in_date}::date,
+        ${check_out_date}::date,
+        ${total_price}::decimal,
+        ${base_price_per_night || null}::decimal,
+        ${cleaning_fee}::decimal,
+        ${expected_guests}::integer,
+        ${expires_at ? `${expires_at}::timestamp with time zone` : null},
+        ${finalMaxUses}::integer,
+        ${internal_notes || null},
+        true,
+        false
+      )
       RETURNING *
     `;
 

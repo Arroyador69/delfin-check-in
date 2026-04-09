@@ -73,7 +73,8 @@ export async function POST(
       FROM payment_links pl
       LEFT JOIN tenant_commission_settings tcs ON pl.tenant_id = tcs.tenant_id
       LEFT JOIN tenants t ON pl.tenant_id = t.id
-      WHERE pl.link_code = ${linkCode} AND pl.is_active = true
+      WHERE pl.link_code = ${linkCode}
+        AND (pl.is_active IS NULL OR pl.is_active = true)
     `;
 
     if (linkResult.rows.length === 0) {
