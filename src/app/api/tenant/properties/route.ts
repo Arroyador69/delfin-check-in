@@ -13,6 +13,11 @@ import { getTenantId } from '@/lib/tenant';
 
 export async function GET(req: NextRequest) {
   try {
+    // Hardening esquema: soportar pricing por persona extra
+    try {
+      await sql`ALTER TABLE tenant_properties ADD COLUMN IF NOT EXISTS included_guests INT DEFAULT 2`;
+      await sql`ALTER TABLE tenant_properties ADD COLUMN IF NOT EXISTS extra_guest_fee DECIMAL(10,2) DEFAULT 0`;
+    } catch (_) {}
     // Priorizar tenant_id desde JWT; si no está, caer al header (middleware)
     let tenantId = await getTenantId(req);
     if (!tenantId || tenantId.trim() === '') {
@@ -83,6 +88,8 @@ export async function GET(req: NextRequest) {
       description: row.description,
       photos: row.photos || [],
       max_guests: row.max_guests,
+      included_guests: row.included_guests ?? null,
+      extra_guest_fee: row.extra_guest_fee != null ? parseFloat(String(row.extra_guest_fee)) : 0,
       bedrooms: row.bedrooms,
       bathrooms: row.bathrooms,
       amenities: row.amenities || [],
@@ -122,6 +129,11 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    // Hardening esquema: soportar pricing por persona extra
+    try {
+      await sql`ALTER TABLE tenant_properties ADD COLUMN IF NOT EXISTS included_guests INT DEFAULT 2`;
+      await sql`ALTER TABLE tenant_properties ADD COLUMN IF NOT EXISTS extra_guest_fee DECIMAL(10,2) DEFAULT 0`;
+    } catch (_) {}
     // Obtener tenant_id del header (inyectado por middleware) o del token
     let tenantId = req.headers.get('x-tenant-id');
     
@@ -204,6 +216,8 @@ export async function POST(req: NextRequest) {
           description   = ${data.description || ''},
           photos        = ${JSON.stringify(data.photos || [])},
           max_guests    = ${data.max_guests || 2},
+          included_guests = ${data.included_guests ?? Math.min(2, data.max_guests || 2)},
+          extra_guest_fee = ${data.extra_guest_fee ?? 0},
           bedrooms      = ${data.bedrooms || 1},
           bathrooms     = ${data.bathrooms || 1},
           amenities     = ${JSON.stringify(data.amenities || [])},
@@ -220,7 +234,7 @@ export async function POST(req: NextRequest) {
       // Crear nueva propiedad y mapping para ese room_id
       const created = await sql`
       INSERT INTO tenant_properties (
-        tenant_id, property_name, description, photos, max_guests,
+        tenant_id, property_name, description, photos, max_guests, included_guests, extra_guest_fee,
         bedrooms, bathrooms, amenities, base_price, cleaning_fee,
         security_deposit, minimum_nights, maximum_nights, availability_rules
       ) VALUES (
@@ -229,6 +243,8 @@ export async function POST(req: NextRequest) {
         ${data.description || ''},
         ${JSON.stringify(data.photos || [])},
         ${data.max_guests || 2},
+        ${data.included_guests ?? Math.min(2, data.max_guests || 2)},
+        ${data.extra_guest_fee ?? 0},
         ${data.bedrooms || 1},
         ${data.bathrooms || 1},
         ${JSON.stringify(data.amenities || [])},
@@ -272,6 +288,11 @@ export async function POST(req: NextRequest) {
 
 export async function PUT(req: NextRequest) {
   try {
+    // Hardening esquema: soportar pricing por persona extra
+    try {
+      await sql`ALTER TABLE tenant_properties ADD COLUMN IF NOT EXISTS included_guests INT DEFAULT 2`;
+      await sql`ALTER TABLE tenant_properties ADD COLUMN IF NOT EXISTS extra_guest_fee DECIMAL(10,2) DEFAULT 0`;
+    } catch (_) {}
     // Obtener tenant_id del header (inyectado por middleware) o del token
     let tenantId = req.headers.get('x-tenant-id');
     
@@ -337,6 +358,16 @@ export async function PUT(req: NextRequest) {
     if (data.max_guests !== undefined) {
       updateFields.push('max_guests = $' + (updateValues.length + 1));
       updateValues.push(data.max_guests);
+    }
+
+    if ((data as any).included_guests !== undefined) {
+      updateFields.push('included_guests = $' + (updateValues.length + 1));
+      updateValues.push((data as any).included_guests);
+    }
+
+    if ((data as any).extra_guest_fee !== undefined) {
+      updateFields.push('extra_guest_fee = $' + (updateValues.length + 1));
+      updateValues.push((data as any).extra_guest_fee);
     }
     
     if (data.bedrooms !== undefined) {

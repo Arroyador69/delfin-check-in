@@ -34,6 +34,11 @@ export async function OPTIONS(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const origin = req.headers.get('origin');
+    // Hardening esquema: soportar pricing por persona extra
+    try {
+      await sql`ALTER TABLE tenant_properties ADD COLUMN IF NOT EXISTS included_guests INT DEFAULT 2`;
+      await sql`ALTER TABLE tenant_properties ADD COLUMN IF NOT EXISTS extra_guest_fee DECIMAL(10,2) DEFAULT 0`;
+    } catch (_) {}
     const data = await req.json();
     const {
       property_id,
@@ -111,7 +116,11 @@ export async function POST(req: NextRequest) {
     // Calcular precios (asegurar que sean números)
     const basePrice = parseFloat(String(property.base_price || 0));
     const cleaningFee = parseFloat(String(property.cleaning_fee || 0));
-    const subtotal = (basePrice * nights) + cleaningFee;
+    const includedGuests = Math.max(1, parseInt(String(property.included_guests ?? Math.min(2, property.max_guests ?? 2)), 10) || 1);
+    const extraGuestFee = parseFloat(String(property.extra_guest_fee || 0));
+    const extraGuests = Math.max(0, Number(guests || 1) - includedGuests);
+    const extraGuestsAmount = extraGuests > 0 ? (extraGuestFee * extraGuests * nights) : 0;
+    const subtotal = (basePrice * nights) + cleaningFee + extraGuestsAmount;
     const commissionRate = property.commission_rate != null
       ? parseFloat(String(property.commission_rate))
       : getDirectReservationCommissionRate(property.tenant_plan_type);
@@ -220,6 +229,10 @@ export async function POST(req: NextRequest) {
         guests: guests.toString(),
         base_price: basePrice.toString(),
         cleaning_fee: cleaningFee.toString(),
+        included_guests: includedGuests.toString(),
+        extra_guest_fee: extraGuestFee.toString(),
+        extra_guests: extraGuests.toString(),
+        extra_guests_amount: extraGuestsAmount.toString(),
         security_deposit: parseFloat(String(property.security_deposit || 0)).toString(),
         subtotal: subtotal.toString(),
         delfin_commission_rate: commissionRate.toString(),

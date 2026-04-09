@@ -9,6 +9,8 @@ export interface TenantProperty {
   description?: string;
   photos: string[];
   max_guests: number;
+  included_guests?: number;
+  extra_guest_fee?: number;
   bedrooms: number;
   bathrooms: number;
   amenities: string[];
@@ -117,6 +119,8 @@ export interface CreatePropertyRequest {
   description?: string;
   photos?: string[];
   max_guests: number;
+  included_guests?: number;
+  extra_guest_fee?: number;
   bedrooms: number;
   bathrooms: number;
   amenities?: string[];

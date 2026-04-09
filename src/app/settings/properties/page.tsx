@@ -24,6 +24,8 @@ export default function PropertiesManagement() {
     description: '',
     photos: [],
     max_guests: 2,
+    included_guests: 2,
+    extra_guest_fee: 0,
     bedrooms: 1,
     bathrooms: 1,
     amenities: [],
@@ -250,6 +252,8 @@ export default function PropertiesManagement() {
       description: property.description || '',
       photos: property.photos || [],
       max_guests: property.max_guests,
+      included_guests: (property as any).included_guests ?? Math.min(2, property.max_guests || 2),
+      extra_guest_fee: (property as any).extra_guest_fee ?? 0,
       bedrooms: property.bedrooms,
       bathrooms: property.bathrooms,
       amenities: property.amenities || [],
@@ -296,6 +300,8 @@ export default function PropertiesManagement() {
       description: '',
       photos: [],
       max_guests: 2,
+      included_guests: 2,
+      extra_guest_fee: 0,
       bedrooms: 1,
       bathrooms: 1,
       amenities: [],
@@ -674,6 +680,24 @@ export default function PropertiesManagement() {
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                         />
                       </div>
+
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          👤 Incluye (personas)
+                        </label>
+                        <input
+                          type="number"
+                          min="1"
+                          max={formData.max_guests}
+                          value={(formData as any).included_guests ?? 1}
+                          onChange={(e) => {
+                            const next = parseInt(e.target.value || '1', 10);
+                            const max = Math.max(1, (formData as any).max_guests || 1);
+                            setFormData({ ...formData, included_guests: Math.min(Math.max(1, next), max) } as any);
+                          }}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                        />
+                      </div>
                       
                       <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -739,6 +763,23 @@ export default function PropertiesManagement() {
                           onChange={(e) => setFormData({ ...formData, cleaning_fee: parseFloat(e.target.value) })}
                           className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                         />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm sm:text-base font-semibold text-gray-700 mb-2">
+                          👥 Precio por persona extra (€/noche)
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={(formData as any).extra_guest_fee ?? 0}
+                          onChange={(e) => setFormData({ ...formData, extra_guest_fee: parseFloat(e.target.value || '0') } as any)}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">
+                          Se aplicará para huéspedes por encima de “Incluye”.
+                        </p>
                       </div>
                       
                       <div>

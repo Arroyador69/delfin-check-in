@@ -456,6 +456,11 @@ export default function PublicBookingPage({ params }: BookingPageProps) {
               {property.base_price}/noche
             </div>
           </div>
+          {(property.extra_guest_fee ?? 0) > 0 && (
+            <div className="mt-2 text-xs text-gray-500">
+              Incluye {property.included_guests ?? Math.min(2, property.max_guests)} huésped{(property.included_guests ?? 2) > 1 ? 'es' : ''}. +{property.extra_guest_fee}€/persona/noche extra.
+            </div>
+          )}
         </div>
 
         {/* Formulario de reserva */}
@@ -516,6 +521,14 @@ export default function PublicBookingPage({ params }: BookingPageProps) {
                       <span>{pricing.nights} noches × {property.base_price}€</span>
                       <span>{(pricing.nights * property.base_price).toFixed(2)}€</span>
                     </div>
+                    {pricing.extra_guests && Number(pricing.extra_guests) > 0 && (
+                      <div className="flex justify-between">
+                        <span>
+                          {pricing.extra_guests} persona{Number(pricing.extra_guests) > 1 ? 's' : ''} extra × {pricing.nights} noches × {pricing.extra_guest_fee}€
+                        </span>
+                        <span>{pricing.extra_guests_amount}€</span>
+                      </div>
+                    )}
                     {property.cleaning_fee > 0 && (
                       <div className="flex justify-between">
                         <span>Tarifa de limpieza</span>

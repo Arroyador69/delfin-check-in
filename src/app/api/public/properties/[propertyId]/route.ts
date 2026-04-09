@@ -38,6 +38,12 @@ export async function GET(
     const { propertyId } = await params;
     const { searchParams } = new URL(req.url);
     const tenantId = searchParams.get('tenant_id');
+
+    // Hardening esquema: soportar pricing por persona extra
+    try {
+      await sql`ALTER TABLE tenant_properties ADD COLUMN IF NOT EXISTS included_guests INT DEFAULT 2`;
+      await sql`ALTER TABLE tenant_properties ADD COLUMN IF NOT EXISTS extra_guest_fee DECIMAL(10,2) DEFAULT 0`;
+    } catch (_) {}
     
     if (!tenantId) {
       const response = NextResponse.json(
@@ -55,6 +61,7 @@ export async function GET(
     const result = await sql`
       SELECT 
         id, tenant_id, property_name, description, photos, max_guests,
+        included_guests, extra_guest_fee,
         bedrooms, bathrooms, amenities, base_price, cleaning_fee,
         security_deposit, minimum_nights, maximum_nights,
         availability_rules, is_active, created_at, updated_at
@@ -80,6 +87,8 @@ export async function GET(
       description: result.rows[0].description,
       photos: result.rows[0].photos || [],
       max_guests: result.rows[0].max_guests,
+      included_guests: result.rows[0].included_guests ?? undefined,
+      extra_guest_fee: result.rows[0].extra_guest_fee != null ? parseFloat(String(result.rows[0].extra_guest_fee)) : undefined,
       bedrooms: result.rows[0].bedrooms,
       bathrooms: result.rows[0].bathrooms,
       amenities: result.rows[0].amenities || [],

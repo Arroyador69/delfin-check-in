@@ -32,6 +32,11 @@ export async function OPTIONS(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const origin = req.headers.get('origin');
+    // Hardening esquema: soportar pricing por persona extra
+    try {
+      await sql`ALTER TABLE tenant_properties ADD COLUMN IF NOT EXISTS included_guests INT DEFAULT 2`;
+      await sql`ALTER TABLE tenant_properties ADD COLUMN IF NOT EXISTS extra_guest_fee DECIMAL(10,2) DEFAULT 0`;
+    } catch (_) {}
     const data = await req.json();
     const {
       property_id,
@@ -175,7 +180,11 @@ export async function POST(req: NextRequest) {
     // Calcular precios (asegurar que base_price y cleaning_fee sean números)
     const basePrice = parseFloat(String(property.base_price || 0));
     const cleaningFee = parseFloat(String(property.cleaning_fee || 0));
-    const subtotal = (basePrice * nights) + cleaningFee;
+    const includedGuests = Math.max(1, parseInt(String(property.included_guests ?? Math.min(2, property.max_guests ?? 2)), 10) || 1);
+    const extraGuestFee = parseFloat(String(property.extra_guest_fee || 0));
+    const extraGuests = Math.max(0, Number(guests) - includedGuests);
+    const extraGuestsAmount = extraGuests > 0 ? (extraGuestFee * extraGuests * nights) : 0;
+    const subtotal = (basePrice * nights) + cleaningFee + extraGuestsAmount;
     const { getDirectReservationCommissionRate } = await import('@/lib/plan-pricing');
     const commissionRate = property.commission_rate != null
       ? parseFloat(String(property.commission_rate))
@@ -188,6 +197,10 @@ export async function POST(req: NextRequest) {
       nights,
       base_price: basePrice.toFixed(2),
       cleaning_fee: cleaningFee.toFixed(2),
+      included_guests: includedGuests,
+      extra_guest_fee: extraGuestFee.toFixed(2),
+      extra_guests: extraGuests,
+      extra_guests_amount: extraGuestsAmount.toFixed(2),
       subtotal: subtotal.toFixed(2),
       delfin_commission_rate: commissionRate,
       delfin_commission_amount: commission.delfin_commission_amount.toFixed(2),
