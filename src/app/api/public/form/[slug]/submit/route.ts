@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
+import { checkRateLimit, getClientIP, RATE_LIMIT_CONFIGS } from '@/lib/rate-limit';
 
 // CORS headers para permitir peticiones desde el formulario público
 const corsHeaders = {
@@ -45,14 +46,34 @@ export async function POST(
 ) {
   try {
     const { slug } = await params;
+
+    const clientIp = getClientIP(req.headers);
+    const rl = checkRateLimit(
+      `public-form:${slug}:${clientIp}`,
+      RATE_LIMIT_CONFIGS.publicFormSubmit
+    );
+    if (!rl.allowed) {
+      return NextResponse.json(
+        {
+          error: 'Demasiadas solicitudes',
+          message: 'Espera unos minutos antes de volver a enviar el formulario.',
+          retryAfter: rl.retryAfter,
+        },
+        {
+          status: 429,
+          headers: {
+            ...corsHeaders,
+            'Retry-After': String(rl.retryAfter ?? 60),
+          },
+        }
+      );
+    }
+
     const body = await req.json();
-    
-    // Debug: Log del payload recibido
-    console.log('🔍 Endpoint /api/public/form/[slug]/submit recibido:');
-    console.log('Slug:', slug);
-    console.log('Body keys:', Object.keys(body));
-    console.log('Body type:', typeof body);
-    console.log('Body sample:', JSON.stringify(body, null, 2).slice(0, 500) + '...');
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔍 /api/public/form/[slug]/submit', slug, 'keys:', Object.keys(body));
+    }
 
     // Verificar que el tenant existe y está activo
     const tenantResult = await sql`
@@ -77,18 +98,12 @@ export async function POST(
     const tenant = tenantResult.rows[0];
     
     // Si el body contiene datos del MIR (contrato, viajeros), redirigir al endpoint correcto
-    console.log('🔍 Verificando si son datos MIR:');
-    console.log('Tiene contrato:', !!body.contrato);
-    console.log('Tiene viajeros:', !!body.viajeros);
-    console.log('Tiene tenantId:', !!body.tenantId);
-    console.log('Tiene formData:', !!body.formData);
     
     // Detectar si es un formulario MIR (tiene contrato y viajeros) o un formulario simple
     const isMIRForm = body.contrato && body.viajeros;
     const isSimpleForm = body.tenantId && body.formData;
     
     if (isMIRForm) {
-      console.log('✅ Datos MIR detectados, redirigiendo a /api/registro-flex');
       
       // Llamar directamente al endpoint interno en lugar de hacer fetch externo
       const { POST: registroFlexHandler } = await import('@/app/api/registro-flex/route');
@@ -134,7 +149,6 @@ export async function POST(
 
     // Fallback: si no se detecta formato simple pero el payload podría ser MIR, intentarlo como MIR
     if (!isSimpleForm) {
-      console.log('⚠️ Formato no reconocido explícitamente. Intentando reenviar como MIR (fallback).');
       const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://admin.delfincheckin.com';
       const registroFlexUrl = `${baseUrl}/api/registro-flex`;
       const response = await fetch(registroFlexUrl, {
@@ -149,33 +163,17 @@ export async function POST(
       });
 
       if (!response.ok) {
-        console.log('❌ Fallback MIR falló (se reenvía cuerpo JSON sin envolver)');
         return forwardUpstreamError(response, corsHeaders);
       }
 
       const result = await response.json();
-      console.log('✅ Fallback MIR tuvo éxito');
       return NextResponse.json(result, { headers: corsHeaders });
     }
 
-    // Si llegamos aquí, es un formulario simple (no MIR)
-    console.log('❌ NO son datos MIR, procesando como formulario simple');
-    
-    // Si no es MIR ni formulario simple, es un error
-    if (!isSimpleForm && !isMIRForm) {
-      console.log('❌ Error: No se detectó ni formulario MIR ni formulario simple');
-      console.log('Body recibido:', JSON.stringify(body, null, 2));
-      return NextResponse.json(
-        { error: 'Formato de datos no reconocido' },
-        { status: 400, headers: corsHeaders }
-      );
-    }
-    
     // Procesar formulario simple
     const { tenantId, formData } = body;
 
     if (!tenantId || !formData) {
-      console.log('❌ Error: Faltan tenantId o formData en formulario simple');
       return NextResponse.json(
         { error: 'Datos requeridos faltantes' },
         { status: 400, headers: corsHeaders }

@@ -44,6 +44,12 @@ export const RATE_LIMIT_CONFIGS = {
     maxAttempts: 3,
     windowMs: 10 * 60 * 1000, // 10 minutos
     blockDurationMs: 60 * 60 * 1000 // 1 hora de bloqueo
+  },
+  /** POST /api/public/form/[slug]/submit (form.delfincheckin.com → admin): por IP + tenant */
+  publicFormSubmit: {
+    maxAttempts: 25,
+    windowMs: 15 * 60 * 1000, // 15 minutos
+    blockDurationMs: 30 * 60 * 1000 // 30 min bloqueo
   }
 } as const;
 
