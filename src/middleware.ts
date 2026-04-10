@@ -5,6 +5,46 @@ import createMiddleware from 'next-intl/middleware';
 import { locales, defaultLocale, getLocaleFromRequest, isValidLocale } from './i18n/config';
 
 /**
+ * book.delfincheckin.com sirve URLs cortas (/tenantId/123, /pay/CODE) que en la app viven bajo /book/…
+ */
+function rewriteBookMicrositePath(req: NextRequest): NextResponse | null {
+  const host = (req.headers.get('host') || '').split(':')[0].toLowerCase()
+  const isBookHost =
+    host === 'book.delfincheckin.com' ||
+    (host.startsWith('book.') && host.includes('delfincheckin.com'))
+  if (!isBookHost) return null
+
+  const url = req.nextUrl.clone()
+  const pathname = url.pathname
+
+  if (
+    pathname.startsWith('/book/') ||
+    pathname.startsWith('/api/') ||
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/static') ||
+    pathname.startsWith('/images') ||
+    pathname === '/favicon.ico' ||
+    pathname === '/robots.txt'
+  ) {
+    return null
+  }
+
+  const payMatch = pathname.match(/^\/pay\/([^/]+)\/?$/)
+  if (payMatch) {
+    url.pathname = `/book/pay/${payMatch[1]}`
+    return NextResponse.rewrite(url)
+  }
+
+  const propMatch = pathname.match(/^\/([^/]+)\/(\d+)\/?$/)
+  if (propMatch) {
+    url.pathname = `/book/${propMatch[1]}/${propMatch[2]}`
+    return NextResponse.rewrite(url)
+  }
+
+  return null
+}
+
+/**
  * 🔒 MIDDLEWARE DE AUTENTICACIÓN + 🌍 I18N
  * 
  * Orden de ejecución:
@@ -36,6 +76,9 @@ export async function middleware(req: NextRequest) {
   
   // Preflight CORS
   if (req.method === 'OPTIONS') return NextResponse.next();
+
+  const bookRewrite = rewriteBookMicrositePath(req)
+  if (bookRewrite) return bookRewrite
 
   // Raíz y login: no pasar por auth en edge para evitar 404; Next.js los sirve directo
   if (pathname === '/' || pathname === '/admin-login' || pathname === '/forgot-password') {

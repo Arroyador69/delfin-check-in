@@ -1,10 +1,16 @@
 'use client';
 
-import { useState, useEffect, use } from 'react';
-import { Calendar, Users, Euro, CreditCard, CheckCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Suspense, useState, useEffect, use } from 'react';
+import { Users, Euro, CreditCard, CheckCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { TenantProperty } from '@/lib/direct-reservations-types';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import {
+  type BookGuestStrings,
+  bookFmt,
+  getBookStrings,
+} from '@/lib/book-guest-i18n';
+import { useBookGuestLang } from '@/lib/use-book-guest-lang';
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
@@ -15,20 +21,22 @@ interface BookingPageProps {
   }>;
 }
 
-function PaymentForm({ 
-  tenantId, 
-  propertyId, 
-  formData, 
-  pricing, 
-  property, 
-  onBack, 
-  onSuccess 
+function PaymentForm({
+  tenantId,
+  propertyId,
+  formData,
+  pricing,
+  property,
+  s,
+  onBack,
+  onSuccess,
 }: {
   tenantId: string;
   propertyId: string;
-  formData: any;
-  pricing: any;
+  formData: Record<string, unknown>;
+  pricing: { nights?: number; total_amount?: number; reservation_code?: string } | null;
   property: TenantProperty;
+  s: BookGuestStrings;
   onBack: () => void;
   onSuccess: () => void;
 }) {
@@ -47,84 +55,86 @@ function PaymentForm({
     try {
       const cardElement = elements.getElement(CardElement);
       if (!cardElement) {
-        throw new Error('Tarjeta no encontrada');
+        throw new Error(s.errCardNotFound);
       }
 
-      // Crear Payment Intent
       const response = await fetch('/api/direct-reservations/create-payment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          property_id: parseInt(propertyId),
-          ...formData
-        })
+          property_id: parseInt(propertyId, 10),
+          ...formData,
+        }),
       });
 
       const data = await response.json();
 
       if (!data.success) {
-        throw new Error(data.error || 'Error creando el pago');
+        throw new Error(data.error || s.errCreatePayment);
       }
 
-      // Confirmar el pago con Stripe
       const { error: confirmError } = await stripe.confirmCardPayment(data.client_secret, {
         payment_method: {
           card: cardElement,
           billing_details: {
-            name: formData.guest_name,
-            email: formData.guest_email,
+            name: String(formData.guest_name ?? ''),
+            email: String(formData.guest_email ?? ''),
           },
         },
       });
 
       if (confirmError) {
-        throw new Error(confirmError.message);
+        throw new Error(confirmError.message || s.errProcessPayment);
       }
 
       onSuccess();
-    } catch (err: any) {
-      setError(err.message || 'Error procesando el pago');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : s.errProcessPayment;
+      setError(msg);
     } finally {
       setProcessing(false);
     }
   };
 
+  const totalStr =
+    pricing?.total_amount != null ? String(pricing.total_amount) : '—';
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <h2 className="text-xl font-semibold mb-4">Confirmar y pagar</h2>
-      
+      <h2 className="text-xl font-semibold mb-4">{s.payTitle}</h2>
+
       {pricing && (
         <div className="bg-gray-50 p-4 rounded-lg">
-          <h3 className="font-semibold mb-3">Resumen de la reserva</h3>
+          <h3 className="font-semibold mb-3">{s.bookingSummary}</h3>
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
-              <span>Propiedad:</span>
+              <span>{s.property}</span>
               <span>{property.property_name}</span>
             </div>
             <div className="flex justify-between">
-              <span>Fechas:</span>
-              <span>{formData.check_in_date} - {formData.check_out_date}</span>
+              <span>{s.dates}</span>
+              <span>
+                {String(formData.check_in_date)} — {String(formData.check_out_date)}
+              </span>
             </div>
             <div className="flex justify-between">
-              <span>Huéspedes:</span>
-              <span>{formData.guests}</span>
+              <span>{s.guests}</span>
+              <span>{String(formData.guests)}</span>
             </div>
             <div className="flex justify-between">
-              <span>Noches:</span>
+              <span>{s.nights}</span>
               <span>{pricing.nights}</span>
             </div>
             <div className="flex justify-between border-t pt-2 font-semibold">
-              <span>Total:</span>
-              <span>{pricing.total_amount}€</span>
+              <span>{s.total}</span>
+              <span>{totalStr}€</span>
             </div>
           </div>
         </div>
       )}
 
       <div className="border border-gray-300 rounded-lg p-4">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Datos de la tarjeta *
-        </label>
+        <label className="block text-sm font-medium text-gray-700 mb-2">{s.cardLabel}</label>
         <CardElement
           options={{
             style: {
@@ -155,7 +165,7 @@ function PaymentForm({
           onClick={onBack}
           className="flex-1 bg-gray-300 text-gray-700 py-3 rounded-lg hover:bg-gray-400"
         >
-          Atrás
+          {s.back}
         </button>
         <button
           type="submit"
@@ -164,13 +174,13 @@ function PaymentForm({
         >
           {processing ? (
             <>
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-              Procesando...
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+              {s.processing}
             </>
           ) : (
             <>
               <CreditCard className="w-4 h-4" />
-              Pagar {pricing?.total_amount}€
+              {bookFmt(s.payWith, { amount: totalStr })}
             </>
           )}
         </button>
@@ -179,18 +189,33 @@ function PaymentForm({
   );
 }
 
-function MonthGrid({ month, blocked, selectedStart, selectedEnd, onSelect }: {
+function MonthGrid({
+  month,
+  blocked,
+  selectedStart,
+  selectedEnd,
+  onSelect,
+  s,
+}: {
   month: Date;
   blocked: Set<string>;
   selectedStart?: string;
   selectedEnd?: string;
   onSelect: (iso: string) => void;
+  s: BookGuestStrings;
 }) {
   const start = new Date(month.getFullYear(), month.getMonth(), 1);
   const end = new Date(month.getFullYear(), month.getMonth() + 1, 0);
-  const startWeekday = (start.getDay() + 6) % 7; // lunes=0
+  const startWeekday = (start.getDay() + 6) % 7;
   const daysInMonth = end.getDate();
-  const cells: Array<{ d: Date | null; iso?: string; disabled?: boolean; inRange?: boolean; isStart?: boolean; isEnd?: boolean }>=[];
+  const cells: Array<{
+    d: Date | null;
+    iso?: string;
+    disabled?: boolean;
+    inRange?: boolean;
+    isStart?: boolean;
+    isEnd?: boolean;
+  }> = [];
   for (let i = 0; i < startWeekday; i++) cells.push({ d: null });
   for (let day = 1; day <= daysInMonth; day++) {
     const d = new Date(month.getFullYear(), month.getMonth(), day);
@@ -201,16 +226,18 @@ function MonthGrid({ month, blocked, selectedStart, selectedEnd, onSelect }: {
     const isEnd = selectedEnd === iso;
     cells.push({ d, iso, disabled, inRange, isStart, isEnd });
   }
-  const weekdays = ['L','M','X','J','V','S','D'];
   return (
     <div className="border rounded-lg p-3">
       <div className="grid grid-cols-7 text-center text-xs text-gray-500 mb-2">
-        {weekdays.map((w) => (<div key={w}>{w}</div>))}
+        {s.weekdays.map((w, idx) => (
+          <div key={`${month.getFullYear()}-${month.getMonth()}-w${idx}`}>{w}</div>
+        ))}
       </div>
       <div className="grid grid-cols-7 gap-1">
         {cells.map((c, i) => (
           <button
             key={i}
+            type="button"
             disabled={!c.d || c.disabled}
             onClick={() => c.iso && onSelect(c.iso)}
             className={[
@@ -218,7 +245,7 @@ function MonthGrid({ month, blocked, selectedStart, selectedEnd, onSelect }: {
               !c.d ? 'invisible' : '',
               c.disabled ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'hover:bg-blue-50',
               c.isStart || c.isEnd ? 'bg-blue-600 text-white' : '',
-              c.inRange ? 'bg-blue-100' : ''
+              c.inRange ? 'bg-blue-100' : '',
             ].join(' ')}
           >
             {c.d?.getDate()}
@@ -229,14 +256,32 @@ function MonthGrid({ month, blocked, selectedStart, selectedEnd, onSelect }: {
   );
 }
 
-function DateRangePicker({ blockedDates, onChange, initialCheckIn, initialCheckOut }: {
+function DateRangePicker({
+  blockedDates,
+  onChange,
+  initialCheckIn,
+  initialCheckOut,
+  s,
+  localeStr,
+}: {
   blockedDates: Set<string>;
   onChange: (checkIn: string, checkOut: string) => void;
   initialCheckIn?: string;
   initialCheckOut?: string;
+  s: BookGuestStrings;
+  localeStr: string;
 }) {
-  const [monthLeft, setMonthLeft] = useState<Date>(() => { const d=new Date(); d.setDate(1); return d; });
-  const [monthRight, setMonthRight] = useState<Date>(() => { const d=new Date(); d.setMonth(d.getMonth()+1); d.setDate(1); return d; });
+  const [monthLeft, setMonthLeft] = useState<Date>(() => {
+    const d = new Date();
+    d.setDate(1);
+    return d;
+  });
+  const [monthRight, setMonthRight] = useState<Date>(() => {
+    const d = new Date();
+    d.setMonth(d.getMonth() + 1);
+    d.setDate(1);
+    return d;
+  });
   const [checkIn, setCheckIn] = useState<string>(initialCheckIn || '');
   const [checkOut, setCheckOut] = useState<string>(initialCheckOut || '');
 
@@ -244,7 +289,7 @@ function DateRangePicker({ blockedDates, onChange, initialCheckIn, initialCheckO
     if (!a || !b) return false;
     const start = new Date(a);
     const end = new Date(b);
-    for (let d = new Date(start); d < end; d.setDate(d.getDate()+1)) {
+    for (let d = new Date(start); d < end; d.setDate(d.getDate() + 1)) {
       const iso = d.toISOString().split('T')[0];
       if (blockedDates.has(iso)) return true;
     }
@@ -253,17 +298,15 @@ function DateRangePicker({ blockedDates, onChange, initialCheckIn, initialCheckO
 
   const handleSelect = (iso: string) => {
     if (!checkIn || (checkIn && checkOut)) {
-      // start new range
       if (blockedDates.has(iso)) return;
       setCheckIn(iso);
       setCheckOut('');
       onChange(iso, '');
       return;
     }
-    // set checkout
     if (iso <= checkIn) return;
     if (hasBlockedInRange(checkIn, iso)) {
-      alert('Hay días ocupados dentro del rango. Elige otras fechas.');
+      alert(s.blockedInRange);
       return;
     }
     setCheckOut(iso);
@@ -271,49 +314,85 @@ function DateRangePicker({ blockedDates, onChange, initialCheckIn, initialCheckO
   };
 
   const prev = () => {
-    const l = new Date(monthLeft); l.setMonth(l.getMonth()-1);
-    const r = new Date(monthRight); r.setMonth(r.getMonth()-1);
-    setMonthLeft(l); setMonthRight(r);
+    const l = new Date(monthLeft);
+    l.setMonth(l.getMonth() - 1);
+    const r = new Date(monthRight);
+    r.setMonth(r.getMonth() - 1);
+    setMonthLeft(l);
+    setMonthRight(r);
   };
   const next = () => {
-    const l = new Date(monthLeft); l.setMonth(l.getMonth()+1);
-    const r = new Date(monthRight); r.setMonth(r.getMonth()+1);
-    setMonthLeft(l); setMonthRight(r);
+    const l = new Date(monthLeft);
+    l.setMonth(l.getMonth() + 1);
+    const r = new Date(monthRight);
+    r.setMonth(r.getMonth() + 1);
+    setMonthLeft(l);
+    setMonthRight(r);
   };
+
+  const m1 = monthLeft.toLocaleString(localeStr, { month: 'long', year: 'numeric' });
+  const m2 = monthRight.toLocaleString(localeStr, { month: 'long', year: 'numeric' });
+  const monthTitle = bookFmt(s.monthTitle, { m1, m2 });
 
   return (
     <div>
       <div className="flex items-center justify-between mb-2">
-        <button onClick={prev} className="p-2 rounded hover:bg-gray-100"><ChevronLeft className="w-5 h-5"/></button>
-        <div className="text-sm font-medium text-gray-700">
-          {monthLeft.toLocaleString('es-ES', { month: 'long', year: 'numeric' })} · {monthRight.toLocaleString('es-ES', { month: 'long', year: 'numeric' })}
-        </div>
-        <button onClick={next} className="p-2 rounded hover:bg-gray-100"><ChevronRight className="w-5 h-5"/></button>
+        <button type="button" onClick={prev} className="p-2 rounded hover:bg-gray-100">
+          <ChevronLeft className="w-5 h-5" />
+        </button>
+        <div className="text-sm font-medium text-gray-700 capitalize">{monthTitle}</div>
+        <button type="button" onClick={next} className="p-2 rounded hover:bg-gray-100">
+          <ChevronRight className="w-5 h-5" />
+        </button>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <MonthGrid month={monthLeft} blocked={blockedDates} selectedStart={checkIn} selectedEnd={checkOut} onSelect={handleSelect} />
-        <MonthGrid month={monthRight} blocked={blockedDates} selectedStart={checkIn} selectedEnd={checkOut} onSelect={handleSelect} />
+        <MonthGrid
+          month={monthLeft}
+          blocked={blockedDates}
+          selectedStart={checkIn}
+          selectedEnd={checkOut}
+          onSelect={handleSelect}
+          s={s}
+        />
+        <MonthGrid
+          month={monthRight}
+          blocked={blockedDates}
+          selectedStart={checkIn}
+          selectedEnd={checkOut}
+          onSelect={handleSelect}
+          s={s}
+        />
       </div>
       <div className="mt-3 text-sm text-gray-600">
         {checkIn ? (
           <div>
-            Seleccionado: <span className="font-medium">{checkIn}</span>
-            {checkOut && <> → <span className="font-medium">{checkOut}</span></>}
+            {s.selectedRange}{' '}
+            <span className="font-medium">{checkIn}</span>
+            {checkOut && (
+              <>
+                {' '}
+                → <span className="font-medium">{checkOut}</span>
+              </>
+            )}
           </div>
         ) : (
-          <div>Selecciona fecha de entrada</div>
+          <div>{s.selectCheckIn}</div>
         )}
       </div>
     </div>
   );
 }
 
-export default function PublicBookingPage({ params }: BookingPageProps) {
+function PublicBookingPageInner({ params }: BookingPageProps) {
   const resolvedParams = use(params);
   const { tenantId, propertyId } = resolvedParams;
+  const { lang, setLang } = useBookGuestLang();
+  const s = getBookStrings(lang);
+  const localeStr = lang === 'en' ? 'en-GB' : 'es-ES';
+
   const [property, setProperty] = useState<TenantProperty | null>(null);
   const [loading, setLoading] = useState(true);
-  const [step, setStep] = useState(1); // 1: Fechas, 2: Huéspedes, 3: Datos, 4: Pago
+  const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     check_in_date: '',
     check_out_date: '',
@@ -324,26 +403,20 @@ export default function PublicBookingPage({ params }: BookingPageProps) {
     guest_document_type: 'NIF',
     guest_document_number: '',
     guest_nationality: 'España',
-    special_requests: ''
+    special_requests: '',
   });
-  const [pricing, setPricing] = useState<any>(null);
+  const [pricing, setPricing] = useState<{
+    nights?: number;
+    total_amount?: number;
+    extra_guests?: number;
+    extra_guest_fee?: number;
+    extra_guests_amount?: number;
+    reservation_code?: string;
+  } | null>(null);
   const [blockedDates, setBlockedDates] = useState<Set<string>>(new Set());
-  const [availabilityInfo, setAvailabilityInfo] = useState<{from: string; to: string} | null>(null);
-
-  // Utils
-  const toISO = (d: Date) => d.toISOString().split('T')[0];
-  const addDays = (d: Date, n: number) => {
-    const x = new Date(d);
-    x.setDate(x.getDate() + n);
-    return x;
-  };
-  const iterateDates = (start: Date, end: Date) => {
-    const days: string[] = [];
-    for (let d = new Date(start); d < end; d = addDays(d, 1)) {
-      days.push(toISO(d));
-    }
-    return days;
-  };
+  const [availabilityInfo, setAvailabilityInfo] = useState<{ from: string; to: string } | null>(
+    null
+  );
 
   useEffect(() => {
     if (propertyId && tenantId) {
@@ -353,26 +426,30 @@ export default function PublicBookingPage({ params }: BookingPageProps) {
 
   const loadProperty = async () => {
     try {
-      // Cargar propiedad desde API pública
-      const response = await fetch(`/api/public/properties/${propertyId}?tenant_id=${tenantId}`);
+      const response = await fetch(
+        `/api/public/properties/${propertyId}?tenant_id=${tenantId}`
+      );
       const data = await response.json();
-      
+
       if (data.success) {
         setProperty(data.property);
-        // Pre-cargar calendario de disponibilidad (12 meses desde hoy)
         const from = new Date();
         const to = new Date();
         to.setMonth(to.getMonth() + 12);
         const fromStr = from.toISOString().split('T')[0];
         const toStr = to.toISOString().split('T')[0];
         try {
-          const calRes = await fetch(`/api/public/availability-calendar?property_id=${propertyId}&from=${fromStr}&to=${toStr}`);
+          const calRes = await fetch(
+            `/api/public/availability-calendar?property_id=${propertyId}&from=${fromStr}&to=${toStr}`
+          );
           const cal = await calRes.json();
           if (cal.success && Array.isArray(cal.blockedDates)) {
             setBlockedDates(new Set(cal.blockedDates));
             setAvailabilityInfo({ from: fromStr, to: toStr });
           }
-        } catch (_) {}
+        } catch {
+          /* ignore */
+        }
       } else {
         console.error('Error cargando propiedad:', data.error);
       }
@@ -391,11 +468,11 @@ export default function PublicBookingPage({ params }: BookingPageProps) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          property_id: parseInt(propertyId),
+          property_id: parseInt(propertyId, 10),
           check_in_date: formData.check_in_date,
           check_out_date: formData.check_out_date,
-          guests: formData.guests
-        })
+          guests: formData.guests,
+        }),
       });
 
       const data = await response.json();
@@ -420,185 +497,239 @@ export default function PublicBookingPage({ params }: BookingPageProps) {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500"></div>
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500" />
       </div>
     );
   }
 
   if (!property) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Propiedad no encontrada</h1>
-          <p className="text-gray-600">La propiedad que buscas no está disponible.</p>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+        <div className="text-center max-w-md">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">{s.notFoundTitle}</h1>
+          <p className="text-gray-600">{s.notFoundBody}</p>
         </div>
       </div>
     );
   }
 
+  const included = property.included_guests ?? Math.min(2, property.max_guests);
+  const guestPlEs = included > 1 ? 'es' : '';
+  const guestPlEn = included > 1 ? 's' : '';
+  const includesLine =
+    lang === 'es'
+      ? bookFmt(s.includesGuests, {
+          n: included,
+          pl: guestPlEs,
+          fee: property.extra_guest_fee ?? 0,
+        })
+      : bookFmt(s.includesGuests, {
+          n: included,
+          pl: guestPlEn,
+          fee: property.extra_guest_fee ?? 0,
+        });
+
+  const stepClass = (n: number) =>
+    `w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+      step >= n ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600'
+    }`;
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-4xl mx-auto py-8 px-4">
-        {/* Header */}
+        <div className="flex justify-end mb-4">
+          <div
+            className="inline-flex flex-col items-end gap-1"
+            role="group"
+            aria-label={s.langSwitchAria}
+          >
+            <div className="flex rounded-lg border border-gray-200 bg-white p-0.5 shadow-sm">
+              <button
+                type="button"
+                onClick={() => setLang('es')}
+                className={`px-3 py-1.5 text-sm font-medium rounded-md ${
+                  lang === 'es' ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                {s.langEs}
+              </button>
+              <button
+                type="button"
+                onClick={() => setLang('en')}
+                className={`px-3 py-1.5 text-sm font-medium rounded-md ${
+                  lang === 'en' ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                {s.langEn}
+              </button>
+            </div>
+            <p className="text-xs text-gray-500 max-w-xs text-right">{s.langHint}</p>
+          </div>
+        </div>
+
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">{property.property_name}</h1>
-          {property.description && (
-            <p className="text-gray-600 mb-4">{property.description}</p>
-          )}
-          
+          {property.description && <p className="text-gray-600 mb-4">{property.description}</p>}
+
           <div className="flex items-center gap-6 text-sm text-gray-500">
             <div className="flex items-center gap-1">
               <Users className="w-4 h-4" />
-              {property.max_guests} huéspedes máx.
+              {property.max_guests} {s.maxGuests}
             </div>
             <div className="flex items-center gap-1">
               <Euro className="w-4 h-4" />
-              {property.base_price}/noche
+              {property.base_price}
+              {s.perNight}
             </div>
           </div>
           {(property.extra_guest_fee ?? 0) > 0 && (
-            <div className="mt-2 text-xs text-gray-500">
-              Incluye {property.included_guests ?? Math.min(2, property.max_guests)} huésped{(property.included_guests ?? 2) > 1 ? 'es' : ''}. +{property.extra_guest_fee}€/persona/noche extra.
-            </div>
+            <div className="mt-2 text-xs text-gray-500">{includesLine}</div>
           )}
         </div>
 
-        {/* Formulario de reserva */}
         <div className="bg-white rounded-lg shadow-md p-6">
-          <div className="flex items-center gap-2 mb-6">
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-              step >= 1 ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600'
-            }`}>
-              1
-            </div>
-            <span className="font-medium">Fechas</span>
-            
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ml-4 ${
-              step >= 2 ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600'
-            }`}>
-              2
-            </div>
-            <span className="font-medium">Huéspedes</span>
-            
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ml-4 ${
-              step >= 3 ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600'
-            }`}>
-              3
-            </div>
-            <span className="font-medium">Datos</span>
-            
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ml-4 ${
-              step >= 4 ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600'
-            }`}>
-              4
-            </div>
-            <span className="font-medium">Pago</span>
+          <div className="flex flex-wrap items-center gap-2 mb-6 text-sm md:text-base">
+            <div className={stepClass(1)}>1</div>
+            <span className="font-medium">{s.stepDates}</span>
+            <div className={`${stepClass(2)} ml-2 md:ml-4`}>2</div>
+            <span className="font-medium">{s.stepGuests}</span>
+            <div className={`${stepClass(3)} ml-2 md:ml-4`}>3</div>
+            <span className="font-medium">{s.stepDetails}</span>
+            <div className={`${stepClass(4)} ml-2 md:ml-4`}>4</div>
+            <span className="font-medium">{s.stepPayment}</span>
           </div>
 
-          {/* Paso 1: Fechas */}
           {step === 1 && (
             <div className="space-y-4">
-              <h2 className="text-xl font-semibold mb-4">Selecciona tus fechas</h2>
-              
+              <h2 className="text-xl font-semibold mb-4">{s.selectDates}</h2>
+
               <DateRangePicker
                 blockedDates={blockedDates}
-                onChange={(ci, co) => setFormData({ ...formData, check_in_date: ci, check_out_date: co })}
+                onChange={(ci, co) =>
+                  setFormData({ ...formData, check_in_date: ci, check_out_date: co })
+                }
                 initialCheckIn={formData.check_in_date}
                 initialCheckOut={formData.check_out_date}
+                s={s}
+                localeStr={localeStr}
               />
 
               {availabilityInfo && (
                 <p className="text-xs text-gray-500">
-                  Días ocupados ocultos en el selector entre {availabilityInfo.from} y {availabilityInfo.to}. Si eliges una fecha ocupada te avisaremos.
+                  {bookFmt(s.availabilityHint, {
+                    from: availabilityInfo.from,
+                    to: availabilityInfo.to,
+                  })}
                 </p>
               )}
-              
+
               {pricing && (
                 <div className="bg-blue-50 p-4 rounded-lg">
-                  <h3 className="font-semibold text-blue-900 mb-2">Resumen de precios</h3>
+                  <h3 className="font-semibold text-blue-900 mb-2">{s.priceSummary}</h3>
                   <div className="space-y-1 text-sm">
                     <div className="flex justify-between">
-                      <span>{pricing.nights} noches × {property.base_price}€</span>
-                      <span>{(pricing.nights * property.base_price).toFixed(2)}€</span>
+                      <span>
+                        {bookFmt(s.nightsX, {
+                          n: pricing.nights ?? 0,
+                          price: property.base_price,
+                        })}
+                      </span>
+                      <span>
+                        {((pricing.nights ?? 0) * Number(property.base_price)).toFixed(2)}€
+                      </span>
                     </div>
                     {pricing.extra_guests && Number(pricing.extra_guests) > 0 && (
                       <div className="flex justify-between">
                         <span>
-                          {pricing.extra_guests} persona{Number(pricing.extra_guests) > 1 ? 's' : ''} extra × {pricing.nights} noches × {pricing.extra_guest_fee}€
+                          {bookFmt(s.extraPersonLine, {
+                            n: pricing.extra_guests,
+                            pl: Number(pricing.extra_guests) > 1 ? 's' : '',
+                            nights: pricing.nights ?? 0,
+                            fee: pricing.extra_guest_fee ?? property.extra_guest_fee ?? 0,
+                          })}
                         </span>
                         <span>{pricing.extra_guests_amount}€</span>
                       </div>
                     )}
                     {property.cleaning_fee > 0 && (
                       <div className="flex justify-between">
-                        <span>Tarifa de limpieza</span>
+                        <span>{s.cleaningFee}</span>
                         <span>{property.cleaning_fee}€</span>
                       </div>
                     )}
                     <div className="flex justify-between font-semibold border-t pt-2">
-                      <span>Total</span>
+                      <span>{s.total}</span>
                       <span>{pricing.total_amount}€</span>
                     </div>
                   </div>
                 </div>
               )}
-              
+
               <button
+                type="button"
                 onClick={() => setStep(2)}
                 disabled={!formData.check_in_date || !formData.check_out_date}
                 className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 disabled:bg-gray-300"
               >
-                Continuar
+                {s.continue}
               </button>
             </div>
           )}
 
-          {/* Paso 2: Huéspedes */}
           {step === 2 && (
             <div className="space-y-4">
-              <h2 className="text-xl font-semibold mb-4">Número de huéspedes</h2>
-              
+              <h2 className="text-xl font-semibold mb-4">{s.guestCountTitle}</h2>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Huéspedes
+                  {s.guestsLabel}
                 </label>
                 <select
                   value={formData.guests}
-                  onChange={(e) => setFormData({ ...formData, guests: parseInt(e.target.value) })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, guests: parseInt(e.target.value, 10) })
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
-                  {Array.from({ length: property.max_guests }, (_, i) => (
-                    <option key={i + 1} value={i + 1}>{i + 1} huésped{i + 1 > 1 ? 'es' : ''}</option>
-                  ))}
+                  {Array.from({ length: property.max_guests }, (_, i) => {
+                    const n = i + 1;
+                    const pl = n > 1 ? (lang === 'es' ? 'es' : 's') : '';
+                    return (
+                      <option key={n} value={n}>
+                        {bookFmt(s.guestOption, { n, pl })}
+                      </option>
+                    );
+                  })}
                 </select>
               </div>
-              
+
               <div className="flex gap-4">
                 <button
+                  type="button"
                   onClick={() => setStep(1)}
                   className="flex-1 bg-gray-300 text-gray-700 py-3 rounded-lg hover:bg-gray-400"
                 >
-                  Atrás
+                  {s.back}
                 </button>
                 <button
+                  type="button"
                   onClick={() => setStep(3)}
                   className="flex-1 bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700"
                 >
-                  Continuar
+                  {s.continue}
                 </button>
               </div>
             </div>
           )}
 
-          {/* Paso 3: Datos del huésped */}
           {step === 3 && (
             <div className="space-y-4">
-              <h2 className="text-xl font-semibold mb-4">Datos del huésped</h2>
-              
+              <h2 className="text-xl font-semibold mb-4">{s.guestDetailsTitle}</h2>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Nombre completo *
+                    {s.fullName}
                   </label>
                   <input
                     type="text"
@@ -608,11 +739,9 @@ export default function PublicBookingPage({ params }: BookingPageProps) {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
-                
+
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Email *
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{s.email}</label>
                   <input
                     type="email"
                     required
@@ -621,11 +750,9 @@ export default function PublicBookingPage({ params }: BookingPageProps) {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
-                
+
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Teléfono
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{s.phone}</label>
                   <input
                     type="tel"
                     value={formData.guest_phone}
@@ -633,52 +760,57 @@ export default function PublicBookingPage({ params }: BookingPageProps) {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Nacionalidad
+                    {s.nationality}
                   </label>
                   <input
                     type="text"
                     value={formData.guest_nationality}
-                    onChange={(e) => setFormData({ ...formData, guest_nationality: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, guest_nationality: e.target.value })
+                    }
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Solicitudes especiales
+                  {s.specialRequests}
                 </label>
                 <textarea
                   value={formData.special_requests}
-                  onChange={(e) => setFormData({ ...formData, special_requests: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, special_requests: e.target.value })
+                  }
                   rows={3}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Alguna solicitud especial..."
+                  placeholder={s.specialPlaceholder}
                 />
               </div>
-              
+
               <div className="flex gap-4">
                 <button
+                  type="button"
                   onClick={() => setStep(2)}
                   className="flex-1 bg-gray-300 text-gray-700 py-3 rounded-lg hover:bg-gray-400"
                 >
-                  Atrás
+                  {s.back}
                 </button>
                 <button
+                  type="button"
                   onClick={() => setStep(4)}
                   disabled={!formData.guest_name || !formData.guest_email}
                   className="flex-1 bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 disabled:bg-gray-300"
                 >
-                  Continuar al pago
+                  {s.continueToPay}
                 </button>
               </div>
             </div>
           )}
 
-          {/* Paso 4: Pago */}
           {step === 4 && (
             <Elements stripe={stripePromise}>
               <PaymentForm
@@ -687,23 +819,21 @@ export default function PublicBookingPage({ params }: BookingPageProps) {
                 formData={formData}
                 pricing={pricing}
                 property={property}
+                s={s}
                 onBack={() => setStep(3)}
                 onSuccess={handlePaymentSuccess}
               />
             </Elements>
           )}
 
-          {/* Paso 5: Confirmación */}
           {step === 5 && (
             <div className="text-center space-y-4">
               <CheckCircle className="w-16 h-16 text-green-600 mx-auto" />
-              <h2 className="text-2xl font-semibold text-gray-900">¡Reserva confirmada!</h2>
-              <p className="text-gray-600">
-                Tu reserva ha sido procesada correctamente. Recibirás un email de confirmación.
-              </p>
+              <h2 className="text-2xl font-semibold text-gray-900">{s.confirmedTitle}</h2>
+              <p className="text-gray-600">{s.confirmedBody}</p>
               <div className="bg-green-50 p-4 rounded-lg">
                 <p className="text-sm text-green-800">
-                  <strong>Código de reserva:</strong> {pricing?.reservation_code}
+                  <strong>{s.reservationCode}</strong> {pricing?.reservation_code}
                 </p>
               </div>
             </div>
@@ -711,5 +841,21 @@ export default function PublicBookingPage({ params }: BookingPageProps) {
         </div>
       </div>
     </div>
+  );
+}
+
+function BookingSuspenseFallback() {
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500" />
+    </div>
+  );
+}
+
+export default function PublicBookingPage(props: BookingPageProps) {
+  return (
+    <Suspense fallback={<BookingSuspenseFallback />}>
+      <PublicBookingPageInner {...props} />
+    </Suspense>
   );
 }
