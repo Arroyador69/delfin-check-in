@@ -6,6 +6,7 @@ import { useLocale } from 'next-intl';
 import LocalizedDateInput from '@/components/LocalizedDateInput';
 import { toIntlDateLocale, type Locale as AppLocale } from '@/i18n/config';
 import { Plus, Trash2, Copy, ExternalLink, Home, Bed, X, CheckCircle, Link as LinkIcon } from 'lucide-react';
+import { guestLocaleIsEn, paymentLinkIsActiveForUi } from '@/lib/payment-links-ui';
 
 interface PaymentLink {
   id: number;
@@ -84,11 +85,9 @@ export default function PaymentLinksPage() {
       const response = await fetch('/api/payment-links', { credentials: 'include' });
       const data = await response.json();
       if (data.success) {
-        // Agregar URLs a los enlaces (no mostrar enlaces desactivados: la papelera los “elimina”)
         const baseUrl = process.env.NEXT_PUBLIC_BOOK_URL || 'https://book.delfincheckin.com';
-        const activeOnly = (data.links as PaymentLink[]).filter((l) => l.is_active !== false);
-        const linksWithUrls = activeOnly.map((link: PaymentLink) => {
-          const loc = link.guest_locale === 'en' ? 'en' : 'es';
+        const linksWithUrls = (data.links as PaymentLink[]).map((link: PaymentLink) => {
+          const loc = guestLocaleIsEn(link.guest_locale) ? 'en' : 'es';
           const qs = loc === 'en' ? '?lang=en' : '';
           return {
             ...link,
@@ -159,8 +158,9 @@ export default function PaymentLinksPage() {
       } else {
         setMessage({ type: 'error', text: data.error || t('errorCreate') });
       }
-    } catch (error: any) {
-      setMessage({ type: 'error', text: error.message || t('errorCreate') });
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : t('errorCreate');
+      setMessage({ type: 'error', text: msg });
     }
   };
 
@@ -177,7 +177,7 @@ export default function PaymentLinksPage() {
 
       const data = await response.json().catch(() => ({}));
       if (response.ok && data.success) {
-        setMessage({ type: 'success', text: t('deactivateSuccess') });
+        setMessage({ type: 'success', text: t('deleteSuccess') });
         setLinks((prev) => prev.filter((l) => l.link_code !== linkCode));
         loadLinks();
       } else {
@@ -548,7 +548,7 @@ export default function PaymentLinksPage() {
                       <div className="text-xs text-gray-500">{link.link_code}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                      {link.guest_locale === 'en' ? t('guestLocaleEn') : t('guestLocaleEs')}
+                      {guestLocaleIsEn(link.guest_locale) ? t('guestLocaleEn') : t('guestLocaleEs')}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center text-sm text-gray-900">
@@ -569,12 +569,14 @@ export default function PaymentLinksPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="space-y-1">
-                        <span className={`px-2 py-1 text-xs rounded-full ${
-                          link.is_active
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-gray-100 text-gray-800'
-                        }`}>
-                          {link.is_active ? t('active') : t('inactive')}
+                        <span
+                          className={`px-2 py-1 text-xs rounded-full ${
+                            paymentLinkIsActiveForUi(link.is_active)
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-gray-100 text-gray-800'
+                          }`}
+                        >
+                          {paymentLinkIsActiveForUi(link.is_active) ? t('active') : t('inactive')}
                         </span>
                         {link.payment_completed && (
                           <div className="flex items-center text-xs text-green-700">
@@ -619,7 +621,7 @@ export default function PaymentLinksPage() {
                         <button
                           onClick={() => handleDelete(link.link_code)}
                           className="text-red-600 hover:text-red-900"
-                          title={t('deactivate')}
+                          title={t('deleteLink')}
                         >
                           <Trash2 className="w-5 h-5" />
                         </button>

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Plus, Trash2, Copy, ExternalLink, Calendar, Euro, Users, Home, Bed, X, CheckCircle, Link as LinkIcon } from 'lucide-react';
+import { guestLocaleIsEn, paymentLinkIsActiveForUi } from '@/lib/payment-links-ui';
 
 interface PaymentLink {
   id: number;
@@ -78,9 +79,8 @@ export default function PaymentLinksPage() {
       const data = await response.json();
       if (data.success) {
         const baseUrl = process.env.NEXT_PUBLIC_BOOK_URL || 'https://book.delfincheckin.com';
-        const activeOnly = (data.links as PaymentLink[]).filter((l) => l.is_active !== false);
-        const linksWithUrls = activeOnly.map((link: PaymentLink) => {
-          const loc = link.guest_locale === 'en' ? 'en' : 'es';
+        const linksWithUrls = (data.links as PaymentLink[]).map((link: PaymentLink) => {
+          const loc = guestLocaleIsEn(link.guest_locale) ? 'en' : 'es';
           const qs = loc === 'en' ? '?lang=en' : '';
           return {
             ...link,
@@ -155,7 +155,7 @@ export default function PaymentLinksPage() {
   };
 
   const handleDelete = async (linkCode: string) => {
-    if (!confirm('¿Estás seguro de que quieres desactivar este enlace de pago?')) {
+    if (!confirm('¿Eliminar este enlace de pago? No podrás recuperarlo.')) {
       return;
     }
 
@@ -167,7 +167,7 @@ export default function PaymentLinksPage() {
 
       const data = await response.json().catch(() => ({}));
       if (response.ok && data.success) {
-        setMessage({ type: 'success', text: 'Enlace desactivado correctamente' });
+        setMessage({ type: 'success', text: 'Enlace eliminado correctamente' });
         setLinks((prev) => prev.filter((l) => l.link_code !== linkCode));
         loadLinks();
       } else {
@@ -509,6 +509,9 @@ export default function PaymentLinksPage() {
                     Nombre / Código
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Idioma
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Recurso
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -537,6 +540,9 @@ export default function PaymentLinksPage() {
                       </div>
                       <div className="text-xs text-gray-500">{link.link_code}</div>
                     </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                      {guestLocaleIsEn(link.guest_locale) ? 'English' : 'Español'}
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center text-sm text-gray-900">
                         {link.resource_type === 'room' ? (
@@ -556,12 +562,14 @@ export default function PaymentLinksPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="space-y-1">
-                        <span className={`px-2 py-1 text-xs rounded-full ${
-                          link.is_active
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-gray-100 text-gray-800'
-                        }`}>
-                          {link.is_active ? 'Activo' : 'Inactivo'}
+                        <span
+                          className={`px-2 py-1 text-xs rounded-full ${
+                            paymentLinkIsActiveForUi(link.is_active)
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-gray-100 text-gray-800'
+                          }`}
+                        >
+                          {paymentLinkIsActiveForUi(link.is_active) ? 'Activo' : 'Inactivo'}
                         </span>
                         {link.payment_completed && (
                           <div className="flex items-center text-xs text-green-700">
@@ -606,7 +614,7 @@ export default function PaymentLinksPage() {
                         <button
                           onClick={() => handleDelete(link.link_code)}
                           className="text-red-600 hover:text-red-900"
-                          title="Desactivar"
+                          title="Eliminar enlace"
                         >
                           <Trash2 className="w-5 h-5" />
                         </button>

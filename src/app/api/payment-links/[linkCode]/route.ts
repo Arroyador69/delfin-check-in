@@ -161,16 +161,22 @@ export async function DELETE(
       );
     }
 
-    // Desactivar el enlace (soft delete)
-    await sql`
-      UPDATE payment_links
-      SET is_active = false, updated_at = NOW()
+    const del = await sql`
+      DELETE FROM payment_links
       WHERE link_code = ${linkCode} AND tenant_id = ${tenantId}::uuid
+      RETURNING id
     `;
+
+    if (del.rows.length === 0) {
+      return NextResponse.json(
+        { success: false, error: 'No se pudo eliminar el enlace' },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({
       success: true,
-      message: 'Enlace desactivado correctamente'
+      message: 'Enlace eliminado correctamente',
     });
   } catch (error: any) {
     console.error('Error eliminando enlace de pago:', error);
