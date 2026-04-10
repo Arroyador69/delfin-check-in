@@ -1,6 +1,28 @@
 {
   "framework": "nextjs",
   "buildCommand": "npm run build",
+  "rewrites": [
+    {
+      "source": "/pay/:linkCode",
+      "destination": "/book/pay/:linkCode",
+      "has": [{ "type": "host", "value": "book.delfincheckin.com" }]
+    },
+    {
+      "source": "/:tenant([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})/:propertyId(\\d+)",
+      "destination": "/book/:tenant/:propertyId",
+      "has": [{ "type": "host", "value": "book.delfincheckin.com" }]
+    },
+    {
+      "source": "/pay/:linkCode",
+      "destination": "/book/pay/:linkCode",
+      "has": [{ "type": "host", "value": "book.staging.delfincheckin.com" }]
+    },
+    {
+      "source": "/:tenant([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})/:propertyId(\\d+)",
+      "destination": "/book/:tenant/:propertyId",
+      "has": [{ "type": "host", "value": "book.staging.delfincheckin.com" }]
+    }
+  ],
   "crons": [
     {"path":"/api/superadmin/programmatic/cron","schedule":"0 9,17 * * *"},
     {"path":"/api/cron/daily-report","schedule":"0 7 * * *"},

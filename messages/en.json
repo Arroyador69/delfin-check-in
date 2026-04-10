@@ -1839,6 +1839,7 @@
       "deleteConfirm": "Are you sure you want to deactivate this payment link?",
       "deactivateSuccess": "Link deactivated successfully",
       "errorDeactivate": "Error deactivating link",
+      "sessionHint": "check your session or sign in again",
       "createFormTitle": "Create New Payment Link",
       "guestLocaleLabel": "Language for guest page *",
       "guestLocaleHint": "Spanish or English for the payment page the customer opens (book.delfincheckin.com).",

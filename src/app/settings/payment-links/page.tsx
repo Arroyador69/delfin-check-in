@@ -7,6 +7,7 @@ interface PaymentLink {
   id: number;
   link_code: string;
   link_name: string | null;
+  guest_locale?: string | null;
   resource_type: 'room' | 'property';
   resource_id: string;
   check_in_date: string;
@@ -61,7 +62,8 @@ export default function PaymentLinksPage() {
     expected_guests: '2',
     expires_at: '',
     max_uses: '',
-    internal_notes: ''
+    internal_notes: '',
+    guest_locale: 'es' as 'es' | 'en',
   });
 
   useEffect(() => {
@@ -72,15 +74,19 @@ export default function PaymentLinksPage() {
   const loadLinks = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/payment-links');
+      const response = await fetch('/api/payment-links', { credentials: 'include' });
       const data = await response.json();
       if (data.success) {
-        // Agregar URLs a los enlaces
         const baseUrl = process.env.NEXT_PUBLIC_BOOK_URL || 'https://book.delfincheckin.com';
-        const linksWithUrls = data.links.map((link: PaymentLink) => ({
-          ...link,
-          link_url: `${baseUrl}/pay/${link.link_code}`
-        }));
+        const activeOnly = (data.links as PaymentLink[]).filter((l) => l.is_active !== false);
+        const linksWithUrls = activeOnly.map((link: PaymentLink) => {
+          const loc = link.guest_locale === 'en' ? 'en' : 'es';
+          const qs = loc === 'en' ? '?lang=en' : '';
+          return {
+            ...link,
+            link_url: `${baseUrl}/pay/${link.link_code}${qs}`,
+          };
+        });
         setLinks(linksWithUrls);
       }
     } catch (error) {
@@ -94,14 +100,14 @@ export default function PaymentLinksPage() {
   const loadResources = async () => {
     try {
       // Cargar slots de habitaciones
-      const slotsRes = await fetch('/api/tenant/property-slots');
+      const slotsRes = await fetch('/api/tenant/property-slots', { credentials: 'include' });
       const slotsData = await slotsRes.json();
       if (slotsRes.ok && slotsData.success) {
         setSlots(slotsData.slots || []);
       }
 
       // Cargar propiedades
-      const propsRes = await fetch('/api/tenant/properties');
+      const propsRes = await fetch('/api/tenant/properties', { credentials: 'include' });
       const propsData = await propsRes.json();
       if (propsRes.ok && propsData.success) {
         const raw = (propsData.properties || []) as any[];
@@ -121,6 +127,7 @@ export default function PaymentLinksPage() {
     try {
       const response = await fetch('/api/payment-links', {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...formData,
@@ -154,18 +161,26 @@ export default function PaymentLinksPage() {
 
     try {
       const response = await fetch(`/api/payment-links/${linkCode}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        credentials: 'include',
       });
 
-      const data = await response.json();
-      if (data.success) {
+      const data = await response.json().catch(() => ({}));
+      if (response.ok && data.success) {
         setMessage({ type: 'success', text: 'Enlace desactivado correctamente' });
+        setLinks((prev) => prev.filter((l) => l.link_code !== linkCode));
         loadLinks();
       } else {
-        setMessage({ type: 'error', text: data.error || 'Error desactivando enlace' });
+        const msg =
+          data.error ||
+          (response.status === 401
+            ? 'No autorizado: vuelve a iniciar sesión e inténtalo de nuevo.'
+            : 'Error desactivando enlace');
+        setMessage({ type: 'error', text: msg });
       }
-    } catch (error: any) {
-      setMessage({ type: 'error', text: error.message || 'Error desactivando enlace' });
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : 'Error desactivando enlace';
+      setMessage({ type: 'error', text: msg });
     }
   };
 
@@ -192,7 +207,8 @@ export default function PaymentLinksPage() {
       expected_guests: '2',
       expires_at: '',
       max_uses: '',
-      internal_notes: ''
+      internal_notes: '',
+      guest_locale: 'es',
     });
   };
 
@@ -258,6 +274,24 @@ export default function PaymentLinksPage() {
           <h2 className="text-xl font-semibold mb-4">Crear Nuevo Enlace de Pago</h2>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Idioma página de pago (huésped)
+                </label>
+                <select
+                  value={formData.guest_locale}
+                  onChange={(e) =>
+                    setFormData({ ...formData, guest_locale: e.target.value as 'es' | 'en' })
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="es">Español</option>
+                  <option value="en">English</option>
+                </select>
+                <p className="mt-1 text-xs text-gray-500">
+                  Define si el enlace copiado lleva <code className="text-xs">?lang=en</code> y el texto inicial en inglés.
+                </p>
+              </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Nombre del enlace (opcional)

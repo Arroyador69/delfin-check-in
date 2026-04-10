@@ -1905,6 +1905,7 @@
       "deleteConfirm": "¿Estás seguro de que quieres desactivar este enlace de pago?",
       "deactivateSuccess": "Enlace desactivado correctamente",
       "errorDeactivate": "Error desactivando enlace",
+      "sessionHint": "revisa la sesión o vuelve a entrar",
       "createFormTitle": "Crear Nuevo Enlace de Pago",
       "guestLocaleLabel": "Idioma para el huésped *",
       "guestLocaleHint": "Español o inglés en la página de pago que abre el cliente (book.delfincheckin.com).",

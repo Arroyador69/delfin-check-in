@@ -1869,6 +1869,7 @@
       "deleteConfirm": "Sei sicuro di voler disattivare questo link di pagamento?",
       "deactivateSuccess": "Link disattivato correttamente",
       "errorDeactivate": "Errore nella disattivazione del link",
+      "sessionHint": "controlla la sessione o accedi di nuovo",
       "createFormTitle": "Crea nuovo link di pagamento",
       "guestLocaleLabel": "Lingua per l’ospite *",
       "guestLocaleHint": "Italiano: scegli la lingua della pagina di pagamento su book.delfincheckin.com (spagnolo o inglese).",

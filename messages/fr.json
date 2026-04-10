@@ -1796,6 +1796,7 @@
       "deleteConfirm": "Êtes-vous sûr de vouloir désactiver ce lien de paiement ?",
       "deactivateSuccess": "Lien désactivé avec succès",
       "errorDeactivate": "Erreur lors de la désactivation du lien",
+      "sessionHint": "vérifiez la session ou reconnectez-vous",
       "createFormTitle": "Créer un nouveau lien de paiement",
       "guestLocaleLabel": "Langue pour l’invité *",
       "guestLocaleHint": "Espagnol ou anglais sur la page de paiement (book.delfincheckin.com).",

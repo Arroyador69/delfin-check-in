@@ -35,7 +35,10 @@ function rewriteBookMicrositePath(req: NextRequest): NextResponse | null {
     return NextResponse.rewrite(url)
   }
 
-  const propMatch = pathname.match(/^\/([^/]+)\/(\d+)\/?$/)
+  // Solo UUID + id numérico (evita capturar /es/31 u otras rutas de 2 segmentos en el host book)
+  const propMatch = pathname.match(
+    /^\/([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})\/(\d+)\/?$/i
+  )
   if (propMatch) {
     url.pathname = `/book/${propMatch[1]}/${propMatch[2]}`
     return NextResponse.rewrite(url)

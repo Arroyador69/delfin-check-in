@@ -81,12 +81,13 @@ export default function PaymentLinksPage() {
   const loadLinks = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/payment-links');
+      const response = await fetch('/api/payment-links', { credentials: 'include' });
       const data = await response.json();
       if (data.success) {
-        // Agregar URLs a los enlaces
+        // Agregar URLs a los enlaces (no mostrar enlaces desactivados: la papelera los “elimina”)
         const baseUrl = process.env.NEXT_PUBLIC_BOOK_URL || 'https://book.delfincheckin.com';
-        const linksWithUrls = data.links.map((link: PaymentLink) => {
+        const activeOnly = (data.links as PaymentLink[]).filter((l) => l.is_active !== false);
+        const linksWithUrls = activeOnly.map((link: PaymentLink) => {
           const loc = link.guest_locale === 'en' ? 'en' : 'es';
           const qs = loc === 'en' ? '?lang=en' : '';
           return {
@@ -107,14 +108,14 @@ export default function PaymentLinksPage() {
   const loadResources = async () => {
     try {
       // Cargar slots de habitaciones
-      const slotsRes = await fetch('/api/tenant/property-slots');
+      const slotsRes = await fetch('/api/tenant/property-slots', { credentials: 'include' });
       const slotsData = await slotsRes.json();
       if (slotsRes.ok && slotsData.success) {
         setSlots(slotsData.slots || []);
       }
 
       // Cargar propiedades
-      const propsRes = await fetch('/api/tenant/properties');
+      const propsRes = await fetch('/api/tenant/properties', { credentials: 'include' });
       const propsData = await propsRes.json();
       if (propsRes.ok && propsData.success) {
         // En /api/tenant/properties pueden venir placeholders con id = null.
@@ -136,6 +137,7 @@ export default function PaymentLinksPage() {
     try {
       const response = await fetch('/api/payment-links', {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...formData,
@@ -169,18 +171,26 @@ export default function PaymentLinksPage() {
 
     try {
       const response = await fetch(`/api/payment-links/${linkCode}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        credentials: 'include',
       });
 
-      const data = await response.json();
-      if (data.success) {
+      const data = await response.json().catch(() => ({}));
+      if (response.ok && data.success) {
         setMessage({ type: 'success', text: t('deactivateSuccess') });
+        setLinks((prev) => prev.filter((l) => l.link_code !== linkCode));
         loadLinks();
       } else {
-        setMessage({ type: 'error', text: data.error || t('errorDeactivate') });
+        const msg =
+          data.error ||
+          (response.status === 401
+            ? `${t('errorDeactivate')} (${t('sessionHint')})`
+            : t('errorDeactivate'));
+        setMessage({ type: 'error', text: msg });
       }
-    } catch (error: any) {
-      setMessage({ type: 'error', text: error.message || t('errorDeactivate') });
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : t('errorDeactivate');
+      setMessage({ type: 'error', text: msg });
     }
   };
 
