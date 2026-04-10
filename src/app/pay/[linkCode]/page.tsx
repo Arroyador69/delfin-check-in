@@ -2,20 +2,9 @@ import { Suspense } from 'react';
 import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 import PayLinkClient from '@/app/book/pay/[linkCode]/pay-link-client';
-import type { BookGuestLang } from '@/lib/book-guest-i18n';
 import { isBookMicrositeRequestHost } from '@/lib/book-public-host';
 
 export const dynamic = 'force-dynamic';
-
-function parseLangFromSearchParams(
-  lang: string | string[] | undefined
-): BookGuestLang | undefined {
-  const raw = Array.isArray(lang) ? lang[0] : lang;
-  const n = (raw || '').toLowerCase().trim();
-  if (n === 'en') return 'en';
-  if (n === 'es') return 'es';
-  return undefined;
-}
 
 function PayFallback() {
   return (
@@ -26,15 +15,13 @@ function PayFallback() {
 }
 
 /**
- * URL pública: https://book.delfincheckin.com/pay/{code}?lang=en
- * Misma UI i18n que /book/pay/… (rutas /pay en la raíz para el dominio book).
+ * URL pública: https://book.delfincheckin.com/pay/{code}
+ * (misma UI que /book/pay/…; solo host microsite).
  */
 export default async function PayLinkRootPage({
   params,
-  searchParams,
 }: {
   params: Promise<{ linkCode: string }>;
-  searchParams: Promise<{ lang?: string | string[] }>;
 }) {
   const h = await headers();
   const forwarded = h.get('x-forwarded-host');
@@ -43,12 +30,9 @@ export default async function PayLinkRootPage({
     notFound();
   }
 
-  const sp = await searchParams;
-  const initialLangFromUrl = parseLangFromSearchParams(sp.lang);
-
   return (
     <Suspense fallback={<PayFallback />}>
-      <PayLinkClient params={params} initialLangFromUrl={initialLangFromUrl} />
+      <PayLinkClient params={params} />
     </Suspense>
   );
 }

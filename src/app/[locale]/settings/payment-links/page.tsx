@@ -6,7 +6,7 @@ import { useLocale } from 'next-intl';
 import LocalizedDateInput from '@/components/LocalizedDateInput';
 import { toIntlDateLocale, type Locale as AppLocale } from '@/i18n/config';
 import { Plus, Trash2, Copy, ExternalLink, Home, Bed, X, CheckCircle, Link as LinkIcon } from 'lucide-react';
-import { guestLocaleIsEn, paymentLinkIsActiveForUi } from '@/lib/payment-links-ui';
+import { paymentLinkIsActiveForUi } from '@/lib/payment-links-ui';
 
 interface PaymentLink {
   id: number;
@@ -70,8 +70,7 @@ export default function PaymentLinksPage() {
     expected_guests: '2',
     expires_at: '',
     max_uses: '',
-    internal_notes: '',
-    guest_locale: 'es' as 'es' | 'en'
+    internal_notes: ''
   });
 
   useEffect(() => {
@@ -86,14 +85,10 @@ export default function PaymentLinksPage() {
       const data = await response.json();
       if (data.success) {
         const baseUrl = process.env.NEXT_PUBLIC_BOOK_URL || 'https://book.delfincheckin.com';
-        const linksWithUrls = (data.links as PaymentLink[]).map((link: PaymentLink) => {
-          const loc = guestLocaleIsEn(link.guest_locale) ? 'en' : 'es';
-          const qs = loc === 'en' ? '?lang=en' : '';
-          return {
-            ...link,
-            link_url: `${baseUrl}/pay/${link.link_code}${qs}`
-          };
-        });
+        const linksWithUrls = (data.links as PaymentLink[]).map((link: PaymentLink) => ({
+          ...link,
+          link_url: `${baseUrl}/pay/${link.link_code}`,
+        }));
         setLinks(linksWithUrls);
       }
     } catch (error) {
@@ -217,8 +212,7 @@ export default function PaymentLinksPage() {
       expected_guests: '2',
       expires_at: '',
       max_uses: '',
-      internal_notes: '',
-      guest_locale: 'es'
+      internal_notes: ''
     });
   };
 
@@ -284,21 +278,6 @@ export default function PaymentLinksPage() {
           <h2 className="text-xl font-semibold mb-4">{t('createFormTitle')}</h2>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {t('guestLocaleLabel')}
-                </label>
-                <select
-                  value={formData.guest_locale}
-                  onChange={(e) => setFormData({ ...formData, guest_locale: e.target.value as 'es' | 'en' })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="es">{t('guestLocaleEs')}</option>
-                  <option value="en">{t('guestLocaleEn')}</option>
-                </select>
-                <p className="mt-1 text-xs text-gray-500">{t('guestLocaleHint')}</p>
-              </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   {t('linkNameLabel')}
@@ -516,9 +495,6 @@ export default function PaymentLinksPage() {
                     {t('tableNameCode')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t('tableGuestLocale')}
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     {t('tableResource')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -546,9 +522,6 @@ export default function PaymentLinksPage() {
                         {link.link_name || link.link_code}
                       </div>
                       <div className="text-xs text-gray-500">{link.link_code}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                      {guestLocaleIsEn(link.guest_locale) ? t('guestLocaleEn') : t('guestLocaleEs')}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center text-sm text-gray-900">

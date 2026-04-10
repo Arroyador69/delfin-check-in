@@ -5,10 +5,3 @@
 export function paymentLinkIsActiveForUi(isActive: unknown): boolean {
   return isActive !== false;
 }
-
-export function guestLocaleIsEn(locale: unknown): boolean {
-  const s = String(locale ?? '')
-    .trim()
-    .toLowerCase();
-  return s === 'en';
-}

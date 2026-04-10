@@ -3,8 +3,7 @@
 import { use, useEffect, useState } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useElements, useStripe } from '@stripe/react-stripe-js';
-import { type BookGuestLang, bookFmt, getBookStrings } from '@/lib/book-guest-i18n';
-import { useBookGuestLang } from '@/lib/use-book-guest-lang';
+import { bookFmt, getBookStrings } from '@/lib/book-guest-i18n';
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
@@ -34,14 +33,12 @@ function PayForm({
   linkCode,
   link,
   s,
-  lang,
   localeStr,
   onSuccess,
 }: {
   linkCode: string;
   link: PaymentLinkRow;
   s: ReturnType<typeof getBookStrings>;
-  lang: BookGuestLang;
   localeStr: string;
   onSuccess: () => void;
 }) {
@@ -159,7 +156,7 @@ function PayForm({
         >
           {Array.from({ length: maxGuests }, (_, i) => {
             const n = i + 1;
-            const pl = n > 1 ? (lang === 'es' ? 'es' : 's') : '';
+            const pl = n > 1 ? 'es' : '';
             return (
               <option key={n} value={n}>
                 {bookFmt(s.guestOption, { n, pl })}
@@ -270,25 +267,15 @@ function PayForm({
   );
 }
 
-export default function PayLinkClient({
-  params,
-  initialLangFromUrl,
-}: {
-  params: Promise<{ linkCode: string }>;
-  initialLangFromUrl?: BookGuestLang;
-}) {
+export default function PayLinkClient({ params }: { params: Promise<{ linkCode: string }> }) {
   const { linkCode } = use(params);
   const [link, setLink] = useState<PaymentLinkRow | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [paid, setPaid] = useState(false);
 
-  const { lang, setLang } = useBookGuestLang({
-    defaultDb: link?.guest_locale ?? null,
-    initialLangFromUrl,
-  });
-  const s = getBookStrings(lang);
-  const localeStr = lang === 'en' ? 'en-GB' : 'es-ES';
+  const s = getBookStrings();
+  const localeStr = 'es-ES';
 
   useEffect(() => {
     let cancelled = false;
@@ -347,32 +334,6 @@ export default function PayLinkClient({
   return (
     <div className="min-h-screen bg-gray-50 py-10 px-4">
       <div className="max-w-lg mx-auto">
-        <div className="flex justify-end mb-4">
-          <div className="inline-flex flex-col items-end gap-1" role="group" aria-label={s.langSwitchAria}>
-            <div className="flex rounded-lg border border-gray-200 bg-white p-0.5 shadow-sm">
-              <button
-                type="button"
-                onClick={() => setLang('es')}
-                className={`px-3 py-1.5 text-sm font-medium rounded-md ${
-                  lang === 'es' ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-50'
-                }`}
-              >
-                {s.langEs}
-              </button>
-              <button
-                type="button"
-                onClick={() => setLang('en')}
-                className={`px-3 py-1.5 text-sm font-medium rounded-md ${
-                  lang === 'en' ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-50'
-                }`}
-              >
-                {s.langEn}
-              </button>
-            </div>
-            <p className="text-xs text-gray-500 max-w-xs text-right">{s.langHint}</p>
-          </div>
-        </div>
-
         <div className="bg-white rounded-xl shadow-md p-6 space-y-2">
           <h1 className="text-2xl font-bold text-gray-900">{s.payLinkTitle}</h1>
           <p className="text-sm text-gray-600">{s.payLinkSubtitle}</p>
@@ -384,7 +345,6 @@ export default function PayLinkClient({
               linkCode={linkCode}
               link={link}
               s={s}
-              lang={lang}
               localeStr={localeStr}
               onSuccess={() => setPaid(true)}
             />

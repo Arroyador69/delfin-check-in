@@ -17,9 +17,6 @@ export default function PropertiesManagement() {
   const [uploadingImages, setUploadingImages] = useState(false);
   const [tenantId, setTenantId] = useState<string>('');
   const [copiedLink, setCopiedLink] = useState<number | null>(null);
-  const [bookingLinkLangByProperty, setBookingLinkLangByProperty] = useState<
-    Record<number, 'es' | 'en'>
-  >({});
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [slots, setSlots] = useState<{ room_id: string; room_name: string; property_id: number|null; property_name: string|null; is_placeholder: boolean }[]>([]);
   const [formData, setFormData] = useState<CreatePropertyRequest>({
@@ -117,13 +114,7 @@ export default function PropertiesManagement() {
 
   const getBookingLink = (propertyId: number) => {
     if (!tenantId) return '';
-    const base = `https://book.delfincheckin.com/${tenantId}/${propertyId}`;
-    const lang = bookingLinkLangByProperty[propertyId] ?? 'es';
-    return lang === 'en' ? `${base}?lang=en` : base;
-  };
-
-  const setBookingLinkLang = (propertyId: number, lang: 'es' | 'en') => {
-    setBookingLinkLangByProperty((prev) => ({ ...prev, [propertyId]: lang }));
+    return `https://book.delfincheckin.com/${tenantId}/${propertyId}`;
   };
 
   // Función para convertir imágenes a base64
@@ -472,36 +463,7 @@ export default function PropertiesManagement() {
                           <LinkIcon className="w-4 h-4 text-blue-600" />
                           Enlace de Reserva Directa
                         </label>
-                        <div className="flex items-center gap-1.5" role="group" aria-label="Idioma página huésped">
-                          <div className="inline-flex rounded-lg border border-gray-200 overflow-hidden text-xs font-semibold shadow-sm">
-                            <button
-                              type="button"
-                              onClick={() => setBookingLinkLang(property.id!, 'es')}
-                              className={`px-2.5 py-1 transition-colors ${
-                                (bookingLinkLangByProperty[property.id!] ?? 'es') === 'es'
-                                  ? 'bg-blue-600 text-white'
-                                  : 'bg-white text-gray-600 hover:bg-gray-50'
-                              }`}
-                            >
-                              ES
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setBookingLinkLang(property.id!, 'en')}
-                              className={`px-2.5 py-1 transition-colors border-l border-gray-200 ${
-                                bookingLinkLangByProperty[property.id!] === 'en'
-                                  ? 'bg-blue-600 text-white'
-                                  : 'bg-white text-gray-600 hover:bg-gray-50'
-                              }`}
-                            >
-                              EN
-                            </button>
-                          </div>
-                        </div>
                       </div>
-                      <p className="text-[11px] text-gray-500 mb-2 leading-snug">
-                        Elige ES o EN para el enlace que copias. En book el huésped puede cambiar el idioma arriba a la derecha.
-                      </p>
                       <div className="flex items-center gap-2 bg-gray-50 rounded-lg p-2 border border-gray-200">
                         <input
                           type="text"

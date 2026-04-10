@@ -133,10 +133,10 @@ export async function POST(req: NextRequest) {
       expires_at,
       max_uses,
       internal_notes,
-      guest_locale: guestLocaleRaw,
     } = data;
 
-    const guest_locale = guestLocaleRaw === 'en' ? 'en' : 'es';
+    /** Solo español en la UI pública de pago (sin selector EN por ahora). */
+    const guest_locale = 'es';
 
     // Los enlaces son siempre de un solo uso
     const finalMaxUses = 1;
@@ -288,17 +288,15 @@ export async function POST(req: NextRequest) {
 
     const newLink = result.rows[0];
     const storedLocale = (newLink as { guest_locale?: string }).guest_locale;
-    const localeForBook = storedLocale === 'en' || storedLocale === 'es' ? storedLocale : guest_locale;
 
     const baseUrl = process.env.NEXT_PUBLIC_BOOK_URL || 'https://book.delfincheckin.com';
-    const langQs = localeForBook === 'en' ? '?lang=en' : '';
-    const linkUrl = `${baseUrl}/pay/${newLink.link_code}${langQs}`;
+    const linkUrl = `${baseUrl}/pay/${newLink.link_code}`;
 
     return NextResponse.json({
       success: true,
       link: {
         ...newLink,
-        guest_locale: storedLocale ?? guest_locale,
+        guest_locale: storedLocale ?? 'es',
         link_url: linkUrl,
       },
     });

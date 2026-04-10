@@ -5,13 +5,7 @@ import { Users, Euro, CreditCard, CheckCircle, ChevronLeft, ChevronRight } from 
 import { TenantProperty } from '@/lib/direct-reservations-types';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
-import {
-  type BookGuestLang,
-  type BookGuestStrings,
-  bookFmt,
-  getBookStrings,
-} from '@/lib/book-guest-i18n';
-import { useBookGuestLang } from '@/lib/use-book-guest-lang';
+import { type BookGuestStrings, bookFmt, getBookStrings } from '@/lib/book-guest-i18n';
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
@@ -20,7 +14,6 @@ interface BookingPageClientProps {
     tenantId: string;
     propertyId: string;
   }>;
-  initialLangFromUrl?: BookGuestLang;
 }
 
 function PaymentForm({
@@ -385,15 +378,11 @@ function DateRangePicker({
   );
 }
 
-export default function BookingPageClient({
-  params,
-  initialLangFromUrl,
-}: BookingPageClientProps) {
+export default function BookingPageClient({ params }: BookingPageClientProps) {
   const resolvedParams = use(params);
   const { tenantId, propertyId } = resolvedParams;
-  const { lang, setLang } = useBookGuestLang({ initialLangFromUrl });
-  const s = getBookStrings(lang);
-  const localeStr = lang === 'en' ? 'en-GB' : 'es-ES';
+  const s = getBookStrings();
+  const localeStr = 'es-ES';
 
   const [property, setProperty] = useState<TenantProperty | null>(null);
   const [loading, setLoading] = useState(true);
@@ -520,19 +509,11 @@ export default function BookingPageClient({
 
   const included = property.included_guests ?? Math.min(2, property.max_guests);
   const guestPlEs = included > 1 ? 'es' : '';
-  const guestPlEn = included > 1 ? 's' : '';
-  const includesLine =
-    lang === 'es'
-      ? bookFmt(s.includesGuests, {
-          n: included,
-          pl: guestPlEs,
-          fee: property.extra_guest_fee ?? 0,
-        })
-      : bookFmt(s.includesGuests, {
-          n: included,
-          pl: guestPlEn,
-          fee: property.extra_guest_fee ?? 0,
-        });
+  const includesLine = bookFmt(s.includesGuests, {
+    n: included,
+    pl: guestPlEs,
+    fee: property.extra_guest_fee ?? 0,
+  });
 
   const stepClass = (n: number) =>
     `w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
@@ -542,36 +523,6 @@ export default function BookingPageClient({
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-4xl mx-auto py-8 px-4">
-        <div className="flex justify-end mb-4">
-          <div
-            className="inline-flex flex-col items-end gap-1"
-            role="group"
-            aria-label={s.langSwitchAria}
-          >
-            <div className="flex rounded-lg border border-gray-200 bg-white p-0.5 shadow-sm">
-              <button
-                type="button"
-                onClick={() => setLang('es')}
-                className={`px-3 py-1.5 text-sm font-medium rounded-md ${
-                  lang === 'es' ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-50'
-                }`}
-              >
-                {s.langEs}
-              </button>
-              <button
-                type="button"
-                onClick={() => setLang('en')}
-                className={`px-3 py-1.5 text-sm font-medium rounded-md ${
-                  lang === 'en' ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-50'
-                }`}
-              >
-                {s.langEn}
-              </button>
-            </div>
-            <p className="text-xs text-gray-500 max-w-xs text-right">{s.langHint}</p>
-          </div>
-        </div>
-
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">{property.property_name}</h1>
           {property.description && <p className="text-gray-600 mb-4">{property.description}</p>}
@@ -698,7 +649,7 @@ export default function BookingPageClient({
                 >
                   {Array.from({ length: property.max_guests }, (_, i) => {
                     const n = i + 1;
-                    const pl = n > 1 ? (lang === 'es' ? 'es' : 's') : '';
+                    const pl = n > 1 ? 'es' : '';
                     return (
                       <option key={n} value={n}>
                         {bookFmt(s.guestOption, { n, pl })}
