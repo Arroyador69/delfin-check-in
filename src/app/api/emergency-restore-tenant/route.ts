@@ -1,13 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
 
+function unauthorizedEmergency() {
+  return NextResponse.json({ success: false, error: 'Not found' }, { status: 404 });
+}
+
+/** Solo usable con EMERGENCY_RESTORE_SECRET en el entorno y cabecera x-emergency-restore-secret. */
+function assertEmergencyAuthorized(req: NextRequest): NextResponse | null {
+  const expected = process.env.EMERGENCY_RESTORE_SECRET?.trim();
+  if (!expected) return unauthorizedEmergency();
+  const got = req.headers.get('x-emergency-restore-secret')?.trim();
+  if (!got || got !== expected) return unauthorizedEmergency();
+  return null;
+}
+
 /**
  * 🚨 ENDPOINT DE EMERGENCIA PARA RESTAURAR TENANT
- * 
- * Este endpoint crea la tabla tenants y restaura tu configuración
- * con la configuración de Telegram que tenías
+ *
+ * Protegido por EMERGENCY_RESTORE_SECRET + cabecera x-emergency-restore-secret.
+ * Sin secreto configurado, responde 404 (no exponer que la ruta existe).
  */
 export async function POST(req: NextRequest) {
+  const deny = assertEmergencyAuthorized(req);
+  if (deny) return deny;
+
   try {
     console.log('🚨 Iniciando restauración de emergencia del tenant...');
 
@@ -148,7 +164,7 @@ export async function POST(req: NextRequest) {
       ) VALUES (
         '870e589f-d313-4a5a-901f-f25fd4e7240a',
         'admin@delfincheckin.com',
-        '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj4J/8KzKz2K', -- password: admin123
+        '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj4J/8KzKz2K', -- hash bcrypt (rotar contraseña tras uso)
         'Administrador',
         'owner',
         true,
@@ -179,8 +195,8 @@ export async function POST(req: NextRequest) {
       rooms_created: 6,
       admin_user: {
         email: 'admin@delfincheckin.com',
-        password: 'admin123'
-      }
+        note: 'Si creaste el usuario con contraseña temporal, cámbiala tras el primer acceso.',
+      },
     });
 
   } catch (error) {
@@ -197,6 +213,9 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
+  const deny = assertEmergencyAuthorized(req);
+  if (deny) return deny;
+
   try {
     // Verificar estado de las tablas
     const tables = ['tenants', 'tenant_users', 'Room'];
