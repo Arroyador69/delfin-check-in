@@ -1,6 +1,6 @@
 /**
  * Rutas públicas de reserva/pago solo deben usarse en el host del microsite (y en local).
- * Evita que /pay/… o /{uuid}/{id} en admin.delfincheckin.com sirvan UI equivocada.
+ * Evita que /pay/… en admin sirva la UI de pago del microsite por error.
  */
 export function isBookMicrositeRequestHost(hostHeader: string | null | undefined): boolean {
   if (!hostHeader) return false;
@@ -15,11 +15,4 @@ export function isBookMicrositeRequestHost(hostHeader: string | null | undefined
     return true;
   }
   return false;
-}
-
-export const BOOK_TENANT_UUID_RE =
-  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
-
-export function isNumericPropertyId(id: string): boolean {
-  return /^\d+$/.test(id);
 }
