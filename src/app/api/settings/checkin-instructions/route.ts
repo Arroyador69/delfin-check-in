@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { sql } from '@vercel/postgres'
+import { getTenantById } from '@/lib/tenant'
+import { hasCheckinInstructionsEmailPlan } from '@/lib/checkin-email-plan'
 
 // Estructura: checkin_instructions
 // - id SERIAL PK
@@ -49,6 +51,19 @@ export async function PUT(req: NextRequest) {
   try {
     const tenantId = req.headers.get('x-tenant-id') || req.nextUrl.searchParams.get('tenant_id')
     if (!tenantId) return NextResponse.json({ success: false, error: 'tenant_id requerido' }, { status: 400 })
+
+    const tenant = await getTenantById(tenantId)
+    if (!tenant || !hasCheckinInstructionsEmailPlan(tenant)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Las instrucciones de check-in por email están disponibles en los planes Standard y Pro.',
+          code: 'PLAN_REQUIRED',
+        },
+        { status: 403 }
+      )
+    }
+
     await ensureTable()
 
     const body = await req.json()
@@ -84,6 +99,19 @@ export async function DELETE(req: NextRequest) {
     if (!tenantId) {
       return NextResponse.json({ success: false, error: 'tenant_id requerido' }, { status: 400 })
     }
+
+    const tenant = await getTenantById(tenantId)
+    if (!tenant || !hasCheckinInstructionsEmailPlan(tenant)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Las instrucciones de check-in por email están disponibles en los planes Standard y Pro.',
+          code: 'PLAN_REQUIRED',
+        },
+        { status: 403 }
+      )
+    }
+
     await ensureTable()
 
     const idRaw = req.nextUrl.searchParams.get('id')

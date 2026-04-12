@@ -4,6 +4,8 @@
 
 import nodemailer from 'nodemailer';
 import { DirectReservation, TenantProperty } from '@/lib/direct-reservations-types';
+import { generatePropertyOwnerNotificationEmailLocalized, normalizeOwnerMailLocale } from '@/lib/email-owner-direct-booking-i18n';
+import { normalizeRoomId } from '@/lib/db';
 
 // Configuración del transporter SMTP
 const transporter = nodemailer.createTransport({
@@ -223,9 +225,10 @@ function generateCheckinInstructionsEmailHtml(params: {
   property: TenantProperty,
   instructionsHtml: string,
   publicFormUrl?: string,
-  contact?: { email?: string; phone?: string; name?: string }
+  contact?: { email?: string; phone?: string; name?: string },
+  trackingPixelUrl?: string
 }) {
-  const { reservation, property, instructionsHtml, publicFormUrl, contact } = params
+  const { reservation, property, instructionsHtml, publicFormUrl, contact, trackingPixelUrl } = params
   const checkInDate = new Date(reservation.check_in_date).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })
   const checkOutDate = new Date(reservation.check_out_date).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })
   const contactEmail = contact?.email || 'booking@delfincheckin.com'
@@ -274,6 +277,7 @@ function generateCheckinInstructionsEmailHtml(params: {
               <p>Para cualquier duda, contacta con <strong>${contactName}</strong>:</p>
               <p><strong>Email:</strong> ${contactEmail}<br/><strong>Teléfono:</strong> ${contactPhone || 'No proporcionado'}</p>
             </div>
+            ${trackingPixelUrl ? `<img src="${trackingPixelUrl}" width="1" height="1" alt="" style="display:block;border:0;width:1px;height:1px" />` : ''}
           </div>
         </div>
       </body></html>
@@ -298,7 +302,8 @@ export async function sendCheckinInstructionsEmail(params: {
   reservation: DirectReservation,
   property: TenantProperty,
   roomId?: string | null,
-  publicFormUrl?: string
+  publicFormUrl?: string,
+  trackingPixelUrl?: string
 }) {
   const { reservation, property, roomId, publicFormUrl } = params
   try {
@@ -306,8 +311,14 @@ export async function sendCheckinInstructionsEmail(params: {
     const { sql } = await import('@vercel/postgres')
     let instr
     if (roomId) {
-      const r = await sql`SELECT body_html, title FROM checkin_instructions WHERE tenant_id = ${reservation.tenant_id}::uuid AND room_id = ${roomId}::text LIMIT 1`
-      instr = r.rows[0]
+      const variants = new Set<string>([String(roomId), normalizeRoomId(roomId)])
+      for (const rid of variants) {
+        const r = await sql`SELECT body_html, title FROM checkin_instructions WHERE tenant_id = ${reservation.tenant_id}::uuid AND room_id = ${rid}::text LIMIT 1`
+        if (r.rows[0]) {
+          instr = r.rows[0]
+          break
+        }
+      }
     }
     if (!instr) {
       const r = await sql`SELECT body_html, title FROM checkin_instructions WHERE tenant_id = ${reservation.tenant_id}::uuid AND room_id IS NULL ORDER BY updated_at DESC LIMIT 1`
@@ -345,7 +356,8 @@ export async function sendCheckinInstructionsEmail(params: {
       property,
       instructionsHtml: bodyHtml,
       publicFormUrl,
-      contact: { email: contactEmail, phone: contactPhone, name: contactName }
+      contact: { email: contactEmail, phone: contactPhone, name: contactName },
+      trackingPixelUrl: params.trackingPixelUrl
     })
 
     const result = await transporter.sendMail({
@@ -361,178 +373,6 @@ export async function sendCheckinInstructionsEmail(params: {
     console.error('❌ Error enviando email de instrucciones:', e)
     return { success: false, error: e.message || 'Error' }
   }
-}
-
-export function generatePropertyOwnerNotificationEmail(reservation: DirectReservation, property: TenantProperty) {
-  const checkInDate = new Date(reservation.check_in_date).toLocaleDateString('es-ES', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  });
-  
-  const checkOutDate = new Date(reservation.check_out_date).toLocaleDateString('es-ES', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  });
-
-  return {
-    subject: `🏠 Nueva reserva directa - ${reservation.reservation_code}`,
-    html: `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Nueva Reserva Directa</title>
-        <style>
-          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-          .header { background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-          .content { background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px; }
-          .reservation-details { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; }
-          .detail-row { display: flex; justify-content: space-between; margin: 10px 0; padding: 8px 0; border-bottom: 1px solid #eee; }
-          .detail-label { font-weight: bold; color: #555; }
-          .detail-value { color: #333; }
-          .revenue { font-size: 18px; font-weight: bold; color: #28a745; }
-          .commission { font-size: 14px; color: #dc3545; }
-          .footer { text-align: center; margin-top: 30px; color: #666; font-size: 14px; }
-          .logo { font-size: 24px; font-weight: bold; }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <div class="header">
-            <div class="logo">🐬 Delfin Check-in</div>
-            <h1>¡Nueva Reserva Directa!</h1>
-            <p>Has recibido una nueva reserva en tu propiedad</p>
-          </div>
-          
-          <div class="content">
-            <h2>¡Felicitaciones!</h2>
-            <p>Has recibido una nueva reserva directa para tu propiedad <strong>${property.property_name}</strong>.</p>
-            
-            ${reservation.payment_status === 'paid' ? `
-              <div class="reservation-details" style="background: #d4edda; border-left: 4px solid #28a745;">
-                <h3 style="color: #155724; margin-top: 0;">✅ Pago Confirmado</h3>
-                <p style="color: #155724; margin-bottom: 0;">El cliente ha completado el pago exitosamente. La reserva está confirmada y lista para gestionar.</p>
-              </div>
-            ` : ''}
-            
-            <div class="reservation-details">
-              <h3>👤 Información del huésped</h3>
-              <div class="detail-row">
-                <span class="detail-label">Nombre:</span>
-                <span class="detail-value">${reservation.guest_name}</span>
-              </div>
-              <div class="detail-row">
-                <span class="detail-label">Email:</span>
-                <span class="detail-value">${reservation.guest_email}</span>
-              </div>
-              <div class="detail-row">
-                <span class="detail-label">Teléfono:</span>
-                <span class="detail-value">${reservation.guest_phone || 'No proporcionado'}</span>
-              </div>
-              <div class="detail-row">
-                <span class="detail-label">Nacionalidad:</span>
-                <span class="detail-value">${reservation.guest_nationality || 'No especificada'}</span>
-              </div>
-            </div>
-            
-            <div class="reservation-details">
-              <h3>📅 Detalles de la estancia</h3>
-              <div class="detail-row">
-                <span class="detail-label">Código de reserva:</span>
-                <span class="detail-value"><strong>${reservation.reservation_code}</strong></span>
-              </div>
-              <div class="detail-row">
-                <span class="detail-label">Fecha de entrada:</span>
-                <span class="detail-value">${checkInDate}</span>
-              </div>
-              <div class="detail-row">
-                <span class="detail-label">Fecha de salida:</span>
-                <span class="detail-value">${checkOutDate}</span>
-              </div>
-              <div class="detail-row">
-                <span class="detail-label">Noches:</span>
-                <span class="detail-value">${reservation.nights}</span>
-              </div>
-              <div class="detail-row">
-                <span class="detail-label">Huéspedes:</span>
-                <span class="detail-value">${reservation.guests}</span>
-              </div>
-            </div>
-            
-            <div class="reservation-details">
-              <h3>💰 Desglose financiero</h3>
-              <div class="detail-row">
-                <span class="detail-label">Total de la reserva:</span>
-                <span class="detail-value">${reservation.total_amount.toFixed(2)}€</span>
-              </div>
-              <div class="detail-row">
-                <span class="detail-label">Comisión Delfin (${(reservation.delfin_commission_rate * 100).toFixed(1)}%):</span>
-                <span class="detail-value commission">-${reservation.delfin_commission_amount.toFixed(2)}€</span>
-              </div>
-              <div class="detail-row">
-                <span class="detail-label">Tu ingreso neto:</span>
-                <span class="detail-value revenue">${reservation.property_owner_amount.toFixed(2)}€</span>
-              </div>
-            </div>
-            
-            ${reservation.special_requests ? `
-              <div class="reservation-details">
-                <h3>📝 Solicitudes especiales del huésped</h3>
-                <p>${reservation.special_requests}</p>
-              </div>
-            ` : ''}
-            
-            <div class="reservation-details">
-              <h3>📊 Próximos pasos</h3>
-              <p>1. <strong>Prepara la propiedad</strong> para la llegada del huésped</p>
-              <p>2. <strong>Coordina el check-in</strong> con el huésped</p>
-              <p>3. <strong>Gestiona la estancia</strong> según tus protocolos</p>
-              <p>4. <strong>Realiza el check-out</strong> al finalizar la estancia</p>
-            </div>
-            
-            <p>Puedes gestionar esta reserva desde tu panel de administración en Delfin Check-in.</p>
-            <p>¡Que tengas una excelente experiencia con tu huésped!</p>
-          </div>
-          
-          <div class="footer">
-            <p>Este email fue enviado automáticamente por Delfin Check-in</p>
-            <p>© 2024 Delfin Check-in. Todos los derechos reservados.</p>
-          </div>
-        </div>
-      </body>
-      </html>
-    `,
-    text: `
-      ¡Nueva Reserva Directa!
-      
-      Has recibido una nueva reserva directa para tu propiedad ${property.property_name}.
-      
-      ${reservation.payment_status === 'paid' ? '✅ PAGO CONFIRMADO - El cliente ha completado el pago exitosamente.\n\n' : ''}Información del huésped:
-      - Nombre: ${reservation.guest_name}
-      - Email: ${reservation.guest_email}
-      - Teléfono: ${reservation.guest_phone || 'No proporcionado'}
-      - Nacionalidad: ${reservation.guest_nationality || 'No especificada'}
-      
-      Detalles de la estancia:
-      - Código: ${reservation.reservation_code}
-      - Fechas: ${checkInDate} - ${checkOutDate}
-      - Noches: ${reservation.nights}
-      - Huéspedes: ${reservation.guests}
-      
-      Desglose financiero:
-      - Total reserva: ${reservation.total_amount.toFixed(2)}€
-      - Comisión Delfin: -${reservation.delfin_commission_amount.toFixed(2)}€
-      - Tu ingreso neto: ${reservation.property_owner_amount.toFixed(2)}€
-      
-      ${reservation.special_requests ? `Solicitudes especiales: ${reservation.special_requests}` : ''}
-      
-      ¡Que tengas una excelente experiencia con tu huésped!
-    `
-  };
 }
 
 // =====================================================
@@ -596,22 +436,28 @@ export async function sendGuestConfirmationEmail(reservation: DirectReservation,
 
 export async function sendPropertyOwnerNotificationEmail(reservation: DirectReservation, property: TenantProperty) {
   try {
-    // Obtener email del propietario desde la tabla tenants
     const { sql } = await import('@vercel/postgres');
     const tenantResult = await sql`
-      SELECT email FROM tenants WHERE id = ${reservation.tenant_id}
+      SELECT email, config FROM tenants WHERE id = ${reservation.tenant_id}
     `;
-    
+
     if (tenantResult.rows.length === 0) {
       throw new Error('Tenant no encontrado');
     }
-    
+
     const ownerEmail = tenantResult.rows[0].email;
     if (!ownerEmail) {
       throw new Error('Email del propietario no configurado');
     }
 
-    const emailContent = generatePropertyOwnerNotificationEmail(reservation, property);
+    const cfg = tenantResult.rows[0].config as { language?: string } | null | undefined;
+    const ownerLocale = normalizeOwnerMailLocale(cfg?.language);
+
+    const emailContent = generatePropertyOwnerNotificationEmailLocalized(
+      reservation,
+      property,
+      ownerLocale
+    );
     
     const mailOptions = {
       // Email específico para reservas directas (book.delfincheckin.com)

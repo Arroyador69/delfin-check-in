@@ -151,7 +151,8 @@
         "mirIncluded": "Digital guest registration (MIR) included",
         "fullPms": "Full property management",
         "noAds": "Ad-free experience",
-        "directBooking": "Direct bookings (lower platform fee)"
+        "directBooking": "Direct bookings (lower platform fee)",
+        "checkinEmailInstructions": "Check-in instructions email to guests"
       }
     },
     "unitsAvailableToAdd": "{remaining, plural, one {✅ # unit available to add} other {✅ # units available to add}}",
@@ -417,7 +418,8 @@
       "commission": "Commission",
       "netIncome": "Your income",
       "channel": "Channel",
-      "actions": "Actions"
+      "actions": "Actions",
+      "checkinMail": "Check-in email"
     },
     "noResultsTitle": "No results found",
     "noResultsDescription": "There are no reservations matching \"{term}\"",
@@ -450,6 +452,29 @@
       "delete": "Delete",
       "deleting": "Deleting..."
     },
+    "checkinMail": {
+      "send": "Check-in instructions",
+      "sendTitle": "Send check-in instructions by email",
+      "upgrade": "Included in Standard and Pro",
+      "sentShort": "Sent",
+      "openedShort": "Opened",
+      "openUnknown": "Open not detected",
+      "noEmail": "No email",
+      "modalStep1Title": "Review send",
+      "modalStep1Intro": "A single email will be sent to the guest with the instructions configured for this reservation’s room.",
+      "modalGuest": "Guest",
+      "modalEmail": "Email",
+      "modalRoom": "Room",
+      "modalNext": "Continue",
+      "modalStep2Title": "Final confirmation",
+      "modalStep2Warning": "This reservation can only receive one instructions email. Do you confirm sending it?",
+      "modalSend": "Send now",
+      "modalBack": "Back",
+      "modalCancel": "Cancel",
+      "sending": "Sending…",
+      "success": "Email sent successfully",
+      "errorGeneric": "Could not send the email"
+    },
     "createModal": {
       "title": "New manual reservation",
       "reservationSection": "Reservation information"
@@ -467,6 +492,7 @@
       "guestNamePlaceholder": "Full name",
       "guestEmailLabel": "Guest email",
       "guestEmailPlaceholder": "email@example.com",
+      "guestEmailHint": "Required to send check-in instructions by email (Standard and Pro plans).",
       "guestPhoneLabel": "Guest phone",
       "guestPhonePlaceholder": "+34 600 000 000",
       "guestCountLabel": "Number of guests *",
@@ -886,6 +912,9 @@
   },
   "estadoEnviosMir": {
     "title": "MIR Submissions Status",
+    "paywallTitle": "Free plan",
+    "paywallBody": "MIR tracking and Ministry submissions are included in paid plans (Check-in, Standard or Pro). Upgrade to use these tools.",
+    "paywallCta": "View plans",
     "subtitle": "Visual monitoring of communications to the Ministry of Interior.",
     "lastUpdate": "Last update: {date}",
     "autoUpdating": "Auto-updating",
@@ -935,6 +964,9 @@
   "mirComunicaciones": {
     "title": "MIR Submissions Status",
     "subtitle": "Management of communications with the Ministry of Interior",
+    "paywallTitle": "Free plan",
+    "paywallBody": "Full MIR tools are included in paid plans. Upgrade to submit, query and cancel communications.",
+    "paywallCta": "View plans",
     "subtitleDetail": "Submission, query and cancellation of official communications",
     "proBadge": "All countries",
     "consultaTiempoReal": "Real-time MIR Query",
@@ -1922,7 +1954,10 @@
       "deleteCancel": "Cancel",
       "deleteSuccess": "Template deleted",
       "deleteError": "Could not delete template",
-      "deleting": "Deleting..."
+      "deleting": "Deleting...",
+      "paywallTitle": "Check-in instructions email",
+      "paywallBody": "Configure and send instructions to guests from Reservations. Available on Standard and Pro plans.",
+      "paywallCta": "View plans"
     },
     "empresa": {
       "title": "Company Data",
@@ -1972,6 +2007,9 @@
     },
     "mir": {
       "title": "MIR Settings",
+      "paywallTitle": "Free plan",
+      "paywallBody": "MIR configuration and Ministry submissions require a paid plan. Upgrade to activate the legal module.",
+      "paywallCta": "View plans",
       "subtitle": "Configure credentials for sending communications to the Ministry of the Interior",
       "selectCountry": "Select a country",
       "countrySaved": "Country configured successfully",
@@ -2300,6 +2338,7 @@
     "standardF3": "No ads",
     "standardF4": "Full PMS",
     "standardF5": "Direct bookings (9% fee)",
+    "standardF6": "Check-in instructions email to guests (included)",
     "proPlanName": "Pro Plan",
     "proPlanDesc": "Full PMS without ads, lower commission",
     "proF0": "Includes 1 unit",
@@ -2309,7 +2348,8 @@
     "proF4": "Full PMS",
     "proF5": "Direct bookings (5% fee)",
     "proF6": "Priority support",
-    "proF7": "Automatic backup"
+    "proF7": "Automatic backup",
+    "proF8": "Check-in instructions email to guests (included)"
   },
   "upgradePlan": {
     "title": "Upgrade Plan",

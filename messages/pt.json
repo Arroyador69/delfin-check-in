@@ -151,7 +151,8 @@
         "mirIncluded": "Check-in digital (MIR) incluído",
         "fullPms": "PMS completo",
         "noAds": "Sem anúncios",
-        "directBooking": "Reservas diretas (comissão reduzida)"
+        "directBooking": "Reservas diretas (comissão reduzida)",
+        "checkinEmailInstructions": "E-mail com instruções de check-in ao hóspede"
       }
     },
     "unitsAvailableToAdd": "{remaining, plural, one {✅ # unidade disponível para adicionar} other {✅ # unidades disponíveis para adicionar}}",
@@ -406,7 +407,8 @@
       "commission": "Comissão",
       "netIncome": "O seu ganho",
       "channel": "Canal",
-      "actions": "Ações"
+      "actions": "Ações",
+      "checkinMail": "E-mail check-in"
     },
     "noResultsTitle": "Nenhum resultado encontrado",
     "noResultsDescription": "Não existem reservas que correspondam a \"{term}\"",
@@ -472,6 +474,29 @@
       "delete": "Eliminar",
       "deleting": "A eliminar..."
     },
+    "checkinMail": {
+      "send": "Instruções check-in",
+      "sendTitle": "Enviar instruções de check-in por e-mail",
+      "upgrade": "Incluído em Standard e Pro",
+      "sentShort": "Enviado",
+      "openedShort": "Aberto",
+      "openUnknown": "Abertura não detetada",
+      "noEmail": "Sem e-mail",
+      "modalStep1Title": "Rever envio",
+      "modalStep1Intro": "Será enviado um único e-mail ao hóspede com as instruções configuradas para o quarto desta reserva.",
+      "modalGuest": "Hóspede",
+      "modalEmail": "E-mail",
+      "modalRoom": "Quarto",
+      "modalNext": "Continuar",
+      "modalStep2Title": "Confirmação final",
+      "modalStep2Warning": "Esta reserva só pode receber um envio de instruções. Confirma o envio?",
+      "modalSend": "Enviar agora",
+      "modalBack": "Voltar",
+      "modalCancel": "Cancelar",
+      "sending": "A enviar…",
+      "success": "E-mail enviado com sucesso",
+      "errorGeneric": "Não foi possível enviar o e-mail"
+    },
     "createModal": {
       "title": "Nova reserva manual",
       "reservationSection": "Informações da reserva"
@@ -489,6 +514,7 @@
       "guestNamePlaceholder": "Nome completo",
       "guestEmailLabel": "Email do hóspede",
       "guestEmailPlaceholder": "email@exemplo.com",
+      "guestEmailHint": "Necessário para enviar as instruções de check-in por e-mail (planos Standard e Pro).",
       "guestPhoneLabel": "Telefone do hóspede",
       "guestPhonePlaceholder": "+351 600 000 000",
       "guestCountLabel": "Número de hóspedes *",
@@ -689,6 +715,9 @@
   },
   "estadoEnviosMir": {
     "title": "Estado Envios MIR",
+    "paywallTitle": "Plano gratuito",
+    "paywallBody": "O acompanhamento MIR e os envios ao Ministério estão incluídos nos planos pagos (Check-in, Standard ou Pro). Atualize o plano para usar estas ferramentas.",
+    "paywallCta": "Ver planos",
     "subtitle": "Monitorização visual das comunicações ao Ministério do Interior.",
     "lastUpdate": "Última atualização: {date}",
     "autoUpdating": "Atualização automática",
@@ -738,6 +767,9 @@
   "mirComunicaciones": {
     "title": "Estado Envios MIR",
     "subtitle": "Gestão de comunicações com o Ministério do Interior",
+    "paywallTitle": "Plano gratuito",
+    "paywallBody": "As ferramentas MIR completas estão incluídas nos planos pagos. Atualize o plano para enviar, consultar e anular comunicações.",
+    "paywallCta": "Ver planos",
     "subtitleDetail": "Envio, consulta e anulação de comunicações oficiais",
     "proBadge": "Todos os países",
     "consultaTiempoReal": "Consulta Tempo Real MIR",
@@ -1883,7 +1915,10 @@
       "deleteCancel": "Cancelar",
       "deleteSuccess": "Modelo eliminado",
       "deleteError": "Não foi possível eliminar o modelo",
-      "deleting": "A eliminar..."
+      "deleting": "A eliminar...",
+      "paywallTitle": "E-mail de instruções check-in",
+      "paywallBody": "Configure e envie as instruções ao hóspede em Reservas. Disponível nos planos Standard e Pro.",
+      "paywallCta": "Ver planos"
     },
     "empresa": {
       "title": "Dados da Empresa",
@@ -1933,6 +1968,9 @@
     },
     "mir": {
       "title": "Configuração MIR",
+      "paywallTitle": "Plano gratuito",
+      "paywallBody": "A configuração MIR e os envios ao Ministério requerem um plano pago. Atualize o plano para ativar o módulo legal.",
+      "paywallCta": "Ver planos",
       "subtitle": "Configure as credenciais para o envio de comunicações ao Ministério do Interior",
       "selectCountry": "Selecione um país",
       "countrySaved": "País configurado corretamente",
@@ -2271,6 +2309,7 @@
     "standardF3": "Sem anúncios",
     "standardF4": "PMS completo",
     "standardF5": "Reservas diretas (9% taxa)",
+    "standardF6": "E-mail com instruções de check-in ao hóspede (integrado)",
     "proPlanName": "Plano Pro",
     "proPlanDesc": "PMS completo sem anúncios",
     "proF0": "Inclui 1 unidade",
@@ -2280,7 +2319,8 @@
     "proF4": "PMS completo",
     "proF5": "Reservas diretas (9% taxa)",
     "proF6": "Suporte prioritário",
-    "proF7": "Backup automático"
+    "proF7": "Backup automático",
+    "proF8": "E-mail com instruções de check-in ao hóspede (integrado)"
   },
   "pricing": {
     "title": "Preços Dinâmicos",

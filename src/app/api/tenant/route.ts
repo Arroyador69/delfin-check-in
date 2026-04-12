@@ -3,6 +3,13 @@ import { sql } from '@/lib/db';
 import { verifyToken, AUTH_CONFIG } from '@/lib/auth';
 import type { Tenant } from '@/lib/tenant';
 import { getTenantPlanPresentation } from '@/lib/tenant-plan-billing';
+import { hasCheckinInstructionsEmailPlan } from '@/lib/checkin-email-plan';
+
+function parseTenantStat(value: unknown): number {
+  if (value == null) return 0;
+  const n = typeof value === 'number' ? value : parseInt(String(value), 10);
+  return Number.isFinite(n) ? n : 0;
+}
 
 /**
  * API para obtener información del tenant actual.
@@ -122,18 +129,28 @@ export async function GET(req: NextRequest) {
       `;
       
       if (statsResult.rows.length > 0) {
-        stats = statsResult.rows[0];
+        const row = statsResult.rows[0] as Record<string, unknown>;
+        stats = {
+          total_rooms: parseTenantStat(row.total_rooms),
+          total_reservations: parseTenantStat(row.total_reservations),
+          total_guests: parseTenantStat(row.total_guests),
+          total_registrations: parseTenantStat(row.total_registrations),
+        };
         // Si no hay lodging_id configurado, intentar contar usando tenant_id como fallback
-        if (parseInt(stats.total_rooms) === 0 && !tenantLodgingResult.rows[0]?.lodging_id) {
+        if (stats.total_rooms === 0 && !tenantLodgingResult.rows[0]?.lodging_id) {
           console.log(`⚠️ No se encontraron habitaciones usando lodging_id. Intentando con tenant_id...`);
           const fallbackStats = await sql`
             SELECT COUNT(*) as total_rooms
             FROM "Room" r 
             WHERE r."lodgingId" = ${tenantId}::text
           `;
-          if (fallbackStats.rows.length > 0 && parseInt(fallbackStats.rows[0].total_rooms) > 0) {
-            stats.total_rooms = fallbackStats.rows[0].total_rooms;
-            console.log(`✅ Encontradas ${stats.total_rooms} habitaciones usando tenant_id como fallback`);
+          if (fallbackStats.rows.length > 0) {
+            const fr = fallbackStats.rows[0] as Record<string, unknown>;
+            const tr = parseTenantStat(fr.total_rooms);
+            if (tr > 0) {
+              stats.total_rooms = tr;
+              console.log(`✅ Encontradas ${stats.total_rooms} habitaciones usando tenant_id como fallback`);
+            }
           }
         }
       }
@@ -142,7 +159,7 @@ export async function GET(req: NextRequest) {
       console.log('⚠️ Algunas tablas no existen aún, usando valores por defecto');
     }
 
-    const roomsUsed = parseInt(String(stats.total_rooms || 0), 10) || 0;
+    const roomsUsed = stats.total_rooms || 0;
     const planPresent = await getTenantPlanPresentation(tenant as unknown as Tenant, roomsUsed);
     const maxRoomsUi = planPresent.max_rooms_effective;
 
@@ -162,7 +179,7 @@ export async function GET(req: NextRequest) {
         plan_features: planPresent.plan_features,
         billing_rooms: planPresent.billing_rooms,
         max_rooms: maxRoomsUi,
-        current_rooms: parseInt(stats.total_rooms),
+        current_rooms: stats.total_rooms,
         ads_enabled: tenant.ads_enabled !== undefined ? tenant.ads_enabled : (tenant.plan_type !== 'pro' && tenant.plan_type !== 'standard' && tenant.plan_id !== 'pro' && tenant.plan_id !== 'enterprise'),
         legal_module: tenant.legal_module || false,
         country_code: tenant.country_code || null,
@@ -174,34 +191,35 @@ export async function GET(req: NextRequest) {
             : tenant.onboarding_status,
         status: tenant.status,
         config: tenant.config,
-        created_at: tenant.created_at
+        created_at: tenant.created_at,
+        checkin_instructions_email: hasCheckinInstructionsEmailPlan(tenant as Tenant),
       },
       stats: {
-        total_rooms: parseInt(stats.total_rooms),
-        total_reservations: parseInt(stats.total_reservations),
-        total_guests: parseInt(stats.total_guests),
-        total_registrations: parseInt(stats.total_registrations),
-        rooms_used: parseInt(stats.total_rooms),
-        rooms_remaining: maxRoomsUi === -1 ? -1 : Math.max(0, maxRoomsUi - parseInt(stats.total_rooms))
+        total_rooms: stats.total_rooms,
+        total_reservations: stats.total_reservations,
+        total_guests: stats.total_guests,
+        total_registrations: stats.total_registrations,
+        rooms_used: stats.total_rooms,
+        rooms_remaining: maxRoomsUi === -1 ? -1 : Math.max(0, maxRoomsUi - stats.total_rooms)
       },
       limits: {
-        can_add_rooms: maxRoomsUi === -1 || parseInt(stats.total_rooms) < maxRoomsUi,
+        can_add_rooms: maxRoomsUi === -1 || stats.total_rooms < maxRoomsUi,
         rooms_usage_percentage:
-          maxRoomsUi === -1 ? 0 : Math.round((parseInt(stats.total_rooms) / maxRoomsUi) * 100),
-        rooms_remaining: maxRoomsUi === -1 ? -1 : Math.max(0, maxRoomsUi - parseInt(stats.total_rooms)),
+          maxRoomsUi === -1 ? 0 : Math.round((stats.total_rooms / maxRoomsUi) * 100),
+        rooms_remaining: maxRoomsUi === -1 ? -1 : Math.max(0, maxRoomsUi - stats.total_rooms),
         limit_message: maxRoomsUi === -1 
           ? null 
-          : parseInt(stats.total_rooms) >= maxRoomsUi
+          : stats.total_rooms >= maxRoomsUi
           ? {
               type: 'error',
               message: `⚠️ Límite alcanzado: Has usado todas las ${maxRoomsUi} unidades de tu plan ${planPresent.plan_name}.`,
               suggestion: 'Para añadir más habitaciones, actualiza tu plan desde la página de Mejora de Plan.'
             }
-          : Math.round((parseInt(stats.total_rooms) / maxRoomsUi) * 100) >= 80
+          : Math.round((stats.total_rooms / maxRoomsUi) * 100) >= 80
           ? {
               type: 'warning',
-              message: `⚡ Estás cerca del límite: ${parseInt(stats.total_rooms)}/${maxRoomsUi} unidades (${Math.round((parseInt(stats.total_rooms) / maxRoomsUi) * 100)}% usado).`,
-              suggestion: `Te quedan ${maxRoomsUi - parseInt(stats.total_rooms)} unidades disponibles. Considera actualizar tu plan si necesitas más capacidad.`
+              message: `⚡ Estás cerca del límite: ${stats.total_rooms}/${maxRoomsUi} unidades (${Math.round((stats.total_rooms / maxRoomsUi) * 100)}% usado).`,
+              suggestion: `Te quedan ${maxRoomsUi - stats.total_rooms} unidades disponibles. Considera actualizar tu plan si necesitas más capacidad.`
             }
           : null
       }

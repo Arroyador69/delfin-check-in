@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, X, Calendar, User, Bed, Euro, CreditCard, Download, Phone, Users, Globe, Edit } from 'lucide-react';
+import { Link } from '@/i18n/navigation';
+import { Plus, X, Calendar, User, Bed, Euro, CreditCard, Download, Phone, Users, Globe, Edit, Mail } from 'lucide-react';
+import { useTenant, hasCheckinInstructionsEmailAccess } from '@/hooks/useTenant';
 import { getRoomNumber } from '@/lib/db';
 import { useTranslations, useLocale } from 'next-intl';
 import LocalizedDateInput from '@/components/LocalizedDateInput';
@@ -28,6 +30,8 @@ interface Reservation {
   status: 'confirmed' | 'cancelled' | 'completed';
   created_at: string;
   updated_at: string;
+  checkin_instructions_sent_at?: string | null;
+  checkin_instructions_opened_at?: string | null;
 }
 
 interface Room {
@@ -50,6 +54,8 @@ const RESERVATION_FORM_FALLBACKS: Record<string, string> = {
   'form.guestNamePlaceholder': 'Nombre completo',
   'form.guestEmailLabel': 'Email del huésped',
   'form.guestEmailPlaceholder': 'email@ejemplo.com',
+  'form.guestEmailHint':
+    'Necesario para enviar las instrucciones de check-in por email (planes Standard y Pro).',
   'form.guestPhoneLabel': 'Teléfono del huésped',
   'form.guestPhonePlaceholder': '+34 600 000 000',
   'form.guestCountLabel': 'Número de personas *',
@@ -82,6 +88,8 @@ export default function ReservationsPage() {
   const t = useTranslations('reservations');
   const tCommon = useTranslations('common');
   const locale = useLocale();
+  const { tenant } = useTenant();
+  const canSendCheckinEmail = hasCheckinInstructionsEmailAccess(tenant);
 
   const safeT = (key: string): string => {
     try {
@@ -105,6 +113,9 @@ export default function ReservationsPage() {
   const [reservationToDelete, setReservationToDelete] = useState<Reservation | null>(null);
   const [reservationToEdit, setReservationToEdit] = useState<Reservation | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [checkinModalReservation, setCheckinModalReservation] = useState<Reservation | null>(null);
+  const [checkinModalStep, setCheckinModalStep] = useState<1 | 2>(1);
+  const [checkinSending, setCheckinSending] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredReservations, setFilteredReservations] = useState<Reservation[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -210,6 +221,8 @@ export default function ReservationsPage() {
           total_price: safeNumber(reservation.total_price),
           platform_commission: safeNumber(reservation.platform_commission),
           net_income: safeNumber(reservation.net_income),
+          checkin_instructions_sent_at: reservation.checkin_instructions_sent_at ?? null,
+          checkin_instructions_opened_at: reservation.checkin_instructions_opened_at ?? null,
         };
       });
 
@@ -405,6 +418,51 @@ export default function ReservationsPage() {
 
   const formatDate = (date: string) => {
     return new Date(date).toLocaleDateString(toIntlDateLocale(locale as AppLocale));
+  };
+
+  const formatDateTime = (date: string | null | undefined) => {
+    if (!date) return '—';
+    return new Date(date).toLocaleString(toIntlDateLocale(locale as AppLocale), {
+      dateStyle: 'short',
+      timeStyle: 'short',
+    });
+  };
+
+  const openCheckinMailModal = (r: Reservation) => {
+    setCheckinModalStep(1);
+    setCheckinModalReservation(r);
+  };
+
+  const closeCheckinMailModal = () => {
+    setCheckinModalReservation(null);
+    setCheckinModalStep(1);
+    setCheckinSending(false);
+  };
+
+  const confirmSendCheckinInstructions = async () => {
+    if (!checkinModalReservation) return;
+    setCheckinSending(true);
+    try {
+      const res = await fetch(
+        `/api/reservations/${checkinModalReservation.id}/send-checkin-instructions`,
+        {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'x-ui-locale': locale },
+        }
+      );
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || t('checkinMail.errorGeneric'));
+      }
+      closeCheckinMailModal();
+      await fetchReservations();
+      alert(t('checkinMail.success'));
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : t('checkinMail.errorGeneric'));
+    } finally {
+      setCheckinSending(false);
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -633,6 +691,9 @@ export default function ReservationsPage() {
                     🌐 {t('columns.channel')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                    ✉️ {t('columns.checkinMail')}
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                     ⚙️ {t('columns.actions')}
                   </th>
                 </tr>
@@ -640,7 +701,7 @@ export default function ReservationsPage() {
               <tbody className="bg-white divide-y divide-gray-200">
                 {displayReservations.length === 0 ? (
                   <tr>
-                    <td colSpan={12} className="px-6 py-12 text-center">
+                    <td colSpan={13} className="px-6 py-12 text-center">
                       <div className="bg-gradient-to-r from-blue-100 to-purple-100 p-8 rounded-full w-24 h-24 mx-auto mb-6 flex items-center justify-center">
                         <Bed className="w-12 h-12 text-blue-600" />
                       </div>
@@ -714,6 +775,54 @@ export default function ReservationsPage() {
                       <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
                         {getChannelText(reservation.channel)}
                       </span>
+                    </td>
+                    <td className="px-4 py-4 text-sm text-gray-800 align-top min-w-[10rem] max-w-[11rem]">
+                      <div className="flex flex-col gap-1.5">
+                        {reservation.checkin_instructions_sent_at ? (
+                          <>
+                            <span className="text-xs font-medium text-green-800">
+                              {t('checkinMail.sentShort')}:{' '}
+                              {formatDateTime(reservation.checkin_instructions_sent_at)}
+                            </span>
+                            <span className="text-[11px] text-gray-500 leading-snug">
+                              {reservation.checkin_instructions_opened_at
+                                ? `${t('checkinMail.openedShort')}: ${formatDateTime(reservation.checkin_instructions_opened_at)}`
+                                : t('checkinMail.openUnknown')}
+                            </span>
+                          </>
+                        ) : !String(reservation.guest_email || '').trim() ? (
+                          <span className="text-[11px] text-amber-700 leading-snug">{t('checkinMail.noEmail')}</span>
+                        ) : (
+                          <span className="text-[11px] text-gray-400">—</span>
+                        )}
+                        {canSendCheckinEmail ? (
+                          <button
+                            type="button"
+                            onClick={() => openCheckinMailModal(reservation)}
+                            disabled={
+                              !!reservation.checkin_instructions_sent_at ||
+                              !String(reservation.guest_email || '').trim()
+                            }
+                            title={t('checkinMail.sendTitle')}
+                            className="inline-flex items-center gap-1 rounded-lg border border-indigo-200 bg-indigo-50 px-2 py-1 text-xs font-semibold text-indigo-800 hover:bg-indigo-100 disabled:cursor-not-allowed disabled:opacity-45"
+                          >
+                            <Mail className="h-3.5 w-3.5 shrink-0" />
+                            {t('checkinMail.send')}
+                          </button>
+                        ) : (
+                          <Link
+                            href="/plans"
+                            className="inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-gray-50 px-2 py-1 text-xs font-semibold text-gray-600 hover:bg-gray-100"
+                            title={t('checkinMail.upgrade')}
+                          >
+                            <Mail className="h-3.5 w-3.5 shrink-0 opacity-60" />
+                            {t('checkinMail.send')}
+                            <span className="text-[10px]" aria-hidden>
+                              🔒
+                            </span>
+                          </Link>
+                        )}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <button
@@ -866,6 +975,7 @@ export default function ReservationsPage() {
                       placeholder={safeT('form.guestEmailPlaceholder')}
                       className="w-full px-3 py-2 border-2 border-green-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white font-medium text-black placeholder-gray-500 transition-all"
                     />
+                    <p className="text-xs text-gray-600 mt-1.5">{safeT('form.guestEmailHint')}</p>
                   </div>
                 </div>
 
@@ -1147,6 +1257,7 @@ export default function ReservationsPage() {
                       placeholder={safeT('form.guestEmailPlaceholder')}
                       className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white"
                     />
+                    <p className="text-xs text-gray-600 mt-1.5">{safeT('form.guestEmailHint')}</p>
                   </div>
                 </div>
               </div>
@@ -1433,6 +1544,91 @@ export default function ReservationsPage() {
                   </>
                 )}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {checkinModalReservation && (
+        <div className="fixed inset-0 bg-black/55 flex items-center justify-center p-4 z-[60]">
+          <div className="bg-white rounded-xl shadow-xl max-w-lg w-full border border-indigo-100">
+            <div className="px-5 py-4 border-b border-gray-100 flex justify-between items-start gap-2">
+              <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2 pr-2">
+                <Mail className="h-5 w-5 text-indigo-600 shrink-0" />
+                {checkinModalStep === 1
+                  ? t('checkinMail.modalStep1Title')
+                  : t('checkinMail.modalStep2Title')}
+              </h3>
+              <button
+                type="button"
+                onClick={closeCheckinMailModal}
+                className="text-gray-500 hover:text-gray-800 p-1 rounded-lg hover:bg-gray-100"
+                aria-label={t('checkinMail.modalCancel')}
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="p-5 space-y-3 text-sm text-gray-700">
+              {checkinModalStep === 1 ? (
+                <>
+                  <p>{t('checkinMail.modalStep1Intro')}</p>
+                  <ul className="list-disc pl-5 space-y-1.5">
+                    <li>
+                      <span className="font-semibold">{t('checkinMail.modalGuest')}:</span>{' '}
+                      {checkinModalReservation.guest_name}
+                    </li>
+                    <li>
+                      <span className="font-semibold">{t('checkinMail.modalEmail')}:</span>{' '}
+                      {checkinModalReservation.guest_email}
+                    </li>
+                    <li>
+                      <span className="font-semibold">{t('checkinMail.modalRoom')}:</span>{' '}
+                      {rooms.find((r) => r.id === checkinModalReservation.room_id)?.name ||
+                        t('roomFallback', { number: getRoomNumber(checkinModalReservation.room_id) })}
+                    </li>
+                  </ul>
+                </>
+              ) : (
+                <p className="text-amber-900 bg-amber-50 border border-amber-200 rounded-lg p-3 leading-relaxed">
+                  {t('checkinMail.modalStep2Warning')}
+                </p>
+              )}
+            </div>
+            <div className="px-5 py-4 border-t border-gray-100 flex flex-wrap justify-end gap-2">
+              <button
+                type="button"
+                onClick={closeCheckinMailModal}
+                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+              >
+                {t('checkinMail.modalCancel')}
+              </button>
+              {checkinModalStep === 1 ? (
+                <button
+                  type="button"
+                  onClick={() => setCheckinModalStep(2)}
+                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+                >
+                  {t('checkinMail.modalNext')}
+                </button>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setCheckinModalStep(1)}
+                    className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+                  >
+                    {t('checkinMail.modalBack')}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={checkinSending}
+                    onClick={confirmSendCheckinInstructions}
+                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {checkinSending ? t('checkinMail.sending') : t('checkinMail.modalSend')}
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>

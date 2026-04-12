@@ -3,13 +3,18 @@
  */
 
 export function localizedPlanFeatureSummary(
-  t: (key: string, values?: Record<string, string | number | boolean>) => string,
+  /** `useTranslations('…')` de next-intl (tipado por namespace; se adapta aquí). */
+  translate: unknown,
   tenant: {
     plan_type?: string | null;
     billing_rooms?: number | null;
     config?: { lodgingType?: string } | null;
   }
 ): string {
+  const t = translate as (
+    key: string,
+    values?: Record<string, string | number | Date | undefined>
+  ) => string;
   const pt = String(tenant?.plan_type || 'free');
   const br = Math.max(1, Number(tenant?.billing_rooms) || 1);
   const apartment = tenant?.config?.lodgingType === 'apartamentos';
@@ -33,9 +38,17 @@ export function localizedPlanFeatureSummary(
   if (pt === 'checkin') {
     parts.push(t('planFeatures.paid.mirIncluded'), t('planFeatures.paid.fullPms'));
   } else if (pt === 'standard') {
-    parts.push(t('planFeatures.paid.noAds'), t('planFeatures.paid.mirIncluded'));
+    parts.push(
+      t('planFeatures.paid.noAds'),
+      t('planFeatures.paid.mirIncluded'),
+      t('planFeatures.paid.checkinEmailInstructions')
+    );
   } else if (pt === 'pro') {
-    parts.push(t('planFeatures.paid.noAds'), t('planFeatures.paid.directBooking'));
+    parts.push(
+      t('planFeatures.paid.noAds'),
+      t('planFeatures.paid.directBooking'),
+      t('planFeatures.paid.checkinEmailInstructions')
+    );
   }
 
   return parts.join(' • ');

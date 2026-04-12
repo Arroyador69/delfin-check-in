@@ -19,6 +19,8 @@ import {
   Send,
   XCircle
 } from 'lucide-react';
+import { useTenant, isFreePlanMirPreview } from '@/hooks/useTenant';
+import { PlanFreePreviewOverlay } from '@/components/PlanFreePreviewOverlay';
 
 type EstadoComunicacion = 'pendiente' | 'enviado' | 'confirmado' | 'error';
 
@@ -72,6 +74,7 @@ const ESTADO_BADGE: Record<string, { color: string; icon: typeof CheckCircle }> 
 export default function EstadoEnviosMIRPage() {
   const t = useTranslations('estadoEnviosMir');
   const locale = useLocale();
+  const { tenant } = useTenant();
 
   function formatearFecha(valor: string) {
     return new Date(valor).toLocaleString(locale, {
@@ -277,8 +280,17 @@ export default function EstadoEnviosMIRPage() {
     );
   };
 
+  const showMirFreeOverlay = Boolean(tenant && isFreePlanMirPreview(tenant));
+
   return (
-    <div className="flex min-h-screen flex-col bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+    <div className="relative flex min-h-screen flex-col bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+      {showMirFreeOverlay && (
+        <PlanFreePreviewOverlay
+          title={t('paywallTitle')}
+          body={t('paywallBody')}
+          ctaLabel={t('paywallCta')}
+        />
+      )}
       <header className="border-b border-blue-100/70 bg-white shadow-sm">
         <div className="mx-auto flex max-w-7xl flex-col gap-5 px-4 py-6 sm:px-6 lg:px-8 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">

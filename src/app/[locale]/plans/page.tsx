@@ -63,7 +63,7 @@ const PLANS_CONFIG: (Omit<Plan, 'name' | 'description' | 'features'> & { feature
     legalModule: true,
     color: 'amber',
     icon: Check,
-    featuresKeys: ['standardF0', 'standardF1', 'standardF2', 'standardF3', 'standardF4', 'standardF5']
+    featuresKeys: ['standardF0', 'standardF1', 'standardF2', 'standardF3', 'standardF4', 'standardF5', 'standardF6']
   },
   {
     id: 'pro',
@@ -75,7 +75,7 @@ const PLANS_CONFIG: (Omit<Plan, 'name' | 'description' | 'features'> & { feature
     legalModule: true,
     color: 'purple',
     icon: Crown,
-    featuresKeys: ['proF0', 'proF1', 'proF2', 'proF3', 'proF4', 'proF5', 'proF6', 'proF7']
+    featuresKeys: ['proF0', 'proF1', 'proF2', 'proF3', 'proF4', 'proF5', 'proF6', 'proF7', 'proF8']
   }
 ];
 

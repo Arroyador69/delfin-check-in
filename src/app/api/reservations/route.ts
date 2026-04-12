@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getReservations, insertReservation, sql, normalizeRoomId } from '@/lib/db';
+import { ensureReservationCheckinEmailColumns } from '@/lib/reservation-checkin-email-db';
 import { sendReservationConfirmation } from '@/lib/whatsapp';
 
 // Configuración para evitar caché
@@ -101,6 +102,12 @@ export async function GET(req: NextRequest) {
       CREATE UNIQUE INDEX IF NOT EXISTS uq_reservations_tenant_external_id
       ON reservations(tenant_id, external_id);
     `;
+
+    try {
+      await ensureReservationCheckinEmailColumns();
+    } catch (e) {
+      console.warn('⚠️ Columnas email check-in en reservations:', e);
+    }
     
     // Obtener reservas desde la base de datos filtradas por tenant_id
     const result = await sql`

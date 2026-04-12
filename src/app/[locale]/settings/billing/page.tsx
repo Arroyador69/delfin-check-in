@@ -337,7 +337,9 @@ export default function BillingPage() {
                 <div className="flex-1">
                   <h3 className="text-lg font-bold text-yellow-900 mb-2">⚠️ {tLayout('paymentFailedTitle')}</h3>
                   <p className="text-yellow-800 mb-3">
-                    {tLayout('paymentFailedMessage', { current: billingInfo.tenant.payment_retry_count })}
+                    {tLayout('paymentFailedMessage', {
+                      current: billingInfo.tenant.payment_retry_count ?? 0,
+                    })}
                   </p>
                   <p className="text-yellow-700 text-sm mb-4">
                     {3 - (billingInfo.tenant.payment_retry_count || 0) === 1

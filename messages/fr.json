@@ -151,7 +151,8 @@
         "mirIncluded": "Enregistrement des voyageurs (MIR) inclus",
         "fullPms": "PMS complet",
         "noAds": "Sans publicité",
-        "directBooking": "Réservations directes (commission réduite)"
+        "directBooking": "Réservations directes (commission réduite)",
+        "checkinEmailInstructions": "E-mail d’instructions d’arrivée au voyageur"
       }
     },
     "unitsAvailableToAdd": "{remaining, plural, one {✅ # unité disponible à ajouter} other {✅ # unités disponibles à ajouter}}",
@@ -406,7 +407,8 @@
       "commission": "Commission",
       "netIncome": "Vos gains",
       "channel": "Canal",
-      "actions": "Actions"
+      "actions": "Actions",
+      "checkinMail": "E-mail arrivée"
     },
     "noResultsTitle": "Aucun résultat trouvé",
     "noResultsDescription": "Aucune réservation ne correspond à \"{term}\"",
@@ -472,6 +474,29 @@
       "delete": "Supprimer",
       "deleting": "Suppression..."
     },
+    "checkinMail": {
+      "send": "Instructions d’arrivée",
+      "sendTitle": "Envoyer les instructions d’arrivée par e-mail",
+      "upgrade": "Inclus dans Standard et Pro",
+      "sentShort": "Envoyé",
+      "openedShort": "Ouvert",
+      "openUnknown": "Ouverture non détectée",
+      "noEmail": "Pas d’e-mail",
+      "modalStep1Title": "Vérifier l’envoi",
+      "modalStep1Intro": "Un seul e-mail sera envoyé au voyageur avec les instructions configurées pour la chambre de cette réservation.",
+      "modalGuest": "Voyageur",
+      "modalEmail": "E-mail",
+      "modalRoom": "Chambre",
+      "modalNext": "Continuer",
+      "modalStep2Title": "Confirmation finale",
+      "modalStep2Warning": "Cette réservation ne peut recevoir qu’un seul envoi d’instructions. Confirmez-vous l’envoi ?",
+      "modalSend": "Envoyer maintenant",
+      "modalBack": "Retour",
+      "modalCancel": "Annuler",
+      "sending": "Envoi en cours…",
+      "success": "E-mail envoyé avec succès",
+      "errorGeneric": "Impossible d’envoyer l’e-mail"
+    },
     "createModal": {
       "title": "Nouvelle réservation manuelle",
       "reservationSection": "Informations sur la réservation"
@@ -489,6 +514,7 @@
       "guestNamePlaceholder": "Nom complet",
       "guestEmailLabel": "Email de l'hôte",
       "guestEmailPlaceholder": "email@exemple.com",
+      "guestEmailHint": "Nécessaire pour envoyer les instructions d’arrivée par e-mail (formules Standard et Pro).",
       "guestPhoneLabel": "Téléphone de l'hôte",
       "guestPhonePlaceholder": "+33 600 000 000",
       "guestCountLabel": "Nombre de personnes *",
@@ -685,6 +711,9 @@
   },
   "estadoEnviosMir": {
     "title": "État Envois MIR",
+    "paywallTitle": "Forfait gratuit",
+    "paywallBody": "Le suivi MIR et les envois au ministère sont inclus dans les forfaits payants (Check-in, Standard ou Pro). Passez à un forfait payant pour utiliser ces outils.",
+    "paywallCta": "Voir les forfaits",
     "subtitle": "Suivi visuel des communications au Ministère de l'Intérieur.",
     "lastUpdate": "Dernière mise à jour : {date}",
     "autoUpdating": "Mise à jour auto",
@@ -734,6 +763,9 @@
   "mirComunicaciones": {
     "title": "État Envois MIR",
     "subtitle": "Gestion des communications avec le Ministère de l'Intérieur",
+    "paywallTitle": "Forfait gratuit",
+    "paywallBody": "Les outils MIR complets sont inclus dans les forfaits payants. Mettez à niveau pour envoyer, consulter et annuler des communications.",
+    "paywallCta": "Voir les forfaits",
     "subtitleDetail": "Envoi, consultation et annulation des communications officielles",
     "proBadge": "Tous les pays",
     "consultaTiempoReal": "Consultation Temps Réel MIR",
@@ -1879,7 +1911,10 @@
       "deleteCancel": "Annuler",
       "deleteSuccess": "Modèle supprimé",
       "deleteError": "Impossible de supprimer le modèle",
-      "deleting": "Suppression..."
+      "deleting": "Suppression...",
+      "paywallTitle": "E-mail d’instructions d’arrivée",
+      "paywallBody": "Configurez et envoyez les instructions au voyageur depuis Réservations. Disponible avec les forfaits Standard et Pro.",
+      "paywallCta": "Voir les forfaits"
     },
     "empresa": {
       "title": "Données Entreprise",
@@ -1929,6 +1964,9 @@
     },
     "mir": {
       "title": "Paramètres MIR",
+      "paywallTitle": "Forfait gratuit",
+      "paywallBody": "La configuration MIR et les envois au ministère nécessitent un forfait payant. Mettez à niveau pour activer le module légal.",
+      "paywallCta": "Voir les forfaits",
       "subtitle": "Configurez les identifiants pour l'envoi des communications au Ministère de l'Intérieur",
       "selectCountry": "Sélectionnez un pays",
       "countrySaved": "Pays configuré correctement",
@@ -2267,6 +2305,7 @@
     "standardF3": "Sans annonces",
     "standardF4": "PMS complet",
     "standardF5": "Réservations directes (9% de frais)",
+    "standardF6": "E-mail d’instructions d’arrivée au voyageur (inclus)",
     "proPlanName": "Forfait Pro",
     "proPlanDesc": "PMS complet sans annonces",
     "proF0": "Inclut 1 unité",
@@ -2276,7 +2315,8 @@
     "proF4": "PMS complet",
     "proF5": "Réservations directes (9% de frais)",
     "proF6": "Support prioritaire",
-    "proF7": "Sauvegarde automatique"
+    "proF7": "Sauvegarde automatique",
+    "proF8": "E-mail d’instructions d’arrivée au voyageur (inclus)"
   },
   "pricing": {
     "title": "Prix Dynamiques",

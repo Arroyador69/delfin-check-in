@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import { Home, Bed, Calendar, Users, Settings, Menu, X, TrendingUp, FileText, Download, Shield, Calculator, Send, Receipt, Crown, Target, UserPlus, BarChart3, LifeBuoy } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
-import { useTenant, hasLegalModule } from '@/hooks/useTenant';
+import { useTenant, hasLegalModule, isFreePlanMirPreview } from '@/hooks/useTenant';
 import { useClientTranslations } from '@/hooks/useClientTranslations';
 import LanguageSwitcher from './LanguageSwitcher';
 import { locales, defaultLocale, type Locale } from '@/i18n/config';
@@ -97,7 +97,9 @@ export default function Navigation() {
     }
     // Para usuarios normales, aplicar filtros según plan
     if (item.requiresLegal) {
-      return hasLegalModule(tenant);
+      if (hasLegalModule(tenant)) return true;
+      if (tenant && isFreePlanMirPreview(tenant)) return true;
+      return false;
     }
     return true;
   });

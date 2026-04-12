@@ -11,7 +11,8 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useTenant, hasLegalModule } from '@/hooks/useTenant';
+import { useTenant, hasLegalModule, isFreePlanMirPreview } from '@/hooks/useTenant';
+import { PlanFreePreviewOverlay } from '@/components/PlanFreePreviewOverlay';
 import { 
   Send, 
   Search, 
@@ -81,34 +82,38 @@ export default function MirComunicacionesPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [isSuperAdminUser, setIsSuperAdminUser] = useState(false);
+  const [authResolved, setAuthResolved] = useState(false);
 
-  // Verificar acceso al módulo legal (excepto superadmins)
+  // Verificar acceso al módulo legal (excepto superadmins y vista previa plan gratuito)
   useEffect(() => {
-    if (!tenantLoading && tenant) {
-      // Verificar si es superadmin - SI ES SUPERADMIN, PERMITIR ACCESO COMPLETO
-      fetch('/api/auth/me')
-        .then(res => res.json())
-        .then(data => {
-          const isSuperAdmin = data.success && data.data?.isPlatformAdmin;
-          // Superadmins SIEMPRE tienen acceso, sin importar el plan
-          if (isSuperAdmin) {
-            console.log('👑 SuperAdmin: Acceso completo al módulo legal concedido');
-            return; // No hacer nada, permitir acceso
-          }
-          // Solo para usuarios normales, verificar legal_module
-          if (!hasLegalModule(tenant)) {
-            router.push(`/${locale}/upgrade-plan?reason=legal_module`);
-          }
-        })
-        .catch(() => {
-          // Si falla la verificación, verificar si es superadmin de otra forma
-          // Por seguridad, si no podemos verificar, permitir acceso si tiene legal_module
-          if (!hasLegalModule(tenant)) {
-            // Solo bloquear si definitivamente no tiene legal_module
-            router.push(`/${locale}/upgrade-plan?reason=legal_module`);
-          }
-        });
+    if (tenantLoading) return;
+    if (!tenant) {
+      setAuthResolved(true);
+      return;
     }
+    fetch('/api/auth/me')
+      .then(res => res.json())
+      .then(data => {
+        const isSuperAdmin = data.success && data.data?.isPlatformAdmin;
+        setIsSuperAdminUser(!!isSuperAdmin);
+        if (isSuperAdmin) {
+          console.log('👑 SuperAdmin: Acceso completo al módulo legal concedido');
+          return;
+        }
+        if (isFreePlanMirPreview(tenant)) {
+          return;
+        }
+        if (!hasLegalModule(tenant)) {
+          router.push(`/${locale}/upgrade-plan?reason=legal_module`);
+        }
+      })
+      .catch(() => {
+        if (!hasLegalModule(tenant) && !isFreePlanMirPreview(tenant)) {
+          router.push(`/${locale}/upgrade-plan?reason=legal_module`);
+        }
+      })
+      .finally(() => setAuthResolved(true));
   }, [tenant, tenantLoading, router, locale]);
   
   // Estados para consulta
@@ -339,9 +344,19 @@ export default function MirComunicacionesPage() {
     );
   };
 
+  const showMirFreeOverlay =
+    authResolved && tenant && isFreePlanMirPreview(tenant) && !isSuperAdminUser;
+
   return (
     <AdminLayout>
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="relative min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+        {showMirFreeOverlay && (
+          <PlanFreePreviewOverlay
+            title={t('paywallTitle')}
+            body={t('paywallBody')}
+            ctaLabel={t('paywallCta')}
+          />
+        )}
         {/* Header */}
         <header className="bg-white shadow-sm border-b">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

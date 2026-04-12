@@ -1,6 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import type { Tenant } from '@/lib/tenant';
+import { resolveEffectivePlanType } from '@/lib/tenant-plan-billing';
+import { hasCheckinInstructionsEmailPlan } from '@/lib/checkin-email-plan';
 
 export interface TenantInfo {
   id: string;
@@ -83,6 +86,28 @@ export function hasAds(tenant: TenantInfo | null): boolean {
 /**
  * Helper para obtener el tipo de plan legible
  */
+function effectivePlan(tenant: TenantInfo | null) {
+  if (!tenant) return 'free' as const;
+  return resolveEffectivePlanType({
+    plan_type: tenant.plan_type as Tenant['plan_type'],
+    plan_id: tenant.plan_id as Tenant['plan_id'],
+  });
+}
+
+/** Plan Standard o Pro: email de instrucciones check-in al huésped (PMS y reservas directas). */
+export function hasCheckinInstructionsEmailAccess(tenant: TenantInfo | null): boolean {
+  if (!tenant) return false;
+  return hasCheckinInstructionsEmailPlan({
+    plan_type: tenant.plan_type as Tenant['plan_type'],
+    plan_id: tenant.plan_id as Tenant['plan_id'],
+  });
+}
+
+/** Plan gratuito: vista previa bloqueada de MIR / estado envíos (upsell). */
+export function isFreePlanMirPreview(tenant: TenantInfo | null): boolean {
+  return effectivePlan(tenant) === 'free';
+}
+
 export function getPlanName(tenant: TenantInfo | null): string {
   if (!tenant) return 'Desconocido';
   

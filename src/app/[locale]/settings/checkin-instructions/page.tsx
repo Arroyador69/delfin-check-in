@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react'
 import AdminLayout from '@/components/AdminLayout'
 import { useTranslations, useLocale } from 'next-intl'
 import { Trash2 } from 'lucide-react'
+import { useTenant, hasCheckinInstructionsEmailAccess } from '@/hooks/useTenant'
+import { PlanFreePreviewOverlay } from '@/components/PlanFreePreviewOverlay'
 
 interface SlotOption {
   id: string
@@ -14,6 +16,8 @@ interface SlotOption {
 export default function CheckinInstructionsPage() {
   const t = useTranslations('settings.checkinInstructions')
   const locale = useLocale()
+  const { tenant } = useTenant()
+  const canEditCheckinEmail = hasCheckinInstructionsEmailAccess(tenant)
   const [slots, setSlots] = useState<SlotOption[]>([])
   const [selectedRoomId, setSelectedRoomId] = useState<string>('')
   const [title, setTitle] = useState('')
@@ -144,9 +148,18 @@ export default function CheckinInstructionsPage() {
     }
   }
 
+  const showPaywall = Boolean(tenant && !canEditCheckinEmail)
+
   return (
     <AdminLayout>
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+      <div className="relative min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+        {showPaywall && (
+          <PlanFreePreviewOverlay
+            title={t('paywallTitle')}
+            body={t('paywallBody')}
+            ctaLabel={t('paywallCta')}
+          />
+        )}
         <div className="max-w-6xl mx-auto px-4 py-8">
           <div className="bg-white rounded-2xl shadow-md border border-indigo-100 p-6 mb-8">
             <div className="flex items-center gap-3 mb-1">

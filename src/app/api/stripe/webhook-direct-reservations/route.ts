@@ -6,6 +6,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { sql } from '@vercel/postgres';
 import { sendReservationEmails, sendCheckinInstructionsEmail } from '@/lib/email-notifications';
+import { hasCheckinInstructionsEmailPlan } from '@/lib/checkin-email-plan';
 import { DirectReservation, TenantProperty } from '@/lib/direct-reservations-types';
 import { getStripeServer } from '@/lib/stripe-server';
 
@@ -70,8 +71,11 @@ export async function POST(req: NextRequest) {
         hasReservationId: !!paymentIntent.metadata?.reservation_id
       });
 
-      // Verificar que sea una reserva directa (CRÍTICO)
-      if (paymentIntent.metadata?.source !== 'direct_reservation' || !paymentIntent.metadata?.reservation_code) {
+      // Verificar que sea una reserva directa o pago vía enlace (mismos metadatos)
+      const paymentSource = paymentIntent.metadata?.source;
+      const isDirectOrLink =
+        paymentSource === 'direct_reservation' || paymentSource === 'payment_link';
+      if (!isDirectOrLink || !paymentIntent.metadata?.reservation_code) {
         console.warn('⚠️ [WEBHOOK RESERVAS] Payment Intent NO es de una reserva directa:', {
           paymentIntentId: paymentIntent.id,
           source: paymentIntent.metadata?.source,
@@ -88,7 +92,7 @@ export async function POST(req: NextRequest) {
 
       // Crear o actualizar reserva desde los metadatos del Payment Intent
       // La reserva se crea SOLO cuando el pago se confirma exitosamente
-      if ((paymentIntent.metadata?.source === 'direct_reservation' || paymentIntent.metadata?.source === 'payment_link') && paymentIntent.metadata?.reservation_code) {
+      if (paymentIntent.metadata?.reservation_code) {
         console.log('🔍 [WEBHOOK RESERVAS] Procesando pago de reserva directa:', {
           paymentIntentId: paymentIntent.id,
           reservationCode: paymentIntent.metadata.reservation_code,
@@ -127,7 +131,7 @@ export async function POST(req: NextRequest) {
           });
 
           // Si es un pago desde enlace de pago, actualizar el enlace
-          if (paymentIntent.metadata?.source === 'payment_link' && paymentIntent.metadata?.payment_link_code) {
+          if (paymentSource === 'payment_link' && paymentIntent.metadata?.payment_link_code) {
             try {
               await sql`
                 UPDATE payment_links
@@ -199,7 +203,7 @@ export async function POST(req: NextRequest) {
           });
 
           // Si es un pago desde enlace de pago, actualizar el enlace
-          if (paymentIntent.metadata?.source === 'payment_link' && paymentIntent.metadata?.payment_link_code) {
+          if (paymentSource === 'payment_link' && paymentIntent.metadata?.payment_link_code) {
             try {
               await sql`
                 UPDATE payment_links
@@ -480,13 +484,32 @@ export async function POST(req: NextRequest) {
                 } catch {}
 
                 await new Promise((r) => setTimeout(r, 2500))
-                const instrRes = await sendCheckinInstructionsEmail({
-                  reservation,
-                  property,
-                  roomId,
-                  publicFormUrl
-                })
-                console.log('📧 [WEBHOOK RESERVAS] Instrucciones check‑in:', instrRes.success ? '✅ Enviadas' : `❌ ${instrRes.error}`)
+
+                const tenantPlanRow = await sql`
+                  SELECT plan_type, plan_id FROM tenants WHERE id = ${reservation.tenant_id}::uuid LIMIT 1
+                `
+                const tenantPlan = tenantPlanRow.rows[0] as
+                  | { plan_type?: string | null; plan_id?: string | null }
+                  | undefined
+                const canAutoCheckinEmail =
+                  tenantPlan && hasCheckinInstructionsEmailPlan(tenantPlan as any)
+
+                if (!canAutoCheckinEmail) {
+                  console.log(
+                    '📧 [WEBHOOK RESERVAS] Instrucciones check-in no enviadas (planes Standard/Pro)'
+                  )
+                } else {
+                  const instrRes = await sendCheckinInstructionsEmail({
+                    reservation,
+                    property,
+                    roomId,
+                    publicFormUrl,
+                  })
+                  console.log(
+                    '📧 [WEBHOOK RESERVAS] Instrucciones check‑in:',
+                    instrRes.success ? '✅ Enviadas' : `❌ ${instrRes.error}`
+                  )
+                }
               } catch (e:any) {
                 console.error('⚠️ [WEBHOOK RESERVAS] Error al enviar instrucciones check‑in (no bloquea webhook):', e.message)
               }
