@@ -102,6 +102,7 @@
     "labelUrl": "Link per recensione Google",
     "hintUrl": "Incolla il link da Google (Maps / Profilo / g.page).",
     "labelLocale": "Lingua dell’email all’ospite",
+    "guestEmailLanguagesNote": "Solo spagnolo o inglese: sono le uniche lingue disponibili per le email agli ospiti in questa funzione.",
     "localeEs": "Spagnolo",
     "localeEn": "Inglese",
     "labelMessageEs": "Testo email (spagnolo)",

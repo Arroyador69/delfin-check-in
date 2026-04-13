@@ -265,6 +265,9 @@ export default function ReputationGooglePage() {
                       {t('localeEn')}
                     </label>
                   </div>
+                  <p className="text-xs text-amber-900/90 bg-amber-50 border border-amber-200 rounded-md px-2.5 py-2 mt-2">
+                    {t('guestEmailLanguagesNote')}
+                  </p>
                   <p className="text-xs text-gray-500 mt-2">{t('testEmailHint')}</p>
                 </div>
 

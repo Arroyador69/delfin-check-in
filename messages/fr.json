@@ -102,6 +102,7 @@
     "labelUrl": "Lien pour laisser un avis Google",
     "hintUrl": "Collez le lien Google (Maps / Profil / g.page).",
     "labelLocale": "Langue de l’e-mail au voyageur",
+    "guestEmailLanguagesNote": "Uniquement espagnol ou anglais : seules ces langues sont utilisées pour les e-mails aux voyageurs dans cette fonctionnalité.",
     "localeEs": "Espagnol",
     "localeEn": "Anglais",
     "labelMessageEs": "Texte de l’e-mail (espagnol)",

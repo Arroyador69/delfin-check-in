@@ -1,6 +1,7 @@
 import type { Tenant } from '@/lib/tenant';
 import { resolveEffectivePlanType } from '@/lib/tenant-plan-billing';
 
+/** Idioma del correo al huésped: solo ES y EN (comunicación habitual con huéspedes). */
 export type ReputationGuestLocale = 'es' | 'en';
 
 /** Texto recomendado (editable). Mismos placeholders en ES y EN. */

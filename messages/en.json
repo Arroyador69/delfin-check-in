@@ -102,6 +102,7 @@
     "labelUrl": "Google review link",
     "hintUrl": "Paste the link from Google (Maps / Business Profile / g.page).",
     "labelLocale": "Guest email language",
+    "guestEmailLanguagesNote": "Only Spanish or English—those are the two languages available for emails to guests in this feature.",
     "localeEs": "Spanish",
     "localeEn": "English",
     "labelMessageEs": "Email body (Spanish)",

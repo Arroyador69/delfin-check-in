@@ -102,6 +102,7 @@
     "labelUrl": "Enlace para dejar reseña en Google",
     "hintUrl": "Pega aquí el enlace que te da Google (Maps / Perfil de empresa / g.page).",
     "labelLocale": "Idioma del correo al huésped",
+    "guestEmailLanguagesNote": "Solo español o inglés: son los idiomas previstos para hablar con huéspedes en este envío (no se usan otros idiomas).",
     "localeEs": "Español",
     "localeEn": "English",
     "labelMessageEs": "Texto del correo (español)",

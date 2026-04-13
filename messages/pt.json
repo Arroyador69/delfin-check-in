@@ -102,6 +102,7 @@
     "labelUrl": "Link para avaliar no Google",
     "hintUrl": "Cole o link do Google (Maps / Perfil / g.page).",
     "labelLocale": "Idioma do email ao hóspede",
+    "guestEmailLanguagesNote": "Apenas espanhol ou inglês: são as únicas línguas disponíveis para emails ao hóspede nesta funcionalidade.",
     "localeEs": "Espanhol",
     "localeEn": "Inglês",
     "labelMessageEs": "Texto do email (espanhol)",
