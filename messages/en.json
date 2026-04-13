@@ -91,10 +91,10 @@
   },
   "reputationGoogle": {
     "title": "Google reviews and more direct bookings",
-    "subtitle": "Boost local visibility and rely less on Booking or Airbnb: add your Delfín Check-in microsite to your Google profile and send a polite review reminder after each stay.",
+    "subtitle": "Flagship Pro feature: stand out from Airbnb, Booking.com and other OTAs. Improve local ranking on Google, collect reviews with automated reminders, and drive traffic to your direct booking microsite (no big-platform commission).",
     "bannerPro": "Pro is active: set your link, language (ES/EN), and enable sending. A daily job checks reservations; it only sends when the guest email is valid and the checkout date is in the past on the server calendar.",
     "bannerLockedTitle": "Unlock automated reminders with Pro",
-    "bannerLockedBody": "You can read the guide below. Saving your link, choosing the email language, and automated reminders for direct and panel bookings are Pro features.",
+    "bannerLockedBody": "You can read the guide below. Saving your review link, email language, and automated reminders (microsite and panel) are Pro-only—built for more reviews and more direct bookings beyond OTAs.",
     "ctaUpgrade": "View plans and upgrade to Pro",
     "sectionBenefitsTitle": "Why it matters",
     "sectionBenefitsP1": "Google reviews help travellers find you locally. If you also link your Delfín Check-in booking page (microsite), you turn searches into paid stays without large portal fees.",
@@ -180,7 +180,7 @@
   },
   "dashboard": {
     "title": "Delfín Check-in",
-    "subtitle": "Intelligent room management",
+    "subtitle": "Traveller registration and near-automatic reservations: review and confirm. Pro: Google visibility and direct bookings beyond OTAs",
     "connected": "Connected",
     "upgradePlan": "Upgrade Plan",
     "logout": "Logout",
@@ -216,6 +216,7 @@
         "fullPms": "Full property management",
         "noAds": "Ad-free experience",
         "directBooking": "Direct bookings (lower platform fee)",
+        "googleReputationPro": "Google reviews & local visibility (Pro): more direct bookings, less reliance on Airbnb/Booking",
         "checkinEmailInstructions": "Check-in instructions email to guests"
       }
     },
@@ -469,7 +470,7 @@
     "searchActive": "Active search: \"{term}\" - {count} result(s) found",
     "managementTitle": "Reservation management",
     "managementSubtitle": "Create and manage guest reservations",
-    "checkinFormInfoBody": "When a guest submits the traveler registration form, a reservation can be created here with their details and dates. Review room, prices, and channel (e.g. Airbnb or Booking): until then it shows as “Review”. Google review reminders (Pro plan) are only sent after the reservation is no longer pending review.",
+    "checkinFormInfoBody": "The system creates the reservation automatically from traveler registration—you barely need to do anything. Just check room, prices, and channel (e.g. Airbnb or Booking) on this screen and confirm; until then it shows as “Review”. Google review reminders (Pro only) are sent only after the reservation is no longer pending review.",
     "filterPendingOnly": "Pending review only",
     "showAllReservations": "Show all reservations",
     "badgeNeedsReview": "Review",
@@ -2421,7 +2422,7 @@
     "standardF5": "Direct bookings (9% fee)",
     "standardF6": "Check-in instructions email to guests (included)",
     "proPlanName": "Pro Plan",
-    "proPlanDesc": "Full PMS without ads, lower commission",
+    "proPlanDesc": "Full PMS without ads, lower fee, Google growth and direct bookings beyond OTAs",
     "proF0": "Includes 1 unit",
     "proF1": "Additional properties: €2/month",
     "proF2": "Automatic digital check-in (MIR)",
@@ -2430,7 +2431,8 @@
     "proF5": "Direct bookings (5% fee)",
     "proF6": "Priority support",
     "proF7": "Automatic backup",
-    "proF8": "Check-in instructions email to guests (included)"
+    "proF8": "Check-in instructions email to guests (included)",
+    "proF9": "Google reviews & microsite on your Business Profile (Pro): more visibility and direct bookings, less dependence on Airbnb/Booking"
   },
   "upgradePlan": {
     "title": "Upgrade Plan",

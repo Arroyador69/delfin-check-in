@@ -91,10 +91,10 @@
   },
   "reputationGoogle": {
     "title": "Avaliações no Google e mais reservas diretas",
-    "subtitle": "Mais visibilidade local e menos dependência do Booking ou Airbnb: ligue o microsite Delfín Check-in ao seu perfil Google e envie um lembrete cordial para avaliar após a estadia.",
+    "subtitle": "Funcionalidade de destaque do plano Pro: diferencie-se do Airbnb, Booking e outras OTAs. Melhore o posicionamento local no Google, obtenha avaliações com lembretes automáticos e encaminhe tráfego para o microsite de reserva direta (sem comissão de grande plataforma).",
     "bannerPro": "Pro ativo: link, idioma (ES/EN) e ativação. Um processo diário verifica reservas; só envia se o email do hóspede for válido e a data de saída já tiver passado (calendário do servidor).",
     "bannerLockedTitle": "Desbloqueie lembretes automáticos com Pro",
-    "bannerLockedBody": "Pode ler o guia. Guardar o link, escolher o idioma e o envio automático (diretas + painel de reservas) estão incluídos no Pro.",
+    "bannerLockedBody": "Pode ler o guia. Guardar o link de avaliação, o idioma do e-mail e os lembretes automáticos (microsite + painel) são exclusivos do Pro: pensados para mais avaliações e mais reservas diretas fora das OTAs.",
     "ctaUpgrade": "Ver planos e passar a Pro",
     "sectionBenefitsTitle": "Por que vale a pena",
     "sectionBenefitsP1": "As avaliações no Google ajudam viajantes a encontrá-lo. Com o link do microsite transforma pesquisas em estadias pagas sem comissão de grandes portais.",
@@ -180,7 +180,7 @@
   },
   "dashboard": {
     "title": "Delfín Check-in",
-    "subtitle": "Gestão inteligente de quartos",
+    "subtitle": "Registo de viajantes e reservas quase automáticas: reveja e confirme. Pro: Google e reservas diretas além das OTAs",
     "connected": "Ligado",
     "upgradePlan": "Melhorar plano",
     "logout": "Terminar sessão",
@@ -216,6 +216,7 @@
         "fullPms": "PMS completo",
         "noAds": "Sem anúncios",
         "directBooking": "Reservas diretas (comissão reduzida)",
+        "googleReputationPro": "Avaliações Google e visibilidade local (Pro): mais reservas diretas, menos dependência de Airbnb/Booking",
         "checkinEmailInstructions": "E-mail com instruções de check-in ao hóspede"
       }
     },
@@ -458,7 +459,7 @@
     "searchActive": "Pesquisa ativa: \"{term}\" - {count} resultado(s) encontrado(s)",
     "managementTitle": "Gestão de reservas",
     "managementSubtitle": "Crie e gere as reservas dos seus hóspedes",
-    "checkinFormInfoBody": "Quando um hóspede envia o formulário de registo de viajantes, pode criar-se aqui uma reserva com os dados e datas. Revise alojamento, preços e canal (ex. Airbnb ou Booking): até lá aparece como «Rever». Os lembretes de avaliação no Google (plano Pro) só são enviados depois de marcar a reserva como revista.",
+    "checkinFormInfoBody": "O sistema cria a reserva automaticamente a partir do registo de viajantes: tem pouco trabalho. Revise aqui alojamento, preços e canal (ex. Airbnb ou Booking) e confirme; até lá aparece como «Rever». Os lembretes de avaliação no Google (só Pro) só são enviados depois de marcar a reserva como revista.",
     "filterPendingOnly": "Só pendentes de revisão",
     "showAllReservations": "Ver todas as reservas",
     "badgeNeedsReview": "Rever",
@@ -2392,7 +2393,7 @@
     "standardF5": "Reservas diretas (9% taxa)",
     "standardF6": "E-mail com instruções de check-in ao hóspede (integrado)",
     "proPlanName": "Plano Pro",
-    "proPlanDesc": "PMS completo sem anúncios",
+    "proPlanDesc": "PMS completo sem anúncios, crescimento no Google e reservas diretas além dos portais",
     "proF0": "Inclui 1 unidade",
     "proF1": "Quartos adicionais: 5€/mês",
     "proF2": "Check-in digital automático (MIR)",
@@ -2401,7 +2402,8 @@
     "proF5": "Reservas diretas (9% taxa)",
     "proF6": "Suporte prioritário",
     "proF7": "Backup automático",
-    "proF8": "E-mail com instruções de check-in ao hóspede (integrado)"
+    "proF8": "E-mail com instruções de check-in ao hóspede (integrado)",
+    "proF9": "Avaliações Google e microsite no perfil (Pro): mais visibilidade e reservas diretas, menos dependência de Airbnb/Booking"
   },
   "pricing": {
     "title": "Preços Dinâmicos",

@@ -13,8 +13,8 @@ type PaidPlanId = 'checkin' | 'standard' | 'pro';
 const PLAN_FEATURE_KEYS: Record<BillingPlanType, string[]> = {
   free: ['freeF0', 'freeF1', 'freeF2', 'freeF3', 'freeF4'],
   checkin: ['checkinF0', 'checkinF1', 'checkinF2', 'checkinF3', 'checkinF4', 'checkinF5', 'checkinF6'],
-  standard: ['standardF0', 'standardF1', 'standardF2', 'standardF3', 'standardF4', 'standardF5'],
-  pro: ['proF0', 'proF1', 'proF2', 'proF3', 'proF4', 'proF5', 'proF6', 'proF7'],
+  standard: ['standardF0', 'standardF1', 'standardF2', 'standardF3', 'standardF4', 'standardF5', 'standardF6'],
+  pro: ['proF0', 'proF1', 'proF2', 'proF3', 'proF4', 'proF5', 'proF6', 'proF7', 'proF8', 'proF9'],
 };
 
 const PLAN_BADGE_CLASS: Record<BillingPlanType, string> = {

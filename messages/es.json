@@ -91,10 +91,10 @@
   },
   "reputationGoogle": {
     "title": "Reseñas en Google y más reservas directas",
-    "subtitle": "Gana visibilidad local y reduce la dependencia de Booking o Airbnb: enlaza tu microsite de Delfín Check-in en tu ficha de Google y envía un recordatorio amable para que los huéspedes dejen reseña tras la estancia.",
+    "subtitle": "Función estrella del plan Pro: diferénciate de Airbnb, Booking y otros portales. Mejora tu posicionamiento local en Google, gana reseñas con recordatorios automáticos y dirige tráfico a tu microsite de reservas directas (sin comisión de plataforma grande).",
     "bannerPro": "Plan Pro activo: configura el enlace, el idioma (ES/EN) y activa el envío. El automático revisa las reservas una vez al día; solo envía si la reserva tiene email de huésped válido y la fecha de salida ya pasó en el calendario del servidor.",
     "bannerLockedTitle": "Activa el envío automático con el plan Pro",
-    "bannerLockedBody": "Puedes leer la guía. Guardar el enlace, elegir idioma del correo y el recordatorio automático (reservas directas y reservas del panel) están incluidos en Pro.",
+    "bannerLockedBody": "Puedes leer la guía. Guardar el enlace de reseña, el idioma del correo y los recordatorios automáticos (microsite y panel) son exclusivos del plan Pro: diseñados para más reseñas y más reservas directas frente a OTAs.",
     "ctaUpgrade": "Ver planes y pasar a Pro",
     "sectionBenefitsTitle": "Por qué compensa",
     "sectionBenefitsP1": "Las reseñas en Google ayudan a que te encuentren viajeros que buscan alojamiento en tu zona. Si además enlazas tu página de reservas de Delfín Check-in (microsite), conviertes búsquedas en reservas pagadas sin comisión de portal grande.",
@@ -180,7 +180,7 @@
   },
   "dashboard": {
     "title": "Delfín Check-in",
-    "subtitle": "Gestión inteligente de habitaciones",
+    "subtitle": "Registro de viajeros y reservas casi automáticos: revisa y confirma. Plan Pro: Google y reservas directas frente a portales",
     "connected": "Conectado",
     "upgradePlan": "Mejorar Plan",
     "logout": "Cerrar Sesión",
@@ -216,6 +216,7 @@
         "fullPms": "PMS completo",
         "noAds": "Sin anuncios",
         "directBooking": "Reservas directas (comisión reducida)",
+        "googleReputationPro": "Reseñas Google y visibilidad local (Pro): más reservas directas, menos dependencia de Airbnb/Booking",
         "checkinEmailInstructions": "Envío de instrucciones de check-in por email al huésped"
       }
     },
@@ -469,7 +470,7 @@
     "searchActive": "Búsqueda activa: \"{term}\" - {count} resultado(s) encontrado(s)",
     "managementTitle": "Gestión de reservas",
     "managementSubtitle": "Crear y gestionar reservas de clientes",
-    "checkinFormInfoBody": "Cuando un huésped envía el formulario de registro de viajeros, se puede crear aquí una reserva con sus datos y fechas. Revisa habitación, precios y canal (p. ej. Airbnb o Booking): hasta entonces aparece como «Revisar». El recordatorio de reseña en Google (plan Pro) solo se envía cuando la reserva ya no está pendiente de revisión.",
+    "checkinFormInfoBody": "El sistema crea la reserva desde el registro de viajeros de forma automática: tú casi no tienes que hacer nada. Solo revisa en esta pantalla que habitación, precios y canal (p. ej. Airbnb o Booking) estén correctos y confirma; hasta entonces aparece como «Revisar». El recordatorio de reseña en Google (exclusivo plan Pro) solo se envía cuando la reserva ya no está pendiente de revisión.",
     "filterPendingOnly": "Solo pendientes de revisar",
     "showAllReservations": "Ver todas las reservas",
     "badgeNeedsReview": "Revisar",
@@ -2487,7 +2488,7 @@
     "standardF5": "Reservas directas (9% fee)",
     "standardF6": "Instrucciones de check-in por email al huésped (integrado)",
     "proPlanName": "Plan Pro",
-    "proPlanDesc": "PMS completo sin anuncios, comisión reducida",
+    "proPlanDesc": "PMS completo sin anuncios, comisión reducida, crecimiento en Google y reservas directas frente a portales",
     "proF0": "Incluye 1 unidad",
     "proF1": "Propiedades adicionales: 2€/mes",
     "proF2": "Check-in digital automático (MIR)",
@@ -2496,7 +2497,8 @@
     "proF5": "Reservas directas (5% fee)",
     "proF6": "Soporte prioritario",
     "proF7": "Backup automático",
-    "proF8": "Instrucciones de check-in por email al huésped (integrado)"
+    "proF8": "Instrucciones de check-in por email al huésped (integrado)",
+    "proF9": "Reseñas en Google y microsite en tu ficha (Pro): más visibilidad y reservas directas, menos dependencia de Airbnb/Booking"
   },
   "upgradePlan": {
     "title": "Mejorar Plan",

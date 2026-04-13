@@ -47,6 +47,7 @@ export function localizedPlanFeatureSummary(
     parts.push(
       t('planFeatures.paid.noAds'),
       t('planFeatures.paid.directBooking'),
+      t('planFeatures.paid.googleReputationPro'),
       t('planFeatures.paid.checkinEmailInstructions')
     );
   }

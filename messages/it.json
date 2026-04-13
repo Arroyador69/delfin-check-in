@@ -91,10 +91,10 @@
   },
   "reputationGoogle": {
     "title": "Recensioni Google e più prenotazioni dirette",
-    "subtitle": "Più visibilità locale e meno dipendenza da Booking o Airbnb: collega il microsite Delfín Check-in al profilo Google e invia un promemoria gentile per la recensione dopo il soggiorno.",
+    "subtitle": "Funzione chiave del piano Pro: distinguersi da Airbnb, Booking e altre OTA. Migliora il posizionamento locale su Google, raccogli recensioni con promemoria automatici e indirizza il traffico al microsite di prenotazione diretta (senza commissioni da grande piattaforma).",
     "bannerPro": "Pro attivo: link, lingua (ES/EN) e attivazione. Un job giornaliero controlla le prenotazioni; invia solo se l’email ospite è valida e la data di check-out è passata (calendario server).",
     "bannerLockedTitle": "Sblocca i promemoria automatici con Pro",
-    "bannerLockedBody": "Puoi leggere la guida. Salvare il link, scegliere la lingua e l’invio automatico (dirette + pannello prenotazioni) sono inclusi in Pro.",
+    "bannerLockedBody": "Puoi leggere la guida. Salvare il link recensioni, la lingua dell’email e i promemoria automatici (microsite + pannello) sono solo Pro: pensati per più recensioni e più prenotazioni dirette oltre le OTA.",
     "ctaUpgrade": "Vedi i piani e passa a Pro",
     "sectionBenefitsTitle": "Perché conviene",
     "sectionBenefitsP1": "Le recensioni Google aiutano i viaggiatori a trovarti. Con il link al microsite di prenotazione trasformi le ricerche in soggiorni pagati senza commissioni da grandi portali.",
@@ -180,7 +180,7 @@
   },
   "dashboard": {
     "title": "Delfín Check-in",
-    "subtitle": "Gestione intelligente delle camere",
+    "subtitle": "Registro viaggiatori e prenotazioni quasi automatiche: controlla e conferma. Pro: Google e prenotazioni dirette oltre le OTA",
     "connected": "Connesso",
     "upgradePlan": "Aggiorna Piano",
     "logout": "Esci",
@@ -216,6 +216,7 @@
         "fullPms": "PMS completo",
         "noAds": "Senza pubblicità",
         "directBooking": "Prenotazioni dirette (commissione ridotta)",
+        "googleReputationPro": "Recensioni Google e visibilità locale (Pro): più prenotazioni dirette, meno dipendenza da Airbnb/Booking",
         "checkinEmailInstructions": "Email con istruzioni check-in all'ospite"
       }
     },
@@ -469,7 +470,7 @@
     "searchActive": "Ricerca attiva: \"{term}\" - {count} risultato/i trovato/i",
     "managementTitle": "Gestione prenotazioni",
     "managementSubtitle": "Crea e gestisci le prenotazioni degli ospiti",
-    "checkinFormInfoBody": "Quando un ospite invia il modulo di registro viaggiatori, qui si può creare una prenotazione con dati e date. Controlla alloggio, prezzi e canale (es. Airbnb o Booking): finché non lo fai compare come «Da revisionare». I promemoria recensioni Google (piano Pro) partono solo dopo la revisione.",
+    "checkinFormInfoBody": "Il sistema crea la prenotazione automaticamente dal registro viaggiatori: devi fare poco. Controlla qui alloggio, prezzi e canale (es. Airbnb o Booking) e conferma; finché non lo fai compare come «Da revisionare». I promemoria recensioni Google (solo Pro) partono solo dopo la revisione.",
     "filterPendingOnly": "Solo da revisionare",
     "showAllReservations": "Mostra tutte le prenotazioni",
     "badgeNeedsReview": "Da revisionare",
@@ -2451,7 +2452,7 @@
     "standardF5": "Prenotazioni dirette (9% fee)",
     "standardF6": "Email con istruzioni check-in all'ospite (integrato)",
     "proPlanName": "Piano Pro",
-    "proPlanDesc": "PMS completo senza annunci",
+    "proPlanDesc": "PMS completo senza annunci, crescita su Google e prenotazioni dirette oltre i portali",
     "proF0": "Include 1 unità",
     "proF1": "Camere aggiuntive: 5€/mese",
     "proF2": "Check-in digitale automatico (MIR)",
@@ -2460,7 +2461,8 @@
     "proF5": "Prenotazioni dirette (9% fee)",
     "proF6": "Supporto prioritario",
     "proF7": "Backup automatico",
-    "proF8": "Email con istruzioni check-in all'ospite (integrato)"
+    "proF8": "Email con istruzioni check-in all'ospite (integrato)",
+    "proF9": "Recensioni Google e microsite sul profilo (Pro): più visibilità e prenotazioni dirette, meno dipendenza da Airbnb/Booking"
   },
   "upgradePlan": {
     "title": "Aggiorna Piano",

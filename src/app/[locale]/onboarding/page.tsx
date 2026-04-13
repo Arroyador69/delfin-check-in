@@ -1228,7 +1228,7 @@ export default function OnboardingPage() {
         desc: tPlans('standardPlanDesc'),
         basePrice: 9.99,
         color: 'amber',
-        featuresKeys: ['standardF0', 'standardF1', 'standardF2', 'standardF3', 'standardF4', 'standardF5'],
+        featuresKeys: ['standardF0', 'standardF1', 'standardF2', 'standardF3', 'standardF4', 'standardF5', 'standardF6'],
         defaultUnits: 4,
       },
       {
@@ -1237,7 +1237,7 @@ export default function OnboardingPage() {
         desc: tPlans('proPlanDesc'),
         basePrice: 29.99,
         color: 'purple',
-        featuresKeys: ['proF0', 'proF1', 'proF2', 'proF3', 'proF4', 'proF5', 'proF6', 'proF7'],
+        featuresKeys: ['proF0', 'proF1', 'proF2', 'proF3', 'proF4', 'proF5', 'proF6', 'proF7', 'proF8', 'proF9'],
         defaultUnits: 6,
       },
     ];
