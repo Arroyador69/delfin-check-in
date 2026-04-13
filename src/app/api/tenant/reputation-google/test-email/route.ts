@@ -9,6 +9,10 @@ import {
   buildGoogleReviewReminderContent,
 } from '@/lib/reputation-google';
 
+function isValidEmailAddress(s: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s.trim());
+}
+
 export async function POST(req: NextRequest) {
   try {
     let tenantId = req.headers.get('x-tenant-id');
@@ -47,9 +51,22 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    let targetEmail = tenant.email;
-    if (typeof body.to === 'string' && body.to.includes('@')) {
-      targetEmail = body.to.trim();
+    let targetEmail = String(tenant.email || '').trim();
+    if (typeof body.to === 'string' && body.to.trim()) {
+      const addr = body.to.trim();
+      if (!isValidEmailAddress(addr)) {
+        return NextResponse.json(
+          { success: false, error: 'Introduce un email válido para la prueba.' },
+          { status: 400 }
+        );
+      }
+      targetEmail = addr;
+    }
+    if (!targetEmail || !isValidEmailAddress(targetEmail)) {
+      return NextResponse.json(
+        { success: false, error: 'No hay email de destino válido.' },
+        { status: 400 }
+      );
     }
 
     const msgEs =

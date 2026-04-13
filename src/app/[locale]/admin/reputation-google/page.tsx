@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { useTenant, isProPlanTenant } from '@/hooks/useTenant';
@@ -8,7 +8,11 @@ import { Star, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import type { ReputationGuestLocale } from '@/lib/reputation-google';
+import { isPlausibleGoogleReviewUrl, type ReputationGuestLocale } from '@/lib/reputation-google';
+
+function isValidEmailAddress(s: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s.trim());
+}
 
 export default function ReputationGooglePage() {
   const t = useTranslations('reputationGoogle');
@@ -28,6 +32,8 @@ export default function ReputationGooglePage() {
   const [testBusy, setTestBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [testEmailTo, setTestEmailTo] = useState('');
+  const testEmailInitializedRef = useRef(false);
 
   useEffect(() => {
     fetch('/api/auth/me')
@@ -73,6 +79,13 @@ export default function ReputationGooglePage() {
     if (unlocked) loadSettings();
   }, [unlocked, loadSettings]);
 
+  useEffect(() => {
+    if (unlocked && settingsLoaded && tenant?.email && !testEmailInitializedRef.current) {
+      setTestEmailTo(tenant.email);
+      testEmailInitializedRef.current = true;
+    }
+  }, [unlocked, settingsLoaded, tenant?.email]);
+
   const save = async () => {
     if (!unlocked) return;
     setSaveBusy(true);
@@ -107,19 +120,37 @@ export default function ReputationGooglePage() {
 
   const sendTest = async () => {
     if (!unlocked) return;
-    setTestBusy(true);
     setMessage(null);
     setError(null);
+
+    const url = reviewUrl.trim();
+    if (!url) {
+      setError(t('testEmailNeedUrl'));
+      return;
+    }
+    if (!isPlausibleGoogleReviewUrl(url)) {
+      setError(t('testEmailInvalidUrl'));
+      return;
+    }
+
+    const to = testEmailTo.trim() || tenant?.email?.trim() || '';
+    if (!to || !isValidEmailAddress(to)) {
+      setError(t('testEmailInvalidAddress'));
+      return;
+    }
+
+    setTestBusy(true);
     try {
       const r = await fetch('/api/tenant/reputation-google/test-email', {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          reviewUrl: reviewUrl.trim(),
+          reviewUrl: url,
           guestEmailLocale: guestLocale,
           guestMessageEs: messageEs,
           guestMessageEn: messageEn,
+          to,
         }),
       });
       const data = await r.json();
@@ -127,8 +158,8 @@ export default function ReputationGooglePage() {
         setError(data.error || t('toastTestFail'));
         return;
       }
-      setMessage(t('toastTestOk'));
-      setTimeout(() => setMessage(null), 5000);
+      setMessage(t('toastTestOk', { email: data.sentTo || to }));
+      setTimeout(() => setMessage(null), 6000);
     } catch {
       setError(t('toastTestFail'));
     } finally {
@@ -288,12 +319,40 @@ export default function ReputationGooglePage() {
                   />
                 </div>
 
-                <div className="flex flex-wrap gap-3 pt-1">
-                  <Button type="button" onClick={save} disabled={saveBusy}>
-                    {saveBusy ? t('saving') : t('save')}
-                  </Button>
-                  <Button type="button" variant="outline" onClick={sendTest} disabled={testBusy || !reviewUrl.trim()}>
+                <div className="rounded-xl border-2 border-dashed border-blue-300 bg-gradient-to-br from-sky-50 to-blue-50/80 p-4 sm:p-5 space-y-3 shadow-sm">
+                  <p className="text-sm font-semibold text-gray-900">{t('testSectionTitle')}</p>
+                  <p className="text-xs text-gray-600">
+                    {guestLocale === 'en' ? t('localeEn') : t('localeEs')} · {t('testEmailHint')}
+                  </p>
+                  <div>
+                    <Label htmlFor="rg-test-email" className="text-sm font-medium text-gray-800">
+                      {t('labelTestEmail')}
+                    </Label>
+                    <Input
+                      id="rg-test-email"
+                      type="email"
+                      autoComplete="email"
+                      className="mt-1.5 bg-white"
+                      value={testEmailTo}
+                      onChange={(e) => setTestEmailTo(e.target.value)}
+                      placeholder={tenant?.email || 'email@ejemplo.com'}
+                    />
+                    <p className="text-xs text-gray-600 mt-1">{t('hintTestEmail')}</p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="default"
+                    className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-md"
+                    onClick={sendTest}
+                    disabled={testBusy}
+                  >
                     {testBusy ? t('testEmailBusy') : t('testEmail')}
+                  </Button>
+                </div>
+
+                <div className="flex flex-wrap gap-3 pt-1">
+                  <Button type="button" variant="outline" onClick={save} disabled={saveBusy}>
+                    {saveBusy ? t('saving') : t('save')}
                   </Button>
                 </div>
                 <p className="text-xs text-gray-500">{t('automationNote')}</p>
