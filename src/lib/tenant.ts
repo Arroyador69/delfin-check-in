@@ -38,6 +38,11 @@ export interface Tenant {
     language?: string;
     currency?: string;
     lodgingType?: string;
+    reputationGoogle?: {
+      enabled?: boolean;
+      reviewUrl?: string;
+      guestEmailLocale?: 'es' | 'en';
+    };
   };
   created_at: Date;
   updated_at: Date;
