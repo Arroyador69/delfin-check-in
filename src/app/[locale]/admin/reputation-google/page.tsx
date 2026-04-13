@@ -409,6 +409,12 @@ export default function ReputationGooglePage() {
               <h2 className="text-lg font-semibold text-gray-900">{t('sectionMicroTitle')}</h2>
               <p className="mt-2 text-sm sm:text-base leading-relaxed">{t('sectionMicroP')}</p>
             </section>
+            <section>
+              <h2 className="text-lg font-semibold text-gray-900">{t('sectionAutomationTitle')}</h2>
+              <p className="mt-2 text-sm sm:text-base leading-relaxed">{t('sectionAutomationP1')}</p>
+              <p className="mt-2 text-sm sm:text-base leading-relaxed">{t('sectionAutomationP2')}</p>
+              <p className="mt-2 text-sm sm:text-base leading-relaxed">{t('sectionAutomationP3')}</p>
+            </section>
             <p className="text-sm text-gray-600">{t('sectionNote')}</p>
           </article>
         </>
