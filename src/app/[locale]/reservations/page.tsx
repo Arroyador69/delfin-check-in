@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { Link } from '@/i18n/navigation';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { Link, useRouter, usePathname } from '@/i18n/navigation';
 import { Plus, X, Calendar, User, Bed, Euro, CreditCard, Download, Phone, Users, Globe, Edit, Mail } from 'lucide-react';
 import { useTenant, hasCheckinInstructionsEmailAccess } from '@/hooks/useTenant';
 import { getRoomNumber } from '@/lib/db';
@@ -139,12 +139,55 @@ export default function ReservationsPage() {
 
   const [showPendingOnly, setShowPendingOnly] = useState(false);
   const [markingReviewedId, setMarkingReviewedId] = useState<string | null>(null);
+  const pathname = usePathname();
+  const editReservationOpenedRef = useRef<string | null>(null);
+
+  const openEditReservationModal = useCallback((reservation: Reservation) => {
+    setReservationToEdit(reservation);
+    setFormData({
+      room_id: reservation.room_id,
+      guest_name: reservation.guest_name,
+      guest_email: reservation.guest_email || '',
+      guest_phone: reservation.guest_phone || '',
+      guest_count: reservation.guest_count || 1,
+      check_in: reservation.check_in.split('T')[0],
+      check_out: reservation.check_out.split('T')[0],
+      total_price: reservation.total_price?.toString() || '',
+      guest_paid: reservation.guest_paid?.toString() || '',
+      platform_commission: reservation.platform_commission?.toString() || '',
+      currency: reservation.currency || 'EUR',
+      status: reservation.status || 'confirmed' as 'confirmed' | 'cancelled' | 'completed',
+      channel: (reservation.channel || 'manual') as Reservation['channel'],
+    });
+    setShowEditModal(true);
+    if (reservation.needs_review) setShowPendingOnly(true);
+  }, []);
 
   useEffect(() => {
     if (searchParams?.get('review') === 'pending') {
       setShowPendingOnly(true);
     }
   }, [searchParams]);
+
+  useEffect(() => {
+    const editId = searchParams?.get('editReservation');
+    if (!editId) {
+      editReservationOpenedRef.current = null;
+      return;
+    }
+    if (loading) return;
+    const r = reservations.find((x) => x.id === editId);
+    if (!r) {
+      if (reservations.length > 0) {
+        router.replace(pathname);
+      }
+      return;
+    }
+    if (editReservationOpenedRef.current === editId) return;
+    editReservationOpenedRef.current = editId;
+    openEditReservationModal(r);
+    router.replace(pathname);
+  }, [searchParams, loading, reservations, router, pathname, openEditReservationModal]);
 
   // Cargar datos al montar el componente
   // La autenticación ya está manejada por el middleware
@@ -355,23 +398,7 @@ export default function ReservationsPage() {
   };
 
   const handleEditClick = (reservation: Reservation) => {
-    setReservationToEdit(reservation);
-    setFormData({
-      room_id: reservation.room_id,
-      guest_name: reservation.guest_name,
-      guest_email: reservation.guest_email || '',
-      guest_phone: reservation.guest_phone || '',
-      guest_count: reservation.guest_count || 1,
-      check_in: reservation.check_in.split('T')[0], // Solo la fecha
-      check_out: reservation.check_out.split('T')[0], // Solo la fecha
-      total_price: reservation.total_price?.toString() || '',
-      guest_paid: reservation.guest_paid?.toString() || '',
-      platform_commission: reservation.platform_commission?.toString() || '',
-      currency: reservation.currency || 'EUR',
-      status: reservation.status || 'confirmed' as 'confirmed' | 'cancelled' | 'completed',
-      channel: (reservation.channel || 'manual') as Reservation['channel'],
-    });
-    setShowEditModal(true);
+    openEditReservationModal(reservation);
   };
 
   const handleUpdateReservation = async (e: React.FormEvent) => {
