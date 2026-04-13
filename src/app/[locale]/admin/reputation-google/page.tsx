@@ -415,7 +415,6 @@ export default function ReputationGooglePage() {
               <p className="mt-2 text-sm sm:text-base leading-relaxed">{t('sectionAutomationP2')}</p>
               <p className="mt-2 text-sm sm:text-base leading-relaxed">{t('sectionAutomationP3')}</p>
             </section>
-            <p className="text-sm text-gray-600">{t('sectionNote')}</p>
           </article>
         </>
       )}
