@@ -640,6 +640,21 @@ export default function GuestRegistrationsDashboard() {
               </a>
             </div>
           </div>
+          <div className="mt-5 pt-5 border-t border-blue-100 rounded-lg bg-slate-50/90 px-4 py-3 text-sm text-slate-800 leading-relaxed">
+            <p className="font-semibold text-slate-900 flex items-center gap-2">
+              <span aria-hidden>🔔</span>
+              {t('formUrlOwnerHintTitle')}
+            </p>
+            <p className="mt-2">{t('formUrlOwnerHintP1')}</p>
+            <p className="mt-2">{t('formUrlOwnerHintP2')}</p>
+            <p className="mt-2 text-xs text-slate-600">
+              <Link href="/reservations" className="text-blue-700 font-medium underline hover:text-blue-900">
+                {t('formUrlOwnerHintReservationsCta')}
+              </Link>
+              {' · '}
+              {t('formUrlOwnerHintPlansNote')}
+            </p>
+          </div>
         </div>
 
         {/* Filtros y búsqueda */}
