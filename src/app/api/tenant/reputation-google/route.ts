@@ -7,6 +7,9 @@ import {
   mergeReputationIntoConfig,
   isProForReputation,
   isPlausibleGoogleReviewUrl,
+  GUEST_MESSAGE_MAX_LENGTH,
+  RECOMMENDED_GUEST_MESSAGE_ES,
+  RECOMMENDED_GUEST_MESSAGE_EN,
   type ReputationGoogleSettings,
 } from '@/lib/reputation-google';
 
@@ -35,6 +38,10 @@ export async function GET(req: NextRequest) {
       success: true,
       settings,
       isPro,
+      recommendedGuestMessages: {
+        es: RECOMMENDED_GUEST_MESSAGE_ES,
+        en: RECOMMENDED_GUEST_MESSAGE_EN,
+      },
     });
   } catch (e) {
     console.error('[reputation-google GET]', e);
@@ -69,6 +76,9 @@ export async function PUT(req: NextRequest) {
     const currentConfig = (tenant.config || {}) as Record<string, unknown>;
     const prev = parseReputationGoogleFromConfig(currentConfig);
 
+    const clip = (s: unknown) =>
+      typeof s === 'string' ? s.slice(0, GUEST_MESSAGE_MAX_LENGTH) : '';
+
     const next: ReputationGoogleSettings = {
       enabled: typeof body.enabled === 'boolean' ? body.enabled : prev.enabled,
       reviewUrl: typeof body.reviewUrl === 'string' ? body.reviewUrl : prev.reviewUrl,
@@ -78,6 +88,10 @@ export async function PUT(req: NextRequest) {
           : body.guestEmailLocale === 'es'
             ? 'es'
             : prev.guestEmailLocale,
+      guestMessageEs:
+        typeof body.guestMessageEs === 'string' ? clip(body.guestMessageEs) : prev.guestMessageEs,
+      guestMessageEn:
+        typeof body.guestMessageEn === 'string' ? clip(body.guestMessageEn) : prev.guestMessageEn,
     };
 
     if (next.enabled) {

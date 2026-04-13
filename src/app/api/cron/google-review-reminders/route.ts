@@ -59,12 +59,15 @@ export async function GET(req: NextRequest) {
         continue;
       }
 
+      const guestMessage = locale === 'en' ? cfg.guestMessageEn : cfg.guestMessageEs;
+
       const { subject, html, text } = buildGoogleReviewReminderContent({
         guestName: String(row.guest_name || '').trim() || (locale === 'en' ? 'Guest' : 'Huésped'),
         propertyName: String(row.property_name || '').trim(),
         reviewUrl,
         locale,
         tenantBrandName: String(row.tenant_name || '').trim() || 'Delfín Check-in',
+        guestMessage: guestMessage.trim() ? guestMessage : null,
       });
 
       const send = await sendEmail({

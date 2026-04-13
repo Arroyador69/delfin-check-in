@@ -52,12 +52,19 @@ export async function POST(req: NextRequest) {
       targetEmail = body.to.trim();
     }
 
+    const msgEs =
+      typeof body.guestMessageEs === 'string' ? body.guestMessageEs : settings.guestMessageEs;
+    const msgEn =
+      typeof body.guestMessageEn === 'string' ? body.guestMessageEn : settings.guestMessageEn;
+    const guestMessage = locale === 'en' ? msgEn : msgEs;
+
     const { subject, html, text } = buildGoogleReviewReminderContent({
       guestName: locale === 'en' ? 'Alex Guest' : 'María Huésped',
       propertyName: locale === 'en' ? 'Sample apartment' : 'Apartamento de ejemplo',
       reviewUrl,
       locale,
       tenantBrandName: tenant.name || 'Delfín Check-in',
+      guestMessage: guestMessage.trim() ? guestMessage : null,
     });
 
     const result = await sendEmail({

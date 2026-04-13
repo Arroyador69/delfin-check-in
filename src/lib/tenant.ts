@@ -42,6 +42,8 @@ export interface Tenant {
       enabled?: boolean;
       reviewUrl?: string;
       guestEmailLocale?: 'es' | 'en';
+      guestMessageEs?: string;
+      guestMessageEn?: string;
     };
   };
   created_at: Date;

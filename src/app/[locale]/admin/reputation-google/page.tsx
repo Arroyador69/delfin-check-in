@@ -20,6 +20,9 @@ export default function ReputationGooglePage() {
   const [enabled, setEnabled] = useState(false);
   const [reviewUrl, setReviewUrl] = useState('');
   const [guestLocale, setGuestLocale] = useState<ReputationGuestLocale>('es');
+  const [messageEs, setMessageEs] = useState('');
+  const [messageEn, setMessageEn] = useState('');
+  const [recommended, setRecommended] = useState<{ es: string; en: string }>({ es: '', en: '' });
   const [settingsLoaded, setSettingsLoaded] = useState(false);
   const [saveBusy, setSaveBusy] = useState(false);
   const [testBusy, setTestBusy] = useState(false);
@@ -52,9 +55,13 @@ export default function ReputationGooglePage() {
         return;
       }
       const s = data.settings;
+      const rec = data.recommendedGuestMessages || { es: '', en: '' };
+      setRecommended(rec);
       setEnabled(Boolean(s.enabled));
       setReviewUrl(String(s.reviewUrl || ''));
       setGuestLocale(s.guestEmailLocale === 'en' ? 'en' : 'es');
+      setMessageEs((s.guestMessageEs ?? '').trim() ? String(s.guestMessageEs) : rec.es);
+      setMessageEn((s.guestMessageEn ?? '').trim() ? String(s.guestMessageEn) : rec.en);
     } catch {
       setError(t('errLoad'));
     } finally {
@@ -80,6 +87,8 @@ export default function ReputationGooglePage() {
           enabled,
           reviewUrl,
           guestEmailLocale: guestLocale,
+          guestMessageEs: messageEs,
+          guestMessageEn: messageEn,
         }),
       });
       const data = await r.json();
@@ -109,6 +118,8 @@ export default function ReputationGooglePage() {
         body: JSON.stringify({
           reviewUrl: reviewUrl.trim(),
           guestEmailLocale: guestLocale,
+          guestMessageEs: messageEs,
+          guestMessageEn: messageEn,
         }),
       });
       const data = await r.json();
@@ -223,7 +234,60 @@ export default function ReputationGooglePage() {
                       {t('localeEn')}
                     </label>
                   </div>
+                  <p className="text-xs text-gray-500 mt-2">{t('testEmailHint')}</p>
                 </div>
+
+                <p className="text-xs text-gray-600 border-t border-gray-100 pt-4">{t('hintSaludo')}</p>
+                <p className="text-xs text-gray-500">{t('hintPlaceholders')}</p>
+
+                <div>
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <Label htmlFor="rg-msg-es" className="text-sm font-medium text-gray-800">
+                      {t('labelMessageEs')}
+                    </Label>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 text-xs"
+                      onClick={() => setMessageEs(recommended.es)}
+                    >
+                      {t('restoreEs')}
+                    </Button>
+                  </div>
+                  <textarea
+                    id="rg-msg-es"
+                    className="mt-1.5 flex min-h-[128px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    value={messageEs}
+                    onChange={(e) => setMessageEs(e.target.value)}
+                    spellCheck
+                  />
+                </div>
+
+                <div>
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <Label htmlFor="rg-msg-en" className="text-sm font-medium text-gray-800">
+                      {t('labelMessageEn')}
+                    </Label>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 text-xs"
+                      onClick={() => setMessageEn(recommended.en)}
+                    >
+                      {t('restoreEn')}
+                    </Button>
+                  </div>
+                  <textarea
+                    id="rg-msg-en"
+                    className="mt-1.5 flex min-h-[128px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    value={messageEn}
+                    onChange={(e) => setMessageEn(e.target.value)}
+                    spellCheck
+                  />
+                </div>
+
                 <div className="flex flex-wrap gap-3 pt-1">
                   <Button type="button" onClick={save} disabled={saveBusy}>
                     {saveBusy ? t('saving') : t('save')}
@@ -253,6 +317,8 @@ export default function ReputationGooglePage() {
                     <span className="text-sm font-medium">{t('labelUrl')}</span>
                     <div className="mt-1.5 h-10 bg-gray-100 rounded-md border" />
                   </div>
+                  <div className="h-24 bg-gray-100 rounded-md border" />
+                  <div className="h-24 bg-gray-100 rounded-md border" />
                 </div>
                 <div
                   className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-white/75 backdrop-blur-[1px] px-4"
