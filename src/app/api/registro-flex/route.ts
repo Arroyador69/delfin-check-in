@@ -578,6 +578,21 @@ export async function POST(req: NextRequest) {
     });
 
     console.log('✅ Registro guardado en guest_registrations con ID:', id);
+
+    try {
+      const { syncReservationFromGuestRegistration } = await import('@/lib/reservation-from-guest-registration');
+      const syncRes = await syncReservationFromGuestRegistration({
+        guestRegistrationId: id,
+        tenantId,
+        reservaRef: reserva_ref,
+        fechaEntrada: c.entrada.split('T')[0],
+        fechaSalida: c.salida.split('T')[0],
+        data: dbData as Record<string, unknown>,
+      });
+      console.log('📋 Reserva panel (desde formulario viajero):', syncRes);
+    } catch (syncErr) {
+      console.error('⚠️ syncReservationFromGuestRegistration:', syncErr);
+    }
     console.log('🔍 Reserva Ref:', reserva_ref);
     console.log('🔍 Tenant ID:', tenantId);
     

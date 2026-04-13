@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, useMemo } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Link } from '@/i18n/navigation';
 import { Plus, X, Calendar, User, Bed, Euro, CreditCard, Download, Phone, Users, Globe, Edit, Mail } from 'lucide-react';
 import { useTenant, hasCheckinInstructionsEmailAccess } from '@/hooks/useTenant';
@@ -21,7 +21,8 @@ interface Reservation {
   guest_count?: number;
   check_in: string;
   check_out: string;
-  channel: 'airbnb' | 'booking' | 'manual';
+  channel: 'airbnb' | 'booking' | 'manual' | 'checkin_form';
+  needs_review?: boolean;
   total_price: number;
   guest_paid: number;
   platform_commission: number;
@@ -88,6 +89,7 @@ export default function ReservationsPage() {
   const t = useTranslations('reservations');
   const tCommon = useTranslations('common');
   const locale = useLocale();
+  const searchParams = useSearchParams();
   const { tenant } = useTenant();
   const canSendCheckinEmail = hasCheckinInstructionsEmailAccess(tenant);
 
@@ -132,8 +134,17 @@ export default function ReservationsPage() {
     platform_commission: '',
     currency: 'EUR',
     status: 'confirmed' as 'confirmed' | 'cancelled' | 'completed',
-    channel: 'manual' as 'airbnb' | 'booking' | 'manual',
+    channel: 'manual' as 'airbnb' | 'booking' | 'manual' | 'checkin_form',
   });
+
+  const [showPendingOnly, setShowPendingOnly] = useState(false);
+  const [markingReviewedId, setMarkingReviewedId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (searchParams?.get('review') === 'pending') {
+      setShowPendingOnly(true);
+    }
+  }, [searchParams]);
 
   // Cargar datos al montar el componente
   // La autenticación ya está manejada por el middleware
@@ -196,6 +207,11 @@ export default function ReservationsPage() {
   // Obtener las reservas a mostrar (filtradas o todas)
   const displayReservations = isSearching ? filteredReservations : reservations;
 
+  const listForTable = useMemo(() => {
+    if (!showPendingOnly) return displayReservations;
+    return displayReservations.filter((r) => r.needs_review);
+  }, [displayReservations, showPendingOnly]);
+
   const fetchReservations = async () => {
     try {
       setError(null);
@@ -221,6 +237,7 @@ export default function ReservationsPage() {
           total_price: safeNumber(reservation.total_price),
           platform_commission: safeNumber(reservation.platform_commission),
           net_income: safeNumber(reservation.net_income),
+          needs_review: !!reservation.needs_review,
           checkin_instructions_sent_at: reservation.checkin_instructions_sent_at ?? null,
           checkin_instructions_opened_at: reservation.checkin_instructions_opened_at ?? null,
         };
@@ -310,8 +327,31 @@ export default function ReservationsPage() {
       platform_commission: '',
       currency: 'EUR',
       status: 'confirmed' as 'confirmed' | 'cancelled' | 'completed',
-      channel: 'manual' as 'airbnb' | 'booking' | 'manual',
+      channel: 'manual' as 'airbnb' | 'booking' | 'manual' | 'checkin_form',
     });
+  };
+
+  const handleMarkReviewed = async (reservation: Reservation) => {
+    setMarkingReviewedId(reservation.id);
+    try {
+      const response = await fetch('/api/reservations/mark-reviewed', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reservationId: reservation.id }),
+      });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.error || t('markReviewedError'));
+      }
+      setReservations((prev) =>
+        prev.map((r) => (r.id === reservation.id ? { ...r, needs_review: false } : r))
+      );
+      alert(t('markReviewedSuccess'));
+    } catch (e: unknown) {
+      alert(t('markReviewedErrorMsg', { message: String(e instanceof Error ? e.message : e) }));
+    } finally {
+      setMarkingReviewedId(null);
+    }
   };
 
   const handleEditClick = (reservation: Reservation) => {
@@ -329,7 +369,7 @@ export default function ReservationsPage() {
       platform_commission: reservation.platform_commission?.toString() || '',
       currency: reservation.currency || 'EUR',
       status: reservation.status || 'confirmed' as 'confirmed' | 'cancelled' | 'completed',
-      channel: reservation.channel || 'manual',
+      channel: (reservation.channel || 'manual') as Reservation['channel'],
     });
     setShowEditModal(true);
   };
@@ -488,6 +528,7 @@ export default function ReservationsPage() {
       case 'airbnb': return t('channelAirbnb');
       case 'booking': return t('channelBooking');
       case 'manual': return t('channelManual');
+      case 'checkin_form': return t('channelCheckinForm');
       default: return channel;
     }
   };
@@ -636,10 +677,26 @@ export default function ReservationsPage() {
               <p className="text-sm text-gray-600 font-medium">
                 {t('managementSubtitle')}
               </p>
-              {displayReservations.length > 0 && (
+              <p className="text-xs text-gray-600 mt-2 max-w-3xl leading-relaxed">
+                {t('checkinFormInfoBody')}
+              </p>
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowPendingOnly((v) => !v)}
+                  className={`text-xs font-semibold px-3 py-1.5 rounded-lg border transition-colors ${
+                    showPendingOnly
+                      ? 'bg-amber-100 border-amber-300 text-amber-900'
+                      : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  {showPendingOnly ? t('showAllReservations') : t('filterPendingOnly')}
+                </button>
+              </div>
+              {listForTable.length > 0 && (
                 <p className="text-xs text-blue-700 mt-1 font-semibold">
                   {t('resultsCount', {
-                    count: displayReservations.length,
+                    count: listForTable.length,
                     total: reservations.length,
                   })}
                 </p>
@@ -699,7 +756,7 @@ export default function ReservationsPage() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {displayReservations.length === 0 ? (
+                {listForTable.length === 0 ? (
                   <tr>
                     <td colSpan={13} className="px-6 py-12 text-center">
                       <div className="bg-gradient-to-r from-blue-100 to-purple-100 p-8 rounded-full w-24 h-24 mx-auto mb-6 flex items-center justify-center">
@@ -721,6 +778,18 @@ export default function ReservationsPage() {
                               {t('noResultsShowAll')}
                             </button>
                           </>
+                        ) : showPendingOnly && reservations.length > 0 ? (
+                          <>
+                            <div className="text-lg mb-2 font-semibold">{t('noPendingReviewTitle')}</div>
+                            <div className="text-sm mb-4">{t('noPendingReviewBody')}</div>
+                            <button
+                              type="button"
+                              onClick={() => setShowPendingOnly(false)}
+                              className="text-blue-600 hover:text-blue-800 underline text-sm font-medium"
+                            >
+                              {t('showAllReservations')}
+                            </button>
+                          </>
                         ) : (
                           <>
                             <div className="text-lg mb-2">{t('emptyTitle')}</div>
@@ -731,7 +800,7 @@ export default function ReservationsPage() {
                     </td>
                   </tr>
                 ) : (
-                  displayReservations.map((reservation) => (
+                  listForTable.map((reservation) => (
                   <tr key={reservation.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       {rooms.find(r => r.id === reservation.room_id)?.name ||
@@ -739,7 +808,14 @@ export default function ReservationsPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       <div>
-                        <div className="font-medium">{reservation.guest_name}</div>
+                        <div className="font-medium flex flex-wrap items-center gap-2">
+                          {reservation.guest_name}
+                          {reservation.needs_review ? (
+                            <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-900">
+                              {t('badgeNeedsReview')}
+                            </span>
+                          ) : null}
+                        </div>
                         {reservation.guest_email && (
                           <div className="text-xs text-gray-500">{reservation.guest_email}</div>
                         )}
@@ -825,6 +901,16 @@ export default function ReservationsPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      {reservation.needs_review ? (
+                        <button
+                          type="button"
+                          onClick={() => handleMarkReviewed(reservation)}
+                          disabled={markingReviewedId === reservation.id}
+                          className="mb-2 block w-full sm:w-auto rounded-lg border border-amber-300 bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-900 hover:bg-amber-100 disabled:opacity-50"
+                        >
+                          {markingReviewedId === reservation.id ? t('markReviewing') : t('markReviewed')}
+                        </button>
+                      ) : null}
                       <button
                         onClick={() => handleEditClick(reservation)}
                         className="text-gray-700 hover:text-gray-900 mr-3"
@@ -857,7 +943,7 @@ export default function ReservationsPage() {
           </div>
         </div>
 
-        {displayReservations.length === 0 && !error && !isSearching && (
+        {reservations.length === 0 && !error && !isSearching && (
           <div className="text-center py-12 bg-white">
             <div className="text-black text-lg mb-4 font-medium">
               {t('emptyTitle')}
@@ -1108,12 +1194,18 @@ export default function ReservationsPage() {
                   <select
                     required
                     value={formData.channel}
-                    onChange={(e) => setFormData({...formData, channel: e.target.value as 'airbnb' | 'booking' | 'manual'})}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        channel: e.target.value as 'airbnb' | 'booking' | 'manual' | 'checkin_form',
+                      })
+                    }
                     className="w-full px-3 py-2 border-2 border-indigo-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white font-medium transition-all"
                   >
                     <option value="manual">📝 {safeT('channelManual')}</option>
                     <option value="airbnb">🏠 {safeT('channelAirbnb')}</option>
                     <option value="booking">🌐 {safeT('channelBooking')}</option>
+                    <option value="checkin_form">📋 {safeT('channelCheckinForm')}</option>
                   </select>
                 </div>
               </div>
@@ -1404,12 +1496,18 @@ export default function ReservationsPage() {
                   <select
                     required
                     value={formData.channel}
-                    onChange={(e) => setFormData({...formData, channel: e.target.value as 'airbnb' | 'booking' | 'manual'})}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        channel: e.target.value as 'airbnb' | 'booking' | 'manual' | 'checkin_form',
+                      })
+                    }
                     className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white"
                   >
                     <option value="manual">📝 {safeT('channelManual')}</option>
                     <option value="airbnb">🏠 {safeT('channelAirbnb')}</option>
                     <option value="booking">🌐 {safeT('channelBooking')}</option>
+                    <option value="checkin_form">📋 {safeT('channelCheckinForm')}</option>
                   </select>
                 </div>
               </div>

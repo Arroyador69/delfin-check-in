@@ -3,6 +3,7 @@ import { parteSchema } from '@/lib/rd933';
 import { sql } from '@/lib/db';
 import { logAudit } from '@/lib/audit';
 import crypto from 'crypto';
+import { syncReservationFromGuestRegistration } from '@/lib/reservation-from-guest-registration';
 
 // Memoria temporal (MVP) para idempotencia por hash
 const processed = new Set<string>();
@@ -43,11 +44,13 @@ export async function POST(request: NextRequest) {
     const entrada = parsed.data.ejecucionContrato.fechaHoraEntrada;
     const salida = parsed.data.ejecucionContrato.fechaHoraSalida;
 
+    const referenciaUnica = crypto.randomUUID();
+
     // Normalizar estructura mínima compatible con exportador actual
     const registro = {
       contrato: {
         codigoEstablecimiento: parsed.data.establecimiento.codigoEstablecimiento || '0000256653',
-        referencia: 'FORM-' + new Date().toISOString().slice(0,10),
+        referencia: referenciaUnica,
         numHabitaciones: 1,
         internet: false,
         tipoPago: parsed.data.pago.tipo,
@@ -55,7 +58,7 @@ export async function POST(request: NextRequest) {
       comunicaciones: [
         {
           contrato: {
-            referencia: 'FORM-' + new Date().toISOString(),
+            referencia: referenciaUnica,
             fechaContrato: new Date(entrada).toISOString(),
             fechaEntrada: new Date(entrada).toISOString(),
             fechaSalida: new Date(salida).toISOString(),
@@ -83,17 +86,34 @@ export async function POST(request: NextRequest) {
     
     console.log('🏢 Tenant ID detectado en /api/partes:', tenantId);
     
-    // Insertar con tenant_id para aislamiento multi-tenant
-    await sql`
+    const insertGr = await sql`
       INSERT INTO guest_registrations (reserva_ref, fecha_entrada, fecha_salida, data, tenant_id)
       VALUES (
-        ${registro.contrato.referencia}, 
-        ${entrada}::timestamp, 
-        ${salida}::timestamp, 
+        ${registro.contrato.referencia},
+        ${entrada}::timestamp,
+        ${salida}::timestamp,
         ${JSON.stringify(registro)}::jsonb,
         ${tenantId}::uuid
       )
+      RETURNING id
     `;
+
+    const grId = insertGr.rows[0]?.id as string | undefined;
+    if (grId) {
+      try {
+        const syncRes = await syncReservationFromGuestRegistration({
+          guestRegistrationId: grId,
+          tenantId,
+          reservaRef: registro.contrato.referencia,
+          fechaEntrada: String(entrada).slice(0, 10),
+          fechaSalida: String(salida).slice(0, 10),
+          data: registro as unknown as Record<string, unknown>,
+        });
+        console.log('📋 Reserva panel (parte / formulario):', syncRes);
+      } catch (e) {
+        console.error('⚠️ syncReservationFromGuestRegistration (partes):', e);
+      }
+    }
 
     await logAudit({
       action: 'VALIDATE_OK',

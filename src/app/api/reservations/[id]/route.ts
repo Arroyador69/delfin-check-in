@@ -28,6 +28,12 @@ export async function DELETE(
 
     console.log(`🗑️ Eliminando reserva con ID: ${id}`);
 
+    await sql`
+      UPDATE guest_registrations
+      SET linked_reservation_id = NULL
+      WHERE linked_reservation_id = ${id}::uuid
+    `.catch(() => {});
+
     // Verificar que la reserva existe
     const existingReservation = await sql`
       SELECT id, guest_name, room_id, check_in, check_out

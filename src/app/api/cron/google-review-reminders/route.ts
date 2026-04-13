@@ -79,6 +79,7 @@ export async function GET(req: NextRequest) {
         LEFT JOIN tenant_properties tp2 ON tp2.id = prm.property_id AND tp2.tenant_id::uuid = r.tenant_id
         LEFT JOIN "Room" rm ON rm.id::text = r.room_id
         WHERE r.status IS DISTINCT FROM 'cancelled'
+          AND COALESCE(r.needs_review, false) = false
           AND r.check_out::date < CURRENT_DATE
           AND r.google_review_reminder_sent_at IS NULL
           AND (t.plan_type = 'pro' OR t.plan_id IN ('pro', 'enterprise'))
@@ -171,7 +172,7 @@ export async function GET(req: NextRequest) {
         {
           success: false,
           error:
-            'Falta la columna google_review_reminder_sent_at en direct_reservations o reservations. Ejecuta database/add-google-review-reminder-column.sql en Neon.',
+            'Faltan columnas en la base de datos (recordatorios Google y/o reservas desde formulario). Ejecuta en Neon: database/add-google-review-reminder-column.sql y database/add-reservation-from-guest-form.sql.',
         },
         { status: 500 }
       );

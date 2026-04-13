@@ -415,14 +415,18 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-function calculateCommission(amount: number, channel: 'airbnb' | 'booking' | 'manual'): number {
+function calculateCommission(
+  amount: number,
+  channel: 'airbnb' | 'booking' | 'manual' | 'checkin_form'
+): number {
   switch (channel) {
     case 'booking':
       return Math.round(amount * 0.15 * 100) / 100; // 15% comisión Booking
     case 'airbnb':
       return Math.round(amount * 0.14 * 100) / 100; // 14% comisión Airbnb
     case 'manual':
-      return 0; // Sin comisión para reservas manuales
+    case 'checkin_form':
+      return 0;
     default:
       return 0;
   }
