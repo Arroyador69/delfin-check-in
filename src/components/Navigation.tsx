@@ -2,10 +2,10 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Bed, Calendar, Users, Settings, Menu, X, TrendingUp, FileText, Download, Shield, Calculator, Send, Receipt, Crown, Target, UserPlus, BarChart3, LifeBuoy } from 'lucide-react';
+import { Home, Bed, Calendar, Users, Settings, Menu, X, TrendingUp, FileText, Download, Shield, Calculator, Send, Receipt, Crown, Target, UserPlus, BarChart3, LifeBuoy, Star } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
-import { useTenant, hasLegalModule, isFreePlanMirPreview } from '@/hooks/useTenant';
+import { useTenant, hasLegalModule, isFreePlanMirPreview, isProPlanTenant } from '@/hooks/useTenant';
 import { useClientTranslations } from '@/hooks/useClientTranslations';
 import LanguageSwitcher from './LanguageSwitcher';
 import { locales, defaultLocale, type Locale } from '@/i18n/config';
@@ -73,6 +73,13 @@ export default function Navigation() {
     { name: t('dashboard'), href: '/dashboard', icon: Home, requiresLegal: false },
     { name: t('reservations'), href: '/reservations', icon: Calendar, requiresLegal: false },
     { name: t('directReservations'), href: '/admin/direct-reservations', icon: Calendar, requiresLegal: false },
+    {
+      name: t('reputationGoogle'),
+      href: '/admin/reputation-google',
+      icon: Star,
+      requiresLegal: false,
+      proFeature: true,
+    },
     { name: t('calendar'), href: '/calendar', icon: Calendar, requiresLegal: false },
     { name: t('guestRegistrations'), href: '/guest-registrations-dashboard', icon: Users, requiresLegal: false },
     { name: t('invoices'), href: '/facturas', icon: Receipt, requiresLegal: false },
@@ -174,8 +181,19 @@ export default function Navigation() {
                       : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                   }`}
                 >
-                  <item.icon className="w-5 h-5 mr-3" />
-                  {item.name}
+                  <item.icon className="w-5 h-5 mr-3 flex-shrink-0" />
+                  <span className="flex items-center gap-2 flex-wrap">
+                    {item.name}
+                    {'proFeature' in item &&
+                    item.proFeature &&
+                    tenant &&
+                    !isPlatformAdmin &&
+                    !isProPlanTenant(tenant) ? (
+                      <span className="text-[10px] font-semibold uppercase tracking-wide text-amber-800 bg-amber-100 px-1.5 py-0.5 rounded">
+                        Pro
+                      </span>
+                    ) : null}
+                  </span>
                 </Link>
               );
             })}

@@ -108,6 +108,17 @@ export function isFreePlanMirPreview(tenant: TenantInfo | null): boolean {
   return effectivePlan(tenant) === 'free';
 }
 
+/** Plan efectivo Pro (incluye respaldo por plan_id legacy enterprise/pro). */
+export function isProPlanTenant(tenant: TenantInfo | null): boolean {
+  if (!tenant) return false;
+  return (
+    resolveEffectivePlanType({
+      plan_type: tenant.plan_type as Tenant['plan_type'],
+      plan_id: tenant.plan_id as Tenant['plan_id'],
+    }) === 'pro'
+  );
+}
+
 export function getPlanName(tenant: TenantInfo | null): string {
   if (!tenant) return 'Desconocido';
   
