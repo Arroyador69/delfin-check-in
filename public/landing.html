@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Delfín Check-in — Software para alojamientos</title>
+  <meta name="description" content="Registro de viajeros, panel de reservas y cumplimiento MIR. Prueba el plan gratuito sin tarjeta." />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+    .lang-btn { padding: 0.35rem 0.75rem; border-radius: 0.375rem; font-size: 0.875rem; border: 1px solid #e5e7eb; background: #fff; color: #374151; transition: all 0.15s; }
+    .lang-btn:hover { background: #f9fafb; border-color: #d1d5db; }
+    .lang-btn.active { background: #2563eb; color: #fff; border-color: #2563eb; }
+  </style>
+</head>
+<body class="min-h-screen bg-slate-50 text-slate-900 antialiased">
+  <header class="border-b border-slate-200/80 bg-white/90 backdrop-blur-sm sticky top-0 z-10">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 py-4 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <span class="text-2xl" aria-hidden="true">🐬</span>
+        <span class="font-bold text-lg text-slate-900 tracking-tight">Delfín Check-in</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <button type="button" class="lang-btn active" data-lang="es" id="btn-lang-es" aria-pressed="true">ES</button>
+        <button type="button" class="lang-btn" data-lang="en" id="btn-lang-en" aria-pressed="false">EN</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="max-w-5xl mx-auto px-4 sm:px-6 pt-12 sm:pt-16 pb-10">
+      <p class="text-sm font-medium text-blue-700 uppercase tracking-wide text-center mb-3" data-key="eyebrow"></p>
+      <h1 class="text-3xl sm:text-4xl md:text-5xl font-bold text-center text-slate-900 leading-tight max-w-3xl mx-auto" data-key="heroTitle"></h1>
+      <p class="mt-5 text-lg sm:text-xl text-center text-slate-600 max-w-2xl mx-auto leading-relaxed" data-key="heroSubtitle"></p>
+
+      <div class="mt-10 max-w-2xl mx-auto rounded-2xl border border-indigo-200/70 bg-gradient-to-br from-indigo-50 via-white to-sky-50 px-6 py-5 shadow-sm">
+        <p class="text-center text-base sm:text-lg font-semibold text-indigo-950 leading-snug" data-key="tagline"></p>
+      </div>
+
+      <div class="mt-10 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
+        <a id="link-login" href="/admin-login" class="inline-flex items-center justify-center w-full sm:w-auto px-8 py-3.5 rounded-xl bg-blue-600 text-white font-semibold text-base shadow-md shadow-blue-600/20 hover:bg-blue-700 transition-colors" data-key="ctaPrimary"></a>
+        <a id="link-form" href="/index.html" class="inline-flex items-center justify-center w-full sm:w-auto px-8 py-3.5 rounded-xl border-2 border-slate-200 bg-white text-slate-800 font-semibold text-base hover:border-slate-300 hover:bg-slate-50 transition-colors" data-key="ctaSecondary"></a>
+      </div>
+    </section>
+
+    <section class="border-t border-slate-200 bg-white py-12 sm:py-14">
+      <div class="max-w-5xl mx-auto px-4 sm:px-6">
+        <h2 class="text-xl sm:text-2xl font-bold text-center text-slate-900 mb-8" data-key="featuresTitle"></h2>
+        <ul class="grid sm:grid-cols-3 gap-6 sm:gap-8">
+          <li class="rounded-xl border border-slate-100 bg-slate-50/80 p-5 sm:p-6">
+            <span class="text-2xl mb-2 block" aria-hidden="true">📋</span>
+            <p class="font-semibold text-slate-900 mb-1" data-key="f1t"></p>
+            <p class="text-sm text-slate-600 leading-relaxed" data-key="f1d"></p>
+          </li>
+          <li class="rounded-xl border border-slate-100 bg-slate-50/80 p-5 sm:p-6">
+            <span class="text-2xl mb-2 block" aria-hidden="true">🏠</span>
+            <p class="font-semibold text-slate-900 mb-1" data-key="f2t"></p>
+            <p class="text-sm text-slate-600 leading-relaxed" data-key="f2d"></p>
+          </li>
+          <li class="rounded-xl border border-slate-100 bg-slate-50/80 p-5 sm:p-6 sm:col-span-1 col-span-full max-w-md sm:max-w-none mx-auto sm:mx-0 w-full">
+            <span class="text-2xl mb-2 block" aria-hidden="true">📈</span>
+            <p class="font-semibold text-slate-900 mb-1" data-key="f3t"></p>
+            <p class="text-sm text-slate-600 leading-relaxed" data-key="f3d"></p>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="py-12 sm:py-14 px-4 sm:px-6">
+      <div class="max-w-2xl mx-auto rounded-2xl border border-slate-200 bg-white px-6 py-6 sm:px-8 sm:py-7 shadow-sm">
+        <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2" data-key="freeLabel"></p>
+        <p class="text-slate-700 text-sm sm:text-base leading-relaxed" data-key="freeBody"></p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="border-t border-slate-200 bg-slate-100/50 py-8 text-center text-sm text-slate-500">
+    <p data-key="footer"></p>
+    <p class="mt-2">
+      <a href="mailto:contacto@delfincheckin.com" class="text-blue-600 hover:underline">contacto@delfincheckin.com</a>
+    </p>
+  </footer>
+
+  <script src="/landing-tracking.js"></script>
+  <script>
+(function () {
+  var STR = {
+    es: {
+      eyebrow: 'Para propietarios y gestores de alojamiento',
+      heroTitle: 'Menos papeleo, más control de tus reservas',
+      heroSubtitle: 'Une el registro legal de viajeros con tu panel: datos ordenados, estancias enlazadas y un camino claro hacia la próxima reserva.',
+      tagline: 'Cada check-in que registras en Delfín Check-in es una oportunidad de fidelizar al huésped y trabajar tu próxima reserva.',
+      ctaPrimary: 'Probar el panel',
+      ctaSecondary: 'Ver formulario de huésped',
+      featuresTitle: 'Pensado para encajar en tu día a día',
+      f1t: 'Registro MIR en orden',
+      f1d: 'Partes de viajeros alineados con lo que exige el Ministerio del Interior, sin perder el hilo operativo.',
+      f2t: 'Reservas en un solo sitio',
+      f2d: 'Centraliza calendario, habitaciones y registros para revisar y confirmar con pocos clics.',
+      f3t: 'De la estancia a la repetición',
+      f3d: 'Cuando el flujo encaja, cada estancia bien registrada apoya la relación con el huésped y la reserva futura.',
+      freeLabel: 'Plan gratuito',
+      freeBody: 'Puedes empezar con el plan gratuito: no hace falta tarjeta y no tiene coste. Pruébalo con calma; si te encaja, podrás pasar a otro plan cuando lo necesites.',
+      footer: '© Delfín Check-in'
+    },
+    en: {
+      eyebrow: 'For property owners and hosts',
+      heroTitle: 'Less paperwork, more control of your bookings',
+      heroSubtitle: 'Connect legal guest registration with your dashboard: clean data, stays linked, and a clear path to your next booking.',
+      tagline: 'Every guest check-in you log in Delfín Check-in is a chance to build loyalty and nurture your next reservation.',
+      ctaPrimary: 'Open the dashboard',
+      ctaSecondary: 'See the guest form',
+      featuresTitle: 'Built to fit your daily workflow',
+      f1t: 'MIR registration, sorted',
+      f1d: 'Traveler records aligned with Spanish Ministry requirements—without losing operational clarity.',
+      f2t: 'Bookings in one place',
+      f2d: 'Rooms, calendar, and registrations together so you can review and confirm in a few clicks.',
+      f3t: 'From stay to repeat business',
+      f3d: 'When the flow works, every well-logged stay supports guest relationships and future bookings.',
+      freeLabel: 'Free plan',
+      freeBody: 'Start on the free plan: no card required and zero cost. Try it at your own pace; if it fits, you can upgrade whenever you need more.',
+      footer: '© Delfín Check-in'
+    }
+  };
+
+  function adminOrigin() {
+    var h = (location.hostname || '').toLowerCase();
+    if (h === 'admin.delfincheckin.com' || h.endsWith('.vercel.app') || h === 'localhost' || h === '127.0.0.1')
+      return '';
+    return 'https://admin.delfincheckin.com';
+  }
+
+  function applyLinks() {
+    var base = adminOrigin();
+    var login = document.getElementById('link-login');
+    var form = document.getElementById('link-form');
+    if (login) login.href = base + '/admin-login';
+    if (form) form.href = base + '/index.html';
+  }
+
+  function setLang(lang) {
+    var t = STR[lang] || STR.es;
+    document.documentElement.lang = lang;
+    document.querySelectorAll('[data-key]').forEach(function (el) {
+      var k = el.getAttribute('data-key');
+      if (k && t[k] != null) el.textContent = t[k];
+    });
+    document.querySelectorAll('.lang-btn').forEach(function (b) {
+      var on = b.getAttribute('data-lang') === lang;
+      b.classList.toggle('active', on);
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+    try { localStorage.setItem('landing_lang', lang); } catch (e) {}
+  }
+
+  document.getElementById('btn-lang-es').addEventListener('click', function () { setLang('es'); });
+  document.getElementById('btn-lang-en').addEventListener('click', function () { setLang('en'); });
+
+  applyLinks();
+  var saved = null;
+  try { saved = localStorage.getItem('landing_lang'); } catch (e) {}
+  setLang(saved === 'en' ? 'en' : 'es');
+})();
+  </script>
+</body>
+</html>
