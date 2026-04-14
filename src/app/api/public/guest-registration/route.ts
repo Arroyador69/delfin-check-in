@@ -134,6 +134,18 @@ export async function POST(req: NextRequest) {
 
     console.log('📋 Datos recibidos del formulario público:', JSON.stringify(json, null, 2));
 
+    // Preferencias (idioma + consentimiento para instrucciones) desde el formulario público
+    const uiLocale =
+      (req.headers.get('x-ui-locale') ||
+        req.headers.get('X-UI-Locale') ||
+        req.headers.get('accept-language')?.split(',')[0]?.trim() ||
+        null) ?? null;
+    const rawOptIn =
+      (json as any)?.checkin_instructions_opt_in ??
+      (json as any)?.receive_checkin_instructions ??
+      (json as any)?.receiveInstructions;
+    const checkinOptIn = rawOptIn === true || rawOptIn === 'true' || rawOptIn === 1 || rawOptIn === '1';
+
     const parsed = PublicGuestRegistrationSchema.safeParse(json);
     
     if (!parsed.success) {
@@ -179,6 +191,8 @@ export async function POST(req: NextRequest) {
     const dataWithDefaults = {
       ...parsed.data,
       codigoEstablecimiento: ESTABLISHMENT_CODE,
+      ui_locale: uiLocale,
+      checkin_instructions_opt_in: checkinOptIn,
       comunicaciones: parsed.data.comunicaciones.map(com => ({
         ...com,
         contrato: {

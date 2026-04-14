@@ -110,11 +110,13 @@ export async function getTenantPlanPresentation(
       `Suscripción: ${billingRooms} ${unitWord}`,
       'Sin anuncios',
       'Check-in digital (MIR) incluido',
+      'Instrucciones de check-in por email al huésped (seguimiento de apertura)',
     ],
     pro: [
       `Suscripción: ${billingRooms} ${unitWord}`,
       'Sin anuncios',
       'Reservas directas (comisión reducida)',
+      'Instrucciones de check-in por email al huésped (seguimiento de apertura)',
     ],
   };
 

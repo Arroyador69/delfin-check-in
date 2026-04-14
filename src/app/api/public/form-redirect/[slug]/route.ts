@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
+import { getTenantById } from '@/lib/tenant';
+import { hasCheckinInstructionsEmailPlan } from '@/lib/checkin-email-plan';
 
 /**
  * URL base del HTML del formulario (sin querystring). Cada tenant sigue usando la misma página;
@@ -72,6 +74,20 @@ export async function GET(
 
     const formBase = getTravelerFormBaseUrl(req);
 
+    // Locale del formulario: el del tenant (enlace creado desde admin), con fallback a ES.
+    const locale =
+      (tenant.config?.language && String(tenant.config.language).trim()) ||
+      (req.headers.get('accept-language')?.split(',')[0]?.trim() || 'es');
+
+    // Feature flags por plan: SOLO Standard/Pro pueden usar envío de instrucciones por email.
+    let canEmailCheckinInstructions = false;
+    try {
+      const fullTenant = await getTenantById(String(tenant.id));
+      canEmailCheckinInstructions = !!(fullTenant && hasCheckinInstructionsEmailPlan(fullTenant));
+    } catch {
+      canEmailCheckinInstructions = false;
+    }
+
     // Parámetros del tenant para personalizar el formulario
     const tenantParams = new URLSearchParams({
       tenant_id: tenant.id,
@@ -81,7 +97,11 @@ export async function GET(
       tenant_address: tenant.config?.address || '',
       tenant_city: tenant.config?.city || '',
       tenant_country: tenant.config?.country || '',
-      api_endpoint: `${apiOrigin}/api/public/form/${tenant.id}/submit`
+      api_endpoint: `${apiOrigin}/api/public/form/${tenant.id}/submit`,
+
+      // Preferencias/flags para el formulario por-tenant
+      ui_locale: locale,
+      checkin_email_enabled: canEmailCheckinInstructions ? '1' : '0',
     });
 
     const sep = formBase.includes('?') ? '&' : '?';

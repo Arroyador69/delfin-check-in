@@ -95,7 +95,7 @@ export default function PendingReservationReviewBadge() {
 
       {open ? (
         <div
-          className="absolute right-0 top-full z-[60] mt-1 w-[min(20rem,calc(100vw-2rem))] overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl"
+          className="absolute left-1/2 top-full z-[60] mt-2 w-[min(22rem,calc(100vw-2rem))] -translate-x-1/2 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl sm:mt-1 sm:w-[20rem]"
           role="menu"
           aria-label={t('pendingReservationsReviewDropdownTitle')}
         >

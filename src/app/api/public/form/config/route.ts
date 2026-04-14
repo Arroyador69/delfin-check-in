@@ -11,6 +11,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
 import { getAdapter } from '@/lib/adapters';
+import { getTenantById } from '@/lib/tenant';
+import { hasCheckinInstructionsEmailPlan } from '@/lib/checkin-email-plan';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -84,6 +86,15 @@ export async function GET(req: NextRequest) {
     const tenantConfig = property.config || {};
     const locale = tenantConfig.language || 'es';
 
+    // Flags por plan: el formulario solo debe mostrar "recibir instrucciones" si Standard/Pro
+    let checkinEmailEnabled = false;
+    try {
+      const tenant = await getTenantById(String(tenantId));
+      checkinEmailEnabled = !!(tenant && hasCheckinInstructionsEmailPlan(tenant));
+    } catch {
+      checkinEmailEnabled = false;
+    }
+
     // Obtener el adapter correspondiente
     const adapter = getAdapter(adapterKey);
 
@@ -114,6 +125,9 @@ export async function GET(req: NextRequest) {
           validations: defaultAdapter.getValidationRules(),
           legalTexts: defaultAdapter.getLegalTexts(locale),
           locale,
+          features: {
+            checkinEmailEnabled,
+          },
         },
         { headers: corsHeaders }
       );
@@ -128,6 +142,9 @@ export async function GET(req: NextRequest) {
         validations: adapter.getValidationRules(),
         legalTexts: adapter.getLegalTexts(locale),
         locale,
+        features: {
+          checkinEmailEnabled,
+        },
       },
       { headers: corsHeaders }
     );

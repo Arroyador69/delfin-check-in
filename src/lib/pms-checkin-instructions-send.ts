@@ -9,7 +9,8 @@ import {
 
 export async function fetchCheckinInstructionsBodyForRoom(
   tenantId: string,
-  roomId: string | null | undefined
+  roomId: string | null | undefined,
+  locale: GuestMailLocale
 ): Promise<{ body_html: string; title: string | null } | null> {
   const attempts = new Set<string>();
   if (roomId) {
@@ -19,18 +20,30 @@ export async function fetchCheckinInstructionsBodyForRoom(
   for (const rid of attempts) {
     const r = await sql`
       SELECT body_html, title FROM checkin_instructions
-      WHERE tenant_id = ${tenantId}::uuid AND room_id = ${rid}::text
+      WHERE tenant_id = ${tenantId}::uuid AND room_id = ${rid}::text AND locale = ${locale}
       LIMIT 1
     `;
     if (r.rows[0]) return r.rows[0] as { body_html: string; title: string | null };
   }
   const def = await sql`
     SELECT body_html, title FROM checkin_instructions
-    WHERE tenant_id = ${tenantId}::uuid AND room_id IS NULL
+    WHERE tenant_id = ${tenantId}::uuid AND room_id IS NULL AND locale = ${locale}
     ORDER BY updated_at DESC
     LIMIT 1
   `;
-  return (def.rows[0] as { body_html: string; title: string | null }) || null;
+  if (def.rows[0]) return def.rows[0] as { body_html: string; title: string | null };
+
+  // Fallback: si no hay plantilla en el idioma, usar español
+  if (locale !== 'es') {
+    const defEs = await sql`
+      SELECT body_html, title FROM checkin_instructions
+      WHERE tenant_id = ${tenantId}::uuid AND room_id IS NULL AND locale = 'es'
+      ORDER BY updated_at DESC
+      LIMIT 1
+    `;
+    return (defEs.rows[0] as { body_html: string; title: string | null }) || null;
+  }
+  return null;
 }
 
 function applyInstructionPlaceholders(
@@ -62,7 +75,8 @@ export async function sendPmsReservationCheckinInstructionsEmail(params: {
   trackingPixelUrl?: string;
 }): Promise<{ success: boolean; messageId?: string; error?: string }> {
   try {
-    const row = await fetchCheckinInstructionsBodyForRoom(params.tenantId, params.roomId);
+    const loc = normalizeGuestMailLocale(params.uiLocale);
+    const row = await fetchCheckinInstructionsBodyForRoom(params.tenantId, params.roomId, loc);
     const ci = params.checkIn.toLocaleDateString('es-ES');
     const co = params.checkOut.toLocaleDateString('es-ES');
     let bodyHtml =
@@ -93,7 +107,6 @@ export async function sendPmsReservationCheckinInstructionsEmail(params: {
       /* ignore */
     }
 
-    const loc = normalizeGuestMailLocale(params.uiLocale);
     const publicFormUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://admin.delfincheckin.com'}/api/public/form-redirect/${params.tenantId}`;
 
     const content = buildPmsCheckinInstructionsEmail({

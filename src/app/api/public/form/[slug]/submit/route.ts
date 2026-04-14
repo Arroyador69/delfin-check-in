@@ -96,6 +96,11 @@ export async function POST(
     }
 
     const tenant = tenantResult.rows[0];
+
+    // Locale “oficial” del formulario por tenant (el enlace se creó con este idioma en admin)
+    const tenantLocale =
+      (tenant.config?.language && String(tenant.config.language).trim()) ||
+      (req.headers.get('accept-language')?.split(',')[0]?.trim() || 'es');
     
     // Si el body contiene datos del MIR (contrato, viajeros), redirigir al endpoint correcto
     
@@ -116,6 +121,7 @@ export async function POST(
           'Accept': 'application/json',
           'X-Tenant-ID': tenant.id,
           'X-Tenant-Name': tenant.name,
+          'X-UI-Locale': tenantLocale,
           ...req.headers,
         },
         body: JSON.stringify(body),
@@ -158,6 +164,7 @@ export async function POST(
           'Accept': 'application/json',
           'X-Tenant-ID': tenant.id,
           'X-Tenant-Name': tenant.name,
+          'X-UI-Locale': tenantLocale,
         },
         body: JSON.stringify(body),
       });

@@ -1,4 +1,6 @@
 import { sql } from '@/lib/db';
+import { ensureReservationCheckinEmailColumns } from '@/lib/reservation-checkin-email-db';
+import { normalizeGuestMailLocale } from '@/lib/pms-guest-checkin-email-i18n';
 
 let columnsEnsured = false;
 
@@ -9,6 +11,11 @@ export async function ensureReservationGuestFormColumns(): Promise<void> {
     await sql`ALTER TABLE guest_registrations ADD COLUMN IF NOT EXISTS linked_reservation_id UUID`;
     await sql`ALTER TABLE reservations ADD COLUMN IF NOT EXISTS needs_review BOOLEAN NOT NULL DEFAULT false`;
     await sql`ALTER TABLE reservations ADD COLUMN IF NOT EXISTS guest_registration_id UUID`;
+    try {
+      await ensureReservationCheckinEmailColumns();
+    } catch {
+      /* ignore */
+    }
     await sql`
       CREATE UNIQUE INDEX IF NOT EXISTS uq_reservations_guest_registration_id
       ON reservations (guest_registration_id)
@@ -25,6 +32,26 @@ function extractFirstPersona(data: Record<string, unknown>): Record<string, unkn
   const com = (data as { comunicaciones?: { personas?: unknown[] }[] })?.comunicaciones?.[0];
   const p = com?.personas?.[0];
   return p && typeof p === 'object' ? (p as Record<string, unknown>) : null;
+}
+
+function extractOptIn(data: Record<string, unknown>): boolean {
+  const raw =
+    (data as any)?.checkin_instructions_opt_in ??
+    (data as any)?.meta?.checkin_instructions_opt_in ??
+    (data as any)?.form?.checkin_instructions_opt_in ??
+    (data as any)?.comunicaciones?.[0]?.contrato?.checkin_instructions_opt_in;
+  return raw === true || raw === 'true' || raw === 1 || raw === '1';
+}
+
+function extractLocale(data: Record<string, unknown>): string | null {
+  const raw =
+    (data as any)?.ui_locale ??
+    (data as any)?.meta?.ui_locale ??
+    (data as any)?.form?.ui_locale ??
+    (data as any)?.comunicaciones?.[0]?.contrato?.ui_locale;
+  const s = String(raw || '').trim();
+  if (!s) return null;
+  return normalizeGuestMailLocale(s);
 }
 
 function countPersonas(data: Record<string, unknown>): number {
@@ -90,6 +117,9 @@ export async function syncReservationFromGuestRegistration(
   const grId = input.guestRegistrationId;
 
   try {
+    const optIn = extractOptIn(input.data);
+    const guestLocale = extractLocale(input.data);
+
     const byGr = await sql`
       SELECT id FROM reservations
       WHERE guest_registration_id = ${grId}::uuid
@@ -102,6 +132,13 @@ export async function syncReservationFromGuestRegistration(
         SET linked_reservation_id = ${rid}
         WHERE id = ${grId}::uuid AND (linked_reservation_id IS NULL OR linked_reservation_id <> ${rid})
       `;
+      // Enriquecer reserva existente con consentimiento/idioma si aún no están
+      await sql`
+        UPDATE reservations
+        SET checkin_instructions_opt_in = COALESCE(checkin_instructions_opt_in, ${optIn}),
+            guest_mail_locale = COALESCE(guest_mail_locale, ${guestLocale})
+        WHERE id = ${rid}::uuid AND tenant_id = ${tenantId}::uuid
+      `;
       return { ok: true, reservationId: rid };
     }
 
@@ -110,6 +147,12 @@ export async function syncReservationFromGuestRegistration(
     `;
     const existingLink = grLinked.rows[0]?.linked_reservation_id as string | null | undefined;
     if (existingLink) {
+      await sql`
+        UPDATE reservations
+        SET checkin_instructions_opt_in = COALESCE(checkin_instructions_opt_in, ${optIn}),
+            guest_mail_locale = COALESCE(guest_mail_locale, ${guestLocale})
+        WHERE id = ${existingLink}::uuid AND tenant_id = ${tenantId}::uuid
+      `;
       return { ok: true, reservationId: existingLink };
     }
 
@@ -135,6 +178,8 @@ export async function syncReservationFromGuestRegistration(
         UPDATE reservations
         SET needs_review = true,
             guest_registration_id = COALESCE(guest_registration_id, ${grId}::uuid),
+            checkin_instructions_opt_in = COALESCE(checkin_instructions_opt_in, ${optIn}),
+            guest_mail_locale = COALESCE(guest_mail_locale, ${guestLocale}),
             updated_at = NOW()
         WHERE id = ${rid}
       `;
@@ -157,7 +202,8 @@ export async function syncReservationFromGuestRegistration(
       INSERT INTO reservations (
         tenant_id, external_id, room_id, guest_name, guest_email, guest_phone,
         guest_count, check_in, check_out, channel, total_price, guest_paid,
-        platform_commission, net_income, currency, status, needs_review, guest_registration_id
+        platform_commission, net_income, currency, status, needs_review, guest_registration_id,
+        checkin_instructions_opt_in, guest_mail_locale
       ) VALUES (
         ${tenantId}::uuid,
         ${externalId},
@@ -176,7 +222,9 @@ export async function syncReservationFromGuestRegistration(
         'EUR',
         'confirmed',
         true,
-        ${grId}::uuid
+        ${grId}::uuid,
+        ${optIn},
+        ${guestLocale}
       )
       RETURNING id
     `;

@@ -571,7 +571,22 @@ export async function POST(req: NextRequest) {
       reserva_ref: reserva_ref,
       fecha_entrada: c.entrada.split('T')[0],
       fecha_salida: c.salida.split('T')[0],
-      data: dbData,
+      data: {
+        ...dbData,
+        ui_locale:
+          req.headers.get('x-ui-locale') ||
+          req.headers.get('X-UI-Locale') ||
+          req.headers.get('accept-language')?.split(',')[0]?.trim() ||
+          null,
+        checkin_instructions_opt_in:
+          (json as any)?.checkin_instructions_opt_in === true ||
+          (json as any)?.checkin_instructions_opt_in === 'true' ||
+          (json as any)?.receive_checkin_instructions === true ||
+          (json as any)?.receive_checkin_instructions === 'true' ||
+          (json as any)?.receiveInstructions === true ||
+          (json as any)?.receiveInstructions === 'true' ||
+          false,
+      },
       tenant_id: tenantId,
       signature_data,
       signature_date,
