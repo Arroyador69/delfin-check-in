@@ -99,10 +99,18 @@ export function getRoomNumber(roomId: string | null | undefined): string {
   return roomId.length > 8 ? roomId.slice(0, 8) + '...' : roomId;
 }
 
+/** UUID estándar (p. ej. id de fila en "Room") — no convertir a dígito 1-6. */
+const ROOM_UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 // Función para normalizar room_id a números simples (1-6) - SOLO cuando sea necesario
 export function normalizeRoomId(roomId: string | null | undefined): string {
   if (!roomId) return '1'; // Default a habitación 1
-  
+
+  const trimmed = String(roomId).trim();
+  if (ROOM_UUID_RE.test(trimmed)) {
+    return trimmed;
+  }
   // Si ya es un número simple válido (1-6), devolverlo SIN CAMBIOS
   if (/^[1-6]$/.test(roomId)) {
     return roomId; // ← NO TOCAR números válidos

@@ -9,6 +9,9 @@ import { toIntlDateLocale, type Locale as AppLocale } from '@/i18n/config';
 
 type PendingItem = { id: string; guest_name: string; check_in: string | null };
 
+/** Misma clave que en la página de reservas al guardar / marcar revisada. */
+export const PENDING_RESERVATIONS_REVIEW_CHANGED = 'delfin:pending-reservations-review-changed';
+
 export default function PendingReservationReviewBadge() {
   const pathname = usePathname();
   const t = useClientTranslations('navigation');
@@ -35,6 +38,12 @@ export default function PendingReservationReviewBadge() {
   useEffect(() => {
     load();
   }, [load, pathname]);
+
+  useEffect(() => {
+    const onRefresh = () => load();
+    window.addEventListener(PENDING_RESERVATIONS_REVIEW_CHANGED, onRefresh);
+    return () => window.removeEventListener(PENDING_RESERVATIONS_REVIEW_CHANGED, onRefresh);
+  }, [load]);
 
   useEffect(() => {
     if (!open) return;

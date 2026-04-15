@@ -72,10 +72,8 @@ export async function POST(req: NextRequest) {
           const instr = await fetchCheckinInstructionsBodyForRoom(tenantId, String(row.room_id), uiLocale);
           if (!instr?.body_html || !String(instr.body_html).trim()) {
             checkinEmail = { attempted: true, sent: false, skippedReason: 'instructions_not_configured' };
-            return;
-          }
-
-          const lock = await sql`
+          } else {
+            const lock = await sql`
             UPDATE reservations
             SET checkin_instructions_track_token = ${token}
             WHERE id = ${reservationId}::uuid
@@ -83,40 +81,41 @@ export async function POST(req: NextRequest) {
               AND checkin_instructions_sent_at IS NULL
             RETURNING id
           `;
-          if (lock.rows.length > 0) {
-            const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://admin.delfincheckin.com';
-            const trackingUrl = `${baseUrl}/api/public/checkin-email-open?t=${encodeURIComponent(token)}`;
+            if (lock.rows.length > 0) {
+              const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://admin.delfincheckin.com';
+              const trackingUrl = `${baseUrl}/api/public/checkin-email-open?t=${encodeURIComponent(token)}`;
 
-            const sendResult = await sendPmsReservationCheckinInstructionsEmail({
-              tenantId,
-              tenantName: tenant.name || 'Delfin Check-in',
-              guestEmail: email,
-              guestName: String(row.guest_name || 'Huésped'),
-              checkIn: new Date(row.check_in),
-              checkOut: new Date(row.check_out),
-              guestCount: Math.max(1, Number(row.guest_count) || 1),
-              roomId: String(row.room_id),
-              uiLocale,
-              trackingPixelUrl: trackingUrl,
-            });
+              const sendResult = await sendPmsReservationCheckinInstructionsEmail({
+                tenantId,
+                tenantName: tenant.name || 'Delfin Check-in',
+                guestEmail: email,
+                guestName: String(row.guest_name || 'Huésped'),
+                checkIn: new Date(row.check_in),
+                checkOut: new Date(row.check_out),
+                guestCount: Math.max(1, Number(row.guest_count) || 1),
+                roomId: String(row.room_id),
+                uiLocale,
+                trackingPixelUrl: trackingUrl,
+              });
 
-            if (sendResult.success) {
-              await sql`
+              if (sendResult.success) {
+                await sql`
                 UPDATE reservations
                 SET checkin_instructions_sent_at = NOW(), updated_at = NOW()
                 WHERE id = ${reservationId}::uuid AND tenant_id = ${tenantId}::uuid
               `;
-              checkinEmail = { attempted: true, sent: true };
-            } else {
-              await sql`
+                checkinEmail = { attempted: true, sent: true };
+              } else {
+                await sql`
                 UPDATE reservations
                 SET checkin_instructions_track_token = NULL
                 WHERE id = ${reservationId}::uuid AND tenant_id = ${tenantId}::uuid
               `;
-              checkinEmail = { attempted: true, sent: false, skippedReason: 'send_failed' };
+                checkinEmail = { attempted: true, sent: false, skippedReason: 'send_failed' };
+              }
+            } else {
+              checkinEmail = { attempted: true, sent: false, skippedReason: 'lock_failed' };
             }
-          } else {
-            checkinEmail = { attempted: true, sent: false, skippedReason: 'lock_failed' };
           }
         }
       }

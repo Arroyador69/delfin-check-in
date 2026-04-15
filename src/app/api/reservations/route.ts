@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getReservations, insertReservation, sql, normalizeRoomId } from '@/lib/db';
 import { ensureReservationCheckinEmailColumns } from '@/lib/reservation-checkin-email-db';
+import { ensureReservationGuestFormColumns } from '@/lib/reservation-from-guest-registration';
 import { sendReservationConfirmation } from '@/lib/whatsapp';
 
 // Configuración para evitar caché
@@ -354,6 +355,11 @@ export async function PUT(request: NextRequest) {
     
     const body = await request.json();
     console.log('📋 Datos recibidos para actualización:', body);
+
+    const tenantId = request.headers.get('x-tenant-id');
+    if (!tenantId) {
+      return NextResponse.json({ error: 'No se pudo identificar el tenant' }, { status: 400 });
+    }
     
     // Validar datos requeridos
     if (!body.id || !body.guest_name || !body.room_id || !body.check_in || !body.check_out) {
@@ -363,9 +369,14 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    // Normalizar room_id a número simple (1-6)
+    try {
+      await ensureReservationGuestFormColumns();
+    } catch {
+      /* UPDATE puede fallar si falta needs_review y no se pudo añadir la columna */
+    }
+
     const normalizedRoomId = normalizeRoomId(body.room_id);
-    console.log(`🏠 Normalizando room_id en actualización: ${body.room_id} → ${normalizedRoomId}`);
+    console.log(`🏠 room_id en actualización: ${body.room_id} → ${normalizedRoomId}`);
 
     // Calcular datos financieros
     const total_price = parseFloat(body.total_price) || 0;
@@ -373,7 +384,6 @@ export async function PUT(request: NextRequest) {
     const platform_commission = parseFloat(body.platform_commission) || calculateCommission(guest_paid, body.channel || 'manual');
     const net_income = guest_paid - platform_commission;
 
-    // Actualizar la reserva
     const result = await sql`
       UPDATE reservations 
       SET 
@@ -391,8 +401,9 @@ export async function PUT(request: NextRequest) {
         net_income = ${net_income},
         currency = ${body.currency || 'EUR'},
         status = ${body.status || 'confirmed'},
+        needs_review = false,
         updated_at = NOW()
-      WHERE id = ${body.id}
+      WHERE id = ${body.id}::uuid AND tenant_id = ${tenantId}::uuid
       RETURNING *;
     `;
     

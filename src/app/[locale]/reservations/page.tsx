@@ -8,6 +8,7 @@ import { useTenant, hasCheckinInstructionsEmailAccess } from '@/hooks/useTenant'
 import { getRoomNumber } from '@/lib/db';
 import { useTranslations, useLocale } from 'next-intl';
 import LocalizedDateInput from '@/components/LocalizedDateInput';
+import { PENDING_RESERVATIONS_REVIEW_CHANGED } from '@/components/PendingReservationReviewBadge';
 import { toIntlDateLocale, type Locale as AppLocale } from '@/i18n/config';
 // Base de datos: Neon PostgreSQL
 
@@ -389,6 +390,7 @@ export default function ReservationsPage() {
       setReservations((prev) =>
         prev.map((r) => (r.id === reservation.id ? { ...r, needs_review: false } : r))
       );
+      window.dispatchEvent(new Event(PENDING_RESERVATIONS_REVIEW_CHANGED));
       alert(t('markReviewedSuccess'));
     } catch (e: unknown) {
       alert(t('markReviewedErrorMsg', { message: String(e instanceof Error ? e.message : e) }));
@@ -432,6 +434,7 @@ export default function ReservationsPage() {
         )
       );
 
+      window.dispatchEvent(new Event(PENDING_RESERVATIONS_REVIEW_CHANGED));
       setShowEditModal(false);
       setReservationToEdit(null);
       resetForm();
