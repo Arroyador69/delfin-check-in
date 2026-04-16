@@ -20,11 +20,13 @@ export default function CheckinInstructionsPage() {
   const canEditCheckinEmail = hasCheckinInstructionsEmailAccess(tenant)
   const [slots, setSlots] = useState<SlotOption[]>([])
   const [selectedRoomId, setSelectedRoomId] = useState<string>('')
-  const [title, setTitle] = useState('')
-  const [body, setBody] = useState('')
+  const [titleEs, setTitleEs] = useState('')
+  const [bodyEs, setBodyEs] = useState('')
+  const [titleEn, setTitleEn] = useState('')
+  const [bodyEn, setBodyEn] = useState('')
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<string>('')
-  const [templates, setTemplates] = useState<Array<{ id:number; room_id:string|null; title:string|null; body_html:string; updated_at:string }>>([])
+  const [templates, setTemplates] = useState<Array<{ id:number; room_id:string|null; locale:string; title:string|null; body_html:string; updated_at:string }>>([])
   const [deleteFlow, setDeleteFlow] = useState<null | { id: number; label: string; room_id: string | null; phase: 1 | 2 }>(null)
   const [deleteAck, setDeleteAck] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -52,11 +54,14 @@ export default function CheckinInstructionsPage() {
         if (data.success && Array.isArray(data.items) && data.items.length > 0) {
           setTemplates(data.items)
           // si hay una por defecto, precargar
-          const def = data.items.find((it: any) => !it.room_id)
-          if (def) {
+          const defEs = data.items.find((it: any) => !it.room_id && it.locale === 'es')
+          const defEn = data.items.find((it: any) => !it.room_id && it.locale === 'en')
+          if (defEs || defEn) {
             setSelectedRoomId('')
-            setTitle(def.title || '')
-            setBody(def.body_html || '')
+            setTitleEs(defEs?.title || '')
+            setBodyEs(defEs?.body_html || '')
+            setTitleEn(defEn?.title || '')
+            setBodyEn(defEn?.body_html || '')
           }
         }
       } catch (e) {}
@@ -70,9 +75,13 @@ export default function CheckinInstructionsPage() {
       const res = await fetch(url)
       const data = await res.json()
       if (data.success) {
-        const item = roomId ? (data.items?.[0] || null) : (data.items?.find((it: any) => !it.room_id) || null)
-        setTitle(item?.title || '')
-        setBody(item?.body_html || '')
+        const all = data.items || []
+        const es = all.find((it: any) => it.locale === 'es') || null
+        const en = all.find((it: any) => it.locale === 'en') || null
+        setTitleEs(es?.title || '')
+        setBodyEs(es?.body_html || '')
+        setTitleEn(en?.title || '')
+        setBodyEn(en?.body_html || '')
       }
     } catch (e) {}
   }
@@ -81,13 +90,28 @@ export default function CheckinInstructionsPage() {
     setSaving(true)
     setMessage('')
     try {
-      const res = await fetch('/api/settings/checkin-instructions', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ room_id: selectedRoomId || null, title, body_html: body })
-      })
-      const data = await res.json()
-      if (data.success) {
+      const requests: Promise<Response>[] = []
+      if (bodyEs.trim()) {
+        requests.push(fetch('/api/settings/checkin-instructions', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ room_id: selectedRoomId || null, locale: 'es', title: titleEs, body_html: bodyEs })
+        }))
+      }
+      if (bodyEn.trim()) {
+        requests.push(fetch('/api/settings/checkin-instructions', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ room_id: selectedRoomId || null, locale: 'en', title: titleEn, body_html: bodyEn })
+        }))
+      }
+      if (requests.length === 0) {
+        setMessage(t('contentPlaceholder'))
+        return
+      }
+      const responses = await Promise.all(requests)
+      const payloads = await Promise.all(responses.map(r => r.json()))
+      if (payloads.every((p) => p.success)) {
         setMessage(t('saved'))
         // refrescar lista
         try {
@@ -96,7 +120,7 @@ export default function CheckinInstructionsPage() {
           if (d.success) setTemplates(d.items)
         } catch {}
       }
-      else setMessage(data.error || t('errorSaving'))
+      else setMessage(payloads.find((p) => !p.success)?.error || t('errorSaving'))
     } catch (e: any) {
       setMessage(e.message || t('errorSaving'))
     } finally {
@@ -134,8 +158,11 @@ export default function CheckinInstructionsPage() {
             (deleteFlow.room_id || '') === (selectedRoomId || '') ||
             (deleteFlow.room_id == null && selectedRoomId === '')
           if (sameSlot) {
-            setTitle('')
-            setBody('')
+            const remaining = d.items.filter((it: any) => (it.room_id || '') === (selectedRoomId || ''))
+            setTitleEs(remaining.find((it: any) => it.locale === 'es')?.title || '')
+            setBodyEs(remaining.find((it: any) => it.locale === 'es')?.body_html || '')
+            setTitleEn(remaining.find((it: any) => it.locale === 'en')?.title || '')
+            setBodyEn(remaining.find((it: any) => it.locale === 'en')?.body_html || '')
           }
         }
       } else {
@@ -185,13 +212,22 @@ export default function CheckinInstructionsPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{t('titleLabel')}</label>
-              <input value={title} onChange={(e) => setTitle(e.target.value)} className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent" />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{t('contentLabel')}</label>
-              <textarea value={body} onChange={(e) => setBody(e.target.value)} rows={12} className="w-full border rounded-lg px-3 py-2 font-mono text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder={t('contentPlaceholder')} />
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                  <div className="font-semibold text-sm text-gray-900 mb-3">ES</div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('titleLabel')}</label>
+                  <input value={titleEs} onChange={(e) => setTitleEs(e.target.value)} className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent mb-3" />
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('contentLabel')}</label>
+                  <textarea value={bodyEs} onChange={(e) => setBodyEs(e.target.value)} rows={12} className="w-full border rounded-lg px-3 py-2 font-mono text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder={t('contentPlaceholder')} />
+                </div>
+                <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                  <div className="font-semibold text-sm text-gray-900 mb-3">EN</div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('titleLabel')}</label>
+                  <input value={titleEn} onChange={(e) => setTitleEn(e.target.value)} className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent mb-3" />
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('contentLabel')}</label>
+                  <textarea value={bodyEn} onChange={(e) => setBodyEn(e.target.value)} rows={12} className="w-full border rounded-lg px-3 py-2 font-mono text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder={t('contentPlaceholder')} />
+                </div>
+              </div>
               <div className="mt-2 text-xs text-gray-600 space-y-1">
                 <div className="font-semibold">{t('variablesTitle')}</div>
                 <div><code className="px-1 py-0.5 bg-gray-100 rounded">{'{{guest_name}}'}</code> → {t('varGuest')}</div>
@@ -220,13 +256,13 @@ export default function CheckinInstructionsPage() {
                 return (
                   <details key={tpl.id} className="py-2 group">
                     <summary className="cursor-pointer text-sm flex items-center justify-between">
-                      <span className="font-medium text-gray-800">{roomLabel}</span>
+                      <span className="font-medium text-gray-800">{roomLabel} · {(tpl.locale || 'es').toUpperCase()}</span>
                       <span className="text-xs text-gray-500">{t('updated')} {new Date(tpl.updated_at).toLocaleDateString(locale)}</span>
                     </summary>
                     <div className="mt-2 p-3 bg-gray-50 rounded">
                       <div className="prose prose-sm max-w-none text-gray-800" dangerouslySetInnerHTML={{ __html: tpl.body_html.substring(0, 800) + (tpl.body_html.length>800?'…':'') }} />
                       <div className="mt-2 flex flex-wrap items-center gap-4">
-                        <button type="button" onClick={() => { setSelectedRoomId(tpl.room_id || ''); setTitle(tpl.title || ''); setBody(tpl.body_html || ''); window.scrollTo({ top: 0, behavior: 'smooth' }) }} className="text-indigo-600 text-sm font-medium hover:underline">{t('editTemplate')}</button>
+                        <button type="button" onClick={() => { setSelectedRoomId(tpl.room_id || ''); loadForRoom(tpl.room_id || ''); window.scrollTo({ top: 0, behavior: 'smooth' }) }} className="text-indigo-600 text-sm font-medium hover:underline">{t('editTemplate')}</button>
                         <button type="button" onClick={() => requestDeleteTemplate(tpl)} className="text-red-600 text-sm font-medium hover:underline inline-flex items-center gap-1">
                           <Trash2 className="w-4 h-4" aria-hidden />
                           {t('deleteTemplate')}

@@ -128,11 +128,6 @@ export default function SettingsScreen() {
           onPress={() => router.push('/(app)/settings/properties' as any)}
         />
         <Item
-          title={t('settings.tabs.countryCode')}
-          subtitle={t('mobile.settings.hubCountrySubtitle')}
-          onPress={() => router.push('/(app)/settings/country' as any)}
-        />
-        <Item
           title={t('settings.tabs.language')}
           subtitle={t('mobile.settings.languageSubtitle')}
           onPress={() => router.push('/(app)/settings/language' as any)}

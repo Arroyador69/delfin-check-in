@@ -32,9 +32,10 @@ export default function CheckinInstructionsScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [editor, setEditor] = useState<InstructionItem | null>(null);
-  const [title, setTitle] = useState('');
-  const [body, setBody] = useState('');
-  const [locale, setLocale] = useState<'es' | 'en'>('es');
+  const [titleEs, setTitleEs] = useState('');
+  const [bodyEs, setBodyEs] = useState('');
+  const [titleEn, setTitleEn] = useState('');
+  const [bodyEn, setBodyEn] = useState('');
 
   const { data, isLoading } = useQuery({
     queryKey: ['checkin-instructions'],
@@ -48,13 +49,32 @@ export default function CheckinInstructionsScreen() {
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      const res = await api.put('/api/settings/checkin-instructions', {
-        room_id: editor?.room_id ?? null,
-        locale,
-        title: title.trim() || null,
-        body_html: body,
-      });
-      return res.data;
+      const roomId = editor?.room_id ?? null;
+      const requests: Promise<any>[] = [];
+      if (bodyEs.trim()) {
+        requests.push(
+          api.put('/api/settings/checkin-instructions', {
+            room_id: roomId,
+            locale: 'es',
+            title: titleEs.trim() || null,
+            body_html: bodyEs,
+          })
+        );
+      }
+      if (bodyEn.trim()) {
+        requests.push(
+          api.put('/api/settings/checkin-instructions', {
+            room_id: roomId,
+            locale: 'en',
+            title: titleEn.trim() || null,
+            body_html: bodyEn,
+          })
+        );
+      }
+      if (requests.length === 0) {
+        throw new Error(t('settings.checkinInstructions.contentPlaceholder'));
+      }
+      await Promise.all(requests);
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['checkin-instructions'] });
@@ -79,10 +99,14 @@ export default function CheckinInstructionsScreen() {
   });
 
   function openEdit(item: InstructionItem) {
+    const siblings = items.filter((it) => (it.room_id || '') === (item.room_id || ''));
+    const es = siblings.find((it) => it.locale === 'es');
+    const en = siblings.find((it) => it.locale === 'en');
     setEditor(item);
-    setTitle(item.title || '');
-    setBody(item.body_html || '');
-    setLocale(item.locale === 'en' ? 'en' : 'es');
+    setTitleEs(es?.title || '');
+    setBodyEs(es?.body_html || '');
+    setTitleEn(en?.title || '');
+    setBodyEn(en?.body_html || '');
   }
 
   return (
@@ -131,28 +155,41 @@ export default function CheckinInstructionsScreen() {
               style={{ width: '100%' }}
             >
               <View style={styles.modalBox}>
-            <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 8 }}>
-            <Text style={styles.modalTitle}>{t('settings.checkinInstructions.titleLabel')}</Text>
-            <TextInput style={styles.input} value={title} onChangeText={setTitle} placeholder={t('settings.checkinInstructions.titleLabel')} />
-            <Text style={styles.label}>{t('settings.general.language')}</Text>
-            <View style={styles.localeRow}>
-              <Pressable style={[styles.chip, locale === 'es' && styles.chipOn]} onPress={() => setLocale('es')}>
-                <Text style={locale === 'es' ? styles.chipOnText : styles.chipText}>ES</Text>
-              </Pressable>
-              <Pressable style={[styles.chip, locale === 'en' && styles.chipOn]} onPress={() => setLocale('en')}>
-                <Text style={locale === 'en' ? styles.chipOnText : styles.chipText}>EN</Text>
-              </Pressable>
-            </View>
-            <Text style={styles.label}>{t('settings.checkinInstructions.contentLabel')}</Text>
+                <ScrollView
+                  style={{ flexGrow: 0 }}
+                  keyboardShouldPersistTaps="handled"
+                  keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
+                  contentContainerStyle={{ paddingBottom: 8 }}
+                >
+            <Text style={styles.modalTitle}>{t('settings.checkinInstructions.title')}</Text>
             <Text style={styles.hintSmall}>{t('mobile.settings.checkinBodyHint')}</Text>
-            <TextInput
-              style={[styles.input, styles.textArea]}
-              multiline
-              textAlignVertical="top"
-              value={body}
-              onChangeText={setBody}
-              placeholder={t('settings.checkinInstructions.contentPlaceholder')}
-            />
+
+            <View style={styles.localeSection}>
+              <Text style={styles.localeHeader}>ES</Text>
+              <TextInput style={styles.input} value={titleEs} onChangeText={setTitleEs} placeholder={t('settings.checkinInstructions.titleLabel')} />
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                multiline
+                textAlignVertical="top"
+                value={bodyEs}
+                onChangeText={setBodyEs}
+                placeholder={t('settings.checkinInstructions.contentPlaceholder')}
+              />
+            </View>
+
+            <View style={styles.localeSection}>
+              <Text style={styles.localeHeader}>EN</Text>
+              <TextInput style={styles.input} value={titleEn} onChangeText={setTitleEn} placeholder={t('settings.checkinInstructions.titleLabel')} />
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                multiline
+                textAlignVertical="top"
+                value={bodyEn}
+                onChangeText={setBodyEn}
+                placeholder={t('settings.checkinInstructions.contentPlaceholder')}
+              />
+            </View>
+
             <View style={styles.modalActions}>
               <Pressable style={styles.btnGhost} onPress={() => setEditor(null)}>
                 <Text style={styles.btnGhostText}>{t('common.cancel')}</Text>
@@ -183,7 +220,7 @@ export default function CheckinInstructionsScreen() {
                 <Text style={styles.btnPrimaryText}>{t('settings.checkinInstructions.save')}</Text>
               </Pressable>
             </View>
-            </ScrollView>
+                </ScrollView>
           </View>
             </KeyboardAvoidingView>
           </View>
@@ -230,6 +267,16 @@ const styles = StyleSheet.create({
     maxHeight: '92%',
   },
   modalTitle: { fontSize: 16, fontWeight: '800', marginBottom: 10 },
+  localeSection: {
+    marginTop: 8,
+    marginBottom: 8,
+    padding: 12,
+    borderRadius: 12,
+    backgroundColor: '#f8fafc',
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+  },
+  localeHeader: { fontSize: 13, fontWeight: '800', color: '#111827', marginBottom: 8 },
   label: { fontSize: 13, fontWeight: '700', marginTop: 8, marginBottom: 4 },
   hintSmall: { fontSize: 11, color: '#6b7280', marginBottom: 4 },
   input: {
@@ -240,19 +287,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     backgroundColor: '#f9fafb',
   },
-  textArea: { minHeight: 160, marginTop: 4 },
-  localeRow: { flexDirection: 'row', gap: 8, marginVertical: 8 },
-  chip: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-    backgroundColor: '#f9fafb',
-  },
-  chipOn: { backgroundColor: '#2563eb', borderColor: '#2563eb' },
-  chipText: { fontWeight: '700', color: '#374151' },
-  chipOnText: { fontWeight: '800', color: 'white' },
+  textArea: { minHeight: 180, marginTop: 4 },
   modalActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 16 },
   btnGhost: { padding: 12, borderRadius: 12, borderWidth: 1, borderColor: '#e5e7eb' },
   btnGhostText: { fontWeight: '700' },
