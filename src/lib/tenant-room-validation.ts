@@ -2,7 +2,7 @@ import { sql } from '@vercel/postgres';
 
 /**
  * Comprueba que cada room_id pertenezca al tenant, con la misma lógica flexible
- * que GET /api/tenant/rooms (lodging_id, tenant uuid como lodging, Lodging, Room.tenant_id, property_room_map).
+ * que GET /api/tenant/rooms (lodging_id, tenant uuid como lodging, Lodging por id, Room.tenant_id, property_room_map).
  */
 export async function validateRoomIdsBelongToTenant(
   tenantId: string,
@@ -28,10 +28,7 @@ export async function validateRoomIdsBelongToTenant(
           SELECT 1
           FROM "Lodging" l
           WHERE r."lodgingId"::text = l.id::text
-            AND (
-              l.id::text = ${tenantId}
-              OR (l.tenant_id IS NOT NULL AND l.tenant_id::text = ${tenantId})
-            )
+            AND l.id::text = ${tenantId}
         )
         OR r.tenant_id = ${tenantId}::uuid
         OR EXISTS (

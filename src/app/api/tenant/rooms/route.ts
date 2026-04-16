@@ -31,13 +31,12 @@ async function selectRoomsWithFallbacks(tenantId: string): Promise<{ rows: { id:
       `,
     },
     {
-      label: 'via_Lodging_tenant_id',
+      label: 'via_Lodging_id',
       run: () => sql`
         SELECT DISTINCT r.id, r.name
         FROM "Room" r
         INNER JOIN "Lodging" l ON r."lodgingId"::text = l.id::text
         WHERE l.id::text = ${tenantId}
-           OR (l.tenant_id IS NOT NULL AND l.tenant_id::text = ${tenantId})
         ORDER BY r.id::text ASC
       `,
     },
