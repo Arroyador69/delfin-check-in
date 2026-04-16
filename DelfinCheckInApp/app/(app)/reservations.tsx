@@ -2,13 +2,29 @@
 // LISTA DE RESERVAS - Con crear reserva y búsqueda
 // =====================================================
 
-import { View, Text, FlatList, StyleSheet, RefreshControl, TextInput, Pressable, Modal, ScrollView, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  FlatList,
+  StyleSheet,
+  RefreshControl,
+  TextInput,
+  Pressable,
+  Modal,
+  ScrollView,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  Keyboard,
+  TouchableWithoutFeedback,
+} from 'react-native';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { useEffect, useMemo, useState } from 'react';
 import { useLocalSearchParams } from 'expo-router';
 import { Search, Plus, X, CheckCircle2, BellRing, Pencil, Trash2 } from 'lucide-react-native';
 import { t } from '@/lib/i18n';
+import DateTimePicker from '@react-native-community/datetimepicker';
 
 import {
   PendingReservationItem,
@@ -34,6 +50,7 @@ export default function ReservationsScreen() {
     params.filter === 'pending' ? 'pending' : 'all'
   );
   const queryClient = useQueryClient();
+  const [datePicker, setDatePicker] = useState<{ field: 'check_in' | 'check_out' } | null>(null);
 
   const [formData, setFormData] = useState({
     room_id: '',
@@ -253,6 +270,18 @@ export default function ReservationsScreen() {
       channel: ((reservation.channel as 'airbnb' | 'booking' | 'manual') || 'manual'),
     });
     setShowCreateModal(true);
+  };
+
+  const parseIsoDateOrToday = (iso: string) => {
+    const d = new Date(iso);
+    return Number.isFinite(d.getTime()) ? d : new Date();
+  };
+
+  const toIsoDate = (d: Date) => {
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
   };
 
   const formatDate = (dateStr: string) => {
@@ -501,8 +530,14 @@ export default function ReservationsScreen() {
         transparent={true}
         onRequestClose={() => setShowCreateModal(false)}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+          <View style={styles.modalOverlay}>
+            <KeyboardAvoidingView
+              behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+              keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
+              style={{ width: '100%' }}
+            >
+              <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>
                 {editingReservationId ? t('reservations.editReservation') : t('reservations.createReservation')}
@@ -517,7 +552,7 @@ export default function ReservationsScreen() {
               </Pressable>
             </View>
 
-            <ScrollView style={styles.modalBody}>
+            <ScrollView style={styles.modalBody} keyboardShouldPersistTaps="handled">
               <Text style={styles.label}>{t('reservations.form.roomLabel')}</Text>
               <View style={styles.pickerContainer}>
                 {rooms.map((room) => (
@@ -578,20 +613,37 @@ export default function ReservationsScreen() {
               />
 
               <Text style={styles.label}>{t('reservations.form.checkInLabel')}</Text>
-              <TextInput
-                style={styles.input}
-                value={formData.check_in}
-                onChangeText={(text) => setFormData({ ...formData, check_in: text })}
-                placeholder="YYYY-MM-DD"
-              />
+              <Pressable style={styles.input} onPress={() => setDatePicker({ field: 'check_in' })}>
+                <Text style={styles.inputText}>{formData.check_in ? formData.check_in : 'YYYY-MM-DD'}</Text>
+              </Pressable>
 
               <Text style={styles.label}>{t('reservations.form.checkOutLabel')}</Text>
-              <TextInput
-                style={styles.input}
-                value={formData.check_out}
-                onChangeText={(text) => setFormData({ ...formData, check_out: text })}
-                placeholder="YYYY-MM-DD"
-              />
+              <Pressable style={styles.input} onPress={() => setDatePicker({ field: 'check_out' })}>
+                <Text style={styles.inputText}>{formData.check_out ? formData.check_out : 'YYYY-MM-DD'}</Text>
+              </Pressable>
+
+              {datePicker ? (
+                <View style={{ marginBottom: 12 }}>
+                  <DateTimePicker
+                    value={parseIsoDateOrToday(formData[datePicker.field])}
+                    mode="date"
+                    display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                    onChange={(_, selected) => {
+                      if (Platform.OS !== 'ios') setDatePicker(null);
+                      if (!selected) return;
+                      setFormData((prev) => ({ ...prev, [datePicker.field]: toIsoDate(selected) }));
+                    }}
+                  />
+                  {Platform.OS === 'ios' ? (
+                    <Pressable
+                      style={[styles.modalButton, styles.modalButtonCreate, { marginTop: 8 }]}
+                      onPress={() => setDatePicker(null)}
+                    >
+                      <Text style={styles.modalButtonTextCreate}>{t('common.confirm')}</Text>
+                    </Pressable>
+                  ) : null}
+                </View>
+              ) : null}
 
               <Text style={styles.label}>{t('reservations.totalPrice')}</Text>
               <TextInput
@@ -630,7 +682,9 @@ export default function ReservationsScreen() {
               </Pressable>
             </View>
           </View>
-        </View>
+            </KeyboardAvoidingView>
+          </View>
+        </TouchableWithoutFeedback>
       </Modal>
     </View>
   );
@@ -890,6 +944,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#1f2937',
     backgroundColor: '#f9fafb',
+  },
+  inputText: {
+    fontSize: 16,
+    color: '#1f2937',
   },
   pickerContainer: {
     flexDirection: 'row',

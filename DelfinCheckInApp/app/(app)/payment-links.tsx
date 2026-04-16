@@ -2,13 +2,29 @@
 // ENLACES DE PAGO - Crear y gestionar enlaces
 // =====================================================
 
-import { View, Text, FlatList, StyleSheet, RefreshControl, Pressable, Modal, ScrollView, TextInput, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  FlatList,
+  StyleSheet,
+  RefreshControl,
+  Pressable,
+  Modal,
+  ScrollView,
+  TextInput,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  Keyboard,
+  TouchableWithoutFeedback,
+} from 'react-native';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { useState } from 'react';
 import { Plus, X, Copy, CheckCircle, XCircle } from 'lucide-react-native';
 import { Clipboard } from 'react-native';
 import { getLocaleTag, t } from '@/lib/i18n';
+import DateTimePicker from '@react-native-community/datetimepicker';
 
 interface PaymentLink {
   id: number;
@@ -48,6 +64,9 @@ export default function PaymentLinksScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [copiedLink, setCopiedLink] = useState<string | null>(null);
+  const [datePicker, setDatePicker] = useState<{ field: 'check_in_date' | 'check_out_date' } | null>(
+    null
+  );
   const queryClient = useQueryClient();
 
   const [formData, setFormData] = useState({
@@ -204,6 +223,18 @@ export default function PaymentLinksScreen() {
     });
   };
 
+  const parseIsoDateOrToday = (iso: string) => {
+    const d = new Date(iso);
+    return Number.isFinite(d.getTime()) ? d : new Date();
+  };
+
+  const toIsoDate = (d: Date) => {
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  };
+
   const formatPriceEur = (raw: unknown) => {
     const n = typeof raw === 'number' ? raw : typeof raw === 'string' ? Number(raw) : NaN;
     if (!Number.isFinite(n)) return '—';
@@ -323,8 +354,14 @@ export default function PaymentLinksScreen() {
         transparent={true}
         onRequestClose={() => setShowCreateModal(false)}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+          <View style={styles.modalOverlay}>
+            <KeyboardAvoidingView
+              behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+              keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
+              style={{ width: '100%' }}
+            >
+              <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>{t('settings.paymentLinks.createFormTitle')}</Text>
               <Pressable onPress={() => setShowCreateModal(false)}>
@@ -332,7 +369,7 @@ export default function PaymentLinksScreen() {
               </Pressable>
             </View>
 
-            <ScrollView style={styles.modalBody}>
+            <ScrollView style={styles.modalBody} keyboardShouldPersistTaps="handled">
               <Text style={styles.label}>{t('settings.paymentLinks.linkNameLabel')}</Text>
               <TextInput
                 style={styles.input}
@@ -412,20 +449,41 @@ export default function PaymentLinksScreen() {
               </View>
 
               <Text style={styles.label}>{t('settings.paymentLinks.checkInLabel')}</Text>
-              <TextInput
-                style={styles.input}
-                value={formData.check_in_date}
-                onChangeText={(text) => setFormData({ ...formData, check_in_date: text })}
-                placeholder={t('settings.paymentLinks.dateIsoPlaceholder')}
-              />
+              <Pressable style={styles.input} onPress={() => setDatePicker({ field: 'check_in_date' })}>
+                <Text style={styles.inputText}>
+                  {formData.check_in_date ? formData.check_in_date : t('settings.paymentLinks.dateIsoPlaceholder')}
+                </Text>
+              </Pressable>
 
               <Text style={styles.label}>{t('settings.paymentLinks.checkOutLabel')}</Text>
-              <TextInput
-                style={styles.input}
-                value={formData.check_out_date}
-                onChangeText={(text) => setFormData({ ...formData, check_out_date: text })}
-                placeholder={t('settings.paymentLinks.dateIsoPlaceholder')}
-              />
+              <Pressable style={styles.input} onPress={() => setDatePicker({ field: 'check_out_date' })}>
+                <Text style={styles.inputText}>
+                  {formData.check_out_date ? formData.check_out_date : t('settings.paymentLinks.dateIsoPlaceholder')}
+                </Text>
+              </Pressable>
+
+              {datePicker ? (
+                <View style={{ marginBottom: 12 }}>
+                  <DateTimePicker
+                    value={parseIsoDateOrToday(formData[datePicker.field])}
+                    mode="date"
+                    display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                    onChange={(_, selected) => {
+                      if (Platform.OS !== 'ios') setDatePicker(null);
+                      if (!selected) return;
+                      setFormData((prev) => ({ ...prev, [datePicker.field]: toIsoDate(selected) }));
+                    }}
+                  />
+                  {Platform.OS === 'ios' ? (
+                    <Pressable
+                      style={[styles.modalButton, styles.modalButtonCreate, { marginTop: 8 }]}
+                      onPress={() => setDatePicker(null)}
+                    >
+                      <Text style={styles.modalButtonTextCreate}>{t('common.confirm')}</Text>
+                    </Pressable>
+                  ) : null}
+                </View>
+              ) : null}
 
               <Text style={styles.label}>{t('settings.paymentLinks.totalPriceLabel')}</Text>
               <TextInput
@@ -490,7 +548,9 @@ export default function PaymentLinksScreen() {
               </Pressable>
             </View>
           </View>
-        </View>
+            </KeyboardAvoidingView>
+          </View>
+        </TouchableWithoutFeedback>
       </Modal>
     </View>
   );
@@ -702,6 +762,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#1f2937',
     backgroundColor: '#f9fafb',
+  },
+  inputText: {
+    fontSize: 16,
+    color: '#1f2937',
   },
   pickerContainer: {
     flexDirection: 'row',
