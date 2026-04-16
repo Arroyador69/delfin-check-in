@@ -73,6 +73,16 @@ export async function GET(
 
 function generarPdfFactura(factura: any, empresaConfig: any): jsPDF {
   const doc = new jsPDF();
+  const getDocumentLabel = (value: unknown) => {
+    switch (String(value || 'dni').toLowerCase()) {
+      case 'nie':
+        return 'NIE';
+      case 'pasaporte':
+        return 'Pasaporte';
+      default:
+        return 'DNI';
+    }
+  };
   
   // Configuración de colores
   const primaryColor = [59, 130, 246]; // blue-500
@@ -135,7 +145,7 @@ function generarPdfFactura(factura: any, empresaConfig: any): jsPDF {
   doc.text(factura.cliente_nombre, 110, 70);
   
   if (factura.cliente_nif) {
-    doc.text(`NIF: ${factura.cliente_nif}`, 110, 80);
+    doc.text(`${getDocumentLabel(factura.cliente_tipo_documento)}: ${factura.cliente_nif}`, 110, 80);
   }
   
   if (factura.cliente_direccion) {

@@ -27,6 +27,7 @@ interface Factura {
   numero_factura: string;
   fecha_emision: string;
   cliente_nombre: string;
+  cliente_tipo_documento?: string;
   cliente_nif?: string;
   concepto: string;
   precio_base: number;
@@ -56,6 +57,7 @@ interface Recibo {
   numero_recibo: string;
   fecha_emision: string;
   cliente_nombre: string;
+  cliente_tipo_documento?: string;
   concepto: string;
   descripcion?: string | null;
   fecha_pago?: string | null;
@@ -77,6 +79,12 @@ function formatReciboDateOnly(value: string | null | undefined, loc: string): st
   return Number.isNaN(d.getTime()) ? String(value) : d.toLocaleDateString(loc);
 }
 
+const DOCUMENT_TYPE_OPTIONS = [
+  { value: 'dni', labelKey: 'documentTypeDni' },
+  { value: 'nie', labelKey: 'documentTypeNie' },
+  { value: 'pasaporte', labelKey: 'documentTypePassport' },
+] as const;
+
 export default function FacturasPage() {
   const t = useTranslations('facturas');
   const locale = useLocale();
@@ -95,6 +103,7 @@ export default function FacturasPage() {
   // Formulario de nueva factura
   const [nuevaFactura, setNuevaFactura] = useState({
     cliente_nombre: '',
+    cliente_tipo_documento: 'dni',
     cliente_nif: '',
     cliente_direccion: '',
     cliente_codigo_postal: '',
@@ -110,6 +119,7 @@ export default function FacturasPage() {
 
   const [nuevoRecibo, setNuevoRecibo] = useState({
     cliente_nombre: '',
+    cliente_tipo_documento: 'dni',
     cliente_nif: '',
     cliente_direccion: '',
     cliente_codigo_postal: '',
@@ -219,6 +229,7 @@ export default function FacturasPage() {
         setMessage({ type: 'success', text: t('successCreate') });
         setNuevaFactura({
           cliente_nombre: '',
+          cliente_tipo_documento: 'dni',
           cliente_nif: '',
           cliente_direccion: '',
           cliente_codigo_postal: '',
@@ -315,6 +326,7 @@ export default function FacturasPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           cliente_nombre: nuevoRecibo.cliente_nombre,
+          cliente_tipo_documento: nuevoRecibo.cliente_tipo_documento,
           cliente_nif: nuevoRecibo.cliente_nif,
           cliente_direccion: nuevoRecibo.cliente_direccion,
           cliente_codigo_postal: nuevoRecibo.cliente_codigo_postal,
@@ -337,6 +349,7 @@ export default function FacturasPage() {
         setMessage({ type: 'success', text: t('successCreateReceipt') });
         setNuevoRecibo({
           cliente_nombre: '',
+          cliente_tipo_documento: 'dni',
           cliente_nif: '',
           cliente_direccion: '',
           cliente_codigo_postal: '',
@@ -536,12 +549,27 @@ export default function FacturasPage() {
                         />
                     </div>
                     <div>
-                      <Label htmlFor="cliente_nif" className="text-gray-700 font-medium">{t('nifDni')}</Label>
+                      <Label htmlFor="cliente_tipo_documento" className="text-gray-700 font-medium">{t('documentType')}</Label>
+                      <select
+                        id="cliente_tipo_documento"
+                        value={nuevaFactura.cliente_tipo_documento}
+                        onChange={(e) => setNuevaFactura(prev => ({ ...prev, cliente_tipo_documento: e.target.value }))}
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-gray-900 ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                      >
+                        {DOCUMENT_TYPE_OPTIONS.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {t(option.labelKey)}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <Label htmlFor="cliente_nif" className="text-gray-700 font-medium">{t('documentNumber')}</Label>
                       <Input
                         id="cliente_nif"
                         value={nuevaFactura.cliente_nif}
                         onChange={(e) => setNuevaFactura(prev => ({ ...prev, cliente_nif: e.target.value }))}
-                        placeholder={t('nifPlaceholder')}
+                        placeholder={t('documentNumberPlaceholder')}
                         className="text-gray-900 placeholder:text-gray-400"
                         style={{ color: '#111827' }}
                       />
@@ -843,11 +871,27 @@ export default function FacturasPage() {
                           />
                         </div>
                         <div>
-                          <Label htmlFor="r_cliente_nif">{t('nifDni')}</Label>
+                          <Label htmlFor="r_cliente_tipo_documento">{t('documentType')}</Label>
+                          <select
+                            id="r_cliente_tipo_documento"
+                            value={nuevoRecibo.cliente_tipo_documento}
+                            onChange={(e) => setNuevoRecibo((p) => ({ ...p, cliente_tipo_documento: e.target.value }))}
+                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-gray-900 ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                          >
+                            {DOCUMENT_TYPE_OPTIONS.map((option) => (
+                              <option key={option.value} value={option.value}>
+                                {t(option.labelKey)}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <Label htmlFor="r_cliente_nif">{t('documentNumber')}</Label>
                           <Input
                             id="r_cliente_nif"
                             value={nuevoRecibo.cliente_nif}
                             onChange={(e) => setNuevoRecibo((p) => ({ ...p, cliente_nif: e.target.value }))}
+                            placeholder={t('documentNumberPlaceholder')}
                             className="text-gray-900"
                           />
                         </div>

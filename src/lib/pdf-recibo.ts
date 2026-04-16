@@ -29,6 +29,16 @@ export function generarPdfRecibo(recibo: Record<string, unknown>, empresaConfig:
     const n = parseFloat(String(v ?? '0'));
     return Number.isFinite(n) ? n : 0;
   };
+  const getDocumentLabel = (value: unknown) => {
+    switch (String(value || 'dni').toLowerCase()) {
+      case 'nie':
+        return 'NIE';
+      case 'pasaporte':
+        return 'Pasaporte';
+      default:
+        return 'DNI';
+    }
+  };
 
   const incluirIva = Boolean(recibo.incluir_iva);
 
@@ -80,7 +90,7 @@ export function generarPdfRecibo(recibo: Record<string, unknown>, empresaConfig:
   doc.text(safeStr(recibo.cliente_nombre), 110, cy);
   cy += lineStep;
   if (recibo.cliente_nif) {
-    doc.text(`NIF: ${safeStr(recibo.cliente_nif)}`, 110, cy);
+    doc.text(`${getDocumentLabel(recibo.cliente_tipo_documento)}: ${safeStr(recibo.cliente_nif)}`, 110, cy);
     cy += lineStep;
   }
   if (recibo.cliente_direccion) {

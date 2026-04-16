@@ -52,6 +52,7 @@ export async function POST(request: NextRequest) {
     const factura = await crearFactura({
       tenant_id: tenantId,
       cliente_nombre: body.cliente_nombre,
+      cliente_tipo_documento: body.cliente_tipo_documento,
       cliente_nif: body.cliente_nif,
       cliente_direccion: body.cliente_direccion,
       cliente_codigo_postal: body.cliente_codigo_postal,

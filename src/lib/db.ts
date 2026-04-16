@@ -682,6 +682,7 @@ export async function ensureFacturasTables(): Promise<void> {
         
         -- Datos del cliente/huésped
         cliente_nombre VARCHAR(255) NOT NULL,
+        cliente_tipo_documento VARCHAR(20) DEFAULT 'dni',
         cliente_nif VARCHAR(20),
         cliente_direccion TEXT,
         cliente_codigo_postal VARCHAR(10),
@@ -786,6 +787,7 @@ export async function ensureFacturasTables(): Promise<void> {
         numero_recibo VARCHAR(50) NOT NULL,
         fecha_emision DATE NOT NULL DEFAULT CURRENT_DATE,
         cliente_nombre VARCHAR(255) NOT NULL,
+        cliente_tipo_documento VARCHAR(20) DEFAULT 'dni',
         cliente_nif VARCHAR(20),
         cliente_direccion TEXT,
         cliente_codigo_postal VARCHAR(10),
@@ -842,6 +844,8 @@ export async function ensureFacturasTables(): Promise<void> {
     await sql`ALTER TABLE recibos ADD COLUMN IF NOT EXISTS fecha_pago DATE`;
     await sql`ALTER TABLE recibos ADD COLUMN IF NOT EXISTS fecha_estancia_desde DATE`;
     await sql`ALTER TABLE recibos ADD COLUMN IF NOT EXISTS fecha_estancia_hasta DATE`;
+    await sql`ALTER TABLE facturas ADD COLUMN IF NOT EXISTS cliente_tipo_documento VARCHAR(20) DEFAULT 'dni'`;
+    await sql`ALTER TABLE recibos ADD COLUMN IF NOT EXISTS cliente_tipo_documento VARCHAR(20) DEFAULT 'dni'`;
 
   } catch (error) {
     console.error('Error al crear tablas de facturas:', error);
@@ -922,6 +926,7 @@ export async function generarNumeroFactura(tenantId: string): Promise<string> {
 export async function crearFactura(data: {
   tenant_id: string;
   cliente_nombre: string;
+  cliente_tipo_documento?: string;
   cliente_nif?: string;
   cliente_direccion?: string;
   cliente_codigo_postal?: string;
@@ -947,14 +952,14 @@ export async function crearFactura(data: {
   const result = await sql`
     INSERT INTO facturas (
       tenant_id, numero_factura, fecha_emision,
-      cliente_nombre, cliente_nif, cliente_direccion, cliente_codigo_postal,
+      cliente_nombre, cliente_tipo_documento, cliente_nif, cliente_direccion, cliente_codigo_postal,
       cliente_ciudad, cliente_provincia, cliente_pais,
       concepto, descripcion, precio_base, iva_porcentaje, iva_importe, total,
       forma_pago
     )
     VALUES (
       ${data.tenant_id}, ${numeroFactura}, CURRENT_DATE,
-      ${data.cliente_nombre}, ${data.cliente_nif || ''}, ${data.cliente_direccion || ''}, 
+      ${data.cliente_nombre}, ${data.cliente_tipo_documento || 'dni'}, ${data.cliente_nif || ''}, ${data.cliente_direccion || ''}, 
       ${data.cliente_codigo_postal || ''}, ${data.cliente_ciudad || ''}, 
       ${data.cliente_provincia || ''}, ${data.cliente_pais || 'España'},
       ${data.concepto}, ${data.descripcion || ''}, ${data.precio_base}, 
@@ -1027,6 +1032,7 @@ export async function generarNumeroRecibo(tenantId: string): Promise<string> {
 export async function crearRecibo(data: {
   tenant_id: string;
   cliente_nombre: string;
+  cliente_tipo_documento?: string;
   cliente_nif?: string;
   cliente_direccion?: string;
   cliente_codigo_postal?: string;
@@ -1065,7 +1071,7 @@ export async function crearRecibo(data: {
   const result = await sql`
     INSERT INTO recibos (
       tenant_id, numero_recibo, fecha_emision,
-      cliente_nombre, cliente_nif, cliente_direccion, cliente_codigo_postal,
+      cliente_nombre, cliente_tipo_documento, cliente_nif, cliente_direccion, cliente_codigo_postal,
       cliente_ciudad, cliente_provincia, cliente_pais,
       concepto, descripcion, fecha_pago, fecha_estancia_desde, fecha_estancia_hasta,
       importe_total, incluir_iva,
@@ -1073,7 +1079,7 @@ export async function crearRecibo(data: {
     )
     VALUES (
       ${data.tenant_id}, ${numeroRecibo}, CURRENT_DATE,
-      ${data.cliente_nombre}, ${data.cliente_nif || ''}, ${data.cliente_direccion || ''},
+      ${data.cliente_nombre}, ${data.cliente_tipo_documento || 'dni'}, ${data.cliente_nif || ''}, ${data.cliente_direccion || ''},
       ${data.cliente_codigo_postal || ''}, ${data.cliente_ciudad || ''},
       ${data.cliente_provincia || ''}, ${data.cliente_pais || 'España'},
       ${data.concepto}, ${data.descripcion || ''},

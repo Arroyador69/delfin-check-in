@@ -26,6 +26,7 @@ interface Factura {
   numero_factura: string;
   fecha_emision: string;
   cliente_nombre: string;
+  cliente_tipo_documento?: string;
   cliente_nif?: string;
   concepto: string;
   precio_base: number;
@@ -50,6 +51,12 @@ interface EmpresaConfig {
   logo_url?: string;
 }
 
+const DOCUMENT_TYPE_OPTIONS = [
+  { value: 'dni', label: 'DNI' },
+  { value: 'nie', label: 'NIE' },
+  { value: 'pasaporte', label: 'Pasaporte' },
+];
+
 export default function FacturasPage() {
   const t = useClientTranslations('invoices');
   const [facturas, setFacturas] = useState<Factura[]>([]);
@@ -61,6 +68,7 @@ export default function FacturasPage() {
   // Formulario de nueva factura
   const [nuevaFactura, setNuevaFactura] = useState({
     cliente_nombre: '',
+    cliente_tipo_documento: 'dni',
     cliente_nif: '',
     cliente_direccion: '',
     cliente_codigo_postal: '',
@@ -151,6 +159,7 @@ export default function FacturasPage() {
         setMessage({ type: 'success', text: 'Factura creada correctamente' });
         setNuevaFactura({
           cliente_nombre: '',
+          cliente_tipo_documento: 'dni',
           cliente_nif: '',
           cliente_direccion: '',
           cliente_codigo_postal: '',
@@ -324,7 +333,7 @@ export default function FacturasPage() {
                       <User className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-blue-600" />
                       Datos del Cliente
                     </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                       <Label htmlFor="cliente_nombre" className="text-gray-700 font-medium">Nombre Completo *</Label>
                         <Input
@@ -338,7 +347,22 @@ export default function FacturasPage() {
                         />
                     </div>
                     <div>
-                      <Label htmlFor="cliente_nif" className="text-gray-700 font-medium">NIF/DNI</Label>
+                      <Label htmlFor="cliente_tipo_documento" className="text-gray-700 font-medium">Tipo de documento</Label>
+                      <select
+                        id="cliente_tipo_documento"
+                        value={nuevaFactura.cliente_tipo_documento}
+                        onChange={(e) => setNuevaFactura(prev => ({ ...prev, cliente_tipo_documento: e.target.value }))}
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-gray-900 ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                      >
+                        {DOCUMENT_TYPE_OPTIONS.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <Label htmlFor="cliente_nif" className="text-gray-700 font-medium">Nº de documento</Label>
                       <Input
                         id="cliente_nif"
                         value={nuevaFactura.cliente_nif}
