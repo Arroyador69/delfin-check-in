@@ -2895,6 +2895,7 @@
       "hubGeneralSubtitle": "Plan, límites y nombres de habitaciones/apartamentos.",
       "hubCheckinSubtitle": "Plantillas de instrucciones por email (planes con check-in por correo).",
       "hubIntegrationsSubtitle": "iCal externos (Airbnb, Booking…) para bloquear fechas.",
+      "hubCleaningSubtitle": "Horarios de limpieza por habitación, iCal y notas.",
       "hubBillingSubtitle": "Resumen de suscripción y facturas pendientes.",
       "hubBankingSubtitle": "Cuentas IBAN para cobros del micrositio.",
       "hubReputationSubtitle": "Reseñas Google y recordatorios (Pro).",

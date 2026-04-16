@@ -6,7 +6,7 @@ import { View, Text, Pressable, StyleSheet, Alert, ScrollView } from 'react-nati
 import { useAuth } from '@/lib/auth';
 import { useRouter } from 'expo-router';
 import { t } from '@/lib/i18n';
-import { openUpgradePlanInBrowser } from '@/lib/upgrade-plan';
+import { openUpgradePlanInBrowser, suggestedUpgradeTargetPlan } from '@/lib/upgrade-plan';
 
 export default function SettingsScreen() {
   const { session, signOut } = useAuth();
@@ -69,7 +69,15 @@ export default function SettingsScreen() {
           <Text style={styles.infoLabel}>{t('mobile.settings.planLabel')}</Text>
           <Text style={styles.infoValue}>{getPlanLabel(session?.user.tenant.planId)}</Text>
         </View>
-        <Pressable style={styles.upgradeCta} onPress={() => void openUpgradePlanInBrowser()}>
+        <Pressable
+          style={styles.upgradeCta}
+          onPress={() =>
+            void openUpgradePlanInBrowser(undefined, {
+              planId: suggestedUpgradeTargetPlan(session?.user?.tenant?.planId),
+              roomCount: Math.max(1, session?.user?.tenant?.currentRooms ?? 1),
+            })
+          }
+        >
           <Text style={styles.upgradeCtaText}>{t('mobile.settings.upgradePlanButton')}</Text>
         </Pressable>
         <Text style={styles.upgradeHint}>{t('mobile.settings.upgradePlanHint')}</Text>
@@ -91,6 +99,11 @@ export default function SettingsScreen() {
           title={t('settings.tabs.integrations')}
           subtitle={t('mobile.settings.hubIntegrationsSubtitle')}
           onPress={() => router.push('/(app)/settings/integrations' as any)}
+        />
+        <Item
+          title={t('settings.cleaning.title')}
+          subtitle={t('mobile.settings.hubCleaningSubtitle')}
+          onPress={() => router.push('/(app)/settings/cleaning-calendar' as any)}
         />
         <Item
           title={t('settings.tabs.billing')}

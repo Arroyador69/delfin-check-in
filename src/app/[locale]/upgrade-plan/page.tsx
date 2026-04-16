@@ -349,6 +349,16 @@ export default function UpgradePlanPage() {
     loadCurrentPlan();
   }, []);
 
+  /** Aplicar siempre `rooms` de la URL (p. ej. desde la app móvil), aunque no venga `plan`. */
+  useEffect(() => {
+    if (loading) return;
+    const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
+    const roomsParam = parseInt(params.get('rooms') || '', 10);
+    if (!Number.isNaN(roomsParam) && roomsParam >= 1) {
+      setRoomCount(roomsParam);
+    }
+  }, [loading]);
+
   const loadCurrentPlan = async () => {
     try {
       const response = await fetch('/api/tenant');
@@ -413,10 +423,6 @@ export default function UpgradePlanPage() {
     appliedQueryRef.current = true;
     setSelectedPlan(planParam);
     setShowCheckout(true);
-    const roomsParam = parseInt(params.get('rooms') || '', 10);
-    if (!Number.isNaN(roomsParam) && roomsParam >= 1) {
-      setRoomCount(roomsParam);
-    }
   }, [loading, currentPlan, availablePlans]);
 
   if (loading) {

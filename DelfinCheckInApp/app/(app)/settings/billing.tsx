@@ -184,7 +184,15 @@ export default function BillingSettingsScreen() {
                 <Text style={styles.rowVal}>€{Number(data.plan.price_total).toFixed(2)}</Text>
               </>
             ) : null}
-            <Pressable style={styles.upgradeCta} onPress={() => void openUpgradePlanInBrowser()}>
+            <Pressable
+              style={styles.upgradeCta}
+              onPress={() =>
+                void openUpgradePlanInBrowser(undefined, {
+                  planId: planCalcId,
+                  roomCount,
+                })
+              }
+            >
               <Text style={styles.upgradeCtaText}>{t('mobile.settings.upgradePlanButton')}</Text>
             </Pressable>
             <Text style={styles.upgradeHint}>{t('mobile.settings.upgradePlanHint')}</Text>

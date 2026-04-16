@@ -8,10 +8,12 @@ import {
   FlatList,
   Platform,
   ScrollView,
+  Keyboard,
+  Dimensions,
 } from 'react-native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { api } from '@/lib/api';
 import { t } from '@/lib/i18n';
@@ -25,9 +27,13 @@ type InstructionItem = {
   body_html: string;
 };
 
+const winH = Dimensions.get('window').height;
+
 export default function CheckinInstructionsScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const scrollRef = useRef<ScrollView>(null);
+  const [kbInset, setKbInset] = useState(0);
   const [editor, setEditor] = useState<InstructionItem | null>(null);
   const [titleEs, setTitleEs] = useState('');
   const [bodyEs, setBodyEs] = useState('');
@@ -43,6 +49,23 @@ export default function CheckinInstructionsScreen() {
   });
 
   const items = data?.items || [];
+
+  useEffect(() => {
+    const showEv = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEv = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+    const show = Keyboard.addListener(showEv, (e) => setKbInset(e.endCoordinates.height));
+    const hide = Keyboard.addListener(hideEv, () => setKbInset(0));
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, []);
+
+  function scrollForKeyboard() {
+    requestAnimationFrame(() => {
+      scrollRef.current?.scrollToEnd({ animated: true });
+    });
+  }
 
   const saveMutation = useMutation({
     mutationFn: async () => {
@@ -143,16 +166,15 @@ export default function CheckinInstructionsScreen() {
         )}
       />
 
-      <KeyboardAwareFormModal
-        visible={editor != null}
-        onRequestClose={() => setEditor(null)}
-      >
-        <View style={styles.modalBox}>
+      <KeyboardAwareFormModal visible={editor != null} onRequestClose={() => setEditor(null)}>
+        <View style={[styles.modalBox, { maxHeight: winH * 0.92 }]}>
                 <ScrollView
-                  style={{ flexGrow: 0 }}
+                  ref={scrollRef}
+                  style={{ maxHeight: winH * 0.78 }}
                   keyboardShouldPersistTaps="handled"
                   keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
-                  contentContainerStyle={{ paddingBottom: 8 }}
+                  contentContainerStyle={{ paddingBottom: Math.max(32, kbInset + 24) }}
+                  showsVerticalScrollIndicator
                 >
             <Text style={styles.modalTitle}>{t('settings.checkinInstructions.title')}</Text>
             <Text style={styles.hintSmall}>{t('mobile.settings.checkinBodyHint')}</Text>
@@ -166,6 +188,7 @@ export default function CheckinInstructionsScreen() {
                 textAlignVertical="top"
                 value={bodyEs}
                 onChangeText={setBodyEs}
+                onFocus={scrollForKeyboard}
                 placeholder={t('settings.checkinInstructions.contentPlaceholder')}
               />
             </View>
@@ -179,6 +202,7 @@ export default function CheckinInstructionsScreen() {
                 textAlignVertical="top"
                 value={bodyEn}
                 onChangeText={setBodyEn}
+                onFocus={scrollForKeyboard}
                 placeholder={t('settings.checkinInstructions.contentPlaceholder')}
               />
             </View>
@@ -253,7 +277,6 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     padding: 16,
-    maxHeight: '92%',
   },
   modalTitle: { fontSize: 16, fontWeight: '800', marginBottom: 10 },
   localeSection: {

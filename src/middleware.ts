@@ -65,6 +65,13 @@ const intlMiddleware = createMiddleware({
   localeDetection: true, // Detectar idioma del navegador
 });
 
+/** Destino interno post-login (path + query). Evita bucles con /admin-login. */
+function buildLoginRedirectPath(pathname: string, search: string): string {
+  const dest = `${pathname}${search || ''}`;
+  if (!dest || dest.startsWith('/admin-login')) return '';
+  return dest;
+}
+
 export async function middleware(req: NextRequest) {
   const url = req.nextUrl
   const pathname = url.pathname
@@ -399,6 +406,10 @@ export async function middleware(req: NextRequest) {
   if (!authToken || authToken.trim() === '') {
     console.log('🔒 No hay token de autenticación válido, redirigiendo al login');
     const loginUrl = new URL('/admin-login', req.url);
+    const redirectTarget = buildLoginRedirectPath(pathname, url.search);
+    if (redirectTarget) {
+      loginUrl.searchParams.set('redirect', redirectTarget);
+    }
     return NextResponse.redirect(loginUrl);
   }
   
@@ -433,11 +444,19 @@ export async function middleware(req: NextRequest) {
     } else {
       console.log('🔒 Token sin tenantId, redirigiendo al login');
       const loginUrl = new URL('/admin-login', req.url);
+      const redirectTarget = buildLoginRedirectPath(pathname, url.search);
+      if (redirectTarget) {
+        loginUrl.searchParams.set('redirect', redirectTarget);
+      }
       return NextResponse.redirect(loginUrl);
     }
   } catch (error: any) {
     console.log(`🔒 Token inválido o expirado (${error.message}), redirigiendo al login`);
     const loginUrl = new URL('/admin-login', req.url);
+    const redirectTarget = buildLoginRedirectPath(pathname, url.search);
+    if (redirectTarget) {
+      loginUrl.searchParams.set('redirect', redirectTarget);
+    }
     return NextResponse.redirect(loginUrl);
   }
 }

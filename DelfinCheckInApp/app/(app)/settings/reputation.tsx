@@ -17,8 +17,9 @@ import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 
 import { api } from '@/lib/api';
+import { useAuth } from '@/lib/auth';
 import { t } from '@/lib/i18n';
-import { openUpgradePlanInBrowser } from '@/lib/upgrade-plan';
+import { openUpgradePlanInBrowser, suggestedUpgradeTargetPlan } from '@/lib/upgrade-plan';
 
 type RepSettings = {
   enabled: boolean;
@@ -38,6 +39,7 @@ const defaultSettings: RepSettings = {
 
 export default function ReputationSettingsScreen() {
   const router = useRouter();
+  const { session } = useAuth();
   const queryClient = useQueryClient();
   const [draft, setDraft] = useState<RepSettings>(defaultSettings);
 
@@ -103,7 +105,15 @@ export default function ReputationSettingsScreen() {
       {!isPro ? (
         <View style={styles.card}>
           <Text style={styles.warn}>{t('mobile.settings.repNotPro')}</Text>
-          <Pressable style={styles.upgradeCta} onPress={() => void openUpgradePlanInBrowser()}>
+          <Pressable
+            style={styles.upgradeCta}
+            onPress={() =>
+              void openUpgradePlanInBrowser(undefined, {
+                planId: suggestedUpgradeTargetPlan(session?.user?.tenant?.planId),
+                roomCount: Math.max(1, session?.user?.tenant?.currentRooms ?? 1),
+              })
+            }
+          >
             <Text style={styles.upgradeCtaText}>{t('mobile.settings.upgradePlanButton')}</Text>
           </Pressable>
           <Text style={styles.upgradeHint}>{t('mobile.settings.upgradePlanHint')}</Text>

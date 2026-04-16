@@ -12,6 +12,7 @@ export default function SettingsStackLayout() {
       <Stack.Screen name="general" />
       <Stack.Screen name="checkin-instructions" />
       <Stack.Screen name="integrations" />
+      <Stack.Screen name="cleaning-calendar" />
       <Stack.Screen name="billing" />
       <Stack.Screen name="banking" />
       <Stack.Screen name="reputation" />

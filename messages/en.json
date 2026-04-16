@@ -2782,6 +2782,7 @@
       "hubGeneralSubtitle": "Plan limits and room/apartment names.",
       "hubCheckinSubtitle": "Email instruction templates (plans with check-in email).",
       "hubIntegrationsSubtitle": "External iCals (Airbnb, Booking…) to block dates.",
+      "hubCleaningSubtitle": "Per-room cleaning times, iCal feed and notes.",
       "hubBillingSubtitle": "Subscription summary and pending invoices.",
       "hubBankingSubtitle": "IBAN accounts for microsite payouts.",
       "hubReputationSubtitle": "Google reviews and reminders (Pro).",

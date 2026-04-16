@@ -2719,6 +2719,7 @@
       "hubGeneralSubtitle": "Limites du plan et noms des chambres/appartements.",
       "hubCheckinSubtitle": "Modèles d’instructions par email (plans avec email check-in).",
       "hubIntegrationsSubtitle": "iCal externes (Airbnb, Booking…) pour bloquer des dates.",
+      "hubCleaningSubtitle": "Horaires de ménage par chambre, iCal et notes.",
       "hubBillingSubtitle": "Abonnement et factures en attente.",
       "hubBankingSubtitle": "Comptes IBAN pour les paiements du microsite.",
       "hubReputationSubtitle": "Avis Google et rappels (Pro).",
