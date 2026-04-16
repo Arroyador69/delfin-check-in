@@ -15,6 +15,21 @@ function badRequest(message: string) {
   return NextResponse.json({ success: false, error: message }, { status: 400 });
 }
 
+function resolveAuthPayload(request: NextRequest) {
+  const authHeader = request.headers.get('authorization') || request.headers.get('Authorization');
+  if (authHeader?.startsWith('Bearer ')) {
+    const bearer = authHeader.slice(7).trim();
+    if (bearer) {
+      const p = verifyToken(bearer);
+      if (p?.userId && p?.email) return p;
+    }
+  }
+  const cookie = request.cookies.get('auth_token')?.value;
+  if (!cookie) return null;
+  const p = verifyToken(cookie);
+  return p?.userId && p?.email ? p : null;
+}
+
 export async function GET(request: NextRequest) {
   try {
     const tenantId = await getTenantId(request);
@@ -44,12 +59,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
     }
 
-    const token = request.cookies.get('auth_token')?.value;
-    if (!token) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
-    }
-
-    const payload = verifyToken(token);
+    const payload = resolveAuthPayload(request);
     if (!payload?.userId || !payload?.email) {
       return NextResponse.json({ error: 'Sesión no válida' }, { status: 401 });
     }
