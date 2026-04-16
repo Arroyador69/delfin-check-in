@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
 import { getTenantId } from '@/lib/tenant';
 import { validateRoomIdsBelongToTenant } from '@/lib/tenant-room-validation';
+import { ensureCleaningPublicLinkTables } from '@/lib/ensure-cleaning-public-links-tables';
 
 async function resolveTenantId(req: NextRequest): Promise<string | null> {
   let tenantId = await getTenantId(req);
@@ -16,6 +17,8 @@ export async function GET(req: NextRequest) {
     if (!tenantId) {
       return NextResponse.json({ success: false, error: 'No tenant' }, { status: 401 });
     }
+
+    await ensureCleaningPublicLinkTables();
 
     const links = await sql`
       SELECT id, label, public_token, created_at, updated_at
@@ -58,6 +61,8 @@ export async function POST(req: NextRequest) {
     if (!tenantId) {
       return NextResponse.json({ success: false, error: 'No tenant' }, { status: 401 });
     }
+
+    await ensureCleaningPublicLinkTables();
 
     const body = await req.json();
     const label = String(body.label || '').trim();
@@ -105,18 +110,7 @@ export async function POST(req: NextRequest) {
       link: { ...ins.rows[0], room_ids },
     });
   } catch (error: unknown) {
-    const msg = (error as Error).message || '';
-    if (msg.includes('does not exist') || msg.includes('cleaning_public_links')) {
-      return NextResponse.json(
-        {
-          success: false,
-          error:
-            'En tu base Neon (la misma que usa la web) faltan las tablas de enlaces de limpieza. Abre el SQL Editor en Neon, pega y ejecuta el archivo database/cleaning-public-links.sql del repositorio, y vuelve a intentarlo.',
-        },
-        { status: 503 }
-      );
-    }
     console.error('[cleaning/links] POST error:', error);
-    return NextResponse.json({ success: false, error: msg }, { status: 500 });
+    return NextResponse.json({ success: false, error: (error as Error).message || 'Error' }, { status: 500 });
   }
 }

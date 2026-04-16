@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
+import { ensureCleaningPublicLinkTables } from '@/lib/ensure-cleaning-public-links-tables';
 import {
   buildCleaningTasksForRoom,
   type CleaningTaskEvent,
@@ -17,6 +18,8 @@ export async function GET(
 ) {
   try {
     const { token } = await params;
+
+    await ensureCleaningPublicLinkTables();
 
     const linkResult = await sql`
       SELECT id, tenant_id, label

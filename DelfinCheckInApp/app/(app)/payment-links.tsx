@@ -18,7 +18,7 @@ import {
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { useState } from 'react';
-import { Plus, X, Copy, CheckCircle, XCircle } from 'lucide-react-native';
+import { Plus, X, Copy, CheckCircle, XCircle, CalendarDays, ChevronRight } from 'lucide-react-native';
 import { Clipboard } from 'react-native';
 import { getLocaleTag, t } from '@/lib/i18n';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -62,9 +62,7 @@ export default function PaymentLinksScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [copiedLink, setCopiedLink] = useState<string | null>(null);
-  const [datePicker, setDatePicker] = useState<{ field: 'check_in_date' | 'check_out_date' } | null>(
-    null
-  );
+  const [calendarFor, setCalendarFor] = useState<'check_in_date' | 'check_out_date' | null>(null);
   const queryClient = useQueryClient();
 
   const [formData, setFormData] = useState({
@@ -219,19 +217,23 @@ export default function PaymentLinksScreen() {
       expires_at: '',
       internal_notes: '',
     });
+    setCalendarFor(null);
+  };
+
+  const dateFromYmd = (ymd: string) => {
+    const raw = (ymd || '').split('T')[0];
+    if (!raw || !/^\d{4}-\d{2}-\d{2}$/.test(raw)) return new Date();
+    const [y, m, d] = raw.split('-').map((x) => parseInt(x, 10));
+    return new Date(y, m - 1, d);
   };
 
   const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString(getLocaleTag(), {
+    const d = dateFromYmd(dateStr);
+    return d.toLocaleDateString(getLocaleTag(), {
       day: 'numeric',
       month: 'short',
       year: 'numeric',
     });
-  };
-
-  const parseIsoDateOrToday = (iso: string) => {
-    const d = new Date(iso);
-    return Number.isFinite(d.getTime()) ? d : new Date();
   };
 
   const toIsoDate = (d: Date) => {
@@ -364,12 +366,20 @@ export default function PaymentLinksScreen() {
       {/* Modal crear enlace */}
       <KeyboardAwareFormModal
         visible={showCreateModal}
-        onRequestClose={() => setShowCreateModal(false)}
+        onRequestClose={() => {
+          setCalendarFor(null);
+          setShowCreateModal(false);
+        }}
       >
         <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>{t('settings.paymentLinks.createFormTitle')}</Text>
-              <Pressable onPress={() => setShowCreateModal(false)}>
+              <Pressable
+                onPress={() => {
+                  setCalendarFor(null);
+                  setShowCreateModal(false);
+                }}
+              >
                 <X size={24} color="#6b7280" />
               </Pressable>
             </View>
@@ -454,36 +464,50 @@ export default function PaymentLinksScreen() {
               </View>
 
               <Text style={styles.label}>{t('settings.paymentLinks.checkInLabel')}</Text>
-              <Pressable style={styles.input} onPress={() => setDatePicker({ field: 'check_in_date' })}>
-                <Text style={styles.inputText}>
-                  {formData.check_in_date ? formData.check_in_date : t('settings.paymentLinks.dateIsoPlaceholder')}
+              <Pressable style={styles.datePickRow} onPress={() => setCalendarFor('check_in_date')}>
+                <CalendarDays size={20} color="#2563eb" />
+                <Text style={styles.datePickRowText}>
+                  {formData.check_in_date
+                    ? formatDate(formData.check_in_date)
+                    : t('settings.paymentLinks.dateIsoPlaceholder')}
                 </Text>
+                <ChevronRight size={18} color="#9ca3af" />
               </Pressable>
 
               <Text style={styles.label}>{t('settings.paymentLinks.checkOutLabel')}</Text>
-              <Pressable style={styles.input} onPress={() => setDatePicker({ field: 'check_out_date' })}>
-                <Text style={styles.inputText}>
-                  {formData.check_out_date ? formData.check_out_date : t('settings.paymentLinks.dateIsoPlaceholder')}
+              <Pressable style={styles.datePickRow} onPress={() => setCalendarFor('check_out_date')}>
+                <CalendarDays size={20} color="#2563eb" />
+                <Text style={styles.datePickRowText}>
+                  {formData.check_out_date
+                    ? formatDate(formData.check_out_date)
+                    : t('settings.paymentLinks.dateIsoPlaceholder')}
                 </Text>
+                <ChevronRight size={18} color="#9ca3af" />
               </Pressable>
 
-              {datePicker ? (
-                <View style={{ marginBottom: 12 }}>
+              {calendarFor ? (
+                <View style={styles.inlineCalendarBox}>
                   <DateTimePicker
-                    value={parseIsoDateOrToday(formData[datePicker.field])}
+                    value={dateFromYmd(formData[calendarFor])}
                     mode="date"
-                    display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                    onChange={(_, selected) => {
-                      if (Platform.OS !== 'ios') setDatePicker(null);
-                      if (!selected) return;
-                      setFormData((prev) => ({ ...prev, [datePicker.field]: toIsoDate(selected) }));
+                    display={Platform.OS === 'ios' ? 'inline' : 'default'}
+                    onChange={(event, date) => {
+                      if (Platform.OS === 'android') {
+                        const field = calendarFor;
+                        setCalendarFor(null);
+                        if (event.type === 'dismissed') return;
+                        if ((event.type === 'set' || event.type === 'neutralButtonPressed') && date && field) {
+                          setFormData((prev) => ({ ...prev, [field]: toIsoDate(date) }));
+                        }
+                        return;
+                      }
+                      if (date && calendarFor) {
+                        setFormData((prev) => ({ ...prev, [calendarFor]: toIsoDate(date) }));
+                      }
                     }}
                   />
                   {Platform.OS === 'ios' ? (
-                    <Pressable
-                      style={[styles.modalButton, styles.modalButtonCreate, { marginTop: 8 }]}
-                      onPress={() => setDatePicker(null)}
-                    >
+                    <Pressable style={styles.inlineCalendarDone} onPress={() => setCalendarFor(null)}>
                       <Text style={styles.modalButtonTextCreate}>{t('common.confirm')}</Text>
                     </Pressable>
                   ) : null}
@@ -538,7 +562,10 @@ export default function PaymentLinksScreen() {
             <View style={styles.modalFooter}>
               <Pressable
                 style={[styles.modalButton, styles.modalButtonCancel]}
-                onPress={() => setShowCreateModal(false)}
+                onPress={() => {
+                  setCalendarFor(null);
+                  setShowCreateModal(false);
+                }}
               >
                 <Text style={styles.modalButtonTextCancel}>{t('common.cancel')}</Text>
               </Pressable>
@@ -752,6 +779,38 @@ const styles = StyleSheet.create({
   },
   modalBody: {
     padding: 20,
+    maxHeight: Platform.OS === 'ios' ? 560 : 520,
+  },
+  datePickRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    borderRadius: 12,
+    padding: 12,
+    backgroundColor: '#f9fafb',
+  },
+  datePickRowText: {
+    flex: 1,
+    fontSize: 16,
+    color: '#1f2937',
+  },
+  inlineCalendarBox: {
+    marginTop: 8,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#bfdbfe',
+    borderRadius: 12,
+    backgroundColor: '#f8fafc',
+    overflow: 'hidden',
+  },
+  inlineCalendarDone: {
+    margin: 12,
+    backgroundColor: '#2563eb',
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
   },
   label: {
     fontSize: 14,

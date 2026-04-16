@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
 import { getTenantId } from '@/lib/tenant';
 import { validateRoomIdsBelongToTenant } from '@/lib/tenant-room-validation';
+import { ensureCleaningPublicLinkTables } from '@/lib/ensure-cleaning-public-links-tables';
 
 async function resolveTenantId(req: NextRequest): Promise<string | null> {
   let tenantId = await getTenantId(req);
@@ -19,6 +20,8 @@ export async function PATCH(
     if (!tenantId) {
       return NextResponse.json({ success: false, error: 'No tenant' }, { status: 401 });
     }
+
+    await ensureCleaningPublicLinkTables();
 
     const { id } = await params;
     const body = await req.json();
@@ -94,6 +97,8 @@ export async function DELETE(
     if (!tenantId) {
       return NextResponse.json({ success: false, error: 'No tenant' }, { status: 401 });
     }
+
+    await ensureCleaningPublicLinkTables();
 
     const { id } = await params;
     await sql`
