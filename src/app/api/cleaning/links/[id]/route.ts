@@ -1,23 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
 import { getTenantId } from '@/lib/tenant';
+import { validateRoomIdsBelongToTenant } from '@/lib/tenant-room-validation';
 
 async function resolveTenantId(req: NextRequest): Promise<string | null> {
   let tenantId = await getTenantId(req);
   if (!tenantId || tenantId.trim() === '') tenantId = req.headers.get('x-tenant-id');
   if (!tenantId || tenantId === 'default' || tenantId.trim() === '') return null;
   return tenantId;
-}
-
-async function validateRoomsForTenant(tenantId: string, roomIds: string[]): Promise<boolean> {
-  if (roomIds.length === 0) return false;
-  const res = await sql`
-    SELECT r.id::text AS id
-    FROM "Room" r
-    WHERE r."lodgingId" = (SELECT lodging_id FROM tenants WHERE id = ${tenantId}::uuid)
-      AND r.id::text = ANY(${roomIds})
-  `;
-  return res.rows.length === roomIds.length;
 }
 
 export async function PATCH(
@@ -72,7 +62,7 @@ export async function PATCH(
       if (room_ids.length === 0) {
         return NextResponse.json({ success: false, error: 'Selecciona al menos una habitación' }, { status: 400 });
       }
-      const ok = await validateRoomsForTenant(tenantId, room_ids);
+      const ok = await validateRoomIdsBelongToTenant(tenantId, room_ids);
       if (!ok) {
         return NextResponse.json(
           { success: false, error: 'Alguna habitación no es válida' },

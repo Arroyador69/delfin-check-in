@@ -365,6 +365,7 @@ export default function CleaningCalendarScreen() {
         <View style={styles.publicLinksCard}>
           <Text style={styles.publicLinksTitle}>{t('settings.cleaning.publicLinksTitle')}</Text>
           <Text style={styles.publicLinksIntro}>{t('settings.cleaning.publicLinksIntro')}</Text>
+          <Text style={styles.publicLinksPerRoomHint}>{t('settings.cleaning.perRoomHint')}</Text>
           {publicLinksLoading ? (
             <ActivityIndicator style={{ marginVertical: 12 }} color="#2563eb" />
           ) : (
@@ -847,6 +848,13 @@ const styles = StyleSheet.create({
   },
   publicLinksTitle: { fontSize: 16, fontWeight: '800', color: '#111827' },
   publicLinksIntro: { marginTop: 8, fontSize: 13, color: '#4b5563', lineHeight: 18 },
+  publicLinksPerRoomHint: {
+    marginTop: 8,
+    fontSize: 12,
+    color: '#6b7280',
+    fontStyle: 'italic',
+    lineHeight: 17,
+  },
   publicLinkRow: {
     marginTop: 12,
     paddingTop: 12,

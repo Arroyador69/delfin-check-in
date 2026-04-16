@@ -51,7 +51,7 @@ export async function GET(
       FROM reservations r
       WHERE r.room_id = ${config.room_id}
         AND r.tenant_id = ${config.tenant_id}::uuid
-        AND r.status = 'confirmed'
+        AND (r.status IS NULL OR LOWER(TRIM(r.status)) NOT IN ('cancelled', 'canceled'))
         AND r.check_out >= ${fromDate.toISOString().slice(0, 10)}::date
         AND r.check_in  <= ${toDate.toISOString().slice(0, 10)}::date
       ORDER BY r.check_in ASC

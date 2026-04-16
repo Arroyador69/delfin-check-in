@@ -42,7 +42,8 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         foregroundImage: './assets/icon.png',
         backgroundColor: '#0D9488' // Teal del logo de Delfín Check-in
       },
-      versionCode: 1
+      versionCode: 1,
+      softwareKeyboardLayoutMode: 'resize'
     },
     web: {
       favicon: './assets/favicon.png'

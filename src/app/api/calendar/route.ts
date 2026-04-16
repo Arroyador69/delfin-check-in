@@ -64,7 +64,6 @@ export async function GET(req: NextRequest) {
 
     // Reservas operativas como eventos
     let filterRoomId: string | null = null
-    let lodgingId: string | null = null
     if (propertyId) {
       const mapRow = await sql`
         SELECT room_id FROM property_room_map
@@ -72,9 +71,6 @@ export async function GET(req: NextRequest) {
         LIMIT 1
       `
       filterRoomId = mapRow.rows?.[0]?.room_id || null
-    } else {
-      const trow = await sql`SELECT lodging_id FROM tenants WHERE id = ${tenantId}::uuid LIMIT 1`
-      lodgingId = trow.rows?.[0]?.lodging_id || null
     }
     let reservations
     try {
@@ -91,26 +87,9 @@ export async function GET(req: NextRequest) {
             AND prm.property_id = $4
           ORDER BY r.check_in ASC`
         reservations = await sql.query(text, params)
-      } else if (lodgingId) {
-        const params: any[] = [
-          tenantId,
-          toDate.toISOString().slice(0, 10),
-          fromDate.toISOString().slice(0, 10),
-          lodgingId,
-        ]
-        const text = `
-          SELECT r.id, r.tenant_id, r.room_id, r.guest_name, r.check_in, r.check_out, r.channel, r.guest_count
-          FROM reservations r
-          WHERE r.tenant_id = $1::uuid
-            AND r.room_id = ANY(
-              SELECT id::text FROM "Room" WHERE "lodgingId" = $4::text
-            )
-            AND r.check_in  < $2::date
-            AND r.check_out > $3::date
-          ORDER BY r.check_in ASC`
-        reservations = await sql.query(text, params)
       } else {
-        // fallback por tenant
+        // Sin property_id: todas las reservas del tenant en rango (alineado con listados y app móvil).
+        // No usar solo lodging_id: suele desalinearse con cómo GET /api/tenant/rooms resuelve habitaciones.
         const params: any[] = [tenantId, toDate.toISOString().slice(0,10), fromDate.toISOString().slice(0,10)]
         const text = `
           SELECT r.id, r.tenant_id, r.room_id, r.guest_name, r.check_in, r.check_out, r.channel, r.guest_count

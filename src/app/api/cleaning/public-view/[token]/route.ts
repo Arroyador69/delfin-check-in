@@ -62,8 +62,7 @@ export async function GET(
       FROM "Room" r
       LEFT JOIN cleaning_config cc
         ON cc.tenant_id = ${tenantId}::uuid AND cc.room_id = r.id::text
-      WHERE r."lodgingId" = (SELECT lodging_id FROM tenants WHERE id = ${tenantId}::uuid)
-        AND r.id::text = ANY(${roomIds})
+      WHERE r.id::text = ANY(${roomIds})
     `;
 
     const propertyByRoom = new Map<string, string>();
@@ -94,8 +93,8 @@ export async function GET(
       SELECT id, guest_name, check_in, check_out, guest_count, channel, room_id
       FROM reservations
       WHERE tenant_id = ${tenantId}::uuid
-        AND status = 'confirmed'
         AND room_id = ANY(${roomIds})
+        AND (status IS NULL OR LOWER(TRIM(status)) NOT IN ('cancelled', 'canceled'))
         AND check_out >= ${fromStr}::date
         AND check_in <= ${toStr}::date
       ORDER BY check_in ASC
