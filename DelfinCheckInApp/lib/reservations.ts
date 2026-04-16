@@ -17,6 +17,9 @@ export interface Reservation {
   needs_review?: boolean;
   guest_count?: number;
   channel?: string;
+  guest_paid?: number;
+  platform_commission?: number;
+  currency?: string;
 }
 
 export interface PendingReservationItem {

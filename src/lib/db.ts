@@ -111,34 +111,27 @@ export function normalizeRoomId(roomId: string | null | undefined): string {
   if (ROOM_UUID_RE.test(trimmed)) {
     return trimmed;
   }
-  // Si ya es un número simple válido (1-6), devolverlo SIN CAMBIOS
-  if (/^[1-6]$/.test(roomId)) {
-    return roomId; // ← NO TOCAR números válidos
+  // IDs numéricos reales de "Room" (enteros largos, etc.): conservar tal cual
+  if (/^\d+$/.test(trimmed)) {
+    return trimmed;
+  }
+  // Legacy: habitación 1-6 como dígito único
+  if (/^[1-6]$/.test(trimmed)) {
+    return trimmed;
   }
   
-  // Si es un número pero fuera del rango, normalizar
-  if (/^\d+$/.test(roomId)) {
-    const num = parseInt(roomId);
-    if (num >= 1 && num <= 6) {
-      return roomId; // ← NO TOCAR números válidos
-    }
-    // Solo normalizar si está fuera del rango 1-6
-    return ((num - 1) % 6 + 1).toString();
-  }
-  
-  // Solo normalizar UUIDs, timestamps y strings complejos
-  // Si contiene "room-" seguido de número
-  if (roomId.includes('room-')) {
-    const match = roomId.match(/room-(\d+)/);
+  // Si contiene "room-" seguido de número (legacy)
+  if (trimmed.includes('room-')) {
+    const match = trimmed.match(/room-(\d+)/);
     if (match) {
       const num = parseInt(match[1]);
       return ((num - 1) % 6 + 1).toString();
     }
   }
   
-  // Si es un UUID o string complejo (más de 10 caracteres), extraer números
-  if (roomId.length > 10) {
-    const numbers = roomId.match(/\d+/g);
+  // String complejo (legacy): intentar extraer dígito 1-6
+  if (trimmed.length > 10) {
+    const numbers = trimmed.match(/\d+/g);
     if (numbers && numbers.length > 0) {
       const lastNumber = numbers[numbers.length - 1];
       const num = parseInt(lastNumber);
@@ -147,14 +140,13 @@ export function normalizeRoomId(roomId: string | null | undefined): string {
     
     // Si no se puede extraer nada, usar hash del string para obtener 1-6
     let hash = 0;
-    for (let i = 0; i < roomId.length; i++) {
-      hash = ((hash << 5) - hash + roomId.charCodeAt(i)) & 0xffffffff;
+    for (let i = 0; i < trimmed.length; i++) {
+      hash = ((hash << 5) - hash + trimmed.charCodeAt(i)) & 0xffffffff;
     }
     return (Math.abs(hash) % 6 + 1).toString();
   }
   
-  // Si es un string corto que no reconocemos, devolverlo tal como está
-  return roomId;
+  return trimmed;
 }
 
 // Función helper para insertar un registro con prevención de duplicados

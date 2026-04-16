@@ -13,12 +13,23 @@ import {
   ScrollView,
   Alert,
   Platform,
+  Modal,
 } from 'react-native';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { useEffect, useMemo, useState } from 'react';
 import { useLocalSearchParams } from 'expo-router';
-import { Search, Plus, X, CheckCircle2, BellRing, Pencil, Trash2 } from 'lucide-react-native';
+import {
+  Search,
+  Plus,
+  X,
+  CheckCircle2,
+  BellRing,
+  Pencil,
+  Trash2,
+  CalendarDays,
+  ChevronRight,
+} from 'lucide-react-native';
 import { KeyboardAwareFormModal } from '@/components/KeyboardAwareFormModal';
 import { t } from '@/lib/i18n';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -33,7 +44,7 @@ import {
 } from '@/lib/reservations';
 
 interface Room {
-  id: number;
+  id: string;
   name: string;
 }
 
@@ -47,7 +58,7 @@ export default function ReservationsScreen() {
     params.filter === 'pending' ? 'pending' : 'all'
   );
   const queryClient = useQueryClient();
-  const [datePicker, setDatePicker] = useState<{ field: 'check_in' | 'check_out' } | null>(null);
+  const [calendarFor, setCalendarFor] = useState<'check_in' | 'check_out' | null>(null);
 
   const [formData, setFormData] = useState({
     room_id: '',
@@ -58,8 +69,11 @@ export default function ReservationsScreen() {
     check_in: '',
     check_out: '',
     total_price: '',
+    guest_paid: '',
+    platform_commission: '',
+    currency: 'EUR',
     status: 'confirmed' as 'confirmed' | 'cancelled' | 'completed',
-    channel: 'manual' as 'airbnb' | 'booking' | 'manual',
+    channel: 'manual' as 'airbnb' | 'booking' | 'manual' | 'checkin_form',
   });
 
   // Obtener habitaciones
@@ -153,15 +167,20 @@ export default function ReservationsScreen() {
 
   const createReservation = useMutation({
     mutationFn: async (data: typeof formData) => {
+      const total = parseFloat(data.total_price) || 0;
+      const paid = parseFloat(data.guest_paid) || total;
       const response = await api.post('/api/reservations', {
         room_id: data.room_id,
         guest_name: data.guest_name,
         guest_email: data.guest_email || null,
         guest_phone: data.guest_phone || null,
-        guest_count: parseInt(data.guest_count) || 1,
+        guest_count: parseInt(data.guest_count, 10) || 1,
         check_in: data.check_in,
         check_out: data.check_out,
-        total_price: parseFloat(data.total_price) || 0,
+        total_price: total,
+        guest_paid: paid,
+        platform_commission: parseFloat(data.platform_commission) || 0,
+        currency: data.currency || 'EUR',
         status: data.status,
         channel: data.channel,
       });
@@ -186,11 +205,13 @@ export default function ReservationsScreen() {
         guest_name: data.guest_name,
         guest_email: data.guest_email || null,
         guest_phone: data.guest_phone || null,
-        guest_count: parseInt(data.guest_count) || 1,
+        guest_count: parseInt(data.guest_count, 10) || 1,
         check_in: data.check_in,
         check_out: data.check_out,
         total_price: parseFloat(data.total_price) || 0,
-        guest_paid: parseFloat(data.total_price) || 0,
+        guest_paid: parseFloat(data.guest_paid) || parseFloat(data.total_price) || 0,
+        platform_commission: parseFloat(data.platform_commission) || 0,
+        currency: data.currency || 'EUR',
         status: data.status,
         channel: data.channel,
       });
@@ -229,6 +250,10 @@ export default function ReservationsScreen() {
       Alert.alert(t('common.error'), t('reservations.requiredFields'));
       return;
     }
+    if (formData.check_in.localeCompare(formData.check_out) >= 0) {
+      Alert.alert(t('common.error'), t('reservations.checkOutBeforeCheckIn'));
+      return;
+    }
     if (editingReservationId) {
       updateReservation.mutate({ ...formData, id: editingReservationId });
     } else {
@@ -247,6 +272,9 @@ export default function ReservationsScreen() {
       check_in: '',
       check_out: '',
       total_price: '',
+      guest_paid: '',
+      platform_commission: '',
+      currency: 'EUR',
       status: 'confirmed',
       channel: 'manual',
     });
@@ -254,6 +282,8 @@ export default function ReservationsScreen() {
 
   const openEditModal = (reservation: Reservation) => {
     setEditingReservationId(String(reservation.id));
+    const gp = reservation.guest_paid;
+    const pc = reservation.platform_commission;
     setFormData({
       room_id: String(reservation.room_id || ''),
       guest_name: reservation.guest_name || '',
@@ -263,15 +293,19 @@ export default function ReservationsScreen() {
       check_in: (getReservationCheckIn(reservation) || '').split('T')[0],
       check_out: (getReservationCheckOut(reservation) || '').split('T')[0],
       total_price: String(getReservationPrice(reservation) || ''),
+      guest_paid: gp != null ? String(gp) : String(getReservationPrice(reservation) || ''),
+      platform_commission: pc != null ? String(pc) : '',
+      currency: reservation.currency || 'EUR',
       status: (getReservationStatus(reservation) as 'confirmed' | 'cancelled' | 'completed') || 'confirmed',
-      channel: ((reservation.channel as 'airbnb' | 'booking' | 'manual') || 'manual'),
+      channel: (reservation.channel as typeof formData.channel) || 'manual',
     });
     setShowCreateModal(true);
   };
 
-  const parseIsoDateOrToday = (iso: string) => {
-    const d = new Date(iso);
-    return Number.isFinite(d.getTime()) ? d : new Date();
+  const dateFromYmd = (ymd: string) => {
+    if (!ymd || !/^\d{4}-\d{2}-\d{2}$/.test(ymd)) return new Date();
+    const [y, m, d] = ymd.split('-').map((x) => parseInt(x, 10));
+    return new Date(y, m - 1, d);
   };
 
   const toIsoDate = (d: Date) => {
@@ -282,7 +316,8 @@ export default function ReservationsScreen() {
   };
 
   const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('es-ES', {
+    const d = dateFromYmd(dateStr);
+    return d.toLocaleDateString(undefined, {
       day: 'numeric',
       month: 'short',
       year: 'numeric',
@@ -541,6 +576,7 @@ export default function ReservationsScreen() {
             </View>
 
             <ScrollView style={styles.modalBody} keyboardShouldPersistTaps="handled">
+              <Text style={styles.sectionHeading}>{t('reservations.createModal.reservationSection')}</Text>
               <Text style={styles.label}>{t('reservations.form.roomLabel')}</Text>
               <View style={styles.pickerContainer}>
                 {rooms.map((room) => (
@@ -548,14 +584,14 @@ export default function ReservationsScreen() {
                     key={room.id}
                     style={[
                       styles.pickerOption,
-                      formData.room_id === String(room.id) && styles.pickerOptionSelected,
+                      formData.room_id === room.id && styles.pickerOptionSelected,
                     ]}
-                    onPress={() => setFormData({ ...formData, room_id: String(room.id) })}
+                    onPress={() => setFormData({ ...formData, room_id: room.id })}
                   >
                     <Text
                       style={[
                         styles.pickerOptionText,
-                        formData.room_id === String(room.id) && styles.pickerOptionTextSelected,
+                        formData.room_id === room.id && styles.pickerOptionTextSelected,
                       ]}
                     >
                       {room.name}
@@ -564,6 +600,33 @@ export default function ReservationsScreen() {
                 ))}
               </View>
 
+              <Text style={styles.label}>{t('reservations.form.statusLabel')}</Text>
+              <View style={styles.pickerContainer}>
+                {(
+                  [
+                    ['confirmed', t('reservations.statusConfirmed')],
+                    ['cancelled', t('reservations.statusCancelled')],
+                    ['completed', t('reservations.statusCompleted')],
+                  ] as const
+                ).map(([val, label]) => (
+                  <Pressable
+                    key={val}
+                    style={[styles.pickerOption, formData.status === val && styles.pickerOptionSelected]}
+                    onPress={() => setFormData({ ...formData, status: val })}
+                  >
+                    <Text
+                      style={[
+                        styles.pickerOptionText,
+                        formData.status === val && styles.pickerOptionTextSelected,
+                      ]}
+                    >
+                      {label}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+
+              <Text style={styles.sectionHeading}>{t('reservations.form.guestSectionTitle')}</Text>
               <Text style={styles.label}>{t('reservations.form.guestNameLabel')}</Text>
               <TextInput
                 style={styles.input}
@@ -600,40 +663,31 @@ export default function ReservationsScreen() {
                 keyboardType="numeric"
               />
 
+              <Text style={styles.sectionHeading}>{t('reservations.form.datesSectionTitle')}</Text>
               <Text style={styles.label}>{t('reservations.form.checkInLabel')}</Text>
-              <Pressable style={styles.input} onPress={() => setDatePicker({ field: 'check_in' })}>
-                <Text style={styles.inputText}>{formData.check_in ? formData.check_in : 'YYYY-MM-DD'}</Text>
+              <Pressable style={styles.datePickRow} onPress={() => setCalendarFor('check_in')}>
+                <CalendarDays size={20} color="#2563eb" />
+                <Text style={styles.datePickRowText}>
+                  {formData.check_in
+                    ? formatDate(formData.check_in)
+                    : t('reservations.form.checkInLabel')}
+                </Text>
+                <ChevronRight size={18} color="#9ca3af" />
               </Pressable>
 
               <Text style={styles.label}>{t('reservations.form.checkOutLabel')}</Text>
-              <Pressable style={styles.input} onPress={() => setDatePicker({ field: 'check_out' })}>
-                <Text style={styles.inputText}>{formData.check_out ? formData.check_out : 'YYYY-MM-DD'}</Text>
+              <Pressable style={styles.datePickRow} onPress={() => setCalendarFor('check_out')}>
+                <CalendarDays size={20} color="#2563eb" />
+                <Text style={styles.datePickRowText}>
+                  {formData.check_out
+                    ? formatDate(formData.check_out)
+                    : t('reservations.form.checkOutLabel')}
+                </Text>
+                <ChevronRight size={18} color="#9ca3af" />
               </Pressable>
 
-              {datePicker ? (
-                <View style={{ marginBottom: 12 }}>
-                  <DateTimePicker
-                    value={parseIsoDateOrToday(formData[datePicker.field])}
-                    mode="date"
-                    display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                    onChange={(_, selected) => {
-                      if (Platform.OS !== 'ios') setDatePicker(null);
-                      if (!selected) return;
-                      setFormData((prev) => ({ ...prev, [datePicker.field]: toIsoDate(selected) }));
-                    }}
-                  />
-                  {Platform.OS === 'ios' ? (
-                    <Pressable
-                      style={[styles.modalButton, styles.modalButtonCreate, { marginTop: 8 }]}
-                      onPress={() => setDatePicker(null)}
-                    >
-                      <Text style={styles.modalButtonTextCreate}>{t('common.confirm')}</Text>
-                    </Pressable>
-                  ) : null}
-                </View>
-              ) : null}
-
-              <Text style={styles.label}>{t('reservations.totalPrice')}</Text>
+              <Text style={styles.sectionHeading}>{t('reservations.form.financialSectionTitle')}</Text>
+              <Text style={styles.label}>{t('reservations.form.totalPriceLabel')}</Text>
               <TextInput
                 style={styles.input}
                 value={formData.total_price}
@@ -641,6 +695,75 @@ export default function ReservationsScreen() {
                 placeholder="0.00"
                 keyboardType="decimal-pad"
               />
+              <Text style={styles.label}>{t('reservations.form.guestPaidLabel')}</Text>
+              <TextInput
+                style={styles.input}
+                value={formData.guest_paid}
+                onChangeText={(text) => setFormData({ ...formData, guest_paid: text })}
+                placeholder="0.00"
+                keyboardType="decimal-pad"
+              />
+              <Text style={styles.label}>{t('reservations.form.platformCommissionLabel')}</Text>
+              <TextInput
+                style={styles.input}
+                value={formData.platform_commission}
+                onChangeText={(text) => setFormData({ ...formData, platform_commission: text })}
+                placeholder="0.00"
+                keyboardType="decimal-pad"
+              />
+              <Text style={styles.label}>{t('reservations.form.currencyLabel')}</Text>
+              <View style={styles.pickerContainer}>
+                {(
+                  [
+                    ['EUR', t('reservations.form.currencyEUR')],
+                    ['USD', t('reservations.form.currencyUSD')],
+                    ['GBP', t('reservations.form.currencyGBP')],
+                  ] as const
+                ).map(([val, label]) => (
+                  <Pressable
+                    key={val}
+                    style={[styles.pickerOption, formData.currency === val && styles.pickerOptionSelected]}
+                    onPress={() => setFormData({ ...formData, currency: val })}
+                  >
+                    <Text
+                      style={[
+                        styles.pickerOptionText,
+                        formData.currency === val && styles.pickerOptionTextSelected,
+                      ]}
+                    >
+                      {label}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+
+              <Text style={styles.sectionHeading}>{t('reservations.form.configSectionTitle')}</Text>
+              <Text style={styles.label}>{t('reservations.form.channelLabel')}</Text>
+              <View style={styles.pickerContainer}>
+                {(
+                  [
+                    ['manual', t('reservations.channelManual')],
+                    ['airbnb', t('reservations.channelAirbnb')],
+                    ['booking', t('reservations.channelBooking')],
+                    ['checkin_form', t('reservations.channelCheckinForm')],
+                  ] as const
+                ).map(([val, label]) => (
+                  <Pressable
+                    key={val}
+                    style={[styles.pickerOption, formData.channel === val && styles.pickerOptionSelected]}
+                    onPress={() => setFormData({ ...formData, channel: val })}
+                  >
+                    <Text
+                      style={[
+                        styles.pickerOptionText,
+                        formData.channel === val && styles.pickerOptionTextSelected,
+                      ]}
+                    >
+                      {label}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
             </ScrollView>
 
             <View style={styles.modalFooter}>
@@ -671,6 +794,48 @@ export default function ReservationsScreen() {
             </View>
           </View>
       </KeyboardAwareFormModal>
+
+      <Modal
+        visible={calendarFor !== null}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setCalendarFor(null)}
+      >
+        <View style={styles.dateModalOverlay}>
+          <Pressable style={StyleSheet.absoluteFill} onPress={() => setCalendarFor(null)} />
+          <View style={styles.dateModalSheet} pointerEvents="box-none">
+            <Text style={styles.dateModalTitle}>
+              {calendarFor === 'check_in'
+                ? t('reservations.form.checkInLabel')
+                : t('reservations.form.checkOutLabel')}
+            </Text>
+            {calendarFor ? (
+              <DateTimePicker
+                value={dateFromYmd(formData[calendarFor])}
+                mode="date"
+                display={Platform.OS === 'ios' ? 'inline' : 'calendar'}
+                onChange={(event, date) => {
+                  if (Platform.OS === 'android') {
+                    const field = calendarFor;
+                    setCalendarFor(null);
+                    if (event.type !== 'set' || !date || !field) return;
+                    setFormData((prev) => ({ ...prev, [field]: toIsoDate(date) }));
+                    return;
+                  }
+                  if (date && calendarFor) {
+                    setFormData((prev) => ({ ...prev, [calendarFor]: toIsoDate(date) }));
+                  }
+                }}
+              />
+            ) : null}
+            {Platform.OS === 'ios' ? (
+              <Pressable style={styles.dateModalDone} onPress={() => setCalendarFor(null)}>
+                <Text style={styles.modalButtonTextCreate}>{t('common.confirm')}</Text>
+              </Pressable>
+            ) : null}
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -908,6 +1073,56 @@ const styles = StyleSheet.create({
   },
   modalBody: {
     padding: 20,
+    maxHeight: Platform.OS === 'ios' ? 560 : 520,
+  },
+  sectionHeading: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#1e3a8a',
+    marginTop: 16,
+    marginBottom: 4,
+  },
+  dateModalOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.45)',
+  },
+  dateModalSheet: {
+    backgroundColor: 'white',
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    padding: 16,
+    paddingBottom: 24,
+  },
+  dateModalTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#111827',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  dateModalDone: {
+    marginTop: 12,
+    backgroundColor: '#2563eb',
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  datePickRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    borderRadius: 12,
+    padding: 14,
+    backgroundColor: '#f9fafb',
+  },
+  datePickRowText: {
+    flex: 1,
+    fontSize: 16,
+    color: '#1f2937',
+    fontWeight: '600',
   },
   label: {
     fontSize: 14,

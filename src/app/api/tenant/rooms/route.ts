@@ -133,7 +133,8 @@ export async function GET(req: NextRequest) {
     const result = await selectRoomsWithFallbacks(tenantId);
 
     const rooms = result.rows.map((row) => ({
-      id: typeof row.id === 'number' ? row.id : parseInt(String(row.id), 10) || row.id,
+      // Siempre string: evita parseInt sobre UUID (p. ej. "550e8400-…" → 550).
+      id: String(row.id),
       name: row.name,
     }));
 
