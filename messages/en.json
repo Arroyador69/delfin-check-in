@@ -56,7 +56,7 @@
     "directReservations": "Direct Reservations",
     "reputationGoogle": "Reputation (Google)",
     "calendar": "Calendar",
-    "guestRegistrations": "Guest Registrations",
+    "guestRegistrations": "Communication registration",
     "invoices": "Invoices/Receipts",
     "mirStatus": "MIR Submissions Status",
     "costCalculator": "Cost Calculator",
@@ -2846,8 +2846,24 @@
       "saveFailed": "Could not save"
     },
     "guestRegistrations": {
-      "empty": "No registrations found",
-      "hint": "Forms submitted from your site will appear here"
+      "empty": "No communication registrations yet",
+      "hint": "When guests submit the traveller form via your public link, entries appear here.",
+      "statsTotal": "Total",
+      "stats7d": "7 days",
+      "stats30d": "30 days",
+      "loadError": "Could not load registrations.",
+      "retry": "Retry",
+      "searchPlaceholder": "Search by name, reference or booking…",
+      "itemFallbackName": "Communication registration",
+      "roomsLabel": "room",
+      "roomsLabelPlural": "rooms",
+      "reference": "Reference",
+      "reservation": "Booking",
+      "nationality": "Nationality",
+      "document": "Document",
+      "establishment": "Property code",
+      "entry": "Arrival",
+      "exit": "Departure"
     }
   }
 }

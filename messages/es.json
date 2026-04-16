@@ -56,7 +56,7 @@
     "directReservations": "Reservas Directas",
     "reputationGoogle": "Mejorar reputación (Google)",
     "calendar": "Calendario",
-    "guestRegistrations": "Registros de formularios",
+    "guestRegistrations": "Registro de comunicaciones",
     "invoices": "Facturas/Recibos",
     "mirStatus": "Estado Envíos MIR",
     "costCalculator": "Calculadora de Costos",
@@ -2959,8 +2959,24 @@
       "saveFailed": "No se pudo guardar"
     },
     "guestRegistrations": {
-      "empty": "No hay comunicaciones registradas",
-      "hint": "Los formularios enviados desde tu página aparecerán aquí"
+      "empty": "No hay registros de comunicación todavía",
+      "hint": "Cuando los huéspedes envíen el parte desde el enlace público, aparecerán aquí.",
+      "statsTotal": "Total",
+      "stats7d": "7 días",
+      "stats30d": "30 días",
+      "loadError": "No se pudieron cargar los registros.",
+      "retry": "Reintentar",
+      "searchPlaceholder": "Buscar por nombre, referencia o reserva…",
+      "itemFallbackName": "Registro de comunicación",
+      "roomsLabel": "habitación",
+      "roomsLabelPlural": "habitaciones",
+      "reference": "Referencia",
+      "reservation": "Reserva",
+      "nationality": "Nacionalidad",
+      "document": "Documento",
+      "establishment": "Establecimiento",
+      "entry": "Entrada",
+      "exit": "Salida"
     }
   }
 }

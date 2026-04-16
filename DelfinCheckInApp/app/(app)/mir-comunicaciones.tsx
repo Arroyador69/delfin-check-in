@@ -1,13 +1,25 @@
 // =====================================================
-// COMUNICACIONES MIR - Registros de formularios
+// REGISTRO DE COMUNICACIONES — Partes de viajeros (mismo enlace público que la web)
 // =====================================================
 
-import { View, Text, FlatList, StyleSheet, RefreshControl, TextInput, Pressable } from 'react-native';
+import {
+  View,
+  Text,
+  FlatList,
+  StyleSheet,
+  RefreshControl,
+  TextInput,
+  Pressable,
+  Linking,
+  Clipboard,
+  Alert,
+  ActivityIndicator,
+} from 'react-native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
-import { useState } from 'react';
-import { Search, Mail, Phone, Calendar, Users } from 'lucide-react-native';
-import { t } from '@/lib/i18n';
+import { useMemo, useState } from 'react';
+import { Search, Calendar, Users, Copy, ExternalLink } from 'lucide-react-native';
+import { getLocaleTag, t } from '@/lib/i18n';
 
 interface GuestRegistration {
   id: string;
@@ -31,7 +43,7 @@ interface GuestRegistration {
     internet?: boolean;
     tipoPago?: string;
   };
-  data?: any;
+  data?: unknown;
 }
 
 interface GuestRegistrationStats {
@@ -40,100 +52,123 @@ interface GuestRegistrationStats {
   submissions_last_30_days: number;
 }
 
-export default function MIRComunicacionesScreen() {
+function trimApiBase(): string {
+  return String(api.defaults.baseURL || '').replace(/\/$/, '');
+}
+
+export default function CommunicationRegistrationScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const queryClient = useQueryClient();
+
+  const { data: tenantPayload } = useQuery({
+    queryKey: ['tenant-me'],
+    queryFn: async () => {
+      const res = await api.get('/api/tenant');
+      return res.data as { success?: boolean; tenant?: { id: string } };
+    },
+  });
+
+  const tenantId = tenantPayload?.tenant?.id;
+  const formPublicUrl = useMemo(
+    () => (tenantId ? `${trimApiBase()}/api/public/form-redirect/${tenantId}` : ''),
+    [tenantId]
+  );
+
+  const openPublicForm = () => {
+    if (!formPublicUrl) return;
+    Linking.openURL(formPublicUrl).catch(() => {
+      Alert.alert(t('common.error'), t('mobile.guestRegistrations.loadError'));
+    });
+  };
+
+  const copyPublicFormUrl = () => {
+    if (!formPublicUrl) return;
+    Clipboard.setString(formPublicUrl);
+    Alert.alert(t('common.success'), t('guestRegistrations.urlCopied'));
+  };
 
   const { data, isLoading, refetch, error } = useQuery({
     queryKey: ['guest-registrations', searchTerm],
     queryFn: async () => {
       try {
-        console.log('📱 App móvil: Obteniendo registros de guest-registrations...');
         const response = await api.get('/api/guest-registrations');
-        
-        console.log('📦 Respuesta completa:', {
-          status: response.status,
-          hasData: !!response.data,
-          isArray: Array.isArray(response.data),
-          hasItems: !!response.data?.items,
-          itemsLength: response.data?.items?.length || 0,
-          ok: response.data?.ok,
-          dataKeys: response.data ? Object.keys(response.data) : []
-        });
-        
-        // La API puede devolver array directo o objeto con items
-        let registrationsData: any[] = [];
-        
+
+        let registrationsData: GuestRegistration[] = [];
+
         if (Array.isArray(response.data)) {
           registrationsData = response.data;
-          console.log('✅ Datos recibidos como array directo');
         } else if (response.data?.items && Array.isArray(response.data.items)) {
           registrationsData = response.data.items;
-          console.log('✅ Datos recibidos como objeto con items');
         } else if (response.data?.ok && response.data?.items) {
           registrationsData = response.data.items;
-          console.log('✅ Datos recibidos como objeto con ok:true e items');
         } else {
-          console.warn('⚠️ Formato de respuesta no reconocido:', response.data);
           registrationsData = [];
         }
-        
-        console.log(`✅ ${registrationsData.length} registros obtenidos en app móvil`);
-        
-        // Asegurar que los datos tengan la estructura correcta
-        const processedData = registrationsData.map((item: any) => {
-          // Si el item tiene data anidado, extraer la información del viajero
+
+        const processedData = registrationsData.map((item: GuestRegistration) => {
           if (item.data && !item.viajero) {
-            const comunicacion = item.data?.comunicaciones?.[0];
+            const raw = item.data as {
+              comunicaciones?: Array<{
+                personas?: Array<Record<string, string>>;
+                contrato?: Record<string, unknown>;
+              }>;
+              codigoEstablecimiento?: string;
+            };
+            const comunicacion = raw?.comunicaciones?.[0];
             const persona = comunicacion?.personas?.[0];
-            const contrato = comunicacion?.contrato;
-            
+            const contrato = comunicacion?.contrato as Record<string, unknown> | undefined;
+
             return {
               ...item,
-              viajero: persona ? {
-                nombre: persona.nombre || '',
-                apellido1: persona.apellido1 || '',
-                apellido2: persona.apellido2 || '',
-                nacionalidad: persona.nacionalidad || '',
-                tipoDocumento: persona.tipoDocumento || '',
-                numeroDocumento: persona.numeroDocumento || ''
-              } : undefined,
-              contrato: contrato ? {
-                codigoEstablecimiento: item.data?.codigoEstablecimiento || contrato.codigoEstablecimiento || '',
-                referencia: contrato.referencia || '',
-                numHabitaciones: contrato.numHabitaciones || 1,
-                internet: contrato.internet || false,
-                tipoPago: contrato.pago?.tipoPago || ''
-              } : item.contrato
+              viajero: persona
+                ? {
+                    nombre: persona.nombre || '',
+                    apellido1: persona.apellido1 || '',
+                    apellido2: persona.apellido2 || '',
+                    nacionalidad: persona.nacionalidad || '',
+                    tipoDocumento: persona.tipoDocumento || '',
+                    numeroDocumento: persona.numeroDocumento || '',
+                  }
+                : undefined,
+              contrato: contrato
+                ? {
+                    codigoEstablecimiento:
+                      raw?.codigoEstablecimiento ||
+                      (contrato.codigoEstablecimiento as string) ||
+                      '',
+                    referencia: (contrato.referencia as string) || '',
+                    numHabitaciones: (contrato.numHabitaciones as number) || 1,
+                    internet: (contrato.internet as boolean) || false,
+                    tipoPago: ((contrato.pago as { tipoPago?: string })?.tipoPago as string) || '',
+                  }
+                : item.contrato,
             };
           }
           return item;
         });
-        
-        console.log(`✅ ${processedData.length} registros procesados con estructura correcta`);
-        
-        // Filtrar por búsqueda si existe
+
         let filtered = processedData;
         if (searchTerm) {
           const searchLower = searchTerm.toLowerCase();
-          filtered = registrationsData.filter((item: GuestRegistration) => {
+          filtered = processedData.filter((item: GuestRegistration) => {
             const nombre = item.viajero?.nombre?.toLowerCase() || '';
             const apellido = item.viajero?.apellido1?.toLowerCase() || '';
             const referencia = item.contrato?.referencia?.toLowerCase() || '';
             const reservaRef = item.reserva_ref?.toLowerCase() || '';
-            return nombre.includes(searchLower) || 
-                   apellido.includes(searchLower) || 
-                   referencia.includes(searchLower) ||
-                   reservaRef.includes(searchLower);
+            return (
+              nombre.includes(searchLower) ||
+              apellido.includes(searchLower) ||
+              referencia.includes(searchLower) ||
+              reservaRef.includes(searchLower)
+            );
           });
         }
-        
-        // Calcular estadísticas
+
         const now = new Date();
         const last7Days = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
         const last30Days = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-        
+
         const stats = {
           total_submissions: processedData.length,
           submissions_last_7_days: processedData.filter((item: GuestRegistration) => {
@@ -145,14 +180,12 @@ export default function MIRComunicacionesScreen() {
             return created >= last30Days;
           }).length,
         };
-        
+
         return {
           registrations: filtered,
           stats,
         };
-      } catch (err: any) {
-        console.error('❌ Error obteniendo registros:', err.message);
-        // Retornar datos vacíos en lugar de lanzar error
+      } catch {
         return {
           registrations: [],
           stats: {
@@ -166,25 +199,37 @@ export default function MIRComunicacionesScreen() {
   });
 
   const registrations: GuestRegistration[] = data?.registrations || [];
-  const stats: GuestRegistrationStats = (data?.stats as GuestRegistrationStats | undefined) ?? {
-    total_submissions: 0,
-    submissions_last_7_days: 0,
-    submissions_last_30_days: 0,
-  };
+  const stats: GuestRegistrationStats =
+    (data?.stats as GuestRegistrationStats | undefined) ?? {
+      total_submissions: 0,
+      submissions_last_7_days: 0,
+      submissions_last_30_days: 0,
+    };
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await refetch();
+    await Promise.all([
+      refetch(),
+      queryClient.invalidateQueries({ queryKey: ['tenant-me'] }),
+    ]);
     setRefreshing(false);
   };
 
   const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('es-ES', {
+    return new Date(dateStr).toLocaleDateString(getLocaleTag(), {
       day: 'numeric',
       month: 'short',
       year: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
+    });
+  };
+
+  const formatDay = (dateStr: string) => {
+    return new Date(dateStr).toLocaleDateString(getLocaleTag(), {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
     });
   };
 
@@ -196,18 +241,41 @@ export default function MIRComunicacionesScreen() {
     );
   }
 
-  // Si hay error pero tenemos datos vacíos, mostrar la lista vacía en lugar del error
   const showError = error && (!data || registrations.length === 0);
 
-  return (
-    <View style={styles.container}>
-      {/* Barra de búsqueda */}
+  const listHeader = (
+    <>
+      <View style={styles.formUrlCard}>
+        <Text style={styles.formUrlEmoji}>{'\u{1F517}'}</Text>
+        <Text style={styles.formUrlTitle}>{t('guestRegistrations.formUrl')}</Text>
+        <Text style={styles.formUrlDescription}>{t('guestRegistrations.formUrlDescription')}</Text>
+        {!tenantId ? (
+          <ActivityIndicator style={{ marginVertical: 12 }} color="#2563eb" />
+        ) : (
+          <>
+            <Text selectable style={styles.formUrlMono}>
+              {formPublicUrl}
+            </Text>
+            <View style={styles.formUrlActions}>
+              <Pressable style={styles.formUrlBtnSecondary} onPress={copyPublicFormUrl}>
+                <Copy size={18} color="#2563eb" />
+                <Text style={styles.formUrlBtnSecondaryText}>{t('guestRegistrations.copyUrl')}</Text>
+              </Pressable>
+              <Pressable style={styles.formUrlBtnPrimary} onPress={openPublicForm}>
+                <ExternalLink size={18} color="white" />
+                <Text style={styles.formUrlBtnPrimaryText}>{t('guestRegistrations.viewForm')}</Text>
+              </Pressable>
+            </View>
+          </>
+        )}
+      </View>
+
       <View style={styles.searchContainer}>
         <View style={styles.searchBox}>
           <Search size={20} color="#6b7280" />
           <TextInput
             style={styles.searchInput}
-            placeholder="Buscar por nombre, email o mensaje..."
+            placeholder={t('mobile.guestRegistrations.searchPlaceholder')}
             value={searchTerm}
             onChangeText={setSearchTerm}
             placeholderTextColor="#9ca3af"
@@ -215,119 +283,114 @@ export default function MIRComunicacionesScreen() {
         </View>
       </View>
 
-      {/* Estadísticas */}
-      {stats && (
-        <View style={styles.statsContainer}>
-          <View style={styles.statCard}>
-            <Text style={styles.statValue}>{stats.total_submissions || 0}</Text>
-            <Text style={styles.statLabel}>Total</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statValue}>{stats.submissions_last_7_days || 0}</Text>
-            <Text style={styles.statLabel}>Últimos 7 días</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statValue}>{stats.submissions_last_30_days || 0}</Text>
-            <Text style={styles.statLabel}>Últimos 30 días</Text>
-          </View>
+      <View style={styles.statsContainer}>
+        <View style={styles.statCard}>
+          <Text style={styles.statValue}>{stats.total_submissions || 0}</Text>
+          <Text style={styles.statLabel}>{t('mobile.guestRegistrations.statsTotal')}</Text>
         </View>
-      )}
+        <View style={styles.statCard}>
+          <Text style={styles.statValue}>{stats.submissions_last_7_days || 0}</Text>
+          <Text style={styles.statLabel}>{t('mobile.guestRegistrations.stats7d')}</Text>
+        </View>
+        <View style={styles.statCard}>
+          <Text style={styles.statValue}>{stats.submissions_last_30_days || 0}</Text>
+          <Text style={styles.statLabel}>{t('mobile.guestRegistrations.stats30d')}</Text>
+        </View>
+      </View>
 
-      {/* Mensaje de error si es necesario */}
-      {showError && (
+      {showError ? (
         <View style={styles.errorBanner}>
-          <Text style={styles.errorBannerText}>
-            No se pudieron cargar las comunicaciones. Mostrando datos locales.
-          </Text>
+          <Text style={styles.errorBannerText}>{t('mobile.guestRegistrations.loadError')}</Text>
           <Pressable style={styles.retryButtonSmall} onPress={() => refetch()}>
-            <Text style={styles.retryButtonText}>Reintentar</Text>
+            <Text style={styles.retryButtonText}>{t('mobile.guestRegistrations.retry')}</Text>
           </Pressable>
         </View>
-      )}
+      ) : null}
+    </>
+  );
 
-      {/* Lista de registros */}
+  return (
+    <View style={styles.container}>
       <FlatList
         data={registrations}
         keyExtractor={(item) => String(item.id)}
+        ListHeaderComponent={listHeader}
         renderItem={({ item }) => {
-          const nombreCompleto = item.viajero 
+          const nombreCompleto = item.viajero
             ? `${item.viajero.nombre || ''} ${item.viajero.apellido1 || ''} ${item.viajero.apellido2 || ''}`.trim()
-            : 'Sin nombre';
-          
+            : '';
+
           return (
             <View style={styles.card}>
               <View style={styles.cardHeader}>
-                <Text style={styles.name}>{nombreCompleto || 'Registro MIR'}</Text>
+                <Text style={styles.name}>
+                  {nombreCompleto || t('mobile.guestRegistrations.itemFallbackName')}
+                </Text>
                 <Text style={styles.date}>{formatDate(item.created_at)}</Text>
               </View>
 
-              {item.contrato?.referencia && (
+              {item.contrato?.referencia ? (
                 <View style={styles.infoRow}>
-                  <Text style={styles.infoLabel}>Referencia:</Text>
+                  <Text style={styles.infoLabel}>{t('mobile.guestRegistrations.reference')}:</Text>
                   <Text style={styles.infoText}>{item.contrato.referencia}</Text>
                 </View>
-              )}
+              ) : null}
 
-              {item.reserva_ref && (
+              {item.reserva_ref ? (
                 <View style={styles.infoRow}>
-                  <Text style={styles.infoLabel}>Reserva:</Text>
+                  <Text style={styles.infoLabel}>{t('mobile.guestRegistrations.reservation')}:</Text>
                   <Text style={styles.infoText}>{item.reserva_ref}</Text>
                 </View>
-              )}
+              ) : null}
 
               <View style={styles.infoRow}>
                 <Calendar size={16} color="#6b7280" />
                 <Text style={styles.infoText}>
-                  Entrada: {new Date(item.fecha_entrada).toLocaleDateString('es-ES', { 
-                    day: 'numeric', 
-                    month: 'short',
-                    year: 'numeric'
-                  })}
+                  {t('mobile.guestRegistrations.entry')}: {formatDay(item.fecha_entrada)}
                 </Text>
               </View>
 
               <View style={styles.infoRow}>
                 <Calendar size={16} color="#6b7280" />
                 <Text style={styles.infoText}>
-                  Salida: {new Date(item.fecha_salida).toLocaleDateString('es-ES', { 
-                    day: 'numeric', 
-                    month: 'short',
-                    year: 'numeric'
-                  })}
+                  {t('mobile.guestRegistrations.exit')}: {formatDay(item.fecha_salida)}
                 </Text>
               </View>
 
-              {item.viajero?.nacionalidad && (
+              {item.viajero?.nacionalidad ? (
                 <View style={styles.infoRow}>
-                  <Text style={styles.infoLabel}>Nacionalidad:</Text>
+                  <Text style={styles.infoLabel}>{t('mobile.guestRegistrations.nationality')}:</Text>
                   <Text style={styles.infoText}>{item.viajero.nacionalidad}</Text>
                 </View>
-              )}
+              ) : null}
 
-              {item.viajero?.numeroDocumento && (
+              {item.viajero?.numeroDocumento ? (
                 <View style={styles.infoRow}>
-                  <Text style={styles.infoLabel}>Documento:</Text>
+                  <Text style={styles.infoLabel}>{t('mobile.guestRegistrations.document')}:</Text>
                   <Text style={styles.infoText}>
                     {item.viajero.tipoDocumento || 'NIF'} {item.viajero.numeroDocumento}
                   </Text>
                 </View>
-              )}
+              ) : null}
 
-              {item.contrato?.codigoEstablecimiento && (
+              {item.contrato?.codigoEstablecimiento ? (
                 <View style={styles.infoRow}>
-                  <Text style={styles.infoLabel}>Establecimiento:</Text>
+                  <Text style={styles.infoLabel}>{t('mobile.guestRegistrations.establishment')}:</Text>
                   <Text style={styles.infoText}>{item.contrato.codigoEstablecimiento}</Text>
                 </View>
-              )}
+              ) : null}
 
-              {item.contrato?.numHabitaciones && (
+              {item.contrato?.numHabitaciones ? (
                 <View style={styles.infoRow}>
                   <Users size={16} color="#6b7280" />
                   <Text style={styles.infoText}>
-                    {item.contrato.numHabitaciones} habitación{item.contrato.numHabitaciones > 1 ? 'es' : ''}
+                    {item.contrato.numHabitaciones}{' '}
+                    {item.contrato.numHabitaciones > 1
+                      ? t('mobile.guestRegistrations.roomsLabelPlural')
+                      : t('mobile.guestRegistrations.roomsLabel')}
                   </Text>
                 </View>
-              )}
+              ) : null}
             </View>
           );
         }}
@@ -336,9 +399,7 @@ export default function MIRComunicacionesScreen() {
             <Text style={styles.emptyText}>
               {searchTerm ? t('reservations.noResultsTitle') : t('mobile.guestRegistrations.empty')}
             </Text>
-            <Text style={styles.emptySubtext}>
-              {t('mobile.guestRegistrations.hint')}
-            </Text>
+            <Text style={styles.emptySubtext}>{t('mobile.guestRegistrations.hint')}</Text>
           </View>
         }
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
@@ -353,8 +414,53 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f8fafc',
   },
+  formUrlCard: {
+    backgroundColor: 'white',
+    marginHorizontal: 16,
+    marginTop: 16,
+    marginBottom: 8,
+    padding: 16,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#bfdbfe',
+  },
+  formUrlEmoji: { fontSize: 28, marginBottom: 4 },
+  formUrlTitle: { fontSize: 17, fontWeight: '800', color: '#111827' },
+  formUrlDescription: { marginTop: 8, fontSize: 13, color: '#4b5563', lineHeight: 19 },
+  formUrlMono: {
+    marginTop: 12,
+    fontSize: 11,
+    color: '#0369a1',
+    fontFamily: 'monospace',
+  },
+  formUrlActions: { flexDirection: 'row', gap: 10, marginTop: 14 },
+  formUrlBtnSecondary: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#93c5fd',
+    backgroundColor: '#eff6ff',
+  },
+  formUrlBtnSecondaryText: { fontSize: 14, fontWeight: '700', color: '#2563eb' },
+  formUrlBtnPrimary: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    borderRadius: 12,
+    backgroundColor: '#059669',
+  },
+  formUrlBtnPrimaryText: { fontSize: 14, fontWeight: '800', color: 'white' },
   searchContainer: {
     padding: 16,
+    paddingTop: 8,
     backgroundColor: 'white',
     borderBottomWidth: 1,
     borderBottomColor: '#e5e7eb',
@@ -376,6 +482,7 @@ const styles = StyleSheet.create({
   statsContainer: {
     flexDirection: 'row',
     padding: 16,
+    paddingTop: 12,
     gap: 12,
   },
   statCard: {
@@ -398,6 +505,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     padding: 16,
+    paddingTop: 0,
   },
   card: {
     backgroundColor: 'white',
@@ -444,30 +552,6 @@ const styles = StyleSheet.create({
     marginRight: 8,
     minWidth: 100,
   },
-  roomType: {
-    fontSize: 14,
-    color: '#2563eb',
-    fontWeight: '500',
-    marginTop: 4,
-    marginBottom: 8,
-  },
-  messageContainer: {
-    marginTop: 8,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#f3f4f6',
-  },
-  messageLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#6b7280',
-    marginBottom: 4,
-  },
-  messageText: {
-    fontSize: 14,
-    color: '#1f2937',
-    lineHeight: 20,
-  },
   loadingText: {
     textAlign: 'center',
     marginTop: 24,
@@ -489,36 +573,13 @@ const styles = StyleSheet.create({
     color: '#d1d5db',
     textAlign: 'center',
   },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-  },
-  errorTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#ef4444',
-    marginBottom: 8,
-  },
-  errorText: {
-    fontSize: 14,
-    color: '#6b7280',
-    textAlign: 'center',
-    marginBottom: 16,
-  },
-  retryButton: {
-    backgroundColor: '#2563eb',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
-  },
   retryButtonSmall: {
     backgroundColor: '#2563eb',
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 6,
     marginTop: 8,
+    alignSelf: 'flex-start',
   },
   retryButtonText: {
     color: 'white',
@@ -530,7 +591,8 @@ const styles = StyleSheet.create({
     borderLeftWidth: 4,
     borderLeftColor: '#f59e0b',
     padding: 12,
-    margin: 16,
+    marginHorizontal: 16,
+    marginBottom: 8,
     borderRadius: 8,
   },
   errorBannerText: {

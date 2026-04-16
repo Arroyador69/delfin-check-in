@@ -56,7 +56,7 @@
     "directReservations": "Réservations Directes",
     "reputationGoogle": "Réputation (Google)",
     "calendar": "Calendrier",
-    "guestRegistrations": "Enregistrements d'Hôtes",
+    "guestRegistrations": "Registre des communications",
     "invoices": "Factures/Reçus",
     "mirStatus": "Statut Envois MIR",
     "costCalculator": "Calculateur de Coûts",
@@ -2783,8 +2783,24 @@
       "saveFailed": "Enregistrement impossible"
     },
     "guestRegistrations": {
-      "empty": "Aucune communication enregistrée",
-      "hint": "Les formulaires envoyés depuis votre site apparaîtront ici"
+      "empty": "Aucun registre de communication pour l’instant",
+      "hint": "Lorsque les voyageurs envoient le formulaire via votre lien public, les entrées s’affichent ici.",
+      "statsTotal": "Total",
+      "stats7d": "7 jours",
+      "stats30d": "30 jours",
+      "loadError": "Impossible de charger les enregistrements.",
+      "retry": "Réessayer",
+      "searchPlaceholder": "Rechercher par nom, référence ou réservation…",
+      "itemFallbackName": "Registre de communication",
+      "roomsLabel": "chambre",
+      "roomsLabelPlural": "chambres",
+      "reference": "Référence",
+      "reservation": "Réservation",
+      "nationality": "Nationalité",
+      "document": "Document",
+      "establishment": "Établissement",
+      "entry": "Arrivée",
+      "exit": "Départ"
     }
   }
 }

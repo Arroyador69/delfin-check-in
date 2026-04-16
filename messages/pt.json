@@ -56,7 +56,7 @@
     "directReservations": "Reservas Diretas",
     "reputationGoogle": "Reputação (Google)",
     "calendar": "Calendário",
-    "guestRegistrations": "Registos de Hóspedes",
+    "guestRegistrations": "Registo de comunicações",
     "invoices": "Faturas/Recibos",
     "mirStatus": "Estado Envios MIR",
     "costCalculator": "Calculadora de Custos",
@@ -2787,8 +2787,24 @@
       "saveFailed": "Não foi possível guardar"
     },
     "guestRegistrations": {
-      "empty": "Não há comunicações registadas",
-      "hint": "Os formulários enviados a partir do seu site aparecerão aqui"
+      "empty": "Ainda não há registos de comunicação",
+      "hint": "Quando os hóspedes enviam o formulário pelo link público, as entradas aparecem aqui.",
+      "statsTotal": "Total",
+      "stats7d": "7 dias",
+      "stats30d": "30 dias",
+      "loadError": "Não foi possível carregar os registos.",
+      "retry": "Tentar de novo",
+      "searchPlaceholder": "Pesquisar por nome, referência ou reserva…",
+      "itemFallbackName": "Registo de comunicação",
+      "roomsLabel": "quarto",
+      "roomsLabelPlural": "quartos",
+      "reference": "Referência",
+      "reservation": "Reserva",
+      "nationality": "Nacionalidade",
+      "document": "Documento",
+      "establishment": "Estabelecimento",
+      "entry": "Entrada",
+      "exit": "Saída"
     }
   }
 }
