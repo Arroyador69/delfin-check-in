@@ -1661,7 +1661,14 @@
       "saveNote": "Salva nota",
       "upcomingTasks": "Pulizie imminenti",
       "noUpcomingTasks": "Non ci sono ancora prenotazioni future per questa camera o appartamento.",
-      "newNotePlaceholder": "Scrivi una nota per la pulizia"
+      "newNotePlaceholder": "Scrivi una nota per la pulizia",
+      "configureOnWebTitle": "Orari e regole pulizie",
+      "configureOnWebBody": "Sul telefono non gestiamo bene orari, durata e iCal. Configura sul sito (Impostazioni → Calendario pulizie), come per il link della persona delle pulizie.",
+      "openWebSettings": "Apri sul sito",
+      "upcomingPreviewIntro": "Prossime pulizie in base alle prenotazioni e alla configurazione per camera (stessa logica del link pubblico).",
+      "upcomingEmptyNeedWeb": "Nessuna pulizia prevista. Controlla prenotazioni future e la configurazione salvata sul sito per ogni camera.",
+      "roomAdvancedOnWeb": "Feed iCal e altre opzioni: sul sito.",
+      "upcomingTimeRange": "{start} – {end}"
     },
     "properties": {
       "title": "Le Mie Proprietà",

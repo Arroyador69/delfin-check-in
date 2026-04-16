@@ -5,23 +5,20 @@ import {
   ScrollView,
   Pressable,
   TextInput,
-  Switch,
   ActivityIndicator,
   Alert,
   Clipboard,
-  Platform,
+  Linking,
 } from 'react-native';
-import DateTimePicker from '@react-native-community/datetimepicker';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Check, Clock, X } from 'lucide-react-native';
+import { Check, X } from 'lucide-react-native';
 
 import { api } from '@/lib/api';
-import { cleanerLimpiezaPageUrl, icalCleaningFeedUrl } from '@/lib/cleaning-public-url';
+import { cleanerLimpiezaPageUrl, getCleaningPublicOrigin, icalCleaningFeedUrl } from '@/lib/cleaning-public-url';
 import { KeyboardAwareFormModal } from '@/components/KeyboardAwareFormModal';
-import { t } from '@/lib/i18n';
-import { Reservation, getReservationCheckIn, getReservationCheckOut, getReservationStatus } from '@/lib/reservations';
+import { getLocale, getLocaleTag, t } from '@/lib/i18n';
 
 type Room = { id: number; name: string };
 
@@ -38,17 +35,6 @@ type CleaningConfig = {
   cleaner_name: string | null;
 };
 
-type CleaningDraft = {
-  room_id: string;
-  checkout_time: string;
-  checkin_time: string;
-  cleaning_duration_minutes: number;
-  cleaning_trigger: 'on_checkout' | 'day_before_checkin' | 'both';
-  same_day_alert: boolean;
-  ical_enabled: boolean;
-  cleaner_name: string | null;
-};
-
 type CleaningNote = {
   id: string;
   room_id: string;
@@ -60,11 +46,16 @@ type CleaningNote = {
   created_at: string;
 };
 
-type CleaningTask = {
-  key: string;
+type OwnerCleaningTask = {
+  id: string;
+  type?: string;
+  room_id: string;
+  room_name?: string;
   date: string;
-  label: string;
-  guestName: string;
+  start_iso: string;
+  end_iso: string;
+  summary: string;
+  guest_name?: string;
 };
 
 type PublicCleaningLink = {
@@ -75,102 +66,28 @@ type PublicCleaningLink = {
   created_at?: string;
 };
 
-const DURATIONS = [60, 90, 120, 150, 180, 240] as const;
-
-function ymdLocal(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
-}
-
-function parseTimeToDate(hhmm: string, fallbackHour: number, fallbackMinute: number): Date {
-  const m = /^(\d{1,2}):(\d{2})$/.exec((hhmm || '').trim());
-  const d = new Date();
-  if (m) {
-    const h = Math.min(23, Math.max(0, parseInt(m[1], 10)));
-    const min = Math.min(59, Math.max(0, parseInt(m[2], 10)));
-    d.setHours(h, min, 0, 0);
-  } else {
-    d.setHours(fallbackHour, fallbackMinute, 0, 0);
-  }
-  return d;
-}
-
-function formatTimeFromDate(d: Date): string {
-  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
-}
-
-function defaultDraft(roomId: number, cfg?: CleaningConfig): CleaningDraft {
-  return {
-    room_id: String(roomId),
-    checkout_time: cfg?.checkout_time?.slice(0, 5) || '11:00',
-    checkin_time: cfg?.checkin_time?.slice(0, 5) || '16:00',
-    cleaning_duration_minutes: cfg?.cleaning_duration_minutes || 120,
-    cleaning_trigger: cfg?.cleaning_trigger || 'on_checkout',
-    same_day_alert: cfg?.same_day_alert ?? true,
-    ical_enabled: cfg?.ical_enabled ?? true,
-    cleaner_name: cfg?.cleaner_name || null,
-  };
-}
-
-function buildTasksForRoom(roomId: number, roomName: string, cfg: CleaningDraft, reservations: Reservation[]): CleaningTask[] {
-  const valid = reservations
-    .filter((r) => String(r.room_id || '') === String(roomId))
-    .filter((r) => !['cancelled', 'canceled'].includes(getReservationStatus(r)))
-    .sort((a, b) => {
-      const da = new Date(String(getReservationCheckIn(a) || '')).getTime();
-      const db = new Date(String(getReservationCheckIn(b) || '')).getTime();
-      return da - db;
-    });
-
-  const tasks: CleaningTask[] = [];
-  for (const r of valid) {
-    const guestName = r.guest_name || 'Huésped';
-    const checkIn = getReservationCheckIn(r);
-    const checkOut = getReservationCheckOut(r);
-    if (!checkIn || !checkOut) continue;
-
-    const inDate = new Date(checkIn);
-    const outDate = new Date(checkOut);
-    const outYmd = ymdLocal(outDate);
-
-    if (cfg.cleaning_trigger === 'on_checkout' || cfg.cleaning_trigger === 'both') {
-      tasks.push({
-        key: `co-${r.id}`,
-        date: outYmd,
-        label: `${roomName} · checkout`,
-        guestName,
-      });
-    }
-
-    if (cfg.cleaning_trigger === 'day_before_checkin' || cfg.cleaning_trigger === 'both') {
-      const dayBefore = new Date(inDate.getFullYear(), inDate.getMonth(), inDate.getDate() - 1);
-      tasks.push({
-        key: `pre-${r.id}`,
-        date: ymdLocal(dayBefore),
-        label: `${roomName} · pre check-in`,
-        guestName,
-      });
-    }
-  }
-
-  return tasks
-    .filter((task) => task.date >= ymdLocal(new Date()))
-    .sort((a, b) => a.date.localeCompare(b.date))
-    .slice(0, 8);
+function formatTimeShort(iso: string): string {
+  const d = new Date(iso);
+  if (!Number.isFinite(d.getTime())) return '';
+  return d.toLocaleTimeString(getLocaleTag(), { hour: '2-digit', minute: '2-digit' });
 }
 
 export default function CleaningCalendarScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [expandedId, setExpandedId] = useState<number | null>(null);
-  const [draftByRoom, setDraftByRoom] = useState<Record<number, CleaningDraft>>({});
   const [noteDraft, setNoteDraft] = useState<Record<number, { date: string; text: string }>>({});
   const [publicLinkLabel, setPublicLinkLabel] = useState('');
   const [publicLinkRooms, setPublicLinkRooms] = useState<Set<string>>(new Set());
   const [showPublicLinkModal, setShowPublicLinkModal] = useState(false);
-  const [activeTimePick, setActiveTimePick] = useState<'checkout_time' | 'checkin_time' | null>(null);
+
+  const webSettingsUrl = `${getCleaningPublicOrigin()}/${getLocale()}/settings`;
+
+  const openWebSettings = () => {
+    Linking.openURL(webSettingsUrl).catch(() => {
+      Alert.alert(t('common.error'), t('settings.cleaning.saveError'));
+    });
+  };
 
   const { data: rooms, isLoading: roomsLoading } = useQuery({
     queryKey: ['rooms'],
@@ -196,11 +113,15 @@ export default function CleaningCalendarScreen() {
     },
   });
 
-  const { data: reservationsRes, isLoading: reservationsLoading } = useQuery({
-    queryKey: ['cleaning-reservations'],
+  const { data: upcomingRes, isLoading: upcomingLoading } = useQuery({
+    queryKey: ['cleaning-upcoming-owner'],
     queryFn: async () => {
-      const res = await api.get('/api/reservations');
-      return (res.data || []) as Reservation[];
+      const res = await api.get('/api/cleaning/upcoming-for-owner');
+      return res.data as {
+        success?: boolean;
+        tasks?: OwnerCleaningTask[];
+        configured_room_count?: number;
+      };
     },
   });
 
@@ -214,8 +135,9 @@ export default function CleaningCalendarScreen() {
 
   const configs = configRes?.configs ?? [];
   const notes = notesRes?.notes ?? [];
-  const reservations = reservationsRes ?? [];
   const publicLinks = publicLinksRes?.links ?? [];
+  const upcomingTasks = upcomingRes?.tasks ?? [];
+  const configuredRoomCount = upcomingRes?.configured_room_count ?? 0;
 
   const configByRoom = useMemo(() => {
     const m = new Map<string, CleaningConfig>();
@@ -223,14 +145,8 @@ export default function CleaningCalendarScreen() {
     return m;
   }, [configs]);
 
-  function getRoomDraft(room: Room, cfg?: CleaningConfig): CleaningDraft {
-    return draftByRoom[room.id] || defaultDraft(room.id, cfg);
-  }
-
-  function openRoom(room: Room, cfg?: CleaningConfig) {
-    setActiveTimePick(null);
+  function openRoom(room: Room) {
     setExpandedId((prev) => (prev === room.id ? null : room.id));
-    setDraftByRoom((prev) => (prev[room.id] ? prev : { ...prev, [room.id]: defaultDraft(room.id, cfg) }));
     setNoteDraft((prev) =>
       prev[room.id]
         ? prev
@@ -241,24 +157,6 @@ export default function CleaningCalendarScreen() {
     );
   }
 
-  const saveConfigMutation = useMutation({
-    mutationFn: async (draft: CleaningDraft) => {
-      const res = await api.put('/api/cleaning/config', draft);
-      return res.data;
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['cleaning-config'] });
-      Alert.alert(t('common.success'), t('settings.cleaning.saved'));
-    },
-    onError: (e: unknown) => {
-      const msg =
-        e && typeof e === 'object' && 'response' in e
-          ? String((e as { response?: { data?: { error?: string } } }).response?.data?.error || '')
-          : '';
-      Alert.alert(t('common.error'), msg || t('settings.cleaning.saveError'));
-    },
-  });
-
   const addNoteMutation = useMutation({
     mutationFn: async (payload: { room_id: string; cleaning_date: string; note: string }) => {
       const res = await api.post('/api/cleaning/notes', payload);
@@ -266,6 +164,7 @@ export default function CleaningCalendarScreen() {
     },
     onSuccess: async (_, vars) => {
       await queryClient.invalidateQueries({ queryKey: ['cleaning-notes'] });
+      await queryClient.invalidateQueries({ queryKey: ['cleaning-upcoming-owner'] });
       const rid = Number(vars.room_id);
       setNoteDraft((d) => ({ ...d, [rid]: { date: vars.cleaning_date, text: '' } }));
       Alert.alert(t('common.success'), t('settings.cleaning.saved'));
@@ -288,6 +187,7 @@ export default function CleaningCalendarScreen() {
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['cleaning-notes'] });
+      await queryClient.invalidateQueries({ queryKey: ['cleaning-upcoming-owner'] });
     },
   });
 
@@ -307,6 +207,7 @@ export default function CleaningCalendarScreen() {
       setPublicLinkRooms(new Set());
       setShowPublicLinkModal(false);
       await queryClient.invalidateQueries({ queryKey: ['cleaning-public-links'] });
+      await queryClient.invalidateQueries({ queryKey: ['cleaning-upcoming-owner'] });
       Alert.alert(t('common.success'), t('settings.cleaning.publicLinksCreated'));
     },
     onError: (e: unknown) => {
@@ -349,7 +250,7 @@ export default function CleaningCalendarScreen() {
     onError: () => Alert.alert(t('common.error'), t('settings.cleaning.saveError')),
   });
 
-  const loading = roomsLoading || configLoading || notesLoading || reservationsLoading;
+  const listLoading = roomsLoading || notesLoading || configLoading;
 
   function togglePublicLinkRoom(roomId: string) {
     setPublicLinkRooms((prev) => {
@@ -374,499 +275,368 @@ export default function CleaningCalendarScreen() {
       .map((n) => n.id);
   }
 
+  function tasksForRoom(roomId: number): OwnerCleaningTask[] {
+    return upcomingTasks.filter((task) => String(task.room_id) === String(roomId));
+  }
+
   function closePublicLinkModal() {
     setShowPublicLinkModal(false);
   }
 
   return (
     <>
-    <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 32 }}>
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.backButton}>
-          <Text style={styles.backText}>{'\u2039'}</Text>
-        </Pressable>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.title}>{t('settings.cleaning.title')}</Text>
-          <Text style={styles.subtitle}>{t('mobile.settings.hubCleaningSubtitle')}</Text>
+      <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 32 }}>
+        <View style={styles.header}>
+          <Pressable onPress={() => router.back()} style={styles.backButton}>
+            <Text style={styles.backText}>{'\u2039'}</Text>
+          </Pressable>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.title}>{t('settings.cleaning.title')}</Text>
+            <Text style={styles.subtitle}>{t('mobile.settings.hubCleaningSubtitle')}</Text>
+          </View>
         </View>
-      </View>
 
-      {!roomsLoading ? (
-        <View style={styles.publicLinksCard}>
-          <Text style={styles.publicLinksTitle}>{t('settings.cleaning.publicLinksTitle')}</Text>
-          <Text style={styles.publicLinksIntro}>{t('settings.cleaning.publicLinksIntro')}</Text>
-          <Text style={styles.publicLinksPerRoomHint}>{t('settings.cleaning.perRoomHint')}</Text>
-          {publicLinksLoading ? (
-            <ActivityIndicator style={{ marginVertical: 12 }} color="#2563eb" />
-          ) : (
-            <>
-              {publicLinks.map((link) => (
-                <View key={link.id} style={styles.publicLinkRow}>
-                  <Text style={styles.publicLinkLabel}>{link.label}</Text>
-                  <Text style={styles.publicLinkRooms}>
-                    {link.room_ids.map((rid) => roomNameById(rid)).join(', ')}
-                  </Text>
-                  <Pressable
-                    style={styles.secondaryBtn}
-                    onPress={() => {
-                      Clipboard.setString(cleanerLimpiezaPageUrl(link.public_token));
-                      Alert.alert(t('common.success'), t('settings.cleaning.copy'));
-                    }}
-                  >
-                    <Text style={styles.secondaryBtnText}>{t('settings.cleaning.copy')}</Text>
-                  </Pressable>
-                  <Pressable
-                    style={styles.linkLikeBtn}
-                    onPress={() =>
-                      Alert.alert(t('settings.cleaning.publicLinksRegenerateConfirm'), '', [
-                        { text: t('common.cancel'), style: 'cancel' },
-                        {
-                          text: t('settings.cleaning.publicLinksRegenerate'),
-                          onPress: () => regeneratePublicLinkMutation.mutate(link.id),
-                        },
-                      ])
-                    }
-                  >
-                    <Text style={styles.linkLikeText}>{t('settings.cleaning.publicLinksRegenerate')}</Text>
-                  </Pressable>
-                  <Pressable
-                    style={styles.linkLikeBtn}
-                    onPress={() =>
-                      Alert.alert(t('common.delete'), t('settings.cleaning.publicLinksDeleteConfirm'), [
-                        { text: t('common.cancel'), style: 'cancel' },
-                        {
-                          text: t('common.delete'),
-                          style: 'destructive',
-                          onPress: () => deletePublicLinkMutation.mutate(link.id),
-                        },
-                      ])
-                    }
-                  >
-                    <Text style={styles.linkLikeDanger}>{t('settings.cleaning.publicLinksDelete')}</Text>
-                  </Pressable>
-                </View>
-              ))}
-
-              {rooms?.length ? (
-                <Pressable
-                  style={styles.openCreateModalBtn}
-                  onPress={() => setShowPublicLinkModal(true)}
-                >
-                  <Text style={styles.openCreateModalBtnText}>{t('settings.cleaning.publicLinksOpenCreateButton')}</Text>
-                </Pressable>
-              ) : (
-                <Text style={styles.mutedInline}>{t('settings.cleaning.noRooms')}</Text>
-              )}
-            </>
-          )}
+        <View style={styles.webBanner}>
+          <Text style={styles.webBannerTitle}>{t('settings.cleaning.configureOnWebTitle')}</Text>
+          <Text style={styles.webBannerBody}>{t('settings.cleaning.configureOnWebBody')}</Text>
+          <Pressable style={styles.webBannerBtn} onPress={openWebSettings}>
+            <Text style={styles.webBannerBtnText}>{t('settings.cleaning.openWebSettings')}</Text>
+          </Pressable>
         </View>
-      ) : null}
 
-      {loading ? (
-        <ActivityIndicator style={{ marginTop: 24 }} color="#2563eb" />
-      ) : !rooms?.length ? (
-        <Text style={styles.muted}>{t('settings.cleaning.noRooms')}</Text>
-      ) : (
-        rooms.map((room) => {
-          const cfg = configByRoom.get(String(room.id));
-          const draft = getRoomDraft(room, cfg);
-          const expanded = expandedId === room.id;
-          const unread = unreadCleanerNoteIds(room.id);
-          const tasks = buildTasksForRoom(room.id, room.name, draft, reservations);
-
-          return (
-            <View key={room.id} style={styles.card}>
-              <Pressable onPress={() => openRoom(room, cfg)} style={styles.cardHead}>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.roomName}>{room.name}</Text>
-                  <Text style={styles.status}>
-                    {cfg
-                      ? cfg.ical_enabled
-                        ? t('settings.cleaning.active')
-                        : t('settings.cleaning.inactive')
-                      : t('settings.cleaning.notConfigured')}
-                  </Text>
-                  {unread.length > 0 ? (
-                    <Text style={styles.unread}>
-                      {t('settings.cleaning.unreadNotes', { count: unread.length })}
+        {!roomsLoading ? (
+          <View style={styles.publicLinksCard}>
+            <Text style={styles.publicLinksTitle}>{t('settings.cleaning.publicLinksTitle')}</Text>
+            <Text style={styles.publicLinksIntro}>{t('settings.cleaning.publicLinksIntro')}</Text>
+            <Text style={styles.publicLinksPerRoomHint}>{t('settings.cleaning.perRoomHint')}</Text>
+            {publicLinksLoading ? (
+              <ActivityIndicator style={{ marginVertical: 12 }} color="#2563eb" />
+            ) : (
+              <>
+                {publicLinks.map((link) => (
+                  <View key={link.id} style={styles.publicLinkRow}>
+                    <Text style={styles.publicLinkLabel}>{link.label}</Text>
+                    <Text style={styles.publicLinkRooms}>
+                      {link.room_ids.map((rid) => roomNameById(rid)).join(', ')}
                     </Text>
-                  ) : null}
-                </View>
-                <Text style={styles.chev}>{expanded ? '\u25BC' : '\u25B6'}</Text>
-              </Pressable>
-
-              {expanded ? (
-                <View style={styles.cardBody}>
-                  <Text style={styles.sectionTitle}>{t('settings.cleaning.cleanerScheduleTitle')}</Text>
-                  <Text style={styles.scheduleHint}>{t('settings.cleaning.cleanerScheduleSubtitle')}</Text>
-
-                  <Text style={styles.label}>{t('settings.cleaning.checkoutTime')}</Text>
-                  <Text style={styles.tapTimeHint}>{t('settings.cleaning.tapToChangeTime')}</Text>
-                  <Pressable
-                    style={styles.timePickRow}
-                    onPress={() => setActiveTimePick('checkout_time')}
-                  >
-                    <Clock size={18} color="#2563eb" />
-                    <Text style={styles.timePickValue}>{draft.checkout_time}</Text>
-                  </Pressable>
-                  {activeTimePick === 'checkout_time' && expandedId === room.id ? (
-                    <View style={styles.inlineTimeBox}>
-                      <DateTimePicker
-                        value={parseTimeToDate(draft.checkout_time, 11, 0)}
-                        mode="time"
-                        display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                        onChange={(event, date) => {
-                          if (Platform.OS === 'android') {
-                            setActiveTimePick(null);
-                            if (event.type === 'dismissed') return;
-                            if (
-                              (event.type === 'set' || event.type === 'neutralButtonPressed') &&
-                              date
-                            ) {
-                              const hhmm = formatTimeFromDate(date);
-                              setDraftByRoom((prev) => {
-                                const cur = prev[room.id] ?? defaultDraft(room.id, cfg);
-                                return { ...prev, [room.id]: { ...cur, checkout_time: hhmm } };
-                              });
-                            }
-                            return;
-                          }
-                          if (date) {
-                            const hhmm = formatTimeFromDate(date);
-                            setDraftByRoom((prev) => {
-                              const cur = prev[room.id] ?? defaultDraft(room.id, cfg);
-                              return { ...prev, [room.id]: { ...cur, checkout_time: hhmm } };
-                            });
-                          }
-                        }}
-                      />
-                      {Platform.OS === 'ios' ? (
-                        <Pressable style={styles.inlineTimeDone} onPress={() => setActiveTimePick(null)}>
-                          <Text style={styles.inlineTimeDoneText}>{t('common.confirm')}</Text>
-                        </Pressable>
-                      ) : null}
-                    </View>
-                  ) : null}
-
-                  <Text style={styles.label}>{t('settings.cleaning.checkinTime')}</Text>
-                  <Text style={styles.tapTimeHint}>{t('settings.cleaning.tapToChangeTime')}</Text>
-                  <Pressable
-                    style={styles.timePickRow}
-                    onPress={() => setActiveTimePick('checkin_time')}
-                  >
-                    <Clock size={18} color="#2563eb" />
-                    <Text style={styles.timePickValue}>{draft.checkin_time}</Text>
-                  </Pressable>
-                  {activeTimePick === 'checkin_time' && expandedId === room.id ? (
-                    <View style={styles.inlineTimeBox}>
-                      <DateTimePicker
-                        value={parseTimeToDate(draft.checkin_time, 16, 0)}
-                        mode="time"
-                        display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                        onChange={(event, date) => {
-                          if (Platform.OS === 'android') {
-                            setActiveTimePick(null);
-                            if (event.type === 'dismissed') return;
-                            if (
-                              (event.type === 'set' || event.type === 'neutralButtonPressed') &&
-                              date
-                            ) {
-                              const hhmm = formatTimeFromDate(date);
-                              setDraftByRoom((prev) => {
-                                const cur = prev[room.id] ?? defaultDraft(room.id, cfg);
-                                return { ...prev, [room.id]: { ...cur, checkin_time: hhmm } };
-                              });
-                            }
-                            return;
-                          }
-                          if (date) {
-                            const hhmm = formatTimeFromDate(date);
-                            setDraftByRoom((prev) => {
-                              const cur = prev[room.id] ?? defaultDraft(room.id, cfg);
-                              return { ...prev, [room.id]: { ...cur, checkin_time: hhmm } };
-                            });
-                          }
-                        }}
-                      />
-                      {Platform.OS === 'ios' ? (
-                        <Pressable style={styles.inlineTimeDone} onPress={() => setActiveTimePick(null)}>
-                          <Text style={styles.inlineTimeDoneText}>{t('common.confirm')}</Text>
-                        </Pressable>
-                      ) : null}
-                    </View>
-                  ) : null}
-
-                  <Text style={styles.label}>{t('settings.cleaning.duration')}</Text>
-                  <View style={styles.chipRow}>
-                    {DURATIONS.map((m) => (
-                      <Pressable
-                        key={m}
-                        style={[styles.chip, draft.cleaning_duration_minutes === m && styles.chipOn]}
-                        onPress={() =>
-                          setDraftByRoom((prev) => ({
-                            ...prev,
-                            [room.id]: { ...draft, cleaning_duration_minutes: m },
-                          }))
-                        }
-                      >
-                        <Text style={[styles.chipText, draft.cleaning_duration_minutes === m && styles.chipTextOn]}>
-                          {m >= 60 ? `${m / 60}h` : `${m}m`}
-                        </Text>
-                      </Pressable>
-                    ))}
-                  </View>
-
-                  <Text style={styles.label}>{t('settings.cleaning.whenToClean')}</Text>
-                  {(
-                    [
-                      ['on_checkout', t('settings.cleaning.triggerCheckout')],
-                      ['day_before_checkin', t('settings.cleaning.triggerDayBefore')],
-                      ['both', t('settings.cleaning.triggerBoth')],
-                    ] as const
-                  ).map(([val, label]) => (
                     <Pressable
-                      key={val}
-                      style={[styles.opt, draft.cleaning_trigger === val && styles.optOn]}
+                      style={styles.secondaryBtn}
+                      onPress={() => {
+                        Clipboard.setString(cleanerLimpiezaPageUrl(link.public_token));
+                        Alert.alert(t('common.success'), t('settings.cleaning.copy'));
+                      }}
+                    >
+                      <Text style={styles.secondaryBtnText}>{t('settings.cleaning.copy')}</Text>
+                    </Pressable>
+                    <Pressable
+                      style={styles.linkLikeBtn}
                       onPress={() =>
-                        setDraftByRoom((prev) => ({
-                          ...prev,
-                          [room.id]: { ...draft, cleaning_trigger: val },
-                        }))
+                        Alert.alert(t('settings.cleaning.publicLinksRegenerateConfirm'), '', [
+                          { text: t('common.cancel'), style: 'cancel' },
+                          {
+                            text: t('settings.cleaning.publicLinksRegenerate'),
+                            onPress: () => regeneratePublicLinkMutation.mutate(link.id),
+                          },
+                        ])
                       }
                     >
-                      <Text style={[styles.optText, draft.cleaning_trigger === val && styles.optTextOn]}>
-                        {label}
-                      </Text>
+                      <Text style={styles.linkLikeText}>{t('settings.cleaning.publicLinksRegenerate')}</Text>
                     </Pressable>
-                  ))}
-
-                  <View style={styles.switchRow}>
-                    <Text style={styles.labelInline}>{t('settings.cleaning.sameDayAlert')}</Text>
-                    <Switch
-                      value={draft.same_day_alert}
-                      onValueChange={(v) =>
-                        setDraftByRoom((prev) => ({ ...prev, [room.id]: { ...draft, same_day_alert: v } }))
+                    <Pressable
+                      style={styles.linkLikeBtn}
+                      onPress={() =>
+                        Alert.alert(t('common.delete'), t('settings.cleaning.publicLinksDeleteConfirm'), [
+                          { text: t('common.cancel'), style: 'cancel' },
+                          {
+                            text: t('common.delete'),
+                            style: 'destructive',
+                            onPress: () => deletePublicLinkMutation.mutate(link.id),
+                          },
+                        ])
                       }
-                    />
-                  </View>
-
-                  <View style={styles.switchRow}>
-                    <Text style={styles.labelInline}>{t('settings.cleaning.calendarEnabled')}</Text>
-                    <Switch
-                      value={draft.ical_enabled}
-                      onValueChange={(v) =>
-                        setDraftByRoom((prev) => ({ ...prev, [room.id]: { ...draft, ical_enabled: v } }))
-                      }
-                    />
-                  </View>
-
-                  <Text style={styles.label}>{t('settings.cleaning.cleanerName')}</Text>
-                  <TextInput
-                    style={styles.input}
-                    placeholder={t('settings.cleaning.cleanerNamePlaceholder')}
-                    value={draft.cleaner_name || ''}
-                    onChangeText={(v) =>
-                      setDraftByRoom((prev) => ({
-                        ...prev,
-                        [room.id]: { ...draft, cleaner_name: v || null },
-                      }))
-                    }
-                  />
-
-                  <Pressable
-                    style={[styles.primaryBtn, saveConfigMutation.isPending && styles.disabled]}
-                    disabled={saveConfigMutation.isPending}
-                    onPress={() => saveConfigMutation.mutate(draft)}
-                  >
-                    <Text style={styles.primaryBtnText}>{t('settings.cleaning.saveCalendar')}</Text>
-                  </Pressable>
-
-                  {cfg?.ical_token ? (
-                    <>
-                      <Text style={styles.label}>{t('settings.cleaning.icalLink')}</Text>
-                      <Text selectable style={styles.mono}>
-                        {icalCleaningFeedUrl(cfg.ical_token)}
-                      </Text>
-                      <Pressable
-                        style={styles.secondaryBtn}
-                        onPress={() => {
-                          Clipboard.setString(icalCleaningFeedUrl(cfg.ical_token));
-                          Alert.alert(t('common.success'), t('settings.cleaning.copy'));
-                        }}
-                      >
-                        <Text style={styles.secondaryBtnText}>{t('settings.cleaning.copy')}</Text>
-                      </Pressable>
-                    </>
-                  ) : null}
-
-                  <Text style={[styles.sectionTitle, { marginTop: 18 }]}>
-                    {t('settings.cleaning.upcomingTasks')}
-                  </Text>
-                  {tasks.length === 0 ? (
-                    <Text style={styles.mutedInline}>{t('settings.cleaning.noUpcomingTasks')}</Text>
-                  ) : (
-                    tasks.map((task) => (
-                      <View key={task.key} style={styles.taskCard}>
-                        <Text style={styles.taskDate}>{task.date}</Text>
-                        <Text style={styles.taskTitle}>{task.label}</Text>
-                        <Text style={styles.taskSub}>{task.guestName}</Text>
-                      </View>
-                    ))
-                  )}
-
-                  {unread.length > 0 ? (
-                    <Pressable style={styles.secondaryBtn} onPress={() => markReadMutation.mutate(unread)}>
-                      <Text style={styles.secondaryBtnText}>{t('settings.cleaning.markAsRead')}</Text>
+                    >
+                      <Text style={styles.linkLikeDanger}>{t('settings.cleaning.publicLinksDelete')}</Text>
                     </Pressable>
-                  ) : null}
+                  </View>
+                ))}
 
-                  <Text style={[styles.sectionTitle, { marginTop: 18 }]}>
-                    {t('settings.cleaning.notesSectionTitle')}
-                  </Text>
-                  {notesForRoom(room.id)
-                    .slice(0, 12)
-                    .map((n) => (
-                      <View key={n.id} style={styles.noteCard}>
-                        <Text style={styles.noteMeta}>
-                          {n.author_type === 'cleaner'
-                            ? t('settings.cleaning.authorCleaner')
-                            : t('settings.cleaning.authorOwner')}{' '}
-                          · {n.cleaning_date}
-                        </Text>
-                        <Text style={styles.noteBody}>{n.note}</Text>
-                        <Pressable
-                          onPress={() =>
-                            Alert.alert(t('settings.cleaning.deleteStep1Title'), '', [
-                              { text: t('common.cancel'), style: 'cancel' },
-                              {
-                                text: t('common.delete'),
-                                style: 'destructive',
-                                onPress: () => deleteNoteMutation.mutate(n.id),
-                              },
-                            ])
-                          }
-                        >
-                          <Text style={styles.link}>{t('settings.cleaning.deleteNote')}</Text>
-                        </Pressable>
-                      </View>
-                    ))}
-
-                  <Text style={styles.label}>{t('settings.cleaning.cleaningDateLabel', { date: 'YYYY-MM-DD' })}</Text>
-                  <TextInput
-                    style={styles.input}
-                    value={noteDraft[room.id]?.date || new Date().toISOString().slice(0, 10)}
-                    onChangeText={(v) =>
-                      setNoteDraft((d) => ({
-                        ...d,
-                        [room.id]: { date: v, text: d[room.id]?.text || '' },
-                      }))
-                    }
-                    placeholder="YYYY-MM-DD"
-                  />
-                  <TextInput
-                    style={[styles.input, { minHeight: 72, marginTop: 8 }]}
-                    multiline
-                    textAlignVertical="top"
-                    value={noteDraft[room.id]?.text || ''}
-                    onChangeText={(v) =>
-                      setNoteDraft((d) => ({
-                        ...d,
-                        [room.id]: { date: d[room.id]?.date || new Date().toISOString().slice(0, 10), text: v },
-                      }))
-                    }
-                    placeholder={t('settings.cleaning.newNotePlaceholder')}
-                  />
-                  <Pressable
-                    style={[styles.primaryBtn, addNoteMutation.isPending && styles.disabled]}
-                    disabled={addNoteMutation.isPending}
-                    onPress={() => {
-                      const d = noteDraft[room.id];
-                      if (!d?.text?.trim()) return;
-                      addNoteMutation.mutate({
-                        room_id: String(room.id),
-                        cleaning_date: d.date,
-                        note: d.text.trim(),
-                      });
-                    }}
-                  >
-                    <Text style={styles.primaryBtnText}>{t('settings.cleaning.saveNote')}</Text>
+                {rooms?.length ? (
+                  <Pressable style={styles.openCreateModalBtn} onPress={() => setShowPublicLinkModal(true)}>
+                    <Text style={styles.openCreateModalBtnText}>
+                      {t('settings.cleaning.publicLinksOpenCreateButton')}
+                    </Text>
                   </Pressable>
+                ) : (
+                  <Text style={styles.mutedInline}>{t('settings.cleaning.noRooms')}</Text>
+                )}
+              </>
+            )}
+          </View>
+        ) : null}
+
+        <View style={styles.upcomingCard}>
+          <Text style={styles.sectionTitle}>{t('settings.cleaning.upcomingTasks')}</Text>
+          <Text style={styles.upcomingIntro}>{t('settings.cleaning.upcomingPreviewIntro')}</Text>
+          {upcomingLoading ? (
+            <ActivityIndicator style={{ marginVertical: 16 }} color="#2563eb" />
+          ) : upcomingTasks.length === 0 ? (
+            <Text style={styles.mutedInline}>
+              {configuredRoomCount === 0
+                ? t('settings.cleaning.upcomingEmptyNeedWeb')
+                : t('settings.cleaning.noUpcomingTasks')}
+            </Text>
+          ) : (
+            upcomingTasks.slice(0, 30).map((task) => {
+              const timeRange = t('settings.cleaning.upcomingTimeRange', {
+                start: formatTimeShort(task.start_iso),
+                end: formatTimeShort(task.end_iso),
+              });
+              return (
+                <View key={task.id} style={styles.taskCard}>
+                  <Text style={styles.taskDate}>
+                    {task.date} · {timeRange}
+                  </Text>
+                  <Text style={styles.taskTitle}>{task.summary}</Text>
+                  <Text style={styles.taskSub}>
+                    {task.room_name || roomNameById(String(task.room_id))}
+                    {task.guest_name ? ` · ${task.guest_name}` : ''}
+                  </Text>
                 </View>
-              ) : null}
-            </View>
-          );
-        })
-      )}
-    </ScrollView>
-
-    <KeyboardAwareFormModal
-      visible={showPublicLinkModal}
-      onRequestClose={closePublicLinkModal}
-    >
-      <View style={styles.modalSheet}>
-        <View style={styles.modalHeaderRow}>
-          <Text style={styles.modalTitleText}>{t('settings.cleaning.publicLinksCreateModalTitle')}</Text>
-          <Pressable
-            onPress={closePublicLinkModal}
-            style={styles.modalCloseHit}
-            accessibilityRole="button"
-            accessibilityLabel={t('common.close')}
-          >
-            <X size={22} color="#6b7280" />
-          </Pressable>
+              );
+            })
+          )}
         </View>
-        <ScrollView
-          style={styles.modalScroll}
-          contentContainerStyle={{ paddingBottom: 24 }}
-          keyboardShouldPersistTaps="handled"
-        >
-          <Text style={styles.stepPill}>1</Text>
-          <Text style={styles.modalSectionText}>{t('settings.cleaning.publicLinksPickRooms')}</Text>
-          {rooms?.map((room) => {
-            const id = String(room.id);
-            const on = publicLinkRooms.has(id);
+
+        {listLoading ? (
+          <ActivityIndicator style={{ marginTop: 24 }} color="#2563eb" />
+        ) : !rooms?.length ? (
+          <Text style={styles.muted}>{t('settings.cleaning.noRooms')}</Text>
+        ) : (
+          rooms.map((room) => {
+            const cfg = configByRoom.get(String(room.id));
+            const expanded = expandedId === room.id;
+            const unread = unreadCleanerNoteIds(room.id);
+            const roomTasks = tasksForRoom(room.id);
+
             return (
-              <Pressable
-                key={room.id}
-                style={[styles.roomSelectRow, on && styles.roomSelectRowOn]}
-                onPress={() => togglePublicLinkRoom(id)}
-              >
-                <View style={[styles.roomCheckCircle, on && styles.roomCheckCircleOn]}>
-                  {on ? <Check size={16} color="white" strokeWidth={3} /> : null}
-                </View>
-                <Text style={[styles.roomSelectName, on && styles.roomSelectNameOn]}>{room.name}</Text>
-              </Pressable>
+              <View key={room.id} style={styles.card}>
+                <Pressable onPress={() => openRoom(room)} style={styles.cardHead}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.roomName}>{room.name}</Text>
+                    <Text style={styles.status}>
+                      {cfg
+                        ? cfg.ical_enabled
+                          ? t('settings.cleaning.active')
+                          : t('settings.cleaning.inactive')
+                        : t('settings.cleaning.notConfigured')}
+                    </Text>
+                    {unread.length > 0 ? (
+                      <Text style={styles.unread}>
+                        {t('settings.cleaning.unreadNotes', { count: unread.length })}
+                      </Text>
+                    ) : null}
+                  </View>
+                  <Text style={styles.chev}>{expanded ? '\u25BC' : '\u25B6'}</Text>
+                </Pressable>
+
+                {expanded ? (
+                  <View style={styles.cardBody}>
+                    <Text style={styles.sectionTitle}>{t('settings.cleaning.upcomingTasks')}</Text>
+                    {roomTasks.length === 0 ? (
+                      <Text style={styles.mutedInline}>{t('settings.cleaning.noUpcomingTasks')}</Text>
+                    ) : (
+                      roomTasks.slice(0, 8).map((task) => {
+                        const timeRange = t('settings.cleaning.upcomingTimeRange', {
+                          start: formatTimeShort(task.start_iso),
+                          end: formatTimeShort(task.end_iso),
+                        });
+                        return (
+                          <View key={task.id} style={styles.taskCard}>
+                            <Text style={styles.taskDate}>
+                              {task.date} · {timeRange}
+                            </Text>
+                            <Text style={styles.taskTitle}>{task.summary}</Text>
+                            {task.guest_name ? <Text style={styles.taskSub}>{task.guest_name}</Text> : null}
+                          </View>
+                        );
+                      })
+                    )}
+
+                    <Text style={[styles.mutedInline, { marginTop: 14 }]}>
+                      {t('settings.cleaning.roomAdvancedOnWeb')}
+                    </Text>
+                    <Pressable style={styles.secondaryBtn} onPress={openWebSettings}>
+                      <Text style={styles.secondaryBtnText}>{t('settings.cleaning.openWebSettings')}</Text>
+                    </Pressable>
+
+                    {cfg?.ical_token ? (
+                      <>
+                        <Text style={[styles.label, { marginTop: 14 }]}>{t('settings.cleaning.icalLink')}</Text>
+                        <Text selectable style={styles.mono}>
+                          {icalCleaningFeedUrl(cfg.ical_token)}
+                        </Text>
+                        <Pressable
+                          style={styles.secondaryBtn}
+                          onPress={() => {
+                            Clipboard.setString(icalCleaningFeedUrl(cfg.ical_token));
+                            Alert.alert(t('common.success'), t('settings.cleaning.copy'));
+                          }}
+                        >
+                          <Text style={styles.secondaryBtnText}>{t('settings.cleaning.copy')}</Text>
+                        </Pressable>
+                      </>
+                    ) : null}
+
+                    {unread.length > 0 ? (
+                      <Pressable style={styles.secondaryBtn} onPress={() => markReadMutation.mutate(unread)}>
+                        <Text style={styles.secondaryBtnText}>{t('settings.cleaning.markAsRead')}</Text>
+                      </Pressable>
+                    ) : null}
+
+                    <Text style={[styles.sectionTitle, { marginTop: 18 }]}>
+                      {t('settings.cleaning.notesSectionTitle')}
+                    </Text>
+                    {notesForRoom(room.id)
+                      .slice(0, 12)
+                      .map((n) => (
+                        <View key={n.id} style={styles.noteCard}>
+                          <Text style={styles.noteMeta}>
+                            {n.author_type === 'cleaner'
+                              ? t('settings.cleaning.authorCleaner')
+                              : t('settings.cleaning.authorOwner')}{' '}
+                            · {n.cleaning_date}
+                          </Text>
+                          <Text style={styles.noteBody}>{n.note}</Text>
+                          <Pressable
+                            onPress={() =>
+                              Alert.alert(t('settings.cleaning.deleteStep1Title'), '', [
+                                { text: t('common.cancel'), style: 'cancel' },
+                                {
+                                  text: t('common.delete'),
+                                  style: 'destructive',
+                                  onPress: () => deleteNoteMutation.mutate(n.id),
+                                },
+                              ])
+                            }
+                          >
+                            <Text style={styles.link}>{t('settings.cleaning.deleteNote')}</Text>
+                          </Pressable>
+                        </View>
+                      ))}
+
+                    <Text style={styles.label}>{t('settings.cleaning.cleaningDateLabel', { date: 'YYYY-MM-DD' })}</Text>
+                    <TextInput
+                      style={styles.input}
+                      value={noteDraft[room.id]?.date || new Date().toISOString().slice(0, 10)}
+                      onChangeText={(v) =>
+                        setNoteDraft((d) => ({
+                          ...d,
+                          [room.id]: { date: v, text: d[room.id]?.text || '' },
+                        }))
+                      }
+                      placeholder="YYYY-MM-DD"
+                    />
+                    <TextInput
+                      style={[styles.input, { minHeight: 72, marginTop: 8 }]}
+                      multiline
+                      textAlignVertical="top"
+                      value={noteDraft[room.id]?.text || ''}
+                      onChangeText={(v) =>
+                        setNoteDraft((d) => ({
+                          ...d,
+                          [room.id]: { date: d[room.id]?.date || new Date().toISOString().slice(0, 10), text: v },
+                        }))
+                      }
+                      placeholder={t('settings.cleaning.newNotePlaceholder')}
+                    />
+                    <Pressable
+                      style={[styles.primaryBtn, addNoteMutation.isPending && styles.disabled]}
+                      disabled={addNoteMutation.isPending}
+                      onPress={() => {
+                        const d = noteDraft[room.id];
+                        if (!d?.text?.trim()) return;
+                        addNoteMutation.mutate({
+                          room_id: String(room.id),
+                          cleaning_date: d.date,
+                          note: d.text.trim(),
+                        });
+                      }}
+                    >
+                      <Text style={styles.primaryBtnText}>{t('settings.cleaning.saveNote')}</Text>
+                    </Pressable>
+                  </View>
+                ) : null}
+              </View>
             );
-          })}
-          <Text style={styles.selectedCountText}>
-            {t('settings.cleaning.publicLinksSelectedCount', { count: publicLinkRooms.size })}
-          </Text>
+          })
+        )}
+      </ScrollView>
 
-          <Text style={styles.stepPill}>2</Text>
-          <Text style={styles.modalSectionText}>{t('settings.cleaning.publicLinksStepNameTitle')}</Text>
-          <TextInput
-            style={styles.input}
-            value={publicLinkLabel}
-            onChangeText={setPublicLinkLabel}
-            placeholder={t('settings.cleaning.publicLinksNamePlaceholder')}
-          />
-
-          <Pressable
-            style={[
-              styles.primaryBtn,
-              (createPublicLinkMutation.isPending || !publicLinkLabel.trim() || publicLinkRooms.size === 0) &&
-                styles.disabled,
-            ]}
-            disabled={
-              createPublicLinkMutation.isPending || !publicLinkLabel.trim() || publicLinkRooms.size === 0
-            }
-            onPress={() => createPublicLinkMutation.mutate()}
+      <KeyboardAwareFormModal visible={showPublicLinkModal} onRequestClose={closePublicLinkModal}>
+        <View style={styles.modalSheet}>
+          <View style={styles.modalHeaderRow}>
+            <Text style={styles.modalTitleText}>{t('settings.cleaning.publicLinksCreateModalTitle')}</Text>
+            <Pressable
+              onPress={closePublicLinkModal}
+              style={styles.modalCloseHit}
+              accessibilityRole="button"
+              accessibilityLabel={t('common.close')}
+            >
+              <X size={22} color="#6b7280" />
+            </Pressable>
+          </View>
+          <ScrollView
+            style={styles.modalScroll}
+            contentContainerStyle={{ paddingBottom: 24 }}
+            keyboardShouldPersistTaps="handled"
           >
-            <Text style={styles.primaryBtnText}>{t('settings.cleaning.publicLinksCreate')}</Text>
-          </Pressable>
-        </ScrollView>
-      </View>
-    </KeyboardAwareFormModal>
+            <Text style={styles.stepPill}>1</Text>
+            <Text style={styles.modalSectionText}>{t('settings.cleaning.publicLinksPickRooms')}</Text>
+            {rooms?.map((room) => {
+              const id = String(room.id);
+              const on = publicLinkRooms.has(id);
+              return (
+                <Pressable
+                  key={room.id}
+                  style={[styles.roomSelectRow, on && styles.roomSelectRowOn]}
+                  onPress={() => togglePublicLinkRoom(id)}
+                >
+                  <View style={[styles.roomCheckCircle, on && styles.roomCheckCircleOn]}>
+                    {on ? <Check size={16} color="white" strokeWidth={3} /> : null}
+                  </View>
+                  <Text style={[styles.roomSelectName, on && styles.roomSelectNameOn]}>{room.name}</Text>
+                </Pressable>
+              );
+            })}
+            <Text style={styles.selectedCountText}>
+              {t('settings.cleaning.publicLinksSelectedCount', { count: publicLinkRooms.size })}
+            </Text>
+
+            <Text style={styles.stepPill}>2</Text>
+            <Text style={styles.modalSectionText}>{t('settings.cleaning.publicLinksStepNameTitle')}</Text>
+            <TextInput
+              style={styles.input}
+              value={publicLinkLabel}
+              onChangeText={setPublicLinkLabel}
+              placeholder={t('settings.cleaning.publicLinksNamePlaceholder')}
+            />
+
+            <Pressable
+              style={[
+                styles.primaryBtn,
+                (createPublicLinkMutation.isPending || !publicLinkLabel.trim() || publicLinkRooms.size === 0) &&
+                  styles.disabled,
+              ]}
+              disabled={
+                createPublicLinkMutation.isPending || !publicLinkLabel.trim() || publicLinkRooms.size === 0
+              }
+              onPress={() => createPublicLinkMutation.mutate()}
+            >
+              <Text style={styles.primaryBtnText}>{t('settings.cleaning.publicLinksCreate')}</Text>
+            </Pressable>
+          </ScrollView>
+        </View>
+      </KeyboardAwareFormModal>
     </>
   );
 }
@@ -887,6 +657,33 @@ const styles = StyleSheet.create({
   backText: { fontSize: 22, fontWeight: '900', color: '#111827', marginTop: -2 },
   title: { fontSize: 18, fontWeight: '900', color: '#111827' },
   subtitle: { marginTop: 2, fontSize: 12, color: '#6b7280' },
+  webBanner: {
+    backgroundColor: '#eff6ff',
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#bfdbfe',
+  },
+  webBannerTitle: { fontSize: 15, fontWeight: '800', color: '#1e3a8a' },
+  webBannerBody: { marginTop: 8, fontSize: 13, color: '#374151', lineHeight: 19 },
+  webBannerBtn: {
+    marginTop: 12,
+    backgroundColor: '#2563eb',
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  webBannerBtnText: { color: 'white', fontWeight: '800', fontSize: 15 },
+  upcomingCard: {
+    backgroundColor: 'white',
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+  },
+  upcomingIntro: { marginTop: 6, fontSize: 12, color: '#6b7280', lineHeight: 17 },
   muted: { textAlign: 'center', color: '#6b7280', marginTop: 24 },
   card: {
     backgroundColor: 'white',
@@ -903,7 +700,6 @@ const styles = StyleSheet.create({
   chev: { fontSize: 18, color: '#9ca3af' },
   cardBody: { paddingHorizontal: 14, paddingBottom: 16, borderTopWidth: 1, borderTopColor: '#f3f4f6' },
   label: { fontSize: 12, fontWeight: '700', color: '#374151', marginTop: 10, marginBottom: 6 },
-  labelInline: { fontSize: 14, fontWeight: '700', color: '#374151' },
   input: {
     borderWidth: 1,
     borderColor: '#e5e7eb',
@@ -911,35 +707,6 @@ const styles = StyleSheet.create({
     padding: 12,
     fontSize: 15,
     backgroundColor: '#f9fafb',
-  },
-  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-    backgroundColor: '#f9fafb',
-  },
-  chipOn: { backgroundColor: '#2563eb', borderColor: '#2563eb' },
-  chipText: { fontSize: 12, fontWeight: '700', color: '#4b5563' },
-  chipTextOn: { color: 'white' },
-  opt: {
-    padding: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-    marginBottom: 8,
-    backgroundColor: '#f9fafb',
-  },
-  optOn: { borderColor: '#2563eb', backgroundColor: '#eff6ff' },
-  optText: { fontSize: 14, fontWeight: '600', color: '#374151' },
-  optTextOn: { color: '#1d4ed8' },
-  switchRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: 12,
   },
   mono: { fontSize: 11, color: '#0369a1', marginBottom: 8 },
   primaryBtn: {
@@ -1078,33 +845,4 @@ const styles = StyleSheet.create({
   roomSelectName: { flex: 1, fontSize: 15, fontWeight: '600', color: '#374151' },
   roomSelectNameOn: { color: '#1e3a8a' },
   selectedCountText: { marginTop: 12, fontSize: 13, fontWeight: '700', color: '#1d4ed8' },
-  scheduleHint: { marginTop: 6, fontSize: 12, color: '#6b7280', lineHeight: 17 },
-  tapTimeHint: { fontSize: 11, color: '#9ca3af', marginBottom: 4, marginTop: -4 },
-  timePickRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-    borderRadius: 12,
-    padding: 12,
-    backgroundColor: '#f9fafb',
-  },
-  timePickValue: { fontSize: 17, fontWeight: '700', color: '#111827', fontVariant: ['tabular-nums'] },
-  inlineTimeBox: {
-    marginTop: 8,
-    borderWidth: 1,
-    borderColor: '#bfdbfe',
-    borderRadius: 12,
-    backgroundColor: '#f8fafc',
-    overflow: 'hidden',
-  },
-  inlineTimeDone: {
-    margin: 12,
-    backgroundColor: '#2563eb',
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: 'center',
-  },
-  inlineTimeDoneText: { color: 'white', fontWeight: '800', fontSize: 15 },
 });

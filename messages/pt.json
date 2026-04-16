@@ -1601,7 +1601,14 @@
       "saveNote": "Guardar nota",
       "upcomingTasks": "Próximas limpezas",
       "noUpcomingTasks": "Ainda não existem reservas futuras para este quarto ou apartamento.",
-      "newNotePlaceholder": "Escreva uma nota de limpeza"
+      "newNotePlaceholder": "Escreva uma nota de limpeza",
+      "configureOnWebTitle": "Horários e regras de limpeza",
+      "configureOnWebBody": "Na app móvel não configuramos bem horas, duração nem iCal. Faça-o na web (Definições → Calendário de limpeza), igual ao link da equipa.",
+      "openWebSettings": "Abrir na web",
+      "upcomingPreviewIntro": "Próximas limpezas conforme as reservas e a configuração por quarto (mesma lógica do link público).",
+      "upcomingEmptyNeedWeb": "Sem limpezas previstas. Confirme reservas futuras e a configuração guardada na web por quarto.",
+      "roomAdvancedOnWeb": "Feed iCal e mais opções: na web.",
+      "upcomingTimeRange": "{start} – {end}"
     },
     "properties": {
       "title": "As Minhas Propriedades",

@@ -1597,7 +1597,14 @@
       "saveNote": "Enregistrer la note",
       "upcomingTasks": "Nettoyages à venir",
       "noUpcomingTasks": "Il n'y a pas encore de réservations à venir pour cette chambre ou cet appartement.",
-      "newNotePlaceholder": "Écrivez une note de nettoyage"
+      "newNotePlaceholder": "Écrivez une note de nettoyage",
+      "configureOnWebTitle": "Horaires et règles de ménage",
+      "configureOnWebBody": "Sur mobile, les heures, durées et iCal ne sont pas gérés correctement. Configurez-les sur le web (Paramètres → Calendrier de nettoyage), comme pour le lien de l’équipe.",
+      "openWebSettings": "Ouvrir sur le web",
+      "upcomingPreviewIntro": "Prochains ménages selon vos réservations et le réglage par chambre (même logique que le lien public).",
+      "upcomingEmptyNeedWeb": "Aucun ménage prévu. Vérifiez les réservations futures et la configuration enregistrée sur le web pour chaque chambre.",
+      "roomAdvancedOnWeb": "Flux iCal et options avancées : sur le web.",
+      "upcomingTimeRange": "{start} – {end}"
     },
     "properties": {
       "title": "Mes Propriétés",
