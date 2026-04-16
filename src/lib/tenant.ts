@@ -293,20 +293,27 @@ export async function updateTenantStripeInfo(
  */
 export async function getTenantId(request: NextRequest): Promise<string | null> {
   try {
-    // Obtener el token de autenticación de las cookies
+    const authHeader = request.headers.get('authorization') || request.headers.get('Authorization');
+    if (authHeader?.startsWith('Bearer ')) {
+      const bearer = authHeader.slice(7).trim();
+      if (bearer) {
+        const bearerPayload = verifyToken(bearer);
+        if (bearerPayload?.tenantId) {
+          return bearerPayload.tenantId;
+        }
+      }
+    }
+
     const authToken = request.cookies.get('auth_token')?.value;
-    
     if (!authToken) {
       return null;
     }
-    
-    // Verificar el token JWT
+
     const payload = verifyToken(authToken);
-    
-    if (!payload || !payload.tenantId) {
+    if (!payload?.tenantId) {
       return null;
     }
-    
+
     return payload.tenantId;
   } catch (error) {
     console.error('Error al obtener tenant ID:', error);

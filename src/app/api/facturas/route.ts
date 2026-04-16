@@ -63,6 +63,8 @@ export async function POST(request: NextRequest) {
       descripcion: body.descripcion,
       precio_base: body.precio_base,
       iva_porcentaje: body.iva_porcentaje,
+      iva_importe: typeof body.iva_importe === 'number' ? body.iva_importe : undefined,
+      total: typeof body.total === 'number' ? body.total : undefined,
       forma_pago: body.forma_pago,
     });
 
