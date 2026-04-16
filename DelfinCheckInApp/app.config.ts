@@ -1,11 +1,12 @@
 import { ExpoConfig, ConfigContext } from 'expo/config';
 
 export default ({ config }: ConfigContext): ExpoConfig => {
-  const isProduction = process.env.EXPO_PUBLIC_ENV === 'production';
   const apiUrl = process.env.EXPO_PUBLIC_API_URL || 'https://admin.delfincheckin.com';
+  const cleaningPublicBase =
+    process.env.EXPO_PUBLIC_CLEANING_PUBLIC_BASE_URL?.trim().replace(/\/$/, '') || '';
 
   return {
-    name: isProduction ? 'Delfín Check-in' : 'Delfín Check-in (Staging)',
+    name: 'Delfín Check-in',
     slug: 'delfin-owner',
     scheme: 'delfin',
     version: '1.0.0',
@@ -48,6 +49,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     },
     extra: {
       API_URL: apiUrl,
+      CLEANING_PUBLIC_BASE_URL: cleaningPublicBase,
       eas: {
         projectId: '1408210e-72cc-49ab-b045-f91d89452a4e'
       }

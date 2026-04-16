@@ -34,8 +34,22 @@ interface CalendarEvent {
   guest_count?: number | null;
 }
 
-function formatDate(d: Date): string {
-  return d.toISOString().slice(0, 10);
+function ymdLocal(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+/** Fechas API (ISO) → día local YYYY-MM-DD (alineado con celdas del calendario). */
+function ymdFromApiDateString(iso: string): string {
+  const d = new Date(iso);
+  return ymdLocal(d);
+}
+
+function parseLocalYmd(ymd: string): Date {
+  const [y, mo, d] = ymd.split('-').map((x) => parseInt(x, 10));
+  return new Date(y, mo - 1, d);
 }
 
 export default function CalendarScreen() {
@@ -47,17 +61,17 @@ export default function CalendarScreen() {
   const [start, setStart] = useState<string>(() => {
     const d = new Date();
     d.setDate(1);
-    return formatDate(d);
+    return ymdLocal(d);
   });
   
   const [end, setEnd] = useState<string>(() => {
     const d = new Date();
     d.setMonth(d.getMonth() + 1);
     d.setDate(1);
-    return formatDate(d);
+    return ymdLocal(d);
   });
 
-  const tenantId = session?.tenant_id || '';
+  const tenantId = session?.tenant_id || session?.user?.tenant?.id || '';
 
   // Cargar datos del calendario
   const { data, isLoading, refetch } = useQuery({
@@ -90,36 +104,38 @@ export default function CalendarScreen() {
   // Calcular días del mes
   const days = useMemo(() => {
     const out: string[] = [];
-    const s = new Date(start);
-    const e = new Date(end);
-    
+    const s = parseLocalYmd(start);
+    const e = parseLocalYmd(end);
+
     const firstDayOfMonth = new Date(s.getFullYear(), s.getMonth(), 1);
     const startWeekday = (firstDayOfMonth.getDay() + 6) % 7; // lunes=0
-    
+
     if (startWeekday > 0) {
       const prevMonth = new Date(s.getFullYear(), s.getMonth(), 0);
       const prevMonthDays = prevMonth.getDate();
       const startFromDay = prevMonthDays - startWeekday + 1;
       for (let i = startFromDay; i <= prevMonthDays; i++) {
         const d = new Date(s.getFullYear(), s.getMonth() - 1, i);
-        out.push(formatDate(d));
+        out.push(ymdLocal(d));
       }
     }
-    
+
     for (let d = new Date(s); d < e; d.setDate(d.getDate() + 1)) {
-      out.push(formatDate(d));
+      out.push(ymdLocal(d));
     }
-    
+
     return out;
   }, [start, end]);
 
   const eventsByDate = useMemo(() => {
     const map = new Map<string, CalendarEvent[]>();
-    events.forEach(ev => {
+    events.forEach((ev) => {
       const s = new Date(ev.start_date);
       const e = new Date(ev.end_date);
-      for (let d = new Date(s); d < e; d.setDate(d.getDate() + 1)) {
-        const key = formatDate(d);
+      const start = new Date(s.getFullYear(), s.getMonth(), s.getDate());
+      const endDay = new Date(e.getFullYear(), e.getMonth(), e.getDate());
+      for (let d = new Date(start); d < endDay; d.setDate(d.getDate() + 1)) {
+        const key = ymdLocal(d);
         if (!map.has(key)) map.set(key, []);
         map.get(key)!.push(ev);
       }
@@ -153,32 +169,18 @@ export default function CalendarScreen() {
     const arriving: CalendarEvent[] = [];
     const leaving: CalendarEvent[] = [];
     const staying: CalendarEvent[] = [];
-    
-    const selectedDateObj = new Date(selectedDate);
-    selectedDateObj.setHours(0, 0, 0, 0);
-    
-    dayEvents.forEach(ev => {
+
+    dayEvents.forEach((ev) => {
       if (ev.event_type !== 'reservation' || !ev.room_id) return;
-      
-      const checkIn = new Date(ev.start_date);
-      checkIn.setHours(0, 0, 0, 0);
-      const checkOut = new Date(ev.end_date);
-      checkOut.setHours(0, 0, 0, 0);
-      
-      const checkInStr = formatDate(checkIn);
-      const checkOutStr = formatDate(checkOut);
-      const selectedStr = formatDate(selectedDateObj);
-      
-      // Quién llega hoy
-      if (checkInStr === selectedStr) {
+
+      const checkInStr = ymdFromApiDateString(ev.start_date);
+      const checkOutStr = ymdFromApiDateString(ev.end_date);
+
+      if (checkInStr === selectedDate) {
         arriving.push(ev);
-      }
-      // Quién se va hoy
-      else if (checkOutStr === selectedStr) {
+      } else if (checkOutStr === selectedDate) {
         leaving.push(ev);
-      }
-      // Quién está hoy (check-in < hoy y check-out > hoy)
-      else if (checkIn < selectedDateObj && checkOut > selectedDateObj) {
+      } else if (checkInStr < selectedDate && checkOutStr > selectedDate) {
         staying.push(ev);
       }
     });
@@ -187,29 +189,29 @@ export default function CalendarScreen() {
   }, [selectedDate, eventsByDate]);
 
   const currentMonth = useMemo(() => {
-    const s = new Date(start);
+    const s = parseLocalYmd(start);
     return { year: s.getFullYear(), month: s.getMonth() };
   }, [start]);
 
   const previousMonth = () => {
-    const d = new Date(start);
+    const d = parseLocalYmd(start);
     d.setMonth(d.getMonth() - 1);
     d.setDate(1);
-    setStart(formatDate(d));
+    setStart(ymdLocal(d));
     const e = new Date(d);
     e.setMonth(e.getMonth() + 1);
-    setEnd(formatDate(e));
+    setEnd(ymdLocal(e));
     setSelectedDate(null);
   };
 
   const nextMonth = () => {
-    const d = new Date(start);
+    const d = parseLocalYmd(start);
     d.setMonth(d.getMonth() + 1);
     d.setDate(1);
-    setStart(formatDate(d));
+    setStart(ymdLocal(d));
     const e = new Date(d);
     e.setMonth(e.getMonth() + 1);
-    setEnd(formatDate(e));
+    setEnd(ymdLocal(e));
     setSelectedDate(null);
   };
 
@@ -221,16 +223,16 @@ export default function CalendarScreen() {
   const weekDays = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
 
   const isToday = (dateStr: string) => {
-    return dateStr === formatDate(new Date());
+    return dateStr === ymdLocal(new Date());
   };
 
   const isCurrentMonth = (dateStr: string) => {
-    const d = new Date(dateStr);
+    const d = parseLocalYmd(dateStr);
     return d.getMonth() === currentMonth.month && d.getFullYear() === currentMonth.year;
   };
 
   const formatDisplayDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString(getLocaleTag(), {
+    return parseLocalYmd(dateStr).toLocaleDateString(getLocaleTag(), {
       day: 'numeric',
       month: 'long',
       year: 'numeric',
@@ -300,25 +302,22 @@ export default function CalendarScreen() {
                     isSelected && styles.selectedNumber,
                   ]}
                 >
-                  {new Date(dateStr).getDate()}
+                  {parseLocalYmd(dateStr).getDate()}
                 </Text>
                 {dayEvents.length > 0 && (() => {
                   // Filtrar solo reservas y determinar colores
                   const reservationEvents = dayEvents.filter(ev => ev.event_type === 'reservation');
-                  const dateStrFormatted = formatDate(new Date(dateStr));
-                  
-                  // Contar llegadas, salidas y estancias
                   let hasArriving = false;
                   let hasLeaving = false;
                   let hasStaying = false;
-                  
-                  reservationEvents.forEach(ev => {
-                    const checkInStr = formatDate(new Date(ev.start_date));
-                    const checkOutStr = formatDate(new Date(ev.end_date));
-                    
-                    if (checkInStr === dateStrFormatted) {
+
+                  reservationEvents.forEach((ev) => {
+                    const checkInStr = ymdFromApiDateString(ev.start_date);
+                    const checkOutStr = ymdFromApiDateString(ev.end_date);
+
+                    if (checkInStr === dateStr) {
                       hasArriving = true;
-                    } else if (checkOutStr === dateStrFormatted) {
+                    } else if (checkOutStr === dateStr) {
                       hasLeaving = true;
                     } else {
                       hasStaying = true;

@@ -2485,6 +2485,7 @@
     "errorPaymentMethod": "Error creando método de pago",
     "errorSubscription": "Error creando suscripción",
     "errorProcessingPayment": "Error procesando pago",
+    "stripeLoadFailed": "No se pudo cargar el pago seguro (Stripe). Comprueba la conexión, desactiva bloqueadores o prueba desde otro navegador.",
     "mostPopular": "Más Popular",
     "currentPlanBadge": "Plan Actual",
     "selectPlan": "Seleccionar Plan",

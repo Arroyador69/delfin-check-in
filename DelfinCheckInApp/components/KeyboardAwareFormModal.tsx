@@ -3,7 +3,7 @@ import {
   Modal,
   View,
   KeyboardAvoidingView,
-  TouchableWithoutFeedback,
+  Pressable,
   Keyboard,
   Platform,
   StyleSheet,
@@ -26,17 +26,16 @@ export function KeyboardAwareFormModal({
   const offset = keyboardVerticalOffset ?? (Platform.OS === 'ios' ? 64 : 0);
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onRequestClose}>
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-        <View style={styles.overlay}>
-          <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            keyboardVerticalOffset={offset}
-            style={styles.kav}
-          >
-            {children}
-          </KeyboardAvoidingView>
-        </View>
-      </TouchableWithoutFeedback>
+      <View style={styles.overlay}>
+        <Pressable style={styles.backdrop} onPress={Keyboard.dismiss} accessibilityRole="button" />
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={offset}
+          style={styles.kav}
+        >
+          {children}
+        </KeyboardAvoidingView>
+      </View>
     </Modal>
   );
 }
@@ -47,5 +46,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'flex-end',
   },
-  kav: { width: '100%' },
+  backdrop: { ...StyleSheet.absoluteFillObject },
+  kav: { width: '100%', justifyContent: 'flex-end', maxHeight: '100%' },
 });

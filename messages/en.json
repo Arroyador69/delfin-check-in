@@ -2419,6 +2419,7 @@
     "errorPaymentMethod": "Error creating payment method",
     "errorSubscription": "Error creating subscription",
     "errorProcessingPayment": "Error processing payment",
+    "stripeLoadFailed": "Secure payment (Stripe) could not load. Check your connection, disable blockers, or try another browser.",
     "mostPopular": "Most Popular",
     "currentPlanBadge": "Current Plan",
     "selectPlan": "Select Plan",

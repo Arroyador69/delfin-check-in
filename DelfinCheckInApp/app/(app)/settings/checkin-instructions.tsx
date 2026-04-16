@@ -8,12 +8,12 @@ import {
   FlatList,
   Platform,
   ScrollView,
-  Keyboard,
   Dimensions,
 } from 'react-native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { api } from '@/lib/api';
 import { t } from '@/lib/i18n';
@@ -33,7 +33,7 @@ export default function CheckinInstructionsScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const scrollRef = useRef<ScrollView>(null);
-  const [kbInset, setKbInset] = useState(0);
+  const insets = useSafeAreaInsets();
   const [editor, setEditor] = useState<InstructionItem | null>(null);
   const [titleEs, setTitleEs] = useState('');
   const [bodyEs, setBodyEs] = useState('');
@@ -49,23 +49,6 @@ export default function CheckinInstructionsScreen() {
   });
 
   const items = data?.items || [];
-
-  useEffect(() => {
-    const showEv = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
-    const hideEv = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
-    const show = Keyboard.addListener(showEv, (e) => setKbInset(e.endCoordinates.height));
-    const hide = Keyboard.addListener(hideEv, () => setKbInset(0));
-    return () => {
-      show.remove();
-      hide.remove();
-    };
-  }, []);
-
-  function scrollForKeyboard() {
-    requestAnimationFrame(() => {
-      scrollRef.current?.scrollToEnd({ animated: true });
-    });
-  }
 
   const saveMutation = useMutation({
     mutationFn: async () => {
@@ -167,78 +150,100 @@ export default function CheckinInstructionsScreen() {
       />
 
       <KeyboardAwareFormModal visible={editor != null} onRequestClose={() => setEditor(null)}>
-        <View style={[styles.modalBox, { maxHeight: winH * 0.92 }]}>
-                <ScrollView
-                  ref={scrollRef}
-                  style={{ maxHeight: winH * 0.78 }}
-                  keyboardShouldPersistTaps="handled"
-                  keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
-                  contentContainerStyle={{ paddingBottom: Math.max(32, kbInset + 24) }}
-                  showsVerticalScrollIndicator
-                >
-            <Text style={styles.modalTitle}>{t('settings.checkinInstructions.title')}</Text>
-            <Text style={styles.hintSmall}>{t('mobile.settings.checkinBodyHint')}</Text>
-
-            <View style={styles.localeSection}>
-              <Text style={styles.localeHeader}>ES</Text>
-              <TextInput style={styles.input} value={titleEs} onChangeText={setTitleEs} placeholder={t('settings.checkinInstructions.titleLabel')} />
-              <TextInput
-                style={[styles.input, styles.textArea]}
-                multiline
-                textAlignVertical="top"
-                value={bodyEs}
-                onChangeText={setBodyEs}
-                onFocus={scrollForKeyboard}
-                placeholder={t('settings.checkinInstructions.contentPlaceholder')}
-              />
-            </View>
-
-            <View style={styles.localeSection}>
-              <Text style={styles.localeHeader}>EN</Text>
-              <TextInput style={styles.input} value={titleEn} onChangeText={setTitleEn} placeholder={t('settings.checkinInstructions.titleLabel')} />
-              <TextInput
-                style={[styles.input, styles.textArea]}
-                multiline
-                textAlignVertical="top"
-                value={bodyEn}
-                onChangeText={setBodyEn}
-                onFocus={scrollForKeyboard}
-                placeholder={t('settings.checkinInstructions.contentPlaceholder')}
-              />
-            </View>
-
-            <View style={styles.modalActions}>
-              <Pressable style={styles.btnGhost} onPress={() => setEditor(null)}>
-                <Text style={styles.btnGhostText}>{t('common.cancel')}</Text>
-              </Pressable>
-              <Pressable
-                style={styles.btnDanger}
-                onPress={() => {
-                  if (!editor) return;
-                  Alert.alert(t('settings.checkinInstructions.deleteStep1Title'), t('settings.checkinInstructions.deleteStep1Body', {
-                    label: editor.room_id ? t('settings.checkinInstructions.roomLabel', { id: editor.room_id }) : t('settings.checkinInstructions.default'),
-                  }), [
+        <View
+          style={[
+            styles.modalBox,
+            {
+              maxHeight: winH * 0.94,
+              paddingBottom: Math.max(12, insets.bottom + 8),
+            },
+          ]}
+        >
+          <View style={styles.modalToolbar}>
+            <Pressable style={styles.btnGhost} onPress={() => setEditor(null)}>
+              <Text style={styles.btnGhostText}>{t('common.cancel')}</Text>
+            </Pressable>
+            <Pressable
+              style={styles.btnDanger}
+              onPress={() => {
+                if (!editor) return;
+                Alert.alert(
+                  t('settings.checkinInstructions.deleteStep1Title'),
+                  t('settings.checkinInstructions.deleteStep1Body', {
+                    label: editor.room_id
+                      ? t('settings.checkinInstructions.roomLabel', { id: editor.room_id })
+                      : t('settings.checkinInstructions.default'),
+                  }),
+                  [
                     { text: t('common.cancel'), style: 'cancel' },
                     {
                       text: t('common.delete'),
                       style: 'destructive',
                       onPress: () => deleteMutation.mutate(editor.id),
                     },
-                  ]);
-                }}
-              >
-                <Text style={styles.btnDangerText}>{t('mobile.settings.checkinDelete')}</Text>
-              </Pressable>
-              <Pressable
-                style={[styles.btnPrimary, saveMutation.isPending && styles.disabled]}
-                onPress={() => saveMutation.mutate()}
-                disabled={saveMutation.isPending}
-              >
-                <Text style={styles.btnPrimaryText}>{t('settings.checkinInstructions.save')}</Text>
-              </Pressable>
-            </View>
-                </ScrollView>
+                  ]
+                );
+              }}
+            >
+              <Text style={styles.btnDangerText}>{t('mobile.settings.checkinDelete')}</Text>
+            </Pressable>
+            <Pressable
+              style={[styles.btnPrimary, saveMutation.isPending && styles.disabled]}
+              onPress={() => saveMutation.mutate()}
+              disabled={saveMutation.isPending}
+            >
+              <Text style={styles.btnPrimaryText}>{t('settings.checkinInstructions.save')}</Text>
+            </Pressable>
           </View>
+
+          <ScrollView
+            ref={scrollRef}
+            style={styles.modalScroll}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
+            contentContainerStyle={styles.modalScrollContent}
+            showsVerticalScrollIndicator
+          >
+            <Text style={styles.modalTitle}>{t('settings.checkinInstructions.title')}</Text>
+            <Text style={styles.hintSmall}>{t('mobile.settings.checkinBodyHint')}</Text>
+
+            <View style={styles.localeSection}>
+              <Text style={styles.localeHeader}>ES</Text>
+              <TextInput
+                style={styles.input}
+                value={titleEs}
+                onChangeText={setTitleEs}
+                placeholder={t('settings.checkinInstructions.titleLabel')}
+              />
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                multiline
+                textAlignVertical="top"
+                value={bodyEs}
+                onChangeText={setBodyEs}
+                placeholder={t('settings.checkinInstructions.contentPlaceholder')}
+              />
+            </View>
+
+            <View style={styles.localeSection}>
+              <Text style={styles.localeHeader}>EN</Text>
+              <TextInput
+                style={styles.input}
+                value={titleEn}
+                onChangeText={setTitleEn}
+                placeholder={t('settings.checkinInstructions.titleLabel')}
+              />
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                multiline
+                textAlignVertical="top"
+                value={bodyEn}
+                onChangeText={setBodyEn}
+                placeholder={t('settings.checkinInstructions.contentPlaceholder')}
+              />
+            </View>
+          </ScrollView>
+        </View>
       </KeyboardAwareFormModal>
     </View>
   );
@@ -276,8 +281,22 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingTop: 12,
   },
+  modalToolbar: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+    marginBottom: 12,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f3f4f6',
+  },
+  modalScroll: { maxHeight: winH * 0.72 },
+  modalScrollContent: { paddingBottom: 24 },
   modalTitle: { fontSize: 16, fontWeight: '800', marginBottom: 10 },
   localeSection: {
     marginTop: 8,
@@ -299,8 +318,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     backgroundColor: '#f9fafb',
   },
-  textArea: { minHeight: 180, marginTop: 4 },
-  modalActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 16 },
+  textArea: { minHeight: 140, marginTop: 4 },
   btnGhost: { padding: 12, borderRadius: 12, borderWidth: 1, borderColor: '#e5e7eb' },
   btnGhostText: { fontWeight: '700' },
   btnPrimary: { paddingHorizontal: 16, paddingVertical: 12, borderRadius: 12, backgroundColor: '#2563eb' },

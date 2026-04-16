@@ -5,10 +5,8 @@ import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { Check, Crown, Zap, Shield, Loader2, Calculator, Info } from 'lucide-react';
 import AdminLayout from '@/components/AdminLayout';
-import { loadStripe } from '@stripe/stripe-js';
-import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
-
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '');
+import { StripeCheckoutElements } from '@/components/StripeCheckoutElements';
+import { CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 
 type PlanId = 'free' | 'checkin' | 'standard' | 'pro';
 
@@ -503,7 +501,7 @@ export default function PlansPage() {
                       </button>
                     </div>
                   ) : (
-                    <Elements stripe={stripePromise}>
+                    <StripeCheckoutElements>
                       <CheckoutForm
                         planId={selectedPlan}
                         roomCount={roomCount}
@@ -511,7 +509,7 @@ export default function PlansPage() {
                         onSuccess={handleSuccess}
                         onError={(error) => console.error(error)}
                       />
-                    </Elements>
+                    </StripeCheckoutElements>
                   )}
                 </div>
               )}

@@ -253,6 +253,7 @@ export async function middleware(req: NextRequest) {
     pathname === '/forgot-password' ||
     pathname.startsWith('/book/') ||
     pathname.startsWith('/limpieza') ||
+    pathname.startsWith('/api/ical/cleaning/') ||
     pathname.startsWith('/api/cleaning/public-view/') ||
     pathname.startsWith('/api/cleaning/public-link/') ||
     pathname.startsWith('/api/public/') ||

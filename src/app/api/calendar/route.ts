@@ -92,13 +92,19 @@ export async function GET(req: NextRequest) {
           ORDER BY r.check_in ASC`
         reservations = await sql.query(text, params)
       } else if (lodgingId) {
-        const params: any[] = [lodgingId, toDate.toISOString().slice(0,10), fromDate.toISOString().slice(0,10)]
+        const params: any[] = [
+          tenantId,
+          toDate.toISOString().slice(0, 10),
+          fromDate.toISOString().slice(0, 10),
+          lodgingId,
+        ]
         const text = `
           SELECT r.id, r.tenant_id, r.room_id, r.guest_name, r.check_in, r.check_out, r.channel, r.guest_count
           FROM reservations r
-          WHERE r.room_id = ANY(
-            SELECT id FROM "Room" WHERE "lodgingId" = $1::text
-          )
+          WHERE r.tenant_id = $1::uuid
+            AND r.room_id = ANY(
+              SELECT id::text FROM "Room" WHERE "lodgingId" = $4::text
+            )
             AND r.check_in  < $2::date
             AND r.check_out > $3::date
           ORDER BY r.check_in ASC`

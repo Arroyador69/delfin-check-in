@@ -2390,6 +2390,7 @@
     "errorPaymentMethod": "Erro ao criar método de pagamento",
     "errorSubscription": "Erro ao criar subscrição",
     "errorProcessingPayment": "Erro ao processar pagamento",
+    "stripeLoadFailed": "Não foi possível carregar o pagamento seguro (Stripe). Verifique a ligação, desative bloqueadores ou tente outro navegador.",
     "mostPopular": "Mais Popular",
     "currentPlanBadge": "Plano Atual",
     "selectPlan": "Selecionar Plano",

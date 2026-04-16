@@ -15,6 +15,7 @@ import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 
 import { api } from '@/lib/api';
+import { cleanerLimpiezaPageUrl, icalCleaningFeedUrl } from '@/lib/cleaning-public-url';
 import { t } from '@/lib/i18n';
 import { Reservation, getReservationCheckIn, getReservationCheckOut, getReservationStatus } from '@/lib/reservations';
 
@@ -62,11 +63,21 @@ type CleaningTask = {
   guestName: string;
 };
 
+type PublicCleaningLink = {
+  id: string;
+  label: string;
+  public_token: string;
+  room_ids: string[];
+  created_at?: string;
+};
+
 const DURATIONS = [60, 90, 120, 150, 180, 240] as const;
 
-function icalFeedUrl(token: string): string {
-  const base = String(api.defaults.baseURL || '').replace(/\/$/, '');
-  return `${base}/api/ical/cleaning/${token}`;
+function ymdLocal(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
 }
 
 function defaultDraft(roomId: number, cfg?: CleaningConfig): CleaningDraft {
@@ -101,7 +112,7 @@ function buildTasksForRoom(roomId: number, roomName: string, cfg: CleaningDraft,
 
     const inDate = new Date(checkIn);
     const outDate = new Date(checkOut);
-    const outYmd = outDate.toISOString().slice(0, 10);
+    const outYmd = ymdLocal(outDate);
 
     if (cfg.cleaning_trigger === 'on_checkout' || cfg.cleaning_trigger === 'both') {
       tasks.push({
@@ -113,10 +124,10 @@ function buildTasksForRoom(roomId: number, roomName: string, cfg: CleaningDraft,
     }
 
     if (cfg.cleaning_trigger === 'day_before_checkin' || cfg.cleaning_trigger === 'both') {
-      const dayBefore = new Date(inDate.getTime() - 86400000);
+      const dayBefore = new Date(inDate.getFullYear(), inDate.getMonth(), inDate.getDate() - 1);
       tasks.push({
         key: `pre-${r.id}`,
-        date: dayBefore.toISOString().slice(0, 10),
+        date: ymdLocal(dayBefore),
         label: `${roomName} · pre check-in`,
         guestName,
       });
@@ -124,7 +135,7 @@ function buildTasksForRoom(roomId: number, roomName: string, cfg: CleaningDraft,
   }
 
   return tasks
-    .filter((task) => task.date >= new Date().toISOString().slice(0, 10))
+    .filter((task) => task.date >= ymdLocal(new Date()))
     .sort((a, b) => a.date.localeCompare(b.date))
     .slice(0, 8);
 }
@@ -135,6 +146,8 @@ export default function CleaningCalendarScreen() {
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [draftByRoom, setDraftByRoom] = useState<Record<number, CleaningDraft>>({});
   const [noteDraft, setNoteDraft] = useState<Record<number, { date: string; text: string }>>({});
+  const [publicLinkLabel, setPublicLinkLabel] = useState('');
+  const [publicLinkRooms, setPublicLinkRooms] = useState<Set<string>>(new Set());
 
   const { data: rooms, isLoading: roomsLoading } = useQuery({
     queryKey: ['rooms'],
@@ -168,9 +181,18 @@ export default function CleaningCalendarScreen() {
     },
   });
 
+  const { data: publicLinksRes, isLoading: publicLinksLoading } = useQuery({
+    queryKey: ['cleaning-public-links'],
+    queryFn: async () => {
+      const res = await api.get('/api/cleaning/links');
+      return res.data as { success?: boolean; links?: PublicCleaningLink[] };
+    },
+  });
+
   const configs = configRes?.configs ?? [];
   const notes = notesRes?.notes ?? [];
   const reservations = reservationsRes ?? [];
+  const publicLinks = publicLinksRes?.links ?? [];
 
   const configByRoom = useMemo(() => {
     const m = new Map<string, CleaningConfig>();
@@ -245,7 +267,77 @@ export default function CleaningCalendarScreen() {
     },
   });
 
+  const createPublicLinkMutation = useMutation({
+    mutationFn: async () => {
+      const label = publicLinkLabel.trim();
+      if (!label) throw new Error('name');
+      if (publicLinkRooms.size === 0) throw new Error('rooms');
+      const res = await api.post('/api/cleaning/links', {
+        label,
+        room_ids: Array.from(publicLinkRooms),
+      });
+      return res.data;
+    },
+    onSuccess: async () => {
+      setPublicLinkLabel('');
+      setPublicLinkRooms(new Set());
+      await queryClient.invalidateQueries({ queryKey: ['cleaning-public-links'] });
+      Alert.alert(t('common.success'), t('settings.cleaning.publicLinksCreated'));
+    },
+    onError: (e: unknown) => {
+      const code = e && typeof e === 'object' && 'message' in e ? String((e as Error).message) : '';
+      if (code === 'name') {
+        Alert.alert(t('common.error'), t('settings.cleaning.publicLinksNameRequired'));
+        return;
+      }
+      if (code === 'rooms') {
+        Alert.alert(t('common.error'), t('settings.cleaning.publicLinksRoomsRequired'));
+        return;
+      }
+      const msg =
+        e && typeof e === 'object' && 'response' in e
+          ? String((e as { response?: { data?: { error?: string } } }).response?.data?.error || '')
+          : '';
+      Alert.alert(t('common.error'), msg || t('settings.cleaning.saveError'));
+    },
+  });
+
+  const regeneratePublicLinkMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await api.patch(`/api/cleaning/links/${id}`, { regenerate_token: true });
+      return res.data;
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['cleaning-public-links'] });
+      Alert.alert(t('common.success'), t('settings.cleaning.tokenRegenerated'));
+    },
+    onError: () => Alert.alert(t('common.error'), t('settings.cleaning.saveError')),
+  });
+
+  const deletePublicLinkMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await api.delete(`/api/cleaning/links/${id}`);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['cleaning-public-links'] });
+    },
+    onError: () => Alert.alert(t('common.error'), t('settings.cleaning.saveError')),
+  });
+
   const loading = roomsLoading || configLoading || notesLoading || reservationsLoading;
+
+  function togglePublicLinkRoom(roomId: string) {
+    setPublicLinkRooms((prev) => {
+      const n = new Set(prev);
+      if (n.has(roomId)) n.delete(roomId);
+      else n.add(roomId);
+      return n;
+    });
+  }
+
+  function roomNameById(rid: string): string {
+    return rooms?.find((r) => String(r.id) === rid)?.name || rid;
+  }
 
   function notesForRoom(roomId: number) {
     return notes.filter((n) => n.room_id === String(roomId));
@@ -268,6 +360,110 @@ export default function CleaningCalendarScreen() {
           <Text style={styles.subtitle}>{t('mobile.settings.hubCleaningSubtitle')}</Text>
         </View>
       </View>
+
+      {!roomsLoading ? (
+        <View style={styles.publicLinksCard}>
+          <Text style={styles.publicLinksTitle}>{t('settings.cleaning.publicLinksTitle')}</Text>
+          <Text style={styles.publicLinksIntro}>{t('settings.cleaning.publicLinksIntro')}</Text>
+          {publicLinksLoading ? (
+            <ActivityIndicator style={{ marginVertical: 12 }} color="#2563eb" />
+          ) : (
+            <>
+              {publicLinks.map((link) => (
+                <View key={link.id} style={styles.publicLinkRow}>
+                  <Text style={styles.publicLinkLabel}>{link.label}</Text>
+                  <Text style={styles.publicLinkRooms}>
+                    {link.room_ids.map((rid) => roomNameById(rid)).join(', ')}
+                  </Text>
+                  <Pressable
+                    style={styles.secondaryBtn}
+                    onPress={() => {
+                      Clipboard.setString(cleanerLimpiezaPageUrl(link.public_token));
+                      Alert.alert(t('common.success'), t('settings.cleaning.copy'));
+                    }}
+                  >
+                    <Text style={styles.secondaryBtnText}>{t('settings.cleaning.copy')}</Text>
+                  </Pressable>
+                  <Pressable
+                    style={styles.linkLikeBtn}
+                    onPress={() =>
+                      Alert.alert(t('settings.cleaning.publicLinksRegenerateConfirm'), '', [
+                        { text: t('common.cancel'), style: 'cancel' },
+                        {
+                          text: t('settings.cleaning.publicLinksRegenerate'),
+                          onPress: () => regeneratePublicLinkMutation.mutate(link.id),
+                        },
+                      ])
+                    }
+                  >
+                    <Text style={styles.linkLikeText}>{t('settings.cleaning.publicLinksRegenerate')}</Text>
+                  </Pressable>
+                  <Pressable
+                    style={styles.linkLikeBtn}
+                    onPress={() =>
+                      Alert.alert(t('common.delete'), t('settings.cleaning.publicLinksDeleteConfirm'), [
+                        { text: t('common.cancel'), style: 'cancel' },
+                        {
+                          text: t('common.delete'),
+                          style: 'destructive',
+                          onPress: () => deletePublicLinkMutation.mutate(link.id),
+                        },
+                      ])
+                    }
+                  >
+                    <Text style={styles.linkLikeDanger}>{t('settings.cleaning.publicLinksDelete')}</Text>
+                  </Pressable>
+                </View>
+              ))}
+
+              {rooms?.length ? (
+                <>
+                  <Text style={[styles.sectionTitle, { marginTop: 14 }]}>
+                    {t('settings.cleaning.publicLinksNewTitle')}
+                  </Text>
+                  <TextInput
+                    style={styles.input}
+                    value={publicLinkLabel}
+                    onChangeText={setPublicLinkLabel}
+                    placeholder={t('settings.cleaning.publicLinksNamePlaceholder')}
+                  />
+                  <Text style={styles.label}>{t('settings.cleaning.publicLinksPickRooms')}</Text>
+                  <View style={styles.roomPickWrap}>
+                    {rooms.map((room) => {
+                      const id = String(room.id);
+                      const on = publicLinkRooms.has(id);
+                      return (
+                        <Pressable
+                          key={room.id}
+                          style={[styles.roomPickChip, on && styles.roomPickChipOn]}
+                          onPress={() => togglePublicLinkRoom(id)}
+                        >
+                          <Text style={[styles.roomPickText, on && styles.roomPickTextOn]}>{room.name}</Text>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                  <Pressable
+                    style={[
+                      styles.primaryBtn,
+                      (createPublicLinkMutation.isPending || !publicLinkLabel.trim() || publicLinkRooms.size === 0) &&
+                        styles.disabled,
+                    ]}
+                    disabled={
+                      createPublicLinkMutation.isPending || !publicLinkLabel.trim() || publicLinkRooms.size === 0
+                    }
+                    onPress={() => createPublicLinkMutation.mutate()}
+                  >
+                    <Text style={styles.primaryBtnText}>{t('settings.cleaning.publicLinksCreate')}</Text>
+                  </Pressable>
+                </>
+              ) : (
+                <Text style={styles.mutedInline}>{t('settings.cleaning.noRooms')}</Text>
+              )}
+            </>
+          )}
+        </View>
+      ) : null}
 
       {loading ? (
         <ActivityIndicator style={{ marginTop: 24 }} color="#2563eb" />
@@ -413,12 +609,12 @@ export default function CleaningCalendarScreen() {
                     <>
                       <Text style={styles.label}>{t('settings.cleaning.icalLink')}</Text>
                       <Text selectable style={styles.mono}>
-                        {icalFeedUrl(cfg.ical_token)}
+                        {icalCleaningFeedUrl(cfg.ical_token)}
                       </Text>
                       <Pressable
                         style={styles.secondaryBtn}
                         onPress={() => {
-                          Clipboard.setString(icalFeedUrl(cfg.ical_token));
+                          Clipboard.setString(icalCleaningFeedUrl(cfg.ical_token));
                           Alert.alert(t('common.success'), t('settings.cleaning.copy'));
                         }}
                       >
@@ -641,4 +837,37 @@ const styles = StyleSheet.create({
   noteBody: { marginTop: 6, fontSize: 14, color: '#111827' },
   link: { marginTop: 8, color: '#dc2626', fontWeight: '700', fontSize: 13 },
   disabled: { opacity: 0.6 },
+  publicLinksCard: {
+    backgroundColor: 'white',
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#bfdbfe',
+  },
+  publicLinksTitle: { fontSize: 16, fontWeight: '800', color: '#111827' },
+  publicLinksIntro: { marginTop: 8, fontSize: 13, color: '#4b5563', lineHeight: 18 },
+  publicLinkRow: {
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#e5e7eb',
+  },
+  publicLinkLabel: { fontSize: 15, fontWeight: '800', color: '#111827' },
+  publicLinkRooms: { marginTop: 4, fontSize: 12, color: '#6b7280' },
+  roomPickWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
+  roomPickChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    backgroundColor: '#f9fafb',
+  },
+  roomPickChipOn: { backgroundColor: '#2563eb', borderColor: '#2563eb' },
+  roomPickText: { fontSize: 13, fontWeight: '700', color: '#374151' },
+  roomPickTextOn: { color: 'white' },
+  linkLikeBtn: { marginTop: 8, alignSelf: 'flex-start' },
+  linkLikeText: { fontSize: 13, fontWeight: '700', color: '#2563eb' },
+  linkLikeDanger: { fontSize: 13, fontWeight: '700', color: '#b91c1c' },
 });

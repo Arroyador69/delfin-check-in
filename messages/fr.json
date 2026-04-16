@@ -2386,6 +2386,7 @@
     "errorPaymentMethod": "Erreur création moyen de paiement",
     "errorSubscription": "Erreur création abonnement",
     "errorProcessingPayment": "Erreur traitement paiement",
+    "stripeLoadFailed": "Le paiement sécurisé (Stripe) n’a pas pu se charger. Vérifiez la connexion, désactivez les bloqueurs ou essayez un autre navigateur.",
     "mostPopular": "Le plus populaire",
     "currentPlanBadge": "Forfait actuel",
     "selectPlan": "Sélectionner le forfait",

@@ -6,10 +6,8 @@ import { useLocale, useTranslations } from 'next-intl';
 import { ArrowLeft, Check, Crown, Zap, Loader2, Calculator, Star } from 'lucide-react';
 import Link from 'next/link';
 import AdminLayout from '@/components/AdminLayout';
-import { loadStripe } from '@stripe/stripe-js';
-import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
-
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '');
+import { StripeCheckoutElements } from '@/components/StripeCheckoutElements';
+import { CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 
 type PlanId = 'checkin' | 'standard' | 'pro';
 
@@ -547,7 +545,7 @@ export default function UpgradePlanPage() {
                         </button>
                       </div>
                     ) : (
-                      <Elements stripe={stripePromise}>
+                      <StripeCheckoutElements>
                         <CheckoutForm
                           planId={selectedPlan}
                           roomCount={roomCount}
@@ -555,7 +553,7 @@ export default function UpgradePlanPage() {
                           onSuccess={handleSuccess}
                           onError={(error) => console.error(error)}
                         />
-                      </Elements>
+                      </StripeCheckoutElements>
                     )}
                   </div>
                 )}
