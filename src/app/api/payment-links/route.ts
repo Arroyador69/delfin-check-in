@@ -95,9 +95,15 @@ export async function GET(req: NextRequest) {
       links.rows = links.rows.map((row) => ({ ...row, guest_locale: 'es' }));
     }
 
+    const baseUrl = process.env.NEXT_PUBLIC_BOOK_URL || 'https://book.delfincheckin.com';
+
     return NextResponse.json({
       success: true,
-      links: links.rows,
+      links: links.rows.map((row) => ({
+        ...row,
+        guest_locale: (row as { guest_locale?: string }).guest_locale ?? 'es',
+        link_url: `${baseUrl}/pay/${row.link_code}`,
+      })),
     });
   } catch (error: unknown) {
     console.error('Error listando enlaces de pago:', error);

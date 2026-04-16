@@ -16,6 +16,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Keyboard,
+  Share,
   TouchableWithoutFeedback,
 } from 'react-native';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
@@ -184,6 +185,14 @@ export default function PaymentLinksScreen() {
     Alert.alert(t('common.success'), t('settings.paymentLinks.urlCopied'));
   };
 
+  const handleShare = async (url: string) => {
+    await Share.share({
+      message: url,
+      url,
+      title: t('settings.paymentLinks.copyLink'),
+    });
+  };
+
   const handleDelete = (linkCode: string) => {
     Alert.alert(
       t('settings.paymentLinks.deleteLink'),
@@ -325,15 +334,23 @@ export default function PaymentLinksScreen() {
               </View>
 
               {item.link_url && (
-                <Pressable
-                  style={styles.copyButton}
-                  onPress={() => handleCopy(item.link_url!, item.link_code)}
-                >
-                  <Copy size={16} color="#2563eb" />
-                  <Text style={styles.copyButtonText}>
-                    {copiedLink === item.link_code ? t('mobile.paymentLinks.copiedLabel') : t('settings.paymentLinks.copyLink')}
-                  </Text>
-                </Pressable>
+                <View style={styles.linkActionsRow}>
+                  <Pressable
+                    style={[styles.copyButton, styles.linkActionHalf]}
+                    onPress={() => handleCopy(item.link_url!, item.link_code)}
+                  >
+                    <Copy size={16} color="#2563eb" />
+                    <Text style={styles.copyButtonText}>
+                      {copiedLink === item.link_code ? t('mobile.paymentLinks.copiedLabel') : t('settings.paymentLinks.copyLink')}
+                    </Text>
+                  </Pressable>
+                  <Pressable
+                    style={[styles.copyButton, styles.linkActionHalf]}
+                    onPress={() => handleShare(item.link_url!)}
+                  >
+                    <Text style={styles.copyButtonText}>{t('common.share')}</Text>
+                  </Pressable>
+                </View>
               )}
             </View>
           )}
@@ -695,6 +712,15 @@ const styles = StyleSheet.create({
   usageText: {
     fontSize: 12,
     color: '#9ca3af',
+  },
+  linkActionsRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 8,
+  },
+  linkActionHalf: {
+    flex: 1,
+    marginTop: 0,
   },
   copyButton: {
     flexDirection: 'row',

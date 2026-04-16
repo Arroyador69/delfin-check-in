@@ -1,4 +1,18 @@
-import { View, Text, StyleSheet, Pressable, TextInput, Alert, Modal, FlatList } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Pressable,
+  TextInput,
+  Alert,
+  Modal,
+  FlatList,
+  KeyboardAvoidingView,
+  Platform,
+  Keyboard,
+  TouchableWithoutFeedback,
+  ScrollView,
+} from 'react-native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
@@ -109,8 +123,15 @@ export default function CheckinInstructionsScreen() {
       />
 
       <Modal visible={editor != null} animationType="slide" transparent onRequestClose={() => setEditor(null)}>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalBox}>
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+          <View style={styles.modalOverlay}>
+            <KeyboardAvoidingView
+              behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+              keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
+              style={{ width: '100%' }}
+            >
+              <View style={styles.modalBox}>
+            <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 8 }}>
             <Text style={styles.modalTitle}>{t('settings.checkinInstructions.titleLabel')}</Text>
             <TextInput style={styles.input} value={title} onChangeText={setTitle} placeholder={t('settings.checkinInstructions.titleLabel')} />
             <Text style={styles.label}>{t('settings.general.language')}</Text>
@@ -162,8 +183,11 @@ export default function CheckinInstructionsScreen() {
                 <Text style={styles.btnPrimaryText}>{t('settings.checkinInstructions.save')}</Text>
               </Pressable>
             </View>
+            </ScrollView>
           </View>
-        </View>
+            </KeyboardAvoidingView>
+          </View>
+        </TouchableWithoutFeedback>
       </Modal>
     </View>
   );

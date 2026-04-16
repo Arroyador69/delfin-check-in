@@ -193,7 +193,10 @@
       "free": "Plano Básico (Grátis)",
       "checkin": "Plano Check-in",
       "standard": "Plano Standard",
-      "pro": "Plano Pro"
+      "pro": "Plano Pro",
+      "basic": "Plano Básico",
+      "premium": "Plano Premium",
+      "enterprise": "Plano Enterprise"
     },
     "planCardPricingFree": "0 €/mês (sem custo) · sem IVA",
     "planCardPricingPaid": "{ex} €/mês (sem IVA) + IVA {rate}%: {vat} € → Total {total} €/mês (IVA incl.)",
@@ -2681,6 +2684,8 @@
       "propertiesEmpty": "Não há propriedades registadas.",
       "countryCurrent": "Código atual",
       "countryHint": "Código ISO de 2 letras (ex.: ES). No Pro pode deixar em branco quando aplicável.",
+      "countryExplainTitle": "Para que serve isto?",
+      "countryExplainBody": "Isto so afeta o modulo legal de registo de viajantes. Define o pais cujas regras legais serao usadas para enviar ou preparar registos oficiais. Se nao usa esse modulo legal no movel, pode ignorar.",
       "countryNotEditable": "O módulo legal não está ativo ou o país não pode ser alterado na app.",
       "countrySaved": "Código do país atualizado",
       "countryInvalid": "Código inválido: use 2 letras (A-Z).",

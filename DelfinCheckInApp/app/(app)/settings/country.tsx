@@ -81,6 +81,11 @@ export default function CountrySettingsScreen() {
       <View style={styles.card}>
         {isLoading && !data ? <ActivityIndicator color="#2563eb" /> : null}
 
+        <View style={styles.infoBox}>
+          <Text style={styles.infoTitle}>{t('mobile.settings.countryExplainTitle')}</Text>
+          <Text style={styles.infoText}>{t('mobile.settings.countryExplainBody')}</Text>
+        </View>
+
         {!editable ? (
           <Text style={styles.muted}>{t('mobile.settings.countryNotEditable')}</Text>
         ) : (
@@ -142,6 +147,16 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#e5e7eb',
   },
+  infoBox: {
+    marginBottom: 14,
+    padding: 12,
+    borderRadius: 12,
+    backgroundColor: '#eff6ff',
+    borderWidth: 1,
+    borderColor: '#bfdbfe',
+  },
+  infoTitle: { fontSize: 13, fontWeight: '800', color: '#1d4ed8', marginBottom: 4 },
+  infoText: { fontSize: 12, color: '#1e3a8a', lineHeight: 18 },
   muted: { color: '#6b7280', fontSize: 14, lineHeight: 20 },
   label: { fontSize: 13, fontWeight: '700', color: '#111827', marginBottom: 6 },
   hint: { fontSize: 12, color: '#6b7280', marginBottom: 10 },

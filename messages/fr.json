@@ -193,7 +193,10 @@
       "free": "Forfait Basique (Gratuit)",
       "checkin": "Forfait Check-in",
       "standard": "Forfait Standard",
-      "pro": "Forfait Pro"
+      "pro": "Forfait Pro",
+      "basic": "Forfait Basique",
+      "premium": "Forfait Premium",
+      "enterprise": "Forfait Enterprise"
     },
     "planCardPricingFree": "0 €/mois (sans frais) · pas de TVA",
     "planCardPricingPaid": "{ex} €/mois (HT) + TVA {rate}% : {vat} € → Total {total} €/mois (TTC)",
@@ -2677,6 +2680,8 @@
       "propertiesEmpty": "Aucune propriété enregistrée.",
       "countryCurrent": "Code actuel",
       "countryHint": "Code ISO à 2 lettres (ex. ES). En Pro vous pouvez le laisser vide si applicable.",
+      "countryExplainTitle": "A quoi cela sert-il ?",
+      "countryExplainBody": "Cela concerne uniquement le module legal d'enregistrement des voyageurs. Il definit le pays dont les regles legales seront utilisees pour envoyer ou preparer les registres officiels. Si vous n'utilisez pas ce module sur mobile, vous pouvez l'ignorer.",
       "countryNotEditable": "Le module légal est inactif ou le pays ne peut pas être modifié depuis l’app.",
       "countrySaved": "Code pays mis à jour",
       "countryInvalid": "Code invalide : utilisez 2 lettres (A-Z).",

@@ -82,7 +82,7 @@ export default function GeneralSettingsScreen() {
         <Text style={styles.muted}>{t('settings.rooms.description')}</Text>
         {isLoading && !data ? <ActivityIndicator style={{ marginVertical: 16 }} /> : null}
         {rooms.map((room, index) => (
-          <View key={room.id} style={styles.roomRow}>
+          <View key={`${room.id ?? 'room'}-${index}`} style={styles.roomRow}>
             <Text style={styles.roomIdx}>{index + 1}</Text>
             <TextInput
               style={[styles.input, { flex: 1, marginBottom: 0 }]}

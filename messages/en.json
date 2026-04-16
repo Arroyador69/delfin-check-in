@@ -193,7 +193,10 @@
       "free": "Basic (Free) plan",
       "checkin": "Check-in plan",
       "standard": "Standard plan",
-      "pro": "Pro plan"
+      "pro": "Pro plan",
+      "basic": "Basic plan",
+      "premium": "Premium plan",
+      "enterprise": "Enterprise plan"
     },
     "planCardPricingFree": "€0/mo (no charge) · no VAT",
     "planCardPricingPaid": "{ex} €/mo (ex. VAT) + VAT {rate}%: {vat} € → Total {total} €/mo (incl. VAT)",
@@ -2740,6 +2743,8 @@
       "propertiesEmpty": "No properties found.",
       "countryCurrent": "Current code",
       "countryHint": "2-letter ISO code (e.g. ES). On Pro you may leave it empty when applicable.",
+      "countryExplainTitle": "What is this for?",
+      "countryExplainBody": "This only affects the legal traveller-registration module. It sets the country whose legal rules will be used to send or prepare official records. If you do not use that legal module on mobile, you can ignore it.",
       "countryNotEditable": "Legal module is inactive or country cannot be changed from the app.",
       "countrySaved": "Country code updated",
       "countryInvalid": "Invalid code: use 2 letters (A-Z).",

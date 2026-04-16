@@ -11,6 +11,14 @@ export default function SettingsScreen() {
   const { session, signOut } = useAuth();
   const router = useRouter();
 
+  function getPlanLabel(planId?: string | null) {
+    const raw = String(planId || '').trim().toLowerCase();
+    if (!raw) return '—';
+    const translated = t(`dashboard.planTypeNames.${raw}`);
+    if (translated !== `dashboard.planTypeNames.${raw}`) return translated;
+    return raw.charAt(0).toUpperCase() + raw.slice(1);
+  }
+
   async function handleSignOut() {
     Alert.alert(t('dashboard.logout'), t('common.confirm'), [
       { text: t('common.cancel'), style: 'cancel' },
@@ -58,7 +66,7 @@ export default function SettingsScreen() {
         </View>
         <View style={[styles.infoRow, { borderBottomWidth: 0 }]}>
           <Text style={styles.infoLabel}>{t('mobile.settings.planLabel')}</Text>
-          <Text style={styles.infoValue}>{session?.user.tenant.planId}</Text>
+          <Text style={styles.infoValue}>{getPlanLabel(session?.user.tenant.planId)}</Text>
         </View>
       </View>
 

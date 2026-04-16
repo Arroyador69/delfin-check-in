@@ -193,7 +193,10 @@
       "free": "Piano Base (gratuito)",
       "checkin": "Piano Check-in",
       "standard": "Piano Standard",
-      "pro": "Piano Pro"
+      "pro": "Piano Pro",
+      "basic": "Piano Base",
+      "premium": "Piano Premium",
+      "enterprise": "Piano Enterprise"
     },
     "planCardPricingFree": "0 €/mese (senza costi) · nessuna IVA",
     "planCardPricingPaid": "{ex} €/mese (IVA esclusa) + IVA {rate}%: {vat} € → Totale {total} €/mese (IVA inclusa)",
@@ -2797,6 +2800,8 @@
       "propertiesEmpty": "Nessuna proprietà registrata.",
       "countryCurrent": "Codice attuale",
       "countryHint": "Codice ISO a 2 lettere (es. ES). In Pro puoi lasciarlo vuoto se applicabile.",
+      "countryExplainTitle": "A cosa serve?",
+      "countryExplainBody": "Riguarda solo il modulo legale per la registrazione dei viaggiatori. Imposta il paese le cui regole legali verranno usate per inviare o preparare i registri ufficiali. Se non usi questo modulo su mobile, puoi ignorarlo.",
       "countryNotEditable": "Il modulo legale non è attivo o il paese non è modificabile dall’app.",
       "countrySaved": "Codice paese aggiornato",
       "countryInvalid": "Codice non valido: usa 2 lettere (A-Z).",
