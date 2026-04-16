@@ -5,12 +5,8 @@ import {
   Pressable,
   TextInput,
   Alert,
-  Modal,
   FlatList,
-  KeyboardAvoidingView,
   Platform,
-  Keyboard,
-  TouchableWithoutFeedback,
   ScrollView,
 } from 'react-native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -19,6 +15,7 @@ import { useState } from 'react';
 
 import { api } from '@/lib/api';
 import { t } from '@/lib/i18n';
+import { KeyboardAwareFormModal } from '@/components/KeyboardAwareFormModal';
 
 type InstructionItem = {
   id: number;
@@ -146,15 +143,11 @@ export default function CheckinInstructionsScreen() {
         )}
       />
 
-      <Modal visible={editor != null} animationType="slide" transparent onRequestClose={() => setEditor(null)}>
-        <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-          <View style={styles.modalOverlay}>
-            <KeyboardAvoidingView
-              behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-              keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
-              style={{ width: '100%' }}
-            >
-              <View style={styles.modalBox}>
+      <KeyboardAwareFormModal
+        visible={editor != null}
+        onRequestClose={() => setEditor(null)}
+      >
+        <View style={styles.modalBox}>
                 <ScrollView
                   style={{ flexGrow: 0 }}
                   keyboardShouldPersistTaps="handled"
@@ -222,10 +215,7 @@ export default function CheckinInstructionsScreen() {
             </View>
                 </ScrollView>
           </View>
-            </KeyboardAvoidingView>
-          </View>
-        </TouchableWithoutFeedback>
-      </Modal>
+      </KeyboardAwareFormModal>
     </View>
   );
 }
@@ -258,7 +248,6 @@ const styles = StyleSheet.create({
   cardSub: { fontSize: 13, color: '#374151', marginTop: 4 },
   cardPreview: { fontSize: 12, color: '#6b7280', marginTop: 6 },
   muted: { textAlign: 'center', color: '#9ca3af', marginTop: 24 },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
   modalBox: {
     backgroundColor: 'white',
     borderTopLeftRadius: 20,

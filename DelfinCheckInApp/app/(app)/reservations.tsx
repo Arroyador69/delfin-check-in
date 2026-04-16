@@ -10,19 +10,16 @@ import {
   RefreshControl,
   TextInput,
   Pressable,
-  Modal,
   ScrollView,
   Alert,
-  KeyboardAvoidingView,
   Platform,
-  Keyboard,
-  TouchableWithoutFeedback,
 } from 'react-native';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { useEffect, useMemo, useState } from 'react';
 import { useLocalSearchParams } from 'expo-router';
 import { Search, Plus, X, CheckCircle2, BellRing, Pencil, Trash2 } from 'lucide-react-native';
+import { KeyboardAwareFormModal } from '@/components/KeyboardAwareFormModal';
 import { t } from '@/lib/i18n';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
@@ -524,20 +521,11 @@ export default function ReservationsScreen() {
       />
 
       {/* Modal crear reserva */}
-      <Modal
+      <KeyboardAwareFormModal
         visible={showCreateModal}
-        animationType="slide"
-        transparent={true}
         onRequestClose={() => setShowCreateModal(false)}
       >
-        <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-          <View style={styles.modalOverlay}>
-            <KeyboardAvoidingView
-              behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-              keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
-              style={{ width: '100%' }}
-            >
-              <View style={styles.modalContent}>
+        <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>
                 {editingReservationId ? t('reservations.editReservation') : t('reservations.createReservation')}
@@ -682,10 +670,7 @@ export default function ReservationsScreen() {
               </Pressable>
             </View>
           </View>
-            </KeyboardAvoidingView>
-          </View>
-        </TouchableWithoutFeedback>
-      </Modal>
+      </KeyboardAwareFormModal>
     </View>
   );
 }
@@ -901,11 +886,6 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 16,
     color: '#9ca3af',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
   },
   modalContent: {
     backgroundColor: 'white',

@@ -9,15 +9,11 @@ import {
   StyleSheet,
   RefreshControl,
   Pressable,
-  Modal,
   ScrollView,
   TextInput,
   Alert,
-  KeyboardAvoidingView,
   Platform,
-  Keyboard,
   Share,
-  TouchableWithoutFeedback,
 } from 'react-native';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { api } from '@/lib/api';
@@ -26,6 +22,7 @@ import { Plus, X, Copy, CheckCircle, XCircle } from 'lucide-react-native';
 import { Clipboard } from 'react-native';
 import { getLocaleTag, t } from '@/lib/i18n';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { KeyboardAwareFormModal } from '@/components/KeyboardAwareFormModal';
 
 interface PaymentLink {
   id: number;
@@ -365,20 +362,11 @@ export default function PaymentLinksScreen() {
       )}
 
       {/* Modal crear enlace */}
-      <Modal
+      <KeyboardAwareFormModal
         visible={showCreateModal}
-        animationType="slide"
-        transparent={true}
         onRequestClose={() => setShowCreateModal(false)}
       >
-        <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-          <View style={styles.modalOverlay}>
-            <KeyboardAvoidingView
-              behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-              keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
-              style={{ width: '100%' }}
-            >
-              <View style={styles.modalContent}>
+        <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>{t('settings.paymentLinks.createFormTitle')}</Text>
               <Pressable onPress={() => setShowCreateModal(false)}>
@@ -565,10 +553,7 @@ export default function PaymentLinksScreen() {
               </Pressable>
             </View>
           </View>
-            </KeyboardAvoidingView>
-          </View>
-        </TouchableWithoutFeedback>
-      </Modal>
+      </KeyboardAwareFormModal>
     </View>
   );
 }
@@ -745,11 +730,6 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 16,
     color: '#9ca3af',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
   },
   modalContent: {
     backgroundColor: 'white',

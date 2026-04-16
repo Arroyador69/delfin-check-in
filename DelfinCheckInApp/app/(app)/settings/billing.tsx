@@ -1,10 +1,14 @@
 import { View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator, Linking } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
+import { useEffect, useState } from 'react';
 
 import { api } from '@/lib/api';
+import { useAuth } from '@/lib/auth';
 import { t } from '@/lib/i18n';
 import { openUpgradePlanInBrowser } from '@/lib/upgrade-plan';
+
+type PlanCalcId = 'checkin' | 'standard' | 'pro';
 
 type PendingInv = {
   id?: string;
@@ -26,6 +30,41 @@ type StripeInv = {
 
 export default function BillingSettingsScreen() {
   const router = useRouter();
+  const { session } = useAuth();
+  const [planCalcId, setPlanCalcId] = useState<PlanCalcId>('standard');
+  const [roomCount, setRoomCount] = useState(2);
+
+  useEffect(() => {
+    const n = session?.user?.tenant?.currentRooms;
+    if (n != null && n >= 1) setRoomCount(n);
+  }, [session?.user?.tenant?.currentRooms]);
+
+  const { data: priceRes, isFetching: priceLoading, isError: priceError } = useQuery({
+    queryKey: ['plan-calculate-price', planCalcId, roomCount],
+    queryFn: async () => {
+      const res = await api.get(
+        `/api/plans/calculate-price?planId=${planCalcId}&roomCount=${roomCount}`
+      );
+      return res.data as {
+        success?: boolean;
+        pricing?: {
+          base_price: number;
+          extra_rooms?: number;
+          extra_rooms_price?: number;
+          subtotal: number;
+          vat?: { vat_rate?: number; vat_amount?: number };
+          vat_rate?: number;
+          vat_amount?: number;
+          total: number;
+        };
+      };
+    },
+  });
+
+  const pricing = priceRes?.success ? priceRes.pricing : null;
+  const money = (v: unknown) => Number(v ?? 0);
+  const vatRate = pricing ? pricing.vat?.vat_rate ?? pricing.vat_rate ?? 21 : 21;
+  const vatAmount = pricing ? money(pricing.vat?.vat_amount ?? pricing.vat_amount) : 0;
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['billing-summary'],
@@ -56,6 +95,74 @@ export default function BillingSettingsScreen() {
           <Text style={styles.title}>{t('settings.billing.title')}</Text>
           <Text style={styles.subtitle}>{t('mobile.settings.hubBillingSubtitle')}</Text>
         </View>
+      </View>
+
+      <View style={[styles.card, styles.calcCard]}>
+        <Text style={styles.cardTitle}>{t('plans.priceCalculator')}</Text>
+        <Text style={styles.calcHint}>{t('mobile.settings.billingPlan')}</Text>
+        <View style={styles.planRow}>
+          {(['checkin', 'standard', 'pro'] as const).map((pid) => (
+            <Pressable
+              key={pid}
+              style={[styles.planChip, planCalcId === pid && styles.planChipOn]}
+              onPress={() => setPlanCalcId(pid)}
+            >
+              <Text style={[styles.planChipText, planCalcId === pid && styles.planChipTextOn]}>
+                {pid === 'checkin'
+                  ? t('plans.checkinPlanName')
+                  : pid === 'standard'
+                    ? t('plans.standardPlanName')
+                    : t('plans.proPlanName')}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+        <Text style={[styles.calcHint, { marginTop: 10 }]}>{t('plans.numberOfRooms')}</Text>
+        <View style={styles.roomStepper}>
+          <Pressable
+            style={styles.stepBtn}
+            onPress={() => setRoomCount((c) => Math.max(1, c - 1))}
+          >
+            <Text style={styles.stepBtnText}>−</Text>
+          </Pressable>
+          <Text style={styles.roomCount}>{roomCount}</Text>
+          <Pressable style={styles.stepBtn} onPress={() => setRoomCount((c) => c + 1)}>
+            <Text style={styles.stepBtnText}>+</Text>
+          </Pressable>
+        </View>
+        {priceLoading ? (
+          <ActivityIndicator style={{ marginTop: 12 }} color="#2563eb" />
+        ) : priceError || !pricing ? (
+          <Text style={styles.errSmall}>{t('mobile.settings.planCalcError')}</Text>
+        ) : (
+          <View style={styles.priceBox}>
+            <View style={styles.priceLine}>
+              <Text style={styles.priceLineLabel}>{t('plans.basePrice')}</Text>
+              <Text style={styles.priceLineVal}>{money(pricing.base_price).toFixed(2)} €</Text>
+            </View>
+            {money(pricing.extra_rooms_price) > 0 ? (
+              <View style={styles.priceLine}>
+                <Text style={styles.priceLineMuted}>
+                  {t('plans.extraRooms', { count: pricing.extra_rooms || 0 })}
+                </Text>
+                <Text style={styles.priceLineMuted}>+{money(pricing.extra_rooms_price).toFixed(2)} €</Text>
+              </View>
+            ) : null}
+            <View style={styles.priceLine}>
+              <Text style={styles.priceLineLabel}>{t('plans.subtotal')}</Text>
+              <Text style={styles.priceLineVal}>{money(pricing.subtotal).toFixed(2)} €</Text>
+            </View>
+            <View style={styles.priceLine}>
+              <Text style={styles.priceLineMuted}>{t('plans.vat', { rate: vatRate })}</Text>
+              <Text style={styles.priceLineMuted}>+{vatAmount.toFixed(2)} €</Text>
+            </View>
+            <View style={[styles.priceLine, styles.priceTotalRow]}>
+              <Text style={styles.priceTotalLabel}>{t('plans.totalMonthly')}</Text>
+              <Text style={styles.priceTotalVal}>{money(pricing.total).toFixed(2)} €</Text>
+            </View>
+          </View>
+        )}
+        <Text style={styles.calcFoot}>{t('mobile.settings.planCalcNote')}</Text>
       </View>
 
       {isLoading ? (
@@ -195,4 +302,58 @@ const styles = StyleSheet.create({
   invSub: { fontSize: 13, color: '#374151', marginTop: 2 },
   invHint: { fontSize: 11, color: '#9ca3af', marginTop: 4 },
   link: { color: '#2563eb', fontWeight: '800', fontSize: 13 },
+  calcCard: {
+    borderStyle: 'dashed',
+    borderWidth: 2,
+    borderColor: '#d1d5db',
+    backgroundColor: '#f9fafb',
+  },
+  calcHint: { fontSize: 12, color: '#6b7280', fontWeight: '600' },
+  roomStepper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+    marginTop: 8,
+  },
+  stepBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: 'white',
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stepBtnText: { fontSize: 22, fontWeight: '800', color: '#111827' },
+  roomCount: { fontSize: 20, fontWeight: '900', color: '#111827', minWidth: 36, textAlign: 'center' },
+  planRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
+  planChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    backgroundColor: 'white',
+  },
+  planChipOn: { backgroundColor: '#2563eb', borderColor: '#2563eb' },
+  planChipText: { fontSize: 12, fontWeight: '700', color: '#4b5563' },
+  planChipTextOn: { color: 'white' },
+  priceBox: {
+    marginTop: 12,
+    padding: 12,
+    backgroundColor: 'white',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+  },
+  priceLine: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
+  priceLineLabel: { fontSize: 13, color: '#111827' },
+  priceLineVal: { fontSize: 13, fontWeight: '700', color: '#111827' },
+  priceLineMuted: { fontSize: 13, color: '#6b7280' },
+  priceTotalRow: { marginTop: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: '#e5e7eb' },
+  priceTotalLabel: { fontSize: 15, fontWeight: '800', color: '#111827' },
+  priceTotalVal: { fontSize: 16, fontWeight: '900', color: '#2563eb' },
+  calcFoot: { marginTop: 12, fontSize: 11, color: '#6b7280', lineHeight: 16 },
+  errSmall: { marginTop: 8, color: '#dc2626', fontWeight: '600', fontSize: 13 },
 });
