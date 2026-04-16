@@ -1635,6 +1635,7 @@
       "tapToChangeTime": "Toca para elegir la hora",
       "publicLinksNamePlaceholder": "Ej.: María — mañanas",
       "publicLinksPickRooms": "Marca las habitaciones o apartamentos que verá esta limpiadora en este enlace.",
+      "roomLinkScheduleHint": "Salida {checkout} · Entrada {checkin} · {minutes} min · {trigger}",
       "publicLinksCreate": "Crear enlace",
       "publicLinksCreated": "Enlace creado. Copia la URL y compártela solo con tu limpiadora.",
       "publicLinksNameRequired": "Indica un nombre para este enlace (te ayuda a recordar a quién va).",

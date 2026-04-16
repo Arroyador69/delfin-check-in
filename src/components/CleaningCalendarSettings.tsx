@@ -97,6 +97,28 @@ export default function CleaningCalendarSettings({ rooms, t }: Props) {
     loadNotes();
   }, [loadConfigs, loadNotes]);
 
+  const getRoomScheduleLabel = useCallback(
+    (roomId: string) => {
+      const c = configs.find(x => x.room_id === roomId);
+      const co = c?.checkout_time?.slice(0, 5) ?? '11:00';
+      const ci = c?.checkin_time?.slice(0, 5) ?? '16:00';
+      const dur = c?.cleaning_duration_minutes ?? 120;
+      const triggerLabel =
+        c?.cleaning_trigger === 'day_before_checkin'
+          ? t('cleaning.triggerDayBefore')
+          : c?.cleaning_trigger === 'both'
+            ? t('cleaning.triggerBoth')
+            : t('cleaning.triggerCheckout');
+      return t('cleaning.roomLinkScheduleHint', {
+        checkout: co,
+        checkin: ci,
+        minutes: dur,
+        trigger: triggerLabel,
+      });
+    },
+    [configs, t]
+  );
+
   const getConfigForRoom = (roomId: number): CleaningConfig | undefined => {
     return configs.find(c => c.room_id === String(roomId));
   };
@@ -201,7 +223,12 @@ export default function CleaningCalendarSettings({ rooms, t }: Props) {
         {t('cleaning.notesAdminHintBody')}
       </div>
 
-      <CleaningPublicLinksSection rooms={rooms} t={t} />
+      <CleaningPublicLinksSection
+        rooms={rooms}
+        t={t}
+        getRoomScheduleLabel={getRoomScheduleLabel}
+        onLinksMutated={loadConfigs}
+      />
 
       <p className="text-xs text-gray-500 mb-4 border-t border-gray-100 pt-4">{t('cleaning.perRoomHint')}</p>
 

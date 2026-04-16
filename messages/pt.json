@@ -1539,6 +1539,7 @@
       "tapToChangeTime": "Toque para escolher a hora",
       "publicLinksNamePlaceholder": "Ex.: Maria — manhãs",
       "publicLinksPickRooms": "Selecione os quartos ou unidades que esta pessoa vê neste link.",
+      "roomLinkScheduleHint": "Check-out {checkout} · Check-in {checkin} · {minutes} min · {trigger}",
       "publicLinksCreate": "Criar link",
       "publicLinksCreated": "Link criado. Copie o URL e partilhe só com a sua equipa de limpeza.",
       "publicLinksNameRequired": "Indique um nome para este link.",

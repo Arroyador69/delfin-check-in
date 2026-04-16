@@ -1535,6 +1535,7 @@
       "tapToChangeTime": "Appuyez pour choisir l’heure",
       "publicLinksNamePlaceholder": "Ex. : Maria — matins",
       "publicLinksPickRooms": "Sélectionnez les chambres ou unités visibles avec ce lien.",
+      "roomLinkScheduleHint": "Départ {checkout} · Arrivée {checkin} · {minutes} min · {trigger}",
       "publicLinksCreate": "Créer le lien",
       "publicLinksCreated": "Lien créé. Copiez l’URL et partagez-la uniquement avec votre équipe.",
       "publicLinksNameRequired": "Donnez un nom à ce lien.",

@@ -20,9 +20,18 @@ interface PublicLink {
 interface Props {
   rooms: Room[];
   t: (key: string, values?: Record<string, string | number>) => string;
+  /** Horario de limpieza por habitación (misma lógica que el bloque «por habitación» debajo). */
+  getRoomScheduleLabel?: (roomId: string) => string;
+  /** Tras crear/editar enlaces, recargar configuración por si se crearon filas por defecto. */
+  onLinksMutated?: () => void;
 }
 
-export default function CleaningPublicLinksSection({ rooms, t }: Props) {
+export default function CleaningPublicLinksSection({
+  rooms,
+  t,
+  getRoomScheduleLabel,
+  onLinksMutated,
+}: Props) {
   const [links, setLinks] = useState<PublicLink[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
@@ -81,6 +90,7 @@ export default function CleaningPublicLinksSection({ rooms, t }: Props) {
         setNewLabel('');
         setSelectedRooms(new Set());
         await load();
+        onLinksMutated?.();
         setMessage({ type: 'success', text: t('cleaning.publicLinksCreated') });
       } else {
         setMessage({ type: 'error', text: data.error || t('cleaning.saveError') });
@@ -177,18 +187,29 @@ export default function CleaningPublicLinksSection({ rooms, t }: Props) {
           {rooms.map(r => {
             const id = String(r.id);
             const on = selectedRooms.has(id);
+            const schedule =
+              typeof getRoomScheduleLabel === 'function' ? getRoomScheduleLabel(id) : null;
             return (
               <button
                 key={id}
                 type="button"
                 onClick={() => toggleRoom(id)}
-                className={`text-xs sm:text-sm px-3 py-1.5 rounded-full border transition-colors ${
+                className={`text-left text-xs sm:text-sm px-3 py-1.5 rounded-full border transition-colors max-w-[220px] sm:max-w-none ${
                   on
                     ? 'bg-blue-600 text-white border-blue-600'
                     : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
                 }`}
               >
-                {r.name}
+                <span className="font-medium block truncate">{r.name}</span>
+                {schedule ? (
+                  <span
+                    className={`block text-[10px] sm:text-xs mt-0.5 leading-tight line-clamp-2 ${
+                      on ? 'text-blue-100' : 'text-gray-500'
+                    }`}
+                  >
+                    {schedule}
+                  </span>
+                ) : null}
               </button>
             );
           })}

@@ -3,6 +3,7 @@ import { sql } from '@vercel/postgres';
 import { getTenantId } from '@/lib/tenant';
 import { validateRoomIdsBelongToTenant } from '@/lib/tenant-room-validation';
 import { ensureCleaningPublicLinkTables } from '@/lib/ensure-cleaning-public-links-tables';
+import { ensureCleaningConfigForRoomIds } from '@/lib/ensure-cleaning-config-for-rooms';
 
 async function resolveTenantId(req: NextRequest): Promise<string | null> {
   let tenantId = await getTenantId(req);
@@ -79,6 +80,7 @@ export async function PATCH(
           VALUES (${id}::uuid, ${rid}, ${tenantId}::uuid)
         `;
       }
+      await ensureCleaningConfigForRoomIds(tenantId, room_ids);
     }
 
     return NextResponse.json({ success: true });

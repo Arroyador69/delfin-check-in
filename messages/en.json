@@ -1569,6 +1569,7 @@
       "tapToChangeTime": "Tap to set time",
       "publicLinksNamePlaceholder": "E.g. Maria — mornings",
       "publicLinksPickRooms": "Select the rooms or units this cleaner will see on this link.",
+      "roomLinkScheduleHint": "Checkout {checkout} · Check-in {checkin} · {minutes} min · {trigger}",
       "publicLinksCreate": "Create link",
       "publicLinksCreated": "Link created. Copy the URL and share it only with your cleaner.",
       "publicLinksNameRequired": "Give this link a name (helps you remember who it’s for).",

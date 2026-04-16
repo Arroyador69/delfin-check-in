@@ -73,6 +73,26 @@ function formatTimeShort(iso: string): string {
   return d.toLocaleTimeString(getLocaleTag(), { hour: '2-digit', minute: '2-digit' });
 }
 
+/** Misma información que al elegir habitaciones en la web (horario por habitación en cleaning_config). */
+function buildRoomScheduleHint(cfg: CleaningConfig | undefined): string {
+  const co = cfg?.checkout_time?.slice(0, 5) ?? '11:00';
+  const ci = cfg?.checkin_time?.slice(0, 5) ?? '16:00';
+  const dur = cfg?.cleaning_duration_minutes ?? 120;
+  const tr = cfg?.cleaning_trigger ?? 'on_checkout';
+  const triggerLabel =
+    tr === 'day_before_checkin'
+      ? t('settings.cleaning.triggerDayBefore')
+      : tr === 'both'
+        ? t('settings.cleaning.triggerBoth')
+        : t('settings.cleaning.triggerCheckout');
+  return t('settings.cleaning.roomLinkScheduleHint', {
+    checkout: co,
+    checkin: ci,
+    minutes: dur,
+    trigger: triggerLabel,
+  });
+}
+
 export default function CleaningCalendarScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -213,6 +233,7 @@ export default function CleaningCalendarScreen() {
       setShowPublicLinkModal(false);
       await queryClient.invalidateQueries({ queryKey: ['cleaning-public-links'] });
       await queryClient.invalidateQueries({ queryKey: ['cleaning-upcoming-owner'] });
+      await queryClient.invalidateQueries({ queryKey: ['cleaning-config'] });
       Alert.alert(t('common.success'), t('settings.cleaning.publicLinksCreated'));
     },
     onError: (e: unknown) => {
@@ -457,6 +478,9 @@ export default function CleaningCalendarScreen() {
                           : t('settings.cleaning.inactive')
                         : t('settings.cleaning.notConfigured')}
                     </Text>
+                    <Text style={styles.scheduleHintCompact} numberOfLines={3}>
+                      {buildRoomScheduleHint(cfg)}
+                    </Text>
                     {unread.length > 0 ? (
                       <Text style={styles.unread}>
                         {t('settings.cleaning.unreadNotes', { count: unread.length })}
@@ -468,7 +492,15 @@ export default function CleaningCalendarScreen() {
 
                 {expanded ? (
                   <View style={styles.cardBody}>
-                    <Text style={styles.sectionTitle}>{t('settings.cleaning.upcomingTasks')}</Text>
+                    <Text style={styles.sectionTitle}>{t('settings.cleaning.cleanerScheduleTitle')}</Text>
+                    <Text style={styles.mutedInline}>{buildRoomScheduleHint(cfg)}</Text>
+                    <Text style={[styles.mutedInline, { marginTop: 6, fontSize: 12 }]}>
+                      {t('settings.cleaning.cleanerScheduleSubtitle')}
+                    </Text>
+
+                    <Text style={[styles.sectionTitle, { marginTop: 16 }]}>
+                      {t('settings.cleaning.upcomingTasks')}
+                    </Text>
                     {roomTasks.length === 0 ? (
                       <Text style={styles.mutedInline}>{t('settings.cleaning.noUpcomingTasks')}</Text>
                     ) : (
@@ -622,6 +654,7 @@ export default function CleaningCalendarScreen() {
             {rooms?.map((room) => {
               const id = String(room.id);
               const on = publicLinkRooms.has(id);
+              const roomCfg = configByRoom.get(id);
               return (
                 <Pressable
                   key={room.id}
@@ -631,7 +664,15 @@ export default function CleaningCalendarScreen() {
                   <View style={[styles.roomCheckCircle, on && styles.roomCheckCircleOn]}>
                     {on ? <Check size={16} color="white" strokeWidth={3} /> : null}
                   </View>
-                  <Text style={[styles.roomSelectName, on && styles.roomSelectNameOn]}>{room.name}</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.roomSelectName, on && styles.roomSelectNameOn]}>{room.name}</Text>
+                    <Text
+                      style={[styles.roomSelectSchedule, on && styles.roomSelectScheduleOn]}
+                      numberOfLines={3}
+                    >
+                      {buildRoomScheduleHint(roomCfg)}
+                    </Text>
+                  </View>
                 </Pressable>
               );
             })}
@@ -723,6 +764,7 @@ const styles = StyleSheet.create({
   cardHead: { flexDirection: 'row', alignItems: 'center', padding: 14 },
   roomName: { fontSize: 16, fontWeight: '800', color: '#111827' },
   status: { marginTop: 4, fontSize: 12, color: '#6b7280', fontWeight: '600' },
+  scheduleHintCompact: { marginTop: 4, fontSize: 11, color: '#6b7280', lineHeight: 15 },
   unread: { marginTop: 4, fontSize: 12, color: '#b45309', fontWeight: '700' },
   chev: { fontSize: 18, color: '#9ca3af' },
   cardBody: { paddingHorizontal: 14, paddingBottom: 16, borderTopWidth: 1, borderTopColor: '#f3f4f6' },
@@ -869,7 +911,9 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
   },
   roomCheckCircleOn: { backgroundColor: '#2563eb', borderColor: '#2563eb' },
-  roomSelectName: { flex: 1, fontSize: 15, fontWeight: '600', color: '#374151' },
+  roomSelectName: { fontSize: 15, fontWeight: '600', color: '#374151' },
   roomSelectNameOn: { color: '#1e3a8a' },
+  roomSelectSchedule: { marginTop: 4, fontSize: 11, color: '#6b7280', lineHeight: 15 },
+  roomSelectScheduleOn: { color: '#4b5563' },
   selectedCountText: { marginTop: 12, fontSize: 13, fontWeight: '700', color: '#1d4ed8' },
 });
