@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { X } from 'lucide-react-native';
 
 import { api } from '@/lib/api';
@@ -103,6 +103,7 @@ export default function PropertiesSettingsScreen() {
   });
 
   const list = data?.properties ?? [];
+  const displayList = useMemo(() => list.filter((p) => !p.is_placeholder), [list]);
 
   function openEdit(p: TenantPropertyRow) {
     setEditing(p);
@@ -200,10 +201,10 @@ export default function PropertiesSettingsScreen() {
             <ActivityIndicator color="#2563eb" />
           ) : isError ? (
             <Text style={styles.muted}>{t('common.error')}</Text>
-          ) : list.length === 0 ? (
+          ) : displayList.length === 0 ? (
             <Text style={styles.muted}>{t('mobile.settings.propertiesEmpty')}</Text>
           ) : (
-            list.map((p, idx) => (
+            displayList.map((p, idx) => (
               <Pressable
                 key={p.id != null ? `p-${p.id}` : `ph-${p.room_id ?? idx}`}
                 style={[styles.row, idx > 0 && styles.rowBorder]}

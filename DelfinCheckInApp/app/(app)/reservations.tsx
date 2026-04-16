@@ -13,7 +13,6 @@ import {
   ScrollView,
   Alert,
   Platform,
-  Modal,
 } from 'react-native';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { api } from '@/lib/api';
@@ -686,6 +685,35 @@ export default function ReservationsScreen() {
                 <ChevronRight size={18} color="#9ca3af" />
               </Pressable>
 
+              {calendarFor ? (
+                <View style={styles.inlineCalendarBox}>
+                  <DateTimePicker
+                    value={dateFromYmd(formData[calendarFor])}
+                    mode="date"
+                    display={Platform.OS === 'ios' ? 'inline' : 'default'}
+                    onChange={(event, date) => {
+                      if (Platform.OS === 'android') {
+                        const field = calendarFor;
+                        setCalendarFor(null);
+                        if (event.type === 'dismissed') return;
+                        if ((event.type === 'set' || event.type === 'neutralButtonPressed') && date && field) {
+                          setFormData((prev) => ({ ...prev, [field]: toIsoDate(date) }));
+                        }
+                        return;
+                      }
+                      if (date && calendarFor) {
+                        setFormData((prev) => ({ ...prev, [calendarFor]: toIsoDate(date) }));
+                      }
+                    }}
+                  />
+                  {Platform.OS === 'ios' ? (
+                    <Pressable style={styles.inlineCalendarDone} onPress={() => setCalendarFor(null)}>
+                      <Text style={styles.modalButtonTextCreate}>{t('common.confirm')}</Text>
+                    </Pressable>
+                  ) : null}
+                </View>
+              ) : null}
+
               <Text style={styles.sectionHeading}>{t('reservations.form.financialSectionTitle')}</Text>
               <Text style={styles.label}>{t('reservations.form.totalPriceLabel')}</Text>
               <TextInput
@@ -794,48 +822,6 @@ export default function ReservationsScreen() {
             </View>
           </View>
       </KeyboardAwareFormModal>
-
-      <Modal
-        visible={calendarFor !== null}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setCalendarFor(null)}
-      >
-        <View style={styles.dateModalOverlay}>
-          <Pressable style={StyleSheet.absoluteFill} onPress={() => setCalendarFor(null)} />
-          <View style={styles.dateModalSheet} pointerEvents="box-none">
-            <Text style={styles.dateModalTitle}>
-              {calendarFor === 'check_in'
-                ? t('reservations.form.checkInLabel')
-                : t('reservations.form.checkOutLabel')}
-            </Text>
-            {calendarFor ? (
-              <DateTimePicker
-                value={dateFromYmd(formData[calendarFor])}
-                mode="date"
-                display={Platform.OS === 'ios' ? 'inline' : 'calendar'}
-                onChange={(event, date) => {
-                  if (Platform.OS === 'android') {
-                    const field = calendarFor;
-                    setCalendarFor(null);
-                    if (event.type !== 'set' || !date || !field) return;
-                    setFormData((prev) => ({ ...prev, [field]: toIsoDate(date) }));
-                    return;
-                  }
-                  if (date && calendarFor) {
-                    setFormData((prev) => ({ ...prev, [calendarFor]: toIsoDate(date) }));
-                  }
-                }}
-              />
-            ) : null}
-            {Platform.OS === 'ios' ? (
-              <Pressable style={styles.dateModalDone} onPress={() => setCalendarFor(null)}>
-                <Text style={styles.modalButtonTextCreate}>{t('common.confirm')}</Text>
-              </Pressable>
-            ) : null}
-          </View>
-        </View>
-      </Modal>
     </View>
   );
 }
@@ -1082,27 +1068,17 @@ const styles = StyleSheet.create({
     marginTop: 16,
     marginBottom: 4,
   },
-  dateModalOverlay: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0,0,0,0.45)',
-  },
-  dateModalSheet: {
-    backgroundColor: 'white',
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-    padding: 16,
-    paddingBottom: 24,
-  },
-  dateModalTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#111827',
+  inlineCalendarBox: {
+    marginTop: 8,
     marginBottom: 8,
-    textAlign: 'center',
+    borderWidth: 1,
+    borderColor: '#bfdbfe',
+    borderRadius: 12,
+    backgroundColor: '#f8fafc',
+    overflow: 'hidden',
   },
-  dateModalDone: {
-    marginTop: 12,
+  inlineCalendarDone: {
+    margin: 12,
     backgroundColor: '#2563eb',
     borderRadius: 12,
     paddingVertical: 14,

@@ -111,7 +111,7 @@ export async function POST(req: NextRequest) {
         {
           success: false,
           error:
-            'Falta ejecutar la migración SQL database/cleaning-public-links.sql en la base de datos.',
+            'En tu base Neon (la misma que usa la web) faltan las tablas de enlaces de limpieza. Abre el SQL Editor en Neon, pega y ejecuta el archivo database/cleaning-public-links.sql del repositorio, y vuelve a intentarlo.',
         },
         { status: 503 }
       );

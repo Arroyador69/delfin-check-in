@@ -186,7 +186,8 @@ export async function GET(
       return NextResponse.json(
         {
           success: false,
-          error: 'Servicio no disponible: falta migración en base de datos.',
+          error:
+            'En Neon falta ejecutar database/cleaning-public-links.sql (SQL Editor). Es la misma base que la app web.',
         },
         { status: 503 }
       );
