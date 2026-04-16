@@ -18,7 +18,8 @@ interface PaymentLink {
   resource_id: number;
   check_in_date: string;
   check_out_date: string;
-  total_price: number;
+  /** Puede venir como string (NUMERIC) o null según BD/API */
+  total_price: number | string | null | undefined;
   base_price_per_night: number | null;
   cleaning_fee: number;
   expected_guests: number;
@@ -203,6 +204,12 @@ export default function PaymentLinksScreen() {
     });
   };
 
+  const formatPriceEur = (raw: unknown) => {
+    const n = typeof raw === 'number' ? raw : typeof raw === 'string' ? Number(raw) : NaN;
+    if (!Number.isFinite(n)) return '—';
+    return `${n.toFixed(2)} €`;
+  };
+
   const getResourceName = (link: PaymentLink) => {
     if (link.resource_type === 'room') {
       const slot = slots.find(s => String(s.room_id) === String(link.resource_id));
@@ -277,7 +284,7 @@ export default function PaymentLinksScreen() {
 
               <View style={styles.priceContainer}>
                 <Text style={styles.priceLabel}>{t('settings.paymentLinks.totalPriceLabel')}</Text>
-                <Text style={styles.priceValue}>{item.total_price.toFixed(2)} €</Text>
+                <Text style={styles.priceValue}>{formatPriceEur(item.total_price)}</Text>
               </View>
 
               <View style={styles.usageContainer}>
