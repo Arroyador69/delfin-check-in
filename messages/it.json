@@ -1649,7 +1649,12 @@
       "deleteFinal": "Elimina definitivamente",
       "noteDeleted": "Nota eliminata",
       "noteDeleteError": "Impossibile eliminare la nota",
-      "icalInstructions": "La persona delle pulizie deve solo aprire questo link in Google Calendar (Aggiungi per URL) o incollarlo in qualsiasi app di calendario. Si aggiorna automaticamente con ogni prenotazione."
+      "icalInstructions": "La persona delle pulizie deve solo aprire questo link in Google Calendar (Aggiungi per URL) o incollarlo in qualsiasi app di calendario. Si aggiorna automaticamente con ogni prenotazione.",
+      "saveCalendar": "Salva calendario",
+      "saveNote": "Salva nota",
+      "upcomingTasks": "Pulizie imminenti",
+      "noUpcomingTasks": "Non ci sono ancora prenotazioni future per questa camera o appartamento.",
+      "newNotePlaceholder": "Scrivi una nota per la pulizia"
     },
     "properties": {
       "title": "Le Mie Proprietà",
@@ -2452,6 +2457,13 @@
     "perMonth": "/mese",
     "extraRoomPerMonth": "+{price}€/mese per camera aggiuntiva",
     "successSubscription": "Abbonamento creato con successo!",
+    "manageCurrentPlan": "Gestisci questo piano",
+    "currentRoomsSummary": "Attualmente contrattato: {rooms} unità",
+    "selectedRoomsSummary": "Selezione attuale: {rooms} unità",
+    "currentSubscriptionTitle": "Abbonamento attuale",
+    "currentSubscriptionDescription": "Al momento hai il piano {plan} con {rooms} unità.",
+    "updateSubscription": "Aggiorna abbonamento",
+    "noChangesToSubscription": "Non hai ancora modificato il numero di unità.",
     "freePlanName": "Piano gratuito",
     "freePlanDesc": "PMS base con annunci",
     "freeF0": "Fino a 1 camera",

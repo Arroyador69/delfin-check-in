@@ -1585,7 +1585,12 @@
       "deleteFinal": "Supprimer définitivement",
       "noteDeleted": "Note supprimée",
       "noteDeleteError": "Impossible de supprimer la note",
-      "icalInstructions": "La femme de ménage n'a qu'à ouvrir ce lien dans Google Calendar (Ajouter par URL) ou le coller dans n'importe quelle application de calendrier. Il se met à jour automatiquement à chaque réservation."
+      "icalInstructions": "La femme de ménage n'a qu'à ouvrir ce lien dans Google Calendar (Ajouter par URL) ou le coller dans n'importe quelle application de calendrier. Il se met à jour automatiquement à chaque réservation.",
+      "saveCalendar": "Enregistrer le calendrier",
+      "saveNote": "Enregistrer la note",
+      "upcomingTasks": "Nettoyages à venir",
+      "noUpcomingTasks": "Il n'y a pas encore de réservations à venir pour cette chambre ou cet appartement.",
+      "newNotePlaceholder": "Écrivez une note de nettoyage"
     },
     "properties": {
       "title": "Mes Propriétés",
@@ -2389,6 +2394,13 @@
     "perMonth": "/mois",
     "extraRoomPerMonth": "+{price}€/mois par chambre supplémentaire",
     "successSubscription": "Abonnement créé avec succès !",
+    "manageCurrentPlan": "Gérer ce forfait",
+    "currentRoomsSummary": "Actuellement souscrit : {rooms} unité(s)",
+    "selectedRoomsSummary": "Sélection actuelle : {rooms} unité(s)",
+    "currentSubscriptionTitle": "Abonnement actuel",
+    "currentSubscriptionDescription": "Vous avez actuellement le forfait {plan} avec {rooms} unité(s).",
+    "updateSubscription": "Mettre à jour l’abonnement",
+    "noChangesToSubscription": "Vous n’avez pas encore modifié le nombre d’unités.",
     "freePlanName": "Forfait gratuit",
     "freePlanDesc": "PMS de base avec annonces",
     "freeF0": "Jusqu'à 1 chambre",

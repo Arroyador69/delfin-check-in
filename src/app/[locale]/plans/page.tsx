@@ -217,9 +217,18 @@ function CheckoutForm({
   );
 }
 
-function PlanCalculator({ planId, onPriceChange }: { planId: PlanId; onPriceChange: (pricing: any) => void }) {
+function PlanCalculator({
+  planId,
+  roomCount,
+  onRoomCountChange,
+  onPriceChange,
+}: {
+  planId: PlanId;
+  roomCount: number;
+  onRoomCountChange: (n: number) => void;
+  onPriceChange: (pricing: any) => void;
+}) {
   const t = useTranslations('plans');
-  const [roomCount, setRoomCount] = useState(2);
   const [pricing, setPricing] = useState<any>(null);
   const [loading, setLoading] = useState(false);
 
@@ -263,7 +272,7 @@ function PlanCalculator({ planId, onPriceChange }: { planId: PlanId; onPriceChan
             type="number"
             min={plan.maxRoomsIncluded}
             value={roomCount}
-            onChange={(e) => setRoomCount(parseInt(e.target.value) || plan.maxRoomsIncluded)}
+            onChange={(e) => onRoomCountChange(parseInt(e.target.value, 10) || plan.maxRoomsIncluded)}
             className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
           />
           <p className="text-xs text-gray-500 mt-1">
@@ -330,6 +339,7 @@ export default function PlansPage() {
   const locale = useLocale();
   const router = useRouter();
   const [currentPlan, setCurrentPlan] = useState<PlanId | null>(null);
+  const [currentRoomCount, setCurrentRoomCount] = useState(1);
   const [selectedPlan, setSelectedPlan] = useState<PlanId | null>(null);
   const [showCheckout, setShowCheckout] = useState(false);
   const [pricing, setPricing] = useState<any>(null);
@@ -348,6 +358,17 @@ export default function PlansPage() {
       if (data.success && data.tenant) {
         setCurrentPlan(data.tenant.plan_type || 'free');
       }
+      try {
+        const roomsResponse = await fetch('/api/tenant/limits');
+        if (roomsResponse.ok) {
+          const roomsData = await roomsResponse.json();
+          const nextRooms = Math.max(1, roomsData?.currentRooms?.length || 1);
+          setCurrentRoomCount(nextRooms);
+          setRoomCount(nextRooms);
+        }
+      } catch {
+        /* ignore */
+      }
     } catch (error) {
       console.error('Error cargando plan actual:', error);
     } finally {
@@ -356,12 +377,11 @@ export default function PlansPage() {
   };
 
   const handleSelectPlan = (planId: PlanId) => {
-    if (planId === currentPlan) {
-      return;
-    }
     setSelectedPlan(planId);
     setShowCheckout(true);
-    setRoomCount(planId === 'checkin' ? 2 : planId === 'standard' ? 4 : planId === 'pro' ? 6 : 2);
+    if (planId !== currentPlan) {
+      setRoomCount(Math.max(1, currentRoomCount));
+    }
   };
 
   const handlePriceChange = (newPricing: any) => {
@@ -372,6 +392,26 @@ export default function PlansPage() {
     alert(t('successSubscription'));
     router.push(`/${locale}/dashboard`);
     router.refresh();
+  };
+
+  const isSamePlanSelection = Boolean(selectedPlan && selectedPlan === currentPlan);
+  const hasRoomCountChange = roomCount !== currentRoomCount;
+
+  const handleSamePlanUpdate = async () => {
+    try {
+      const response = await fetch('/api/stripe/update-subscription', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ roomCount }),
+      });
+      const data = await response.json();
+      if (!data.success) {
+        throw new Error(data.error || t('errorSubscription'));
+      }
+      handleSuccess();
+    } catch (error: any) {
+      alert(error?.message || t('errorSubscription'));
+    }
   };
 
   if (loading) {
@@ -400,6 +440,10 @@ export default function PlansPage() {
               <span>{t('currentPlanLabel')} <strong>{getPlanName(t, currentPlan)}</strong></span>
             </div>
           )}
+          <div className="mt-3 inline-flex items-center gap-2 bg-slate-50 text-slate-700 px-4 py-2 rounded-lg">
+            <Info size={16} />
+            <span>{t('currentRoomsSummary', { rooms: currentRoomCount })}</span>
+          </div>
         </div>
 
         {showCheckout && selectedPlan && selectedPlan !== 'free' ? (
@@ -419,22 +463,56 @@ export default function PlansPage() {
                 {t('subscribeTo')} {getPlanName(t, selectedPlan)}
               </h2>
 
+              <div className="mb-6 rounded-xl border border-blue-100 bg-blue-50 p-4 text-sm text-blue-900">
+                <p className="font-semibold">{t('currentSubscriptionTitle')}</p>
+                <p className="mt-1">
+                  {t('currentSubscriptionDescription', {
+                    plan: currentPlan ? getPlanName(t, currentPlan) : '-',
+                    rooms: currentRoomCount,
+                  })}
+                </p>
+                <p className="mt-1">{t('selectedRoomsSummary', { rooms: roomCount })}</p>
+              </div>
+
               <PlanCalculator 
                 planId={selectedPlan} 
+                roomCount={roomCount}
+                onRoomCountChange={(next) => {
+                  const min = selectedPlan === currentPlan ? Math.max(1, currentRoomCount) : 1;
+                  setRoomCount(Math.max(min, next));
+                }}
                 onPriceChange={handlePriceChange}
               />
 
               {pricing && (
                 <div className="mt-6">
-                  <Elements stripe={stripePromise}>
-                    <CheckoutForm
-                      planId={selectedPlan}
-                      roomCount={roomCount}
-                      pricing={pricing}
-                      onSuccess={handleSuccess}
-                      onError={(error) => console.error(error)}
-                    />
-                  </Elements>
+                  {isSamePlanSelection ? (
+                    <div className="space-y-4">
+                      {!hasRoomCountChange ? (
+                        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-amber-800">
+                          {t('noChangesToSubscription')}
+                        </div>
+                      ) : null}
+                      <button
+                        type="button"
+                        onClick={handleSamePlanUpdate}
+                        disabled={!hasRoomCountChange}
+                        className="w-full rounded-lg bg-blue-600 px-4 py-3 font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {t('updateSubscription')}
+                      </button>
+                    </div>
+                  ) : (
+                    <Elements stripe={stripePromise}>
+                      <CheckoutForm
+                        planId={selectedPlan}
+                        roomCount={roomCount}
+                        pricing={pricing}
+                        onSuccess={handleSuccess}
+                        onError={(error) => console.error(error)}
+                      />
+                    </Elements>
+                  )}
                 </div>
               )}
             </div>
@@ -503,19 +581,19 @@ export default function PlansPage() {
 
                   <button
                     onClick={() => handleSelectPlan(plan.id)}
-                    disabled={isCurrent || isFree}
                     className={`w-full py-3 px-4 rounded-lg font-semibold transition-colors ${
-                      isCurrent
-                        ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                        : isFree
+                      isFree
                         ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
+                        : isCurrent
+                        ? 'bg-green-600 text-white hover:bg-green-700'
                         : plan.popular
                         ? 'bg-blue-600 text-white hover:bg-blue-700'
                         : `bg-${plan.color}-600 text-white hover:bg-${plan.color}-700`
                     }`}
+                    disabled={isFree}
                   >
                     {isCurrent
-                      ? t('currentPlanBadge')
+                      ? t('manageCurrentPlan')
                       : isFree
                       ? t('freePlan')
                       : t('selectPlan')}

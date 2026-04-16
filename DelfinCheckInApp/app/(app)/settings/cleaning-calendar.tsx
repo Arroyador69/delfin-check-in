@@ -16,6 +16,7 @@ import { useMemo, useState } from 'react';
 
 import { api } from '@/lib/api';
 import { t } from '@/lib/i18n';
+import { Reservation, getReservationCheckIn, getReservationCheckOut, getReservationStatus } from '@/lib/reservations';
 
 type Room = { id: number; name: string };
 
@@ -32,6 +33,17 @@ type CleaningConfig = {
   cleaner_name: string | null;
 };
 
+type CleaningDraft = {
+  room_id: string;
+  checkout_time: string;
+  checkin_time: string;
+  cleaning_duration_minutes: number;
+  cleaning_trigger: 'on_checkout' | 'day_before_checkin' | 'both';
+  same_day_alert: boolean;
+  ical_enabled: boolean;
+  cleaner_name: string | null;
+};
+
 type CleaningNote = {
   id: string;
   room_id: string;
@@ -43,6 +55,13 @@ type CleaningNote = {
   created_at: string;
 };
 
+type CleaningTask = {
+  key: string;
+  date: string;
+  label: string;
+  guestName: string;
+};
+
 const DURATIONS = [60, 90, 120, 150, 180, 240] as const;
 
 function icalFeedUrl(token: string): string {
@@ -50,10 +69,71 @@ function icalFeedUrl(token: string): string {
   return `${base}/api/ical/cleaning/${token}`;
 }
 
+function defaultDraft(roomId: number, cfg?: CleaningConfig): CleaningDraft {
+  return {
+    room_id: String(roomId),
+    checkout_time: cfg?.checkout_time?.slice(0, 5) || '11:00',
+    checkin_time: cfg?.checkin_time?.slice(0, 5) || '16:00',
+    cleaning_duration_minutes: cfg?.cleaning_duration_minutes || 120,
+    cleaning_trigger: cfg?.cleaning_trigger || 'on_checkout',
+    same_day_alert: cfg?.same_day_alert ?? true,
+    ical_enabled: cfg?.ical_enabled ?? true,
+    cleaner_name: cfg?.cleaner_name || null,
+  };
+}
+
+function buildTasksForRoom(roomId: number, roomName: string, cfg: CleaningDraft, reservations: Reservation[]): CleaningTask[] {
+  const valid = reservations
+    .filter((r) => String(r.room_id || '') === String(roomId))
+    .filter((r) => !['cancelled', 'canceled'].includes(getReservationStatus(r)))
+    .sort((a, b) => {
+      const da = new Date(String(getReservationCheckIn(a) || '')).getTime();
+      const db = new Date(String(getReservationCheckIn(b) || '')).getTime();
+      return da - db;
+    });
+
+  const tasks: CleaningTask[] = [];
+  for (const r of valid) {
+    const guestName = r.guest_name || 'Huésped';
+    const checkIn = getReservationCheckIn(r);
+    const checkOut = getReservationCheckOut(r);
+    if (!checkIn || !checkOut) continue;
+
+    const inDate = new Date(checkIn);
+    const outDate = new Date(checkOut);
+    const outYmd = outDate.toISOString().slice(0, 10);
+
+    if (cfg.cleaning_trigger === 'on_checkout' || cfg.cleaning_trigger === 'both') {
+      tasks.push({
+        key: `co-${r.id}`,
+        date: outYmd,
+        label: `${roomName} · checkout`,
+        guestName,
+      });
+    }
+
+    if (cfg.cleaning_trigger === 'day_before_checkin' || cfg.cleaning_trigger === 'both') {
+      const dayBefore = new Date(inDate.getTime() - 86400000);
+      tasks.push({
+        key: `pre-${r.id}`,
+        date: dayBefore.toISOString().slice(0, 10),
+        label: `${roomName} · pre check-in`,
+        guestName,
+      });
+    }
+  }
+
+  return tasks
+    .filter((task) => task.date >= new Date().toISOString().slice(0, 10))
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .slice(0, 8);
+}
+
 export default function CleaningCalendarScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [draftByRoom, setDraftByRoom] = useState<Record<number, CleaningDraft>>({});
   const [noteDraft, setNoteDraft] = useState<Record<number, { date: string; text: string }>>({});
 
   const { data: rooms, isLoading: roomsLoading } = useQuery({
@@ -80,8 +160,17 @@ export default function CleaningCalendarScreen() {
     },
   });
 
+  const { data: reservationsRes, isLoading: reservationsLoading } = useQuery({
+    queryKey: ['cleaning-reservations'],
+    queryFn: async () => {
+      const res = await api.get('/api/reservations');
+      return (res.data || []) as Reservation[];
+    },
+  });
+
   const configs = configRes?.configs ?? [];
   const notes = notesRes?.notes ?? [];
+  const reservations = reservationsRes ?? [];
 
   const configByRoom = useMemo(() => {
     const m = new Map<string, CleaningConfig>();
@@ -89,9 +178,26 @@ export default function CleaningCalendarScreen() {
     return m;
   }, [configs]);
 
-  const saveMutation = useMutation({
-    mutationFn: async (body: Record<string, unknown>) => {
-      const res = await api.put('/api/cleaning/config', body);
+  function getRoomDraft(room: Room, cfg?: CleaningConfig): CleaningDraft {
+    return draftByRoom[room.id] || defaultDraft(room.id, cfg);
+  }
+
+  function openRoom(room: Room, cfg?: CleaningConfig) {
+    setExpandedId((prev) => (prev === room.id ? null : room.id));
+    setDraftByRoom((prev) => (prev[room.id] ? prev : { ...prev, [room.id]: defaultDraft(room.id, cfg) }));
+    setNoteDraft((prev) =>
+      prev[room.id]
+        ? prev
+        : {
+            ...prev,
+            [room.id]: { date: new Date().toISOString().slice(0, 10), text: '' },
+          }
+    );
+  }
+
+  const saveConfigMutation = useMutation({
+    mutationFn: async (draft: CleaningDraft) => {
+      const res = await api.put('/api/cleaning/config', draft);
       return res.data;
     },
     onSuccess: async () => {
@@ -139,20 +245,10 @@ export default function CleaningCalendarScreen() {
     },
   });
 
-  const loading = roomsLoading || configLoading || notesLoading;
-
-  function getDraft(roomId: number) {
-    return (
-      noteDraft[roomId] || {
-        date: new Date().toISOString().slice(0, 10),
-        text: '',
-      }
-    );
-  }
+  const loading = roomsLoading || configLoading || notesLoading || reservationsLoading;
 
   function notesForRoom(roomId: number) {
-    const id = String(roomId);
-    return notes.filter((n) => n.room_id === id);
+    return notes.filter((n) => n.room_id === String(roomId));
   }
 
   function unreadCleanerNoteIds(roomId: number): string[] {
@@ -180,12 +276,14 @@ export default function CleaningCalendarScreen() {
       ) : (
         rooms.map((room) => {
           const cfg = configByRoom.get(String(room.id));
+          const draft = getRoomDraft(room, cfg);
           const expanded = expandedId === room.id;
           const unread = unreadCleanerNoteIds(room.id);
+          const tasks = buildTasksForRoom(room.id, room.name, draft, reservations);
 
           return (
             <View key={room.id} style={styles.card}>
-              <Pressable onPress={() => setExpandedId(expanded ? null : room.id)} style={styles.cardHead}>
+              <Pressable onPress={() => openRoom(room, cfg)} style={styles.cardHead}>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.roomName}>{room.name}</Text>
                   <Text style={styles.status}>
@@ -206,176 +304,113 @@ export default function CleaningCalendarScreen() {
 
               {expanded ? (
                 <View style={styles.cardBody}>
-                  {!cfg ? (
+                  <Text style={styles.sectionTitle}>{t('settings.cleaning.checkoutTime')}</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={draft.checkout_time}
+                    onChangeText={(v) =>
+                      setDraftByRoom((prev) => ({ ...prev, [room.id]: { ...draft, checkout_time: v } }))
+                    }
+                    placeholder="11:00"
+                  />
+
+                  <Text style={styles.label}>{t('settings.cleaning.checkinTime')}</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={draft.checkin_time}
+                    onChangeText={(v) =>
+                      setDraftByRoom((prev) => ({ ...prev, [room.id]: { ...draft, checkin_time: v } }))
+                    }
+                    placeholder="16:00"
+                  />
+
+                  <Text style={styles.label}>{t('settings.cleaning.duration')}</Text>
+                  <View style={styles.chipRow}>
+                    {DURATIONS.map((m) => (
+                      <Pressable
+                        key={m}
+                        style={[styles.chip, draft.cleaning_duration_minutes === m && styles.chipOn]}
+                        onPress={() =>
+                          setDraftByRoom((prev) => ({
+                            ...prev,
+                            [room.id]: { ...draft, cleaning_duration_minutes: m },
+                          }))
+                        }
+                      >
+                        <Text style={[styles.chipText, draft.cleaning_duration_minutes === m && styles.chipTextOn]}>
+                          {m >= 60 ? `${m / 60}h` : `${m}m`}
+                        </Text>
+                      </Pressable>
+                    ))}
+                  </View>
+
+                  <Text style={styles.label}>{t('settings.cleaning.whenToClean')}</Text>
+                  {(
+                    [
+                      ['on_checkout', t('settings.cleaning.triggerCheckout')],
+                      ['day_before_checkin', t('settings.cleaning.triggerDayBefore')],
+                      ['both', t('settings.cleaning.triggerBoth')],
+                    ] as const
+                  ).map(([val, label]) => (
                     <Pressable
-                      style={styles.primaryBtn}
+                      key={val}
+                      style={[styles.opt, draft.cleaning_trigger === val && styles.optOn]}
                       onPress={() =>
-                        saveMutation.mutate({
-                          room_id: String(room.id),
-                          checkout_time: '11:00',
-                          checkin_time: '16:00',
-                          cleaning_duration_minutes: 120,
-                          cleaning_trigger: 'on_checkout',
-                          same_day_alert: true,
-                          ical_enabled: true,
-                          cleaner_name: null,
-                        })
+                        setDraftByRoom((prev) => ({
+                          ...prev,
+                          [room.id]: { ...draft, cleaning_trigger: val },
+                        }))
                       }
                     >
-                      <Text style={styles.primaryBtnText}>{t('settings.cleaning.activate')}</Text>
+                      <Text style={[styles.optText, draft.cleaning_trigger === val && styles.optTextOn]}>
+                        {label}
+                      </Text>
                     </Pressable>
-                  ) : (
+                  ))}
+
+                  <View style={styles.switchRow}>
+                    <Text style={styles.labelInline}>{t('settings.cleaning.sameDayAlert')}</Text>
+                    <Switch
+                      value={draft.same_day_alert}
+                      onValueChange={(v) =>
+                        setDraftByRoom((prev) => ({ ...prev, [room.id]: { ...draft, same_day_alert: v } }))
+                      }
+                    />
+                  </View>
+
+                  <View style={styles.switchRow}>
+                    <Text style={styles.labelInline}>{t('settings.cleaning.calendarEnabled')}</Text>
+                    <Switch
+                      value={draft.ical_enabled}
+                      onValueChange={(v) =>
+                        setDraftByRoom((prev) => ({ ...prev, [room.id]: { ...draft, ical_enabled: v } }))
+                      }
+                    />
+                  </View>
+
+                  <Text style={styles.label}>{t('settings.cleaning.cleanerName')}</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder={t('settings.cleaning.cleanerNamePlaceholder')}
+                    value={draft.cleaner_name || ''}
+                    onChangeText={(v) =>
+                      setDraftByRoom((prev) => ({
+                        ...prev,
+                        [room.id]: { ...draft, cleaner_name: v || null },
+                      }))
+                    }
+                  />
+
+                  <Pressable
+                    style={[styles.primaryBtn, saveConfigMutation.isPending && styles.disabled]}
+                    disabled={saveConfigMutation.isPending}
+                    onPress={() => saveConfigMutation.mutate(draft)}
+                  >
+                    <Text style={styles.primaryBtnText}>{t('settings.cleaning.saveCalendar')}</Text>
+                  </Pressable>
+
+                  {cfg?.ical_token ? (
                     <>
-                      <Text style={styles.label}>{t('settings.cleaning.checkoutTime')}</Text>
-                      <TextInput
-                        key={`co-${room.id}-${cfg.checkout_time}`}
-                        style={styles.input}
-                        defaultValue={cfg.checkout_time?.slice(0, 5) || '11:00'}
-                        onEndEditing={(e) =>
-                          saveMutation.mutate({
-                            room_id: String(room.id),
-                            checkout_time: e.nativeEvent.text || '11:00',
-                            checkin_time: cfg.checkin_time?.slice(0, 5) || '16:00',
-                            cleaning_duration_minutes: cfg.cleaning_duration_minutes,
-                            cleaning_trigger: cfg.cleaning_trigger,
-                            same_day_alert: cfg.same_day_alert,
-                            ical_enabled: cfg.ical_enabled,
-                            cleaner_name: cfg.cleaner_name,
-                          })
-                        }
-                      />
-                      <Text style={styles.label}>{t('settings.cleaning.checkinTime')}</Text>
-                      <TextInput
-                        key={`ci-${room.id}-${cfg.checkin_time}`}
-                        style={styles.input}
-                        defaultValue={cfg.checkin_time?.slice(0, 5) || '16:00'}
-                        onEndEditing={(e) =>
-                          saveMutation.mutate({
-                            room_id: String(room.id),
-                            checkout_time: cfg.checkout_time?.slice(0, 5) || '11:00',
-                            checkin_time: e.nativeEvent.text || '16:00',
-                            cleaning_duration_minutes: cfg.cleaning_duration_minutes,
-                            cleaning_trigger: cfg.cleaning_trigger,
-                            same_day_alert: cfg.same_day_alert,
-                            ical_enabled: cfg.ical_enabled,
-                            cleaner_name: cfg.cleaner_name,
-                          })
-                        }
-                      />
-
-                      <Text style={styles.label}>{t('settings.cleaning.duration')}</Text>
-                      <View style={styles.chipRow}>
-                        {DURATIONS.map((m) => (
-                          <Pressable
-                            key={m}
-                            style={[styles.chip, cfg.cleaning_duration_minutes === m && styles.chipOn]}
-                            onPress={() =>
-                              saveMutation.mutate({
-                                room_id: String(room.id),
-                                checkout_time: cfg.checkout_time?.slice(0, 5) || '11:00',
-                                checkin_time: cfg.checkin_time?.slice(0, 5) || '16:00',
-                                cleaning_duration_minutes: m,
-                                cleaning_trigger: cfg.cleaning_trigger,
-                                same_day_alert: cfg.same_day_alert,
-                                ical_enabled: cfg.ical_enabled,
-                                cleaner_name: cfg.cleaner_name,
-                              })
-                            }
-                          >
-                            <Text style={[styles.chipText, cfg.cleaning_duration_minutes === m && styles.chipTextOn]}>
-                              {m >= 60 ? `${m / 60}h` : `${m}m`}
-                            </Text>
-                          </Pressable>
-                        ))}
-                      </View>
-
-                      <Text style={styles.label}>{t('settings.cleaning.whenToClean')}</Text>
-                      {(
-                        [
-                          ['on_checkout', t('settings.cleaning.triggerCheckout')],
-                          ['day_before_checkin', t('settings.cleaning.triggerDayBefore')],
-                          ['both', t('settings.cleaning.triggerBoth')],
-                        ] as const
-                      ).map(([val, label]) => (
-                        <Pressable
-                          key={val}
-                          style={[styles.opt, cfg.cleaning_trigger === val && styles.optOn]}
-                          onPress={() =>
-                            saveMutation.mutate({
-                              room_id: String(room.id),
-                              checkout_time: cfg.checkout_time?.slice(0, 5) || '11:00',
-                              checkin_time: cfg.checkin_time?.slice(0, 5) || '16:00',
-                              cleaning_duration_minutes: cfg.cleaning_duration_minutes,
-                              cleaning_trigger: val,
-                              same_day_alert: cfg.same_day_alert,
-                              ical_enabled: cfg.ical_enabled,
-                              cleaner_name: cfg.cleaner_name,
-                            })
-                          }
-                        >
-                          <Text style={[styles.optText, cfg.cleaning_trigger === val && styles.optTextOn]}>
-                            {label}
-                          </Text>
-                        </Pressable>
-                      ))}
-
-                      <View style={styles.switchRow}>
-                        <Text style={styles.labelInline}>{t('settings.cleaning.sameDayAlert')}</Text>
-                        <Switch
-                          value={cfg.same_day_alert}
-                          onValueChange={(v) =>
-                            saveMutation.mutate({
-                              room_id: String(room.id),
-                              checkout_time: cfg.checkout_time?.slice(0, 5) || '11:00',
-                              checkin_time: cfg.checkin_time?.slice(0, 5) || '16:00',
-                              cleaning_duration_minutes: cfg.cleaning_duration_minutes,
-                              cleaning_trigger: cfg.cleaning_trigger,
-                              same_day_alert: v,
-                              ical_enabled: cfg.ical_enabled,
-                              cleaner_name: cfg.cleaner_name,
-                            })
-                          }
-                        />
-                      </View>
-                      <View style={styles.switchRow}>
-                        <Text style={styles.labelInline}>{t('settings.cleaning.calendarEnabled')}</Text>
-                        <Switch
-                          value={cfg.ical_enabled}
-                          onValueChange={(v) =>
-                            saveMutation.mutate({
-                              room_id: String(room.id),
-                              checkout_time: cfg.checkout_time?.slice(0, 5) || '11:00',
-                              checkin_time: cfg.checkin_time?.slice(0, 5) || '16:00',
-                              cleaning_duration_minutes: cfg.cleaning_duration_minutes,
-                              cleaning_trigger: cfg.cleaning_trigger,
-                              same_day_alert: cfg.same_day_alert,
-                              ical_enabled: v,
-                              cleaner_name: cfg.cleaner_name,
-                            })
-                          }
-                        />
-                      </View>
-
-                      <Text style={styles.label}>{t('settings.cleaning.cleanerName')}</Text>
-                      <TextInput
-                        key={`cl-${room.id}-${cfg.cleaner_name || ''}`}
-                        style={styles.input}
-                        placeholder={t('settings.cleaning.cleanerNamePlaceholder')}
-                        defaultValue={cfg.cleaner_name || ''}
-                        onEndEditing={(e) =>
-                          saveMutation.mutate({
-                            room_id: String(room.id),
-                            checkout_time: cfg.checkout_time?.slice(0, 5) || '11:00',
-                            checkin_time: cfg.checkin_time?.slice(0, 5) || '16:00',
-                            cleaning_duration_minutes: cfg.cleaning_duration_minutes,
-                            cleaning_trigger: cfg.cleaning_trigger,
-                            same_day_alert: cfg.same_day_alert,
-                            ical_enabled: cfg.ical_enabled,
-                            cleaner_name: e.nativeEvent.text?.trim() || null,
-                          })
-                        }
-                      />
-
                       <Text style={styles.label}>{t('settings.cleaning.icalLink')}</Text>
                       <Text selectable style={styles.mono}>
                         {icalFeedUrl(cfg.ical_token)}
@@ -389,77 +424,101 @@ export default function CleaningCalendarScreen() {
                       >
                         <Text style={styles.secondaryBtnText}>{t('settings.cleaning.copy')}</Text>
                       </Pressable>
-
-                      {unread.length > 0 ? (
-                        <Pressable
-                          style={[styles.secondaryBtn, { marginTop: 8 }]}
-                          onPress={() => markReadMutation.mutate(unread)}
-                        >
-                          <Text style={styles.secondaryBtnText}>{t('settings.cleaning.markAsRead')}</Text>
-                        </Pressable>
-                      ) : null}
-
-                      <Text style={[styles.sectionTitle, { marginTop: 16 }]}>
-                        {t('settings.cleaning.notesSectionTitle')}
-                      </Text>
-                      {notesForRoom(room.id)
-                        .slice(0, 12)
-                        .map((n) => (
-                          <View key={n.id} style={styles.noteCard}>
-                            <Text style={styles.noteMeta}>
-                              {n.author_type === 'cleaner'
-                                ? t('settings.cleaning.authorCleaner')
-                                : t('settings.cleaning.authorOwner')}{' '}
-                              · {n.cleaning_date}
-                            </Text>
-                            <Text style={styles.noteBody}>{n.note}</Text>
-                            <Pressable
-                              onPress={() =>
-                                Alert.alert(t('settings.cleaning.deleteStep1Title'), '', [
-                                  { text: t('common.cancel'), style: 'cancel' },
-                                  {
-                                    text: t('common.delete'),
-                                    style: 'destructive',
-                                    onPress: () => deleteNoteMutation.mutate(n.id),
-                                  },
-                                ])
-                              }
-                            >
-                              <Text style={styles.link}>{t('settings.cleaning.deleteNote')}</Text>
-                            </Pressable>
-                          </View>
-                        ))}
-
-                      <Text style={styles.label}>{t('settings.cleaning.notesSectionTitle')} (nueva)</Text>
-                      <TextInput
-                        style={styles.input}
-                        value={getDraft(room.id).date}
-                        onChangeText={(v) => setNoteDraft((d) => ({ ...d, [room.id]: { ...getDraft(room.id), date: v } }))}
-                        placeholder="YYYY-MM-DD"
-                      />
-                      <TextInput
-                        style={[styles.input, { minHeight: 72, marginTop: 8 }]}
-                        multiline
-                        textAlignVertical="top"
-                        value={getDraft(room.id).text}
-                        onChangeText={(v) => setNoteDraft((d) => ({ ...d, [room.id]: { ...getDraft(room.id), text: v } }))}
-                      />
-                      <Pressable
-                        style={styles.primaryBtn}
-                        onPress={() => {
-                          const d = getDraft(room.id);
-                          if (!d.text.trim()) return;
-                          addNoteMutation.mutate({
-                            room_id: String(room.id),
-                            cleaning_date: d.date,
-                            note: d.text.trim(),
-                          });
-                        }}
-                      >
-                        <Text style={styles.primaryBtnText}>{t('common.save')}</Text>
-                      </Pressable>
                     </>
+                  ) : null}
+
+                  <Text style={[styles.sectionTitle, { marginTop: 18 }]}>
+                    {t('settings.cleaning.upcomingTasks')}
+                  </Text>
+                  {tasks.length === 0 ? (
+                    <Text style={styles.mutedInline}>{t('settings.cleaning.noUpcomingTasks')}</Text>
+                  ) : (
+                    tasks.map((task) => (
+                      <View key={task.key} style={styles.taskCard}>
+                        <Text style={styles.taskDate}>{task.date}</Text>
+                        <Text style={styles.taskTitle}>{task.label}</Text>
+                        <Text style={styles.taskSub}>{task.guestName}</Text>
+                      </View>
+                    ))
                   )}
+
+                  {unread.length > 0 ? (
+                    <Pressable style={styles.secondaryBtn} onPress={() => markReadMutation.mutate(unread)}>
+                      <Text style={styles.secondaryBtnText}>{t('settings.cleaning.markAsRead')}</Text>
+                    </Pressable>
+                  ) : null}
+
+                  <Text style={[styles.sectionTitle, { marginTop: 18 }]}>
+                    {t('settings.cleaning.notesSectionTitle')}
+                  </Text>
+                  {notesForRoom(room.id)
+                    .slice(0, 12)
+                    .map((n) => (
+                      <View key={n.id} style={styles.noteCard}>
+                        <Text style={styles.noteMeta}>
+                          {n.author_type === 'cleaner'
+                            ? t('settings.cleaning.authorCleaner')
+                            : t('settings.cleaning.authorOwner')}{' '}
+                          · {n.cleaning_date}
+                        </Text>
+                        <Text style={styles.noteBody}>{n.note}</Text>
+                        <Pressable
+                          onPress={() =>
+                            Alert.alert(t('settings.cleaning.deleteStep1Title'), '', [
+                              { text: t('common.cancel'), style: 'cancel' },
+                              {
+                                text: t('common.delete'),
+                                style: 'destructive',
+                                onPress: () => deleteNoteMutation.mutate(n.id),
+                              },
+                            ])
+                          }
+                        >
+                          <Text style={styles.link}>{t('settings.cleaning.deleteNote')}</Text>
+                        </Pressable>
+                      </View>
+                    ))}
+
+                  <Text style={styles.label}>{t('settings.cleaning.cleaningDateLabel', { date: 'YYYY-MM-DD' })}</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={noteDraft[room.id]?.date || new Date().toISOString().slice(0, 10)}
+                    onChangeText={(v) =>
+                      setNoteDraft((d) => ({
+                        ...d,
+                        [room.id]: { date: v, text: d[room.id]?.text || '' },
+                      }))
+                    }
+                    placeholder="YYYY-MM-DD"
+                  />
+                  <TextInput
+                    style={[styles.input, { minHeight: 72, marginTop: 8 }]}
+                    multiline
+                    textAlignVertical="top"
+                    value={noteDraft[room.id]?.text || ''}
+                    onChangeText={(v) =>
+                      setNoteDraft((d) => ({
+                        ...d,
+                        [room.id]: { date: d[room.id]?.date || new Date().toISOString().slice(0, 10), text: v },
+                      }))
+                    }
+                    placeholder={t('settings.cleaning.newNotePlaceholder')}
+                  />
+                  <Pressable
+                    style={[styles.primaryBtn, addNoteMutation.isPending && styles.disabled]}
+                    disabled={addNoteMutation.isPending}
+                    onPress={() => {
+                      const d = noteDraft[room.id];
+                      if (!d?.text?.trim()) return;
+                      addNoteMutation.mutate({
+                        room_id: String(room.id),
+                        cleaning_date: d.date,
+                        note: d.text.trim(),
+                      });
+                    }}
+                  >
+                    <Text style={styles.primaryBtnText}>{t('settings.cleaning.saveNote')}</Text>
+                  </Pressable>
                 </View>
               ) : null}
             </View>
@@ -558,6 +617,18 @@ const styles = StyleSheet.create({
   },
   secondaryBtnText: { color: '#2563eb', fontWeight: '800' },
   sectionTitle: { fontSize: 15, fontWeight: '800', color: '#111827' },
+  mutedInline: { marginTop: 8, fontSize: 13, color: '#6b7280' },
+  taskCard: {
+    padding: 10,
+    backgroundColor: '#eff6ff',
+    borderRadius: 10,
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: '#bfdbfe',
+  },
+  taskDate: { fontSize: 11, color: '#1d4ed8', fontWeight: '700' },
+  taskTitle: { marginTop: 4, fontSize: 14, color: '#111827', fontWeight: '700' },
+  taskSub: { marginTop: 2, fontSize: 12, color: '#4b5563' },
   noteCard: {
     padding: 10,
     backgroundColor: '#f8fafc',
@@ -569,4 +640,5 @@ const styles = StyleSheet.create({
   noteMeta: { fontSize: 11, color: '#6b7280', fontWeight: '600' },
   noteBody: { marginTop: 6, fontSize: 14, color: '#111827' },
   link: { marginTop: 8, color: '#dc2626', fontWeight: '700', fontSize: 13 },
+  disabled: { opacity: 0.6 },
 });

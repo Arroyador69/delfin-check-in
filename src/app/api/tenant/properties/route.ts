@@ -5,7 +5,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
 import { CreatePropertyRequest, UpdatePropertyRequest, TenantProperty } from '@/lib/direct-reservations-types';
-import { getTenantId } from '@/lib/tenant';
+import { getTenantById, getTenantId } from '@/lib/tenant';
 
 // =====================================================
 // GET: Obtener propiedades del tenant
@@ -33,6 +33,55 @@ export async function GET(req: NextRequest) {
     }
     
     console.log('🏠 Obteniendo propiedades para tenant:', tenantId);
+
+    // Backfill suave para tenants antiguos: si existe una propiedad sin mapping y
+    // hay una Room sin mapping con el mismo nombre, enlazarlas automáticamente.
+    const tenant = (await getTenantById(tenantId)) as ({ lodging_id?: string | null } & Record<string, unknown>) | null;
+    const lodgingId =
+      tenant?.lodging_id && String(tenant.lodging_id).trim() !== ''
+        ? String(tenant.lodging_id)
+        : String(tenantId);
+
+    try {
+      await sql`
+        WITH unmapped_props AS (
+          SELECT
+            tp.id AS property_id,
+            lower(trim(tp.property_name)) AS norm_name,
+            ROW_NUMBER() OVER (
+              PARTITION BY lower(trim(tp.property_name))
+              ORDER BY tp.created_at ASC, tp.id ASC
+            ) AS rn
+          FROM tenant_properties tp
+          LEFT JOIN property_room_map prm
+            ON prm.tenant_id = tp.tenant_id::uuid AND prm.property_id = tp.id
+          WHERE tp.tenant_id = ${tenantId}::uuid
+            AND prm.property_id IS NULL
+        ),
+        unmapped_rooms AS (
+          SELECT
+            r.id AS room_id,
+            lower(trim(r.name)) AS norm_name,
+            ROW_NUMBER() OVER (
+              PARTITION BY lower(trim(r.name))
+              ORDER BY r.id ASC
+            ) AS rn
+          FROM "Room" r
+          LEFT JOIN property_room_map prm
+            ON prm.tenant_id = ${tenantId}::uuid AND prm.room_id = r.id
+          WHERE r."lodgingId" = ${lodgingId}
+            AND prm.room_id IS NULL
+        )
+        INSERT INTO property_room_map (tenant_id, property_id, room_id, created_at, updated_at)
+        SELECT ${tenantId}::uuid, up.property_id, ur.room_id, NOW(), NOW()
+        FROM unmapped_props up
+        JOIN unmapped_rooms ur
+          ON ur.norm_name = up.norm_name AND ur.rn = up.rn
+        ON CONFLICT (tenant_id, property_id) DO NOTHING
+      `;
+    } catch (mappingError) {
+      console.warn('⚠️ No se pudo hacer backfill de property_room_map:', mappingError);
+    }
     
     // Unir propiedades existentes con placeholders derivados de Room sin mapping
     const result = await sql`
@@ -73,7 +122,7 @@ export async function GET(req: NextRequest) {
         FROM "Room" r
         LEFT JOIN property_room_map prm
           ON prm.tenant_id = ${tenantId}::uuid AND prm.room_id = r.id
-        WHERE r."lodgingId" = ${tenantId}::text AND prm.room_id IS NULL
+        WHERE r."lodgingId" = ${lodgingId} AND prm.room_id IS NULL
       )
       SELECT * FROM mapped
       UNION ALL
@@ -186,15 +235,12 @@ export async function POST(req: NextRequest) {
         { 
           success: false, 
           error: unitValidation.error,
-          suggestion: 'Para añadir más unidades, actualiza a PRO o crea otra cuenta.',
-          current_usage: unitValidation.tenant?.current_rooms || 0,
-          max_allowed: unitValidation.tenant?.max_rooms || 2,
-          plan_type: unitValidation.tenant?.plan_type || 'free'
+          suggestion: 'Para añadir más unidades, actualiza el número de unidades de tu plan o crea otra cuenta.'
         },
         { status: unitValidation.status || 403 }
       );
     }
-    
+
     const tenant = unitValidation.tenant;
     const maxRooms = tenant.max_rooms;
     const roomsCount = tenant.current_rooms;

@@ -338,6 +338,7 @@ export default function UpgradePlanPage() {
   const locale = useLocale();
   const router = useRouter();
   const [currentPlan, setCurrentPlan] = useState<string | null>(null);
+  const [currentRoomCount, setCurrentRoomCount] = useState(1);
   const [selectedPlan, setSelectedPlan] = useState<PlanId | null>(null);
   const [showCheckout, setShowCheckout] = useState(false);
   const [pricing, setPricing] = useState<any>(null);
@@ -372,7 +373,9 @@ export default function UpgradePlanPage() {
         if (roomsResponse.ok) {
           const roomsData = await roomsResponse.json();
           if (roomsData.currentRooms && roomsData.currentRooms.length > 0) {
-            setRoomCount(Math.max(1, roomsData.currentRooms.length));
+            const nextRooms = Math.max(1, roomsData.currentRooms.length);
+            setCurrentRoomCount(nextRooms);
+            setRoomCount(nextRooms);
           }
         }
       } catch {
@@ -386,11 +389,11 @@ export default function UpgradePlanPage() {
   };
 
   const handleSelectPlan = (planId: PlanId) => {
-    if (planId === currentPlan) {
-      return; // No se puede seleccionar el plan actual
-    }
     setSelectedPlan(planId);
     setShowCheckout(true);
+    if (planId !== currentPlan) {
+      setRoomCount(Math.max(1, currentRoomCount));
+    }
   };
 
   const handlePriceChange = useCallback((newPricing: any) => {
@@ -418,12 +421,35 @@ export default function UpgradePlanPage() {
     if (!planParam || !['checkin', 'standard', 'pro'].includes(planParam)) return;
 
     const allowedIds = availablePlans.map((p) => p.id);
-    if (!allowedIds.includes(planParam) || planParam === currentPlan) return;
+    if (!allowedIds.includes(planParam)) return;
 
     appliedQueryRef.current = true;
     setSelectedPlan(planParam);
     setShowCheckout(true);
   }, [loading, currentPlan, availablePlans]);
+
+  const isSamePlanSelection = Boolean(selectedPlan && selectedPlan === currentPlan);
+  const hasRoomCountChange = roomCount !== currentRoomCount;
+
+  const handleSamePlanUpdate = async () => {
+    if (!selectedPlan || selectedPlan !== currentPlan) return;
+    try {
+      const response = await fetch('/api/stripe/update-subscription', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ roomCount }),
+      });
+      const data = await response.json();
+      if (!data.success) {
+        throw new Error(data.error || tPlans('errorSubscription'));
+      }
+      alert(tPlans('successSubscription'));
+      router.push(`/${locale}/dashboard`);
+      router.refresh();
+    } catch (error: any) {
+      alert(error?.message || tPlans('errorSubscription'));
+    }
+  };
 
   if (loading) {
     return (
@@ -479,24 +505,58 @@ export default function UpgradePlanPage() {
                   {tPlans('subscribeTo')} {selectedPlan ? getPlanName(tPlans, selectedPlan) : ''}
                 </h2>
 
+                <div className="mb-6 rounded-xl border border-blue-100 bg-blue-50 p-4 text-sm text-blue-900">
+                  <p className="font-semibold">{tPlans('currentSubscriptionTitle')}</p>
+                  <p className="mt-1">
+                    {tPlans('currentSubscriptionDescription', {
+                      plan: currentPlan ? getPlanName(tPlans, currentPlan) : tUpgrade('unknownPlan'),
+                      rooms: currentRoomCount,
+                    })}
+                  </p>
+                  <p className="mt-1">
+                    {tPlans('selectedRoomsSummary', { rooms: roomCount })}
+                  </p>
+                </div>
+
                 <PlanCalculator 
                   planId={selectedPlan} 
                   roomCount={roomCount}
-                  onRoomCountChange={setRoomCount}
+                  onRoomCountChange={(next) => {
+                    const min = selectedPlan === currentPlan ? Math.max(1, currentRoomCount) : 1;
+                    setRoomCount(Math.max(min, next));
+                  }}
                   onPriceChange={handlePriceChange}
                 />
 
                 {pricing && (
                   <div className="mt-6">
-                    <Elements stripe={stripePromise}>
-                      <CheckoutForm
-                        planId={selectedPlan}
-                        roomCount={roomCount}
-                        pricing={pricing}
-                        onSuccess={handleSuccess}
-                        onError={(error) => console.error(error)}
-                      />
-                    </Elements>
+                    {isSamePlanSelection ? (
+                      <div className="space-y-4">
+                        {!hasRoomCountChange ? (
+                          <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-amber-800">
+                            {tPlans('noChangesToSubscription')}
+                          </div>
+                        ) : null}
+                        <button
+                          type="button"
+                          onClick={handleSamePlanUpdate}
+                          disabled={!hasRoomCountChange}
+                          className="w-full rounded-lg bg-blue-600 px-4 py-3 font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {tPlans('updateSubscription')}
+                        </button>
+                      </div>
+                    ) : (
+                      <Elements stripe={stripePromise}>
+                        <CheckoutForm
+                          planId={selectedPlan}
+                          roomCount={roomCount}
+                          pricing={pricing}
+                          onSuccess={handleSuccess}
+                          onError={(error) => console.error(error)}
+                        />
+                      </Elements>
+                    )}
                   </div>
                 )}
               </div>
@@ -578,17 +638,16 @@ export default function UpgradePlanPage() {
 
                     <button
                       onClick={() => handleSelectPlan(plan.id)}
-                      disabled={isCurrent}
                       className={`w-full py-3 px-4 rounded-lg font-semibold transition-colors ${
-                        isCurrent
-                          ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                          : plan.popular
+                        plan.popular && !isCurrent
                           ? 'bg-blue-600 text-white hover:bg-blue-700'
-                          : `bg-${plan.color}-600 text-white hover:bg-${plan.color}-700`
+                          : isCurrent
+                            ? 'bg-green-600 text-white hover:bg-green-700'
+                            : `bg-${plan.color}-600 text-white hover:bg-${plan.color}-700`
                       }`}
                     >
                       {isCurrent
-                        ? tPlans('currentPlanBadge')
+                        ? tPlans('manageCurrentPlan')
                         : tPlans('selectPlan')}
                     </button>
                   </div>
