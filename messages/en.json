@@ -57,7 +57,7 @@
     "reputationGoogle": "Reputation (Google)",
     "calendar": "Calendar",
     "guestRegistrations": "Guest Registrations",
-    "invoices": "Invoices",
+    "invoices": "Invoices/Receipts",
     "mirStatus": "MIR Submissions Status",
     "costCalculator": "Cost Calculator",
     "exportAEAT": "Export AEAT",
@@ -517,6 +517,11 @@
     "createErrorDefault": "Error creating reservation",
     "updateErrorDefault": "Error updating reservation",
     "deleteErrorDefault": "Error deleting reservation",
+    "mobile": {
+      "markReviewedConfirmTitle": "Mark as reviewed",
+      "markReviewedConfirmBody": "This will remove the reservation from pending review and confirm that you’ve checked it.",
+      "markReviewedError": "Could not mark the reservation as reviewed"
+    },
     "createError": "Error creating reservation: {message}",
     "updateError": "Error updating reservation: {message}",
     "deleteError": "Error deleting reservation: {message}",
@@ -1449,6 +1454,7 @@
       "billing": "Billing",
       "micrositePayments": "Microsite Payments",
       "paymentLinks": "Payment Links",
+      "countryCode": "Country code (legal)",
       "support": "Technical support",
       "account": "Account",
       "payments": "Payments"
@@ -1956,6 +1962,7 @@
       "errorLoading": "Error loading payment links",
       "createSuccess": "Payment link created successfully",
       "errorCreate": "Error creating link",
+      "errorDelete": "Error deleting the link",
       "deleteConfirm": "Delete this payment link permanently?",
       "deleteSuccess": "Payment link deleted",
       "deactivateSuccess": "Link deactivated successfully",
@@ -2003,7 +2010,14 @@
       "paid": "Paid",
       "copyLink": "Copy link",
       "openLink": "Open link",
-      "deactivate": "Deactivate"
+      "deactivate": "Deactivate",
+      "requiredFields": "Please fill in all required fields",
+      "urlCopied": "URL copied to clipboard",
+      "dateIsoPlaceholder": "YYYY-MM-DD",
+      "dateTimeIsoPlaceholder": "YYYY-MM-DD HH:MM",
+      "priceDecimalPlaceholder": "0.00",
+      "expectedGuestsPlaceholder": "2",
+      "propertyFallback": "Property {id}"
     },
     "checkinInstructions": {
       "title": "Check-in Instructions",
@@ -2678,5 +2692,60 @@
     "errorCardNotFound": "Card not found",
     "errorProcessingPayment": "Error processing payment",
     "loading": "Loading..."
+  },
+  "mobile": {
+    "facturas": {
+      "pdfDownloadedHint": "PDF downloaded. Use “Share” if you want to send it via WhatsApp."
+    },
+    "paymentLinks": {
+      "unpaid": "Unpaid",
+      "uses": "Uses",
+      "copiedLabel": "Copied!"
+    },
+    "dashboard": {
+      "greeting": "Hi, {name}",
+      "pendingReviewTitle": "Pending review",
+      "noPending": "No reservations pending review",
+      "stayingTodayTitle": "Staying today",
+      "stayingTodayEmpty": "No guests staying today",
+      "arrivingTodayTitle": "Arriving today",
+      "arrivingTodayEmpty": "No arrivals scheduled for today",
+      "leavingTodayTitle": "Leaving today",
+      "leavingTodayEmpty": "No departures scheduled for today",
+      "upcomingTitle": "Upcoming reservations",
+      "upcomingEmpty": "No upcoming reservations"
+    },
+    "calendar": {
+      "noReservationsForDay": "No reservations for this day"
+    },
+    "settings": {
+      "mirSubtitle": "Basic configuration for automatic MIR submission.",
+      "hubEmpresaSubtitle": "Required for invoice and receipt PDFs.",
+      "hubMirSubtitle": "Enable submission and review MIR status.",
+      "hubPropertiesSubtitle": "View units and slots linked to your account.",
+      "hubCountrySubtitle": "Legal module country (FREE+LEGAL plans).",
+      "tenantLabel": "Tenant",
+      "planLabel": "Plan",
+      "propertiesEmpty": "No properties found.",
+      "countryCurrent": "Current code",
+      "countryHint": "2-letter ISO code (e.g. ES). On Pro you may leave it empty when applicable.",
+      "countryNotEditable": "Legal module is inactive or country cannot be changed from the app.",
+      "countrySaved": "Country code updated",
+      "countryInvalid": "Invalid code: use 2 letters (A-Z).",
+      "mirEnabledLabel": "MIR enabled",
+      "mirAutoSubmitLabel": "Auto-submit",
+      "mirTestModeLabel": "Test mode",
+      "mirDenominacionLabel": "Establishment name *",
+      "mirDenominacionPh": "Lodging name",
+      "mirDireccionLabel": "Full address *",
+      "mirDireccionPh": "Address",
+      "mirCodigoPh": "Code",
+      "propertyDraftHint": "Unmapped slot",
+      "saveFailed": "Could not save"
+    },
+    "guestRegistrations": {
+      "empty": "No registrations found",
+      "hint": "Forms submitted from your site will appear here"
+    }
   }
 }

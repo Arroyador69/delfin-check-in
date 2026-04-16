@@ -57,7 +57,7 @@
     "reputationGoogle": "Reputação (Google)",
     "calendar": "Calendário",
     "guestRegistrations": "Registos de Hóspedes",
-    "invoices": "Faturas",
+    "invoices": "Faturas/Recibos",
     "mirStatus": "Estado Envios MIR",
     "costCalculator": "Calculadora de Custos",
     "exportAEAT": "Exportar AEAT",
@@ -536,6 +536,11 @@
     "createErrorDefault": "Erro ao criar a reserva",
     "updateErrorDefault": "Erro ao atualizar a reserva",
     "deleteErrorDefault": "Erro ao eliminar a reserva",
+    "mobile": {
+      "markReviewedConfirmTitle": "Marcar como revista",
+      "markReviewedConfirmBody": "Isto removerá a reserva das pendentes de revisão e confirmará que já a verificou.",
+      "markReviewedError": "Não foi possível marcar a reserva como revista"
+    },
     "createError": "Erro ao criar a reserva: {message}",
     "updateError": "Erro ao atualizar a reserva: {message}",
     "deleteError": "Erro ao eliminar a reserva: {message}",
@@ -1419,6 +1424,7 @@
       "billing": "Faturação",
       "micrositePayments": "Pagamentos Microsite",
       "paymentLinks": "Links de Pagamento",
+      "countryCode": "Código do país (legal)",
       "support": "Suporte técnico",
       "account": "Conta",
       "payments": "Pagamentos"
@@ -1917,6 +1923,7 @@
       "errorLoading": "Erro ao carregar links de pagamento",
       "createSuccess": "Link de pagamento criado com sucesso",
       "errorCreate": "Erro ao criar link",
+      "errorDelete": "Erro ao eliminar o link",
       "deleteConfirm": "Eliminar permanentemente este link de pagamento?",
       "deleteSuccess": "Link de pagamento eliminado",
       "deactivateSuccess": "Link desativado com sucesso",
@@ -1964,7 +1971,14 @@
       "paid": "Pago",
       "copyLink": "Copiar link",
       "openLink": "Abrir link",
-      "deactivate": "Desativar"
+      "deactivate": "Desativar",
+      "requiredFields": "Preencha todos os campos obrigatórios",
+      "urlCopied": "URL copiada para a área de transferência",
+      "dateIsoPlaceholder": "YYYY-MM-DD",
+      "dateTimeIsoPlaceholder": "YYYY-MM-DD HH:MM",
+      "priceDecimalPlaceholder": "0,00",
+      "expectedGuestsPlaceholder": "2",
+      "propertyFallback": "Propriedade {id}"
     },
     "checkinInstructions": {
       "title": "Instruções Check-in",
@@ -2619,5 +2633,60 @@
     "errorCardNotFound": "Cartão não encontrado",
     "errorProcessingPayment": "Erro ao processar pagamento",
     "loading": "A carregar..."
+  },
+  "mobile": {
+    "facturas": {
+      "pdfDownloadedHint": "PDF descarregado. Use « Partilhar » se quiser enviá-lo via WhatsApp."
+    },
+    "paymentLinks": {
+      "unpaid": "Não pago",
+      "uses": "Usos",
+      "copiedLabel": "Copiado!"
+    },
+    "dashboard": {
+      "greeting": "Olá, {name}",
+      "pendingReviewTitle": "Pendentes de revisão",
+      "noPending": "Não há reservas pendentes",
+      "stayingTodayTitle": "Hóspedes hoje",
+      "stayingTodayEmpty": "Não há hóspedes alojados hoje",
+      "arrivingTodayTitle": "Chegadas hoje",
+      "arrivingTodayEmpty": "Não há chegadas previstas para hoje",
+      "leavingTodayTitle": "Saídas hoje",
+      "leavingTodayEmpty": "Não há saídas previstas para hoje",
+      "upcomingTitle": "Próximas reservas",
+      "upcomingEmpty": "Não há reservas próximas"
+    },
+    "calendar": {
+      "noReservationsForDay": "Não há reservas para este dia"
+    },
+    "settings": {
+      "mirSubtitle": "Configuração básica do envio automático para o MIR.",
+      "hubEmpresaSubtitle": "Necessário para PDFs de faturas e recibos.",
+      "hubMirSubtitle": "Ative o envio e veja o estado MIR.",
+      "hubPropertiesSubtitle": "Consulte unidades e slots associados.",
+      "hubCountrySubtitle": "País do módulo legal (planos FREE+LEGAL).",
+      "tenantLabel": "Tenant",
+      "planLabel": "Plano",
+      "propertiesEmpty": "Não há propriedades registadas.",
+      "countryCurrent": "Código atual",
+      "countryHint": "Código ISO de 2 letras (ex.: ES). No Pro pode deixar em branco quando aplicável.",
+      "countryNotEditable": "O módulo legal não está ativo ou o país não pode ser alterado na app.",
+      "countrySaved": "Código do país atualizado",
+      "countryInvalid": "Código inválido: use 2 letras (A-Z).",
+      "mirEnabledLabel": "MIR ativo",
+      "mirAutoSubmitLabel": "Envio automático",
+      "mirTestModeLabel": "Modo de teste",
+      "mirDenominacionLabel": "Denominação *",
+      "mirDenominacionPh": "Nome do alojamento",
+      "mirDireccionLabel": "Morada completa *",
+      "mirDireccionPh": "Morada",
+      "mirCodigoPh": "Código",
+      "propertyDraftHint": "Slot por mapear",
+      "saveFailed": "Não foi possível guardar"
+    },
+    "guestRegistrations": {
+      "empty": "Não há comunicações registadas",
+      "hint": "Os formulários enviados a partir do seu site aparecerão aqui"
+    }
   }
 }
