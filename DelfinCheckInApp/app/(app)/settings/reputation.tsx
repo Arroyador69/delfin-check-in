@@ -18,6 +18,7 @@ import { useEffect, useState } from 'react';
 
 import { api } from '@/lib/api';
 import { t } from '@/lib/i18n';
+import { openUpgradePlanInBrowser } from '@/lib/upgrade-plan';
 
 type RepSettings = {
   enabled: boolean;
@@ -102,6 +103,10 @@ export default function ReputationSettingsScreen() {
       {!isPro ? (
         <View style={styles.card}>
           <Text style={styles.warn}>{t('mobile.settings.repNotPro')}</Text>
+          <Pressable style={styles.upgradeCta} onPress={() => void openUpgradePlanInBrowser()}>
+            <Text style={styles.upgradeCtaText}>{t('mobile.settings.upgradePlanButton')}</Text>
+          </Pressable>
+          <Text style={styles.upgradeHint}>{t('mobile.settings.upgradePlanHint')}</Text>
         </View>
       ) : null}
 
@@ -194,6 +199,20 @@ const styles = StyleSheet.create({
   },
   dim: { opacity: 0.55 },
   warn: { fontSize: 14, color: '#b45309', fontWeight: '700' },
+  upgradeCta: {
+    marginTop: 12,
+    backgroundColor: '#2563eb',
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  upgradeCtaText: { color: 'white', fontWeight: '800', fontSize: 15 },
+  upgradeHint: {
+    marginTop: 10,
+    fontSize: 11,
+    color: '#6b7280',
+    lineHeight: 16,
+  },
   cardTitle: { fontSize: 15, fontWeight: '800' },
   rowBetween: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
   label: { fontSize: 12, fontWeight: '700', color: '#374151', marginBottom: 4 },

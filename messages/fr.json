@@ -2702,6 +2702,8 @@
       "hubReputationSubtitle": "Avis Google et rappels (Pro).",
       "hubSupportSubtitle": "Ouvrir et suivre les tickets support.",
       "hubPaymentLinksSubtitle": "Créer et gérer les liens de paiement.",
+      "upgradePlanButton": "Améliorer ou changer de formule",
+      "upgradePlanHint": "Ouvre le panneau web dans le navigateur, dans la langue de l’app. Connectez-vous avec le même compte si besoin ; la formule s’applique à votre établissement actuel.",
       "webAdvancedHint": "Les options très avancées restent sur le panneau web.",
       "calendarName": "Nom",
       "calendarUrl": "URL iCal",

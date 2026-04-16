@@ -2878,6 +2878,8 @@
       "hubReputationSubtitle": "Reseñas Google y recordatorios (Pro).",
       "hubSupportSubtitle": "Abrir y consultar incidencias técnicas.",
       "hubPaymentLinksSubtitle": "Crear y gestionar enlaces de pago.",
+      "upgradePlanButton": "Mejorar o cambiar plan",
+      "upgradePlanHint": "Se abrirá el navegador en el panel web, en el idioma de la app. Inicia sesión con la misma cuenta si hace falta; el plan se aplica a tu establecimiento actual.",
       "webAdvancedHint": "Opciones muy avanzadas (p. ej. calendario de limpieza detallado) siguen en el panel web.",
       "calendarName": "Nombre",
       "calendarUrl": "URL iCal",

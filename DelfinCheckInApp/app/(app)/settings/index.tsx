@@ -6,6 +6,7 @@ import { View, Text, Pressable, StyleSheet, Alert, ScrollView } from 'react-nati
 import { useAuth } from '@/lib/auth';
 import { useRouter } from 'expo-router';
 import { t } from '@/lib/i18n';
+import { openUpgradePlanInBrowser } from '@/lib/upgrade-plan';
 
 export default function SettingsScreen() {
   const { session, signOut } = useAuth();
@@ -68,6 +69,10 @@ export default function SettingsScreen() {
           <Text style={styles.infoLabel}>{t('mobile.settings.planLabel')}</Text>
           <Text style={styles.infoValue}>{getPlanLabel(session?.user.tenant.planId)}</Text>
         </View>
+        <Pressable style={styles.upgradeCta} onPress={() => void openUpgradePlanInBrowser()}>
+          <Text style={styles.upgradeCtaText}>{t('mobile.settings.upgradePlanButton')}</Text>
+        </Pressable>
+        <Text style={styles.upgradeHint}>{t('mobile.settings.upgradePlanHint')}</Text>
       </View>
 
       <View style={styles.card}>
@@ -190,6 +195,20 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     flexShrink: 1,
     textAlign: 'right',
+  },
+  upgradeCta: {
+    marginTop: 12,
+    backgroundColor: '#2563eb',
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  upgradeCtaText: { color: 'white', fontWeight: '800', fontSize: 15 },
+  upgradeHint: {
+    marginTop: 10,
+    fontSize: 11,
+    color: '#6b7280',
+    lineHeight: 16,
   },
   item: {
     flexDirection: 'row',

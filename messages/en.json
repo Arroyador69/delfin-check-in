@@ -2765,6 +2765,8 @@
       "hubReputationSubtitle": "Google reviews and reminders (Pro).",
       "hubSupportSubtitle": "Open and view technical support tickets.",
       "hubPaymentLinksSubtitle": "Create and manage payment links.",
+      "upgradePlanButton": "Upgrade or change plan",
+      "upgradePlanHint": "Opens your browser to the web panel in your app language. Sign in with the same account if needed; the plan applies to your current property.",
       "webAdvancedHint": "Very advanced options (e.g. detailed cleaning calendar) remain on the web panel.",
       "calendarName": "Name",
       "calendarUrl": "iCal URL",

@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 
 import { api } from '@/lib/api';
 import { t } from '@/lib/i18n';
+import { openUpgradePlanInBrowser } from '@/lib/upgrade-plan';
 
 type PendingInv = {
   id?: string;
@@ -76,6 +77,10 @@ export default function BillingSettingsScreen() {
                 <Text style={styles.rowVal}>€{Number(data.plan.price_total).toFixed(2)}</Text>
               </>
             ) : null}
+            <Pressable style={styles.upgradeCta} onPress={() => void openUpgradePlanInBrowser()}>
+              <Text style={styles.upgradeCtaText}>{t('mobile.settings.upgradePlanButton')}</Text>
+            </Pressable>
+            <Text style={styles.upgradeHint}>{t('mobile.settings.upgradePlanHint')}</Text>
           </View>
 
           <View style={styles.card}>
@@ -158,6 +163,20 @@ const styles = StyleSheet.create({
     padding: 16,
     borderWidth: 1,
     borderColor: '#e5e7eb',
+  },
+  upgradeCta: {
+    marginTop: 14,
+    backgroundColor: '#2563eb',
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  upgradeCtaText: { color: 'white', fontWeight: '800', fontSize: 15 },
+  upgradeHint: {
+    marginTop: 10,
+    fontSize: 11,
+    color: '#6b7280',
+    lineHeight: 16,
   },
   cardTitle: { fontSize: 15, fontWeight: '800', marginBottom: 8 },
   label: { fontSize: 12, fontWeight: '700', color: '#6b7280' },

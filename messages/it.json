@@ -2822,6 +2822,8 @@
       "hubReputationSubtitle": "Recensioni Google e promemoria (Pro).",
       "hubSupportSubtitle": "Apri e consulta i ticket di supporto.",
       "hubPaymentLinksSubtitle": "Crea e gestisci link di pagamento.",
+      "upgradePlanButton": "Migliora o cambia piano",
+      "upgradePlanHint": "Si apre il browser sul pannello web nella lingua dell’app. Accedi con lo stesso account se necessario; il piano vale per la struttura attuale.",
       "webAdvancedHint": "Le opzioni più avanzate restano nel pannello web.",
       "calendarName": "Nome",
       "calendarUrl": "URL iCal",
