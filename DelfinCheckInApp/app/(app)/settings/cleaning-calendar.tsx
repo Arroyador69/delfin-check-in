@@ -9,13 +9,17 @@ import {
   ActivityIndicator,
   Alert,
   Clipboard,
+  Platform,
 } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
+import { Check, Clock, X } from 'lucide-react-native';
 
 import { api } from '@/lib/api';
 import { cleanerLimpiezaPageUrl, icalCleaningFeedUrl } from '@/lib/cleaning-public-url';
+import { KeyboardAwareFormModal } from '@/components/KeyboardAwareFormModal';
 import { t } from '@/lib/i18n';
 import { Reservation, getReservationCheckIn, getReservationCheckOut, getReservationStatus } from '@/lib/reservations';
 
@@ -78,6 +82,23 @@ function ymdLocal(d: Date): string {
   const m = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
   return `${y}-${m}-${day}`;
+}
+
+function parseTimeToDate(hhmm: string, fallbackHour: number, fallbackMinute: number): Date {
+  const m = /^(\d{1,2}):(\d{2})$/.exec((hhmm || '').trim());
+  const d = new Date();
+  if (m) {
+    const h = Math.min(23, Math.max(0, parseInt(m[1], 10)));
+    const min = Math.min(59, Math.max(0, parseInt(m[2], 10)));
+    d.setHours(h, min, 0, 0);
+  } else {
+    d.setHours(fallbackHour, fallbackMinute, 0, 0);
+  }
+  return d;
+}
+
+function formatTimeFromDate(d: Date): string {
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 }
 
 function defaultDraft(roomId: number, cfg?: CleaningConfig): CleaningDraft {
@@ -148,6 +169,8 @@ export default function CleaningCalendarScreen() {
   const [noteDraft, setNoteDraft] = useState<Record<number, { date: string; text: string }>>({});
   const [publicLinkLabel, setPublicLinkLabel] = useState('');
   const [publicLinkRooms, setPublicLinkRooms] = useState<Set<string>>(new Set());
+  const [showPublicLinkModal, setShowPublicLinkModal] = useState(false);
+  const [activeTimePick, setActiveTimePick] = useState<'checkout_time' | 'checkin_time' | null>(null);
 
   const { data: rooms, isLoading: roomsLoading } = useQuery({
     queryKey: ['rooms'],
@@ -205,6 +228,7 @@ export default function CleaningCalendarScreen() {
   }
 
   function openRoom(room: Room, cfg?: CleaningConfig) {
+    setActiveTimePick(null);
     setExpandedId((prev) => (prev === room.id ? null : room.id));
     setDraftByRoom((prev) => (prev[room.id] ? prev : { ...prev, [room.id]: defaultDraft(room.id, cfg) }));
     setNoteDraft((prev) =>
@@ -281,6 +305,7 @@ export default function CleaningCalendarScreen() {
     onSuccess: async () => {
       setPublicLinkLabel('');
       setPublicLinkRooms(new Set());
+      setShowPublicLinkModal(false);
       await queryClient.invalidateQueries({ queryKey: ['cleaning-public-links'] });
       Alert.alert(t('common.success'), t('settings.cleaning.publicLinksCreated'));
     },
@@ -349,7 +374,12 @@ export default function CleaningCalendarScreen() {
       .map((n) => n.id);
   }
 
+  function closePublicLinkModal() {
+    setShowPublicLinkModal(false);
+  }
+
   return (
+    <>
     <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 32 }}>
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} style={styles.backButton}>
@@ -418,46 +448,12 @@ export default function CleaningCalendarScreen() {
               ))}
 
               {rooms?.length ? (
-                <>
-                  <Text style={[styles.sectionTitle, { marginTop: 14 }]}>
-                    {t('settings.cleaning.publicLinksNewTitle')}
-                  </Text>
-                  <TextInput
-                    style={styles.input}
-                    value={publicLinkLabel}
-                    onChangeText={setPublicLinkLabel}
-                    placeholder={t('settings.cleaning.publicLinksNamePlaceholder')}
-                  />
-                  <Text style={styles.label}>{t('settings.cleaning.publicLinksPickRooms')}</Text>
-                  <View style={styles.roomPickWrap}>
-                    {rooms.map((room) => {
-                      const id = String(room.id);
-                      const on = publicLinkRooms.has(id);
-                      return (
-                        <Pressable
-                          key={room.id}
-                          style={[styles.roomPickChip, on && styles.roomPickChipOn]}
-                          onPress={() => togglePublicLinkRoom(id)}
-                        >
-                          <Text style={[styles.roomPickText, on && styles.roomPickTextOn]}>{room.name}</Text>
-                        </Pressable>
-                      );
-                    })}
-                  </View>
-                  <Pressable
-                    style={[
-                      styles.primaryBtn,
-                      (createPublicLinkMutation.isPending || !publicLinkLabel.trim() || publicLinkRooms.size === 0) &&
-                        styles.disabled,
-                    ]}
-                    disabled={
-                      createPublicLinkMutation.isPending || !publicLinkLabel.trim() || publicLinkRooms.size === 0
-                    }
-                    onPress={() => createPublicLinkMutation.mutate()}
-                  >
-                    <Text style={styles.primaryBtnText}>{t('settings.cleaning.publicLinksCreate')}</Text>
-                  </Pressable>
-                </>
+                <Pressable
+                  style={styles.openCreateModalBtn}
+                  onPress={() => setShowPublicLinkModal(true)}
+                >
+                  <Text style={styles.openCreateModalBtnText}>{t('settings.cleaning.publicLinksOpenCreateButton')}</Text>
+                </Pressable>
               ) : (
                 <Text style={styles.mutedInline}>{t('settings.cleaning.noRooms')}</Text>
               )}
@@ -501,25 +497,104 @@ export default function CleaningCalendarScreen() {
 
               {expanded ? (
                 <View style={styles.cardBody}>
-                  <Text style={styles.sectionTitle}>{t('settings.cleaning.checkoutTime')}</Text>
-                  <TextInput
-                    style={styles.input}
-                    value={draft.checkout_time}
-                    onChangeText={(v) =>
-                      setDraftByRoom((prev) => ({ ...prev, [room.id]: { ...draft, checkout_time: v } }))
-                    }
-                    placeholder="11:00"
-                  />
+                  <Text style={styles.sectionTitle}>{t('settings.cleaning.cleanerScheduleTitle')}</Text>
+                  <Text style={styles.scheduleHint}>{t('settings.cleaning.cleanerScheduleSubtitle')}</Text>
+
+                  <Text style={styles.label}>{t('settings.cleaning.checkoutTime')}</Text>
+                  <Text style={styles.tapTimeHint}>{t('settings.cleaning.tapToChangeTime')}</Text>
+                  <Pressable
+                    style={styles.timePickRow}
+                    onPress={() => setActiveTimePick('checkout_time')}
+                  >
+                    <Clock size={18} color="#2563eb" />
+                    <Text style={styles.timePickValue}>{draft.checkout_time}</Text>
+                  </Pressable>
+                  {activeTimePick === 'checkout_time' && expandedId === room.id ? (
+                    <View style={styles.inlineTimeBox}>
+                      <DateTimePicker
+                        value={parseTimeToDate(draft.checkout_time, 11, 0)}
+                        mode="time"
+                        display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                        onChange={(event, date) => {
+                          if (Platform.OS === 'android') {
+                            setActiveTimePick(null);
+                            if (event.type === 'dismissed') return;
+                            if (
+                              (event.type === 'set' || event.type === 'neutralButtonPressed') &&
+                              date
+                            ) {
+                              const hhmm = formatTimeFromDate(date);
+                              setDraftByRoom((prev) => {
+                                const cur = prev[room.id] ?? defaultDraft(room.id, cfg);
+                                return { ...prev, [room.id]: { ...cur, checkout_time: hhmm } };
+                              });
+                            }
+                            return;
+                          }
+                          if (date) {
+                            const hhmm = formatTimeFromDate(date);
+                            setDraftByRoom((prev) => {
+                              const cur = prev[room.id] ?? defaultDraft(room.id, cfg);
+                              return { ...prev, [room.id]: { ...cur, checkout_time: hhmm } };
+                            });
+                          }
+                        }}
+                      />
+                      {Platform.OS === 'ios' ? (
+                        <Pressable style={styles.inlineTimeDone} onPress={() => setActiveTimePick(null)}>
+                          <Text style={styles.inlineTimeDoneText}>{t('common.confirm')}</Text>
+                        </Pressable>
+                      ) : null}
+                    </View>
+                  ) : null}
 
                   <Text style={styles.label}>{t('settings.cleaning.checkinTime')}</Text>
-                  <TextInput
-                    style={styles.input}
-                    value={draft.checkin_time}
-                    onChangeText={(v) =>
-                      setDraftByRoom((prev) => ({ ...prev, [room.id]: { ...draft, checkin_time: v } }))
-                    }
-                    placeholder="16:00"
-                  />
+                  <Text style={styles.tapTimeHint}>{t('settings.cleaning.tapToChangeTime')}</Text>
+                  <Pressable
+                    style={styles.timePickRow}
+                    onPress={() => setActiveTimePick('checkin_time')}
+                  >
+                    <Clock size={18} color="#2563eb" />
+                    <Text style={styles.timePickValue}>{draft.checkin_time}</Text>
+                  </Pressable>
+                  {activeTimePick === 'checkin_time' && expandedId === room.id ? (
+                    <View style={styles.inlineTimeBox}>
+                      <DateTimePicker
+                        value={parseTimeToDate(draft.checkin_time, 16, 0)}
+                        mode="time"
+                        display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                        onChange={(event, date) => {
+                          if (Platform.OS === 'android') {
+                            setActiveTimePick(null);
+                            if (event.type === 'dismissed') return;
+                            if (
+                              (event.type === 'set' || event.type === 'neutralButtonPressed') &&
+                              date
+                            ) {
+                              const hhmm = formatTimeFromDate(date);
+                              setDraftByRoom((prev) => {
+                                const cur = prev[room.id] ?? defaultDraft(room.id, cfg);
+                                return { ...prev, [room.id]: { ...cur, checkin_time: hhmm } };
+                              });
+                            }
+                            return;
+                          }
+                          if (date) {
+                            const hhmm = formatTimeFromDate(date);
+                            setDraftByRoom((prev) => {
+                              const cur = prev[room.id] ?? defaultDraft(room.id, cfg);
+                              return { ...prev, [room.id]: { ...cur, checkin_time: hhmm } };
+                            });
+                          }
+                        }}
+                      />
+                      {Platform.OS === 'ios' ? (
+                        <Pressable style={styles.inlineTimeDone} onPress={() => setActiveTimePick(null)}>
+                          <Text style={styles.inlineTimeDoneText}>{t('common.confirm')}</Text>
+                        </Pressable>
+                      ) : null}
+                    </View>
+                  ) : null}
 
                   <Text style={styles.label}>{t('settings.cleaning.duration')}</Text>
                   <View style={styles.chipRow}>
@@ -723,6 +798,76 @@ export default function CleaningCalendarScreen() {
         })
       )}
     </ScrollView>
+
+    <KeyboardAwareFormModal
+      visible={showPublicLinkModal}
+      onRequestClose={closePublicLinkModal}
+    >
+      <View style={styles.modalSheet}>
+        <View style={styles.modalHeaderRow}>
+          <Text style={styles.modalTitleText}>{t('settings.cleaning.publicLinksCreateModalTitle')}</Text>
+          <Pressable
+            onPress={closePublicLinkModal}
+            style={styles.modalCloseHit}
+            accessibilityRole="button"
+            accessibilityLabel={t('common.close')}
+          >
+            <X size={22} color="#6b7280" />
+          </Pressable>
+        </View>
+        <ScrollView
+          style={styles.modalScroll}
+          contentContainerStyle={{ paddingBottom: 24 }}
+          keyboardShouldPersistTaps="handled"
+        >
+          <Text style={styles.stepPill}>1</Text>
+          <Text style={styles.modalSectionText}>{t('settings.cleaning.publicLinksPickRooms')}</Text>
+          {rooms?.map((room) => {
+            const id = String(room.id);
+            const on = publicLinkRooms.has(id);
+            return (
+              <Pressable
+                key={room.id}
+                style={[styles.roomSelectRow, on && styles.roomSelectRowOn]}
+                onPress={() => togglePublicLinkRoom(id)}
+              >
+                <View style={[styles.roomCheckCircle, on && styles.roomCheckCircleOn]}>
+                  {on ? <Check size={16} color="white" strokeWidth={3} /> : null}
+                </View>
+                <Text style={[styles.roomSelectName, on && styles.roomSelectNameOn]}>{room.name}</Text>
+              </Pressable>
+            );
+          })}
+          <Text style={styles.selectedCountText}>
+            {t('settings.cleaning.publicLinksSelectedCount', { count: publicLinkRooms.size })}
+          </Text>
+
+          <Text style={styles.stepPill}>2</Text>
+          <Text style={styles.modalSectionText}>{t('settings.cleaning.publicLinksStepNameTitle')}</Text>
+          <TextInput
+            style={styles.input}
+            value={publicLinkLabel}
+            onChangeText={setPublicLinkLabel}
+            placeholder={t('settings.cleaning.publicLinksNamePlaceholder')}
+          />
+
+          <Pressable
+            style={[
+              styles.primaryBtn,
+              (createPublicLinkMutation.isPending || !publicLinkLabel.trim() || publicLinkRooms.size === 0) &&
+                styles.disabled,
+            ]}
+            disabled={
+              createPublicLinkMutation.isPending || !publicLinkLabel.trim() || publicLinkRooms.size === 0
+            }
+            onPress={() => createPublicLinkMutation.mutate()}
+          >
+            <Text style={styles.primaryBtnText}>{t('settings.cleaning.publicLinksCreate')}</Text>
+          </Pressable>
+        </ScrollView>
+      </View>
+    </KeyboardAwareFormModal>
+    </>
   );
 }
 
@@ -863,19 +1008,103 @@ const styles = StyleSheet.create({
   },
   publicLinkLabel: { fontSize: 15, fontWeight: '800', color: '#111827' },
   publicLinkRooms: { marginTop: 4, fontSize: 12, color: '#6b7280' },
-  roomPickWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
-  roomPickChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 10,
+  linkLikeBtn: { marginTop: 8, alignSelf: 'flex-start' },
+  linkLikeText: { fontSize: 13, fontWeight: '700', color: '#2563eb' },
+  linkLikeDanger: { fontSize: 13, fontWeight: '700', color: '#b91c1c' },
+  openCreateModalBtn: {
+    marginTop: 14,
+    backgroundColor: '#059669',
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  openCreateModalBtnText: { color: 'white', fontWeight: '800', fontSize: 15 },
+  modalSheet: {
+    backgroundColor: 'white',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: '88%',
+    paddingBottom: 8,
+  },
+  modalHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 18,
+    paddingTop: 16,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f3f4f6',
+  },
+  modalTitleText: { flex: 1, fontSize: 17, fontWeight: '800', color: '#111827', paddingRight: 8 },
+  modalCloseHit: { padding: 4 },
+  modalScroll: { maxHeight: 480, paddingHorizontal: 18, paddingTop: 12 },
+  stepPill: {
+    alignSelf: 'flex-start',
+    marginTop: 10,
+    backgroundColor: '#1d4ed8',
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '800',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  modalSectionText: { marginTop: 8, fontSize: 14, fontWeight: '600', color: '#374151', lineHeight: 20 },
+  roomSelectRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginTop: 10,
+    padding: 12,
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: '#e5e7eb',
     backgroundColor: '#f9fafb',
   },
-  roomPickChipOn: { backgroundColor: '#2563eb', borderColor: '#2563eb' },
-  roomPickText: { fontSize: 13, fontWeight: '700', color: '#374151' },
-  roomPickTextOn: { color: 'white' },
-  linkLikeBtn: { marginTop: 8, alignSelf: 'flex-start' },
-  linkLikeText: { fontSize: 13, fontWeight: '700', color: '#2563eb' },
-  linkLikeDanger: { fontSize: 13, fontWeight: '700', color: '#b91c1c' },
+  roomSelectRowOn: { borderColor: '#2563eb', backgroundColor: '#eff6ff' },
+  roomCheckCircle: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    borderWidth: 2,
+    borderColor: '#cbd5e1',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'white',
+  },
+  roomCheckCircleOn: { backgroundColor: '#2563eb', borderColor: '#2563eb' },
+  roomSelectName: { flex: 1, fontSize: 15, fontWeight: '600', color: '#374151' },
+  roomSelectNameOn: { color: '#1e3a8a' },
+  selectedCountText: { marginTop: 12, fontSize: 13, fontWeight: '700', color: '#1d4ed8' },
+  scheduleHint: { marginTop: 6, fontSize: 12, color: '#6b7280', lineHeight: 17 },
+  tapTimeHint: { fontSize: 11, color: '#9ca3af', marginBottom: 4, marginTop: -4 },
+  timePickRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    borderRadius: 12,
+    padding: 12,
+    backgroundColor: '#f9fafb',
+  },
+  timePickValue: { fontSize: 17, fontWeight: '700', color: '#111827', fontVariant: ['tabular-nums'] },
+  inlineTimeBox: {
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: '#bfdbfe',
+    borderRadius: 12,
+    backgroundColor: '#f8fafc',
+    overflow: 'hidden',
+  },
+  inlineTimeDone: {
+    margin: 12,
+    backgroundColor: '#2563eb',
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  inlineTimeDoneText: { color: 'white', fontWeight: '800', fontSize: 15 },
 });
