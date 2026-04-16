@@ -1701,7 +1701,8 @@
       "configureOnWebTitle": "Horarios y reglas de limpieza",
       "configureOnWebBody": "En el móvil no afinamos bien horas, duración ni iCal. Configúralo en la web (Ajustes → Calendario de limpieza): es lo mismo que usa el enlace de la limpiadora.",
       "openWebSettings": "Abrir en la web",
-      "upcomingPreviewIntro": "Próximas limpiezas según tus reservas y la configuración por habitación (misma lógica que el enlace público).",
+      "upcomingPreviewIntro": "Solo habitaciones incluidas en algún enlace para limpiadora. Las fechas se recalculan con tus reservas (misma lógica que el enlace público).",
+      "upcomingNoCleaningLinks": "Crea arriba un enlace para limpiadora y marca las habitaciones. Aquí verás las próximas limpiezas solo de esas habitaciones; al cambiar reservas, tira hacia abajo para actualizar.",
       "upcomingEmptyNeedWeb": "No hay limpiezas previstas. Revisa que tengas reservas futuras y que en la web hayas guardado la configuración de limpieza por habitación.",
       "roomAdvancedOnWeb": "Calendario iCal y demás opciones: en la web.",
       "upcomingTimeRange": "{start} – {end}"

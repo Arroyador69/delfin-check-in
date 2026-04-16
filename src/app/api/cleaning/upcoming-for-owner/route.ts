@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
 import { getTenantId } from '@/lib/tenant';
+import { ensureCleaningPublicLinkTables } from '@/lib/ensure-cleaning-public-links-tables';
 import {
   buildCleaningTasksForRoom,
   type CleaningTrigger,
@@ -16,7 +17,9 @@ async function resolveTenantId(req: NextRequest): Promise<string | null> {
 }
 
 /**
- * Próximas tareas de limpieza para el panel del propietario (misma lógica que la vista pública / iCal).
+ * Próximas tareas de limpieza para el panel del propietario.
+ * Solo incluye habitaciones que figuren en al menos un enlace público de limpieza
+ * (misma visión agregada que si unieras las habitaciones de todos tus enlaces).
  */
 export async function GET(req: NextRequest) {
   try {
@@ -24,6 +27,8 @@ export async function GET(req: NextRequest) {
     if (!tenantId) {
       return NextResponse.json({ success: false, error: 'No tenant' }, { status: 401 });
     }
+
+    await ensureCleaningPublicLinkTables();
 
     const now = new Date();
     const pastDays = 30;
@@ -33,29 +38,26 @@ export async function GET(req: NextRequest) {
     const fromStr = fromDate.toISOString().slice(0, 10);
     const toStr = toDate.toISOString().slice(0, 10);
 
-    const roomIdRows = await sql`
-      SELECT DISTINCT x.rid AS room_id
-      FROM (
-        SELECT cc.room_id::text AS rid
-        FROM cleaning_config cc
-        WHERE cc.tenant_id = ${tenantId}::uuid
-        UNION
-        SELECT r.room_id::text AS rid
-        FROM reservations r
-        WHERE r.tenant_id = ${tenantId}::uuid
-          AND r.check_out >= ${fromStr}::date
-          AND (r.status IS NULL OR LOWER(TRIM(r.status)) NOT IN ('cancelled', 'canceled'))
-      ) x
-      WHERE x.rid IS NOT NULL AND BTRIM(x.rid) <> ''
+    const linkedRows = await sql`
+      SELECT DISTINCT clr.room_id::text AS room_id
+      FROM cleaning_link_rooms clr
+      WHERE clr.tenant_id = ${tenantId}::uuid
+        AND BTRIM(clr.room_id::text) <> ''
     `;
 
-    const roomIds: string[] = roomIdRows.rows.map((r: { room_id: string }) => String(r.room_id));
+    const roomIds: string[] = linkedRows.rows.map((r: { room_id: string }) => String(r.room_id));
+    const hasCleaningLinks = roomIds.length > 0;
 
-    if (roomIds.length === 0) {
+    if (!hasCleaningLinks) {
+      const configCountEmpty = await sql`
+        SELECT COUNT(*)::int AS c FROM cleaning_config WHERE tenant_id = ${tenantId}::uuid
+      `;
       return NextResponse.json({
         success: true,
         tasks: [],
-        configured_room_count: 0,
+        configured_room_count: Number(configCountEmpty.rows[0]?.c ?? 0),
+        has_cleaning_links: false,
+        linked_room_count: 0,
       });
     }
 
@@ -184,6 +186,8 @@ export async function GET(req: NextRequest) {
       success: true,
       tasks: upcoming,
       configured_room_count: configuredRoomCount,
+      has_cleaning_links: true,
+      linked_room_count: roomIds.length,
     });
   } catch (error) {
     console.error('[cleaning/upcoming-for-owner] error:', error);

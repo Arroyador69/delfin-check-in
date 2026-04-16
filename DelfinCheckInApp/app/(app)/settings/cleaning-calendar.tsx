@@ -9,6 +9,7 @@ import {
   Alert,
   Clipboard,
   Linking,
+  RefreshControl,
 } from 'react-native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
@@ -80,6 +81,7 @@ export default function CleaningCalendarScreen() {
   const [publicLinkLabel, setPublicLinkLabel] = useState('');
   const [publicLinkRooms, setPublicLinkRooms] = useState<Set<string>>(new Set());
   const [showPublicLinkModal, setShowPublicLinkModal] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   const webSettingsUrl = `${getCleaningPublicOrigin()}/${getLocale()}/settings`;
 
@@ -121,6 +123,8 @@ export default function CleaningCalendarScreen() {
         success?: boolean;
         tasks?: OwnerCleaningTask[];
         configured_room_count?: number;
+        has_cleaning_links?: boolean;
+        linked_room_count?: number;
       };
     },
   });
@@ -138,6 +142,7 @@ export default function CleaningCalendarScreen() {
   const publicLinks = publicLinksRes?.links ?? [];
   const upcomingTasks = upcomingRes?.tasks ?? [];
   const configuredRoomCount = upcomingRes?.configured_room_count ?? 0;
+  const hasCleaningLinks = upcomingRes?.has_cleaning_links ?? false;
 
   const configByRoom = useMemo(() => {
     const m = new Map<string, CleaningConfig>();
@@ -246,9 +251,25 @@ export default function CleaningCalendarScreen() {
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['cleaning-public-links'] });
+      await queryClient.invalidateQueries({ queryKey: ['cleaning-upcoming-owner'] });
     },
     onError: () => Alert.alert(t('common.error'), t('settings.cleaning.saveError')),
   });
+
+  const onPullRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await Promise.all([
+        queryClient.refetchQueries({ queryKey: ['cleaning-upcoming-owner'] }),
+        queryClient.refetchQueries({ queryKey: ['cleaning-public-links'] }),
+        queryClient.refetchQueries({ queryKey: ['cleaning-config'] }),
+        queryClient.refetchQueries({ queryKey: ['cleaning-notes'] }),
+        queryClient.refetchQueries({ queryKey: ['rooms'] }),
+      ]);
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   const listLoading = roomsLoading || notesLoading || configLoading;
 
@@ -285,7 +306,11 @@ export default function CleaningCalendarScreen() {
 
   return (
     <>
-      <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 32 }}>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={{ paddingBottom: 32 }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onPullRefresh} />}
+      >
         <View style={styles.header}>
           <Pressable onPress={() => router.back()} style={styles.backButton}>
             <Text style={styles.backText}>{'\u2039'}</Text>
@@ -381,9 +406,11 @@ export default function CleaningCalendarScreen() {
             <ActivityIndicator style={{ marginVertical: 16 }} color="#2563eb" />
           ) : upcomingTasks.length === 0 ? (
             <Text style={styles.mutedInline}>
-              {configuredRoomCount === 0
-                ? t('settings.cleaning.upcomingEmptyNeedWeb')
-                : t('settings.cleaning.noUpcomingTasks')}
+              {!hasCleaningLinks
+                ? t('settings.cleaning.upcomingNoCleaningLinks')
+                : configuredRoomCount === 0
+                  ? t('settings.cleaning.upcomingEmptyNeedWeb')
+                  : t('settings.cleaning.noUpcomingTasks')}
             </Text>
           ) : (
             upcomingTasks.slice(0, 30).map((task) => {

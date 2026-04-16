@@ -1605,7 +1605,8 @@
       "configureOnWebTitle": "Horários e regras de limpeza",
       "configureOnWebBody": "Na app móvel não configuramos bem horas, duração nem iCal. Faça-o na web (Definições → Calendário de limpeza), igual ao link da equipa.",
       "openWebSettings": "Abrir na web",
-      "upcomingPreviewIntro": "Próximas limpezas conforme as reservas e a configuração por quarto (mesma lógica do link público).",
+      "upcomingPreviewIntro": "Apenas quartos incluídos em pelo menos um link para limpeza. As datas seguem as reservas (mesma lógica da página pública).",
+      "upcomingNoCleaningLinks": "Crie acima um link e escolha os quartos. As limpezas aqui são só para esses quartos; puxe para baixo para atualizar após alterar reservas.",
       "upcomingEmptyNeedWeb": "Sem limpezas previstas. Confirme reservas futuras e a configuração guardada na web por quarto.",
       "roomAdvancedOnWeb": "Feed iCal e mais opções: na web.",
       "upcomingTimeRange": "{start} – {end}"

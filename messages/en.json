@@ -1635,7 +1635,8 @@
       "configureOnWebTitle": "Cleaning times & rules",
       "configureOnWebBody": "The mobile app is not ideal for checkout/check-in times, duration, triggers, or iCal. Set these on the web (Settings → Cleaning calendar)—same rules as the cleaner’s link.",
       "openWebSettings": "Open in browser",
-      "upcomingPreviewIntro": "Upcoming cleaning slots from your reservations and per-room settings (same logic as the public cleaner link).",
+      "upcomingPreviewIntro": "Only rooms included in at least one cleaner link. Dates follow your reservations (same logic as the public cleaner page).",
+      "upcomingNoCleaningLinks": "Create a cleaner link above and select rooms. Upcoming tasks here are only for those rooms; pull down to refresh after reservation changes.",
       "upcomingEmptyNeedWeb": "No upcoming cleaning tasks. Check you have future reservations and that cleaning settings are saved per room on the web.",
       "roomAdvancedOnWeb": "iCal feed and advanced options: on the web.",
       "upcomingTimeRange": "{start} – {end}"

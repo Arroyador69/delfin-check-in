@@ -1601,7 +1601,8 @@
       "configureOnWebTitle": "Horaires et règles de ménage",
       "configureOnWebBody": "Sur mobile, les heures, durées et iCal ne sont pas gérés correctement. Configurez-les sur le web (Paramètres → Calendrier de nettoyage), comme pour le lien de l’équipe.",
       "openWebSettings": "Ouvrir sur le web",
-      "upcomingPreviewIntro": "Prochains ménages selon vos réservations et le réglage par chambre (même logique que le lien public).",
+      "upcomingPreviewIntro": "Uniquement les chambres incluses dans au moins un lien pour l’équipe de ménage. Les dates suivent vos réservations (même logique que la page publique).",
+      "upcomingNoCleaningLinks": "Créez un lien ci-dessus et sélectionnez les chambres. Les tâches affichées concernent seulement ces chambres ; tirez vers le bas pour actualiser après un changement de réservation.",
       "upcomingEmptyNeedWeb": "Aucun ménage prévu. Vérifiez les réservations futures et la configuration enregistrée sur le web pour chaque chambre.",
       "roomAdvancedOnWeb": "Flux iCal et options avancées : sur le web.",
       "upcomingTimeRange": "{start} – {end}"
