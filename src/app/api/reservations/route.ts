@@ -3,6 +3,7 @@ import { getReservations, insertReservation, sql, normalizeRoomId } from '@/lib/
 import { ensureReservationCheckinEmailColumns } from '@/lib/reservation-checkin-email-db';
 import { ensureReservationGuestFormColumns } from '@/lib/reservation-from-guest-registration';
 import { sendReservationConfirmation } from '@/lib/whatsapp';
+import { estimatePlatformCommission } from '@/lib/reservation-platform-commission';
 
 // Configuración para evitar caché
 export const dynamic = "force-dynamic";
@@ -253,7 +254,9 @@ export async function POST(request: NextRequest) {
     // Calcular datos financieros
     const total_price = parseFloat(body.total_price) || 0;
     const guest_paid = parseFloat(body.guest_paid) || total_price;
-    const platform_commission = parseFloat(body.platform_commission) || calculateCommission(guest_paid, body.channel || 'manual');
+    const platform_commission =
+      parseFloat(body.platform_commission) ||
+      estimatePlatformCommission(guest_paid, body.channel || 'manual');
     const net_income = guest_paid - platform_commission;
 
     // Generar external_id único
@@ -381,7 +384,9 @@ export async function PUT(request: NextRequest) {
     // Calcular datos financieros
     const total_price = parseFloat(body.total_price) || 0;
     const guest_paid = parseFloat(body.guest_paid) || total_price;
-    const platform_commission = parseFloat(body.platform_commission) || calculateCommission(guest_paid, body.channel || 'manual');
+    const platform_commission =
+      parseFloat(body.platform_commission) ||
+      estimatePlatformCommission(guest_paid, body.channel || 'manual');
     const net_income = guest_paid - platform_commission;
 
     const result = await sql`
@@ -423,22 +428,5 @@ export async function PUT(request: NextRequest) {
       { error: 'Error al actualizar la reserva', details: error.message },
       { status: 500 }
     );
-  }
-}
-
-function calculateCommission(
-  amount: number,
-  channel: 'airbnb' | 'booking' | 'manual' | 'checkin_form'
-): number {
-  switch (channel) {
-    case 'booking':
-      return Math.round(amount * 0.15 * 100) / 100; // 15% comisión Booking
-    case 'airbnb':
-      return Math.round(amount * 0.14 * 100) / 100; // 14% comisión Airbnb
-    case 'manual':
-    case 'checkin_form':
-      return 0;
-    default:
-      return 0;
   }
 }

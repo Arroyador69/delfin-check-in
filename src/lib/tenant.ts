@@ -45,6 +45,7 @@ export interface Tenant {
       guestMessageEs?: string;
       guestMessageEn?: string;
     };
+    bookingChannels?: { presets?: string[]; custom?: Array<{ id: string; label: string }> };
   };
   created_at: Date;
   updated_at: Date;

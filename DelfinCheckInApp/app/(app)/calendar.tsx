@@ -57,9 +57,12 @@ function translateChannelLabel(channel: string | null | undefined): string {
   if (!raw) return '';
   if (raw === 'airbnb') return t('reservations.channelAirbnb');
   if (raw === 'booking') return t('reservations.channelBooking');
+  if (raw === 'vrbo') return t('reservations.channelVrbo');
+  if (raw === 'expedia') return t('reservations.channelExpedia');
+  if (raw === 'tripadvisor') return t('reservations.channelTripadvisor');
   if (raw === 'manual') return t('reservations.channelManual');
   if (raw === 'checkin_form') return t('reservations.channelCheckinForm');
-  return raw;
+  return String(channel || '');
 }
 
 export default function CalendarScreen() {

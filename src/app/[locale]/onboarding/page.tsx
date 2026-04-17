@@ -4,6 +4,12 @@ import { useState, useEffect } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import LocalizedDateInput from '@/components/LocalizedDateInput';
+import BookingChannelsEditor from '@/components/BookingChannelsEditor';
+import {
+  normalizeBookingChannels,
+  defaultBookingChannelsConfig,
+  type BookingChannelsConfig,
+} from '@/lib/booking-channels';
 
 type PlanId = 'free' | 'checkin' | 'standard' | 'pro';
 type BillingInterval = 'month' | 'year';
@@ -45,6 +51,9 @@ interface OnboardingData {
   unitCount: number;
   checkoutCompleted: boolean;
   lodgingType: LodgingType;
+
+  /** Canales de reserva (OTAs + custom); se guarda en tenant.config */
+  bookingChannels: BookingChannelsConfig;
 }
 
 export default function OnboardingPage() {
@@ -95,6 +104,7 @@ export default function OnboardingPage() {
     unitCount: 1,
     checkoutCompleted: false,
     lodgingType: 'hostal',
+    bookingChannels: defaultBookingChannelsConfig(),
   });
 
   // Persistencia de onboarding para que, si el usuario sale y vuelve, continúe donde estaba.
@@ -142,6 +152,9 @@ export default function OnboardingPage() {
           unitCount: parsed.formData.unitCount ?? prev.unitCount,
           checkoutCompleted: !!parsed.formData.checkoutCompleted,
           lodgingType: parsed.formData.lodgingType ?? prev.lodgingType,
+          bookingChannels: parsed.formData.bookingChannels
+            ? normalizeBookingChannels(parsed.formData.bookingChannels)
+            : prev.bookingChannels,
         }));
       }
     } catch {}
@@ -178,6 +191,7 @@ export default function OnboardingPage() {
             unitCount: formData.unitCount,
             checkoutCompleted: formData.checkoutCompleted,
             lodgingType: formData.lodgingType,
+            bookingChannels: formData.bookingChannels,
           },
         })
       );
@@ -474,6 +488,13 @@ export default function OnboardingPage() {
       if (!response.ok) {
         console.error('Error guardando datos de empresa');
       }
+
+      await fetch('/api/tenant/booking-channels', {
+        method: 'PUT',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bookingChannels: formData.bookingChannels }),
+      });
     } catch (error) {
       console.error('Error guardando datos de empresa:', error);
     }
@@ -551,6 +572,13 @@ export default function OnboardingPage() {
     setLoading(true);
 
     try {
+      await fetch('/api/tenant/booking-channels', {
+        method: 'PUT',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bookingChannels: formData.bookingChannels }),
+      });
+
       // Guardar datos MIR si se proporcionaron (opcional)
       if (formData.usuarioMir && formData.contraseñaMir && formData.codigoArrendador && formData.codigoEstablecimiento) {
         await fetch('/api/ministerio/config-produccion', {
@@ -869,6 +897,15 @@ export default function OnboardingPage() {
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
+        </div>
+
+        <div className="mt-8 space-y-3">
+          <h2 className="text-lg font-semibold text-gray-900">{t('step2.channelsSectionTitle')}</h2>
+          <p className="text-sm text-gray-600">{t('step2.channelsSectionIntro')}</p>
+          <BookingChannelsEditor
+            value={formData.bookingChannels}
+            onChange={(bookingChannels) => setFormData((prev) => ({ ...prev, bookingChannels }))}
+          />
         </div>
 
         <div className="flex justify-between mt-8">

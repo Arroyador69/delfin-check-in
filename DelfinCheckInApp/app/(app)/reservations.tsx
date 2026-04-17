@@ -41,6 +41,12 @@ import {
   getReservationPrice,
   getReservationStatus,
 } from '@/lib/reservations';
+import {
+  buildChannelSelectOptions,
+  normalizeBookingChannels,
+  defaultBookingChannelsConfig,
+  type BookingChannelsConfig,
+} from '@/lib/booking-channels';
 
 interface Room {
   id: string;
@@ -72,7 +78,7 @@ export default function ReservationsScreen() {
     platform_commission: '',
     currency: 'EUR',
     status: 'confirmed' as 'confirmed' | 'cancelled' | 'completed',
-    channel: 'manual' as 'airbnb' | 'booking' | 'manual' | 'checkin_form',
+    channel: 'manual',
   });
 
   // Obtener habitaciones
@@ -85,6 +91,44 @@ export default function ReservationsScreen() {
   });
 
   const rooms: Room[] = roomsData || [];
+
+  const { data: bookingChannelsResponse } = useQuery({
+    queryKey: ['booking-channels'],
+    queryFn: async () => {
+      const response = await api.get('/api/tenant/booking-channels');
+      return response.data as { success?: boolean; bookingChannels?: unknown };
+    },
+  });
+
+  const bookingChannelCfg: BookingChannelsConfig = useMemo(() => {
+    const raw = bookingChannelsResponse?.bookingChannels;
+    return raw ? normalizeBookingChannels(raw) : defaultBookingChannelsConfig();
+  }, [bookingChannelsResponse]);
+
+  const channelPickerOptions = useMemo(() => {
+    const labelFor = (id: string) => {
+      const keyMap: Record<string, string> = {
+        manual: 'reservations.channelManual',
+        checkin_form: 'reservations.channelCheckinForm',
+        airbnb: 'reservations.channelAirbnb',
+        booking: 'reservations.channelBooking',
+        vrbo: 'reservations.channelVrbo',
+        expedia: 'reservations.channelExpedia',
+        tripadvisor: 'reservations.channelTripadvisor',
+      };
+      const tr = keyMap[id];
+      if (tr) return t(tr);
+      const cust = bookingChannelCfg.custom.find((c) => c.id === id);
+      return cust?.label ?? id;
+    };
+    const base = buildChannelSelectOptions(bookingChannelCfg, labelFor);
+    const seen = new Set(base.map((o) => o.value));
+    const out = [...base];
+    if (formData.channel && !seen.has(formData.channel)) {
+      out.push({ value: formData.channel, label: labelFor(formData.channel) });
+    }
+    return out;
+  }, [bookingChannelCfg, formData.channel, t]);
 
   // Obtener reservas normales
   const { data: normalReservations } = useQuery({
@@ -296,7 +340,7 @@ export default function ReservationsScreen() {
       platform_commission: pc != null ? String(pc) : '',
       currency: reservation.currency || 'EUR',
       status: (getReservationStatus(reservation) as 'confirmed' | 'cancelled' | 'completed') || 'confirmed',
-      channel: (reservation.channel as typeof formData.channel) || 'manual',
+      channel: reservation.channel || 'manual',
     });
     setShowCreateModal(true);
   };
@@ -768,26 +812,22 @@ export default function ReservationsScreen() {
               <Text style={styles.sectionHeading}>{t('reservations.form.configSectionTitle')}</Text>
               <Text style={styles.label}>{t('reservations.form.channelLabel')}</Text>
               <View style={styles.pickerContainer}>
-                {(
-                  [
-                    ['manual', t('reservations.channelManual')],
-                    ['airbnb', t('reservations.channelAirbnb')],
-                    ['booking', t('reservations.channelBooking')],
-                    ['checkin_form', t('reservations.channelCheckinForm')],
-                  ] as const
-                ).map(([val, label]) => (
+                {channelPickerOptions.map((opt) => (
                   <Pressable
-                    key={val}
-                    style={[styles.pickerOption, formData.channel === val && styles.pickerOptionSelected]}
-                    onPress={() => setFormData({ ...formData, channel: val })}
+                    key={opt.value}
+                    style={[
+                      styles.pickerOption,
+                      formData.channel === opt.value && styles.pickerOptionSelected,
+                    ]}
+                    onPress={() => setFormData({ ...formData, channel: opt.value })}
                   >
                     <Text
                       style={[
                         styles.pickerOptionText,
-                        formData.channel === val && styles.pickerOptionTextSelected,
+                        formData.channel === opt.value && styles.pickerOptionTextSelected,
                       ]}
                     >
-                      {label}
+                      {opt.label}
                     </Text>
                   </Pressable>
                 ))}

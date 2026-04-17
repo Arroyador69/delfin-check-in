@@ -1,3 +1,5 @@
+import { estimatePlatformCommission } from '@/lib/reservation-platform-commission';
+
 // Sistema de almacenamiento usando localStorage del navegador
 // Esto funciona tanto en desarrollo como en producción
 
@@ -268,7 +270,9 @@ export function createReservation(reservationData: Omit<Reservation, 'id' | 'cre
   
   // Calcular datos financieros si no se proporcionan
   const guest_paid = reservationData.guest_paid || reservationData.total_price || 0;
-  const platform_commission = reservationData.platform_commission || calculateCommission(guest_paid, reservationData.channel);
+  const platform_commission =
+    reservationData.platform_commission ||
+    estimatePlatformCommission(guest_paid, reservationData.channel);
   const net_income = reservationData.net_income || (guest_paid - platform_commission);
   
   const newReservation: Reservation = {
@@ -284,20 +288,6 @@ export function createReservation(reservationData: Omit<Reservation, 'id' | 'cre
   reservations.push(newReservation);
   writeStorageData(STORAGE_KEYS.RESERVATIONS, reservations);
   return newReservation;
-}
-
-// Función para calcular comisiones
-function calculateCommission(amount: number, channel: 'airbnb' | 'booking' | 'manual'): number {
-  switch (channel) {
-    case 'booking':
-      return Math.round(amount * 0.15 * 100) / 100; // 15% comisión Booking
-    case 'airbnb':
-      return Math.round(amount * 0.14 * 100) / 100; // 14% comisión Airbnb
-    case 'manual':
-      return 0; // Sin comisión para reservas manuales
-    default:
-      return 0;
-  }
 }
 
 // Funciones para huéspedes

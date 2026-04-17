@@ -10,6 +10,12 @@ import { useTranslations, useLocale } from 'next-intl';
 import LocalizedDateInput from '@/components/LocalizedDateInput';
 import { PENDING_RESERVATIONS_REVIEW_CHANGED } from '@/components/PendingReservationReviewBadge';
 import { toIntlDateLocale, type Locale as AppLocale } from '@/i18n/config';
+import {
+  buildChannelSelectOptions,
+  normalizeBookingChannels,
+  defaultBookingChannelsConfig,
+  type BookingChannelsConfig,
+} from '@/lib/booking-channels';
 // Base de datos: Neon PostgreSQL
 
 interface Reservation {
@@ -22,7 +28,7 @@ interface Reservation {
   guest_count?: number;
   check_in: string;
   check_out: string;
-  channel: 'airbnb' | 'booking' | 'manual' | 'checkin_form';
+  channel: string;
   needs_review?: boolean;
   total_price: number;
   guest_paid: number;
@@ -135,13 +141,14 @@ export default function ReservationsPage() {
     platform_commission: '',
     currency: 'EUR',
     status: 'confirmed' as 'confirmed' | 'cancelled' | 'completed',
-    channel: 'manual' as 'airbnb' | 'booking' | 'manual' | 'checkin_form',
+    channel: 'manual',
   });
 
   const [showPendingOnly, setShowPendingOnly] = useState(false);
   const [markingReviewedId, setMarkingReviewedId] = useState<string | null>(null);
   const pathname = usePathname();
   const editReservationOpenedRef = useRef<string | null>(null);
+  const [bookingChannelCfg, setBookingChannelCfg] = useState<BookingChannelsConfig | null>(null);
 
   const openEditReservationModal = useCallback((reservation: Reservation) => {
     setReservationToEdit(reservation);
@@ -158,7 +165,7 @@ export default function ReservationsPage() {
       platform_commission: reservation.platform_commission?.toString() || '',
       currency: reservation.currency || 'EUR',
       status: reservation.status || 'confirmed' as 'confirmed' | 'cancelled' | 'completed',
-      channel: (reservation.channel || 'manual') as Reservation['channel'],
+      channel: reservation.channel || 'manual',
     });
     setShowEditModal(true);
     if (reservation.needs_review) setShowPendingOnly(true);
@@ -195,6 +202,24 @@ export default function ReservationsPage() {
   useEffect(() => {
     fetchReservations();
     fetchRooms();
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await fetch('/api/tenant/booking-channels', { credentials: 'include' });
+        const d = await r.json();
+        if (!cancelled && d.success && d.bookingChannels) {
+          setBookingChannelCfg(normalizeBookingChannels(d.bookingChannels));
+        }
+      } catch {
+        if (!cancelled) setBookingChannelCfg(defaultBookingChannelsConfig());
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // Limpiar búsqueda cuando se actualicen las reservas
@@ -371,9 +396,41 @@ export default function ReservationsPage() {
       platform_commission: '',
       currency: 'EUR',
       status: 'confirmed' as 'confirmed' | 'cancelled' | 'completed',
-      channel: 'manual' as 'airbnb' | 'booking' | 'manual' | 'checkin_form',
+      channel: 'manual',
     });
   };
+
+  const mergedChannelOptions = useMemo(() => {
+    const labelFor = (id: string) => {
+      const keyMap: Record<string, string> = {
+        manual: 'channelManual',
+        checkin_form: 'channelCheckinForm',
+        airbnb: 'channelAirbnb',
+        booking: 'channelBooking',
+        vrbo: 'channelVrbo',
+        expedia: 'channelExpedia',
+        tripadvisor: 'channelTripadvisor',
+      };
+      const tr = keyMap[id];
+      if (tr) {
+        try {
+          return t(tr);
+        } catch {
+          return id;
+        }
+      }
+      const cust = bookingChannelCfg?.custom.find((c) => c.id === id);
+      return cust?.label ?? id;
+    };
+    const cfg = bookingChannelCfg ?? defaultBookingChannelsConfig();
+    const base = buildChannelSelectOptions(cfg, labelFor);
+    const seen = new Set(base.map((o) => o.value));
+    const out = [...base];
+    if (formData.channel && !seen.has(formData.channel)) {
+      out.push({ value: formData.channel, label: labelFor(formData.channel) });
+    }
+    return out;
+  }, [bookingChannelCfg, formData.channel, t]);
 
   const handleMarkReviewed = async (reservation: Reservation) => {
     setMarkingReviewedId(reservation.id);
@@ -554,13 +611,26 @@ export default function ReservationsPage() {
   };
 
   const getChannelText = (channel: string) => {
-    switch (channel) {
-      case 'airbnb': return t('channelAirbnb');
-      case 'booking': return t('channelBooking');
-      case 'manual': return t('channelManual');
-      case 'checkin_form': return t('channelCheckinForm');
-      default: return channel;
+    const keyMap: Record<string, string> = {
+      manual: 'channelManual',
+      checkin_form: 'channelCheckinForm',
+      airbnb: 'channelAirbnb',
+      booking: 'channelBooking',
+      vrbo: 'channelVrbo',
+      expedia: 'channelExpedia',
+      tripadvisor: 'channelTripadvisor',
+    };
+    const tr = keyMap[channel];
+    if (tr) {
+      try {
+        return t(tr);
+      } catch {
+        return channel;
+      }
     }
+    const cust = bookingChannelCfg?.custom.find((c) => c.id === channel);
+    if (cust) return cust.label;
+    return channel;
   };
 
   // Función helper para formatear números de forma segura
@@ -1224,18 +1294,14 @@ export default function ReservationsPage() {
                   <select
                     required
                     value={formData.channel}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        channel: e.target.value as 'airbnb' | 'booking' | 'manual' | 'checkin_form',
-                      })
-                    }
+                    onChange={(e) => setFormData({ ...formData, channel: e.target.value })}
                     className="w-full px-3 py-2 border-2 border-indigo-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white font-medium transition-all"
                   >
-                    <option value="manual">📝 {safeT('channelManual')}</option>
-                    <option value="airbnb">🏠 {safeT('channelAirbnb')}</option>
-                    <option value="booking">🌐 {safeT('channelBooking')}</option>
-                    <option value="checkin_form">📋 {safeT('channelCheckinForm')}</option>
+                    {mergedChannelOptions.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>
@@ -1526,18 +1592,14 @@ export default function ReservationsPage() {
                   <select
                     required
                     value={formData.channel}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        channel: e.target.value as 'airbnb' | 'booking' | 'manual' | 'checkin_form',
-                      })
-                    }
+                    onChange={(e) => setFormData({ ...formData, channel: e.target.value })}
                     className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white"
                   >
-                    <option value="manual">📝 {safeT('channelManual')}</option>
-                    <option value="airbnb">🏠 {safeT('channelAirbnb')}</option>
-                    <option value="booking">🌐 {safeT('channelBooking')}</option>
-                    <option value="checkin_form">📋 {safeT('channelCheckinForm')}</option>
+                    {mergedChannelOptions.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>
