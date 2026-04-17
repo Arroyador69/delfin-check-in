@@ -334,6 +334,8 @@
     "passwordLabel": "Contraseña",
     "passwordPlaceholder": "Ingresa tu contraseña",
     "loginButton": "Iniciar Sesión",
+    "createAccount": "Crear cuenta",
+    "resetAndShowOnboarding": "Resetear y ver onboarding",
     "verifying": "Verificando...",
     "forgotPassword": "¿Has olvidado tu contraseña?",
     "secureConnection": "🔒 Conexión segura con autenticación JWT",

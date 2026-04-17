@@ -333,6 +333,8 @@
     "passwordLabel": "Mot de passe",
     "passwordPlaceholder": "Entrez votre mot de passe",
     "loginButton": "Se Connecter",
+    "createAccount": "Créer un compte",
+    "resetAndShowOnboarding": "Réinitialiser et voir l’onboarding",
     "forgotPassword": "Mot de passe oublié ?",
     "errors": {
       "enterEmail": "Veuillez entrer votre email",

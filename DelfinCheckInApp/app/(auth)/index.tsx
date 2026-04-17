@@ -3,10 +3,11 @@
 // =====================================================
 
 import { useState } from 'react';
-import { View, Text, TextInput, Pressable, StyleSheet, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, TextInput, Pressable, StyleSheet, ActivityIndicator, Alert, Linking } from 'react-native';
 import { useAuth } from '@/lib/auth';
 import { useRouter } from 'expo-router';
 import { t } from '@/lib/i18n';
+import { setOnboardingSeen, setForceOnboarding } from '@/lib/onboarding';
 
 export default function LoginScreen() {
   const { signIn, signOut } = useAuth();
@@ -78,14 +79,24 @@ export default function LoginScreen() {
         </Pressable>
 
         <Pressable
+          style={[styles.secondaryButton, styles.createAccountButton]}
+          onPress={() => Linking.openURL('https://admin.delfincheckin.com')}
+          disabled={loading}
+        >
+          <Text style={[styles.secondaryButtonText, styles.createAccountText]}>{t('auth.createAccount')}</Text>
+        </Pressable>
+
+        <Pressable
           style={styles.secondaryButton}
           onPress={async () => {
             await signOut();
-            Alert.alert(t('common.success'), t('common.reset'));
+            await setOnboardingSeen(false);
+            await setForceOnboarding(false);
+            Alert.alert(t('common.success'), t('auth.resetAndShowOnboarding'));
           }}
           disabled={loading}
         >
-          <Text style={styles.secondaryButtonText}>{t('common.reset')}</Text>
+          <Text style={styles.secondaryButtonText}>{t('auth.resetAndShowOnboarding')}</Text>
         </Pressable>
       </View>
     </View>
@@ -160,6 +171,14 @@ const styles = StyleSheet.create({
     color: '#6b7280',
     fontSize: 14,
     fontWeight: '600',
+  },
+  createAccountButton: {
+    backgroundColor: 'white',
+    borderColor: '#bfdbfe',
+  },
+  createAccountText: {
+    color: '#2563eb',
+    fontWeight: '800',
   },
 });
 
