@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, View, Text, StyleSheet, Pressable, SafeAreaView } from 'react-native';
+import { Animated, View, Text, StyleSheet, Pressable } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { t } from '@/lib/i18n';
 import { getForceOnboarding, setForceOnboarding, setOnboardingSeen } from '@/lib/onboarding';
