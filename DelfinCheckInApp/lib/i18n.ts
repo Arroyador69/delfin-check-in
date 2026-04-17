@@ -64,9 +64,12 @@ function resolveLocale(): SupportedLocale {
     return persistedLocale;
   }
   const locales = Localization.getLocales?.() || [];
-  const lang = locales[0]?.languageCode?.toLowerCase();
-  if (lang && lang in messages) return lang as SupportedLocale;
-  return 'es';
+  for (const loc of locales) {
+    const lang = loc?.languageCode?.toLowerCase();
+    if (lang && lang in messages) return lang as SupportedLocale;
+  }
+  // Si el idioma del teléfono no está soportado, usamos inglés.
+  return 'en';
 }
 
 export function getLocale(): SupportedLocale {
@@ -111,7 +114,7 @@ function interpolate(template: string, vars?: Record<string, string | number>): 
 export function t(key: string, vars?: Record<string, string | number>): string {
   const locale = resolveLocale();
   const dict = messages[locale];
-  const fallback = messages.es;
+  const fallback = messages.en;
 
   const raw = getPath(dict, key) ?? getPath(fallback, key);
   if (typeof raw === 'string') return interpolate(raw, vars);

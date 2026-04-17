@@ -25,6 +25,59 @@ export default function DashboardScreen() {
   const queryClient = useQueryClient();
   const router = useRouter();
 
+  const { data: mirData } = useQuery({
+    queryKey: ['settings-mir'],
+    queryFn: async () => {
+      const res = await api.get('/api/settings/mir');
+      return res.data as { mir?: any };
+    },
+  });
+
+  const { data: limitsData } = useQuery({
+    queryKey: ['tenant-limits'],
+    queryFn: async () => {
+      const res = await api.get('/api/tenant/limits');
+      return res.data as { currentRooms?: any[] };
+    },
+  });
+
+  const { data: propsData } = useQuery({
+    queryKey: ['tenant-properties-onboarding'],
+    queryFn: async () => {
+      const res = await api.get('/api/tenant/properties');
+      return res.data as { properties?: any[] };
+    },
+  });
+
+  const { data: repData } = useQuery({
+    queryKey: ['reputation-google'],
+    queryFn: async () => {
+      const res = await api.get('/api/reputation-google');
+      return res.data as any;
+    },
+  });
+
+  const onboardingTasks = useMemo(() => {
+    const mir = mirData?.mir || {};
+    const mirReady = Boolean(
+      mir?.enabled &&
+        String(mir?.codigoEstablecimiento || '').trim() &&
+        String(mir?.denominacion || '').trim() &&
+        String(mir?.direccionCompleta || '').trim()
+    );
+    const roomsReady = Array.isArray(limitsData?.currentRooms) && limitsData!.currentRooms!.length > 0;
+    const propertiesReady = Array.isArray(propsData?.properties) && propsData!.properties!.length > 0;
+    const googleReady = Boolean(repData?.enabled);
+    const tasks = [
+      { key: 'mir', label: t('mobile.onboarding.tasks.mir'), done: mirReady, href: '/(app)/settings/mir' },
+      { key: 'rooms', label: t('mobile.onboarding.tasks.rooms'), done: roomsReady, href: '/(app)/settings/general' },
+      { key: 'properties', label: t('mobile.onboarding.tasks.properties'), done: propertiesReady, href: '/(app)/settings/properties' },
+      { key: 'google', label: t('mobile.onboarding.tasks.google'), done: googleReady, href: '/(app)/settings/reputation' },
+    ];
+    const doneCount = tasks.filter((x) => x.done).length;
+    return { tasks, doneCount, total: tasks.length };
+  }, [mirData, limitsData, propsData, repData]);
+
   // Obtener reservas normales
   const { data: reservations, isLoading } = useQuery({
     queryKey: ['reservations'],
@@ -161,6 +214,49 @@ export default function DashboardScreen() {
         <Text style={styles.tenantName}>{session?.user.tenant.name}</Text>
       </View>
 
+      {onboardingTasks.doneCount < onboardingTasks.total ? (
+        <View style={[styles.card, { borderWidth: 1, borderColor: '#e0e7ff', backgroundColor: '#f8fafc' }]}>
+          <View style={styles.cardHeader}>
+            <View style={styles.cardHeaderLeft}>
+              <Text style={{ fontSize: 18, fontWeight: '900', color: '#1e3a8a' }}>
+                {t('mobile.onboarding.checklist.title')}
+              </Text>
+            </View>
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>{onboardingTasks.doneCount}/{onboardingTasks.total}</Text>
+            </View>
+          </View>
+          <Text style={[styles.emptyText, { color: '#475569', fontStyle: 'normal' }]}>
+            {t('mobile.onboarding.checklist.subtitle')}
+          </Text>
+
+          <View style={{ marginTop: 10, gap: 8 }}>
+            {onboardingTasks.tasks.map((task) => (
+              <Pressable
+                key={task.key}
+                onPress={() => router.push(task.href as any)}
+                style={{
+                  paddingVertical: 10,
+                  paddingHorizontal: 12,
+                  borderRadius: 12,
+                  backgroundColor: 'white',
+                  borderWidth: 1,
+                  borderColor: '#e5e7eb',
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                }}
+              >
+                <Text style={{ fontSize: 14, fontWeight: '700', color: '#111827' }}>
+                  {task.done ? '✅ ' : '⬜ '} {task.label}
+                </Text>
+                <Text style={{ color: '#2563eb', fontWeight: '800' }}>{t('mobile.onboarding.checklist.open')}</Text>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+      ) : null}
+
       <View style={styles.card}>
         <View style={styles.cardHeader}>
           <View style={styles.cardHeaderLeft}>
@@ -188,14 +284,14 @@ export default function DashboardScreen() {
               >
                 <Text style={styles.pendingGuest}>{item.guest_name}</Text>
                 <Text style={styles.pendingMeta}>
-                  Check-in:{' '}
+                  {t('mobile.dashboard.checkinLabel')}:{' '}
                   {item.check_in
-                    ? new Date(item.check_in).toLocaleDateString('es-ES', {
+                    ? new Date(item.check_in).toLocaleDateString(getLocaleTag(), {
                         day: 'numeric',
                         month: 'short',
                         year: 'numeric',
                       })
-                    : 'Sin fecha'}
+                    : t('mobile.dashboard.noDate')}
                 </Text>
               </Pressable>
             ))}
@@ -208,7 +304,7 @@ export default function DashboardScreen() {
                 })
               }
             >
-              <Text style={styles.pendingButtonText}>Ver pendientes</Text>
+              <Text style={styles.pendingButtonText}>{t('mobile.dashboard.viewPending')}</Text>
             </Pressable>
           </>
         )}

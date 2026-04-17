@@ -2786,6 +2786,45 @@
     "loading": "Caricamento..."
   },
   "mobile": {
+    "onboarding": {
+      "title": "Onboarding",
+      "progress": "{current}/{total}",
+      "skip": "Salta",
+      "back": "Indietro",
+      "next": "Avanti",
+      "done": "Inizia",
+      "checklist": {
+        "title": "Configurazione minima",
+        "subtitle": "Completa l’essenziale per far funzionare tutto al meglio.",
+        "open": "Apri"
+      },
+      "tasks": {
+        "mir": "Configurare MIR",
+        "rooms": "Configurare camere",
+        "properties": "Configurare proprietà",
+        "google": "Attivare reputazione Google"
+      },
+      "step1": {
+        "title": "Tutto parte dal modulo",
+        "body": "L’ospite compila il modulo di check-in dal link. Il sistema prepara la parte legale e crea la prenotazione automaticamente."
+      },
+      "step2": {
+        "title": "Tu devi solo confermare",
+        "body": "Vedrai elementi in sospeso nell’app. Aprili, controlla l’essenziale (canale, commissioni, importi) e segna la prenotazione come verificata."
+      },
+      "step3": {
+        "title": "Invio MIR (se attivo)",
+        "body": "Se configuri le credenziali MIR, l’invio al Ministero dell’Interno è automatizzato. Controlli tutto da Impostazioni."
+      },
+      "step4": {
+        "title": "Prenotazioni dirette, senza intermediari",
+        "body": "Con proprietà e microsito puoi ottenere prenotazioni dirette e incassare senza dipendere dalle piattaforme. Più margine, più controllo."
+      },
+      "step5": {
+        "title": "Piano Pro: più prenotazioni con Google",
+        "body": "Attiva reputazione Google e promemoria per migliorare il ranking. Più recensioni e migliore posizione = più prenotazioni dirette."
+      }
+    },
     "facturas": {
       "pdfDownloadedHint": "PDF scaricato. Usa « Condividi » se vuoi inviarlo via WhatsApp."
     },
@@ -2798,6 +2837,9 @@
       "greeting": "Ciao, {name}",
       "pendingReviewTitle": "Da verificare",
       "noPending": "Nessuna prenotazione in sospeso",
+      "checkinLabel": "Check-in",
+      "noDate": "Senza data",
+      "viewPending": "Vedi in sospeso",
       "stayingTodayTitle": "Ospiti oggi",
       "stayingTodayEmpty": "Nessun ospite presente oggi",
       "arrivingTodayTitle": "Arrivi oggi",

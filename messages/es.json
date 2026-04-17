@@ -2842,6 +2842,45 @@
     "loading": "Cargando..."
   },
   "mobile": {
+    "onboarding": {
+      "title": "Onboarding",
+      "progress": "{current}/{total}",
+      "skip": "Saltar",
+      "back": "Atrás",
+      "next": "Siguiente",
+      "done": "Empezar",
+      "checklist": {
+        "title": "Configuración mínima",
+        "subtitle": "Completa lo básico para que todo funcione perfecto.",
+        "open": "Abrir"
+      },
+      "tasks": {
+        "mir": "Configurar MIR",
+        "rooms": "Configurar habitaciones",
+        "properties": "Configurar propiedades",
+        "google": "Activar reputación Google"
+      },
+      "step1": {
+        "title": "Todo empieza en el formulario",
+        "body": "El huésped completa el formulario de check-in desde el enlace. Con eso, el sistema prepara el registro y crea la reserva automáticamente."
+      },
+      "step2": {
+        "title": "Tú solo confirmas",
+        "body": "Recibirás pendientes en la app. Entra, revisa lo importante (canal, comisiones, importes) y marca la reserva como revisada."
+      },
+      "step3": {
+        "title": "Envío al MIR (si lo activas)",
+        "body": "Si configuras tus credenciales MIR, el envío al Ministerio del Interior se automatiza. Tú controlas el proceso desde Ajustes."
+      },
+      "step4": {
+        "title": "Directo y sin intermediarios",
+        "body": "Con propiedades y microsite puedes captar reservas directas y cobrar sin depender de plataformas. Más margen y más control."
+      },
+      "step5": {
+        "title": "Plan Pro: más reservas con Google",
+        "body": "Activa reputación Google y recordatorios para mejorar posicionamiento. Cuantas más reseñas y mejor ranking, más reservas directas."
+      }
+    },
     "facturas": {
       "pdfDownloadedHint": "PDF descargado. Usa “Compartir” si quieres enviarlo por WhatsApp."
     },
@@ -2854,6 +2893,9 @@
       "greeting": "Hola, {name}",
       "pendingReviewTitle": "Pendientes de revisión",
       "noPending": "No hay reservas pendientes de completar",
+      "checkinLabel": "Check-in",
+      "noDate": "Sin fecha",
+      "viewPending": "Ver pendientes",
       "stayingTodayTitle": "Quién hay hoy",
       "stayingTodayEmpty": "No hay huéspedes alojados hoy",
       "arrivingTodayTitle": "Quién llega hoy",

@@ -2669,6 +2669,45 @@
     "loading": "Chargement..."
   },
   "mobile": {
+    "onboarding": {
+      "title": "Onboarding",
+      "progress": "{current}/{total}",
+      "skip": "Passer",
+      "back": "Retour",
+      "next": "Suivant",
+      "done": "Commencer",
+      "checklist": {
+        "title": "Configuration minimale",
+        "subtitle": "Complétez l’essentiel pour que tout fonctionne parfaitement.",
+        "open": "Ouvrir"
+      },
+      "tasks": {
+        "mir": "Configurer le MIR",
+        "rooms": "Configurer les chambres",
+        "properties": "Configurer les propriétés",
+        "google": "Activer la réputation Google"
+      },
+      "step1": {
+        "title": "Tout commence avec le formulaire",
+        "body": "Le voyageur complète le formulaire de check-in via le lien. Le système prépare le registre légal et crée la réservation automatiquement."
+      },
+      "step2": {
+        "title": "Vous ne faites que confirmer",
+        "body": "Vous verrez des éléments en attente dans l’app. Ouvrez-les, vérifiez l’essentiel (canal, commissions, montants) et marquez la réservation comme vérifiée."
+      },
+      "step3": {
+        "title": "Envoi au MIR (si activé)",
+        "body": "Si vous configurez vos identifiants MIR, l’envoi au Ministère de l’Intérieur est automatisé. Vous gardez la main depuis Réglages."
+      },
+      "step4": {
+        "title": "Réservations directes, sans intermédiaires",
+        "body": "Avec vos propriétés et le microsite, vous pouvez capter des réservations directes et encaisser sans dépendre des plateformes. Plus de marge, plus de contrôle."
+      },
+      "step5": {
+        "title": "Plan Pro : plus de réservations avec Google",
+        "body": "Activez la réputation Google et les rappels pour améliorer le classement. Plus d’avis et une meilleure position = plus de réservations directes."
+      }
+    },
     "facturas": {
       "pdfDownloadedHint": "PDF téléchargé. Utilisez « Partager » si vous voulez l’envoyer via WhatsApp."
     },
@@ -2681,6 +2720,9 @@
       "greeting": "Bonjour, {name}",
       "pendingReviewTitle": "À vérifier",
       "noPending": "Aucune réservation à compléter",
+      "checkinLabel": "Arrivée",
+      "noDate": "Sans date",
+      "viewPending": "Voir les en attente",
       "stayingTodayTitle": "Présents aujourd’hui",
       "stayingTodayEmpty": "Aucun client hébergé aujourd’hui",
       "arrivingTodayTitle": "Arrivées aujourd’hui",

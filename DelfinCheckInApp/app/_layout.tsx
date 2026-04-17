@@ -10,6 +10,7 @@ import { useAuth } from '@/lib/auth';
 import { useRouter, useSegments } from 'expo-router';
 import { DeviceEventEmitter, LogBox } from 'react-native';
 import { hydrateAppLocale, LOCALE_CHANGED_EVENT } from '@/lib/i18n';
+import { getOnboardingSeen } from '@/lib/onboarding';
 
 // Ignorar warnings específicos si es necesario
 LogBox.ignoreLogs([
@@ -30,6 +31,7 @@ function NavigationHandler() {
   const { session, loading } = useAuth();
   const segments = useSegments();
   const router = useRouter();
+  const [checkedOnboarding, setCheckedOnboarding] = useState(false);
 
   useEffect(() => {
     console.log('🧭 NavigationHandler:', { loading, hasSession: !!session, segments });
@@ -40,6 +42,8 @@ function NavigationHandler() {
     }
 
     const inAuthGroup = segments[0] === '(auth)';
+    const inAppGroup = segments[0] === '(app)';
+    const inOnboarding = inAppGroup && segments.slice(1).includes('onboarding');
 
     if (!session && !inAuthGroup) {
       // No hay sesión y no está en auth, redirigir a login
@@ -51,6 +55,16 @@ function NavigationHandler() {
       router.replace('/(app)');
     } else {
       console.log('✅ Navegación correcta, no se requiere redirección');
+    }
+
+    if (session && inAppGroup && !inOnboarding && !checkedOnboarding) {
+      (async () => {
+        const seen = await getOnboardingSeen();
+        setCheckedOnboarding(true);
+        if (!seen) {
+          router.replace('/(app)/onboarding');
+        }
+      })();
     }
   }, [session, loading, segments]);
 

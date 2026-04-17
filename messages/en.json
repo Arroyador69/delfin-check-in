@@ -2738,6 +2738,45 @@
     "loading": "Loading..."
   },
   "mobile": {
+    "onboarding": {
+      "title": "Onboarding",
+      "progress": "{current}/{total}",
+      "skip": "Skip",
+      "back": "Back",
+      "next": "Next",
+      "done": "Get started",
+      "checklist": {
+        "title": "Minimum setup",
+        "subtitle": "Complete the basics so everything runs smoothly.",
+        "open": "Open"
+      },
+      "tasks": {
+        "mir": "Configure MIR",
+        "rooms": "Set up rooms",
+        "properties": "Set up properties",
+        "google": "Enable Google reputation"
+      },
+      "step1": {
+        "title": "It all starts with the form",
+        "body": "Your guest completes the check-in form from the link. The system prepares the legal record and creates the reservation automatically."
+      },
+      "step2": {
+        "title": "You just confirm",
+        "body": "You’ll see pending items in the app. Open them, review what matters (channel, commissions, amounts) and mark the reservation as reviewed."
+      },
+      "step3": {
+        "title": "MIR submission (if enabled)",
+        "body": "If you configure your MIR credentials, submissions to the Ministry of the Interior are automated. You control it from Settings."
+      },
+      "step4": {
+        "title": "Direct bookings, no middlemen",
+        "body": "With properties and your microsite you can get direct bookings and take payments without relying on platforms. More margin, more control."
+      },
+      "step5": {
+        "title": "Pro plan: more bookings with Google",
+        "body": "Enable Google reputation and reminders to improve ranking. More reviews and better positioning lead to more direct bookings."
+      }
+    },
     "facturas": {
       "pdfDownloadedHint": "PDF downloaded. Use “Share” if you want to send it via WhatsApp."
     },
@@ -2750,6 +2789,9 @@
       "greeting": "Hi, {name}",
       "pendingReviewTitle": "Pending review",
       "noPending": "No reservations pending review",
+      "checkinLabel": "Check-in",
+      "noDate": "No date",
+      "viewPending": "View pending",
       "stayingTodayTitle": "Staying today",
       "stayingTodayEmpty": "No guests staying today",
       "arrivingTodayTitle": "Arriving today",
