@@ -2679,7 +2679,7 @@
       "back": "Retour",
       "next": "Suivant",
       "done": "Commencer",
-      "subtitle": "Automatisez le check-in, validez les réservations et respectez le MIR en quelques minutes.",
+      "subtitle": "Tout commence avec le formulaire : automatisez le check-in, validez les réservations et gérez le registre des voyageurs en quelques minutes.",
       "value": {
         "fast": "Rapide",
         "secure": "Sécurisé",
@@ -2698,23 +2698,23 @@
       },
       "step1": {
         "title": "Tout commence avec le formulaire",
-        "body": "Le voyageur complète le formulaire de check-in via le lien. Le système prépare le registre légal et crée la réservation automatiquement."
+        "body": "Chaque formulaire déclenche tout le système : le voyageur le complète via le lien et Delfín prépare le registre, crée la réservation et la laisse prête à vérifier."
       },
       "step2": {
-        "title": "Vous ne faites que confirmer",
-        "body": "Vous verrez des éléments en attente dans l’app. Ouvrez-les, vérifiez l’essentiel (canal, commissions, montants) et marquez la réservation comme vérifiée."
+        "title": "Vous vérifiez et confirmez",
+        "body": "Vous verrez des éléments en attente dans l’app. Ouvrez-les, vérifiez l’essentiel (canal, commissions, montants) et confirmez — tout se passe sous vos yeux."
       },
       "step3": {
-        "title": "Envoi au MIR (si activé)",
-        "body": "Si vous configurez vos identifiants MIR, l’envoi au Ministère de l’Intérieur est automatisé. Vous gardez la main depuis Réglages."
+        "title": "Registre des voyageurs (si activé)",
+        "body": "Si vous configurez vos identifiants, le registre des voyageurs est préparé et envoyé automatiquement au Ministère de l’Intérieur. Vous suivez l’état depuis Réglages."
       },
       "step4": {
-        "title": "Réservations directes, sans intermédiaires",
-        "body": "Avec vos propriétés et le microsite, vous pouvez capter des réservations directes et encaisser sans dépendre des plateformes. Plus de marge, plus de contrôle."
+        "title": "Plus d’indépendance vis‑à‑vis des plateformes",
+        "body": "Avec vos propriétés et le microsite, vous captez des réservations directes et encaissez sans dépendre autant d’Airbnb/Booking. Plus de marge, plus de contrôle et une relation directe avec vos voyageurs."
       },
       "step5": {
-        "title": "Plan Pro : plus de réservations avec Google",
-        "body": "Activez la réputation Google et les rappels pour améliorer le classement. Plus d’avis et une meilleure position = plus de réservations directes."
+        "title": "Plan Pro : des ventes futures grâce aux avis",
+        "body": "Automatisez les rappels d’avis Google pour améliorer votre classement. Chaque séjour peut devenir un avis… et chaque avis une réservation future."
       }
     },
     "facturas": {

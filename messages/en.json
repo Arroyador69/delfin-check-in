@@ -2748,7 +2748,7 @@
       "back": "Back",
       "next": "Next",
       "done": "Get started",
-      "subtitle": "Automate check-in, review & confirm reservations, and stay compliant with MIR in minutes.",
+      "subtitle": "It all starts with the form: automate check-in, confirm reservations, and handle guest registration in minutes.",
       "value": {
         "fast": "Fast",
         "secure": "Secure",
@@ -2767,23 +2767,23 @@
       },
       "step1": {
         "title": "It all starts with the form",
-        "body": "Your guest completes the check-in form from the link. The system prepares the legal record and creates the reservation automatically."
+        "body": "Each form kickstarts the whole flow: your guest completes it from the link and Delfín prepares the record, creates the reservation, and leaves it ready for your review."
       },
       "step2": {
-        "title": "You just confirm",
-        "body": "You’ll see pending items in the app. Open them, review what matters (channel, commissions, amounts) and mark the reservation as reviewed."
+        "title": "You review and confirm",
+        "body": "You’ll see pending items in the app. Open them, review what matters (channel, commissions, amounts) and confirm—everything happens in front of you."
       },
       "step3": {
-        "title": "MIR submission (if enabled)",
-        "body": "If you configure your MIR credentials, submissions to the Ministry of the Interior are automated. You control it from Settings."
+        "title": "Guest registration (if enabled)",
+        "body": "If you configure your credentials, guest registration is prepared and sent automatically to the Ministry of the Interior. You control the status from Settings."
       },
       "step4": {
-        "title": "Direct bookings, no middlemen",
-        "body": "With properties and your microsite you can get direct bookings and take payments without relying on platforms. More margin, more control."
+        "title": "More independence from platforms",
+        "body": "With properties and your microsite you can get direct bookings and take payments without relying as much on Airbnb/Booking. More margin, more control, and a direct relationship with guests."
       },
       "step5": {
-        "title": "Pro plan: more bookings with Google",
-        "body": "Enable Google reputation and reminders to improve ranking. More reviews and better positioning lead to more direct bookings."
+        "title": "Pro plan: future sales via reviews",
+        "body": "Automate Google review reminders to improve ranking. Each stay can become a review… and each review can become a future booking."
       }
     },
     "facturas": {

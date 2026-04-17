@@ -2796,7 +2796,7 @@
       "back": "Indietro",
       "next": "Avanti",
       "done": "Inizia",
-      "subtitle": "Automatizza il check-in, rivedi e conferma le prenotazioni e rispetta il MIR in pochi minuti.",
+      "subtitle": "Tutto parte dal modulo: automatizza il check-in, conferma le prenotazioni e gestisci la registrazione degli ospiti in pochi minuti.",
       "value": {
         "fast": "Veloce",
         "secure": "Sicuro",
@@ -2815,23 +2815,23 @@
       },
       "step1": {
         "title": "Tutto parte dal modulo",
-        "body": "L’ospite compila il modulo di check-in dal link. Il sistema prepara la parte legale e crea la prenotazione automaticamente."
+        "body": "Ogni modulo avvia l’intero flusso: l’ospite lo compila dal link e Delfín prepara la registrazione, crea la prenotazione e la lascia pronta per la tua revisione."
       },
       "step2": {
-        "title": "Tu devi solo confermare",
-        "body": "Vedrai elementi in sospeso nell’app. Aprili, controlla l’essenziale (canale, commissioni, importi) e segna la prenotazione come verificata."
+        "title": "Tu rivedi e confermi",
+        "body": "Vedrai elementi in sospeso nell’app. Aprili, controlla l’essenziale (canale, commissioni, importi) e conferma: tutto avviene sotto i tuoi occhi."
       },
       "step3": {
-        "title": "Invio MIR (se attivo)",
-        "body": "Se configuri le credenziali MIR, l’invio al Ministero dell’Interno è automatizzato. Controlli tutto da Impostazioni."
+        "title": "Registrazione ospiti (se attiva)",
+        "body": "Se configuri le credenziali, la registrazione degli ospiti viene preparata e inviata automaticamente al Ministero dell’Interno. Controlli lo stato da Impostazioni."
       },
       "step4": {
-        "title": "Prenotazioni dirette, senza intermediari",
-        "body": "Con proprietà e microsito puoi ottenere prenotazioni dirette e incassare senza dipendere dalle piattaforme. Più margine, più controllo."
+        "title": "Più indipendenza dalle piattaforme",
+        "body": "Con proprietà e microsito puoi ottenere prenotazioni dirette e incassare senza dipendere così tanto da Airbnb/Booking. Più margine, più controllo e rapporto diretto con gli ospiti."
       },
       "step5": {
-        "title": "Piano Pro: più prenotazioni con Google",
-        "body": "Attiva reputazione Google e promemoria per migliorare il ranking. Più recensioni e migliore posizione = più prenotazioni dirette."
+        "title": "Piano Pro: vendite future con recensioni",
+        "body": "Automatizza i promemoria di recensioni su Google per migliorare il ranking. Ogni soggiorno può diventare una recensione… e ogni recensione una prenotazione futura."
       }
     },
     "facturas": {

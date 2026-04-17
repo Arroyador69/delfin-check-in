@@ -2683,7 +2683,7 @@
       "back": "Voltar",
       "next": "Seguinte",
       "done": "Começar",
-      "subtitle": "Automatize o check-in, reveja e confirme reservas e cumpra o MIR em poucos minutos.",
+      "subtitle": "Tudo começa no formulário: automatize o check-in, confirme reservas e trate do registo de viajantes em poucos minutos.",
       "value": {
         "fast": "Rápido",
         "secure": "Seguro",
@@ -2702,23 +2702,23 @@
       },
       "step1": {
         "title": "Tudo começa no formulário",
-        "body": "O hóspede preenche o formulário de check-in através do link. O sistema prepara o registo legal e cria a reserva automaticamente."
+        "body": "Cada formulário inicia todo o fluxo: o hóspede preenche-o pelo link e a Delfín prepara o registo, cria a reserva e deixa tudo pronto para a sua revisão."
       },
       "step2": {
-        "title": "Você só confirma",
-        "body": "Vai ver pendentes na app. Abra, reveja o essencial (canal, comissões, valores) e marque a reserva como revista."
+        "title": "Você revê e confirma",
+        "body": "Vai ver pendentes na app. Abra, reveja o essencial (canal, comissões, valores) e confirme — tudo acontece à sua frente."
       },
       "step3": {
-        "title": "Envio ao MIR (se ativar)",
-        "body": "Se configurar as credenciais MIR, o envio para o Ministério do Interior fica automatizado. Controla tudo em Definições."
+        "title": "Registo de viajantes (se ativar)",
+        "body": "Se configurar as credenciais, o registo de viajantes é preparado e enviado automaticamente para o Ministério do Interior. Controla o estado em Definições."
       },
       "step4": {
-        "title": "Direto e sem intermediários",
-        "body": "Com propriedades e microsite pode captar reservas diretas e receber pagamentos sem depender de plataformas. Mais margem e mais controlo."
+        "title": "Mais independência das plataformas",
+        "body": "Com propriedades e microsite pode captar reservas diretas e receber pagamentos sem depender tanto de Airbnb/Booking. Mais margem, mais controlo e relação direta com os hóspedes."
       },
       "step5": {
-        "title": "Plano Pro: mais reservas com Google",
-        "body": "Ative reputação Google e lembretes para melhorar o posicionamento. Mais avaliações e melhor ranking = mais reservas diretas."
+        "title": "Plano Pro: vendas futuras com avaliações",
+        "body": "Automatize lembretes de avaliações no Google para melhorar o posicionamento. Cada estadia pode virar uma avaliação… e cada avaliação uma reserva futura."
       }
     },
     "facturas": {
