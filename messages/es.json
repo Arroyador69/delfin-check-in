@@ -1724,6 +1724,7 @@
       "title": "Mis Propiedades",
       "pageTitle": "Gestión de Propiedades",
       "subtitle": "Administra tus propiedades para reservas directas",
+      "guestHubWhereHint": "Delfín Guest Hub: pulsa Editar en una propiedad ya guardada; el bloque verde «Delfín Guest Hub» aparece arriba del formulario (WhatsApp e instrucciones). No se muestra al crear un slot hasta la primera guardada.",
       "addProperty": "Añadir Propiedad",
       "copyError": "Error al copiar el enlace",
       "invalidImage": "El archivo {name} no es una imagen válida",

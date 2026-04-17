@@ -402,6 +402,9 @@ export default function PropertiesManagement() {
             </span>
           </h1>
           <p className="text-gray-600 text-sm sm:text-lg">{t('subtitle')}</p>
+          <p className="text-emerald-800 text-xs sm:text-sm mt-3 max-w-2xl mx-auto bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-2">
+            {t('guestHubWhereHint')}
+          </p>
         </div>
 
         {/* Botón Nueva Propiedad */}
@@ -577,6 +580,90 @@ export default function PropertiesManagement() {
                 </div>
                 
                 <form onSubmit={handleSubmit} className="space-y-6">
+                  {editingProperty?.id != null && (
+                    <div className="bg-white p-6 rounded-xl border border-emerald-200 shadow-sm ring-2 ring-emerald-100">
+                      <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-2 flex items-center gap-2">
+                        <span className="text-xl sm:text-2xl">🐬</span>
+                        {t('form.guestHub.title')}
+                      </h3>
+                      <p className="text-sm text-gray-600 mb-4">{t('form.guestHub.subtitle')}</p>
+                      <label className="flex items-center gap-2 mb-4 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={guestHubForm.enabled}
+                          onChange={(e) =>
+                            setGuestHubForm((prev) => ({ ...prev, enabled: e.target.checked }))
+                          }
+                          className="w-4 h-4 rounded border-gray-300 text-emerald-600"
+                        />
+                        <span className="text-sm font-medium text-gray-800">{t('form.guestHub.enabled')}</span>
+                      </label>
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-1">
+                            {t('form.guestHub.welcomeTitle')}
+                          </label>
+                          <input
+                            type="text"
+                            value={guestHubForm.welcomeTitle}
+                            onChange={(e) =>
+                              setGuestHubForm((prev) => ({ ...prev, welcomeTitle: e.target.value }))
+                            }
+                            className="w-full px-4 py-2 border border-gray-300 rounded-xl"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-1">
+                            {t('form.guestHub.whatsapp')}
+                          </label>
+                          <input
+                            type="text"
+                            value={guestHubForm.whatsapp}
+                            onChange={(e) =>
+                              setGuestHubForm((prev) => ({ ...prev, whatsapp: e.target.value }))
+                            }
+                            className="w-full px-4 py-2 border border-gray-300 rounded-xl"
+                            placeholder="+34 600 000 000"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-1">
+                            {t('form.guestHub.instructions')}
+                          </label>
+                          <textarea
+                            rows={4}
+                            value={guestHubForm.instructions}
+                            onChange={(e) =>
+                              setGuestHubForm((prev) => ({ ...prev, instructions: e.target.value }))
+                            }
+                            className="w-full px-4 py-2 border border-gray-300 rounded-xl resize-none"
+                          />
+                        </div>
+                        <div className="rounded-lg bg-emerald-50 border border-emerald-100 p-3">
+                          <p className="text-xs font-semibold text-emerald-900">{t('form.guestHub.publicUrl')}</p>
+                          {hubUrlDisplay ? (
+                            <div className="mt-2 flex flex-col sm:flex-row gap-2">
+                              <code className="flex-1 text-xs break-all text-gray-800 bg-white p-2 rounded border">
+                                {hubUrlDisplay}
+                              </code>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  void copyToClipboard(hubUrlDisplay, editingProperty.id!);
+                                }}
+                                className="px-3 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium"
+                              >
+                                {t('form.guestHub.copy')}
+                              </button>
+                            </div>
+                          ) : (
+                            <p className="text-xs text-emerald-800 mt-1">{t('form.guestHub.hint')}</p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Subida de Imágenes */}
                   <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-6 rounded-xl border border-blue-200 shadow-sm">
                     <label className="block text-base sm:text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
@@ -713,90 +800,6 @@ export default function PropertiesManagement() {
                       />
                     </div>
                   </div>
-
-                  {editingProperty?.id != null && (
-                    <div className="bg-white p-6 rounded-xl border border-emerald-200 shadow-sm">
-                      <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-2 flex items-center gap-2">
-                        <span className="text-xl sm:text-2xl">🐬</span>
-                        {t('form.guestHub.title')}
-                      </h3>
-                      <p className="text-sm text-gray-600 mb-4">{t('form.guestHub.subtitle')}</p>
-                      <label className="flex items-center gap-2 mb-4 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={guestHubForm.enabled}
-                          onChange={(e) =>
-                            setGuestHubForm((prev) => ({ ...prev, enabled: e.target.checked }))
-                          }
-                          className="w-4 h-4 rounded border-gray-300 text-emerald-600"
-                        />
-                        <span className="text-sm font-medium text-gray-800">{t('form.guestHub.enabled')}</span>
-                      </label>
-                      <div className="space-y-4">
-                        <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-1">
-                            {t('form.guestHub.welcomeTitle')}
-                          </label>
-                          <input
-                            type="text"
-                            value={guestHubForm.welcomeTitle}
-                            onChange={(e) =>
-                              setGuestHubForm((prev) => ({ ...prev, welcomeTitle: e.target.value }))
-                            }
-                            className="w-full px-4 py-2 border border-gray-300 rounded-xl"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-1">
-                            {t('form.guestHub.whatsapp')}
-                          </label>
-                          <input
-                            type="text"
-                            value={guestHubForm.whatsapp}
-                            onChange={(e) =>
-                              setGuestHubForm((prev) => ({ ...prev, whatsapp: e.target.value }))
-                            }
-                            className="w-full px-4 py-2 border border-gray-300 rounded-xl"
-                            placeholder="+34 600 000 000"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-1">
-                            {t('form.guestHub.instructions')}
-                          </label>
-                          <textarea
-                            rows={4}
-                            value={guestHubForm.instructions}
-                            onChange={(e) =>
-                              setGuestHubForm((prev) => ({ ...prev, instructions: e.target.value }))
-                            }
-                            className="w-full px-4 py-2 border border-gray-300 rounded-xl resize-none"
-                          />
-                        </div>
-                        <div className="rounded-lg bg-emerald-50 border border-emerald-100 p-3">
-                          <p className="text-xs font-semibold text-emerald-900">{t('form.guestHub.publicUrl')}</p>
-                          {hubUrlDisplay ? (
-                            <div className="mt-2 flex flex-col sm:flex-row gap-2">
-                              <code className="flex-1 text-xs break-all text-gray-800 bg-white p-2 rounded border">
-                                {hubUrlDisplay}
-                              </code>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  void copyToClipboard(hubUrlDisplay, -1);
-                                }}
-                                className="px-3 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium"
-                              >
-                                {t('form.guestHub.copy')}
-                              </button>
-                            </div>
-                          ) : (
-                            <p className="text-xs text-emerald-800 mt-1">{t('form.guestHub.hint')}</p>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  )}
                   
                   {/* Características */}
                   <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-6 rounded-xl border border-purple-200 shadow-sm">

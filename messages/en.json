@@ -1667,6 +1667,7 @@
       "title": "My Properties",
       "pageTitle": "Property Management",
       "subtitle": "Manage your properties for direct bookings",
+      "guestHubWhereHint": "Delfín Guest Hub: click Edit on a saved property — the green «Delfín Guest Hub» block is at the top of the form (WhatsApp + instructions). It does not appear when completing a slot until you save once.",
       "addProperty": "Add Property",
       "copyError": "Error copying link",
       "invalidImage": "The file {name} is not a valid image",

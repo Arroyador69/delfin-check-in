@@ -1688,6 +1688,7 @@
       "title": "Le Mie Proprietà",
       "pageTitle": "Gestione Proprietà",
       "subtitle": "Gestisci le tue proprietà per prenotazioni dirette",
+      "guestHubWhereHint": "Delfín Guest Hub: tocca Modifica su una proprietà già salvata — il blocco verde «Delfín Guest Hub» è in cima al modulo (WhatsApp + istruzioni). Non compare mentre completi uno slot fino al primo salvataggio.",
       "addProperty": "Aggiungi Proprietà",
       "copyError": "Errore nella copia del link",
       "invalidImage": "Il file {name} non è un'immagine valida",
