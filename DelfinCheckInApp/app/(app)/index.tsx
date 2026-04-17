@@ -9,7 +9,8 @@ import { api } from '@/lib/api';
 import { useState, useMemo } from 'react';
 import { Users, ArrowDownCircle, ArrowUpCircle, Calendar, BellRing } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
-import { getLocaleTag, t } from '@/lib/i18n';
+import { getLocaleTag, hasPersistedAppLocale, t, useLocaleListener } from '@/lib/i18n';
+import { getAppCountryCode } from '@/lib/country-preference';
 
 import {
   PendingReservationItem,
@@ -20,6 +21,7 @@ import {
 } from '@/lib/reservations';
 
 export default function DashboardScreen() {
+  useLocaleListener();
   const { session } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
   const queryClient = useQueryClient();
@@ -57,6 +59,22 @@ export default function DashboardScreen() {
     },
   });
 
+  const { data: regionPrefs } = useQuery({
+    queryKey: ['app-region-prefs'],
+    queryFn: async () => {
+      const [country, hasLocale] = await Promise.all([getAppCountryCode(), hasPersistedAppLocale()]);
+      return { country, hasLocale };
+    },
+  });
+
+  const { data: tenantCountryData } = useQuery({
+    queryKey: ['tenant-country-code'],
+    queryFn: async () => {
+      const res = await api.get('/api/tenant/country-code');
+      return res.data as { country_code?: string | null };
+    },
+  });
+
   const onboardingTasks = useMemo(() => {
     const mir = mirData?.mir || {};
     const mirReady = Boolean(
@@ -68,15 +86,39 @@ export default function DashboardScreen() {
     const roomsReady = Array.isArray(limitsData?.currentRooms) && limitsData!.currentRooms!.length > 0;
     const propertiesReady = Array.isArray(propsData?.properties) && propsData!.properties!.length > 0;
     const googleReady = Boolean(repData?.enabled);
-    const tasks = [
-      { key: 'mir', label: t('mobile.onboarding.tasks.mir'), done: mirReady, href: '/(app)/settings/mir' },
-      { key: 'rooms', label: t('mobile.onboarding.tasks.rooms'), done: roomsReady, href: '/(app)/settings/general' },
-      { key: 'properties', label: t('mobile.onboarding.tasks.properties'), done: propertiesReady, href: '/(app)/settings/properties' },
-      { key: 'google', label: t('mobile.onboarding.tasks.google'), done: googleReady, href: '/(app)/settings/reputation' },
+
+    const effectiveCountry =
+      (regionPrefs?.country || tenantCountryData?.country_code || '').toString().toUpperCase() || null;
+    const countryDone = Boolean(effectiveCountry);
+    const languageDone = Boolean(regionPrefs?.hasLocale);
+    const isSpain = effectiveCountry === 'ES';
+
+    const tasks: { key: string; label: string; done: boolean; href: string }[] = [
+      { key: 'country', label: t('mobile.onboarding.tasks.country'), done: countryDone, href: '/(app)/settings/country' },
+      { key: 'language', label: t('mobile.onboarding.tasks.language'), done: languageDone, href: '/(app)/settings/language' },
     ];
+    if (isSpain) {
+      tasks.push({
+        key: 'mir',
+        label: t('mobile.onboarding.tasks.mir'),
+        done: mirReady,
+        href: '/(app)/settings/mir',
+      });
+    }
+    tasks.push(
+      { key: 'rooms', label: t('mobile.onboarding.tasks.rooms'), done: roomsReady, href: '/(app)/settings/general' },
+      {
+        key: 'properties',
+        label: t('mobile.onboarding.tasks.properties'),
+        done: propertiesReady,
+        href: '/(app)/settings/properties',
+      },
+      { key: 'google', label: t('mobile.onboarding.tasks.google'), done: googleReady, href: '/(app)/settings/reputation' }
+    );
+
     const doneCount = tasks.filter((x) => x.done).length;
     return { tasks, doneCount, total: tasks.length };
-  }, [mirData, limitsData, propsData, repData]);
+  }, [mirData, limitsData, propsData, repData, regionPrefs, tenantCountryData]);
 
   // Obtener reservas normales
   const { data: reservations, isLoading } = useQuery({

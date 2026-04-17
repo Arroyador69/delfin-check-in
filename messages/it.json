@@ -2801,6 +2801,13 @@
       "next": "Avanti",
       "done": "Inizia",
       "subtitle": "Tutto parte dal modulo: automatizza il check-in, conferma le prenotazioni e gestisci la registrazione degli ospiti in pochi minuti.",
+      "setupBadge": "Configurazione",
+      "setupTitle": "Paese e lingua",
+      "setupSubtitle": "Adattiamo l’app e gli adempimenti legali (es. registro ospiti solo in Spagna).",
+      "countryLabel": "Il tuo paese",
+      "countrySearchPlaceholder": "Cerca paese o codice",
+      "languageLabel": "Lingua dell’app",
+      "continueToTour": "Continua il tour",
       "value": {
         "fast": "Veloce",
         "secure": "Sicuro",
@@ -2812,6 +2819,8 @@
         "open": "Apri"
       },
       "tasks": {
+        "country": "Imposta il paese",
+        "language": "Scegli la lingua dell’app",
         "mir": "Configurare MIR",
         "rooms": "Configurare camere",
         "properties": "Configurare proprietà",

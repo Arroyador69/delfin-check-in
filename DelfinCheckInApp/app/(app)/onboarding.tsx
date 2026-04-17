@@ -1,10 +1,32 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, View, Text, StyleSheet, Pressable } from 'react-native';
+import {
+  Animated,
+  View,
+  Text,
+  StyleSheet,
+  Pressable,
+  TextInput,
+  FlatList,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import * as Localization from 'expo-localization';
 import { useRouter } from 'expo-router';
-import { t } from '@/lib/i18n';
+import { useQueryClient } from '@tanstack/react-query';
+import {
+  t,
+  getLocale,
+  getLocaleTag,
+  setAppLocale,
+  useLocaleListener,
+  type SupportedLocale,
+} from '@/lib/i18n';
 import { getForceOnboarding, setForceOnboarding, setOnboardingSeen } from '@/lib/onboarding';
-import { Bell, CalendarDays, ShieldCheck, Sparkles, Star } from 'lucide-react-native';
+import { setAppCountryCode } from '@/lib/country-preference';
+import { api } from '@/lib/api';
+import { ISO3166_ALPHA2 } from '@/lib/iso3166-alpha2';
+import { Bell, CalendarDays, Globe2, Languages, ShieldCheck, Sparkles, Star } from 'lucide-react-native';
 
 type Step = {
   titleKey: string;
@@ -12,8 +34,33 @@ type Step = {
   Icon: React.ComponentType<{ size?: number; color?: string }>;
 };
 
+function regionDisplayName(code: string, localeTag: string): string {
+  try {
+    const dn = new Intl.DisplayNames([localeTag], { type: 'region' });
+    return dn.of(code) || code;
+  } catch {
+    return code;
+  }
+}
+
+const LANGS: SupportedLocale[] = ['es', 'en', 'fr', 'it', 'pt'];
+
+const LANG_LABEL: Record<SupportedLocale, string> = {
+  es: 'mobile.settings.languageEs',
+  en: 'mobile.settings.languageEn',
+  fr: 'mobile.settings.languageFr',
+  it: 'mobile.settings.languageIt',
+  pt: 'mobile.settings.languagePt',
+};
+
 export default function OnboardingScreen() {
+  useLocaleListener();
   const router = useRouter();
+  const queryClient = useQueryClient();
+  const [phase, setPhase] = useState<'setup' | 'slides'>('setup');
+  const [countrySearch, setCountrySearch] = useState('');
+  const [countryCode, setCountryCode] = useState<string | null>(null);
+
   const steps: Step[] = useMemo(
     () => [
       { titleKey: 'mobile.onboarding.step1.title', bodyKey: 'mobile.onboarding.step1.body', Icon: Sparkles },
@@ -32,6 +79,34 @@ export default function OnboardingScreen() {
   const step = steps[idx];
   const anim = useRef(new Animated.Value(0)).current;
 
+  const localeTag = getLocaleTag();
+
+  useEffect(() => {
+    const region = Localization.getLocales?.()?.[0]?.regionCode;
+    if (region && ISO3166_ALPHA2.includes(region as (typeof ISO3166_ALPHA2)[number])) {
+      setCountryCode(region);
+    }
+  }, []);
+
+  const sortedCountries = useMemo(() => {
+    const list = [...ISO3166_ALPHA2];
+    list.sort((a, b) =>
+      regionDisplayName(a, localeTag).localeCompare(regionDisplayName(b, localeTag), localeTag, {
+        sensitivity: 'base',
+      })
+    );
+    return list;
+  }, [localeTag]);
+
+  const filteredCountries = useMemo(() => {
+    const q = countrySearch.trim().toLowerCase();
+    if (!q) return sortedCountries;
+    return sortedCountries.filter((code) => {
+      const name = regionDisplayName(code, localeTag).toLowerCase();
+      return code.toLowerCase().includes(q) || name.includes(q);
+    });
+  }, [sortedCountries, countrySearch, localeTag]);
+
   useEffect(() => {
     anim.setValue(0);
     Animated.timing(anim, {
@@ -49,6 +124,158 @@ export default function OnboardingScreen() {
   async function toggleForce() {
     const cur = await getForceOnboarding();
     await setForceOnboarding(!cur);
+  }
+
+  async function continueFromSetup() {
+    if (!countryCode) return;
+    try {
+      await setAppLocale(getLocale());
+      await setAppCountryCode(countryCode);
+      await syncCountryToTenant(countryCode);
+      queryClient.invalidateQueries({ queryKey: ['app-region-prefs'] });
+      queryClient.invalidateQueries({ queryKey: ['tenant-country-code'] });
+    } catch {
+      /* still continue */
+    }
+    setPhase('slides');
+    setIdx(0);
+  }
+
+  async function syncCountryToTenant(code: string) {
+    try {
+      const res = await api.get('/api/tenant/country-code');
+      const d = res.data as { legal_module?: boolean };
+      if (!d?.legal_module) return;
+      await api.put('/api/tenant/country-code', { country_code: code });
+    } catch {
+      /* sin permiso o red */
+    }
+  }
+
+  async function pickLanguage(code: SupportedLocale) {
+    await setAppLocale(code);
+    queryClient.invalidateQueries({ queryKey: ['app-region-prefs'] });
+  }
+
+  const setupValid = Boolean(countryCode);
+
+  if (phase === 'setup') {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <View style={styles.bg}>
+          <View style={styles.blobA} />
+          <View style={styles.blobB} />
+          <View style={styles.blobC} />
+        </View>
+
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
+          <View style={styles.container}>
+            <View style={styles.topRow}>
+              <View style={styles.progressLeft}>
+                <Text style={styles.progressText}>{t('mobile.onboarding.setupBadge')}</Text>
+              </View>
+              <View style={styles.actionsRight}>
+                {__DEV__ ? (
+                  <Pressable onPress={toggleForce} hitSlop={10}>
+                    <Text style={styles.dev}>{t('mobile.onboarding.devToggle')}</Text>
+                  </Pressable>
+                ) : null}
+                <Pressable onPress={finish} hitSlop={10}>
+                  <Text style={styles.skip}>{t('mobile.onboarding.skip')}</Text>
+                </Pressable>
+              </View>
+            </View>
+
+            <View style={styles.hero}>
+              <Text style={styles.brand}>Delfín Check-in</Text>
+              <Text style={styles.tagline}>{t('mobile.onboarding.setupTitle')}</Text>
+              <Text style={[styles.tagline, { marginTop: 8, fontSize: 13, fontWeight: '600' }]}>
+                {t('mobile.onboarding.setupSubtitle')}
+              </Text>
+            </View>
+
+            <View style={[styles.card, { flex: 1, minHeight: 0 }]}>
+              <View style={styles.cardHeader}>
+                <View style={styles.iconBadge}>
+                  <Globe2 size={20} color="#e0f2fe" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.title}>{t('mobile.onboarding.countryLabel')}</Text>
+                </View>
+              </View>
+              <TextInput
+                style={styles.searchInput}
+                value={countrySearch}
+                onChangeText={setCountrySearch}
+                placeholder={t('mobile.onboarding.countrySearchPlaceholder')}
+                placeholderTextColor="#64748b"
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+              <FlatList
+                data={filteredCountries}
+                keyExtractor={(c) => c}
+                style={{ flex: 1, marginTop: 10 }}
+                initialNumToRender={20}
+                keyboardShouldPersistTaps="handled"
+                renderItem={({ item: code }) => {
+                  const selected = countryCode === code;
+                  return (
+                    <Pressable
+                      onPress={() => setCountryCode(code)}
+                      style={[styles.countryRow, selected && styles.countryRowSelected]}
+                    >
+                      <Text style={[styles.countryName, selected && styles.countryNameSelected]}>
+                        {regionDisplayName(code, localeTag)}
+                      </Text>
+                      <Text style={styles.countryCode}>{code}</Text>
+                    </Pressable>
+                  );
+                }}
+              />
+            </View>
+
+            <View style={[styles.card, { marginTop: 10 }]}>
+              <View style={styles.cardHeader}>
+                <View style={styles.iconBadge}>
+                  <Languages size={20} color="#e0f2fe" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.title}>{t('mobile.onboarding.languageLabel')}</Text>
+                </View>
+              </View>
+              <View style={styles.langRow}>
+                {LANGS.map((code) => {
+                  const active = getLocale() === code;
+                  return (
+                    <Pressable
+                      key={code}
+                      onPress={() => void pickLanguage(code)}
+                      style={[styles.langChip, active && styles.langChipActive]}
+                    >
+                      <Text style={[styles.langChipText, active && styles.langChipTextActive]}>
+                        {t(LANG_LABEL[code])}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </View>
+
+            <Pressable
+              style={[styles.btnFullWidth, styles.btnPrimary, !setupValid && styles.btnDisabledSetup]}
+              disabled={!setupValid}
+              onPress={() => void continueFromSetup()}
+            >
+              <Text style={[styles.btnText, styles.btnPrimaryText]}>{t('mobile.onboarding.continueToTour')}</Text>
+            </Pressable>
+          </View>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    );
   }
 
   return (
@@ -267,5 +494,58 @@ const styles = StyleSheet.create({
   btnGhostText: { color: '#e5e7eb' },
   btnText: { fontSize: 15, fontWeight: '900' },
   btnDisabled: { opacity: 0.35 },
+  btnDisabledSetup: { opacity: 0.45 },
+  btnFullWidth: {
+    width: '100%',
+    paddingVertical: 14,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 8,
+  },
+  searchInput: {
+    backgroundColor: 'rgba(2, 6, 23, 0.55)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(148, 163, 184, 0.2)',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    color: '#f1f5f9',
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  countryRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 4,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(148, 163, 184, 0.12)',
+  },
+  countryRowSelected: {
+    backgroundColor: 'rgba(37, 99, 235, 0.25)',
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    borderBottomWidth: 0,
+    marginBottom: 1,
+  },
+  countryName: { color: '#e2e8f0', fontSize: 14, fontWeight: '600', flex: 1, paddingRight: 8 },
+  countryNameSelected: { color: 'white', fontWeight: '800' },
+  countryCode: { color: '#94a3b8', fontSize: 12, fontWeight: '800' },
+  langRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  langChip: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 999,
+    backgroundColor: 'rgba(2, 6, 23, 0.55)',
+    borderWidth: 1,
+    borderColor: 'rgba(148, 163, 184, 0.2)',
+  },
+  langChipActive: {
+    backgroundColor: 'rgba(37, 99, 235, 0.35)',
+    borderColor: 'rgba(96, 165, 250, 0.55)',
+  },
+  langChipText: { color: '#cbd5e1', fontWeight: '800', fontSize: 12 },
+  langChipTextActive: { color: 'white' },
 });
-

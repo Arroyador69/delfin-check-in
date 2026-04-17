@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 
 import { api } from '@/lib/api';
 import { t } from '@/lib/i18n';
+import { clearAppCountryCode, setAppCountryCode } from '@/lib/country-preference';
 
 type CountryPayload = {
   country_code: string | null;
@@ -40,8 +41,14 @@ export default function CountrySettingsScreen() {
       const res = await api.put('/api/tenant/country-code', { country_code });
       return res.data;
     },
-    onSuccess: async () => {
+    onSuccess: async (_, country_code) => {
+      if (country_code) {
+        await setAppCountryCode(country_code);
+      } else {
+        await clearAppCountryCode();
+      }
       await queryClient.invalidateQueries({ queryKey: ['tenant-country-code'] });
+      await queryClient.invalidateQueries({ queryKey: ['app-region-prefs'] });
       Alert.alert(t('common.success'), t('mobile.settings.countrySaved'));
     },
     onError: (e: any) => {

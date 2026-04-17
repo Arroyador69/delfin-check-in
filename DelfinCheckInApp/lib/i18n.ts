@@ -59,6 +59,16 @@ export async function clearAppLocale(): Promise<void> {
   DeviceEventEmitter.emit(LOCALE_CHANGED_EVENT);
 }
 
+/** True si el usuario eligió un idioma explícito (no solo el del teléfono). */
+export async function hasPersistedAppLocale(): Promise<boolean> {
+  try {
+    const raw = await SecureStore.getItemAsync(LOCALE_STORAGE_KEY);
+    return Boolean(raw && raw in messages);
+  } catch {
+    return false;
+  }
+}
+
 function resolveLocale(): SupportedLocale {
   if (persistedLocale && persistedLocale in messages) {
     return persistedLocale;

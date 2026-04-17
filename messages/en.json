@@ -2753,6 +2753,13 @@
       "next": "Next",
       "done": "Get started",
       "subtitle": "It all starts with the form: automate check-in, confirm reservations, and handle guest registration in minutes.",
+      "setupBadge": "Setup",
+      "setupTitle": "Country & language",
+      "setupSubtitle": "We use this to tailor the app and legal steps (e.g. guest registration in Spain only).",
+      "countryLabel": "Your country",
+      "countrySearchPlaceholder": "Search country or code",
+      "languageLabel": "App language",
+      "continueToTour": "Continue to tour",
       "value": {
         "fast": "Fast",
         "secure": "Secure",
@@ -2764,6 +2771,8 @@
         "open": "Open"
       },
       "tasks": {
+        "country": "Set country",
+        "language": "Set app language",
         "mir": "Configure MIR",
         "rooms": "Set up rooms",
         "properties": "Set up properties",

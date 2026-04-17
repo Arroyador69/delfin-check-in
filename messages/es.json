@@ -2857,6 +2857,13 @@
       "next": "Siguiente",
       "done": "Empezar",
       "subtitle": "Todo empieza con el formulario: automatiza check-in, confirma reservas y cumple el parte de viajeros en minutos.",
+      "setupBadge": "Configuración",
+      "setupTitle": "País e idioma",
+      "setupSubtitle": "Así adaptamos la experiencia y las obligaciones legales (p. ej. parte de viajeros solo en España).",
+      "countryLabel": "Tu país",
+      "countrySearchPlaceholder": "Buscar país o código",
+      "languageLabel": "Idioma de la app",
+      "continueToTour": "Continuar al tour",
       "value": {
         "fast": "Rápido",
         "secure": "Seguro",
@@ -2868,6 +2875,8 @@
         "open": "Abrir"
       },
       "tasks": {
+        "country": "Indicar país",
+        "language": "Elegir idioma de la app",
         "mir": "Configurar MIR",
         "rooms": "Configurar habitaciones",
         "properties": "Configurar propiedades",

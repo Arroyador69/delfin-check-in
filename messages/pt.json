@@ -2688,6 +2688,13 @@
       "next": "Seguinte",
       "done": "Começar",
       "subtitle": "Tudo começa no formulário: automatize o check-in, confirme reservas e trate do registo de viajantes em poucos minutos.",
+      "setupBadge": "Configuração",
+      "setupTitle": "País e idioma",
+      "setupSubtitle": "Assim adaptamos a app e as obrigações legais (ex.: registo de viajantes só em Espanha).",
+      "countryLabel": "O seu país",
+      "countrySearchPlaceholder": "Pesquisar país ou código",
+      "languageLabel": "Idioma da app",
+      "continueToTour": "Continuar visita",
       "value": {
         "fast": "Rápido",
         "secure": "Seguro",
@@ -2699,6 +2706,8 @@
         "open": "Abrir"
       },
       "tasks": {
+        "country": "Indicar país",
+        "language": "Escolher idioma da app",
         "mir": "Configurar MIR",
         "rooms": "Configurar quartos",
         "properties": "Configurar propriedades",

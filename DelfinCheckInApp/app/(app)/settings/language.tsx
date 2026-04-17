@@ -1,5 +1,6 @@
 import { View, Text, StyleSheet, Pressable, ScrollView, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useQueryClient } from '@tanstack/react-query';
 
 import { clearAppLocale, setAppLocale, t } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -15,6 +16,7 @@ const OPTIONS: { code: SupportedLocale | 'device'; labelKey: string }[] = [
 
 export default function LanguageSettingsScreen() {
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   async function pick(code: SupportedLocale | 'device') {
     try {
@@ -23,6 +25,7 @@ export default function LanguageSettingsScreen() {
       } else {
         await setAppLocale(code);
       }
+      await queryClient.invalidateQueries({ queryKey: ['app-region-prefs'] });
       Alert.alert(t('common.success'), t('common.save'));
       router.back();
     } catch {
