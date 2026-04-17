@@ -90,7 +90,7 @@ export default function LoginScreen() {
           style={[styles.secondaryButton, styles.createAccountButton]}
           onPress={() =>
             Linking.openURL(
-              `https://admin.delfincheckin.com/signup?source=mobile&lang=${encodeURIComponent(getLocale())}`
+              `https://delfincheckin.com/signup?source=mobile&lang=${encodeURIComponent(getLocale())}`
             )
           }
           disabled={loading}
