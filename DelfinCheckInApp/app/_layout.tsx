@@ -33,6 +33,10 @@ function NavigationHandler() {
   const router = useRouter();
   const [checkedOnboarding, setCheckedOnboarding] = useState(false);
 
+  const isDevOnboardingUser = Boolean(
+    __DEV__ && session?.user?.email && session.user.email.toLowerCase() === 'albertogarciaarroyo@gmail.com'
+  );
+
   useEffect(() => {
     console.log('🧭 NavigationHandler:', { loading, hasSession: !!session, segments });
     
@@ -60,8 +64,8 @@ function NavigationHandler() {
     if (session && inAppGroup && !inOnboarding && !checkedOnboarding) {
       (async () => {
         const [storedForce, seen] = await Promise.all([getForceOnboarding(), getOnboardingSeen()]);
-        // En desarrollo (Expo), mostrar siempre para iterar el copy/flujo.
-        const force = Boolean(__DEV__) || storedForce;
+        // Forzar solo para tu usuario en desarrollo, o si está activado manualmente.
+        const force = isDevOnboardingUser || storedForce;
         setCheckedOnboarding(true);
         if (force || !seen) {
           router.replace('/(app)/onboarding');
