@@ -79,6 +79,14 @@ export default function LoginScreen() {
         </Pressable>
 
         <Pressable
+          onPress={() => Linking.openURL('https://admin.delfincheckin.com/forgot-password')}
+          disabled={loading}
+          style={styles.linkRow}
+        >
+          <Text style={styles.linkText}>{t('auth.forgotPassword')}</Text>
+        </Pressable>
+
+        <Pressable
           style={[styles.secondaryButton, styles.createAccountButton]}
           onPress={() => Linking.openURL('https://admin.delfincheckin.com')}
           disabled={loading}
@@ -179,6 +187,16 @@ const styles = StyleSheet.create({
   createAccountText: {
     color: '#2563eb',
     fontWeight: '800',
+  },
+  linkRow: {
+    marginTop: 12,
+    alignItems: 'center',
+  },
+  linkText: {
+    color: '#2563eb',
+    fontSize: 14,
+    fontWeight: '700',
+    textDecorationLine: 'underline',
   },
 });
 
