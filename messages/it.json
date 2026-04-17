@@ -2789,6 +2789,7 @@
     "onboarding": {
       "title": "Onboarding",
       "progress": "{current}/{total}",
+      "devToggle": "Modalità onboarding",
       "skip": "Salta",
       "back": "Indietro",
       "next": "Avanti",

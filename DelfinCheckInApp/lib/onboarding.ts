@@ -1,6 +1,7 @@
 import * as SecureStore from 'expo-secure-store';
 
 const ONBOARDING_SEEN_KEY = 'delfin.mobile_onboarding_seen.v1';
+const ONBOARDING_FORCE_KEY = 'delfin.mobile_onboarding_force.v1';
 
 export async function getOnboardingSeen(): Promise<boolean> {
   try {
@@ -17,6 +18,27 @@ export async function setOnboardingSeen(seen: boolean): Promise<void> {
       await SecureStore.setItemAsync(ONBOARDING_SEEN_KEY, '1');
     } else {
       await SecureStore.deleteItemAsync(ONBOARDING_SEEN_KEY);
+    }
+  } catch {
+    // ignore
+  }
+}
+
+export async function getForceOnboarding(): Promise<boolean> {
+  try {
+    const raw = await SecureStore.getItemAsync(ONBOARDING_FORCE_KEY);
+    return raw === '1';
+  } catch {
+    return false;
+  }
+}
+
+export async function setForceOnboarding(force: boolean): Promise<void> {
+  try {
+    if (force) {
+      await SecureStore.setItemAsync(ONBOARDING_FORCE_KEY, '1');
+    } else {
+      await SecureStore.deleteItemAsync(ONBOARDING_FORCE_KEY);
     }
   } catch {
     // ignore

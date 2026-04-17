@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, SafeAreaView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { t } from '@/lib/i18n';
-import { setOnboardingSeen } from '@/lib/onboarding';
+import { getForceOnboarding, setForceOnboarding, setOnboardingSeen } from '@/lib/onboarding';
 
 type Step = {
   titleKey: string;
@@ -33,6 +33,11 @@ export default function OnboardingScreen() {
     router.replace('/(app)');
   }
 
+  async function toggleForce() {
+    const cur = await getForceOnboarding();
+    await setForceOnboarding(!cur);
+  }
+
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.container}>
@@ -40,9 +45,14 @@ export default function OnboardingScreen() {
           <Text style={styles.progressText}>
             {t('mobile.onboarding.progress', { current: idx + 1, total: steps.length })}
           </Text>
-          <Pressable onPress={finish} hitSlop={10}>
-            <Text style={styles.skip}>{t('mobile.onboarding.skip')}</Text>
-          </Pressable>
+          <View style={{ flexDirection: 'row', gap: 14, alignItems: 'center' }}>
+            <Pressable onPress={toggleForce} hitSlop={10}>
+              <Text style={styles.dev}>{t('mobile.onboarding.devToggle')}</Text>
+            </Pressable>
+            <Pressable onPress={finish} hitSlop={10}>
+              <Text style={styles.skip}>{t('mobile.onboarding.skip')}</Text>
+            </Pressable>
+          </View>
         </View>
 
         <View style={styles.card}>
@@ -86,6 +96,7 @@ const styles = StyleSheet.create({
     paddingTop: 6,
   },
   progressText: { color: '#cbd5e1', fontWeight: '700' },
+  dev: { color: '#a7f3d0', fontWeight: '900' },
   skip: { color: '#93c5fd', fontWeight: '800' },
   card: {
     backgroundColor: '#0f172a',

@@ -2845,6 +2845,7 @@
     "onboarding": {
       "title": "Onboarding",
       "progress": "{current}/{total}",
+      "devToggle": "Modo onboarding",
       "skip": "Saltar",
       "back": "Atrás",
       "next": "Siguiente",

@@ -10,7 +10,7 @@ import { useAuth } from '@/lib/auth';
 import { useRouter, useSegments } from 'expo-router';
 import { DeviceEventEmitter, LogBox } from 'react-native';
 import { hydrateAppLocale, LOCALE_CHANGED_EVENT } from '@/lib/i18n';
-import { getOnboardingSeen } from '@/lib/onboarding';
+import { getForceOnboarding, getOnboardingSeen } from '@/lib/onboarding';
 
 // Ignorar warnings específicos si es necesario
 LogBox.ignoreLogs([
@@ -59,9 +59,9 @@ function NavigationHandler() {
 
     if (session && inAppGroup && !inOnboarding && !checkedOnboarding) {
       (async () => {
-        const seen = await getOnboardingSeen();
+        const [force, seen] = await Promise.all([getForceOnboarding(), getOnboardingSeen()]);
         setCheckedOnboarding(true);
-        if (!seen) {
+        if (force || !seen) {
           router.replace('/(app)/onboarding');
         }
       })();
