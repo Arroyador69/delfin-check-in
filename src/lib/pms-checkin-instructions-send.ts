@@ -46,6 +46,35 @@ export async function fetchCheckinInstructionsBodyForRoom(
   return null;
 }
 
+/** URL pública Guest Hub si la propiedad enlazada al room lo tiene activo. */
+async function resolveGuestHubUrlForRoom(
+  tenantId: string,
+  roomId: string | null | undefined,
+  mailLocale: GuestMailLocale
+): Promise<string | null> {
+  if (!roomId) return null;
+  const attempts = new Set<string>();
+  attempts.add(String(roomId));
+  attempts.add(normalizeRoomId(roomId));
+  const base = (process.env.NEXT_PUBLIC_APP_URL || 'https://admin.delfincheckin.com').replace(/\/$/, '');
+  for (const rid of attempts) {
+    const r = await sql`
+      SELECT tp.guest_hub_slug, tp.guest_hub
+      FROM property_room_map prm
+      INNER JOIN tenant_properties tp
+        ON tp.id = prm.property_id AND tp.tenant_id = prm.tenant_id
+      WHERE prm.tenant_id = ${tenantId}::uuid AND prm.room_id = ${rid}
+      LIMIT 1
+    `;
+    const row = r.rows[0] as { guest_hub_slug: string | null; guest_hub: unknown } | undefined;
+    if (!row?.guest_hub_slug) continue;
+    const gh = (row.guest_hub || {}) as Record<string, unknown>;
+    if (!(gh.enabled === true || gh.enabled === 'true')) continue;
+    return `${base}/${mailLocale}/guest/hub/${row.guest_hub_slug}`;
+  }
+  return null;
+}
+
 function applyInstructionPlaceholders(
   bodyHtml: string,
   vars: { guest_name: string; check_in: string; check_out: string }
@@ -109,6 +138,8 @@ export async function sendPmsReservationCheckinInstructionsEmail(params: {
 
     const publicFormUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://admin.delfincheckin.com'}/api/public/form-redirect/${params.tenantId}`;
 
+    const guestHubUrl = await resolveGuestHubUrlForRoom(params.tenantId, params.roomId, loc);
+
     const content = buildPmsCheckinInstructionsEmail({
       locale: loc,
       guestName: params.guestName,
@@ -118,6 +149,7 @@ export async function sendPmsReservationCheckinInstructionsEmail(params: {
       guestCount: params.guestCount,
       instructionsHtml: bodyHtml,
       publicFormUrl,
+      guestHubUrl: guestHubUrl ?? undefined,
       contactEmail,
       contactPhone,
       contactName,

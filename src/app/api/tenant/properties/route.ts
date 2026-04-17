@@ -131,7 +131,13 @@ export async function GET(req: NextRequest) {
         FROM "Room" r
         LEFT JOIN property_room_map prm
           ON prm.tenant_id = ${tenantId}::uuid AND prm.room_id = r.id
-        WHERE r."lodgingId" = ${lodgingId} AND prm.room_id IS NULL
+        WHERE r."lodgingId" = ${lodgingId}
+          AND prm.room_id IS NULL
+          AND NOT EXISTS (
+            SELECT 1 FROM tenant_properties tp
+            WHERE tp.tenant_id = ${tenantId}::uuid
+              AND lower(trim(tp.property_name)) = lower(trim(r.name))
+          )
       )
       SELECT * FROM mapped
       UNION ALL

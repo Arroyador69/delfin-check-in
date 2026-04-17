@@ -28,6 +28,8 @@ export function buildPmsCheckinInstructionsEmail(params: {
   guestCount: number;
   instructionsHtml: string;
   publicFormUrl: string;
+  /** Página pública Guest Hub (por unidad), si está activa en la propiedad enlazada al room */
+  guestHubUrl?: string;
   contactEmail: string;
   contactPhone: string;
   contactName: string;
@@ -119,6 +121,27 @@ export function buildPmsCheckinInstructionsEmail(params: {
       pt: 'Abrir formulário',
       fr: 'Ouvrir le formulaire',
     },
+    hubTitle: {
+      es: 'Página para tu estancia (Guest Hub)',
+      en: 'Your stay page (Guest Hub)',
+      it: 'Pagina del soggiorno (Guest Hub)',
+      pt: 'Página da estadia (Guest Hub)',
+      fr: 'Page pour votre séjour (Guest Hub)',
+    },
+    hubBody: {
+      es: 'Un solo enlace con WhatsApp del alojamiento e instrucciones útiles en el móvil (navegador). No sustituye el registro de viajeros ni el email anterior.',
+      en: 'One link with the property WhatsApp and useful instructions on your phone (browser). It does not replace traveller registration or the sections above.',
+      it: 'Un solo link con WhatsApp e istruzioni utili sul telefono (browser). Non sostituisce la registrazione ospiti.',
+      pt: 'Uma ligação com WhatsApp e instruções úteis no telemóvel (browser). Não substitui o registo de hóspedes.',
+      fr: 'Un seul lien avec WhatsApp et consignes utiles sur mobile (navigateur). Ne remplace pas l’enregistrement des voyageurs.',
+    },
+    hubBtn: {
+      es: 'Abrir página del huésped',
+      en: 'Open guest page',
+      it: 'Apri pagina ospite',
+      pt: 'Abrir página do hóspede',
+      fr: 'Ouvrir la page invité',
+    },
     cancelTitle: {
       es: '¿Necesitas cancelar tu reserva?',
       en: 'Need to cancel your booking?',
@@ -199,6 +222,15 @@ export function buildPmsCheckinInstructionsEmail(params: {
               <p class="muted">${T.spamHint[loc]}</p>
             </div>
             <div class="section">${params.instructionsHtml}</div>
+            ${
+              params.guestHubUrl
+                ? `<div class="section" style="background:#ecfdf5;border-left:4px solid #059669">
+              <h3 style="margin-top:0">${T.hubTitle[loc]}</h3>
+              <p>${T.hubBody[loc]}</p>
+              <p><a href="${params.guestHubUrl}" target="_blank" style="background:#059669;color:white;padding:10px 16px;border-radius:8px;text-decoration:none;display:inline-block">${T.hubBtn[loc]}</a></p>
+            </div>`
+                : ''
+            }
             <div class="section" style="background:#fff7ed;border-left:4px solid #f59e0b">
               <h3>${T.regTitle[loc]}</h3>
               <p>${T.regBody[loc]}</p>
@@ -222,7 +254,10 @@ export function buildPmsCheckinInstructionsEmail(params: {
       </body></html>
     `;
 
-  const text = `${T.title[loc]} — ${params.propertyLabel}\n\n${ci} → ${co}\n${T.regBtn[loc]}: ${params.publicFormUrl}\n`;
+  const hubLine = params.guestHubUrl
+    ? `${T.hubTitle[loc]}: ${params.guestHubUrl}\n`
+    : '';
+  const text = `${T.title[loc]} — ${params.propertyLabel}\n\n${ci} → ${co}\n${hubLine}${T.regBtn[loc]}: ${params.publicFormUrl}\n`;
 
   return {
     subject: T.subject[loc],
