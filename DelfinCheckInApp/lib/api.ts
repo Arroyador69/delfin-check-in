@@ -9,6 +9,7 @@ import * as SecureStore from 'expo-secure-store';
 const API_URL = Constants.expoConfig?.extra?.API_URL || process.env.EXPO_PUBLIC_API_URL || 'https://admin.delfincheckin.com';
 
 console.log('🌐 API URL configurada:', API_URL);
+const DEBUG_AUTH = __DEV__;
 
 // Cliente axios configurado
 export const api: AxiosInstance = axios.create({
@@ -24,11 +25,12 @@ async function refreshAccessToken(): Promise<string | null> {
   try {
     const refreshToken = await SecureStore.getItemAsync('refreshToken');
     if (!refreshToken) {
-      console.warn('⚠️ No hay refresh token disponible');
+      // Es normal no tener refresh token antes de hacer login.
+      if (DEBUG_AUTH) console.debug('ℹ️ Sin refresh token: no se puede refrescar');
       return null;
     }
 
-    console.log('🔄 Refrescando access token...');
+    if (DEBUG_AUTH) console.log('🔄 Refrescando access token...');
     const response = await axios.post(`${API_URL}/api/auth/refresh`, {
       refreshToken,
     });
@@ -45,7 +47,7 @@ async function refreshAccessToken(): Promise<string | null> {
         await SecureStore.setItemAsync('delfin.session.v1', JSON.stringify(session));
       }
       
-      console.log('✅ Token refrescado exitosamente');
+      if (DEBUG_AUTH) console.log('✅ Token refrescado exitosamente');
       return newToken;
     }
     
@@ -100,8 +102,14 @@ api.interceptors.request.use(
         }
       } else {
         // No hay token, intentar refrescar desde refresh token
-        console.log('⚠️ No hay access token, intentando refrescar desde refresh token...');
-        needsRefresh = true;
+        const hasRefresh = await SecureStore.getItemAsync('refreshToken');
+        if (hasRefresh) {
+          if (DEBUG_AUTH) console.log('ℹ️ No hay access token, intentando refrescar desde refresh token...');
+          needsRefresh = true;
+        } else {
+          // Request público (sin sesión). No intentar refresh ni generar warnings.
+          needsRefresh = false;
+        }
       }
       
       // Si necesita refresh, intentar refrescar
@@ -121,7 +129,9 @@ api.interceptors.request.use(
           } catch {}
         } else {
           // No se pudo refrescar, el interceptor de response manejará el 401
-          console.warn('⚠️ No se pudo refrescar token, continuando con request (se manejará en response interceptor)');
+          if (DEBUG_AUTH) {
+            console.debug('ℹ️ No se pudo refrescar token, continuando con request (se manejará en response interceptor)');
+          }
           if (token) {
             config.headers.Authorization = `Bearer ${token}`;
           }
@@ -167,6 +177,12 @@ api.interceptors.response.use(
       
       console.log('🚨 401 recibido, intentando refrescar token y reintentar...');
       
+      const refreshToken = await SecureStore.getItemAsync('refreshToken');
+      if (!refreshToken) {
+        // Sin refresh token: comportamiento esperado cuando no hay sesión.
+        return Promise.reject(error);
+      }
+
       const newToken = await refreshAccessToken();
       
       if (newToken) {
@@ -185,7 +201,7 @@ api.interceptors.response.use(
         return api.request(originalRequest);
       } else {
         // refreshAccessToken ya limpia sesión; aquí solo evitamos ruido en la UI.
-        console.warn('⚠️ No se pudo refrescar token (se requiere re-login)');
+        if (DEBUG_AUTH) console.warn('⚠️ No se pudo refrescar token (se requiere re-login)');
         // El refresh falló, el error se propagará y el componente manejará el logout
         // No limpiar aquí porque refreshAccessToken ya lo hace
       }
