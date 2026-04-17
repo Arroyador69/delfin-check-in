@@ -37,6 +37,13 @@ function NavigationHandler() {
     __DEV__ && session?.user?.email && session.user.email.toLowerCase() === 'albertogarciaarroyo@gmail.com'
   );
 
+  // Si se pierde la sesión (logout), volvemos a permitir comprobar onboarding en el próximo login.
+  useEffect(() => {
+    if (!session) {
+      setCheckedOnboarding(false);
+    }
+  }, [session]);
+
   useEffect(() => {
     console.log('🧭 NavigationHandler:', { loading, hasSession: !!session, segments });
     
@@ -72,7 +79,7 @@ function NavigationHandler() {
         }
       })();
     }
-  }, [session, loading, segments]);
+  }, [session, loading, segments, checkedOnboarding, isDevOnboardingUser, router]);
 
   return null;
 }
