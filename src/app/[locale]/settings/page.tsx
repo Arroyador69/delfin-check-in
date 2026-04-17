@@ -4,10 +4,21 @@ import { useState, useEffect } from 'react';
 import { Settings } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import CleaningCalendarSettings from '@/components/CleaningCalendarSettings';
+import BookingChannelsEditor from '@/components/BookingChannelsEditor';
+import {
+  normalizeBookingChannels,
+  defaultBookingChannelsConfig,
+  type BookingChannelsConfig,
+} from '@/lib/booking-channels';
 
 export default function SettingsPage() {
   const t = useTranslations('settings');
+  const tBc = useTranslations('settings.bookingChannels');
+  const tCommon = useTranslations('common');
   const [loading, setLoading] = useState(false);
+  const [bookingChannels, setBookingChannels] = useState<BookingChannelsConfig | null>(null);
+  const [savingChannels, setSavingChannels] = useState(false);
+  const [channelsMessage, setChannelsMessage] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
   
   // Estados para configuración de habitaciones/apartamentos
   const [roomsConfig, setRoomsConfig] = useState<Array<{id: number, name: string}>>([]);
@@ -49,6 +60,53 @@ export default function SettingsPage() {
     
     loadData();
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await fetch('/api/tenant/booking-channels', { credentials: 'include' });
+        const d = await r.json();
+        if (cancelled) return;
+        if (d.success && d.bookingChannels) {
+          setBookingChannels(normalizeBookingChannels(d.bookingChannels));
+        } else {
+          setBookingChannels(defaultBookingChannelsConfig());
+        }
+      } catch {
+        if (!cancelled) setBookingChannels(defaultBookingChannelsConfig());
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const saveBookingChannels = async () => {
+    if (!bookingChannels) return;
+    setSavingChannels(true);
+    setChannelsMessage(null);
+    try {
+      const r = await fetch('/api/tenant/booking-channels', {
+        method: 'PUT',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bookingChannels }),
+      });
+      const d = await r.json();
+      if (!r.ok || !d.success) {
+        setChannelsMessage({ type: 'err', text: d.error || tBc('saveError') });
+        return;
+      }
+      setBookingChannels(normalizeBookingChannels(d.bookingChannels));
+      setChannelsMessage({ type: 'ok', text: tBc('saved') });
+      setTimeout(() => setChannelsMessage(null), 5000);
+    } catch {
+      setChannelsMessage({ type: 'err', text: tBc('saveError') });
+    } finally {
+      setSavingChannels(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex flex-col">
@@ -224,6 +282,45 @@ export default function SettingsPage() {
             </div>
           )}
         </div>
+      </div>
+
+      {/* Canales de reserva (misma pantalla que habitaciones) */}
+      <div className="bg-white shadow-xl rounded-xl border border-emerald-100 p-4 sm:p-8">
+        <h4 className="text-lg sm:text-xl font-semibold text-gray-800 mb-1 flex items-center">
+          <span className="text-xl sm:text-2xl mr-2 sm:mr-3" style={{ fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif' }}>🏷️</span>
+          {tBc('title')}
+        </h4>
+        <p className="text-xs sm:text-sm text-gray-600 mb-4">{tBc('pageSubtitle')}</p>
+        {channelsMessage && (
+          <div
+            className={`mb-4 rounded-lg px-4 py-2 text-sm ${
+              channelsMessage.type === 'ok'
+                ? 'bg-emerald-50 text-emerald-900 border border-emerald-200'
+                : 'bg-red-50 text-red-800 border border-red-200'
+            }`}
+          >
+            {channelsMessage.text}
+          </div>
+        )}
+        {bookingChannels ? (
+          <>
+            <BookingChannelsEditor
+              value={bookingChannels}
+              onChange={setBookingChannels}
+              disabled={savingChannels}
+            />
+            <button
+              type="button"
+              onClick={() => void saveBookingChannels()}
+              disabled={savingChannels}
+              className="mt-4 px-5 py-2.5 rounded-lg bg-emerald-600 text-white font-medium hover:bg-emerald-700 disabled:bg-gray-300"
+            >
+              {savingChannels ? tBc('saving') : tBc('save')}
+            </button>
+          </>
+        ) : (
+          <p className="text-sm text-gray-500">{tCommon('loading')}</p>
+        )}
       </div>
 
       {/* Calendario de limpieza */}

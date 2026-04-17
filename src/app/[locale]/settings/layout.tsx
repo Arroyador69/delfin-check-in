@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import AdminLayout from '@/components/AdminLayout';
 import { Link, usePathname } from '@/i18n/navigation';
-import { Settings, FileText, CreditCard, User, LinkIcon, Home, Calendar, Wallet, AlertCircle, ExternalLink, LifeBuoy, Tags } from 'lucide-react';
+import { Settings, FileText, CreditCard, User, LinkIcon, Home, Calendar, Wallet, AlertCircle, ExternalLink, LifeBuoy } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { useTranslations, useLocale } from 'next-intl';
 
@@ -33,12 +33,6 @@ export default function SettingsLayout({
         tabKey: 'checkinInstructions',
         icon: FileText,
         href: '/settings/checkin-instructions' as const,
-      },
-      {
-        id: 'bookingChannels',
-        tabKey: 'bookingChannels',
-        icon: Tags,
-        href: '/settings/booking-channels' as const,
       },
       { id: 'integrations', tabKey: 'integrations', icon: Calendar, href: '/settings/integrations' as const },
       { id: 'billing', tabKey: 'billing', icon: CreditCard, href: '/settings/billing' as const },

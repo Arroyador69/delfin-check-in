@@ -49,6 +49,10 @@ export function defaultBookingChannelsConfig(): BookingChannelsConfig {
   });
 }
 
+export function newCustomChannelId(): string {
+  return `custom_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
 export type ChannelOption = { value: string; label: string };
 
 export function buildChannelSelectOptions(

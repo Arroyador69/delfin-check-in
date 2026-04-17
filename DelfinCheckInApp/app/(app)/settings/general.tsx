@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 
+import BookingChannelsSettingsBlock from '@/components/BookingChannelsSettingsBlock';
 import { api } from '@/lib/api';
 import { t } from '@/lib/i18n';
 
@@ -112,6 +113,8 @@ export default function GeneralSettingsScreen() {
           </Text>
         </Pressable>
       </View>
+
+      <BookingChannelsSettingsBlock />
     </ScrollView>
   );
 }
