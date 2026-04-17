@@ -28,8 +28,8 @@ export function buildPmsCheckinInstructionsEmail(params: {
   guestCount: number;
   instructionsHtml: string;
   publicFormUrl: string;
-  /** Página pública Guest Hub (por unidad), si está activa en la propiedad enlazada al room */
-  guestHubUrl?: string;
+  /** Enlace wa.me si guardaste número en Instrucciones check-in */
+  whatsappChatUrl?: string;
   contactEmail: string;
   contactPhone: string;
   contactName: string;
@@ -121,26 +121,26 @@ export function buildPmsCheckinInstructionsEmail(params: {
       pt: 'Abrir formulário',
       fr: 'Ouvrir le formulaire',
     },
-    hubTitle: {
-      es: 'Página para tu estancia (Guest Hub)',
-      en: 'Your stay page (Guest Hub)',
-      it: 'Pagina del soggiorno (Guest Hub)',
-      pt: 'Página da estadia (Guest Hub)',
-      fr: 'Page pour votre séjour (Guest Hub)',
+    waTitle: {
+      es: 'WhatsApp del alojamiento',
+      en: 'Property WhatsApp',
+      it: 'WhatsApp della struttura',
+      pt: 'WhatsApp do alojamento',
+      fr: 'WhatsApp de l’hébergement',
     },
-    hubBody: {
-      es: 'Un solo enlace con WhatsApp del alojamiento e instrucciones útiles en el móvil (navegador). No sustituye el registro de viajeros ni el email anterior.',
-      en: 'One link with the property WhatsApp and useful instructions on your phone (browser). It does not replace traveller registration or the sections above.',
-      it: 'Un solo link con WhatsApp e istruzioni utili sul telefono (browser). Non sostituisce la registrazione ospiti.',
-      pt: 'Uma ligação com WhatsApp e instruções úteis no telemóvel (browser). Não substitui o registo de hóspedes.',
-      fr: 'Un seul lien avec WhatsApp et consignes utiles sur mobile (navigateur). Ne remplace pas l’enregistrement des voyageurs.',
+    waBody: {
+      es: 'Número configurado en Instrucciones de check-in. Pulsa para abrir el chat (móvil o WhatsApp Web).',
+      en: 'Number saved under Check-in instructions. Tap to open chat (mobile or WhatsApp Web).',
+      it: 'Numero salvato nelle istruzioni check-in. Tocca per aprire la chat.',
+      pt: 'Número guardado nas instruções de check-in. Toque para abrir o chat.',
+      fr: 'Numéro enregistré dans les instructions d’arrivée. Appuyez pour ouvrir le chat.',
     },
-    hubBtn: {
-      es: 'Abrir página del huésped',
-      en: 'Open guest page',
-      it: 'Apri pagina ospite',
-      pt: 'Abrir página do hóspede',
-      fr: 'Ouvrir la page invité',
+    waBtn: {
+      es: 'Chatear por WhatsApp',
+      en: 'Chat on WhatsApp',
+      it: 'Chatta su WhatsApp',
+      pt: 'Conversar no WhatsApp',
+      fr: 'Discuter sur WhatsApp',
     },
     cancelTitle: {
       es: '¿Necesitas cancelar tu reserva?',
@@ -223,11 +223,11 @@ export function buildPmsCheckinInstructionsEmail(params: {
             </div>
             <div class="section">${params.instructionsHtml}</div>
             ${
-              params.guestHubUrl
+              params.whatsappChatUrl
                 ? `<div class="section" style="background:#ecfdf5;border-left:4px solid #059669">
-              <h3 style="margin-top:0">${T.hubTitle[loc]}</h3>
-              <p>${T.hubBody[loc]}</p>
-              <p><a href="${params.guestHubUrl}" target="_blank" style="background:#059669;color:white;padding:10px 16px;border-radius:8px;text-decoration:none;display:inline-block">${T.hubBtn[loc]}</a></p>
+              <h3 style="margin-top:0">${T.waTitle[loc]}</h3>
+              <p>${T.waBody[loc]}</p>
+              <p><a href="${params.whatsappChatUrl}" target="_blank" style="background:#059669;color:white;padding:10px 16px;border-radius:8px;text-decoration:none;display:inline-block">${T.waBtn[loc]}</a></p>
             </div>`
                 : ''
             }
@@ -254,10 +254,8 @@ export function buildPmsCheckinInstructionsEmail(params: {
       </body></html>
     `;
 
-  const hubLine = params.guestHubUrl
-    ? `${T.hubTitle[loc]}: ${params.guestHubUrl}\n`
-    : '';
-  const text = `${T.title[loc]} — ${params.propertyLabel}\n\n${ci} → ${co}\n${hubLine}${T.regBtn[loc]}: ${params.publicFormUrl}\n`;
+  const waLine = params.whatsappChatUrl ? `${T.waTitle[loc]}: ${params.whatsappChatUrl}\n` : '';
+  const text = `${T.title[loc]} — ${params.propertyLabel}\n\n${ci} → ${co}\n${waLine}${T.regBtn[loc]}: ${params.publicFormUrl}\n`;
 
   return {
     subject: T.subject[loc],

@@ -12,6 +12,7 @@ import {
   Modal,
   KeyboardAvoidingView,
   Keyboard,
+  Linking,
 } from 'react-native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
@@ -27,7 +28,24 @@ type InstructionItem = {
   locale: string;
   title: string | null;
   body_html: string;
+  whatsapp_e164?: string | null;
 };
+
+function pickWhatsappFromItems(items: InstructionItem[], roomKey: string | null): string {
+  const key = roomKey || '';
+  const filtered = items.filter((it) => (it.room_id || '') === key);
+  const es = filtered.find((it) => it.locale === 'es');
+  const en = filtered.find((it) => it.locale === 'en');
+  const w = es?.whatsapp_e164 ?? en?.whatsapp_e164;
+  return w ? String(w) : '';
+}
+
+function waMeUrlPreview(raw: string): string | null {
+  if (!raw.trim()) return null;
+  const d = raw.replace(/\D/g, '');
+  if (d.length < 8) return null;
+  return `https://wa.me/${d}`;
+}
 
 const winH = Dimensions.get('window').height;
 
@@ -41,6 +59,7 @@ export default function CheckinInstructionsScreen() {
   const [bodyEs, setBodyEs] = useState('');
   const [titleEn, setTitleEn] = useState('');
   const [bodyEn, setBodyEn] = useState('');
+  const [whatsappE164, setWhatsappE164] = useState('');
 
   const { data, isLoading } = useQuery({
     queryKey: ['checkin-instructions'],
@@ -56,6 +75,7 @@ export default function CheckinInstructionsScreen() {
     mutationFn: async () => {
       const roomId = editor?.room_id ?? null;
       const requests: Promise<any>[] = [];
+      const waPayload = whatsappE164.trim() ? whatsappE164.trim() : null;
       if (bodyEs.trim()) {
         requests.push(
           api.put('/api/settings/checkin-instructions', {
@@ -63,6 +83,7 @@ export default function CheckinInstructionsScreen() {
             locale: 'es',
             title: titleEs.trim() || null,
             body_html: bodyEs,
+            whatsapp_e164: waPayload,
           })
         );
       }
@@ -73,6 +94,7 @@ export default function CheckinInstructionsScreen() {
             locale: 'en',
             title: titleEn.trim() || null,
             body_html: bodyEn,
+            whatsapp_e164: waPayload,
           })
         );
       }
@@ -103,6 +125,8 @@ export default function CheckinInstructionsScreen() {
     onError: () => Alert.alert(t('common.error'), t('settings.checkinInstructions.errorSaving')),
   });
 
+  const waUrlPreview = waMeUrlPreview(whatsappE164);
+
   function openEdit(item: InstructionItem) {
     const siblings = items.filter((it) => (it.room_id || '') === (item.room_id || ''));
     const es = siblings.find((it) => it.locale === 'es');
@@ -112,6 +136,7 @@ export default function CheckinInstructionsScreen() {
     setBodyEs(es?.body_html || '');
     setTitleEn(en?.title || '');
     setBodyEn(en?.body_html || '');
+    setWhatsappE164(pickWhatsappFromItems(items, item.room_id));
   }
 
   return (
@@ -220,6 +245,24 @@ export default function CheckinInstructionsScreen() {
               >
                 <Text style={styles.modalTitle}>{t('settings.checkinInstructions.title')}</Text>
                 <Text style={styles.hintSmall}>{t('mobile.settings.checkinBodyHint')}</Text>
+
+                <View style={styles.waSection}>
+                  <Text style={styles.label}>{t('settings.checkinInstructions.whatsappLabel')}</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={whatsappE164}
+                    onChangeText={setWhatsappE164}
+                    placeholder={t('settings.checkinInstructions.whatsappPlaceholder')}
+                    keyboardType="phone-pad"
+                    autoComplete="tel"
+                  />
+                  <Text style={styles.hintSmall}>{t('settings.checkinInstructions.whatsappHint')}</Text>
+                  {waUrlPreview ? (
+                    <Text style={styles.waLink} onPress={() => Linking.openURL(waUrlPreview)}>
+                      {t('settings.checkinInstructions.whatsappLinkPreview')}: {waUrlPreview}
+                    </Text>
+                  ) : null}
+                </View>
 
                 <View style={styles.localeSection}>
                   <Text style={styles.localeHeader}>ES</Text>
@@ -334,6 +377,15 @@ const styles = StyleSheet.create({
   localeHeader: { fontSize: 13, fontWeight: '800', color: '#111827', marginBottom: 8 },
   label: { fontSize: 13, fontWeight: '700', marginTop: 8, marginBottom: 4 },
   hintSmall: { fontSize: 11, color: '#6b7280', marginBottom: 4 },
+  waSection: {
+    marginBottom: 12,
+    padding: 12,
+    borderRadius: 12,
+    backgroundColor: '#ecfdf5',
+    borderWidth: 1,
+    borderColor: '#a7f3d0',
+  },
+  waLink: { fontSize: 12, color: '#047857', marginTop: 6, textDecorationLine: 'underline' },
   input: {
     borderWidth: 1,
     borderColor: '#e5e7eb',

@@ -6,6 +6,18 @@ import { useTranslations, useLocale } from 'next-intl'
 import { Trash2 } from 'lucide-react'
 import { useTenant, hasCheckinInstructionsEmailAccess } from '@/hooks/useTenant'
 import { PlanFreePreviewOverlay } from '@/components/PlanFreePreviewOverlay'
+import { waMeUrlFromStoredPhone } from '@/lib/wa-me-url'
+
+function pickWhatsappFromItems(
+  items: Array<{ room_id?: string | null; locale?: string; whatsapp_e164?: string | null }>,
+  roomKey: string
+): string {
+  const filtered = items.filter((it) => (it.room_id || '') === (roomKey || ''))
+  const es = filtered.find((it) => it.locale === 'es')
+  const en = filtered.find((it) => it.locale === 'en')
+  const w = es?.whatsapp_e164 ?? en?.whatsapp_e164
+  return w ? String(w) : ''
+}
 
 interface SlotOption {
   id: string
@@ -26,7 +38,18 @@ export default function CheckinInstructionsPage() {
   const [bodyEn, setBodyEn] = useState('')
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<string>('')
-  const [templates, setTemplates] = useState<Array<{ id:number; room_id:string|null; locale:string; title:string|null; body_html:string; updated_at:string }>>([])
+  const [templates, setTemplates] = useState<
+    Array<{
+      id: number
+      room_id: string | null
+      locale: string
+      title: string | null
+      body_html: string
+      updated_at: string
+      whatsapp_e164?: string | null
+    }>
+  >([])
+  const [whatsappE164, setWhatsappE164] = useState('')
   const [deleteFlow, setDeleteFlow] = useState<null | { id: number; label: string; room_id: string | null; phase: 1 | 2 }>(null)
   const [deleteAck, setDeleteAck] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -62,6 +85,7 @@ export default function CheckinInstructionsPage() {
             setBodyEs(defEs?.body_html || '')
             setTitleEn(defEn?.title || '')
             setBodyEn(defEn?.body_html || '')
+            setWhatsappE164(pickWhatsappFromItems(data.items, ''))
           }
         }
       } catch (e) {}
@@ -82,6 +106,7 @@ export default function CheckinInstructionsPage() {
         setBodyEs(es?.body_html || '')
         setTitleEn(en?.title || '')
         setBodyEn(en?.body_html || '')
+        setWhatsappE164(pickWhatsappFromItems(all, roomId))
       }
     } catch (e) {}
   }
@@ -91,18 +116,31 @@ export default function CheckinInstructionsPage() {
     setMessage('')
     try {
       const requests: Promise<Response>[] = []
+      const waPayload = whatsappE164.trim() ? whatsappE164.trim() : null
       if (bodyEs.trim()) {
         requests.push(fetch('/api/settings/checkin-instructions', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ room_id: selectedRoomId || null, locale: 'es', title: titleEs, body_html: bodyEs })
+          body: JSON.stringify({
+            room_id: selectedRoomId || null,
+            locale: 'es',
+            title: titleEs,
+            body_html: bodyEs,
+            whatsapp_e164: waPayload,
+          })
         }))
       }
       if (bodyEn.trim()) {
         requests.push(fetch('/api/settings/checkin-instructions', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ room_id: selectedRoomId || null, locale: 'en', title: titleEn, body_html: bodyEn })
+          body: JSON.stringify({
+            room_id: selectedRoomId || null,
+            locale: 'en',
+            title: titleEn,
+            body_html: bodyEn,
+            whatsapp_e164: waPayload,
+          })
         }))
       }
       if (requests.length === 0) {
@@ -117,7 +155,10 @@ export default function CheckinInstructionsPage() {
         try {
           const r = await fetch('/api/settings/checkin-instructions')
           const d = await r.json()
-          if (d.success) setTemplates(d.items)
+          if (d.success) {
+            setTemplates(d.items)
+            setWhatsappE164(pickWhatsappFromItems(d.items, selectedRoomId))
+          }
         } catch {}
       }
       else setMessage(payloads.find((p) => !p.success)?.error || t('errorSaving'))
@@ -163,6 +204,7 @@ export default function CheckinInstructionsPage() {
             setBodyEs(remaining.find((it: any) => it.locale === 'es')?.body_html || '')
             setTitleEn(remaining.find((it: any) => it.locale === 'en')?.title || '')
             setBodyEn(remaining.find((it: any) => it.locale === 'en')?.body_html || '')
+            setWhatsappE164(pickWhatsappFromItems(remaining, selectedRoomId))
           }
         }
       } else {
@@ -176,6 +218,7 @@ export default function CheckinInstructionsPage() {
   }
 
   const showPaywall = Boolean(tenant && !canEditCheckinEmail)
+  const waPreview = waMeUrlFromStoredPhone(whatsappE164)
 
   return (
     <AdminLayout>
@@ -209,6 +252,27 @@ export default function CheckinInstructionsPage() {
                 ))}
               </select>
               <p className="text-xs text-gray-500 mt-1">{t('roomHint')}</p>
+            </div>
+
+            <div className="rounded-xl border border-emerald-100 bg-emerald-50/60 p-4 space-y-2">
+              <label className="block text-sm font-medium text-gray-800">{t('whatsappLabel')}</label>
+              <input
+                value={whatsappE164}
+                onChange={(e) => setWhatsappE164(e.target.value)}
+                className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white"
+                placeholder={t('whatsappPlaceholder')}
+                inputMode="tel"
+                autoComplete="tel"
+              />
+              <p className="text-xs text-gray-600">{t('whatsappHint')}</p>
+              {waPreview ? (
+                <p className="text-xs text-gray-700">
+                  <span className="font-medium">{t('whatsappLinkPreview')}:</span>{' '}
+                  <a href={waPreview} target="_blank" rel="noopener noreferrer" className="text-emerald-700 underline break-all">
+                    {waPreview}
+                  </a>
+                </p>
+              ) : null}
             </div>
 
             <div>

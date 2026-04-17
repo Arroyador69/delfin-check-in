@@ -27,6 +27,7 @@ async function ensureTable() {
   `
   // Migración suave para tablas existentes sin `locale`
   await sql`ALTER TABLE checkin_instructions ADD COLUMN IF NOT EXISTS locale TEXT NOT NULL DEFAULT 'es'`;
+  await sql`ALTER TABLE checkin_instructions ADD COLUMN IF NOT EXISTS whatsapp_e164 VARCHAR(32) NULL`;
   await sql`CREATE INDEX IF NOT EXISTS idx_checkin_instructions_tenant_room ON checkin_instructions(tenant_id, room_id)`
   await sql`CREATE INDEX IF NOT EXISTS idx_checkin_instructions_tenant_room_locale ON checkin_instructions(tenant_id, room_id, locale)`
   await sql`
@@ -90,24 +91,56 @@ export async function PUT(req: NextRequest) {
     await ensureTable()
 
     const body = await req.json()
-    const { room_id, title, body_html, locale: localeRaw } = body || {}
+    const { room_id, title, body_html, locale: localeRaw, whatsapp_e164 } = body || {}
     if (!body_html || typeof body_html !== 'string') {
       return NextResponse.json({ success: false, error: 'body_html requerido' }, { status: 400 })
     }
     const locale = normalizeGuestMailLocale(localeRaw)
+    const wa =
+      whatsapp_e164 === undefined
+        ? undefined
+        : whatsapp_e164 === null || String(whatsapp_e164).trim() === ''
+          ? null
+          : String(whatsapp_e164).trim()
 
     // Upsert manual: primero UPDATE, si no existe, INSERT (compatible con room_id NULL)
-    const upd = await sql`
+    const upd =
+      wa === undefined
+        ? await sql`
       UPDATE checkin_instructions
       SET title = ${title || null}, body_html = ${body_html}, updated_at = now()
       WHERE tenant_id = ${tenantId}::uuid
         AND room_id IS NOT DISTINCT FROM ${room_id || null}
         AND locale = ${locale}
     `
+        : await sql`
+      UPDATE checkin_instructions
+      SET title = ${title || null}, body_html = ${body_html}, whatsapp_e164 = ${wa}, updated_at = now()
+      WHERE tenant_id = ${tenantId}::uuid
+        AND room_id IS NOT DISTINCT FROM ${room_id || null}
+        AND locale = ${locale}
+    `
     if (upd.rowCount === 0) {
-      await sql`
+      if (wa === undefined) {
+        await sql`
         INSERT INTO checkin_instructions (tenant_id, room_id, locale, title, body_html)
         VALUES (${tenantId}::uuid, ${room_id || null}, ${locale}, ${title || null}, ${body_html})
+      `
+      } else {
+        await sql`
+        INSERT INTO checkin_instructions (tenant_id, room_id, locale, title, body_html, whatsapp_e164)
+        VALUES (${tenantId}::uuid, ${room_id || null}, ${locale}, ${title || null}, ${body_html}, ${wa})
+      `
+      }
+    }
+
+    // Mismo número de WhatsApp para todas las plantillas (idiomas) de este slot
+    if (wa !== undefined) {
+      await sql`
+        UPDATE checkin_instructions
+        SET whatsapp_e164 = ${wa}, updated_at = now()
+        WHERE tenant_id = ${tenantId}::uuid
+          AND room_id IS NOT DISTINCT FROM ${room_id || null}
       `
     }
 

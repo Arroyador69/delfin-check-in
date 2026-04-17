@@ -345,12 +345,6 @@
       "connectionError": "Erreur de connexion"
     }
   },
-  "guestHubPage": {
-    "brand": "Delfín Guest Hub",
-    "whatsappCta": "Discuter sur WhatsApp",
-    "instructionsTitle": "Instructions d'arrivée",
-    "notFound": "Cette page invité n'est pas disponible ou a été désactivée."
-  },
   "onboarding": {
     "appName": "Delfín Check-in",
     "stepOf": "Étape {currentStep} sur {totalSteps}",
@@ -1627,7 +1621,6 @@
       "title": "Mes Propriétés",
       "pageTitle": "Gestion des Propriétés",
       "subtitle": "Gérez vos propriétés pour les réservations directes",
-      "guestHubWhereHint": "Delfín Guest Hub : cliquez sur Modifier sur une propriété déjà enregistrée — le bloc vert « Delfín Guest Hub » est en haut du formulaire (WhatsApp + instructions). Il n’apparaît pas lors de la complétion d’un slot avant la première sauvegarde.",
       "addProperty": "Ajouter une Propriété",
       "copyError": "Erreur lors de la copie du lien",
       "invalidImage": "Le fichier {name} n'est pas une image valide",
@@ -1686,19 +1679,7 @@
         "amenities": "Équipements",
         "cancel": "Annuler",
         "create": "Créer la Propriété",
-        "update": "Mettre à Jour la Propriété",
-        "guestHub": {
-          "title": "Delfín Guest Hub",
-          "subtitle": "Page publique pour les invités (WhatsApp + instructions). S'ouvre dans le navigateur ; aucune installation d'application requise.",
-          "enabled": "Activer le Guest Hub",
-          "whatsapp": "WhatsApp (avec indicatif international, ex. +33600111222)",
-          "welcomeTitle": "Titre de bienvenue",
-          "instructions": "Instructions d'arrivée pour l'invité",
-          "publicUrl": "Lien public",
-          "copy": "Copier",
-          "hint": "Enregistrez la propriété avec le Guest Hub activé pour générer le lien.",
-          "onlyAfterSave": "Enregistrez d'abord la propriété pour configurer le Guest Hub."
-        }
+        "update": "Mettre à Jour la Propriété"
       },
       "amenitiesList": {
         "wifi": "WiFi",
@@ -2037,6 +2018,10 @@
       "roomSlot": "Chambre/slot",
       "defaultOption": "Par défaut (toutes les chambres)",
       "roomHint": "Si vous choisissez \"Par défaut\", cela s'appliquera à toutes les chambres sans configuration spécifique.",
+      "whatsappLabel": "WhatsApp (indicatif international)",
+      "whatsappPlaceholder": "+33600111222",
+      "whatsappHint": "Facultatif. Nous générons le lien wa.me pour l’e-mail d’instructions. Même numéro pour ES et EN sur ce créneau.",
+      "whatsappLinkPreview": "Aperçu du lien",
       "titleLabel": "Titre (optionnel)",
       "contentLabel": "Contenu (HTML autorisé)",
       "contentPlaceholder": "Ex. : Code de la porte, instructions d'arrivée, parking, etc...",
@@ -2792,7 +2777,7 @@
       "languagePt": "Portugais",
       "hubEmpresaSubtitle": "Nécessaire pour les PDF de factures et reçus.",
       "hubMirSubtitle": "Activez l’envoi et consultez l’état MIR.",
-      "hubPropertiesSubtitle": "Modifiez les fiches, tarifs, lien de réservation directe et Guest Hub.",
+      "hubPropertiesSubtitle": "Modifiez les fiches, tarifs et lien de réservation directe.",
       "hubCountrySubtitle": "Pays du module légal (plans FREE+LEGAL).",
       "tenantLabel": "Établissement",
       "planLabel": "Forfait",
@@ -2817,18 +2802,6 @@
       "propertiesLinkCopied": "Lien copié",
       "propertiesEditTitle": "Modifier l’unité",
       "propertiesNewSlotTitle": "Compléter l’unité",
-      "guestHubSectionTitle": "Guest Hub",
-      "guestHubSectionSubtitle": "Page publique pour les invités (WhatsApp + instructions). S’ouvre dans le navigateur.",
-      "guestHubEnabled": "Activer le Guest Hub",
-      "guestHubWhatsapp": "WhatsApp (indicatif international, ex. +33600111222)",
-      "guestHubWhatsappPh": "+33…",
-      "guestHubWelcomeTitle": "Titre de bienvenue",
-      "guestHubInstructions": "Instructions d’arrivée pour l’invité",
-      "guestHubPublicUrl": "Lien public",
-      "guestHubCopyLink": "Copier le lien",
-      "guestHubOpenInBrowser": "Ouvrir dans le navigateur",
-      "guestHubHint": "Enregistrez avec le Guest Hub activé pour générer ou actualiser le lien.",
-      "guestHubCompleteUnitFirst": "Après avoir enregistré cette unité, rouvrez-la pour activer le Guest Hub et le lien public.",
       "planCalcNote": "Chiffres indicatifs ; la TVA dépend de votre pays. Pour souscrire, utilisez « Améliorer ou changer de formule ».",
       "planCalcError": "Impossible de calculer le prix",
       "countryCurrent": "Code actuel",

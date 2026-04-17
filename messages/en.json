@@ -355,12 +355,6 @@
       "retryInPlural": "You can try again in {minutes} minutes"
     }
   },
-  "guestHubPage": {
-    "brand": "Delfín Guest Hub",
-    "whatsappCta": "Chat on WhatsApp",
-    "instructionsTitle": "Check-in instructions",
-    "notFound": "This guest page is not available or has been disabled."
-  },
   "onboarding": {
     "appName": "Delfín Check-in",
     "stepOf": "Step {currentStep} of {totalSteps}",
@@ -1667,7 +1661,6 @@
       "title": "My Properties",
       "pageTitle": "Property Management",
       "subtitle": "Manage your properties for direct bookings",
-      "guestHubWhereHint": "Delfín Guest Hub: click Edit on a saved property — the green «Delfín Guest Hub» block is at the top of the form (WhatsApp + instructions). It does not appear when completing a slot until you save once.",
       "addProperty": "Add Property",
       "copyError": "Error copying link",
       "invalidImage": "The file {name} is not a valid image",
@@ -1735,19 +1728,7 @@
         "amenities": "Amenities",
         "cancel": "Cancel",
         "create": "Create Property",
-        "update": "Update Property",
-        "guestHub": {
-          "title": "Delfín Guest Hub",
-          "subtitle": "Public page for your guests (WhatsApp + instructions). Works in the browser; no app install required.",
-          "enabled": "Enable Guest Hub",
-          "whatsapp": "WhatsApp (with country code, e.g. +34600111222)",
-          "welcomeTitle": "Welcome title",
-          "instructions": "Check-in instructions for guests",
-          "publicUrl": "Public link",
-          "copy": "Copy",
-          "hint": "Save the property with Guest Hub enabled to generate the link.",
-          "onlyAfterSave": "Save the property first to configure the Guest Hub."
-        }
+        "update": "Update Property"
       },
       "amenitiesList": {
         "wifi": "WiFi",
@@ -2086,6 +2067,10 @@
       "roomSlot": "Room/slot",
       "defaultOption": "Default (all rooms)",
       "roomHint": "If you choose \"Default\", it will apply to all rooms without specific configuration.",
+      "whatsappLabel": "WhatsApp (international prefix)",
+      "whatsappPlaceholder": "+34600111222",
+      "whatsappHint": "Optional. We generate the wa.me link for the instructions email. Same number for ES and EN for this slot.",
+      "whatsappLinkPreview": "Link preview",
       "titleLabel": "Title (optional)",
       "contentLabel": "Content (HTML allowed)",
       "contentPlaceholder": "E.g.: Door code, arrival instructions, parking, etc...",
@@ -2861,7 +2846,7 @@
       "languagePt": "Portuguese",
       "hubEmpresaSubtitle": "Required for invoice and receipt PDFs.",
       "hubMirSubtitle": "Enable submission and review MIR status.",
-      "hubPropertiesSubtitle": "Edit listings, prices, direct booking link and Guest Hub.",
+      "hubPropertiesSubtitle": "Edit listings, prices, and direct booking link.",
       "hubCountrySubtitle": "Legal module country (FREE+LEGAL plans).",
       "tenantLabel": "Tenant",
       "planLabel": "Plan",
@@ -2886,18 +2871,6 @@
       "propertiesLinkCopied": "Link copied",
       "propertiesEditTitle": "Edit unit",
       "propertiesNewSlotTitle": "Complete unit",
-      "guestHubSectionTitle": "Guest Hub",
-      "guestHubSectionSubtitle": "Public page for guests (WhatsApp + instructions). Opens in the browser.",
-      "guestHubEnabled": "Enable Guest Hub",
-      "guestHubWhatsapp": "WhatsApp (international prefix, e.g. +34600111222)",
-      "guestHubWhatsappPh": "+34…",
-      "guestHubWelcomeTitle": "Welcome title",
-      "guestHubInstructions": "Check-in instructions for guests",
-      "guestHubPublicUrl": "Public link",
-      "guestHubCopyLink": "Copy link",
-      "guestHubOpenInBrowser": "Open in browser",
-      "guestHubHint": "Save with Guest Hub enabled to generate or refresh the link.",
-      "guestHubCompleteUnitFirst": "After you save this unit, open it again to activate Guest Hub and the public link.",
       "planCalcNote": "Indicative figures; VAT depends on your country. To subscribe, use “Upgrade or change plan”.",
       "planCalcError": "Could not calculate price",
       "countryCurrent": "Current code",

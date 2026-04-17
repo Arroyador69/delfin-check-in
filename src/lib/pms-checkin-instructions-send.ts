@@ -6,12 +6,13 @@ import {
   normalizeGuestMailLocale,
   type GuestMailLocale,
 } from '@/lib/pms-guest-checkin-email-i18n';
+import { waMeUrlFromStoredPhone } from '@/lib/wa-me-url';
 
 export async function fetchCheckinInstructionsBodyForRoom(
   tenantId: string,
   roomId: string | null | undefined,
   locale: GuestMailLocale
-): Promise<{ body_html: string; title: string | null } | null> {
+): Promise<{ body_html: string; title: string | null; whatsapp_e164: string | null } | null> {
   const attempts = new Set<string>();
   if (roomId) {
     attempts.add(String(roomId));
@@ -19,58 +20,32 @@ export async function fetchCheckinInstructionsBodyForRoom(
   }
   for (const rid of attempts) {
     const r = await sql`
-      SELECT body_html, title FROM checkin_instructions
+      SELECT body_html, title, whatsapp_e164 FROM checkin_instructions
       WHERE tenant_id = ${tenantId}::uuid AND room_id = ${rid}::text AND locale = ${locale}
       LIMIT 1
     `;
-    if (r.rows[0]) return r.rows[0] as { body_html: string; title: string | null };
+    if (r.rows[0])
+      return r.rows[0] as { body_html: string; title: string | null; whatsapp_e164: string | null };
   }
   const def = await sql`
-    SELECT body_html, title FROM checkin_instructions
+    SELECT body_html, title, whatsapp_e164 FROM checkin_instructions
     WHERE tenant_id = ${tenantId}::uuid AND room_id IS NULL AND locale = ${locale}
     ORDER BY updated_at DESC
     LIMIT 1
   `;
-  if (def.rows[0]) return def.rows[0] as { body_html: string; title: string | null };
+  if (def.rows[0]) return def.rows[0] as { body_html: string; title: string | null; whatsapp_e164: string | null };
 
   // Fallback: si no hay plantilla en el idioma, usar español
   if (locale !== 'es') {
     const defEs = await sql`
-      SELECT body_html, title FROM checkin_instructions
+      SELECT body_html, title, whatsapp_e164 FROM checkin_instructions
       WHERE tenant_id = ${tenantId}::uuid AND room_id IS NULL AND locale = 'es'
       ORDER BY updated_at DESC
       LIMIT 1
     `;
-    return (defEs.rows[0] as { body_html: string; title: string | null }) || null;
-  }
-  return null;
-}
-
-/** URL pública Guest Hub si la propiedad enlazada al room lo tiene activo. */
-async function resolveGuestHubUrlForRoom(
-  tenantId: string,
-  roomId: string | null | undefined,
-  mailLocale: GuestMailLocale
-): Promise<string | null> {
-  if (!roomId) return null;
-  const attempts = new Set<string>();
-  attempts.add(String(roomId));
-  attempts.add(normalizeRoomId(roomId));
-  const base = (process.env.NEXT_PUBLIC_APP_URL || 'https://admin.delfincheckin.com').replace(/\/$/, '');
-  for (const rid of attempts) {
-    const r = await sql`
-      SELECT tp.guest_hub_slug, tp.guest_hub
-      FROM property_room_map prm
-      INNER JOIN tenant_properties tp
-        ON tp.id = prm.property_id AND tp.tenant_id = prm.tenant_id
-      WHERE prm.tenant_id = ${tenantId}::uuid AND prm.room_id = ${rid}
-      LIMIT 1
-    `;
-    const row = r.rows[0] as { guest_hub_slug: string | null; guest_hub: unknown } | undefined;
-    if (!row?.guest_hub_slug) continue;
-    const gh = (row.guest_hub || {}) as Record<string, unknown>;
-    if (!(gh.enabled === true || gh.enabled === 'true')) continue;
-    return `${base}/${mailLocale}/guest/hub/${row.guest_hub_slug}`;
+    return (
+      (defEs.rows[0] as { body_html: string; title: string | null; whatsapp_e164: string | null }) || null
+    );
   }
   return null;
 }
@@ -138,7 +113,7 @@ export async function sendPmsReservationCheckinInstructionsEmail(params: {
 
     const publicFormUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://admin.delfincheckin.com'}/api/public/form-redirect/${params.tenantId}`;
 
-    const guestHubUrl = await resolveGuestHubUrlForRoom(params.tenantId, params.roomId, loc);
+    const whatsappChatUrl = waMeUrlFromStoredPhone(row?.whatsapp_e164);
 
     const content = buildPmsCheckinInstructionsEmail({
       locale: loc,
@@ -149,7 +124,7 @@ export async function sendPmsReservationCheckinInstructionsEmail(params: {
       guestCount: params.guestCount,
       instructionsHtml: bodyHtml,
       publicFormUrl,
-      guestHubUrl: guestHubUrl ?? undefined,
+      whatsappChatUrl: whatsappChatUrl ?? undefined,
       contactEmail,
       contactPhone,
       contactName,

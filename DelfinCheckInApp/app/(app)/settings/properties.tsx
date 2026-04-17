@@ -19,8 +19,7 @@ import { X } from 'lucide-react-native';
 
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
-import { getLocale, t, useLocaleListener } from '@/lib/i18n';
-import { getSiteOrigin } from '@/lib/site-origin';
+import { t, useLocaleListener } from '@/lib/i18n';
 import { KeyboardAwareFormModal } from '@/components/KeyboardAwareFormModal';
 
 type TenantPropertyRow = {
@@ -40,8 +39,6 @@ type TenantPropertyRow = {
   is_active?: boolean;
   room_id?: string | null;
   is_placeholder?: boolean;
-  guest_hub?: Record<string, unknown> | null;
-  guest_hub_slug?: string | null;
 };
 
 type Draft = {
@@ -72,20 +69,6 @@ const emptyDraft: Draft = {
   is_active: true,
 };
 
-type GuestHubDraft = {
-  enabled: boolean;
-  whatsapp: string;
-  welcomeTitle: string;
-  instructions: string;
-};
-
-const emptyGuestHub: GuestHubDraft = {
-  enabled: false,
-  whatsapp: '',
-  welcomeTitle: '',
-  instructions: '',
-};
-
 function rowToDraft(p: TenantPropertyRow): Draft {
   return {
     property_name: p.property_name || '',
@@ -109,8 +92,6 @@ export default function PropertiesSettingsScreen() {
   const { session } = useAuth();
   const [editing, setEditing] = useState<TenantPropertyRow | null>(null);
   const [draft, setDraft] = useState<Draft>(emptyDraft);
-  const [guestHubForm, setGuestHubForm] = useState<GuestHubDraft>(emptyGuestHub);
-  const [guestHubSlug, setGuestHubSlug] = useState<string | null>(null);
 
   const tenantId = session?.user?.tenant?.id || '';
 
@@ -123,39 +104,20 @@ export default function PropertiesSettingsScreen() {
   });
 
   const list = data?.properties ?? [];
-  const displayList = useMemo(() => list, [list]);
-
-  function guestHubFromRow(guestHub: Record<string, unknown> | null | undefined): GuestHubDraft {
-    const gh = guestHub || {};
-    return {
-      enabled: gh.enabled === true || gh.enabled === 'true',
-      whatsapp: String(gh.whatsapp ?? ''),
-      welcomeTitle: String(gh.welcomeTitle ?? ''),
-      instructions: String(gh.instructions ?? ''),
-    };
-  }
+  const displayList = useMemo(() => list.filter((p) => !p.is_placeholder), [list]);
 
   function openEdit(p: TenantPropertyRow) {
     setEditing(p);
     setDraft(rowToDraft(p));
-    setGuestHubForm(guestHubFromRow(p.guest_hub ?? undefined));
-    setGuestHubSlug(p.guest_hub_slug ?? null);
   }
 
   function closeEdit() {
     setEditing(null);
     setDraft(emptyDraft);
-    setGuestHubForm(emptyGuestHub);
-    setGuestHubSlug(null);
   }
 
   function getBookingUrl(propertyId: number): string {
     return `https://book.delfincheckin.com/${tenantId}/${propertyId}`;
-  }
-
-  function getGuestHubUrl(slug: string): string {
-    const locale = getLocale();
-    return `${getSiteOrigin()}/${locale}/guest/hub/${slug}`;
   }
 
   const saveMutation = useMutation({
@@ -165,7 +127,7 @@ export default function PropertiesSettingsScreen() {
       if (!draft.property_name.trim() || !(basePrice > 0)) {
         throw new Error('validation');
       }
-      const payload: Record<string, unknown> = {
+      const payload = {
         property_name: draft.property_name.trim(),
         description: draft.description.trim(),
         max_guests: parseInt(draft.max_guests, 10) || 2,
@@ -180,19 +142,7 @@ export default function PropertiesSettingsScreen() {
       };
 
       if (editing.id != null) {
-        payload.guest_hub = {
-          enabled: guestHubForm.enabled,
-          whatsapp: guestHubForm.whatsapp.trim(),
-          welcomeTitle: guestHubForm.welcomeTitle.trim(),
-          instructions: guestHubForm.instructions.trim(),
-        };
-        const res = await api.put(`/api/tenant/properties?id=${editing.id}`, payload);
-        const data = res.data as { guest_hub_slug?: string | null };
-        if (typeof data.guest_hub_slug === 'string' && data.guest_hub_slug) {
-          setGuestHubSlug(data.guest_hub_slug);
-        } else if (data.guest_hub_slug === null) {
-          setGuestHubSlug(null);
-        }
+        await api.put(`/api/tenant/properties?id=${editing.id}`, payload);
         return;
       }
 
@@ -310,67 +260,6 @@ export default function PropertiesSettingsScreen() {
                   </Pressable>
                 </View>
               </View>
-            ) : null}
-
-            {!isPlaceholder && editing?.id != null ? (
-              <View style={styles.guestHubBlock}>
-                <Text style={styles.guestHubTitle}>{t('mobile.settings.guestHubSectionTitle')}</Text>
-                <Text style={styles.guestHubSubtitle}>{t('mobile.settings.guestHubSectionSubtitle')}</Text>
-                <View style={styles.switchRow}>
-                  <Text style={styles.labelInline}>{t('mobile.settings.guestHubEnabled')}</Text>
-                  <Switch
-                    value={guestHubForm.enabled}
-                    onValueChange={(v) => setGuestHubForm((g) => ({ ...g, enabled: v }))}
-                  />
-                </View>
-                <Text style={styles.label}>{t('mobile.settings.guestHubWelcomeTitle')}</Text>
-                <TextInput
-                  style={styles.input}
-                  value={guestHubForm.welcomeTitle}
-                  onChangeText={(v) => setGuestHubForm((g) => ({ ...g, welcomeTitle: v }))}
-                />
-                <Text style={styles.label}>{t('mobile.settings.guestHubWhatsapp')}</Text>
-                <TextInput
-                  style={styles.input}
-                  value={guestHubForm.whatsapp}
-                  onChangeText={(v) => setGuestHubForm((g) => ({ ...g, whatsapp: v }))}
-                  keyboardType="phone-pad"
-                  placeholder={t('mobile.settings.guestHubWhatsappPh')}
-                  placeholderTextColor="#9ca3af"
-                />
-                <Text style={styles.label}>{t('mobile.settings.guestHubInstructions')}</Text>
-                <TextInput
-                  style={[styles.input, styles.textarea]}
-                  multiline
-                  textAlignVertical="top"
-                  value={guestHubForm.instructions}
-                  onChangeText={(v) => setGuestHubForm((g) => ({ ...g, instructions: v }))}
-                />
-                {guestHubForm.enabled && guestHubSlug ? (
-                  <>
-                    <Text style={styles.label}>{t('mobile.settings.guestHubPublicUrl')}</Text>
-                    <Text selectable style={styles.guestHubUrl}>
-                      {getGuestHubUrl(guestHubSlug)}
-                    </Text>
-                    <View style={styles.linkActions}>
-                      <Pressable style={styles.guestHubBtn} onPress={() => copyLink(getGuestHubUrl(guestHubSlug))}>
-                        <Text style={styles.linkBtnText}>{t('mobile.settings.guestHubCopyLink')}</Text>
-                      </Pressable>
-                      <Pressable
-                        style={styles.guestHubBtn}
-                        onPress={() => void Linking.openURL(getGuestHubUrl(guestHubSlug))}
-                      >
-                        <Text style={styles.linkBtnText}>{t('mobile.settings.guestHubOpenInBrowser')}</Text>
-                      </Pressable>
-                    </View>
-                    <Text style={styles.guestHubHint}>{t('mobile.settings.guestHubHint')}</Text>
-                  </>
-                ) : guestHubForm.enabled ? (
-                  <Text style={styles.guestHubHint}>{t('mobile.settings.guestHubHint')}</Text>
-                ) : null}
-              </View>
-            ) : isPlaceholder ? (
-              <Text style={styles.guestHubSlotHint}>{t('mobile.settings.guestHubCompleteUnitFirst')}</Text>
             ) : null}
 
             <Text style={styles.label}>{t('mobile.settings.propertiesFieldName')}</Text>
@@ -566,25 +455,6 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   linkBtnText: { color: 'white', fontWeight: '800', fontSize: 13 },
-  guestHubBlock: {
-    marginBottom: 8,
-    padding: 12,
-    backgroundColor: '#ecfdf5',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#a7f3d0',
-  },
-  guestHubTitle: { fontSize: 15, fontWeight: '800', color: '#065f46' },
-  guestHubSubtitle: { fontSize: 12, color: '#047857', marginTop: 4, marginBottom: 8, lineHeight: 16 },
-  guestHubUrl: { fontSize: 12, color: '#047857', marginTop: 4 },
-  guestHubBtn: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    backgroundColor: '#059669',
-    borderRadius: 10,
-  },
-  guestHubHint: { fontSize: 11, color: '#065f46', marginTop: 8, lineHeight: 15 },
-  guestHubSlotHint: { fontSize: 12, color: '#6b7280', marginBottom: 8, lineHeight: 17 },
   switchRow: {
     flexDirection: 'row',
     alignItems: 'center',

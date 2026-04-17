@@ -3,7 +3,6 @@
 // =====================================================
 
 import { NextRequest, NextResponse } from 'next/server';
-import { randomUUID } from 'crypto';
 import { sql } from '@vercel/postgres';
 import { CreatePropertyRequest, UpdatePropertyRequest, TenantProperty } from '@/lib/direct-reservations-types';
 import { getTenantById, getTenantId } from '@/lib/tenant';
@@ -34,11 +33,6 @@ export async function GET(req: NextRequest) {
     }
     
     console.log('🏠 Obteniendo propiedades para tenant:', tenantId);
-
-    try {
-      await sql`ALTER TABLE tenant_properties ADD COLUMN IF NOT EXISTS guest_hub JSONB DEFAULT '{}'::jsonb`;
-      await sql`ALTER TABLE tenant_properties ADD COLUMN IF NOT EXISTS guest_hub_slug VARCHAR(64)`;
-    } catch (_) {}
 
     // Backfill suave para tenants antiguos: si existe una propiedad sin mapping y
     // hay una Room sin mapping con el mismo nombre, enlazarlas automáticamente.
@@ -97,7 +91,6 @@ export async function GET(req: NextRequest) {
           tp.bedrooms, tp.bathrooms, tp.amenities, tp.base_price, tp.cleaning_fee,
           tp.security_deposit, tp.minimum_nights, tp.maximum_nights,
           tp.availability_rules, tp.is_active, tp.created_at, tp.updated_at,
-          tp.guest_hub, tp.guest_hub_slug,
           prm.room_id, FALSE AS is_placeholder
         FROM tenant_properties tp
         LEFT JOIN property_room_map prm
@@ -124,8 +117,6 @@ export async function GET(req: NextRequest) {
           TRUE AS is_active,
           NOW() AS created_at,
           NOW() AS updated_at,
-          NULL::jsonb AS guest_hub,
-          NULL::varchar AS guest_hub_slug,
           r.id AS room_id,
           TRUE AS is_placeholder
         FROM "Room" r
@@ -167,9 +158,7 @@ export async function GET(req: NextRequest) {
       created_at: row.created_at,
       updated_at: row.updated_at,
       room_id: row.room_id || null,
-      is_placeholder: row.is_placeholder || false,
-      guest_hub: row.guest_hub || {},
-      guest_hub_slug: row.guest_hub_slug || null
+      is_placeholder: row.is_placeholder || false
     }));
     
     console.log(`✅ Encontradas ${properties.length} propiedades`);
@@ -355,8 +344,6 @@ export async function PUT(req: NextRequest) {
     try {
       await sql`ALTER TABLE tenant_properties ADD COLUMN IF NOT EXISTS included_guests INT DEFAULT 2`;
       await sql`ALTER TABLE tenant_properties ADD COLUMN IF NOT EXISTS extra_guest_fee DECIMAL(10,2) DEFAULT 0`;
-      await sql`ALTER TABLE tenant_properties ADD COLUMN IF NOT EXISTS guest_hub JSONB DEFAULT '{}'::jsonb`;
-      await sql`ALTER TABLE tenant_properties ADD COLUMN IF NOT EXISTS guest_hub_slug VARCHAR(64)`;
     } catch (_) {}
     // Obtener tenant_id del header (inyectado por middleware) o del token
     let tenantId = req.headers.get('x-tenant-id');
@@ -484,30 +471,6 @@ export async function PUT(req: NextRequest) {
       updateFields.push('is_active = $' + (updateValues.length + 1));
       updateValues.push(data.is_active);
     }
-
-    if ((data as { guest_hub?: Record<string, unknown> }).guest_hub !== undefined) {
-      const prevRow = await sql`
-        SELECT guest_hub, guest_hub_slug FROM tenant_properties
-        WHERE id = ${propertyId} AND tenant_id = ${tenantId}
-        LIMIT 1
-      `;
-      const prevGh = (prevRow.rows[0]?.guest_hub || {}) as Record<string, unknown>;
-      const prevSlug = (prevRow.rows[0]?.guest_hub_slug as string | null) || null;
-      const merged = { ...prevGh, ...(data as { guest_hub: Record<string, unknown> }).guest_hub };
-      let slug = prevSlug;
-      const en = merged.enabled === true || merged.enabled === 'true';
-      if (en) {
-        if (!slug) {
-          slug = randomUUID().replace(/-/g, '').slice(0, 22);
-        }
-      } else {
-        slug = null;
-      }
-      updateFields.push('guest_hub = $' + (updateValues.length + 1));
-      updateValues.push(JSON.stringify(merged));
-      updateFields.push('guest_hub_slug = $' + (updateValues.length + 1));
-      updateValues.push(slug);
-    }
     
     if (updateFields.length === 0) {
       return NextResponse.json(
@@ -523,7 +486,7 @@ export async function PUT(req: NextRequest) {
       UPDATE tenant_properties 
       SET ${updateFields.join(', ')}
       WHERE id = $${updateValues.length + 1} AND tenant_id = $${updateValues.length + 2}
-      RETURNING updated_at, guest_hub, guest_hub_slug
+      RETURNING updated_at
     `;
     
     updateValues.push(propertyId, tenantId);
@@ -536,8 +499,6 @@ export async function PUT(req: NextRequest) {
       success: true,
       message: 'Propiedad actualizada correctamente',
       updated_at: result.rows[0].updated_at,
-      guest_hub: result.rows[0].guest_hub ?? null,
-      guest_hub_slug: result.rows[0].guest_hub_slug ?? null,
     });
     
   } catch (error) {
