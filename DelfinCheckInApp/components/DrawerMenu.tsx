@@ -13,6 +13,7 @@ import {
   Settings, 
   CreditCard,
   Receipt,
+  Users,
   X 
 } from 'lucide-react-native';
 
@@ -40,6 +41,7 @@ export default function DrawerMenu({ isOpen, onClose }: DrawerMenuProps) {
     { name: t('navigation.calendar'), href: '/(app)/calendar', icon: Calendar },
     { name: t('navigation.invoices'), href: '/(app)/invoices', icon: Receipt },
     { name: t('navigation.guestRegistrations'), href: '/(app)/mir-comunicaciones', icon: FileText },
+    { name: t('navigation.referrals'), href: '/(app)/referrals', icon: Users },
     { name: t('settings.tabs.paymentLinks'), href: '/(app)/payment-links', icon: CreditCard },
     { name: t('navigation.settings'), href: '/(app)/settings', icon: Settings },
   ];

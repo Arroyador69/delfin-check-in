@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyToken } from '@/lib/auth';
 import { getReferralStats, generateReferralCodeForTenant } from '@/lib/referrals';
 import { getTenantCredits } from '@/lib/referral-credits';
 import { sql } from '@/lib/db';
+import { getTenantFromRequest } from '@/lib/permissions';
 
 /**
  * GET /api/referrals/stats
@@ -10,19 +10,11 @@ import { sql } from '@/lib/db';
  */
 export async function GET(req: NextRequest) {
   try {
-    const authToken = req.cookies.get('auth_token')?.value;
-    
-    if (!authToken) {
+    const tenantData = await getTenantFromRequest(req);
+    if (!tenantData) {
       return NextResponse.json({ success: false, error: 'No autorizado' }, { status: 401 });
     }
-
-    const payload = verifyToken(authToken);
-    
-    if (!payload || !payload.tenantId) {
-      return NextResponse.json({ success: false, error: 'No autorizado' }, { status: 401 });
-    }
-
-    const tenantId = payload.tenantId;
+    const tenantId = tenantData.tenantId;
 
     // Obtener código de referido (generar si no existe)
     let referralCode = await sql`
