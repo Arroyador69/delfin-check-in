@@ -22,16 +22,6 @@ interface MenuItem {
   icon: any;
 }
 
-const menuItems: MenuItem[] = [
-  { name: t('navigation.dashboard'), href: '/(app)', icon: Home },
-  { name: t('navigation.reservations'), href: '/(app)/reservations', icon: Calendar },
-  { name: t('navigation.calendar'), href: '/(app)/calendar', icon: Calendar },
-  { name: t('navigation.invoices'), href: '/(app)/invoices', icon: Receipt },
-  { name: t('navigation.guestRegistrations'), href: '/(app)/mir-comunicaciones', icon: FileText },
-  { name: t('settings.tabs.paymentLinks'), href: '/(app)/payment-links', icon: CreditCard },
-  { name: t('navigation.settings'), href: '/(app)/settings', icon: Settings },
-];
-
 interface DrawerMenuProps {
   isOpen: boolean;
   onClose: () => void;
@@ -43,6 +33,16 @@ export default function DrawerMenu({ isOpen, onClose }: DrawerMenuProps) {
   const { session, signOut } = useAuth();
 
   if (!isOpen) return null;
+
+  const menuItems: MenuItem[] = [
+    { name: t('navigation.dashboard'), href: '/(app)', icon: Home },
+    { name: t('navigation.reservations'), href: '/(app)/reservations', icon: Calendar },
+    { name: t('navigation.calendar'), href: '/(app)/calendar', icon: Calendar },
+    { name: t('navigation.invoices'), href: '/(app)/invoices', icon: Receipt },
+    { name: t('navigation.guestRegistrations'), href: '/(app)/mir-comunicaciones', icon: FileText },
+    { name: t('settings.tabs.paymentLinks'), href: '/(app)/payment-links', icon: CreditCard },
+    { name: t('navigation.settings'), href: '/(app)/settings', icon: Settings },
+  ];
 
   const handleNavigate = (href: string) => {
     router.push(href as any);
