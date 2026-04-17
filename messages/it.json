@@ -2824,7 +2824,7 @@
       "hubMirSubtitle": "Attiva l’invio e controlla lo stato MIR.",
       "hubPropertiesSubtitle": "Modifica schede, prezzi e link di prenotazione diretta.",
       "hubCountrySubtitle": "Paese del modulo legale (piani FREE+LEGAL).",
-      "tenantLabel": "Tenant",
+      "tenantLabel": "Struttura",
       "planLabel": "Piano",
       "propertiesEmpty": "Nessuna proprietà registrata.",
       "propertiesTapToEdit": "Tocca una riga per modificare la scheda o completare uno slot.",

@@ -2704,7 +2704,7 @@
       "hubMirSubtitle": "Activez l’envoi et consultez l’état MIR.",
       "hubPropertiesSubtitle": "Modifiez les fiches, tarifs et lien de réservation directe.",
       "hubCountrySubtitle": "Pays du module légal (plans FREE+LEGAL).",
-      "tenantLabel": "Tenant",
+      "tenantLabel": "Établissement",
       "planLabel": "Plan",
       "propertiesEmpty": "Aucune propriété enregistrée.",
       "propertiesTapToEdit": "Touchez une ligne pour modifier la fiche ou compléter un emplacement.",
