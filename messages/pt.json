@@ -339,7 +339,8 @@
       "enterPassword": "Por favor introduza a sua palavra-passe",
       "invalidEmail": "Por favor introduza um email válido",
       "incorrectPassword": "Palavra-passe incorreta",
-      "loginError": "Erro de autenticação"
+      "loginError": "Erro de autenticação",
+      "connectionError": "Erro de ligação"
     }
   },
   "onboarding": {
@@ -500,6 +501,8 @@
     "createReservation": "Criar reserva",
     "editReservation": "Editar reserva",
     "deleteReservation": "Eliminar reserva",
+    "confirmDelete": "Tem a certeza que deseja eliminar esta reserva?",
+    "deleteWarning": "Esta ação não pode ser anulada",
     "searchPlaceholder": "Pesquisar por nome, telefone ou email...",
     "searching": "A pesquisar...",
     "totalReservations": "Total de reservas: {count}",
