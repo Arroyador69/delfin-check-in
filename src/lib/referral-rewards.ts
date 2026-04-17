@@ -19,6 +19,8 @@ export interface RewardRule {
 export interface ReferralStats {
   totalRegistered: number;
   activeCheckin: number;
+  activeStandard: number;
+  activePaidCore: number;
   activePro: number;
   paidReferrals: number;
 }
@@ -45,7 +47,7 @@ export const REWARD_RULES: RewardRule[] = [
     id: '1_checkin_paid',
     name: '1 Referido que Paga Check-in',
     description: 'Cuando un referido paga Plan Check-in o Standard, consigues 1 mes gratis de Plan Check-in',
-    condition: (stats) => stats.activeCheckin >= 1 && stats.paidReferrals >= 1,
+    condition: (stats) => stats.activePaidCore >= 1 && stats.paidReferrals >= 1,
     reward: {
       type: 'checkin_month',
       months: 1,
@@ -55,7 +57,7 @@ export const REWARD_RULES: RewardRule[] = [
     id: '3_active_checkin',
     name: '3 Referidos Activos en Check-in',
     description: 'Con 3 referidos activos en Plan Check-in o Standard, consigues 1 mes gratis de Plan Pro',
-    condition: (stats) => stats.activeCheckin >= 3,
+    condition: (stats) => stats.activePaidCore >= 3,
     reward: {
       type: 'pro_month',
       months: 1,
@@ -80,9 +82,11 @@ export async function getReferralStatsForRewards(tenantId: string): Promise<Refe
   try {
     const result = await sql`
       SELECT 
-        COUNT(*) FILTER (WHERE status IN ('registered', 'active_checkin', 'active_pro')) as total_registered,
-        COUNT(*) FILTER (WHERE status = 'active_checkin' AND months_paid_completed >= 1) as active_checkin,
-        COUNT(*) FILTER (WHERE status = 'active_pro' AND months_paid_completed >= 1) as active_pro,
+        COUNT(*) FILTER (WHERE status IN ('registered', 'active_checkin', 'active_standard', 'active_pro')) as total_registered,
+        COUNT(*) FILTER (WHERE referred_plan_type = 'checkin' AND months_paid_completed >= 1) as active_checkin,
+        COUNT(*) FILTER (WHERE referred_plan_type = 'standard' AND months_paid_completed >= 1) as active_standard,
+        COUNT(*) FILTER (WHERE referred_plan_type IN ('checkin','standard') AND months_paid_completed >= 1) as active_paid_core,
+        COUNT(*) FILTER (WHERE referred_plan_type = 'pro' AND months_paid_completed >= 1) as active_pro,
         COUNT(*) FILTER (WHERE months_paid_completed >= 1) as paid_referrals
       FROM referrals
       WHERE referrer_tenant_id = ${tenantId}
@@ -93,6 +97,8 @@ export async function getReferralStatsForRewards(tenantId: string): Promise<Refe
     return {
       totalRegistered: parseInt(row.total_registered || '0'),
       activeCheckin: parseInt(row.active_checkin || '0'),
+      activeStandard: parseInt(row.active_standard || '0'),
+      activePaidCore: parseInt(row.active_paid_core || '0'),
       activePro: parseInt(row.active_pro || '0'),
       paidReferrals: parseInt(row.paid_referrals || '0'),
     };
@@ -101,6 +107,8 @@ export async function getReferralStatsForRewards(tenantId: string): Promise<Refe
     return {
       totalRegistered: 0,
       activeCheckin: 0,
+      activeStandard: 0,
+      activePaidCore: 0,
       activePro: 0,
       paidReferrals: 0,
     };
@@ -262,7 +270,7 @@ export async function recalculateRewards(tenantId: string): Promise<{
       SELECT id
       FROM referrals
       WHERE referrer_tenant_id = ${tenantId}
-        AND status IN ('registered', 'active_checkin', 'active_pro')
+        AND status IN ('registered', 'active_checkin', 'active_standard', 'active_pro')
         AND months_paid_completed >= 0
     `;
 
@@ -311,7 +319,7 @@ export async function getContributingReferrals(
           SELECT id
           FROM referrals
           WHERE referrer_tenant_id = ${tenantId}
-            AND status IN ('registered', 'active_checkin', 'active_pro')
+            AND status IN ('registered', 'active_checkin', 'active_standard', 'active_pro')
           ORDER BY created_at ASC
           LIMIT 5
         `;
@@ -323,7 +331,7 @@ export async function getContributingReferrals(
           SELECT id
           FROM referrals
           WHERE referrer_tenant_id = ${tenantId}
-            AND status = 'active_checkin'
+            AND referred_plan_type IN ('checkin','standard')
             AND months_paid_completed >= 1
           ORDER BY first_paid_at ASC
           LIMIT 1
@@ -336,7 +344,7 @@ export async function getContributingReferrals(
           SELECT id
           FROM referrals
           WHERE referrer_tenant_id = ${tenantId}
-            AND status = 'active_checkin'
+            AND referred_plan_type IN ('checkin','standard')
             AND months_paid_completed >= 1
           ORDER BY first_paid_at ASC
           LIMIT 3

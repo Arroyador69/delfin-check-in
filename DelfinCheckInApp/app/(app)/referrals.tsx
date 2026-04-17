@@ -11,6 +11,7 @@ type ReferralStats = {
   totalReferrals: number;
   registeredCount: number;
   activeCheckinCount: number;
+  activeStandardCount: number;
   activeProCount: number;
   cancelledCount: number;
   paidReferralsCount: number;
@@ -119,10 +120,11 @@ export default function ReferralsScreen() {
     );
   }
 
+  const paidCore = stats.activeCheckinCount + stats.activeStandardCount;
   const goals = [
     { title: t('referrals.goalRegisteredTitle'), desc: t('referrals.goalRegisteredDesc'), current: stats.registeredCount, goal: 5 },
     { title: t('referrals.goalPaidTitle'), desc: t('referrals.goalPaidDesc'), current: stats.paidReferralsCount, goal: 1 },
-    { title: t('referrals.goalActiveCheckinTitle'), desc: t('referrals.goalActiveCheckinDesc'), current: stats.activeCheckinCount, goal: 3 },
+    { title: t('referrals.goalActiveCheckinTitle'), desc: t('referrals.goalActiveCheckinDesc'), current: paidCore, goal: 3 },
     { title: t('referrals.goalActiveProTitle'), desc: t('referrals.goalActiveProDesc'), current: stats.activeProCount, goal: 5 },
   ];
 
@@ -165,15 +167,19 @@ export default function ReferralsScreen() {
 
       <View style={styles.grid}>
         <View style={styles.kpiCard}>
-          <Text style={styles.kpiLabel}>{t('referrals.totalReferrals') || 'Total'}</Text>
+          <Text style={styles.kpiLabel}>{t('referrals.totalReferrals')}</Text>
           <Text style={styles.kpiValue}>{stats.totalReferrals}</Text>
         </View>
         <View style={styles.kpiCard}>
-          <Text style={styles.kpiLabel}>{t('referrals.activeCheckin') || 'Check-in'}</Text>
+          <Text style={styles.kpiLabel}>{t('referrals.activeCheckin')}</Text>
           <Text style={styles.kpiValue}>{stats.activeCheckinCount}</Text>
         </View>
         <View style={styles.kpiCard}>
-          <Text style={styles.kpiLabel}>{t('referrals.activePro') || 'Pro'}</Text>
+          <Text style={styles.kpiLabel}>{t('referrals.activeStandard')}</Text>
+          <Text style={[styles.kpiValue, { color: '#4f46e5' }]}>{stats.activeStandardCount}</Text>
+        </View>
+        <View style={styles.kpiCard}>
+          <Text style={styles.kpiLabel}>{t('referrals.activePro')}</Text>
           <Text style={[styles.kpiValue, { color: '#7c3aed' }]}>{stats.activeProCount}</Text>
         </View>
       </View>
@@ -303,8 +309,16 @@ const styles = StyleSheet.create({
   btnPrimaryText: { color: 'white', fontWeight: '900' },
   btnGhost: { backgroundColor: '#e2e8f0' },
   btnGhostText: { color: '#0f172a', fontWeight: '900' },
-  grid: { flexDirection: 'row', gap: 10, marginHorizontal: 16, marginTop: 12 },
-  kpiCard: { flex: 1, backgroundColor: 'white', borderRadius: 16, padding: 12, borderWidth: 1, borderColor: '#e5e7eb' },
+  grid: { flexDirection: 'row', gap: 10, marginHorizontal: 16, marginTop: 12, flexWrap: 'wrap' },
+  kpiCard: {
+    flexGrow: 1,
+    flexBasis: '45%',
+    backgroundColor: 'white',
+    borderRadius: 16,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+  },
   kpiLabel: { color: '#64748b', fontWeight: '800', fontSize: 12 },
   kpiValue: { marginTop: 4, fontSize: 20, fontWeight: '900', color: '#0f172a' },
   goalItem: { borderRadius: 14, padding: 12, borderWidth: 1, borderColor: '#e5e7eb', backgroundColor: '#ffffff' },

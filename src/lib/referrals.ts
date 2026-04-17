@@ -267,6 +267,7 @@ export async function getReferralStats(tenantId: string): Promise<{
   totalReferrals: number;
   registeredCount: number;
   activeCheckinCount: number;
+  activeStandardCount: number;
   activeProCount: number;
   cancelledCount: number;
   paidReferralsCount: number;
@@ -276,8 +277,9 @@ export async function getReferralStats(tenantId: string): Promise<{
       SELECT 
         COUNT(*) as total_referrals,
         COUNT(*) FILTER (WHERE status = 'registered') as registered_count,
-        COUNT(*) FILTER (WHERE status = 'active_checkin') as active_checkin_count,
-        COUNT(*) FILTER (WHERE status = 'active_pro') as active_pro_count,
+        COUNT(*) FILTER (WHERE referred_plan_type = 'checkin' AND months_paid_completed >= 1) as active_checkin_count,
+        COUNT(*) FILTER (WHERE referred_plan_type = 'standard' AND months_paid_completed >= 1) as active_standard_count,
+        COUNT(*) FILTER (WHERE referred_plan_type = 'pro' AND months_paid_completed >= 1) as active_pro_count,
         COUNT(*) FILTER (WHERE status = 'cancelled') as cancelled_count,
         COUNT(*) FILTER (WHERE months_paid_completed >= 1) as paid_referrals_count
       FROM referrals
@@ -290,6 +292,7 @@ export async function getReferralStats(tenantId: string): Promise<{
       totalReferrals: parseInt(row.total_referrals || '0'),
       registeredCount: parseInt(row.registered_count || '0'),
       activeCheckinCount: parseInt(row.active_checkin_count || '0'),
+      activeStandardCount: parseInt(row.active_standard_count || '0'),
       activeProCount: parseInt(row.active_pro_count || '0'),
       cancelledCount: parseInt(row.cancelled_count || '0'),
       paidReferralsCount: parseInt(row.paid_referrals_count || '0'),
@@ -300,6 +303,7 @@ export async function getReferralStats(tenantId: string): Promise<{
       totalReferrals: 0,
       registeredCount: 0,
       activeCheckinCount: 0,
+      activeStandardCount: 0,
       activeProCount: 0,
       cancelledCount: 0,
       paidReferralsCount: 0,

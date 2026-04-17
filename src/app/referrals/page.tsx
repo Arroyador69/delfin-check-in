@@ -9,6 +9,7 @@ interface ReferralStats {
   totalReferrals: number;
   registeredCount: number;
   activeCheckinCount: number;
+  activeStandardCount: number;
   activeProCount: number;
   cancelledCount: number;
   paidReferralsCount: number;
@@ -145,6 +146,8 @@ export default function ReferralsPage() {
         return <span className="px-2 py-1 text-xs rounded bg-gray-100 text-gray-700">Free</span>;
       case 'checkin':
         return <span className="px-2 py-1 text-xs rounded bg-blue-100 text-blue-700">Check-in</span>;
+      case 'standard':
+        return <span className="px-2 py-1 text-xs rounded bg-indigo-100 text-indigo-700">Standard</span>;
       case 'pro':
         return <span className="px-2 py-1 text-xs rounded bg-purple-100 text-purple-700">Pro</span>;
       default:
@@ -156,7 +159,7 @@ export default function ReferralsPage() {
     if (!stats) return null;
 
     const registered = stats.registeredCount;
-    const activeCheckin = stats.activeCheckinCount;
+    const activeCheckin = stats.activeCheckinCount + stats.activeStandardCount;
     const activePro = stats.activeProCount;
 
     if (registered < 5) {
@@ -164,7 +167,7 @@ export default function ReferralsPage() {
     }
 
     if (activeCheckin < 3) {
-      return `Te faltan ${3 - activeCheckin} referidos activos en Check-in para conseguir 1 mes gratis de Plan Pro`;
+      return `Te faltan ${3 - activeCheckin} referidos activos en Check-in/Standard para conseguir 1 mes gratis de Plan Pro`;
     }
 
     if (activePro < 5) {
@@ -281,7 +284,7 @@ export default function ReferralsPage() {
                 {
                   title: '3 referidos activos en Check-in o Standard',
                   desc: '1 mes gratis de Plan Pro',
-                  current: stats.activeCheckinCount,
+                  current: stats.activeCheckinCount + stats.activeStandardCount,
                   goal: 3,
                 },
                 {
@@ -311,7 +314,7 @@ export default function ReferralsPage() {
         </div>
 
         {/* Estadísticas */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
           <div className="bg-white rounded-lg shadow-md p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -329,6 +332,16 @@ export default function ReferralsPage() {
                 <p className="text-3xl font-bold text-gray-900">{stats.activeCheckinCount}</p>
               </div>
               <CheckCircle className="w-12 h-12 text-blue-600 opacity-50" />
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Activos Standard</p>
+                <p className="text-3xl font-bold text-gray-900">{stats.activeStandardCount}</p>
+              </div>
+              <CheckCircle className="w-12 h-12 text-indigo-600 opacity-50" />
             </div>
           </div>
 
