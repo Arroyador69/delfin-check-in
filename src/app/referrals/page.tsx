@@ -360,16 +360,26 @@ export default function ReferralsPage() {
         <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg shadow-md p-6 mb-6 border border-blue-200">
           <h2 className="text-xl font-semibold mb-4 flex items-center">
             <Gift className="w-5 h-5 mr-2 text-purple-600" />
-            Créditos Acumulados
+            {t('creditsAccumulated')}
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="bg-white rounded-lg p-4">
-              <p className="text-sm text-gray-600">Plan Check-in</p>
-              <p className="text-2xl font-bold text-blue-600">{stats.checkinCredits} mes{stats.checkinCredits !== 1 ? 'es' : ''} gratis</p>
+              <p className="text-sm text-gray-600">{t('planCheckinLabel')}</p>
+              <p className="text-2xl font-bold text-blue-600">
+                {t(stats.checkinCredits === 1 ? 'monthsFreeOne' : 'monthsFreeMany', { count: stats.checkinCredits })}
+              </p>
             </div>
             <div className="bg-white rounded-lg p-4">
-              <p className="text-sm text-gray-600">Plan Pro</p>
-              <p className="text-2xl font-bold text-purple-600">{stats.proCredits} mes{stats.proCredits !== 1 ? 'es' : ''} gratis</p>
+              <p className="text-sm text-gray-600">{t('planStandardLabel')}</p>
+              <p className="text-2xl font-bold text-indigo-600">
+                {t(stats.checkinCredits === 1 ? 'monthsFreeOne' : 'monthsFreeMany', { count: stats.checkinCredits })}
+              </p>
+            </div>
+            <div className="bg-white rounded-lg p-4">
+              <p className="text-sm text-gray-600">{t('planProLabel')}</p>
+              <p className="text-2xl font-bold text-purple-600">
+                {t(stats.proCredits === 1 ? 'monthsFreeOne' : 'monthsFreeMany', { count: stats.proCredits })}
+              </p>
             </div>
           </div>
         </div>

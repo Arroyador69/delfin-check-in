@@ -1431,6 +1431,7 @@
     "activePro": "Active Pro",
     "creditsAccumulated": "Accumulated Credits",
     "planCheckinLabel": "Check-in Plan",
+    "planStandardLabel": "Standard Plan",
     "planProLabel": "Pro Plan",
     "monthsFreeOne": "1 month free",
     "monthsFreeMany": "{count} months free",

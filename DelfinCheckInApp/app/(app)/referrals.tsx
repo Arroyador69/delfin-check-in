@@ -216,11 +216,15 @@ export default function ReferralsScreen() {
         </View>
         <View style={styles.creditsRow}>
           <View style={styles.creditBox}>
-            <Text style={styles.creditLabel}>Check-in</Text>
+            <Text style={styles.creditLabel}>{t('referrals.planCheckinLabel')}</Text>
             <Text style={styles.creditValue}>{stats.checkinCredits}</Text>
           </View>
           <View style={styles.creditBox}>
-            <Text style={styles.creditLabel}>Pro</Text>
+            <Text style={styles.creditLabel}>{t('referrals.planStandardLabel')}</Text>
+            <Text style={[styles.creditValue, { color: '#4f46e5' }]}>{stats.checkinCredits}</Text>
+          </View>
+          <View style={styles.creditBox}>
+            <Text style={styles.creditLabel}>{t('referrals.planProLabel')}</Text>
             <Text style={[styles.creditValue, { color: '#7c3aed' }]}>{stats.proCredits}</Text>
           </View>
         </View>
@@ -331,7 +335,7 @@ const styles = StyleSheet.create({
   goalCount: { fontWeight: '900', color: '#0f172a' },
   goalBar: { height: 8, backgroundColor: '#e2e8f0', borderRadius: 999, overflow: 'hidden', marginTop: 10 },
   goalBarFill: { height: 8, backgroundColor: '#2563eb', borderRadius: 999 },
-  creditsRow: { flexDirection: 'row', gap: 10, marginTop: 10 },
+  creditsRow: { flexDirection: 'row', gap: 10, marginTop: 10, flexWrap: 'wrap' },
   creditBox: { flex: 1, borderRadius: 14, backgroundColor: '#f8fafc', padding: 12, borderWidth: 1, borderColor: '#e5e7eb' },
   creditLabel: { color: '#64748b', fontWeight: '800', fontSize: 12 },
   creditValue: { marginTop: 6, fontSize: 24, fontWeight: '900', color: '#2563eb' },
