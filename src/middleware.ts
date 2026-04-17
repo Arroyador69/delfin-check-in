@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { verifyTokenEdge } from '@/lib/auth-edge'
+import { checkRateLimit, getClientIP, isGlobalApiRateLimitExempt, RATE_LIMIT_CONFIGS } from '@/lib/rate-limit';
 import createMiddleware from 'next-intl/middleware';
 import { locales, defaultLocale, getLocaleFromRequest, isValidLocale } from './i18n/config';
 
@@ -86,6 +87,32 @@ export async function middleware(req: NextRequest) {
   
   // Preflight CORS
   if (req.method === 'OPTIONS') return NextResponse.next();
+
+  // Rate limit global para /api (admin web + app móvil + público). Por IP; almacenamiento en memoria
+  // (por instancia). Excluye webhooks y cron — ver isGlobalApiRateLimitExempt.
+  if (pathname.startsWith('/api/')) {
+    if (!isGlobalApiRateLimitExempt(pathname)) {
+      const ip = getClientIP(req.headers);
+      const rl = checkRateLimit(`global-api:${ip}`, RATE_LIMIT_CONFIGS.api);
+      if (!rl.allowed) {
+        return NextResponse.json(
+          {
+            error: 'Too many requests',
+            message: 'Demasiadas peticiones. Espera unos segundos e inténtalo de nuevo.',
+            retryAfter: rl.retryAfter,
+          },
+          {
+            status: 429,
+            headers: {
+              'Retry-After': String(rl.retryAfter ?? 60),
+              'X-RateLimit-Limit': String(RATE_LIMIT_CONFIGS.api.maxAttempts),
+              'X-RateLimit-Remaining': String(rl.remaining),
+            },
+          }
+        );
+      }
+    }
+  }
 
   const bookRewrite = rewriteBookMicrositePath(req)
   if (bookRewrite) return bookRewrite

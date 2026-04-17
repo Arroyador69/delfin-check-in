@@ -53,6 +53,20 @@ export const RATE_LIMIT_CONFIGS = {
   }
 } as const;
 
+/**
+ * Rutas que no deben contar en el rate limit global del middleware (webhooks de terceros,
+ * cron, healthchecks). Sin esto Stripe/Telegram podrían recibir 429 o reintentos masivos.
+ */
+export function isGlobalApiRateLimitExempt(pathname: string): boolean {
+  if (pathname.startsWith('/api/stripe/webhook')) return true;
+  if (pathname.startsWith('/api/telegram/webhook')) return true;
+  if (pathname.startsWith('/api/whatsapp/webhook')) return true;
+  if (pathname.startsWith('/api/cron/')) return true;
+  if (pathname === '/api/health' || pathname.startsWith('/api/health/')) return true;
+  if (pathname === '/api/database/status' || pathname.startsWith('/api/database/status/')) return true;
+  return false;
+}
+
 // ============================================
 // FUNCIONES PRINCIPALES
 // ============================================
