@@ -345,6 +345,12 @@
       "connectionError": "Erro de ligação"
     }
   },
+  "guestHubPage": {
+    "brand": "Delfín Guest Hub",
+    "whatsappCta": "Falar no WhatsApp",
+    "instructionsTitle": "Instruções de check-in",
+    "notFound": "Esta página de hóspedes não está disponível ou foi desativada."
+  },
   "onboarding": {
     "appName": "Delfín Check-in",
     "stepOf": "Passo {currentStep} de {totalSteps}",
@@ -1683,7 +1689,19 @@
         "amenities": "Comodidades",
         "cancel": "Cancelar",
         "create": "Criar Propriedade",
-        "update": "Atualizar Propriedade"
+        "update": "Atualizar Propriedade",
+        "guestHub": {
+          "title": "Delfín Guest Hub",
+          "subtitle": "Página pública para hóspedes (WhatsApp + instruções). Abre no browser; não é necessário instalar uma app.",
+          "enabled": "Ativar Guest Hub",
+          "whatsapp": "WhatsApp (com indicativo internacional, ex. +351911223344)",
+          "welcomeTitle": "Título de boas-vindas",
+          "instructions": "Instruções de check-in para o hóspede",
+          "publicUrl": "Ligação pública",
+          "copy": "Copiar",
+          "hint": "Guarde a propriedade com o Guest Hub ativo para gerar a ligação.",
+          "onlyAfterSave": "Guarde primeiro a propriedade para poder configurar o Guest Hub."
+        }
       },
       "amenitiesList": {
         "wifi": "WiFi",

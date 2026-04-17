@@ -67,6 +67,19 @@ export async function GET(
 
     const tenant = result.rows[0];
 
+    let propertyId = '';
+    try {
+      const propRow = await sql`
+        SELECT id::text AS id FROM tenant_properties
+        WHERE tenant_id = ${tenant.id}::uuid
+        ORDER BY id ASC
+        LIMIT 1
+      `;
+      propertyId = propRow.rows[0]?.id || '';
+    } catch {
+      propertyId = '';
+    }
+
     const apiOrigin = (
       process.env.NEXT_PUBLIC_APP_URL?.trim() ||
       req.nextUrl.origin
@@ -102,6 +115,7 @@ export async function GET(
       // Preferencias/flags para el formulario por-tenant
       ui_locale: locale,
       checkin_email_enabled: canEmailCheckinInstructions ? '1' : '0',
+      property_id: propertyId,
     });
 
     const sep = formBase.includes('?') ? '&' : '?';

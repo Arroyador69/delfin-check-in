@@ -248,9 +248,17 @@ export async function middleware(req: NextRequest) {
   }
   
   // Rutas completamente públicas - no requieren autenticación
+  const isGuestHubPublic =
+    locales.some(
+      (locale) =>
+        pathname === `/${locale}/guest/hub` ||
+        pathname.startsWith(`/${locale}/guest/hub/`)
+    );
+
   const isPublicRoute = (
     pathname === '/admin-login' ||
     pathname === '/forgot-password' ||
+    isGuestHubPublic ||
     pathname.startsWith('/book/') ||
     pathname.startsWith('/limpieza') ||
     pathname.startsWith('/api/ical/cleaning/') ||

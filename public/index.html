@@ -1676,9 +1676,83 @@
             }
         };
 
+        /** Textos sin menciones MIR / Ministerio (alojamientos fuera de ES o sin módulo legal ES). */
+        const LEGAL_GENERIC_OVERRIDES = {
+            es: {
+                "header.subtitle": "Registro de huéspedes",
+                "main.title": "Registro de huéspedes",
+                "main.subtitle": "Recopilación de datos para tu estancia y gestión de la reserva.",
+                "main.automationBody": "Al completar este formulario, el alojamiento recibe tus datos para preparar la estancia y gestionar la reserva en su panel. Si tienes dudas, contacta directamente con el alojamiento.",
+                "consent.summary": "Tus datos se tratan según el RGPD para gestionar la reserva y la estancia. No aplican comunicaciones obligatorias al Ministerio del Interior de España salvo que el alojamiento opere en España con ese requisito y esté configurado en Delfín Check-in.",
+                "privacy.title": "Información sobre protección de datos",
+                "privacy.processor.text": "Delfín Check-in (proveedor tecnológico) facilita el formulario al alojamiento. Los datos los gestiona el responsable del alojamiento según su política y la normativa aplicable en su país.",
+                "privacy.purpose.text": "Gestionar la reserva, el check-in y la comunicación necesaria con el huésped durante la estancia.",
+                "privacy.basis.text": "Ejecución de medidas precontractuales y del contrato de alojamiento, e intereses legítimos del responsable en la gestión del establecimiento (art. 6 RGPD), según corresponda.",
+                "privacy.recipients.text": "No se comunican datos a autoridades salvo obligación legal aplicable al establecimiento en su jurisdicción.",
+                "privacy.retention.text": "Los datos se conservarán el tiempo necesario para la estancia y las obligaciones contables/legales aplicables al alojamiento.",
+                "privacy.obligation.text": "Los campos marcados como obligatorios son necesarios para formalizar la estancia según las políticas del alojamiento.",
+                "privacy.acceptance.text": "Al enviar el formulario confirmas que has leído la información sobre datos personales y aceptas los términos del alojamiento.",
+                "signature.instruction": "Firma requerida para confirmar la validez del registro."
+            },
+            en: {
+                "header.subtitle": "Guest registration",
+                "main.title": "Guest registration",
+                "main.subtitle": "Collecting details for your stay and reservation handling.",
+                "main.automationBody": "When you submit this form, the property receives your details to prepare your stay and manage the reservation in their dashboard. For questions, contact the property directly.",
+                "consent.summary": "Your data is processed under the GDPR for the reservation and stay. Mandatory communications to the Spanish Ministry of the Interior do not apply unless the property operates in Spain with that requirement and it is enabled in Delfín Check-in.",
+                "privacy.title": "Personal data information",
+                "privacy.processor.text": "Delfín Check-in (technology provider) supplies this form to the property. The property controller processes data according to its policy and applicable local law.",
+                "privacy.purpose.text": "To manage the reservation, check-in, and communication needed during the stay.",
+                "privacy.basis.text": "Performance of pre-contractual steps and the accommodation contract, and legitimate interests where applicable (Art. 6 GDPR).",
+                "privacy.recipients.text": "Data is not sent to authorities unless required by law in the property’s jurisdiction.",
+                "privacy.retention.text": "Data is kept as long as needed for the stay and any accounting/legal duties of the property.",
+                "privacy.obligation.text": "Required fields are needed to complete the stay according to the property’s policies.",
+                "privacy.acceptance.text": "By submitting, you confirm you have read this privacy information and accept the property’s terms.",
+                "signature.instruction": "Signature required to confirm the registration."
+            },
+            fr: {
+                "header.subtitle": "Enregistrement des voyageurs",
+                "main.title": "Enregistrement des voyageurs",
+                "main.subtitle": "Collecte des informations pour le séjour et la gestion de la réservation.",
+                "main.automationBody": "En envoyant ce formulaire, l’hébergement reçoit vos données pour préparer le séjour et gérer la réservation. Pour toute question, contactez directement l’hébergement.",
+                "consent.summary": "Vos données sont traitées conformément au RGPD pour la réservation et le séjour. Les communications obligatoires vers le ministère espagnol de l’Intérieur ne s’appliquent pas sauf si l’établissement est en Espagne avec cette obligation activée dans Delfín Check-in.",
+                "privacy.title": "Informations sur la protection des données",
+                "privacy.processor.text": "Delfín Check-in (prestataire technique) fournit le formulaire à l’hébergement. Le responsable de traitement applique sa politique et le droit local.",
+                "privacy.purpose.text": "Gérer la réservation, l’enregistrement et la communication nécessaire pendant le séjour.",
+                "privacy.basis.text": "Exécution de mesures précontractuelles et du contrat d’hébergement, et intérêts légitimes le cas échéant (art. 6 RGPD).",
+                "privacy.recipients.text": "Les données ne sont pas transmises aux autorités sauf obligation légale dans la juridiction concernée.",
+                "privacy.retention.text": "Conservation pendant la durée nécessaire au séjour et aux obligations légales/comptables.",
+                "privacy.obligation.text": "Les champs obligatoires sont nécessaires selon la politique de l’hébergement.",
+                "privacy.acceptance.text": "En envoyant le formulaire, vous confirmez avoir lu cette information et accepté les conditions.",
+                "signature.instruction": "Signature requise pour valider l’enregistrement."
+            },
+            ru: {
+                "header.subtitle": "Регистрация гостей",
+                "main.title": "Регистрация гостей",
+                "main.subtitle": "Сбор данных для проживания и обработки бронирования.",
+                "main.automationBody": "Отправляя форму, вы передаёте данные объекту размещения для подготовки проживания и управления бронированием. По вопросам обращайтесь напрямую в объект.",
+                "consent.summary": "Данные обрабатываются в соответствии с GDPR для бронирования и проживания. Обязательная передача в МВД Испании не применяется, если объект не работает в Испании с таким требованием в Delfín Check-in.",
+                "privacy.title": "Информация о защите данных",
+                "privacy.processor.text": "Delfín Check-in (технологический провайдер) предоставляет форму объекту. Обработку данных осуществляет ответственный объект согласно своей политике и местному закону.",
+                "privacy.purpose.text": "Управление бронированием, заездом и необходимой коммуникацией во время проживания.",
+                "privacy.basis.text": "Исполнение преддоговорных мер и договора размещения, а также законные интересы при необходимости (ст. 6 GDPR).",
+                "privacy.recipients.text": "Данные не передаются властям, если иное не требуется законом в юрисдикции объекта.",
+                "privacy.retention.text": "Хранение в течение срока, необходимого для проживания и учётных/юридических обязательств.",
+                "privacy.obligation.text": "Обязательные поля необходимы согласно правилам объекта.",
+                "privacy.acceptance.text": "Отправляя форму, вы подтверждаете, что прочитали информацию и принимаете условия.",
+                "signature.instruction": "Подпись обязательна для подтверждения регистрации."
+            }
+        };
+
+        window.__legalVariant = window.__legalVariant || 'mir';
+
         // Función para obtener traducción actual
         function getTranslation(key) {
             const currentLang = document.documentElement.lang || 'es';
+            if (window.__legalVariant === 'generic') {
+                const g = LEGAL_GENERIC_OVERRIDES[currentLang] || LEGAL_GENERIC_OVERRIDES.es;
+                if (g && g[key]) return g[key];
+            }
             const translation = translations[currentLang] && translations[currentLang][key] || translations.es[key] || key;
             console.log(`🔍 getTranslation("${key}") con idioma "${currentLang}": "${translation}"`);
             return translation;
@@ -1691,6 +1765,33 @@
                 element.innerHTML = text;
             } else {
                 element.textContent = text;
+            }
+        }
+
+        async function loadLegalFlags() {
+            window.__legalVariant = 'mir';
+            try {
+                const params = new URLSearchParams(window.location.search);
+                const tenantId = params.get('tenant_id');
+                const propertyId = params.get('property_id');
+                if (!tenantId) return;
+                let apiBase = 'https://admin.delfincheckin.com';
+                const apiEndpoint = params.get('api_endpoint') || '';
+                try {
+                    if (apiEndpoint) apiBase = new URL(apiEndpoint).origin;
+                } catch (_) {}
+                if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                    apiBase = window.location.origin.replace(/:\d+$/, ':3000');
+                }
+                const u = new URL(apiBase + '/api/public/form/legal-flags');
+                u.searchParams.set('tenant_id', tenantId);
+                if (propertyId) u.searchParams.set('property_id', propertyId);
+                const res = await fetch(u.toString());
+                const data = await res.json();
+                window.__legalVariant = data.showSpainMirLegalCopy ? 'mir' : 'generic';
+            } catch (e) {
+                console.warn('legal-flags:', e);
+                window.__legalVariant = 'mir';
             }
         }
 
@@ -10926,7 +11027,7 @@
         }
 
         // Inicializar idioma al cargar la página
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', async function() {
             console.log('🚀 DOM cargado, inicializando formulario...');
             
             // Verificar que los selects existen
@@ -10945,6 +11046,7 @@
             // Verificar que populateCountrySelects está disponible
             console.log('🔍 DIAGNÓSTICO: populateCountrySelects disponible:', typeof populateCountrySelects !== 'undefined');
             
+            await loadLegalFlags();
             initializeLanguage();
             
             // Inicializar países con retry

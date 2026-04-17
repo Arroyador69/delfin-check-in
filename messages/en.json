@@ -355,6 +355,12 @@
       "retryInPlural": "You can try again in {minutes} minutes"
     }
   },
+  "guestHubPage": {
+    "brand": "Delfín Guest Hub",
+    "whatsappCta": "Chat on WhatsApp",
+    "instructionsTitle": "Check-in instructions",
+    "notFound": "This guest page is not available or has been disabled."
+  },
   "onboarding": {
     "appName": "Delfín Check-in",
     "stepOf": "Step {currentStep} of {totalSteps}",
@@ -1728,7 +1734,19 @@
         "amenities": "Amenities",
         "cancel": "Cancel",
         "create": "Create Property",
-        "update": "Update Property"
+        "update": "Update Property",
+        "guestHub": {
+          "title": "Delfín Guest Hub",
+          "subtitle": "Public page for your guests (WhatsApp + instructions). Works in the browser; no app install required.",
+          "enabled": "Enable Guest Hub",
+          "whatsapp": "WhatsApp (with country code, e.g. +34600111222)",
+          "welcomeTitle": "Welcome title",
+          "instructions": "Check-in instructions for guests",
+          "publicUrl": "Public link",
+          "copy": "Copy",
+          "hint": "Save the property with Guest Hub enabled to generate the link.",
+          "onlyAfterSave": "Save the property first to configure the Guest Hub."
+        }
       },
       "amenitiesList": {
         "wifi": "WiFi",
