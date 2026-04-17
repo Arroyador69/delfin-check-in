@@ -58,12 +58,13 @@ function NavigationHandler() {
 }
 
 function LocalizedStack() {
-  const [, setBootTick] = useState(0);
+  const [tick, setTick] = useState(0);
   useLocaleListener();
   useEffect(() => {
-    hydrateAppLocale().finally(() => setBootTick((x) => x + 1));
+    hydrateAppLocale().finally(() => setTick((x) => x + 1));
   }, []);
-  return <Stack screenOptions={{ headerShown: false }} />;
+  // Forzamos re-montaje del árbol de navegación al cambiar idioma guardado.
+  return <Stack key={`locale-${tick}`} screenOptions={{ headerShown: false }} />;
 }
 
 export default function RootLayout() {
