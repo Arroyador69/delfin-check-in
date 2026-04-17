@@ -2852,6 +2852,12 @@
       "back": "Atrás",
       "next": "Siguiente",
       "done": "Empezar",
+      "subtitle": "Automatiza el check-in, revisa y confirma reservas, y cumple con el MIR en minutos.",
+      "value": {
+        "fast": "Rápido",
+        "secure": "Seguro",
+        "simple": "Muy simple"
+      },
       "checklist": {
         "title": "Configuración mínima",
         "subtitle": "Completa lo básico para que todo funcione perfecto.",

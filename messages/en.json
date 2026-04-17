@@ -2748,6 +2748,12 @@
       "back": "Back",
       "next": "Next",
       "done": "Get started",
+      "subtitle": "Automate check-in, review & confirm reservations, and stay compliant with MIR in minutes.",
+      "value": {
+        "fast": "Fast",
+        "secure": "Secure",
+        "simple": "Simple"
+      },
       "checklist": {
         "title": "Minimum setup",
         "subtitle": "Complete the basics so everything runs smoothly.",

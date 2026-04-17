@@ -2683,6 +2683,12 @@
       "back": "Voltar",
       "next": "Seguinte",
       "done": "Começar",
+      "subtitle": "Automatize o check-in, reveja e confirme reservas e cumpra o MIR em poucos minutos.",
+      "value": {
+        "fast": "Rápido",
+        "secure": "Seguro",
+        "simple": "Simples"
+      },
       "checklist": {
         "title": "Configuração mínima",
         "subtitle": "Complete o básico para que tudo funcione na perfeição.",

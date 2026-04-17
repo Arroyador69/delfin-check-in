@@ -2796,6 +2796,12 @@
       "back": "Indietro",
       "next": "Avanti",
       "done": "Inizia",
+      "subtitle": "Automatizza il check-in, rivedi e conferma le prenotazioni e rispetta il MIR in pochi minuti.",
+      "value": {
+        "fast": "Veloce",
+        "secure": "Sicuro",
+        "simple": "Semplice"
+      },
       "checklist": {
         "title": "Configurazione minima",
         "subtitle": "Completa l’essenziale per far funzionare tutto al meglio.",
