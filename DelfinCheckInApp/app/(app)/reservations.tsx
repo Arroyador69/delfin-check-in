@@ -30,7 +30,7 @@ import {
   ChevronRight,
 } from 'lucide-react-native';
 import { KeyboardAwareFormModal } from '@/components/KeyboardAwareFormModal';
-import { t } from '@/lib/i18n';
+import { getLocaleTag, t } from '@/lib/i18n';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
 import {
@@ -316,7 +316,7 @@ export default function ReservationsScreen() {
 
   const formatDate = (dateStr: string) => {
     const d = dateFromYmd(dateStr);
-    return d.toLocaleDateString(undefined, {
+    return d.toLocaleDateString(getLocaleTag(), {
       day: 'numeric',
       month: 'short',
       year: 'numeric',
@@ -410,7 +410,7 @@ export default function ReservationsScreen() {
           <Text
             style={[styles.filterChipText, selectedFilter === 'all' && styles.filterChipTextActive]}
           >
-            Todas
+            {t('reservations.showAllReservations')}
           </Text>
         </Pressable>
         <Pressable
@@ -468,11 +468,11 @@ export default function ReservationsScreen() {
                     ]}
                   >
                     {status === 'confirmed'
-                      ? 'Confirmada'
+                      ? t('reservations.statusConfirmed')
                       : status === 'cancelled'
-                      ? 'Cancelada'
+                      ? t('reservations.statusCancelled')
                       : status === 'completed'
-                      ? 'Completada'
+                      ? t('reservations.statusCompleted')
                       : status}
                   </Text>
                 </View>
@@ -481,9 +481,9 @@ export default function ReservationsScreen() {
               {needsReview && (
                 <View style={styles.pendingBanner}>
                   <View style={styles.pendingBannerTextWrap}>
-                    <Text style={styles.pendingBannerTitle}>Pendiente de revisión</Text>
+                    <Text style={styles.pendingBannerTitle}>{t('reservations.badgeNeedsReview')}</Text>
                     <Text style={styles.pendingBannerText}>
-                      Reserva creada automáticamente desde el formulario de check-in.
+                      {t('reservations.checkinFormInfoBody')}
                     </Text>
                   </View>
                   <Pressable

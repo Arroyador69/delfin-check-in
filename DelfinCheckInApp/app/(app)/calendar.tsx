@@ -52,6 +52,16 @@ function parseLocalYmd(ymd: string): Date {
   return new Date(y, mo - 1, d);
 }
 
+function translateChannelLabel(channel: string | null | undefined): string {
+  const raw = String(channel || '').toLowerCase();
+  if (!raw) return '';
+  if (raw === 'airbnb') return t('reservations.channelAirbnb');
+  if (raw === 'booking') return t('reservations.channelBooking');
+  if (raw === 'manual') return t('reservations.channelManual');
+  if (raw === 'checkin_form') return t('reservations.channelCheckinForm');
+  return raw;
+}
+
 export default function CalendarScreen() {
   const { session } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
@@ -215,12 +225,18 @@ export default function CalendarScreen() {
     setSelectedDate(null);
   };
 
-  const monthNames = [
-    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
-  ];
+  const monthTitle = useMemo(() => {
+    const d = new Date(currentMonth.year, currentMonth.month, 1);
+    const name = d.toLocaleDateString(getLocaleTag(), { month: 'long' });
+    return `${name} ${currentMonth.year}`;
+  }, [currentMonth.month, currentMonth.year]);
 
-  const weekDays = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
+  const weekDays = useMemo(() => {
+    // Semana ISO: lunes → domingo.
+    const baseMonday = new Date(2024, 0, 1); // 2024-01-01 fue lunes
+    const fmt = new Intl.DateTimeFormat(getLocaleTag(), { weekday: 'narrow' });
+    return Array.from({ length: 7 }, (_, i) => fmt.format(new Date(baseMonday.getTime() + i * 86400000)));
+  }, [start]);
 
   const isToday = (dateStr: string) => {
     return dateStr === ymdLocal(new Date());
@@ -238,6 +254,9 @@ export default function CalendarScreen() {
       year: 'numeric',
     });
   };
+
+  const formatShortRangeDate = (iso: string) =>
+    new Date(iso).toLocaleDateString(getLocaleTag(), { day: 'numeric', month: 'short' });
 
   if (isLoading && !data) {
     return (
@@ -259,7 +278,7 @@ export default function CalendarScreen() {
             <ChevronLeft size={24} color="#2563eb" />
           </Pressable>
           <Text style={styles.monthTitle}>
-            {monthNames[currentMonth.month]} {currentMonth.year}
+            {monthTitle}
           </Text>
           <Pressable onPress={nextMonth} style={styles.navButton}>
             <ChevronRight size={24} color="#2563eb" />
@@ -376,17 +395,18 @@ export default function CalendarScreen() {
                     <View style={styles.roomCardLeftBar} />
                     <View style={styles.roomCardContent}>
                       <Text style={styles.roomName}>
-                        {ev.room_name || `Habitación ${ev.room_id}`}
+                        {ev.room_name || t('mobile.calendar.roomFallback', { number: ev.room_id || '' })}
                       </Text>
                       <Text style={styles.guestName}>{ev.guest_name}</Text>
                       {ev.guest_count && (
                         <Text style={styles.guestInfo}>
-                          {ev.guest_count} huésped{ev.guest_count > 1 ? 'es' : ''}
+                          {ev.guest_count}{' '}
+                          {ev.guest_count > 1 ? t('mobile.calendar.guestsPlural') : t('mobile.calendar.guestSingular')}
                         </Text>
                       )}
                       {ev.channel && (
                         <Text style={styles.channelInfo}>
-                          Canal: {ev.channel}
+                          {t('mobile.calendar.channelLabel')}: {translateChannelLabel(ev.channel)}
                         </Text>
                       )}
                     </View>
@@ -406,21 +426,21 @@ export default function CalendarScreen() {
                   <View key={idx} style={[styles.roomCard, styles.roomCardLeaving]}>
                     <View style={styles.roomCardContent}>
                       <Text style={styles.roomName}>
-                        {ev.room_name || `Habitación ${ev.room_id}`}
+                        {ev.room_name || t('mobile.calendar.roomFallback', { number: ev.room_id || '' })}
                       </Text>
                       <Text style={styles.guestName}>{ev.guest_name}</Text>
                       <Text style={styles.datesInfo}>
-                        {new Date(ev.start_date).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })} -{' '}
-                        {new Date(ev.end_date).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
+                        {formatShortRangeDate(ev.start_date)} - {formatShortRangeDate(ev.end_date)}
                       </Text>
                       {ev.guest_count && (
                         <Text style={styles.guestInfo}>
-                          {ev.guest_count} huésped{ev.guest_count > 1 ? 'es' : ''}
+                          {ev.guest_count}{' '}
+                          {ev.guest_count > 1 ? t('mobile.calendar.guestsPlural') : t('mobile.calendar.guestSingular')}
                         </Text>
                       )}
                       {ev.channel && (
                         <Text style={styles.channelInfo}>
-                          Canal: {ev.channel}
+                          {t('mobile.calendar.channelLabel')}: {translateChannelLabel(ev.channel)}
                         </Text>
                       )}
                     </View>
@@ -440,21 +460,21 @@ export default function CalendarScreen() {
                   <View key={idx} style={[styles.roomCard, styles.roomCardStaying]}>
                     <View style={styles.roomCardContent}>
                       <Text style={styles.roomName}>
-                        {ev.room_name || `Habitación ${ev.room_id}`}
+                        {ev.room_name || t('mobile.calendar.roomFallback', { number: ev.room_id || '' })}
                       </Text>
                       <Text style={styles.guestName}>{ev.guest_name}</Text>
                       <Text style={styles.datesInfo}>
-                        {new Date(ev.start_date).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })} -{' '}
-                        {new Date(ev.end_date).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
+                        {formatShortRangeDate(ev.start_date)} - {formatShortRangeDate(ev.end_date)}
                       </Text>
                       {ev.guest_count && (
                         <Text style={styles.guestInfo}>
-                          {ev.guest_count} huésped{ev.guest_count > 1 ? 'es' : ''}
+                          {ev.guest_count}{' '}
+                          {ev.guest_count > 1 ? t('mobile.calendar.guestsPlural') : t('mobile.calendar.guestSingular')}
                         </Text>
                       )}
                       {ev.channel && (
                         <Text style={styles.channelInfo}>
-                          Canal: {ev.channel}
+                          {t('mobile.calendar.channelLabel')}: {translateChannelLabel(ev.channel)}
                         </Text>
                       )}
                     </View>

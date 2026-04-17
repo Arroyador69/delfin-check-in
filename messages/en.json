@@ -2760,7 +2760,11 @@
       "upcomingEmpty": "No upcoming reservations"
     },
     "calendar": {
-      "noReservationsForDay": "No reservations for this day"
+      "noReservationsForDay": "No reservations for this day",
+      "roomFallback": "Room {number}",
+      "channelLabel": "Channel",
+      "guestSingular": "guest",
+      "guestsPlural": "guests"
     },
     "settings": {
       "mirSubtitle": "Basic configuration for automatic MIR submission.",

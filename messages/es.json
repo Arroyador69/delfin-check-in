@@ -2864,7 +2864,11 @@
       "upcomingEmpty": "No hay reservas próximas"
     },
     "calendar": {
-      "noReservationsForDay": "No hay reservas para este día"
+      "noReservationsForDay": "No hay reservas para este día",
+      "roomFallback": "Habitación {number}",
+      "channelLabel": "Canal",
+      "guestSingular": "huésped",
+      "guestsPlural": "huéspedes"
     },
     "settings": {
       "mirSubtitle": "Configuración básica del envío automático al MIR.",

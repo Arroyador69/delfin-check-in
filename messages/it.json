@@ -2808,7 +2808,11 @@
       "upcomingEmpty": "Nessuna prenotazione in arrivo"
     },
     "calendar": {
-      "noReservationsForDay": "Nessuna prenotazione per questo giorno"
+      "noReservationsForDay": "Nessuna prenotazione per questo giorno",
+      "roomFallback": "Camera {number}",
+      "channelLabel": "Canale",
+      "guestSingular": "ospite",
+      "guestsPlural": "ospiti"
     },
     "settings": {
       "mirSubtitle": "Configurazione di base per l’invio automatico al MIR.",
