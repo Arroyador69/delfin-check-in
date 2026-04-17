@@ -8,8 +8,8 @@ import { AuthProvider } from '@/lib/auth';
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/auth';
 import { useRouter, useSegments } from 'expo-router';
-import { LogBox } from 'react-native';
-import { hydrateAppLocale, useLocaleListener } from '@/lib/i18n';
+import { DeviceEventEmitter, LogBox } from 'react-native';
+import { hydrateAppLocale, LOCALE_CHANGED_EVENT } from '@/lib/i18n';
 
 // Ignorar warnings específicos si es necesario
 LogBox.ignoreLogs([
@@ -59,9 +59,14 @@ function NavigationHandler() {
 
 function LocalizedStack() {
   const [tick, setTick] = useState(0);
-  useLocaleListener();
   useEffect(() => {
     hydrateAppLocale().finally(() => setTick((x) => x + 1));
+  }, []);
+  useEffect(() => {
+    const sub = DeviceEventEmitter.addListener(LOCALE_CHANGED_EVENT, () => {
+      setTick((x) => x + 1);
+    });
+    return () => sub.remove();
   }, []);
   // Forzamos re-montaje del árbol de navegación al cambiar idioma guardado.
   return <Stack key={`locale-${tick}`} screenOptions={{ headerShown: false }} />;
