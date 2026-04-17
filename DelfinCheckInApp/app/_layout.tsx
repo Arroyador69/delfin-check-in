@@ -59,7 +59,9 @@ function NavigationHandler() {
 
     if (session && inAppGroup && !inOnboarding && !checkedOnboarding) {
       (async () => {
-        const [force, seen] = await Promise.all([getForceOnboarding(), getOnboardingSeen()]);
+        const [storedForce, seen] = await Promise.all([getForceOnboarding(), getOnboardingSeen()]);
+        // En desarrollo (Expo), mostrar siempre para iterar el copy/flujo.
+        const force = Boolean(__DEV__) || storedForce;
         setCheckedOnboarding(true);
         if (force || !seen) {
           router.replace('/(app)/onboarding');
