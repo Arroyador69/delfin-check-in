@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { View, Text, TextInput, Pressable, StyleSheet, ActivityIndicator, Alert, Linking } from 'react-native';
 import { useAuth } from '@/lib/auth';
 import { useRouter } from 'expo-router';
-import { t } from '@/lib/i18n';
+import { getLocale, t } from '@/lib/i18n';
 import { setOnboardingSeen, setForceOnboarding } from '@/lib/onboarding';
 
 export default function LoginScreen() {
@@ -88,7 +88,11 @@ export default function LoginScreen() {
 
         <Pressable
           style={[styles.secondaryButton, styles.createAccountButton]}
-          onPress={() => Linking.openURL('https://admin.delfincheckin.com')}
+          onPress={() =>
+            Linking.openURL(
+              `https://admin.delfincheckin.com/signup?source=mobile&lang=${encodeURIComponent(getLocale())}`
+            )
+          }
           disabled={loading}
         >
           <Text style={[styles.secondaryButtonText, styles.createAccountText]}>{t('auth.createAccount')}</Text>
