@@ -212,7 +212,7 @@ export default function ReferralsScreen() {
       <View style={styles.card}>
         <View style={styles.cardTitleRow}>
           <Gift size={18} color="#7c3aed" />
-          <Text style={styles.cardTitle}>{t('referrals.creditsTitle') || 'Créditos'}</Text>
+          <Text style={styles.cardTitle}>{t('referrals.creditsAccumulated')}</Text>
         </View>
         <View style={styles.creditsRow}>
           <View style={styles.creditBox}>
@@ -228,7 +228,7 @@ export default function ReferralsScreen() {
 
       {rewards.length > 0 ? (
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>{t('referrals.rewardsHistoryTitle') || 'Recompensas'}</Text>
+          <Text style={styles.cardTitle}>{t('referrals.rewardsHistory')}</Text>
           <View style={{ gap: 10, marginTop: 10 }}>
             {rewards.slice(0, 6).map((rw) => (
               <View key={rw.id} style={styles.rowBetween}>
@@ -244,9 +244,12 @@ export default function ReferralsScreen() {
       ) : null}
 
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>{t('referrals.myReferralsTitle') || 'Mis referidos'}</Text>
+        <Text style={styles.cardTitle}>{t('referrals.myReferrals')}</Text>
         {referrals.length === 0 ? (
-          <Text style={styles.goalDesc}>{t('referrals.noReferralsYet') || 'Aún no tienes referidos.'}</Text>
+          <View style={{ gap: 6 }}>
+            <Text style={styles.goalDesc}>{t('referrals.noReferrals')}</Text>
+            <Text style={styles.goalDesc}>{t('referrals.noReferralsHint')}</Text>
+          </View>
         ) : (
           <View style={{ gap: 10, marginTop: 10 }}>
             {referrals.slice(0, 12).map((rf) => (

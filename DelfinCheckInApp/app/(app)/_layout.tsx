@@ -98,6 +98,13 @@ export default function AppLayout() {
           }}
         />
         <Tabs.Screen
+          name="referrals"
+          options={{
+            href: null,
+            title: t('referrals.title'),
+          }}
+        />
+        <Tabs.Screen
           name="onboarding"
           options={{
             href: null,
