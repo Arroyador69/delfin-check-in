@@ -54,10 +54,11 @@ jobs:
         vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
         vercel-args: '--prod'
 
+  # Desactivado hasta MVP/backend en Railway (evita fallos sin proyecto enlazado + RAILWAY_TOKEN).
   deploy-railway:
     needs: test
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && false
     
     steps:
     - uses: actions/checkout@v4
@@ -126,7 +127,7 @@ jobs:
         cache-to: type=gha,mode=max
 
   notify-telegram:
-    needs: [deploy-vercel, deploy-railway, deploy-render, deploy-heroku, deploy-docker]
+    needs: [deploy-vercel, deploy-render, deploy-heroku, deploy-docker]
     runs-on: ubuntu-latest
     if: always()
     
