@@ -41,12 +41,13 @@ jobs:
     - name: Ejecutar tests
       run: npm run test || echo "⚠️ No hay tests configurados aún"
       
+    # Sin ${{ secrets.* }}: el validador del IDE no conoce nombres custom y avisa en falso.
+    # El build no necesita la BD real; en Vercel siguen las variables de entorno del proyecto.
     - name: Build de producción
       run: npm run build
       env:
-        POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
-        NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
-        NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }}
+        POSTGRES_URL: postgresql://ci:ci@127.0.0.1:5432/ci
+        JWT_SECRET: ci-github-actions-build-only-not-for-production-min-32chars
         
     - name: Verificar tamaño del bundle
       run: npx next-bundle-analyzer || echo "Bundle size check completed"
