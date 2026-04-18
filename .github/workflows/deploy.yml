@@ -13,6 +13,7 @@ on:
 
 env:
   NODE_VERSION: '20.x'
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   test:
@@ -31,7 +32,7 @@ jobs:
         run: npm ci
 
       - name: Run linter
-        run: npm run lint
+        run: npm run lint -- --quiet
 
       - name: Run tests
         run: npm test

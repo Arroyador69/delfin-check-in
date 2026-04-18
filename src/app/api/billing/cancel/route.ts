@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import type Stripe from 'stripe';
 import { sql } from '@vercel/postgres';
 import { getStripeServer } from '@/lib/stripe-server';
+import { subscriptionCurrentPeriodEndUnix } from '@/lib/stripe-period';
 
 /**
  * API para cancelar la suscripción del tenant
@@ -71,7 +72,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true,
       message: 'Suscripción cancelada. Tu acceso continuará hasta el final del período actual.',
-      cancel_at: new Date(subscription.current_period_end * 1000).toISOString(),
+      cancel_at: new Date(
+        subscriptionCurrentPeriodEndUnix(subscription) * 1000
+      ).toISOString(),
     });
 
   } catch (error: any) {

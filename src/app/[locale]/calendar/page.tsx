@@ -40,7 +40,7 @@ export default function CalendarPage() {
   const t = useTranslations('calendar');
   const locale = useLocale();
   const [tenantId, setTenantId] = useState('')
-  const [propertyId, setPropertyId] = useState('')
+  const [propertyId] = useState('')
   const [start, setStart] = useState<string>(() => {
     const d = new Date(); d.setDate(1); return formatDate(d)
   })
@@ -50,7 +50,9 @@ export default function CalendarPage() {
   const [loading, setLoading] = useState(false)
   const [availability, setAvailability] = useState<Availability[]>([])
   const [events, setEvents] = useState<CalendarEvent[]>([])
-  const [properties, setProperties] = useState<{ id: number | null; property_name: string; room_id?: number; is_placeholder?: boolean }[]>([])
+  const [, setProperties] = useState<
+    { id: number | null; property_name: string; room_id?: number; is_placeholder?: boolean }[]
+  >([])
   const router = useRouter()
   const [viewEvent, setViewEvent] = useState<CalendarEvent | null>(null)
 

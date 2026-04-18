@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Calendar, Users, Euro, CreditCard, CheckCircle, XCircle, Clock, TrendingUp, Eye, Home, Bed } from 'lucide-react';
+import { Calendar, Users, Euro, CheckCircle, XCircle, Clock, TrendingUp, Eye, Bed } from 'lucide-react';
 import { DirectReservation, ReservationStats } from '@/lib/direct-reservations-types';
 import { useTranslations, useLocale } from 'next-intl';
 import { toIntlDateLocale, type Locale as AppLocale } from '@/i18n/config';

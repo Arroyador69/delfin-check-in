@@ -9,7 +9,10 @@ on:
 jobs:
   ci:
     runs-on: ubuntu-latest
-    
+    env:
+      # Reduce avisos de deprecación de Node 20 en actions/checkout y setup-node (changelog GitHub 2025–2026).
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
     strategy:
       matrix:
         # 18.x EOL; 20.x/22.x alineados con avisos de deprecación de Actions (Node 24 por defecto en 2026).
@@ -32,12 +35,16 @@ jobs:
       run: npm run format:check || echo "⚠️ Formato incorrecto - ejecuta 'npm run format' localmente"
       
     - name: Lint con ESLint
-      run: npm run lint
+      run: npm run lint -- --quiet
       
-    # tsconfig raíz solo incluye src/ (no DelfinCheckInApp). Aún hay deuda en src/; Next usa ignoreBuildErrors.
-    - name: Verificar tipos TypeScript
-      run: npm run type-check
-      continue-on-error: true
+    # No imprimir líneas "error TS" al log: el problem matcher de Actions las convierte en cientos de anotaciones.
+    # Detalle: ejecuta `npm run type-check` en local. Cuando la deuda baje, se puede volver a mostrar el log completo.
+    - name: Verificar tipos TypeScript (resumen)
+      run: |
+        npm run type-check > "$RUNNER_TEMP/tsc.log" 2>&1 || true
+        count=$(grep -c "error TS" "$RUNNER_TEMP/tsc.log" || echo 0)
+        echo "TypeScript (tsc): ${count} errores en el proyecto (no se listan aquí para evitar anotaciones en la PR). Ejecuta npm run type-check en local para el detalle."
+        exit 0
       
     - name: Ejecutar tests
       run: npm run test || echo "⚠️ No hay tests configurados aún"
@@ -55,6 +62,8 @@ jobs:
 
   security:
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
     - name: Checkout código
       uses: actions/checkout@v4
@@ -68,6 +77,8 @@ jobs:
   lighthouse:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
     - name: Checkout código
       uses: actions/checkout@v4

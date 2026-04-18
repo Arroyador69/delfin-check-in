@@ -9,6 +9,7 @@ import {
 } from '@/lib/cleaning-tasks';
 import { getCleaningPublicBaseUrlFromRequest } from '@/lib/cleaning-public-base-url';
 import { getYmdInTimeZone } from '@/lib/calendar-date';
+import { sqlTextArrayForAny } from '@/lib/pg-sql-params';
 
 type TaskJson = CleaningTaskEvent & { note_url: string };
 
@@ -39,7 +40,9 @@ export async function GET(
       SELECT room_id FROM cleaning_link_rooms
       WHERE link_id = ${link.id}::uuid AND tenant_id = ${tenantId}::uuid
     `;
-    const roomIds: string[] = roomRows.rows.map((r: { room_id: string }) => r.room_id);
+    const roomIds: string[] = roomRows.rows.map((r) =>
+      String((r as Record<string, unknown>).room_id)
+    );
 
     if (roomIds.length === 0) {
       return NextResponse.json({
@@ -65,7 +68,7 @@ export async function GET(
       FROM "Room" r
       LEFT JOIN cleaning_config cc
         ON cc.tenant_id = ${tenantId}::uuid AND cc.room_id = r.id::text
-      WHERE r.id::text = ANY(${roomIds})
+      WHERE r.id::text = ANY(${sqlTextArrayForAny(roomIds)})
     `;
 
     const propertyByRoom = new Map<string, string>();
@@ -75,7 +78,7 @@ export async function GET(
         FROM property_room_map prm
         JOIN tenant_properties tp ON tp.id = prm.property_id AND tp.tenant_id = prm.tenant_id
         WHERE prm.tenant_id = ${tenantId}::uuid
-          AND prm.room_id = ANY(${roomIds})
+          AND prm.room_id = ANY(${sqlTextArrayForAny(roomIds)})
       `;
       for (const row of pr.rows) {
         propertyByRoom.set(row.room_id as string, row.property_name as string);
@@ -96,7 +99,7 @@ export async function GET(
       SELECT id, guest_name, check_in, check_out, guest_count, channel, room_id
       FROM reservations
       WHERE tenant_id = ${tenantId}::uuid
-        AND room_id = ANY(${roomIds})
+        AND room_id = ANY(${sqlTextArrayForAny(roomIds)})
         AND (status IS NULL OR LOWER(TRIM(status)) NOT IN ('cancelled', 'canceled'))
         AND check_out >= ${fromStr}::date
         AND check_in <= ${toStr}::date
@@ -107,7 +110,7 @@ export async function GET(
       SELECT room_id, cleaning_date, note
       FROM cleaning_notes
       WHERE tenant_id = ${tenantId}::uuid
-        AND room_id = ANY(${roomIds})
+        AND room_id = ANY(${sqlTextArrayForAny(roomIds)})
         AND author_type = 'owner'
         AND cleaning_date >= ${fromStr}::date
         AND cleaning_date <= ${toStr}::date
@@ -125,7 +128,9 @@ export async function GET(
 
     for (const row of roomsData.rows) {
       const roomId = row.room_id as string;
-      const resForRoom = reservations.rows.filter((r: { room_id: string }) => r.room_id === roomId);
+      const resForRoom = reservations.rows.filter(
+        (r) => String((r as Record<string, unknown>).room_id) === roomId
+      );
       const notesByDate = new Map<string, string>();
       for (const [k, v] of notesMap) {
         if (k.startsWith(`${roomId}|`)) {

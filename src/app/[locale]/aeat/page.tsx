@@ -1,7 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import LocalizedDateInput from '@/components/LocalizedDateInput';
 
@@ -21,7 +20,6 @@ export default function AEATPage() {
   const [dateField, setDateField] = useState<'check_in'|'check_out'>('check_out');
   const [vat, setVat] = useState(21);
   const [preview, setPreview] = useState<{count:number;base:number;cuota_iva:number;total:number;comision_ota:number;totalsByChannel?:Record<string,any>}|null>(null);
-  const router = useRouter();
 
   // La autenticación está manejada por el middleware
 

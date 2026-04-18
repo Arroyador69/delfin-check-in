@@ -8,6 +8,7 @@ import {
   type ReservationRow,
 } from '@/lib/cleaning-tasks';
 import { getYmdInTimeZone } from '@/lib/calendar-date';
+import { sqlTextArrayForAny } from '@/lib/pg-sql-params';
 
 async function resolveTenantId(req: NextRequest): Promise<string | null> {
   let tenantId = await getTenantId(req);
@@ -45,7 +46,9 @@ export async function GET(req: NextRequest) {
         AND BTRIM(clr.room_id::text) <> ''
     `;
 
-    const roomIds: string[] = linkedRows.rows.map((r: { room_id: string }) => String(r.room_id));
+    const roomIds: string[] = linkedRows.rows.map((r) =>
+      String((r as Record<string, unknown>).room_id)
+    );
     const hasCleaningLinks = roomIds.length > 0;
 
     if (!hasCleaningLinks) {
@@ -78,7 +81,7 @@ export async function GET(req: NextRequest) {
       FROM "Room" r
       LEFT JOIN cleaning_config cc
         ON cc.tenant_id = ${tenantId}::uuid AND cc.room_id = r.id::text
-      WHERE r.id::text = ANY(${roomIds})
+      WHERE r.id::text = ANY(${sqlTextArrayForAny(roomIds)})
     `;
 
     const propertyByRoom = new Map<string, string>();
@@ -88,7 +91,7 @@ export async function GET(req: NextRequest) {
         FROM property_room_map prm
         JOIN tenant_properties tp ON tp.id = prm.property_id AND tp.tenant_id = prm.tenant_id
         WHERE prm.tenant_id = ${tenantId}::uuid
-          AND prm.room_id = ANY(${roomIds})
+          AND prm.room_id = ANY(${sqlTextArrayForAny(roomIds)})
       `;
       for (const row of pr.rows) {
         propertyByRoom.set(row.room_id as string, row.property_name as string);
@@ -101,7 +104,7 @@ export async function GET(req: NextRequest) {
       SELECT id, guest_name, check_in, check_out, guest_count, channel, room_id
       FROM reservations
       WHERE tenant_id = ${tenantId}::uuid
-        AND room_id = ANY(${roomIds})
+        AND room_id = ANY(${sqlTextArrayForAny(roomIds)})
         AND (status IS NULL OR LOWER(TRIM(status)) NOT IN ('cancelled', 'canceled'))
         AND check_out >= ${fromStr}::date
         AND check_in <= ${toStr}::date
@@ -112,7 +115,7 @@ export async function GET(req: NextRequest) {
       SELECT room_id, cleaning_date, note
       FROM cleaning_notes
       WHERE tenant_id = ${tenantId}::uuid
-        AND room_id = ANY(${roomIds})
+        AND room_id = ANY(${sqlTextArrayForAny(roomIds)})
         AND author_type = 'owner'
         AND cleaning_date >= ${fromStr}::date
         AND cleaning_date <= ${toStr}::date
@@ -131,7 +134,7 @@ export async function GET(req: NextRequest) {
     for (const row of roomsData.rows) {
       const roomId = row.room_id as string;
       const resForRoom = reservations.rows.filter(
-        (r: { room_id: string }) => String(r.room_id) === String(roomId)
+        (r) => String((r as Record<string, unknown>).room_id) === String(roomId)
       );
       const notesByDate = new Map<string, string>();
       for (const [k, v] of notesMap) {

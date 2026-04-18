@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations, useLocale } from 'next-intl';
 import AdminLayout from '@/components/AdminLayout';
@@ -129,36 +129,32 @@ export default function MirComunicacionesPage() {
   const [resultadosCatalogo, setResultadosCatalogo] = useState<CatalogoListItem[]>([]);
   const [resultadoCatalogoCompleto, setResultadoCatalogoCompleto] = useState<any>(null);
 
-  // Cargar comunicaciones al montar el componente
-  useEffect(() => {
-    cargarComunicaciones();
-  }, []);
-
-  const cargarComunicaciones = async () => {
+  const cargarComunicaciones = useCallback(async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
       const response = await fetch('/api/ministerio/estado-envios');
       const data = await response.json();
-      
+
       if (data.success) {
-        // Convertir datos del nuevo formato al formato esperado
         const todosRegistros = [
           ...data.comunicaciones.pendientes,
           ...data.comunicaciones.enviados,
           ...data.comunicaciones.confirmados,
-          ...data.comunicaciones.errores
+          ...data.comunicaciones.errores,
         ];
-        
+
         setComunicaciones(todosRegistros);
-        setSuccess(t('successLoad', {
-          total: data.estadisticas.total,
-          pendientes: data.estadisticas.pendientes,
-          enviados: data.estadisticas.enviados,
-          confirmados: data.estadisticas.confirmados,
-          errores: data.estadisticas.errores
-        }));
+        setSuccess(
+          t('successLoad', {
+            total: data.estadisticas.total,
+            pendientes: data.estadisticas.pendientes,
+            enviados: data.estadisticas.enviados,
+            confirmados: data.estadisticas.confirmados,
+            errores: data.estadisticas.errores,
+          })
+        );
       } else {
         setError(data.message || t('errorLoad'));
       }
@@ -168,7 +164,11 @@ export default function MirComunicacionesPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [t]);
+
+  useEffect(() => {
+    void cargarComunicaciones();
+  }, [cargarComunicaciones]);
 
 
   const consultarComunicaciones = async () => {
@@ -558,7 +558,7 @@ export default function MirComunicacionesPage() {
                                       } else {
                                         alert(`❌ Error: ${result.message || result.error}`);
                                       }
-                                    } catch (error) {
+                                    } catch {
                                       alert(`❌ ${t('errorConsultandoMir')}`);
                                     } finally {
                                       setLoading(false);
@@ -596,7 +596,7 @@ export default function MirComunicacionesPage() {
                                       } else {
                                         alert(`❌ Error: ${result.message}`);
                                       }
-                                    } catch (error) {
+                                    } catch {
                                       alert(`❌ ${t('errorEnviandoMir')}`);
                                     }
                                   }}
@@ -643,7 +643,7 @@ export default function MirComunicacionesPage() {
                                       } else {
                                         alert(t('errorObteniendoXml'));
                                       }
-                                    } catch (error) {
+                                    } catch {
                                       alert(t('errorDescargandoXml'));
                                     }
                                   }}
