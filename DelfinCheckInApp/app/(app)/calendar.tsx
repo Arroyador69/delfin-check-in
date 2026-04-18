@@ -7,7 +7,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { useState, useMemo, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, ArrowDownCircle, ArrowUpCircle, Users } from 'lucide-react-native';
+import { ChevronLeft, ChevronRight, ArrowDownCircle, ArrowUpCircle, Users, Info } from 'lucide-react-native';
 import { getLocaleTag, t } from '@/lib/i18n';
 import { FixedBannerAd } from '@/components/FixedBannerAd';
 
@@ -289,6 +289,12 @@ export default function CalendarScreen() {
           </Pressable>
         </View>
 
+        {/* Misma aclaración que en web: iCal bloquea micrositio/enlaces; aquí solo reservas en Delfín */}
+        <View style={styles.icalNotice} accessible accessibilityLabel={t('calendar.icalScopeNotice')}>
+          <Info size={20} color="#1d4ed8" style={styles.icalNoticeIcon} />
+          <Text style={styles.icalNoticeText}>{t('calendar.icalScopeNotice')}</Text>
+        </View>
+
         {/* Días de la semana */}
         <View style={styles.weekDays}>
           {weekDays.map((day, idx) => (
@@ -526,6 +532,27 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     color: '#1f2937',
+  },
+  icalNotice: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: '#eff6ff',
+    borderWidth: 1,
+    borderColor: '#bfdbfe',
+    marginHorizontal: 16,
+    marginBottom: 8,
+    padding: 12,
+    borderRadius: 12,
+    gap: 10,
+  },
+  icalNoticeIcon: {
+    marginTop: 2,
+  },
+  icalNoticeText: {
+    flex: 1,
+    fontSize: 14,
+    lineHeight: 20,
+    color: '#1e3a8a',
   },
   weekDays: {
     flexDirection: 'row',
