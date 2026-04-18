@@ -47,6 +47,7 @@ import {
   defaultBookingChannelsConfig,
   type BookingChannelsConfig,
 } from '@/lib/booking-channels';
+import { FixedBannerAd } from '@/components/FixedBannerAd';
 
 interface Room {
   id: string;
@@ -475,6 +476,7 @@ export default function ReservationsScreen() {
 
       {/* Lista de reservas */}
       <FlatList
+        style={{ flex: 1 }}
         data={filteredReservations}
         keyExtractor={(item) => String(item.id)}
         renderItem={({ item }) => {
@@ -597,6 +599,7 @@ export default function ReservationsScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         contentContainerStyle={styles.listContent}
       />
+      <FixedBannerAd />
 
       {/* Modal crear reserva */}
       <KeyboardAwareFormModal

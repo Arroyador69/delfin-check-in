@@ -3,6 +3,7 @@
 // =====================================================
 
 import { View, Text, ScrollView, StyleSheet, RefreshControl, Pressable } from 'react-native';
+import { FixedBannerAd } from '@/components/FixedBannerAd';
 import { useAuth } from '@/lib/auth';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
@@ -245,6 +246,7 @@ export default function DashboardScreen() {
   };
 
   return (
+    <View style={{ flex: 1, backgroundColor: '#f8fafc' }}>
     <ScrollView
       style={styles.container}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
@@ -437,6 +439,8 @@ export default function DashboardScreen() {
         )}
       </View>
     </ScrollView>
+    <FixedBannerAd />
+    </View>
   );
 }
 

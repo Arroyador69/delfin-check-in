@@ -6,10 +6,14 @@ import { useEffect, useState } from 'react';
 import BookingChannelsSettingsBlock from '@/components/BookingChannelsSettingsBlock';
 import { api } from '@/lib/api';
 import { t } from '@/lib/i18n';
+import { useAuth } from '@/lib/auth';
+import { shouldShowMobileAds } from '@/lib/plan-ads';
+import { notifyMajorActionCompleted } from '@/lib/admob-interstitial';
 
 type RoomRow = { id: number; name: string };
 
 export default function GeneralSettingsScreen() {
+  const { session } = useAuth();
   const router = useRouter();
   const queryClient = useQueryClient();
   const [rooms, setRooms] = useState<RoomRow[]>([]);
@@ -49,6 +53,7 @@ export default function GeneralSettingsScreen() {
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['tenant-limits'] });
       Alert.alert(t('common.success'), t('settings.rooms.saved'));
+      notifyMajorActionCompleted(shouldShowMobileAds(session?.user?.tenant?.planId));
     },
     onError: (e: any) => {
       Alert.alert(t('common.error'), e?.response?.data?.message || t('settings.rooms.saveError'));

@@ -9,6 +9,7 @@ import { useAuth } from '@/lib/auth';
 import { useState, useMemo, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, ArrowDownCircle, ArrowUpCircle, Users } from 'lucide-react-native';
 import { getLocaleTag, t } from '@/lib/i18n';
+import { FixedBannerAd } from '@/components/FixedBannerAd';
 
 interface Availability {
   property_id: number;
@@ -496,6 +497,7 @@ export default function CalendarScreen() {
           </View>
         )}
       </ScrollView>
+      <FixedBannerAd />
     </View>
   );
 }

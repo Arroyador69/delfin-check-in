@@ -11,6 +11,7 @@ import { useRouter, useSegments } from 'expo-router';
 import { DeviceEventEmitter, LogBox } from 'react-native';
 import { hydrateAppLocale, LOCALE_CHANGED_EVENT } from '@/lib/i18n';
 import { getForceOnboarding, getOnboardingSeen } from '@/lib/onboarding';
+import { AdMobInitializer } from '@/lib/admob-init';
 
 // Ignorar warnings específicos si es necesario
 LogBox.ignoreLogs([
@@ -121,6 +122,7 @@ export default function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
+        <AdMobInitializer />
         <NavigationHandler />
         <LocalizedStack />
       </AuthProvider>

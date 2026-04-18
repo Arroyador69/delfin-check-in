@@ -7,6 +7,7 @@ import { useAuth } from '@/lib/auth';
 import { useRouter } from 'expo-router';
 import { t } from '@/lib/i18n';
 import { openUpgradePlanInBrowser, suggestedUpgradeTargetPlan } from '@/lib/upgrade-plan';
+import { FixedBannerAd } from '@/components/FixedBannerAd';
 
 export default function SettingsScreen() {
   const { session, signOut } = useAuth();
@@ -45,6 +46,7 @@ export default function SettingsScreen() {
   );
 
   return (
+    <View style={{ flex: 1, backgroundColor: '#f8fafc' }}>
     <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 24 }}>
       <View style={styles.card}>
         <Text style={styles.sectionTitle}>{t('settings.title')}</Text>
@@ -157,6 +159,8 @@ export default function SettingsScreen() {
         <Text style={styles.signOutText}>{t('dashboard.logout')}</Text>
       </Pressable>
     </ScrollView>
+    <FixedBannerAd />
+    </View>
   );
 }
 

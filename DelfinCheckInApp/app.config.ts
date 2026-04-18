@@ -5,6 +5,12 @@ export default ({ config }: ConfigContext): ExpoConfig => {
   const cleaningPublicBase =
     process.env.EXPO_PUBLIC_CLEANING_PUBLIC_BASE_URL?.trim().replace(/\/$/, '') || '';
 
+  /** IDs de aplicación AdMob (no confundir con IDs de unidad de anuncio). En desarrollo, valores de prueba de Google. */
+  const admobIosAppId =
+    process.env.EXPO_PUBLIC_ADMOB_IOS_APP_ID?.trim() || 'ca-app-pub-3940256099942544~1458002511';
+  const admobAndroidAppId =
+    process.env.EXPO_PUBLIC_ADMOB_ANDROID_APP_ID?.trim() || 'ca-app-pub-3940256099942544~3347511711';
+
   return {
     name: 'Delfín Check-in',
     slug: 'delfin-owner',
@@ -51,6 +57,11 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     extra: {
       API_URL: apiUrl,
       CLEANING_PUBLIC_BASE_URL: cleaningPublicBase,
+      /** IDs de unidad (banner / intersticial) — créalos en AdMob y pásalos por EAS Secrets */
+      ADMOB_IOS_BANNER_ID: process.env.EXPO_PUBLIC_ADMOB_IOS_BANNER_ID || '',
+      ADMOB_ANDROID_BANNER_ID: process.env.EXPO_PUBLIC_ADMOB_ANDROID_BANNER_ID || '',
+      ADMOB_IOS_INTERSTITIAL_ID: process.env.EXPO_PUBLIC_ADMOB_IOS_INTERSTITIAL_ID || '',
+      ADMOB_ANDROID_INTERSTITIAL_ID: process.env.EXPO_PUBLIC_ADMOB_ANDROID_INTERSTITIAL_ID || '',
       eas: {
         projectId: '1408210e-72cc-49ab-b045-f91d89452a4e'
       }
@@ -70,6 +81,15 @@ export default ({ config }: ConfigContext): ExpoConfig => {
           android: {
             kotlinVersion: '1.9.0'
           }
+        }
+      ],
+      [
+        'react-native-google-mobile-ads',
+        {
+          androidAppId: admobAndroidAppId,
+          iosAppId: admobIosAppId,
+          userTrackingUsageDescription:
+            'Delfín Check-in puede usar este identificador para mostrar anuncios más relevantes. Puedes cambiarlo en Privacidad del iPhone.'
         }
       ]
     ]
