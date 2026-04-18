@@ -55,9 +55,22 @@ const nextConfig: NextConfig = {
       { source: `/${locale}/next.svg`, destination: '/vercel.svg' },
     ]);
   },
-  // Configuración PWA simplificada
+  // Cabeceras de seguridad (complementan nginx en Docker / proxy en Vercel)
   async headers() {
+    const security = [
+      { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
+      { key: 'X-Content-Type-Options', value: 'nosniff' },
+      { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+      {
+        key: 'Permissions-Policy',
+        value: 'camera=(), microphone=(), geolocation=(self)',
+      },
+    ];
     return [
+      {
+        source: '/:path*',
+        headers: security,
+      },
       {
         source: '/sw.js',
         headers: [

@@ -5,10 +5,15 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken, generateAccessToken } from '@/lib/auth';
+import { getClientIP, rateLimitMiddleware, RATE_LIMIT_CONFIGS } from '@/lib/rate-limit';
 
 export const runtime = 'nodejs';
 
 export async function POST(req: NextRequest) {
+  const clientIP = getClientIP(req.headers);
+  const rl = rateLimitMiddleware(`auth-refresh:${clientIP}`, RATE_LIMIT_CONFIGS.authRefresh);
+  if (rl) return rl;
+
   try {
     const { refreshToken } = await req.json();
     

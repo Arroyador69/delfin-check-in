@@ -50,6 +50,12 @@ export const RATE_LIMIT_CONFIGS = {
     maxAttempts: 25,
     windowMs: 15 * 60 * 1000, // 15 minutos
     blockDurationMs: 30 * 60 * 1000 // 30 min bloqueo
+  },
+  /** POST /api/auth/refresh (app móvil): evita abuso de verificación de tokens */
+  authRefresh: {
+    maxAttempts: 30,
+    windowMs: 60 * 1000,
+    blockDurationMs: 5 * 60 * 1000
   }
 } as const;
 

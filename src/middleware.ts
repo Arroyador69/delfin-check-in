@@ -2,6 +2,11 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { verifyTokenEdge } from '@/lib/auth-edge'
 import { checkRateLimit, getClientIP, isGlobalApiRateLimitExempt, RATE_LIMIT_CONFIGS } from '@/lib/rate-limit';
+import {
+  isDangerousDiagnosticApiPath,
+  isProductionNodeEnv,
+  shouldExposeDiagnosticApis,
+} from '@/lib/security-deployment';
 import createMiddleware from 'next-intl/middleware';
 import { locales, defaultLocale, getLocaleFromRequest, isValidLocale } from './i18n/config';
 
@@ -87,6 +92,16 @@ export async function middleware(req: NextRequest) {
   
   // Preflight CORS
   if (req.method === 'OPTIONS') return NextResponse.next();
+
+  // Producción: no exponer endpoints de test/debug/check-db (activar con DELFIN_ALLOW_DEBUG_ROUTES=true si hace falta)
+  if (
+    pathname.startsWith('/api/') &&
+    isProductionNodeEnv() &&
+    !shouldExposeDiagnosticApis() &&
+    isDangerousDiagnosticApiPath(pathname)
+  ) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
 
   // Rate limit global para /api (admin web + app móvil + público). Por IP; almacenamiento en memoria
   // (por instancia). Excluye webhooks y cron — ver isGlobalApiRateLimitExempt.

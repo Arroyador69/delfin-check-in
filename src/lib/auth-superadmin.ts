@@ -2,7 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/auth';
 
 export async function verifySuperAdmin(req: NextRequest) {
-  const authToken = req.cookies.get('auth_token')?.value;
+  let authToken = req.cookies.get('auth_token')?.value;
+  const bearer = req.headers.get('authorization');
+  if (!authToken && bearer?.startsWith('Bearer ')) {
+    authToken = bearer.slice(7).trim();
+  }
 
   if (!authToken) {
     return {
