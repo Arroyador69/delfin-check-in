@@ -16,7 +16,7 @@ import { getClientIP, rateLimitMiddleware, RATE_LIMIT_CONFIGS } from '@/lib/rate
 
 export async function POST(req: NextRequest) {
   const clientIP = getClientIP(req.headers);
-  const rl = rateLimitMiddleware(clientIP, RATE_LIMIT_CONFIGS.login);
+  const rl = rateLimitMiddleware(`pw-recovery:${clientIP}`, RATE_LIMIT_CONFIGS.login);
   if (rl) return rl;
 
   try {
