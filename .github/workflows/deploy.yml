@@ -51,6 +51,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Sin vercel-version la acción usa un CLI viejo y la API de Vercel falla (p. ej. ≥ 47.2.2).
       - name: Deploy to Vercel
         uses: amondnet/vercel-action@v25
         with:
@@ -58,3 +59,4 @@ jobs:
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
           vercel-args: '--prod'
+          vercel-version: latest
