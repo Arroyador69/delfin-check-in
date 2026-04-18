@@ -37,7 +37,10 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
         // Deshabilitar Mac Catalyst para evitar crashes en macOS
-        'UIApplicationSupportsIndirectInputEvents': false
+        'UIApplicationSupportsIndirectInputEvents': false,
+        /** iOS 14+: sin esto, Metro (192.168.x.x:8081) queda bloqueado (“Local network prohibited”). */
+        NSLocalNetworkUsageDescription:
+          'Conectar con tu Mac en la misma Wi‑Fi para cargar la app en modo desarrollo (Metro).'
       },
       // Deshabilitar Mac Catalyst explícitamente
       requireFullScreen: true
