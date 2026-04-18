@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import type Stripe from 'stripe';
 import { sql } from '@vercel/postgres';
 import { getStripeServer } from '@/lib/stripe-server';
 
@@ -51,12 +52,12 @@ export async function POST(req: NextRequest) {
     }
 
     // Cancelar la suscripción al final del período
-    const subscription = await getStripeServer().subscriptions.update(
+    const subscription = (await getStripeServer().subscriptions.update(
       tenant.stripe_subscription_id,
       {
         cancel_at_period_end: true,
       }
-    );
+    )) as Stripe.Subscription;
 
     console.log(`🔴 Suscripción marcada para cancelación: ${tenant.stripe_subscription_id}`);
 

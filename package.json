@@ -32,7 +32,9 @@
   "dependencies": {
     "@octokit/rest": "^22.0.1",
     "@radix-ui/react-label": "^2.0.2",
+    "@radix-ui/react-select": "^2.2.6",
     "@radix-ui/react-slot": "^1.0.2",
+    "@radix-ui/react-switch": "^1.2.6",
     "@radix-ui/react-tabs": "^1.0.4",
     "@sentry/nextjs": "^10.49.0",
     "@stripe/react-stripe-js": "^5.2.0",

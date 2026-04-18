@@ -57,9 +57,10 @@ export async function POST(req: NextRequest) {
         WHERE tu.email = ${email.toLowerCase()} AND tu.is_active = true
       `;
       console.log('✅ Consulta SQL exitosa');
-    } catch (sqlError) {
+    } catch (sqlError: unknown) {
       console.error('❌ Error en consulta SQL:', sqlError);
-      throw new Error(`Error de base de datos: ${sqlError.message}`);
+      const msg = sqlError instanceof Error ? sqlError.message : String(sqlError);
+      throw new Error(`Error de base de datos: ${msg}`);
     }
 
     console.log('👤 Usuarios encontrados:', userResult.rows.length);
@@ -92,9 +93,10 @@ export async function POST(req: NextRequest) {
         WHERE id = ${user.id}
       `;
       console.log('✅ Código guardado exitosamente');
-    } catch (updateError) {
+    } catch (updateError: unknown) {
       console.error('❌ Error guardando código:', updateError);
-      throw new Error(`Error actualizando usuario: ${updateError.message}`);
+      const msg = updateError instanceof Error ? updateError.message : String(updateError);
+      throw new Error(`Error actualizando usuario: ${msg}`);
     }
 
     // Usar el email principal como destino (por ahora)

@@ -9,7 +9,7 @@
  */
 
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+import jwt, { type Secret, type SignOptions } from 'jsonwebtoken';
 
 // ============================================
 // CONFIGURACIÓN
@@ -93,10 +93,11 @@ export function generateAccessToken(payload: JWTPayload, expiresIn: string = JWT
   }
 
   try {
-    const token = jwt.sign(payload, jwtSecret, {
+    const signOptions: SignOptions = {
       expiresIn,
-      algorithm: 'HS256'
-    });
+      algorithm: 'HS256',
+    };
+    const token = jwt.sign(payload, jwtSecret as Secret, signOptions);
     
     return token;
   } catch (error) {
@@ -118,13 +119,14 @@ export function generateRefreshToken(payload: JWTPayload): string {
   }
 
   try {
+    const refreshOptions: SignOptions = {
+      expiresIn: REFRESH_TOKEN_EXPIRATION,
+      algorithm: 'HS256',
+    };
     const refreshToken = jwt.sign(
       { ...payload, type: 'refresh' },
-      jwtSecret,
-      {
-        expiresIn: REFRESH_TOKEN_EXPIRATION,
-        algorithm: 'HS256'
-      }
+      jwtSecret as Secret,
+      refreshOptions
     );
     
     return refreshToken;
@@ -179,8 +181,8 @@ export function verifyToken(token: string): JWTPayload | null {
 
   try {
     // Verificación completa del token con firma
-    const decoded = jwt.verify(token, jwtSecret, {
-      algorithms: ['HS256']
+    const decoded = jwt.verify(token, jwtSecret as Secret, {
+      algorithms: ['HS256'],
     }) as JWTPayload;
     
     if (!decoded || !decoded.exp) {
@@ -220,8 +222,8 @@ export function verifyTokenServer(token: string): JWTPayload | null {
   }
 
   try {
-    const decoded = jwt.verify(token, jwtSecret, {
-      algorithms: ['HS256']
+    const decoded = jwt.verify(token, jwtSecret as Secret, {
+      algorithms: ['HS256'],
     }) as JWTPayload;
     
     return decoded;

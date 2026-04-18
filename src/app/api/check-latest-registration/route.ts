@@ -13,14 +13,14 @@ export async function GET(req: NextRequest) {
       LIMIT 1
     `;
     
-    if (registros.length === 0) {
+    if (registros.rows.length === 0) {
       return NextResponse.json({
         ok: false,
         message: 'No hay registros en la base de datos'
       });
     }
     
-    const registro = registros[0];
+    const registro = registros.rows[0];
     const data = registro.data;
     
     console.log('📊 Registro más reciente encontrado:', registro.id);

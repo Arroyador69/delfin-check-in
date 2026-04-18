@@ -18,13 +18,18 @@ export async function GET(req: NextRequest) {
     const published_only = searchParams.get('published_only') === 'true';
 
     if (slug) {
-      // Obtener artículo específico por slug
-      const result = await sql`
-        SELECT * FROM blog_articles
-        WHERE slug = ${slug}
-        ${published_only ? sql`AND is_published = true` : sql``}
-        LIMIT 1
-      `;
+      // Dos consultas evitan fragmentos sql anidados (tipos de @vercel/postgres).
+      const result = published_only
+        ? await sql`
+            SELECT * FROM blog_articles
+            WHERE slug = ${slug} AND is_published = true
+            LIMIT 1
+          `
+        : await sql`
+            SELECT * FROM blog_articles
+            WHERE slug = ${slug}
+            LIMIT 1
+          `;
 
       if (result.rows.length === 0) {
         return NextResponse.json(

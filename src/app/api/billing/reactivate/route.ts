@@ -1,3 +1,4 @@
+import type Stripe from 'stripe';
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
 import { getStripeServer } from '@/lib/stripe-server';
@@ -51,12 +52,12 @@ export async function POST(req: NextRequest) {
     }
 
     // Reactivar la suscripción (quitar cancelación programada)
-    const subscription = await getStripeServer().subscriptions.update(
+    const subscription = (await getStripeServer().subscriptions.update(
       tenant.stripe_subscription_id,
       {
         cancel_at_period_end: false,
       }
-    );
+    )) as Stripe.Subscription;
 
     console.log(`🟢 Suscripción reactivada: ${tenant.stripe_subscription_id}`);
 

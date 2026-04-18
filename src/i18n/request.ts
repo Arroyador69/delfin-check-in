@@ -8,11 +8,17 @@ import { getRequestConfig } from 'next-intl/server';
 import { locales, defaultLocale, type Locale } from './config';
 
 export default getRequestConfig(async (opts) => {
-  // next-intl puede pasar requestLocale (4.x) o locale; rutas sin prefijo (/admin-login, /)
-  // pueden llegar sin locale y provocar notFound() → 404. Usar defaultLocale en ese caso.
+  // next-intl puede pasar requestLocale (4.x) como Promise; rutas sin prefijo pueden no tener locale.
+  const o = opts as {
+    requestLocale?: string | Promise<string | undefined>;
+    locale?: string;
+  };
+  const reqLoc = o.requestLocale;
   const raw =
-    (opts as { requestLocale?: string }).requestLocale ??
-    (opts as { locale?: string }).locale;
+    (typeof reqLoc === 'object' && reqLoc !== null && 'then' in reqLoc
+      ? await reqLoc
+      : reqLoc) ??
+    o.locale;
   let locale: Locale =
     typeof raw === 'string' && locales.includes(raw as Locale)
       ? (raw as Locale)

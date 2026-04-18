@@ -135,12 +135,15 @@ export async function GET(req: NextRequest) {
       return resultados;
     };
     
+    type EstructuraKey = keyof typeof estructurasPosibles;
+    const claves = Object.keys(estructurasPosibles) as EstructuraKey[];
+
     // Analizar cada estructura
     const analisis = {
-      estructuras: Object.keys(estructurasPosibles).map(key => ({
+      estructuras: claves.map((key) => ({
         nombre: key,
         datos: estructurasPosibles[key],
-        extracciones: extraerDatosUniversal(estructurasPosibles[key])
+        extracciones: extraerDatosUniversal(estructurasPosibles[key]),
       })),
       
       // Función universal para extraer dirección

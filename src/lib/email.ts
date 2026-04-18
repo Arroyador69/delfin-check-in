@@ -9,7 +9,8 @@
  */
 
 interface EmailConfig {
-  from: string;
+  /** Si no se indica, sendEmail usa SMTP/ZOHO_FROM (ver implementación). */
+  from?: string;
   to: string;
   subject: string;
   html: string;
@@ -228,8 +229,11 @@ export async function sendEmail(config: EmailConfig): Promise<{ success: boolean
           const errorText = await response.text();
           console.log('⚠️ Zoho Mail falló:', response.status, errorText);
         }
-      } catch (zohoError) {
-        console.log('⚠️ Error con Zoho Mail:', zohoError.message);
+      } catch (zohoError: unknown) {
+        console.log(
+          '⚠️ Error con Zoho Mail:',
+          zohoError instanceof Error ? zohoError.message : String(zohoError)
+        );
       }
     }
 
@@ -279,8 +283,11 @@ export async function sendEmail(config: EmailConfig): Promise<{ success: boolean
             messageId: result.id
           };
         }
-      } catch (resendError) {
-        console.log('⚠️ Error con Resend:', resendError.message);
+      } catch (resendError: unknown) {
+        console.log(
+          '⚠️ Error con Resend:',
+          resendError instanceof Error ? resendError.message : String(resendError)
+        );
       }
     }
 
