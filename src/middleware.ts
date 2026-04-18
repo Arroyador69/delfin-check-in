@@ -311,54 +311,42 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // Para rutas de API, inyectar tenant ID desde JWT o header
+  // Para rutas de API: tenant solo desde JWT verificado (firma HS256). El header x-tenant-id del
+  // cliente no se confía (evita IDOR). SuperAdmin puede indicar otro tenant en el header.
   if (pathname.startsWith('/api/')) {
+    const rawHeaderTenant =
+      (req.headers.get('x-tenant-id') || req.headers.get('X-Tenant-ID') || '').trim() || null;
+
     const requestHeaders = new Headers(req.headers);
+    requestHeaders.delete('x-tenant-id');
+    requestHeaders.delete('X-Tenant-ID');
+
     let tenantId: string | null = null;
-    
-    // PRIMERO: Verificar si hay tenant_id en el header
-    const headerTenantId = req.headers.get('x-tenant-id') || req.headers.get('X-Tenant-ID');
-    if (headerTenantId) {
-      tenantId = headerTenantId;
+
+    const authHeader = req.headers.get('authorization');
+    let jwtPayload: Awaited<ReturnType<typeof verifyTokenEdge>> = null;
+    if (authHeader?.startsWith('Bearer ')) {
+      const token = authHeader.split(' ')[1];
+      jwtPayload = await verifyTokenEdge(token);
+    }
+
+    const authCookie = req.cookies.get('auth_token')?.value;
+    if (!jwtPayload && authCookie) {
+      jwtPayload = await verifyTokenEdge(authCookie);
+    }
+
+    if (jwtPayload) {
+      const uuidOk = (id: string) =>
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+
+      if (jwtPayload.isPlatformAdmin === true && rawHeaderTenant && uuidOk(rawHeaderTenant)) {
+        tenantId = rawHeaderTenant;
+        console.log(`👑 SuperAdmin — tenant objetivo: ${tenantId}`);
+      } else {
+        tenantId = jwtPayload.tenantId;
+        console.log(`🔐 Tenant desde JWT: ${tenantId}`);
+      }
       requestHeaders.set('x-tenant-id', tenantId);
-      console.log(`🔗 Tenant_id desde header (llamada interna): ${tenantId}`);
-    }
-    
-    // SEGUNDO: Si no hay tenant_id en header, intentar desde Authorization Bearer token
-    if (!tenantId) {
-      const authHeader = req.headers.get('authorization');
-      if (authHeader && authHeader.startsWith('Bearer ')) {
-        try {
-          const token = authHeader.split(' ')[1];
-          const payload = verifyTokenEdge(token);
-          if (payload?.tenantId) {
-            tenantId = payload.tenantId;
-            requestHeaders.set('x-tenant-id', tenantId);
-            console.log(`📱 Token móvil detectado, tenant_id: ${tenantId}`);
-          }
-        } catch (error: any) {
-          if (error.name !== 'TokenExpiredError' && !error.message?.includes('expired')) {
-            console.error('Error verificando token Bearer:', error);
-          }
-        }
-      }
-    }
-    
-    // TERCERO: Si no hay tenant_id en Bearer token, intentar desde cookie (web)
-    if (!tenantId) {
-      const authToken = req.cookies.get('auth_token')?.value;
-      if (authToken) {
-        try {
-          const payload = verifyTokenEdge(authToken);
-          if (payload?.tenantId) {
-            tenantId = payload.tenantId;
-            requestHeaders.set('x-tenant-id', tenantId);
-            console.log(`🌐 Token web detectado, tenant_id: ${tenantId}`);
-          }
-        } catch (error) {
-          console.error('Error verificando token cookie:', error);
-        }
-      }
     }
     
     // Si no hay tenant_id válido, las rutas protegidas deben fallar con 401
@@ -443,7 +431,7 @@ export async function middleware(req: NextRequest) {
   
   // Si hay token, verificar que sea válido y extraer tenant_id
   try {
-    const payload = verifyTokenEdge(authToken);
+    const payload = await verifyTokenEdge(authToken);
     if (payload?.tenantId) {
       const requestHeaders = new Headers(req.headers);
       requestHeaders.set('x-tenant-id', payload.tenantId);

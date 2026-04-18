@@ -12,8 +12,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
 import { sendRecoveryEmail } from '@/lib/email';
 import crypto from 'crypto';
+import { getClientIP, rateLimitMiddleware, RATE_LIMIT_CONFIGS } from '@/lib/rate-limit';
 
 export async function POST(req: NextRequest) {
+  const clientIP = getClientIP(req.headers);
+  const rl = rateLimitMiddleware(clientIP, RATE_LIMIT_CONFIGS.login);
+  if (rl) return rl;
+
   try {
     console.log('🔍 Iniciando forgot-password para:', req.url);
     const { email } = await req.json();

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyToken, hashPassword } from '@/lib/auth';
+import { hashPassword } from '@/lib/auth';
 import { sql } from '@/lib/db';
+import { getClientIP, rateLimitMiddleware, RATE_LIMIT_CONFIGS } from '@/lib/rate-limit';
 
 /**
  * 🔄 API PARA CAMBIAR CONTRASEÑA CON CÓDIGO DE RECUPERACIÓN
@@ -14,6 +15,10 @@ import { sql } from '@/lib/db';
  */
 
 export async function POST(req: NextRequest) {
+  const clientIP = getClientIP(req.headers);
+  const rl = rateLimitMiddleware(clientIP, RATE_LIMIT_CONFIGS.login);
+  if (rl) return rl;
+
   try {
     const { email, recoveryCode, newPassword } = await req.json();
     

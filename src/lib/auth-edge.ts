@@ -1,9 +1,10 @@
 /**
  * 🔐 AUTENTICACIÓN COMPATIBLE CON EDGE RUNTIME
- * 
- * Implementación de verificación de tokens JWT usando solo Web Crypto API
- * Compatible con Edge Runtime de Next.js
+ *
+ * Verificación de JWT con firma HS256 (jose) — no solo decodificación Base64.
  */
+
+import { jwtVerify } from 'jose';
 
 // ============================================
 // TIPOS
@@ -14,66 +15,64 @@ export interface JWTPayload {
   tenantId: string;
   email: string;
   role: 'owner' | 'admin' | 'staff';
+  isPlatformAdmin?: boolean;
   tenantName?: string;
   planId?: string;
   iat?: number;
   exp?: number;
 }
 
-// ============================================
-// FUNCIONES DE VERIFICACIÓN DE TOKEN
-// ============================================
+function isRole(r: unknown): r is JWTPayload['role'] {
+  return r === 'owner' || r === 'admin' || r === 'staff';
+}
 
 /**
- * Verifica un token JWT usando Web Crypto API (compatible con Edge Runtime)
- * @param token - Token JWT a verificar
- * @returns Payload decodificado si es válido, null si es inválido
+ * Verifica firma y expiración del JWT (HS256, mismo secreto que jsonwebtoken en Node).
  */
-export function verifyTokenEdge(token: string): JWTPayload | null {
+export async function verifyTokenEdge(token: string): Promise<JWTPayload | null> {
   const jwtSecret = process.env.JWT_SECRET;
-  
+
   if (!jwtSecret) {
     console.error('JWT_SECRET no está configurado');
     return null;
   }
 
   try {
-    // Decodificar el token sin verificar la firma (para Edge Runtime)
-    const parts = token.split('.');
-    if (parts.length !== 3) {
+    const secretKey = new TextEncoder().encode(jwtSecret);
+    const { payload: raw } = await jwtVerify(token, secretKey, {
+      algorithms: ['HS256'],
+    });
+
+    const userId = typeof raw.userId === 'string' ? raw.userId : null;
+    const tenantId = typeof raw.tenantId === 'string' ? raw.tenantId : null;
+    const email = typeof raw.email === 'string' ? raw.email : null;
+    const role = raw.role;
+
+    if (!userId || !tenantId || !email || !isRole(role)) {
       return null;
     }
 
-    // Decodificar el payload
-    const payload = JSON.parse(atob(parts[1])) as JWTPayload;
-    
-    if (!payload || !payload.exp) {
-      return null;
-    }
+    const out: JWTPayload = {
+      userId,
+      tenantId,
+      email,
+      role,
+      isPlatformAdmin: raw.isPlatformAdmin === true,
+      tenantName: typeof raw.tenantName === 'string' ? raw.tenantName : undefined,
+      planId: typeof raw.planId === 'string' ? raw.planId : undefined,
+      iat: typeof raw.iat === 'number' ? raw.iat : undefined,
+      exp: typeof raw.exp === 'number' ? raw.exp : undefined,
+    };
 
-    // Verificar expiración
-    const isExpired = payload.exp * 1000 < Date.now();
-    if (isExpired) {
-      console.log('Token expirado');
-      return null;
-    }
-
-    // Verificación básica de estructura
-    if (!payload.userId || !payload.tenantId || !payload.email || !payload.role) {
-      return null;
-    }
-    
-    return payload;
+    return out;
   } catch (error) {
-    console.error('Error al verificar token:', error);
+    console.error('Error al verificar token (Edge):', error);
     return null;
   }
 }
 
 /**
- * Decodifica un token JWT sin verificar (útil para debugging)
- * @param token - Token JWT
- * @returns Payload decodificado o null
+ * Decodifica un token JWT sin verificar (solo diagnóstico / hints de UI; no usar para autorización)
  */
 export function decodeTokenEdge(token: string): JWTPayload | null {
   try {
@@ -91,19 +90,16 @@ export function decodeTokenEdge(token: string): JWTPayload | null {
 }
 
 /**
- * Verifica si un token ha expirado
- * @param token - Token JWT a verificar
- * @returns true si ha expirado, false si no
+ * Verifica si un token ha expirado (sin verificar firma)
  */
 export function isTokenExpiredEdge(token: string): boolean {
   try {
     const payload = decodeTokenEdge(token);
-    
+
     if (!payload || !payload.exp) {
       return true;
     }
 
-    // exp está en segundos, Date.now() en milisegundos
     const isExpired = payload.exp * 1000 < Date.now();
     return isExpired;
   } catch (error) {
@@ -114,22 +110,16 @@ export function isTokenExpiredEdge(token: string): boolean {
 
 /**
  * Extrae el token de un header Authorization Bearer
- * @param authHeader - Header de autorización
- * @returns Token extraído o null
  */
 export function extractBearerToken(authHeader: string | null): string | null {
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return null;
   }
-  
-  return authHeader.substring(7); // Remover 'Bearer '
-}
 
-// ============================================
-// CONFIGURACIÓN
-// ============================================
+  return authHeader.substring(7);
+}
 
 export const AUTH_CONFIG = {
   cookieName: 'auth_token',
-  refreshCookieName: 'refresh_token'
+  refreshCookieName: 'refresh_token',
 } as const;
