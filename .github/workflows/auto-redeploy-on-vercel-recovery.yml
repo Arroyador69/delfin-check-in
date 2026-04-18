@@ -20,7 +20,7 @@ jobs:
         run: |
           echo "Vercel not operational (status=${{ steps.status.outputs.status }}). Exiting neutral." && exit 78
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Install Vercel CLI
         run: npm i -g vercel
       - name: Deploy to Production

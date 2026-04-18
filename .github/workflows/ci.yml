@@ -9,9 +9,6 @@ on:
 jobs:
   ci:
     runs-on: ubuntu-latest
-    env:
-      # Reduce avisos de deprecación de Node 20 en actions/checkout y setup-node (changelog GitHub 2025–2026).
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     strategy:
       matrix:
@@ -20,10 +17,10 @@ jobs:
     
     steps:
     - name: Checkout código
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       
     - name: Configurar Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v5
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
@@ -62,11 +59,9 @@ jobs:
 
   security:
     runs-on: ubuntu-latest
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
     - name: Checkout código
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       
     - name: Audit de seguridad
       run: npm audit --audit-level moderate
@@ -77,11 +72,9 @@ jobs:
   lighthouse:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
     - name: Checkout código
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       
     - name: Lighthouse CI
       uses: treosh/lighthouse-ci-action@v10
