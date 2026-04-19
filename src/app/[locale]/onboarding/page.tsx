@@ -10,6 +10,7 @@ import {
   defaultBookingChannelsConfig,
   type BookingChannelsConfig,
 } from '@/lib/booking-channels';
+import { isValidLocale } from '@/i18n/config';
 
 type PlanId = 'free' | 'checkin' | 'standard' | 'pro';
 type BillingInterval = 'month' | 'year';
@@ -236,7 +237,7 @@ export default function OnboardingPage() {
   const getLocaleFromPath = () => {
     const parts = (pathname || '').split('/').filter(Boolean);
     const maybeLocale = parts[0];
-    return maybeLocale && ['es', 'en', 'it', 'pt', 'fr'].includes(maybeLocale) ? maybeLocale : 'es';
+    return maybeLocale && isValidLocale(maybeLocale) ? maybeLocale : 'es';
   };
 
   const bootstrapSessionFromToken = async () => {

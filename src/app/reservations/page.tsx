@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { isValidLocale } from '@/i18n/config';
 
 /**
  * Redirige /reservations → /[locale]/reservations para que siempre se use
@@ -14,7 +15,7 @@ export default function ReservationsRedirect() {
     const locale = typeof window !== 'undefined'
       ? (localStorage.getItem('preferred-locale') || navigator.language?.slice(0, 2) || 'es')
       : 'es';
-    const valid = ['es', 'en', 'it', 'pt', 'fr'].includes(locale) ? locale : 'es';
+    const valid = isValidLocale(locale) ? locale : 'es';
     router.replace(`/${valid}/reservations`);
   }, [router]);
 

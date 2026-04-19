@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import { isValidLocale } from '@/i18n/config'
 
 /** Redirigir solo a rutas internas (evita open redirect). */
 function getSafeRedirect(redirect: string | null): string {
@@ -16,7 +17,7 @@ function getSafeRedirect(redirect: string | null): string {
 function getDashboardPath(): string {
   if (typeof window === 'undefined') return '/es/dashboard'
   const loc = localStorage.getItem('preferred-locale')
-  if (loc && ['es', 'en', 'it', 'pt', 'fr'].includes(loc)) return `/${loc}/dashboard`
+  if (loc && isValidLocale(loc)) return `/${loc}/dashboard`
   return '/es/dashboard'
 }
 

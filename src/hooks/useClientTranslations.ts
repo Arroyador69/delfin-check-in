@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { type Locale, defaultLocale } from '@/i18n/config';
+import { type Locale, defaultLocale, isValidLocale } from '@/i18n/config';
 
 /**
  * 🌍 HOOK DE TRADUCCIONES DEL CLIENTE
@@ -49,8 +49,8 @@ export function getCurrentLocale(): Locale {
   if (typeof window === 'undefined') return defaultLocale;
   
   const stored = localStorage.getItem('preferred-locale');
-  if (stored && ['es', 'en', 'it', 'pt', 'fr'].includes(stored)) {
-    return stored as Locale;
+  if (stored && isValidLocale(stored)) {
+    return stored;
   }
   
   return defaultLocale;

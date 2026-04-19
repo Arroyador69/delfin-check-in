@@ -4,9 +4,9 @@
 
 import type { DirectReservation, TenantProperty } from '@/lib/direct-reservations-types';
 
-export type OwnerMailLocale = 'es' | 'en' | 'it' | 'pt' | 'fr';
+export type OwnerMailLocale = 'es' | 'en' | 'it' | 'pt' | 'fr' | 'fi';
 
-const SUPPORTED: OwnerMailLocale[] = ['es', 'en', 'it', 'pt', 'fr'];
+const SUPPORTED: OwnerMailLocale[] = ['es', 'en', 'it', 'pt', 'fr', 'fi'];
 
 export function normalizeOwnerMailLocale(raw: string | null | undefined): OwnerMailLocale {
   const l = String(raw || 'es').toLowerCase().split('-')[0];
@@ -21,6 +21,7 @@ const STRINGS = {
     it: (code: string) => `🏠 Nuova prenotazione diretta - ${code}`,
     pt: (code: string) => `🏠 Nova reserva direta - ${code}`,
     fr: (code: string) => `🏠 Nouvelle réservation directe - ${code}`,
+    fi: (code: string) => `🏠 Uusi suora varaus - ${code}`,
   },
   titleDoc: {
     es: 'Nueva Reserva Directa',
@@ -28,6 +29,7 @@ const STRINGS = {
     it: 'Nuova prenotazione diretta',
     pt: 'Nova reserva direta',
     fr: 'Nouvelle réservation directe',
+    fi: 'Uusi suora varaus',
   },
   headerTitle: {
     es: '¡Nueva Reserva Directa!',
@@ -35,6 +37,7 @@ const STRINGS = {
     it: 'Nuova prenotazione diretta!',
     pt: 'Nova reserva direta!',
     fr: 'Nouvelle réservation directe !',
+    fi: 'Uusi suora varaus!',
   },
   headerSub: {
     es: 'Has recibido una nueva reserva en tu propiedad',
@@ -42,6 +45,7 @@ const STRINGS = {
     it: 'Hai ricevuto una nuova prenotazione per la tua struttura',
     pt: 'Recebeu uma nova reserva na sua propriedade',
     fr: 'Vous avez reçu une nouvelle réservation pour votre bien',
+    fi: 'Olet saanut uuden varauksen majoituspaikallesi',
   },
   congrats: {
     es: '¡Felicitaciones!',
@@ -49,6 +53,7 @@ const STRINGS = {
     it: 'Congratulazioni!',
     pt: 'Parabéns!',
     fr: 'Félicitations !',
+    fi: 'Onnittelut!',
   },
   intro: {
     es: (prop: string) =>
@@ -61,6 +66,8 @@ const STRINGS = {
       `Recebeu uma nova reserva direta para <strong>${prop}</strong>.`,
     fr: (prop: string) =>
       `Vous avez reçu une nouvelle réservation directe pour <strong>${prop}</strong>.`,
+    fi: (prop: string) =>
+      `Olet saanut uuden suoran varauksen kohteeseen <strong>${prop}</strong>.`,
   },
   paidTitle: {
     es: '✅ Pago Confirmado',
@@ -68,6 +75,7 @@ const STRINGS = {
     it: '✅ Pagamento confermato',
     pt: '✅ Pagamento confirmado',
     fr: '✅ Paiement confirmé',
+    fi: '✅ Maksu vahvistettu',
   },
   paidBody: {
     es: 'El cliente ha completado el pago exitosamente. La reserva está confirmada y lista para gestionar.',
@@ -75,6 +83,7 @@ const STRINGS = {
     it: 'L’ospite ha completato il pagamento. La prenotazione è confermata e pronta da gestire.',
     pt: 'O hóspede concluiu o pagamento com sucesso. A reserva está confirmada e pronta a gerir.',
     fr: 'Le client a payé avec succès. La réservation est confirmée et prête à être gérée.',
+    fi: 'Vieras on suorittanut maksun. Vahvistettu varaus on valmis hallittavaksi.',
   },
   guestSection: {
     es: '👤 Información del huésped',
@@ -82,16 +91,39 @@ const STRINGS = {
     it: '👤 Informazioni sull’ospite',
     pt: '👤 Informação do hóspede',
     fr: '👤 Informations sur le client',
+    fi: '👤 Vieraan tiedot',
   },
-  labelName: { es: 'Nombre:', en: 'Name:', it: 'Nome:', pt: 'Nome:', fr: 'Nom :' },
-  labelEmail: { es: 'Email:', en: 'Email:', it: 'Email:', pt: 'Email:', fr: 'E-mail :' },
-  labelPhone: { es: 'Teléfono:', en: 'Phone:', it: 'Telefono:', pt: 'Telefone:', fr: 'Téléphone :' },
+  labelName: {
+    es: 'Nombre:',
+    en: 'Name:',
+    it: 'Nome:',
+    pt: 'Nome:',
+    fr: 'Nom :',
+    fi: 'Nimi:',
+  },
+  labelEmail: {
+    es: 'Email:',
+    en: 'Email:',
+    it: 'Email:',
+    pt: 'Email:',
+    fr: 'E-mail :',
+    fi: 'Sähköposti:',
+  },
+  labelPhone: {
+    es: 'Teléfono:',
+    en: 'Phone:',
+    it: 'Telefono:',
+    pt: 'Telefone:',
+    fr: 'Téléphone :',
+    fi: 'Puhelin:',
+  },
   labelNationality: {
     es: 'Nacionalidad:',
     en: 'Nationality:',
     it: 'Nazionalità:',
     pt: 'Nacionalidade:',
     fr: 'Nationalité :',
+    fi: 'Kansallisuus:',
   },
   notProvided: {
     es: 'No proporcionado',
@@ -99,6 +131,7 @@ const STRINGS = {
     it: 'Non fornito',
     pt: 'Não fornecido',
     fr: 'Non fourni',
+    fi: 'Ei ilmoitettu',
   },
   notSpecified: {
     es: 'No especificada',
@@ -106,6 +139,7 @@ const STRINGS = {
     it: 'Non specificata',
     pt: 'Não especificada',
     fr: 'Non précisée',
+    fi: 'Ei määritelty',
   },
   staySection: {
     es: '📅 Detalles de la estancia',
@@ -113,6 +147,7 @@ const STRINGS = {
     it: '📅 Dettagli del soggiorno',
     pt: '📅 Detalhes da estadia',
     fr: '📅 Détails du séjour',
+    fi: '📅 Majoituksen tiedot',
   },
   labelCode: {
     es: 'Código de reserva:',
@@ -120,6 +155,7 @@ const STRINGS = {
     it: 'Codice prenotazione:',
     pt: 'Código da reserva:',
     fr: 'Code de réservation :',
+    fi: 'Varauskoodi:',
   },
   labelCheckIn: {
     es: 'Fecha de entrada:',
@@ -127,6 +163,7 @@ const STRINGS = {
     it: 'Check-in:',
     pt: 'Check-in:',
     fr: 'Arrivée :',
+    fi: 'Sisäänkirjautuminen:',
   },
   labelCheckOut: {
     es: 'Fecha de salida:',
@@ -134,14 +171,23 @@ const STRINGS = {
     it: 'Check-out:',
     pt: 'Check-out:',
     fr: 'Départ :',
+    fi: 'Uloskirjautuminen:',
   },
-  labelNights: { es: 'Noches:', en: 'Nights:', it: 'Notti:', pt: 'Noites:', fr: 'Nuits :' },
+  labelNights: {
+    es: 'Noches:',
+    en: 'Nights:',
+    it: 'Notti:',
+    pt: 'Noites:',
+    fr: 'Nuits :',
+    fi: 'Yöt:',
+  },
   labelGuests: {
     es: 'Huéspedes:',
     en: 'Guests:',
     it: 'Ospiti:',
     pt: 'Hóspedes:',
     fr: 'Voyageurs :',
+    fi: 'Vieraat:',
   },
   financeSection: {
     es: '💰 Desglose financiero',
@@ -149,6 +195,7 @@ const STRINGS = {
     it: '💰 Dettaglio economico',
     pt: '💰 Resumo financeiro',
     fr: '💰 Détail financier',
+    fi: '💰 Talouserittely',
   },
   labelTotal: {
     es: 'Total de la reserva:',
@@ -156,6 +203,7 @@ const STRINGS = {
     it: 'Totale prenotazione:',
     pt: 'Total da reserva:',
     fr: 'Total de la réservation :',
+    fi: 'Varauksen kokonaissumma:',
   },
   labelCommission: {
     es: 'Comisión Delfin',
@@ -163,6 +211,7 @@ const STRINGS = {
     it: 'Commissione Delfin',
     pt: 'Comissão Delfin',
     fr: 'Commission Delfin',
+    fi: 'Delfin-komissio',
   },
   labelNet: {
     es: 'Tu ingreso neto:',
@@ -170,6 +219,7 @@ const STRINGS = {
     it: 'Il tuo netto:',
     pt: 'O seu rendimento líquido:',
     fr: 'Votre revenu net :',
+    fi: 'Nettotulosi:',
   },
   specialSection: {
     es: '📝 Solicitudes especiales del huésped',
@@ -177,6 +227,7 @@ const STRINGS = {
     it: '📝 Richieste speciali dell’ospite',
     pt: '📝 Pedidos especiais do hóspede',
     fr: '📝 Demandes particulières du client',
+    fi: '📝 Vieraan erityistoiveet',
   },
   nextSection: {
     es: '📊 Próximos pasos',
@@ -184,6 +235,7 @@ const STRINGS = {
     it: '📊 Prossimi passi',
     pt: '📊 Próximos passos',
     fr: '📊 Prochaines étapes',
+    fi: '📊 Seuraavat vaiheet',
   },
   nextSteps: {
     es: [
@@ -216,6 +268,12 @@ const STRINGS = {
       '3. <strong>Gérez le séjour</strong> selon vos procédures',
       '4. <strong>Effectuez le check-out</strong> en fin de séjour',
     ],
+    fi: [
+      '1. <strong>Valmista majoitus</strong> vieraan saapumista varten',
+      '2. <strong>Sovi sisäänkirjautuminen</strong> vieraan kanssa',
+      '3. <strong>Hallitse majoitusta</strong> omien käytänteidesi mukaan',
+      '4. <strong>Suorita uloskirjautuminen</strong> majoituksen päättyessä',
+    ],
   },
   panelNote: {
     es: 'Puedes gestionar esta reserva desde tu panel de administración en Delfin Check-in.',
@@ -223,6 +281,7 @@ const STRINGS = {
     it: 'Puoi gestire questa prenotazione dal pannello Delfin Check-in.',
     pt: 'Pode gerir esta reserva no painel de administração Delfin Check-in.',
     fr: 'Vous pouvez gérer cette réservation depuis votre tableau de bord Delfin Check-in.',
+    fi: 'Voit hallita tätä varausta Delfin Check-in -hallintapaneelista.',
   },
   closing: {
     es: '¡Que tengas una excelente experiencia con tu huésped!',
@@ -230,6 +289,7 @@ const STRINGS = {
     it: 'Ti auguriamo un’ottima esperienza con il tuo ospite!',
     pt: 'Desejamos uma excelente experiência com o seu hóspede!',
     fr: 'Nous vous souhaitons une excellente expérience avec votre client !',
+    fi: 'Toivomme hyvää kokemusta vieraan kanssa!',
   },
   footerAuto: {
     es: 'Este email fue enviado automáticamente por Delfin Check-in',
@@ -237,6 +297,7 @@ const STRINGS = {
     it: 'Questa email è stata inviata automaticamente da Delfin Check-in',
     pt: 'Este e-mail foi enviado automaticamente pela Delfin Check-in',
     fr: 'Cet e-mail a été envoyé automatiquement par Delfin Check-in',
+    fi: 'Tämän sähköpostin lähetti automaattisesti Delfin Check-in',
   },
   footerRights: {
     es: '© 2024 Delfin Check-in. Todos los derechos reservados.',
@@ -244,6 +305,7 @@ const STRINGS = {
     it: '© 2024 Delfin Check-in. Tutti i diritti riservati.',
     pt: '© 2024 Delfin Check-in. Todos os direitos reservados.',
     fr: '© 2024 Delfin Check-in. Tous droits réservés.',
+    fi: '© 2024 Delfin Check-in. Kaikki oikeudet pidätetään.',
   },
 } as const;
 
@@ -254,6 +316,7 @@ function localeTag(loc: OwnerMailLocale): string {
     it: 'it-IT',
     pt: 'pt-PT',
     fr: 'fr-FR',
+    fi: 'fi-FI',
   };
   return map[loc];
 }

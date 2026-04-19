@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
 import { verifyToken } from '@/lib/auth';
+import { locales } from '@/i18n/config';
 
 /**
  * 🌍 API: GUARDAR PREFERENCIAS DE USUARIO (IDIOMA)
@@ -40,10 +41,10 @@ export async function POST(req: NextRequest) {
     const { locale } = body;
 
     // Validar locale
-    const validLocales = ['es', 'en', 'it', 'pt', 'fr'];
+    const validLocales = [...locales];
     if (!locale || !validLocales.includes(locale)) {
       return NextResponse.json(
-        { error: 'Locale inválido. Debe ser uno de: es, en, it, pt, fr' },
+        { error: `Locale inválido. Debe ser uno de: ${validLocales.join(', ')}` },
         { status: 400 }
       );
     }

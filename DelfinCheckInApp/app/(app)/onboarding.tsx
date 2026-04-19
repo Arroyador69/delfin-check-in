@@ -48,7 +48,7 @@ type Step = {
   Icon: React.ComponentType<{ size?: number; color?: string }>;
 };
 
-const LANGS: SupportedLocale[] = ['es', 'en', 'fr', 'it', 'pt'];
+const LANGS: SupportedLocale[] = ['es', 'en', 'fr', 'it', 'pt', 'fi'];
 
 const LANG_LABEL: Record<SupportedLocale, string> = {
   es: 'mobile.settings.languageEs',
@@ -56,6 +56,7 @@ const LANG_LABEL: Record<SupportedLocale, string> = {
   fr: 'mobile.settings.languageFr',
   it: 'mobile.settings.languageIt',
   pt: 'mobile.settings.languagePt',
+  fi: 'mobile.settings.languageFi',
 };
 
 export default function OnboardingScreen() {

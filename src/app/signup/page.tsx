@@ -4,14 +4,14 @@ import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 
-function normalizeLang(raw: string | null): 'es' | 'en' | 'fr' | 'it' | 'pt' {
+function normalizeLang(raw: string | null): 'es' | 'en' | 'fr' | 'it' | 'pt' | 'fi' {
   const v = String(raw || '').trim().toLowerCase();
-  if (v === 'es' || v === 'en' || v === 'fr' || v === 'it' || v === 'pt') return v;
+  if (v === 'es' || v === 'en' || v === 'fr' || v === 'it' || v === 'pt' || v === 'fi') return v;
   return 'en';
 }
 
 const copy: Record<
-  'es' | 'en' | 'fr' | 'it' | 'pt',
+  'es' | 'en' | 'fr' | 'it' | 'pt' | 'fi',
   {
     title: string;
     subtitle: string;
@@ -78,6 +78,17 @@ const copy: Record<
     already: 'Este email já está na lista de espera ou tem conta ativa.',
     error: 'Não foi possível concluir. Tenta novamente.',
     goLogin: 'Ir para login',
+  },
+  fi: {
+    title: 'Luo tili',
+    subtitle: 'Jätä sähköpostisi, lähetämme käyttöoikeuden kun se on saatavilla.',
+    emailLabel: 'Sähköposti',
+    emailPlaceholder: 'sinä@email.com',
+    cta: 'Liity',
+    success: 'Valmis. Tarkista sähköpostisi: ilmoitamme kun käyttöoikeus on avoinna.',
+    already: 'Tämä sähköposti on jo jonossa tai sillä on aktiivinen tili.',
+    error: 'Ei onnistunut. Yritä uudelleen.',
+    goLogin: 'Siirry kirjautumaan',
   },
 };
 

@@ -99,7 +99,7 @@ export interface Message {
   trigger: string;
   channel: 'email' | 'telegram' | 'whatsapp';
   template: string;
-  language: 'es' | 'en';
+  language: 'es' | 'en' | 'it' | 'pt' | 'fr' | 'fi';
   is_active: boolean;
   created_at: string;
 }

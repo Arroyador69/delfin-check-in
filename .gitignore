@@ -3,6 +3,11 @@ _landing_clone/
 _landing_repo/
 staging.delfincheckin.com/
 
+# i18n FI build (caché local / venv de traducción)
+scripts/__pycache__/
+scripts/fi_translate_cache.json
+.venv-i18n/
+
 # Dependencies
 node_modules/
 npm-debug.log*

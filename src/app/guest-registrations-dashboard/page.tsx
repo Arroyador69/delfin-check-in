@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { isValidLocale } from '@/i18n/config';
 
 /**
  * Redirige /guest-registrations-dashboard → /[locale]/guest-registrations-dashboard
@@ -14,7 +15,7 @@ export default function GuestRegistrationsRedirect() {
     const locale = typeof window !== 'undefined'
       ? (localStorage.getItem('preferred-locale') || navigator.language?.slice(0, 2) || 'es')
       : 'es';
-    const valid = ['es', 'en', 'it', 'pt', 'fr'].includes(locale) ? locale : 'es';
+    const valid = isValidLocale(locale) ? locale : 'es';
     router.replace(`/${valid}/guest-registrations-dashboard`);
   }, [router]);
 

@@ -12,6 +12,7 @@ const OPTIONS: { code: SupportedLocale | 'device'; labelKey: string }[] = [
   { code: 'fr', labelKey: 'mobile.settings.languageFr' },
   { code: 'it', labelKey: 'mobile.settings.languageIt' },
   { code: 'pt', labelKey: 'mobile.settings.languagePt' },
+  { code: 'fi', labelKey: 'mobile.settings.languageFi' },
 ];
 
 export default function LanguageSettingsScreen() {

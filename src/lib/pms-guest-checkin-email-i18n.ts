@@ -1,6 +1,6 @@
-export type GuestMailLocale = 'es' | 'en' | 'it' | 'pt' | 'fr';
+export type GuestMailLocale = 'es' | 'en' | 'it' | 'pt' | 'fr' | 'fi';
 
-const SUPPORTED: GuestMailLocale[] = ['es', 'en', 'it', 'pt', 'fr'];
+const SUPPORTED: GuestMailLocale[] = ['es', 'en', 'it', 'pt', 'fr', 'fi'];
 
 export function normalizeGuestMailLocale(raw: string | null | undefined): GuestMailLocale {
   const l = String(raw || 'es').toLowerCase().split('-')[0];
@@ -15,6 +15,7 @@ function localeTag(loc: GuestMailLocale): string {
     it: 'it-IT',
     pt: 'pt-PT',
     fr: 'fr-FR',
+    fi: 'fi-FI',
   };
   return map[loc];
 }
@@ -54,6 +55,7 @@ export function buildPmsCheckinInstructionsEmail(params: {
       it: `📬 Istruzioni check-in · ${params.propertyLabel}`,
       pt: `📬 Instruções de check-in · ${params.propertyLabel}`,
       fr: `📬 Instructions d’arrivée · ${params.propertyLabel}`,
+      fi: `📬 Sisäänkirjautumisohjeet · ${params.propertyLabel}`,
     },
     title: {
       es: 'Instrucciones de check-in',
@@ -61,6 +63,7 @@ export function buildPmsCheckinInstructionsEmail(params: {
       it: 'Istruzioni check-in',
       pt: 'Instruções de check-in',
       fr: 'Instructions d’arrivée',
+      fi: 'Sisäänkirjautumisohjeet',
     },
     sub: {
       es: (p: string) => `${p}`,
@@ -68,6 +71,7 @@ export function buildPmsCheckinInstructionsEmail(params: {
       it: (p: string) => `${p}`,
       pt: (p: string) => `${p}`,
       fr: (p: string) => `${p}`,
+      fi: (p: string) => `${p}`,
     },
     hello: {
       es: (n: string) =>
@@ -80,6 +84,8 @@ export function buildPmsCheckinInstructionsEmail(params: {
         `<p>Olá <strong>${n}</strong>, segue a informação para a sua chegada.</p>`,
       fr: (n: string) =>
         `<p>Bonjour <strong>${n}</strong>, voici les informations pour votre arrivée.</p>`,
+      fi: (n: string) =>
+        `<p>Hei <strong>${n}</strong>, tässä on tiedot saapumistasi varten.</p>`,
     },
     dates: {
       es: (a: string, b: string, g: number) =>
@@ -92,6 +98,8 @@ export function buildPmsCheckinInstructionsEmail(params: {
         `<p><strong>Datas:</strong> ${a} → ${b} · <strong>Pessoas:</strong> ${g}</p>`,
       fr: (a: string, b: string, g: number) =>
         `<p><strong>Dates :</strong> ${a} → ${b} · <strong>Personnes :</strong> ${g}</p>`,
+      fi: (a: string, b: string, g: number) =>
+        `<p><strong>Päivät:</strong> ${a} → ${b} · <strong>Vieraat:</strong> ${g}</p>`,
     },
     spamHint: {
       es: 'Si no ves este email correctamente, revisa la carpeta de spam.',
@@ -99,6 +107,7 @@ export function buildPmsCheckinInstructionsEmail(params: {
       it: 'Se l’email non si visualizza bene, controlla la cartella spam.',
       pt: 'Se o e-mail não aparecer bem, verifique a pasta de spam.',
       fr: 'Si l’e-mail s’affiche mal, vérifiez votre dossier spam.',
+      fi: 'Jos sähköposti näyttää oudolta, tarkista roskapostikansio.',
     },
     regTitle: {
       es: 'Recordatorio: registro de viajeros',
@@ -106,6 +115,7 @@ export function buildPmsCheckinInstructionsEmail(params: {
       it: 'Promemoria: registrazione ospiti',
       pt: 'Lembrete: registo de viajantes',
       fr: 'Rappel : enregistrement des voyageurs',
+      fi: 'Muistutus: matkustajien rekisteröinti',
     },
     regBody: {
       es: 'Si aún no lo has hecho, completa el formulario obligatorio antes de tu llegada:',
@@ -113,6 +123,7 @@ export function buildPmsCheckinInstructionsEmail(params: {
       it: 'Se non l’hai ancora fatto, completa il modulo obbligatorio prima dell’arrivo:',
       pt: 'Se ainda não o fez, preencha o formulário obrigatório antes da chegada:',
       fr: 'Si ce n’est pas encore fait, complétez le formulaire obligatoire avant l’arrivée :',
+      fi: 'Jos et ole vielä täyttänyt, täytä pakollinen lomake ennen saapumista:',
     },
     regBtn: {
       es: 'Rellenar formulario',
@@ -120,6 +131,7 @@ export function buildPmsCheckinInstructionsEmail(params: {
       it: 'Apri modulo',
       pt: 'Abrir formulário',
       fr: 'Ouvrir le formulaire',
+      fi: 'Avaa lomake',
     },
     waTitle: {
       es: 'WhatsApp del alojamiento',
@@ -127,6 +139,7 @@ export function buildPmsCheckinInstructionsEmail(params: {
       it: 'WhatsApp della struttura',
       pt: 'WhatsApp do alojamento',
       fr: 'WhatsApp de l’hébergement',
+      fi: 'Majoituspaikan WhatsApp',
     },
     waBody: {
       es: 'Número configurado en Instrucciones de check-in. Pulsa para abrir el chat (móvil o WhatsApp Web).',
@@ -134,6 +147,7 @@ export function buildPmsCheckinInstructionsEmail(params: {
       it: 'Numero salvato nelle istruzioni check-in. Tocca per aprire la chat.',
       pt: 'Número guardado nas instruções de check-in. Toque para abrir o chat.',
       fr: 'Numéro enregistré dans les instructions d’arrivée. Appuyez pour ouvrir le chat.',
+      fi: 'Tallennettu numero sisäänkirjautumisohjeissa. Avaa keskustelu napauttamalla (mobiili tai WhatsApp Web).',
     },
     waBtn: {
       es: 'Chatear por WhatsApp',
@@ -141,6 +155,7 @@ export function buildPmsCheckinInstructionsEmail(params: {
       it: 'Chatta su WhatsApp',
       pt: 'Conversar no WhatsApp',
       fr: 'Discuter sur WhatsApp',
+      fi: 'Chat WhatsAppissa',
     },
     cancelTitle: {
       es: '¿Necesitas cancelar tu reserva?',
@@ -148,6 +163,7 @@ export function buildPmsCheckinInstructionsEmail(params: {
       it: 'Devi cancellare la prenotazione?',
       pt: 'Precisa de cancelar a reserva?',
       fr: 'Besoin d’annuler votre réservation ?',
+      fi: 'Tarvitsetko peruuttaa varauksen?',
     },
     cancelBody: {
       es: 'Puedes hacerlo desde nuestro sistema.',
@@ -155,6 +171,7 @@ export function buildPmsCheckinInstructionsEmail(params: {
       it: 'Puoi farlo dal nostro sistema.',
       pt: 'Pode fazê-lo no nosso sistema.',
       fr: 'Vous pouvez le faire via notre système.',
+      fi: 'Voit tehdä sen järjestelmässämme.',
     },
     cancelBtn: {
       es: 'Cancelar reserva',
@@ -162,6 +179,7 @@ export function buildPmsCheckinInstructionsEmail(params: {
       it: 'Cancella prenotazione',
       pt: 'Cancelar reserva',
       fr: 'Annuler la réservation',
+      fi: 'Peruuta varaus',
     },
     cancelPolicy: {
       es: 'Política: cancelación con al menos 1 día de antelación · Reembolso según condiciones.',
@@ -169,6 +187,7 @@ export function buildPmsCheckinInstructionsEmail(params: {
       it: 'Politica: cancellazione con almeno 1 giorno di anticipo · Rimborso secondo condizioni.',
       pt: 'Política: cancelar com pelo menos 1 dia de antecedência · Reembolso conforme condições.',
       fr: 'Politique : annulation au moins 1 jour avant · Remboursement selon conditions.',
+      fi: 'Käytäntö: peruutus vähintään 1 päivä etukäteen · Hyvitys ehtojen mukaan.',
     },
     contactTitle: {
       es: 'Contacto',
@@ -176,6 +195,7 @@ export function buildPmsCheckinInstructionsEmail(params: {
       it: 'Contatto',
       pt: 'Contacto',
       fr: 'Contact',
+      fi: 'Yhteystiedot',
     },
     contactIntro: {
       es: (n: string) => `Para cualquier duda, contacta con <strong>${n}</strong>:`,
@@ -183,14 +203,23 @@ export function buildPmsCheckinInstructionsEmail(params: {
       it: (n: string) => `Per dubbi, contatta <strong>${n}</strong>:`,
       pt: (n: string) => `Para dúvidas, contacte <strong>${n}</strong>:`,
       fr: (n: string) => `Pour toute question, contactez <strong>${n}</strong> :`,
+      fi: (n: string) => `Kysyttävää? Ota yhteyttä: <strong>${n}</strong>:`,
     },
-    emailLbl: { es: 'Email:', en: 'Email:', it: 'Email:', pt: 'Email:', fr: 'E-mail :' },
+    emailLbl: {
+      es: 'Email:',
+      en: 'Email:',
+      it: 'Email:',
+      pt: 'Email:',
+      fr: 'E-mail :',
+      fi: 'Sähköposti:',
+    },
     phoneLbl: {
       es: 'Teléfono:',
       en: 'Phone:',
       it: 'Telefono:',
       pt: 'Telefone:',
       fr: 'Téléphone :',
+      fi: 'Puhelin:',
     },
     openNote: {
       es: 'Apertura del correo: indicador aproximado (puede variar según el cliente de email).',
@@ -198,6 +227,7 @@ export function buildPmsCheckinInstructionsEmail(params: {
       it: 'Apertura email: indicatore approssimativo.',
       pt: 'Abertura do e-mail: indicador aproximado.',
       fr: 'Ouverture de l’e-mail : indicateur approximatif.',
+      fi: 'Sähköpostin avaus: likimääräinen tieto (vaihtelee sähköpostiohjelman mukaan).',
     },
   } as const;
 

@@ -11,6 +11,7 @@ export function getKBForLocale(locale: string | undefined | null): SupportKB {
   if (norm === 'fr') return KB_FR;
   if (norm === 'it') return KB_IT;
   if (norm === 'pt' || norm === 'pt-pt' || norm === 'pt-br') return KB_PT;
+  if (norm === 'fi') return KB_EN;
   return KB_ES;
 }
 

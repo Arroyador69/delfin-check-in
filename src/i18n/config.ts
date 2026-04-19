@@ -11,8 +11,9 @@
 // - 🇮🇹 Italiano (it)
 // - 🇵🇹 Portugués (pt)
 // - 🇫🇷 Francés (fr)
+// - 🇫🇮 Finés (fi)
 
-export const locales = ['es', 'en', 'it', 'pt', 'fr'] as const;
+export const locales = ['es', 'en', 'it', 'pt', 'fr', 'fi'] as const;
 export type Locale = (typeof locales)[number];
 
 export const defaultLocale: Locale = 'es';
@@ -24,6 +25,7 @@ export const localeNames: Record<Locale, string> = {
   it: 'Italiano',
   pt: 'Português',
   fr: 'Français',
+  fi: 'Suomi',
 };
 
 // Banderas (emojis) para el selector
@@ -33,6 +35,7 @@ export const localeFlags: Record<Locale, string> = {
   it: '🇮🇹',
   pt: '🇵🇹',
   fr: '🇫🇷',
+  fi: '🇫🇮',
 };
 
 // Validar si un locale es soportado
@@ -48,6 +51,7 @@ export function toIntlDateLocale(locale: Locale): string {
     it: 'it-IT',
     pt: 'pt-PT',
     fr: 'fr-FR',
+    fi: 'fi-FI',
   };
   return map[locale];
 }

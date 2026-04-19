@@ -43,7 +43,7 @@ export const messageSchema = z.object({
   trigger: z.string().min(1, 'Trigger requerido'),
   channel: z.enum(['email', 'telegram', 'whatsapp']),
   template: z.string().min(1, 'Plantilla requerida'),
-  language: z.enum(['es', 'en']),
+  language: z.enum(['es', 'en', 'it', 'pt', 'fr', 'fi']),
   is_active: z.boolean(),
 });
 

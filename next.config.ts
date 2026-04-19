@@ -49,7 +49,7 @@ const nextConfig: NextConfig = {
   },
   /** Algunos navegadores resuelven iconos del manifest bajo /{locale}/… y piden /es/vercel.svg (404). */
   async rewrites() {
-    const locales = ['es', 'en', 'it', 'fr', 'pt'];
+    const locales = ['es', 'en', 'it', 'fr', 'pt', 'fi'];
     return locales.flatMap((locale) => [
       { source: `/${locale}/vercel.svg`, destination: '/vercel.svg' },
       { source: `/${locale}/next.svg`, destination: '/vercel.svg' },

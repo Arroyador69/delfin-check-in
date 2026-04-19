@@ -10,6 +10,7 @@ import enMessages from '../../messages/en.json';
 import frMessages from '../../messages/fr.json';
 import itMessages from '../../messages/it.json';
 import ptMessages from '../../messages/pt.json';
+import fiMessages from '../../messages/fi.json';
 
 // Reutilizamos los mismos diccionarios del software web (Next-intl).
 // Ruta desde DelfinCheckInApp/lib → raíz/messages
@@ -19,6 +20,7 @@ const messages = {
   fr: frMessages as Messages,
   it: itMessages as Messages,
   pt: ptMessages as Messages,
+  fi: fiMessages as Messages,
 } as const;
 
 export type SupportedLocale = keyof typeof messages;
@@ -92,6 +94,7 @@ const localeTagByCode: Record<SupportedLocale, string> = {
   fr: 'fr-FR',
   it: 'it-IT',
   pt: 'pt-PT',
+  fi: 'fi-FI',
 };
 
 export function getLocaleTag(): string {
