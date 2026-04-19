@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { useLocale } from 'next-intl';
 import { Wallet, Plus, CheckCircle, XCircle, Download, CreditCard, Calendar, AlertCircle } from 'lucide-react';
 import { useTenant } from '@/hooks/useTenant';
+import { useTenantMoneyFormat } from '@/hooks/use-tenant-money-format';
 
 interface BankAccount {
   id: number;
@@ -33,6 +34,7 @@ interface Payment {
 export default function MicrositePaymentsPage() {
   const t = useTranslations('settings.micrositePayments');
   const locale = useLocale();
+  const { formatCurrency } = useTenantMoneyFormat();
   const { tenant } = useTenant();
   const commissionPercent = tenant?.plan_type === 'pro' ? 5 : 9;
   const [loading, setLoading] = useState(true);
@@ -155,10 +157,6 @@ export default function MicrositePaymentsPage() {
       console.error('Error descargando reporte:', error);
       setMessage({ type: 'error', text: t('errorDownloadReport') });
     }
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat(locale, { style: 'currency', currency: 'EUR' }).format(amount);
   };
 
   const formatDate = (dateString: string) => {

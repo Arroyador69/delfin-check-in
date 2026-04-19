@@ -7,6 +7,7 @@ import LocalizedDateInput from '@/components/LocalizedDateInput';
 import { toIntlDateLocale, type Locale as AppLocale } from '@/i18n/config';
 import { Plus, Trash2, Copy, ExternalLink, Home, Bed, X, CheckCircle, Link as LinkIcon } from 'lucide-react';
 import { paymentLinkIsActiveForUi } from '@/lib/payment-links-ui';
+import { useTenantMoneyFormat } from '@/hooks/use-tenant-money-format';
 
 interface PaymentLink {
   id: number;
@@ -49,6 +50,7 @@ interface Property {
 export default function PaymentLinksPage() {
   const t = useTranslations('settings.paymentLinks');
   const locale = useLocale();
+  const { formatCurrency } = useTenantMoneyFormat();
   const intlLoc = toIntlDateLocale(locale as AppLocale);
   const [links, setLinks] = useState<PaymentLink[]>([]);
   const [loading, setLoading] = useState(true);
@@ -222,13 +224,6 @@ export default function PaymentLinksPage() {
       month: 'long',
       day: 'numeric'
     });
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat(intlLoc, {
-      style: 'currency',
-      currency: 'EUR'
-    }).format(amount);
   };
 
   return (

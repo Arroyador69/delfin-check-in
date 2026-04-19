@@ -118,8 +118,12 @@ export function validatePhone(phone: string): boolean {
 // FORMATEO DE PRECIOS
 // =====================================================
 
-export function formatPrice(amount: number, currency: string = 'EUR'): string {
-  return new Intl.NumberFormat('es-ES', {
+export function formatPrice(
+  amount: number,
+  currency: string = 'EUR',
+  numberLocale: string = 'es-ES'
+): string {
+  return new Intl.NumberFormat(numberLocale, {
     style: 'currency',
     currency: currency,
     minimumFractionDigits: 2,

@@ -5,7 +5,7 @@ import AdminLayout from '@/components/AdminLayout';
 import { Link, usePathname } from '@/i18n/navigation';
 import { Settings, FileText, CreditCard, User, LinkIcon, Home, Calendar, Wallet, AlertCircle, ExternalLink, LifeBuoy } from 'lucide-react';
 import dynamic from 'next/dynamic';
-import { useTranslations, useLocale } from 'next-intl';
+import { useTranslations } from 'next-intl';
 
 const AdSidebar = dynamic(() => import('@/components/AdSidebar'), {
   ssr: false
@@ -17,7 +17,6 @@ export default function SettingsLayout({
   children: React.ReactNode;
 }) {
   const t = useTranslations('settings');
-  const locale = useLocale();
   const pathname = usePathname();
   const [billingInfo, setBillingInfo] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -65,21 +64,6 @@ export default function SettingsLayout({
     };
     loadBillingInfo();
   }, []);
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat(locale, {
-      style: 'currency',
-      currency: 'EUR'
-    }).format(amount);
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString(locale, {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-  };
 
   return (
     <AdminLayout>

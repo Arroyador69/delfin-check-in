@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { useLocale } from 'next-intl';
+import { useTenantMoneyFormat } from '@/hooks/use-tenant-money-format';
 import { CreditCard, TrendingUp, Calendar, AlertCircle, CheckCircle, Download, ExternalLink, ChevronRight } from 'lucide-react';
 import DynamicPriceCalculator from '@/components/DynamicPriceCalculator';
 import { Link } from '@/i18n/navigation';
@@ -105,6 +106,7 @@ export default function BillingPage() {
   const tPlans = useTranslations('plans');
   const tLayout = useTranslations('settings.layout');
   const locale = useLocale();
+  const { formatCurrency } = useTenantMoneyFormat();
   const [loading, setLoading] = useState(true);
   const [billingInfo, setBillingInfo] = useState<BillingInfo | null>(null);
   const [error, setError] = useState('');
@@ -201,13 +203,6 @@ export default function BillingPage() {
     });
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat(locale, {
-      style: 'currency',
-      currency: 'EUR'
-    }).format(amount);
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -300,7 +295,7 @@ export default function BillingPage() {
                           <li key={inv.id} className="flex items-center justify-between bg-white p-3 rounded border border-red-200">
                             <div>
                               <p className="font-medium text-red-900">
-                                {formatCurrency(inv.amount_due)} {inv.currency.toUpperCase()}
+                                {formatCurrency(inv.amount_due, inv.currency)}
                               </p>
                               {inv.due_date && (
                                 <p className="text-sm text-red-600">
@@ -354,7 +349,7 @@ export default function BillingPage() {
                           <li key={inv.id} className="flex items-center justify-between bg-white p-3 rounded border border-yellow-200">
                             <div>
                               <p className="font-medium text-yellow-900">
-                                {formatCurrency(inv.amount_due)} {inv.currency.toUpperCase()}
+                                {formatCurrency(inv.amount_due, inv.currency)}
                               </p>
                               {inv.due_date && (
                                 <p className="text-sm text-yellow-600">
@@ -404,7 +399,7 @@ export default function BillingPage() {
                       <li key={inv.id} className="flex items-center justify-between bg-white p-3 rounded border border-blue-200">
                         <div>
                           <p className="font-medium text-blue-900">
-                            {inv.invoice_number || t('invoice')} - {formatCurrency(inv.amount_due)} {inv.currency.toUpperCase()}
+                            {inv.invoice_number || t('invoice')} - {formatCurrency(inv.amount_due, inv.currency)}
                           </p>
                           {inv.due_date && (
                             <p className="text-sm text-blue-600">
@@ -585,7 +580,7 @@ export default function BillingPage() {
                           {inv.invoice_number || inv.id.slice(0, 20) + '...'}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-orange-900">
-                          {formatCurrency(inv.amount_due)} {inv.currency.toUpperCase()}
+                          {formatCurrency(inv.amount_due, inv.currency)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                           {inv.due_date ? formatDate(inv.due_date) : 'N/A'}

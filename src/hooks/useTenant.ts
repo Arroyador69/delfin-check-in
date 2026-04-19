@@ -14,6 +14,10 @@ export interface TenantInfo {
   ads_enabled?: boolean;
   legal_module?: boolean;
   country_code?: string;
+  /** ISO 4217 según país del negocio (no según idioma UI). */
+  business_currency?: string;
+  /** BCP 47 para Intl (idioma cuenta + región país). */
+  money_format_locale?: string;
   max_rooms: number;
   current_rooms: number;
   status: string;

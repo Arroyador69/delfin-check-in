@@ -3,6 +3,7 @@ import { sql } from '@/lib/db';
 import { verifyToken, AUTH_CONFIG } from '@/lib/auth';
 import type { Tenant } from '@/lib/tenant';
 import { getTenantPlanPresentation } from '@/lib/tenant-plan-billing';
+import { getTenantBusinessCurrency, getTenantMoneyFormatLocale } from '@/lib/tenant-currency';
 import { hasCheckinInstructionsEmailPlan } from '@/lib/checkin-email-plan';
 
 function parseTenantStat(value: unknown): number {
@@ -84,6 +85,10 @@ export async function GET(req: NextRequest) {
     }
 
     const tenant = tenantResult.rows[0];
+    const tenantForMoney = {
+      country_code: tenant.country_code,
+      config: tenant.config,
+    } as Pick<Tenant, 'country_code' | 'config'>;
 
     // Obtener nombre de la empresa desde empresa_config
     const tenantIdString = String(tenantId);
@@ -193,6 +198,10 @@ export async function GET(req: NextRequest) {
         config: tenant.config,
         created_at: tenant.created_at,
         checkin_instructions_email: hasCheckinInstructionsEmailPlan(tenant as Tenant),
+        /** Moneda operativa según país del negocio (no según idioma de la UI). */
+        business_currency: getTenantBusinessCurrency(tenantForMoney),
+        /** Locale para formatear importes: idioma de cuenta + región del país. */
+        money_format_locale: getTenantMoneyFormatLocale(tenantForMoney),
       },
       stats: {
         total_rooms: stats.total_rooms,

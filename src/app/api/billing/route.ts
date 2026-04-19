@@ -5,6 +5,7 @@ import { getPendingInvoices } from '@/lib/payment-tracking';
 import { getTenantById } from '@/lib/tenant';
 import type { Tenant } from '@/lib/tenant';
 import { getTenantPlanPresentation } from '@/lib/tenant-plan-billing';
+import { getTenantBusinessCurrency, getTenantMoneyFormatLocale } from '@/lib/tenant-currency';
 
 const stripe = process.env.STRIPE_SECRET_KEY
   ? new Stripe(process.env.STRIPE_SECRET_KEY, {
@@ -178,7 +179,11 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    return NextResponse.json(billingInfo);
+    return NextResponse.json({
+      ...billingInfo,
+      business_currency: getTenantBusinessCurrency(tenant),
+      money_format_locale: getTenantMoneyFormatLocale(tenant),
+    });
   } catch (error) {
     console.error('Error obteniendo información de facturación:', error);
     return NextResponse.json(

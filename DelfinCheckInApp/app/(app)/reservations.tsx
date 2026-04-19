@@ -49,6 +49,7 @@ import {
 } from '@/lib/booking-channels';
 import { FixedBannerAd } from '@/components/FixedBannerAd';
 import { useMajorActionAd } from '@/lib/use-major-action-ad';
+import { formatTenantMoney } from '@/lib/tenant-money';
 
 interface Room {
   id: string;
@@ -94,6 +95,20 @@ export default function ReservationsScreen() {
   });
 
   const rooms: Room[] = roomsData || [];
+
+  const { data: tenantProfile } = useQuery({
+    queryKey: ['tenant-profile'],
+    queryFn: async () => {
+      const response = await api.get('/api/tenant');
+      return response.data?.tenant as
+        | { business_currency?: string; money_format_locale?: string }
+        | undefined;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const bizCurrency = tenantProfile?.business_currency || 'EUR';
+  const moneyLocale = tenantProfile?.money_format_locale || 'es-ES';
 
   const { data: bookingChannelsResponse } = useQuery({
     queryKey: ['booking-channels'],
@@ -323,7 +338,7 @@ export default function ReservationsScreen() {
       total_price: '',
       guest_paid: '',
       platform_commission: '',
-      currency: 'EUR',
+      currency: bizCurrency,
       status: 'confirmed',
       channel: 'manual',
     });
@@ -445,7 +460,10 @@ export default function ReservationsScreen() {
         </View>
         <Pressable
           style={styles.createButton}
-          onPress={() => setShowCreateModal(true)}
+          onPress={() => {
+            resetForm();
+            setShowCreateModal(true);
+          }}
         >
           <Plus size={20} color="white" />
           <Text style={styles.createButtonText}>{t('common.create')}</Text>
@@ -504,7 +522,14 @@ export default function ReservationsScreen() {
               <View style={styles.cardHeader}>
                 <View style={styles.namePriceContainer}>
                   <Text style={styles.guestName}>{item.guest_name}</Text>
-                  {price > 0 && !isNaN(price) && <Text style={styles.price}>{price.toFixed(2)} €</Text>}
+                  {price > 0 && !isNaN(price) && (
+                    <Text style={styles.price}>
+                      {formatTenantMoney(price, {
+                        currency: item.currency || bizCurrency,
+                        locale: moneyLocale,
+                      })}
+                    </Text>
+                  )}
                 </View>
                 <View
                   style={[
