@@ -25,7 +25,7 @@ import {
   useLocaleListener,
   type SupportedLocale,
 } from '@/lib/i18n';
-import { getForceOnboarding, setForceOnboarding, setOnboardingSeen } from '@/lib/onboarding';
+import { setOnboardingSeen } from '@/lib/onboarding';
 import { setAppCountryCode } from '@/lib/country-preference';
 import { api } from '@/lib/api';
 import { ISO3166_ALPHA2 } from '@/lib/iso3166-alpha2';
@@ -117,9 +117,18 @@ export default function OnboardingScreen() {
     if (!q) return sortedCountries;
     return sortedCountries.filter((code) => {
       const name = regionDisplayName(code, localeTag).toLowerCase();
-      return code.toLowerCase().includes(q) || name.includes(q);
+      return name.includes(q);
     });
   }, [sortedCountries, countrySearch, localeTag]);
+
+  /** Idiomas ordenados alfabéticamente según el nombre mostrado en el idioma actual de la UI. */
+  const sortedLangs = useMemo(() => {
+    const list = [...LANGS];
+    list.sort((a, b) =>
+      t(LANG_LABEL[a]).localeCompare(t(LANG_LABEL[b]), localeTag, { sensitivity: 'base' })
+    );
+    return list;
+  }, [localeTag]);
 
   useEffect(() => {
     anim.setValue(0);
@@ -135,15 +144,11 @@ export default function OnboardingScreen() {
     router.replace('/(app)');
   }
 
-  async function toggleForce() {
-    const cur = await getForceOnboarding();
-    await setForceOnboarding(!cur);
-  }
-
   async function continueFromSetup() {
     if (!countryCode) return;
     try {
-      await setAppLocale(getLocale());
+      // No llamar a setAppLocale aquí: ya se aplicó al elegir idioma; volver a guardar
+      // dispara LOCALE_CHANGED y el layout remonta, reseteando phase y rompiendo el paso al tour.
       await setAppCountryCode(countryCode);
       await syncCountryToTenant(countryCode);
       queryClient.invalidateQueries({ queryKey: ['app-region-prefs'] });
@@ -200,16 +205,6 @@ export default function OnboardingScreen() {
               <View style={styles.progressLeft}>
                 <Text style={styles.progressText}>{t('mobile.onboarding.setupBadge')}</Text>
               </View>
-              <View style={styles.actionsRight}>
-                {__DEV__ ? (
-                  <Pressable onPress={toggleForce} hitSlop={10}>
-                    <Text style={styles.dev}>{t('mobile.onboarding.devToggle')}</Text>
-                  </Pressable>
-                ) : null}
-                <Pressable onPress={finish} hitSlop={10}>
-                  <Text style={styles.skip}>{t('mobile.onboarding.skip')}</Text>
-                </Pressable>
-              </View>
             </View>
 
             <View style={styles.hero}>
@@ -237,12 +232,9 @@ export default function OnboardingScreen() {
               >
                 <View style={{ flex: 1, minWidth: 0 }}>
                   {countryCode ? (
-                    <>
-                      <Text style={styles.countrySelectedName} numberOfLines={2}>
-                        {regionDisplayName(countryCode, localeTag)}
-                      </Text>
-                      <Text style={styles.countrySelectedCode}>{countryCode}</Text>
-                    </>
+                    <Text style={styles.countrySelectedName} numberOfLines={3}>
+                      {regionDisplayName(countryCode, localeTag)}
+                    </Text>
                   ) : (
                     <Text style={styles.countryPlaceholder}>{t('mobile.onboarding.countryTapToChoose')}</Text>
                   )}
@@ -261,7 +253,7 @@ export default function OnboardingScreen() {
                 </View>
               </View>
               <View style={styles.langRow}>
-                {LANGS.map((code) => {
+                {sortedLangs.map((code) => {
                   const active = getLocale() === code;
                   return (
                     <Pressable
@@ -283,7 +275,7 @@ export default function OnboardingScreen() {
               disabled={!setupValid}
               onPress={() => void continueFromSetup()}
             >
-              <Text style={[styles.btnText, styles.btnPrimaryText]}>{t('mobile.onboarding.continueToTour')}</Text>
+              <Text style={[styles.btnText, styles.btnPrimaryText]}>{t('mobile.onboarding.continue')}</Text>
             </Pressable>
           </ScrollView>
         </SafeAreaView>
@@ -343,7 +335,6 @@ export default function OnboardingScreen() {
                       <Text style={[styles.countryName, selected && styles.countryNameSelected]} numberOfLines={2}>
                         {regionDisplayName(code, localeTag)}
                       </Text>
-                      <Text style={styles.countryCode}>{code}</Text>
                     </Pressable>
                   );
                 }}
@@ -374,17 +365,6 @@ export default function OnboardingScreen() {
                 <View key={i} style={[styles.dot, i === idx ? styles.dotActive : styles.dotIdle]} />
               ))}
             </View>
-          </View>
-
-          <View style={styles.actionsRight}>
-            {__DEV__ ? (
-              <Pressable onPress={toggleForce} hitSlop={10}>
-                <Text style={styles.dev}>{t('mobile.onboarding.devToggle')}</Text>
-              </Pressable>
-            ) : null}
-            <Pressable onPress={finish} hitSlop={10}>
-              <Text style={styles.skip}>{t('mobile.onboarding.skip')}</Text>
-            </Pressable>
           </View>
         </View>
 
@@ -521,12 +501,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '800',
   },
-  countrySelectedCode: {
-    color: '#64748b',
-    fontSize: 12,
-    fontWeight: '700',
-    marginTop: 2,
-  },
   modalSafe: {
     flex: 1,
     backgroundColor: '#050b1a',
@@ -579,9 +553,6 @@ const styles = StyleSheet.create({
   dot: { height: 6, borderRadius: 99 },
   dotIdle: { width: 10, backgroundColor: 'rgba(203, 213, 225, 0.25)' },
   dotActive: { width: 22, backgroundColor: '#60a5fa' },
-  actionsRight: { flexDirection: 'row', gap: 14, alignItems: 'center' },
-  dev: { color: '#a7f3d0', fontWeight: '900' },
-  skip: { color: '#93c5fd', fontWeight: '900' },
   hero: {
     paddingTop: 10,
     paddingBottom: 8,
@@ -665,10 +636,9 @@ const styles = StyleSheet.create({
   },
   countryRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 4,
+    paddingVertical: 12,
+    paddingHorizontal: 8,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(148, 163, 184, 0.12)',
   },
@@ -679,9 +649,8 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0,
     marginBottom: 1,
   },
-  countryName: { color: '#e2e8f0', fontSize: 14, fontWeight: '600', flex: 1, paddingRight: 8 },
+  countryName: { color: '#e2e8f0', fontSize: 15, fontWeight: '600', flex: 1 },
   countryNameSelected: { color: 'white', fontWeight: '800' },
-  countryCode: { color: '#94a3b8', fontSize: 12, fontWeight: '800' },
   langRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   langChip: {
     paddingVertical: 8,
@@ -695,6 +664,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(37, 99, 235, 0.35)',
     borderColor: 'rgba(96, 165, 250, 0.55)',
   },
-  langChipText: { color: '#cbd5e1', fontWeight: '800', fontSize: 12 },
+  langChipText: { color: '#cbd5e1', fontWeight: '800', fontSize: 14 },
   langChipTextActive: { color: 'white' },
 });
