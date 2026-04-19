@@ -23,6 +23,7 @@ import { Download, Plus, Share2 } from 'lucide-react-native';
 import { api, getAuthorizedDownloadHeaders } from '@/lib/api';
 import { downloadToCache, shareFile } from '@/lib/files';
 import { getLocaleTag, t } from '@/lib/i18n';
+import { useMajorActionAd } from '@/lib/use-major-action-ad';
 
 type Tab = 'facturas' | 'recibos';
 
@@ -88,6 +89,7 @@ function toYmd(d: Date): string {
 type ReciboDateField = 'fecha_pago' | 'fecha_estancia_desde' | 'fecha_estancia_hasta';
 
 export default function InvoicesScreen() {
+  const notifyMajorAd = useMajorActionAd();
   const queryClient = useQueryClient();
   const [tab, setTab] = useState<Tab>('facturas');
   const [refreshing, setRefreshing] = useState(false);
@@ -221,6 +223,7 @@ export default function InvoicesScreen() {
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['facturas'] });
       Alert.alert(t('common.success'), t('facturas.successCreate'));
+      notifyMajorAd();
       setFacturaForm((p) => ({
         ...p,
         cliente_nombre: '',
@@ -271,6 +274,7 @@ export default function InvoicesScreen() {
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['recibos'] });
       Alert.alert(t('common.success'), t('facturas.successCreateReceipt'));
+      notifyMajorAd();
       setReciboForm((p) => ({
         ...p,
         cliente_nombre: '',

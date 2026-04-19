@@ -7,13 +7,13 @@ import BookingChannelsSettingsBlock from '@/components/BookingChannelsSettingsBl
 import { api } from '@/lib/api';
 import { t } from '@/lib/i18n';
 import { useAuth } from '@/lib/auth';
-import { shouldShowMobileAds } from '@/lib/plan-ads';
-import { notifyMajorActionCompleted } from '@/lib/admob-interstitial';
+import { useMajorActionAd } from '@/lib/use-major-action-ad';
 
 type RoomRow = { id: number; name: string };
 
 export default function GeneralSettingsScreen() {
   const { session } = useAuth();
+  const notifyMajorAd = useMajorActionAd();
   const router = useRouter();
   const queryClient = useQueryClient();
   const [rooms, setRooms] = useState<RoomRow[]>([]);
@@ -53,7 +53,7 @@ export default function GeneralSettingsScreen() {
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['tenant-limits'] });
       Alert.alert(t('common.success'), t('settings.rooms.saved'));
-      notifyMajorActionCompleted(shouldShowMobileAds(session?.user?.tenant?.planId));
+      notifyMajorAd();
     },
     onError: (e: any) => {
       Alert.alert(t('common.error'), e?.response?.data?.message || t('settings.rooms.saveError'));

@@ -48,6 +48,7 @@ import {
   type BookingChannelsConfig,
 } from '@/lib/booking-channels';
 import { FixedBannerAd } from '@/components/FixedBannerAd';
+import { useMajorActionAd } from '@/lib/use-major-action-ad';
 
 interface Room {
   id: string;
@@ -55,6 +56,7 @@ interface Room {
 }
 
 export default function ReservationsScreen() {
+  const notifyMajorAd = useMajorActionAd();
   const params = useLocalSearchParams<{ filter?: string; reservationId?: string }>();
   const [refreshing, setRefreshing] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -172,6 +174,7 @@ export default function ReservationsScreen() {
         queryClient.invalidateQueries({ queryKey: ['reservations'] }),
         queryClient.invalidateQueries({ queryKey: ['pending-reservations-review'] }),
       ]);
+      notifyMajorAd();
     },
     onError: (error: any) => {
       Alert.alert(
@@ -235,6 +238,7 @@ export default function ReservationsScreen() {
       setShowCreateModal(false);
       resetForm();
       Alert.alert(t('common.success'), t('reservations.createSuccess'));
+      notifyMajorAd();
     },
     onError: (error: any) => {
       Alert.alert(t('common.error'), error.response?.data?.error || t('reservations.createErrorDefault'));
@@ -268,6 +272,7 @@ export default function ReservationsScreen() {
       setEditingReservationId(null);
       resetForm();
       Alert.alert(t('common.success'), t('reservations.updateSuccess'));
+      notifyMajorAd();
     },
     onError: (error: any) => {
       Alert.alert(t('common.error'), error.response?.data?.error || t('reservations.updateErrorDefault'));
