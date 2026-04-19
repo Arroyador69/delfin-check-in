@@ -13,6 +13,16 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+    #lang-select {
+      min-width: 11.5rem; max-width: 100%;
+      border-radius: 0.5rem; border: 1px solid #cbd5e1; background: #fff;
+      padding: 0.5rem 2rem 0.5rem 0.75rem; font-size: 0.875rem; font-weight: 600; color: #1e293b;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+      cursor: pointer;
+      appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 0.5rem center; background-size: 1rem;
+    }
+    #lang-select:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25); }
     .lang-btn { padding: 0.35rem 0.55rem; border-radius: 0.375rem; font-size: 0.75rem; font-weight: 600; border: 1px solid #e5e7eb; background: #fff; color: #374151; transition: all 0.15s; }
     @media (min-width: 640px) {
       .lang-btn { font-size: 0.8125rem; padding: 0.35rem 0.65rem; }
@@ -28,7 +38,19 @@
         <span class="text-2xl" aria-hidden="true">🐬</span>
         <span class="font-bold text-lg text-slate-900 tracking-tight">Delfín Check-in</span>
       </div>
-      <nav class="flex flex-wrap items-center justify-end gap-1.5 sm:gap-2" id="lang-nav" aria-label="Language"></nav>
+      <div
+        class="flex w-full sm:w-auto flex-col items-stretch sm:items-end gap-2 border border-slate-200/90 rounded-xl bg-slate-50/90 px-3 py-2.5 sm:border-0 sm:bg-transparent sm:px-0 sm:py-0"
+        id="lang-panel"
+      >
+        <div class="flex flex-col gap-1.5 sm:min-w-[16rem]">
+          <label id="lang-field-label" for="lang-select" class="text-xs font-bold uppercase tracking-wide text-slate-500">Language</label>
+          <select id="lang-select" name="lang" aria-describedby="lang-field-label"></select>
+        </div>
+        <div class="flex flex-wrap items-center justify-end gap-1 border-t border-slate-200/80 pt-2 sm:border-t-0 sm:pt-0">
+          <span class="sr-only" id="lang-quick-label">Shortcuts</span>
+          <nav class="flex flex-wrap items-center justify-end gap-1" id="lang-nav" aria-label="Language shortcuts"></nav>
+        </div>
+      </div>
     </div>
   </header>
 
@@ -86,20 +108,21 @@
     </p>
   </footer>
 
-  <script src="/landing-tracking.js"></script>
+  <script src="/landing-tracking.js" defer></script>
   <script>
 (function () {
   var LANGS = [
-    { code: 'es', label: 'ES', aria: 'Español' },
-    { code: 'en', label: 'EN', aria: 'English' },
-    { code: 'it', label: 'IT', aria: 'Italiano' },
-    { code: 'pt', label: 'PT', aria: 'Português' },
-    { code: 'fr', label: 'FR', aria: 'Français' },
-    { code: 'fi', label: 'FI', aria: 'Suomi' }
+    { code: 'es', label: 'ES', name: 'Español', aria: 'Español', flag: '🇪🇸' },
+    { code: 'en', label: 'EN', name: 'English', aria: 'English', flag: '🇬🇧' },
+    { code: 'it', label: 'IT', name: 'Italiano', aria: 'Italiano', flag: '🇮🇹' },
+    { code: 'pt', label: 'PT', name: 'Português', aria: 'Português', flag: '🇵🇹' },
+    { code: 'fr', label: 'FR', name: 'Français', aria: 'Français', flag: '🇫🇷' },
+    { code: 'fi', label: 'FI', name: 'Suomi', aria: 'Suomi', flag: '🇫🇮' }
   ];
 
   var STR = {
     es: {
+      languageLabel: 'Idioma',
       eyebrow: 'Para propietarios y gestores de alojamiento',
       heroTitle: 'Menos papeleo, más control de tus reservas',
       heroSubtitle: 'Une el registro legal de viajeros con tu panel: datos ordenados, estancias enlazadas y un camino claro hacia la próxima reserva.',
@@ -118,6 +141,7 @@
       footer: '© Delfín Check-in'
     },
     en: {
+      languageLabel: 'Language',
       eyebrow: 'For property owners and hosts',
       heroTitle: 'Less paperwork, more control of your bookings',
       heroSubtitle: 'Connect legal guest registration with your dashboard: clean data, stays linked, and a clear path to your next booking.',
@@ -136,6 +160,7 @@
       footer: '© Delfín Check-in'
     },
     it: {
+      languageLabel: 'Lingua',
       eyebrow: 'Per proprietari e gestori di strutture ricettive',
       heroTitle: 'Meno burocrazia, più controllo sulle prenotazioni',
       heroSubtitle: 'Collega la registrazione legale degli ospiti al tuo pannello: dati ordinati, soggiorni collegati e un percorso chiaro verso la prossima prenotazione.',
@@ -154,6 +179,7 @@
       footer: '© Delfín Check-in'
     },
     pt: {
+      languageLabel: 'Idioma',
       eyebrow: 'Para proprietários e gestores de alojamento',
       heroTitle: 'Menos papelada, mais controlo das reservas',
       heroSubtitle: 'Una o registo legal de hóspedes ao seu painel: dados organizados, estadias ligadas e um caminho claro para a próxima reserva.',
@@ -172,6 +198,7 @@
       footer: '© Delfín Check-in'
     },
     fr: {
+      languageLabel: 'Langue',
       eyebrow: 'Pour les propriétaires et gestionnaires d’hébergements',
       heroTitle: 'Moins de paperasse, plus de maîtrise de vos réservations',
       heroSubtitle: 'Reliez l’enregistrement légal des voyageurs à votre tableau de bord : données claires, séjours liés et une voie vers votre prochaine réservation.',
@@ -190,6 +217,7 @@
       footer: '© Delfín Check-in'
     },
     fi: {
+      languageLabel: 'Kieli',
       eyebrow: 'Majoituskohteiden omistajille ja hallinnoijille',
       heroTitle: 'Vähemmän paperityötä, parempi hallinta varauksista',
       heroSubtitle: 'Yhdistä matkustajien laillinen rekisteröinti hallintapaneeliisi: siistit tiedot, linkitetyt majoitukset ja selkeä polku seuraavaan varaukseen.',
@@ -277,13 +305,28 @@
       b.classList.toggle('active', on);
       b.setAttribute('aria-pressed', on ? 'true' : 'false');
     });
+    var selEl = document.getElementById('lang-select');
+    if (selEl) selEl.value = lang;
+    var labEl = document.getElementById('lang-field-label');
+    if (labEl && t.languageLabel) labEl.textContent = t.languageLabel;
     try {
       localStorage.setItem('landing_lang', lang);
       localStorage.setItem('preferred-locale', lang);
     } catch (e) {}
+    try {
+      var url = new URL(location.href);
+      url.searchParams.set('lang', lang);
+      if (history.replaceState) history.replaceState(null, '', url.toString());
+    } catch (e2) {}
   }
 
   function pickInitialLang() {
+    try {
+      var u = new URL(location.href);
+      var q = (u.searchParams.get('lang') || '').toLowerCase().trim().replace(/_/g, '-');
+      if (q === 'pt-br' || q === 'pt-pt') q = 'pt';
+      if (q && STR[q]) return q;
+    } catch (e0) {}
     var saved = null;
     var pref = null;
     try {
@@ -293,6 +336,19 @@
     if (saved && STR[saved]) return saved;
     if (pref && STR[pref]) return pref;
     return 'es';
+  }
+
+  var sel = document.getElementById('lang-select');
+  if (sel) {
+    LANGS.forEach(function (L) {
+      var opt = document.createElement('option');
+      opt.value = L.code;
+      opt.textContent = (L.flag ? L.flag + ' ' : '') + L.name;
+      sel.appendChild(opt);
+    });
+    sel.addEventListener('change', function () {
+      setLang(sel.value);
+    });
   }
 
   var nav = document.getElementById('lang-nav');
