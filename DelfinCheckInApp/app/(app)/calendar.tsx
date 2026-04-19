@@ -148,7 +148,8 @@ export default function CalendarScreen() {
       const e = new Date(ev.end_date);
       const start = new Date(s.getFullYear(), s.getMonth(), s.getDate());
       const endDay = new Date(e.getFullYear(), e.getMonth(), e.getDate());
-      for (let d = new Date(start); d < endDay; d.setDate(d.getDate() + 1)) {
+      // Incluir el día de check-out (el API usa check_out como día de salida; antes d < endDay lo omitía).
+      for (let d = new Date(start); d <= endDay; d.setDate(d.getDate() + 1)) {
         const key = ymdLocal(d);
         if (!map.has(key)) map.set(key, []);
         map.get(key)!.push(ev);
