@@ -12,23 +12,14 @@
   <meta name="description" content="Registro de viajeros, panel de reservas y cumplimiento MIR. Prueba el plan gratuito sin tarjeta." />
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
+    /* Misma idea que src/components/LanguageSwitcher.tsx + localeNames/localeFlags en src/i18n/config.ts */
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
-    #lang-select {
-      min-width: 11.5rem; max-width: 100%;
-      border-radius: 0.5rem; border: 1px solid #cbd5e1; background: #fff;
-      padding: 0.5rem 2rem 0.5rem 0.75rem; font-size: 0.875rem; font-weight: 600; color: #1e293b;
-      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
-      cursor: pointer;
-      appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
-      background-repeat: no-repeat; background-position: right 0.5rem center; background-size: 1rem;
+    #lang-dropdown:not(.hidden) { animation: langDdIn 0.2s ease-out; }
+    @keyframes langDdIn {
+      from { opacity: 0; transform: translateY(-6px); }
+      to { opacity: 1; transform: translateY(0); }
     }
-    #lang-select:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25); }
-    .lang-btn { padding: 0.35rem 0.55rem; border-radius: 0.375rem; font-size: 0.75rem; font-weight: 600; border: 1px solid #e5e7eb; background: #fff; color: #374151; transition: all 0.15s; }
-    @media (min-width: 640px) {
-      .lang-btn { font-size: 0.8125rem; padding: 0.35rem 0.65rem; }
-    }
-    .lang-btn:hover { background: #f9fafb; border-color: #d1d5db; }
-    .lang-btn.active { background: #2563eb; color: #fff; border-color: #2563eb; }
+    #lang-chevron.lang-dd-open { transform: rotate(180deg); }
   </style>
 </head>
 <body class="min-h-screen bg-slate-50 text-slate-900 antialiased">
@@ -39,17 +30,36 @@
         <span class="font-bold text-lg text-slate-900 tracking-tight">Delfín Check-in</span>
       </div>
       <div
-        class="flex w-full sm:w-auto flex-col items-stretch sm:items-end gap-2 border border-slate-200/90 rounded-xl bg-slate-50/90 px-3 py-2.5 sm:border-0 sm:bg-transparent sm:px-0 sm:py-0"
-        id="lang-panel"
+        id="lang-switcher-root"
+        class="relative z-[60] flex w-full justify-end sm:w-auto"
+        data-landing-lang-switcher
       >
-        <div class="flex flex-col gap-1.5 sm:min-w-[16rem]">
-          <label id="lang-field-label" for="lang-select" class="text-xs font-bold uppercase tracking-wide text-slate-500">Language</label>
-          <select id="lang-select" name="lang" aria-describedby="lang-field-label"></select>
-        </div>
-        <div class="flex flex-wrap items-center justify-end gap-1 border-t border-slate-200/80 pt-2 sm:border-t-0 sm:pt-0">
-          <span class="sr-only" id="lang-quick-label">Shortcuts</span>
-          <nav class="flex flex-wrap items-center justify-end gap-1" id="lang-nav" aria-label="Language shortcuts"></nav>
-        </div>
+        <button
+          type="button"
+          id="lang-trigger"
+          class="flex w-full sm:w-auto items-center justify-between gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-left text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 sm:justify-start"
+          aria-expanded="false"
+          aria-haspopup="listbox"
+          aria-label="Cambiar idioma"
+        >
+          <span class="flex min-w-0 flex-1 items-center gap-2">
+            <svg class="h-5 w-5 shrink-0 text-gray-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+              <circle cx="12" cy="12" r="10" stroke-width="2" />
+              <path stroke-width="2" d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z" />
+            </svg>
+            <span id="lang-trigger-text" class="hidden truncate sm:inline">🇪🇸 Español</span>
+            <span id="lang-trigger-flag-only" class="text-lg sm:hidden" aria-hidden="true">🇪🇸</span>
+          </span>
+          <svg id="lang-chevron" class="h-4 w-4 shrink-0 text-gray-600 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+        <div
+          id="lang-dropdown"
+          class="absolute right-0 top-full z-[70] mt-2 hidden w-[min(100vw-2rem,13.5rem)] rounded-lg border border-gray-200 bg-white py-2 shadow-lg sm:w-52"
+          role="listbox"
+          aria-labelledby="lang-trigger"
+        ></div>
       </div>
     </div>
   </header>
@@ -300,15 +310,7 @@
       var k = el.getAttribute('data-key');
       if (k && t[k] != null) el.textContent = t[k];
     });
-    document.querySelectorAll('.lang-btn').forEach(function (b) {
-      var on = b.getAttribute('data-lang') === lang;
-      b.classList.toggle('active', on);
-      b.setAttribute('aria-pressed', on ? 'true' : 'false');
-    });
-    var selEl = document.getElementById('lang-select');
-    if (selEl) selEl.value = lang;
-    var labEl = document.getElementById('lang-field-label');
-    if (labEl && t.languageLabel) labEl.textContent = t.languageLabel;
+    syncLangSwitcher(lang);
     try {
       localStorage.setItem('landing_lang', lang);
       localStorage.setItem('preferred-locale', lang);
@@ -318,6 +320,111 @@
       url.searchParams.set('lang', lang);
       if (history.replaceState) history.replaceState(null, '', url.toString());
     } catch (e2) {}
+  }
+
+  function langMeta(code) {
+    for (var i = 0; i < LANGS.length; i++) {
+      if (LANGS[i].code === code) return LANGS[i];
+    }
+    return LANGS[0];
+  }
+
+  function setDropdownOpen(open) {
+    var dd = document.getElementById('lang-dropdown');
+    var ch = document.getElementById('lang-chevron');
+    var tr = document.getElementById('lang-trigger');
+    if (!dd) return;
+    if (open) {
+      dd.classList.remove('hidden');
+      if (ch) ch.classList.add('lang-dd-open');
+      if (tr) tr.setAttribute('aria-expanded', 'true');
+    } else {
+      dd.classList.add('hidden');
+      if (ch) ch.classList.remove('lang-dd-open');
+      if (tr) tr.setAttribute('aria-expanded', 'false');
+    }
+  }
+
+  function toggleLangDropdown() {
+    var dd = document.getElementById('lang-dropdown');
+    if (!dd) return;
+    setDropdownOpen(dd.classList.contains('hidden'));
+  }
+
+  function syncLangSwitcher(lang) {
+    var L = langMeta(lang);
+    var tx = document.getElementById('lang-trigger-text');
+    var fo = document.getElementById('lang-trigger-flag-only');
+    if (tx) tx.textContent = (L.flag ? L.flag + ' ' : '') + L.name;
+    if (fo) fo.textContent = L.flag || '';
+    document.querySelectorAll('[data-lang-item]').forEach(function (btn) {
+      var c = btn.getAttribute('data-lang-code');
+      var active = c === lang;
+      btn.setAttribute('aria-selected', active ? 'true' : 'false');
+      btn.classList.toggle('bg-blue-50', active);
+      btn.classList.toggle('text-blue-700', active);
+      btn.classList.toggle('font-medium', active);
+      btn.classList.toggle('text-gray-700', !active);
+      var chk = btn.querySelector('[data-lang-check]');
+      if (chk) chk.classList.toggle('hidden', !active);
+    });
+  }
+
+  function initLangSwitcher() {
+    var dd = document.getElementById('lang-dropdown');
+    var tr = document.getElementById('lang-trigger');
+    if (!dd || !tr) return;
+    LANGS.forEach(function (L) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.setAttribute('role', 'option');
+      btn.setAttribute('data-lang-item', '');
+      btn.setAttribute('data-lang-code', L.code);
+      btn.setAttribute('aria-selected', 'false');
+      btn.className =
+        'flex w-full items-center gap-3 px-4 py-2 text-left text-sm text-gray-700 transition-colors hover:bg-gray-100';
+      var sf = document.createElement('span');
+      sf.className = 'text-xl shrink-0';
+      sf.textContent = L.flag;
+      var sn = document.createElement('span');
+      sn.className = 'flex-1';
+      sn.textContent = L.name;
+      var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.setAttribute('data-lang-check', '');
+      svg.setAttribute('class', 'hidden h-4 w-4 shrink-0 text-blue-700');
+      svg.setAttribute('fill', 'currentColor');
+      svg.setAttribute('viewBox', '0 0 20 20');
+      var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute(
+        'fill-rule',
+        'evenodd'
+      );
+      path.setAttribute(
+        'd',
+        'M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z'
+      );
+      path.setAttribute('clip-rule', 'evenodd');
+      svg.appendChild(path);
+      btn.appendChild(sf);
+      btn.appendChild(sn);
+      btn.appendChild(svg);
+      btn.addEventListener('click', function () {
+        setLang(L.code);
+        setDropdownOpen(false);
+      });
+      dd.appendChild(btn);
+    });
+    tr.addEventListener('click', function (e) {
+      e.stopPropagation();
+      toggleLangDropdown();
+    });
+    document.addEventListener('mousedown', function (e) {
+      var root = document.getElementById('lang-switcher-root');
+      if (root && e.target && !root.contains(e.target)) setDropdownOpen(false);
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') setDropdownOpen(false);
+    });
   }
 
   function pickInitialLang() {
@@ -338,35 +445,7 @@
     return 'es';
   }
 
-  var sel = document.getElementById('lang-select');
-  if (sel) {
-    LANGS.forEach(function (L) {
-      var opt = document.createElement('option');
-      opt.value = L.code;
-      opt.textContent = (L.flag ? L.flag + ' ' : '') + L.name;
-      sel.appendChild(opt);
-    });
-    sel.addEventListener('change', function () {
-      setLang(sel.value);
-    });
-  }
-
-  var nav = document.getElementById('lang-nav');
-  if (nav) {
-    LANGS.forEach(function (L) {
-      var b = document.createElement('button');
-      b.type = 'button';
-      b.className = 'lang-btn' + (L.code === 'es' ? ' active' : '');
-      b.setAttribute('data-lang', L.code);
-      b.setAttribute('id', 'btn-lang-' + L.code);
-      b.setAttribute('aria-label', L.aria);
-      b.setAttribute('aria-pressed', L.code === 'es' ? 'true' : 'false');
-      b.textContent = L.label;
-      b.addEventListener('click', function () { setLang(L.code); });
-      nav.appendChild(b);
-    });
-  }
-
+  initLangSwitcher();
   applyLinks();
   setLang(pickInitialLang());
 })();
