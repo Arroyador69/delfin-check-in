@@ -1,5 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { sql } from '@vercel/postgres'
+import { sqlTextArrayForAny } from '@/lib/pg-sql-params'
+import {
+  getTenantRoomContext,
+  resolveReservationRoomIdToCanonicalRoomId,
+  getAcceptableReservationIdsArrayForProperty,
+  reservationRowMatchesLinkedRoom,
+} from '@/lib/cleaning-reservation-room-match'
 
 export async function GET(req: NextRequest) {
   try {
@@ -62,92 +69,93 @@ export async function GET(req: NextRequest) {
       console.error('[calendar] events error:', e?.message || e)
     }
 
-    // Reservas operativas como eventos
-    let filterRoomId: string | null = null
+    // Reservas operativas: mismo matching UUID + legacy que limpieza / slots
+    const roomCtx = await getTenantRoomContext(tenantId)
+    const { orderedRoomIds, roomNameById } = roomCtx
+
+    let filterAcceptableIds: string[] | null = null
     if (propertyId) {
-      const mapRow = await sql`
-        SELECT room_id FROM property_room_map
-        WHERE tenant_id = ${tenantId}::uuid AND property_id = ${parseInt(propertyId)}
-        LIMIT 1
-      `
-      filterRoomId = mapRow.rows?.[0]?.room_id || null
+      filterAcceptableIds = await getAcceptableReservationIdsArrayForProperty(
+        tenantId,
+        parseInt(propertyId, 10)
+      )
     }
+
     let reservations
     try {
       if (propertyId) {
-        const params: any[] = [tenantId, toDate.toISOString().slice(0,10), fromDate.toISOString().slice(0,10), parseInt(propertyId)]
-        const text = `
-          SELECT r.id, r.tenant_id, r.room_id, r.guest_name, r.check_in, r.check_out, r.channel, r.guest_count
-          FROM reservations r
-          JOIN property_room_map prm
-            ON prm.tenant_id = $1::uuid AND prm.room_id = r.room_id
-          WHERE r.tenant_id = $1::uuid
-            AND r.check_in  < $2::date
-            AND r.check_out > $3::date
-            AND prm.property_id = $4
-          ORDER BY r.check_in ASC`
-        reservations = await sql.query(text, params)
+        if (!filterAcceptableIds || filterAcceptableIds.length === 0) {
+          reservations = { rows: [] as any[] }
+        } else {
+          const acc = filterAcceptableIds
+          reservations = await sql`
+            SELECT r.id, r.tenant_id, r.room_id, r.guest_name, r.check_in, r.check_out, r.channel, r.guest_count
+            FROM reservations r
+            WHERE r.tenant_id = ${tenantId}::uuid
+              AND r.check_in  < ${toDate.toISOString().slice(0, 10)}::date
+              AND r.check_out > ${fromDate.toISOString().slice(0, 10)}::date
+              AND r.room_id = ANY(${sqlTextArrayForAny(acc)})
+            ORDER BY r.check_in ASC
+          `
+        }
       } else {
-        // Sin property_id: todas las reservas del tenant en rango (alineado con listados y app móvil).
-        // No usar solo lodging_id: suele desalinearse con cómo GET /api/tenant/rooms resuelve habitaciones.
-        const params: any[] = [tenantId, toDate.toISOString().slice(0,10), fromDate.toISOString().slice(0,10)]
-        const text = `
+        reservations = await sql`
           SELECT r.id, r.tenant_id, r.room_id, r.guest_name, r.check_in, r.check_out, r.channel, r.guest_count
           FROM reservations r
-          WHERE r.tenant_id = $1::uuid
-            AND r.check_in  < $2::date
-            AND r.check_out > $3::date
-          ORDER BY r.check_in ASC`
-        reservations = await sql.query(text, params)
+          WHERE r.tenant_id = ${tenantId}::uuid
+            AND r.check_in  < ${toDate.toISOString().slice(0, 10)}::date
+            AND r.check_out > ${fromDate.toISOString().slice(0, 10)}::date
+          ORDER BY r.check_in ASC
+        `
       }
     } catch (e) {
       console.warn('[calendar] reservations primary query error, falling back:', (e as any)?.message)
-      const params: any[] = [tenantId, toDate.toISOString().slice(0,10), fromDate.toISOString().slice(0,10)]
-      let text = `
+      reservations = await sql`
         SELECT r.id, r.tenant_id, r.room_id, r.guest_name, r.check_in, r.check_out, r.channel, r.guest_count
         FROM reservations r
-        WHERE r.room_id = ANY(
-          SELECT prm.room_id FROM property_room_map prm WHERE prm.tenant_id = $1::uuid
-        )
-          AND r.check_in  < $2::date
-          AND r.check_out > $3::date
+        WHERE r.tenant_id = ${tenantId}::uuid
+          AND r.check_in  < ${toDate.toISOString().slice(0, 10)}::date
+          AND r.check_out > ${fromDate.toISOString().slice(0, 10)}::date
+        ORDER BY r.check_in ASC
       `
-      if (filterRoomId) {
-        params.push(filterRoomId)
-        text += ` AND r.room_id = $4`
+      if (propertyId) {
+        if (!filterAcceptableIds || filterAcceptableIds.length === 0) {
+          reservations = { rows: [] as any[] }
+        } else {
+          const acc = new Set(filterAcceptableIds)
+          reservations = {
+            rows: (reservations.rows as any[]).filter((r) =>
+              reservationRowMatchesLinkedRoom(r.room_id, acc)
+            ),
+          }
+        }
       }
-      text += ` ORDER BY r.check_in ASC`
-      reservations = await sql.query(text, params)
     }
-    // Traer nombres de habitación para mejor visualización
-    const roomNamesMap = new Map<string, string>()
-    try {
-      const roomIds = [...new Set(reservations.rows.map((r: any) => r.room_id))]
-      if (roomIds.length > 0) {
-        const roomsRes = await sql.query(
-          `SELECT id, name FROM "Room" WHERE id = ANY($1::text[])`,
-          [roomIds]
-        )
-        roomsRes.rows.forEach((row: any) => roomNamesMap.set(String(row.id), row.name))
-      }
-    } catch {}
 
-    const reservationEvents = reservations.rows.map((r: any) => ({
-      reservation_id: r.id,
-      tenant_id: r.tenant_id,
-      property_id: propertyId ? parseInt(propertyId) : null,
-      event_title: `Reserva ${r.guest_name}`,
-      event_description: null,
-      start_date: r.check_in,
-      end_date: r.check_out,
-      is_blocked: true,
-      event_type: 'reservation',
-      room_id: r.room_id,
-      room_name: roomNamesMap.get(String(r.room_id)) || null,
-      guest_name: r.guest_name,
-      channel: r.channel || null,
-      guest_count: r.guest_count || null
-    }))
+    const reservationEvents = reservations.rows.map((r: any) => {
+      const canonical = resolveReservationRoomIdToCanonicalRoomId(r.room_id, orderedRoomIds)
+      const displayRoomId = canonical ?? String(r.room_id)
+      const room_name =
+        (canonical ? roomNameById.get(canonical) : null) ??
+        roomNameById.get(String(r.room_id)) ??
+        null
+      return {
+        reservation_id: r.id,
+        tenant_id: r.tenant_id,
+        property_id: propertyId ? parseInt(propertyId) : null,
+        event_title: `Reserva ${r.guest_name}`,
+        event_description: null,
+        start_date: r.check_in,
+        end_date: r.check_out,
+        is_blocked: true,
+        event_type: 'reservation',
+        room_id: displayRoomId,
+        room_name,
+        guest_name: r.guest_name,
+        channel: r.channel || null,
+        guest_count: r.guest_count || null,
+      }
+    })
 
     const calendarOnlyEvents = events.rows.filter(
       (ev: any) => ev.event_type !== 'reservation'

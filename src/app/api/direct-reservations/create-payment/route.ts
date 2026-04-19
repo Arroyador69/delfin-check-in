@@ -7,6 +7,8 @@ import { sql } from '@vercel/postgres';
 import { generateReservationCode, calculateCommission } from '@/lib/direct-reservations-utils';
 import { getDirectReservationCommissionRate } from '@/lib/plan-pricing';
 import { getStripeServer } from '@/lib/stripe-server';
+import { sqlTextArrayForAny } from '@/lib/pg-sql-params';
+import { getAcceptableReservationIdsArrayForProperty } from '@/lib/cleaning-reservation-room-match';
 
 function corsHeaders(origin: string | null) {
   const allowedOrigins = [
@@ -133,18 +135,16 @@ export async function POST(req: NextRequest) {
 
     // Validar disponibilidad ANTES de crear el Payment Intent (evita overbooking)
     try {
+      const acceptableResRoomIds = await getAcceptableReservationIdsArrayForProperty(
+        String(tenantId),
+        Number(property_id)
+      );
       const overlap = await sql`
-        WITH map AS (
-          SELECT room_id
-          FROM property_room_map
-          WHERE tenant_id = ${tenantId}::uuid AND property_id = ${property_id}::int
-          LIMIT 1
-        ),
-        solapadas AS (
+        WITH solapadas AS (
           SELECT 1
-          FROM reservations r, map m
+          FROM reservations r
           WHERE r.tenant_id = ${tenantId}::uuid
-            AND r.room_id = m.room_id
+            AND r.room_id = ANY(${sqlTextArrayForAny(acceptableResRoomIds)})
             AND r.check_in  < ${check_out_date}::date
             AND r.check_out > ${check_in_date}::date
           UNION ALL

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
+import { sqlTextArrayForAny } from '@/lib/pg-sql-params';
+import { getAcceptableReservationIdsArrayForProperty } from '@/lib/cleaning-reservation-room-match';
 
 function escapeICal(text: string): string {
   return text.replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\n/g, '\\n');
@@ -40,15 +42,24 @@ export async function GET(
       WHERE property_id = ${propId} AND tenant_id = ${tenantId} AND reservation_status = 'confirmed'
     `;
 
-    // 2. Reservas del sistema principal (reservations) vinculadas via property_room_map
+    // 2. Reservas operativas (mismo matching UUID/legacy que calendario y disponibilidad)
     let systemRes = { rows: [] as any[] };
     try {
-      systemRes = await sql`
-        SELECT r.id, r.external_id AS reservation_code, r.guest_name, r.check_in, r.check_out, 'system' AS source
-        FROM reservations r
-        JOIN property_room_map prm ON prm.room_id = r.room_id AND prm.tenant_id = r.tenant_id
-        WHERE prm.property_id = ${propId} AND r.tenant_id = ${tenantId}::uuid AND r.status = 'confirmed'
-      `;
+      const acceptableResRoomIds = await getAcceptableReservationIdsArrayForProperty(
+        String(tenantId),
+        propId
+      );
+      if (acceptableResRoomIds.length === 0) {
+        systemRes = { rows: [] };
+      } else {
+        systemRes = await sql`
+          SELECT r.id, r.external_id AS reservation_code, r.guest_name, r.check_in, r.check_out, 'system' AS source
+          FROM reservations r
+          WHERE r.tenant_id = ${tenantId}::uuid
+            AND r.status = 'confirmed'
+            AND r.room_id = ANY(${sqlTextArrayForAny(acceptableResRoomIds)})
+        `;
+      }
     } catch {
       try {
         systemRes = await sql`

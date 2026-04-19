@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
       SELECT id AS room_id, name AS room_name
       FROM "Room"
       WHERE "lodgingId" = ${lodgingId}::text
-      ORDER BY id
+      ORDER BY id::text ASC
     `
     console.log('📦 [property-slots] Rooms encontrados:', (rooms as any).rowCount)
 

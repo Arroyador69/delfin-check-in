@@ -136,3 +136,90 @@ export function reservationRowMatchesLinkedRoom(
   const n = normalizeRoomId(rid);
   return acceptableIds.has(n);
 }
+
+/** Mismo orden y criterio que slots / limpieza: Room por lodging, ORDER BY id::text. */
+export type TenantRoomContext = {
+  orderedRoomIds: string[];
+  roomNameById: Map<string, string>;
+};
+
+export async function getTenantRoomContext(tenantId: string): Promise<TenantRoomContext> {
+  const empty = (): TenantRoomContext => ({
+    orderedRoomIds: [],
+    roomNameById: new Map(),
+  });
+  const tenant = await getTenantById(tenantId);
+  if (!tenant) return empty();
+  const lodgingId =
+    tenant.lodging_id && String(tenant.lodging_id).trim() !== ''
+      ? String(tenant.lodging_id)
+      : String(tenant.id);
+  try {
+    const r = await sql`
+      SELECT id::text AS id, name
+      FROM "Room"
+      WHERE "lodgingId" = ${lodgingId}
+      ORDER BY id::text ASC
+    `;
+    const orderedRoomIds: string[] = [];
+    const roomNameById = new Map<string, string>();
+    for (const row of r.rows as { id: string; name: string | null }[]) {
+      orderedRoomIds.push(row.id);
+      roomNameById.set(row.id, row.name ?? '');
+    }
+    return { orderedRoomIds, roomNameById };
+  } catch {
+    return empty();
+  }
+}
+
+export async function getOrderedRoomIdsForTenant(tenantId: string): Promise<string[]> {
+  const ctx = await getTenantRoomContext(tenantId);
+  return ctx.orderedRoomIds;
+}
+
+/**
+ * Convierte `reservations.room_id` (UUID, dígito legacy, etc.) al id canónico de fila Room.
+ */
+export function resolveReservationRoomIdToCanonicalRoomId(
+  resRoomId: unknown,
+  orderedRoomIds: string[]
+): string | null {
+  const rid = String(resRoomId ?? '').trim();
+  if (!rid) return null;
+  if (orderedRoomIds.includes(rid)) return rid;
+  if (/^\d+$/.test(rid)) {
+    const idx = parseInt(rid, 10) - 1;
+    if (idx >= 0 && idx < orderedRoomIds.length) return orderedRoomIds[idx]!;
+  }
+  const n = normalizeRoomId(rid);
+  if (orderedRoomIds.includes(n)) return n;
+  return null;
+}
+
+/** Expande a todos los alias posibles en SQL para todas las habitaciones del alojamiento. */
+export async function expandRoomIdsForAllTenantRooms(tenantId: string): Promise<string[]> {
+  const ordered = await getOrderedRoomIdsForTenant(tenantId);
+  if (ordered.length === 0) return [];
+  return expandRoomIdsForReservationQuery(tenantId, ordered);
+}
+
+/**
+ * Valores posibles de `reservations.room_id` para la habitación mapeada a una propiedad
+ * (mismo criterio que enlaces de limpieza y calendario).
+ */
+export async function getAcceptableReservationIdsArrayForProperty(
+  tenantId: string,
+  propertyId: number
+): Promise<string[]> {
+  const row = await sql`
+    SELECT room_id::text AS room_id
+    FROM property_room_map
+    WHERE tenant_id = ${tenantId}::uuid AND property_id = ${propertyId}
+    LIMIT 1
+  `;
+  const canon = String(row.rows[0]?.room_id ?? '').trim();
+  if (!canon) return [];
+  const m = await getAcceptableReservationRoomIdsByLinkedRoom(tenantId, [canon]);
+  return [...(m.get(canon) ?? new Set())];
+}

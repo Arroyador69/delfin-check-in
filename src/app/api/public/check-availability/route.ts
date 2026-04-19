@@ -5,6 +5,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
 import { calculateCommission } from '@/lib/direct-reservations-utils';
+import { sqlTextArrayForAny } from '@/lib/pg-sql-params';
+import { getAcceptableReservationIdsArrayForProperty } from '@/lib/cleaning-reservation-room-match';
 
 function corsHeaders(origin: string | null) {
   const allowedOrigins = [
@@ -126,24 +128,22 @@ export async function POST(req: NextRequest) {
       return response;
     }
 
+    const acceptableResRoomIds = await getAcceptableReservationIdsArrayForProperty(
+      String(property.tenant_id),
+      Number(property_id)
+    );
+
     // Verificar disponibilidad REAL contra:
-    // - reservations (operacional) por room_id mapeado
+    // - reservations (operacional) con mismo matching UUID/legacy que calendario y slots
     // - direct_reservations confirmadas por property_id
     // - property_availability con available = FALSE
     // - calendar_events (bloqueos iCal sincronizados)
-    // Primero resolvemos el room_id del slot
     const overlap = await sql`
-      WITH map AS (
-        SELECT room_id
-        FROM property_room_map
-        WHERE tenant_id = ${property.tenant_id}::uuid AND property_id = ${property_id}::int
-        LIMIT 1
-      ),
-      solapadas AS (
+      WITH solapadas AS (
         SELECT 1
-        FROM reservations r, map m
+        FROM reservations r
         WHERE r.tenant_id = ${property.tenant_id}::uuid
-          AND r.room_id = m.room_id
+          AND r.room_id = ANY(${sqlTextArrayForAny(acceptableResRoomIds)})
           AND r.check_in  < ${check_out_date}::date
           AND r.check_out > ${check_in_date}::date
         UNION ALL

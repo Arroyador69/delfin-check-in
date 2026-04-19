@@ -4,6 +4,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
+import { sqlTextArrayForAny } from '@/lib/pg-sql-params';
+import { getAcceptableReservationIdsArrayForProperty } from '@/lib/cleaning-reservation-room-match';
 
 function corsHeaders(origin: string | null) {
   const allowedOrigins = [
@@ -90,8 +92,13 @@ export async function GET(req: NextRequest) {
     const tenantId = mapping.rows[0].tenant_id as string;
     console.log('[availability-calendar] tenant', { tenantId });
 
+    const acceptableResRoomIds = await getAcceptableReservationIdsArrayForProperty(
+      tenantId,
+      propertyId
+    );
+
     // Recopilar días bloqueados desde 4 fuentes:
-    // - reservations (operacional) vía property_room_map
+    // - reservations (operacional) con matching UUID/legacy alineado a calendario y slots
     // - direct_reservations (reservas directas confirmadas)
     // - property_availability (bloqueos manuales)
     // - calendar_events (bloqueos iCal sincronizados)
@@ -102,11 +109,9 @@ export async function GET(req: NextRequest) {
       op AS (
         SELECT generate_series(r.check_in::date, (r.check_out::date - INTERVAL '1 day'), '1 day')::date AS d
         FROM reservations r
-        INNER JOIN property_room_map prm
-          ON prm.tenant_id = r.tenant_id AND prm.room_id = r.room_id
         CROSS JOIN rango g
-        WHERE prm.property_id = ${propertyId}::int
-          AND r.tenant_id = ${tenantId}::uuid
+        WHERE r.tenant_id = ${tenantId}::uuid
+          AND r.room_id = ANY(${sqlTextArrayForAny(acceptableResRoomIds)})
           AND r.check_in  < g.t
           AND r.check_out > g.f
       ),
