@@ -9,6 +9,9 @@ import {
   FlatList,
   KeyboardAvoidingView,
   Platform,
+  Modal,
+  ScrollView,
+  Keyboard,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Localization from 'expo-localization';
@@ -26,7 +29,17 @@ import { getForceOnboarding, setForceOnboarding, setOnboardingSeen } from '@/lib
 import { setAppCountryCode } from '@/lib/country-preference';
 import { api } from '@/lib/api';
 import { ISO3166_ALPHA2 } from '@/lib/iso3166-alpha2';
-import { Bell, CalendarDays, Globe2, Languages, ShieldCheck, Sparkles, Star } from 'lucide-react-native';
+import {
+  Bell,
+  CalendarDays,
+  ChevronRight,
+  Globe2,
+  Languages,
+  ShieldCheck,
+  Sparkles,
+  Star,
+  X,
+} from 'lucide-react-native';
 
 type Step = {
   titleKey: string;
@@ -59,6 +72,7 @@ export default function OnboardingScreen() {
   const queryClient = useQueryClient();
   const [phase, setPhase] = useState<'setup' | 'slides'>('setup');
   const [countrySearch, setCountrySearch] = useState('');
+  const [countryModalOpen, setCountryModalOpen] = useState(false);
   const [countryCode, setCountryCode] = useState<string | null>(null);
 
   const steps: Step[] = useMemo(
@@ -159,20 +173,29 @@ export default function OnboardingScreen() {
 
   const setupValid = Boolean(countryCode);
 
+  function selectCountryFromModal(code: string) {
+    setCountryCode(code);
+    Keyboard.dismiss();
+    setCountryModalOpen(false);
+    setCountrySearch('');
+  }
+
   if (phase === 'setup') {
     return (
-      <SafeAreaView style={styles.safe}>
-        <View style={styles.bg}>
-          <View style={styles.blobA} />
-          <View style={styles.blobB} />
-          <View style={styles.blobC} />
-        </View>
+      <>
+        <SafeAreaView style={styles.safe}>
+          <View style={styles.bg}>
+            <View style={styles.blobA} />
+            <View style={styles.blobB} />
+            <View style={styles.blobC} />
+          </View>
 
-        <KeyboardAvoidingView
-          style={{ flex: 1 }}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        >
-          <View style={styles.container}>
+          <ScrollView
+            style={{ flex: 1 }}
+            contentContainerStyle={styles.setupScrollContent}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
             <View style={styles.topRow}>
               <View style={styles.progressLeft}>
                 <Text style={styles.progressText}>{t('mobile.onboarding.setupBadge')}</Text>
@@ -197,7 +220,7 @@ export default function OnboardingScreen() {
               </Text>
             </View>
 
-            <View style={[styles.card, { flex: 1, minHeight: 0 }]}>
+            <View style={styles.card}>
               <View style={styles.cardHeader}>
                 <View style={styles.iconBadge}>
                   <Globe2 size={20} color="#e0f2fe" />
@@ -206,36 +229,26 @@ export default function OnboardingScreen() {
                   <Text style={styles.title}>{t('mobile.onboarding.countryLabel')}</Text>
                 </View>
               </View>
-              <TextInput
-                style={styles.searchInput}
-                value={countrySearch}
-                onChangeText={setCountrySearch}
-                placeholder={t('mobile.onboarding.countrySearchPlaceholder')}
-                placeholderTextColor="#64748b"
-                autoCapitalize="none"
-                autoCorrect={false}
-              />
-              <FlatList
-                data={filteredCountries}
-                keyExtractor={(c) => c}
-                style={{ flex: 1, marginTop: 10 }}
-                initialNumToRender={20}
-                keyboardShouldPersistTaps="handled"
-                renderItem={({ item: code }) => {
-                  const selected = countryCode === code;
-                  return (
-                    <Pressable
-                      onPress={() => setCountryCode(code)}
-                      style={[styles.countryRow, selected && styles.countryRowSelected]}
-                    >
-                      <Text style={[styles.countryName, selected && styles.countryNameSelected]}>
-                        {regionDisplayName(code, localeTag)}
+              <Pressable
+                style={styles.countrySelector}
+                onPress={() => setCountryModalOpen(true)}
+                accessibilityRole="button"
+                accessibilityLabel={t('mobile.onboarding.countryPickerTitle')}
+              >
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  {countryCode ? (
+                    <>
+                      <Text style={styles.countrySelectedName} numberOfLines={2}>
+                        {regionDisplayName(countryCode, localeTag)}
                       </Text>
-                      <Text style={styles.countryCode}>{code}</Text>
-                    </Pressable>
-                  );
-                }}
-              />
+                      <Text style={styles.countrySelectedCode}>{countryCode}</Text>
+                    </>
+                  ) : (
+                    <Text style={styles.countryPlaceholder}>{t('mobile.onboarding.countryTapToChoose')}</Text>
+                  )}
+                </View>
+                <ChevronRight size={22} color="#94a3b8" />
+              </Pressable>
             </View>
 
             <View style={[styles.card, { marginTop: 10 }]}>
@@ -272,9 +285,73 @@ export default function OnboardingScreen() {
             >
               <Text style={[styles.btnText, styles.btnPrimaryText]}>{t('mobile.onboarding.continueToTour')}</Text>
             </Pressable>
-          </View>
-        </KeyboardAvoidingView>
-      </SafeAreaView>
+          </ScrollView>
+        </SafeAreaView>
+
+        <Modal
+          visible={countryModalOpen}
+          animationType="slide"
+          presentationStyle="fullScreen"
+          onRequestClose={() => {
+            Keyboard.dismiss();
+            setCountryModalOpen(false);
+          }}
+        >
+          <SafeAreaView style={styles.modalSafe} edges={['top', 'bottom', 'left', 'right']}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>{t('mobile.onboarding.countryPickerTitle')}</Text>
+              <Pressable
+                onPress={() => {
+                  Keyboard.dismiss();
+                  setCountryModalOpen(false);
+                }}
+                hitSlop={12}
+                accessibilityRole="button"
+                accessibilityLabel={t('common.close')}
+              >
+                <X size={26} color="#e2e8f0" />
+              </Pressable>
+            </View>
+            <TextInput
+              style={styles.modalSearch}
+              value={countrySearch}
+              onChangeText={setCountrySearch}
+              placeholder={t('mobile.onboarding.countrySearchByName')}
+              placeholderTextColor="#64748b"
+              autoCapitalize="none"
+              autoCorrect={false}
+              clearButtonMode="while-editing"
+            />
+            <KeyboardAvoidingView
+              style={styles.modalListWrap}
+              behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+              keyboardVerticalOffset={Platform.OS === 'ios' ? 8 : 0}
+            >
+              <FlatList
+                data={filteredCountries}
+                keyExtractor={(c) => c}
+                style={styles.modalList}
+                initialNumToRender={24}
+                keyboardShouldPersistTaps="handled"
+                renderItem={({ item: code }) => {
+                  const selected = countryCode === code;
+                  return (
+                    <Pressable
+                      onPress={() => selectCountryFromModal(code)}
+                      style={[styles.countryRow, selected && styles.countryRowSelected]}
+                    >
+                      <Text style={[styles.countryName, selected && styles.countryNameSelected]} numberOfLines={2}>
+                        {regionDisplayName(code, localeTag)}
+                      </Text>
+                      <Text style={styles.countryCode}>{code}</Text>
+                    </Pressable>
+                  );
+                }}
+              />
+            </KeyboardAvoidingView>
+          </SafeAreaView>
+        </Modal>
+      </>
     );
   }
 
@@ -418,6 +495,78 @@ const styles = StyleSheet.create({
     opacity: 0.14,
   },
   container: { flex: 1, padding: 16, justifyContent: 'space-between' },
+  setupScrollContent: {
+    padding: 16,
+    paddingBottom: 36,
+    flexGrow: 1,
+  },
+  countrySelector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    minHeight: 56,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    backgroundColor: 'rgba(2, 6, 23, 0.55)',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(148, 163, 184, 0.22)',
+  },
+  countryPlaceholder: {
+    color: '#94a3b8',
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  countrySelectedName: {
+    color: '#f1f5f9',
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  countrySelectedCode: {
+    color: '#64748b',
+    fontSize: 12,
+    fontWeight: '700',
+    marginTop: 2,
+  },
+  modalSafe: {
+    flex: 1,
+    backgroundColor: '#050b1a',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 18,
+    paddingVertical: 14,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: 'rgba(148, 163, 184, 0.2)',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: 'white',
+    flex: 1,
+    paddingRight: 12,
+  },
+  modalSearch: {
+    backgroundColor: 'rgba(2, 6, 23, 0.55)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(148, 163, 184, 0.2)',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginHorizontal: 16,
+    marginBottom: 8,
+    marginTop: 4,
+    color: '#f1f5f9',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  modalListWrap: {
+    flex: 1,
+  },
+  modalList: {
+    flex: 1,
+  },
   topRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
