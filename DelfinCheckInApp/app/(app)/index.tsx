@@ -8,6 +8,13 @@ import { useAuth } from '@/lib/auth';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { useState, useMemo } from 'react';
+import type { AxiosError } from 'axios';
+
+function apiErrorMessage(err: unknown): string {
+  const ax = err as AxiosError<{ error?: string; message?: string }>;
+  const d = ax.response?.data;
+  return (d?.error || d?.message || ax.message || '').trim() || 'Error de red';
+}
 import { Users, ArrowDownCircle, ArrowUpCircle, Calendar, BellRing } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { getLocaleTag, hasPersistedAppLocale, t, useLocaleListener } from '@/lib/i18n';
@@ -122,12 +129,19 @@ export default function DashboardScreen() {
   }, [mirData, limitsData, propsData, repData, regionPrefs, tenantCountryData]);
 
   // Obtener reservas normales
-  const { data: reservations, isLoading } = useQuery({
+  const {
+    data: reservations,
+    isLoading,
+    isError: reservationsError,
+    error: reservationsErr,
+    refetch: refetchReservations,
+  } = useQuery({
     queryKey: ['reservations'],
     queryFn: async () => {
       const response = await api.get('/api/reservations');
       return response.data || [];
     },
+    retry: 1,
   });
 
   const allReservations = (reservations || []) as Reservation[];
@@ -257,6 +271,27 @@ export default function DashboardScreen() {
         </Text>
         <Text style={styles.tenantName}>{session?.user.tenant.name}</Text>
       </View>
+
+      {reservationsError ? (
+        <View
+          style={{
+            marginHorizontal: 16,
+            marginBottom: 12,
+            padding: 12,
+            borderRadius: 12,
+            backgroundColor: '#fef2f2',
+            borderWidth: 1,
+            borderColor: '#fecaca',
+          }}
+        >
+          <Text style={{ fontWeight: '800', color: '#991b1b', marginBottom: 4 }}>
+            {t('common.error')}: {apiErrorMessage(reservationsErr)}
+          </Text>
+          <Pressable onPress={() => refetchReservations()} style={{ marginTop: 8 }}>
+            <Text style={{ color: '#2563eb', fontWeight: '700' }}>{t('common.refresh')}</Text>
+          </Pressable>
+        </View>
+      ) : null}
 
       {onboardingTasks.doneCount < onboardingTasks.total ? (
         <View style={[styles.card, { borderWidth: 1, borderColor: '#e0e7ff', backgroundColor: '#f8fafc' }]}>
