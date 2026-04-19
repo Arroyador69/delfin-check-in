@@ -3,6 +3,54 @@ import { normalizeRoomId } from '@/lib/db';
 import { getTenantById } from '@/lib/tenant';
 
 /**
+ * Número “humano” de la habitación en el nombre (p. ej. "Habitación 2" → "2").
+ * No confundir con el índice por orden de UUID en BD.
+ */
+export function extractPrimaryRoomNumberFromName(name: string | null | undefined): string | null {
+  if (name == null || !String(name).trim()) return null;
+  const s = String(name).trim();
+  const m1 = s.match(
+    /(?:habitaci[oó]n|hab\.?|room|apartamento|apart|apto\.?|apt\.?|suite|estudio|studio)\s*[:\s#·\-]*\s*(\d{1,3})\b/i
+  );
+  if (m1) return String(parseInt(m1[1], 10));
+  const only = s.match(/^\s*(\d{1,3})\s*$/);
+  if (only) return String(parseInt(only[1], 10));
+  return null;
+}
+
+/**
+ * Mapa dígito → id de Room solo si ninguna otra habitación reclama el mismo dígito por nombre.
+ */
+export function buildUniqueDisplayNumberToRoomId(
+  rooms: { id: string; name: string | null }[]
+): Map<string, string> {
+  const numToIds = new Map<string, string[]>();
+  for (const row of rooms) {
+    const num = extractPrimaryRoomNumberFromName(row.name);
+    if (!num) continue;
+    if (!numToIds.has(num)) numToIds.set(num, []);
+    numToIds.get(num)!.push(row.id);
+  }
+  const out = new Map<string, string>();
+  for (const [num, ids] of numToIds) {
+    if (ids.length === 1) out.set(num, ids[0]!);
+  }
+  return out;
+}
+
+async function fetchRoomsForLodging(
+  lodgingId: string
+): Promise<{ id: string; name: string | null }[]> {
+  const r = await sql`
+    SELECT id::text AS id, name
+    FROM "Room"
+    WHERE "lodgingId" = ${lodgingId}
+    ORDER BY id::text ASC
+  `;
+  return r.rows as { id: string; name: string | null }[];
+}
+
+/**
  * Los enlaces de limpieza guardan `Room.id` tal cual; en `reservations.room_id`
  * puede existir la misma cadena, una variante legacy o el resultado antiguo de
  * `normalizeRoomId`. Expandimos para que el `WHERE room_id = ANY(...)` sea robusto.
@@ -39,17 +87,16 @@ export async function expandRoomIdsForReservationQuery(
       : String(tenant.id);
 
   try {
-    const r = await sql`
-      SELECT id::text AS id
-      FROM "Room"
-      WHERE "lodgingId" = ${lodgingId}
-      ORDER BY id::text ASC
-    `;
-    const ordered = (r.rows as { id: string }[]).map((row) => row.id);
+    const roomRows = await fetchRoomsForLodging(lodgingId);
+    const ordered = roomRows.map((row) => row.id);
     const want = new Set(linkRoomIds.map((x) => String(x).trim()));
+    const byDisplay = buildUniqueDisplayNumberToRoomId(roomRows);
     for (let i = 0; i < ordered.length; i++) {
       if (!want.has(ordered[i])) continue;
       out.add(String(i + 1));
+    }
+    for (const [num, rid] of byDisplay) {
+      if (want.has(rid)) out.add(num);
     }
   } catch {
     /* sin tabla Room o columna distinta */
@@ -98,19 +145,16 @@ export async function getAcceptableReservationRoomIdsByLinkedRoom(
       ? String(tenant.lodging_id)
       : String(tenant.id);
 
-  let ordered: string[] = [];
+  let roomRows: { id: string; name: string | null }[] = [];
   try {
-    const r = await sql`
-      SELECT id::text AS id
-      FROM "Room"
-      WHERE "lodgingId" = ${lodgingId}
-      ORDER BY id::text ASC
-    `;
-    ordered = (r.rows as { id: string }[]).map((row) => row.id);
+    roomRows = await fetchRoomsForLodging(lodgingId);
   } catch {
     seedOnlyDefaults();
     return result;
   }
+
+  const ordered = roomRows.map((row) => row.id);
+  const byDisplay = buildUniqueDisplayNumberToRoomId(roomRows);
 
   for (const roomId of trimmed) {
     const acceptable = new Set<string>();
@@ -118,6 +162,9 @@ export async function getAcceptableReservationRoomIdsByLinkedRoom(
     const idx = ordered.indexOf(roomId);
     if (idx >= 0) {
       acceptable.add(String(idx + 1));
+    }
+    for (const [num, rid] of byDisplay) {
+      if (rid === roomId) acceptable.add(num);
     }
     result.set(roomId, acceptable);
   }
@@ -141,12 +188,15 @@ export function reservationRowMatchesLinkedRoom(
 export type TenantRoomContext = {
   orderedRoomIds: string[];
   roomNameById: Map<string, string>;
+  /** room_id "2" en reserva → UUID de "Habitación 2" si el nombre lo permite sin ambigüedad */
+  displayNumberToRoomId: Map<string, string>;
 };
 
 export async function getTenantRoomContext(tenantId: string): Promise<TenantRoomContext> {
   const empty = (): TenantRoomContext => ({
     orderedRoomIds: [],
     roomNameById: new Map(),
+    displayNumberToRoomId: new Map(),
   });
   const tenant = await getTenantById(tenantId);
   if (!tenant) return empty();
@@ -155,19 +205,15 @@ export async function getTenantRoomContext(tenantId: string): Promise<TenantRoom
       ? String(tenant.lodging_id)
       : String(tenant.id);
   try {
-    const r = await sql`
-      SELECT id::text AS id, name
-      FROM "Room"
-      WHERE "lodgingId" = ${lodgingId}
-      ORDER BY id::text ASC
-    `;
+    const rows = await fetchRoomsForLodging(lodgingId);
     const orderedRoomIds: string[] = [];
     const roomNameById = new Map<string, string>();
-    for (const row of r.rows as { id: string; name: string | null }[]) {
+    for (const row of rows) {
       orderedRoomIds.push(row.id);
       roomNameById.set(row.id, row.name ?? '');
     }
-    return { orderedRoomIds, roomNameById };
+    const displayNumberToRoomId = buildUniqueDisplayNumberToRoomId(rows);
+    return { orderedRoomIds, roomNameById, displayNumberToRoomId };
   } catch {
     return empty();
   }
@@ -180,15 +226,19 @@ export async function getOrderedRoomIdsForTenant(tenantId: string): Promise<stri
 
 /**
  * Convierte `reservations.room_id` (UUID, dígito legacy, etc.) al id canónico de fila Room.
+ * Prioriza el número del nombre ("Habitación 2") frente al índice por orden de UUID.
  */
 export function resolveReservationRoomIdToCanonicalRoomId(
   resRoomId: unknown,
-  orderedRoomIds: string[]
+  orderedRoomIds: string[],
+  displayNumberToRoomId?: Map<string, string>
 ): string | null {
   const rid = String(resRoomId ?? '').trim();
   if (!rid) return null;
   if (orderedRoomIds.includes(rid)) return rid;
   if (/^\d+$/.test(rid)) {
+    const byName = displayNumberToRoomId?.get(rid);
+    if (byName) return byName;
     const idx = parseInt(rid, 10) - 1;
     if (idx >= 0 && idx < orderedRoomIds.length) return orderedRoomIds[idx]!;
   }

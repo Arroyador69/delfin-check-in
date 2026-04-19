@@ -71,7 +71,7 @@ export async function GET(req: NextRequest) {
 
     // Reservas operativas: mismo matching UUID + legacy que limpieza / slots
     const roomCtx = await getTenantRoomContext(tenantId)
-    const { orderedRoomIds, roomNameById } = roomCtx
+    const { orderedRoomIds, roomNameById, displayNumberToRoomId } = roomCtx
 
     let filterAcceptableIds: string[] | null = null
     if (propertyId) {
@@ -133,7 +133,11 @@ export async function GET(req: NextRequest) {
     }
 
     const reservationEvents = reservations.rows.map((r: any) => {
-      const canonical = resolveReservationRoomIdToCanonicalRoomId(r.room_id, orderedRoomIds)
+      const canonical = resolveReservationRoomIdToCanonicalRoomId(
+        r.room_id,
+        orderedRoomIds,
+        displayNumberToRoomId
+      )
       const displayRoomId = canonical ?? String(r.room_id)
       const room_name =
         (canonical ? roomNameById.get(canonical) : null) ??
