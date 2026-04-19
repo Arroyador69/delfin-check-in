@@ -26,6 +26,7 @@
     "expo-secure-store": "~15.0.8",
     "expo-sharing": "~14.0.8",
     "expo-sqlite": "~16.0.10",
+    "i18n-iso-countries": "^7.14.0",
     "lucide-react-native": "^0.553.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",

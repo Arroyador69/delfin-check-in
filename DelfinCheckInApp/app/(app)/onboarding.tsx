@@ -29,6 +29,7 @@ import { setOnboardingSeen } from '@/lib/onboarding';
 import { setAppCountryCode } from '@/lib/country-preference';
 import { api } from '@/lib/api';
 import { ISO3166_ALPHA2 } from '@/lib/iso3166-alpha2';
+import { getLocalizedCountryName } from '@/lib/country-names-i18n';
 import {
   Bell,
   CalendarDays,
@@ -46,15 +47,6 @@ type Step = {
   bodyKey: string;
   Icon: React.ComponentType<{ size?: number; color?: string }>;
 };
-
-function regionDisplayName(code: string, localeTag: string): string {
-  try {
-    const dn = new Intl.DisplayNames([localeTag], { type: 'region' });
-    return dn.of(code) || code;
-  } catch {
-    return code;
-  }
-}
 
 const LANGS: SupportedLocale[] = ['es', 'en', 'fr', 'it', 'pt'];
 
@@ -94,6 +86,7 @@ export default function OnboardingScreen() {
   const anim = useRef(new Animated.Value(0)).current;
 
   const localeTag = getLocaleTag();
+  const appLocale = getLocale();
 
   useEffect(() => {
     const region = Localization.getLocales?.()?.[0]?.regionCode;
@@ -105,21 +98,21 @@ export default function OnboardingScreen() {
   const sortedCountries = useMemo(() => {
     const list = [...ISO3166_ALPHA2];
     list.sort((a, b) =>
-      regionDisplayName(a, localeTag).localeCompare(regionDisplayName(b, localeTag), localeTag, {
+      getLocalizedCountryName(a, appLocale).localeCompare(getLocalizedCountryName(b, appLocale), localeTag, {
         sensitivity: 'base',
       })
     );
     return list;
-  }, [localeTag]);
+  }, [localeTag, appLocale]);
 
   const filteredCountries = useMemo(() => {
     const q = countrySearch.trim().toLowerCase();
     if (!q) return sortedCountries;
     return sortedCountries.filter((code) => {
-      const name = regionDisplayName(code, localeTag).toLowerCase();
+      const name = getLocalizedCountryName(code, appLocale).toLowerCase();
       return name.includes(q);
     });
-  }, [sortedCountries, countrySearch, localeTag]);
+  }, [sortedCountries, countrySearch, appLocale]);
 
   /** Idiomas ordenados alfabéticamente según el nombre mostrado en el idioma actual de la UI. */
   const sortedLangs = useMemo(() => {
@@ -128,7 +121,7 @@ export default function OnboardingScreen() {
       t(LANG_LABEL[a]).localeCompare(t(LANG_LABEL[b]), localeTag, { sensitivity: 'base' })
     );
     return list;
-  }, [localeTag]);
+  }, [localeTag, appLocale]);
 
   useEffect(() => {
     anim.setValue(0);
@@ -233,7 +226,7 @@ export default function OnboardingScreen() {
                 <View style={{ flex: 1, minWidth: 0 }}>
                   {countryCode ? (
                     <Text style={styles.countrySelectedName} numberOfLines={3}>
-                      {regionDisplayName(countryCode, localeTag)}
+                      {getLocalizedCountryName(countryCode, appLocale)}
                     </Text>
                   ) : (
                     <Text style={styles.countryPlaceholder}>{t('mobile.onboarding.countryTapToChoose')}</Text>
@@ -333,7 +326,7 @@ export default function OnboardingScreen() {
                       style={[styles.countryRow, selected && styles.countryRowSelected]}
                     >
                       <Text style={[styles.countryName, selected && styles.countryNameSelected]} numberOfLines={2}>
-                        {regionDisplayName(code, localeTag)}
+                        {getLocalizedCountryName(code, appLocale)}
                       </Text>
                     </Pressable>
                   );
