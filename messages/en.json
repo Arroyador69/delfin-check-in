@@ -391,6 +391,10 @@
       "website": "Website",
       "channelsSectionTitle": "Booking channels you use",
       "channelsSectionIntro": "Select Airbnb, Booking.com or other OTAs you work with; you can add custom names. This drives the channel dropdown when creating reservations (also editable under Settings → Booking channels).",
+      "businessCountryCode": "Business country (required) *",
+      "businessCountryHint": "ISO code of the country where your properties operate.",
+      "appLanguage": "Account language (required) *",
+      "appLanguageHint": "Language for the interface and account communications.",
       "previous": "Previous",
       "continue": "Continue"
     },
@@ -463,7 +467,8 @@
       "propertyNameRequired": "Property name is required",
       "createPropertyFailed": "Error creating property",
       "addPropertyFailed": "Error adding property",
-      "completeFailed": "Error completing onboarding. Please try again."
+      "completeFailed": "Error completing onboarding. Please try again.",
+      "countryAndLanguageRequired": "Select your business country (ISO) and account language to continue."
     }
   },
   "reservations": {

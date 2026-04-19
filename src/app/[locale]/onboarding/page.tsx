@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import LocalizedDateInput from '@/components/LocalizedDateInput';
@@ -10,7 +10,8 @@ import {
   defaultBookingChannelsConfig,
   type BookingChannelsConfig,
 } from '@/lib/booking-channels';
-import { isValidLocale } from '@/i18n/config';
+import { isValidLocale, locales, localeNames, type Locale } from '@/i18n/config';
+import { ISO3166_ALPHA2 } from '@/lib/iso3166-alpha2';
 
 type PlanId = 'free' | 'checkin' | 'standard' | 'pro';
 type BillingInterval = 'month' | 'year';
@@ -55,6 +56,10 @@ interface OnboardingData {
 
   /** Canales de reserva (OTAs + custom); se guarda en tenant.config */
   bookingChannels: BookingChannelsConfig;
+
+  /** País del negocio (ISO 3166-1 alpha-2) e idioma de cuenta — obligatorios antes de continuar. */
+  businessCountryCode: string;
+  businessLanguage: Locale | '';
 }
 
 export default function OnboardingPage() {
@@ -106,6 +111,8 @@ export default function OnboardingPage() {
     checkoutCompleted: false,
     lodgingType: 'hostal',
     bookingChannels: defaultBookingChannelsConfig(),
+    businessCountryCode: '',
+    businessLanguage: '',
   });
 
   // Persistencia de onboarding para que, si el usuario sale y vuelve, continúe donde estaba.
@@ -156,6 +163,11 @@ export default function OnboardingPage() {
           bookingChannels: parsed.formData.bookingChannels
             ? normalizeBookingChannels(parsed.formData.bookingChannels)
             : prev.bookingChannels,
+          businessCountryCode: parsed.formData.businessCountryCode ?? prev.businessCountryCode,
+          businessLanguage:
+            parsed.formData.businessLanguage && isValidLocale(parsed.formData.businessLanguage)
+              ? parsed.formData.businessLanguage
+              : prev.businessLanguage,
         }));
       }
     } catch {}
@@ -193,6 +205,8 @@ export default function OnboardingPage() {
             checkoutCompleted: formData.checkoutCompleted,
             lodgingType: formData.lodgingType,
             bookingChannels: formData.bookingChannels,
+            businessCountryCode: formData.businessCountryCode,
+            businessLanguage: formData.businessLanguage,
           },
         })
       );
@@ -239,6 +253,16 @@ export default function OnboardingPage() {
     const maybeLocale = parts[0];
     return maybeLocale && isValidLocale(maybeLocale) ? maybeLocale : 'es';
   };
+
+  const sortedCountrySelectOptions = useMemo(() => {
+    const dn = new Intl.DisplayNames([locale], { type: 'region' });
+    return [...ISO3166_ALPHA2]
+      .map((code) => ({
+        code,
+        label: `${dn.of(code) || code} (${code})`,
+      }))
+      .sort((a, b) => a.label.localeCompare(b.label, locale));
+  }, [locale]);
 
   const bootstrapSessionFromToken = async () => {
     // Si venimos desde email con token, intercambiarlo por cookies de sesión
@@ -341,6 +365,18 @@ export default function OnboardingPage() {
         }
         return true;
       case 2: // Datos empresa
+        if (
+          !formData.businessCountryCode ||
+          formData.businessCountryCode.length !== 2 ||
+          !/^[A-Z]{2}$/i.test(formData.businessCountryCode)
+        ) {
+          setError(t('errors.countryAndLanguageRequired'));
+          return false;
+        }
+        if (!formData.businessLanguage || !isValidLocale(formData.businessLanguage)) {
+          setError(t('errors.countryAndLanguageRequired'));
+          return false;
+        }
         if (!formData.nombreEmpresa || !formData.nifEmpresa || !formData.direccionEmpresa ||
             !formData.codigoPostal || !formData.ciudad || !formData.provincia || 
             !formData.pais || !formData.telefono || !formData.email || !formData.fechaCreacion) {
@@ -385,7 +421,8 @@ export default function OnboardingPage() {
 
     // Guardar datos del paso actual antes de avanzar
     if (currentStep === 2) {
-      await saveCompanyData();
+      const saved = await saveCompanyData();
+      if (!saved) return;
     }
 
     if (currentStep < TOTAL_STEPS) {
@@ -466,8 +503,23 @@ export default function OnboardingPage() {
     }
   };
 
-  const saveCompanyData = async () => {
+  const saveCompanyData = async (): Promise<boolean> => {
     try {
+      const blRes = await fetch('/api/tenant/business-locale', {
+        method: 'PUT',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          country_code: formData.businessCountryCode.toUpperCase(),
+          language: formData.businessLanguage,
+        }),
+      });
+      if (!blRes.ok) {
+        const errData = await blRes.json().catch(() => ({}));
+        setError((errData as { error?: string }).error || t('errors.countryAndLanguageRequired'));
+        return false;
+      }
+
       const response = await fetch('/api/empresa/config', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -496,8 +548,10 @@ export default function OnboardingPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ bookingChannels: formData.bookingChannels }),
       });
+      return true;
     } catch (error) {
       console.error('Error guardando datos de empresa:', error);
+      return false;
     }
   };
 
@@ -605,7 +659,11 @@ export default function OnboardingPage() {
         body: JSON.stringify({ onboarding_status: 'completed' })
       });
 
-      router.push(`/${locale}/dashboard`);
+      const dashLocale =
+        formData.businessLanguage && isValidLocale(formData.businessLanguage)
+          ? formData.businessLanguage
+          : locale;
+      router.push(`/${dashLocale}/dashboard`);
     } catch (error) {
       console.error('Error:', error);
       setError(t('errors.completeFailed'));
@@ -756,6 +814,44 @@ export default function OnboardingPage() {
             <p className="text-red-800">{error}</p>
           </div>
         )}
+
+        <div className="mb-8 p-4 rounded-xl border-2 border-blue-200 bg-blue-50/80">
+          <h2 className="text-lg font-semibold text-gray-900 mb-1">{t('step2.businessCountryCode')}</h2>
+          <p className="text-sm text-gray-600 mb-3">{t('step2.businessCountryHint')}</p>
+          <select
+            value={formData.businessCountryCode}
+            onChange={(e) => handleInputChange('businessCountryCode', e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-white"
+            required
+          >
+            <option value="">—</option>
+            {sortedCountrySelectOptions.map(({ code, label }) => (
+              <option key={code} value={code}>
+                {label}
+              </option>
+            ))}
+          </select>
+          <h2 className="text-lg font-semibold text-gray-900 mt-5 mb-1">{t('step2.appLanguage')}</h2>
+          <p className="text-sm text-gray-600 mb-3">{t('step2.appLanguageHint')}</p>
+          <select
+            value={formData.businessLanguage}
+            onChange={(e) =>
+              handleInputChange(
+                'businessLanguage',
+                e.target.value && isValidLocale(e.target.value) ? e.target.value : ''
+              )
+            }
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-white"
+            required
+          >
+            <option value="">—</option>
+            {locales.map((loc) => (
+              <option key={loc} value={loc}>
+                {localeNames[loc]}
+              </option>
+            ))}
+          </select>
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>

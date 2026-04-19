@@ -14,7 +14,6 @@ import {
   Keyboard,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import * as Localization from 'expo-localization';
 import { useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import {
@@ -23,6 +22,7 @@ import {
   getLocaleTag,
   setAppLocale,
   useLocaleListener,
+  hasPersistedAppLocale,
   type SupportedLocale,
 } from '@/lib/i18n';
 import { setOnboardingSeen } from '@/lib/onboarding';
@@ -67,6 +67,7 @@ export default function OnboardingScreen() {
   const [countrySearch, setCountrySearch] = useState('');
   const [countryModalOpen, setCountryModalOpen] = useState(false);
   const [countryCode, setCountryCode] = useState<string | null>(null);
+  const [languageChosen, setLanguageChosen] = useState(false);
 
   const steps: Step[] = useMemo(
     () => [
@@ -90,10 +91,9 @@ export default function OnboardingScreen() {
   const appLocale = getLocale();
 
   useEffect(() => {
-    const region = Localization.getLocales?.()?.[0]?.regionCode;
-    if (region && ISO3166_ALPHA2.includes(region as (typeof ISO3166_ALPHA2)[number])) {
-      setCountryCode(region);
-    }
+    void (async () => {
+      if (await hasPersistedAppLocale()) setLanguageChosen(true);
+    })();
   }, []);
 
   const sortedCountries = useMemo(() => {
@@ -139,14 +139,16 @@ export default function OnboardingScreen() {
   }
 
   async function continueFromSetup() {
-    if (!countryCode) return;
+    if (!countryCode || !languageChosen) return;
     try {
-      // No llamar a setAppLocale aquí: ya se aplicó al elegir idioma; volver a guardar
-      // dispara LOCALE_CHANGED y el layout remonta, reseteando phase y rompiendo el paso al tour.
       await setAppCountryCode(countryCode);
-      await syncCountryToTenant(countryCode);
+      await api.put('/api/tenant/business-locale', {
+        country_code: countryCode,
+        language: getLocale(),
+      });
       queryClient.invalidateQueries({ queryKey: ['app-region-prefs'] });
       queryClient.invalidateQueries({ queryKey: ['tenant-country-code'] });
+      queryClient.invalidateQueries({ queryKey: ['tenant-profile'] });
     } catch {
       /* still continue */
     }
@@ -154,23 +156,13 @@ export default function OnboardingScreen() {
     setIdx(0);
   }
 
-  async function syncCountryToTenant(code: string) {
-    try {
-      const res = await api.get('/api/tenant/country-code');
-      const d = res.data as { legal_module?: boolean };
-      if (!d?.legal_module) return;
-      await api.put('/api/tenant/country-code', { country_code: code });
-    } catch {
-      /* sin permiso o red */
-    }
-  }
-
   async function pickLanguage(code: SupportedLocale) {
     await setAppLocale(code);
+    setLanguageChosen(true);
     queryClient.invalidateQueries({ queryKey: ['app-region-prefs'] });
   }
 
-  const setupValid = Boolean(countryCode);
+  const setupValid = Boolean(countryCode) && languageChosen;
 
   function selectCountryFromModal(code: string) {
     setCountryCode(code);

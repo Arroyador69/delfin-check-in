@@ -391,6 +391,10 @@
       "website": "Sitio Web",
       "channelsSectionTitle": "Canales por los que recibes reservas",
       "channelsSectionIntro": "Marca Airbnb, Booking u otras OTAs que uses; puedes añadir canales a medida. Esto define el desplegable al crear reservas (también editable en Configuración → Canales de reserva).",
+      "businessCountryCode": "País del negocio (obligatorio) *",
+      "businessCountryHint": "Código ISO del país donde están tus alojamientos.",
+      "appLanguage": "Idioma de la cuenta (obligatorio) *",
+      "appLanguageHint": "Idioma de la interfaz y comunicaciones de la cuenta.",
       "previous": "Anterior",
       "continue": "Continuar"
     },
@@ -463,7 +467,8 @@
       "propertyNameRequired": "El nombre de la propiedad es obligatorio",
       "createPropertyFailed": "Error al crear la propiedad",
       "addPropertyFailed": "Error al añadir la propiedad",
-      "completeFailed": "Error al completar el onboarding. Por favor, inténtalo de nuevo."
+      "completeFailed": "Error al completar el onboarding. Por favor, inténtalo de nuevo.",
+      "countryAndLanguageRequired": "Selecciona país (ISO) e idioma de la cuenta para continuar."
     }
   },
   "reservations": {
