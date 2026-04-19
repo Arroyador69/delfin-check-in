@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <!--
-  La landing en producción es el repo GitHub Pages (index.html + en/index.html), no este archivo:
-  https://github.com/Arroyador69/delfincheckin.com
-  Este HTML sirve como copia en admin (public/landing.html) o referencia; edita el hero allí para marketing.
+  Landing estática (también sirve desde admin en /landing.html).
+  Idiomas alineados con el software: es, en, it, pt, fr, fi.
+  Repo marketing GitHub Pages (si aplica): https://github.com/Arroyador69/delfincheckin.com
 -->
 <html lang="es">
 <head>
@@ -13,7 +13,10 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
-    .lang-btn { padding: 0.35rem 0.75rem; border-radius: 0.375rem; font-size: 0.875rem; border: 1px solid #e5e7eb; background: #fff; color: #374151; transition: all 0.15s; }
+    .lang-btn { padding: 0.35rem 0.55rem; border-radius: 0.375rem; font-size: 0.75rem; font-weight: 600; border: 1px solid #e5e7eb; background: #fff; color: #374151; transition: all 0.15s; }
+    @media (min-width: 640px) {
+      .lang-btn { font-size: 0.8125rem; padding: 0.35rem 0.65rem; }
+    }
     .lang-btn:hover { background: #f9fafb; border-color: #d1d5db; }
     .lang-btn.active { background: #2563eb; color: #fff; border-color: #2563eb; }
   </style>
@@ -25,10 +28,7 @@
         <span class="text-2xl" aria-hidden="true">🐬</span>
         <span class="font-bold text-lg text-slate-900 tracking-tight">Delfín Check-in</span>
       </div>
-      <div class="flex items-center gap-2">
-        <button type="button" class="lang-btn active" data-lang="es" id="btn-lang-es" aria-pressed="true">ES</button>
-        <button type="button" class="lang-btn" data-lang="en" id="btn-lang-en" aria-pressed="false">EN</button>
-      </div>
+      <nav class="flex flex-wrap items-center justify-end gap-1.5 sm:gap-2" id="lang-nav" aria-label="Language"></nav>
     </div>
   </header>
 
@@ -89,6 +89,15 @@
   <script src="/landing-tracking.js"></script>
   <script>
 (function () {
+  var LANGS = [
+    { code: 'es', label: 'ES', aria: 'Español' },
+    { code: 'en', label: 'EN', aria: 'English' },
+    { code: 'it', label: 'IT', aria: 'Italiano' },
+    { code: 'pt', label: 'PT', aria: 'Português' },
+    { code: 'fr', label: 'FR', aria: 'Français' },
+    { code: 'fi', label: 'FI', aria: 'Suomi' }
+  ];
+
   var STR = {
     es: {
       eyebrow: 'Para propietarios y gestores de alojamiento',
@@ -117,7 +126,7 @@
       ctaSecondary: 'See the guest form',
       featuresTitle: 'Built to fit your daily workflow',
       f1t: 'MIR registration, sorted',
-      f1d: 'Traveler records aligned with Spanish Ministry requirements—without losing operational clarity.',
+      f1d: 'Traveller records aligned with Spanish Ministry requirements—without losing operational clarity.',
       f2t: 'Bookings in one place',
       f2d: 'Rooms, calendar, and registrations together so you can review and confirm in a few clicks.',
       f3t: 'From stay to repeat business',
@@ -125,8 +134,109 @@
       freeLabel: 'Free plan',
       freeBody: 'Start on the free plan: no card required and zero cost. Try it at your own pace; if it fits, you can upgrade whenever you need more.',
       footer: '© Delfín Check-in'
+    },
+    it: {
+      eyebrow: 'Per proprietari e gestori di strutture ricettive',
+      heroTitle: 'Meno burocrazia, più controllo sulle prenotazioni',
+      heroSubtitle: 'Collega la registrazione legale degli ospiti al tuo pannello: dati ordinati, soggiorni collegati e un percorso chiaro verso la prossima prenotazione.',
+      tagline: 'Ogni check-in che registri in Delfín Check-in è un’occasione per fidelizzare l’ospite e lavorare sulla prossima prenotazione.',
+      ctaPrimary: 'Apri il pannello',
+      ctaSecondary: 'Vedi modulo ospite',
+      featuresTitle: 'Progettato per il tuo lavoro quotidiano',
+      f1t: 'Registrazione MIR in ordine',
+      f1d: 'Schede viaggiatori in linea con i requisiti del Ministero dell’Interno spagnolo, senza perdere chiarezza operativa.',
+      f2t: 'Prenotazioni in un unico posto',
+      f2d: 'Calendario, camere e registrazioni insieme per controllare e confermare in pochi clic.',
+      f3t: 'Dal soggiorno alla ripetizione',
+      f3d: 'Quando il flusso funziona, ogni soggiorno ben registrato rafforza il rapporto con l’ospite e le prenotazioni future.',
+      freeLabel: 'Piano gratuito',
+      freeBody: 'Puoi iniziare con il piano gratuito: nessuna carta richiesta e costo zero. Provalo con calma; se fa per te, potrai passare a un altro piano quando vorrai.',
+      footer: '© Delfín Check-in'
+    },
+    pt: {
+      eyebrow: 'Para proprietários e gestores de alojamento',
+      heroTitle: 'Menos papelada, mais controlo das reservas',
+      heroSubtitle: 'Una o registo legal de hóspedes ao seu painel: dados organizados, estadias ligadas e um caminho claro para a próxima reserva.',
+      tagline: 'Cada check-in que regista no Delfín Check-in é uma oportunidade de fidelizar o hóspede e trabalhar a próxima reserva.',
+      ctaPrimary: 'Abrir o painel',
+      ctaSecondary: 'Ver formulário do hóspede',
+      featuresTitle: 'Pensado para o seu dia a dia',
+      f1t: 'Registo MIR organizado',
+      f1d: 'Partes de hóspedes alinhadas com o que exige o Ministério do Interior, sem perder o fio à meada operacional.',
+      f2t: 'Reservas num só sítio',
+      f2d: 'Calendário, quartos e registos reunidos para rever e confirmar em poucos cliques.',
+      f3t: 'Da estadia à repetição',
+      f3d: 'Quando o fluxo funciona, cada estadia bem registada apoia a relação com o hóspede e a reserva futura.',
+      freeLabel: 'Plano gratuito',
+      freeBody: 'Pode começar com o plano gratuito: não é preciso cartão e não tem custo. Experimente ao seu ritmo; se encaixar, poderá mudar para outro plano quando precisar.',
+      footer: '© Delfín Check-in'
+    },
+    fr: {
+      eyebrow: 'Pour les propriétaires et gestionnaires d’hébergements',
+      heroTitle: 'Moins de paperasse, plus de maîtrise de vos réservations',
+      heroSubtitle: 'Reliez l’enregistrement légal des voyageurs à votre tableau de bord : données claires, séjours liés et une voie vers votre prochaine réservation.',
+      tagline: 'Chaque enregistrement d’arrivée dans Delfín Check-in est une chance de fidéliser le client et de préparer la prochaine réservation.',
+      ctaPrimary: 'Ouvrir le tableau de bord',
+      ctaSecondary: 'Voir le formulaire voyageur',
+      featuresTitle: 'Conçu pour votre quotidien',
+      f1t: 'Déclaration MIR en ordre',
+      f1d: 'Fiches voyageurs alignées sur les exigences du ministère de l’Intérieur, sans perdre le fil opérationnel.',
+      f2t: 'Réservations au même endroit',
+      f2d: 'Calendrier, chambres et registres réunis pour vérifier et confirmer en quelques clics.',
+      f3t: 'Du séjour à la fidélisation',
+      f3d: 'Quand le flux est fluide, chaque séjour bien enregistré renforce la relation avec le client et les réservations futures.',
+      freeLabel: 'Offre gratuite',
+      freeBody: 'Vous pouvez commencer avec l’offre gratuite : pas de carte bancaire et aucun coût. Essayez à votre rythme ; si cela vous convient, vous pourrez passer à une autre formule quand vous le souhaitez.',
+      footer: '© Delfín Check-in'
+    },
+    fi: {
+      eyebrow: 'Majoituskohteiden omistajille ja hallinnoijille',
+      heroTitle: 'Vähemmän paperityötä, parempi hallinta varauksista',
+      heroSubtitle: 'Yhdistä matkustajien laillinen rekisteröinti hallintapaneeliisi: siistit tiedot, linkitetyt majoitukset ja selkeä polku seuraavaan varaukseen.',
+      tagline: 'Jokainen Delfín Check-inissä kirjattu sisäänkirjautuminen on mahdollisuus vakiinnuttaa vieras ja työstää seuraavaa varausta.',
+      ctaPrimary: 'Avaa hallintapaneeli',
+      ctaSecondary: 'Katso vieraslomake',
+      featuresTitle: 'Rakennettu arkeesi',
+      f1t: 'MIR-rekisteröinti kunnossa',
+      f1d: 'Matkustajatiedot linjassa Espanjan sisäministeriön vaatimusten kanssa ilman että operatiivinen kokonaiskuva katoaa.',
+      f2t: 'Varaukset yhdessä paikassa',
+      f2d: 'Kalenteri, huoneet ja rekisterit samassa näkymässä tarkistusta ja vahvistusta varten muutamalla klikkauksella.',
+      f3t: 'Majoituksesta uudelle käynnille',
+      f3d: 'Kun prosessi toimii, hyvin kirjattu jokainen majoitus tukee vierassuhdetta ja tulevia varauksia.',
+      freeLabel: 'Ilmainen suunnitelma',
+      freeBody: 'Voit aloittaa ilmaisella suunnitelmalla: korttia ei tarvita eikä kustannuksia. Kokeile omaan tahtiin; jos sopii, voit vaihtaa toiseen suunnitelmaan myöhemmin.',
+      footer: '© Delfín Check-in'
     }
   };
+
+  var META = {
+    es: {
+      title: 'Delfín Check-in — Software para alojamientos',
+      description: 'Registro de viajeros, panel de reservas y cumplimiento MIR. Prueba el plan gratuito sin tarjeta.'
+    },
+    en: {
+      title: 'Delfín Check-in — Software for lodging businesses',
+      description: 'Guest registration, booking dashboard and MIR compliance. Try the free plan with no card required.'
+    },
+    it: {
+      title: 'Delfín Check-in — Software per strutture ricettive',
+      description: 'Registrazione ospiti, pannello prenotazioni e conformità MIR. Prova il piano gratuito senza carta.'
+    },
+    pt: {
+      title: 'Delfín Check-in — Software para alojamentos',
+      description: 'Registo de hóspedes, painel de reservas e conformidade MIR. Experimente o plano gratuito sem cartão.'
+    },
+    fr: {
+      title: 'Delfín Check-in — Logiciel pour hébergements',
+      description: 'Enregistrement des voyageurs, tableau de bord et conformité MIR. Essayez l’offre gratuite sans carte.'
+    },
+    fi: {
+      title: 'Delfín Check-in — Majoitusalan ohjelmisto',
+      description: 'Vieraiden rekisteröinti, varausten hallinta ja MIR-vaatimukset. Kokeile ilmaista suunnitelmaa ilman korttia.'
+    }
+  };
+
+  var HTML_LANG = { es: 'es', en: 'en', it: 'it', pt: 'pt', fr: 'fr', fi: 'fi' };
 
   function adminOrigin() {
     var h = (location.hostname || '').toLowerCase();
@@ -145,7 +255,13 @@
 
   function setLang(lang) {
     var t = STR[lang] || STR.es;
-    document.documentElement.lang = lang;
+    var m = META[lang] || META.es;
+    document.documentElement.lang = HTML_LANG[lang] || 'es';
+    var titleEl = document.querySelector('title');
+    if (titleEl) titleEl.textContent = m.title;
+    var metaD = document.querySelector('meta[name="description"]');
+    if (metaD) metaD.setAttribute('content', m.description);
+
     document.querySelectorAll('[data-key]').forEach(function (el) {
       var k = el.getAttribute('data-key');
       if (k && t[k] != null) el.textContent = t[k];
@@ -155,16 +271,42 @@
       b.classList.toggle('active', on);
       b.setAttribute('aria-pressed', on ? 'true' : 'false');
     });
-    try { localStorage.setItem('landing_lang', lang); } catch (e) {}
+    try {
+      localStorage.setItem('landing_lang', lang);
+      localStorage.setItem('preferred-locale', lang);
+    } catch (e) {}
   }
 
-  document.getElementById('btn-lang-es').addEventListener('click', function () { setLang('es'); });
-  document.getElementById('btn-lang-en').addEventListener('click', function () { setLang('en'); });
+  function pickInitialLang() {
+    var saved = null;
+    var pref = null;
+    try {
+      saved = localStorage.getItem('landing_lang');
+      pref = localStorage.getItem('preferred-locale');
+    } catch (e) {}
+    if (saved && STR[saved]) return saved;
+    if (pref && STR[pref]) return pref;
+    return 'es';
+  }
+
+  var nav = document.getElementById('lang-nav');
+  if (nav) {
+    LANGS.forEach(function (L) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'lang-btn' + (L.code === 'es' ? ' active' : '');
+      b.setAttribute('data-lang', L.code);
+      b.setAttribute('id', 'btn-lang-' + L.code);
+      b.setAttribute('aria-label', L.aria);
+      b.setAttribute('aria-pressed', L.code === 'es' ? 'true' : 'false');
+      b.textContent = L.label;
+      b.addEventListener('click', function () { setLang(L.code); });
+      nav.appendChild(b);
+    });
+  }
 
   applyLinks();
-  var saved = null;
-  try { saved = localStorage.getItem('landing_lang'); } catch (e) {}
-  setLang(saved === 'en' ? 'en' : 'es');
+  setLang(pickInitialLang());
 })();
   </script>
 </body>
