@@ -246,11 +246,17 @@
   }
 
   function applyLinks() {
+    var h = (location.hostname || '').toLowerCase();
     var base = adminOrigin();
     var login = document.getElementById('link-login');
     var form = document.getElementById('link-form');
     if (login) login.href = base + '/admin-login';
-    if (form) form.href = base + '/index.html';
+    if (form) {
+      if (h === 'delfincheckin.com' || h === 'www.delfincheckin.com')
+        form.href = 'https://form.delfincheckin.com/';
+      else
+        form.href = base + '/index.html';
+    }
   }
 
   function setLang(lang) {

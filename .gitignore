@@ -1,12 +1,18 @@
 # Local clone of marketing site (separate repo: delfincheckin.com)
 _landing_clone/
 _landing_repo/
+_landing_repo_update/
+_delfincheckin_com/
 staging.delfincheckin.com/
+
+# Clon local del formulario público (repo aparte: delfin-formulario-publico)
+_formulario_publico_update/
 
 # i18n FI build (caché local / venv de traducción)
 scripts/__pycache__/
 scripts/fi_translate_cache.json
 .venv-i18n/
+.venv-formulario/
 
 # Dependencies
 node_modules/
