@@ -111,6 +111,10 @@ export function normalizeRoomId(roomId: string | null | undefined): string {
   if (ROOM_UUID_RE.test(trimmed)) {
     return trimmed;
   }
+  /** Prisma cuid (Room.id texto): nunca colapsar a dígito 1–6 (rompía limpieza vs enlaces). */
+  if (/^c[a-z0-9]{20,}$/i.test(trimmed)) {
+    return trimmed;
+  }
   // IDs numéricos reales de "Room" (enteros largos, etc.): conservar tal cual
   if (/^\d+$/.test(trimmed)) {
     return trimmed;

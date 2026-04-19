@@ -10,6 +10,8 @@ import {
 import { getCleaningPublicBaseUrlFromRequest } from '@/lib/cleaning-public-base-url';
 import { getYmdInTimeZone } from '@/lib/calendar-date';
 import { sqlTextArrayForAny } from '@/lib/pg-sql-params';
+import { expandRoomIdsForReservationFilter } from '@/lib/cleaning-reservation-room-match';
+import { normalizeRoomId } from '@/lib/db';
 
 type TaskJson = CleaningTaskEvent & { note_url: string };
 
@@ -95,11 +97,13 @@ export async function GET(
     const fromStr = fromDate.toISOString().slice(0, 10);
     const toStr = toDate.toISOString().slice(0, 10);
 
+    const roomIdsForReservations = expandRoomIdsForReservationFilter(roomIds);
+
     const reservations = await sql`
       SELECT id, guest_name, check_in, check_out, guest_count, channel, room_id
       FROM reservations
       WHERE tenant_id = ${tenantId}::uuid
-        AND room_id = ANY(${sqlTextArrayForAny(roomIds)})
+        AND room_id = ANY(${sqlTextArrayForAny(roomIdsForReservations)})
         AND (status IS NULL OR LOWER(TRIM(status)) NOT IN ('cancelled', 'canceled'))
         AND check_out >= ${fromStr}::date
         AND check_in <= ${toStr}::date
@@ -110,7 +114,7 @@ export async function GET(
       SELECT room_id, cleaning_date, note
       FROM cleaning_notes
       WHERE tenant_id = ${tenantId}::uuid
-        AND room_id = ANY(${sqlTextArrayForAny(roomIds)})
+        AND room_id = ANY(${sqlTextArrayForAny(roomIdsForReservations)})
         AND author_type = 'owner'
         AND cleaning_date >= ${fromStr}::date
         AND cleaning_date <= ${toStr}::date
@@ -128,9 +132,14 @@ export async function GET(
 
     for (const row of roomsData.rows) {
       const roomId = row.room_id as string;
-      const resForRoom = reservations.rows.filter(
-        (r) => String((r as Record<string, unknown>).room_id) === roomId
-      );
+      const resForRoom = reservations.rows.filter((r) => {
+        const rid = String((r as Record<string, unknown>).room_id);
+        return (
+          rid === roomId ||
+          normalizeRoomId(rid) === roomId ||
+          rid === normalizeRoomId(roomId)
+        );
+      });
       const notesByDate = new Map<string, string>();
       for (const [k, v] of notesMap) {
         if (k.startsWith(`${roomId}|`)) {

@@ -2,6 +2,10 @@
  * Tareas de limpieza derivadas de reservas + cleaning_config (misma lógica que el feed iCal).
  */
 
+import { getYmdInTimeZone } from '@/lib/calendar-date';
+
+const CLEANING_TZ = 'Europe/Madrid';
+
 export type CleaningTrigger = 'on_checkout' | 'day_before_checkin' | 'both';
 
 export interface RoomCleaningConfigInput {
@@ -46,8 +50,10 @@ export interface CleaningTaskEvent {
   note_path: string;
 }
 
-function padDate(d: Date): string {
-  return d.toISOString().slice(0, 10);
+/** Día calendario del check-in/out en la misma TZ que el filtro «hoy» del API (Madrid). */
+function reservationYmd(d: Date | string): string {
+  const dt = typeof d === 'string' ? new Date(d) : d;
+  return getYmdInTimeZone(dt, CLEANING_TZ);
 }
 
 /** Misma lógica que formatIcalDate en api/ical/cleaning (hora local sobre el día de la reserva). */
@@ -82,10 +88,10 @@ export function buildCleaningTasksForRoom(
     const checkinDate = new Date(res.check_in);
     const guestName = res.guest_name || 'Huésped';
     const guestCount = res.guest_count || 1;
-    const checkoutDateStr = padDate(checkoutDate);
+    const checkoutDateStr = reservationYmd(checkoutDate);
 
     const nextRes = reservationsList.find(r => {
-      const nextIn = padDate(new Date(r.check_in));
+      const nextIn = reservationYmd(new Date(r.check_in));
       return nextIn === checkoutDateStr && r.id !== res.id;
     });
 
@@ -124,7 +130,7 @@ export function buildCleaningTasksForRoom(
 
     if (trigger === 'day_before_checkin' || trigger === 'both') {
       const dayBefore = new Date(checkinDate.getTime() - 86400000);
-      const dayBeforeStr = padDate(dayBefore);
+      const dayBeforeStr = reservationYmd(dayBefore);
       if (dayBeforeStr !== checkoutDateStr) {
         const startPre = combineDateAndTime(dayBefore, checkoutTime);
         const endPre = addMinutesToDate(startPre, duration);

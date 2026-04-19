@@ -91,12 +91,8 @@ export default function LimpiezaPublicPage() {
     setDidSnapCalendarMonth(false);
   }, [token]);
 
-  /** Solo desde hoy (dispositivo local): alineado con la API que ya filtra por Madrid. */
-  const displayTasks = useMemo(() => {
-    const n = new Date();
-    const todayStr = toISODate(n.getFullYear(), n.getMonth(), n.getDate());
-    return tasks.filter(task => task.date >= todayStr);
-  }, [tasks]);
+  /** La API ya devuelve solo tareas con fecha >= hoy (Europe/Madrid); no filtrar otra vez (evita desfases). */
+  const displayTasks = tasks;
 
   const tasksByDate = useMemo(() => {
     const m = new Map<string, Task[]>();
