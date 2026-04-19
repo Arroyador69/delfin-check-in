@@ -9,7 +9,7 @@ import { t } from '@/lib/i18n';
 import { useAuth } from '@/lib/auth';
 import { useMajorActionAd } from '@/lib/use-major-action-ad';
 
-type RoomRow = { id: number; name: string };
+type RoomRow = { id: string; name: string };
 
 export default function GeneralSettingsScreen() {
   const { session } = useAuth();
@@ -65,7 +65,7 @@ export default function GeneralSettingsScreen() {
       Alert.alert(t('common.error'), t('settings.rooms.limitReachedDescription', { max: maxRooms }));
       return;
     }
-    const nextId = rooms.length ? Math.max(...rooms.map((r) => r.id)) + 1 : 1;
+    const nextId = `tmp-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
     setRooms([...rooms, { id: nextId, name: t('settings.rooms.roomNumber', { number: rooms.length + 1 }) }]);
   };
 

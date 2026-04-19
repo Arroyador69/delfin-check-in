@@ -5,7 +5,7 @@ import { Link2, Copy, Check, Trash2, RefreshCw, Plus, Users } from 'lucide-react
 import { getCleaningPublicBaseUrlClient } from '@/lib/cleaning-public-base-url';
 
 interface Room {
-  id: number;
+  id: string;
   name: string;
 }
 

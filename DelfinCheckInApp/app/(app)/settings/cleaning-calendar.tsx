@@ -21,7 +21,7 @@ import { cleanerLimpiezaPageUrl, getCleaningPublicOrigin, icalCleaningFeedUrl } 
 import { KeyboardAwareFormModal } from '@/components/KeyboardAwareFormModal';
 import { getLocale, getLocaleTag, t } from '@/lib/i18n';
 
-type Room = { id: number; name: string };
+type Room = { id: string; name: string };
 
 type CleaningConfig = {
   room_id: string;
@@ -96,8 +96,8 @@ function buildRoomScheduleHint(cfg: CleaningConfig | undefined): string {
 export default function CleaningCalendarScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const [expandedId, setExpandedId] = useState<number | null>(null);
-  const [noteDraft, setNoteDraft] = useState<Record<number, { date: string; text: string }>>({});
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [noteDraft, setNoteDraft] = useState<Record<string, { date: string; text: string }>>({});
   const [publicLinkLabel, setPublicLinkLabel] = useState('');
   const [publicLinkRooms, setPublicLinkRooms] = useState<Set<string>>(new Set());
   const [showPublicLinkModal, setShowPublicLinkModal] = useState(false);
@@ -190,8 +190,7 @@ export default function CleaningCalendarScreen() {
     onSuccess: async (_, vars) => {
       await queryClient.invalidateQueries({ queryKey: ['cleaning-notes'] });
       await queryClient.invalidateQueries({ queryKey: ['cleaning-upcoming-owner'] });
-      const rid = Number(vars.room_id);
-      setNoteDraft((d) => ({ ...d, [rid]: { date: vars.cleaning_date, text: '' } }));
+      setNoteDraft((d) => ({ ...d, [vars.room_id]: { date: vars.cleaning_date, text: '' } }));
       Alert.alert(t('common.success'), t('settings.cleaning.saved'));
     },
     onError: () => Alert.alert(t('common.error'), t('settings.cleaning.saveError')),
@@ -307,17 +306,17 @@ export default function CleaningCalendarScreen() {
     return rooms?.find((r) => String(r.id) === rid)?.name || rid;
   }
 
-  function notesForRoom(roomId: number) {
+  function notesForRoom(roomId: string) {
     return notes.filter((n) => n.room_id === String(roomId));
   }
 
-  function unreadCleanerNoteIds(roomId: number): string[] {
+  function unreadCleanerNoteIds(roomId: string): string[] {
     return notesForRoom(roomId)
       .filter((n) => n.author_type === 'cleaner' && !n.read_at)
       .map((n) => n.id);
   }
 
-  function tasksForRoom(roomId: number): OwnerCleaningTask[] {
+  function tasksForRoom(roomId: string): OwnerCleaningTask[] {
     return upcomingTasks.filter((task) => String(task.room_id) === String(roomId));
   }
 

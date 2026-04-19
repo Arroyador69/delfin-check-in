@@ -41,8 +41,9 @@ export async function GET(req: NextRequest) {
       ORDER BY id ASC
     `;
 
+    // Room.id es UUID/cuid en texto; parseInt rompe (NaN o colisiones) y en React todas las filas comparten clave.
     const currentRooms = roomsResult.rows.map((row) => ({
-      id: parseInt(String(row.id), 10),
+      id: String(row.id),
       name: row.name,
     }));
 

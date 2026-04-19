@@ -10,7 +10,7 @@ import {
 import { getCleaningPublicBaseUrlFromRequest } from '@/lib/cleaning-public-base-url';
 import { getYmdInTimeZone } from '@/lib/calendar-date';
 import { sqlTextArrayForAny } from '@/lib/pg-sql-params';
-import { expandRoomIdsForReservationFilter } from '@/lib/cleaning-reservation-room-match';
+import { expandRoomIdsForReservationQuery } from '@/lib/cleaning-reservation-room-match';
 import { normalizeRoomId } from '@/lib/db';
 
 type TaskJson = CleaningTaskEvent & { note_url: string };
@@ -97,7 +97,7 @@ export async function GET(
     const fromStr = fromDate.toISOString().slice(0, 10);
     const toStr = toDate.toISOString().slice(0, 10);
 
-    const roomIdsForReservations = expandRoomIdsForReservationFilter(roomIds);
+    const roomIdsForReservations = await expandRoomIdsForReservationQuery(tenantId, roomIds);
 
     const reservations = await sql`
       SELECT id, guest_name, check_in, check_out, guest_count, channel, room_id

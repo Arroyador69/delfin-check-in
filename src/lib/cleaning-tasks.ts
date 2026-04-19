@@ -2,7 +2,11 @@
  * Tareas de limpieza derivadas de reservas + cleaning_config (misma lógica que el feed iCal).
  */
 
-import { getYmdInTimeZone } from '@/lib/calendar-date';
+import {
+  addCalendarDaysToYmd,
+  getYmdInTimeZone,
+  utcInstantFromCalendarDayAndWallClock,
+} from '@/lib/calendar-date';
 
 const CLEANING_TZ = 'Europe/Madrid';
 
@@ -56,12 +60,12 @@ function reservationYmd(d: Date | string): string {
   return getYmdInTimeZone(dt, CLEANING_TZ);
 }
 
-/** Misma lógica que formatIcalDate en api/ical/cleaning (hora local sobre el día de la reserva). */
-function combineDateAndTime(date: Date, timeHHmm: string): Date {
-  const [h, m] = timeHHmm.split(':').map(Number);
-  const d = new Date(date);
-  d.setHours(h, m, 0, 0);
-  return d;
+function cleaningInstantOnReservationDay(
+  reservationInstant: Date | string,
+  timeHHmm: string
+): Date {
+  const ymd = reservationYmd(reservationInstant);
+  return utcInstantFromCalendarDayAndWallClock(ymd, timeHHmm.slice(0, 5), CLEANING_TZ);
 }
 
 function addMinutesToDate(base: Date, minutes: number): Date {
@@ -75,7 +79,6 @@ export function buildCleaningTasksForRoom(
   notePathForRoomAndDate: (roomId: string, date: string) => string
 ): CleaningTaskEvent[] {
   const checkoutTime = config.checkout_time?.slice(0, 5) || '11:00';
-  const checkinTime = config.checkin_time?.slice(0, 5) || '16:00';
   const duration = config.cleaning_duration_minutes || 120;
   const trigger = config.cleaning_trigger || 'on_checkout';
   const roomName = config.room_name || `Habitación ${config.room_id}`;
@@ -98,7 +101,7 @@ export function buildCleaningTasksForRoom(
     const isSameDayTurnover = !!nextRes;
     const ownerNote = notesByDate.get(checkoutDateStr) || null;
 
-    const startCheckout = combineDateAndTime(checkoutDate, checkoutTime);
+    const startCheckout = cleaningInstantOnReservationDay(res.check_out, checkoutTime);
     const endCheckout = addMinutesToDate(startCheckout, duration);
 
     if (trigger === 'on_checkout' || trigger === 'both') {
@@ -129,10 +132,14 @@ export function buildCleaningTasksForRoom(
     }
 
     if (trigger === 'day_before_checkin' || trigger === 'both') {
-      const dayBefore = new Date(checkinDate.getTime() - 86400000);
-      const dayBeforeStr = reservationYmd(dayBefore);
+      const checkInYmd = reservationYmd(checkinDate);
+      const dayBeforeStr = addCalendarDaysToYmd(checkInYmd, -1);
       if (dayBeforeStr !== checkoutDateStr) {
-        const startPre = combineDateAndTime(dayBefore, checkoutTime);
+        const startPre = utcInstantFromCalendarDayAndWallClock(
+          dayBeforeStr,
+          checkoutTime,
+          CLEANING_TZ
+        );
         const endPre = addMinutesToDate(startPre, duration);
         tasks.push({
           id: `pre-${config.room_id}-${res.id}`,

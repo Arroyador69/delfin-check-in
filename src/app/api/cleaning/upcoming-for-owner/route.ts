@@ -9,7 +9,7 @@ import {
 } from '@/lib/cleaning-tasks';
 import { getYmdInTimeZone } from '@/lib/calendar-date';
 import { sqlTextArrayForAny } from '@/lib/pg-sql-params';
-import { expandRoomIdsForReservationFilter } from '@/lib/cleaning-reservation-room-match';
+import { expandRoomIdsForReservationQuery } from '@/lib/cleaning-reservation-room-match';
 import { normalizeRoomId } from '@/lib/db';
 
 async function resolveTenantId(req: NextRequest): Promise<string | null> {
@@ -102,7 +102,7 @@ export async function GET(req: NextRequest) {
       /* opcional */
     }
 
-    const roomIdsForReservations = expandRoomIdsForReservationFilter(roomIds);
+    const roomIdsForReservations = await expandRoomIdsForReservationQuery(tenantId, roomIds);
 
     const reservations = await sql`
       SELECT id, guest_name, check_in, check_out, guest_count, channel, room_id

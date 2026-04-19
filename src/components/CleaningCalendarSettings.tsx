@@ -16,7 +16,7 @@ import CleaningPublicLinksSection from '@/components/CleaningPublicLinksSection'
 import { toIntlDateLocale, type Locale as AppLocale } from '@/i18n/config';
 
 interface Room {
-  id: number;
+  id: string;
   name: string;
 }
 

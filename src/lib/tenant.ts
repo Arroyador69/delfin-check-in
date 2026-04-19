@@ -17,6 +17,8 @@ export interface Tenant {
   stripe_customer_id?: string;
   stripe_subscription_id?: string;
   status: 'active' | 'trial' | 'suspended' | 'cancelled';
+  /** Alojamiento asociado (Room.lodgingId); puede faltar en tenants antiguos. */
+  lodging_id?: string | null;
   trial_ends_at?: Date;
   // Nuevos campos para sistema de planes MVP
   subscription_price?: number; // Precio base de suscripción

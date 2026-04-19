@@ -21,7 +21,7 @@ export default function SettingsPage() {
   const [channelsMessage, setChannelsMessage] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
   
   // Estados para configuración de habitaciones/apartamentos
-  const [roomsConfig, setRoomsConfig] = useState<Array<{id: number, name: string}>>([]);
+  const [roomsConfig, setRoomsConfig] = useState<Array<{ id: string; name: string }>>([]);
   const [tenantLimits, setTenantLimits] = useState({ 
     maxRooms: 1,
     maxReservations: 100, 
@@ -54,7 +54,7 @@ export default function SettingsPage() {
         }
       } catch (error) {
         console.error('Error cargando datos:', error);
-        setRoomsConfig([{ id: 1, name: 'Habitación 1' }]);
+        setRoomsConfig([{ id: '1', name: 'Habitación 1' }]);
       }
     };
     
@@ -181,8 +181,14 @@ export default function SettingsPage() {
             onClick={() => {
               const cap = tenantLimits.maxRooms;
               if (cap === -1 || roomsConfig.length < cap) {
-                const newId = Math.max(...roomsConfig.map(r => r.id), 0) + 1;
-                setRoomsConfig([...roomsConfig, { id: newId, name: t('rooms.roomNumber', { number: newId }) }]);
+                const newId =
+                  typeof crypto !== 'undefined' && crypto.randomUUID
+                    ? `tmp-${crypto.randomUUID()}`
+                    : `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
+                setRoomsConfig([
+                  ...roomsConfig,
+                  { id: newId, name: t('rooms.roomNumber', { number: roomsConfig.length + 1 }) },
+                ]);
               } else {
                 setMessage({ 
                   type: 'error', 
