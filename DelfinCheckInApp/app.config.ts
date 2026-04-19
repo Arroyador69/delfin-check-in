@@ -5,11 +5,16 @@ export default ({ config }: ConfigContext): ExpoConfig => {
   const cleaningPublicBase =
     process.env.EXPO_PUBLIC_CLEANING_PUBLIC_BASE_URL?.trim().replace(/\/$/, '') || '';
 
-  /** IDs de aplicación AdMob (no confundir con IDs de unidad de anuncio). En desarrollo, valores de prueba de Google. */
+  /**
+   * AdMob App ID (incluye ~): distinto por app iOS/Android en la consola.
+   * iOS: perfil Delfín Check-in. Android: sustituir cuando exista el perfil en AdMob.
+   */
   const admobIosAppId =
-    process.env.EXPO_PUBLIC_ADMOB_IOS_APP_ID?.trim() || 'ca-app-pub-3940256099942544~1458002511';
+    process.env.EXPO_PUBLIC_ADMOB_IOS_APP_ID?.trim() ||
+    'ca-app-pub-6039298229774115~4354523068';
   const admobAndroidAppId =
-    process.env.EXPO_PUBLIC_ADMOB_ANDROID_APP_ID?.trim() || 'ca-app-pub-3940256099942544~3347511711';
+    process.env.EXPO_PUBLIC_ADMOB_ANDROID_APP_ID?.trim() ||
+    'ca-app-pub-3940256099942544~3347511711';
 
   return {
     name: 'Delfín Check-in',
@@ -60,10 +65,12 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     extra: {
       API_URL: apiUrl,
       CLEANING_PUBLIC_BASE_URL: cleaningPublicBase,
-      /** IDs de unidad (banner / intersticial) — créalos en AdMob y pásalos por EAS Secrets */
+      /** IDs de unidad (banner / intersticial). iOS intersticial creado en AdMob; banner iOS al crear el bloque. */
       ADMOB_IOS_BANNER_ID: process.env.EXPO_PUBLIC_ADMOB_IOS_BANNER_ID || '',
       ADMOB_ANDROID_BANNER_ID: process.env.EXPO_PUBLIC_ADMOB_ANDROID_BANNER_ID || '',
-      ADMOB_IOS_INTERSTITIAL_ID: process.env.EXPO_PUBLIC_ADMOB_IOS_INTERSTITIAL_ID || '',
+      ADMOB_IOS_INTERSTITIAL_ID:
+        process.env.EXPO_PUBLIC_ADMOB_IOS_INTERSTITIAL_ID?.trim() ||
+        'ca-app-pub-6039298229774115/7074688196',
       ADMOB_ANDROID_INTERSTITIAL_ID: process.env.EXPO_PUBLIC_ADMOB_ANDROID_INTERSTITIAL_ID || '',
       eas: {
         projectId: '1408210e-72cc-49ab-b045-f91d89452a4e'
