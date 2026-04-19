@@ -1,15 +1,17 @@
 import { useEffect, useRef } from 'react';
 import { isGoogleMobileAdsNativeAvailable } from '@/lib/admob-native-available';
+import { useIsOnboardingRoute } from '@/lib/use-onboarding-ads-block';
 
 /**
- * Inicializa el SDK una vez al arrancar (requerido antes de cargar anuncios).
+ * Inicializa el SDK cuando el usuario ya no está en el onboarding de primera vez.
  * Omitido en Expo Go / sin módulo nativo.
  */
 export function AdMobInitializer() {
   const done = useRef(false);
+  const onOnboarding = useIsOnboardingRoute();
 
   useEffect(() => {
-    if (done.current || !isGoogleMobileAdsNativeAvailable()) return;
+    if (onOnboarding || done.current || !isGoogleMobileAdsNativeAvailable()) return;
     done.current = true;
     try {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -22,7 +24,7 @@ export function AdMobInitializer() {
     } catch {
       done.current = false;
     }
-  }, []);
+  }, [onOnboarding]);
 
   return null;
 }
