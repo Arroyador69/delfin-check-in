@@ -9,8 +9,11 @@ import {
 } from '@/lib/cleaning-tasks';
 import { getYmdInTimeZone } from '@/lib/calendar-date';
 import { sqlTextArrayForAny } from '@/lib/pg-sql-params';
-import { expandRoomIdsForReservationQuery } from '@/lib/cleaning-reservation-room-match';
-import { normalizeRoomId } from '@/lib/db';
+import {
+  expandRoomIdsForReservationQuery,
+  getAcceptableReservationRoomIdsByLinkedRoom,
+  reservationRowMatchesLinkedRoom,
+} from '@/lib/cleaning-reservation-room-match';
 
 async function resolveTenantId(req: NextRequest): Promise<string | null> {
   let tenantId = await getTenantId(req);
@@ -103,6 +106,10 @@ export async function GET(req: NextRequest) {
     }
 
     const roomIdsForReservations = await expandRoomIdsForReservationQuery(tenantId, roomIds);
+    const acceptableByLinkedRoom = await getAcceptableReservationRoomIdsByLinkedRoom(
+      tenantId,
+      roomIds
+    );
 
     const reservations = await sql`
       SELECT id, guest_name, check_in, check_out, guest_count, channel, room_id
@@ -137,18 +144,21 @@ export async function GET(req: NextRequest) {
 
     for (const row of roomsData.rows) {
       const roomId = row.room_id as string;
-      const resForRoom = reservations.rows.filter((r) => {
-        const rid = String((r as Record<string, unknown>).room_id);
-        return (
-          rid === String(roomId) ||
-          normalizeRoomId(rid) === String(roomId) ||
-          rid === normalizeRoomId(String(roomId))
-        );
-      });
+      const acceptable =
+        acceptableByLinkedRoom.get(roomId) ?? new Set<string>([roomId]);
+      const resForRoom = reservations.rows.filter((r) =>
+        reservationRowMatchesLinkedRoom(
+          (r as Record<string, unknown>).room_id,
+          acceptable
+        )
+      );
       const notesByDate = new Map<string, string>();
       for (const [k, v] of notesMap) {
-        if (k.startsWith(`${roomId}|`)) {
-          const d = k.split('|')[1];
+        const pipe = k.indexOf('|');
+        if (pipe === -1) continue;
+        const noteRid = k.slice(0, pipe);
+        const d = k.slice(pipe + 1);
+        if (reservationRowMatchesLinkedRoom(noteRid, acceptable)) {
           notesByDate.set(d, v);
         }
       }
