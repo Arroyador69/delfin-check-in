@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
       simulacion: false
     };
 
-    let dbResult = null;
+    let dbResult: { rows?: any[] } | null = null;
     try {
       // Buscar por propietario_id O tenant_id (ambos pueden existir)
       dbResult = await sql`
@@ -75,14 +75,15 @@ export async function POST(req: NextRequest) {
         LIMIT 1
       `;
       
+      const dbRowsLen = dbResult?.rows?.length ?? 0;
       console.log('🔍 Búsqueda de configuración MIR:', {
         tenantIdBuscado: tenantId,
-        resultadosEncontrados: dbResult.rows.length,
+        resultadosEncontrados: dbRowsLen,
         propietario_id_encontrado: dbResult.rows[0]?.propietario_id,
         tenant_id_encontrado: dbResult.rows[0]?.tenant_id
       });
 
-      if (dbResult.rows.length > 0 && dbResult.rows[0].activo) {
+      if (dbRowsLen > 0 && dbResult.rows[0].activo) {
         const dbConfig = dbResult.rows[0];
         config = {
           baseUrl: dbConfig.base_url || 'https://hospedajes.ses.mir.es/hospedajes-web/ws/v1/comunicacion',
@@ -112,46 +113,62 @@ export async function POST(req: NextRequest) {
     if (!config.simulacion) {
       if (!config.username || config.username.trim() === '') {
         console.error('❌ ERROR: Usuario MIR vacío o no configurado');
+        const configuracionEncontrada = (dbResult?.rows?.length ?? 0) > 0;
         console.error('🔍 Diagnóstico:', {
           tenantIdBuscado: tenantId,
-          configuracionEncontrada: dbResult?.rows?.length > 0,
+          configuracionEncontrada,
           propietario_id_encontrado: dbResult?.rows?.[0]?.propietario_id,
           tenant_id_encontrado: dbResult?.rows?.[0]?.tenant_id,
           usuario_encontrado: dbResult?.rows?.[0]?.usuario ? 'SÍ' : 'NO',
           activo: dbResult?.rows?.[0]?.activo
         });
-        return NextResponse.json({
-          success: false,
-          error: 'Credenciales MIR no configuradas',
-          message: 'El usuario MIR está vacío. Por favor, configura las credenciales MIR en la configuración del tenant.',
-          tenantId,
-          diagnostico: {
-            tenantIdBuscado: tenantId,
-            configuracionEncontrada: dbResult?.rows?.length > 0,
-            propietario_id_encontrado: dbResult?.rows?.[0]?.propietario_id,
-            tenant_id_encontrado: dbResult?.rows?.[0]?.tenant_id
-          }
-        }, { status: 400 });
+        return NextResponse.json(
+          {
+            success: false,
+            code: 'MIR_CREDENTIALS_MISSING',
+            error: 'Credenciales MIR no configuradas',
+            message:
+              'El usuario MIR está vacío. Por favor, configura las credenciales MIR en la configuración del tenant.',
+            tenantId,
+            diagnostico: {
+              tenantIdBuscado: tenantId,
+              configuracionEncontrada,
+              propietario_id_encontrado: dbResult?.rows?.[0]?.propietario_id,
+              tenant_id_encontrado: dbResult?.rows?.[0]?.tenant_id
+            }
+          },
+          { status: 400 }
+        );
       }
       
       if (!config.password || config.password.trim() === '') {
         console.error('❌ ERROR: Contraseña MIR vacía o no configurada');
-        return NextResponse.json({
-          success: false,
-          error: 'Credenciales MIR no configuradas',
-          message: 'La contraseña MIR está vacía. Por favor, configura las credenciales MIR en la configuración del tenant.',
-          tenantId
-        }, { status: 400 });
+        return NextResponse.json(
+          {
+            success: false,
+            code: 'MIR_CREDENTIALS_MISSING',
+            error: 'Credenciales MIR no configuradas',
+            message:
+              'La contraseña MIR está vacía. Por favor, configura las credenciales MIR en la configuración del tenant.',
+            tenantId
+          },
+          { status: 400 }
+        );
       }
       
       if (!config.codigoArrendador || config.codigoArrendador.trim() === '') {
         console.error('❌ ERROR: Código arrendador MIR vacío o no configurado');
-        return NextResponse.json({
-          success: false,
-          error: 'Credenciales MIR no configuradas',
-          message: 'El código arrendador MIR está vacío. Por favor, configura las credenciales MIR en la configuración del tenant.',
-          tenantId
-        }, { status: 400 });
+        return NextResponse.json(
+          {
+            success: false,
+            code: 'MIR_CREDENTIALS_MISSING',
+            error: 'Credenciales MIR no configuradas',
+            message:
+              'El código arrendador MIR está vacío. Por favor, configura las credenciales MIR en la configuración del tenant.',
+            tenantId
+          },
+          { status: 400 }
+        );
       }
     }
 
@@ -473,7 +490,7 @@ export async function POST(req: NextRequest) {
           stack: error instanceof Error ? error.stack : undefined,
           tipo: 'critical_error'
         }),
-        tenant_id: tenantId !== 'default' ? tenantId : null
+        tenant_id: tenantId !== 'default' ? tenantId : undefined
       });
       
       // Guardar error para RH
@@ -487,7 +504,7 @@ export async function POST(req: NextRequest) {
           stack: error instanceof Error ? error.stack : undefined,
           tipo: 'critical_error'
         }),
-        tenant_id: tenantId !== 'default' ? tenantId : null
+        tenant_id: tenantId !== 'default' ? tenantId : undefined
       });
       
       console.log('✅ Errores críticos guardados en mir_comunicaciones');

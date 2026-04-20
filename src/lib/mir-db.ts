@@ -30,7 +30,18 @@ export async function insertMirComunicacion(comunicacion: Omit<MirComunicacion, 
         ${comunicacion.xml_enviado || null},
         ${comunicacion.xml_respuesta || null},
         ${comunicacion.tenant_id || null}
-      ) RETURNING id
+      )
+      ON CONFLICT (referencia) DO UPDATE SET
+        tipo = EXCLUDED.tipo,
+        estado = EXCLUDED.estado,
+        lote = EXCLUDED.lote,
+        resultado = EXCLUDED.resultado,
+        error = EXCLUDED.error,
+        xml_enviado = EXCLUDED.xml_enviado,
+        xml_respuesta = EXCLUDED.xml_respuesta,
+        tenant_id = COALESCE(EXCLUDED.tenant_id, mir_comunicaciones.tenant_id),
+        updated_at = NOW()
+      RETURNING id
     `;
     
     return result.rows[0].id;

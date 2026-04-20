@@ -90,6 +90,7 @@ export default function EstadoEnviosMIRPage() {
   const [estadoEnvio, setEstadoEnvio] = useState<EstadoEnvio | null>(null);
   const [loading, setLoading] = useState(false);
   const [consultandoLotes, setConsultandoLotes] = useState(false);
+  const [reintentandoPendientes, setReintentandoPendientes] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [autoRefresh, setAutoRefresh] = useState(true);
@@ -153,6 +154,31 @@ export default function EstadoEnviosMIRPage() {
       setError(t('errorConexionConsulta'));
     } finally {
       setConsultandoLotes(false);
+    }
+  };
+
+  const reintentarPendientes = async () => {
+    setReintentandoPendientes(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      const res = await fetch('/api/ministerio/reintentar-pendientes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ limit: 50 })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        await cargarEstadoEnvios(true);
+        setSuccess(`✅ Reintento lanzado: ${data.sent || 0} enviados, ${data.failed || 0} fallidos`);
+      } else {
+        setError(data.message || 'No se pudieron reintentar los pendientes');
+      }
+    } catch (err) {
+      console.error('Error reintentando pendientes:', err);
+      setError(t('errorConexionConsulta'));
+    } finally {
+      setReintentandoPendientes(false);
     }
   };
 
@@ -324,6 +350,16 @@ export default function EstadoEnviosMIRPage() {
             >
               <Activity className={`mr-2 h-4 w-4 ${consultandoLotes ? 'animate-spin' : ''}`} />
               {consultandoLotes ? t('consulting') : t('consultReal')}
+            </Button>
+
+            <Button
+              onClick={reintentarPendientes}
+              disabled={reintentandoPendientes}
+              variant="outline"
+              className="w-full rounded-xl border-2 border-amber-200 bg-white font-semibold text-amber-700 shadow-sm hover:border-amber-300 hover:bg-amber-50 sm:w-auto"
+            >
+              <RefreshCw className={`mr-2 h-4 w-4 ${reintentandoPendientes ? 'animate-spin' : ''}`} />
+              {reintentandoPendientes ? 'Reintentando…' : 'Reintentar pendientes'}
             </Button>
 
             <Button

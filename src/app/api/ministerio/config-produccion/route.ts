@@ -96,6 +96,27 @@ export async function POST(req: NextRequest) {
         message: 'No se pudo guardar la configuración en la base de datos'
       }, { status: 500 });
     }
+
+    // Intentar reenviar comunicaciones pendientes por falta de credenciales (best-effort)
+    try {
+      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL?.trim() || req.nextUrl.origin;
+      const retryRes = await fetch(`${baseUrl}/api/ministerio/reintentar-pendientes`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-tenant-id': tenantId
+        },
+        body: JSON.stringify({ limit: 25 })
+      });
+      const retryJson = await retryRes.json().catch(() => null);
+      console.log('🔁 Reintento de pendientes tras guardar credenciales:', {
+        ok: retryRes.ok,
+        status: retryRes.status,
+        retry: retryJson
+      });
+    } catch (retryError) {
+      console.warn('⚠️ No se pudo reintentar pendientes MIR tras guardar credenciales:', retryError);
+    }
     
     const configuracion = {
       usuario,

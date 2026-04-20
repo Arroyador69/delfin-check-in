@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { insertGuestRegistration, sql } from '@/lib/db';
 import { logError } from '@/lib/error-logger';
 import { getTenantById, hasLegalModuleAccess } from '@/lib/tenant';
+import { insertMirComunicacion } from '@/lib/mir-db';
 
 // Configuración CORS robusta - Fix definitivo
 const ALLOWED_ORIGINS = new Set([
@@ -344,7 +345,49 @@ export async function POST(req: NextRequest) {
       } else {
         const errorMIR = await responseMIR.json();
         console.error('❌ Error en auto-envío al MIR:', errorMIR);
-        resultadoMIR = { error: errorMIR.message || 'Error desconocido' };
+        resultadoMIR = { error: errorMIR.message || 'Error desconocido', code: errorMIR.code };
+
+        const esCredencialesPendientes = errorMIR?.code === 'MIR_CREDENTIALS_MISSING';
+        if (esCredencialesPendientes) {
+          const updatedData = {
+            ...dataWithDefaults,
+            mir_status: {
+              error: errorMIR.message || 'Credenciales MIR no configuradas',
+              fechaEnvio: new Date().toISOString(),
+              estado: 'pendiente',
+              reason: 'credenciales_no_configuradas'
+            }
+          };
+
+          await sql`
+            UPDATE guest_registrations 
+            SET 
+              data = ${JSON.stringify(updatedData)}::jsonb,
+              comunicacion_id = ${reserva_ref}
+            WHERE id = ${id}
+          `;
+
+          // Crear comunicaciones "pendientes" para que aparezcan en el panel MIR aunque aún no se hayan enviado
+          try {
+            await insertMirComunicacion({
+              referencia: `${reserva_ref}-PV`,
+              tipo: 'PV',
+              estado: 'pendiente',
+              error: 'Pendiente de credenciales MIR',
+              tenant_id: tenantId
+            });
+            await insertMirComunicacion({
+              referencia: `${reserva_ref}-RH`,
+              tipo: 'RH',
+              estado: 'pendiente',
+              error: 'Pendiente de credenciales MIR',
+              tenant_id: tenantId
+            });
+          } catch (e) {
+            // No bloquear el flujo del cliente si fallara la inserción en mir_comunicaciones
+            console.warn('⚠️ No se pudo insertar mir_comunicaciones pendientes:', e);
+          }
+        } else {
         
         // Registrar error en logs del superadmin
         await logError({
@@ -378,6 +421,7 @@ export async function POST(req: NextRequest) {
         `;
         
         console.log('✅ Error MIR guardado en el registro');
+        }
       }
     } catch (errorMIR) {
       console.error('❌ Error en auto-envío al MIR:', errorMIR);
