@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { sql } from '@vercel/postgres';
 import { getTenantById, getTenantId } from '@/lib/tenant';
 import type { Tenant } from '@/lib/tenant';
 import { getTenantPlanPresentation } from '@/lib/tenant-plan-billing';
+import { getRoomsForTenant } from '@/lib/tenant-rooms';
 
 export async function GET(req: NextRequest) {
   try {
@@ -33,24 +33,7 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const lodgingId =
-      tenant.lodging_id && String(tenant.lodging_id).trim() !== ''
-        ? String(tenant.lodging_id)
-        : String(tenant.id);
-
-    const roomsResult = await sql`
-      SELECT id, name
-      FROM "Room"
-      WHERE "lodgingId" = ${lodgingId}
-      ORDER BY id ASC
-    `;
-
-    // Room.id es UUID/cuid en texto; parseInt rompe (NaN o colisiones) y en React todas las filas comparten clave.
-    const currentRooms = roomsResult.rows.map((row) => ({
-      id: String(row.id),
-      name: row.name,
-    }));
-
+    const currentRooms = await getRoomsForTenant(tenantId);
     const roomsUsed = currentRooms.length;
 
     const presentation = await getTenantPlanPresentation(tenant as Tenant, roomsUsed);

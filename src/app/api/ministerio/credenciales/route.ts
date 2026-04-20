@@ -3,6 +3,7 @@ import { sql } from '@vercel/postgres';
 import { getTenantById } from '@/lib/tenant';
 import type { Tenant } from '@/lib/tenant';
 import { getTenantPlanPresentation } from '@/lib/tenant-plan-billing';
+import { getRoomsForTenant } from '@/lib/tenant-rooms';
 
 function maskCredentialRow(row: any) {
   return {
@@ -93,18 +94,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Tenant no encontrado' }, { status: 404 });
     }
 
-    const lodgingId =
-      tenant.lodging_id && String(tenant.lodging_id).trim() !== ''
-        ? String(tenant.lodging_id)
-        : String(tenant.id);
-
-    const roomsResult = await sql`
-      SELECT id, name
-      FROM "Room"
-      WHERE "lodgingId" = ${lodgingId}
-      ORDER BY id ASC
-    `;
-    const roomsUsed = roomsResult.rows.length;
+    const rooms = await getRoomsForTenant(tenantId);
+    const roomsUsed = rooms.length;
     const presentation = await getTenantPlanPresentation(tenant as Tenant, roomsUsed);
     const maxRooms = Number(presentation.max_rooms_effective ?? 0);
     if (!maxRooms || maxRooms < 1) {
