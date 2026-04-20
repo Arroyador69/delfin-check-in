@@ -119,19 +119,7 @@ export async function POST(req: NextRequest) {
 
     const tenant = await getTenantById(payload.tenantId);
     const planType = tenant ? getPlanConfig(tenant).planType : 'free';
-    const eligible = planType === 'checkin' || planType === 'standard' || planType === 'pro';
-
-    if (!eligible) {
-      return NextResponse.json(
-        {
-          success: false,
-          code: 'PLAN_REQUIRED',
-          error: 'El asistente está disponible solo en el Plan Check-in o superior.',
-          upgradePath: `/${pathLocale}/plans`,
-        },
-        { status: 403 }
-      );
-    }
+    const eligible = true;
 
     let usage: Awaited<ReturnType<typeof getUsage>> | null = null;
     try {

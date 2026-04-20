@@ -8,20 +8,10 @@ export type AssistantLimits = {
 };
 
 export function getAssistantLimits(planType: PlanType): AssistantLimits {
-  // El asistente solo se puede usar en CHECKIN+.
-  // En FREE se muestra el widget pero bloqueado (limits = 0).
-  switch (planType) {
-    case 'checkin':
-      return { daily: 20, monthly: 60 };
-    case 'standard':
-      return { daily: 50, monthly: 200 };
-    case 'pro':
-      return { daily: 150, monthly: 600 };
-    case 'free':
-    case 'free_legal':
-    default:
-      return { daily: 0, monthly: 0 };
-  }
+  // Límite global para controlar costes: igual para todos los planes.
+  // Nota: aunque exista límite mensual, el límite diario actúa como "techo" real de uso.
+  void planType;
+  return { daily: 10, monthly: 300 };
 }
 
 function getMonthKey(): string {

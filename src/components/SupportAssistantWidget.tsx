@@ -234,14 +234,10 @@ export default function SupportAssistantWidget() {
             <div ref={bottomRef} />
             {usage?.eligible === false && (
               <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-xl p-3 text-sm">
-                <div className="font-semibold">{t('lockedTitle') || 'Disponible en Plan Check-in'}</div>
-                <div className="mt-1">{t('lockedBody') || 'Mejora tu plan para poder hablar con el asistente.'}</div>
-                <Link
-                  href={usage?.upgradePath ?? `/${locale}/plans`}
-                  className="inline-flex mt-2 items-center justify-center px-3 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 text-sm font-medium"
-                >
-                  {t('upgradeCta') || 'Ver planes'}
-                </Link>
+                <div className="font-semibold">{t('lockedTitle') || 'Asistente bloqueado'}</div>
+                <div className="mt-1">
+                  {t('lockedBody') || 'No se puede usar el asistente en este momento.'}
+                </div>
               </div>
             )}
           </div>

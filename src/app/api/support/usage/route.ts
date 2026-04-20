@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
 
     const tenant = await getTenantById(payload.tenantId);
     const planType = tenant ? getPlanConfig(tenant).planType : 'free';
-    const eligible = planType === 'checkin' || planType === 'standard' || planType === 'pro';
+    const eligible = true;
 
     const { pathLocale, intlLocale } = resolveLocales(req);
     const usage = await getUsage({
