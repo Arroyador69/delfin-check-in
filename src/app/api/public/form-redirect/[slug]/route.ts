@@ -67,6 +67,68 @@ export async function GET(
 
     const tenant = result.rows[0];
 
+    // Validación de plan/estado para que el propietario no tenga que "arreglar" enlaces.
+    // Si el tenant está suspendido/cancelado (o la suscripción está impagada/cancelada),
+    // no redirigimos al formulario: devolvemos un HTML claro.
+    let fullTenant = null as Awaited<ReturnType<typeof getTenantById>> | null;
+    try {
+      fullTenant = await getTenantById(String(tenant.id));
+    } catch {
+      fullTenant = null;
+    }
+    const tenantStatus = (fullTenant?.status || tenant.status) as
+      | 'active'
+      | 'trial'
+      | 'suspended'
+      | 'cancelled';
+    const subStatus = (fullTenant as any)?.subscription_status as
+      | 'active'
+      | 'trialing'
+      | 'past_due'
+      | 'canceled'
+      | 'unpaid'
+      | undefined;
+
+    const serviceAllowed =
+      (tenantStatus === 'active' || tenantStatus === 'trial') &&
+      subStatus !== 'canceled' &&
+      subStatus !== 'unpaid';
+
+    if (!serviceAllowed) {
+      const locale =
+        (tenant.config?.language && String(tenant.config.language).trim()) ||
+        (req.headers.get('accept-language')?.split(',')[0]?.trim() || 'es');
+      const html = `<!doctype html>
+<html lang="${String(locale).slice(0, 2) || 'es'}">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Delfín Check-in</title>
+  <style>
+    body{font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif;margin:0;background:#f8fafc;color:#0f172a}
+    .wrap{max-width:720px;margin:0 auto;padding:32px}
+    .card{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:18px 20px}
+    h1{font-size:18px;margin:0 0 10px}
+    p{margin:8px 0;line-height:1.5;color:#334155}
+    .muted{color:#64748b;font-size:12px}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>Este enlace no está disponible</h1>
+      <p>El alojamiento no tiene el servicio activo en este momento. Contacta con el propietario para que revise su plan o el estado de la suscripción.</p>
+      <p class="muted">Código: TENANT_INACTIVE · Tenant: ${String(tenant.id)}</p>
+    </div>
+  </div>
+</body>
+</html>`;
+      return new NextResponse(html, {
+        status: 403,
+        headers: { 'Content-Type': 'text/html; charset=utf-8' },
+      });
+    }
+
     let propertyId = '';
     try {
       const propRow = await sql`
@@ -95,8 +157,9 @@ export async function GET(
     // Feature flags por plan: SOLO Standard/Pro pueden usar envío de instrucciones por email.
     let canEmailCheckinInstructions = false;
     try {
-      const fullTenant = await getTenantById(String(tenant.id));
-      canEmailCheckinInstructions = !!(fullTenant && hasCheckinInstructionsEmailPlan(fullTenant));
+      canEmailCheckinInstructions = !!(
+        fullTenant && hasCheckinInstructionsEmailPlan(fullTenant)
+      );
     } catch {
       canEmailCheckinInstructions = false;
     }
