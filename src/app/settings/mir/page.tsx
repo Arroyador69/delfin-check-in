@@ -545,19 +545,88 @@ export default function MirSettingsPage() {
           <CardHeader>
             <CardTitle className="flex items-center text-gray-900 font-bold">
               <Info className="h-5 w-5 mr-2" />
-              ℹ️ Información Importante
+              ℹ️ Guía oficial: credenciales MIR (SES Hospedajes)
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-          <div className="text-sm text-gray-600">
-            <p><strong>¿Cómo obtener las credenciales?</strong></p>
-            <ol className="list-decimal list-inside space-y-1 mt-2">
-              <li>Regístrate en el portal MIR: <a href="https://hospedajes.ses.mir.es" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">hospedajes.ses.mir.es</a></li>
-              <li>Marca la casilla "Envío de comunicaciones por servicio web"</li>
-              <li>Obtén tu usuario (formato: CIF---WS), contraseña y código de arrendador</li>
-              <li>Configura estas credenciales en este formulario</li>
-            </ol>
-          </div>
+            <div className="text-sm text-gray-700 space-y-3">
+              <p className="font-medium">
+                Para que Delfín Check-in pueda <strong>enviar automáticamente</strong> los partes al Ministerio del Interior, el
+                propietario debe obtener sus credenciales técnicas en el portal oficial de SES Hospedajes.
+              </p>
+
+              <div className="rounded-xl border border-blue-200 bg-blue-50/60 p-4">
+                <p className="font-semibold text-blue-900 mb-2">✅ Resumen (los 4 datos que debes pegar aquí)</p>
+                <ul className="list-disc list-inside space-y-1 text-blue-900">
+                  <li><strong>Código de Arrendador</strong> (Entidad/propietario)</li>
+                  <li><strong>Código de Establecimiento</strong> (<strong>10 dígitos</strong>, por cada propiedad)</li>
+                  <li><strong>Usuario WS</strong> (normalmente <strong>NIF/CIF</strong> en mayúsculas + <strong>“---WS”</strong>, ej. <code>12345678A---WS</code>)</li>
+                  <li><strong>Contraseña WS</strong> (la del apartado “Servicio de Comunicación”)</li>
+                </ul>
+              </div>
+
+              <div>
+                <p className="font-semibold text-gray-900 mb-2">Paso 1: Alta de la Entidad (Propietario)</p>
+                <ol className="list-decimal list-inside space-y-1">
+                  <li>
+                    Accede a la Sede Electrónica del Ministerio del Interior y entra en{' '}
+                    <span className="font-semibold">“Acceso al registro de establecimientos y entidades”</span>.
+                  </li>
+                  <li>Identifícate con <strong>certificado digital</strong> o <strong>Cl@ve</strong>.</li>
+                  <li>
+                    Rellena el formulario de alta y selecciona tipo de entidad <strong>“Hospedaje”</strong>.
+                  </li>
+                  <li>
+                    <strong>Crítico:</strong> marca la casilla <strong>“Envío de comunicaciones por servicio web”</strong>.
+                    Si no se marca, el sistema no generará las credenciales que tu software necesita.
+                  </li>
+                  <li>Indica un <strong>correo de notificaciones de error</strong> (el MIR avisará si algún dato es incorrecto).</li>
+                </ol>
+              </div>
+
+              <div>
+                <p className="font-semibold text-gray-900 mb-2">Paso 2: Registro de los Establecimientos (Propiedades)</p>
+                <ol className="list-decimal list-inside space-y-1">
+                  <li>En el mismo módulo, entra en <strong>“Registro de establecimiento”</strong>.</li>
+                  <li>Completa los datos de cada propiedad y firma (por ejemplo, con <strong>AutoFirma</strong>).</li>
+                  <li>
+                    Al finalizar, se asigna un <strong>Código de Establecimiento</strong> de <strong>10 dígitos</strong> para cada propiedad.
+                  </li>
+                </ol>
+              </div>
+
+              <div>
+                <p className="font-semibold text-gray-900 mb-2">Paso 3: Dónde ver cada credencial (muy importante)</p>
+                <ul className="list-disc list-inside space-y-1">
+                  <li>
+                    En <strong>“Mis datos registrados”</strong> verás el <strong>Código de Arrendador</strong> y los <strong>Códigos de Establecimiento</strong>.
+                  </li>
+                  <li>
+                    En <strong>“Servicio de Comunicación”</strong> verás el <strong>Usuario del Servicio Web</strong> (formato <strong>NIF/CIF + “---WS”</strong>)
+                    y la <strong>Contraseña del Servicio Web</strong> (asignada o modificable).
+                  </li>
+                </ul>
+              </div>
+
+              <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+                <p className="font-semibold text-amber-900 mb-1">⏱️ Plazo legal</p>
+                <p className="text-amber-900">
+                  Recuerda: las comunicaciones (partes de viajeros) deben enviarse en un plazo máximo de <strong>24 horas</strong> desde el inicio del hospedaje.
+                </p>
+              </div>
+
+              <p className="text-sm text-gray-600">
+                Portal oficial:{" "}
+                <a
+                  href="https://hospedajes.ses.mir.es"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:underline font-semibold"
+                >
+                  hospedajes.ses.mir.es
+                </a>
+              </p>
+            </div>
           
           <div className="flex items-start space-x-2">
             <AlertTriangle className="h-4 w-4 text-orange-500 mt-0.5" />

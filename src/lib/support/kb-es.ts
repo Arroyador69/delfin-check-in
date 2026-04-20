@@ -26,7 +26,42 @@ export const KB_ES: SupportKB = {
     },
     {
       q: '¿Cómo configuro mis credenciales del MIR?',
-      a: 'Ve a Configuración → MIR. Introduce: usuario MIR (CIF/NIF + ---WS), contraseña MIR y tu código de arrendador. Guarda. Si no lo tienes, debes obtenerlo desde el portal del MIR al dar de alta tu establecimiento.',
+      a:
+        'Ve a Configuración → MIR y pega estos 4 datos: 1) Código de Arrendador (Entidad), 2) Código de Establecimiento (10 dígitos), 3) Usuario WS (NIF/CIF + “---WS”), 4) Contraseña WS. ' +
+        'Guarda y prueba la conexión. Si aún no los tienes, consulta la guía “Guía oficial: obtener credenciales MIR (SES Hospedajes)”.',
+    },
+    {
+      q: 'Guía oficial: obtener credenciales MIR (SES Hospedajes)',
+      a:
+        'Guía basada en los manuales oficiales de SES Hospedajes (Ministerio del Interior):\n' +
+        '\n' +
+        'Paso 1) Alta de la Entidad (Propietario)\n' +
+        '- Accede a la Sede Electrónica del Ministerio del Interior y entra en “Acceso al registro de establecimientos y entidades”.\n' +
+        '- Identifícate con certificado digital o Cl@ve.\n' +
+        '- Rellena el alta y selecciona tipo de entidad “Hospedaje”.\n' +
+        '- CRÍTICO: marca la casilla “Envío de comunicaciones por servicio web” (si no, no tendrás credenciales para software).\n' +
+        '- Indica un email de notificaciones de error (el MIR avisará si hay datos incorrectos).\n' +
+        '\n' +
+        'Paso 2) Registro de Establecimientos (Propiedades)\n' +
+        '- En el mismo módulo, entra en “Registro de establecimiento”.\n' +
+        '- Completa los datos de cada propiedad y firma (p. ej. con AutoFirma).\n' +
+        '- El sistema asigna un Código de Establecimiento de 10 dígitos por establecimiento.\n' +
+        '\n' +
+        'Paso 3) Obtener las 4 credenciales para Delfín Check-in\n' +
+        '- En “Mis datos registrados” verás:\n' +
+        '  - Código de Arrendador/Entidad (identifica al propietario ante el MIR).\n' +
+        '  - Código de Establecimiento (10 dígitos) para cada propiedad.\n' +
+        '- En “Servicio de Comunicación” verás:\n' +
+        '  - Usuario del Servicio Web (normalmente NIF/CIF en mayúsculas + “---WS”, ej. “12345678A---WS”).\n' +
+        '  - Contraseña del Servicio Web (asignada o modificable desde esa pantalla).\n' +
+        '\n' +
+        'Resumen (los 4 datos que debes pegar en el software)\n' +
+        '- Código de Arrendador\n' +
+        '- Código de Establecimiento (10 dígitos)\n' +
+        '- Usuario WS (NIF/CIF + “---WS”)\n' +
+        '- Contraseña WS\n' +
+        '\n' +
+        'Importante: las comunicaciones deben enviarse como máximo en 24 horas desde el inicio del hospedaje.',
     },
     {
       q: '¿Dónde consigo el usuario del MIR?',
