@@ -67,6 +67,10 @@ export default function MirSettingsPage() {
   const [hasConfig, setHasConfig] = useState(false); // Para saber si hay datos configurados
   const [editingUsuario, setEditingUsuario] = useState(false);
   const [editingContraseña, setEditingContraseña] = useState(false);
+  const [serverHasUsuario, setServerHasUsuario] = useState(false);
+  const [serverHasContraseña, setServerHasContraseña] = useState(false);
+  const [serverHasCodigoArrendador, setServerHasCodigoArrendador] = useState(false);
+  const [serverHasCodigoEstablecimiento, setServerHasCodigoEstablecimiento] = useState(false);
   const [navLocale, setNavLocale] = useState<Locale>(defaultLocale);
 
   useEffect(() => {
@@ -132,19 +136,24 @@ export default function MirSettingsPage() {
       const data = await response.json();
       
       if (data.success) {
-        const hasUsuario = !!data.config.usuario;
-        const hasContraseña = !!data.config.contraseña;
-        const hasAnySensitive =
-          hasUsuario ||
-          hasContraseña ||
-          !!data.config.codigoArrendador ||
-          !!data.config.codigoEstablecimiento;
+        const hasUsuario = Boolean(data?.status?.credenciales?.usuario);
+        const hasContraseña = Boolean(data?.status?.credenciales?.contraseña);
+        const hasArr = Boolean(data?.status?.credenciales?.codigoArrendador);
+        const hasEst = Boolean(data?.config?.codigoEstablecimiento);
+
+        setServerHasUsuario(hasUsuario);
+        setServerHasContraseña(hasContraseña);
+        setServerHasCodigoArrendador(hasArr);
+        setServerHasCodigoEstablecimiento(hasEst);
+
+        const hasAnySensitive = hasUsuario || hasContraseña || hasArr || hasEst;
         setHasConfig(hasAnySensitive);
         setConfig({
+          // No pre-rellenar secretos; sí podemos mostrar códigos (no son contraseña)
           usuario: '',
           contraseña: '',
-          codigoArrendador: '',
-          codigoEstablecimiento: '',
+          codigoArrendador: data?.config?.codigoArrendador || '',
+          codigoEstablecimiento: data?.config?.codigoEstablecimiento || '',
           baseUrl: data.config.baseUrl || 'https://hospedajes.ses.mir.es/hospedajes-web/ws/v1/comunicacion',
           aplicacion: data.config.aplicacion || 'Delfin_Check_in',
           simulacion: data.config.simulacion || false,
@@ -213,7 +222,10 @@ export default function MirSettingsPage() {
   };
 
   const getConfigStatus = () => {
-    const hasRequired = config.usuario && config.contraseña && config.codigoArrendador;
+    const effectiveUsuario = editingUsuario ? Boolean(config.usuario) : serverHasUsuario;
+    const effectiveContraseña = editingContraseña ? Boolean(config.contraseña) : serverHasContraseña;
+    const effectiveCodigoArrendador = Boolean(config.codigoArrendador) || serverHasCodigoArrendador;
+    const hasRequired = effectiveUsuario && effectiveContraseña && effectiveCodigoArrendador;
     return {
       hasRequired,
       status: hasRequired ? 'Completa' : 'Incompleta',
@@ -280,7 +292,7 @@ export default function MirSettingsPage() {
           <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="flex items-center space-x-2">
-              {config.usuario ? (
+              {(editingUsuario ? Boolean(config.usuario) : serverHasUsuario) ? (
                 <CheckCircle className="h-5 w-5 text-green-500" />
               ) : (
                 <XCircle className="h-5 w-5 text-red-500" />
@@ -288,7 +300,7 @@ export default function MirSettingsPage() {
               <span className="text-sm font-semibold text-gray-800">Usuario MIR</span>
             </div>
             <div className="flex items-center space-x-2">
-              {config.contraseña ? (
+              {(editingContraseña ? Boolean(config.contraseña) : serverHasContraseña) ? (
                 <CheckCircle className="h-5 w-5 text-green-500" />
               ) : (
                 <XCircle className="h-5 w-5 text-red-500" />
@@ -296,7 +308,7 @@ export default function MirSettingsPage() {
               <span className="text-sm font-semibold text-gray-800">Contraseña MIR</span>
             </div>
             <div className="flex items-center space-x-2">
-              {config.codigoArrendador ? (
+              {(Boolean(config.codigoArrendador) || serverHasCodigoArrendador) ? (
                 <CheckCircle className="h-5 w-5 text-green-500" />
               ) : (
                 <XCircle className="h-5 w-5 text-red-500" />
@@ -341,19 +353,14 @@ export default function MirSettingsPage() {
                 name="mir_usuario_ws"
                 autoComplete="off"
                 autoCapitalize="none"
-                placeholder="ejemplo12345678TWS"
-                value={hasConfig && !editingUsuario && config.usuario ? "•••••••••••" : config.usuario}
+                placeholder={serverHasUsuario && !editingUsuario ? 'Configurado (pulsa para cambiar)' : '12345678A---WS'}
+                value={editingUsuario ? config.usuario : ''}
                 onChange={(e) => {
-                  if (e.target.value !== "•••••••••••") {
-                    setConfig({...config, usuario: e.target.value});
-                    setEditingUsuario(true);
-                  }
+                  setConfig({...config, usuario: e.target.value});
+                  setEditingUsuario(true);
                 }}
                 onFocus={() => {
-                  if (hasConfig && config.usuario && !editingUsuario) {
-                    setEditingUsuario(true);
-                    setConfig({...config, usuario: ""});
-                  }
+                  if (!editingUsuario) setEditingUsuario(true);
                 }}
                 onBlur={() => {
                   if (config.usuario) {
@@ -363,7 +370,7 @@ export default function MirSettingsPage() {
                 className="text-gray-900"
               />
               <p className="text-xs text-gray-600 font-medium">
-                Formato: DNI/CIF + letra + WS (ejemplo: ejemplo12345678TWS)
+                Formato habitual (oficial): NIF/CIF/NIE + “---WS” (ejemplo: 12345678A---WS)
               </p>
             </div>
             
@@ -375,23 +382,16 @@ export default function MirSettingsPage() {
                   type={showPassword ? "text" : "password"}
                   name="mir_password_ws"
                   autoComplete="new-password"
-                  placeholder="ejemplo_contraseña_segura"
+                  placeholder={serverHasContraseña && !editingContraseña ? 'Configurado (pulsa para cambiar)' : 'Contraseña del Servicio Web'}
                   value={
-                    hasConfig && !editingContraseña && config.contraseña && !showPassword
-                      ? "••••••••"
-                      : config.contraseña
+                    editingContraseña ? config.contraseña : ''
                   }
                   onChange={(e) => {
-                    if (e.target.value !== "••••••••") {
-                      setConfig({...config, contraseña: e.target.value});
-                      setEditingContraseña(true);
-                    }
+                    setConfig({...config, contraseña: e.target.value});
+                    setEditingContraseña(true);
                   }}
                   onFocus={() => {
-                    if (hasConfig && config.contraseña && !editingContraseña) {
-                      setEditingContraseña(true);
-                      setConfig({...config, contraseña: ""});
-                    }
+                    if (!editingContraseña) setEditingContraseña(true);
                   }}
                   onBlur={() => {
                     if (config.contraseña) {

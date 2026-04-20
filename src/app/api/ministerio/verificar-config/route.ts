@@ -19,6 +19,7 @@ export async function GET(req: NextRequest) {
       simulacion: false,
       activo: false
     };
+    let source: 'db' | 'env' | 'none' = 'none';
 
     try {
       const result = await sql`
@@ -41,6 +42,7 @@ export async function GET(req: NextRequest) {
           simulacion: dbConfig.simulacion || false,
           activo: dbConfig.activo || false
         };
+        source = 'db';
         console.log('📋 Configuración cargada desde base de datos');
       } else {
         console.log('📋 No hay configuración en base de datos, usando variables de entorno');
@@ -55,6 +57,7 @@ export async function GET(req: NextRequest) {
           simulacion: process.env.MIR_SIMULACION === 'true',
           activo: true
         };
+        source = 'env';
       }
     } catch (dbError) {
       console.error('❌ Error cargando desde base de datos, usando variables de entorno:', dbError);
@@ -69,6 +72,7 @@ export async function GET(req: NextRequest) {
         simulacion: process.env.MIR_SIMULACION === 'true',
         activo: true
       };
+      source = 'env';
     }
 
     // Verificar si las credenciales están configuradas
@@ -100,9 +104,11 @@ export async function GET(req: NextRequest) {
       message: hasRequiredVars ? 
         'Configuración MIR completa' : 
         'Configuración MIR incompleta - faltan credenciales',
+      // Seguridad: NO devolver credenciales (usuario/contraseña) en claro.
+      // La UI debe mostrar "configurado" y solo permitir cambiar re-escribiendo.
       config: {
-        usuario: config.usuario,
-        contraseña: config.contraseña, // Devolver la contraseña real para el formulario
+        usuario: '',
+        contraseña: '',
         codigoArrendador: config.codigoArrendador,
         codigoEstablecimiento: config.codigoEstablecimiento,
         baseUrl: config.baseUrl,
@@ -111,11 +117,12 @@ export async function GET(req: NextRequest) {
         activo: config.activo
       },
       status,
+      source,
       interpretacion: {
         configurado: hasRequiredVars,
         mensaje: hasRequiredVars ? 
           '✅ Configuración MIR completa y lista para usar' : 
-          '❌ Configuración MIR incompleta - configura las credenciales en las variables de entorno',
+          '❌ Configuración MIR incompleta - añade las credenciales en Configuración → MIR',
         credencialesFaltantes: [
           !config.usuario && 'Usuario MIR (MIR_HTTP_USER)',
           !config.contraseña && 'Contraseña MIR (MIR_HTTP_PASS)',
