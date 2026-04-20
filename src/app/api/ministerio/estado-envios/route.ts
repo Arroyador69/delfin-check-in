@@ -172,6 +172,15 @@ export async function GET(req: NextRequest) {
       
       // Comunicación PV
       if (comunicacionesMIR.find(c => c.tipo === 'PV') || estadoFromData) {
+        const normalizedEstadoPV =
+          estadoPV === 'confirmado'
+            ? 'confirmado'
+            : estadoPV === 'enviado'
+              ? 'enviado'
+              : estadoPV === 'error' || estadoPV === 'anulado'
+                ? 'error'
+                : 'pendiente';
+
         comunicacionesParaMostrar.push({
           id: `${registro.id}-PV`,
           timestamp: registro.created_at,
@@ -182,7 +191,7 @@ export async function GET(req: NextRequest) {
           lote: lotePV,
           error: comunicacionesMIR.find(c => c.tipo === 'PV')?.error,
           fechaEnvio: comunicacionesMIR.find(c => c.tipo === 'PV')?.created_at,
-          estado: estadoPV === 'enviado' ? 'enviado' : estadoPV === 'error' ? 'error' : 'pendiente',
+          estado: normalizedEstadoPV,
           tenant_id: registro.tenant_id,
           vinculacion: {
             guest_registration_id: registro.id,
@@ -194,6 +203,15 @@ export async function GET(req: NextRequest) {
       
       // Comunicación RH
       if (comunicacionesMIR.find(c => c.tipo === 'RH') || estadoFromData) {
+        const normalizedEstadoRH =
+          estadoRH === 'confirmado'
+            ? 'confirmado'
+            : estadoRH === 'enviado'
+              ? 'enviado'
+              : estadoRH === 'error' || estadoRH === 'anulado'
+                ? 'error'
+                : 'pendiente';
+
         comunicacionesParaMostrar.push({
           id: `${registro.id}-RH`,
           timestamp: registro.created_at,
@@ -204,7 +222,7 @@ export async function GET(req: NextRequest) {
           lote: loteRH,
           error: comunicacionesMIR.find(c => c.tipo === 'RH')?.error,
           fechaEnvio: comunicacionesMIR.find(c => c.tipo === 'RH')?.created_at,
-          estado: estadoRH === 'enviado' ? 'enviado' : estadoRH === 'error' ? 'error' : 'pendiente',
+          estado: normalizedEstadoRH,
           tenant_id: registro.tenant_id,
           vinculacion: {
             guest_registration_id: registro.id,

@@ -261,9 +261,10 @@ export async function POST(req: NextRequest) {
 
     // Normalizaciones requeridas por XSD oficial
     referenciaNorm = String(referencia).slice(0, 50);
+    // MIR/XSD exige exactamente: YYYY-MM-DDTHH:mm:ss (sin milisegundos ni sufijo Z)
     const asDateTime = (d: unknown) => {
       if (d == null) return '';
-      const s =
+      const raw =
         d instanceof Date
           ? d.toISOString()
           : typeof d === 'string'
@@ -271,7 +272,20 @@ export async function POST(req: NextRequest) {
             : typeof d === 'number'
               ? new Date(d).toISOString()
               : String(d);
-      return s.includes('T') ? s : `${s}T12:00:00`;
+
+      const s = raw.trim();
+      if (s === '') return '';
+
+      // Si viene solo fecha, añadir hora
+      const withTime = s.includes('T') ? s : `${s}T12:00:00`;
+
+      // Quitar milisegundos y zona horaria (Z o +hh:mm)
+      const noMillis = withTime.replace(/\.\d{1,3}(?=Z$|[+-]\d{2}:\d{2}$)/, '');
+      const noZone = noMillis.replace(/Z$|[+-]\d{2}:\d{2}$/, '');
+
+      // Si aun así viene con más precisión, recortar a segundos
+      // (ej: 2026-04-20T12:34:56.789 -> 2026-04-20T12:34:56)
+      return noZone.length >= 19 ? noZone.slice(0, 19) : noZone;
     };
     const fechaEntradaDT = asDateTime(fechaEntrada);
     const fechaSalidaDT = asDateTime(fechaSalida);
