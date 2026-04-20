@@ -258,7 +258,18 @@ export async function POST(req: NextRequest) {
 
     // Normalizaciones requeridas por XSD oficial
     referenciaNorm = String(referencia).slice(0, 50);
-    const asDateTime = (d: string) => (d && d.includes('T') ? d : `${d}T12:00:00`);
+    const asDateTime = (d: unknown) => {
+      if (d == null) return '';
+      const s =
+        d instanceof Date
+          ? d.toISOString()
+          : typeof d === 'string'
+            ? d
+            : typeof d === 'number'
+              ? new Date(d).toISOString()
+              : String(d);
+      return s.includes('T') ? s : `${s}T12:00:00`;
+    };
     const fechaEntradaDT = asDateTime(fechaEntrada);
     const fechaSalidaDT = asDateTime(fechaSalida);
     const codigoEstablecimientoFinal = config.codigoEstablecimiento || config.codigoArrendador || '0000256653';
