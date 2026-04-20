@@ -187,11 +187,11 @@ export async function POST(req: NextRequest) {
             COALESCE(data, '{}'::jsonb),
             '{mir_status}',
             jsonb_build_object(
-              'estado', ${nuevoEstado},
-              'lote', ${loteResult.lote},
-              'codigoEstado', ${loteResult.codigoEstado},
-              'descEstado', ${descripcionEstado},
-              'ultimaConsulta', ${nowIso}
+              'estado', ${nuevoEstado}::text,
+              'lote', ${String(loteResult.lote ?? '')}::text,
+              'codigoEstado', ${String(loteResult.codigoEstado ?? '')}::text,
+              'descEstado', ${descripcionEstado}::text,
+              'ultimaConsulta', ${nowIso}::text
             )
           )
           WHERE reserva_ref IN (
