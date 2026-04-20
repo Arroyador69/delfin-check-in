@@ -211,7 +211,16 @@ export default function MirSettingsPage() {
       if (data.success) {
         setSuccess('✅ Conexión con MIR exitosa');
       } else {
-        setError(`❌ Error en la conexión: ${data.message}`);
+        const desc =
+          data?.resultado?.descripcion ||
+          data?.interpretacion?.mensaje ||
+          data?.message ||
+          'Error desconocido';
+        const code = data?.resultado?.codigo ? ` (código ${data.resultado.codigo})` : '';
+        const causes = Array.isArray(data?.probableCauses) && data.probableCauses.length
+          ? `\n\nPosibles causas:\n- ${data.probableCauses.join('\n- ')}`
+          : '';
+        setError(`❌ Error en la conexión: ${desc}${code}${causes}`);
       }
     } catch (err) {
       setError('Error de conexión');
@@ -376,45 +385,54 @@ export default function MirSettingsPage() {
             
             <div className="space-y-2">
               <Label htmlFor="contraseña" className="text-gray-800 font-semibold">Contraseña MIR *</Label>
-              <div className="relative">
-                <Input
-                  id="contraseña"
-                  type={showPassword ? "text" : "password"}
-                  name="mir_password_ws"
-                  autoComplete="new-password"
-                  placeholder={serverHasContraseña && !editingContraseña ? 'Contraseña configurada (••••••••) — pulsa para cambiar' : 'Contraseña del Servicio Web'}
-                  value={editingContraseña ? config.contraseña : (serverHasContraseña ? '••••••••' : '')}
-                  readOnly={!editingContraseña && serverHasContraseña}
-                  onChange={(e) => {
-                    setConfig({...config, contraseña: e.target.value});
-                    setEditingContraseña(true);
-                  }}
-                  onFocus={() => {
-                    if (!editingContraseña) {
+              <div className="space-y-2">
+                <div className="relative">
+                  <Input
+                    id="contraseña"
+                    type={showPassword ? "text" : "password"}
+                    name="mir_password_ws"
+                    autoComplete="new-password"
+                    placeholder={serverHasContraseña && !editingContraseña ? 'Contraseña configurada (••••••••)' : 'Contraseña del Servicio Web'}
+                    value={editingContraseña ? config.contraseña : (serverHasContraseña ? '••••••••' : '')}
+                    disabled={!editingContraseña && serverHasContraseña}
+                    onChange={(e) => {
+                      setConfig({ ...config, contraseña: e.target.value });
+                    }}
+                    className="text-gray-900 disabled:opacity-100 disabled:cursor-default"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                    onClick={() => setShowPassword(!showPassword)}
+                    disabled={!editingContraseña && serverHasContraseña}
+                    title={!editingContraseña && serverHasContraseña ? 'Pulsa “Cambiar contraseña” para ver/editar' : 'Mostrar/ocultar'}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
+                </div>
+
+                {serverHasContraseña && !editingContraseña && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full sm:w-auto"
+                    onClick={() => {
+                      setShowPassword(false);
                       setConfig((prev) => ({ ...prev, contraseña: '' }));
                       setEditingContraseña(true);
-                    }
-                  }}
-                  onBlur={() => {
-                    if (config.contraseña) {
-                      setEditingContraseña(false);
-                    }
-                  }}
-                  className="text-gray-900"
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
-                </Button>
+                    }}
+                  >
+                    Cambiar contraseña
+                  </Button>
+                )}
+
+                {!serverHasContraseña && (
+                  <p className="text-xs text-gray-600 font-medium">
+                    Introduce la contraseña del “Servicio de Comunicación” (SES Hospedajes).
+                  </p>
+                )}
               </div>
             </div>
           </div>
