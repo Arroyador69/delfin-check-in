@@ -173,9 +173,9 @@ export async function POST(req: NextRequest) {
             estado = ${nuevoEstado},
             resultado = COALESCE(resultado, '{}'::jsonb) ||
               jsonb_build_object(
-                'codigoEstado', ${String(loteResult.codigoEstado ?? '')},
-                'descEstado', ${descripcionEstado},
-                'ultimaConsulta', ${nowIso}
+                'codigoEstado', ${String(loteResult.codigoEstado ?? '')}::text,
+                'descEstado', ${descripcionEstado}::text,
+                'ultimaConsulta', ${nowIso}::text
               )
           WHERE lote = ${loteResult.lote}
         `;
