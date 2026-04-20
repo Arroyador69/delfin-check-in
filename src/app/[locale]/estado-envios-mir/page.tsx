@@ -143,11 +143,20 @@ export default function EstadoEnviosMIRPage() {
       });
       const data = await res.json();
 
-      if (data.success) {
+      if (res.ok && data.success) {
         await cargarEstadoEnvios();
         setSuccess(t('successConsulta', { count: data.lotesConsultados || 0 }));
       } else {
-        setError(data.message || t('errorConsulta'));
+        const msg =
+          data?.message ||
+          data?.error ||
+          (typeof data === 'string' ? data : '') ||
+          t('errorConsulta');
+        const hint =
+          data?.error === 'Not found' || msg.toLowerCase().includes('not found')
+            ? '\n\n(Esto suele indicar que el endpoint está bloqueado por middleware o que el despliegue aún no está actualizado.)'
+            : '';
+        setError(`Error consultando MIR (HTTP ${res.status}): ${msg}${hint}`);
       }
     } catch (err) {
       console.error('Error consultando MIR:', err);
