@@ -629,6 +629,9 @@ export async function POST(req: NextRequest) {
     }
 
     // Enviar automáticamente al MIR (PV + RH dual)
+    let dualResult: any = null;
+    let dualError: any = null;
+    let mirEstadoFinal: 'enviado' | 'pendiente' | 'error' = 'pendiente';
     try {
       console.log('📤 Enviando automáticamente al MIR (PV + RH dual)...');
       
@@ -671,9 +674,6 @@ export async function POST(req: NextRequest) {
       console.log('🔍 Datos MIR:', JSON.stringify(datosMIR, null, 2));
       console.log('═══════════════════════════════════════════════════════════');
       
-      let dualResult = null;
-      let dualError = null;
-      
       try {
       const dualResponse = await fetch(`${req.nextUrl.origin}/api/ministerio/auto-envio-dual`, {
         method: 'POST',
@@ -699,6 +699,7 @@ export async function POST(req: NextRequest) {
         console.log('✅ Envío dual PV + RH al MIR exitoso:', dualResult);
           console.log('🔍 Comunicaciones guardadas:', dualResult.comunicaciones);
           console.log('🔍 Estado:', dualResult.estado);
+          mirEstadoFinal = 'enviado';
         
         // Actualizar el registro con el estado del MIR dual y crear vinculación
         const updatedData = {
@@ -742,6 +743,30 @@ export async function POST(req: NextRequest) {
           }
           
           console.error('❌ Error en envío dual al MIR:', dualError);
+
+          const isMissingCreds = (dualError as any)?.code === 'MIR_CREDENTIALS_MISSING';
+          mirEstadoFinal = isMissingCreds ? 'pendiente' : 'error';
+
+          // Persistir el estado MIR en guest_registrations (para que el propietario lo vea sin ir a logs)
+          try {
+            const updatedData = {
+              ...dbData,
+              mir_status: {
+                error: (dualError as any)?.message || (dualError as any)?.error || `HTTP ${dualResponse.status}: ${dualResponse.statusText}`,
+                fechaEnvio: new Date().toISOString(),
+                estado: isMissingCreds ? 'pendiente' : 'error',
+                reason: isMissingCreds ? 'credenciales_no_configuradas' : undefined,
+              },
+            };
+            const { sql: pgSql } = await import('@vercel/postgres');
+            await pgSql`
+              UPDATE guest_registrations
+              SET data = ${JSON.stringify(updatedData)}::jsonb
+              WHERE id = ${id}
+            `;
+          } catch (e) {
+            console.warn('⚠️ No se pudo persistir mir_status en guest_registrations:', e);
+          }
           
           // Guardar error en mir_comunicaciones para que aparezca en la página de estados
           try {
@@ -752,8 +777,10 @@ export async function POST(req: NextRequest) {
             await insertMirComunicacion({
               referencia: `${reserva_ref}-PV`,
               tipo: 'PV',
-              estado: 'error',
-              error: `Error HTTP ${dualResponse.status}: ${dualError.error || dualResponse.statusText}`,
+              estado: isMissingCreds ? 'pendiente' : 'error',
+              error: isMissingCreds
+                ? 'Pendiente de credenciales MIR'
+                : `Error HTTP ${dualResponse.status}: ${(dualError as any)?.error || dualResponse.statusText}`,
               resultado: JSON.stringify(dualError),
               tenant_id: tenantId || null
             });
@@ -762,8 +789,10 @@ export async function POST(req: NextRequest) {
             await insertMirComunicacion({
               referencia: `${reserva_ref}-RH`,
               tipo: 'RH',
-              estado: 'error',
-              error: `Error HTTP ${dualResponse.status}: ${dualError.error || dualResponse.statusText}`,
+              estado: isMissingCreds ? 'pendiente' : 'error',
+              error: isMissingCreds
+                ? 'Pendiente de credenciales MIR'
+                : `Error HTTP ${dualResponse.status}: ${(dualError as any)?.error || dualResponse.statusText}`,
               resultado: JSON.stringify(dualError),
               tenant_id: tenantId || null
             });
@@ -784,6 +813,7 @@ export async function POST(req: NextRequest) {
       } catch (fetchError) {
         console.error('❌ Error en fetch al endpoint dual:', fetchError);
         dualError = fetchError instanceof Error ? fetchError.message : String(fetchError);
+        mirEstadoFinal = 'error';
         
         // Guardar error en mir_comunicaciones para que aparezca en la página de estados
         try {
@@ -821,12 +851,22 @@ export async function POST(req: NextRequest) {
     const headers = cors(req);
     return NextResponse.json({ 
       success: true, 
-      message: 'Registro guardado y enviado al MIR correctamente (PV + RH)',
+      message:
+        mirEstadoFinal === 'enviado'
+          ? 'Registro guardado y enviado al MIR correctamente (PV + RH)'
+          : mirEstadoFinal === 'pendiente'
+            ? 'Registro guardado. Envío al MIR pendiente (faltan credenciales MIR del propietario).'
+            : 'Registro guardado, pero hubo un error al enviar al MIR. Revisa “Estado envíos MIR”.',
       id: id,
       reserva_ref: reserva_ref, // Usar referencia única generada
       comunicacion_id: comunicacion_id, // Incluir comunicacion_id en la respuesta
       date: new Date().toISOString().split('T')[0],
-      comunicaciones_enviadas: ['PV', 'RH'],
+      mir: {
+        estado: mirEstadoFinal,
+        resultados: dualResult?.resultados || null,
+        error: dualError || null,
+        referencia: reserva_ref,
+      },
       debug: {
         seguimiento_url: `${req.nextUrl.origin}/api/debug/seguimiento-mir?reserva_ref=${reserva_ref}&tenant_id=${tenantId}`,
         guest_id: id

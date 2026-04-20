@@ -27,15 +27,6 @@ export async function POST(req: NextRequest) {
       simulacion = false
     } = json;
 
-    // Validaciones
-    if (!usuario || !contraseña || !codigoArrendador || !codigoEstablecimiento) {
-      return NextResponse.json({
-        success: false,
-        error: 'Credenciales incompletas',
-        message: 'Usuario, contraseña, código de arrendador y código de establecimiento son obligatorios'
-      }, { status: 400 });
-    }
-
     // Validar formato del usuario WS (oficial habitual: NIF/CIF/NIE + '---WS')
     // Aceptamos también formatos legacy sin guiones para no bloquear casos existentes.
     const u = String(usuario).trim().toUpperCase();
@@ -72,14 +63,51 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Permitir guardar sin volver a introducir la contraseña:
+    // - Si llega vacía pero ya existe en BD para este tenant, la mantenemos.
+    // - Si no existe aún, entonces sí es obligatoria.
+    let finalPassword = typeof contraseña === 'string' ? contraseña : '';
+    if (!finalPassword || finalPassword.trim() === '') {
+      try {
+        const existing = await sql`
+          SELECT contraseña
+          FROM mir_configuraciones
+          WHERE propietario_id = ${tenantId} OR tenant_id = ${tenantId}
+          ORDER BY updated_at DESC
+          LIMIT 1
+        `;
+        const existingPassword = (existing.rows[0]?.contraseña as string | null | undefined) || '';
+        if (existingPassword) {
+          finalPassword = existingPassword;
+        }
+      } catch {
+        // ignore: si no podemos leer, validaremos abajo
+      }
+    }
+
+    // Validaciones (tras fallback de contraseña)
+    if (!u || !finalPassword || !codigoArrendador || !codigoEstablecimiento) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Credenciales incompletas',
+          message:
+            !finalPassword || finalPassword.trim() === ''
+              ? 'La contraseña MIR es obligatoria (o ya debe estar guardada previamente).'
+              : 'Usuario, código de arrendador y código de establecimiento son obligatorios',
+        },
+        { status: 400 }
+      );
+    }
+
     // Guardar en la base de datos
     try {
       // Primero intentar actualizar
       const updateResult = await sql`
         UPDATE mir_configuraciones 
         SET 
-          usuario = ${usuario},
-          contraseña = ${contraseña},
+          usuario = ${u},
+          contraseña = ${finalPassword},
           codigo_arrendador = ${codigoArrendador},
           codigo_establecimiento = ${codigoEstablecimiento},
           base_url = ${baseUrl},
@@ -97,7 +125,7 @@ export async function POST(req: NextRequest) {
             propietario_id, usuario, contraseña, codigo_arrendador, codigo_establecimiento,
             base_url, aplicacion, simulacion, activo, created_at, updated_at
           ) VALUES (
-            ${tenantId}, ${u}, ${contraseña}, ${codigoArrendador}, ${codigoEstablecimiento},
+            ${tenantId}, ${u}, ${finalPassword}, ${codigoArrendador}, ${codigoEstablecimiento},
             ${baseUrl}, ${aplicacion}, ${simulacion}, true, NOW(), NOW()
           )
         `;

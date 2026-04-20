@@ -382,16 +382,18 @@ export default function MirSettingsPage() {
                   type={showPassword ? "text" : "password"}
                   name="mir_password_ws"
                   autoComplete="new-password"
-                  placeholder={serverHasContraseña && !editingContraseña ? 'Configurado (pulsa para cambiar)' : 'Contraseña del Servicio Web'}
-                  value={
-                    editingContraseña ? config.contraseña : ''
-                  }
+                  placeholder={serverHasContraseña && !editingContraseña ? 'Contraseña configurada (••••••••) — pulsa para cambiar' : 'Contraseña del Servicio Web'}
+                  value={editingContraseña ? config.contraseña : (serverHasContraseña ? '••••••••' : '')}
+                  readOnly={!editingContraseña && serverHasContraseña}
                   onChange={(e) => {
                     setConfig({...config, contraseña: e.target.value});
                     setEditingContraseña(true);
                   }}
                   onFocus={() => {
-                    if (!editingContraseña) setEditingContraseña(true);
+                    if (!editingContraseña) {
+                      setConfig((prev) => ({ ...prev, contraseña: '' }));
+                      setEditingContraseña(true);
+                    }
                   }}
                   onBlur={() => {
                     if (config.contraseña) {

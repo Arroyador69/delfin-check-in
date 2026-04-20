@@ -85,17 +85,14 @@ export async function GET(req: NextRequest) {
     }
 
     // Verificar si las credenciales están configuradas
-    const hasRequiredVars = !!(
-      config.usuario &&
-      config.contraseña &&
-      config.codigoArrendador
-    );
+    const passwordLen = typeof config.contraseña === 'string' ? config.contraseña.trim().length : 0;
+    const hasRequiredVars = !!(config.usuario && passwordLen > 0 && config.codigoArrendador);
 
     const status = {
       configurado: hasRequiredVars,
       credenciales: {
         usuario: !!config.usuario,
-        contraseña: !!config.contraseña,
+        contraseña: passwordLen > 0,
         codigoArrendador: !!config.codigoArrendador
       },
       configuracion: {
