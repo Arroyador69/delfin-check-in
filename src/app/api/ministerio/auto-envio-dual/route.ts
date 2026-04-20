@@ -183,7 +183,7 @@ export async function POST(req: NextRequest) {
     if (referencia && (!fechaEntrada || !fechaSalida || !Array.isArray(personas) || personas.length === 0)) {
       try {
         const dbReg = await sql`
-          SELECT data
+          SELECT data, fecha_entrada, fecha_salida
           FROM guest_registrations
           WHERE reserva_ref = ${String(referencia)}
             AND tenant_id = ${tenantId}
@@ -191,11 +191,13 @@ export async function POST(req: NextRequest) {
           LIMIT 1
         `;
 
-        const data = dbReg.rows?.[0]?.data as any | undefined;
-        if (data) {
+        const row = dbReg.rows?.[0] as any | undefined;
+        const data = row?.data as any | undefined;
+        if (row) {
           loadedFromDb = true;
           fechaEntrada =
             fechaEntrada ??
+            row.fecha_entrada ??
             data.fechaEntrada ??
             data.fecha_entrada ??
             data.estancia?.fechaEntrada ??
@@ -207,6 +209,7 @@ export async function POST(req: NextRequest) {
 
           fechaSalida =
             fechaSalida ??
+            row.fecha_salida ??
             data.fechaSalida ??
             data.fecha_salida ??
             data.estancia?.fechaSalida ??

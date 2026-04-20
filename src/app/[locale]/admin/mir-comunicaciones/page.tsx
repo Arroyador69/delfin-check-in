@@ -565,7 +565,10 @@ export default function MirComunicacionesPage() {
                                     try {
                                       const response = await fetch('/api/ministerio/auto-envio-dual', {
                                         method: 'POST',
-                                        headers: { 'Content-Type': 'application/json' },
+                                        headers: {
+                                          'Content-Type': 'application/json',
+                                          ...(tenant?.id ? { 'x-tenant-id': tenant.id } : {}),
+                                        },
                                         body: JSON.stringify({
                                           referencia: registro.referencia,
                                           fechaEntrada: registro.fecha_entrada,
