@@ -1,10 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
-import { MinisterioClient, getMinisterioConfigFromEnv } from '@/lib/ministerio-client';
+import { MinisterioClient } from '@/lib/ministerio-client';
 
 export async function POST(req: NextRequest) {
   try {
     console.log('🔍 Consultando estado real con el MIR...');
+
+    // Resolver tenant (multi-tenant real): credenciales desde BD por tenant.
+    const { getTenantId } = await import('@/lib/tenant');
+    const tenantId =
+      (await getTenantId(req)) ||
+      req.headers.get('x-tenant-id') ||
+      req.headers.get('X-Tenant-ID') ||
+      null;
+
+    if (!tenantId) {
+      return NextResponse.json({ success: false, error: 'No autorizado' }, { status: 401 });
+    }
 
     // Obtener todos los lotes que están en estado "enviado" para consultar su estado real
     const result = await sql`
@@ -19,6 +31,7 @@ export async function POST(req: NextRequest) {
       FROM mir_comunicaciones mc
       LEFT JOIN guest_registrations gr ON mc.referencia = gr.reserva_ref
       WHERE mc.estado = 'enviado' AND mc.lote IS NOT NULL
+        AND (mc.tenant_id = ${tenantId} OR gr.tenant_id = ${tenantId})
       ORDER BY mc.created_at DESC
     `;
 
@@ -33,8 +46,35 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Configurar cliente MIR
-    const config = getMinisterioConfigFromEnv();
+    const cfgRes = await sql`
+      SELECT usuario, contraseña, codigo_arrendador, base_url, aplicacion, simulacion, activo
+      FROM mir_configuraciones
+      WHERE propietario_id = ${tenantId} OR tenant_id = ${tenantId}
+      ORDER BY updated_at DESC
+      LIMIT 1
+    `;
+    const row = cfgRes.rows[0];
+    if (!row || row.activo === false) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Credenciales MIR no configuradas',
+          code: 'MIR_CREDENTIALS_MISSING',
+          message: 'Configura las credenciales MIR del propietario antes de consultar estados reales.',
+        },
+        { status: 400 }
+      );
+    }
+
+    // Configurar cliente MIR (misma operación; solo cambia la fuente de credenciales)
+    const config = {
+      baseUrl: row.base_url || 'https://hospedajes.ses.mir.es/hospedajes-web/ws/v1/comunicacion',
+      username: String(row.usuario || '').trim().toUpperCase(),
+      password: String(row.contraseña || ''),
+      codigoArrendador: String(row.codigo_arrendador || '').trim(),
+      aplicacion: row.aplicacion || 'Delfin_Check_in',
+      simulacion: Boolean(row.simulacion),
+    };
     const cliente = new MinisterioClient(config);
 
     // Obtener lotes únicos para consultar
