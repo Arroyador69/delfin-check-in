@@ -8,8 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { useTenant, isFreePlanMirPreview } from '@/hooks/useTenant';
-import { PlanFreePreviewOverlay } from '@/components/PlanFreePreviewOverlay';
+import { useTenant } from '@/hooks/useTenant';
 import { useTranslations, useLocale } from 'next-intl';
 import { 
   CheckCircle, 
@@ -438,17 +437,8 @@ export default function MirSettingsPage() {
 
   const status = getConfigStatus();
 
-  const showMirFreeOverlay = Boolean(tenant && isFreePlanMirPreview(tenant));
-
   return (
     <div className="relative min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-6">
-      {showMirFreeOverlay && (
-        <PlanFreePreviewOverlay
-          title={t('paywallTitle')}
-          body={t('paywallBody')}
-          ctaLabel={t('paywallCta')}
-        />
-      )}
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
         <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-8 transition-all duration-500 hover:shadow-2xl hover:scale-[1.02]">
