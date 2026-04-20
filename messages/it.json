@@ -2275,6 +2275,35 @@
       "testConnection": "Prova Connessione",
       "goToPanel": "Vai al Pannello MIR",
       "testResultTitle": "Risultato del Test",
+      "multi": {
+        "title": "Credenziali MIR configurate",
+        "counter": "Configurate: {configured} · Massimo secondo il tuo piano: {max}",
+        "limitReached": "Hai raggiunto il massimo di credenziali MIR del tuo piano. Aumenta le unità per aggiungerne un’altra.",
+        "rule": "Regola: un appartamento deve avere le proprie credenziali MIR. Le camere possono condividerle.",
+        "createTitle": "Crea credenziale",
+        "name": "Nome",
+        "user": "Utente MIR (WS)",
+        "password": "Password MIR (WS)",
+        "landlord": "Codice locatore",
+        "establishment": "Codice struttura",
+        "baseUrl": "Base URL",
+        "createButton": "Crea credenziale",
+        "createdOk": "Credenziale MIR creata",
+        "createdFail": "Impossibile creare la credenziale",
+        "unitsTitle": "Unità (camere / appartamenti)",
+        "unitType": "Tipo unità",
+        "typeRoom": "Camera",
+        "typeApartment": "Appartamento",
+        "assignCredential": "Assegna credenziale",
+        "unassign": "Rimuovi assegnazione",
+        "saveUnitFail": "Impossibile salvare la configurazione dell’unità",
+        "currentType": "Tipo",
+        "currentCredential": "Credenziale",
+        "changeType": "Cambia tipo",
+        "assign": "Assegna",
+        "none": "Non assegnata",
+        "noUnits": "Nessuna unità per ora."
+      },
       "countries": {
         "ES": "Spagna",
         "IT": "Italia",
@@ -2829,6 +2858,12 @@
     "loading": "Caricamento..."
   },
   "mobile": {
+    "notifications": {
+      "title": "Notifiche",
+      "choose": "Cosa vuoi controllare?",
+      "pendingReservations": "Prenotazioni in sospeso",
+      "pendingMirConfig": "Configura MIR (unità non assegnate)"
+    },
     "onboarding": {
       "title": "Onboarding",
       "progress": "{current}/{total}",

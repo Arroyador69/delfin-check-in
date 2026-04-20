@@ -2254,6 +2254,35 @@
       "testConnection": "Testaa yhteys",
       "goToPanel": "Siirry MIR-paneeliin",
       "testResultTitle": "Testin tulos",
+      "multi": {
+        "title": "MIR-tunnukset määritetty",
+        "counter": "Määritetty: {configured} · Enimmäismäärä suunnitelmassasi: {max}",
+        "limitReached": "Olet saavuttanut suunnitelmasi MIR-tunnusten enimmäismäärän. Lisää yksiköitä lisätäksesi uuden.",
+        "rule": "Sääntö: asunnolla (apartment) on oltava omat MIR-tunnuksensa. Huoneet voivat jakaa tunnukset.",
+        "createTitle": "Luo tunnus",
+        "name": "Nimi",
+        "user": "MIR-käyttäjä (WS)",
+        "password": "MIR-salasana (WS)",
+        "landlord": "Vuokranantajakoodi",
+        "establishment": "Majoituspaikkakoodi",
+        "baseUrl": "Base URL",
+        "createButton": "Luo tunnus",
+        "createdOk": "MIR-tunnus luotu",
+        "createdFail": "Tunnusta ei voitu luoda",
+        "unitsTitle": "Yksiköt (huoneet / asunnot)",
+        "unitType": "Yksikön tyyppi",
+        "typeRoom": "Huone",
+        "typeApartment": "Asunto",
+        "assignCredential": "Määritä tunnus",
+        "unassign": "Poista määritys",
+        "saveUnitFail": "Yksikön asetuksia ei voitu tallentaa",
+        "currentType": "Tyyppi",
+        "currentCredential": "Tunnus",
+        "changeType": "Vaihda tyyppiä",
+        "assign": "Määritä",
+        "none": "Ei määritetty",
+        "noUnits": "Ei yksiköitä vielä."
+      },
       "countries": {
         "ES": "Espanja",
         "IT": "Italia",
@@ -2781,6 +2810,12 @@
     "loading": "Ladataan..."
   },
   "mobile": {
+    "notifications": {
+      "title": "Ilmoitukset",
+      "choose": "Mitä haluat tarkistaa?",
+      "pendingReservations": "Odottaa varauksia",
+      "pendingMirConfig": "Määritä MIR (yksiköt ilman määritystä)"
+    },
     "onboarding": {
       "title": "Käyttöönotto",
       "progress": "{current}/{total}",

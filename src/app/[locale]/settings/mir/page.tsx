@@ -388,14 +388,14 @@ export default function MirSettingsPage() {
 
       <Card className="bg-white/90 backdrop-blur-sm border-white/30 shadow-xl">
         <CardHeader>
-          <CardTitle className="text-gray-900 font-bold">🔑 {t('multiCredentialsTitle') || 'Credenciales MIR configuradas'}</CardTitle>
+          <CardTitle className="text-gray-900 font-bold">🔑 {t('multi.title')}</CardTitle>
           <CardDescription className="text-gray-700 font-medium">
-            {loadingMulti ? 'Cargando…' : `Configuradas: ${configured} · Máximo según tu plan: ${maxAllowed || '—'}`}
+            {loadingMulti ? t('saving') : t('multi.counter', { configured, max: maxAllowed || '—' })}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           <p className="text-xs text-gray-600">
-            Apartamentos: 1 credencial por apartamento. Habitaciones: pueden compartir credencial.
+            {t('multi.rule')}
           </p>
           <div className="space-y-2">
             {units.map((u) => (

@@ -2205,6 +2205,35 @@
       "testConnection": "Tester la Connexion",
       "goToPanel": "Aller au Panneau MIR",
       "testResultTitle": "Résultat du Test",
+      "multi": {
+        "title": "Identifiants MIR configurés",
+        "counter": "Configurés : {configured} · Max selon votre plan : {max}",
+        "limitReached": "Vous avez atteint le maximum d’identifiants MIR de votre plan. Augmentez vos unités pour en ajouter un autre.",
+        "rule": "Règle : un appartement doit avoir ses propres identifiants MIR. Les chambres peuvent partager.",
+        "createTitle": "Créer un identifiant",
+        "name": "Nom",
+        "user": "Utilisateur MIR (WS)",
+        "password": "Mot de passe MIR (WS)",
+        "landlord": "Code bailleur",
+        "establishment": "Code établissement",
+        "baseUrl": "Base URL",
+        "createButton": "Créer l’identifiant",
+        "createdOk": "Identifiant MIR créé",
+        "createdFail": "Impossible de créer l’identifiant",
+        "unitsTitle": "Unités (chambres / appartements)",
+        "unitType": "Type d’unité",
+        "typeRoom": "Chambre",
+        "typeApartment": "Appartement",
+        "assignCredential": "Assigner un identifiant",
+        "unassign": "Retirer l’assignation",
+        "saveUnitFail": "Impossible d’enregistrer la configuration de l’unité",
+        "currentType": "Type",
+        "currentCredential": "Identifiant",
+        "changeType": "Changer le type",
+        "assign": "Assigner",
+        "none": "Non assigné",
+        "noUnits": "Aucune unité pour le moment."
+      },
       "countries": {
         "ES": "Espagne",
         "IT": "Italie",
@@ -2712,6 +2741,12 @@
     "loading": "Chargement..."
   },
   "mobile": {
+    "notifications": {
+      "title": "Notifications",
+      "choose": "Que voulez-vous vérifier ?",
+      "pendingReservations": "Réservations en attente",
+      "pendingMirConfig": "Configurer MIR (unités non assignées)"
+    },
     "onboarding": {
       "title": "Onboarding",
       "progress": "{current}/{total}",

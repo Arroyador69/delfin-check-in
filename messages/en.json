@@ -2259,6 +2259,35 @@
       "testConnection": "Test Connection",
       "goToPanel": "Go to MIR Panel",
       "testResultTitle": "Test Result",
+      "multi": {
+        "title": "Configured MIR credentials",
+        "counter": "Configured: {configured} · Max by your plan: {max}",
+        "limitReached": "You reached the maximum MIR credentials for your plan. Upgrade your units to add another.",
+        "rule": "Rule: an apartment must have its own MIR credential. Rooms can share credentials.",
+        "createTitle": "Create credential",
+        "name": "Name",
+        "user": "MIR user (WS)",
+        "password": "MIR password (WS)",
+        "landlord": "Landlord code",
+        "establishment": "Establishment code",
+        "baseUrl": "Base URL",
+        "createButton": "Create credential",
+        "createdOk": "MIR credential created",
+        "createdFail": "Could not create the credential",
+        "unitsTitle": "Units (rooms / apartments)",
+        "unitType": "Unit type",
+        "typeRoom": "Room",
+        "typeApartment": "Apartment",
+        "assignCredential": "Assign credential",
+        "unassign": "Unassign",
+        "saveUnitFail": "Could not save unit configuration",
+        "currentType": "Type",
+        "currentCredential": "Credential",
+        "changeType": "Change type",
+        "assign": "Assign",
+        "none": "Not assigned",
+        "noUnits": "No units yet."
+      },
       "countries": {
         "ES": "Spain",
         "IT": "Italy",
@@ -2786,6 +2815,12 @@
     "loading": "Loading..."
   },
   "mobile": {
+    "notifications": {
+      "title": "Notifications",
+      "choose": "What do you want to review?",
+      "pendingReservations": "Pending reservations",
+      "pendingMirConfig": "Configure MIR (units without assignment)"
+    },
     "onboarding": {
       "title": "Onboarding",
       "progress": "{current}/{total}",
