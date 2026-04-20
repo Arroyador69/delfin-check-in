@@ -33,6 +33,7 @@ export async function POST(req: NextRequest) {
       WHERE mc.estado = 'enviado' AND mc.lote IS NOT NULL
         AND (mc.tenant_id = ${tenantId} OR gr.tenant_id = ${tenantId})
       ORDER BY mc.created_at DESC
+      LIMIT 200
     `;
 
     console.log(`📋 Encontrados ${result.rows.length} lotes para consultar`);
@@ -77,8 +78,11 @@ export async function POST(req: NextRequest) {
     };
     const cliente = new MinisterioClientOfficial(config);
 
-    // Obtener lotes únicos para consultar
-    const lotesUnicos = [...new Set(result.rows.map(r => r.lote).filter(Boolean))];
+    // Obtener lotes únicos para consultar (priorizando los más recientes).
+    // IMPORTANTE: limitar por ejecución para evitar timeouts en serverless.
+    const lotesUnicosAll = [...new Set(result.rows.map(r => r.lote).filter(Boolean))];
+    const maxLotesPorEjecucion = 20; // 2 chunks de 10, seguro para producción
+    const lotesUnicos = lotesUnicosAll.slice(0, maxLotesPorEjecucion);
     
     if (lotesUnicos.length === 0) {
       return NextResponse.json({
@@ -89,7 +93,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    console.log(`🔍 Consultando ${lotesUnicos.length} lotes únicos al MIR`);
+    console.log(`🔍 Consultando ${lotesUnicos.length}/${lotesUnicosAll.length} lotes únicos al MIR`);
 
     // El MIR limita el nº de lotes por petición (históricamente 10). Hacemos batching.
     const chunkSize = 10;
