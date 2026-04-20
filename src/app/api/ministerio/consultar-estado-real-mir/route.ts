@@ -166,27 +166,18 @@ export async function POST(req: NextRequest) {
             break;
         }
 
+        const resultadoPatch = JSON.stringify({
+          codigoEstado: String(loteResult.codigoEstado ?? ''),
+          descEstado: descripcionEstado,
+          ultimaConsulta: nowIso,
+        });
+
         // Actualizar la tabla mir_comunicaciones
         await sql`
           UPDATE mir_comunicaciones 
           SET 
             estado = ${nuevoEstado},
-            resultado = jsonb_set(
-              jsonb_set(
-                jsonb_set(
-                  COALESCE(NULLIF(resultado, '')::jsonb, '{}'::jsonb),
-                  '{codigoEstado}',
-                  to_jsonb(${String(loteResult.codigoEstado)}::text),
-                  true
-                ),
-                '{descEstado}',
-                to_jsonb(${descripcionEstado}::text),
-                true
-              ),
-              '{ultimaConsulta}',
-              to_jsonb(${nowIso}::text),
-              true
-            )
+            resultado = COALESCE(NULLIF(resultado, '')::jsonb, '{}'::jsonb) || ${resultadoPatch}::jsonb
           WHERE lote = ${loteResult.lote}
         `;
 
