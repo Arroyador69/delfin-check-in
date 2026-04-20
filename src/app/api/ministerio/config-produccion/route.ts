@@ -198,17 +198,6 @@ export async function POST(req: NextRequest) {
           '3. Si hay errores, revisa el mensaje y corrige el dato del huésped/estancia',
           '4. Una vez verificado, puedes usar el sistema en producción'
         ]
-      },
-      variablesEntorno: {
-        titulo: 'Nota sobre variables de entorno (solo para modo único / demo)',
-        variables: [
-          `MIR_HTTP_USER=${u}`,
-          `MIR_HTTP_PASS=${contraseña}`,
-          `MIR_CODIGO_ARRENDADOR=${codigoArrendador}`,
-          `MIR_BASE_URL=${baseUrl}`,
-          `MIR_APLICACION=${aplicacion}`,
-          `MIR_SIMULACION=${simulacion}`
-        ]
       }
     });
 

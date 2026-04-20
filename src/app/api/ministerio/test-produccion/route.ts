@@ -40,6 +40,11 @@ export async function POST(req: NextRequest) {
     let contraseña = typeof contraseñaRaw === 'string' ? contraseñaRaw : '';
     let codigoArrendador = typeof codigoArrendadorRaw === 'string' ? codigoArrendadorRaw.trim() : '';
 
+    // Si la UI envía el "placeholder" de máscara, nunca debe considerarse una contraseña real.
+    if (contraseña === '••••••••' || contraseña === '********' || contraseña === '***') {
+      contraseña = '';
+    }
+
     const needsDbFallback = (!usuario || !contraseña || !codigoArrendador) && Boolean(tenantId);
     if (needsDbFallback && tenantId) {
       const r = await sql`
@@ -156,6 +161,10 @@ export async function POST(req: NextRequest) {
       probableCauses: ok ? [] : probableCauses,
       source,
       debug: {
+        tenant: {
+          tenantId: tenantId || null,
+          resolvedFrom: tenantId ? 'cookie_or_header' : 'none',
+        },
         configuracion: {
           baseUrl: config.baseUrl,
           usuario: config.username,

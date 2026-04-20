@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'No autorizado' }, { status: 401 });
     }
 
-    // Intentar cargar desde la base de datos primero
+    // En SaaS multi-tenant: solo BD por tenant (sin fallback a variables de entorno).
     let config = {
       usuario: '',
       contraseña: '',
@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
       simulacion: false,
       activo: false
     };
-    let source: 'db' | 'env' | 'none' = 'none';
+    let source: 'db' | 'none' = 'none';
 
     try {
       const result = await sql`
@@ -54,34 +54,10 @@ export async function GET(req: NextRequest) {
         source = 'db';
         console.log('📋 Configuración cargada desde base de datos');
       } else {
-        console.log('📋 No hay configuración en base de datos, usando variables de entorno');
-        // Fallback a variables de entorno si no hay configuración en BD
-        config = {
-          usuario: process.env.MIR_HTTP_USER || '',
-          contraseña: process.env.MIR_HTTP_PASS || '',
-          codigoArrendador: process.env.MIR_CODIGO_ARRENDADOR || '',
-          codigoEstablecimiento: process.env.MIR_CODIGO_ESTABLECIMIENTO || '',
-          baseUrl: process.env.MIR_BASE_URL || 'https://hospedajes.ses.mir.es/hospedajes-web/ws/v1/comunicacion',
-          aplicacion: process.env.MIR_APLICACION || 'Delfin_Check_in',
-          simulacion: process.env.MIR_SIMULACION === 'true',
-          activo: true
-        };
-        source = 'env';
+        console.log('📋 No hay configuración MIR en base de datos para este tenant');
       }
     } catch (dbError) {
-      console.error('❌ Error cargando desde base de datos, usando variables de entorno:', dbError);
-      // Fallback a variables de entorno
-      config = {
-        usuario: process.env.MIR_HTTP_USER || '',
-        contraseña: process.env.MIR_HTTP_PASS || '',
-        codigoArrendador: process.env.MIR_CODIGO_ARRENDADOR || '',
-        codigoEstablecimiento: process.env.MIR_CODIGO_ESTABLECIMIENTO || '',
-        baseUrl: process.env.MIR_BASE_URL || 'https://hospedajes.ses.mir.es/hospedajes-web/ws/v1/comunicacion',
-        aplicacion: process.env.MIR_APLICACION || 'Delfin_Check_in',
-        simulacion: process.env.MIR_SIMULACION === 'true',
-        activo: true
-      };
-      source = 'env';
+      console.error('❌ Error cargando configuración MIR desde base de datos:', dbError);
     }
 
     // Verificar si las credenciales están configuradas
@@ -130,9 +106,9 @@ export async function GET(req: NextRequest) {
           '✅ Configuración MIR completa y lista para usar' : 
           '❌ Configuración MIR incompleta - añade las credenciales en Configuración → MIR',
         credencialesFaltantes: [
-          !config.usuario && 'Usuario MIR (MIR_HTTP_USER)',
-          !config.contraseña && 'Contraseña MIR (MIR_HTTP_PASS)',
-          !config.codigoArrendador && 'Código Arrendador (MIR_CODIGO_ARRENDADOR)'
+          !config.usuario && 'Usuario MIR (Servicio Web)',
+          !config.contraseña && 'Contraseña MIR (Servicio Web)',
+          !config.codigoArrendador && 'Código Arrendador MIR'
         ].filter(Boolean)
       }
     });
