@@ -891,6 +891,7 @@
     "freePlanBanner": "Nel piano gratuito l'invio automatico al Ministero dell'Interno non è incluso. I dati vengono salvati qui e puoi scaricare l'XML per caricarlo manualmente al Ministero.",
     "formUrl": "Link pubblico di registrazione ospiti",
     "formUrlDescription": "Condividilo con gli ospiti: apre il modulo ufficiale con i dati della tua struttura; gli errori compaiono accanto a ogni campo nella lingua scelta nel modulo (ES/EN/FR/RU).",
+    "formUrlDuplicateHiddenHint": "Lo stesso link è mostrato solo nel blocco «Camere» sotto (stessa credenziale MIR), per non ripeterlo qui.",
     "formUrlOwnerHintTitle": "Prenotazioni, avvisi e automazione",
     "formUrlOwnerHintP1": "Quando un ospite invia il modulo, il sistema può creare una prenotazione con date e dati. L’icona campana è sempre nella barra in alto (accanto alla lingua): compare il numero rosso se ci sono prenotazioni da completare. Apri Prenotazioni, regola alloggio, prezzi e canale e segna come revisionata.",
     "formUrlOwnerHintP2": "Per inviare solo il link senza copiare ogni volta, inserisci questo stesso URL in un messaggio salvato o programmato su Airbnb o Booking (benvenuto o promemoria pre check-in). Il flusso resta automatico e la registrazione resta in Delfín Check-in.",
@@ -2341,7 +2342,18 @@
         "prefillFromMain": "Copia dal modulo principale",
         "apartmentAssignedNote": "Questa unità ha già una credenziale assegnata. Per cambiarla, usa il menu sopra (altra credenziale o “Non assegnata”).",
         "assignedOk": "Credenziale creata e assegnata all’unità",
-        "assignedFail": "Impossibile creare/assegnare la credenziale"
+        "assignedFail": "Impossibile creare/assegnare la credenziale",
+        "viewCredential": "Vedi dettaglio",
+        "editCredential": "Modifica",
+        "deleteCredential": "Elimina",
+        "deleteCredentialConfirm": "Eliminare la credenziale «{name}»? Le unità che la usavano resteranno senza credenziale finché non ne assegni un’altra in Configurazione MIR.",
+        "credentialUpdated": "Credenziale aggiornata",
+        "credentialDeleted": "Credenziale eliminata",
+        "credentialSaveError": "Impossibile salvare la credenziale",
+        "credentialDeleteError": "Impossibile eliminare la credenziale",
+        "editingCredentialTitle": "Modifica credenziale",
+        "leavePasswordEmptyHint": "Lascia la password vuota per mantenere quella attuale.",
+        "mirRoutingNote": "L’invio MIR usa sempre la credenziale associata all’unità (room_id) sul server; modificare qui non mescola gli stabilimenti."
       },
       "countries": {
         "ES": "Spagna",
@@ -3089,6 +3101,7 @@
       "saveFailed": "Impossibile salvare"
     },
     "guestRegistrations": {
+      "formUrlLeadShort": "Link pubblico del modulo ospiti. Il MIR applica la credenziale di ogni camera o appartamento secondo la configurazione (server).",
       "empty": "Nessun registro di comunicazione ancora",
       "hint": "Quando gli ospiti inviano il modulo tramite il link pubblico, le voci compaiono qui.",
       "statsTotal": "Totale",

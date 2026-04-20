@@ -22,7 +22,9 @@ import {
   TestTube,
   ExternalLink,
   Info,
-  Globe
+  Globe,
+  Pencil,
+  Trash2,
 } from 'lucide-react';
 
 type MirUnitType = 'habitacion' | 'apartamento';
@@ -119,6 +121,19 @@ export default function MirSettingsPage() {
     codigoEstablecimiento: '',
     baseUrl: 'https://hospedajes.ses.mir.es/hospedajes-web/ws/v1/comunicacion',
   });
+
+  const [editCredId, setEditCredId] = useState<number | null>(null);
+  const [editDraft, setEditDraft] = useState<UnitCredDraft>({
+    nombre: '',
+    usuario: '',
+    contraseña: '',
+    codigoArrendador: '',
+    codigoEstablecimiento: '',
+    baseUrl: 'https://hospedajes.ses.mir.es/hospedajes-web/ws/v1/comunicacion',
+  });
+  const [savingCredEdit, setSavingCredEdit] = useState(false);
+  const [expandedCredId, setExpandedCredId] = useState<number | null>(null);
+  const [deletingCred, setDeletingCred] = useState(false);
 
   useEffect(() => {
     setNavLocale(getCurrentLocale());
@@ -281,6 +296,82 @@ export default function MirSettingsPage() {
       setError(`❌ ${e?.message || 'Error creando credencial'}`);
     } finally {
       setCreatingCred(false);
+    }
+  };
+
+  const startEditCred = (c: MirCredencialLite) => {
+    setEditCredId(c.id);
+    setExpandedCredId(null);
+    setEditDraft({
+      nombre: c.nombre,
+      usuario: c.usuario,
+      contraseña: '',
+      codigoArrendador: c.codigoArrendador,
+      codigoEstablecimiento: c.codigoEstablecimiento,
+      baseUrl: c.baseUrl || newCred.baseUrl,
+    });
+  };
+
+  const cancelEditCred = () => {
+    setEditCredId(null);
+  };
+
+  const saveEditCred = async () => {
+    if (!editCredId) return;
+    setSavingCredEdit(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      const res = await fetch(`/api/ministerio/credenciales/${editCredId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nombre: editDraft.nombre,
+          usuario: editDraft.usuario,
+          contraseña: editDraft.contraseña,
+          codigoArrendador: editDraft.codigoArrendador,
+          codigoEstablecimiento: editDraft.codigoEstablecimiento,
+          baseUrl: editDraft.baseUrl,
+        }),
+      });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok || !j?.success) {
+        throw new Error(String(j?.error || j?.message || 'No se pudo guardar la credencial'));
+      }
+      setSuccess('✅ Credencial actualizada');
+      setEditCredId(null);
+      await cargarMultiMir();
+    } catch (e: any) {
+      setError(`❌ ${e?.message || 'No se pudo guardar la credencial'}`);
+    } finally {
+      setSavingCredEdit(false);
+    }
+  };
+
+  const deleteCred = async (c: MirCredencialLite) => {
+    if (
+      !window.confirm(
+        `¿Eliminar la credencial «${c.nombre}»? Las unidades que la usaban quedarán sin credencial hasta que asignes otra en Configuración MIR.`
+      )
+    )
+      return;
+    setDeletingCred(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      const res = await fetch(`/api/ministerio/credenciales/${c.id}`, { method: 'DELETE' });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok || !j?.success) {
+        throw new Error(String(j?.error || 'No se pudo eliminar la credencial'));
+      }
+      setSuccess('✅ Credencial eliminada');
+      if (editCredId === c.id) setEditCredId(null);
+      if (expandedCredId === c.id) setExpandedCredId(null);
+      await cargarMultiMir();
+    } catch (e: any) {
+      setError(`❌ ${e?.message || 'No se pudo eliminar la credencial'}`);
+    } finally {
+      setDeletingCred(false);
     }
   };
 
@@ -793,6 +884,10 @@ export default function MirSettingsPage() {
               <div className="text-xs text-gray-600">
                 Estas credenciales aparecen en el desplegable “Sin asignar” de cada unidad.
               </div>
+              <p className="text-xs text-gray-500 mt-2">
+                El envío al MIR usa siempre la credencial asignada a la unidad (room_id) en el servidor; editar aquí no
+                mezcla establecimientos.
+              </p>
               {credenciales.length === 0 ? (
                 <div className="text-sm text-gray-600">
                   Todavía no has creado credenciales. Crea la primera abajo o usa el asistente por apartamento.
@@ -800,12 +895,124 @@ export default function MirSettingsPage() {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                   {credenciales.map((c) => (
-                    <div key={c.id} className="rounded-lg border border-gray-100 bg-gray-50 px-3 py-2">
-                      <div className="text-sm font-semibold text-gray-900 truncate">{c.nombre}</div>
-                      <div className="text-xs text-gray-600 truncate">
-                        {c.codigoEstablecimiento} · {c.usuario}
-                        {c.hasPassword ? '' : ' · ⚠️'}
+                    <div key={c.id} className="rounded-lg border border-gray-100 bg-gray-50 px-3 py-2 space-y-2">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                          <div className="text-sm font-semibold text-gray-900 truncate">{c.nombre}</div>
+                          <div className="text-xs text-gray-600 truncate">
+                            {c.codigoEstablecimiento} · {c.usuario}
+                            {c.hasPassword ? '' : ' · ⚠️'}
+                          </div>
+                        </div>
+                        <div className="flex flex-shrink-0 gap-1">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                            aria-label="Ver detalle"
+                            onClick={() => {
+                              setExpandedCredId((id) => (id === c.id ? null : c.id));
+                              setEditCredId(null);
+                            }}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                            aria-label="Editar credencial"
+                            onClick={() => {
+                              startEditCred(c);
+                              setExpandedCredId(null);
+                            }}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                            disabled={deletingCred}
+                            aria-label="Eliminar credencial"
+                            onClick={() => deleteCred(c)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
+                      {expandedCredId === c.id ? (
+                        <div className="text-xs text-gray-600 space-y-1 border-t border-gray-200 pt-2">
+                          <div className="break-all">
+                            <span className="font-semibold">URL:</span> {c.baseUrl}
+                          </div>
+                          <div>
+                            <span className="font-semibold">Establecimiento:</span> {c.codigoEstablecimiento}
+                          </div>
+                        </div>
+                      ) : null}
+                      {editCredId === c.id ? (
+                        <div className="border-t border-gray-200 pt-3 space-y-2">
+                          <div className="text-xs font-semibold text-gray-800">Editar credencial</div>
+                          <p className="text-xs text-gray-500">Deja la contraseña vacía para mantener la guardada.</p>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <div className="space-y-1">
+                              <Label className="text-xs">Nombre</Label>
+                              <Input
+                                value={editDraft.nombre}
+                                onChange={(e) => setEditDraft((p) => ({ ...p, nombre: e.target.value }))}
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs">Usuario MIR (WS)</Label>
+                              <Input
+                                value={editDraft.usuario}
+                                onChange={(e) => setEditDraft((p) => ({ ...p, usuario: e.target.value }))}
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs">Contraseña MIR (WS)</Label>
+                              <Input
+                                type="password"
+                                value={editDraft.contraseña}
+                                onChange={(e) => setEditDraft((p) => ({ ...p, contraseña: e.target.value }))}
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs">Código Arrendador</Label>
+                              <Input
+                                value={editDraft.codigoArrendador}
+                                onChange={(e) => setEditDraft((p) => ({ ...p, codigoArrendador: e.target.value }))}
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs">Código Establecimiento</Label>
+                              <Input
+                                value={editDraft.codigoEstablecimiento}
+                                onChange={(e) => setEditDraft((p) => ({ ...p, codigoEstablecimiento: e.target.value }))}
+                              />
+                            </div>
+                            <div className="space-y-1 sm:col-span-2">
+                              <Label className="text-xs">Base URL</Label>
+                              <Input
+                                value={editDraft.baseUrl}
+                                onChange={(e) => setEditDraft((p) => ({ ...p, baseUrl: e.target.value }))}
+                              />
+                            </div>
+                          </div>
+                          <div className="flex flex-wrap gap-2 pt-1">
+                            <Button type="button" size="sm" onClick={saveEditCred} disabled={savingCredEdit}>
+                              {savingCredEdit ? 'Guardando…' : 'Guardar'}
+                            </Button>
+                            <Button type="button" size="sm" variant="outline" onClick={cancelEditCred}>
+                              Cancelar
+                            </Button>
+                          </div>
+                        </div>
+                      ) : null}
                     </div>
                   ))}
                 </div>

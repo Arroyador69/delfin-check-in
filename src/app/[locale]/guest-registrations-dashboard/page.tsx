@@ -247,6 +247,15 @@ export default function GuestRegistrationsDashboard() {
     return { pending };
   }, [unitPublicLinkMode, rooms, mirUnitsByRoomId]);
 
+  const hideDuplicatePrimaryPublicBlock = useMemo(() => {
+    if (unitPublicLinkMode !== 'per-room') return false;
+    const { roomUnits, apartmentUnits, roomsShareSameCred } = roomsAndApartments;
+    if (roomUnits.length === 0) return false;
+    if (!roomsShareSameCred) return false;
+    if (apartmentUnits.length > 0) return false;
+    return true;
+  }, [unitPublicLinkMode, roomsAndApartments]);
+
   // Todos los planes (incl. básico gratuito) pueden ver registros y descargar XML; solo los con legal_module tienen envío automático MIR
 
   const copyToClipboard = async (text: string) => {
@@ -738,32 +747,36 @@ export default function GuestRegistrationsDashboard() {
                 ) : null}
               </div>
             </div>
-            <div className="flex items-center space-x-3">
-              <div className="flex-1 min-w-0">
-                <input
-                  type="text"
-                  value={formUrl}
-                  readOnly
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-sm font-mono"
-                />
-              </div>
+            {!hideDuplicatePrimaryPublicBlock ? (
+              <div className="flex items-center space-x-3">
+                <div className="flex-1 min-w-0">
+                  <input
+                    type="text"
+                    value={formUrl}
+                    readOnly
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-sm font-mono"
+                  />
+                </div>
                 <button
-                onClick={() => copyToClipboard(formUrl)}
-                className="px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 transition-colors flex items-center space-x-2 shadow"
-              >
-                <Copy className="w-4 h-4" />
+                  onClick={() => copyToClipboard(formUrl)}
+                  className="px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 transition-colors flex items-center space-x-2 shadow"
+                >
+                  <Copy className="w-4 h-4" />
                   <span>{t('copyUrl')}</span>
-              </button>
-              <a
-                href={formUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-4 py-2 bg-gradient-to-r from-emerald-600 to-green-600 text-white rounded-xl hover:from-emerald-700 hover:to-green-700 transition-colors flex items-center space-x-2 shadow"
-              >
-                <ExternalLink className="w-4 h-4" />
-                <span>{t('viewForm')}</span>
-              </a>
-            </div>
+                </button>
+                <a
+                  href={formUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-4 py-2 bg-gradient-to-r from-emerald-600 to-green-600 text-white rounded-xl hover:from-emerald-700 hover:to-green-700 transition-colors flex items-center space-x-2 shadow"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                  <span>{t('viewForm')}</span>
+                </a>
+              </div>
+            ) : (
+              <p className="text-sm text-slate-600 mt-1">{t('formUrlDuplicateHiddenHint')}</p>
+            )}
           </div>
           <div className="mt-5 pt-5 border-t border-blue-100 rounded-lg bg-slate-50/90 px-4 py-3 text-sm text-slate-800 leading-relaxed">
             <p className="font-semibold text-slate-900 flex items-center gap-2">

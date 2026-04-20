@@ -159,6 +159,17 @@ export default function CommunicationRegistrationScreen() {
     return { pending };
   }, [unitPublicLinkMode, linkExtras]);
 
+  /** Evita repetir el mismo enlace arriba y en «Habitaciones» cuando todas comparten credencial. */
+  const hideDuplicatePrimaryPublicBlock = useMemo(() => {
+    if (!linkExtras) return false;
+    if (unitPublicLinkMode !== 'per-room') return false;
+    const { roomUnits, apartmentUnits, roomsShareSameCred } = roomsAndApartments;
+    if (roomUnits.length === 0) return false;
+    if (!roomsShareSameCred) return false;
+    if (apartmentUnits.length > 0) return false;
+    return true;
+  }, [linkExtras, unitPublicLinkMode, roomsAndApartments]);
+
   const openPublicForm = () => {
     if (!formPublicUrl) return;
     Linking.openURL(formPublicUrl).catch(() => {
@@ -374,24 +385,28 @@ export default function CommunicationRegistrationScreen() {
       <View style={styles.formUrlCard}>
         <Text style={styles.formUrlEmoji}>{'\u{1F517}'}</Text>
         <Text style={styles.formUrlTitle}>{t('guestRegistrations.formUrl')}</Text>
-        <Text style={styles.formUrlDescription}>{t('guestRegistrations.formUrlDescription')}</Text>
+        <Text style={styles.formUrlDescription}>{t('mobile.guestRegistrations.formUrlLeadShort')}</Text>
         {!tenantId ? (
           <ActivityIndicator style={{ marginVertical: 12 }} color="#2563eb" />
         ) : (
           <>
-            <Text selectable style={styles.formUrlMono}>
-              {formPublicUrl}
-            </Text>
-            <View style={styles.formUrlActions}>
-              <Pressable style={styles.formUrlBtnSecondary} onPress={copyPublicFormUrl}>
-                <Copy size={18} color="#2563eb" />
-                <Text style={styles.formUrlBtnSecondaryText}>{t('guestRegistrations.copyUrl')}</Text>
-              </Pressable>
-              <Pressable style={styles.formUrlBtnPrimary} onPress={openPublicForm}>
-                <ExternalLink size={18} color="white" />
-                <Text style={styles.formUrlBtnPrimaryText}>{t('guestRegistrations.viewForm')}</Text>
-              </Pressable>
-            </View>
+            {!hideDuplicatePrimaryPublicBlock ? (
+              <>
+                <Text selectable style={styles.formUrlMono}>
+                  {formPublicUrl}
+                </Text>
+                <View style={styles.formUrlActions}>
+                  <Pressable style={styles.formUrlBtnSecondary} onPress={copyPublicFormUrl}>
+                    <Copy size={18} color="#2563eb" />
+                    <Text style={styles.formUrlBtnSecondaryText}>{t('guestRegistrations.copyUrl')}</Text>
+                  </Pressable>
+                  <Pressable style={styles.formUrlBtnPrimary} onPress={openPublicForm}>
+                    <ExternalLink size={18} color="white" />
+                    <Text style={styles.formUrlBtnPrimaryText}>{t('guestRegistrations.viewForm')}</Text>
+                  </Pressable>
+                </View>
+              </>
+            ) : null}
 
             {unitPublicLinkMode === 'loading' ? (
               <ActivityIndicator style={{ marginTop: 14 }} color="#2563eb" />

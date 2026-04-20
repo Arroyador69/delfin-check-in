@@ -20,7 +20,9 @@ import {
   TestTube,
   ExternalLink,
   Info,
-  Globe
+  Globe,
+  Pencil,
+  Trash2,
 } from 'lucide-react';
 
 interface MirConfig {
@@ -67,6 +69,7 @@ const COUNTRY_CODES = ['ES', 'IT', 'PT', 'FR', 'DE'] as const;
 
 export default function MirSettingsPage() {
   const t = useTranslations('settings.mir');
+  const tCommon = useTranslations('common');
   const locale = useLocale();
   const { tenant } = useTenant();
   const [config, setConfig] = useState<MirConfig>({
@@ -112,6 +115,19 @@ export default function MirSettingsPage() {
     codigoEstablecimiento: '',
     baseUrl: 'https://hospedajes.ses.mir.es/hospedajes-web/ws/v1/comunicacion',
   });
+
+  const [editCredId, setEditCredId] = useState<number | null>(null);
+  const [editDraft, setEditDraft] = useState<UnitCredDraft>({
+    nombre: '',
+    usuario: '',
+    contraseña: '',
+    codigoArrendador: '',
+    codigoEstablecimiento: '',
+    baseUrl: 'https://hospedajes.ses.mir.es/hospedajes-web/ws/v1/comunicacion',
+  });
+  const [savingCredEdit, setSavingCredEdit] = useState(false);
+  const [expandedCredId, setExpandedCredId] = useState<number | null>(null);
+  const [deletingCred, setDeletingCred] = useState(false);
 
   // Cargar configuración actual
   useEffect(() => {
@@ -275,6 +291,77 @@ export default function MirSettingsPage() {
       setError(`❌ ${e?.message || t('multi.assignedFail')}`);
     } finally {
       setCreatingForRoom(null);
+    }
+  };
+
+  const startEditCred = (c: MirCredencialLite) => {
+    setEditCredId(c.id);
+    setExpandedCredId(null);
+    setEditDraft({
+      nombre: c.nombre,
+      usuario: c.usuario,
+      contraseña: '',
+      codigoArrendador: c.codigoArrendador,
+      codigoEstablecimiento: c.codigoEstablecimiento,
+      baseUrl: c.baseUrl || newCred.baseUrl,
+    });
+  };
+
+  const cancelEditCred = () => {
+    setEditCredId(null);
+  };
+
+  const saveEditCred = async () => {
+    if (!editCredId) return;
+    setSavingCredEdit(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      const res = await fetch(`/api/ministerio/credenciales/${editCredId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nombre: editDraft.nombre,
+          usuario: editDraft.usuario,
+          contraseña: editDraft.contraseña,
+          codigoArrendador: editDraft.codigoArrendador,
+          codigoEstablecimiento: editDraft.codigoEstablecimiento,
+          baseUrl: editDraft.baseUrl,
+        }),
+      });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok || !j?.success) {
+        throw new Error(String(j?.error || j?.message || t('multi.credentialSaveError')));
+      }
+      setSuccess(`✅ ${t('multi.credentialUpdated')}`);
+      setEditCredId(null);
+      await cargarMultiMir();
+    } catch (e: any) {
+      setError(`❌ ${e?.message || t('multi.credentialSaveError')}`);
+    } finally {
+      setSavingCredEdit(false);
+    }
+  };
+
+  const deleteCred = async (c: MirCredencialLite) => {
+    if (!window.confirm(t('multi.deleteCredentialConfirm', { name: c.nombre }))) return;
+    setDeletingCred(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      const res = await fetch(`/api/ministerio/credenciales/${c.id}`, { method: 'DELETE' });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok || !j?.success) {
+        throw new Error(String(j?.error || t('multi.credentialDeleteError')));
+      }
+      setSuccess(`✅ ${t('multi.credentialDeleted')}`);
+      if (editCredId === c.id) setEditCredId(null);
+      if (expandedCredId === c.id) setExpandedCredId(null);
+      await cargarMultiMir();
+    } catch (e: any) {
+      setError(`❌ ${e?.message || t('multi.credentialDeleteError')}`);
+    } finally {
+      setDeletingCred(false);
     }
   };
 
@@ -547,6 +634,7 @@ export default function MirSettingsPage() {
           <p className="text-xs text-gray-600">
             {t('multi.rule')}
           </p>
+          <p className="text-xs text-gray-500 mt-2">{t('multi.mirRoutingNote')}</p>
 
           {!canCreateMoreCreds && maxAllowed > 0 && (
             <Alert variant="destructive">
@@ -563,12 +651,124 @@ export default function MirSettingsPage() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                 {credenciales.map((c) => (
-                  <div key={c.id} className="rounded-lg border border-gray-100 bg-gray-50 px-3 py-2">
-                    <div className="text-sm font-semibold text-gray-900 truncate">{c.nombre}</div>
-                    <div className="text-xs text-gray-600 truncate">
-                      {c.codigoEstablecimiento} · {c.usuario}
-                      {c.hasPassword ? '' : ' · ⚠️'}
+                  <div key={c.id} className="rounded-lg border border-gray-100 bg-gray-50 px-3 py-2 space-y-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <div className="text-sm font-semibold text-gray-900 truncate">{c.nombre}</div>
+                        <div className="text-xs text-gray-600 truncate">
+                          {c.codigoEstablecimiento} · {c.usuario}
+                          {c.hasPassword ? '' : ' · ⚠️'}
+                        </div>
+                      </div>
+                      <div className="flex flex-shrink-0 gap-1">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0"
+                          aria-label={t('multi.viewCredential')}
+                          onClick={() => {
+                            setExpandedCredId((id) => (id === c.id ? null : c.id));
+                            setEditCredId(null);
+                          }}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0"
+                          aria-label={t('multi.editCredential')}
+                          onClick={() => {
+                            startEditCred(c);
+                            setExpandedCredId(null);
+                          }}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                          disabled={deletingCred}
+                          aria-label={t('multi.deleteCredential')}
+                          onClick={() => deleteCred(c)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
+                    {expandedCredId === c.id ? (
+                      <div className="text-xs text-gray-600 space-y-1 border-t border-gray-200 pt-2">
+                        <div className="break-all">
+                          <span className="font-semibold">URL:</span> {c.baseUrl}
+                        </div>
+                        <div>
+                          <span className="font-semibold">{t('multi.establishment')}:</span> {c.codigoEstablecimiento}
+                        </div>
+                      </div>
+                    ) : null}
+                    {editCredId === c.id ? (
+                      <div className="border-t border-gray-200 pt-3 space-y-2">
+                        <div className="text-xs font-semibold text-gray-800">{t('multi.editingCredentialTitle')}</div>
+                        <p className="text-xs text-gray-500">{t('multi.leavePasswordEmptyHint')}</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          <div className="space-y-1">
+                            <Label className="text-xs">{t('multi.name')}</Label>
+                            <Input
+                              value={editDraft.nombre}
+                              onChange={(e) => setEditDraft((p) => ({ ...p, nombre: e.target.value }))}
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs">{t('multi.user')}</Label>
+                            <Input
+                              value={editDraft.usuario}
+                              onChange={(e) => setEditDraft((p) => ({ ...p, usuario: e.target.value }))}
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs">{t('multi.password')}</Label>
+                            <Input
+                              type="password"
+                              value={editDraft.contraseña}
+                              onChange={(e) => setEditDraft((p) => ({ ...p, contraseña: e.target.value }))}
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs">{t('multi.landlord')}</Label>
+                            <Input
+                              value={editDraft.codigoArrendador}
+                              onChange={(e) => setEditDraft((p) => ({ ...p, codigoArrendador: e.target.value }))}
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs">{t('multi.establishment')}</Label>
+                            <Input
+                              value={editDraft.codigoEstablecimiento}
+                              onChange={(e) => setEditDraft((p) => ({ ...p, codigoEstablecimiento: e.target.value }))}
+                            />
+                          </div>
+                          <div className="space-y-1 sm:col-span-2">
+                            <Label className="text-xs">{t('multi.baseUrl')}</Label>
+                            <Input
+                              value={editDraft.baseUrl}
+                              onChange={(e) => setEditDraft((p) => ({ ...p, baseUrl: e.target.value }))}
+                            />
+                          </div>
+                        </div>
+                        <div className="flex flex-wrap gap-2 pt-1">
+                          <Button type="button" size="sm" onClick={saveEditCred} disabled={savingCredEdit}>
+                            {savingCredEdit ? t('saving') : t('saveConfig')}
+                          </Button>
+                          <Button type="button" size="sm" variant="outline" onClick={cancelEditCred}>
+                            {tCommon('cancel')}
+                          </Button>
+                        </div>
+                      </div>
+                    ) : null}
                   </div>
                 ))}
               </div>

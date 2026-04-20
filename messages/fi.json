@@ -864,6 +864,7 @@
     "freePlanBanner": "Ilmainen suunnitelma ei sisällä automaattista arkistointia Espanjan sisäministeriöön. Rekisteröinnit tallennetaan edelleen Delfíniin – voit ladata virallisen XML:n aina kun tarvitset ja lähettää sen valtion portaalin kautta.",
     "formUrl": "Julkinen matkustajien rekisteröintilinkki",
     "formUrlDescription": "Jaa tämä linkki vieraidesi kanssa. Se avaa virallisen matkustajan rekisteröintilomakkeen kiinteistösi yhteydessä; validointivirheet näkyvät jokaisen kentän vieressä lomakkeessa valitulla kielellä (ES/EN/FR/RU).",
+    "formUrlDuplicateHiddenHint": "Sama linkki näkyy vain alla olevassa huoneiden lohkossa (yksi MIR-tunnus), jotta sitä ei toisteta tässä.",
     "formUrlOwnerHintTitle": "Varaukset, sovelluksen sisäiset hälytykset ja automaatio",
     "formUrlOwnerHintP1": "Kun vieras lähettää lomakkeen, järjestelmä voi luoda varauksen päivämäärineen ja tietoineen. Kellokuvake on aina yläpalkissa (kielenvalitsimen vieressä): punainen numero tulee näkyviin, kun varauksia on suoritettava. Avaa Varaukset, säädä huonetta, hintoja ja kanavaa ja merkitse sitten tarkistetuksi.",
     "formUrlOwnerHintP2": "Joten vieraat saavat vain linkin ilman, että kopioit ja liität joka kerta, lisää tämä sama URL-osoite tallennettuun tai ajoitettuun viestiin Airbnb:ssä tai Bookingissa (tervetulomalli tai muistutus ennen sisäänkirjautumista). Kulku pysyy automaattisena puolestasi ja rekisteröinti tallennetaan Delfin Check-iniin.",
@@ -2320,7 +2321,18 @@
         "prefillFromMain": "Kopioi päälomakkeesta",
         "apartmentAssignedNote": "Tällä yksiköllä on jo tunnus. Vaihda se yläpuolen valikosta (toinen tunnus tai “Ei määritetty”).",
         "assignedOk": "Tunnus luotu ja määritetty yksikölle",
-        "assignedFail": "Tunnusta ei voitu luoda/määrittää"
+        "assignedFail": "Tunnusta ei voitu luoda/määrittää",
+        "viewCredential": "Näytä tiedot",
+        "editCredential": "Muokkaa",
+        "deleteCredential": "Poista",
+        "deleteCredentialConfirm": "Poistetaanko tunnus «{name}»? Yksiköt, jotka käyttivät sitä, jäävät ilman tunnusta kunnes valitset toisen MIR-asetuksissa.",
+        "credentialUpdated": "Tunnus päivitetty",
+        "credentialDeleted": "Tunnus poistettu",
+        "credentialSaveError": "Tunnusta ei voitu tallentaa",
+        "credentialDeleteError": "Tunnusta ei voitu poistaa",
+        "editingCredentialTitle": "Muokkaa tunnusta",
+        "leavePasswordEmptyHint": "Jätä salasana tyhjäksi säilyttääksesi nykyisen.",
+        "mirRoutingNote": "MIR-lähetys käyttää aina yksikölle (room_id) määritettyä tunnusta palvelimella; muokkaus ei sekoita kohteita."
       },
       "countries": {
         "ES": "Espanja",
@@ -3041,6 +3053,7 @@
       "saveFailed": "Ei voitu tallentaa"
     },
     "guestRegistrations": {
+      "formUrlLeadShort": "Julkinen linkki matkustajalomakkeeseen. MIR käyttää kunkin huoneen tai asunnon tunnusta asetusten mukaan (palvelin).",
       "empty": "Ilmoittautumisia ei vielä ole",
       "hint": "Kun vieraat lähettävät matkustajalomakkeen julkisen linkkisi kautta, merkinnät näkyvät täällä.",
       "statsTotal": "Kokonais",

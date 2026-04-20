@@ -706,6 +706,7 @@
     "freePlanBanner": "No plano gratuito o envio automático ao Ministério do Interior não está incluído. Os dados são guardados aqui e pode descarregar o XML para submissão manual ao Ministério.",
     "formUrl": "Link público de registo de hóspedes",
     "formUrlDescription": "Partilhe com os hóspedes: abre o formulário oficial com os dados do seu alojamento; os erros aparecem junto a cada campo no idioma escolhido no formulário (ES/EN/FR/RU).",
+    "formUrlDuplicateHiddenHint": "A mesma ligação aparece só no bloco «Quartos» abaixo (mesma credencial MIR), para não a duplicar aqui.",
     "formUrlOwnerHintTitle": "Reservas, avisos e automatização",
     "formUrlOwnerHintP1": "Quando um hóspede envia o formulário, o sistema pode criar uma reserva com as datas e dados. O ícone da campainha está sempre na barra superior (ao lado do idioma): aparece o número vermelho se houver reservas por completar. Abra Reservas, ajuste alojamento, preços e canal e marque como revista.",
     "formUrlOwnerHintP2": "Para o hóspede receber só a ligação sem copiar e colar sempre, coloque este mesmo URL numa mensagem guardada ou agendada na Airbnb ou Booking (boas-vindas ou lembrete antes do check-in). O fluxo fica automático e o registo fica no Delfín Check-in.",
@@ -2321,7 +2322,18 @@
         "prefillFromMain": "Copiar do formulário principal",
         "apartmentAssignedNote": "Esta unidade já tem uma credencial atribuída. Para alterar, use o menu acima (outra credencial ou “Sem atribuir”).",
         "assignedOk": "Credencial criada e atribuída à unidade",
-        "assignedFail": "Não foi possível criar/atribuir a credencial"
+        "assignedFail": "Não foi possível criar/atribuir a credencial",
+        "viewCredential": "Ver detalhe",
+        "editCredential": "Editar",
+        "deleteCredential": "Eliminar",
+        "deleteCredentialConfirm": "Eliminar a credencial «{name}»? As unidades que a usavam ficam sem credencial até escolher outra em Configuração MIR.",
+        "credentialUpdated": "Credencial atualizada",
+        "credentialDeleted": "Credencial eliminada",
+        "credentialSaveError": "Não foi possível guardar a credencial",
+        "credentialDeleteError": "Não foi possível eliminar a credencial",
+        "editingCredentialTitle": "Editar credencial",
+        "leavePasswordEmptyHint": "Deixe a palavra-passe vazia para manter a atual.",
+        "mirRoutingNote": "O envio MIR usa sempre a credencial associada à unidade (room_id) no servidor; editar aqui não mistura estabelecimentos."
       },
       "countries": {
         "ES": "Espanha",
@@ -3022,6 +3034,7 @@
       "saveFailed": "Não foi possível guardar"
     },
     "guestRegistrations": {
+      "formUrlLeadShort": "Ligação pública do registo de hóspedes. O MIR aplica a credencial de cada quarto ou apartamento conforme a configuração (servidor).",
       "empty": "Ainda não há registos de comunicação",
       "hint": "Quando os hóspedes enviam o formulário pelo link público, as entradas aparecem aqui.",
       "statsTotal": "Total",

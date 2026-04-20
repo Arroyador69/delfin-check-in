@@ -2,10 +2,23 @@
 // AJUSTES > CONFIGURACIÓN MIR (básico)
 // =====================================================
 
-import { View, Text, StyleSheet, TextInput, Pressable, ScrollView, Alert, Switch, Linking } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TextInput,
+  Pressable,
+  ScrollView,
+  Alert,
+  Switch,
+  Linking,
+  Modal,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { api } from '@/lib/api';
 import { t } from '@/lib/i18n';
@@ -24,7 +37,11 @@ type MirUnitType = 'habitacion' | 'apartamento';
 type MirCredencialLite = {
   id: number;
   nombre: string;
+  usuario: string;
+  hasPassword: boolean;
+  codigoArrendador: string;
   codigoEstablecimiento: string;
+  baseUrl: string;
   activo: boolean;
 };
 
@@ -71,6 +88,16 @@ export default function MirSettingsScreen() {
   const queryClient = useQueryClient();
   const [form, setForm] = useState<MirSettings>(emptyMir);
   const [newCred, setNewCred] = useState({
+    nombre: '',
+    usuario: '',
+    contraseña: '',
+    codigoArrendador: '',
+    codigoEstablecimiento: '',
+    baseUrl: 'https://hospedajes.ses.mir.es/hospedajes-web/ws/v1/comunicacion',
+  });
+
+  const [editModalCred, setEditModalCred] = useState<MirCredencialLite | null>(null);
+  const [editDraft, setEditDraft] = useState({
     nombre: '',
     usuario: '',
     contraseña: '',
@@ -147,6 +174,11 @@ export default function MirSettingsScreen() {
 
   const maxAllowed = Number(limitsData?.tenant?.limits?.maxRooms ?? 0);
   const credenciales: MirCredencialLite[] = Array.isArray(credsData?.credenciales) ? credsData!.credenciales! : [];
+  const credById = useMemo(() => {
+    const m = new Map<number, MirCredencialLite>();
+    for (const c of credenciales) m.set(c.id, c);
+    return m;
+  }, [credenciales]);
   const units: MirUnitRow[] = Array.isArray(unitsData?.units) ? unitsData!.units! : [];
   const configured = credenciales.filter((c) => c.activo).length;
   const canCreateMore = maxAllowed > 0 ? configured < maxAllowed : false;
@@ -265,6 +297,39 @@ export default function MirSettingsScreen() {
     },
   });
 
+  const patchCredMutation = useMutation({
+    mutationFn: async (payload: { id: number; body: Record<string, string> }) => {
+      const res = await api.patch(`/api/ministerio/credenciales/${payload.id}`, payload.body);
+      return res.data as { success?: boolean; error?: string; message?: string };
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['mir-credenciales'] });
+      setEditModalCred(null);
+      Alert.alert(t('common.success'), t('settings.mir.multi.credentialUpdated'));
+    },
+    onError: (e: any) => {
+      Alert.alert(
+        t('common.error'),
+        e?.response?.data?.message || e?.response?.data?.error || t('settings.mir.multi.credentialSaveError')
+      );
+    },
+  });
+
+  const deleteCredMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const res = await api.delete(`/api/ministerio/credenciales/${id}`);
+      return res.data as { success?: boolean; error?: string };
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['mir-credenciales'] });
+      await queryClient.invalidateQueries({ queryKey: ['mir-unidades-config'] });
+      Alert.alert(t('common.success'), t('settings.mir.multi.credentialDeleted'));
+    },
+    onError: (e: any) => {
+      Alert.alert(t('common.error'), e?.response?.data?.error || t('settings.mir.multi.credentialDeleteError'));
+    },
+  });
+
   const saveUnitMutation = useMutation({
     mutationFn: async (payload: { room_id: string; unit_type?: MirUnitType; credencial_id?: number | null }) => {
       const res = await api.post('/api/ministerio/unidades-config', payload);
@@ -296,6 +361,55 @@ export default function MirSettingsScreen() {
       ...options.slice(0, 6),
       { text: t('common.cancel'), style: 'cancel' },
     ]);
+  }
+
+  function openViewCredential(c: MirCredencialLite) {
+    const lines = [
+      `${t('settings.mir.multi.baseUrl')}: ${c.baseUrl}`,
+      `${t('settings.mir.multi.landlord')}: ${c.codigoArrendador}`,
+      `${t('settings.mir.multi.establishment')}: ${c.codigoEstablecimiento}`,
+      `${t('settings.mir.multi.user')}: ${c.usuario}`,
+      c.hasPassword ? '' : '⚠️',
+    ].filter(Boolean);
+    Alert.alert(c.nombre, lines.join('\n'));
+  }
+
+  function openEditCredential(c: MirCredencialLite) {
+    setEditModalCred(c);
+    setEditDraft({
+      nombre: c.nombre,
+      usuario: c.usuario,
+      contraseña: '',
+      codigoArrendador: c.codigoArrendador,
+      codigoEstablecimiento: c.codigoEstablecimiento,
+      baseUrl: c.baseUrl || newCred.baseUrl,
+    });
+  }
+
+  function confirmDeleteCredential(c: MirCredencialLite) {
+    Alert.alert(t('settings.mir.multi.deleteCredential'), t('settings.mir.multi.deleteCredentialConfirm', { name: c.nombre }), [
+      { text: t('common.cancel'), style: 'cancel' },
+      {
+        text: t('settings.mir.multi.deleteCredential'),
+        style: 'destructive',
+        onPress: () => deleteCredMutation.mutate(c.id),
+      },
+    ]);
+  }
+
+  function saveEditCredential() {
+    if (!editModalCred) return;
+    patchCredMutation.mutate({
+      id: editModalCred.id,
+      body: {
+        nombre: editDraft.nombre,
+        usuario: editDraft.usuario,
+        contraseña: editDraft.contraseña,
+        codigoArrendador: editDraft.codigoArrendador,
+        codigoEstablecimiento: editDraft.codigoEstablecimiento,
+        baseUrl: editDraft.baseUrl,
+      },
+    });
   }
 
   return (
@@ -443,6 +557,46 @@ export default function MirSettingsScreen() {
         <View style={{ marginTop: 10 }}>
           <Text style={styles.hintText}>{t('settings.mir.multi.rule')}</Text>
         </View>
+        <Text style={[styles.hintText, { marginTop: 8 }]}>{t('settings.mir.multi.mirRoutingNote')}</Text>
+
+        <View style={{ marginTop: 14 }}>
+          <Text style={styles.sectionTitleSmall}>{t('settings.mir.multi.existingTitle')}</Text>
+          <Text style={styles.subtitle}>{t('settings.mir.multi.existingSubtitle')}</Text>
+          {credsLoading ? <Text style={styles.loading}>{t('common.loading')}</Text> : null}
+          {credenciales.length === 0 && !credsLoading ? (
+            <Text style={styles.hintText}>{t('settings.mir.multi.existingEmpty')}</Text>
+          ) : null}
+          {credenciales.map((c) => (
+            <View key={c.id} style={styles.credRow}>
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text style={styles.unitName} numberOfLines={1}>
+                  {c.nombre}
+                </Text>
+                <Text style={styles.unitMeta} numberOfLines={2}>
+                  {c.codigoEstablecimiento} · {c.usuario}
+                  {c.hasPassword ? '' : ' · ⚠️'}
+                </Text>
+              </View>
+              <View style={styles.credActions}>
+                <Pressable style={styles.credActionBtn} onPress={() => openViewCredential(c)}>
+                  <Text style={styles.credActionText}>{t('settings.mir.multi.viewCredential')}</Text>
+                </Pressable>
+                <Pressable style={styles.credActionBtn} onPress={() => openEditCredential(c)}>
+                  <Text style={styles.credActionText}>{t('settings.mir.multi.editCredential')}</Text>
+                </Pressable>
+                <Pressable
+                  style={[styles.credActionBtn, styles.credActionDanger]}
+                  onPress={() => confirmDeleteCredential(c)}
+                  disabled={deleteCredMutation.isPending}
+                >
+                  <Text style={[styles.credActionText, styles.credActionDangerText]}>
+                    {t('settings.mir.multi.deleteCredential')}
+                  </Text>
+                </Pressable>
+              </View>
+            </View>
+          ))}
+        </View>
 
         <View style={{ marginTop: 12 }}>
           <Text style={styles.sectionTitleSmall}>{t('settings.mir.multi.createTitle')}</Text>
@@ -499,7 +653,10 @@ export default function MirSettingsScreen() {
                   {t('settings.mir.multi.currentType')}: {u.unit_type === 'apartamento' ? t('settings.mir.multi.typeApartment') : t('settings.mir.multi.typeRoom')}
                 </Text>
                 <Text style={styles.unitMeta}>
-                  {t('settings.mir.multi.currentCredential')}: {u.credencial_id ? `#${u.credencial_id}` : t('settings.mir.multi.none')}
+                  {t('settings.mir.multi.currentCredential')}:{' '}
+                  {u.credencial_id
+                    ? credById.get(u.credencial_id)?.nombre || `#${u.credencial_id}`
+                    : t('settings.mir.multi.none')}
                 </Text>
               </View>
               <View style={{ gap: 8 }}>
@@ -525,6 +682,69 @@ export default function MirSettingsScreen() {
       >
         <Text style={styles.saveText}>{saveMutation.isPending ? t('common.loading') : t('common.save')}</Text>
       </Pressable>
+
+      <Modal visible={editModalCred !== null} animationType="slide" transparent onRequestClose={() => setEditModalCred(null)}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.modalBackdrop}
+        >
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>{t('settings.mir.multi.editingCredentialTitle')}</Text>
+            <Text style={styles.hintText}>{t('settings.mir.multi.leavePasswordEmptyHint')}</Text>
+            <ScrollView keyboardShouldPersistTaps="handled" style={{ maxHeight: 420 }}>
+              <Field
+                label={t('settings.mir.multi.name')}
+                value={editDraft.nombre}
+                onChangeText={(v) => setEditDraft((p) => ({ ...p, nombre: v }))}
+              />
+              <Field
+                label={t('settings.mir.multi.user')}
+                value={editDraft.usuario}
+                onChangeText={(v) => setEditDraft((p) => ({ ...p, usuario: v }))}
+              />
+              <Field
+                label={t('settings.mir.multi.password')}
+                value={editDraft.contraseña}
+                onChangeText={(v) => setEditDraft((p) => ({ ...p, contraseña: v }))}
+                secureTextEntry
+              />
+              <Field
+                label={t('settings.mir.multi.landlord')}
+                value={editDraft.codigoArrendador}
+                onChangeText={(v) => setEditDraft((p) => ({ ...p, codigoArrendador: v }))}
+              />
+              <Field
+                label={t('settings.mir.multi.establishment')}
+                value={editDraft.codigoEstablecimiento}
+                onChangeText={(v) => setEditDraft((p) => ({ ...p, codigoEstablecimiento: v }))}
+              />
+              <Field
+                label={t('settings.mir.multi.baseUrl')}
+                value={editDraft.baseUrl}
+                onChangeText={(v) => setEditDraft((p) => ({ ...p, baseUrl: v }))}
+              />
+            </ScrollView>
+            <View style={{ flexDirection: 'row', gap: 10, marginTop: 14 }}>
+              <Pressable
+                style={[styles.saveButton, { flex: 1 }, patchCredMutation.isPending && styles.saveButtonDisabled]}
+                onPress={saveEditCredential}
+                disabled={patchCredMutation.isPending}
+              >
+                <Text style={styles.saveText}>
+                  {patchCredMutation.isPending ? t('common.loading') : t('common.save')}
+                </Text>
+              </Pressable>
+              <Pressable
+                style={[styles.smallButton, { flex: 1, paddingVertical: 14 }]}
+                onPress={() => setEditModalCred(null)}
+                disabled={patchCredMutation.isPending}
+              >
+                <Text style={styles.smallButtonText}>{t('common.cancel')}</Text>
+              </Pressable>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </ScrollView>
   );
 }
@@ -579,5 +799,36 @@ const styles = StyleSheet.create({
   unitMeta: { marginTop: 2, fontSize: 12, color: '#6b7280' },
   smallButton: { backgroundColor: '#f3f4f6', borderRadius: 10, paddingVertical: 10, paddingHorizontal: 10, alignItems: 'center' },
   smallButtonText: { fontSize: 12, fontWeight: '900', color: '#111827' },
+  credRow: {
+    marginTop: 10,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#f3f4f6',
+    gap: 8,
+  },
+  credActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  credActionBtn: {
+    backgroundColor: '#eff6ff',
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+  },
+  credActionText: { fontSize: 11, fontWeight: '800', color: '#1d4ed8' },
+  credActionDanger: { backgroundColor: '#fef2f2' },
+  credActionDangerText: { color: '#b91c1c' },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'center',
+    padding: 16,
+  },
+  modalCard: {
+    backgroundColor: 'white',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+  },
+  modalTitle: { fontSize: 16, fontWeight: '900', color: '#111827', marginBottom: 8 },
 });
 

@@ -707,6 +707,7 @@
     "freePlanBanner": "Sur le forfait gratuit, l'envoi automatique au Ministère de l'Intérieur n'est pas inclus. Les données sont enregistrées ici et vous pouvez télécharger le XML pour l'envoyer manuellement au Ministère.",
     "formUrl": "Lien public d'enregistrement des voyageurs",
     "formUrlDescription": "Partagez ce lien avec vos clients. Il ouvre le formulaire officiel prérempli pour votre établissement ; les erreurs s'affichent à côté de chaque champ dans la langue choisie sur le formulaire (ES/EN/FR/RU).",
+    "formUrlDuplicateHiddenHint": "Le même lien n’apparaît que dans le bloc « Chambres » ci-dessous (même identifiant MIR). Il n’est pas dupliqué ici.",
     "formUrlOwnerHintTitle": "Réservations, alertes et automatisation",
     "formUrlOwnerHintP1": "Lorsqu’un voyageur envoie le formulaire, le système peut créer une réservation avec ses dates et données. L’icône de cloche est toujours visible en haut (à côté de la langue) : un numéro rouge apparaît s’il y a des réservations à compléter. Ouvrez Réservations, ajustez logement, prix et canal, puis marquez comme vérifiée.",
     "formUrlOwnerHintP2": "Pour que le client reçoive seulement le lien sans copier-coller à chaque fois, ajoutez cette même URL dans un message enregistré ou programmé sur Airbnb ou Booking (accueil ou rappel avant l’arrivée). Le flux reste automatique et l’enregistrement reste dans Delfín Check-in.",
@@ -2322,7 +2323,18 @@
         "prefillFromMain": "Copier depuis le formulaire principal",
         "apartmentAssignedNote": "Cette unité a déjà un identifiant assigné. Pour le modifier, utilisez la liste déroulante ci-dessus (autre identifiant ou « Non assigné »).",
         "assignedOk": "Identifiant créé et assigné à l’unité",
-        "assignedFail": "Impossible de créer/assigner l’identifiant"
+        "assignedFail": "Impossible de créer/assigner l’identifiant",
+        "viewCredential": "Voir le détail",
+        "editCredential": "Modifier",
+        "deleteCredential": "Supprimer",
+        "deleteCredentialConfirm": "Supprimer l’identifiant « {name} » ? Les unités qui l’utilisaient seront sans identifiant jusqu’à ce que vous en choisissiez un autre dans Configuration MIR.",
+        "credentialUpdated": "Identifiant mis à jour",
+        "credentialDeleted": "Identifiant supprimé",
+        "credentialSaveError": "Impossible d’enregistrer l’identifiant",
+        "credentialDeleteError": "Impossible de supprimer l’identifiant",
+        "editingCredentialTitle": "Modifier l’identifiant",
+        "leavePasswordEmptyHint": "Laissez le mot de passe vide pour conserver l’actuel.",
+        "mirRoutingNote": "L’envoi MIR utilise toujours l’identifiant associé à l’unité (room_id) côté serveur ; une modification ici ne mélange pas les établissements."
       },
       "countries": {
         "ES": "Espagne",
@@ -3023,6 +3035,7 @@
       "saveFailed": "Enregistrement impossible"
     },
     "guestRegistrations": {
+      "formUrlLeadShort": "Lien public du formulaire voyageurs. Le MIR applique l’identifiant de chaque chambre ou appartement selon la configuration (serveur).",
       "empty": "Aucun registre de communication pour l’instant",
       "hint": "Lorsque les voyageurs envoient le formulaire via votre lien public, les entrées s’affichent ici.",
       "statsTotal": "Total",

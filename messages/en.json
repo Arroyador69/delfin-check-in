@@ -869,6 +869,7 @@
     "freePlanBanner": "The free plan does not include automatic filing with the Spanish Ministry of the Interior. Registrations are still stored in Delfín—you can download the official XML whenever you need it and upload it through the government portal.",
     "formUrl": "Public traveler registration link",
     "formUrlDescription": "Share this link with your guests. It opens the official traveler registration form with your property context; validation errors appear next to each field in the language selected on the form (ES/EN/FR/RU).",
+    "formUrlDuplicateHiddenHint": "The same link is shown only in the rooms block below (shared MIR credential), so it isn’t repeated here.",
     "formUrlOwnerHintTitle": "Reservations, in-app alerts, and automation",
     "formUrlOwnerHintP1": "When a guest submits the form, the system can create a reservation with their dates and details. The bell icon is always in the top bar (next to the language selector): a red number appears when there are reservations to complete. Open Reservations, adjust room, prices, and channel, then mark as reviewed.",
     "formUrlOwnerHintP2": "So guests only receive the link without you copying and pasting each time, add this same URL to a saved or scheduled message in Airbnb or Booking (welcome template or pre check-in reminder). The flow stays automatic for you and the registration is stored in Delfín Check-in.",
@@ -2325,7 +2326,18 @@
         "prefillFromMain": "Copy from main form",
         "apartmentAssignedNote": "This unit already has a credential assigned. To change it, use the dropdown above (pick another credential or “Unassigned”).",
         "assignedOk": "Credential created and assigned to the unit",
-        "assignedFail": "Could not create/assign the credential"
+        "assignedFail": "Could not create/assign the credential",
+        "viewCredential": "View details",
+        "editCredential": "Edit",
+        "deleteCredential": "Delete",
+        "deleteCredentialConfirm": "Delete credential \"{name}\"? Units that used it will be unassigned until you pick another in MIR settings.",
+        "credentialUpdated": "Credential updated",
+        "credentialDeleted": "Credential deleted",
+        "credentialSaveError": "Could not save credential",
+        "credentialDeleteError": "Could not delete credential",
+        "editingCredentialTitle": "Edit credential",
+        "leavePasswordEmptyHint": "Leave password empty to keep the current one.",
+        "mirRoutingNote": "MIR submissions always use the credential mapped to the unit (room_id) on the server; editing here does not mix establishments."
       },
       "countries": {
         "ES": "Spain",
@@ -3046,6 +3058,7 @@
       "saveFailed": "Could not save"
     },
     "guestRegistrations": {
+      "formUrlLeadShort": "Public link for the traveller form. MIR uses each room or apartment’s credential (enforced on the server).",
       "empty": "No communication registrations yet",
       "hint": "When guests submit the traveller form via your public link, entries appear here.",
       "statsTotal": "Total",
