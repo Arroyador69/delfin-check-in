@@ -138,6 +138,7 @@ export async function POST(req: NextRequest) {
 
     if (resultado.resultados) {
       for (const loteResult of resultado.resultados) {
+        const nowIso = new Date().toISOString();
         // Determinar el nuevo estado según el código MIR oficial
         let nuevoEstado = 'enviado';
         let descripcionEstado = 'Enviado al MIR';
@@ -167,19 +168,20 @@ export async function POST(req: NextRequest) {
           SET 
             estado = ${nuevoEstado},
             resultado = jsonb_set(
-              COALESCE(resultado, '{}'::jsonb),
-              '{codigoEstado}', 
-              ${loteResult.codigoEstado}::jsonb
-            ),
-            resultado = jsonb_set(
-              resultado,
-              '{descEstado}', 
-              ${descripcionEstado}::jsonb
-            ),
-            resultado = jsonb_set(
-              resultado,
-              '{ultimaConsulta}', 
-              ${new Date().toISOString()}::jsonb
+              jsonb_set(
+                jsonb_set(
+                  COALESCE(resultado, '{}'::jsonb),
+                  '{codigoEstado}',
+                  to_jsonb(${String(loteResult.codigoEstado)}::text),
+                  true
+                ),
+                '{descEstado}',
+                to_jsonb(${descripcionEstado}::text),
+                true
+              ),
+              '{ultimaConsulta}',
+              to_jsonb(${nowIso}::text),
+              true
             )
           WHERE lote = ${loteResult.lote}
         `;
@@ -195,7 +197,7 @@ export async function POST(req: NextRequest) {
               'lote', ${loteResult.lote},
               'codigoEstado', ${loteResult.codigoEstado},
               'descEstado', ${descripcionEstado},
-              'ultimaConsulta', ${new Date().toISOString()}
+              'ultimaConsulta', ${nowIso}
             )
           )
           WHERE reserva_ref IN (
