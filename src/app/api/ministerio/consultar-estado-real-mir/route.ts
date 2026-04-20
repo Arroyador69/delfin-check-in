@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
-import { MinisterioClient } from '@/lib/ministerio-client';
+import { MinisterioClientOfficial } from '@/lib/ministerio-client-official';
 
 export async function POST(req: NextRequest) {
   try {
@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
       aplicacion: row.aplicacion || 'Delfin_Check_in',
       simulacion: Boolean(row.simulacion),
     };
-    const cliente = new MinisterioClient(config);
+    const cliente = new MinisterioClientOfficial(config);
 
     // Obtener lotes únicos para consultar
     const lotesUnicos = [...new Set(result.rows.map(r => r.lote).filter(Boolean))];
