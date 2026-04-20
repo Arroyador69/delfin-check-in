@@ -1022,7 +1022,7 @@ export default function MirSettingsPage() {
         <div className="flex flex-col sm:flex-row gap-4">
           <Button 
             onClick={guardarConfiguracion} 
-            disabled={loading || !status.hasRequired}
+            disabled={loading}
             className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold px-8 py-4 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg"
           >
             <Save className="h-5 w-5 mr-2" />
@@ -1031,7 +1031,7 @@ export default function MirSettingsPage() {
           
           <Button 
             onClick={probarConexion} 
-            disabled={loading || !status.hasRequired}
+            disabled={loading}
             variant="outline"
             className="flex-1 border-2 border-blue-600 text-blue-600 hover:bg-blue-50 font-semibold px-8 py-4 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg"
           >

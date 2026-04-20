@@ -63,54 +63,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Nuevo modelo: crear/actualizar la "credencial principal" en mir_credenciales
-    // y mantener mir_configuraciones como fallback legacy.
-    try {
-      const { ensureMirMultiSchema } = await import('@/lib/mir-multi');
-      await ensureMirMultiSchema();
-      // Intentar reusar la primera credencial del tenant como "principal".
-      const existingMulti = await sql`
-        SELECT id, contraseña
-        FROM mir_credenciales
-        WHERE tenant_id = ${tenantId}::uuid
-        ORDER BY created_at ASC, id ASC
-        LIMIT 1
-      `;
-
-      // Permitir contraseña vacía manteniendo la ya guardada (igual que legacy)
-      let multiPassword = typeof contraseña === 'string' ? contraseña : '';
-      if (!multiPassword || multiPassword.trim() === '') {
-        const existingPw = String(existingMulti.rows?.[0]?.contraseña || '').trim();
-        if (existingPw) multiPassword = existingPw;
-      }
-
-      if (existingMulti.rows.length > 0) {
-        await sql`
-          UPDATE mir_credenciales
-          SET
-            nombre = COALESCE(nombre, 'Credencial MIR'),
-            usuario = ${u},
-            contraseña = ${multiPassword},
-            codigo_arrendador = ${codigoArrendador},
-            codigo_establecimiento = ${codigoEstablecimiento},
-            base_url = ${baseUrl},
-            activo = true,
-            updated_at = NOW()
-          WHERE id = ${Number(existingMulti.rows[0].id)}
-        `;
-      } else {
-        await sql`
-          INSERT INTO mir_credenciales (
-            tenant_id, nombre, usuario, contraseña, codigo_arrendador, codigo_establecimiento, base_url, activo, created_at, updated_at
-          ) VALUES (
-            ${tenantId}::uuid, 'Credencial MIR principal', ${u}, ${multiPassword}, ${codigoArrendador}, ${codigoEstablecimiento}, ${baseUrl}, true, NOW(), NOW()
-          )
-        `;
-      }
-    } catch (multiErr) {
-      console.warn('⚠️ No se pudo guardar en mir_credenciales (se usará legacy):', multiErr);
-    }
-
     // Permitir guardar sin volver a introducir la contraseña:
     // - Si llega vacía pero ya existe en BD para este tenant, la mantenemos.
     // - Si no existe aún, entonces sí es obligatoria.
@@ -146,6 +98,46 @@ export async function POST(req: NextRequest) {
         },
         { status: 400 }
       );
+    }
+
+    // Nuevo modelo: crear/actualizar la "credencial principal" en mir_credenciales
+    // usando la misma contraseña efectiva (incluye fallback legacy).
+    try {
+      const { ensureMirMultiSchema } = await import('@/lib/mir-multi');
+      await ensureMirMultiSchema();
+      const existingMulti = await sql`
+        SELECT id
+        FROM mir_credenciales
+        WHERE tenant_id = ${tenantId}::uuid
+        ORDER BY created_at ASC, id ASC
+        LIMIT 1
+      `;
+
+      if (existingMulti.rows.length > 0) {
+        await sql`
+          UPDATE mir_credenciales
+          SET
+            nombre = COALESCE(nombre, 'Credencial MIR'),
+            usuario = ${u},
+            contraseña = ${finalPassword},
+            codigo_arrendador = ${codigoArrendador},
+            codigo_establecimiento = ${codigoEstablecimiento},
+            base_url = ${baseUrl},
+            activo = true,
+            updated_at = NOW()
+          WHERE id = ${Number(existingMulti.rows[0].id)}
+        `;
+      } else {
+        await sql`
+          INSERT INTO mir_credenciales (
+            tenant_id, nombre, usuario, contraseña, codigo_arrendador, codigo_establecimiento, base_url, activo, created_at, updated_at
+          ) VALUES (
+            ${tenantId}::uuid, 'Credencial MIR principal', ${u}, ${finalPassword}, ${codigoArrendador}, ${codigoEstablecimiento}, ${baseUrl}, true, NOW(), NOW()
+          )
+        `;
+      }
+    } catch (multiErr) {
+      console.warn('⚠️ No se pudo guardar en mir_credenciales (se usará legacy):', multiErr);
     }
 
     // Guardar en la base de datos
