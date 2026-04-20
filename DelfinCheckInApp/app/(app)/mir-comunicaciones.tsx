@@ -159,16 +159,10 @@ export default function CommunicationRegistrationScreen() {
     return { pending };
   }, [unitPublicLinkMode, linkExtras]);
 
-  /** Evita repetir el mismo enlace arriba y en «Habitaciones» cuando todas comparten credencial. */
-  const hideDuplicatePrimaryPublicBlock = useMemo(() => {
-    if (!linkExtras) return false;
-    if (unitPublicLinkMode !== 'per-room') return false;
-    const { roomUnits, apartmentUnits, roomsShareSameCred } = roomsAndApartments;
-    if (roomUnits.length === 0) return false;
-    if (!roomsShareSameCred) return false;
-    if (apartmentUnits.length > 0) return false;
-    return true;
-  }, [linkExtras, unitPublicLinkMode, roomsAndApartments]);
+  /** En móvil: si ya hay enlaces por habitación/apartamento, no mostrar arriba el enlace genérico ni el texto introductorio (redundante). */
+  const skipMobilePublicFormLead = useMemo(() => {
+    return unitPublicLinkMode === 'per-room' && Boolean(linkExtras && linkExtras.rooms.length > 0);
+  }, [unitPublicLinkMode, linkExtras]);
 
   const openPublicForm = () => {
     if (!formPublicUrl) return;
@@ -382,15 +376,19 @@ export default function CommunicationRegistrationScreen() {
 
   const listHeader = (
     <>
-      <View style={styles.formUrlCard}>
-        <Text style={styles.formUrlEmoji}>{'\u{1F517}'}</Text>
-        <Text style={styles.formUrlTitle}>{t('guestRegistrations.formUrl')}</Text>
-        <Text style={styles.formUrlDescription}>{t('mobile.guestRegistrations.formUrlLeadShort')}</Text>
+      <View style={[styles.formUrlCard, skipMobilePublicFormLead && styles.formUrlCardCompactTop]}>
+        {!skipMobilePublicFormLead ? (
+          <>
+            <Text style={styles.formUrlEmoji}>{'\u{1F517}'}</Text>
+            <Text style={styles.formUrlTitle}>{t('guestRegistrations.formUrl')}</Text>
+            <Text style={styles.formUrlDescription}>{t('mobile.guestRegistrations.formUrlLeadShort')}</Text>
+          </>
+        ) : null}
         {!tenantId ? (
           <ActivityIndicator style={{ marginVertical: 12 }} color="#2563eb" />
         ) : (
           <>
-            {!hideDuplicatePrimaryPublicBlock ? (
+            {!skipMobilePublicFormLead ? (
               <>
                 <Text selectable style={styles.formUrlMono}>
                   {formPublicUrl}
@@ -441,7 +439,7 @@ export default function CommunicationRegistrationScreen() {
                 </View>
               </>
             ) : unitPublicLinkMode === 'per-room' && formPublicUrl && linkExtras && linkExtras.rooms.length > 0 ? (
-              <View style={styles.perRoomBlock}>
+              <View style={[styles.perRoomBlock, skipMobilePublicFormLead && styles.perRoomBlockNoTopMargin]}>
                 <Text style={styles.perRoomTitle}>{t('guestRegistrations.unitLinksTitle')}</Text>
                 <Text style={styles.perRoomDescription}>{t('guestRegistrations.unitLinksDescription')}</Text>
 
@@ -662,6 +660,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#bfdbfe',
   },
+  formUrlCardCompactTop: {
+    paddingTop: 14,
+  },
   formUrlEmoji: { fontSize: 28, marginBottom: 4 },
   formUrlTitle: { fontSize: 17, fontWeight: '800', color: '#111827' },
   formUrlDescription: { marginTop: 8, fontSize: 13, color: '#4b5563', lineHeight: 19 },
@@ -692,6 +693,7 @@ const styles = StyleSheet.create({
   },
   unitChipText: { fontSize: 13, fontWeight: '600', color: '#111827' },
   perRoomBlock: { marginTop: 16 },
+  perRoomBlockNoTopMargin: { marginTop: 0 },
   singleBlockTitle: { marginTop: 12, fontSize: 15, fontWeight: '800', color: '#111827' },
   mirSummaryBox: {
     marginTop: 10,
