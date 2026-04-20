@@ -52,8 +52,30 @@ interface GuestRegistrationStats {
   submissions_last_30_days: number;
 }
 
+type MirUnitRow = {
+  room_id: string;
+  unit_type: 'habitacion' | 'apartamento';
+  credencial_id: number | null;
+};
+
+type RoomRow = { id: string; name: string };
+
 function trimApiBase(): string {
   return String(api.defaults.baseURL || '').replace(/\/$/, '');
+}
+
+function computePublicLinkMode(rooms: RoomRow[], units: MirUnitRow[]): 'empty' | 'single' | 'per-room' {
+  if (rooms.length === 0) return 'empty';
+  if (units.length === 0) return 'single';
+  const map = new Map(units.map((u) => [String(u.room_id), u]));
+  for (const r of rooms) {
+    if (!map.has(String(r.id))) return 'per-room';
+  }
+  const configs = rooms.map((r) => map.get(String(r.id))!);
+  if (configs.some((c) => c.unit_type === 'apartamento')) return 'per-room';
+  const nonNull = configs.map((c) => c.credencial_id).filter((x): x is number => x != null);
+  if (new Set(nonNull).size <= 1) return 'single';
+  return 'per-room';
 }
 
 export default function CommunicationRegistrationScreen() {
@@ -74,6 +96,38 @@ export default function CommunicationRegistrationScreen() {
     () => (tenantId ? `${trimApiBase()}/api/public/form-redirect/${tenantId}` : ''),
     [tenantId]
   );
+
+  const { data: linkExtras } = useQuery({
+    queryKey: ['mir-comunicaciones-public-links', tenantId],
+    enabled: Boolean(tenantId),
+    queryFn: async () => {
+      const [roomsRes, mirRes] = await Promise.all([
+        api.get<{ success?: boolean; rooms?: { id: string; name: string }[] }>('/api/tenant/rooms'),
+        api.get<{ success?: boolean; units?: MirUnitRow[] }>('/api/ministerio/unidades-config'),
+      ]);
+      const rooms: RoomRow[] = Array.isArray(roomsRes.data?.rooms)
+        ? roomsRes.data.rooms!.map((r: any) => ({
+            id: String(r.id),
+            name: String(r.name || r.id),
+          }))
+        : [];
+      const mirOk = Boolean(mirRes.data?.success);
+      const units: MirUnitRow[] = mirOk && Array.isArray(mirRes.data?.units)
+        ? mirRes.data!.units!.map((u: any) => ({
+            room_id: String(u.room_id),
+            unit_type: u.unit_type === 'apartamento' ? 'apartamento' : 'habitacion',
+            credencial_id: u.credencial_id == null ? null : Number(u.credencial_id),
+          }))
+        : [];
+      return { rooms, units, mirOk };
+    },
+  });
+
+  const linkMode = useMemo(() => {
+    if (!tenantId || !linkExtras) return 'loading' as const;
+    if (!linkExtras.mirOk) return 'single' as const;
+    return computePublicLinkMode(linkExtras.rooms, linkExtras.units);
+  }, [tenantId, linkExtras]);
 
   const openPublicForm = () => {
     if (!formPublicUrl) return;
@@ -211,6 +265,9 @@ export default function CommunicationRegistrationScreen() {
     await Promise.all([
       refetch(),
       queryClient.invalidateQueries({ queryKey: ['tenant-me'] }),
+      tenantId
+        ? queryClient.invalidateQueries({ queryKey: ['mir-comunicaciones-public-links', tenantId] })
+        : Promise.resolve(),
     ]);
     setRefreshing(false);
   };
@@ -249,6 +306,9 @@ export default function CommunicationRegistrationScreen() {
         <Text style={styles.formUrlEmoji}>{'\u{1F517}'}</Text>
         <Text style={styles.formUrlTitle}>{t('guestRegistrations.formUrl')}</Text>
         <Text style={styles.formUrlDescription}>{t('guestRegistrations.formUrlDescription')}</Text>
+        {linkMode === 'single' && linkExtras && linkExtras.rooms.length > 0 ? (
+          <Text style={styles.formUrlSingleHint}>{t('guestRegistrations.formUrlSingleModeHint')}</Text>
+        ) : null}
         {!tenantId ? (
           <ActivityIndicator style={{ marginVertical: 12 }} color="#2563eb" />
         ) : (
@@ -266,6 +326,54 @@ export default function CommunicationRegistrationScreen() {
                 <Text style={styles.formUrlBtnPrimaryText}>{t('guestRegistrations.viewForm')}</Text>
               </Pressable>
             </View>
+            {linkMode === 'single' && linkExtras && linkExtras.rooms.length > 0 ? (
+              <View style={styles.singleUnitsBlock}>
+                <Text style={styles.singleUnitsLabel}>{t('guestRegistrations.unitLinksSingleUnitsLabel')}</Text>
+                <View style={styles.unitChipsRow}>
+                  {linkExtras.rooms.map((r) => (
+                    <View key={r.id} style={styles.unitChip}>
+                      <Text style={styles.unitChipText}>{r.name}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            ) : null}
+            {linkMode === 'per-room' && formPublicUrl && linkExtras && linkExtras.rooms.length > 0 ? (
+              <View style={styles.perRoomBlock}>
+                <Text style={styles.perRoomTitle}>{t('guestRegistrations.unitLinksTitle')}</Text>
+                <Text style={styles.perRoomDescription}>{t('guestRegistrations.unitLinksDescription')}</Text>
+                {linkExtras.rooms.map((r) => {
+                  const url = `${formPublicUrl}?room_id=${encodeURIComponent(r.id)}`;
+                  return (
+                    <View key={r.id} style={styles.perRoomCard}>
+                      <Text style={styles.perRoomName}>{r.name}</Text>
+                      <Text selectable style={styles.perRoomMono}>
+                        {url}
+                      </Text>
+                      <View style={styles.perRoomActions}>
+                        <Pressable
+                          style={[styles.formUrlBtnSecondary, { flex: 1, marginRight: 8 }]}
+                          onPress={() => {
+                            Clipboard.setString(url);
+                            Alert.alert(t('common.success'), t('guestRegistrations.urlCopied'));
+                          }}
+                        >
+                          <Copy size={18} color="#2563eb" />
+                          <Text style={styles.formUrlBtnSecondaryText}>{t('guestRegistrations.copyUrl')}</Text>
+                        </Pressable>
+                        <Pressable
+                          style={[styles.formUrlBtnPrimary, { flex: 1 }]}
+                          onPress={() => Linking.openURL(url).catch(() => {})}
+                        >
+                          <ExternalLink size={18} color="white" />
+                          <Text style={styles.formUrlBtnPrimaryText}>{t('guestRegistrations.viewForm')}</Text>
+                        </Pressable>
+                      </View>
+                    </View>
+                  );
+                })}
+              </View>
+            ) : null}
           </>
         )}
       </View>
@@ -427,6 +535,46 @@ const styles = StyleSheet.create({
   formUrlEmoji: { fontSize: 28, marginBottom: 4 },
   formUrlTitle: { fontSize: 17, fontWeight: '800', color: '#111827' },
   formUrlDescription: { marginTop: 8, fontSize: 13, color: '#4b5563', lineHeight: 19 },
+  formUrlSingleHint: {
+    marginTop: 10,
+    fontSize: 13,
+    lineHeight: 19,
+    color: '#065f46',
+    backgroundColor: '#ecfdf5',
+    borderWidth: 1,
+    borderColor: '#a7f3d0',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 10,
+  },
+  singleUnitsBlock: { marginTop: 14 },
+  singleUnitsLabel: { fontSize: 12, fontWeight: '800', color: '#6b7280', textTransform: 'uppercase' },
+  unitChipsRow: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 8 },
+  unitChip: {
+    marginRight: 8,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    backgroundColor: '#f9fafb',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 999,
+  },
+  unitChipText: { fontSize: 13, fontWeight: '600', color: '#111827' },
+  perRoomBlock: { marginTop: 16 },
+  perRoomTitle: { fontSize: 15, fontWeight: '800', color: '#111827' },
+  perRoomDescription: { marginTop: 6, fontSize: 13, color: '#4b5563', lineHeight: 19 },
+  perRoomCard: {
+    marginTop: 12,
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    backgroundColor: '#fafafa',
+  },
+  perRoomName: { fontSize: 15, fontWeight: '700', color: '#111827' },
+  perRoomMono: { marginTop: 8, fontSize: 11, color: '#0369a1', fontFamily: 'monospace' },
+  perRoomActions: { flexDirection: 'row', marginTop: 12 },
   formUrlMono: {
     marginTop: 12,
     fontSize: 11,

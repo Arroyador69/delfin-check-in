@@ -879,6 +879,13 @@
     "unitLinkMirReady": "MIR: tunnus määritetty",
     "unitLinkMirPending": "MIR: määritä tunnus MIR-asetuksissa",
     "unitLinkMirUnknown": "MIR: tieto puuttuu (tarkista MIR-asetukset)",
+    "formUrlSingleModeHint": "Huoneet jakavat saman MIR-logiikan: voit käyttää vain yllä olevaa linkkiä (ilman ?room_id) kaikille.",
+    "unitLinksSingleTitle": "Yksi linkki kaikille huoneille",
+    "unitLinksSingleDescription": "Kaikki yksiköt ovat huoneita eikä niillä ole useita eri MIR-tunnuksia. Eri linkkiä jokaiselle huoneen nimelle ei tarvita.",
+    "unitLinksSingleUsePublicAbove": "Käytä julkista linkkiä tässä samassa kortissa — se on sama kaikille alla luetelluille yksiköille.",
+    "unitLinksSingleUnitsLabel": "Yksiköt, jotka tämä linkki kattaa",
+    "unitLinksSingleMirOk": "MIR: sama tunnus (tai eriytystä ei ole) kaikille näytetyille huoneille.",
+    "unitLinksSingleMirWarnUnassigned": "Joillakin huoneilla ei ole MIR-asetuksissa määritettyä tunnusta. Määritä sama tunnus kaikille tai korjaa asetukset, jotta automaattinen lähetys ei epäonnistu.",
     "urlCopied": "URL-osoite kopioitu leikepöydälle",
     "errorPage": {
       "title": "Kojelaudan virhe",

@@ -906,6 +906,13 @@
     "unitLinkMirReady": "MIR: credenziale assegnata",
     "unitLinkMirPending": "MIR: assegna una credenziale in Configurazione MIR",
     "unitLinkMirUnknown": "MIR: informazione non disponibile (controlla Configurazione MIR)",
+    "formUrlSingleModeHint": "Le tue camere condividono la stessa logica MIR: puoi usare solo il link sopra (senza ?room_id) per tutte.",
+    "unitLinksSingleTitle": "Un solo link per tutte le camere",
+    "unitLinksSingleDescription": "Tutte le unità sono camere e non ci sono credenziali MIR diverse tra loro. Non serve un link separato per ogni nome camera.",
+    "unitLinksSingleUsePublicAbove": "Usa il link pubblico in questa stessa scheda: è lo stesso per tutte le unità elencate sotto.",
+    "unitLinksSingleUnitsLabel": "Unità coperte da questo link",
+    "unitLinksSingleMirOk": "MIR: stessa credenziale (o nessuna differenziazione) per tutte le camere mostrate.",
+    "unitLinksSingleMirWarnUnassigned": "Alcune camere non hanno una credenziale assegnata in Configurazione MIR. Assegna la stessa credenziale a tutte o correggi la configurazione per evitare errori nell’invio automatico.",
     "urlCopied": "URL copiato negli appunti",
     "errorPage": {
       "title": "Errore nella Dashboard",

@@ -683,6 +683,13 @@
     "unitLinkMirReady": "MIR : identifiant assigné",
     "unitLinkMirPending": "MIR : assignez un identifiant dans Configuration MIR",
     "unitLinkMirUnknown": "MIR : information indisponible (vérifiez Configuration MIR)",
+    "formUrlSingleModeHint": "Vos chambres partagent la même logique MIR : vous pouvez utiliser uniquement le lien ci-dessus (sans ?room_id) pour toutes.",
+    "unitLinksSingleTitle": "Un seul lien pour toutes vos chambres",
+    "unitLinksSingleDescription": "Toutes vos unités sont des chambres et il n’y a pas plusieurs identifiants MIR différents entre elles. Pas besoin d’un lien distinct par chambre.",
+    "unitLinksSingleUsePublicAbove": "Utilisez le lien public dans cette même carte : il est identique pour toutes les unités listées ci-dessous.",
+    "unitLinksSingleUnitsLabel": "Unités couvertes par ce lien",
+    "unitLinksSingleMirOk": "MIR : même identifiant (ou aucune différenciation) pour toutes les chambres affichées.",
+    "unitLinksSingleMirWarnUnassigned": "Certaines chambres n’ont pas d’identifiant assigné dans Configuration MIR. Assignez le même identifiant à toutes ou corrigez la configuration pour éviter des erreurs d’envoi automatique.",
     "urlCopied": "URL copié dans le presse-papiers",
     "errorPage": {
       "title": "Erreur du tableau de bord",
