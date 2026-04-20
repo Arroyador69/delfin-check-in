@@ -336,6 +336,9 @@ export default function MirSettingsPage() {
               <Label htmlFor="usuario" className="text-gray-800 font-semibold">{t('userLabel')}</Label>
               <Input
                 id="usuario"
+                name="mir_usuario_ws"
+                autoComplete="off"
+                autoCapitalize="none"
                 placeholder={t('userPlaceholder')}
                 value={hasConfig && !editingUsuario && config.usuario ? "•••••••••••" : config.usuario}
                 onChange={(e) => {
@@ -368,6 +371,8 @@ export default function MirSettingsPage() {
                 <Input
                   id="contraseña"
                   type={showPassword ? "text" : "password"}
+                  name="mir_password_ws"
+                  autoComplete="new-password"
                   placeholder={t('passwordPlaceholder')}
                   value={
                     hasConfig && !editingContraseña && config.contraseña && !showPassword

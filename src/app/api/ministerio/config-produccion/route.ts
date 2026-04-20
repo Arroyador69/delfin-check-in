@@ -36,13 +36,17 @@ export async function POST(req: NextRequest) {
       }, { status: 400 });
     }
 
-    // Validar formato del usuario (DNI/CIF + letra + WS)
-    const usuarioPattern = /^[0-9]+[A-Z]WS$/;
-    if (!usuarioPattern.test(usuario)) {
+    // Validar formato del usuario WS (oficial habitual: NIF/CIF/NIE + '---WS')
+    // Aceptamos también formatos legacy sin guiones para no bloquear casos existentes.
+    const u = String(usuario).trim().toUpperCase();
+    const usuarioPatternOficial = /^[A-Z0-9]{6,15}---WS$/; // ej: 12345678A---WS, B12345678---WS
+    const usuarioPatternLegacy = /^[A-Z0-9]{6,15}WS$/; // ej: 27380387ZWS
+    if (!usuarioPatternOficial.test(u) && !usuarioPatternLegacy.test(u)) {
       return NextResponse.json({
         success: false,
         error: 'Formato de usuario incorrecto',
-        message: 'El usuario debe seguir el formato: DNI/CIF + letra + WS (ejemplo: 27380387ZWS, 12345678TWS)'
+        message:
+          'El usuario debe ser el del Servicio Web del MIR. Formato habitual: NIF/CIF/NIE + "---WS" (ej: 12345678A---WS).'
       }, { status: 400 });
     }
 
@@ -119,7 +123,7 @@ export async function POST(req: NextRequest) {
     }
     
     const configuracion = {
-      usuario,
+      usuario: u,
       contraseña: '***', // No devolver la contraseña real
       codigoArrendador,
       codigoEstablecimiento,
@@ -149,16 +153,16 @@ export async function POST(req: NextRequest) {
       instrucciones: {
         titulo: 'Próximos pasos',
         pasos: [
-          '1. Verifica que las credenciales estén configuradas en las variables de entorno de Vercel',
-          '2. Prueba la conexión usando el botón "Probar Conexión"',
-          '3. Accede al panel MIR para enviar comunicaciones de prueba',
+          '1. Prueba la conexión usando el botón "Probar Conexión"',
+          '2. Realiza un envío de prueba desde el panel MIR/Estado de envíos',
+          '3. Si hay errores, revisa el mensaje y corrige el dato del huésped/estancia',
           '4. Una vez verificado, puedes usar el sistema en producción'
         ]
       },
       variablesEntorno: {
-        titulo: 'Variables de entorno requeridas en Vercel',
+        titulo: 'Nota sobre variables de entorno (solo para modo único / demo)',
         variables: [
-          `MIR_HTTP_USER=${usuario}`,
+          `MIR_HTTP_USER=${u}`,
           `MIR_HTTP_PASS=${contraseña}`,
           `MIR_CODIGO_ARRENDADOR=${codigoArrendador}`,
           `MIR_BASE_URL=${baseUrl}`,
