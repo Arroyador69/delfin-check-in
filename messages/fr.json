@@ -683,7 +683,7 @@
     "unitLinkMirReady": "MIR : identifiant assigné",
     "unitLinkMirPending": "MIR : assignez un identifiant dans Configuration MIR",
     "unitLinkMirUnknown": "MIR : information indisponible (vérifiez Configuration MIR)",
-    "formUrlSingleModeHint": "Vos chambres partagent la même logique MIR : vous pouvez utiliser uniquement le lien ci-dessus (sans ?room_id) pour toutes.",
+    "formUrlSingleModeHint": "Un seul lien pour toutes vos chambres : pas besoin de choisir une chambre.",
     "unitLinksSingleTitle": "Un seul lien pour toutes vos chambres",
     "unitLinksSingleDescription": "Toutes vos unités sont des chambres et il n’y a pas plusieurs identifiants MIR différents entre elles. Pas besoin d’un lien distinct par chambre.",
     "unitLinksSingleUsePublicAbove": "Utilisez le lien public dans cette même carte : il est identique pour toutes les unités listées ci-dessous.",

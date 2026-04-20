@@ -682,7 +682,7 @@
     "unitLinkMirReady": "MIR: credencial atribuída",
     "unitLinkMirPending": "MIR: falta atribuir credencial em Configuração MIR",
     "unitLinkMirUnknown": "MIR: sem informação (verifica Configuração MIR)",
-    "formUrlSingleModeHint": "Os seus quartos partilham a mesma lógica MIR: pode usar apenas a ligação acima (sem ?room_id) para todos.",
+    "formUrlSingleModeHint": "Uma única ligação para todos os quartos — não é preciso escolher o quarto.",
     "unitLinksSingleTitle": "Uma única ligação para todos os quartos",
     "unitLinksSingleDescription": "Todas as unidades são quartos e não há várias credenciais MIR diferentes entre elas. Não precisa de uma ligação diferente por nome de quarto.",
     "unitLinksSingleUsePublicAbove": "Use a ligação pública neste mesmo cartão: é a mesma para todas as unidades listadas abaixo.",

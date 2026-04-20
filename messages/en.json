@@ -884,7 +884,7 @@
     "unitLinkMirReady": "MIR: credential assigned",
     "unitLinkMirPending": "MIR: assign a credential in MIR Settings",
     "unitLinkMirUnknown": "MIR: unknown (check MIR Settings)",
-    "formUrlSingleModeHint": "Your rooms share the same MIR setup: you can use only the link above (without ?room_id) for all of them.",
+    "formUrlSingleModeHint": "One link for all your rooms — no need to pick a room.",
     "unitLinksSingleTitle": "One link for all your rooms",
     "unitLinksSingleDescription": "All your units are rooms and there aren’t multiple different MIR credentials across them. You don’t need a separate link per room name.",
     "unitLinksSingleUsePublicAbove": "Use the public link in this same card—it’s the same for every unit listed below.",

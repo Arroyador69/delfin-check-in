@@ -911,7 +911,7 @@
     "unitLinkMirReady": "MIR: credencial asignada",
     "unitLinkMirPending": "MIR: falta asignar credencial en Configuración MIR",
     "unitLinkMirUnknown": "MIR: sin información (revisa Configuración MIR)",
-    "formUrlSingleModeHint": "Tus habitaciones comparten la misma lógica MIR: puedes usar solo el enlace de arriba (sin ?room_id) para todas.",
+    "formUrlSingleModeHint": "Un solo enlace para todas tus habitaciones: no hace falta elegir habitación.",
     "unitLinksSingleTitle": "Un solo enlace para todas tus habitaciones",
     "unitLinksSingleDescription": "Todas tus unidades son habitaciones y no hay varias credenciales MIR distintas entre ellas. No necesitas un enlace distinto por nombre de habitación.",
     "unitLinksSingleUsePublicAbove": "Usa el enlace público de esta misma tarjeta: es el mismo para todas las unidades listadas abajo.",
