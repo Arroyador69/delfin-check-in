@@ -7,10 +7,9 @@ import { View, Text, TextInput, Pressable, StyleSheet, ActivityIndicator, Alert,
 import { useAuth } from '@/lib/auth';
 import { useRouter } from 'expo-router';
 import { getLocale, t } from '@/lib/i18n';
-import { setOnboardingSeen, setForceOnboarding } from '@/lib/onboarding';
 
 export default function LoginScreen() {
-  const { signIn, signOut } = useAuth();
+  const { signIn } = useAuth();
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -96,19 +95,6 @@ export default function LoginScreen() {
           disabled={loading}
         >
           <Text style={[styles.secondaryButtonText, styles.createAccountText]}>{t('auth.createAccount')}</Text>
-        </Pressable>
-
-        <Pressable
-          style={styles.secondaryButton}
-          onPress={async () => {
-            await signOut();
-            await setOnboardingSeen(false);
-            await setForceOnboarding(false);
-            Alert.alert(t('common.success'), t('auth.resetAndShowOnboarding'));
-          }}
-          disabled={loading}
-        >
-          <Text style={styles.secondaryButtonText}>{t('auth.resetAndShowOnboarding')}</Text>
         </Pressable>
       </View>
     </View>

@@ -10,7 +10,6 @@ import { useAuth } from '@/lib/auth';
 import { useRouter, useSegments } from 'expo-router';
 import { DeviceEventEmitter, LogBox } from 'react-native';
 import { hydrateAppLocale, LOCALE_CHANGED_EVENT } from '@/lib/i18n';
-import { getForceOnboarding, getOnboardingSeen } from '@/lib/onboarding';
 import { AdMobInitializer } from '@/lib/admob-init';
 
 // Ignorar warnings específicos si es necesario
@@ -32,18 +31,6 @@ function NavigationHandler() {
   const { session, loading } = useAuth();
   const segments = useSegments();
   const router = useRouter();
-  const [checkedOnboarding, setCheckedOnboarding] = useState(false);
-
-  const isDevOnboardingUser = Boolean(
-    __DEV__ && session?.user?.email && session.user.email.toLowerCase() === 'albertogarciaarroyo@gmail.com'
-  );
-
-  // Si se pierde la sesión (logout), volvemos a permitir comprobar onboarding en el próximo login.
-  useEffect(() => {
-    if (!session) {
-      setCheckedOnboarding(false);
-    }
-  }, [session]);
 
   useEffect(() => {
     console.log('🧭 NavigationHandler:', { loading, hasSession: !!session, segments });
@@ -55,7 +42,6 @@ function NavigationHandler() {
 
     const inAuthGroup = segments[0] === '(auth)';
     const inAppGroup = segments[0] === '(app)';
-    const inOnboarding = inAppGroup && segments.slice(1).includes('onboarding');
 
     if (!session && !inAuthGroup) {
       // No hay sesión y no está en auth, redirigir a login
@@ -68,19 +54,7 @@ function NavigationHandler() {
     } else {
       console.log('✅ Navegación correcta, no se requiere redirección');
     }
-
-    if (session && inAppGroup && !inOnboarding && !checkedOnboarding) {
-      (async () => {
-        const [storedForce, seen] = await Promise.all([getForceOnboarding(), getOnboardingSeen()]);
-        // Forzar solo para tu usuario en desarrollo, o si está activado manualmente.
-        const force = isDevOnboardingUser || storedForce;
-        setCheckedOnboarding(true);
-        if (force || !seen) {
-          router.replace('/(app)/onboarding');
-        }
-      })();
-    }
-  }, [session, loading, segments, checkedOnboarding, isDevOnboardingUser, router]);
+  }, [session, loading, segments, router]);
 
   return null;
 }
