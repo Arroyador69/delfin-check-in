@@ -23,7 +23,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const { getTenantId } = await import('@/lib/tenant');
     const tenantId =
+      (await getTenantId(req)) ||
       req.headers.get('x-tenant-id') ||
       req.headers.get('X-Tenant-ID') ||
       req.nextUrl.searchParams.get('tenant_id') ||
@@ -31,8 +33,8 @@ export async function POST(req: NextRequest) {
 
     if (!tenantId) {
       return NextResponse.json(
-        { success: false, error: 'tenant_id requerido' },
-        { status: 400 }
+        { success: false, error: 'No autorizado', message: 'No se pudo identificar el tenant' },
+        { status: 401 }
       );
     }
 
