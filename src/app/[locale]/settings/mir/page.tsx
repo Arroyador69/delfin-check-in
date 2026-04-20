@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -40,9 +40,22 @@ type MirUnitType = 'habitacion' | 'apartamento';
 interface MirCredencialLite {
   id: number;
   nombre: string;
+  usuario: string;
+  hasPassword: boolean;
+  codigoArrendador: string;
   codigoEstablecimiento: string;
+  baseUrl: string;
   activo: boolean;
 }
+
+type UnitCredDraft = {
+  nombre: string;
+  usuario: string;
+  contraseña: string;
+  codigoArrendador: string;
+  codigoEstablecimiento: string;
+  baseUrl: string;
+};
 
 interface MirUnitConfigRow {
   room_id: string;
@@ -87,6 +100,19 @@ export default function MirSettingsPage() {
   const [credenciales, setCredenciales] = useState<MirCredencialLite[]>([]);
   const [units, setUnits] = useState<MirUnitConfigRow[]>([]);
   const [loadingMulti, setLoadingMulti] = useState(false);
+  const [creatingCred, setCreatingCred] = useState(false);
+  const [creatingForRoom, setCreatingForRoom] = useState<string | null>(null);
+  const [apartmentAssistOpen, setApartmentAssistOpen] = useState<Record<string, boolean>>({});
+  const [unitCredDrafts, setUnitCredDrafts] = useState<Record<string, UnitCredDraft>>({});
+
+  const [newCred, setNewCred] = useState<UnitCredDraft>({
+    nombre: '',
+    usuario: '',
+    contraseña: '',
+    codigoArrendador: '',
+    codigoEstablecimiento: '',
+    baseUrl: 'https://hospedajes.ses.mir.es/hospedajes-web/ws/v1/comunicacion',
+  });
 
   // Cargar configuración actual
   useEffect(() => {
@@ -118,6 +144,140 @@ export default function MirSettingsPage() {
 
   const configured = credenciales.filter((c) => c.activo).length;
   const maxAllowed = limits?.maxRooms ?? 0;
+  const canCreateMoreCreds = maxAllowed > 0 ? configured < maxAllowed : false;
+
+  const credById = useMemo(() => {
+    const m = new Map<number, MirCredencialLite>();
+    for (const c of credenciales) m.set(c.id, c);
+    return m;
+  }, [credenciales]);
+
+  const guardarUnitRow = async (
+    roomId: string,
+    patch: Partial<Pick<MirUnitConfigRow, 'unit_type' | 'credencial_id'>>
+  ) => {
+    const res = await fetch('/api/ministerio/unidades-config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        room_id: roomId,
+        unit_type: patch.unit_type,
+        credencial_id: patch.credencial_id,
+      }),
+    });
+    const j = await res.json().catch(() => ({}));
+    if (!res.ok || !j?.success) {
+      throw new Error(String(j?.error || t('multi.saveUnitFail')));
+    }
+  };
+
+  const getOrInitDraft = (u: MirUnitConfigRow): UnitCredDraft => {
+    const existing = unitCredDrafts[u.room_id];
+    if (existing) return existing;
+    return {
+      nombre: u.room_name || t('multi.name'),
+      usuario: config.usuario || '',
+      contraseña: '',
+      codigoArrendador: config.codigoArrendador || '',
+      codigoEstablecimiento: config.codigoEstablecimiento || '',
+      baseUrl: config.baseUrl || newCred.baseUrl,
+    };
+  };
+
+  const toggleApartmentAssistant = (u: MirUnitConfigRow) => {
+    setApartmentAssistOpen((prev) => {
+      const prevVal = prev[u.room_id];
+      const currentlyOpen = u.credencial_id ? Boolean(prevVal) : prevVal !== false;
+      const nextOpen = !currentlyOpen;
+      if (nextOpen) {
+        setUnitCredDrafts((d) => ({
+          ...d,
+          [u.room_id]: d[u.room_id] || getOrInitDraft(u),
+        }));
+      }
+      return { ...prev, [u.room_id]: nextOpen };
+    });
+  };
+
+  const prefillDraftFromMain = (roomId: string) => {
+    setUnitCredDrafts((d) => ({
+      ...d,
+      [roomId]: {
+        ...(d[roomId] || {
+          nombre: '',
+          usuario: '',
+          contraseña: '',
+          codigoArrendador: '',
+          codigoEstablecimiento: '',
+          baseUrl: newCred.baseUrl,
+        }),
+        usuario: config.usuario || '',
+        codigoArrendador: config.codigoArrendador || '',
+        codigoEstablecimiento: config.codigoEstablecimiento || '',
+        baseUrl: config.baseUrl || newCred.baseUrl,
+      },
+    }));
+  };
+
+  const crearCredencialGlobal = async () => {
+    setCreatingCred(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      const res = await fetch('/api/ministerio/credenciales', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newCred),
+      });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok || !j?.success) {
+        throw new Error(String(j?.error || t('multi.createdFail')));
+      }
+      setSuccess(`✅ ${t('multi.createdOk')}`);
+      setNewCred((p) => ({
+        ...p,
+        nombre: '',
+        usuario: '',
+        contraseña: '',
+        codigoArrendador: '',
+        codigoEstablecimiento: '',
+      }));
+      await cargarMultiMir();
+    } catch (e: any) {
+      setError(`❌ ${e?.message || t('multi.createdFail')}`);
+    } finally {
+      setCreatingCred(false);
+    }
+  };
+
+  const crearCredencialYAsignar = async (u: MirUnitConfigRow) => {
+    const draft = unitCredDrafts[u.room_id] || getOrInitDraft(u);
+    setCreatingForRoom(u.room_id);
+    setError(null);
+    setSuccess(null);
+    try {
+      const res = await fetch('/api/ministerio/credenciales', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(draft),
+      });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok || !j?.success) {
+        throw new Error(String(j?.error || t('multi.assignedFail')));
+      }
+      const id = Number(j?.credencial?.id);
+      if (!id) throw new Error(t('multi.assignedFail'));
+
+      await guardarUnitRow(u.room_id, { credencial_id: id });
+      setUnits((prev) => prev.map((x) => (x.room_id === u.room_id ? { ...x, credencial_id: id } : x)));
+      setSuccess(`✅ ${t('multi.assignedOk')}`);
+      await cargarMultiMir();
+    } catch (e: any) {
+      setError(`❌ ${e?.message || t('multi.assignedFail')}`);
+    } finally {
+      setCreatingForRoom(null);
+    }
+  };
 
   const cargarCountryCode = async () => {
     try {
@@ -393,56 +553,134 @@ export default function MirSettingsPage() {
             {loadingMulti ? t('saving') : t('multi.counter', { configured, max: maxAllowed || '—' })}
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent className="space-y-4">
           <p className="text-xs text-gray-600">
             {t('multi.rule')}
           </p>
+
+          {!canCreateMoreCreds && maxAllowed > 0 && (
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription className="text-red-800 font-semibold">{t('multi.limitReached')}</AlertDescription>
+            </Alert>
+          )}
+
+          <div className="rounded-xl border border-gray-200 bg-white p-4 space-y-2">
+            <div className="text-sm font-semibold text-gray-900">{t('multi.existingTitle')}</div>
+            <div className="text-xs text-gray-600">{t('multi.existingSubtitle')}</div>
+            {credenciales.length === 0 ? (
+              <div className="text-sm text-gray-600">{t('multi.existingEmpty')}</div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                {credenciales.map((c) => (
+                  <div key={c.id} className="rounded-lg border border-gray-100 bg-gray-50 px-3 py-2">
+                    <div className="text-sm font-semibold text-gray-900 truncate">{c.nombre}</div>
+                    <div className="text-xs text-gray-600 truncate">
+                      {c.codigoEstablecimiento} · {c.usuario}
+                      {c.hasPassword ? '' : ' · ⚠️'}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="rounded-xl border border-gray-200 bg-white p-4 space-y-3">
+            <div className="text-sm font-semibold text-gray-900">{t('multi.createTitle')}</div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label className="text-gray-800 font-semibold">{t('multi.name')}</Label>
+                <Input value={newCred.nombre} onChange={(e) => setNewCred((p) => ({ ...p, nombre: e.target.value }))} />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-gray-800 font-semibold">{t('multi.user')}</Label>
+                <Input value={newCred.usuario} onChange={(e) => setNewCred((p) => ({ ...p, usuario: e.target.value }))} />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-gray-800 font-semibold">{t('multi.password')}</Label>
+                <Input
+                  type="password"
+                  value={newCred.contraseña}
+                  onChange={(e) => setNewCred((p) => ({ ...p, contraseña: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-gray-800 font-semibold">{t('multi.landlord')}</Label>
+                <Input
+                  value={newCred.codigoArrendador}
+                  onChange={(e) => setNewCred((p) => ({ ...p, codigoArrendador: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-gray-800 font-semibold">{t('multi.establishment')}</Label>
+                <Input
+                  value={newCred.codigoEstablecimiento}
+                  onChange={(e) => setNewCred((p) => ({ ...p, codigoEstablecimiento: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-gray-800 font-semibold">{t('multi.baseUrl')}</Label>
+                <Input value={newCred.baseUrl} onChange={(e) => setNewCred((p) => ({ ...p, baseUrl: e.target.value }))} />
+              </div>
+            </div>
+            <Button onClick={crearCredencialGlobal} disabled={creatingCred || !canCreateMoreCreds} className="w-full sm:w-auto">
+              {creatingCred ? t('saving') : t('multi.createButton')}
+            </Button>
+          </div>
+
           <div className="space-y-2">
+            <div className="text-sm font-semibold text-gray-900">{t('multi.unitsTitle')}</div>
             {units.map((u) => (
-              <div key={u.room_id} className="rounded-lg border border-gray-200 bg-white p-3">
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-                  <div className="font-semibold text-gray-900">{u.room_name}</div>
-                  <div className="flex flex-col sm:flex-row gap-2">
+              <div key={u.room_id} className="rounded-lg border border-gray-200 bg-white p-3 space-y-3">
+                <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="font-semibold text-gray-900 truncate">{u.room_name}</div>
+                    <div className="text-xs text-gray-600">ID: {u.room_id}</div>
+                    {u.credencial_id ? (
+                      <div className="text-xs text-gray-700 mt-1">
+                        {t('multi.assignedTo', { name: credById.get(u.credencial_id)?.nombre || `#${u.credencial_id}` })}
+                        {credById.get(u.credencial_id)?.codigoEstablecimiento
+                          ? ` · ${t('multi.assignedEstablishment', { code: credById.get(u.credencial_id)!.codigoEstablecimiento })}`
+                          : ''}
+                      </div>
+                    ) : (
+                      <div className="text-xs text-amber-800 mt-1">{t('multi.none')}</div>
+                    )}
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
                     <select
                       value={u.unit_type}
                       onChange={async (e) => {
                         const unit_type = e.target.value as MirUnitType;
-                        const res = await fetch('/api/ministerio/unidades-config', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ room_id: u.room_id, unit_type }),
-                        });
-                        const j = await res.json().catch(() => ({}));
-                        if (!res.ok || !j?.success) {
-                          setError(`❌ ${j?.error || 'No se pudo cambiar el tipo'}`);
-                          return;
+                        try {
+                          await guardarUnitRow(u.room_id, { unit_type });
+                          setUnits((prev) => prev.map((x) => (x.room_id === u.room_id ? { ...x, unit_type } : x)));
+                        } catch (err: any) {
+                          setError(`❌ ${err?.message || t('multi.saveUnitFail')}`);
                         }
-                        setUnits((prev) => prev.map((x) => (x.room_id === u.room_id ? { ...x, unit_type } : x)));
                       }}
                       className="px-3 py-2 border border-gray-300 rounded-lg text-gray-900 bg-white"
                     >
-                      <option value="habitacion">Habitación</option>
-                      <option value="apartamento">Apartamento</option>
+                      <option value="habitacion">{t('multi.typeRoom')}</option>
+                      <option value="apartamento">{t('multi.typeApartment')}</option>
                     </select>
+
                     <select
                       value={u.credencial_id ?? ''}
                       onChange={async (e) => {
-                        const credencial_id = e.target.value ? Number(e.target.value) : null;
-                        const res = await fetch('/api/ministerio/unidades-config', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ room_id: u.room_id, credencial_id }),
-                        });
-                        const j = await res.json().catch(() => ({}));
-                        if (!res.ok || !j?.success) {
-                          setError(`❌ ${j?.error || 'No se pudo asignar la credencial'}`);
-                          return;
+                        const raw = e.target.value;
+                        const credencial_id = raw ? Number(raw) : null;
+                        try {
+                          await guardarUnitRow(u.room_id, { credencial_id });
+                          setUnits((prev) => prev.map((x) => (x.room_id === u.room_id ? { ...x, credencial_id } : x)));
+                        } catch (err: any) {
+                          setError(`❌ ${err?.message || t('multi.saveUnitFail')}`);
                         }
-                        setUnits((prev) => prev.map((x) => (x.room_id === u.room_id ? { ...x, credencial_id } : x)));
                       }}
                       className="px-3 py-2 border border-gray-300 rounded-lg text-gray-900 bg-white"
                     >
-                      <option value="">— Sin asignar —</option>
+                      <option value="">{`— ${t('multi.none')} —`}</option>
                       {credenciales.map((c) => (
                         <option key={c.id} value={c.id}>
                           {c.nombre} · {c.codigoEstablecimiento}
@@ -451,9 +689,97 @@ export default function MirSettingsPage() {
                     </select>
                   </div>
                 </div>
+
+                {u.unit_type === 'apartamento' && (() => {
+                  const assistantVisible = u.credencial_id
+                    ? Boolean(apartmentAssistOpen[u.room_id])
+                    : apartmentAssistOpen[u.room_id] !== false;
+
+                  return (
+                  <div className="rounded-lg border border-blue-100 bg-blue-50/40 p-3 space-y-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                      <div>
+                        <div className="text-sm font-semibold text-gray-900">{t('multi.apartmentAssistantTitle')}</div>
+                        <div className="text-xs text-gray-700 mt-1">{t('multi.apartmentAssistantHint')}</div>
+                      </div>
+                      {!u.credencial_id ? (
+                        <div className="flex flex-col sm:flex-row gap-2">
+                          <Button type="button" variant="outline" onClick={() => toggleApartmentAssistant(u)}>
+                            {assistantVisible ? t('multi.toggleAssistantHide') : t('multi.toggleAssistantShow')}
+                          </Button>
+                          <Button type="button" variant="ghost" onClick={() => prefillDraftFromMain(u.room_id)}>
+                            {t('multi.prefillFromMain')}
+                          </Button>
+                        </div>
+                      ) : null}
+                    </div>
+
+                    {u.credencial_id ? (
+                      <p className="text-xs text-gray-700">{t('multi.apartmentAssignedNote')}</p>
+                    ) : assistantVisible ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {(() => {
+                          const draft = unitCredDrafts[u.room_id] || getOrInitDraft(u);
+                          const setDraft = (patch: Partial<UnitCredDraft>) =>
+                            setUnitCredDrafts((d) => ({ ...d, [u.room_id]: { ...draft, ...patch } }));
+
+                          return (
+                            <>
+                              <div className="space-y-2 md:col-span-2">
+                                <Label className="text-gray-800 font-semibold">{t('multi.name')}</Label>
+                                <Input value={draft.nombre} onChange={(e) => setDraft({ nombre: e.target.value })} />
+                              </div>
+                              <div className="space-y-2">
+                                <Label className="text-gray-800 font-semibold">{t('multi.user')}</Label>
+                                <Input value={draft.usuario} onChange={(e) => setDraft({ usuario: e.target.value })} />
+                              </div>
+                              <div className="space-y-2">
+                                <Label className="text-gray-800 font-semibold">{t('multi.password')}</Label>
+                                <Input
+                                  type="password"
+                                  value={draft.contraseña}
+                                  onChange={(e) => setDraft({ contraseña: e.target.value })}
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label className="text-gray-800 font-semibold">{t('multi.landlord')}</Label>
+                                <Input
+                                  value={draft.codigoArrendador}
+                                  onChange={(e) => setDraft({ codigoArrendador: e.target.value })}
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label className="text-gray-800 font-semibold">{t('multi.establishment')}</Label>
+                                <Input
+                                  value={draft.codigoEstablecimiento}
+                                  onChange={(e) => setDraft({ codigoEstablecimiento: e.target.value })}
+                                />
+                              </div>
+                              <div className="space-y-2 md:col-span-2">
+                                <Label className="text-gray-800 font-semibold">{t('multi.baseUrl')}</Label>
+                                <Input value={draft.baseUrl} onChange={(e) => setDraft({ baseUrl: e.target.value })} />
+                              </div>
+                              <div className="md:col-span-2">
+                                <Button
+                                  type="button"
+                                  onClick={() => crearCredencialYAsignar(u)}
+                                  disabled={creatingForRoom === u.room_id || !canCreateMoreCreds}
+                                  className="w-full sm:w-auto"
+                                >
+                                  {creatingForRoom === u.room_id ? t('saving') : t('multi.createAndAssign')}
+                                </Button>
+                              </div>
+                            </>
+                          );
+                        })()}
+                      </div>
+                    ) : null}
+                  </div>
+                  );
+                })()}
               </div>
             ))}
-            {units.length === 0 && !loadingMulti && <div className="text-sm text-gray-600">No hay unidades.</div>}
+            {units.length === 0 && !loadingMulti && <div className="text-sm text-gray-600">{t('multi.noUnits')}</div>}
           </div>
         </CardContent>
       </Card>

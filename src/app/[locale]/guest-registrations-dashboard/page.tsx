@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Download, Eye, Users, FileText, Calendar, Search, Filter, CheckSquare, Square, Trash2, AlertTriangle, Copy, ExternalLink } from 'lucide-react';
 import AdminLayout from '@/components/AdminLayout';
 import ExportButton, { normalizeData } from './ExportButton';
@@ -12,6 +12,12 @@ import { toIntlDateLocale, type Locale as AppLocale } from '@/i18n/config';
 import { Link } from '@/i18n/navigation';
 
 type RoomLite = { id: string; name: string };
+
+type MirUnitConfigLite = {
+  room_id: string;
+  unit_type: 'habitacion' | 'apartamento';
+  credencial_id: number | null;
+};
 
 interface ComunicacionPayload {
   codigoEstablecimiento: string;
@@ -195,6 +201,14 @@ export default function GuestRegistrationsDashboard() {
   const [formUrl, setFormUrl] = useState('');
   const [rooms, setRooms] = useState<RoomLite[]>([]);
   const [roomsLoading, setRoomsLoading] = useState(false);
+  const [mirUnits, setMirUnits] = useState<MirUnitConfigLite[]>([]);
+  const [mirUnitsLoading, setMirUnitsLoading] = useState(false);
+
+  const mirUnitsByRoomId = useMemo(() => {
+    const m = new Map<string, MirUnitConfigLite>();
+    for (const u of mirUnits) m.set(String(u.room_id), u);
+    return m;
+  }, [mirUnits]);
 
   // Todos los planes (incl. básico gratuito) pueden ver registros y descargar XML; solo los con legal_module tienen envío automático MIR
 
@@ -230,6 +244,42 @@ export default function GuestRegistrationsDashboard() {
   useEffect(() => {
     loadRegistrations();
   }, [selectedDate, showAllRegistrations]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        setMirUnitsLoading(true);
+        const res = await fetch('/api/ministerio/unidades-config', {
+          method: 'GET',
+          headers: { Accept: 'application/json' },
+          credentials: 'include',
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data?.success) {
+          if (!cancelled) setMirUnits([]);
+          return;
+        }
+        const list = Array.isArray(data?.units) ? data.units : [];
+        if (!cancelled) {
+          setMirUnits(
+            list.map((u: any) => ({
+              room_id: String(u.room_id),
+              unit_type: u.unit_type === 'apartamento' ? 'apartamento' : 'habitacion',
+              credencial_id: u.credencial_id == null ? null : Number(u.credencial_id),
+            }))
+          );
+        }
+      } catch {
+        if (!cancelled) setMirUnits([]);
+      } finally {
+        if (!cancelled) setMirUnitsLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const loadRooms = async () => {
     try {
@@ -706,12 +756,46 @@ export default function GuestRegistrationsDashboard() {
               <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
                 {rooms.map((r) => {
                   const url = `${formUrl}?room_id=${encodeURIComponent(r.id)}`;
+                  const mirCfg = mirUnitsByRoomId.get(String(r.id));
+                  const unitTypeLabel =
+                    mirCfg?.unit_type === 'apartamento' ? t('unitLinkTypeApartment') : t('unitLinkTypeRoom');
+                  const mirStatusLabel = mirUnitsLoading
+                    ? '…'
+                    : !mirCfg
+                      ? t('unitLinkMirUnknown')
+                      : mirCfg.credencial_id
+                        ? t('unitLinkMirReady')
+                        : t('unitLinkMirPending');
+                  const mirStatusClass = mirUnitsLoading
+                    ? 'bg-gray-100 text-gray-700 border-gray-200'
+                    : !mirCfg
+                      ? 'bg-slate-100 text-slate-800 border-slate-200'
+                      : mirCfg.credencial_id
+                        ? 'bg-emerald-50 text-emerald-900 border-emerald-200'
+                        : 'bg-amber-50 text-amber-900 border-amber-200';
+
                   return (
                     <div key={r.id} className="rounded-xl border border-gray-200 bg-white p-4">
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
                           <div className="font-semibold text-gray-900 truncate">{r.name}</div>
                           <div className="text-xs text-gray-500 truncate">ID: {r.id}</div>
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {mirCfg ? (
+                              <span className="inline-flex items-center rounded-full border border-gray-200 bg-gray-50 px-2 py-0.5 text-[11px] font-semibold text-gray-800">
+                                {unitTypeLabel}
+                              </span>
+                            ) : mirUnitsLoading ? (
+                              <span className="inline-flex items-center rounded-full border border-gray-200 bg-gray-50 px-2 py-0.5 text-[11px] font-semibold text-gray-700">
+                                {tCommon('loading')}
+                              </span>
+                            ) : null}
+                            <span
+                              className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold ${mirStatusClass}`}
+                            >
+                              {mirStatusLabel}
+                            </span>
+                          </div>
                         </div>
                         <div className="flex gap-2">
                           <button

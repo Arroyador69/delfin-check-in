@@ -79,18 +79,27 @@ export async function POST(req: NextRequest) {
     const body = await req.json().catch(() => ({}));
     const roomId = String(body?.room_id || body?.roomId || '').trim();
     const unitType = normalizeUnitType(body?.unit_type ?? body?.unitType);
-    const credencialIdRaw = body?.credencial_id ?? body?.credencialId ?? null;
-    const credencialId = credencialIdRaw != null ? Number(credencialIdRaw) : null;
+    const credencialIdRaw = body?.credencial_id ?? body?.credencialId;
+    const credencialIdStr =
+      credencialIdRaw === null || credencialIdRaw === undefined ? '' : String(credencialIdRaw).trim();
+    const shouldClearAssignment = credencialIdStr === '' || credencialIdStr === 'null' || credencialIdStr === 'undefined';
+    const credencialId = shouldClearAssignment ? null : Number(credencialIdStr);
 
     if (!roomId) {
       return NextResponse.json({ success: false, error: 'room_id es obligatorio' }, { status: 400 });
     }
 
-    const { ensureMirMultiSchema, upsertMirUnitType, assignCredentialToRoom } = await import('@/lib/mir-multi');
+    const { ensureMirMultiSchema, upsertMirUnitType, assignCredentialToRoom, clearCredentialAssignment } =
+      await import('@/lib/mir-multi');
     await ensureMirMultiSchema();
 
     if (unitType) {
       await upsertMirUnitType(tenantId, roomId, unitType);
+    }
+
+    if (shouldClearAssignment) {
+      await clearCredentialAssignment(tenantId, roomId);
+      return NextResponse.json({ success: true });
     }
 
     if (credencialId != null && Number.isFinite(credencialId)) {
@@ -133,6 +142,8 @@ export async function POST(req: NextRequest) {
       }
 
       await assignCredentialToRoom(tenantId, roomId, credencialId);
+    } else {
+      return NextResponse.json({ success: false, error: 'credencial_id inválido' }, { status: 400 });
     }
 
     return NextResponse.json({ success: true });

@@ -126,6 +126,15 @@ export async function assignCredentialToRoom(tenantId: string, roomId: string, c
   `;
 }
 
+export async function clearCredentialAssignment(tenantId: string, roomId: string): Promise<void> {
+  await ensureMirMultiSchema();
+  await sql`
+    DELETE FROM mir_unidad_credencial_map
+    WHERE tenant_id = ${tenantId}::uuid
+      AND room_id = ${roomId}
+  `;
+}
+
 export async function countDistinctConfiguredCredentials(tenantId: string): Promise<number> {
   await ensureMirMultiSchema();
   const res = await sql`

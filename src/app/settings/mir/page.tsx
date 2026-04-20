@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import type { Locale } from '@/i18n/config';
 import { defaultLocale } from '@/i18n/config';
@@ -56,6 +56,15 @@ interface MirUnitConfigRow {
   credencial_id: number | null;
 }
 
+type UnitCredDraft = {
+  nombre: string;
+  usuario: string;
+  contraseña: string;
+  codigoArrendador: string;
+  codigoEstablecimiento: string;
+  baseUrl: string;
+};
+
 const COUNTRIES = [
   { code: 'ES', name: 'España' },
   { code: 'IT', name: 'Italia' },
@@ -99,7 +108,10 @@ export default function MirSettingsPage() {
   const [units, setUnits] = useState<MirUnitConfigRow[]>([]);
   const [loadingMulti, setLoadingMulti] = useState(false);
   const [creatingCred, setCreatingCred] = useState(false);
-  const [newCred, setNewCred] = useState({
+  const [creatingForRoom, setCreatingForRoom] = useState<string | null>(null);
+  const [apartmentAssistOpen, setApartmentAssistOpen] = useState<Record<string, boolean>>({});
+  const [unitCredDrafts, setUnitCredDrafts] = useState<Record<string, UnitCredDraft>>({});
+  const [newCred, setNewCred] = useState<UnitCredDraft>({
     nombre: '',
     usuario: '',
     contraseña: '',
@@ -148,6 +160,12 @@ export default function MirSettingsPage() {
   const maxCredenciales = limits?.maxRooms ?? 0;
   const canCreateMoreCreds = maxCredenciales > 0 ? credencialesConfiguradas < maxCredenciales : false;
 
+  const credById = useMemo(() => {
+    const m = new Map<number, MirCredencialLite>();
+    for (const c of credenciales) m.set(c.id, c);
+    return m;
+  }, [credenciales]);
+
   const guardarUnitRow = async (roomId: string, patch: Partial<Pick<MirUnitConfigRow, 'unit_type' | 'credencial_id'>>) => {
     await fetch('/api/ministerio/unidades-config', {
       method: 'POST',
@@ -163,6 +181,83 @@ export default function MirSettingsPage() {
         throw new Error(j?.error || 'No se pudo guardar la configuración');
       }
     });
+  };
+
+  const getOrInitDraft = (u: MirUnitConfigRow): UnitCredDraft => {
+    const existing = unitCredDrafts[u.room_id];
+    if (existing) return existing;
+    return {
+      nombre: u.room_name || 'Nombre',
+      usuario: config.usuario || '',
+      contraseña: '',
+      codigoArrendador: config.codigoArrendador || '',
+      codigoEstablecimiento: config.codigoEstablecimiento || '',
+      baseUrl: config.baseUrl || newCred.baseUrl,
+    };
+  };
+
+  const toggleApartmentAssistant = (u: MirUnitConfigRow) => {
+    setApartmentAssistOpen((prev) => {
+      const prevVal = prev[u.room_id];
+      const currentlyOpen = u.credencial_id ? Boolean(prevVal) : prevVal !== false;
+      const nextOpen = !currentlyOpen;
+      if (nextOpen) {
+        setUnitCredDrafts((d) => ({
+          ...d,
+          [u.room_id]: d[u.room_id] || getOrInitDraft(u),
+        }));
+      }
+      return { ...prev, [u.room_id]: nextOpen };
+    });
+  };
+
+  const prefillDraftFromMain = (roomId: string) => {
+    setUnitCredDrafts((d) => ({
+      ...d,
+      [roomId]: {
+        ...(d[roomId] || {
+          nombre: '',
+          usuario: '',
+          contraseña: '',
+          codigoArrendador: '',
+          codigoEstablecimiento: '',
+          baseUrl: newCred.baseUrl,
+        }),
+        usuario: config.usuario || '',
+        codigoArrendador: config.codigoArrendador || '',
+        codigoEstablecimiento: config.codigoEstablecimiento || '',
+        baseUrl: config.baseUrl || newCred.baseUrl,
+      },
+    }));
+  };
+
+  const crearCredencialYAsignar = async (u: MirUnitConfigRow) => {
+    const draft = unitCredDrafts[u.room_id] || getOrInitDraft(u);
+    setCreatingForRoom(u.room_id);
+    setError(null);
+    setSuccess(null);
+    try {
+      const res = await fetch('/api/ministerio/credenciales', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(draft),
+      });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok || !j?.success) {
+        throw new Error(j?.error || 'No se pudo crear/asignar la credencial');
+      }
+      const id = Number(j?.credencial?.id);
+      if (!id) throw new Error('No se pudo crear/asignar la credencial');
+
+      await guardarUnitRow(u.room_id, { credencial_id: id });
+      setUnits((prev) => prev.map((x) => (x.room_id === u.room_id ? { ...x, credencial_id: id } : x)));
+      setSuccess('✅ Credencial creada y asignada a la unidad');
+      await cargarMultiMir();
+    } catch (e: any) {
+      setError(`❌ ${e?.message || 'No se pudo crear/asignar la credencial'}`);
+    } finally {
+      setCreatingForRoom(null);
+    }
   };
 
   const crearCredencial = async () => {
@@ -680,6 +775,10 @@ export default function MirSettingsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            <p className="text-xs text-gray-600">
+              Regla: un apartamento debe tener su propia credencial MIR. Las habitaciones pueden compartirla.
+            </p>
+
             {!canCreateMoreCreds && maxCredenciales > 0 && (
               <Alert variant="destructive">
                 <AlertTriangle className="h-4 w-4" />
@@ -689,61 +788,94 @@ export default function MirSettingsPage() {
               </Alert>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-gray-800 font-semibold">Nombre</Label>
-                <Input value={newCred.nombre} onChange={(e) => setNewCred((p) => ({ ...p, nombre: e.target.value }))} />
+            <div className="rounded-xl border border-gray-200 bg-white p-4 space-y-2">
+              <div className="text-sm font-semibold text-gray-900">Credenciales creadas</div>
+              <div className="text-xs text-gray-600">
+                Estas credenciales aparecen en el desplegable “Sin asignar” de cada unidad.
               </div>
-              <div className="space-y-2">
-                <Label className="text-gray-800 font-semibold">Usuario MIR (WS)</Label>
-                <Input value={newCred.usuario} onChange={(e) => setNewCred((p) => ({ ...p, usuario: e.target.value }))} />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-gray-800 font-semibold">Contraseña MIR (WS)</Label>
-                <Input
-                  type="password"
-                  value={newCred.contraseña}
-                  onChange={(e) => setNewCred((p) => ({ ...p, contraseña: e.target.value }))}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-gray-800 font-semibold">Código Arrendador</Label>
-                <Input
-                  value={newCred.codigoArrendador}
-                  onChange={(e) => setNewCred((p) => ({ ...p, codigoArrendador: e.target.value }))}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-gray-800 font-semibold">Código Establecimiento</Label>
-                <Input
-                  value={newCred.codigoEstablecimiento}
-                  onChange={(e) => setNewCred((p) => ({ ...p, codigoEstablecimiento: e.target.value }))}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-gray-800 font-semibold">Base URL</Label>
-                <Input value={newCred.baseUrl} onChange={(e) => setNewCred((p) => ({ ...p, baseUrl: e.target.value }))} />
-              </div>
+              {credenciales.length === 0 ? (
+                <div className="text-sm text-gray-600">
+                  Todavía no has creado credenciales. Crea la primera abajo o usa el asistente por apartamento.
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {credenciales.map((c) => (
+                    <div key={c.id} className="rounded-lg border border-gray-100 bg-gray-50 px-3 py-2">
+                      <div className="text-sm font-semibold text-gray-900 truncate">{c.nombre}</div>
+                      <div className="text-xs text-gray-600 truncate">
+                        {c.codigoEstablecimiento} · {c.usuario}
+                        {c.hasPassword ? '' : ' · ⚠️'}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
-            <Button onClick={crearCredencial} disabled={creatingCred || !canCreateMoreCreds} className="w-full sm:w-auto">
-              {creatingCred ? 'Creando…' : 'Crear credencial'}
-            </Button>
+            <div className="rounded-xl border border-gray-200 bg-white p-4 space-y-3">
+              <div className="text-sm font-semibold text-gray-900">Crear credencial</div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label className="text-gray-800 font-semibold">Nombre</Label>
+                  <Input value={newCred.nombre} onChange={(e) => setNewCred((p) => ({ ...p, nombre: e.target.value }))} />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-gray-800 font-semibold">Usuario MIR (WS)</Label>
+                  <Input value={newCred.usuario} onChange={(e) => setNewCred((p) => ({ ...p, usuario: e.target.value }))} />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-gray-800 font-semibold">Contraseña MIR (WS)</Label>
+                  <Input
+                    type="password"
+                    value={newCred.contraseña}
+                    onChange={(e) => setNewCred((p) => ({ ...p, contraseña: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-gray-800 font-semibold">Código Arrendador</Label>
+                  <Input
+                    value={newCred.codigoArrendador}
+                    onChange={(e) => setNewCred((p) => ({ ...p, codigoArrendador: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-gray-800 font-semibold">Código Establecimiento</Label>
+                  <Input
+                    value={newCred.codigoEstablecimiento}
+                    onChange={(e) => setNewCred((p) => ({ ...p, codigoEstablecimiento: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-gray-800 font-semibold">Base URL</Label>
+                  <Input value={newCred.baseUrl} onChange={(e) => setNewCred((p) => ({ ...p, baseUrl: e.target.value }))} />
+                </div>
+              </div>
+              <Button onClick={crearCredencial} disabled={creatingCred || !canCreateMoreCreds} className="w-full sm:w-auto">
+                {creatingCred ? 'Guardando…' : 'Crear credencial'}
+              </Button>
+            </div>
 
-            <div className="border-t pt-4">
-              <h3 className="text-sm font-bold text-gray-900 mb-2">Unidades (habitaciones / apartamentos)</h3>
-              <p className="text-xs text-gray-600 mb-3">
-                Regla: un apartamento debe tener su propia credencial MIR. Las habitaciones pueden compartirla.
-              </p>
-
-              <div className="space-y-3">
+            <div className="space-y-2">
+              <div className="text-sm font-semibold text-gray-900">Unidades (habitaciones / apartamentos)</div>
+              <div className="space-y-2">
                 {units.map((u) => (
-                  <div key={u.room_id} className="rounded-lg border border-gray-200 bg-white p-3">
-                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                  <div key={u.room_id} className="rounded-lg border border-gray-200 bg-white p-3 space-y-3">
+                    <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
                       <div className="min-w-0">
                         <div className="font-semibold text-gray-900 truncate">{u.room_name}</div>
                         <div className="text-xs text-gray-600">ID: {u.room_id}</div>
+                        {u.credencial_id ? (
+                          <div className="text-xs text-gray-700 mt-1">
+                            Asignada: {credById.get(u.credencial_id)?.nombre || `#${u.credencial_id}`}
+                            {credById.get(u.credencial_id)?.codigoEstablecimiento
+                              ? ` · Establecimiento: ${credById.get(u.credencial_id)!.codigoEstablecimiento}`
+                              : ''}
+                          </div>
+                        ) : (
+                          <div className="text-xs text-amber-800 mt-1">Sin asignar</div>
+                        )}
                       </div>
+
                       <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
                         <select
                           value={u.unit_type}
@@ -753,7 +885,7 @@ export default function MirSettingsPage() {
                               await guardarUnitRow(u.room_id, { unit_type });
                               setUnits((prev) => prev.map((x) => (x.room_id === u.room_id ? { ...x, unit_type } : x)));
                             } catch (err: any) {
-                              setError(`❌ ${err?.message || 'No se pudo cambiar el tipo'}`);
+                              setError(`❌ ${err?.message || 'No se pudo guardar la configuración de la unidad'}`);
                             }
                           }}
                           className="px-3 py-2 border border-gray-300 rounded-lg text-gray-900 bg-white"
@@ -769,7 +901,7 @@ export default function MirSettingsPage() {
                               await guardarUnitRow(u.room_id, { credencial_id: v });
                               setUnits((prev) => prev.map((x) => (x.room_id === u.room_id ? { ...x, credencial_id: v } : x)));
                             } catch (err: any) {
-                              setError(`❌ ${err?.message || 'No se pudo asignar la credencial'}`);
+                              setError(`❌ ${err?.message || 'No se pudo guardar la configuración de la unidad'}`);
                             }
                           }}
                           className="px-3 py-2 border border-gray-300 rounded-lg text-gray-900 bg-white"
@@ -783,6 +915,109 @@ export default function MirSettingsPage() {
                         </select>
                       </div>
                     </div>
+
+                    {u.unit_type === 'apartamento' &&
+                      (() => {
+                        const assistantVisible = u.credencial_id
+                          ? Boolean(apartmentAssistOpen[u.room_id])
+                          : apartmentAssistOpen[u.room_id] !== false;
+
+                        return (
+                          <div className="rounded-lg border border-blue-100 bg-blue-50/40 p-3 space-y-3">
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                              <div>
+                                <div className="text-sm font-semibold text-gray-900">
+                                  Configurar credencial para este apartamento
+                                </div>
+                                <div className="text-xs text-gray-700 mt-1">
+                                  Rellena los datos MIR para esta unidad. Al guardar, se crea la credencial y se asigna
+                                  automáticamente a esta fila.
+                                </div>
+                              </div>
+                              {!u.credencial_id ? (
+                                <div className="flex flex-col sm:flex-row gap-2">
+                                  <Button type="button" variant="outline" onClick={() => toggleApartmentAssistant(u)}>
+                                    {assistantVisible ? 'Ocultar formulario' : 'Rellenar credencial aquí'}
+                                  </Button>
+                                  <Button type="button" variant="ghost" onClick={() => prefillDraftFromMain(u.room_id)}>
+                                    Copiar datos del formulario principal
+                                  </Button>
+                                </div>
+                              ) : null}
+                            </div>
+
+                            {u.credencial_id ? (
+                              <p className="text-xs text-gray-700">
+                                Esta unidad ya tiene credencial asignada. Para cambiarla, usa el desplegable de arriba
+                                (elige otra credencial o “Sin asignar”).
+                              </p>
+                            ) : assistantVisible ? (
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                {(() => {
+                                  const draft = unitCredDrafts[u.room_id] || getOrInitDraft(u);
+                                  const setDraft = (patch: Partial<UnitCredDraft>) =>
+                                    setUnitCredDrafts((d) => ({ ...d, [u.room_id]: { ...draft, ...patch } }));
+
+                                  return (
+                                    <>
+                                      <div className="space-y-2 md:col-span-2">
+                                        <Label className="text-gray-800 font-semibold">Nombre</Label>
+                                        <Input
+                                          value={draft.nombre}
+                                          onChange={(e) => setDraft({ nombre: e.target.value })}
+                                        />
+                                      </div>
+                                      <div className="space-y-2">
+                                        <Label className="text-gray-800 font-semibold">Usuario MIR (WS)</Label>
+                                        <Input
+                                          value={draft.usuario}
+                                          onChange={(e) => setDraft({ usuario: e.target.value })}
+                                        />
+                                      </div>
+                                      <div className="space-y-2">
+                                        <Label className="text-gray-800 font-semibold">Contraseña MIR (WS)</Label>
+                                        <Input
+                                          type="password"
+                                          value={draft.contraseña}
+                                          onChange={(e) => setDraft({ contraseña: e.target.value })}
+                                        />
+                                      </div>
+                                      <div className="space-y-2">
+                                        <Label className="text-gray-800 font-semibold">Código Arrendador</Label>
+                                        <Input
+                                          value={draft.codigoArrendador}
+                                          onChange={(e) => setDraft({ codigoArrendador: e.target.value })}
+                                        />
+                                      </div>
+                                      <div className="space-y-2">
+                                        <Label className="text-gray-800 font-semibold">Código Establecimiento</Label>
+                                        <Input
+                                          value={draft.codigoEstablecimiento}
+                                          onChange={(e) => setDraft({ codigoEstablecimiento: e.target.value })}
+                                        />
+                                      </div>
+                                      <div className="space-y-2 md:col-span-2">
+                                        <Label className="text-gray-800 font-semibold">Base URL</Label>
+                                        <Input value={draft.baseUrl} onChange={(e) => setDraft({ baseUrl: e.target.value })} />
+                                      </div>
+                                      <div className="md:col-span-2">
+                                        <Button
+                                          type="button"
+                                          onClick={() => crearCredencialYAsignar(u)}
+                                          disabled={creatingForRoom === u.room_id || !canCreateMoreCreds}
+                                          className="w-full sm:w-auto"
+                                        >
+                                          {creatingForRoom === u.room_id ? 'Guardando…' : 'Crear y asignar'}
+                                        </Button>
+                                      </div>
+                                    </>
+                                  );
+                                })()}
+                              </div>
+                            ) : null}
+                          </div>
+                        );
+                      })()}
                   </div>
                 ))}
                 {units.length === 0 && !loadingMulti && (

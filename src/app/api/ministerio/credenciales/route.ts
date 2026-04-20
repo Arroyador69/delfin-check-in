@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
+import { getTenantById } from '@/lib/tenant';
+import type { Tenant } from '@/lib/tenant';
+import { getTenantPlanPresentation } from '@/lib/tenant-plan-billing';
 
 function maskCredentialRow(row: any) {
   return {
@@ -84,12 +87,26 @@ export async function POST(req: NextRequest) {
     const { ensureMirMultiSchema } = await import('@/lib/mir-multi');
     await ensureMirMultiSchema();
 
-    // Límite: credenciales configuradas <= unidades contratadas (maxRooms)
-    const limitsRes = await fetch(new URL('/api/tenant/limits', req.url), {
-      headers: { 'x-tenant-id': tenantId },
-    });
-    const limitsJson = await limitsRes.json().catch(() => ({}));
-    const maxRooms = Number(limitsJson?.tenant?.limits?.maxRooms ?? 0);
+    // Límite: credenciales activas <= unidades contratadas (misma lógica que /api/tenant/limits)
+    const tenant = await getTenantById(tenantId);
+    if (!tenant) {
+      return NextResponse.json({ success: false, error: 'Tenant no encontrado' }, { status: 404 });
+    }
+
+    const lodgingId =
+      tenant.lodging_id && String(tenant.lodging_id).trim() !== ''
+        ? String(tenant.lodging_id)
+        : String(tenant.id);
+
+    const roomsResult = await sql`
+      SELECT id, name
+      FROM "Room"
+      WHERE "lodgingId" = ${lodgingId}
+      ORDER BY id ASC
+    `;
+    const roomsUsed = roomsResult.rows.length;
+    const presentation = await getTenantPlanPresentation(tenant as Tenant, roomsUsed);
+    const maxRooms = Number(presentation.max_rooms_effective ?? 0);
     if (!maxRooms || maxRooms < 1) {
       return NextResponse.json(
         { success: false, error: 'No se pudo determinar el límite del plan' },
