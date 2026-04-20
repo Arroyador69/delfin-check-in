@@ -761,7 +761,10 @@ export function getMinisterioConfigFromEnv(): MinisterioConfig {
 }
 
 function buildSoapConsultaLoteRequest(cfg: MinisterioConfig, lotes: string[]): string {
-  const lotesXml = lotes.map(lote => `<lote>${lote}</lote>`).join('');
+  // IMPORTANTE (XSD MIR): `codigosLote` va sin namespace (sin prefijo),
+  // aunque el elemento `consultaLoteRequest` esté en el namespace `comunicacion`.
+  // Si se envía como `<com:codigosLote>` el MIR responde con Fault de validación.
+  const lotesXml = lotes.map((lote) => `<lote>${escapeXml(String(lote))}</lote>`).join('');
   
   return `<?xml version="1.0" encoding="UTF-8"?>
 <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" 
@@ -769,9 +772,9 @@ function buildSoapConsultaLoteRequest(cfg: MinisterioConfig, lotes: string[]): s
   <soap:Header/>
   <soap:Body>
     <com:consultaLoteRequest>
-      <com:codigosLote>
+      <codigosLote>
         ${lotesXml}
-      </com:codigosLote>
+      </codigosLote>
     </com:consultaLoteRequest>
   </soap:Body>
 </soap:Envelope>`;

@@ -91,20 +91,46 @@ export async function POST(req: NextRequest) {
 
     console.log(`🔍 Consultando ${lotesUnicos.length} lotes únicos al MIR`);
 
-    // Consultar lotes al MIR
-    const resultado = await cliente.consultaLote({ lotes: lotesUnicos });
-    
-    console.log('📊 Resultado consulta MIR:', resultado);
-
-    if (!resultado.ok) {
-      console.error('❌ Error en consulta MIR:', resultado.descripcion);
-      return NextResponse.json({
-        success: false,
-        error: `Error del MIR: ${resultado.descripcion}`,
-        codigo: resultado.codigo,
-        descripcion: resultado.descripcion
-      }, { status: 500 });
+    // El MIR limita el nº de lotes por petición (históricamente 10). Hacemos batching.
+    const chunkSize = 10;
+    const chunks: string[][] = [];
+    for (let i = 0; i < lotesUnicos.length; i += chunkSize) {
+      chunks.push(lotesUnicos.slice(i, i + chunkSize));
     }
+
+    const resultadosAgregados: NonNullable<(Awaited<ReturnType<typeof cliente.consultaLote>>)['resultados']> = [];
+    for (const [idx, chunk] of chunks.entries()) {
+      console.log(`📦 Consultando chunk ${idx + 1}/${chunks.length} (${chunk.length} lotes)`);
+      const r = await cliente.consultaLote({ lotes: chunk });
+      if (!r.ok) {
+        console.error('❌ Error en consulta MIR (chunk):', {
+          idx: idx + 1,
+          total: chunks.length,
+          codigo: r.codigo,
+          descripcion: r.descripcion,
+        });
+        return NextResponse.json(
+          {
+            success: false,
+            error: `Error del MIR: ${r.descripcion}`,
+            codigo: r.codigo,
+            descripcion: r.descripcion,
+          },
+          { status: 500 }
+        );
+      }
+      if (r.resultados?.length) {
+        resultadosAgregados.push(...r.resultados);
+      }
+    }
+
+    const resultado = {
+      ok: true,
+      codigo: '0',
+      descripcion: 'Ok',
+      resultados: resultadosAgregados,
+      rawResponse: '',
+    } as const;
 
     // Procesar resultados y actualizar base de datos
     const actualizados = [];
