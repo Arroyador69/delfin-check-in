@@ -171,7 +171,7 @@ export async function POST(req: NextRequest) {
           UPDATE mir_comunicaciones 
           SET 
             estado = ${nuevoEstado},
-            resultado = COALESCE(NULLIF(resultado, '')::jsonb, '{}'::jsonb) ||
+            resultado = COALESCE(resultado, '{}'::jsonb) ||
               jsonb_build_object(
                 'codigoEstado', ${String(loteResult.codigoEstado ?? '')},
                 'descEstado', ${descripcionEstado},
