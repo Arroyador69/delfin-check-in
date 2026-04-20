@@ -581,7 +581,7 @@ export default function MirComunicacionesPage() {
                                         alert(`✅ ${t('successEnviado')}`);
                                         cargarComunicaciones(); // Recargar lista
                                       } else {
-                                        alert(`❌ Error: ${result.message}`);
+                                        alert(`❌ Error: ${result.message || result.error || t('errorEnviandoMir')}\n\n${JSON.stringify(result, null, 2)}`);
                                       }
                                     } catch {
                                       alert(`❌ ${t('errorEnviandoMir')}`);

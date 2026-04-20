@@ -10,6 +10,7 @@ export async function POST(req: NextRequest) {
   let json: any = undefined;
   let tenantId = 'default';
   let referenciaNorm = 'ERROR-' + Date.now();
+  let loadedFromDb = false;
   
   try {
     console.log('🚀 Envío dual PV + RH al MIR iniciado...');
@@ -176,13 +177,77 @@ export async function POST(req: NextRequest) {
     const client = new MinisterioClientOfficial(config);
 
     // Extraer datos del JSON según normas MIR (TODO debe venir parseado del JSON, no de la BD)
-    const { referencia, fechaEntrada, fechaSalida, personas, tipoPago, pago } = json;
-    
-    if (!referencia || !fechaEntrada || !fechaSalida || !personas || !Array.isArray(personas) || personas.length === 0) {
-      return NextResponse.json({
-        success: false,
-        error: 'Faltan datos obligatorios: referencia, fechaEntrada, fechaSalida, personas (debe ser un array con al menos una persona)'
-      }, { status: 400 });
+    let { referencia, fechaEntrada, fechaSalida, personas, tipoPago, pago } = json;
+
+    // Si desde UI/admin solo llega referencia (+ personas), completar desde BD por referencia.
+    if (referencia && (!fechaEntrada || !fechaSalida || !Array.isArray(personas) || personas.length === 0)) {
+      try {
+        const dbReg = await sql`
+          SELECT data
+          FROM guest_registrations
+          WHERE reserva_ref = ${String(referencia)}
+            AND tenant_id = ${tenantId}
+          ORDER BY created_at DESC
+          LIMIT 1
+        `;
+
+        const data = dbReg.rows?.[0]?.data as any | undefined;
+        if (data) {
+          loadedFromDb = true;
+          fechaEntrada =
+            fechaEntrada ??
+            data.fechaEntrada ??
+            data.fecha_entrada ??
+            data.estancia?.fechaEntrada ??
+            data.estancia?.fecha_entrada ??
+            data.reserva?.fechaEntrada ??
+            data.reserva?.fecha_entrada ??
+            data.contrato?.fechaEntrada ??
+            data.contrato?.fecha_entrada;
+
+          fechaSalida =
+            fechaSalida ??
+            data.fechaSalida ??
+            data.fecha_salida ??
+            data.estancia?.fechaSalida ??
+            data.estancia?.fecha_salida ??
+            data.reserva?.fechaSalida ??
+            data.reserva?.fecha_salida ??
+            data.contrato?.fechaSalida ??
+            data.contrato?.fecha_salida;
+
+          personas =
+            (Array.isArray(personas) && personas.length > 0 ? personas : undefined) ??
+            data.personas ??
+            data.viajeros ??
+            data.huespedes ??
+            data?.comunicaciones?.[0]?.personas;
+
+          tipoPago = tipoPago ?? data.tipoPago ?? data.pago?.tipoPago;
+          pago = pago ?? data.pago;
+        }
+      } catch (e) {
+        console.warn('⚠️ No se pudo completar payload desde guest_registrations:', e);
+      }
+    }
+
+    const missing: string[] = [];
+    if (!referencia) missing.push('referencia');
+    if (!fechaEntrada) missing.push('fechaEntrada');
+    if (!fechaSalida) missing.push('fechaSalida');
+    if (!personas || !Array.isArray(personas) || personas.length === 0) missing.push('personas[]');
+
+    if (missing.length > 0) {
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            'Faltan datos obligatorios: referencia, fechaEntrada, fechaSalida, personas (debe ser un array con al menos una persona)',
+          missing,
+          loadedFromDb,
+        },
+        { status: 400 }
+      );
     }
 
     console.log('📅 Fechas:', { fechaEntrada, fechaSalida });
@@ -239,6 +304,9 @@ export async function POST(req: NextRequest) {
           ? (persona.soporteDocumento || 'C') 
           : undefined;
         
+        const sexoRaw = String(persona.sexo || '').toUpperCase();
+        const sexoNorm = sexoRaw === 'H' || sexoRaw === 'M' ? sexoRaw : 'M';
+
         return {
         rol: "VI",
         nombre: persona.nombre,
@@ -249,7 +317,7 @@ export async function POST(req: NextRequest) {
           soporteDocumento: soporteDoc,
         fechaNacimiento: persona.fechaNacimiento,
         nacionalidad: persona.nacionalidad || 'ESP',
-        sexo: persona.sexo || 'M',
+        sexo: sexoNorm,
         direccion: {
           direccion: persona.direccion?.direccion || 'Calle Ejemplo 123',
           codigoPostal: persona.direccion?.codigoPostal || '28001',
@@ -257,8 +325,8 @@ export async function POST(req: NextRequest) {
           codigoMunicipio: persona.direccion?.codigoMunicipio || '28079',
           nombreMunicipio: persona.direccion?.nombreMunicipio || 'Madrid'
         },
-        telefono: persona.contacto?.telefono || '600000000',
-        correo: persona.contacto?.correo || 'viajero@example.com'
+        telefono: persona.contacto?.telefono || persona.telefono || '600000000',
+        correo: persona.contacto?.correo || persona.correo || 'viajero@example.com'
         };
       })
     };
@@ -287,6 +355,9 @@ export async function POST(req: NextRequest) {
         // Solo se usa en PV (personaHospedajeType)
         const numDoc = persona.numeroDocumento || '';
         
+        const sexoRaw = String(persona.sexo || '').toUpperCase();
+        const sexoNorm = sexoRaw === 'H' || sexoRaw === 'M' ? sexoRaw : 'M';
+
         return {
         rol: index === 0 ? 'TI' : 'VI',
         nombre: persona.nombre,
@@ -297,7 +368,7 @@ export async function POST(req: NextRequest) {
           // NO incluir soporteDocumento para RH (no está en personaReservaType)
         fechaNacimiento: persona.fechaNacimiento,
         nacionalidad: persona.nacionalidad || 'ESP',
-        sexo: persona.sexo || 'M',
+        sexo: sexoNorm,
         direccion: {
           direccion: persona.direccion?.direccion || 'Calle Ejemplo 123',
           codigoPostal: persona.direccion?.codigoPostal || '28001',
@@ -305,8 +376,8 @@ export async function POST(req: NextRequest) {
           codigoMunicipio: persona.direccion?.codigoMunicipio || '28079',
           nombreMunicipio: persona.direccion?.nombreMunicipio || 'Madrid'
         },
-        telefono: persona.contacto?.telefono || '600000000',
-        correo: persona.contacto?.correo || 'viajero@example.com'
+        telefono: persona.contacto?.telefono || persona.telefono || '600000000',
+        correo: persona.contacto?.correo || persona.correo || 'viajero@example.com'
         };
       })
     };

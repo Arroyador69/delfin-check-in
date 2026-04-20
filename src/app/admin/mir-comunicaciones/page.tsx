@@ -561,7 +561,7 @@ export default function MirComunicacionesPage() {
                                         alert('✅ Registro enviado al MIR correctamente');
                                         cargarComunicaciones(); // Recargar lista
                                       } else {
-                                        alert(`❌ Error: ${result.message}`);
+                                        alert(`❌ Error: ${result.message || result.error || 'Error desconocido'}\n\n${JSON.stringify(result, null, 2)}`);
                                       }
                                     } catch (error) {
                                       alert('❌ Error enviando al MIR');
