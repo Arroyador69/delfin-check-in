@@ -30,10 +30,13 @@ export async function POST(req: NextRequest) {
     console.log('📋 Datos recibidos para envío dual:', JSON.stringify(json, null, 2));
 
     // Obtener tenant_id del header o del body y limpiar duplicados
-    let rawTenantId = req.headers.get('x-tenant-id') || 
-                      req.headers.get('X-Tenant-ID') || 
-                      json.tenant_id || 
-                      'default';
+    const { getTenantId } = await import('@/lib/tenant');
+    let rawTenantId =
+      (await getTenantId(req)) ||
+      req.headers.get('x-tenant-id') ||
+      req.headers.get('X-Tenant-ID') ||
+      json.tenant_id ||
+      'default';
     
     // Limpiar tenant_id: si viene duplicado (separado por coma), tomar solo el primero
     if (rawTenantId.includes(',')) {

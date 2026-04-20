@@ -482,7 +482,7 @@ export default function MirComunicacionesPage() {
                     // Los datos vienen del nuevo endpoint estado-envios
                     const nombreCompleto = registro.nombreCompleto || t('datosNoDisponibles');
                     const habitacion = 'N/A'; // Se puede extraer de registro.datos si es necesario
-                    const yaEnviado = registro.estado !== 'pendiente';
+                    const yaEnviado = registro.estado === 'enviado' || registro.estado === 'confirmado';
                     const estado = registro.estado;
                     
                     return (
