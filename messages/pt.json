@@ -674,6 +674,9 @@
     "formUrlOwnerHintPlansNote": "Os avisos de reservas por completar estão em todos os planos; os lembretes de avaliação no Google são no plano Pro.",
     "copyUrl": "Copiar",
     "viewForm": "Ver",
+    "unitLinksTitle": "Links por unidade (recomendado)",
+    "unitLinksDescription": "Use estes links por quarto/apartamento para que o envio automático ao MIR use a credencial correta para essa unidade.",
+    "unitLinksEmpty": "Ainda não existem unidades. Vá a Configurações → Propriedades para as criar.",
     "urlCopied": "URL copiado para a área de transferência",
     "errorPage": {
       "title": "Erro no painel",

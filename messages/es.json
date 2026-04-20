@@ -903,6 +903,9 @@
     "formUrlOwnerHintPlansNote": "El aviso de reservas pendientes está disponible en todos los planes; el recordatorio de reseña en Google es plan Pro.",
     "copyUrl": "Copiar",
     "viewForm": "Ver",
+    "unitLinksTitle": "Enlaces por unidad (recomendado)",
+    "unitLinksDescription": "Usa estos enlaces por habitación/apartamento para que el envío automático al MIR use la credencial correcta según la unidad.",
+    "unitLinksEmpty": "No hay unidades creadas todavía. Ve a Configuración → Propiedades para crearlas.",
     "urlCopied": "URL copiada al portapapeles",
     "errorPage": {
       "title": "Error en el Dashboard",

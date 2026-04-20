@@ -675,6 +675,9 @@
     "formUrlOwnerHintPlansNote": "Les alertes de réservations à compléter sont sur tous les plans ; les rappels d’avis Google sont sur le plan Pro.",
     "copyUrl": "Copier",
     "viewForm": "Voir",
+    "unitLinksTitle": "Liens par unité (recommandé)",
+    "unitLinksDescription": "Utilisez ces liens par chambre/appartement afin que l'envoi automatique au MIR utilise les identifiants corrects pour cette unité.",
+    "unitLinksEmpty": "Aucune unité créée pour le moment. Allez dans Paramètres → Propriétés pour les créer.",
     "urlCopied": "URL copié dans le presse-papiers",
     "errorPage": {
       "title": "Erreur du tableau de bord",

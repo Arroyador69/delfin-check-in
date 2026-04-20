@@ -232,6 +232,8 @@ export async function OPTIONS(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     console.log('🚀 Endpoint flexible recibiendo registro...');
+    const roomIdFromQuery = req.nextUrl.searchParams.get('room_id')?.trim() || '';
+    const roomIdFromHeader = (req.headers.get('x-room-id') || req.headers.get('X-Room-Id') || '').trim();
     
     // Verificar si es un test de conectividad (dry-run)
     const isDryRun = req.headers.get('X-Dry-Run') === '1';
@@ -255,6 +257,7 @@ export async function POST(req: NextRequest) {
       console.error('❌ Datos JSON inválidos o vacíos');
       return sendError(req, 400, 'Datos JSON inválidos o vacíos');
     }
+    const room_id = (json?.room_id ? String(json.room_id).trim() : '') || roomIdFromQuery || roomIdFromHeader || '';
 
     console.log('📋 Datos recibidos:', JSON.stringify(json, null, 2));
     
@@ -573,6 +576,7 @@ export async function POST(req: NextRequest) {
       fecha_salida: c.salida.split('T')[0],
       data: {
         ...dbData,
+        ...(room_id ? { room_id } : {}),
         ui_locale:
           req.headers.get('x-ui-locale') ||
           req.headers.get('X-UI-Locale') ||
@@ -640,6 +644,7 @@ export async function POST(req: NextRequest) {
         referencia: reserva_ref,
         fechaEntrada: c.entrada.split('T')[0],
         fechaSalida: c.salida.split('T')[0],
+        ...(room_id ? { room_id } : {}),
         personas: personasDB.map(persona => ({
           nombre: persona.nombre,
           apellido1: persona.apellido1,
@@ -687,8 +692,9 @@ export async function POST(req: NextRequest) {
           'Accept': 'application/json',
           'x-tenant-id': tenantId || 'default',
           'X-Tenant-ID': tenantId || 'default',
+          ...(room_id ? { 'X-Room-Id': room_id } : {}),
         },
-        body: JSON.stringify({ ...datosMIR, tenantId }),
+        body: JSON.stringify({ ...datosMIR, tenantId, ...(room_id ? { room_id } : {}) }),
       });
 
       const dualResponse = await autoEnvioDualHandler(internalReq);

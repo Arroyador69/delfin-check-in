@@ -898,6 +898,9 @@
     "formUrlOwnerHintPlansNote": "Gli avvisi di prenotazioni da completare sono su tutti i piani; i promemoria recensioni Google sono sul piano Pro.",
     "copyUrl": "Copia",
     "viewForm": "Visualizza",
+    "unitLinksTitle": "Link per unità (consigliato)",
+    "unitLinksDescription": "Usa questi link per camera/appartamento così l'invio automatico al MIR userà la credenziale corretta per quell'unità.",
+    "unitLinksEmpty": "Nessuna unità creata. Vai in Impostazioni → Proprietà per crearle.",
     "urlCopied": "URL copiato negli appunti",
     "errorPage": {
       "title": "Errore nella Dashboard",

@@ -876,6 +876,9 @@
     "formUrlOwnerHintPlansNote": "Pending-reservation alerts are available on all plans; Google review reminders are on the Pro plan.",
     "copyUrl": "Copy",
     "viewForm": "View",
+    "unitLinksTitle": "Links per unit (recommended)",
+    "unitLinksDescription": "Use these per-room/apartment links so the automatic MIR submission uses the correct credential for that unit.",
+    "unitLinksEmpty": "No units created yet. Go to Settings → Properties to create them.",
     "urlCopied": "URL copied to clipboard",
     "errorPage": {
       "title": "Dashboard Error",

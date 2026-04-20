@@ -37,6 +37,7 @@ export async function GET(
 ) {
   try {
     const { slug } = await params;
+    const roomId = req.nextUrl.searchParams.get('room_id')?.trim() || '';
 
     if (!slug) {
       return NextResponse.json(
@@ -173,13 +174,18 @@ export async function GET(
       tenant_address: tenant.config?.address || '',
       tenant_city: tenant.config?.city || '',
       tenant_country: tenant.config?.country || '',
-      api_endpoint: `${apiOrigin}/api/public/form/${tenant.id}/submit`,
+      api_endpoint: roomId
+        ? `${apiOrigin}/api/public/form/${tenant.id}/submit?room_id=${encodeURIComponent(roomId)}`
+        : `${apiOrigin}/api/public/form/${tenant.id}/submit`,
 
       // Preferencias/flags para el formulario por-tenant
       ui_locale: locale,
       checkin_email_enabled: canEmailCheckinInstructions ? '1' : '0',
       property_id: propertyId,
     });
+    if (roomId) {
+      tenantParams.set('room_id', roomId);
+    }
 
     const sep = formBase.includes('?') ? '&' : '?';
     const redirectUrl = `${formBase}${sep}${tenantParams.toString()}`;

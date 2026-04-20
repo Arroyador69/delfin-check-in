@@ -211,8 +211,10 @@ export async function POST(req: NextRequest) {
     // Obtener tenant_id de los parámetros de la URL o del body
     const urlParams = new URLSearchParams(req.url.split('?')[1] || '');
     const tenantId = urlParams.get('tenant_id') || json.tenant_id || 'default';
+    const room_id = (urlParams.get('room_id') || json.room_id || '').toString().trim();
     
     console.log('🏢 Tenant ID detectado:', tenantId);
+    if (room_id) console.log('🚪 Room ID detectado:', room_id);
 
     // Verificar si el tenant puede realizar operaciones (no está suspendido)
     if (tenantId && tenantId !== 'default') {
@@ -308,7 +310,8 @@ export async function POST(req: NextRequest) {
         },
         body: JSON.stringify({
           ...datosMIR,
-          tenant_id: tenantId
+          tenant_id: tenantId,
+          ...(room_id ? { room_id } : {}),
         })
       });
 

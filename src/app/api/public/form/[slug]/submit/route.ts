@@ -46,6 +46,7 @@ export async function POST(
 ) {
   try {
     const { slug } = await params;
+    const roomId = req.nextUrl.searchParams.get('room_id')?.trim() || '';
 
     const clientIp = getClientIP(req.headers);
     const rl = checkRateLimit(
@@ -70,9 +71,10 @@ export async function POST(
     }
 
     const body = await req.json();
+    const bodyWithRoom = roomId && !body?.room_id ? { ...body, room_id: roomId } : body;
 
     if (process.env.NODE_ENV === 'development') {
-      console.log('🔍 /api/public/form/[slug]/submit', slug, 'keys:', Object.keys(body));
+      console.log('🔍 /api/public/form/[slug]/submit', slug, 'keys:', Object.keys(bodyWithRoom || {}));
     }
 
     // Verificar que el tenant existe y está activo
@@ -105,8 +107,8 @@ export async function POST(
     // Si el body contiene datos del MIR (contrato, viajeros), redirigir al endpoint correcto
     
     // Detectar si es un formulario MIR (tiene contrato y viajeros) o un formulario simple
-    const isMIRForm = body.contrato && body.viajeros;
-    const isSimpleForm = body.tenantId && body.formData;
+    const isMIRForm = bodyWithRoom?.contrato && bodyWithRoom?.viajeros;
+    const isSimpleForm = bodyWithRoom?.tenantId && bodyWithRoom?.formData;
     
     if (isMIRForm) {
       
@@ -122,9 +124,10 @@ export async function POST(
           'X-Tenant-ID': tenant.id,
           'X-Tenant-Name': tenant.name,
           'X-UI-Locale': tenantLocale,
+          ...(roomId ? { 'X-Room-Id': roomId } : {}),
           ...req.headers,
         },
-        body: JSON.stringify(body),
+        body: JSON.stringify(bodyWithRoom),
       });
 
       try {
@@ -165,8 +168,9 @@ export async function POST(
           'X-Tenant-ID': tenant.id,
           'X-Tenant-Name': tenant.name,
           'X-UI-Locale': tenantLocale,
+          ...(roomId ? { 'X-Room-Id': roomId } : {}),
         },
-        body: JSON.stringify(body),
+        body: JSON.stringify(bodyWithRoom),
       });
 
       if (!response.ok) {
@@ -178,7 +182,7 @@ export async function POST(
     }
 
     // Procesar formulario simple
-    const { tenantId, formData } = body;
+    const { tenantId, formData } = bodyWithRoom;
 
     if (!tenantId || !formData) {
       return NextResponse.json(

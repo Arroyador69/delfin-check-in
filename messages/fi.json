@@ -871,6 +871,9 @@
     "formUrlOwnerHintPlansNote": "Odottavan varauksen hälytykset ovat saatavilla kaikissa suunnitelmissa; Googlen arvostelumuistutukset ovat Pro-paketissa.",
     "copyUrl": "Kopioida",
     "viewForm": "Näytä",
+    "unitLinksTitle": "Linkit yksiköittäin (suositus)",
+    "unitLinksDescription": "Käytä näitä huone-/asuntokohtaisia linkkejä, jotta automaattinen MIR-lähetys käyttää oikeaa tunnusta kyseiselle yksikölle.",
+    "unitLinksEmpty": "Yksiköitä ei ole vielä luotu. Mene kohtaan Asetukset → Ominaisuudet ja luo ne.",
     "urlCopied": "URL-osoite kopioitu leikepöydälle",
     "errorPage": {
       "title": "Kojelaudan virhe",
