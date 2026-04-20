@@ -935,7 +935,12 @@
       "delete": "Poistaa",
       "deleting": "Poistetaan...",
       "deleteCount": "Poista ({count})",
-      "deleteSelectedLabel": "Poista valitut ({count})"
+      "deleteSelectedLabel": "Poista valitut ({count})",
+      "referenceLabel": "Viite",
+      "establishmentLabel": "Kohde",
+      "roomLabel": "Huone",
+      "registrationDateLabel": "Rekisteröintipäivä",
+      "travelerLabel": "Matkustaja"
     },
     "delete": {
       "title": "Vahvista poisto",

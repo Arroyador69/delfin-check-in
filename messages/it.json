@@ -962,7 +962,12 @@
       "delete": "Elimina",
       "deleting": "Eliminazione...",
       "deleteCount": "Elimina ({count})",
-      "deleteSelectedLabel": "Elimina selezionate ({count})"
+      "deleteSelectedLabel": "Elimina selezionate ({count})",
+      "referenceLabel": "Riferimento",
+      "establishmentLabel": "Struttura",
+      "roomLabel": "Camera",
+      "registrationDateLabel": "Data registrazione",
+      "travelerLabel": "Ospite"
     },
     "delete": {
       "title": "Conferma Eliminazione",

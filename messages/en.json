@@ -940,7 +940,12 @@
       "delete": "Delete",
       "deleting": "Deleting...",
       "deleteCount": "Delete ({count})",
-      "deleteSelectedLabel": "Delete Selected ({count})"
+      "deleteSelectedLabel": "Delete Selected ({count})",
+      "referenceLabel": "Reference",
+      "establishmentLabel": "Establishment",
+      "roomLabel": "Room",
+      "registrationDateLabel": "Registration date",
+      "travelerLabel": "Traveler"
     },
     "delete": {
       "title": "Confirm Deletion",
