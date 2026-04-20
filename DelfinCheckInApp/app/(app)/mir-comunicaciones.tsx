@@ -52,7 +52,7 @@ interface GuestRegistrationStats {
   submissions_last_30_days: number;
 }
 
-type MirUnitRow = {
+type MirUnitConfigLite = {
   room_id: string;
   unit_type: 'habitacion' | 'apartamento';
   credencial_id: number | null;
@@ -62,20 +62,6 @@ type RoomRow = { id: string; name: string };
 
 function trimApiBase(): string {
   return String(api.defaults.baseURL || '').replace(/\/$/, '');
-}
-
-function computePublicLinkMode(rooms: RoomRow[], units: MirUnitRow[]): 'empty' | 'single' | 'per-room' {
-  if (rooms.length === 0) return 'empty';
-  if (units.length === 0) return 'single';
-  const map = new Map(units.map((u) => [String(u.room_id), u]));
-  for (const r of rooms) {
-    if (!map.has(String(r.id))) return 'per-room';
-  }
-  const configs = rooms.map((r) => map.get(String(r.id))!);
-  if (configs.some((c) => c.unit_type === 'apartamento')) return 'per-room';
-  const nonNull = configs.map((c) => c.credencial_id).filter((x): x is number => x != null);
-  if (new Set(nonNull).size <= 1) return 'single';
-  return 'per-room';
 }
 
 export default function CommunicationRegistrationScreen() {
@@ -103,7 +89,7 @@ export default function CommunicationRegistrationScreen() {
     queryFn: async () => {
       const [roomsRes, mirRes] = await Promise.all([
         api.get<{ success?: boolean; rooms?: { id: string; name: string }[] }>('/api/tenant/rooms'),
-        api.get<{ success?: boolean; units?: MirUnitRow[] }>('/api/ministerio/unidades-config'),
+        api.get<{ success?: boolean; units?: MirUnitConfigLite[] }>('/api/ministerio/unidades-config'),
       ]);
       const rooms: RoomRow[] = Array.isArray(roomsRes.data?.rooms)
         ? roomsRes.data.rooms!.map((r: any) => ({
@@ -112,7 +98,7 @@ export default function CommunicationRegistrationScreen() {
           }))
         : [];
       const mirOk = Boolean(mirRes.data?.success);
-      const units: MirUnitRow[] = mirOk && Array.isArray(mirRes.data?.units)
+      const units: MirUnitConfigLite[] = mirOk && Array.isArray(mirRes.data?.units)
         ? mirRes.data!.units!.map((u: any) => ({
             room_id: String(u.room_id),
             unit_type: u.unit_type === 'apartamento' ? 'apartamento' : 'habitacion',
@@ -123,11 +109,55 @@ export default function CommunicationRegistrationScreen() {
     },
   });
 
-  const linkMode = useMemo(() => {
+  /** Misma lógica que la web: `guest-registrations-dashboard` (single vs enlaces por unidad). */
+  const unitPublicLinkMode = useMemo(() => {
     if (!tenantId || !linkExtras) return 'loading' as const;
-    if (!linkExtras.mirOk) return 'single' as const;
-    return computePublicLinkMode(linkExtras.rooms, linkExtras.units);
+    const { rooms, units, mirOk } = linkExtras;
+    if (rooms.length === 0) return 'empty' as const;
+    if (!mirOk || units.length === 0) return 'per-room' as const;
+    const map = new Map(units.map((u) => [String(u.room_id), u]));
+    for (const r of rooms) {
+      if (!map.has(String(r.id))) return 'per-room' as const;
+    }
+    const configs = rooms.map((r) => map.get(String(r.id))!);
+    const roomsOnly = configs.filter((c) => c.unit_type !== 'apartamento');
+    const hasApartments = configs.some((c) => c.unit_type === 'apartamento');
+    const nonNullRoomCredIds = roomsOnly.map((c) => c.credencial_id).filter((id): id is number => id != null);
+    const distinctRoomCreds = new Set(nonNullRoomCredIds);
+    if (!hasApartments && distinctRoomCreds.size <= 1) return 'single' as const;
+    return 'per-room' as const;
   }, [tenantId, linkExtras]);
+
+  const roomsAndApartments = useMemo(() => {
+    if (!linkExtras) {
+      return {
+        roomUnits: [] as Array<{ room: RoomRow; cfg: MirUnitConfigLite }>,
+        apartmentUnits: [] as Array<{ room: RoomRow; cfg: MirUnitConfigLite }>,
+        roomsShareSameCred: true,
+        roomsHasUnassigned: false,
+      };
+    }
+    const { rooms, units } = linkExtras;
+    const mirUnitsByRoomId = new Map(units.map((u) => [String(u.room_id), u]));
+    const rows = rooms
+      .map((r) => ({ room: r, cfg: mirUnitsByRoomId.get(String(r.id)) || null }))
+      .filter((x): x is { room: RoomRow; cfg: MirUnitConfigLite } => x.cfg != null);
+    const roomUnits = rows.filter((x) => x.cfg.unit_type !== 'apartamento');
+    const apartmentUnits = rows.filter((x) => x.cfg.unit_type === 'apartamento');
+    const roomCredIds = roomUnits.map((x) => x.cfg.credencial_id).filter((id): id is number => id != null);
+    const distinctRoomCreds = new Set(roomCredIds);
+    const roomsShareSameCred = distinctRoomCreds.size <= 1;
+    const roomsHasUnassigned = roomUnits.some((x) => x.cfg.credencial_id == null);
+    return { roomUnits, apartmentUnits, roomsShareSameCred, roomsHasUnassigned };
+  }, [linkExtras]);
+
+  const singleLinkMirSummary = useMemo(() => {
+    if (unitPublicLinkMode !== 'single' || !linkExtras || linkExtras.rooms.length === 0) return null;
+    const map = new Map(linkExtras.units.map((u) => [String(u.room_id), u]));
+    const configs = linkExtras.rooms.map((r) => map.get(String(r.id))!);
+    const pending = configs.some((c) => c.credencial_id == null);
+    return { pending };
+  }, [unitPublicLinkMode, linkExtras]);
 
   const openPublicForm = () => {
     if (!formPublicUrl) return;
@@ -300,15 +330,51 @@ export default function CommunicationRegistrationScreen() {
 
   const showError = error && (!data || registrations.length === 0);
 
+  const copyUrl = (url: string) => {
+    Clipboard.setString(url);
+    Alert.alert(t('common.success'), t('guestRegistrations.urlCopied'));
+  };
+
+  const renderUnitLinkCard = (room: RoomRow, cfg: MirUnitConfigLite | null) => {
+    const url = `${formPublicUrl}?room_id=${encodeURIComponent(room.id)}`;
+    const mirLabel = cfg
+      ? cfg.credencial_id
+        ? t('guestRegistrations.unitLinkMirReady')
+        : t('guestRegistrations.unitLinkMirPending')
+      : t('guestRegistrations.unitLinkMirUnknown');
+    const typeLabel =
+      cfg?.unit_type === 'apartamento'
+        ? t('guestRegistrations.unitLinkTypeApartment')
+        : t('guestRegistrations.unitLinkTypeRoom');
+    return (
+      <View key={room.id} style={styles.perRoomCard}>
+        <Text style={styles.perRoomName}>{room.name}</Text>
+        <Text style={styles.unitMetaLine}>
+          {typeLabel} · {mirLabel}
+        </Text>
+        <Text selectable style={styles.perRoomMono}>
+          {url}
+        </Text>
+        <View style={styles.perRoomActions}>
+          <Pressable style={[styles.formUrlBtnSecondary, { flex: 1, marginRight: 8 }]} onPress={() => copyUrl(url)}>
+            <Copy size={18} color="#2563eb" />
+            <Text style={styles.formUrlBtnSecondaryText}>{t('guestRegistrations.copyUrl')}</Text>
+          </Pressable>
+          <Pressable style={[styles.formUrlBtnPrimary, { flex: 1 }]} onPress={() => Linking.openURL(url).catch(() => {})}>
+            <ExternalLink size={18} color="white" />
+            <Text style={styles.formUrlBtnPrimaryText}>{t('guestRegistrations.viewForm')}</Text>
+          </Pressable>
+        </View>
+      </View>
+    );
+  };
+
   const listHeader = (
     <>
       <View style={styles.formUrlCard}>
         <Text style={styles.formUrlEmoji}>{'\u{1F517}'}</Text>
         <Text style={styles.formUrlTitle}>{t('guestRegistrations.formUrl')}</Text>
         <Text style={styles.formUrlDescription}>{t('guestRegistrations.formUrlDescription')}</Text>
-        {linkMode === 'single' && linkExtras && linkExtras.rooms.length > 0 ? (
-          <Text style={styles.formUrlSingleHint}>{t('guestRegistrations.formUrlSingleModeHint')}</Text>
-        ) : null}
         {!tenantId ? (
           <ActivityIndicator style={{ marginVertical: 12 }} color="#2563eb" />
         ) : (
@@ -326,52 +392,101 @@ export default function CommunicationRegistrationScreen() {
                 <Text style={styles.formUrlBtnPrimaryText}>{t('guestRegistrations.viewForm')}</Text>
               </Pressable>
             </View>
-            {linkMode === 'single' && linkExtras && linkExtras.rooms.length > 0 ? (
-              <View style={styles.singleUnitsBlock}>
-                <Text style={styles.singleUnitsLabel}>{t('guestRegistrations.unitLinksSingleUnitsLabel')}</Text>
-                <View style={styles.unitChipsRow}>
-                  {linkExtras.rooms.map((r) => (
-                    <View key={r.id} style={styles.unitChip}>
-                      <Text style={styles.unitChipText}>{r.name}</Text>
-                    </View>
-                  ))}
+
+            {unitPublicLinkMode === 'loading' ? (
+              <ActivityIndicator style={{ marginTop: 14 }} color="#2563eb" />
+            ) : unitPublicLinkMode === 'empty' ? (
+              <Text style={styles.perRoomDescription}>{t('guestRegistrations.unitLinksEmpty')}</Text>
+            ) : unitPublicLinkMode === 'single' && linkExtras && linkExtras.rooms.length > 0 ? (
+              <>
+                <Text style={styles.formUrlSingleHint}>{t('guestRegistrations.formUrlSingleModeHint')}</Text>
+                {singleLinkMirSummary ? (
+                  <Text
+                    style={[
+                      styles.mirSummaryBox,
+                      singleLinkMirSummary.pending ? styles.mirSummaryWarn : styles.mirSummaryOk,
+                    ]}
+                  >
+                    {singleLinkMirSummary.pending
+                      ? t('guestRegistrations.unitLinksSingleMirWarnUnassigned')
+                      : t('guestRegistrations.unitLinksSingleMirOk')}
+                  </Text>
+                ) : null}
+                <Text style={styles.singleBlockTitle}>{t('guestRegistrations.unitLinksSingleTitle')}</Text>
+                <Text style={styles.perRoomDescription}>{t('guestRegistrations.unitLinksSingleDescription')}</Text>
+                <View style={styles.singleUnitsBlock}>
+                  <Text style={styles.singleUnitsLabel}>{t('guestRegistrations.unitLinksSingleUnitsLabel')}</Text>
+                  <View style={styles.unitChipsRow}>
+                    {linkExtras.rooms.map((r) => (
+                      <View key={r.id} style={styles.unitChip}>
+                        <Text style={styles.unitChipText}>{r.name}</Text>
+                      </View>
+                    ))}
+                  </View>
                 </View>
-              </View>
-            ) : null}
-            {linkMode === 'per-room' && formPublicUrl && linkExtras && linkExtras.rooms.length > 0 ? (
+              </>
+            ) : unitPublicLinkMode === 'per-room' && formPublicUrl && linkExtras && linkExtras.rooms.length > 0 ? (
               <View style={styles.perRoomBlock}>
                 <Text style={styles.perRoomTitle}>{t('guestRegistrations.unitLinksTitle')}</Text>
                 <Text style={styles.perRoomDescription}>{t('guestRegistrations.unitLinksDescription')}</Text>
-                {linkExtras.rooms.map((r) => {
-                  const url = `${formPublicUrl}?room_id=${encodeURIComponent(r.id)}`;
-                  return (
-                    <View key={r.id} style={styles.perRoomCard}>
-                      <Text style={styles.perRoomName}>{r.name}</Text>
-                      <Text selectable style={styles.perRoomMono}>
-                        {url}
-                      </Text>
-                      <View style={styles.perRoomActions}>
-                        <Pressable
-                          style={[styles.formUrlBtnSecondary, { flex: 1, marginRight: 8 }]}
-                          onPress={() => {
-                            Clipboard.setString(url);
-                            Alert.alert(t('common.success'), t('guestRegistrations.urlCopied'));
-                          }}
-                        >
-                          <Copy size={18} color="#2563eb" />
-                          <Text style={styles.formUrlBtnSecondaryText}>{t('guestRegistrations.copyUrl')}</Text>
-                        </Pressable>
-                        <Pressable
-                          style={[styles.formUrlBtnPrimary, { flex: 1 }]}
-                          onPress={() => Linking.openURL(url).catch(() => {})}
-                        >
-                          <ExternalLink size={18} color="white" />
-                          <Text style={styles.formUrlBtnPrimaryText}>{t('guestRegistrations.viewForm')}</Text>
-                        </Pressable>
+
+                {roomsAndApartments.roomUnits.length === 0 && roomsAndApartments.apartmentUnits.length === 0 ? (
+                  linkExtras.rooms.map((r) => renderUnitLinkCard(r, null))
+                ) : (
+                  <>
+                    {roomsAndApartments.roomUnits.length > 0 ? (
+                      <View style={styles.groupCard}>
+                        <Text style={styles.groupTitle}>
+                          {t('guestRegistrations.unitLinksRoomsTitle', { count: roomsAndApartments.roomUnits.length })}
+                        </Text>
+                        <Text style={styles.groupDescription}>{t('guestRegistrations.unitLinksRoomsDescription')}</Text>
+                        {roomsAndApartments.roomsShareSameCred ? (
+                          <>
+                            {roomsAndApartments.roomsHasUnassigned ? (
+                              <Text style={styles.warnBanner}>{t('guestRegistrations.unitLinksRoomsWarnUnassigned')}</Text>
+                            ) : null}
+                            <Text selectable style={[styles.formUrlMono, { marginTop: 10 }]}>
+                              {formPublicUrl}
+                            </Text>
+                            <View style={[styles.formUrlActions, { marginTop: 10 }]}>
+                              <Pressable style={styles.formUrlBtnSecondary} onPress={copyPublicFormUrl}>
+                                <Copy size={18} color="#2563eb" />
+                                <Text style={styles.formUrlBtnSecondaryText}>{t('guestRegistrations.copyUrl')}</Text>
+                              </Pressable>
+                              <Pressable style={styles.formUrlBtnPrimary} onPress={openPublicForm}>
+                                <ExternalLink size={18} color="white" />
+                                <Text style={styles.formUrlBtnPrimaryText}>{t('guestRegistrations.viewForm')}</Text>
+                              </Pressable>
+                            </View>
+                            <View style={styles.unitChipsRow}>
+                              {roomsAndApartments.roomUnits.map(({ room }) => (
+                                <View key={room.id} style={styles.unitChip}>
+                                  <Text style={styles.unitChipText}>{room.name}</Text>
+                                </View>
+                              ))}
+                            </View>
+                          </>
+                        ) : (
+                          roomsAndApartments.roomUnits.map(({ room, cfg }) => renderUnitLinkCard(room, cfg))
+                        )}
                       </View>
-                    </View>
-                  );
-                })}
+                    ) : null}
+
+                    {roomsAndApartments.apartmentUnits.length > 0 ? (
+                      <View style={[styles.groupCard, { marginTop: 14 }]}>
+                        <Text style={styles.groupTitle}>
+                          {t('guestRegistrations.unitLinksApartmentsTitle', {
+                            count: roomsAndApartments.apartmentUnits.length,
+                          })}
+                        </Text>
+                        <Text style={styles.groupDescription}>
+                          {t('guestRegistrations.unitLinksApartmentsDescription')}
+                        </Text>
+                        {roomsAndApartments.apartmentUnits.map(({ room, cfg }) => renderUnitLinkCard(room, cfg))}
+                      </View>
+                    ) : null}
+                  </>
+                )}
               </View>
             ) : null}
           </>
@@ -562,6 +677,49 @@ const styles = StyleSheet.create({
   },
   unitChipText: { fontSize: 13, fontWeight: '600', color: '#111827' },
   perRoomBlock: { marginTop: 16 },
+  singleBlockTitle: { marginTop: 12, fontSize: 15, fontWeight: '800', color: '#111827' },
+  mirSummaryBox: {
+    marginTop: 10,
+    fontSize: 13,
+    lineHeight: 19,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  mirSummaryOk: {
+    color: '#065f46',
+    backgroundColor: '#ecfdf5',
+    borderColor: '#a7f3d0',
+  },
+  mirSummaryWarn: {
+    color: '#92400e',
+    backgroundColor: '#fffbeb',
+    borderColor: '#fcd34d',
+  },
+  groupCard: {
+    marginTop: 12,
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    backgroundColor: '#fafafa',
+  },
+  groupTitle: { fontSize: 15, fontWeight: '800', color: '#111827' },
+  groupDescription: { marginTop: 6, fontSize: 13, color: '#4b5563', lineHeight: 19 },
+  warnBanner: {
+    marginTop: 10,
+    fontSize: 13,
+    lineHeight: 19,
+    color: '#92400e',
+    backgroundColor: '#fffbeb',
+    borderWidth: 1,
+    borderColor: '#fcd34d',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 10,
+  },
+  unitMetaLine: { marginTop: 4, fontSize: 12, color: '#6b7280' },
   perRoomTitle: { fontSize: 15, fontWeight: '800', color: '#111827' },
   perRoomDescription: { marginTop: 6, fontSize: 13, color: '#4b5563', lineHeight: 19 },
   perRoomCard: {

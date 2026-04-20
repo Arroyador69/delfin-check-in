@@ -2,7 +2,7 @@
 // AJUSTES > CONFIGURACIÓN MIR (básico)
 // =====================================================
 
-import { View, Text, StyleSheet, TextInput, Pressable, ScrollView, Alert, Switch } from 'react-native';
+import { View, Text, StyleSheet, TextInput, Pressable, ScrollView, Alert, Switch, Linking } from 'react-native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -44,6 +44,28 @@ const emptyMir: MirSettings = {
   testMode: false,
 };
 
+function trimApiBase(): string {
+  return String(api.defaults.baseURL || '').replace(/\/$/, '');
+}
+
+type MirWsConfig = {
+  usuario: string;
+  contraseña: string;
+  codigoArrendador: string;
+  codigoEstablecimiento: string;
+  baseUrl: string;
+  simulacion: boolean;
+};
+
+const emptyWs: MirWsConfig = {
+  usuario: '',
+  contraseña: '',
+  codigoArrendador: '',
+  codigoEstablecimiento: '',
+  baseUrl: 'https://hospedajes.ses.mir.es/hospedajes-web/ws/v1/comunicacion',
+  simulacion: false,
+};
+
 export default function MirSettingsScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -56,6 +78,8 @@ export default function MirSettingsScreen() {
     codigoEstablecimiento: '',
     baseUrl: 'https://hospedajes.ses.mir.es/hospedajes-web/ws/v1/comunicacion',
   });
+
+  const [wsConfig, setWsConfig] = useState<MirWsConfig>(emptyWs);
 
   const { data, isLoading } = useQuery({
     queryKey: ['settings-mir'],
@@ -89,17 +113,44 @@ export default function MirSettingsScreen() {
     },
   });
 
+  const { data: mirVerifyData } = useQuery({
+    queryKey: ['mir-verificar-config'],
+    queryFn: async () => {
+      const res = await api.get('/api/ministerio/verificar-config');
+      return res.data as {
+        success?: boolean;
+        config?: Partial<MirWsConfig>;
+        status?: { configurado?: boolean };
+      };
+    },
+  });
+
   useEffect(() => {
     if (data?.mir) {
       setForm((p) => ({ ...p, ...(data.mir as MirSettings) }));
     }
   }, [data?.mir]);
 
+  useEffect(() => {
+    const c = mirVerifyData?.config;
+    if (!c) return;
+    setWsConfig((prev) => ({
+      ...prev,
+      usuario: String(c.usuario ?? prev.usuario ?? ''),
+      contraseña: '',
+      codigoArrendador: String(c.codigoArrendador ?? prev.codigoArrendador ?? ''),
+      codigoEstablecimiento: String(c.codigoEstablecimiento ?? prev.codigoEstablecimiento ?? ''),
+      baseUrl: String(c.baseUrl ?? prev.baseUrl ?? emptyWs.baseUrl),
+      simulacion: Boolean(c.simulacion ?? prev.simulacion),
+    }));
+  }, [mirVerifyData?.config]);
+
   const maxAllowed = Number(limitsData?.tenant?.limits?.maxRooms ?? 0);
   const credenciales: MirCredencialLite[] = Array.isArray(credsData?.credenciales) ? credsData!.credenciales! : [];
   const units: MirUnitRow[] = Array.isArray(unitsData?.units) ? unitsData!.units! : [];
   const configured = credenciales.filter((c) => c.activo).length;
   const canCreateMore = maxAllowed > 0 ? configured < maxAllowed : false;
+  const mirConfigured = Boolean(mirVerifyData?.status?.configurado);
 
   const saveMutation = useMutation({
     mutationFn: async () => {
@@ -115,7 +166,68 @@ export default function MirSettingsScreen() {
     },
   });
 
-  const Field = (props: { label: string; value: string; onChangeText: (v: string) => void; placeholder?: string }) => (
+  const saveWsMutation = useMutation({
+    mutationFn: async () => {
+      const res = await api.post('/api/ministerio/config-produccion', {
+        usuario: wsConfig.usuario,
+        contraseña: wsConfig.contraseña,
+        codigoArrendador: wsConfig.codigoArrendador,
+        codigoEstablecimiento: wsConfig.codigoEstablecimiento,
+        baseUrl: wsConfig.baseUrl,
+        simulacion: wsConfig.simulacion,
+      });
+      return res.data as { success?: boolean; message?: string; error?: string };
+    },
+    onSuccess: async (data) => {
+      if (data?.success === false) {
+        Alert.alert(t('common.error'), data?.message || data?.error || t('settings.mir.errorSavingConfig'));
+        return;
+      }
+      await queryClient.invalidateQueries({ queryKey: ['mir-verificar-config'] });
+      await queryClient.invalidateQueries({ queryKey: ['mir-credenciales'] });
+      setWsConfig((p) => ({ ...p, contraseña: '' }));
+      Alert.alert(t('common.success'), t('settings.mir.configSaved'));
+    },
+    onError: (e: any) => {
+      Alert.alert(t('common.error'), e?.response?.data?.message || e?.response?.data?.error || t('settings.mir.errorSavingConfig'));
+    },
+  });
+
+  const testWsMutation = useMutation({
+    mutationFn: async () => {
+      const res = await api.post('/api/ministerio/test-produccion', {
+        usuario: wsConfig.usuario,
+        contraseña: wsConfig.contraseña,
+        codigoArrendador: wsConfig.codigoArrendador,
+        codigoEstablecimiento: wsConfig.codigoEstablecimiento,
+        baseUrl: wsConfig.baseUrl,
+        simulacion: wsConfig.simulacion,
+      });
+      return res.data as { success?: boolean; message?: string; resultado?: { descripcion?: string } };
+    },
+    onSuccess: (data) => {
+      if (data?.success) {
+        Alert.alert(t('common.success'), t('settings.mir.connectionSuccess'));
+      } else {
+        const msg =
+          data?.resultado?.descripcion ||
+          data?.message ||
+          t('settings.mir.connectionTestError', { message: '' });
+        Alert.alert(t('common.error'), msg);
+      }
+    },
+    onError: (e: any) => {
+      Alert.alert(t('common.error'), e?.response?.data?.message || t('settings.mir.connectionError'));
+    },
+  });
+
+  const Field = (props: {
+    label: string;
+    value: string;
+    onChangeText: (v: string) => void;
+    placeholder?: string;
+    secureTextEntry?: boolean;
+  }) => (
     <View style={styles.field}>
       <Text style={styles.label}>{props.label}</Text>
       <TextInput
@@ -124,6 +236,9 @@ export default function MirSettingsScreen() {
         onChangeText={props.onChangeText}
         placeholder={props.placeholder}
         placeholderTextColor="#9ca3af"
+        secureTextEntry={props.secureTextEntry}
+        autoCapitalize="none"
+        autoCorrect={false}
       />
     </View>
   );
@@ -192,6 +307,91 @@ export default function MirSettingsScreen() {
         <View style={{ flex: 1 }}>
           <Text style={styles.title}>{t('settings.tabs.mir')}</Text>
           <Text style={styles.subtitle}>{t('mobile.settings.mirSubtitle')}</Text>
+        </View>
+      </View>
+
+      <View style={styles.card}>
+        <Text style={styles.sectionTitleSmall}>{t('settings.mir.credentialsTitle')}</Text>
+        <Text style={styles.subtitle}>{t('settings.mir.credentialsDescription')}</Text>
+        <Text
+          style={[
+            styles.hintText,
+            { marginTop: 8, fontWeight: '800', color: mirConfigured ? '#047857' : '#b45309' },
+          ]}
+        >
+          {mirConfigured ? t('settings.mir.statusComplete') : t('settings.mir.statusIncomplete')}
+        </Text>
+
+        <Field
+          label={t('settings.mir.userLabel')}
+          value={wsConfig.usuario}
+          onChangeText={(v) => setWsConfig((p) => ({ ...p, usuario: v }))}
+          placeholder={t('settings.mir.userPlaceholder')}
+        />
+        <Field
+          label={t('settings.mir.passwordLabel')}
+          value={wsConfig.contraseña}
+          onChangeText={(v) => setWsConfig((p) => ({ ...p, contraseña: v }))}
+          placeholder={t('settings.mir.passwordPlaceholder')}
+          secureTextEntry
+        />
+        <Field
+          label={t('settings.mir.codigoArrendadorLabel')}
+          value={wsConfig.codigoArrendador}
+          onChangeText={(v) => setWsConfig((p) => ({ ...p, codigoArrendador: v }))}
+          placeholder={t('settings.mir.codigoArrendadorPlaceholder')}
+        />
+        <Field
+          label={t('settings.mir.codigoEstablecimientoLabel')}
+          value={wsConfig.codigoEstablecimiento}
+          onChangeText={(v) => setWsConfig((p) => ({ ...p, codigoEstablecimiento: v }))}
+          placeholder={t('settings.mir.codigoEstablecimientoPlaceholder')}
+        />
+        <Field
+          label={t('settings.mir.baseUrlLabel')}
+          value={wsConfig.baseUrl}
+          onChangeText={(v) => setWsConfig((p) => ({ ...p, baseUrl: v }))}
+          placeholder={wsConfig.baseUrl}
+        />
+        <Toggle
+          label={t('settings.mir.simulacionLabel')}
+          value={wsConfig.simulacion}
+          onValueChange={(v) => setWsConfig((p) => ({ ...p, simulacion: v }))}
+        />
+
+        <Pressable
+          style={[
+            styles.saveButton,
+            (saveWsMutation.isPending || testWsMutation.isPending) && styles.saveButtonDisabled,
+          ]}
+          onPress={() => saveWsMutation.mutate()}
+          disabled={saveWsMutation.isPending || testWsMutation.isPending}
+        >
+          <Text style={styles.saveText}>
+            {saveWsMutation.isPending ? t('settings.mir.saving') : t('settings.mir.saveConfig')}
+          </Text>
+        </Pressable>
+
+        <View style={{ flexDirection: 'row', gap: 8, marginTop: 10 }}>
+          <Pressable
+            style={[styles.smallButton, { flex: 1 }, testWsMutation.isPending && { opacity: 0.6 }]}
+            onPress={() => testWsMutation.mutate()}
+            disabled={testWsMutation.isPending || saveWsMutation.isPending}
+          >
+            <Text style={styles.smallButtonText}>
+              {testWsMutation.isPending ? t('settings.mir.testing') : t('settings.mir.testConnection')}
+            </Text>
+          </Pressable>
+          <Pressable
+            style={[styles.smallButton, { flex: 1 }]}
+            onPress={() =>
+              Linking.openURL(`${trimApiBase()}/admin/mir-comunicaciones`).catch(() => {
+                Alert.alert(t('common.error'), t('settings.mir.connectionError'));
+              })
+            }
+          >
+            <Text style={styles.smallButtonText}>{t('settings.mir.goToPanel')}</Text>
+          </Pressable>
         </View>
       </View>
 
