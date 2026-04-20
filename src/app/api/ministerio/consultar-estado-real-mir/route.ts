@@ -174,7 +174,7 @@ export async function POST(req: NextRequest) {
             resultado = jsonb_set(
               jsonb_set(
                 jsonb_set(
-                  COALESCE(resultado, '{}'::jsonb),
+                  COALESCE(NULLIF(resultado, '')::jsonb, '{}'::jsonb),
                   '{codigoEstado}',
                   to_jsonb(${String(loteResult.codigoEstado)}::text),
                   true
