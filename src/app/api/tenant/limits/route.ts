@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
-import { getTenantById } from '@/lib/tenant';
+import { getTenantById, getTenantId } from '@/lib/tenant';
 import type { Tenant } from '@/lib/tenant';
 import { getTenantPlanPresentation } from '@/lib/tenant-plan-billing';
 
 export async function GET(req: NextRequest) {
   try {
-    const tenantId = req.headers.get('x-tenant-id');
+    // Priorizar tenant_id desde JWT; si no está, caer al header (compatibilidad)
+    let tenantId = await getTenantId(req);
+    if (!tenantId || tenantId.trim() === '') {
+      tenantId = req.headers.get('x-tenant-id') || req.headers.get('X-Tenant-Id') || null;
+    }
 
     if (!tenantId || tenantId === 'default') {
       return NextResponse.json(
