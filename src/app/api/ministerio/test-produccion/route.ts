@@ -30,9 +30,9 @@ export async function POST(req: NextRequest) {
     const usuarioRaw = body.usuario;
     const contraseñaRaw = body.contraseña;
     const codigoArrendadorRaw = body.codigoArrendador;
-    const baseUrl = body.baseUrl || 'https://hospedajes.ses.mir.es/hospedajes-web/ws/v1/comunicacion';
-    const aplicacion = body.aplicacion || 'Delfin_Check_in';
-    const simulacion = Boolean(body.simulacion);
+    let baseUrl = body.baseUrl || 'https://hospedajes.ses.mir.es/hospedajes-web/ws/v1/comunicacion';
+    let aplicacion = body.aplicacion || 'Delfin_Check_in';
+    let simulacion = Boolean(body.simulacion);
 
     // Si faltan campos, intentar cargarlos desde BD (multi-tenant real).
     let source: 'body' | 'db' = 'body';
@@ -60,6 +60,10 @@ export async function POST(req: NextRequest) {
         if (!usuario) usuario = String(row.usuario || '').trim();
         if (!contraseña) contraseña = String(row.contraseña || '');
         if (!codigoArrendador) codigoArrendador = String(row.codigo_arrendador || '').trim();
+        // En SaaS, la fuente de verdad es la BD del tenant: si está, úsala también para URL/aplicación/simulación.
+        if (row.base_url) baseUrl = String(row.base_url);
+        if (row.aplicacion) aplicacion = String(row.aplicacion);
+        if (row.simulacion !== undefined && row.simulacion !== null) simulacion = Boolean(row.simulacion);
       }
     }
 
@@ -119,6 +123,9 @@ export async function POST(req: NextRequest) {
     if (!ok) {
       if (code === '401' || code === '403') {
         probableCauses.push('Usuario/contraseña WS incorrectos o sin permisos de Servicio Web en SES Hospedajes.');
+      }
+      if (code === '404') {
+        probableCauses.push('La URL del servicio MIR (baseUrl) no es correcta (el servidor responde 404 Not Found). Revisa que sea la URL oficial del WS.');
       }
       if (desc.toLowerCase().includes('credenciales') || desc.toLowerCase().includes('basic')) {
         probableCauses.push('Credenciales WS inválidas (revisa “Servicio de Comunicación” en SES Hospedajes).');
