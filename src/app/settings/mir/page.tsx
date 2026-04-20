@@ -25,6 +25,8 @@ import {
   Globe
 } from 'lucide-react';
 
+type MirUnitType = 'habitacion' | 'apartamento';
+
 interface MirConfig {
   usuario: string;
   contraseña: string;
@@ -34,6 +36,24 @@ interface MirConfig {
   aplicacion: string;
   simulacion: boolean;
   activo: boolean;
+}
+
+interface MirCredencialLite {
+  id: number;
+  nombre: string;
+  usuario: string;
+  hasPassword: boolean;
+  codigoArrendador: string;
+  codigoEstablecimiento: string;
+  baseUrl: string;
+  activo: boolean;
+}
+
+interface MirUnitConfigRow {
+  room_id: string;
+  room_name: string;
+  unit_type: MirUnitType;
+  credencial_id: number | null;
 }
 
 const COUNTRIES = [
@@ -73,6 +93,21 @@ export default function MirSettingsPage() {
   const [serverHasCodigoEstablecimiento, setServerHasCodigoEstablecimiento] = useState(false);
   const [navLocale, setNavLocale] = useState<Locale>(defaultLocale);
 
+  // Nuevo: credenciales múltiples + configuración por unidad
+  const [limits, setLimits] = useState<{ maxRooms: number } | null>(null);
+  const [credenciales, setCredenciales] = useState<MirCredencialLite[]>([]);
+  const [units, setUnits] = useState<MirUnitConfigRow[]>([]);
+  const [loadingMulti, setLoadingMulti] = useState(false);
+  const [creatingCred, setCreatingCred] = useState(false);
+  const [newCred, setNewCred] = useState({
+    nombre: '',
+    usuario: '',
+    contraseña: '',
+    codigoArrendador: '',
+    codigoEstablecimiento: '',
+    baseUrl: 'https://hospedajes.ses.mir.es/hospedajes-web/ws/v1/comunicacion',
+  });
+
   useEffect(() => {
     setNavLocale(getCurrentLocale());
   }, []);
@@ -83,7 +118,76 @@ export default function MirSettingsPage() {
   useEffect(() => {
     cargarConfiguracion();
     cargarCountryCode();
+    cargarMultiMir();
   }, []);
+
+  const cargarMultiMir = async () => {
+    setLoadingMulti(true);
+    try {
+      const [limitsRes, credsRes, unitsRes] = await Promise.all([
+        fetch('/api/tenant/limits'),
+        fetch('/api/ministerio/credenciales'),
+        fetch('/api/ministerio/unidades-config'),
+      ]);
+      const limitsJson = await limitsRes.json().catch(() => ({}));
+      const credsJson = await credsRes.json().catch(() => ({}));
+      const unitsJson = await unitsRes.json().catch(() => ({}));
+
+      const maxRooms = Number(limitsJson?.tenant?.limits?.maxRooms ?? 0);
+      setLimits({ maxRooms });
+      setCredenciales(Array.isArray(credsJson?.credenciales) ? credsJson.credenciales : []);
+      setUnits(Array.isArray(unitsJson?.units) ? unitsJson.units : []);
+    } catch (e) {
+      console.warn('⚠️ Error cargando multi MIR:', e);
+    } finally {
+      setLoadingMulti(false);
+    }
+  };
+
+  const credencialesConfiguradas = credenciales.filter((c) => c.activo).length;
+  const maxCredenciales = limits?.maxRooms ?? 0;
+  const canCreateMoreCreds = maxCredenciales > 0 ? credencialesConfiguradas < maxCredenciales : false;
+
+  const guardarUnitRow = async (roomId: string, patch: Partial<Pick<MirUnitConfigRow, 'unit_type' | 'credencial_id'>>) => {
+    await fetch('/api/ministerio/unidades-config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        room_id: roomId,
+        unit_type: patch.unit_type,
+        credencial_id: patch.credencial_id,
+      }),
+    }).then(async (r) => {
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok || !j?.success) {
+        throw new Error(j?.error || 'No se pudo guardar la configuración');
+      }
+    });
+  };
+
+  const crearCredencial = async () => {
+    setCreatingCred(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      const res = await fetch('/api/ministerio/credenciales', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newCred),
+      });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok || !j?.success) {
+        throw new Error(j?.error || 'Error creando credencial');
+      }
+      setSuccess('✅ Credencial MIR creada');
+      setNewCred((p) => ({ ...p, nombre: '', usuario: '', contraseña: '', codigoArrendador: '', codigoEstablecimiento: '' }));
+      await cargarMultiMir();
+    } catch (e: any) {
+      setError(`❌ ${e?.message || 'Error creando credencial'}`);
+    } finally {
+      setCreatingCred(false);
+    }
+  };
 
   const cargarCountryCode = async () => {
     try {
@@ -561,6 +665,130 @@ export default function MirSettingsPage() {
                 )}
               </div>
             )}
+          </CardContent>
+        </Card>
+
+        {/* Nuevo: credenciales múltiples por plan + asignación por unidad */}
+        <Card className="bg-white/90 backdrop-blur-sm border-white/30 shadow-xl">
+          <CardHeader>
+            <CardTitle className="text-gray-900 font-bold">🔑 Credenciales MIR configuradas</CardTitle>
+            <CardDescription className="text-gray-700 font-medium">
+              {loadingMulti
+                ? 'Cargando…'
+                : `Configuradas: ${credencialesConfiguradas} · Máximo según tu plan: ${maxCredenciales || '—'}`}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {!canCreateMoreCreds && maxCredenciales > 0 && (
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription className="text-red-800 font-semibold">
+                  Has alcanzado el máximo de credenciales MIR según tu plan. Para añadir otra, contrata una unidad más.
+                </AlertDescription>
+              </Alert>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-gray-800 font-semibold">Nombre</Label>
+                <Input value={newCred.nombre} onChange={(e) => setNewCred((p) => ({ ...p, nombre: e.target.value }))} />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-gray-800 font-semibold">Usuario MIR (WS)</Label>
+                <Input value={newCred.usuario} onChange={(e) => setNewCred((p) => ({ ...p, usuario: e.target.value }))} />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-gray-800 font-semibold">Contraseña MIR (WS)</Label>
+                <Input
+                  type="password"
+                  value={newCred.contraseña}
+                  onChange={(e) => setNewCred((p) => ({ ...p, contraseña: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-gray-800 font-semibold">Código Arrendador</Label>
+                <Input
+                  value={newCred.codigoArrendador}
+                  onChange={(e) => setNewCred((p) => ({ ...p, codigoArrendador: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-gray-800 font-semibold">Código Establecimiento</Label>
+                <Input
+                  value={newCred.codigoEstablecimiento}
+                  onChange={(e) => setNewCred((p) => ({ ...p, codigoEstablecimiento: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-gray-800 font-semibold">Base URL</Label>
+                <Input value={newCred.baseUrl} onChange={(e) => setNewCred((p) => ({ ...p, baseUrl: e.target.value }))} />
+              </div>
+            </div>
+
+            <Button onClick={crearCredencial} disabled={creatingCred || !canCreateMoreCreds} className="w-full sm:w-auto">
+              {creatingCred ? 'Creando…' : 'Crear credencial'}
+            </Button>
+
+            <div className="border-t pt-4">
+              <h3 className="text-sm font-bold text-gray-900 mb-2">Unidades (habitaciones / apartamentos)</h3>
+              <p className="text-xs text-gray-600 mb-3">
+                Regla: un apartamento debe tener su propia credencial MIR. Las habitaciones pueden compartirla.
+              </p>
+
+              <div className="space-y-3">
+                {units.map((u) => (
+                  <div key={u.room_id} className="rounded-lg border border-gray-200 bg-white p-3">
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="font-semibold text-gray-900 truncate">{u.room_name}</div>
+                        <div className="text-xs text-gray-600">ID: {u.room_id}</div>
+                      </div>
+                      <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+                        <select
+                          value={u.unit_type}
+                          onChange={async (e) => {
+                            const unit_type = (e.target.value as MirUnitType) || 'habitacion';
+                            try {
+                              await guardarUnitRow(u.room_id, { unit_type });
+                              setUnits((prev) => prev.map((x) => (x.room_id === u.room_id ? { ...x, unit_type } : x)));
+                            } catch (err: any) {
+                              setError(`❌ ${err?.message || 'No se pudo cambiar el tipo'}`);
+                            }
+                          }}
+                          className="px-3 py-2 border border-gray-300 rounded-lg text-gray-900 bg-white"
+                        >
+                          <option value="habitacion">Habitación</option>
+                          <option value="apartamento">Apartamento</option>
+                        </select>
+                        <select
+                          value={u.credencial_id ?? ''}
+                          onChange={async (e) => {
+                            const v = e.target.value ? Number(e.target.value) : null;
+                            try {
+                              await guardarUnitRow(u.room_id, { credencial_id: v });
+                              setUnits((prev) => prev.map((x) => (x.room_id === u.room_id ? { ...x, credencial_id: v } : x)));
+                            } catch (err: any) {
+                              setError(`❌ ${err?.message || 'No se pudo asignar la credencial'}`);
+                            }
+                          }}
+                          className="px-3 py-2 border border-gray-300 rounded-lg text-gray-900 bg-white"
+                        >
+                          <option value="">— Sin asignar —</option>
+                          {credenciales.map((c) => (
+                            <option key={c.id} value={c.id}>
+                              {c.nombre} · {c.codigoEstablecimiento}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {units.length === 0 && !loadingMulti && (
+                  <div className="text-sm text-gray-600">No hay unidades creadas todavía.</div>
+                )}
+              </div>
+            </div>
           </CardContent>
         </Card>
       )}

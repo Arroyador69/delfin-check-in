@@ -11,6 +11,7 @@ export async function POST(req: NextRequest) {
   let tenantId = 'default';
   let referenciaNorm = 'ERROR-' + Date.now();
   let loadedFromDb = false;
+  let roomIdForMir: string | null = null;
   
   try {
     console.log('🚀 Envío dual PV + RH al MIR iniciado...');
@@ -57,6 +58,13 @@ export async function POST(req: NextRequest) {
       referenciaNorm = String(json.referencia).slice(0, 50);
     }
 
+    // Resolver room_id si viene en el payload (para elegir credencial MIR por unidad)
+    roomIdForMir =
+      (json.room_id != null ? String(json.room_id) : null) ||
+      (json.roomId != null ? String(json.roomId) : null) ||
+      (json?.room?.id != null ? String(json.room.id) : null) ||
+      null;
+
     // Cargar configuración MIR desde la base de datos
     let config = {
       baseUrl: 'https://hospedajes.ses.mir.es/hospedajes-web/ws/v1/comunicacion',
@@ -70,6 +78,61 @@ export async function POST(req: NextRequest) {
 
     let dbResult: { rows?: any[] } | null = null;
     try {
+      // 1) Preferir credenciales multi por unidad (si existen)
+      const { ensureMirMultiSchema } = await import('@/lib/mir-multi');
+      await ensureMirMultiSchema();
+
+      if (tenantId !== 'default' && roomIdForMir) {
+        const multi = await sql`
+          SELECT c.usuario, c.contraseña, c.codigo_arrendador, c.codigo_establecimiento, c.base_url, true AS activo
+          FROM mir_unidad_credencial_map m
+          JOIN mir_credenciales c ON c.id = m.credencial_id
+          WHERE m.tenant_id = ${tenantId}::uuid
+            AND m.room_id = ${roomIdForMir}
+            AND c.activo = true
+          LIMIT 1
+        `;
+        if (multi.rows.length > 0) {
+          const r = multi.rows[0];
+          config = {
+            baseUrl: r.base_url || config.baseUrl,
+            username: r.usuario || '',
+            password: r.contraseña || '',
+            codigoArrendador: r.codigo_arrendador || '',
+            codigoEstablecimiento: r.codigo_establecimiento || '',
+            aplicacion: 'Delfin_Check_in',
+            simulacion: false,
+          };
+          console.log('✅ Config MIR cargada desde mir_credenciales por unidad:', { roomIdForMir });
+        }
+      }
+
+      // 2) Si no hay room_id o no hay mapping, usar primera credencial activa del tenant (multi)
+      if (!config.username || !config.password || !config.codigoArrendador) {
+        if (tenantId !== 'default') {
+          const anyMulti = await sql`
+            SELECT usuario, contraseña, codigo_arrendador, codigo_establecimiento, base_url, activo
+            FROM mir_credenciales
+            WHERE tenant_id = ${tenantId}::uuid AND activo = true
+            ORDER BY created_at ASC, id ASC
+            LIMIT 1
+          `;
+          if (anyMulti.rows.length > 0) {
+            const r = anyMulti.rows[0];
+            config = {
+              baseUrl: r.base_url || config.baseUrl,
+              username: r.usuario || '',
+              password: r.contraseña || '',
+              codigoArrendador: r.codigo_arrendador || '',
+              codigoEstablecimiento: r.codigo_establecimiento || '',
+              aplicacion: 'Delfin_Check_in',
+              simulacion: false,
+            };
+            console.log('✅ Config MIR cargada desde mir_credenciales (fallback tenant):', { roomIdForMir });
+          }
+        }
+      }
+
       // Buscar por propietario_id O tenant_id (ambos pueden existir)
       dbResult = await sql`
         SELECT usuario, contraseña, codigo_arrendador, codigo_establecimiento, base_url, aplicacion, simulacion, activo, propietario_id, tenant_id
@@ -87,7 +150,7 @@ export async function POST(req: NextRequest) {
         tenant_id_encontrado: dbResult.rows[0]?.tenant_id
       });
 
-      if (dbRowsLen > 0 && dbResult.rows[0].activo) {
+      if ((!config.username || !config.password || !config.codigoArrendador) && dbRowsLen > 0 && dbResult.rows[0].activo) {
         const dbConfig = dbResult.rows[0];
         config = {
           baseUrl: dbConfig.base_url || 'https://hospedajes.ses.mir.es/hospedajes-web/ws/v1/comunicacion',

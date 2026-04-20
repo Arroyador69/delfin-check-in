@@ -35,6 +35,22 @@ interface MirConfig {
   activo: boolean;
 }
 
+type MirUnitType = 'habitacion' | 'apartamento';
+
+interface MirCredencialLite {
+  id: number;
+  nombre: string;
+  codigoEstablecimiento: string;
+  activo: boolean;
+}
+
+interface MirUnitConfigRow {
+  room_id: string;
+  room_name: string;
+  unit_type: MirUnitType;
+  credencial_id: number | null;
+}
+
 const COUNTRY_CODES = ['ES', 'IT', 'PT', 'FR', 'DE'] as const;
 
 export default function MirSettingsPage() {
@@ -67,11 +83,41 @@ export default function MirSettingsPage() {
   const [serverHasCodigoArrendador, setServerHasCodigoArrendador] = useState(false);
   const [serverHasCodigoEstablecimiento, setServerHasCodigoEstablecimiento] = useState(false);
 
+  const [limits, setLimits] = useState<{ maxRooms: number } | null>(null);
+  const [credenciales, setCredenciales] = useState<MirCredencialLite[]>([]);
+  const [units, setUnits] = useState<MirUnitConfigRow[]>([]);
+  const [loadingMulti, setLoadingMulti] = useState(false);
+
   // Cargar configuración actual
   useEffect(() => {
     cargarConfiguracion();
     cargarCountryCode();
+    cargarMultiMir();
   }, []);
+
+  const cargarMultiMir = async () => {
+    setLoadingMulti(true);
+    try {
+      const [limitsRes, credsRes, unitsRes] = await Promise.all([
+        fetch('/api/tenant/limits'),
+        fetch('/api/ministerio/credenciales'),
+        fetch('/api/ministerio/unidades-config'),
+      ]);
+      const limitsJson = await limitsRes.json().catch(() => ({}));
+      const credsJson = await credsRes.json().catch(() => ({}));
+      const unitsJson = await unitsRes.json().catch(() => ({}));
+      setLimits({ maxRooms: Number(limitsJson?.tenant?.limits?.maxRooms ?? 0) });
+      setCredenciales(Array.isArray(credsJson?.credenciales) ? credsJson.credenciales : []);
+      setUnits(Array.isArray(unitsJson?.units) ? unitsJson.units : []);
+    } catch (e) {
+      console.warn('⚠️ Error cargando multi MIR:', e);
+    } finally {
+      setLoadingMulti(false);
+    }
+  };
+
+  const configured = credenciales.filter((c) => c.activo).length;
+  const maxAllowed = limits?.maxRooms ?? 0;
 
   const cargarCountryCode = async () => {
     try {
@@ -339,6 +385,78 @@ export default function MirSettingsPage() {
           <AlertDescription className="text-green-800 font-semibold">{success}</AlertDescription>
         </Alert>
       )}
+
+      <Card className="bg-white/90 backdrop-blur-sm border-white/30 shadow-xl">
+        <CardHeader>
+          <CardTitle className="text-gray-900 font-bold">🔑 {t('multiCredentialsTitle') || 'Credenciales MIR configuradas'}</CardTitle>
+          <CardDescription className="text-gray-700 font-medium">
+            {loadingMulti ? 'Cargando…' : `Configuradas: ${configured} · Máximo según tu plan: ${maxAllowed || '—'}`}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-xs text-gray-600">
+            Apartamentos: 1 credencial por apartamento. Habitaciones: pueden compartir credencial.
+          </p>
+          <div className="space-y-2">
+            {units.map((u) => (
+              <div key={u.room_id} className="rounded-lg border border-gray-200 bg-white p-3">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+                  <div className="font-semibold text-gray-900">{u.room_name}</div>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <select
+                      value={u.unit_type}
+                      onChange={async (e) => {
+                        const unit_type = e.target.value as MirUnitType;
+                        const res = await fetch('/api/ministerio/unidades-config', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ room_id: u.room_id, unit_type }),
+                        });
+                        const j = await res.json().catch(() => ({}));
+                        if (!res.ok || !j?.success) {
+                          setError(`❌ ${j?.error || 'No se pudo cambiar el tipo'}`);
+                          return;
+                        }
+                        setUnits((prev) => prev.map((x) => (x.room_id === u.room_id ? { ...x, unit_type } : x)));
+                      }}
+                      className="px-3 py-2 border border-gray-300 rounded-lg text-gray-900 bg-white"
+                    >
+                      <option value="habitacion">Habitación</option>
+                      <option value="apartamento">Apartamento</option>
+                    </select>
+                    <select
+                      value={u.credencial_id ?? ''}
+                      onChange={async (e) => {
+                        const credencial_id = e.target.value ? Number(e.target.value) : null;
+                        const res = await fetch('/api/ministerio/unidades-config', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ room_id: u.room_id, credencial_id }),
+                        });
+                        const j = await res.json().catch(() => ({}));
+                        if (!res.ok || !j?.success) {
+                          setError(`❌ ${j?.error || 'No se pudo asignar la credencial'}`);
+                          return;
+                        }
+                        setUnits((prev) => prev.map((x) => (x.room_id === u.room_id ? { ...x, credencial_id } : x)));
+                      }}
+                      className="px-3 py-2 border border-gray-300 rounded-lg text-gray-900 bg-white"
+                    >
+                      <option value="">— Sin asignar —</option>
+                      {credenciales.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.nombre} · {c.codigoEstablecimiento}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+            ))}
+            {units.length === 0 && !loadingMulti && <div className="text-sm text-gray-600">No hay unidades.</div>}
+          </div>
+        </CardContent>
+      </Card>
 
         {/* Formulario de configuración */}
         <Card className="bg-white/90 backdrop-blur-sm border-white/30 shadow-xl transition-all duration-500 hover:shadow-2xl hover:scale-[1.02]">
