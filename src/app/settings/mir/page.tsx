@@ -667,6 +667,7 @@ export default function MirSettingsPage() {
             )}
           </CardContent>
         </Card>
+      )}
 
         {/* Nuevo: credenciales múltiples por plan + asignación por unidad */}
         <Card className="bg-white/90 backdrop-blur-sm border-white/30 shadow-xl">
@@ -791,7 +792,6 @@ export default function MirSettingsPage() {
             </div>
           </CardContent>
         </Card>
-      )}
 
         {/* Información importante */}
         <Card className="bg-white/90 backdrop-blur-sm border-white/30 shadow-xl transition-all duration-500 hover:shadow-2xl hover:scale-[1.02]">
