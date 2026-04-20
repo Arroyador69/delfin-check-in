@@ -57,8 +57,20 @@ export async function POST(req: NextRequest) {
       simulacion
     });
 
-    // Obtener tenant_id del header
-    const tenantId = req.headers.get('x-tenant-id') || 'default';
+    // Obtener tenant_id autenticado (robusto multi-tenant). Header solo como fallback.
+    const { getTenantId } = await import('@/lib/tenant');
+    const tenantId =
+      (await getTenantId(req)) ||
+      req.headers.get('x-tenant-id') ||
+      req.headers.get('X-Tenant-ID') ||
+      null;
+
+    if (!tenantId) {
+      return NextResponse.json(
+        { success: false, error: 'No autorizado', message: 'No se pudo identificar el tenant' },
+        { status: 401 }
+      );
+    }
 
     // Guardar en la base de datos
     try {
@@ -75,7 +87,7 @@ export async function POST(req: NextRequest) {
           simulacion = ${simulacion},
           activo = true,
           updated_at = NOW()
-        WHERE propietario_id = ${tenantId}
+        WHERE propietario_id = ${tenantId} OR tenant_id = ${tenantId}
       `;
 
       // Si no se actualizó ninguna fila, insertar nueva
@@ -85,7 +97,7 @@ export async function POST(req: NextRequest) {
             propietario_id, usuario, contraseña, codigo_arrendador, codigo_establecimiento,
             base_url, aplicacion, simulacion, activo, created_at, updated_at
           ) VALUES (
-            ${tenantId}, ${usuario}, ${contraseña}, ${codigoArrendador}, ${codigoEstablecimiento},
+            ${tenantId}, ${u}, ${contraseña}, ${codigoArrendador}, ${codigoEstablecimiento},
             ${baseUrl}, ${aplicacion}, ${simulacion}, true, NOW(), NOW()
           )
         `;

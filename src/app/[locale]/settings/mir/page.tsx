@@ -137,8 +137,8 @@ export default function MirSettingsPage() {
         const hasAnySensitive = hasUsuario || hasContraseña || hasArr || hasEst;
         setHasConfig(hasAnySensitive);
         setConfig({
-          // No pre-rellenar datos sensibles (evita exposición accidental en UI)
-          usuario: '',
+          // Mostrar usuario WS (no es contraseña). Nunca pre-rellenar contraseña.
+          usuario: data?.config?.usuario || '',
           contraseña: '',
           codigoArrendador: data?.config?.codigoArrendador || '',
           codigoEstablecimiento: data?.config?.codigoEstablecimiento || '',
@@ -352,7 +352,7 @@ export default function MirSettingsPage() {
                 autoCapitalize="none"
                 placeholder={t('userPlaceholder')}
                 placeholder={serverHasUsuario && !editingUsuario ? 'Configurado (pulsa para cambiar)' : '12345678A---WS'}
-                value={editingUsuario ? config.usuario : ''}
+                value={editingUsuario ? config.usuario : (config.usuario || '')}
                 onChange={(e) => {
                   setConfig({...config, usuario: e.target.value});
                   setEditingUsuario(true);

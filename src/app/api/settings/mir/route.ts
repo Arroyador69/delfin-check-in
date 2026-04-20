@@ -6,13 +6,18 @@ import { sql } from '@vercel/postgres';
  */
 export async function POST(req: NextRequest) {
   try {
-    // Obtener tenant_id del header (enviado por el middleware)
-    const tenantId = req.headers.get('x-tenant-id');
+    // Obtener tenant_id autenticado (robusto multi-tenant). Header solo como fallback.
+    const { getTenantId } = await import('@/lib/tenant');
+    const tenantId =
+      (await getTenantId(req)) ||
+      req.headers.get('x-tenant-id') ||
+      req.headers.get('X-Tenant-ID') ||
+      null;
     
     if (!tenantId) {
       return NextResponse.json(
         { error: 'No se pudo identificar el tenant' },
-        { status: 400 }
+        { status: 401 }
       );
     }
 
@@ -94,13 +99,18 @@ export async function POST(req: NextRequest) {
  */
 export async function GET(req: NextRequest) {
   try {
-    // Obtener tenant_id del header (enviado por el middleware)
-    const tenantId = req.headers.get('x-tenant-id');
+    // Obtener tenant_id autenticado (robusto multi-tenant). Header solo como fallback.
+    const { getTenantId } = await import('@/lib/tenant');
+    const tenantId =
+      (await getTenantId(req)) ||
+      req.headers.get('x-tenant-id') ||
+      req.headers.get('X-Tenant-ID') ||
+      null;
     
     if (!tenantId) {
       return NextResponse.json(
         { error: 'No se pudo identificar el tenant' },
-        { status: 400 }
+        { status: 401 }
       );
     }
 

@@ -5,8 +5,17 @@ export async function GET(req: NextRequest) {
   try {
     console.log('🔍 Verificando configuración MIR...');
 
-    // Obtener tenant_id del header
-    const tenantId = req.headers.get('x-tenant-id') || 'default';
+    // Obtener tenant_id autenticado (robusto multi-tenant). Header solo como fallback.
+    const { getTenantId } = await import('@/lib/tenant');
+    const tenantId =
+      (await getTenantId(req)) ||
+      req.headers.get('x-tenant-id') ||
+      req.headers.get('X-Tenant-ID') ||
+      null;
+
+    if (!tenantId) {
+      return NextResponse.json({ success: false, error: 'No autorizado' }, { status: 401 });
+    }
 
     // Intentar cargar desde la base de datos primero
     let config = {
@@ -25,7 +34,7 @@ export async function GET(req: NextRequest) {
       const result = await sql`
         SELECT usuario, contraseña, codigo_arrendador, codigo_establecimiento, base_url, aplicacion, simulacion, activo
         FROM mir_configuraciones 
-        WHERE propietario_id = ${tenantId}
+        WHERE propietario_id = ${tenantId} OR tenant_id = ${tenantId}
         ORDER BY updated_at DESC
         LIMIT 1
       `;
@@ -104,10 +113,10 @@ export async function GET(req: NextRequest) {
       message: hasRequiredVars ? 
         'Configuración MIR completa' : 
         'Configuración MIR incompleta - faltan credenciales',
-      // Seguridad: NO devolver credenciales (usuario/contraseña) en claro.
-      // La UI debe mostrar "configurado" y solo permitir cambiar re-escribiendo.
+      // Seguridad: NO devolver contraseña en claro.
+      // Podemos devolver el usuario WS para que el propietario lo vea sin tener que recordar el texto exacto.
       config: {
-        usuario: '',
+        usuario: config.usuario,
         contraseña: '',
         codigoArrendador: config.codigoArrendador,
         codigoEstablecimiento: config.codigoEstablecimiento,
