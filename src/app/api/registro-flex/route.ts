@@ -675,15 +675,23 @@ export async function POST(req: NextRequest) {
       console.log('═══════════════════════════════════════════════════════════');
       
       try {
-      const dualResponse = await fetch(`${req.nextUrl.origin}/api/ministerio/auto-envio-dual`, {
+      // IMPORTANTE: evitar fetch HTTP hacia /api/ministerio/* desde serverless, porque el middleware
+      // exige tenant_id vía JWT y puede bloquear llamadas server-to-server aunque pasemos headers.
+      // Llamamos al handler directamente para mantener aislamiento y no abrir rutas públicas.
+      const { POST: autoEnvioDualHandler } = await import('@/app/api/ministerio/auto-envio-dual/route');
+
+      const internalReq = new NextRequest(req.url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-            'x-tenant-id': tenantId || 'default',
-            'X-Tenant-ID': tenantId || 'default' // Mantener ambos por compatibilidad
+          'Accept': 'application/json',
+          'x-tenant-id': tenantId || 'default',
+          'X-Tenant-ID': tenantId || 'default',
         },
-        body: JSON.stringify(datosMIR)
+        body: JSON.stringify({ ...datosMIR, tenantId }),
       });
+
+      const dualResponse = await autoEnvioDualHandler(internalReq);
       
         console.log('═══════════════════════════════════════════════════════════');
         console.log('📥 Respuesta del endpoint dual:');
