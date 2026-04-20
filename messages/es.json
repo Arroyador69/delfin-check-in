@@ -918,6 +918,11 @@
     "unitLinksSingleUnitsLabel": "Unidades cubiertas por este enlace",
     "unitLinksSingleMirOk": "MIR: misma credencial (o ninguna diferenciada) para todas las habitaciones mostradas.",
     "unitLinksSingleMirWarnUnassigned": "Alguna habitación no tiene credencial asignada en Configuración MIR. Asigna la misma credencial a todas o revisa la configuración para evitar fallos en el envío automático.",
+    "unitLinksRoomsTitle": "Habitaciones ({count})",
+    "unitLinksRoomsDescription": "Si todas las habitaciones comparten la misma credencial MIR, basta con el enlace público de arriba.",
+    "unitLinksRoomsWarnUnassigned": "Alguna habitación no tiene credencial asignada en Configuración MIR. Asigna la credencial correcta para evitar fallos en el envío automático.",
+    "unitLinksApartmentsTitle": "Apartamentos ({count})",
+    "unitLinksApartmentsDescription": "Cada apartamento debe usar su propio enlace para aplicar la credencial MIR asignada a esa unidad.",
     "urlCopied": "URL copiada al portapapeles",
     "errorPage": {
       "title": "Error en el Dashboard",

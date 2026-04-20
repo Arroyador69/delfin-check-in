@@ -690,6 +690,11 @@
     "unitLinksSingleUnitsLabel": "Unités couvertes par ce lien",
     "unitLinksSingleMirOk": "MIR : même identifiant (ou aucune différenciation) pour toutes les chambres affichées.",
     "unitLinksSingleMirWarnUnassigned": "Certaines chambres n’ont pas d’identifiant assigné dans Configuration MIR. Assignez le même identifiant à toutes ou corrigez la configuration pour éviter des erreurs d’envoi automatique.",
+    "unitLinksRoomsTitle": "Chambres ({count})",
+    "unitLinksRoomsDescription": "Si toutes les chambres partagent le même identifiant MIR, le lien public ci-dessus suffit.",
+    "unitLinksRoomsWarnUnassigned": "Certaines chambres n’ont pas d’identifiant assigné dans Configuration MIR. Assignez le bon identifiant pour éviter des erreurs d’envoi automatique.",
+    "unitLinksApartmentsTitle": "Appartements ({count})",
+    "unitLinksApartmentsDescription": "Chaque appartement doit utiliser son propre lien afin d’appliquer l’identifiant MIR assigné à cette unité.",
     "urlCopied": "URL copié dans le presse-papiers",
     "errorPage": {
       "title": "Erreur du tableau de bord",

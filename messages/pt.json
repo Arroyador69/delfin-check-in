@@ -689,6 +689,11 @@
     "unitLinksSingleUnitsLabel": "Unidades abrangidas por esta ligação",
     "unitLinksSingleMirOk": "MIR: mesma credencial (ou nenhuma diferenciada) para todos os quartos mostrados.",
     "unitLinksSingleMirWarnUnassigned": "Alguns quartos não têm credencial atribuída em Configuração MIR. Atribua a mesma credencial a todos ou corrija a configuração para evitar falhas no envio automático.",
+    "unitLinksRoomsTitle": "Quartos ({count})",
+    "unitLinksRoomsDescription": "Se todos os quartos partilharem a mesma credencial MIR, a ligação pública acima é suficiente.",
+    "unitLinksRoomsWarnUnassigned": "Alguns quartos não têm credencial atribuída em Configuração MIR. Atribua a correta para evitar falhas no envio automático.",
+    "unitLinksApartmentsTitle": "Apartamentos ({count})",
+    "unitLinksApartmentsDescription": "Cada apartamento deve usar a sua própria ligação para aplicar a credencial MIR atribuída a essa unidade.",
     "urlCopied": "URL copiado para a área de transferência",
     "errorPage": {
       "title": "Erro no painel",

@@ -210,7 +210,7 @@ export default function GuestRegistrationsDashboard() {
     return m;
   }, [mirUnits]);
 
-  /** Un solo enlace público (sin room_id) basta cuando no hay apartamentos y no hay varias credenciales MIR distintas. */
+  /** Un solo enlace público basta cuando todas son habitaciones y comparten credencial. */
   const unitPublicLinkMode = useMemo(() => {
     if (roomsLoading || mirUnitsLoading) return 'loading' as const;
     if (rooms.length === 0) return 'empty' as const;
@@ -219,14 +219,26 @@ export default function GuestRegistrationsDashboard() {
       if (!mirUnitsByRoomId.has(String(r.id))) return 'per-room' as const;
     }
     const configs = rooms.map((r) => mirUnitsByRoomId.get(String(r.id))!);
-    if (configs.some((c) => c.unit_type === 'apartamento')) return 'per-room' as const;
-    const nonNullCredIds = configs
-      .map((c) => c.credencial_id)
-      .filter((id): id is number => id != null);
-    const distinctCreds = new Set(nonNullCredIds);
-    if (distinctCreds.size <= 1) return 'single' as const;
-    return 'per-room' as const;
+    const roomsOnly = configs.filter((c) => c.unit_type !== 'apartamento');
+    const hasApartments = configs.some((c) => c.unit_type === 'apartamento');
+    const nonNullRoomCredIds = roomsOnly.map((c) => c.credencial_id).filter((id): id is number => id != null);
+    const distinctRoomCreds = new Set(nonNullRoomCredIds);
+    if (!hasApartments && distinctRoomCreds.size <= 1) return 'single' as const;
+    return 'per-room' as const; // (modo mixto)
   }, [rooms, roomsLoading, mirUnits, mirUnitsLoading, mirUnitsByRoomId]);
+
+  const roomsAndApartments = useMemo(() => {
+    const rows = rooms
+      .map((r) => ({ room: r, cfg: mirUnitsByRoomId.get(String(r.id)) || null }))
+      .filter((x) => x.cfg);
+    const roomUnits = rows.filter((x) => x.cfg!.unit_type !== 'apartamento');
+    const apartmentUnits = rows.filter((x) => x.cfg!.unit_type === 'apartamento');
+    const roomCredIds = roomUnits.map((x) => x.cfg!.credencial_id).filter((id): id is number => id != null);
+    const distinctRoomCreds = new Set(roomCredIds);
+    const roomsShareSameCred = distinctRoomCreds.size <= 1;
+    const roomsHasUnassigned = roomUnits.some((x) => x.cfg!.credencial_id == null);
+    return { roomUnits, apartmentUnits, roomsShareSameCred, roomsHasUnassigned };
+  }, [rooms, mirUnitsByRoomId]);
 
   const singleLinkMirSummary = useMemo(() => {
     if (unitPublicLinkMode !== 'single' || rooms.length === 0) return null;
@@ -814,60 +826,36 @@ export default function GuestRegistrationsDashboard() {
               <>
                 <h3 className="text-base font-semibold text-gray-900">{t('unitLinksTitle')}</h3>
                 <p className="text-sm text-gray-600 mt-1">{t('unitLinksDescription')}</p>
-                <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {rooms.map((r) => {
-                    const url = `${formUrl}?room_id=${encodeURIComponent(r.id)}`;
-                    const mirCfg = mirUnitsByRoomId.get(String(r.id));
-                    const unitTypeLabel =
-                      mirCfg?.unit_type === 'apartamento' ? t('unitLinkTypeApartment') : t('unitLinkTypeRoom');
-                    const mirStatusLabel = mirUnitsLoading
-                      ? '…'
-                      : !mirCfg
-                        ? t('unitLinkMirUnknown')
-                        : mirCfg.credencial_id
-                          ? t('unitLinkMirReady')
-                          : t('unitLinkMirPending');
-                    const mirStatusClass = mirUnitsLoading
-                      ? 'bg-gray-100 text-gray-700 border-gray-200'
-                      : !mirCfg
-                        ? 'bg-slate-100 text-slate-800 border-slate-200'
-                        : mirCfg.credencial_id
-                          ? 'bg-emerald-50 text-emerald-900 border-emerald-200'
-                          : 'bg-amber-50 text-amber-900 border-amber-200';
-
-                    return (
-                      <div key={r.id} className="rounded-xl border border-gray-200 bg-white p-4">
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="min-w-0">
-                            <div className="font-semibold text-gray-900 truncate">{r.name}</div>
-                            <div className="text-xs text-gray-500 truncate">ID: {r.id}</div>
-                            <div className="mt-2 flex flex-wrap gap-2">
-                              {mirCfg ? (
-                                <span className="inline-flex items-center rounded-full border border-gray-200 bg-gray-50 px-2 py-0.5 text-[11px] font-semibold text-gray-800">
-                                  {unitTypeLabel}
-                                </span>
-                              ) : mirUnitsLoading ? (
-                                <span className="inline-flex items-center rounded-full border border-gray-200 bg-gray-50 px-2 py-0.5 text-[11px] font-semibold text-gray-700">
-                                  {tCommon('loading')}
-                                </span>
-                              ) : null}
-                              <span
-                                className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold ${mirStatusClass}`}
-                              >
-                                {mirStatusLabel}
-                              </span>
-                            </div>
+                <div className="mt-4 space-y-4">
+                  {/* Habitaciones: si comparten credencial, un enlace único; si no, enlaces por habitación */}
+                  {roomsAndApartments.roomUnits.length > 0 ? (
+                    <div className="rounded-xl border border-gray-200 bg-white p-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="font-semibold text-gray-900">
+                            {t('unitLinksRoomsTitle', { count: roomsAndApartments.roomUnits.length })}
                           </div>
-                          <div className="flex gap-2">
+                          <div className="text-sm text-gray-600 mt-1">{t('unitLinksRoomsDescription')}</div>
+                        </div>
+                      </div>
+
+                      {roomsAndApartments.roomsShareSameCred ? (
+                        <>
+                          {roomsAndApartments.roomsHasUnassigned ? (
+                            <div className="mt-3 text-sm rounded-lg px-3 py-2 border text-amber-900 bg-amber-50 border-amber-200">
+                              {t('unitLinksRoomsWarnUnassigned')}
+                            </div>
+                          ) : null}
+                          <div className="mt-3 flex items-center gap-2">
                             <button
-                              onClick={() => copyToClipboard(url)}
+                              onClick={() => copyToClipboard(formUrl)}
                               className="px-3 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500"
                               title={t('copyUrl')}
                             >
                               <Copy className="w-4 h-4" />
                             </button>
                             <a
-                              href={url}
+                              href={formUrl}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="px-3 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500"
@@ -875,19 +863,146 @@ export default function GuestRegistrationsDashboard() {
                             >
                               <ExternalLink className="w-4 h-4" />
                             </a>
+                            <input
+                              type="text"
+                              value={formUrl}
+                              readOnly
+                              className="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-xs font-mono"
+                            />
                           </div>
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {roomsAndApartments.roomUnits.map(({ room }) => (
+                              <span
+                                key={room.id}
+                                className="inline-flex items-center rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-sm font-medium text-gray-800"
+                              >
+                                {room.name}
+                              </span>
+                            ))}
+                          </div>
+                        </>
+                      ) : (
+                        <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {roomsAndApartments.roomUnits.map(({ room, cfg }) => {
+                            const url = `${formUrl}?room_id=${encodeURIComponent(room.id)}`;
+                            const mirStatusLabel = cfg!.credencial_id ? t('unitLinkMirReady') : t('unitLinkMirPending');
+                            const mirStatusClass = cfg!.credencial_id
+                              ? 'bg-emerald-50 text-emerald-900 border-emerald-200'
+                              : 'bg-amber-50 text-amber-900 border-amber-200';
+                            return (
+                              <div key={room.id} className="rounded-xl border border-gray-200 bg-white p-4">
+                                <div className="flex items-start justify-between gap-3">
+                                  <div className="min-w-0">
+                                    <div className="font-semibold text-gray-900 truncate">{room.name}</div>
+                                    <div className="mt-2 flex flex-wrap gap-2">
+                                      <span className="inline-flex items-center rounded-full border border-gray-200 bg-gray-50 px-2 py-0.5 text-[11px] font-semibold text-gray-800">
+                                        {t('unitLinkTypeRoom')}
+                                      </span>
+                                      <span
+                                        className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold ${mirStatusClass}`}
+                                      >
+                                        {mirStatusLabel}
+                                      </span>
+                                    </div>
+                                  </div>
+                                  <div className="flex gap-2">
+                                    <button
+                                      onClick={() => copyToClipboard(url)}
+                                      className="px-3 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                                      title={t('copyUrl')}
+                                    >
+                                      <Copy className="w-4 h-4" />
+                                    </button>
+                                    <a
+                                      href={url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="px-3 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                      title={t('viewForm')}
+                                    >
+                                      <ExternalLink className="w-4 h-4" />
+                                    </a>
+                                  </div>
+                                </div>
+                                <div className="mt-3">
+                                  <input
+                                    type="text"
+                                    value={url}
+                                    readOnly
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-xs font-mono"
+                                  />
+                                </div>
+                              </div>
+                            );
+                          })}
                         </div>
-                        <div className="mt-3">
-                          <input
-                            type="text"
-                            value={url}
-                            readOnly
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-xs font-mono"
-                          />
-                        </div>
+                      )}
+                    </div>
+                  ) : null}
+
+                  {/* Apartamentos: siempre por unidad */}
+                  {roomsAndApartments.apartmentUnits.length > 0 ? (
+                    <div className="rounded-xl border border-gray-200 bg-white p-4">
+                      <div className="font-semibold text-gray-900">
+                        {t('unitLinksApartmentsTitle', { count: roomsAndApartments.apartmentUnits.length })}
                       </div>
-                    );
-                  })}
+                      <div className="text-sm text-gray-600 mt-1">{t('unitLinksApartmentsDescription')}</div>
+                      <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {roomsAndApartments.apartmentUnits.map(({ room, cfg }) => {
+                          const url = `${formUrl}?room_id=${encodeURIComponent(room.id)}`;
+                          const mirStatusLabel = cfg!.credencial_id ? t('unitLinkMirReady') : t('unitLinkMirPending');
+                          const mirStatusClass = cfg!.credencial_id
+                            ? 'bg-emerald-50 text-emerald-900 border-emerald-200'
+                            : 'bg-amber-50 text-amber-900 border-amber-200';
+                          return (
+                            <div key={room.id} className="rounded-xl border border-gray-200 bg-white p-4">
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="min-w-0">
+                                  <div className="font-semibold text-gray-900 truncate">{room.name}</div>
+                                  <div className="mt-2 flex flex-wrap gap-2">
+                                    <span className="inline-flex items-center rounded-full border border-gray-200 bg-gray-50 px-2 py-0.5 text-[11px] font-semibold text-gray-800">
+                                      {t('unitLinkTypeApartment')}
+                                    </span>
+                                    <span
+                                      className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold ${mirStatusClass}`}
+                                    >
+                                      {mirStatusLabel}
+                                    </span>
+                                  </div>
+                                </div>
+                                <div className="flex gap-2">
+                                  <button
+                                    onClick={() => copyToClipboard(url)}
+                                    className="px-3 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                                    title={t('copyUrl')}
+                                  >
+                                    <Copy className="w-4 h-4" />
+                                  </button>
+                                  <a
+                                    href={url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="px-3 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                    title={t('viewForm')}
+                                  >
+                                    <ExternalLink className="w-4 h-4" />
+                                  </a>
+                                </div>
+                              </div>
+                              <div className="mt-3">
+                                <input
+                                  type="text"
+                                  value={url}
+                                  readOnly
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-xs font-mono"
+                                />
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
               </>
             )}

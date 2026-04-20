@@ -886,6 +886,11 @@
     "unitLinksSingleUnitsLabel": "Yksiköt, jotka tämä linkki kattaa",
     "unitLinksSingleMirOk": "MIR: sama tunnus (tai eriytystä ei ole) kaikille näytetyille huoneille.",
     "unitLinksSingleMirWarnUnassigned": "Joillakin huoneilla ei ole MIR-asetuksissa määritettyä tunnusta. Määritä sama tunnus kaikille tai korjaa asetukset, jotta automaattinen lähetys ei epäonnistu.",
+    "unitLinksRoomsTitle": "Huoneet ({count})",
+    "unitLinksRoomsDescription": "Jos kaikki huoneet käyttävät samaa MIR-tunnusta, yllä oleva julkinen linkki riittää.",
+    "unitLinksRoomsWarnUnassigned": "Joillakin huoneilla ei ole MIR-asetuksissa määritettyä tunnusta. Määritä oikea tunnus, jotta automaattinen lähetys ei epäonnistu.",
+    "unitLinksApartmentsTitle": "Asunnot ({count})",
+    "unitLinksApartmentsDescription": "Jokaisen asunnon tulee käyttää omaa linkkiä, jotta yksikölle määritetty MIR-tunnus tulee käyttöön.",
     "urlCopied": "URL-osoite kopioitu leikepöydälle",
     "errorPage": {
       "title": "Kojelaudan virhe",

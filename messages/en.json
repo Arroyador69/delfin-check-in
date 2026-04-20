@@ -891,6 +891,11 @@
     "unitLinksSingleUnitsLabel": "Units covered by this link",
     "unitLinksSingleMirOk": "MIR: same credential (or none differentiated) for every room shown.",
     "unitLinksSingleMirWarnUnassigned": "Some rooms don’t have a credential assigned in MIR Settings. Assign the same credential to all or fix configuration to avoid automatic submission issues.",
+    "unitLinksRoomsTitle": "Rooms ({count})",
+    "unitLinksRoomsDescription": "If all rooms share the same MIR credential, the public link above is enough.",
+    "unitLinksRoomsWarnUnassigned": "Some rooms don’t have a credential assigned in MIR Settings. Assign the right one to avoid automatic submission issues.",
+    "unitLinksApartmentsTitle": "Apartments ({count})",
+    "unitLinksApartmentsDescription": "Each apartment must use its own link so the assigned MIR credential is applied for that unit.",
     "urlCopied": "URL copied to clipboard",
     "errorPage": {
       "title": "Dashboard Error",
