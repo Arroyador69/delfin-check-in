@@ -616,14 +616,23 @@ export default function MirSettingsPage() {
               </div>
 
               <p className="text-sm text-gray-600">
-                Portal oficial:{" "}
+                Enlaces oficiales:{" "}
                 <a
-                  href="https://hospedajes.ses.mir.es"
+                  href="https://hospedajes.ses.mir.es/hospedajes-sede/#/"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-blue-600 hover:underline font-semibold"
                 >
-                  hospedajes.ses.mir.es
+                  Sede SES Hospedajes
+                </a>
+                {" · "}
+                <a
+                  href="https://hospedajes.ses.mir.es/hospedajes-sede/#/comunicacion/inicio"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:underline font-semibold"
+                >
+                  Servicio de Comunicación
                 </a>
               </p>
             </div>

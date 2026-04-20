@@ -33,13 +33,17 @@ export const KB_ES: SupportKB = {
     {
       q: 'Guía oficial: obtener credenciales MIR (SES Hospedajes)',
       a:
-        'Guía basada en los manuales oficiales de SES Hospedajes (Ministerio del Interior):\n' +
+        'Guía basada en recursos oficiales de SES Hospedajes (Ministerio del Interior):\n' +
+        '\n' +
+        'Enlaces oficiales (SES Hospedajes)\n' +
+        '- Portal / Sede: https://hospedajes.ses.mir.es/hospedajes-sede/#/\n' +
+        '- Servicio de Comunicación (para ver Usuario WS y Contraseña WS): https://hospedajes.ses.mir.es/hospedajes-sede/#/comunicacion/inicio\n' +
         '\n' +
         'Paso 1) Alta de la Entidad (Propietario)\n' +
         '- Accede a la Sede Electrónica del Ministerio del Interior y entra en “Acceso al registro de establecimientos y entidades”.\n' +
         '- Identifícate con certificado digital o Cl@ve.\n' +
         '- Rellena el alta y selecciona tipo de entidad “Hospedaje”.\n' +
-        '- CRÍTICO: marca la casilla “Envío de comunicaciones por servicio web” (si no, no tendrás credenciales para software).\n' +
+        '- MUY IMPORTANTE (CRÍTICO): marca la casilla “Envío de comunicaciones por servicio web”. Si no se marca, el sistema NO generará credenciales WS y tu software NO podrá enviar automáticamente.\n' +
         '- Indica un email de notificaciones de error (el MIR avisará si hay datos incorrectos).\n' +
         '\n' +
         'Paso 2) Registro de Establecimientos (Propiedades)\n' +
@@ -65,7 +69,11 @@ export const KB_ES: SupportKB = {
     },
     {
       q: '¿Dónde consigo el usuario del MIR?',
-      a: 'En el portal oficial de hospedajes del MIR: https://hospedajes.ses.mir.es (ses.hospedajes). Al darte de alta como establecimiento con envío por web service, el MIR te asigna usuario y contraseña. El usuario suele ser tu CIF/NIF/NIE seguido de “---WS” (ejemplo: B12345678---WS).',
+      a:
+        'Entra en “Servicio de Comunicación” en SES Hospedajes:\n' +
+        '- https://hospedajes.ses.mir.es/hospedajes-sede/#/comunicacion/inicio\n' +
+        'Ahí verás el usuario y la contraseña del servicio web. Ojo: si en el alta NO marcaste “Envío de comunicaciones por servicio web”, no te aparecerán credenciales WS.\n' +
+        'El usuario suele ser tu CIF/NIF/NIE en mayúsculas seguido de “---WS” (ejemplo: B12345678---WS).',
     },
     {
       q: '¿Qué es el “código de arrendador” del MIR?',
