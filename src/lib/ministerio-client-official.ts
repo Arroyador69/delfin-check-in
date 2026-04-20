@@ -326,7 +326,9 @@ async function makeSoapRequest(cfg: MinisterioConfig, soapXml: string, operation
       'Authorization': authHeader,
       'Content-Type': 'text/xml; charset=utf-8',
       'Content-Length': contentLength.toString(),
-      'SOAPAction': `"${operation}"`,
+      // Según WSDL oficial v3.1.3: soapAction="" en todas las operaciones (SOAP 1.1)
+      // En la práctica, muchos endpoints esperan exactamente: SOAPAction: ""
+      'SOAPAction': '""',
       'User-Agent': 'Delfin_Check_in/1.0',
       'Accept': 'text/xml, application/xml, */*',
       'Cache-Control': 'no-cache',
