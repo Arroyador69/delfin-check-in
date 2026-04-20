@@ -370,22 +370,9 @@ export default function MirComunicacionesPage() {
                       setSuccess(null);
                       
                       console.log('🔄 Iniciando consulta en tiempo real con MIR...');
-                      
-                      // Primero probar la conectividad directa
-                      const testResponse = await fetch('/api/ministerio/test-mir-direct', {
-                        method: 'GET',
-                        headers: { 'Content-Type': 'application/json' }
-                      });
-                      
-                      const testResult = await testResponse.json();
-                      console.log('📊 Test de conectividad MIR:', testResult);
-                      
-                      if (!testResult.success) {
-                        throw new Error(`Error de conectividad: ${testResult.message || testResult.error}`);
-                      }
-                      
-                      // Ahora hacer la consulta en tiempo real
-                      const response = await fetch('/api/ministerio/consulta-tiempo-real-mir', {
+
+                      // Consulta real (multi-tenant + cliente oficial) — sin endpoints /test-* en producción
+                      const response = await fetch('/api/ministerio/consultar-estado-real-mir', {
                         method: 'POST',
                         headers: { 
                           'Content-Type': 'application/json',
@@ -527,7 +514,7 @@ export default function MirComunicacionesPage() {
                                   onClick={async () => {
                                     try {
                                       setLoading(true);
-                                      const response = await fetch('/api/ministerio/consulta-tiempo-real-mir', {
+                                      const response = await fetch('/api/ministerio/consultar-estado-real-mir', {
                                         method: 'POST',
                                         headers: { 'Content-Type': 'application/json' }
                                       });
