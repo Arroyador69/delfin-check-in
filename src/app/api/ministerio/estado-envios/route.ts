@@ -144,6 +144,40 @@ export async function GET(req: NextRequest) {
     registrosAgrupados.forEach((grupo, guestId) => {
       const registro = grupo.guest_registration;
       const comunicacionesMIR = grupo.comunicaciones_mir;
+
+      const estadoPriority = (estado: string | undefined | null): number => {
+        switch (estado) {
+          case 'confirmado':
+            return 4;
+          case 'enviado':
+            return 3;
+          case 'error':
+          case 'anulado':
+            return 2;
+          case 'pendiente':
+            return 1;
+          default:
+            return 0;
+        }
+      };
+
+      const toMs = (d: unknown): number => {
+        if (!d) return 0;
+        const t = new Date(d as any).getTime();
+        return Number.isFinite(t) ? t : 0;
+      };
+
+      const pickBest = (items: any[], tipo: 'PV' | 'RH') => {
+        const candidates = (items || []).filter((c) => c?.tipo === tipo);
+        if (candidates.length === 0) return null;
+        candidates.sort((a, b) => {
+          const pa = estadoPriority(a?.estado);
+          const pb = estadoPriority(b?.estado);
+          if (pa !== pb) return pb - pa;
+          return toMs(b?.created_at) - toMs(a?.created_at);
+        });
+        return candidates[0];
+      };
       
       // Extraer nombre del huésped
       let nombreCompleto = 'Datos no disponibles';
@@ -162,10 +196,13 @@ export async function GET(req: NextRequest) {
       const loteFromData = mirStatusFromData.lote;
       
       // Determinar estados de PV y RH por separado
-      const estadoPV = comunicacionesMIR.find(c => c.tipo === 'PV')?.estado || estadoFromData;
-      const estadoRH = comunicacionesMIR.find(c => c.tipo === 'RH')?.estado || estadoFromData;
-      const lotePV = comunicacionesMIR.find(c => c.tipo === 'PV')?.lote || loteFromData;
-      const loteRH = comunicacionesMIR.find(c => c.tipo === 'RH')?.lote || loteFromData;
+      const pvBest = pickBest(comunicacionesMIR, 'PV');
+      const rhBest = pickBest(comunicacionesMIR, 'RH');
+
+      const estadoPV = pvBest?.estado || estadoFromData;
+      const estadoRH = rhBest?.estado || estadoFromData;
+      const lotePV = pvBest?.lote || loteFromData;
+      const loteRH = rhBest?.lote || loteFromData;
       
       // Crear comunicaciones separadas para PV y RH si existen
       const comunicacionesParaMostrar = [];
@@ -189,13 +226,13 @@ export async function GET(req: NextRequest) {
           referencia: registro.reserva_ref,
           tipo: 'PV',
           lote: lotePV,
-          error: comunicacionesMIR.find(c => c.tipo === 'PV')?.error,
-          fechaEnvio: comunicacionesMIR.find(c => c.tipo === 'PV')?.created_at,
+          error: pvBest?.error,
+          fechaEnvio: pvBest?.created_at,
           estado: normalizedEstadoPV,
           tenant_id: registro.tenant_id,
           vinculacion: {
             guest_registration_id: registro.id,
-            mir_comunicacion_id: comunicacionesMIR.find(c => c.tipo === 'PV')?.id,
+            mir_comunicacion_id: pvBest?.id,
             reserva_ref: registro.reserva_ref
           }
         });
@@ -220,13 +257,13 @@ export async function GET(req: NextRequest) {
           referencia: registro.reserva_ref,
           tipo: 'RH',
           lote: loteRH,
-          error: comunicacionesMIR.find(c => c.tipo === 'RH')?.error,
-          fechaEnvio: comunicacionesMIR.find(c => c.tipo === 'RH')?.created_at,
+          error: rhBest?.error,
+          fechaEnvio: rhBest?.created_at,
           estado: normalizedEstadoRH,
           tenant_id: registro.tenant_id,
           vinculacion: {
             guest_registration_id: registro.id,
-            mir_comunicacion_id: comunicacionesMIR.find(c => c.tipo === 'RH')?.id,
+            mir_comunicacion_id: rhBest?.id,
             reserva_ref: registro.reserva_ref
           }
         });
@@ -272,7 +309,9 @@ export async function GET(req: NextRequest) {
       });
     });
     
-    estadisticas.total = result.rows.length;
+    // total real de comunicaciones mostradas (PV+RH), no filas del JOIN
+    estadisticas.total =
+      estadisticas.pendientes + estadisticas.enviados + estadisticas.confirmados + estadisticas.errores;
     
     console.log('📈 Estadísticas de envíos:', estadisticas);
     
