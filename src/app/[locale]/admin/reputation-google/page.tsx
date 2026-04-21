@@ -26,6 +26,10 @@ export default function ReputationGooglePage() {
   const [guestLocale, setGuestLocale] = useState<ReputationGuestLocale>('es');
   const [messageEs, setMessageEs] = useState('');
   const [messageEn, setMessageEn] = useState('');
+  const [properties, setProperties] = useState<Array<{ id: number; name: string; url: string }>>([]);
+  const [selectedPropertyId, setSelectedPropertyId] = useState<number | null>(null);
+  const [propertyUrl, setPropertyUrl] = useState('');
+  const [propertyBusy, setPropertyBusy] = useState(false);
   const [recommended, setRecommended] = useState<{ es: string; en: string }>({ es: '', en: '' });
   const [settingsLoaded, setSettingsLoaded] = useState(false);
   const [saveBusy, setSaveBusy] = useState(false);
@@ -75,9 +79,43 @@ export default function ReputationGooglePage() {
     }
   }, [unlocked, t]);
 
+  const loadProperties = useCallback(async () => {
+    if (!unlocked) return;
+    try {
+      const r = await fetch('/api/tenant/reputation-google/properties', { credentials: 'include' });
+      const data = await r.json();
+      if (!data.success) return;
+      const list = Array.isArray(data.properties) ? data.properties : [];
+      const mapped = list
+        .map((p: any) => ({
+          id: Number(p.id),
+          name: String(p.property_name || ''),
+          url: String(p.google_review_url || ''),
+        }))
+        .filter((p: any) => Number.isFinite(p.id) && p.id > 0);
+      setProperties(mapped);
+      if (mapped.length > 0) {
+        const initialId = selectedPropertyId && mapped.some((x) => x.id === selectedPropertyId)
+          ? selectedPropertyId
+          : mapped[0].id;
+        setSelectedPropertyId(initialId);
+        const found = mapped.find((x) => x.id === initialId);
+        setPropertyUrl(found?.url || '');
+      } else {
+        setSelectedPropertyId(null);
+        setPropertyUrl('');
+      }
+    } catch {
+      // no-op
+    }
+  }, [unlocked, selectedPropertyId]);
+
   useEffect(() => {
-    if (unlocked) loadSettings();
-  }, [unlocked, loadSettings]);
+    if (unlocked) {
+      loadSettings();
+      loadProperties();
+    }
+  }, [unlocked, loadSettings, loadProperties]);
 
   useEffect(() => {
     if (unlocked && settingsLoaded && tenant?.email && !testEmailInitializedRef.current) {
@@ -123,7 +161,7 @@ export default function ReputationGooglePage() {
     setMessage(null);
     setError(null);
 
-    const url = reviewUrl.trim();
+    const url = (propertyUrl.trim() || reviewUrl.trim());
     if (!url) {
       setError(t('testEmailNeedUrl'));
       return;
@@ -147,6 +185,7 @@ export default function ReputationGooglePage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           reviewUrl: url,
+          propertyId: selectedPropertyId,
           guestEmailLocale: guestLocale,
           guestMessageEs: messageEs,
           guestMessageEn: messageEn,
@@ -164,6 +203,37 @@ export default function ReputationGooglePage() {
       setError(t('toastTestFail'));
     } finally {
       setTestBusy(false);
+    }
+  };
+
+  const savePropertyUrl = async () => {
+    if (!unlocked) return;
+    if (!selectedPropertyId) return;
+    setPropertyBusy(true);
+    setMessage(null);
+    setError(null);
+    try {
+      const r = await fetch('/api/tenant/reputation-google/properties', {
+        method: 'PUT',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          propertyId: selectedPropertyId,
+          googleReviewUrl: propertyUrl,
+        }),
+      });
+      const data = await r.json();
+      if (!data.success) {
+        setError(data.error || t('errSave'));
+        return;
+      }
+      setMessage(t('propertySaved'));
+      setTimeout(() => setMessage(null), 3500);
+      await loadProperties();
+    } catch {
+      setError(t('errSave'));
+    } finally {
+      setPropertyBusy(false);
     }
   };
 
@@ -240,6 +310,65 @@ export default function ReputationGooglePage() {
                     onChange={(e) => setReviewUrl(e.target.value)}
                   />
                   <p className="text-xs text-gray-500 mt-1">{t('hintUrl')}</p>
+                </div>
+
+                <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 space-y-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-gray-900">{t('propertyLinksTitle')}</p>
+                      <p className="text-xs text-gray-600 mt-1">{t('propertyLinksSubtitle')}</p>
+                    </div>
+                  </div>
+
+                  {properties.length === 0 ? (
+                    <p className="text-xs text-gray-600">{t('propertyLinksEmpty')}</p>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div className="sm:col-span-1">
+                        <Label htmlFor="rg-prop" className="text-sm font-medium text-gray-800">
+                          {t('propertyLinksSelect')}
+                        </Label>
+                        <select
+                          id="rg-prop"
+                          className="mt-1.5 h-10 w-full rounded-md border border-gray-300 bg-white px-3 text-sm"
+                          value={selectedPropertyId ?? ''}
+                          onChange={(e) => {
+                            const id = Number(e.target.value);
+                            const nextId = Number.isFinite(id) ? id : null;
+                            setSelectedPropertyId(nextId);
+                            const found = properties.find((p) => p.id === nextId);
+                            setPropertyUrl(found?.url || '');
+                          }}
+                        >
+                          {properties.map((p) => (
+                            <option key={p.id} value={p.id}>
+                              {p.name || `#${p.id}`}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="sm:col-span-2">
+                        <Label htmlFor="rg-prop-url" className="text-sm font-medium text-gray-800">
+                          {t('propertyLinksUrl')}
+                        </Label>
+                        <Input
+                          id="rg-prop-url"
+                          type="url"
+                          className="mt-1.5"
+                          placeholder="https://g.page/…"
+                          value={propertyUrl}
+                          onChange={(e) => setPropertyUrl(e.target.value)}
+                        />
+                        <p className="text-xs text-gray-500 mt-1">{t('propertyLinksHint')}</p>
+                      </div>
+                      <div className="sm:col-span-3 flex flex-wrap gap-3">
+                        <Button type="button" variant="outline" onClick={savePropertyUrl} disabled={propertyBusy}>
+                          {propertyBusy ? t('saving') : t('propertyLinksSave')}
+                        </Button>
+                        <p className="text-xs text-gray-500 self-center">{t('propertyLinksFallback')}</p>
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <div>
                   <span className="text-sm font-medium text-gray-800">{t('labelLocale')}</span>

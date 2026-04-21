@@ -17,6 +17,7 @@ export async function GET(req: NextRequest) {
     try {
       await sql`ALTER TABLE tenant_properties ADD COLUMN IF NOT EXISTS included_guests INT DEFAULT 2`;
       await sql`ALTER TABLE tenant_properties ADD COLUMN IF NOT EXISTS extra_guest_fee DECIMAL(10,2) DEFAULT 0`;
+      await sql`ALTER TABLE tenant_properties ADD COLUMN IF NOT EXISTS google_review_url TEXT`;
     } catch (_) {}
     // Priorizar tenant_id desde JWT; si no está, caer al header (middleware)
     let tenantId = await getTenantId(req);
@@ -91,6 +92,7 @@ export async function GET(req: NextRequest) {
           tp.bedrooms, tp.bathrooms, tp.amenities, tp.base_price, tp.cleaning_fee,
           tp.security_deposit, tp.minimum_nights, tp.maximum_nights,
           tp.availability_rules, tp.is_active, tp.created_at, tp.updated_at,
+          tp.google_review_url,
           prm.room_id, FALSE AS is_placeholder
         FROM tenant_properties tp
         LEFT JOIN property_room_map prm
@@ -117,6 +119,7 @@ export async function GET(req: NextRequest) {
           TRUE AS is_active,
           NOW() AS created_at,
           NOW() AS updated_at,
+          NULL::text AS google_review_url,
           r.id AS room_id,
           TRUE AS is_placeholder
         FROM "Room" r
@@ -157,6 +160,7 @@ export async function GET(req: NextRequest) {
       is_active: row.is_active,
       created_at: row.created_at,
       updated_at: row.updated_at,
+      google_review_url: row.google_review_url || '',
       room_id: row.room_id || null,
       is_placeholder: row.is_placeholder || false
     }));
@@ -188,6 +192,7 @@ export async function POST(req: NextRequest) {
     try {
       await sql`ALTER TABLE tenant_properties ADD COLUMN IF NOT EXISTS included_guests INT DEFAULT 2`;
       await sql`ALTER TABLE tenant_properties ADD COLUMN IF NOT EXISTS extra_guest_fee DECIMAL(10,2) DEFAULT 0`;
+      await sql`ALTER TABLE tenant_properties ADD COLUMN IF NOT EXISTS google_review_url TEXT`;
     } catch (_) {}
     // Obtener tenant_id del header (inyectado por middleware) o del token
     let tenantId = req.headers.get('x-tenant-id');
@@ -344,6 +349,7 @@ export async function PUT(req: NextRequest) {
     try {
       await sql`ALTER TABLE tenant_properties ADD COLUMN IF NOT EXISTS included_guests INT DEFAULT 2`;
       await sql`ALTER TABLE tenant_properties ADD COLUMN IF NOT EXISTS extra_guest_fee DECIMAL(10,2) DEFAULT 0`;
+      await sql`ALTER TABLE tenant_properties ADD COLUMN IF NOT EXISTS google_review_url TEXT`;
     } catch (_) {}
     // Obtener tenant_id del header (inyectado por middleware) o del token
     let tenantId = req.headers.get('x-tenant-id');

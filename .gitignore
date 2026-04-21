@@ -98,6 +98,9 @@ jspm_packages/
 # macOS
 .DS_Store
 
+# TypeScript incremental build info
+tsconfig.tsbuildinfo
+
 # Windows
 Thumbs.db
 ehthumbs.db

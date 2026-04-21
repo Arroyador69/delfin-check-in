@@ -95,21 +95,41 @@ export async function PUT(req: NextRequest) {
     };
 
     if (next.enabled) {
-      if (!next.reviewUrl.trim()) {
-        return NextResponse.json(
-          { success: false, error: 'Pega el enlace de reseña de Google para activar el envío.' },
-          { status: 400 }
-        );
-      }
-      if (!isPlausibleGoogleReviewUrl(next.reviewUrl)) {
-        return NextResponse.json(
-          {
-            success: false,
-            error:
-              'El enlace no parece un enlace de Google (Maps, Perfil de empresa o g.page). Revísalo y vuelve a guardar.',
-          },
-          { status: 400 }
-        );
+      const globalUrl = next.reviewUrl.trim();
+      if (globalUrl) {
+        if (!isPlausibleGoogleReviewUrl(globalUrl)) {
+          return NextResponse.json(
+            {
+              success: false,
+              error:
+                'El enlace no parece un enlace de Google (Maps, Perfil de empresa o g.page). Revísalo y vuelve a guardar.',
+            },
+            { status: 400 }
+          );
+        }
+      } else {
+        // Permitimos habilitar si existe al menos 1 enlace por propiedad.
+        try {
+          await sql`ALTER TABLE tenant_properties ADD COLUMN IF NOT EXISTS google_review_url TEXT`;
+        } catch (_) {}
+        const c = await sql`
+          SELECT COUNT(*)::int AS n
+          FROM tenant_properties
+          WHERE tenant_id = ${tenantId}::uuid
+            AND google_review_url IS NOT NULL
+            AND BTRIM(google_review_url) <> ''
+        `;
+        const n = Number(c.rows?.[0]?.n || 0);
+        if (!Number.isFinite(n) || n <= 0) {
+          return NextResponse.json(
+            {
+              success: false,
+              error:
+                'Para activar el envío, guarda un enlace global o asigna al menos un enlace de reseña a una propiedad.',
+            },
+            { status: 400 }
+          );
+        }
       }
     }
 

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { sql } from '@vercel/postgres';
 import { getTenantId, getTenantById } from '@/lib/tenant';
 import { verifyToken } from '@/lib/auth';
 import { sendEmail } from '@/lib/email';
@@ -38,7 +39,30 @@ export async function POST(req: NextRequest) {
     const body = await req.json().catch(() => ({} as Record<string, unknown>));
 
     const urlFromBody = typeof body.reviewUrl === 'string' ? body.reviewUrl.trim() : '';
-    const reviewUrl = urlFromBody || settings.reviewUrl.trim();
+    const propertyIdRaw = (body as any).propertyId;
+    const propertyId = typeof propertyIdRaw === 'number' ? propertyIdRaw : Number(propertyIdRaw);
+
+    // Si se pasa propertyId, usar el enlace por propiedad (fallback al global del tenant).
+    let propertyUrl = '';
+    if (Number.isFinite(propertyId) && propertyId > 0) {
+      try {
+        await sql`ALTER TABLE tenant_properties ADD COLUMN IF NOT EXISTS google_review_url TEXT`;
+      } catch (_) {}
+      try {
+        const r = await sql`
+          SELECT COALESCE(google_review_url, '') AS google_review_url
+          FROM tenant_properties
+          WHERE id = ${propertyId}
+            AND tenant_id = ${tenantId}::uuid
+          LIMIT 1
+        `;
+        propertyUrl = String(r.rows?.[0]?.google_review_url || '').trim();
+      } catch (_) {
+        propertyUrl = '';
+      }
+    }
+
+    const reviewUrl = urlFromBody || propertyUrl || settings.reviewUrl.trim();
     const locale =
       body.guestEmailLocale === 'en' || body.guestEmailLocale === 'es'
         ? body.guestEmailLocale

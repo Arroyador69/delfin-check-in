@@ -29,6 +29,13 @@ type RepSettings = {
   guestMessageEn: string;
 };
 
+type ReputationProperty = {
+  id: number;
+  property_name: string;
+  google_review_url: string;
+  room_id: string | null;
+};
+
 const defaultSettings: RepSettings = {
   enabled: false,
   reviewUrl: '',
@@ -42,6 +49,8 @@ export default function ReputationSettingsScreen() {
   const { session } = useAuth();
   const queryClient = useQueryClient();
   const [draft, setDraft] = useState<RepSettings>(defaultSettings);
+  const [selectedPropertyId, setSelectedPropertyId] = useState<number | null>(null);
+  const [propertyUrlDraft, setPropertyUrlDraft] = useState<string>('');
 
   const { data, isLoading } = useQuery({
     queryKey: ['reputation-google'],
@@ -49,6 +58,15 @@ export default function ReputationSettingsScreen() {
       const res = await api.get('/api/tenant/reputation-google');
       return res.data as { success?: boolean; settings?: RepSettings; isPro?: boolean };
     },
+  });
+
+  const { data: propsData } = useQuery({
+    queryKey: ['reputation-google-properties'],
+    queryFn: async () => {
+      const res = await api.get('/api/tenant/reputation-google/properties');
+      return res.data as { success?: boolean; properties?: ReputationProperty[] };
+    },
+    enabled: Boolean(data?.isPro),
   });
 
   useEffect(() => {
@@ -62,6 +80,20 @@ export default function ReputationSettingsScreen() {
       });
     }
   }, [data]);
+
+  useEffect(() => {
+    const props = (propsData?.properties || []).filter((p) => Number.isFinite(Number(p.id)) && Number(p.id) > 0);
+    if (props.length === 0) {
+      setSelectedPropertyId(null);
+      setPropertyUrlDraft('');
+      return;
+    }
+    const initialId = selectedPropertyId && props.some((p) => p.id === selectedPropertyId) ? selectedPropertyId : props[0].id;
+    setSelectedPropertyId(initialId);
+    const found = props.find((p) => p.id === initialId);
+    setPropertyUrlDraft(found?.google_review_url || '');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [propsData]);
 
   const saveMutation = useMutation({
     mutationFn: async () => {
@@ -77,7 +109,27 @@ export default function ReputationSettingsScreen() {
     },
   });
 
+  const savePropertyUrlMutation = useMutation({
+    mutationFn: async () => {
+      if (!selectedPropertyId) throw new Error('propertyId missing');
+      const res = await api.put('/api/tenant/reputation-google/properties', {
+        propertyId: selectedPropertyId,
+        googleReviewUrl: propertyUrlDraft,
+      });
+      return res.data as { success?: boolean; error?: string };
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['reputation-google-properties'] });
+      Alert.alert(t('common.success'), t('reputationGoogle.propertySaved'));
+    },
+    onError: (e: any) => {
+      Alert.alert(t('common.error'), e?.response?.data?.error || e?.message || t('mobile.settings.saveFailed'));
+    },
+  });
+
   const isPro = Boolean(data?.isPro);
+  const properties = (propsData?.properties || []).filter((p) => Number.isFinite(Number(p.id)) && Number(p.id) > 0);
+  const selectedProperty = selectedPropertyId ? properties.find((p) => p.id === selectedPropertyId) : null;
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
@@ -138,6 +190,73 @@ export default function ReputationSettingsScreen() {
           autoCapitalize="none"
           editable={isPro}
         />
+        <View style={styles.sectionBox}>
+          <Text style={styles.sectionTitle}>{t('reputationGoogle.propertyLinksTitle')}</Text>
+          <Text style={styles.sectionSubtitle}>{t('reputationGoogle.propertyLinksSubtitle')}</Text>
+
+          {properties.length === 0 ? (
+            <Text style={styles.sectionEmpty}>{t('reputationGoogle.propertyLinksEmpty')}</Text>
+          ) : (
+            <>
+              <View style={styles.rowBetween}>
+                <Text style={styles.label}>{t('reputationGoogle.propertyLinksSelect')}</Text>
+                <View style={{ flexDirection: 'row', gap: 10 }}>
+                  <Pressable
+                    style={[styles.smallBtn, (!isPro || properties.length < 2) && styles.disabled]}
+                    disabled={!isPro || properties.length < 2}
+                    onPress={() => {
+                      if (properties.length < 2) return;
+                      const idx = properties.findIndex((p) => p.id === selectedPropertyId);
+                      const prev = idx <= 0 ? properties[properties.length - 1] : properties[idx - 1];
+                      setSelectedPropertyId(prev.id);
+                      setPropertyUrlDraft(prev.google_review_url || '');
+                    }}
+                  >
+                    <Text style={styles.smallBtnText}>‹</Text>
+                  </Pressable>
+                  <Pressable
+                    style={[styles.smallBtn, (!isPro || properties.length < 2) && styles.disabled]}
+                    disabled={!isPro || properties.length < 2}
+                    onPress={() => {
+                      if (properties.length < 2) return;
+                      const idx = properties.findIndex((p) => p.id === selectedPropertyId);
+                      const next = idx < 0 || idx === properties.length - 1 ? properties[0] : properties[idx + 1];
+                      setSelectedPropertyId(next.id);
+                      setPropertyUrlDraft(next.google_review_url || '');
+                    }}
+                  >
+                    <Text style={styles.smallBtnText}>›</Text>
+                  </Pressable>
+                </View>
+              </View>
+              <Text style={styles.propertyLine}>
+                {selectedProperty
+                  ? `${selectedProperty.property_name || `#${selectedProperty.id}`} · ID ${selectedProperty.id}`
+                  : t('reputationGoogle.propertyLinksSelect')}
+              </Text>
+
+              <Text style={styles.label}>{t('reputationGoogle.propertyLinksUrl')}</Text>
+              <TextInput
+                style={styles.input}
+                value={propertyUrlDraft}
+                onChangeText={(v) => setPropertyUrlDraft(v)}
+                placeholder="https://g.page/..."
+                autoCapitalize="none"
+                editable={isPro}
+              />
+              <Text style={styles.sectionHint}>{t('reputationGoogle.propertyLinksHint')}</Text>
+              <Text style={styles.sectionHint}>{t('reputationGoogle.propertyLinksFallback')}</Text>
+
+              <Pressable
+                style={[styles.secondaryBtn, (!isPro || savePropertyUrlMutation.isPending) && styles.disabled]}
+                disabled={!isPro || savePropertyUrlMutation.isPending}
+                onPress={() => savePropertyUrlMutation.mutate()}
+              >
+                <Text style={styles.secondaryBtnText}>{t('reputationGoogle.propertyLinksSave')}</Text>
+              </Pressable>
+            </>
+          )}
+        </View>
         <Text style={styles.label}>{t('reputationGoogle.labelLocale')}</Text>
         <View style={{ flexDirection: 'row', gap: 8, marginBottom: 10 }}>
             {(['es', 'en'] as const).map((loc) => (
@@ -234,6 +353,31 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     backgroundColor: '#f9fafb',
   },
+  sectionBox: {
+    marginTop: 6,
+    marginBottom: 8,
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    backgroundColor: '#f8fafc',
+  },
+  sectionTitle: { fontSize: 13, fontWeight: '900', color: '#111827' },
+  sectionSubtitle: { marginTop: 3, fontSize: 11, color: '#6b7280', lineHeight: 15, marginBottom: 10 },
+  sectionHint: { marginTop: 2, fontSize: 11, color: '#6b7280', lineHeight: 15 },
+  sectionEmpty: { fontSize: 11, color: '#6b7280', lineHeight: 16 },
+  propertyLine: { fontSize: 12, color: '#111827', fontWeight: '800', marginBottom: 10 },
+  smallBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    backgroundColor: 'white',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  smallBtnText: { fontSize: 18, fontWeight: '900', color: '#111827', marginTop: -1 },
   textarea: {
     borderWidth: 1,
     borderColor: '#e5e7eb',
@@ -255,6 +399,8 @@ const styles = StyleSheet.create({
   chipOn: { backgroundColor: '#2563eb', borderColor: '#2563eb' },
   chipText: { fontWeight: '700', color: '#374151' },
   chipOnText: { fontWeight: '800', color: 'white' },
+  secondaryBtn: { marginTop: 10, paddingVertical: 12, borderRadius: 12, backgroundColor: '#2563eb', alignItems: 'center' },
+  secondaryBtnText: { color: 'white', fontWeight: '900' },
   primaryBtn: { marginTop: 8, paddingVertical: 14, borderRadius: 12, backgroundColor: '#059669', alignItems: 'center' },
   primaryBtnText: { color: 'white', fontWeight: '900' },
   disabled: { opacity: 0.5 },

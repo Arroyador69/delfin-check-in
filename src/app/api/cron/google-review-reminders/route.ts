@@ -13,6 +13,7 @@ type ReminderRow = {
   guest_email: string | null;
   guest_name: string | null;
   property_name: string | null;
+  property_review_url: string | null;
   tenant_name: string | null;
   config: Record<string, unknown>;
 };
@@ -35,6 +36,11 @@ export async function GET(req: NextRequest) {
   const results = { scanned: 0, sent: 0, failed: 0, skipped: 0, errors: [] as string[] };
 
   try {
+    // Hardening: el enlace por propiedad vive en tenant_properties.google_review_url
+    try {
+      await sql`ALTER TABLE tenant_properties ADD COLUMN IF NOT EXISTS google_review_url TEXT`;
+    } catch (_) {}
+
     const rows = await sql`
       WITH combined AS (
         SELECT
@@ -43,6 +49,7 @@ export async function GET(req: NextRequest) {
           dr.guest_email,
           dr.guest_name,
           tp.property_name,
+          tp.google_review_url AS property_review_url,
           t.name AS tenant_name,
           t.config,
           dr.check_out_date AS sort_date
@@ -55,7 +62,10 @@ export async function GET(req: NextRequest) {
           AND dr.google_review_reminder_sent_at IS NULL
           AND (t.plan_type = 'pro' OR t.plan_id IN ('pro', 'enterprise'))
           AND COALESCE(t.config->'reputationGoogle'->>'enabled', 'false') = 'true'
-          AND NULLIF(BTRIM(t.config->'reputationGoogle'->>'reviewUrl'), '') IS NOT NULL
+          AND (
+            NULLIF(BTRIM(tp.google_review_url), '') IS NOT NULL
+            OR NULLIF(BTRIM(t.config->'reputationGoogle'->>'reviewUrl'), '') IS NOT NULL
+          )
 
         UNION ALL
 
@@ -70,6 +80,7 @@ export async function GET(req: NextRequest) {
             NULLIF(BTRIM(r.room_id), ''),
             ''
           ) AS property_name,
+          tp2.google_review_url AS property_review_url,
           t.name AS tenant_name,
           t.config,
           (r.check_out::date) AS sort_date
@@ -84,9 +95,12 @@ export async function GET(req: NextRequest) {
           AND r.google_review_reminder_sent_at IS NULL
           AND (t.plan_type = 'pro' OR t.plan_id IN ('pro', 'enterprise'))
           AND COALESCE(t.config->'reputationGoogle'->>'enabled', 'false') = 'true'
-          AND NULLIF(BTRIM(t.config->'reputationGoogle'->>'reviewUrl'), '') IS NOT NULL
+          AND (
+            NULLIF(BTRIM(tp2.google_review_url), '') IS NOT NULL
+            OR NULLIF(BTRIM(t.config->'reputationGoogle'->>'reviewUrl'), '') IS NOT NULL
+          )
       )
-      SELECT reservation_id, source_kind, guest_email, guest_name, property_name, tenant_name, config
+      SELECT reservation_id, source_kind, guest_email, guest_name, property_name, property_review_url, tenant_name, config
       FROM combined
       ORDER BY sort_date ASC NULLS LAST
       LIMIT 50
@@ -96,9 +110,14 @@ export async function GET(req: NextRequest) {
 
     for (const row of rows.rows as ReminderRow[]) {
       const cfg = parseReputationGoogleFromConfig(row.config as Record<string, unknown>);
-      const reviewUrl = cfg.reviewUrl.trim();
+      const reviewUrl = (String(row.property_review_url || '').trim() || cfg.reviewUrl.trim());
       const locale = (cfg.guestEmailLocale === 'en' ? 'en' : 'es') as ReputationGuestLocale;
       const guestEmail = String(row.guest_email || '').trim().toLowerCase();
+
+      if (!reviewUrl) {
+        results.skipped += 1;
+        continue;
+      }
 
       if (!guestEmail || !guestEmail.includes('@')) {
         results.skipped += 1;
