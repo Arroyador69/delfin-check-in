@@ -36,6 +36,12 @@ type ReputationProperty = {
   room_id: string | null;
 };
 
+type PropertySlot = {
+  room_id: string;
+  room_name: string;
+  property_id: number | null;
+};
+
 const defaultSettings: RepSettings = {
   enabled: false,
   reviewUrl: '',
@@ -130,6 +136,76 @@ export default function ReputationSettingsScreen() {
   const isPro = Boolean(data?.isPro);
   const properties = (propsData?.properties || []).filter((p) => Number.isFinite(Number(p.id)) && Number(p.id) > 0);
   const selectedProperty = selectedPropertyId ? properties.find((p) => p.id === selectedPropertyId) : null;
+
+  const { data: limitsData } = useQuery({
+    queryKey: ['tenant-limits'],
+    queryFn: async () => {
+      const res = await api.get('/api/tenant/limits');
+      return res.data as { success?: boolean; tenant?: { limits?: { maxRooms?: number } }; currentRooms?: any[] };
+    },
+    enabled: Boolean(isPro),
+  });
+
+  const { data: slotsData } = useQuery({
+    queryKey: ['tenant-property-slots'],
+    queryFn: async () => {
+      const res = await api.get('/api/tenant/property-slots');
+      return res.data as { success?: boolean; slots?: PropertySlot[] };
+    },
+    enabled: Boolean(isPro),
+  });
+
+  const maxRooms = Number(limitsData?.tenant?.limits?.maxRooms);
+  const currentRooms = Array.isArray(limitsData?.currentRooms) ? limitsData!.currentRooms!.length : 0;
+  const canCreateMoreUnits = Number.isFinite(maxRooms) && (maxRooms === -1 || currentRooms < maxRooms);
+  const slots = (slotsData?.slots || []).map((s: any) => ({
+    room_id: String((s as any).room_id),
+    room_name: String((s as any).room_name || ''),
+    property_id: (s as any).property_id != null ? Number((s as any).property_id) : null,
+  }));
+
+  const createPropertyMutation = useMutation({
+    mutationFn: async (args: { room_id: string; room_name: string }) => {
+      if (!canCreateMoreUnits) {
+        throw new Error('limit');
+      }
+      const roomId = args.room_id;
+      const payload: any = {
+        room_id: Number.isFinite(Number(roomId)) ? Number(roomId) : roomId,
+        property_name: args.room_name || `Unidad ${roomId}`,
+        description: '',
+        photos: [],
+        max_guests: 2,
+        bedrooms: 1,
+        bathrooms: 1,
+        amenities: [],
+        base_price: 50,
+        cleaning_fee: 0,
+        security_deposit: 0,
+        minimum_nights: 1,
+        maximum_nights: 30,
+        availability_rules: {},
+        is_active: true,
+      };
+      const res = await api.post('/api/tenant/properties', payload);
+      return res.data as { success?: boolean; error?: string };
+    },
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['tenant-property-slots'] }),
+        queryClient.invalidateQueries({ queryKey: ['reputation-google-properties'] }),
+        queryClient.invalidateQueries({ queryKey: ['tenant-limits'] }),
+      ]);
+      Alert.alert(t('common.success'), t('reputationGoogle.slotCreated'));
+    },
+    onError: (e: any) => {
+      if (e?.message === 'limit') {
+        Alert.alert(t('common.error'), t('reputationGoogle.slotsLimitReached'));
+        return;
+      }
+      Alert.alert(t('common.error'), e?.response?.data?.error || e?.message || t('mobile.settings.saveFailed'));
+    },
+  });
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
@@ -255,6 +331,52 @@ export default function ReputationSettingsScreen() {
                 <Text style={styles.secondaryBtnText}>{t('reputationGoogle.propertyLinksSave')}</Text>
               </Pressable>
             </>
+          )}
+        </View>
+
+        <View style={styles.sectionBox}>
+          <Text style={styles.sectionTitle}>{t('reputationGoogle.slotsTitle')}</Text>
+          <Text style={styles.sectionSubtitle}>{t('reputationGoogle.slotsSubtitle')}</Text>
+          {Number.isFinite(maxRooms) ? (
+            <Text style={styles.sectionHint}>
+              {t('reputationGoogle.slotsUsage', { used: currentRooms, max: maxRooms === -1 ? '∞' : maxRooms })}
+            </Text>
+          ) : null}
+
+          {slots.length === 0 ? (
+            <Text style={styles.sectionEmpty}>{t('reputationGoogle.slotsEmpty')}</Text>
+          ) : (
+            <View style={{ gap: 8 }}>
+              {slots.map((s) => {
+                const mapped = s.property_id != null;
+                return (
+                  <View key={s.room_id} style={styles.slotRow}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.slotName}>{s.room_name || `#${s.room_id}`}</Text>
+                      <Text style={styles.slotMeta}>{mapped ? t('reputationGoogle.slotMapped') : t('reputationGoogle.slotUnmapped')}</Text>
+                    </View>
+                    {!mapped ? (
+                      <Pressable
+                        style={[styles.slotBtn, (!isPro || !canCreateMoreUnits || createPropertyMutation.isPending) && styles.disabled]}
+                        disabled={!isPro || !canCreateMoreUnits || createPropertyMutation.isPending}
+                        onPress={() => createPropertyMutation.mutate({ room_id: s.room_id, room_name: s.room_name })}
+                      >
+                        <Text style={styles.slotBtnText}>
+                          {createPropertyMutation.isPending ? t('reputationGoogle.creating') : t('reputationGoogle.slotCreate')}
+                        </Text>
+                      </Pressable>
+                    ) : (
+                      <View style={styles.slotReadyPill}>
+                        <Text style={styles.slotReadyText}>{t('reputationGoogle.slotReady')}</Text>
+                      </View>
+                    )}
+                  </View>
+                );
+              })}
+              {!canCreateMoreUnits ? (
+                <Text style={styles.limitWarn}>{t('reputationGoogle.slotsLimitReached')}</Text>
+              ) : null}
+            </View>
           )}
         </View>
         <Text style={styles.label}>{t('reputationGoogle.labelLocale')}</Text>
@@ -401,6 +523,46 @@ const styles = StyleSheet.create({
   chipOnText: { fontWeight: '800', color: 'white' },
   secondaryBtn: { marginTop: 10, paddingVertical: 12, borderRadius: 12, backgroundColor: '#2563eb', alignItems: 'center' },
   secondaryBtnText: { color: 'white', fontWeight: '900' },
+  slotRow: {
+    flexDirection: 'row',
+    gap: 10,
+    alignItems: 'center',
+    padding: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    backgroundColor: 'white',
+  },
+  slotName: { fontSize: 12, fontWeight: '900', color: '#111827' },
+  slotMeta: { marginTop: 2, fontSize: 11, color: '#6b7280' },
+  slotBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 12,
+    backgroundColor: '#059669',
+  },
+  slotBtnText: { color: 'white', fontWeight: '900', fontSize: 12 },
+  slotReadyPill: {
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: '#a7f3d0',
+    backgroundColor: '#ecfdf5',
+  },
+  slotReadyText: { color: '#047857', fontWeight: '900', fontSize: 12 },
+  limitWarn: {
+    marginTop: 8,
+    padding: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#fde68a',
+    backgroundColor: '#fffbeb',
+    color: '#92400e',
+    fontSize: 11,
+    fontWeight: '800',
+    lineHeight: 16,
+  },
   primaryBtn: { marginTop: 8, paddingVertical: 14, borderRadius: 12, backgroundColor: '#059669', alignItems: 'center' },
   primaryBtnText: { color: 'white', fontWeight: '900' },
   disabled: { opacity: 0.5 },

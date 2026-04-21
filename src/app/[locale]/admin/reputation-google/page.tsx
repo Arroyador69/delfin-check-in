@@ -30,6 +30,9 @@ export default function ReputationGooglePage() {
   const [selectedPropertyId, setSelectedPropertyId] = useState<number | null>(null);
   const [propertyUrl, setPropertyUrl] = useState('');
   const [propertyBusy, setPropertyBusy] = useState(false);
+  const [slots, setSlots] = useState<Array<{ room_id: string; room_name: string; property_id: number | null }>>([]);
+  const [limits, setLimits] = useState<{ maxRooms: number; currentRooms: number } | null>(null);
+  const [createBusyRoomId, setCreateBusyRoomId] = useState<string | null>(null);
   const [recommended, setRecommended] = useState<{ es: string; en: string }>({ es: '', en: '' });
   const [settingsLoaded, setSettingsLoaded] = useState(false);
   const [saveBusy, setSaveBusy] = useState(false);
@@ -110,12 +113,50 @@ export default function ReputationGooglePage() {
     }
   }, [unlocked, selectedPropertyId]);
 
+  const loadSlots = useCallback(async () => {
+    if (!unlocked) return;
+    try {
+      const r = await fetch('/api/tenant/property-slots', { credentials: 'include' });
+      const data = await r.json();
+      if (!data.success) return;
+      const list = Array.isArray(data.slots) ? data.slots : [];
+      setSlots(
+        list
+          .map((s: any) => ({
+            room_id: String(s.room_id),
+            room_name: String(s.room_name || ''),
+            property_id: s.property_id != null ? Number(s.property_id) : null,
+          }))
+          .filter((s: any) => s.room_id)
+      );
+    } catch {
+      // no-op
+    }
+  }, [unlocked]);
+
+  const loadLimits = useCallback(async () => {
+    if (!unlocked) return;
+    try {
+      const r = await fetch('/api/tenant/limits', { credentials: 'include' });
+      const data = await r.json();
+      if (!data.success) return;
+      const maxRooms = Number(data?.tenant?.limits?.maxRooms);
+      const currentRooms = Array.isArray(data?.currentRooms) ? data.currentRooms.length : 0;
+      if (!Number.isFinite(maxRooms)) return;
+      setLimits({ maxRooms, currentRooms });
+    } catch {
+      // no-op
+    }
+  }, [unlocked]);
+
   useEffect(() => {
     if (unlocked) {
       loadSettings();
       loadProperties();
+      loadSlots();
+      loadLimits();
     }
-  }, [unlocked, loadSettings, loadProperties]);
+  }, [unlocked, loadSettings, loadProperties, loadSlots, loadLimits]);
 
   useEffect(() => {
     if (unlocked && settingsLoaded && tenant?.email && !testEmailInitializedRef.current) {
@@ -234,6 +275,56 @@ export default function ReputationGooglePage() {
       setError(t('errSave'));
     } finally {
       setPropertyBusy(false);
+    }
+  };
+
+  const canCreateMoreUnits =
+    Boolean(limits) && (limits!.maxRooms === -1 || limits!.currentRooms < limits!.maxRooms);
+
+  const createPropertyForSlot = async (roomId: string, roomName: string) => {
+    if (!unlocked) return;
+    if (!canCreateMoreUnits) {
+      setError(t('slotsLimitReached'));
+      return;
+    }
+    setCreateBusyRoomId(roomId);
+    setMessage(null);
+    setError(null);
+    try {
+      const r = await fetch('/api/tenant/properties', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          room_id: Number.isFinite(Number(roomId)) ? Number(roomId) : roomId,
+          property_name: roomName || `Unidad ${roomId}`,
+          description: '',
+          photos: [],
+          max_guests: 2,
+          bedrooms: 1,
+          bathrooms: 1,
+          amenities: [],
+          base_price: 50,
+          cleaning_fee: 0,
+          security_deposit: 0,
+          minimum_nights: 1,
+          maximum_nights: 30,
+          availability_rules: {},
+          is_active: true,
+        }),
+      });
+      const data = await r.json();
+      if (!data.success) {
+        setError(data.error || t('errSave'));
+        return;
+      }
+      setMessage(t('slotCreated'));
+      setTimeout(() => setMessage(null), 3500);
+      await Promise.all([loadSlots(), loadProperties(), loadLimits()]);
+    } catch {
+      setError(t('errSave'));
+    } finally {
+      setCreateBusyRoomId(null);
     }
   };
 
@@ -367,6 +458,68 @@ export default function ReputationGooglePage() {
                         </Button>
                         <p className="text-xs text-gray-500 self-center">{t('propertyLinksFallback')}</p>
                       </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="rounded-lg border border-gray-200 bg-white p-4 space-y-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-gray-900">{t('slotsTitle')}</p>
+                      <p className="text-xs text-gray-600 mt-1">{t('slotsSubtitle')}</p>
+                      {limits ? (
+                        <p className="text-xs text-gray-500 mt-1">
+                          {t('slotsUsage', {
+                            used: limits.currentRooms,
+                            max: limits.maxRooms === -1 ? '∞' : limits.maxRooms,
+                          })}
+                        </p>
+                      ) : null}
+                    </div>
+                  </div>
+
+                  {slots.length === 0 ? (
+                    <p className="text-xs text-gray-600">{t('slotsEmpty')}</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {slots.map((s) => {
+                        const mapped = s.property_id != null;
+                        return (
+                          <div
+                            key={s.room_id}
+                            className="flex items-center justify-between gap-3 rounded-md border border-gray-200 bg-gray-50 px-3 py-2"
+                          >
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium text-gray-900 truncate">
+                                {s.room_name || `#${s.room_id}`}
+                              </p>
+                              <p className="text-xs text-gray-600">
+                                {mapped ? t('slotMapped') : t('slotUnmapped')}
+                              </p>
+                            </div>
+                            {!mapped ? (
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                disabled={!canCreateMoreUnits || createBusyRoomId === s.room_id}
+                                onClick={() => void createPropertyForSlot(s.room_id, s.room_name)}
+                              >
+                                {createBusyRoomId === s.room_id ? t('creating') : t('slotCreate')}
+                              </Button>
+                            ) : (
+                              <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded px-2 py-1">
+                                {t('slotReady')}
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })}
+                      {!canCreateMoreUnits ? (
+                        <p className="text-xs text-amber-900/90 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
+                          {t('slotsLimitReached')}
+                        </p>
+                      ) : null}
                     </div>
                   )}
                 </div>
