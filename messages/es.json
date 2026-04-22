@@ -109,6 +109,8 @@
     "sectionAutomationP3": "Si te llegó bien la prueba manual, la misma vía de correo y plantilla se usan en el automático con lo que tengas guardado (idioma y textos). La prueba no sustituye al proceso diario: confirma que todo está bien configurado.",
     "formTitle": "Recordatorio automático (microsite y panel de reservas)",
     "formSubtitle": "Reservas directas: confirmadas y pagadas. Reservas del panel: las que guardas en Delfín Check-in (no canceladas). Un correo por reserva tras el día de salida, solo con email de huésped válido; el mensaje usa nombre y alojamiento de la reserva.",
+    "advancedLinksTitle": "Enlaces avanzados (opcional)",
+    "advancedLinksSubtitle": "Normalmente basta con asignar el enlace por unidad en la lista de slots de abajo. Estos campos son un fallback (por si una unidad no tiene enlace propio).",
     "labelEnabled": "Activar envío automático",
     "labelUrl": "Enlace para dejar reseña en Google",
     "hintUrl": "Pega aquí el enlace que te da Google (Maps / Perfil de empresa / g.page).",
