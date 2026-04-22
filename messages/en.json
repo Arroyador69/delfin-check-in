@@ -128,6 +128,8 @@
     "slotMapped": "Property already created (ok)",
     "slotUnmapped": "No property yet: create one to assign its link",
     "slotCreate": "Create",
+    "slotReviewUrlLabel": "Google review link for this unit",
+    "slotSaveUrl": "Save link",
     "creating": "Creating…",
     "slotCreated": "Property created for the slot.",
     "slotReady": "Ready",

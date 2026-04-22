@@ -119,6 +119,8 @@
     "slotMapped": "Majoitus luotu (ok)",
     "slotUnmapped": "Ei vielä majoitusta: luo yksi ja aseta linkki",
     "slotCreate": "Luo",
+    "slotReviewUrlLabel": "Google-arvostelulinkki tälle yksikölle",
+    "slotSaveUrl": "Tallenna linkki",
     "creating": "Luodaan…",
     "slotCreated": "Majoitus luotu yksikölle.",
     "slotReady": "Valmis",

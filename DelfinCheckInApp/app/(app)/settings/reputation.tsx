@@ -23,7 +23,6 @@ import { openUpgradePlanInBrowser, suggestedUpgradeTargetPlan } from '@/lib/upgr
 
 type RepSettings = {
   enabled: boolean;
-  reviewUrl: string;
   guestEmailLocale: 'es' | 'en';
   guestMessageEs: string;
   guestMessageEn: string;
@@ -44,7 +43,6 @@ type PropertySlot = {
 
 const defaultSettings: RepSettings = {
   enabled: false,
-  reviewUrl: '',
   guestEmailLocale: 'es',
   guestMessageEs: '',
   guestMessageEn: '',
@@ -55,8 +53,7 @@ export default function ReputationSettingsScreen() {
   const { session } = useAuth();
   const queryClient = useQueryClient();
   const [draft, setDraft] = useState<RepSettings>(defaultSettings);
-  const [selectedPropertyId, setSelectedPropertyId] = useState<number | null>(null);
-  const [propertyUrlDraft, setPropertyUrlDraft] = useState<string>('');
+  const [slotReviewUrls, setSlotReviewUrls] = useState<Record<string, string>>({});
 
   const { data, isLoading } = useQuery({
     queryKey: ['reputation-google'],
@@ -79,27 +76,12 @@ export default function ReputationSettingsScreen() {
     if (data?.settings) {
       setDraft({
         enabled: Boolean(data.settings.enabled),
-        reviewUrl: data.settings.reviewUrl || '',
         guestEmailLocale: data.settings.guestEmailLocale === 'en' ? 'en' : 'es',
         guestMessageEs: data.settings.guestMessageEs || '',
         guestMessageEn: data.settings.guestMessageEn || '',
       });
     }
   }, [data]);
-
-  useEffect(() => {
-    const props = (propsData?.properties || []).filter((p) => Number.isFinite(Number(p.id)) && Number(p.id) > 0);
-    if (props.length === 0) {
-      setSelectedPropertyId(null);
-      setPropertyUrlDraft('');
-      return;
-    }
-    const initialId = selectedPropertyId && props.some((p) => p.id === selectedPropertyId) ? selectedPropertyId : props[0].id;
-    setSelectedPropertyId(initialId);
-    const found = props.find((p) => p.id === initialId);
-    setPropertyUrlDraft(found?.google_review_url || '');
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [propsData]);
 
   const saveMutation = useMutation({
     mutationFn: async () => {
@@ -115,27 +97,8 @@ export default function ReputationSettingsScreen() {
     },
   });
 
-  const savePropertyUrlMutation = useMutation({
-    mutationFn: async () => {
-      if (!selectedPropertyId) throw new Error('propertyId missing');
-      const res = await api.put('/api/tenant/reputation-google/properties', {
-        propertyId: selectedPropertyId,
-        googleReviewUrl: propertyUrlDraft,
-      });
-      return res.data as { success?: boolean; error?: string };
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['reputation-google-properties'] });
-      Alert.alert(t('common.success'), t('reputationGoogle.propertySaved'));
-    },
-    onError: (e: any) => {
-      Alert.alert(t('common.error'), e?.response?.data?.error || e?.message || t('mobile.settings.saveFailed'));
-    },
-  });
-
   const isPro = Boolean(data?.isPro);
   const properties = (propsData?.properties || []).filter((p) => Number.isFinite(Number(p.id)) && Number(p.id) > 0);
-  const selectedProperty = selectedPropertyId ? properties.find((p) => p.id === selectedPropertyId) : null;
 
   const { data: limitsData } = useQuery({
     queryKey: ['tenant-limits'],
@@ -157,18 +120,30 @@ export default function ReputationSettingsScreen() {
 
   const maxRooms = Number(limitsData?.tenant?.limits?.maxRooms);
   const currentRooms = Array.isArray(limitsData?.currentRooms) ? limitsData!.currentRooms!.length : 0;
-  const canCreateMoreUnits = Number.isFinite(maxRooms) && (maxRooms === -1 || currentRooms < maxRooms);
   const slots = (slotsData?.slots || []).map((s: any) => ({
     room_id: String((s as any).room_id),
     room_name: String((s as any).room_name || ''),
     property_id: (s as any).property_id != null ? Number((s as any).property_id) : null,
   }));
 
+  useEffect(() => {
+    // Inicializar inputs por unidad con el enlace guardado en la propiedad mapeada
+    const urlByPropertyId = new Map<number, string>();
+    for (const p of properties) urlByPropertyId.set(Number(p.id), String(p.google_review_url || ''));
+
+    setSlotReviewUrls((prev) => {
+      const next = { ...prev };
+      for (const s of slots) {
+        if (next[s.room_id] && String(next[s.room_id]).trim() !== '') continue;
+        if (s.property_id == null) continue;
+        next[s.room_id] = urlByPropertyId.get(s.property_id) || '';
+      }
+      return next;
+    });
+  }, [properties, slots]);
+
   const createPropertyMutation = useMutation({
     mutationFn: async (args: { room_id: string; room_name: string }) => {
-      if (!canCreateMoreUnits) {
-        throw new Error('limit');
-      }
       const roomId = args.room_id;
       const payload: any = {
         room_id: Number.isFinite(Number(roomId)) ? Number(roomId) : roomId,
@@ -199,10 +174,24 @@ export default function ReputationSettingsScreen() {
       Alert.alert(t('common.success'), t('reputationGoogle.slotCreated'));
     },
     onError: (e: any) => {
-      if (e?.message === 'limit') {
-        Alert.alert(t('common.error'), t('reputationGoogle.slotsLimitReached'));
-        return;
-      }
+      Alert.alert(t('common.error'), e?.response?.data?.error || e?.message || t('mobile.settings.saveFailed'));
+    },
+  });
+
+  const saveSlotUrlMutation = useMutation({
+    mutationFn: async (args: { room_id: string; property_id: number }) => {
+      const url = String(slotReviewUrls[args.room_id] || '').trim();
+      const res = await api.put('/api/tenant/reputation-google/properties', {
+        propertyId: args.property_id,
+        googleReviewUrl: url,
+      });
+      return res.data as { success?: boolean; error?: string };
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['reputation-google-properties'] });
+      Alert.alert(t('common.success'), t('reputationGoogle.propertySaved'));
+    },
+    onError: (e: any) => {
       Alert.alert(t('common.error'), e?.response?.data?.error || e?.message || t('mobile.settings.saveFailed'));
     },
   });
@@ -257,83 +246,6 @@ export default function ReputationSettingsScreen() {
             disabled={!isPro || isLoading}
           />
         </View>
-        <Text style={styles.label}>{t('reputationGoogle.labelUrl')}</Text>
-        <TextInput
-          style={styles.input}
-          value={draft.reviewUrl}
-          onChangeText={(v) => setDraft((d) => ({ ...d, reviewUrl: v }))}
-          placeholder="https://g.page/..."
-          autoCapitalize="none"
-          editable={isPro}
-        />
-        <View style={styles.sectionBox}>
-          <Text style={styles.sectionTitle}>{t('reputationGoogle.propertyLinksTitle')}</Text>
-          <Text style={styles.sectionSubtitle}>{t('reputationGoogle.propertyLinksSubtitle')}</Text>
-
-          {properties.length === 0 ? (
-            <Text style={styles.sectionEmpty}>{t('reputationGoogle.propertyLinksEmpty')}</Text>
-          ) : (
-            <>
-              <View style={styles.rowBetween}>
-                <Text style={styles.label}>{t('reputationGoogle.propertyLinksSelect')}</Text>
-                <View style={{ flexDirection: 'row', gap: 10 }}>
-                  <Pressable
-                    style={[styles.smallBtn, (!isPro || properties.length < 2) && styles.disabled]}
-                    disabled={!isPro || properties.length < 2}
-                    onPress={() => {
-                      if (properties.length < 2) return;
-                      const idx = properties.findIndex((p) => p.id === selectedPropertyId);
-                      const prev = idx <= 0 ? properties[properties.length - 1] : properties[idx - 1];
-                      setSelectedPropertyId(prev.id);
-                      setPropertyUrlDraft(prev.google_review_url || '');
-                    }}
-                  >
-                    <Text style={styles.smallBtnText}>‹</Text>
-                  </Pressable>
-                  <Pressable
-                    style={[styles.smallBtn, (!isPro || properties.length < 2) && styles.disabled]}
-                    disabled={!isPro || properties.length < 2}
-                    onPress={() => {
-                      if (properties.length < 2) return;
-                      const idx = properties.findIndex((p) => p.id === selectedPropertyId);
-                      const next = idx < 0 || idx === properties.length - 1 ? properties[0] : properties[idx + 1];
-                      setSelectedPropertyId(next.id);
-                      setPropertyUrlDraft(next.google_review_url || '');
-                    }}
-                  >
-                    <Text style={styles.smallBtnText}>›</Text>
-                  </Pressable>
-                </View>
-              </View>
-              <Text style={styles.propertyLine}>
-                {selectedProperty
-                  ? `${selectedProperty.property_name || `#${selectedProperty.id}`} · ID ${selectedProperty.id}`
-                  : t('reputationGoogle.propertyLinksSelect')}
-              </Text>
-
-              <Text style={styles.label}>{t('reputationGoogle.propertyLinksUrl')}</Text>
-              <TextInput
-                style={styles.input}
-                value={propertyUrlDraft}
-                onChangeText={(v) => setPropertyUrlDraft(v)}
-                placeholder="https://g.page/..."
-                autoCapitalize="none"
-                editable={isPro}
-              />
-              <Text style={styles.sectionHint}>{t('reputationGoogle.propertyLinksHint')}</Text>
-              <Text style={styles.sectionHint}>{t('reputationGoogle.propertyLinksFallback')}</Text>
-
-              <Pressable
-                style={[styles.secondaryBtn, (!isPro || savePropertyUrlMutation.isPending) && styles.disabled]}
-                disabled={!isPro || savePropertyUrlMutation.isPending}
-                onPress={() => savePropertyUrlMutation.mutate()}
-              >
-                <Text style={styles.secondaryBtnText}>{t('reputationGoogle.propertyLinksSave')}</Text>
-              </Pressable>
-            </>
-          )}
-        </View>
-
         <View style={styles.sectionBox}>
           <Text style={styles.sectionTitle}>{t('reputationGoogle.slotsTitle')}</Text>
           <Text style={styles.sectionSubtitle}>{t('reputationGoogle.slotsSubtitle')}</Text>
@@ -357,8 +269,8 @@ export default function ReputationSettingsScreen() {
                     </View>
                     {!mapped ? (
                       <Pressable
-                        style={[styles.slotBtn, (!isPro || !canCreateMoreUnits || createPropertyMutation.isPending) && styles.disabled]}
-                        disabled={!isPro || !canCreateMoreUnits || createPropertyMutation.isPending}
+                        style={[styles.slotBtn, (!isPro || createPropertyMutation.isPending) && styles.disabled]}
+                        disabled={!isPro || createPropertyMutation.isPending}
                         onPress={() => createPropertyMutation.mutate({ room_id: s.room_id, room_name: s.room_name })}
                       >
                         <Text style={styles.slotBtnText}>
@@ -373,9 +285,29 @@ export default function ReputationSettingsScreen() {
                   </View>
                 );
               })}
-              {!canCreateMoreUnits ? (
-                <Text style={styles.limitWarn}>{t('reputationGoogle.slotsLimitReached')}</Text>
-              ) : null}
+              {slots.map((s) => {
+                if (s.property_id == null) return null;
+                return (
+                  <View key={`${s.room_id}-url`} style={styles.slotUrlBox}>
+                    <Text style={styles.label}>{t('reputationGoogle.slotReviewUrlLabel')}</Text>
+                    <TextInput
+                      style={styles.input}
+                      value={slotReviewUrls[s.room_id] ?? ''}
+                      onChangeText={(v) => setSlotReviewUrls((prev) => ({ ...prev, [s.room_id]: v }))}
+                      placeholder="https://g.page/..."
+                      autoCapitalize="none"
+                      editable={isPro}
+                    />
+                    <Pressable
+                      style={[styles.secondaryBtn, (!isPro || saveSlotUrlMutation.isPending) && styles.disabled]}
+                      disabled={!isPro || saveSlotUrlMutation.isPending}
+                      onPress={() => saveSlotUrlMutation.mutate({ room_id: s.room_id, property_id: s.property_id! })}
+                    >
+                      <Text style={styles.secondaryBtnText}>{t('reputationGoogle.slotSaveUrl')}</Text>
+                    </Pressable>
+                  </View>
+                );
+              })}
             </View>
           )}
         </View>
@@ -488,7 +420,6 @@ const styles = StyleSheet.create({
   sectionSubtitle: { marginTop: 3, fontSize: 11, color: '#6b7280', lineHeight: 15, marginBottom: 10 },
   sectionHint: { marginTop: 2, fontSize: 11, color: '#6b7280', lineHeight: 15 },
   sectionEmpty: { fontSize: 11, color: '#6b7280', lineHeight: 16 },
-  propertyLine: { fontSize: 12, color: '#111827', fontWeight: '800', marginBottom: 10 },
   smallBtn: {
     width: 34,
     height: 34,
@@ -523,6 +454,12 @@ const styles = StyleSheet.create({
   chipOnText: { fontWeight: '800', color: 'white' },
   secondaryBtn: { marginTop: 10, paddingVertical: 12, borderRadius: 12, backgroundColor: '#2563eb', alignItems: 'center' },
   secondaryBtnText: { color: 'white', fontWeight: '900' },
+  slotUrlBox: {
+    marginTop: 10,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#e5e7eb',
+  },
   slotRow: {
     flexDirection: 'row',
     gap: 10,

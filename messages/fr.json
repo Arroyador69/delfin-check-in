@@ -119,6 +119,8 @@
     "slotMapped": "Propriété déjà créée (ok)",
     "slotUnmapped": "Pas encore de propriété : créez-en une pour lui attribuer son lien",
     "slotCreate": "Créer",
+    "slotReviewUrlLabel": "Lien d’avis Google pour cette unité",
+    "slotSaveUrl": "Enregistrer le lien",
     "creating": "Création…",
     "slotCreated": "Propriété créée pour l’emplacement.",
     "slotReady": "Prêt",
