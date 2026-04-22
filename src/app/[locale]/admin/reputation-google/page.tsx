@@ -344,15 +344,12 @@ export default function ReputationGooglePage() {
     }
   };
 
-  const canCreateMoreUnits =
-    Boolean(limits) && (limits!.maxRooms === -1 || limits!.currentRooms < limits!.maxRooms);
+  // Ojo: aquí "Crear" no crea una habitación nueva, sino una "propiedad" mapeada
+  // para un slot (Room) que ya existe. Por tanto, no debe bloquearse por límites.
+  const canCreateMoreUnits = true;
 
   const createPropertyForSlot = async (roomId: string, roomName: string) => {
     if (!unlocked) return;
-    if (!canCreateMoreUnits) {
-      setError(t('slotsLimitReached'));
-      return;
-    }
     setCreateBusyRoomId(roomId);
     setMessage(null);
     setError(null);
@@ -569,7 +566,7 @@ export default function ReputationGooglePage() {
                                   type="button"
                                   variant="outline"
                                   size="sm"
-                                  disabled={!canCreateMoreUnits || createBusyRoomId === s.room_id}
+                                disabled={createBusyRoomId === s.room_id}
                                   onClick={() => void createPropertyForSlot(s.room_id, s.room_name)}
                                 >
                                   {createBusyRoomId === s.room_id ? t('creating') : t('slotCreate')}

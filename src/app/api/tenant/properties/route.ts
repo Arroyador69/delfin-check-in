@@ -237,24 +237,35 @@ export async function POST(req: NextRequest) {
       );
     }
     
-    // Validar límite por plan usando el nuevo sistema de permisos
-    const { validateUnitCreation } = await import('@/lib/permissions');
-    const unitValidation = await validateUnitCreation(req);
-    
-    if (!unitValidation.success) {
-      return NextResponse.json(
-        { 
-          success: false, 
-          error: unitValidation.error,
-          suggestion: 'Para añadir más unidades, actualiza el número de unidades de tu plan o crea otra cuenta.'
-        },
-        { status: unitValidation.status || 403 }
-      );
+    // IMPORTANTE:
+    // Este endpoint NO crea una "Room" nueva; solo crea/actualiza una "tenant_property"
+    // para un room_id ya existente (slot). Por tanto, no debemos bloquear por límites
+    // de unidades si el room ya existe para el alojamiento del tenant.
+    const tenant = (await getTenantById(tenantId)) as ({ lodging_id?: string | null } & Record<string, unknown>) | null;
+    if (!tenant) {
+      return NextResponse.json({ success: false, error: 'Tenant no encontrado' }, { status: 404 });
     }
+    const lodgingId =
+      tenant?.lodging_id && String(tenant.lodging_id).trim() !== '' ? String(tenant.lodging_id) : String(tenantId);
 
-    const tenant = unitValidation.tenant;
-    const maxRooms = tenant.max_rooms;
-    const roomsCount = tenant.current_rooms;
+    // Validar que el room_id existe y pertenece al lodging del tenant
+    try {
+      const roomExists = await sql`
+        SELECT 1
+        FROM "Room" r
+        WHERE r.id = ${data.room_id}
+          AND r."lodgingId" = ${lodgingId}::text
+        LIMIT 1
+      `;
+      if ((roomExists as any).rowCount <= 0) {
+        return NextResponse.json(
+          { success: false, error: 'El slot (room_id) no existe o no pertenece a este alojamiento' },
+          { status: 400 }
+        );
+      }
+    } catch (e) {
+      console.warn('⚠️ No se pudo validar room_id contra Room:', e);
+    }
 
     // Comprobar si el room_id ya está mapeado a una propiedad
     const mapping = await sql`
