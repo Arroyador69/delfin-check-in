@@ -31,6 +31,8 @@ export default function ReputationGooglePage() {
   const [propertyUrl, setPropertyUrl] = useState('');
   const [propertyBusy, setPropertyBusy] = useState(false);
   const [slots, setSlots] = useState<Array<{ room_id: string; room_name: string; property_id: number | null }>>([]);
+  const [slotReviewUrls, setSlotReviewUrls] = useState<Record<string, string>>({});
+  const [slotSaveBusyRoomId, setSlotSaveBusyRoomId] = useState<string | null>(null);
   const [limits, setLimits] = useState<{ maxRooms: number; currentRooms: number } | null>(null);
   const [createBusyRoomId, setCreateBusyRoomId] = useState<string | null>(null);
   const [recommended, setRecommended] = useState<{ es: string; en: string }>({ es: '', en: '' });
@@ -133,6 +135,27 @@ export default function ReputationGooglePage() {
       // no-op
     }
   }, [unlocked]);
+
+  useEffect(() => {
+    // Mantener un input por unidad (room_id) para su enlace de reseña.
+    // El enlace vive realmente en la propiedad mapeada (property_id).
+    if (!unlocked) return;
+    if (slots.length === 0) return;
+
+    const urlByPropertyId = new Map<number, string>();
+    for (const p of properties) urlByPropertyId.set(p.id, p.url || '');
+
+    setSlotReviewUrls((prev) => {
+      const next: Record<string, string> = { ...prev };
+      for (const s of slots) {
+        const current = next[s.room_id];
+        if (typeof current === 'string' && current.trim() !== '') continue;
+        if (s.property_id == null) continue;
+        next[s.room_id] = urlByPropertyId.get(s.property_id) || '';
+      }
+      return next;
+    });
+  }, [unlocked, slots, properties]);
 
   const loadLimits = useCallback(async () => {
     if (!unlocked) return;
@@ -244,6 +267,49 @@ export default function ReputationGooglePage() {
       setError(t('toastTestFail'));
     } finally {
       setTestBusy(false);
+    }
+  };
+
+  const saveSlotUrl = async (roomId: string) => {
+    if (!unlocked) return;
+    const slot = slots.find((s) => s.room_id === roomId);
+    const propertyId = slot?.property_id ?? null;
+    if (!propertyId) {
+      setError(t('slotsNeedCreate'));
+      return;
+    }
+
+    const url = String(slotReviewUrls[roomId] || '').trim();
+    if (url && !isPlausibleGoogleReviewUrl(url)) {
+      setError(t('testEmailInvalidUrl'));
+      return;
+    }
+
+    setSlotSaveBusyRoomId(roomId);
+    setMessage(null);
+    setError(null);
+    try {
+      const r = await fetch('/api/tenant/reputation-google/properties', {
+        method: 'PUT',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          propertyId,
+          googleReviewUrl: url,
+        }),
+      });
+      const data = await r.json();
+      if (!data.success) {
+        setError(data.error || t('errSave'));
+        return;
+      }
+      setMessage(t('propertySaved'));
+      setTimeout(() => setMessage(null), 3500);
+      await loadProperties();
+    } catch {
+      setError(t('errSave'));
+    } finally {
+      setSlotSaveBusyRoomId(null);
     }
   };
 
@@ -487,31 +553,67 @@ export default function ReputationGooglePage() {
                         return (
                           <div
                             key={s.room_id}
-                            className="flex items-center justify-between gap-3 rounded-md border border-gray-200 bg-gray-50 px-3 py-2"
+                            className="rounded-md border border-gray-200 bg-gray-50 px-3 py-2"
                           >
-                            <div className="min-w-0">
-                              <p className="text-sm font-medium text-gray-900 truncate">
-                                {s.room_name || `#${s.room_id}`}
-                              </p>
-                              <p className="text-xs text-gray-600">
-                                {mapped ? t('slotMapped') : t('slotUnmapped')}
-                              </p>
+                            <div className="flex items-center justify-between gap-3">
+                              <div className="min-w-0">
+                                <p className="text-sm font-medium text-gray-900 truncate">
+                                  {s.room_name || `#${s.room_id}`}
+                                </p>
+                                <p className="text-xs text-gray-600">
+                                  {mapped ? t('slotMapped') : t('slotUnmapped')}
+                                </p>
+                              </div>
+                              {!mapped ? (
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  disabled={!canCreateMoreUnits || createBusyRoomId === s.room_id}
+                                  onClick={() => void createPropertyForSlot(s.room_id, s.room_name)}
+                                >
+                                  {createBusyRoomId === s.room_id ? t('creating') : t('slotCreate')}
+                                </Button>
+                              ) : (
+                                <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded px-2 py-1">
+                                  {t('slotReady')}
+                                </span>
+                              )}
                             </div>
-                            {!mapped ? (
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                disabled={!canCreateMoreUnits || createBusyRoomId === s.room_id}
-                                onClick={() => void createPropertyForSlot(s.room_id, s.room_name)}
-                              >
-                                {createBusyRoomId === s.room_id ? t('creating') : t('slotCreate')}
-                              </Button>
-                            ) : (
-                              <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded px-2 py-1">
-                                {t('slotReady')}
-                              </span>
-                            )}
+
+                            {mapped ? (
+                              <div className="mt-2 grid grid-cols-1 sm:grid-cols-3 gap-2 items-end">
+                                <div className="sm:col-span-2">
+                                  <Label
+                                    htmlFor={`rg-slot-url-${s.room_id}`}
+                                    className="text-xs font-medium text-gray-700"
+                                  >
+                                    {t('slotReviewUrlLabel')}
+                                  </Label>
+                                  <Input
+                                    id={`rg-slot-url-${s.room_id}`}
+                                    type="url"
+                                    className="mt-1"
+                                    placeholder="https://g.page/…"
+                                    value={slotReviewUrls[s.room_id] ?? ''}
+                                    onChange={(e) =>
+                                      setSlotReviewUrls((prev) => ({ ...prev, [s.room_id]: e.target.value }))
+                                    }
+                                  />
+                                </div>
+                                <div className="sm:col-span-1 flex gap-2">
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    className="w-full"
+                                    disabled={slotSaveBusyRoomId === s.room_id}
+                                    onClick={() => void saveSlotUrl(s.room_id)}
+                                  >
+                                    {slotSaveBusyRoomId === s.room_id ? t('saving') : t('slotSaveUrl')}
+                                  </Button>
+                                </div>
+                              </div>
+                            ) : null}
                           </div>
                         );
                       })}
