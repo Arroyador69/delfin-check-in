@@ -11,19 +11,22 @@ import { CommissionCalculation, AvailabilityResponse } from './direct-reservatio
 export function calculateCommission(
   subtotal: number,
   commissionRate: number = 0.09, // 9% por defecto
-  stripeFeeRate: number = 0.014  // 1.4% + 0.25€ por defecto
+  stripeFeeRate: number = 0.014, // 1.4% + 0.25€ por defecto
+  /**
+   * En Stripe Connect (direct charges), la comisión de la plataforma se suele calcular
+   * sobre el importe bruto del cobro. Stripe cobra sus fees al propietario en su cuenta conectada.
+   * Esta flag mantiene el cálculo coherente para UI/contabilidad.
+   */
+  platformFeeOnGross: boolean = true
 ): CommissionCalculation {
   // Calcular comisión de Stripe primero
   const stripeFeeAmount = (subtotal * stripeFeeRate) + 0.25; // 0.25€ fijo
   
-  // Calcular total neto después de Stripe
-  const netAfterStripe = subtotal - stripeFeeAmount;
-  
-  // Calcular comisión de Delfin sobre el neto
-  const delfinCommissionAmount = netAfterStripe * commissionRate;
-  
-  // Lo que recibe el propietario
-  const propertyOwnerAmount = netAfterStripe - delfinCommissionAmount;
+  // Comisión de Delfin
+  const delfinCommissionAmount = (platformFeeOnGross ? subtotal : (subtotal - stripeFeeAmount)) * commissionRate;
+
+  // Estimación del neto para el propietario (orientativo; Stripe fees pueden variar por país/método)
+  const propertyOwnerAmount = subtotal - stripeFeeAmount - delfinCommissionAmount;
   
   return {
     subtotal,

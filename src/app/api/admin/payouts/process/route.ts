@@ -13,6 +13,22 @@ import { getStripeServer } from '@/lib/stripe-server';
 // =====================================================
 
 export async function POST(req: NextRequest) {
+  // Stripe Connect (Direct Charges) migración:
+  // Los propietarios cobran directamente en su cuenta conectada y Stripe gestiona payouts al banco.
+  // Deshabilitamos transfers desde plataforma salvo que se fuerce modo legacy.
+  if (process.env.STRIPE_PAYOUTS_MODE !== 'legacy_transfers') {
+    return NextResponse.json({
+      success: true,
+      message:
+        'Migración activa: los pagos se liquidan directamente al propietario mediante Stripe Connect. No se procesan transfers desde la plataforma.',
+      processed: 0,
+      skipped: 0,
+      failed: 0,
+      details: [],
+      deprecated: true,
+    });
+  }
+
   try {
     // Buscar reservas confirmadas cuyo check-in es HOY
     const today = new Date();

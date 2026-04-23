@@ -3,20 +3,25 @@
 import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { useLocale } from 'next-intl';
-import { Wallet, Plus, CheckCircle, XCircle, Download, CreditCard, Calendar, AlertCircle } from 'lucide-react';
+import { Wallet, CheckCircle, XCircle, Download, CreditCard, Calendar, AlertCircle, ExternalLink } from 'lucide-react';
 import { useTenant } from '@/hooks/useTenant';
 import { useTenantMoneyFormat } from '@/hooks/use-tenant-money-format';
 
-interface BankAccount {
-  id: number;
-  iban: string;
-  bank_name: string;
-  account_holder_name: string;
-  is_verified: boolean;
-  verification_status: string;
-  is_default: boolean;
-  created_at: string;
-}
+type StripeConnectStatus =
+  | {
+      has_account: false;
+      charges_enabled: false;
+      payouts_enabled: false;
+      details_submitted: false;
+    }
+  | {
+      has_account: true;
+      stripe_connect_account_id: string;
+      charges_enabled: boolean;
+      payouts_enabled: boolean;
+      details_submitted: boolean;
+      requirements: unknown;
+    };
 
 interface Payment {
   reservation_code: string;
@@ -38,17 +43,10 @@ export default function MicrositePaymentsPage() {
   const { tenant } = useTenant();
   const commissionPercent = tenant?.plan_type === 'pro' ? 5 : 9;
   const [loading, setLoading] = useState(true);
-  const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
-  const [showAddBank, setShowAddBank] = useState(false);
-  const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-
-  const [newAccount, setNewAccount] = useState({
-    iban: '',
-    bank_name: '',
-    account_holder_name: ''
-  });
+  const [connectStatus, setConnectStatus] = useState<StripeConnectStatus | null>(null);
+  const [connectLoading, setConnectLoading] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -58,18 +56,16 @@ export default function MicrositePaymentsPage() {
     try {
       setLoading(true);
       
-      // Cargar cuentas bancarias y pagos en paralelo
-      const [accountsRes, paymentsRes] = await Promise.all([
-        fetch('/api/tenant/bank-accounts'),
-        fetch('/api/admin/payouts/history')
+      // Cargar estado Connect y pagos en paralelo
+      const [connectRes, paymentsRes] = await Promise.all([
+        fetch('/api/stripe-connect/status'),
+        fetch('/api/admin/payouts/history'),
       ]);
 
-      const accountsData = await accountsRes.json();
+      const connectData = await connectRes.json();
       const paymentsData = await paymentsRes.json();
 
-      if (accountsData.success) {
-        setBankAccounts(accountsData.bank_accounts || []);
-      }
+      if (connectData.success) setConnectStatus(connectData as StripeConnectStatus);
 
       if (paymentsData.success) {
         setPayments(paymentsData.payments || []);
@@ -82,57 +78,25 @@ export default function MicrositePaymentsPage() {
     }
   };
 
-  const handleAddBankAccount = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSaving(true);
-    setMessage(null);
-
+  const handleOpenConnectOnboarding = async () => {
     try {
-      const response = await fetch('/api/tenant/bank-accounts', {
+      setConnectLoading(true);
+      setMessage(null);
+      const res = await fetch('/api/stripe-connect/onboarding-link', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newAccount)
+        body: JSON.stringify({ return_path: `/${locale}/settings/microsite-payments` }),
       });
-
-      const data = await response.json();
-
-      if (data.success) {
-        setMessage({ type: 'success', text: t('addAccountSuccess') });
-        setShowAddBank(false);
-        setNewAccount({ iban: '', bank_name: '', account_holder_name: '' });
-        loadData();
-      } else {
-        setMessage({ type: 'error', text: data.error || t('errorAddAccount') });
+      const data = await res.json();
+      if (!res.ok || !data?.success || !data?.url) {
+        throw new Error(data?.error || t('connectError'));
       }
-    } catch (error) {
-      console.error('Error añadiendo cuenta:', error);
-      setMessage({ type: 'error', text: t('errorAddAccount') });
+      window.location.href = data.url as string;
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : t('connectError');
+      setMessage({ type: 'error', text: msg });
     } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleDeleteBankAccount = async (id: number) => {
-    if (!confirm(t('deleteConfirm'))) {
-      return;
-    }
-
-    try {
-      const response = await fetch(`/api/tenant/bank-accounts?id=${id}`, {
-        method: 'DELETE'
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        setMessage({ type: 'success', text: t('deleteSuccess') });
-        loadData();
-      } else {
-        setMessage({ type: 'error', text: data.error || t('errorDelete') });
-      }
-    } catch (error) {
-      console.error('Error eliminando cuenta:', error);
-      setMessage({ type: 'error', text: t('errorDeleteAccount') });
+      setConnectLoading(false);
     }
   };
 
@@ -208,138 +172,48 @@ export default function MicrositePaymentsPage() {
         </div>
       )}
 
-      {/* Cuentas Bancarias */}
+      {/* Configuración de cobros (Stripe Connect Express) */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-lg font-semibold text-gray-900">{t('bankAccounts')}</h3>
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1">
+            <h3 className="text-lg font-semibold text-gray-900">{t('connectTitle')}</h3>
+            <p className="text-sm text-gray-600 mt-1">{t('connectSubtitle')}</p>
+            <p className="text-xs text-gray-500 mt-2">{t('connectWebOnly')}</p>
+          </div>
           <button
-            onClick={() => setShowAddBank(!showAddBank)}
-            className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            onClick={handleOpenConnectOnboarding}
+            disabled={connectLoading}
+            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 transition-colors"
           >
-            <Plus className="w-4 h-4 mr-2" />
-            {t('addAccount')}
+            <ExternalLink className="w-4 h-4 mr-2" />
+            {connectLoading ? t('connectOpening') : t('connectButton')}
           </button>
         </div>
 
-        {/* Formulario para añadir cuenta */}
-        {showAddBank && (
-          <form onSubmit={handleAddBankAccount} className="mb-6 p-4 bg-gray-50 rounded-lg">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {t('ibanLabel')}
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={newAccount.iban}
-                  onChange={(e) => setNewAccount({ ...newAccount, iban: e.target.value.toUpperCase() })}
-                  placeholder={t('ibanPlaceholder')}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {t('holderLabel')}
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={newAccount.account_holder_name}
-                  onChange={(e) => setNewAccount({ ...newAccount, account_holder_name: e.target.value })}
-                  placeholder={t('holderPlaceholder')}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {t('bankNameLabel')}
-                </label>
-                <input
-                  type="text"
-                  value={newAccount.bank_name}
-                  onChange={(e) => setNewAccount({ ...newAccount, bank_name: e.target.value })}
-                  placeholder={t('bankNamePlaceholder')}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-            </div>
-            <div className="mt-4 flex gap-2">
-              <button
-                type="submit"
-                disabled={saving}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 flex items-center"
-              >
-                <CreditCard className="w-4 h-4 mr-2" />
-                {saving ? t('saving') : t('saveAccount')}
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowAddBank(false)}
-                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
-              >
-                {t('cancel')}
-              </button>
-            </div>
-          </form>
-        )}
-
-        {/* Lista de cuentas */}
-        {bankAccounts.length > 0 ? (
-          <div className="space-y-3">
-            {bankAccounts.map((account) => (
-              <div
-                key={account.id}
-                className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
-              >
-                <div className="flex-1">
-                  <div className="flex items-center gap-3">
-                    <CreditCard className="w-5 h-5 text-gray-600" />
-                    <div>
-                      <p className="font-medium text-gray-900">{account.account_holder_name}</p>
-                      <p className="text-sm text-gray-600">IBAN: {account.iban}</p>
-                      {account.bank_name && (
-                        <p className="text-sm text-gray-600">{account.bank_name}</p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4">
-                  <div>
-                    {account.verification_status === 'verified' ? (
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                        <CheckCircle className="w-3 h-3 mr-1" />
-                        {t('verified')}
-                      </span>
-                    ) : account.verification_status === 'pending' ? (
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                        <AlertCircle className="w-3 h-3 mr-1" />
-                        {t('pending')}
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                        <XCircle className="w-3 h-3 mr-1" />
-                        {t('failed')}
-                      </span>
-                    )}
-                  </div>
-                  <button
-                    onClick={() => handleDeleteBankAccount(account.id)}
-                    className="text-red-600 hover:text-red-700 p-2"
-                  >
-                    {t('delete')}
-                  </button>
-                </div>
-              </div>
-            ))}
+        <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="p-3 rounded-lg border border-gray-200 bg-gray-50">
+            <p className="text-xs text-gray-500">{t('connectStatusAccount')}</p>
+            <p className="mt-1 font-semibold text-gray-900">
+              {connectStatus?.has_account ? t('connectYes') : t('connectNo')}
+            </p>
           </div>
-        ) : (
-          <div className="text-center py-8 text-gray-500">
-            <CreditCard className="w-12 h-12 mx-auto mb-2 text-gray-400" />
-            <p>{t('noAccounts')}</p>
-            <p className="text-sm">{t('noAccountsHint')}</p>
+          <div className="p-3 rounded-lg border border-gray-200 bg-gray-50">
+            <p className="text-xs text-gray-500">{t('connectStatusCharges')}</p>
+            <p className="mt-1 font-semibold text-gray-900">
+              {connectStatus && 'charges_enabled' in connectStatus && connectStatus.charges_enabled
+                ? t('connectEnabled')
+                : t('connectDisabled')}
+            </p>
           </div>
-        )}
+          <div className="p-3 rounded-lg border border-gray-200 bg-gray-50">
+            <p className="text-xs text-gray-500">{t('connectStatusPayouts')}</p>
+            <p className="mt-1 font-semibold text-gray-900">
+              {connectStatus && 'payouts_enabled' in connectStatus && connectStatus.payouts_enabled
+                ? t('connectEnabled')
+                : t('connectDisabled')}
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Historial de Pagos */}

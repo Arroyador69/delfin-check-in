@@ -99,6 +99,34 @@ export async function POST(req: NextRequest) {
     const property = propertyResult.rows[0];
     const tenantId = property.tenant_id;
 
+    // Stripe Connect (Direct Charges): el propietario cobra en su cuenta conectada.
+    // Si no está configurado, devolvemos error accionable (UI: Settings > Pagos Microsite).
+    try {
+      await sql`ALTER TABLE tenants ADD COLUMN IF NOT EXISTS stripe_connect_account_id TEXT`;
+    } catch (_) {}
+    const connectRow = await sql`
+      SELECT stripe_connect_account_id
+      FROM tenants
+      WHERE id = ${tenantId}::uuid
+      LIMIT 1
+    `;
+    const stripeConnectAccountId = String(connectRow.rows[0]?.stripe_connect_account_id || '').trim();
+    if (!stripeConnectAccountId) {
+      const response = NextResponse.json(
+        {
+          success: false,
+          error:
+            'El propietario aún no tiene activados los cobros online. Pídele que active Stripe en Configuración > Pagos.',
+          code: 'stripe_connect_not_configured',
+        },
+        { status: 409 }
+      );
+      Object.entries(corsHeaders(origin)).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return response;
+    }
+
     // Calcular fechas y noches
     const checkInDate = new Date(check_in_date);
     const checkOutDate = new Date(check_out_date);
@@ -128,7 +156,7 @@ export async function POST(req: NextRequest) {
       : getDirectReservationCommissionRate(property.tenant_plan_type);
     const stripeFeeRate = parseFloat(String(property.stripe_fee_rate || 0.014));
     
-    const commission = calculateCommission(subtotal, commissionRate, stripeFeeRate);
+    const commission = calculateCommission(subtotal, commissionRate, stripeFeeRate, true);
 
     // Generar código de reserva único
     const reservationCode = generateReservationCode();
@@ -216,9 +244,12 @@ export async function POST(req: NextRequest) {
     const daysUntilCheckIn = Math.ceil((checkInDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
     const shouldHoldPayment = daysUntilCheckIn > 0; // Retener si el check-in es en el futuro
 
-    const paymentIntent = await getStripeServer().paymentIntents.create({
+    const applicationFeeAmount = Math.round(commission.delfin_commission_amount * 100);
+    const paymentIntent = await getStripeServer().paymentIntents.create(
+      {
       amount: paymentAmount,
       currency: 'eur',
+      application_fee_amount: applicationFeeAmount,
       // Retener pago hasta check-in si es en el futuro
       capture_method: shouldHoldPayment ? 'manual' : 'automatic',
       metadata: {
@@ -259,7 +290,11 @@ export async function POST(req: NextRequest) {
       automatic_payment_methods: {
         enabled: true,
       },
-    });
+      },
+      {
+        stripeAccount: stripeConnectAccountId,
+      }
+    );
 
     console.log('✅ [CREATE PAYMENT] Payment Intent creado:', {
       paymentIntentId: paymentIntent.id,
