@@ -194,6 +194,7 @@ export default function UpgradePlanPage() {
   const tUpgrade = useTranslations('upgradePlan');
   const locale = useLocale();
   const router = useRouter();
+  const money = useCallback((v: unknown) => Number(v ?? 0), []);
   const [currentPlan, setCurrentPlan] = useState<string | null>(null);
   const [currentRoomCount, setCurrentRoomCount] = useState(1);
   const [selectedPlan, setSelectedPlan] = useState<PlanId | null>(null);
