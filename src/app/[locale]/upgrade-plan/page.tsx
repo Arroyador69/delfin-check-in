@@ -6,8 +6,6 @@ import { useLocale, useTranslations } from 'next-intl';
 import { ArrowLeft, Check, Crown, Zap, Loader2, Calculator, Star } from 'lucide-react';
 import Link from 'next/link';
 import AdminLayout from '@/components/AdminLayout';
-import { StripeCheckoutElements } from '@/components/StripeCheckoutElements';
-import { CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 
 type PlanId = 'checkin' | 'standard' | 'pro';
 
@@ -79,145 +77,6 @@ function getPlanDesc(t: (k: string) => string, planId: PlanId): string {
   if (planId === 'checkin') return t('checkinPlanDesc');
   if (planId === 'standard') return t('standardPlanDesc');
   return t('proPlanDesc');
-}
-
-function CheckoutForm({ 
-  planId, 
-  roomCount, 
-  pricing, 
-  onSuccess, 
-  onError 
-}: { 
-  planId: PlanId;
-  roomCount: number;
-  pricing: {
-    base_price: number;
-    vat_rate: number;
-    vat_amount: number;
-    total: number;
-  };
-  onSuccess: () => void;
-  onError: (error: string) => void;
-}) {
-  const t = useTranslations('plans');
-  const stripe = useStripe();
-  const elements = useElements();
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const money = (v: any) => Number(v ?? 0);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!stripe || !elements) {
-      return;
-    }
-
-    setLoading(true);
-    setError('');
-
-    try {
-      const cardElement = elements.getElement(CardElement);
-      if (!cardElement) {
-        throw new Error(t('errorCardNotFound'));
-      }
-
-      const { error: pmError, paymentMethod } = await stripe.createPaymentMethod({
-        type: 'card',
-        card: cardElement,
-      });
-
-      if (pmError || !paymentMethod) {
-        throw new Error(pmError?.message || t('errorPaymentMethod'));
-      }
-
-      const response = await fetch('/api/stripe/create-subscription', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          planId,
-          paymentMethodId: paymentMethod.id,
-          roomCount,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!data.success) {
-        throw new Error(data.error || t('errorSubscription'));
-      }
-
-      onSuccess();
-    } catch (err: any) {
-      const errorMessage = err.message || t('errorProcessingPayment');
-      setError(errorMessage);
-      onError(errorMessage);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="bg-gray-50 p-4 rounded-lg">
-        <div className="space-y-2 text-sm">
-          <div className="flex justify-between">
-            <span>{t('basePrice')}</span>
-            <span>{money((pricing as any)?.base_price).toFixed(2)}€</span>
-          </div>
-          <div className="flex justify-between">
-            <span>{t('vat', { rate: pricing.vat_rate })}</span>
-            <span>{money((pricing as any)?.vat_amount).toFixed(2)}€</span>
-          </div>
-          <div className="flex justify-between font-bold text-lg pt-2 border-t">
-            <span>{t('totalPerMonth')}</span>
-            <span>{money((pricing as any)?.total).toFixed(2)}€/mes</span>
-          </div>
-        </div>
-      </div>
-
-      <div className="border rounded-lg p-4">
-        <CardElement
-          options={{
-            style: {
-              base: {
-                fontSize: '16px',
-                color: '#424770',
-                '::placeholder': {
-                  color: '#aab7c4',
-                },
-              },
-            },
-          }}
-        />
-      </div>
-
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-          {error}
-        </div>
-      )}
-
-      <button
-        type="submit"
-        disabled={loading || !stripe}
-        className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-      >
-        {loading ? (
-          <>
-            <Loader2 className="animate-spin" size={20} />
-            {t('processing')}
-          </>
-        ) : (
-          <>
-            {t('subscribePerMonth', { total: money((pricing as any)?.total).toFixed(2) })}
-          </>
-        )}
-      </button>
-    </form>
-  );
 }
 
 function PlanCalculator({
@@ -429,25 +288,14 @@ export default function UpgradePlanPage() {
   const isSamePlanSelection = Boolean(selectedPlan && selectedPlan === currentPlan);
   const hasRoomCountChange = roomCount !== currentRoomCount;
 
-  const handleSamePlanUpdate = async () => {
-    if (!selectedPlan || selectedPlan !== currentPlan) return;
-    try {
-      const response = await fetch('/api/stripe/update-subscription', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ roomCount }),
-      });
-      const data = await response.json();
-      if (!data.success) {
-        throw new Error(data.error || tPlans('errorSubscription'));
-      }
-      alert(tPlans('successSubscription'));
-      router.push(`/${locale}/dashboard`);
-      router.refresh();
-    } catch (error: any) {
-      alert(error?.message || tPlans('errorSubscription'));
-    }
-  };
+  const startPolarCheckout = useCallback(() => {
+    if (!selectedPlan) return;
+    const url = new URL('/api/polar/upgrade', window.location.origin);
+    url.searchParams.set('plan', selectedPlan);
+    url.searchParams.set('rooms', String(roomCount));
+    url.searchParams.set('locale', String(locale || 'es'));
+    window.location.href = url.toString();
+  }, [selectedPlan, roomCount, locale]);
 
   if (loading) {
     return (
@@ -528,33 +376,26 @@ export default function UpgradePlanPage() {
 
                 {pricing && (
                   <div className="mt-6">
-                    {isSamePlanSelection ? (
-                      <div className="space-y-4">
-                        {!hasRoomCountChange ? (
-                          <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-amber-800">
-                            {tPlans('noChangesToSubscription')}
-                          </div>
-                        ) : null}
-                        <button
-                          type="button"
-                          onClick={handleSamePlanUpdate}
-                          disabled={!hasRoomCountChange}
-                          className="w-full rounded-lg bg-blue-600 px-4 py-3 font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                          {tPlans('updateSubscription')}
-                        </button>
+                    <div className="space-y-4">
+                      {isSamePlanSelection && !hasRoomCountChange ? (
+                        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-amber-800">
+                          {tPlans('noChangesToSubscription')}
+                        </div>
+                      ) : null}
+                      <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
+                        El pago y la factura del plan se gestionan con nuestro Merchant of Record (Polar).
+                        El IVA final y los datos fiscales se aplican en el checkout de Polar.
                       </div>
-                    ) : (
-                      <StripeCheckoutElements>
-                        <CheckoutForm
-                          planId={selectedPlan}
-                          roomCount={roomCount}
-                          pricing={pricing}
-                          onSuccess={handleSuccess}
-                          onError={(error) => console.error(error)}
-                        />
-                      </StripeCheckoutElements>
-                    )}
+                      <button
+                        type="button"
+                        onClick={startPolarCheckout}
+                        disabled={isSamePlanSelection && !hasRoomCountChange}
+                        className="w-full rounded-lg bg-blue-600 px-4 py-3 font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {isSamePlanSelection ? tPlans('updateSubscription') : tPlans('subscribeTo')}{' '}
+                        {money(pricing.total).toFixed(2)}€
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
