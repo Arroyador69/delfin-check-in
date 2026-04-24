@@ -1,15 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { ArrowLeft, Check, Crown, Zap, Loader2, Calculator, Info } from 'lucide-react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { ArrowLeft, Check, Crown, Zap, Loader2, Calculator } from 'lucide-react';
 import Link from 'next/link';
 import AdminLayout from '@/components/AdminLayout';
-import { loadStripe } from '@stripe/stripe-js';
-import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { useClientTranslations } from '@/hooks/useClientTranslations';
-
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '');
 
 type PlanId = 'checkin' | 'pro';
 
@@ -78,145 +74,6 @@ const PLANS: Plan[] = [
     ]
   }
 ];
-
-function CheckoutForm({ 
-  planId, 
-  roomCount, 
-  pricing, 
-  onSuccess, 
-  onError 
-}: { 
-  planId: PlanId;
-  roomCount: number;
-  pricing: {
-    base_price: number;
-    vat_rate: number;
-    vat_amount: number;
-    total: number;
-  };
-  onSuccess: () => void;
-  onError: (error: string) => void;
-}) {
-  const stripe = useStripe();
-  const elements = useElements();
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!stripe || !elements) {
-      return;
-    }
-
-    setLoading(true);
-    setError('');
-
-    try {
-      const cardElement = elements.getElement(CardElement);
-      if (!cardElement) {
-        throw new Error('Elemento de tarjeta no encontrado');
-      }
-
-      // Crear payment method
-      const { error: pmError, paymentMethod } = await stripe.createPaymentMethod({
-        type: 'card',
-        card: cardElement,
-      });
-
-      if (pmError || !paymentMethod) {
-        throw new Error(pmError?.message || 'Error creando método de pago');
-      }
-
-      // Crear suscripción
-      const response = await fetch('/api/stripe/create-subscription', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          planId,
-          paymentMethodId: paymentMethod.id,
-          roomCount,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!data.success) {
-        throw new Error(data.error || 'Error creando suscripción');
-      }
-
-      onSuccess();
-    } catch (err: any) {
-      const errorMessage = err.message || 'Error procesando pago';
-      setError(errorMessage);
-      onError(errorMessage);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="bg-gray-50 p-4 rounded-lg">
-        <div className="space-y-2 text-sm">
-          <div className="flex justify-between">
-            <span>Precio base:</span>
-            <span>{pricing.base_price.toFixed(2)}€</span>
-          </div>
-          <div className="flex justify-between">
-            <span>IVA ({pricing.vat_rate}%):</span>
-            <span>{pricing.vat_amount.toFixed(2)}€</span>
-          </div>
-          <div className="flex justify-between font-bold text-lg pt-2 border-t">
-            <span>Total:</span>
-            <span>{pricing.total.toFixed(2)}€/mes</span>
-          </div>
-        </div>
-      </div>
-
-      <div className="border rounded-lg p-4">
-        <CardElement
-          options={{
-            style: {
-              base: {
-                fontSize: '16px',
-                color: '#424770',
-                '::placeholder': {
-                  color: '#aab7c4',
-                },
-              },
-            },
-          }}
-        />
-      </div>
-
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-          {error}
-        </div>
-      )}
-
-      <button
-        type="submit"
-        disabled={loading || !stripe}
-        className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-      >
-        {loading ? (
-          <>
-            <Loader2 className="animate-spin" size={20} />
-            Procesando...
-          </>
-        ) : (
-          <>
-            Suscribirse por {pricing.total.toFixed(2)}€/mes
-          </>
-        )}
-      </button>
-    </form>
-  );
-}
 
 function PlanCalculator({ planId, onPriceChange }: { planId: PlanId; onPriceChange: (pricing: any) => void }) {
   const [roomCount, setRoomCount] = useState(2);
@@ -314,6 +171,7 @@ function PlanCalculator({ planId, onPriceChange }: { planId: PlanId; onPriceChan
 export default function UpgradePlanPage() {
   const t = useClientTranslations('upgradePlan');
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [currentPlan, setCurrentPlan] = useState<string | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<PlanId | null>(null);
   const [showCheckout, setShowCheckout] = useState(false);
@@ -324,6 +182,18 @@ export default function UpgradePlanPage() {
   useEffect(() => {
     loadCurrentPlan();
   }, []);
+
+  useEffect(() => {
+    const qPlan = String(searchParams?.get('plan') || '').toLowerCase();
+    const qRooms = parseInt(String(searchParams?.get('rooms') || ''), 10);
+    if (qPlan === 'checkin' || qPlan === 'pro') {
+      setSelectedPlan(qPlan as PlanId);
+      setShowCheckout(true);
+    }
+    if (Number.isFinite(qRooms) && qRooms >= 1) {
+      setRoomCount(Math.min(999, Math.floor(qRooms)));
+    }
+  }, [searchParams]);
 
   const loadCurrentPlan = async () => {
     try {
@@ -353,10 +223,15 @@ export default function UpgradePlanPage() {
     setPricing(newPricing);
   };
 
-  const handleSuccess = () => {
-    alert('¡Plan actualizado exitosamente!');
-    router.push('/');
-    router.refresh();
+  const startPolarCheckout = () => {
+    if (!selectedPlan) return;
+    const url = new URL('/api/polar/upgrade', window.location.origin);
+    url.searchParams.set('plan', selectedPlan);
+    url.searchParams.set('rooms', String(roomCount));
+    // Locale en ruta: /es/upgrade-plan → "es"
+    const loc = (window.location.pathname.split('/')[1] || 'es').toLowerCase();
+    url.searchParams.set('locale', loc);
+    window.location.href = url.toString();
   };
 
   // Filtrar planes según el plan actual
@@ -429,15 +304,17 @@ export default function UpgradePlanPage() {
 
                 {pricing && (
                   <div className="mt-6">
-                    <Elements stripe={stripePromise}>
-                      <CheckoutForm
-                        planId={selectedPlan}
-                        roomCount={roomCount}
-                        pricing={pricing}
-                        onSuccess={handleSuccess}
-                        onError={(error) => console.error(error)}
-                      />
-                    </Elements>
+                    <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
+                      El pago y la factura del plan se gestionan con nuestro Merchant of Record (Polar).
+                      Al continuar, serás redirigido a un checkout seguro.
+                    </div>
+                    <button
+                      type="button"
+                      onClick={startPolarCheckout}
+                      className="mt-4 w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 flex items-center justify-center gap-2"
+                    >
+                      Continuar con Polar · {pricing.total.toFixed(2)}€/mes
+                    </button>
                   </div>
                 )}
               </div>
