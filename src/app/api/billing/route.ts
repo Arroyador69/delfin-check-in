@@ -69,6 +69,11 @@ export async function GET(req: NextRequest) {
           tenant.status === 'suspended' || (tenant.payment_retry_count || 0) >= 3,
         stripe_customer_id: tenant.stripe_customer_id,
         stripe_subscription_id: tenant.stripe_subscription_id,
+        polar_customer_id: (tenant as any).polar_customer_id || null,
+        polar_subscription_id: (tenant as any).polar_subscription_id || null,
+        polar_subscription_status: (tenant as any).polar_subscription_status || null,
+        polar_checkout_id: (tenant as any).polar_checkout_id || null,
+        polar_last_event_at: (tenant as any).polar_last_event_at || null,
         created_at: tenant.created_at,
       },
       plan: {
@@ -96,6 +101,7 @@ export async function GET(req: NextRequest) {
         attempt_count: inv.attempt_count,
         next_payment_attempt_at: inv.next_payment_attempt_at,
       })),
+      mor_provider: 'polar',
     };
 
     let subscriptionPayload: {
@@ -160,6 +166,8 @@ export async function GET(req: NextRequest) {
       billingInfo.subscription = subscriptionPayload;
     }
 
+    // Stripe invoice history: mantener solo como compatibilidad/commission history,
+    // pero el plan SaaS es MoR (Polar).
     if (tenant.stripe_customer_id && stripe) {
       try {
         const invoices = await stripe.invoices.list({

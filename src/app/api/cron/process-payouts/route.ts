@@ -9,6 +9,21 @@ import { sendPayoutNotificationEmail } from '@/lib/email-notifications';
 import { getStripeServer } from '@/lib/stripe-server';
 
 export async function GET(req: NextRequest) {
+  // Stripe Connect (Direct Charges): Stripe gestiona payouts al banco del propietario.
+  // Este cron de transfers desde la plataforma queda deshabilitado salvo modo legacy.
+  if (process.env.STRIPE_PAYOUTS_MODE !== 'legacy_transfers') {
+    return NextResponse.json({
+      success: true,
+      message:
+        'Migración activa: payouts gestionados por Stripe Connect en la cuenta del propietario. Cron deshabilitado.',
+      processed: 0,
+      skipped: 0,
+      failed: 0,
+      details: [],
+      deprecated: true,
+    });
+  }
+
   try {
     // Vercel Cron envía automáticamente headers de verificación
     // No necesitamos verificar manualmente si está configurado en vercel.json

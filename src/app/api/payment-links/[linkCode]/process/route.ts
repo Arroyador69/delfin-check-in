@@ -92,6 +92,33 @@ export async function POST(
 
     const link = linkResult.rows[0];
 
+    // Stripe Connect (Direct Charges)
+    try {
+      await sql`ALTER TABLE tenants ADD COLUMN IF NOT EXISTS stripe_connect_account_id TEXT`;
+    } catch (_) {}
+    const connectRow = await sql`
+      SELECT stripe_connect_account_id
+      FROM tenants
+      WHERE id = ${link.tenant_id}::uuid
+      LIMIT 1
+    `;
+    const stripeConnectAccountId = String(connectRow.rows[0]?.stripe_connect_account_id || '').trim();
+    if (!stripeConnectAccountId) {
+      const response = NextResponse.json(
+        {
+          success: false,
+          error:
+            'El propietario aún no tiene activados los cobros online. Contacta con el propietario para completar la configuración de pagos.',
+          code: 'stripe_connect_not_configured',
+        },
+        { status: 409 }
+      );
+      Object.entries(corsHeaders(origin)).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return response;
+    }
+
     // Verificar fecha de expiración
     if (link.expires_at && new Date(link.expires_at) < new Date()) {
       const response = NextResponse.json(
@@ -235,7 +262,7 @@ export async function POST(
       ? parseFloat(String(link.commission_rate))
       : getDirectReservationCommissionRate(link.tenant_plan_type);
     const stripeFeeRate = parseFloat(String(link.stripe_fee_rate || 0.014));
-    const commission = calculateCommission(subtotal, commissionRate, stripeFeeRate);
+    const commission = calculateCommission(subtotal, commissionRate, stripeFeeRate, true);
 
     // Generar código de reserva único
     const reservationCode = generateReservationCode();
@@ -243,9 +270,12 @@ export async function POST(
     // Crear Payment Intent en Stripe
     const paymentAmount = Math.round(commission.total_amount * 100); // Convertir a centavos
     
-    const paymentIntent = await getStripeServer().paymentIntents.create({
+    const applicationFeeAmount = Math.round(commission.delfin_commission_amount * 100);
+    const paymentIntent = await getStripeServer().paymentIntents.create(
+      {
       amount: paymentAmount,
       currency: 'eur',
+      application_fee_amount: applicationFeeAmount,
       metadata: {
         tenant_id: link.tenant_id,
         property_id: propertyId.toString(),
@@ -280,7 +310,11 @@ export async function POST(
       automatic_payment_methods: {
         enabled: true,
       },
-    });
+      },
+      {
+        stripeAccount: stripeConnectAccountId,
+      }
+    );
 
     if (!paymentIntent.client_secret) {
       throw new Error('Payment Intent creado sin client_secret');
