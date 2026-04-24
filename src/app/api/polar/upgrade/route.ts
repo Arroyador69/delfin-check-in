@@ -12,6 +12,11 @@ function baseUrl(req: NextRequest): string {
   return `${proto}://${host}`.replace(/\/+$/, '');
 }
 
+function extraUnitProductId(): string | null {
+  const trimmed = String(process.env.POLAR_PRODUCT_EXTRA_UNIT_ID || '').trim();
+  return trimmed ? trimmed : null;
+}
+
 function productIdFor(planId: UpgradePlanId): string | null {
   const v =
     planId === 'checkin'
@@ -27,8 +32,8 @@ function productIdFor(planId: UpgradePlanId): string | null {
  * GET /api/polar/upgrade?plan=checkin|standard|pro&rooms=2&locale=es
  *
  * Redirige al checkout alojado de Polar (MoR) para "Mejorar plan".
- * Nota: hoy enviamos 1 producto base por plan. El pricing granular por unidades extra
- * se mantiene en UI/BD (límite de unidades) y puede ampliarse a add-ons en Polar.
+ * En Polar, el plan es el producto base y las unidades extra se representan con un producto
+ * adicional seat-based (2 €/mes por unidad). Se pasa `seats = (rooms - 1)` cuando aplica.
  */
 export async function GET(req: NextRequest) {
   const tenantId = await getTenantId(req);
@@ -39,6 +44,8 @@ export async function GET(req: NextRequest) {
   const u = new URL(req.url);
   const plan = (u.searchParams.get('plan') || '').toLowerCase() as UpgradePlanId;
   const locale = (u.searchParams.get('locale') || 'es').toLowerCase();
+  const roomsParam = u.searchParams.get('rooms');
+  const rooms = Math.max(1, Math.min(999, Math.floor(Number(roomsParam || 1) || 1)));
 
   const safePlan: UpgradePlanId =
     plan === 'checkin' || plan === 'standard' || plan === 'pro' ? plan : 'pro';
@@ -47,6 +54,15 @@ export async function GET(req: NextRequest) {
   if (!productId) {
     return NextResponse.json(
       { success: false, error: `Polar no configurado: falta POLAR_PRODUCT_${safePlan.toUpperCase()}_ID` },
+      { status: 500 }
+    );
+  }
+
+  const extraUnits = Math.max(0, rooms - 1);
+  const extraProductId = extraUnits > 0 ? extraUnitProductId() : null;
+  if (extraUnits > 0 && !extraProductId) {
+    return NextResponse.json(
+      { success: false, error: 'Polar no configurado: falta POLAR_PRODUCT_EXTRA_UNIT_ID' },
       { status: 500 }
     );
   }
@@ -64,18 +80,29 @@ export async function GET(req: NextRequest) {
   }
 
   const app = baseUrl(req);
-  const metadata = encodeURIComponent(JSON.stringify({ tenant_id: tenantId, plan: safePlan, source: 'upgrade_plan' }));
-  const success =
-    process.env.POLAR_SUCCESS_URL ||
-    `${app}/${locale}/settings/billing?polar=success&checkout_id={CHECKOUT_ID}`;
-  const returnUrl = process.env.POLAR_RETURN_URL || app;
+  const metadata = encodeURIComponent(
+    JSON.stringify({
+      tenant_id: tenantId,
+      plan: safePlan,
+      rooms,
+      extra_units: extraUnits,
+      source: 'upgrade_plan',
+      locale,
+    })
+  );
 
   // Usamos el handler oficial en /api/polar/checkout.
   const checkoutUrl = new URL(`${app}/api/polar/checkout`);
-  checkoutUrl.searchParams.set('products', productId);
-  checkoutUrl.searchParams.set('metadata', decodeURIComponent(metadata));
-  checkoutUrl.searchParams.set('success_url', success);
-  checkoutUrl.searchParams.set('return_url', returnUrl);
+  // Se pueden repetir params `products=...` para multi-product checkout.
+  checkoutUrl.searchParams.append('products', productId);
+  if (extraProductId) {
+    checkoutUrl.searchParams.append('products', extraProductId);
+    // `seats` aplica a productos seat-based (usamos esto para unidades extra).
+    checkoutUrl.searchParams.set('seats', String(extraUnits));
+  }
+  // Asociar el cliente en Polar al tenant: facilita reconciliación.
+  checkoutUrl.searchParams.set('customerExternalId', tenantId);
+  checkoutUrl.searchParams.set('metadata', metadata);
 
   return NextResponse.redirect(checkoutUrl.toString(), 302);
 }
