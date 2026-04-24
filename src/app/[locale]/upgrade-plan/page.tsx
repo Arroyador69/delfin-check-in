@@ -384,8 +384,8 @@ export default function UpgradePlanPage() {
                         </div>
                       ) : null}
                       <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
-                        El pago y la factura del plan se gestionan con nuestro Merchant of Record (Polar).
-                        El IVA final y los datos fiscales se aplican en el checkout de Polar.
+                        Serás redirigido a un checkout seguro para completar el pago.
+                        El IVA final y los datos fiscales se aplican durante el proceso de compra.
                       </div>
                       <button
                         type="button"
