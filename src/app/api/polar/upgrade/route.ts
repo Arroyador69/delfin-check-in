@@ -80,16 +80,16 @@ export async function GET(req: NextRequest) {
   }
 
   const app = baseUrl(req);
-  const metadata = encodeURIComponent(
-    JSON.stringify({
-      tenant_id: tenantId,
-      plan: safePlan,
-      rooms,
-      extra_units: extraUnits,
-      source: 'upgrade_plan',
-      locale,
-    })
-  );
+  // IMPORTANTE: el handler de @polar-sh/nextjs espera `metadata` como JSON y lo decodifica internamente
+  // (la query-string ya se encargará de escaparlo). No lo pre-encodeamos para evitar doble encoding.
+  const metadata = JSON.stringify({
+    tenant_id: tenantId,
+    plan: safePlan,
+    rooms,
+    extra_units: extraUnits,
+    source: 'upgrade_plan',
+    locale,
+  });
 
   // Usamos el handler oficial en /api/polar/checkout.
   const checkoutUrl = new URL(`${app}/api/polar/checkout`);
