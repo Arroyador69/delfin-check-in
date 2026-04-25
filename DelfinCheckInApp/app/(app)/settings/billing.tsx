@@ -204,7 +204,7 @@ export default function BillingSettingsScreen() {
               </>
             ) : (
               <Text style={styles.upgradeHint}>
-                {t('mobile.settings.upgradePlanHint')}
+                Gestiona tu plan desde el panel web de Delfín Check-in.
               </Text>
             )}
           </View>
