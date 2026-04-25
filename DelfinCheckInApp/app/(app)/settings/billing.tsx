@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator, Linking } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator, Linking, Platform } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -33,6 +33,7 @@ export default function BillingSettingsScreen() {
   const { session } = useAuth();
   const [planCalcId, setPlanCalcId] = useState<PlanCalcId>('standard');
   const [roomCount, setRoomCount] = useState(2);
+  const isIOS = Platform.OS === 'ios';
 
   useEffect(() => {
     const n = session?.user?.tenant?.currentRooms;
@@ -97,73 +98,75 @@ export default function BillingSettingsScreen() {
         </View>
       </View>
 
-      <View style={[styles.card, styles.calcCard]}>
-        <Text style={styles.cardTitle}>{t('plans.priceCalculator')}</Text>
-        <Text style={styles.calcHint}>{t('mobile.settings.billingPlan')}</Text>
-        <View style={styles.planRow}>
-          {(['checkin', 'standard', 'pro'] as const).map((pid) => (
-            <Pressable
-              key={pid}
-              style={[styles.planChip, planCalcId === pid && styles.planChipOn]}
-              onPress={() => setPlanCalcId(pid)}
-            >
-              <Text style={[styles.planChipText, planCalcId === pid && styles.planChipTextOn]}>
-                {pid === 'checkin'
-                  ? t('plans.checkinPlanName')
-                  : pid === 'standard'
-                    ? t('plans.standardPlanName')
-                    : t('plans.proPlanName')}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
-        <Text style={[styles.calcHint, { marginTop: 10 }]}>{t('plans.numberOfRooms')}</Text>
-        <View style={styles.roomStepper}>
-          <Pressable
-            style={styles.stepBtn}
-            onPress={() => setRoomCount((c) => Math.max(1, c - 1))}
-          >
-            <Text style={styles.stepBtnText}>−</Text>
-          </Pressable>
-          <Text style={styles.roomCount}>{roomCount}</Text>
-          <Pressable style={styles.stepBtn} onPress={() => setRoomCount((c) => c + 1)}>
-            <Text style={styles.stepBtnText}>+</Text>
-          </Pressable>
-        </View>
-        {priceLoading ? (
-          <ActivityIndicator style={{ marginTop: 12 }} color="#2563eb" />
-        ) : priceError || !pricing ? (
-          <Text style={styles.errSmall}>{t('mobile.settings.planCalcError')}</Text>
-        ) : (
-          <View style={styles.priceBox}>
-            <View style={styles.priceLine}>
-              <Text style={styles.priceLineLabel}>{t('plans.basePrice')}</Text>
-              <Text style={styles.priceLineVal}>{money(pricing.base_price).toFixed(2)} €</Text>
-            </View>
-            {money(pricing.extra_rooms_price) > 0 ? (
-              <View style={styles.priceLine}>
-                <Text style={styles.priceLineMuted}>
-                  {t('plans.extraRooms', { count: pricing.extra_rooms || 0 })}
+      {!isIOS ? (
+        <View style={[styles.card, styles.calcCard]}>
+          <Text style={styles.cardTitle}>{t('plans.priceCalculator')}</Text>
+          <Text style={styles.calcHint}>{t('mobile.settings.billingPlan')}</Text>
+          <View style={styles.planRow}>
+            {(['checkin', 'standard', 'pro'] as const).map((pid) => (
+              <Pressable
+                key={pid}
+                style={[styles.planChip, planCalcId === pid && styles.planChipOn]}
+                onPress={() => setPlanCalcId(pid)}
+              >
+                <Text style={[styles.planChipText, planCalcId === pid && styles.planChipTextOn]}>
+                  {pid === 'checkin'
+                    ? t('plans.checkinPlanName')
+                    : pid === 'standard'
+                      ? t('plans.standardPlanName')
+                      : t('plans.proPlanName')}
                 </Text>
-                <Text style={styles.priceLineMuted}>+{money(pricing.extra_rooms_price).toFixed(2)} €</Text>
-              </View>
-            ) : null}
-            <View style={styles.priceLine}>
-              <Text style={styles.priceLineLabel}>{t('plans.subtotal')}</Text>
-              <Text style={styles.priceLineVal}>{money(pricing.subtotal).toFixed(2)} €</Text>
-            </View>
-            <View style={styles.priceLine}>
-              <Text style={styles.priceLineMuted}>{t('plans.vat', { rate: vatRate })}</Text>
-              <Text style={styles.priceLineMuted}>+{vatAmount.toFixed(2)} €</Text>
-            </View>
-            <View style={[styles.priceLine, styles.priceTotalRow]}>
-              <Text style={styles.priceTotalLabel}>{t('plans.totalMonthly')}</Text>
-              <Text style={styles.priceTotalVal}>{money(pricing.total).toFixed(2)} €</Text>
-            </View>
+              </Pressable>
+            ))}
           </View>
-        )}
-        <Text style={styles.calcFoot}>{t('mobile.settings.planCalcNote')}</Text>
-      </View>
+          <Text style={[styles.calcHint, { marginTop: 10 }]}>{t('plans.numberOfRooms')}</Text>
+          <View style={styles.roomStepper}>
+            <Pressable
+              style={styles.stepBtn}
+              onPress={() => setRoomCount((c) => Math.max(1, c - 1))}
+            >
+              <Text style={styles.stepBtnText}>−</Text>
+            </Pressable>
+            <Text style={styles.roomCount}>{roomCount}</Text>
+            <Pressable style={styles.stepBtn} onPress={() => setRoomCount((c) => c + 1)}>
+              <Text style={styles.stepBtnText}>+</Text>
+            </Pressable>
+          </View>
+          {priceLoading ? (
+            <ActivityIndicator style={{ marginTop: 12 }} color="#2563eb" />
+          ) : priceError || !pricing ? (
+            <Text style={styles.errSmall}>{t('mobile.settings.planCalcError')}</Text>
+          ) : (
+            <View style={styles.priceBox}>
+              <View style={styles.priceLine}>
+                <Text style={styles.priceLineLabel}>{t('plans.basePrice')}</Text>
+                <Text style={styles.priceLineVal}>{money(pricing.base_price).toFixed(2)} €</Text>
+              </View>
+              {money(pricing.extra_rooms_price) > 0 ? (
+                <View style={styles.priceLine}>
+                  <Text style={styles.priceLineMuted}>
+                    {t('plans.extraRooms', { count: pricing.extra_rooms || 0 })}
+                  </Text>
+                  <Text style={styles.priceLineMuted}>+{money(pricing.extra_rooms_price).toFixed(2)} €</Text>
+                </View>
+              ) : null}
+              <View style={styles.priceLine}>
+                <Text style={styles.priceLineLabel}>{t('plans.subtotal')}</Text>
+                <Text style={styles.priceLineVal}>{money(pricing.subtotal).toFixed(2)} €</Text>
+              </View>
+              <View style={styles.priceLine}>
+                <Text style={styles.priceLineMuted}>{t('plans.vat', { rate: vatRate })}</Text>
+                <Text style={styles.priceLineMuted}>+{vatAmount.toFixed(2)} €</Text>
+              </View>
+              <View style={[styles.priceLine, styles.priceTotalRow]}>
+                <Text style={styles.priceTotalLabel}>{t('plans.totalMonthly')}</Text>
+                <Text style={styles.priceTotalVal}>{money(pricing.total).toFixed(2)} €</Text>
+              </View>
+            </View>
+          )}
+          <Text style={styles.calcFoot}>{t('mobile.settings.planCalcNote')}</Text>
+        </View>
+      ) : null}
 
       {isLoading ? (
         <ActivityIndicator style={{ marginTop: 24 }} />
@@ -184,18 +187,26 @@ export default function BillingSettingsScreen() {
                 <Text style={styles.rowVal}>€{Number(data.plan.price_total).toFixed(2)}</Text>
               </>
             ) : null}
-            <Pressable
-              style={styles.upgradeCta}
-              onPress={() =>
-                void openUpgradePlanInBrowser(undefined, {
-                  planId: planCalcId,
-                  roomCount,
-                })
-              }
-            >
-              <Text style={styles.upgradeCtaText}>{t('mobile.settings.upgradePlanButton')}</Text>
-            </Pressable>
-            <Text style={styles.upgradeHint}>{t('mobile.settings.upgradePlanHint')}</Text>
+            {!isIOS ? (
+              <>
+                <Pressable
+                  style={styles.upgradeCta}
+                  onPress={() =>
+                    void openUpgradePlanInBrowser(undefined, {
+                      planId: planCalcId,
+                      roomCount,
+                    })
+                  }
+                >
+                  <Text style={styles.upgradeCtaText}>{t('mobile.settings.upgradePlanButton')}</Text>
+                </Pressable>
+                <Text style={styles.upgradeHint}>{t('mobile.settings.upgradePlanHint')}</Text>
+              </>
+            ) : (
+              <Text style={styles.upgradeHint}>
+                {t('mobile.settings.upgradePlanHint')}
+              </Text>
+            )}
           </View>
 
           <View style={styles.card}>
