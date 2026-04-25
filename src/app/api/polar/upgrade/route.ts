@@ -32,8 +32,8 @@ function productIdFor(planId: UpgradePlanId): string | null {
  * GET /api/polar/upgrade?plan=checkin|standard|pro&rooms=2&locale=es
  *
  * Redirige al checkout alojado de Polar (MoR) para "Mejorar plan".
- * En Polar, el plan es el producto base y las unidades extra se representan con un producto
- * adicional seat-based (2 €/mes por unidad). Se pasa `seats = (rooms - 1)` cuando aplica.
+ * En Polar, cada plan debe estar configurado con pricing "seat-based" (1 unidad incluida en el tier base
+ * y +2 €/mes por unidad adicional en tiers). Aquí pasamos `seats = rooms`.
  */
 export async function GET(req: NextRequest) {
   const tenantId = await getTenantId(req);
@@ -58,14 +58,7 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  const extraUnits = Math.max(0, rooms - 1);
-  const extraProductId = extraUnits > 0 ? extraUnitProductId() : null;
-  if (extraUnits > 0 && !extraProductId) {
-    return NextResponse.json(
-      { success: false, error: 'Polar no configurado: falta POLAR_PRODUCT_EXTRA_UNIT_ID' },
-      { status: 500 }
-    );
-  }
+  const seats = rooms; // número total de unidades
 
   // Guardamos intención en BD (útil para soporte/analytics).
   try {
@@ -86,20 +79,15 @@ export async function GET(req: NextRequest) {
     tenant_id: tenantId,
     plan: safePlan,
     rooms,
-    extra_units: extraUnits,
+    seats,
     source: 'upgrade_plan',
     locale,
   });
 
   // Usamos el handler oficial en /api/polar/checkout.
   const checkoutUrl = new URL(`${app}/api/polar/checkout`);
-  // Se pueden repetir params `products=...` para multi-product checkout.
   checkoutUrl.searchParams.append('products', productId);
-  if (extraProductId) {
-    checkoutUrl.searchParams.append('products', extraProductId);
-    // `seats` aplica a productos seat-based (usamos esto para unidades extra).
-    checkoutUrl.searchParams.set('seats', String(extraUnits));
-  }
+  checkoutUrl.searchParams.set('seats', String(seats));
   // Asociar el cliente en Polar al tenant: facilita reconciliación.
   checkoutUrl.searchParams.set('customerExternalId', tenantId);
   checkoutUrl.searchParams.set('metadata', metadata);
