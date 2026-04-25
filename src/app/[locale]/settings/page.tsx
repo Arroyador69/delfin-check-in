@@ -229,7 +229,11 @@ export default function SettingsPage() {
                 if (data.success) {
                   setMessage({ type: 'success', text: t('rooms.saved') });
                 } else {
-                  setMessage({ type: 'error', text: data.message || t('rooms.saveError') });
+                  if (data?.checkout_url) {
+                    window.location.href = String(data.checkout_url);
+                    return;
+                  }
+                  setMessage({ type: 'error', text: data.message || data.error || t('rooms.saveError') });
                 }
               } catch (error) {
                 setMessage({ type: 'error', text: t('integrations.connectionError') });

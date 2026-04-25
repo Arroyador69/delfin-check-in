@@ -180,7 +180,11 @@ export default function SettingsPage() {
                 if (data.success) {
                   setMessage({ type: 'success', text: 'Configuración de habitaciones guardada exitosamente' });
                 } else {
-                  setMessage({ type: 'error', text: data.message || 'Error guardando configuración' });
+                  if (data?.checkout_url) {
+                    window.location.href = String(data.checkout_url);
+                    return;
+                  }
+                  setMessage({ type: 'error', text: data.message || data.error || 'Error guardando configuración' });
                 }
               } catch (error) {
                 setMessage({ type: 'error', text: 'Error de conexión' });

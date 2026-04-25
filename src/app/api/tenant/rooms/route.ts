@@ -497,7 +497,13 @@ export async function POST(req: NextRequest) {
       
       // Mensajes personalizados según el plan
       if (planType === 'free' && finalCount > 1) {
-        errorMessage = 'Has alcanzado el límite de 1 propiedad del Plan Básico. Actualiza a Check-in, Standard o Pro para añadir más.';
+        // Plan Básico: 1 unidad gratis; para extras cobramos solo las unidades adicionales (2 €/mes c/u)
+        const origin =
+          process.env.NEXT_PUBLIC_APP_URL?.trim() ||
+          `${req.headers.get('x-forwarded-proto') || 'https'}://${req.headers.get('x-forwarded-host') || req.headers.get('host') || 'admin.delfincheckin.com'}`;
+        const checkout = new URL('/api/polar/free-extra-units', origin);
+        checkout.searchParams.set('rooms', String(finalCount));
+        errorMessage = `Tu plan incluye 1 propiedad gratis. Para añadir más, el coste es 2€/mes por cada unidad adicional.`;
       } else if (planType === 'checkin') {
         errorMessage = `Puedes añadir más propiedades; cada una adicional son 2€/mes. Actualmente tienes ${finalCount}.`;
       } else if (planType === 'standard' && finalCount > 1) {
@@ -510,6 +516,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({
         success: false,
         error: errorMessage,
+        message: errorMessage,
+        checkout_url: planType === 'free' && finalCount > 1 ? checkout.toString() : null,
         current_usage: finalCount,
         max_included: planType === 'free' ? 1 : planType === 'standard' || planType === 'pro' ? 1 : null,
         plan_type: planType,

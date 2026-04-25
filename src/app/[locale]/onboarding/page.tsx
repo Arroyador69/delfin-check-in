@@ -604,6 +604,10 @@ export default function OnboardingPage() {
       const roomsData = await roomsResponse.json();
 
       if (!roomsResponse.ok || !roomsData.success) {
+        if (roomsData?.checkout_url) {
+          window.location.href = String(roomsData.checkout_url);
+          return;
+        }
         setError(roomsData.error || t('errors.createPropertyFailed'));
         setLoading(false);
         return;
