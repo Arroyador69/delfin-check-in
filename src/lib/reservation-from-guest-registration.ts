@@ -186,14 +186,55 @@ export async function syncReservationFromGuestRegistration(
       return { ok: true, reservationId: rid };
     }
 
-    const roomRow = await sql`
-      SELECT r.id::text AS room_id
-      FROM "Room" r
-      WHERE r."lodgingId" = ${tenantId}::text
-      ORDER BY COALESCE(r.name, '') ASC NULLS LAST
-      LIMIT 1
-    `;
-    const roomId = (roomRow.rows[0]?.room_id as string) || '1';
+    // Resolver unidad (habitación/apartamento) para mostrarlo bien en el panel.
+    // Preferencia:
+    // 1) room_id del formulario (si existe y es una Room real)
+    // 2) property_id del formulario (usar nombre de tenant_properties como "unidad" visible)
+    // 3) fallback: primera Room del tenant
+    let resolvedRoomId: string | null = null;
+
+    const roomIdFromForm = String((input.data as any)?.room_id || '').trim();
+    if (roomIdFromForm) {
+      const roomExists = await sql`
+        SELECT r.id::text AS id
+        FROM "Room" r
+        WHERE r."lodgingId" = ${tenantId}::text
+          AND r.id::text = ${roomIdFromForm}
+        LIMIT 1
+      `;
+      if (roomExists.rows.length > 0) {
+        resolvedRoomId = roomIdFromForm;
+      }
+    }
+
+    if (!resolvedRoomId) {
+      const propertyIdFromForm = String((input.data as any)?.property_id || '').trim();
+      if (propertyIdFromForm) {
+        const propRow = await sql`
+          SELECT COALESCE(NULLIF(tp.name, ''), NULLIF(tp.display_name, ''), NULLIF(tp.public_name, '')) AS name
+          FROM tenant_properties tp
+          WHERE tp.tenant_id = ${tenantId}::uuid
+            AND tp.id::text = ${propertyIdFromForm}
+          LIMIT 1
+        `;
+        const propName = String(propRow.rows[0]?.name || '').trim();
+        if (propName) {
+          // Guardamos el nombre como "room_id" visible si el tenant no trabaja por habitaciones.
+          resolvedRoomId = propName;
+        }
+      }
+    }
+
+    if (!resolvedRoomId) {
+      const roomRow = await sql`
+        SELECT r.id::text AS room_id
+        FROM "Room" r
+        WHERE r."lodgingId" = ${tenantId}::text
+        ORDER BY COALESCE(r.name, '') ASC NULLS LAST
+        LIMIT 1
+      `;
+      resolvedRoomId = (roomRow.rows[0]?.room_id as string) || '1';
+    }
 
     const checkIn = toCheckTimestamp(input.fechaEntrada, false);
     const checkOut = toCheckTimestamp(input.fechaSalida, true);
@@ -207,7 +248,7 @@ export async function syncReservationFromGuestRegistration(
       ) VALUES (
         ${tenantId}::uuid,
         ${externalId},
-        ${roomId},
+        ${resolvedRoomId},
         ${guestName},
         ${guestEmail || ''},
         ${guestPhone},

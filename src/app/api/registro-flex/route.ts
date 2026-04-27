@@ -470,33 +470,59 @@ export async function POST(req: NextRequest) {
     
     console.log('🏢 Tenant ID detectado:', tenantId);
     
-    // Obtener configuración MIR del tenant (si está autenticado)
-    // Si no hay tenant_id, usar valores por defecto (formulario público)
-    let ESTABLISHMENT_CODE = "0000256653"; // Valor por defecto
-    let ESTABLISHMENT_REFERENCE = "0000146967"; // Valor por defecto
-    let ESTABLISHMENT_NAME = "Delfín Check-in"; // Valor por defecto
-    let ESTABLISHMENT_ADDRESS = "Fuengirola, Málaga, España"; // Valor por defecto
-    
+    // Datos del establecimiento: NUNCA usar valores "globales" de plataforma.
+    // Si el tenant no tiene configuración, dejamos vacío y el envío al MIR quedará pendiente/error.
+    let ESTABLISHMENT_CODE = '';
+    let ESTABLISHMENT_REFERENCE = '';
+
+    // room_id y property_id (si vienen) sirven para asociar unidad y, opcionalmente, elegir credencial MIR.
+    const propertyIdFromQuery = req.nextUrl.searchParams.get('property_id')?.trim() || '';
+    const propertyIdFromBody = (json?.property_id ? String(json.property_id).trim() : '') || '';
+    const property_id = propertyIdFromBody || propertyIdFromQuery || '';
+
     if (tenantId) {
       try {
         const { sql: pgSql } = await import('@vercel/postgres');
-        const tenantResult = await pgSql`
-          SELECT config FROM tenants WHERE id = ${tenantId}
-        `;
-        
-        if (tenantResult.rows.length > 0) {
-          const config = tenantResult.rows[0].config || {};
-          const mirConfig = config.mir || {};
-          
-          if (mirConfig.enabled && mirConfig.codigoEstablecimiento) {
-            ESTABLISHMENT_CODE = mirConfig.codigoEstablecimiento;
-            ESTABLISHMENT_NAME = mirConfig.denominacion || ESTABLISHMENT_NAME;
-            ESTABLISHMENT_ADDRESS = mirConfig.direccionCompleta || ESTABLISHMENT_ADDRESS;
-            console.log(`✅ Usando configuración MIR del tenant ${tenantId}`);
+
+        // 1) Intentar MIR multi-credenciales por unidad (si existe mapping)
+        try {
+          const { ensureMirMultiSchema } = await import('@/lib/mir-multi');
+          await ensureMirMultiSchema();
+        } catch {
+          // ignore
+        }
+
+        if (room_id) {
+          const multi = await pgSql`
+            SELECT c.codigo_establecimiento
+            FROM mir_unidad_credencial_map m
+            JOIN mir_credenciales c ON c.id = m.credencial_id
+            WHERE m.tenant_id = ${tenantId}::uuid
+              AND m.room_id = ${room_id}
+              AND c.activo = true
+            LIMIT 1
+          `;
+          if (multi.rows.length > 0) {
+            ESTABLISHMENT_CODE = String(multi.rows[0].codigo_establecimiento || '').trim();
           }
         }
-      } catch (error) {
-        console.log('⚠️ No se pudo cargar configuración MIR del tenant, usando valores por defecto');
+
+        // 2) Fallback a mir_configuraciones del tenant (activo)
+        if (!ESTABLISHMENT_CODE) {
+          const dbCfg = await pgSql`
+            SELECT codigo_establecimiento
+            FROM mir_configuraciones
+            WHERE (propietario_id = ${tenantId} OR tenant_id = ${tenantId})
+              AND activo = true
+            ORDER BY updated_at DESC
+            LIMIT 1
+          `;
+          if (dbCfg.rows.length > 0) {
+            ESTABLISHMENT_CODE = String(dbCfg.rows[0].codigo_establecimiento || '').trim();
+          }
+        }
+      } catch {
+        // No bloquear: si no hay config, el envío MIR fallará y se verá en estado/envíos.
       }
     }
     
@@ -525,7 +551,7 @@ export async function POST(req: NextRequest) {
       }
     }));
     
-    const dbData = {
+    const storedData = {
       codigoEstablecimiento: ESTABLISHMENT_CODE,
       comunicaciones: [{
         contrato: {
@@ -560,10 +586,10 @@ export async function POST(req: NextRequest) {
     console.log('🔖 Referencia única generada:', reserva_ref);
     
     // Actualizar dbData con la referencia única
-    dbData.comunicaciones[0].contrato.referencia = reserva_ref;
+    storedData.comunicaciones[0].contrato.referencia = reserva_ref;
 
     console.log('💾 Guardando en base de datos...');
-    console.log('🔍 Debug - Datos finales que se van a guardar:', JSON.stringify(dbData, null, 2));
+    console.log('🔍 Debug - Datos finales que se van a guardar:', JSON.stringify(storedData, null, 2));
     
     const firmas = json.firmas && Array.isArray(json.firmas) ? json.firmas : (json.firma ? [json.firma] : null);
     const firmaFechas = json.firma_fechas && Array.isArray(json.firma_fechas) ? json.firma_fechas : (json.firma_fecha ? [json.firma_fecha] : null);
@@ -575,8 +601,9 @@ export async function POST(req: NextRequest) {
       fecha_entrada: c.entrada.split('T')[0],
       fecha_salida: c.salida.split('T')[0],
       data: {
-        ...dbData,
+        ...storedData,
         ...(room_id ? { room_id } : {}),
+        ...(property_id ? { property_id } : {}),
         ui_locale:
           req.headers.get('x-ui-locale') ||
           req.headers.get('X-UI-Locale') ||
@@ -606,7 +633,16 @@ export async function POST(req: NextRequest) {
         reservaRef: reserva_ref,
         fechaEntrada: c.entrada.split('T')[0],
         fechaSalida: c.salida.split('T')[0],
-        data: dbData as Record<string, unknown>,
+        data: {
+          ...(storedData as Record<string, unknown>),
+          ...(room_id ? ({ room_id } as any) : {}),
+          ...(property_id ? ({ property_id } as any) : {}),
+          ui_locale:
+            req.headers.get('x-ui-locale') ||
+            req.headers.get('X-UI-Locale') ||
+            req.headers.get('accept-language')?.split(',')[0]?.trim() ||
+            null,
+        } as Record<string, unknown>,
       });
       console.log('📋 Reserva panel (desde formulario viajero):', syncRes);
     } catch (syncErr) {

@@ -47,6 +47,7 @@ export async function POST(
   try {
     const { slug } = await params;
     const roomId = req.nextUrl.searchParams.get('room_id')?.trim() || '';
+    const propertyId = req.nextUrl.searchParams.get('property_id')?.trim() || '';
 
     const clientIp = getClientIP(req.headers);
     const rl = checkRateLimit(
@@ -71,10 +72,16 @@ export async function POST(
     }
 
     const body = await req.json();
-    const bodyWithRoom = roomId && !body?.room_id ? { ...body, room_id: roomId } : body;
+    let bodyWithMeta = body;
+    if (roomId && !bodyWithMeta?.room_id) {
+      bodyWithMeta = { ...bodyWithMeta, room_id: roomId };
+    }
+    if (propertyId && !bodyWithMeta?.property_id) {
+      bodyWithMeta = { ...bodyWithMeta, property_id: propertyId };
+    }
 
     if (process.env.NODE_ENV === 'development') {
-      console.log('🔍 /api/public/form/[slug]/submit', slug, 'keys:', Object.keys(bodyWithRoom || {}));
+      console.log('🔍 /api/public/form/[slug]/submit', slug, 'keys:', Object.keys(bodyWithMeta || {}));
     }
 
     // Verificar que el tenant existe y está activo
@@ -107,8 +114,8 @@ export async function POST(
     // Si el body contiene datos del MIR (contrato, viajeros), redirigir al endpoint correcto
     
     // Detectar si es un formulario MIR (tiene contrato y viajeros) o un formulario simple
-    const isMIRForm = bodyWithRoom?.contrato && bodyWithRoom?.viajeros;
-    const isSimpleForm = bodyWithRoom?.tenantId && bodyWithRoom?.formData;
+    const isMIRForm = bodyWithMeta?.contrato && bodyWithMeta?.viajeros;
+    const isSimpleForm = bodyWithMeta?.tenantId && bodyWithMeta?.formData;
     
     if (isMIRForm) {
       
@@ -127,7 +134,7 @@ export async function POST(
           ...(roomId ? { 'X-Room-Id': roomId } : {}),
           ...req.headers,
         },
-        body: JSON.stringify(bodyWithRoom),
+        body: JSON.stringify(bodyWithMeta),
       });
 
       try {
@@ -170,7 +177,7 @@ export async function POST(
           'X-UI-Locale': tenantLocale,
           ...(roomId ? { 'X-Room-Id': roomId } : {}),
         },
-        body: JSON.stringify(bodyWithRoom),
+        body: JSON.stringify(bodyWithMeta),
       });
 
       if (!response.ok) {
@@ -182,7 +189,7 @@ export async function POST(
     }
 
     // Procesar formulario simple
-    const { tenantId, formData } = bodyWithRoom;
+    const { tenantId, formData } = bodyWithMeta;
 
     if (!tenantId || !formData) {
       return NextResponse.json(
