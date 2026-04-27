@@ -123,7 +123,10 @@ export default function HomePage() {
     if (filterPeriod === 'custom' && (!customDateRange.from || !customDateRange.to)) {
       return reservations;
     }
-    const dateRange = getDateRangeForFilter(filterPeriod, customDateRange);
+    // Para evitar resultados "raros" en Hoy/Semana/Mes/Año cuando el rango incluye días futuros,
+    // filtramos y calculamos usando un rango efectivo recortado hasta hoy.
+    const raw = getDateRangeForFilter(filterPeriod, customDateRange);
+    const dateRange = clipMetricRangeToToday(raw.from, raw.to);
     return reservations.filter((reservation) =>
       reservationOverlapsPeriod(reservation.check_in, reservation.check_out, dateRange.from, dateRange.to)
     );
