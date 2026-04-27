@@ -1589,6 +1589,7 @@
         "integration_error": "Integration (payments, MIR or other technical connection)",
         "data_export": "Data, exports or reports",
         "account_access": "Account access or permissions",
+        "proposal": "Proposal",
         "other_technical": "Other serious technical issue"
       },
       "status": {

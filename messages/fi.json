@@ -1584,6 +1584,7 @@
         "integration_error": "Integrointi (maksut, MIR tai muu tekninen yhteys)",
         "data_export": "Tiedot, vienti tai raportit",
         "account_access": "Tilin käyttöoikeudet tai käyttöoikeudet",
+        "proposal": "Ehdotus",
         "other_technical": "Toinen vakava tekninen ongelma"
       },
       "status": {

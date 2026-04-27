@@ -1595,6 +1595,7 @@
         "integration_error": "Intégration (paiements, MIR, etc.)",
         "data_export": "Données ou exports",
         "account_access": "Accès ou droits",
+        "proposal": "Proposition",
         "other_technical": "Autre problème technique sérieux"
       },
       "status": {

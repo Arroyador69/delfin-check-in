@@ -9,6 +9,7 @@ const CATEGORY_KEYS = [
   'integration_error',
   'data_export',
   'account_access',
+  'proposal',
   'other_technical',
 ] as const;
 
