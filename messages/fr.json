@@ -1292,7 +1292,9 @@
   },
   "referrals": {
     "title": "Parrainages",
-    "subtitle": "Amenez de nouveaux propriétaires et obtenez des mois gratuits",
+    "subtitle": "Partagez votre lien avec d’autres propriétaires et cumulez des avantages (même avec le forfait gratuit).",
+    "earlyTitle": "Bravo, vous faites partie des premiers sur Delfín Check-in !",
+    "earlyBody": "Partagez votre lien avec d’autres propriétaires. Chaque inscription compte et, lorsque vos parrainages avancent, vous pouvez obtenir des mois gratuits et des upgrades de plan.",
     "howItWorksTitle": "Comment ça marche",
     "howItWorksSubtitle": "Partagez votre lien et gagnez des crédits à mesure que vos parrainages avancent.",
     "howStep1Title": "Partagez votre lien",
@@ -1315,6 +1317,7 @@
     "btnCopy": "Copier",
     "btnCopied": "Copié !",
     "btnShare": "Partager",
+    "btnShareFacebook": "Publier sur Facebook",
     "shareTitle": "Rejoignez Delfín Check-in",
     "shareText": "Rejoignez Delfín Check-in avec mon lien de parrainage",
     "statusRegistered": "Inscrit",

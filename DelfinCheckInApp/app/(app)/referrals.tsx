@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator, Share } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator, Share, Linking } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Gift, Share2, Copy, Users, TrendingUp } from 'lucide-react-native';
@@ -102,6 +102,17 @@ export default function ReferralsScreen() {
     }
   }
 
+  async function doShareFacebook() {
+    if (!referralLink) return;
+    const quote = t('referrals.shareText');
+    const url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(referralLink)}&quote=${encodeURIComponent(quote)}`;
+    try {
+      await Linking.openURL(url);
+    } catch {
+      // ignore
+    }
+  }
+
   if (loading) {
     return (
       <View style={[styles.center, { paddingTop: insets.top + 16 }]}>
@@ -145,6 +156,11 @@ export default function ReferralsScreen() {
         </View>
       </View>
 
+      <View style={styles.banner}>
+        <Text style={styles.bannerTitle}>{t('referrals.earlyTitle')}</Text>
+        <Text style={styles.bannerBody}>{t('referrals.earlyBody')}</Text>
+      </View>
+
       <View style={styles.card}>
         <View style={styles.cardTitleRow}>
           <Share2 size={18} color="#60a5fa" />
@@ -161,6 +177,10 @@ export default function ReferralsScreen() {
           <Pressable style={[styles.btn, styles.btnGhost]} onPress={doShare}>
             <Gift size={16} color="#0f172a" />
             <Text style={styles.btnGhostText}>{t('referrals.btnShare')}</Text>
+          </Pressable>
+          <Pressable style={[styles.btn, styles.btnFacebook]} onPress={doShareFacebook}>
+            <Share2 size={16} color="white" />
+            <Text style={styles.btnFacebookText}>{t('referrals.btnShareFacebook')}</Text>
           </Pressable>
         </View>
       </View>
@@ -297,6 +317,18 @@ const styles = StyleSheet.create({
   },
   title: { fontSize: 22, fontWeight: '900', color: '#0f172a' },
   subtitle: { marginTop: 2, color: '#64748b', fontWeight: '700' },
+  banner: {
+    marginHorizontal: 16,
+    backgroundColor: '#eff6ff',
+    borderColor: '#bfdbfe',
+    borderWidth: 1,
+    borderRadius: 16,
+    padding: 14,
+    marginTop: 8,
+    marginBottom: 4,
+  },
+  bannerTitle: { color: '#0f172a', fontWeight: '900', fontSize: 14 },
+  bannerBody: { color: '#1f2937', fontSize: 13, marginTop: 6, lineHeight: 18, fontWeight: '600' },
   card: {
     marginHorizontal: 16,
     marginTop: 12,
@@ -310,12 +342,14 @@ const styles = StyleSheet.create({
   cardTitle: { fontWeight: '900', color: '#0f172a', fontSize: 16 },
   linkBox: { backgroundColor: '#f1f5f9', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: '#e2e8f0' },
   linkText: { color: '#0f172a', fontWeight: '700' },
-  row: { flexDirection: 'row', gap: 10, marginTop: 12 },
+  row: { flexDirection: 'row', gap: 10, marginTop: 12, flexWrap: 'wrap' },
   btn: { flex: 1, paddingVertical: 12, borderRadius: 12, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8 },
   btnPrimary: { backgroundColor: '#2563eb' },
   btnPrimaryText: { color: 'white', fontWeight: '900' },
   btnGhost: { backgroundColor: '#e2e8f0' },
   btnGhostText: { color: '#0f172a', fontWeight: '900' },
+  btnFacebook: { backgroundColor: '#1877F2' },
+  btnFacebookText: { color: 'white', fontWeight: '900' },
   grid: { flexDirection: 'row', gap: 10, marginHorizontal: 16, marginTop: 12, flexWrap: 'wrap' },
   kpiCard: {
     flexGrow: 1,

@@ -1454,7 +1454,9 @@
   },
   "referrals": {
     "title": "Viittaukset",
-    "subtitle": "Tuo uusia omistajia ja saat ilmaisia ​​kuukausia",
+    "subtitle": "Jaa linkkisi muiden omistajien kanssa ja ansaitse etuja (myös ilmaisella paketilla).",
+    "earlyTitle": "Onnittelut – olet ensimmäisten joukossa Delfín Check-inissä!",
+    "earlyBody": "Jaa linkkisi muille omistajille. Jokainen rekisteröityminen lasketaan ja, kun viittauksesi etenevät, voit ansaita ilmaisia kuukausia ja pakettipäivityksiä.",
     "howItWorksTitle": "Miten se toimii",
     "howItWorksSubtitle": "Jaa linkkisi ja ansaitse krediittejä viittauksesi edistyessä.",
     "howStep1Title": "Jaa linkkisi",
@@ -1477,6 +1479,7 @@
     "btnCopy": "Kopioida",
     "btnCopied": "Kopioitu!",
     "btnShare": "Jakaa",
+    "btnShareFacebook": "Julkaise Facebookiin",
     "shareTitle": "Liity Delfin-sisäänkirjautumiseen",
     "shareText": "Liity Delfin Check-iniin käyttämällä suosittelulinkkiäni",
     "statusRegistered": "Rekisteröity",

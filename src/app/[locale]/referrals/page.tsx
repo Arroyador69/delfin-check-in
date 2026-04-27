@@ -103,6 +103,14 @@ export default function ReferralsPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const shareToFacebook = () => {
+    if (!stats?.referralCode) return;
+    const link = `https://delfincheckin.com/?ref=${stats.referralCode}`;
+    const quote = t('shareText');
+    const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(link)}&quote=${encodeURIComponent(quote)}`;
+    window.open(fbUrl, '_blank', 'noopener,noreferrer');
+  };
+
   const shareReferralLink = async () => {
     if (!stats?.referralCode) return;
     
@@ -215,6 +223,11 @@ export default function ReferralsPage() {
           <p className="text-gray-600 mt-2">{t('subtitle')}</p>
         </div>
 
+        <div className="mb-6 rounded-lg border border-blue-200 bg-blue-50 p-4">
+          <p className="font-semibold text-blue-900">{t('earlyTitle')}</p>
+          <p className="text-sm text-blue-900/90 mt-1">{t('earlyBody')}</p>
+        </div>
+
         {/* Enlace de Referido */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <h2 className="text-xl font-semibold mb-4 flex items-center">
@@ -238,6 +251,13 @@ export default function ReferralsPage() {
             >
               <Share2 className="w-4 h-4" />
               {t('btnShare')}
+            </button>
+            <button
+              onClick={shareToFacebook}
+              className="px-4 py-2 bg-[#1877F2] text-white rounded-lg hover:bg-[#166FE5] transition flex items-center gap-2"
+            >
+              <Share2 className="w-4 h-4" />
+              {t('btnShareFacebook')}
             </button>
           </div>
         </div>

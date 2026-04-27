@@ -1291,7 +1291,9 @@
   },
   "referrals": {
     "title": "Referidos",
-    "subtitle": "Traz novos proprietários e ganha meses grátis",
+    "subtitle": "Partilha o teu link com outros proprietários e ganha benefícios (mesmo no plano grátis).",
+    "earlyTitle": "Parabéns por seres dos primeiros no Delfín Check-in!",
+    "earlyBody": "Partilha o teu link com outros proprietários. Cada registo conta e, quando os teus referidos avançam, podes ganhar meses grátis e upgrades de plano.",
     "howItWorksTitle": "Como funciona",
     "howItWorksSubtitle": "Partilha o teu link e ganha créditos à medida que os teus referidos avançam.",
     "howStep1Title": "Partilha o teu link",
@@ -1314,6 +1316,7 @@
     "btnCopy": "Copiar",
     "btnCopied": "Copiado!",
     "btnShare": "Partilhar",
+    "btnShareFacebook": "Publicar no Facebook",
     "shareTitle": "Junta-te ao Delfín Check-in",
     "shareText": "Junta-te ao Delfín Check-in com o meu link de referido",
     "statusRegistered": "Registado",

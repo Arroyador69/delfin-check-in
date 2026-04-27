@@ -1459,7 +1459,9 @@
   },
   "referrals": {
     "title": "Referrals",
-    "subtitle": "Bring new owners and get free months",
+    "subtitle": "Share your link with other owners and earn benefits (even on the free plan).",
+    "earlyTitle": "Congrats on being among the first on Delfín Check-in!",
+    "earlyBody": "Share your link with other owners. Every signup counts and, as your referrals progress, you can earn free months and plan upgrades.",
     "howItWorksTitle": "How it works",
     "howItWorksSubtitle": "Share your link and earn credits as your referrals progress.",
     "howStep1Title": "Share your link",
@@ -1482,6 +1484,7 @@
     "btnCopy": "Copy",
     "btnCopied": "Copied!",
     "btnShare": "Share",
+    "btnShareFacebook": "Post to Facebook",
     "shareTitle": "Join Delfín Check-in",
     "shareText": "Join Delfín Check-in using my referral link",
     "statusRegistered": "Registered",

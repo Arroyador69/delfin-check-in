@@ -111,8 +111,8 @@ export default function ReferralsPage() {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: 'Únete a Delfín Check-in',
-          text: 'Únete a Delfín Check-in usando mi enlace de referido',
+          title: t('shareTitle'),
+          text: t('shareText'),
           url: link,
         });
       } catch (error) {
@@ -121,6 +121,14 @@ export default function ReferralsPage() {
     } else {
       copyReferralLink();
     }
+  };
+
+  const shareToFacebook = () => {
+    if (!stats?.referralCode) return;
+    const link = `https://delfincheckin.com/?ref=${stats.referralCode}`;
+    const quote = t('shareText');
+    const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(link)}&quote=${encodeURIComponent(quote)}`;
+    window.open(fbUrl, '_blank', 'noopener,noreferrer');
   };
 
   const getStatusBadge = (status: string) => {
@@ -212,16 +220,21 @@ export default function ReferralsPage() {
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-gray-900 flex items-center">
             <UserPlus className="w-8 h-8 mr-3 text-blue-600" />
-            Referidos
+            {t('title')}
           </h1>
-          <p className="text-gray-600 mt-2">Trae nuevos propietarios y consigue meses gratis</p>
+          <p className="text-gray-600 mt-2">{t('subtitle')}</p>
+        </div>
+
+        <div className="mb-6 rounded-lg border border-blue-200 bg-blue-50 p-4">
+          <p className="font-semibold text-blue-900">{t('earlyTitle')}</p>
+          <p className="text-sm text-blue-900/90 mt-1">{t('earlyBody')}</p>
         </div>
 
         {/* Enlace de Referido */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <h2 className="text-xl font-semibold mb-4 flex items-center">
             <Share2 className="w-5 h-5 mr-2 text-blue-600" />
-            Tu Enlace de Referido
+            {t('yourLink')}
           </h2>
           <div className="flex items-center gap-3">
             <div className="flex-1 p-3 bg-gray-50 rounded-lg border border-gray-200 font-mono text-sm break-all">
@@ -232,14 +245,21 @@ export default function ReferralsPage() {
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2"
             >
               <Copy className="w-4 h-4" />
-              {copied ? '¡Copiado!' : 'Copiar'}
+              {copied ? t('btnCopied') : t('btnCopy')}
             </button>
             <button
               onClick={shareReferralLink}
               className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition flex items-center gap-2"
             >
               <Share2 className="w-4 h-4" />
-              Compartir
+              {t('btnShare')}
+            </button>
+            <button
+              onClick={shareToFacebook}
+              className="px-4 py-2 bg-[#1877F2] text-white rounded-lg hover:bg-[#166FE5] transition flex items-center gap-2"
+            >
+              <Share2 className="w-4 h-4" />
+              {t('btnShareFacebook')}
             </button>
           </div>
         </div>

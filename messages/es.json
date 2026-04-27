@@ -1512,7 +1512,9 @@
   },
   "referrals": {
     "title": "Referidos",
-    "subtitle": "Trae nuevos propietarios y consigue meses gratis",
+    "subtitle": "Comparte tu enlace con otros propietarios y acumula beneficios (también con el plan gratis).",
+    "earlyTitle": "¡Enhorabuena por ser de los primeros en Delfín Check-in!",
+    "earlyBody": "Comparte tu enlace con otros propietarios. Cada registro suma y, cuando tus referidos avanzan, puedes conseguir meses gratis y mejoras de plan.",
     "howItWorksTitle": "Cómo funciona",
     "howItWorksSubtitle": "Comparte tu enlace y gana créditos cuando tus referidos avanzan.",
     "howStep1Title": "Comparte tu enlace",
@@ -1535,6 +1537,7 @@
     "btnCopy": "Copiar",
     "btnCopied": "¡Copiado!",
     "btnShare": "Compartir",
+    "btnShareFacebook": "Publicar en Facebook",
     "shareTitle": "Únete a Delfín Check-in",
     "shareText": "Únete a Delfín Check-in usando mi enlace de referido",
     "statusRegistered": "Registrado",
