@@ -109,14 +109,19 @@ export async function POST(req: NextRequest) {
       
       // Buscar lotes asociados a estos códigos
       const loteResult = await sql`
-        SELECT DISTINCT mc.lote, mc.referencia, mc.tipo, mc.estado
+        SELECT DISTINCT mc.lote
         FROM mir_comunicaciones mc
-        WHERE mc.referencia = ANY(${codigosProcesados}) OR mc.referencia LIKE ANY(${codigosProcesados.map(c => c + '%')})
-        AND mc.lote IS NOT NULL AND mc.lote != '' AND mc.lote != 'SIM-'
-        ORDER BY mc.created_at DESC
+        WHERE (
+          mc.referencia = ANY(${codigosProcesados})
+          OR mc.referencia LIKE ANY(${codigosProcesados.map((c) => c + '%')})
+        )
+          AND mc.lote IS NOT NULL
+          AND mc.lote != ''
+          AND mc.lote != 'SIM-'
+        ORDER BY mc.lote ASC
       `;
-      
-      lotesParaConsultar = loteResult.rows.map(r => r.lote);
+
+      lotesParaConsultar = loteResult.rows.map((r) => String(r.lote || '').trim()).filter(Boolean);
       console.log('📋 Lotes encontrados en BD:', lotesParaConsultar);
       
       if (lotesParaConsultar.length === 0) {

@@ -644,6 +644,20 @@ export default function MirComunicacionesPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
+                <p className="font-semibold">Cómo buscar (Consulta)</p>
+                <ul className="mt-2 list-disc pl-5 space-y-1">
+                  <li>
+                    <span className="font-semibold">Recomendado:</span> pega el/los <span className="font-mono">Lote</span> que ves en la pestaña <span className="font-semibold">Comunicaciones</span> (ej. <span className="font-mono">5f62b0a4-...</span>).
+                  </li>
+                  <li>
+                    También puedes pegar un <span className="font-semibold">código de comunicación MIR</span> si lo tienes.
+                  </li>
+                  <li>
+                    La <span className="font-semibold">Referencia (Ref)</span> que ves en la lista es un identificador interno: si buscas solo con esa referencia, puede que el MIR no devuelva resultados. En ese caso, usa el <span className="font-mono">Lote</span>.
+                  </li>
+                </ul>
+              </div>
               <div className="space-y-2">
                 <Label htmlFor="codigos" className="text-gray-800 font-semibold">Códigos de Comunicación</Label>
                 <Input
@@ -718,6 +732,17 @@ export default function MirComunicacionesPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
+                <p className="font-semibold">Cómo usar (Catálogos)</p>
+                <ul className="mt-2 list-disc pl-5 space-y-1">
+                  <li>
+                    Escribe el nombre exacto del catálogo (por ejemplo: <span className="font-mono">PAISES</span>, <span className="font-mono">MUNICIPIOS</span>, <span className="font-mono">TIPOS_DOCUMENTO</span>).
+                  </li>
+                  <li>
+                    Esto sirve para consultar códigos oficiales del MIR (útil para validaciones/formularios).
+                  </li>
+                </ul>
+              </div>
               <div className="space-y-2">
                 <Label htmlFor="catalogo" className="text-gray-800 font-semibold">Nombre del Catálogo</Label>
                 <Input
@@ -821,6 +846,17 @@ export default function MirComunicacionesPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                <p className="font-semibold">Cómo usar (Anulación)</p>
+                <ul className="mt-2 list-disc pl-5 space-y-1">
+                  <li>
+                    Introduce el <span className="font-semibold">Lote</span> (lo verás como <span className="font-mono">Lote: 5f62b0a4-...</span> en <span className="font-semibold">Comunicaciones</span>).
+                  </li>
+                  <li>
+                    La <span className="font-semibold">Referencia</span> es opcional y solo se usa para actualizar el estado en tu base de datos.
+                  </li>
+                </ul>
+              </div>
               <Alert variant="destructive">
                 <AlertTriangle className="h-4 w-4" />
                 <AlertDescription className="text-red-800 font-semibold">
