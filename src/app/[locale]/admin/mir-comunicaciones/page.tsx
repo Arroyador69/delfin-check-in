@@ -665,16 +665,16 @@ export default function MirComunicacionesPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
-                <p className="font-semibold">Cómo buscar (Consulta)</p>
+                <p className="font-semibold">{t('helpConsultaTitle')}</p>
                 <ul className="mt-2 list-disc pl-5 space-y-1">
                   <li>
-                    <span className="font-semibold">Recomendado:</span> pega el/los <span className="font-mono">Lote</span> que ves en la pestaña <span className="font-semibold">Comunicaciones</span> (ej. <span className="font-mono">5f62b0a4-...</span>).
+                    <span className="font-semibold">{t('helpRecommended')}:</span> {t('helpConsultaBullet1')}
                   </li>
                   <li>
-                    También puedes pegar un <span className="font-semibold">código de comunicación MIR</span> si lo tienes.
+                    {t('helpConsultaBullet2')}
                   </li>
                   <li>
-                    La <span className="font-semibold">Referencia (Ref)</span> que ves en la lista es un identificador interno: si buscas solo con esa referencia, puede que el MIR no devuelva resultados. En ese caso, usa el <span className="font-mono">Lote</span>.
+                    {t('helpConsultaBullet3')}
                   </li>
                 </ul>
               </div>
@@ -753,13 +753,13 @@ export default function MirComunicacionesPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
-                <p className="font-semibold">Cómo usar (Catálogos)</p>
+                <p className="font-semibold">{t('helpCatalogoTitle')}</p>
                 <ul className="mt-2 list-disc pl-5 space-y-1">
                   <li>
-                    Escribe el nombre exacto del catálogo (por ejemplo: <span className="font-mono">PAISES</span>, <span className="font-mono">MUNICIPIOS</span>, <span className="font-mono">TIPOS_DOCUMENTO</span>).
+                    {t('helpCatalogoBullet1')}
                   </li>
                   <li>
-                    Esto sirve para consultar códigos oficiales del MIR (útil para validaciones/formularios).
+                    {t('helpCatalogoBullet2')}
                   </li>
                 </ul>
               </div>
@@ -866,13 +866,13 @@ export default function MirComunicacionesPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-                <p className="font-semibold">Cómo usar (Anulación)</p>
+                <p className="font-semibold">{t('helpAnulacionTitle')}</p>
                 <ul className="mt-2 list-disc pl-5 space-y-1">
                   <li>
-                    Introduce el <span className="font-semibold">Lote</span> (lo verás como <span className="font-mono">Lote: 5f62b0a4-...</span> en <span className="font-semibold">Comunicaciones</span>).
+                    {t('helpAnulacionBullet1')}
                   </li>
                   <li>
-                    La <span className="font-semibold">Referencia</span> es opcional y solo se usa para actualizar el estado en tu base de datos.
+                    {t('helpAnulacionBullet2')}
                   </li>
                 </ul>
               </div>
