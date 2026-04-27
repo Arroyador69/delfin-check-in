@@ -109,8 +109,24 @@ export async function POST(req: NextRequest) {
     });
   } catch (error: unknown) {
     console.error('❌ [stripe-connect onboarding-link] Error:', error);
-    const message = error instanceof Error ? error.message : 'Error interno del servidor';
-    return NextResponse.json({ success: false, error: message }, { status: 500 });
+    const rawMessage = error instanceof Error ? error.message : 'Error interno del servidor';
+
+    // Caso común en cuentas nuevas: Stripe bloquea Connect hasta aceptar responsabilidades en Platform Profile.
+    // Ejemplo: "Please review the responsibilities of managing losses for connected accounts at …/settings/connect/platform-profile."
+    if (rawMessage.includes('managing losses for connected accounts')) {
+      return NextResponse.json(
+        {
+          success: false,
+          code: 'connect_platform_profile_incomplete',
+          error:
+            'Stripe Connect requiere completar el perfil de plataforma (responsabilidad de pérdidas/chargebacks) antes de crear cuentas conectadas.',
+          action_url: 'https://dashboard.stripe.com/settings/connect/platform-profile',
+        },
+        { status: 409 }
+      );
+    }
+
+    return NextResponse.json({ success: false, error: rawMessage }, { status: 500 });
   }
 }
 
