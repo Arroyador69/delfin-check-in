@@ -201,7 +201,7 @@
     "dashboardLinkDesc": "Tarkastele ja hallinnoi kiinteistöjen lippuja"
   },
   "dashboard": {
-    "title": "Delfin sisäänkirjautuminen",
+    "title": "Delfín Check-in",
     "subtitle": "Matkustajien rekisteröinti ja lähes automaattiset varaukset: tarkista ja vahvista. Pro: Google-näkyvyys ja suorat varaukset OTA:n ulkopuolella",
     "connected": "Yhdistetty",
     "upgradePlan": "Päivityssuunnitelma",
@@ -378,7 +378,7 @@
     }
   },
   "onboarding": {
-    "appName": "Delfin sisäänkirjautuminen",
+  "appName": "Delfín Check-in",
     "stepOf": "Vaihe {currentStep}/{totalSteps}",
     "common": {
       "show": "Show",
@@ -1480,7 +1480,7 @@
     "btnCopied": "Kopioitu!",
     "btnShare": "Jakaa",
     "btnShareFacebook": "Julkaise Facebookiin",
-    "shareTitle": "Liity Delfin-sisäänkirjautumiseen",
+    "shareTitle": "Liity Delfín Check-iniin",
     "shareText": "Liity Delfin Check-iniin käyttämällä suosittelulinkkiäni",
     "statusRegistered": "Rekisteröity",
     "statusActiveCheckin": "Aktiivinen sisäänkirjautuminen",
@@ -2865,7 +2865,7 @@
     "error": "Virhe"
   },
   "footer": {
-    "brandTitle": "Delfin sisäänkirjautuminen",
+    "brandTitle": "Delfín Check-in",
     "brandDescription": "Hotellien hallinta ja itsesisäänkirjautumisohjelmisto hostelleille ja huoneistoille.",
     "contactTitle": "Ota yhteyttä",
     "contactSchedule": "ma-su: 9.00-22.00",
@@ -2875,7 +2875,7 @@
     "termsOfService": "Palveluehdot",
     "legalNotice": "Oikeudellinen huomautus",
     "manageCookies": "Hallinnoi evästeitä",
-    "bottomText": "© {year} Delfin sisäänkirjautuminen ·",
+    "bottomText": "© {year} Delfín Check-in ·",
     "viewPricing": "Katso hinnoittelu"
   },
   "checkoutRooms": {
