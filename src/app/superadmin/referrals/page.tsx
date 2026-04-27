@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Users, TrendingUp, Gift, CheckCircle, XCircle, Calendar } from 'lucide-react'
+import { Users, TrendingUp, Gift, CheckCircle, XCircle, Calendar, Link as LinkIcon, Copy as CopyIcon, Share2 } from 'lucide-react'
 
 interface Referral {
   id: string
@@ -53,11 +53,25 @@ interface TopReferrer {
   paidReferrals: number
 }
 
+interface ShareEvent {
+  id: string
+  tenantId: string
+  tenantName?: string
+  tenantEmail?: string
+  tenantReferralCode?: string
+  action: string
+  page?: string
+  target?: string
+  metadata?: any
+  createdAt: string
+}
+
 export default function SuperAdminReferrals() {
   const [referrals, setReferrals] = useState<Referral[]>([])
   const [globalStats, setGlobalStats] = useState<GlobalStats | null>(null)
   const [rewardsStats, setRewardsStats] = useState<RewardsStats | null>(null)
   const [topReferrers, setTopReferrers] = useState<TopReferrer[]>([])
+  const [shareEvents, setShareEvents] = useState<ShareEvent[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<string>('all')
 
@@ -69,7 +83,11 @@ export default function SuperAdminReferrals() {
     try {
       setLoading(true)
       const url = filter !== 'all' ? `/api/superadmin/referrals?status=${filter}` : '/api/superadmin/referrals'
-      const response = await fetch(url)
+      const [response, shareRes] = await Promise.all([
+        fetch(url),
+        fetch('/api/superadmin/referrals/share-events?limit=200'),
+      ])
+
       if (response.ok) {
         const data = await response.json()
         if (data.success) {
@@ -77,6 +95,13 @@ export default function SuperAdminReferrals() {
           setGlobalStats(data.globalStats)
           setRewardsStats(data.rewardsStats)
           setTopReferrers(data.topReferrers || [])
+        }
+      }
+
+      if (shareRes.ok) {
+        const shareData = await shareRes.json()
+        if (shareData.success) {
+          setShareEvents(shareData.events || [])
         }
       }
     } catch (error) {
@@ -217,6 +242,72 @@ export default function SuperAdminReferrals() {
           </div>
         </div>
       )}
+
+      {/* Eventos de compartir/copiar */}
+      <div className="bg-white rounded-lg shadow p-6 mb-6">
+        <h2 className="text-xl font-semibold mb-2 flex items-center">
+          <Share2 className="w-5 h-5 mr-2 text-gray-700" />
+          Eventos de compartir/copiar (últimos 200)
+        </h2>
+        <p className="text-sm text-gray-600 mb-4">
+          Esto registra <strong>acciones</strong> (copiar link, compartir, Facebook). Por privacidad, no siempre se puede ver el contenido exacto publicado.
+        </p>
+
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-gray-200">
+                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Tenant</th>
+                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Acción</th>
+                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Página</th>
+                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">URL</th>
+                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Fecha</th>
+              </tr>
+            </thead>
+            <tbody>
+              {shareEvents.map((e) => {
+                const url = e?.metadata?.url as string | undefined
+                return (
+                  <tr key={e.id} className="border-b border-gray-100 hover:bg-gray-50">
+                    <td className="py-3 px-4">
+                      <div>
+                        <p className="font-medium text-gray-900">{e.tenantName || 'Sin nombre'}</p>
+                        <p className="text-sm text-gray-500">{e.tenantEmail}</p>
+                        {e.tenantReferralCode && (
+                          <code className="text-xs text-gray-400">{e.tenantReferralCode}</code>
+                        )}
+                      </div>
+                    </td>
+                    <td className="py-3 px-4 text-sm text-gray-700">
+                      <span className="inline-flex items-center gap-2">
+                        {e.action === 'copy_link' ? <CopyIcon className="w-4 h-4" /> : <LinkIcon className="w-4 h-4" />}
+                        {e.action}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 text-sm text-gray-600">{e.page || '-'}</td>
+                    <td className="py-3 px-4 text-sm text-gray-600">
+                      {url ? (
+                        <a href={url} target="_blank" rel="noreferrer" className="text-blue-700 underline break-all">
+                          {url}
+                        </a>
+                      ) : (
+                        <span className="text-gray-400">-</span>
+                      )}
+                    </td>
+                    <td className="py-3 px-4 text-sm text-gray-500">
+                      {new Date(e.createdAt).toLocaleString('es-ES')}
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+
+        {shareEvents.length === 0 && (
+          <div className="text-center py-8 text-gray-600">Aún no hay eventos registrados.</div>
+        )}
+      </div>
 
       {/* Filtros y Tabla de Referidos */}
       <div className="mb-4 flex items-center justify-between">

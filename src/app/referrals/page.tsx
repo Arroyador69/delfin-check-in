@@ -50,6 +50,22 @@ export default function ReferralsPage() {
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
 
+  const trackShareEvent = async (action: string, extra?: Record<string, any>) => {
+    try {
+      await fetch('/api/referrals/share-event', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action,
+          page: 'web_referrals_nonlocale',
+          metadata: extra || {},
+        }),
+      });
+    } catch {
+      // Best-effort: no romper UX
+    }
+  };
+
   useEffect(() => {
     fetchStats();
     fetchReferrals();
@@ -101,6 +117,7 @@ export default function ReferralsPage() {
     navigator.clipboard.writeText(link);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+    void trackShareEvent('copy_link', { url: link });
   };
 
   const shareReferralLink = async () => {
@@ -110,11 +127,13 @@ export default function ReferralsPage() {
     
     if (navigator.share) {
       try {
+        void trackShareEvent('open_share_dialog', { url: link, mode: 'navigator.share' });
         await navigator.share({
           title: t('shareTitle'),
           text: t('shareText'),
           url: link,
         });
+        void trackShareEvent('share_native', { url: link });
       } catch (error) {
         // Usuario canceló el compartir
       }
@@ -129,6 +148,7 @@ export default function ReferralsPage() {
     const quote = t('shareText');
     const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(link)}&quote=${encodeURIComponent(quote)}`;
     window.open(fbUrl, '_blank', 'noopener,noreferrer');
+    void trackShareEvent('share_facebook', { url: link });
   };
 
   const getStatusBadge = (status: string) => {
