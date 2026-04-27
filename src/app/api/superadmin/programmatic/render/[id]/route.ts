@@ -385,7 +385,6 @@ function generateFooterHTML(): string {
         <h4>Programas</h4>
         <p>
           <a href="https://delfincheckin.com/referidos.html" style="color: var(--brand);">Programa de Referidos</a><br>
-          <a href="https://delfincheckin.com/afiliados.html" style="color: var(--brand);">Programa de Afiliados</a>
         </p>
       </div>
       <div>
