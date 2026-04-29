@@ -13,7 +13,7 @@
 ### 2. Funciones Core
 - ✅ `src/lib/vat.ts` - Cálculo automático de IVA por país
 - ✅ `src/lib/plan-pricing.ts` - Cálculo de precios de planes
-  - Plan Check-in: 8€ + 4€ por habitación adicional
+  - Plan Check-in: 2€ base + 2€ por cada unidad/propiedad adicional
   - Plan Pro: 29,99€ base (6 hab incluidas), luego 5€/hab adicional
 - ✅ `src/lib/ads.ts` - Configuración de Google AdSense
 - ✅ Actualizado `src/lib/tenant.ts` con nuevos tipos y validaciones
@@ -40,9 +40,9 @@
 
 ### 2. Sistema de Suscripciones Stripe
 - [ ] Crear productos en Stripe:
-  - Plan Check-in (8€/mes base)
+  - Plan Check-in (2€/mes base)
   - Plan Pro (29,99€/mes)
-  - Habitaciones extra (4€/mes para checkin, 5€/mes para pro)
+  - Unidades/propiedades extra (2€/mes para checkin) + Habitaciones extra (5€/mes para pro, si aplica)
 - [ ] `src/app/api/stripe/create-subscription/route.ts` - Crear suscripción
 - [ ] `src/app/api/stripe/update-subscription/route.ts` - Actualizar suscripción (añadir habitaciones)
 - [ ] `src/app/api/stripe/cancel-subscription/route.ts` - Cancelar suscripción
@@ -94,8 +94,8 @@
 - **Reservas directas**: ✅ Sí (9% fee)
 
 ### Plan Check-in (checkin)
-- **Precio base**: 8€/mes
-- **Precio por hab adicional**: 4€/mes (después de 2)
+- **Precio base**: 2€/mes
+- **Precio por unidad/propiedad adicional**: 2€/mes
 - **Límite habitaciones**: Ilimitado (con precio)
 - **Límite registros**: Ilimitado ✅
 - **Anuncios**: ✅ Sí (Google AdSense)
