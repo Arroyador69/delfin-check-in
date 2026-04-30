@@ -44,8 +44,13 @@ export async function GET(req: NextRequest) {
   const u = new URL(req.url);
   const plan = (u.searchParams.get('plan') || '').toLowerCase() as UpgradePlanId;
   const locale = (u.searchParams.get('locale') || 'es').toLowerCase();
+  const source = (u.searchParams.get('source') || '').toLowerCase();
   const roomsParam = u.searchParams.get('rooms');
   const rooms = Math.max(1, Math.min(999, Math.floor(Number(roomsParam || 1) || 1)));
+
+  // Opcional: URLs de vuelta/éxito (para flujos como onboarding).
+  const successUrlParam = u.searchParams.get('success_url') || '';
+  const returnUrlParam = u.searchParams.get('return_url') || '';
 
   const safePlan: UpgradePlanId =
     plan === 'checkin' || plan === 'standard' || plan === 'pro' ? plan : 'pro';
@@ -73,6 +78,16 @@ export async function GET(req: NextRequest) {
   }
 
   const app = baseUrl(req);
+  const toAbsoluteAppUrl = (maybeRelative: string) => {
+    const raw = String(maybeRelative || '').trim();
+    if (!raw) return '';
+    // Solo permitimos rutas internas para evitar open-redirects.
+    if (raw.startsWith('/')) return `${app}${raw}`;
+    return '';
+  };
+  const successUrlAbs = toAbsoluteAppUrl(successUrlParam);
+  const returnUrlAbs = toAbsoluteAppUrl(returnUrlParam);
+
   // IMPORTANTE: el handler de @polar-sh/nextjs espera `metadata` como JSON y lo decodifica internamente
   // (la query-string ya se encargará de escaparlo). No lo pre-encodeamos para evitar doble encoding.
   const metadata = JSON.stringify({
@@ -80,7 +95,7 @@ export async function GET(req: NextRequest) {
     plan: safePlan,
     rooms,
     seats,
-    source: 'upgrade_plan',
+    source: source || 'upgrade_plan',
     locale,
   });
 
@@ -91,6 +106,8 @@ export async function GET(req: NextRequest) {
   // Asociar el cliente en Polar al tenant: facilita reconciliación.
   checkoutUrl.searchParams.set('customerExternalId', tenantId);
   checkoutUrl.searchParams.set('metadata', metadata);
+  if (successUrlAbs) checkoutUrl.searchParams.set('success_url', successUrlAbs);
+  if (returnUrlAbs) checkoutUrl.searchParams.set('return_url', returnUrlAbs);
 
   return NextResponse.redirect(checkoutUrl.toString(), 302);
 }

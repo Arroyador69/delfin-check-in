@@ -109,7 +109,8 @@ export default function OnboardingPage() {
     billingInterval: 'month',
     unitCount: 1,
     checkoutCompleted: false,
-    lodgingType: 'hostal',
+    // Por defecto: vivienda completa (antes "apartamentos")
+    lodgingType: 'apartamentos',
     bookingChannels: defaultBookingChannelsConfig(),
     businessCountryCode: '',
     businessLanguage: '',
@@ -558,7 +559,10 @@ export default function OnboardingPage() {
   };
 
   const generateDefaultUnits = (count: number, lodgingType: LodgingType) => {
-    const base = lodgingType === 'apartamentos' ? 'Apartamento' : 'Habitación';
+    const base =
+      lodgingType === 'apartamentos'
+        ? t('step3.lodgingTypeWholeHome')
+        : t('step3.lodgingTypeRooms');
     return Array.from({ length: count }, (_, i) => ({
       id: String(i + 1),
       name: `${base} ${i + 1}`,
@@ -566,7 +570,7 @@ export default function OnboardingPage() {
   };
 
   const [unitNames, setUnitNames] = useState<Array<{ id: string; name: string }>>(() =>
-    generateDefaultUnits(1, 'hostal')
+    generateDefaultUnits(1, 'apartamentos')
   );
 
   useEffect(() => {
@@ -1229,7 +1233,10 @@ export default function OnboardingPage() {
               <div>
                 <p className="text-sm font-semibold text-gray-900">Unidades a crear</p>
                 <p className="text-xs text-gray-600">
-                  {formData.unitCount} {formData.lodgingType === 'apartamentos' ? 'apartamentos' : 'habitaciones'}
+                  {formData.unitCount}{' '}
+                  {formData.lodgingType === 'apartamentos'
+                    ? t('step3.unitsTypeWholeHome')
+                    : t('step3.unitsTypeRooms')}
                 </p>
               </div>
             </div>
@@ -1237,7 +1244,10 @@ export default function OnboardingPage() {
               {unitNames.map((u, idx) => (
                 <div key={u.id}>
                   <label className="block text-xs font-medium text-gray-700 mb-1">
-                    {formData.lodgingType === 'apartamentos' ? 'Apartamento' : 'Habitación'} {idx + 1}
+                    {formData.lodgingType === 'apartamentos'
+                      ? t('step3.lodgingTypeWholeHome')
+                      : t('step3.lodgingTypeRooms')}{' '}
+                    {idx + 1}
                   </label>
                   <input
                     type="text"
@@ -1515,24 +1525,19 @@ export default function OnboardingPage() {
 
       setCreatingCheckout(true);
       try {
-        const res = await fetch('/api/stripe/create-checkout-session', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({
-            planId: formData.selectedPlanId,
-            roomCount: formData.unitCount,
-            interval: formData.billingInterval,
-            locale,
-            lodgingType: formData.lodgingType,
-          }),
-        });
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok || !data?.success || !data?.url) {
-          setError(data?.error || 'No se pudo iniciar el pago');
-          return;
-        }
-        window.location.href = data.url;
+        // IMPORTANTE: planes/mensualidades siempre via Polar (Merchant of Record).
+        const url = new URL('/api/polar/upgrade', window.location.origin);
+        url.searchParams.set('plan', formData.selectedPlanId);
+        url.searchParams.set('rooms', String(formData.unitCount));
+        url.searchParams.set('locale', String(locale || 'es'));
+        // Volver al onboarding con flag de éxito/cancelación.
+        url.searchParams.set('success_url', `/${locale}/onboarding?checkout=success`);
+        url.searchParams.set('return_url', `/${locale}/onboarding?checkout=cancel`);
+        // Contexto extra para soporte/analytics.
+        url.searchParams.set('source', 'onboarding');
+        url.searchParams.set('interval', String(formData.billingInterval || 'month'));
+        url.searchParams.set('lodgingType', String(formData.lodgingType || 'apartamentos'));
+        window.location.href = url.toString();
       } finally {
         setCreatingCheckout(false);
       }
@@ -1653,8 +1658,8 @@ export default function OnboardingPage() {
                 }}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
               >
-                <option value="hostal">Hostal (habitaciones)</option>
-                <option value="apartamentos">Apartamentos</option>
+                <option value="apartamentos">{t('step3.lodgingTypeWholeHome')}</option>
+                <option value="hostal">{t('step3.lodgingTypeRooms')}</option>
               </select>
             </div>
 
@@ -1676,7 +1681,12 @@ export default function OnboardingPage() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Unidades ({formData.lodgingType === 'apartamentos' ? 'apartamentos' : 'habitaciones'})
+                {t('step3.unitsLabel', {
+                  type:
+                    formData.lodgingType === 'apartamentos'
+                      ? t('step3.unitsTypeWholeHome')
+                      : t('step3.unitsTypeRooms'),
+                })}
               </label>
               <input
                 type="number"
