@@ -2342,6 +2342,8 @@
         "counter": "Configured: {configured} · Max by your plan: {max}",
         "limitReached": "You reached the maximum MIR credentials for your plan. Upgrade your units to add another.",
         "rule": "Rule: an apartment must have its own MIR credential. Rooms can share credentials.",
+        "legacyDetected": "We detected a legacy MIR configuration. To avoid having two different ways of configuring MIR, you can import it into the per-unit (multi-credential) model without losing data.",
+        "legacyImportButton": "Import legacy credential",
         "createTitle": "Create credential",
         "name": "Name",
         "user": "MIR user (WS)",

@@ -631,11 +631,10 @@ export default function MirSettingsPage() {
             <Alert>
               <Info className="h-4 w-4" />
               <AlertDescription className="text-gray-800 font-medium">
-                Detectamos una <strong>configuración MIR heredada</strong> (antigua). Para unificar el sistema y que solo haya
-                una forma de configurarlo, puedes importarla al modo multi-credencial sin perder datos.
+                {t('multi.legacyDetected')}
                 <div className="mt-3">
                   <Button type="button" onClick={importarCredencialHeredada} disabled={loading}>
-                    {loading ? t('saving') : 'Importar credencial heredada'}
+                    {loading ? t('saving') : t('multi.legacyImportButton')}
                   </Button>
                 </div>
               </AlertDescription>

@@ -2338,6 +2338,8 @@
         "counter": "Configuradas: {configured} · Máximo segundo o teu plano: {max}",
         "limitReached": "Atingiste o máximo de credenciais MIR do teu plano. Aumenta as unidades para adicionares outra.",
         "rule": "Regra: um apartamento deve ter as suas próprias credenciais MIR. Os quartos podem partilhar.",
+        "legacyDetected": "Detetámos uma configuração MIR antiga (legacy). Para evitar dois modos diferentes de configurar o MIR, podes importá-la para o modelo multi por unidade sem perder dados.",
+        "legacyImportButton": "Importar credencial antiga",
         "createTitle": "Criar credencial",
         "name": "Nome",
         "user": "Utilizador MIR (WS)",

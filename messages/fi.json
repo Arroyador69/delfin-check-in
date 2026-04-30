@@ -2337,6 +2337,8 @@
         "counter": "Määritetty: {configured} · Enimmäismäärä suunnitelmassasi: {max}",
         "limitReached": "Olet saavuttanut suunnitelmasi MIR-tunnusten enimmäismäärän. Lisää yksiköitä lisätäksesi uuden.",
         "rule": "Sääntö: asunnolla (apartment) on oltava omat MIR-tunnuksensa. Huoneet voivat jakaa tunnukset.",
+        "legacyDetected": "Havaitsimme vanhan (legacy) MIR-määrityksen. Jotta MIR:iä ei tarvitsisi määrittää kahdella eri tavalla, voit tuoda sen yksikkökohtaisen (multi) mallin alle ilman tietojen menetystä.",
+        "legacyImportButton": "Tuo vanha tunnus",
         "createTitle": "Luo tunnus",
         "name": "Nimi",
         "user": "MIR-käyttäjä (WS)",
