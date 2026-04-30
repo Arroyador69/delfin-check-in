@@ -478,7 +478,7 @@
     "step6": {
       "title": "💳 Paiements et réservations directes (Stripe Connect)",
       "intro": "Connectez Stripe Connect pour encaisser vos voyageurs et recevoir l’argent en toute sécurité sur votre compte Stripe.",
-      "note": "Une fois connecté, les paiements arrivent sur Stripe et Stripe peut virer automatiquement vers votre compte bancaire (payouts). Cela sert pour (1) les réservations directes du microsite et (2) les liens de paiement : vous fixez le prix et envoyez le lien par WhatsApp/e-mail. Avec Pro, vous pouvez aussi ajouter votre lien de réservation à Google Business pour capter plus de réservations directes.",
+      "note": "Une fois connecté, les paiements arrivent sur Stripe et Stripe peut virer automatiquement vers votre compte bancaire (payouts). Cela sert pour (1) les réservations directes du microsite et (2) les liens de paiement : vous fixez le prix et envoyez le lien par WhatsApp/e-mail. Avec Pro, vous pouvez aussi ajouter votre lien du microsite à Google Business pour capter plus de réservations directes.",
       "connectButton": "Connecter Stripe (Stripe Connect)",
       "connectLoading": "Ouverture de Stripe…",
       "connectOpened": "✅ Lien Stripe ouvert. Terminez le formulaire puis revenez ici.",

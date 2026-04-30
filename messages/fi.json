@@ -488,7 +488,7 @@
     "step6": {
       "title": "💳 Maksut ja suorat varaukset (Stripe Connect)",
       "intro": "Yhdistä Stripe Connect, jotta voit veloittaa vierailta ja vastaanottaa rahat turvallisesti Stripe-tilillesi.",
-      "note": "Kun Stripe Connect on yhdistetty, maksut tulevat Stripeen ja Stripe voi siirtää ne automaattisesti pankkitilillesi (payouts). Tätä käytetään (1) micrositen suorissa varauksissa ja (2) maksulinkeissä: asetat hinnan ja lähetät linkin WhatsAppilla/sähköpostilla. Prolla voit myös lisätä varauslinkkisi Google Businessiin saadaksesi enemmän suoria varauksia.",
+      "note": "Kun Stripe Connect on yhdistetty, maksut tulevat Stripeen ja Stripe voi siirtää ne automaattisesti pankkitilillesi (payouts). Tätä käytetään (1) micrositen suorissa varauksissa ja (2) maksulinkeissä: asetat hinnan ja lähetät linkin WhatsAppilla/sähköpostilla. Prolla voit myös lisätä microsite-linkkisi Google Businessiin saadaksesi enemmän suoria varauksia.",
       "connectButton": "Yhdistä Stripe (Stripe Connect)",
       "connectLoading": "Avataan Stripe…",
       "connectOpened": "✅ Stripe-linkki avattu. Täytä lomake ja palaa tänne.",

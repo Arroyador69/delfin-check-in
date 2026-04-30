@@ -488,7 +488,7 @@
     "step6": {
       "title": "💳 Pagamenti e prenotazioni dirette (Stripe Connect)",
       "intro": "Collega Stripe Connect per incassare dagli ospiti e ricevere il denaro in modo sicuro sul tuo account Stripe.",
-      "note": "Una volta collegato, i pagamenti arrivano su Stripe e Stripe può trasferirli automaticamente sul tuo conto bancario (payouts). Questo si usa per (1) prenotazioni dirette dal microsito e (2) link di pagamento: imposti tu il prezzo e invii il link via WhatsApp/e-mail. Con Pro puoi anche aggiungere il link di prenotazione su Google Business per ottenere più prenotazioni dirette.",
+      "note": "Una volta collegato, i pagamenti arrivano su Stripe e Stripe può trasferirli automaticamente sul tuo conto bancario (payouts). Questo si usa per (1) prenotazioni dirette dal microsito e (2) link di pagamento: imposti tu il prezzo e invii il link via WhatsApp/e-mail. Con Pro puoi anche aggiungere il link del microsito su Google Business per ottenere più prenotazioni dirette.",
       "connectButton": "Connetti Stripe (Stripe Connect)",
       "connectLoading": "Apro Stripe…",
       "connectOpened": "✅ Link Stripe aperto. Completa il modulo e torna qui.",
