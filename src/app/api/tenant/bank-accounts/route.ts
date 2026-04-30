@@ -135,14 +135,16 @@ export async function POST(req: NextRequest) {
     const externalAccount = await getStripeServer().customers.createSource(
       stripeCustomerId,
       {
+        // Stripe types esperan un token/string, pero Stripe acepta el objeto bank_account.
+        // Lo casteamos para evitar bloquear el type-check.
         source: {
           object: 'bank_account',
           country: countryCode,
           currency: 'eur',
           account_number: cleanIban,
           account_holder_name: account_holder_name
-        }
-      }
+        } as any
+      } as any
     );
 
     console.log('✅ External Account creada en Stripe:', externalAccount.id);

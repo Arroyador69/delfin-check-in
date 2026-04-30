@@ -27,8 +27,17 @@ export async function GET(req: NextRequest) {
 
     const offset = (page - 1) * limit;
 
-    // Construir query con filtros usando template literals de @vercel/postgres
-    let submissionsQuery = sql`
+    const sortBySafe = ['id', 'name', 'email', 'created_at', 'updated_at'].includes(sortBy) ? sortBy : 'created_at';
+    const sortOrderSafe = sortOrder.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
+
+    const params: any[] = [tenantId];
+    let where = `WHERE fs.tenant_id = $1`;
+    if (search) {
+      params.push(`%${search}%`);
+      where += ` AND (fs.name ILIKE $${params.length} OR fs.email ILIKE $${params.length} OR fs.message ILIKE $${params.length})`;
+    }
+
+    const submissionsText = `
       SELECT 
         fs.id,
         fs.name,
@@ -44,46 +53,20 @@ export async function GET(req: NextRequest) {
         fs.created_at,
         fs.updated_at
       FROM form_submissions fs
-      WHERE fs.tenant_id = ${tenantId}
-    `;
-
-    if (search) {
-      const searchPattern = `%${search}%`;
-      submissionsQuery = sql`
-        ${submissionsQuery}
-        AND (fs.name ILIKE ${searchPattern} OR fs.email ILIKE ${searchPattern} OR fs.message ILIKE ${searchPattern})
-      `;
-    }
-
-    // Agregar ORDER BY, LIMIT y OFFSET
-    const sortBySafe = ['id', 'name', 'email', 'created_at', 'updated_at'].includes(sortBy) ? sortBy : 'created_at';
-    const sortOrderSafe = sortOrder.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
-    
-    submissionsQuery = sql`
-      ${submissionsQuery}
-      ORDER BY fs.${sql.unsafe(sortBySafe)} ${sql.unsafe(sortOrderSafe)}
+      ${where}
+      ORDER BY fs.${sortBySafe} ${sortOrderSafe}
       LIMIT ${limit} OFFSET ${offset}
     `;
 
-    // Query de conteo total
-    let countQuery = sql`
+    const countText = `
       SELECT COUNT(*) as total
       FROM form_submissions fs
-      WHERE fs.tenant_id = ${tenantId}
+      ${where}
     `;
 
-    if (search) {
-      const searchPattern = `%${search}%`;
-      countQuery = sql`
-        ${countQuery}
-        AND (fs.name ILIKE ${searchPattern} OR fs.email ILIKE ${searchPattern} OR fs.message ILIKE ${searchPattern})
-      `;
-    }
-
-    // Ejecutar queries
     const [submissionsResult, countResult] = await Promise.all([
-      submissionsQuery,
-      countQuery
+      (sql as any).query(submissionsText, params),
+      (sql as any).query(countText, params),
     ]);
 
     const submissions = submissionsResult.rows;

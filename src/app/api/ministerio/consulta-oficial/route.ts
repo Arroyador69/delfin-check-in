@@ -103,7 +103,7 @@ export async function POST(req: NextRequest) {
     // PRIMERO: Buscar el código de lote en BD local
     console.log('🔍 Buscando código de lote en BD local...');
     
-    let lotesParaConsultar = [];
+    let lotesParaConsultar: string[] = [];
     try {
       const { sql } = await import('@vercel/postgres');
       
@@ -112,8 +112,8 @@ export async function POST(req: NextRequest) {
         SELECT DISTINCT mc.lote
         FROM mir_comunicaciones mc
         WHERE (
-          mc.referencia = ANY(${codigosProcesados})
-          OR mc.referencia LIKE ANY(${codigosProcesados.map((c) => c + '%')})
+          mc.referencia = ANY(${codigosProcesados as any})
+          OR mc.referencia LIKE ANY(${(codigosProcesados.map((c) => c + '%')) as any})
         )
           AND mc.lote IS NOT NULL
           AND mc.lote != ''
@@ -222,7 +222,7 @@ export async function POST(req: NextRequest) {
             id, reserva_ref, fecha_entrada, fecha_salida, 
             data, comunicacion_id, tenant_id, created_at
           FROM guest_registrations 
-          WHERE reserva_ref = ANY(${codigosProcesados}) OR comunicacion_id = ANY(${codigosProcesados})
+          WHERE reserva_ref = ANY(${codigosProcesados as any}) OR comunicacion_id = ANY(${codigosProcesados as any})
           ORDER BY created_at DESC
         `;
 
@@ -233,7 +233,7 @@ export async function POST(req: NextRequest) {
             resultado, error, xml_enviado, xml_respuesta,
             tenant_id, created_at
           FROM mir_comunicaciones 
-          WHERE referencia = ANY(${codigosProcesados}) OR referencia LIKE ANY(${codigosProcesados.map(c => c + '%')})
+          WHERE referencia = ANY(${codigosProcesados as any}) OR referencia LIKE ANY(${(codigosProcesados.map(c => c + '%')) as any})
           ORDER BY created_at DESC
         `;
 

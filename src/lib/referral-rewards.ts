@@ -189,7 +189,7 @@ export async function grantReward(
         ${rewardRule.reward.type},
         ${rewardRule.description},
         ${rewardRule.reward.months},
-        ${contributingReferralIds}::UUID[],
+        ${contributingReferralIds as any}::UUID[],
         'pending'
       ) RETURNING id
     `;

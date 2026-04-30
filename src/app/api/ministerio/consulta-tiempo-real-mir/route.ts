@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
         console.log(`🔍 Procesando lote: ${lote}`);
         
         // Simular respuesta del MIR
-        const codigoEstado = Math.random() > 0.5 ? 1 : 4; // 1 = Confirmado, 4 = Pendiente
+        const codigoEstado: number = Math.random() > 0.5 ? 1 : 4; // 1 = Confirmado, 4 = Pendiente
         
         let nuevoEstado = 'enviado';
         let descripcionEstado = 'Enviado al MIR';
@@ -82,7 +82,7 @@ export async function POST(req: NextRequest) {
           WHERE lote = ${lote}
         `;
         
-        console.log(`📝 Actualizadas ${updateResult.count} comunicaciones MIR para lote ${lote}`);
+        console.log(`📝 Actualizadas ${(updateResult as any).count ?? (updateResult as any).rowCount ?? 0} comunicaciones MIR para lote ${lote}`);
 
         // Actualizar guest_registrations usando el código de arrendador del resultado
         const guestUpdateResult = await sql`
@@ -106,7 +106,7 @@ export async function POST(req: NextRequest) {
           )
         `;
         
-        console.log(`📝 Actualizados ${guestUpdateResult.count} registros de huéspedes para lote ${lote}`);
+        console.log(`📝 Actualizados ${(guestUpdateResult as any).count ?? (guestUpdateResult as any).rowCount ?? 0} registros de huéspedes para lote ${lote}`);
 
         actualizados.push({
           lote,

@@ -94,7 +94,7 @@ export async function POST(req: NextRequest) {
         await updateMirComunicacion(referencia, {
           estado: 'anulado',
           resultado: JSON.stringify(resultado),
-          error: null
+          error: undefined
         });
         console.log('💾 Estado actualizado en BD para referencia:', referencia);
       } catch (dbError) {

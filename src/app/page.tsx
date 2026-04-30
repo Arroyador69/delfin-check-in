@@ -391,7 +391,7 @@ export default function HomePage() {
                       const line =
                         pt === 'free' || Number(total) === 0
                           ? t('planCardPricingFree')
-                          : t('planCardPricingPaid', {
+                          : (t as any)('planCardPricingPaid', {
                               ex: Number(ex ?? 0).toFixed(2),
                               rate: vatRate,
                               vat: Number(vatAmt ?? 0).toFixed(2),

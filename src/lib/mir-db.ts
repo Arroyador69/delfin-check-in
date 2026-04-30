@@ -101,8 +101,8 @@ export async function updateMirComunicacion(
       SET ${setClause.join(', ')}
       WHERE referencia = $${paramIndex}
     `;
-    
-    await sql.unsafe(updateQuery, values);
+
+    await (sql as any).query(updateQuery, values);
   } catch (error) {
     console.error('Error actualizando comunicación MIR:', error);
     throw error;
@@ -112,7 +112,7 @@ export async function updateMirComunicacion(
 export async function getMirComunicaciones(estado?: string): Promise<MirComunicacion[]> {
   try {
     let query = 'SELECT * FROM mir_comunicaciones';
-    const params = [];
+    const params: any[] = [];
     
     if (estado) {
       query += ' WHERE estado = $1';
@@ -121,20 +121,20 @@ export async function getMirComunicaciones(estado?: string): Promise<MirComunica
     
     query += ' ORDER BY created_at DESC';
     
-    const result = await sql.unsafe(query, params);
+    const result = await (sql as any).query(query, params);
     
-    return result.rows.map(row => ({
-      id: row.id,
-      referencia: row.referencia,
-      tipo: row.tipo,
-      estado: row.estado,
-      lote: row.lote,
-      resultado: row.resultado,
-      error: row.error,
-      xml_enviado: row.xml_enviado,
-      xml_respuesta: row.xml_respuesta,
-      created_at: row.created_at,
-      updated_at: row.updated_at
+    return (result.rows as any[]).map((row: any) => ({
+      id: row.id as number,
+      referencia: String(row.referencia),
+      tipo: row.tipo as MirComunicacion['tipo'],
+      estado: row.estado as MirComunicacion['estado'],
+      lote: row.lote ?? undefined,
+      resultado: row.resultado ?? undefined,
+      error: row.error ?? undefined,
+      xml_enviado: row.xml_enviado ?? undefined,
+      xml_respuesta: row.xml_respuesta ?? undefined,
+      created_at: row.created_at ?? undefined,
+      updated_at: row.updated_at ?? undefined,
     }));
   } catch (error) {
     console.error('Error obteniendo comunicaciones MIR:', error);

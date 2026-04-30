@@ -183,12 +183,15 @@ export async function PUT(req: NextRequest) {
       }, { status: 400 });
     }
 
-    const result = await sql`
+    // Construimos query parametrizada para evitar sql.unsafe (no tipado en @vercel/postgres).
+    const text = `
       UPDATE external_calendars
-      SET ${sql.unsafe(updateFields)}, updated_at = NOW()
-      WHERE id = ${id} AND tenant_id = ${tenantId}
+      SET ${updateFields}, updated_at = NOW()
+      WHERE id = $1 AND tenant_id = $${updateValues.length + 2}
       RETURNING *
     `;
+    const values = [id, ...updateValues, tenantId];
+    const result = await (sql as any).query(text, values);
 
     if (result.rows.length === 0) {
       return NextResponse.json({

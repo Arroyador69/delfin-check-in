@@ -406,19 +406,19 @@ export default function ReferralsPage() {
             <div className="bg-white rounded-lg p-4">
               <p className="text-sm text-gray-600">{t('planCheckinLabel')}</p>
               <p className="text-2xl font-bold text-blue-600">
-                {t(stats.checkinCredits === 1 ? 'monthsFreeOne' : 'monthsFreeMany', { count: stats.checkinCredits })}
+                {(t as any)(stats.checkinCredits === 1 ? 'monthsFreeOne' : 'monthsFreeMany', { count: stats.checkinCredits })}
               </p>
             </div>
             <div className="bg-white rounded-lg p-4">
               <p className="text-sm text-gray-600">{t('planStandardLabel')}</p>
               <p className="text-2xl font-bold text-indigo-600">
-                {t(stats.checkinCredits === 1 ? 'monthsFreeOne' : 'monthsFreeMany', { count: stats.checkinCredits })}
+                {(t as any)(stats.checkinCredits === 1 ? 'monthsFreeOne' : 'monthsFreeMany', { count: stats.checkinCredits })}
               </p>
             </div>
             <div className="bg-white rounded-lg p-4">
               <p className="text-sm text-gray-600">{t('planProLabel')}</p>
               <p className="text-2xl font-bold text-purple-600">
-                {t(stats.proCredits === 1 ? 'monthsFreeOne' : 'monthsFreeMany', { count: stats.proCredits })}
+                {(t as any)(stats.proCredits === 1 ? 'monthsFreeOne' : 'monthsFreeMany', { count: stats.proCredits })}
               </p>
             </div>
           </div>

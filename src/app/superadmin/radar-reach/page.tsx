@@ -401,7 +401,7 @@ export default function RadarReachPage() {
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {new Date(landing.created_at).toLocaleDateString('es-ES')}
+                            {new Date((landing as any).created_at).toLocaleDateString('es-ES')}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                             <button

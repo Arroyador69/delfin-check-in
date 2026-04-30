@@ -46,6 +46,7 @@ const DATE_LOCALE: Record<Locale, string> = {
   fr: 'fr-FR',
   it: 'it-IT',
   pt: 'pt-PT',
+  fi: 'fi-FI',
 };
 
 export default function SuperadminSupportPage() {

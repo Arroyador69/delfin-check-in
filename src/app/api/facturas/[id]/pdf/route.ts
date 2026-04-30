@@ -85,9 +85,9 @@ function generarPdfFactura(factura: any, empresaConfig: any): jsPDF {
   };
   
   // Configuración de colores
-  const primaryColor = [59, 130, 246]; // blue-500
-  const grayColor = [107, 114, 128]; // gray-500
-  const lightGrayColor = [243, 244, 246]; // gray-100
+  const primaryColor = [59, 130, 246] as const; // blue-500
+  const grayColor = [107, 114, 128] as const; // gray-500
+  const lightGrayColor = [243, 244, 246] as const; // gray-100
   
   // Configuración de fuentes
   const fontSize = {

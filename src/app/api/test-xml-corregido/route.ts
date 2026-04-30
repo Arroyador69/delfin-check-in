@@ -99,7 +99,7 @@ export async function POST(req: NextRequest) {
       comunicaciones: testData.comunicaciones.map(comunicacion => ({
         ...comunicacion,
         personas: comunicacion.personas.map(persona => {
-          const corrected = { ...persona };
+          const corrected: any = { ...persona };
           
           // CORRECCIÓN 1: sexo 'X' -> 'O' (Otro)
           if (corrected.sexo === 'X') {

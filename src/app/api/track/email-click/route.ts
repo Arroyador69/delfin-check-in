@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
     await updateEmailTracking({
       emailId: tid,
       status: 'clicked',
-      clickUrl: urlParam || null,
+      clickUrl: urlParam || undefined,
     })
   }
 

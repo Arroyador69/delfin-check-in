@@ -52,7 +52,7 @@ export async function insertReferralShareEvent(args: {
       ${args.action},
       ${args.page || null},
       ${args.target || null},
-      ${args.metadata || {}}
+      ${JSON.stringify(args.metadata || {})}::jsonb
     )
   `;
 }

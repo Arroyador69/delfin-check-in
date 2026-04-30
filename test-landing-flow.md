@@ -2,16 +2,57 @@
 
 ## 📋 Pasos para Verificar el Flujo Completo
 
-### 1. **Verificar Configuración de Stripe**
+### 0. **Qué flujos cubre esta guía (oferta actual)**
+
+- **Waitlist / “Plan Básico gratis si te apuntas ya”**: captación de email sin tarjeta.
+- **Contratación / upgrade**:
+  - **Stripe**: suscripciones, facturación, webhooks; también pagos de reservas directas.
+  - **Polar**: checkout de upgrade de plan (si se usa el flujo MoR).
+- **Reservas directas**: microsite + enlaces de cobro + pago del huésped.
+- **Onboarding**: email con contraseña temporal + magic link a `/onboarding`.
+
+### 1. **Verificar configuración mínima de entorno**
 
 ```bash
-# Verificar variables de entorno
-echo "STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:0:20}..."
-echo "STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:0:20}..."
+# URL base
 echo "NEXT_PUBLIC_APP_URL: $NEXT_PUBLIC_APP_URL"
+
+# DB (necesaria para waitlist/tenants/usuarios)
+echo "POSTGRES_URL: ${POSTGRES_URL:0:25}..."
+
+# Stripe (si vas a probar checkout/suscripción y webhooks)
+echo "STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:0:12}..."
+echo "STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:0:12}..."
+echo "STRIPE_WEBHOOK_DIRECT_RESERVATIONS_SECRET: ${STRIPE_WEBHOOK_DIRECT_RESERVATIONS_SECRET:0:12}..."
+
+# Polar (si vas a probar el checkout de upgrade y webhooks)
+echo "POLAR_SERVER: $POLAR_SERVER"
+echo "POLAR_ACCESS_TOKEN: ${POLAR_ACCESS_TOKEN:0:12}..."
+echo "POLAR_WEBHOOK_SECRET: ${POLAR_WEBHOOK_SECRET:0:12}..."
+
+# Email (onboarding / waitlist)
+echo "SMTP_HOST: $SMTP_HOST"
+echo "SMTP_USER: $SMTP_USER"
 ```
 
-### 2. **Probar Contratación desde Landing Page**
+### 2. **Probar Waitlist (flujo de la landing)**
+
+1. **Ir a**: `https://www.delfincheckin.com`
+2. En el CTA de “lista de espera”, enviar el formulario.
+3. **Verificar**:
+   - Se hace `POST /api/waitlist` con `{ email, name?, source? }`
+   - Respuesta `200 { success: true }` o, si existe, `400 alreadyInWaitlist/alreadyActivated`
+4. **Verificar email** de confirmación de waitlist (si SMTP está configurado).
+
+Atajo local (API):
+
+```bash
+curl -sS -X POST "$NEXT_PUBLIC_APP_URL/api/waitlist" \
+  -H "content-type: application/json" \
+  -d '{"email":"test+waitlist@delfincheckin.com","source":"landing"}'
+```
+
+### 3. **Probar Contratación / Upgrade de plan**
 
 1. **Ir a**: `https://delfincheckin.com`
 2. **Hacer clic en**: "Contratar" (cualquier plan)
@@ -19,7 +60,7 @@ echo "NEXT_PUBLIC_APP_URL: $NEXT_PUBLIC_APP_URL"
 4. **Verificar que aparece**: Sección de términos y condiciones
 5. **Verificar que aparece**: Información sobre email de onboarding
 
-### 3. **Simular Pago de Prueba**
+### 4. **Simular Pago de Prueba (Stripe)**
 
 **Usar tarjetas de prueba de Stripe:**
 - ✅ **Éxito**: `4242 4242 4242 4242`
@@ -31,14 +72,21 @@ echo "NEXT_PUBLIC_APP_URL: $NEXT_PUBLIC_APP_URL"
 - **CVC**: Cualquier 3 dígitos
 - **Email**: `test@delfincheckin.com`
 
-### 4. **Verificar Webhook de Stripe**
+### 5. **Verificar Webhooks**
+
+#### Stripe
 
 **Eventos que deben dispararse:**
 1. `payment_intent.succeeded` - Pago exitoso
 2. `invoice.payment_succeeded` - Factura pagada
 3. **Acción**: Crear tenant y enviar email de onboarding
 
-### 5. **Verificar Base de Datos**
+#### Polar (si aplica)
+
+- `checkout.created/updated` y `subscription.*`
+- **Acción**: persistir `polar_*` en `tenants` (ver `/api/webhook/polar`)
+
+### 6. **Verificar Base de Datos**
 
 ```sql
 -- Verificar que se creó el tenant
@@ -52,7 +100,7 @@ SELECT reset_token, reset_token_expires FROM tenant_users
 WHERE email = 'test@delfincheckin.com';
 ```
 
-### 6. **Verificar Email de Onboarding**
+### 7. **Verificar Email de Onboarding**
 
 **El email debe contener:**
 - ✅ Contraseña temporal
@@ -60,7 +108,7 @@ WHERE email = 'test@delfincheckin.com';
 - ✅ Instrucciones de cambio de contraseña
 - ✅ Acceso a admin.delfincheckin.com
 
-### 7. **Verificar Acceso al Dashboard**
+### 8. **Verificar Acceso al Dashboard**
 
 1. **Ir a**: `admin.delfincheckin.com`
 2. **Usar**: Email y contraseña temporal
@@ -82,6 +130,15 @@ WHERE email = 'test@delfincheckin.com';
 - "✅ Usuario creado: [user-id]"
 - "🔗 Magic link de onboarding"
 - "📧 Enviando email de onboarding"
+```
+
+### Polar Webhook Logs
+
+```bash
+# Buscar:
+- "[polar webhook]"
+- "polar_subscription_id"
+- "polar_customer_id"
 ```
 
 ### Base de Datos Logs

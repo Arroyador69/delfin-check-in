@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Cancelar suscripción en Stripe
-    let canceledSubscription;
+    let canceledSubscription: any;
     
     if (cancelImmediately) {
       // Cancelar inmediatamente
@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
       SET 
         status = ${canceledSubscription.status},
         cancel_at_period_end = ${canceledSubscription.cancel_at_period_end || false},
-        canceled_at = ${canceledSubscription.canceled_at ? new Date(canceledSubscription.canceled_at * 1000) : NULL},
+        canceled_at = ${canceledSubscription.canceled_at ? new Date(canceledSubscription.canceled_at * 1000).toISOString() : null},
         updated_at = NOW()
       WHERE stripe_subscription_id = ${tenant.stripe_subscription_id}
     `;

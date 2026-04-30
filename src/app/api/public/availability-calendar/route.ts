@@ -37,7 +37,7 @@ export async function GET(req: NextRequest) {
     const to = searchParams.get('to');
     // Validación de fechas (evitar 500 por formatos inválidos)
     const isoDate = /^\d{4}-\d{2}-\d{2}$/;
-    if (!isoDate.test(from) || !isoDate.test(to)) {
+    if (!from || !to || !isoDate.test(from) || !isoDate.test(to)) {
       const res = NextResponse.json(
         { success: false, error: 'Parámetros from/to deben tener formato YYYY-MM-DD' },
         { status: 400 }

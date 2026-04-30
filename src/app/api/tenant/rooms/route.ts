@@ -3,7 +3,7 @@ import { sql } from '@vercel/postgres';
 import { getTenantId } from '@/lib/tenant';
 
 async function selectRoomsWithFallbacks(tenantId: string): Promise<{ rows: { id: unknown; name: string }[] }> {
-  let result = await sql`
+  let result = await sql<{ id: unknown; name: string }>`
       SELECT DISTINCT r.id, r.name
       FROM "Room" r
       INNER JOIN tenants t ON t.id = ${tenantId}::uuid
@@ -23,7 +23,7 @@ async function selectRoomsWithFallbacks(tenantId: string): Promise<{ rows: { id:
   const attempts: Array<{ label: string; run: () => Promise<{ rows: { id: unknown; name: string }[] }> }> = [
     {
       label: 'lodgingId_eq_tenantId',
-      run: () => sql`
+      run: () => sql<{ id: unknown; name: string }>`
         SELECT id, name
         FROM "Room"
         WHERE "lodgingId"::text = ${tenantId}
@@ -32,7 +32,7 @@ async function selectRoomsWithFallbacks(tenantId: string): Promise<{ rows: { id:
     },
     {
       label: 'via_Lodging_id',
-      run: () => sql`
+      run: () => sql<{ id: unknown; name: string }>`
         SELECT DISTINCT r.id, r.name
         FROM "Room" r
         INNER JOIN "Lodging" l ON r."lodgingId"::text = l.id::text
@@ -42,7 +42,7 @@ async function selectRoomsWithFallbacks(tenantId: string): Promise<{ rows: { id:
     },
     {
       label: 'Room.tenant_id',
-      run: () => sql`
+      run: () => sql<{ id: unknown; name: string }>`
         SELECT id, name
         FROM "Room"
         WHERE tenant_id = ${tenantId}::uuid
@@ -51,7 +51,7 @@ async function selectRoomsWithFallbacks(tenantId: string): Promise<{ rows: { id:
     },
     {
       label: 'property_room_map',
-      run: () => sql`
+      run: () => sql<{ id: unknown; name: string }>`
         SELECT DISTINCT r.id, r.name
         FROM "Room" r
         INNER JOIN property_room_map m
@@ -496,6 +496,7 @@ export async function POST(req: NextRequest) {
       let errorMessage = validation.reason || 'No puedes crear más habitaciones';
       
       // Mensajes personalizados según el plan
+      let checkoutUrl: string | null = null;
       if (planType === 'free' && finalCount > 1) {
         // Plan Básico: 1 unidad gratis; para extras cobramos solo las unidades adicionales (2 €/mes c/u)
         const origin =
@@ -503,6 +504,7 @@ export async function POST(req: NextRequest) {
           `${req.headers.get('x-forwarded-proto') || 'https'}://${req.headers.get('x-forwarded-host') || req.headers.get('host') || 'admin.delfincheckin.com'}`;
         const checkout = new URL('/api/polar/free-extra-units', origin);
         checkout.searchParams.set('rooms', String(finalCount));
+        checkoutUrl = checkout.toString();
         errorMessage = `Tu plan incluye 1 propiedad gratis. Para añadir más, el coste es 2€/mes por cada unidad adicional.`;
       } else if (planType === 'checkin') {
         errorMessage = `Puedes añadir más propiedades; cada una adicional son 2€/mes. Actualmente tienes ${finalCount}.`;
@@ -517,7 +519,7 @@ export async function POST(req: NextRequest) {
         success: false,
         error: errorMessage,
         message: errorMessage,
-        checkout_url: planType === 'free' && finalCount > 1 ? checkout.toString() : null,
+        checkout_url: checkoutUrl,
         current_usage: finalCount,
         max_included: planType === 'free' ? 1 : planType === 'standard' || planType === 'pro' ? 1 : null,
         plan_type: planType,

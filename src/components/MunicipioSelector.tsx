@@ -252,7 +252,7 @@ export default function MunicipioSelector({
     if (busqueda.length >= 2) {
       setMostrarResultados(true);
     } else {
-      setResultados(buscarMunicipio(''));
+      setResultados([]);
       setMostrarResultados(true);
     }
   };

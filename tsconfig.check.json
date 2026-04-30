@@ -15,7 +15,14 @@
     "DelfinCheckInApp",
     "scripts",
     "staging.delfincheckin.com",
-    "tests"
+    "tests",
+    "src/app/api/debug/**",
+    "src/app/api/debug-email/**",
+    "src/app/api/debug-email-*/**",
+    "src/app/api/test-*/**",
+    "src/app/api/emergency-*/**",
+    "src/app/api/pricing/**",
+    "src/app/api/superadmin/programmatic/**"
   ]
 }
 

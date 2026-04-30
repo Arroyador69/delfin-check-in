@@ -22,7 +22,12 @@ export async function GET(req: NextRequest) {
     console.log(`📋 Encontrados ${result.rows.length} registros`);
     
     // Procesar registros y categorizar por estado MIR
-    const comunicaciones = {
+    const comunicaciones: {
+      pendientes: any[];
+      enviados: any[];
+      confirmados: any[];
+      errores: any[];
+    } = {
       pendientes: [],
       enviados: [],
       confirmados: [],

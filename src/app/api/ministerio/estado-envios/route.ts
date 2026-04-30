@@ -96,7 +96,12 @@ export async function GET(req: NextRequest) {
     console.log(`📋 Encontrados ${result.rows.length} registros`);
     
     // Procesar registros y categorizar por estado MIR
-    const comunicaciones = {
+    const comunicaciones: {
+      pendientes: any[];
+      enviados: any[];
+      confirmados: any[];
+      errores: any[];
+    } = {
       pendientes: [],
       enviados: [],
       confirmados: [],
@@ -112,9 +117,9 @@ export async function GET(req: NextRequest) {
     };
     
     // Agrupar registros por guest_registration_id para manejar múltiples comunicaciones
-    const registrosAgrupados = new Map();
+    const registrosAgrupados = new Map<any, any>();
     
-    result.rows.forEach(registro => {
+    result.rows.forEach((registro: any) => {
       const guestId = registro.id;
       
       if (!registrosAgrupados.has(guestId)) {
@@ -205,10 +210,10 @@ export async function GET(req: NextRequest) {
       const loteRH = rhBest?.lote || loteFromData;
       
       // Crear comunicaciones separadas para PV y RH si existen
-      const comunicacionesParaMostrar = [];
+      const comunicacionesParaMostrar: any[] = [];
       
       // Comunicación PV
-      if (comunicacionesMIR.find(c => c.tipo === 'PV') || estadoFromData) {
+      if (comunicacionesMIR.find((c: any) => c.tipo === 'PV') || estadoFromData) {
         const normalizedEstadoPV =
           estadoPV === 'confirmado'
             ? 'confirmado'
@@ -239,7 +244,7 @@ export async function GET(req: NextRequest) {
       }
       
       // Comunicación RH
-      if (comunicacionesMIR.find(c => c.tipo === 'RH') || estadoFromData) {
+      if (comunicacionesMIR.find((c: any) => c.tipo === 'RH') || estadoFromData) {
         const normalizedEstadoRH =
           estadoRH === 'confirmado'
             ? 'confirmado'
@@ -292,7 +297,7 @@ export async function GET(req: NextRequest) {
       }
       
       // Clasificar cada comunicación según su estado
-      comunicacionesParaMostrar.forEach(comunicacion => {
+      comunicacionesParaMostrar.forEach((comunicacion: any) => {
         if (comunicacion.estado === 'error') {
           comunicaciones.errores.push(comunicacion);
           estadisticas.errores++;

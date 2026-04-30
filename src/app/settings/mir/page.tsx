@@ -582,7 +582,7 @@ export default function MirSettingsPage() {
           <CardHeader>
             <CardTitle className="flex items-center justify-between text-gray-900 font-bold">
               📊 Estado de Configuración
-              <Badge variant={status.variant}>{status.status}</Badge>
+              <Badge variant={status.variant as any}>{status.status}</Badge>
             </CardTitle>
             <CardDescription className="text-gray-700 font-medium">
               Verifica que todas las credenciales estén configuradas correctamente

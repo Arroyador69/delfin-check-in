@@ -14,7 +14,7 @@ function isStandalone(): boolean {
 function detectPlatform() {
   if (typeof navigator === 'undefined') return { ios: false, android: false, safari: false, chrome: false };
   const ua = navigator.userAgent || navigator.vendor || '';
-  const ios = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
+  const ios = /iPad|iPhone|iPod/.test(ua) && !(window as any).MSStream;
   const android = /Android/.test(ua);
   const safari = /^((?!chrome|android).)*safari/i.test(ua);
   const chrome = /Chrome\//.test(ua) && /Google Inc/.test((navigator as any).vendor || '') && !/Edg\//.test(ua);

@@ -121,8 +121,9 @@ export async function GET(req: NextRequest) {
       
       // Si no hay en header, intentar desde token (pero manejar expiración)
       if (!tenantId) {
-        if (authToken) {
-          const payload = verifyTokenSilently(authToken);
+        const cookieToken = req.cookies.get('auth_token')?.value;
+        if (cookieToken) {
+          const payload = verifyTokenSilently(cookieToken);
           tenantId = payload?.tenantId || null;
         } else {
           const authHeader = req.headers.get('authorization');

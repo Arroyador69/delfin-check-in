@@ -60,8 +60,8 @@ async function resolveEmailFromPaymentIntent(pi: Stripe.PaymentIntent): Promise<
 
   // 2) Intentar desde el cargo asociado
   try {
-    const expanded = await getStripeServer().paymentIntents.retrieve(pi.id, { expand: ['charges.data.billing_details'] })
-    const chargeEmail = expanded.charges?.data?.[0]?.billing_details?.email
+      const expanded: any = await getStripeServer().paymentIntents.retrieve(pi.id, { expand: ['charges.data.billing_details'] })
+      const chargeEmail = expanded.charges?.data?.[0]?.billing_details?.email
     if (chargeEmail) return String(chargeEmail)
   } catch {}
 
@@ -166,7 +166,11 @@ async function createTenantFromPayment(pi: Stripe.PaymentIntent, overrideEmail?:
         const referrerTenantId = await getTenantIdFromReferralCode(pi.metadata.referral_code);
         
         if (referrerTenantId && referrerTenantId !== tenant.id) {
-          const planType = (plan_id === 'checkin' ? 'checkin' : plan_id === 'pro' ? 'pro' : 'free') as 'free' | 'checkin' | 'pro';
+          const planIdFromMeta = String((pi as any).metadata?.planId || (pi as any).metadata?.plan_id || '');
+          const planType = (planIdFromMeta === 'checkin' ? 'checkin' : planIdFromMeta === 'pro' ? 'pro' : 'free') as
+            | 'free'
+            | 'checkin'
+            | 'pro';
           await associateTenantWithReferrer(tenant.id, referrerTenantId, pi.metadata.referral_code, planType);
           console.log('✅ Tenant asociado con referente desde metadatos Stripe:', referrerTenantId);
         }
@@ -305,7 +309,11 @@ async function createTenantFromInvoice(inv: Stripe.Invoice, email: string): Prom
         const referrerTenantId = await getTenantIdFromReferralCode(inv.metadata.referral_code);
         
         if (referrerTenantId && referrerTenantId !== tenant.id) {
-          const planType = (plan_id === 'checkin' ? 'checkin' : plan_id === 'pro' ? 'pro' : 'free') as 'free' | 'checkin' | 'pro';
+          const planIdFromMeta = String((inv as any).metadata?.planId || (inv as any).metadata?.plan_id || '');
+          const planType = (planIdFromMeta === 'checkin' ? 'checkin' : planIdFromMeta === 'pro' ? 'pro' : 'free') as
+            | 'free'
+            | 'checkin'
+            | 'pro';
           await associateTenantWithReferrer(tenant.id, referrerTenantId, inv.metadata.referral_code, planType);
           console.log('✅ Tenant asociado con referente desde metadatos Stripe (invoice):', referrerTenantId);
         }
@@ -509,13 +517,14 @@ export async function POST(req: NextRequest) {
           
           const tenantId = subscription.metadata?.tenant_id;
           if (tenantId) {
+            const sub: any = subscription as any
             // Actualizar suscripción en BD si existe
             await sql`
               UPDATE subscriptions
               SET 
                 status = ${subscription.status},
-                current_period_start = ${new Date(subscription.current_period_start * 1000)},
-                current_period_end = ${new Date(subscription.current_period_end * 1000)},
+                current_period_start = ${sub.current_period_start ? new Date(sub.current_period_start * 1000).toISOString() : null},
+                current_period_end = ${sub.current_period_end ? new Date(sub.current_period_end * 1000).toISOString() : null},
                 updated_at = NOW()
               WHERE stripe_subscription_id = ${subscription.id}
             `;
@@ -525,7 +534,7 @@ export async function POST(req: NextRequest) {
               UPDATE tenants
               SET 
                 subscription_status = ${subscription.status},
-                subscription_current_period_end = ${new Date(subscription.current_period_end * 1000)},
+                subscription_current_period_end = ${sub.current_period_end ? new Date(sub.current_period_end * 1000).toISOString() : null},
                 updated_at = NOW()
               WHERE id = ${tenantId}::uuid
             `;
@@ -551,6 +560,7 @@ export async function POST(req: NextRequest) {
       case 'customer.subscription.updated':
         try {
           const updatedSub = event.data.object as Stripe.Subscription
+          const sub: any = updatedSub as any
           console.log('🔄 Suscripción actualizada:', updatedSub.id, 'Status:', updatedSub.status)
           // Actualizar estado de suscripción del tenant + sincronizar pricing/flags
           const planFromMetadata = (updatedSub.metadata?.plan_id || updatedSub.metadata?.plan_type || '') as string
@@ -599,8 +609,8 @@ export async function POST(req: NextRequest) {
                 ${updatedSub.id},
                 ${String(updatedSub.customer || '')},
                 ${updatedSub.status},
-                ${new Date(updatedSub.current_period_start * 1000)},
-                ${new Date(updatedSub.current_period_end * 1000)},
+                ${sub.current_period_start ? new Date(sub.current_period_start * 1000).toISOString() : null},
+                ${sub.current_period_end ? new Date(sub.current_period_end * 1000).toISOString() : null},
                 ${pricing.subtotal},
                 ${pricing.vat.vatRate},
                 ${pricing.vat.vatAmount},
@@ -631,7 +641,7 @@ export async function POST(req: NextRequest) {
               SET 
                 subscription_status = ${updatedSub.status},
                 stripe_subscription_id = ${updatedSub.id},
-                subscription_current_period_end = ${new Date(updatedSub.current_period_end * 1000)},
+                subscription_current_period_end = ${sub.current_period_end ? new Date(sub.current_period_end * 1000).toISOString() : null},
                 plan_type = ${planId},
                 plan_id = ${planId},
                 subscription_price = ${pricing.total},

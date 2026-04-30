@@ -96,12 +96,16 @@ Este proyecto sigue un flujo de trabajo profesional con:
 - ✅ Gestión de habitaciones y reservas
 - ✅ Comunicación automática con Ministerio
 - ✅ Reportes y estadísticas
+- ✅ Microsite de reservas directas y enlaces de cobro
+- ✅ Programa de referidos
+- ✅ Planes y facturación (Stripe / Polar según flujo)
 
 ### Para Huéspedes:
 - ✅ Formulario público multiidioma
 - ✅ Registro digital de documentos
 - ✅ Validación en tiempo real
 - ✅ Interfaz responsive y accesible
+- ✅ Pago seguro cuando se usa un enlace de cobro
 
 ### Para Desarrolladores:
 - ✅ API REST completa
@@ -139,19 +143,62 @@ Copia `env.example.template` a `.env.local` y configura:
 # Base de datos
 POSTGRES_URL="postgresql://..."
 
-# Autenticación
-NEXTAUTH_SECRET="tu-secreto-seguro"
-NEXTAUTH_URL="http://localhost:3000"
+# URL base
+NEXT_PUBLIC_APP_URL="http://localhost:3000"
+
+# Autenticación (JWT custom / admin)
+ADMIN_SECRET_HASH="$2a$12$..."
+JWT_SECRET="..."
 
 # Cache/Sesiones
 KV_URL="redis://..."
 KV_REST_API_URL="https://..."
 KV_REST_API_TOKEN="..."
 
+# Waitlist / emails (opcional en local)
+# SMTP_HOST=...
+# SMTP_PORT=...
+# SMTP_USER=...
+# SMTP_PASS=...
+
+# Stripe (pagos y reservas directas)
+STRIPE_SECRET_KEY="sk_..."
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY="pk_..."
+STRIPE_WEBHOOK_SECRET="whsec_..."
+STRIPE_WEBHOOK_DIRECT_RESERVATIONS_SECRET="whsec_..."
+
+# Polar (checkout de upgrade de plan / MoR)
+POLAR_ACCESS_TOKEN="polar_pat_..."
+POLAR_WEBHOOK_SECRET="whsec_..."
+POLAR_SERVER="sandbox" # o production
+
 # Configuración del establecimiento
 ESTABLISHMENT_CODE="0000256653"
 ESTABLISHMENT_NAME="Delfín Check-in"
 ```
+
+## 🧭 Flujos principales (según producto actual)
+
+- **Waitlist / pre-lanzamiento**
+  - **UI**: `GET /signup` (recoge email + `source/lang` en querystring)
+  - **API**: `POST /api/waitlist` (CORS abierto para captación desde la landing)
+  - **Admin (interno)**: `GET /api/waitlist` (stats; en producción debería ir protegido)
+
+- **Onboarding y acceso al panel**
+  - **Admin login**: `GET /admin-login` (middleware protege el dashboard)
+  - **Onboarding**: `GET /onboarding?token=...&email=...` (token de 24h)
+  - **Emails**: envío de onboarding y notificaciones (SMTP/Zoho/Resend según configuración)
+
+- **Planes y facturación**
+  - **Stripe**: suscripciones, webhooks y control de estado (`/api/stripe/*`, `/api/billing/*`)
+  - **Polar**: checkout/upgrade y webhook (`/api/polar/*`, `/api/webhook/polar`)
+
+- **Reservas directas**
+  - **Microsite**: páginas públicas por tenant/propiedad
+  - **Enlaces de pago**: creación y procesamiento (`/api/payment-links/*`, `/pay/[linkCode]`)
+
+- **Cumplimiento MIR (España)**
+  - Formulario + exportación XML + (si aplica) envío automático al MIR según plan/configuración.
 
 ## 🚀 Despliegue
 

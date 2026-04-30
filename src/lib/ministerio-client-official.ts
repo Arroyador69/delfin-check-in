@@ -811,9 +811,9 @@ function parseConsultaLoteResponse(xml: string): ConsultaLoteResult {
       for (const comMatch of comunicacionMatches) {
         const comXml = comMatch[1];
         const indice = parseInt(matchTag(comXml, 'orden') || '1');
-        const codigoComunicacion = matchTag(comXml, 'codigoComunicacion');
-        const tipoError = matchTag(comXml, 'tipoError');
-        const error = matchTag(comXml, 'error');
+        const codigoComunicacion = matchTag(comXml, 'codigoComunicacion') || undefined;
+        const tipoError = matchTag(comXml, 'tipoError') || undefined;
+        const error = matchTag(comXml, 'error') || undefined;
         
         resultadoComunicaciones.push({
           indice,

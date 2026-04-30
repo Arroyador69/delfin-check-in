@@ -506,15 +506,15 @@ export default function SuperAdminWaitlist() {
                 </div>
                 <dl className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
                   {typeof r.answers.want_beta === 'boolean' && <><dt className="text-gray-500">Quiere beta</dt><dd>{r.answers.want_beta ? 'Sí' : 'No'}</dd></>}
-                  {r.answers.properties_count && <><dt className="text-gray-500">Propiedades/hab.</dt><dd>{String(r.answers.properties_count)}</dd></>}
-                  {r.answers.accommodation_type && <><dt className="text-gray-500">Tipo alojamiento</dt><dd>{String(r.answers.accommodation_type)}</dd></>}
-                  {r.answers.has_direct_reservations && <><dt className="text-gray-500">Reservas directas</dt><dd>{String(r.answers.has_direct_reservations)}</dd></>}
-                  {r.answers.current_software && <><dt className="text-gray-500">Software actual</dt><dd>{String(r.answers.current_software)}</dd></>}
-                  {r.answers.current_monthly_pay && <><dt className="text-gray-500">Pago mensual actual</dt><dd>{String(r.answers.current_monthly_pay)}</dd></>}
-                  {r.answers.plan_choice && <><dt className="text-gray-500">Plan elegido</dt><dd>{String(r.answers.plan_choice)}</dd></>}
-                  {r.answers.price_perception && <><dt className="text-gray-500">Precio</dt><dd>{String(r.answers.price_perception)}</dd></>}
-                  {r.answers.what_features && <><dt className="text-gray-500 col-span-2">Qué le gustaría</dt><dd className="col-span-2">{String(r.answers.what_features)}</dd></>}
-                  {r.answers.comments && <><dt className="text-gray-500 col-span-2">Comentarios</dt><dd className="col-span-2">{String(r.answers.comments)}</dd></>}
+                  {r.answers.properties_count != null && <><dt className="text-gray-500">Propiedades/hab.</dt><dd>{String(r.answers.properties_count)}</dd></>}
+                  {r.answers.accommodation_type != null && <><dt className="text-gray-500">Tipo alojamiento</dt><dd>{String(r.answers.accommodation_type)}</dd></>}
+                  {r.answers.has_direct_reservations != null && <><dt className="text-gray-500">Reservas directas</dt><dd>{String(r.answers.has_direct_reservations)}</dd></>}
+                  {r.answers.current_software != null && <><dt className="text-gray-500">Software actual</dt><dd>{String(r.answers.current_software)}</dd></>}
+                  {r.answers.current_monthly_pay != null && <><dt className="text-gray-500">Pago mensual actual</dt><dd>{String(r.answers.current_monthly_pay)}</dd></>}
+                  {r.answers.plan_choice != null && <><dt className="text-gray-500">Plan elegido</dt><dd>{String(r.answers.plan_choice)}</dd></>}
+                  {r.answers.price_perception != null && <><dt className="text-gray-500">Precio</dt><dd>{String(r.answers.price_perception)}</dd></>}
+                  {r.answers.what_features != null && <><dt className="text-gray-500 col-span-2">Qué le gustaría</dt><dd className="col-span-2">{String(r.answers.what_features)}</dd></>}
+                  {r.answers.comments != null && <><dt className="text-gray-500 col-span-2">Comentarios</dt><dd className="col-span-2">{String(r.answers.comments)}</dd></>}
                 </dl>
               </div>
             ))}

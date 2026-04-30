@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
       modoSimulacion,
       entorno: esProduccion ? 'PRODUCCIÓN' : esPruebas ? 'PRUEBAS' : 'NO CONFIGURADO',
       listoParaProduccion: esProduccion && !modoSimulacion && credencialesConfiguradas,
-      problemas: []
+      problemas: [] as string[]
     };
     
     if (!credencialesConfiguradas) {

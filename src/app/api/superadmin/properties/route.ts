@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const tenantId = searchParams.get('tenant_id');
 
-    let query = sql`
+    let text = `
       SELECT 
         tp.id,
         tp.tenant_id,
@@ -24,14 +24,16 @@ export async function GET(req: NextRequest) {
       JOIN tenants t ON tp.tenant_id = t.id
       WHERE tp.is_active = true
     `;
+    const params: any[] = [];
 
     if (tenantId) {
-      query = sql`${query} AND tp.tenant_id = ${tenantId}::uuid`;
+      params.push(tenantId);
+      text += ` AND tp.tenant_id = $${params.length}::uuid`;
     }
 
-    query = sql`${query} ORDER BY t.name, tp.property_name`;
+    text += ` ORDER BY t.name, tp.property_name`;
 
-    const result = await query;
+    const result = await (sql as any).query(text, params);
 
     return NextResponse.json({
       success: true,

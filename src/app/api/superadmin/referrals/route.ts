@@ -37,7 +37,7 @@ export async function GET(req: NextRequest) {
     `
 
     // Obtener referidos con información de tenants
-    let query = sql`
+    let text = `
       SELECT 
         r.id,
         r.referrer_tenant_id,
@@ -63,19 +63,22 @@ export async function GET(req: NextRequest) {
       LEFT JOIN tenants t1 ON t1.id = r.referrer_tenant_id
       LEFT JOIN tenants t2 ON t2.id = r.referred_tenant_id
       WHERE 1=1
-    `
+    `;
+    const params: any[] = [];
 
     if (status) {
-      query = sql`${query} AND r.status = ${status}`
+      params.push(status);
+      text += ` AND r.status = $${params.length}`;
     }
 
     if (referrerTenantId) {
-      query = sql`${query} AND r.referrer_tenant_id = ${referrerTenantId}`
+      params.push(referrerTenantId);
+      text += ` AND r.referrer_tenant_id = $${params.length}::uuid`;
     }
 
-    query = sql`${query} ORDER BY r.created_at DESC LIMIT 500`
+    text += ` ORDER BY r.created_at DESC LIMIT 500`;
 
-    const referrals = await query
+    const referrals = await (sql as any).query(text, params)
 
     // Obtener estadísticas de recompensas
     const rewardsStats = await sql`

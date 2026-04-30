@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
     const activeOnly = searchParams.get('active_only') === 'true';
     const processed = searchParams.get('processed');
 
-    let query = sql`
+    let text = `
       SELECT 
         rs.*,
         tp.property_name,
@@ -27,28 +27,31 @@ export async function GET(req: NextRequest) {
       JOIN tenants t ON rs.tenant_id = t.id
       WHERE 1=1
     `;
+    const params: any[] = [];
 
     if (propertyId) {
-      query = sql`${query} AND rs.property_id = ${parseInt(propertyId)}`;
+      params.push(parseInt(propertyId));
+      text += ` AND rs.property_id = $${params.length}`;
     }
 
     if (tenantId) {
-      query = sql`${query} AND rs.tenant_id = ${tenantId}::uuid`;
+      params.push(tenantId);
+      text += ` AND rs.tenant_id = $${params.length}::uuid`;
     }
 
     if (activeOnly) {
-      query = sql`${query} AND rs.is_active = true AND (rs.expires_at IS NULL OR rs.expires_at > NOW())`;
+      text += ` AND rs.is_active = true AND (rs.expires_at IS NULL OR rs.expires_at > NOW())`;
     }
 
     if (processed === 'true') {
-      query = sql`${query} AND rs.processed = true`;
+      text += ` AND rs.processed = true`;
     } else if (processed === 'false') {
-      query = sql`${query} AND rs.processed = false`;
+      text += ` AND rs.processed = false`;
     }
 
-    query = sql`${query} ORDER BY rs.detected_at DESC, rs.signal_intensity DESC LIMIT 100`;
+    text += ` ORDER BY rs.detected_at DESC, rs.signal_intensity DESC LIMIT 100`;
 
-    const result = await query;
+    const result = await (sql as any).query(text, params);
 
     return NextResponse.json({
       success: true,
@@ -121,7 +124,7 @@ export async function POST(req: NextRequest) {
         ${signal_type},
         ${signal_intensity || 0},
         ${JSON.stringify(signal_data || {})},
-        ${expires_at ? new Date(expires_at) : null},
+        ${expires_at ? new Date(expires_at).toISOString() : null},
         true,
         false
       )
@@ -176,7 +179,7 @@ export async function PUT(req: NextRequest) {
         signal_data = COALESCE(${signal_data ? JSON.stringify(signal_data) : null}::jsonb, signal_data),
         is_active = COALESCE(${is_active}, is_active),
         processed = COALESCE(${processed}, processed),
-        expires_at = COALESCE(${expires_at ? new Date(expires_at) : null}, expires_at),
+        expires_at = COALESCE(${expires_at ? new Date(expires_at).toISOString() : null}, expires_at),
         updated_at = NOW()
       WHERE id = ${id}
       RETURNING *

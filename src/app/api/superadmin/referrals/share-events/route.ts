@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
 
     const limit = Math.min(Math.max(parseInt(limitRaw || '200', 10) || 200, 1), 1000);
 
-    let query = sql`
+    let text = `
       SELECT
         e.id,
         e.tenant_id,
@@ -45,17 +45,20 @@ export async function GET(req: NextRequest) {
       LEFT JOIN tenants t ON t.id = e.tenant_id
       WHERE 1=1
     `;
+    const params: any[] = [];
 
     if (tenantId) {
-      query = sql`${query} AND e.tenant_id = ${tenantId}`;
+      params.push(tenantId);
+      text += ` AND e.tenant_id = $${params.length}::uuid`;
     }
     if (action) {
-      query = sql`${query} AND e.action = ${action}`;
+      params.push(action);
+      text += ` AND e.action = $${params.length}`;
     }
 
-    query = sql`${query} ORDER BY e.created_at DESC LIMIT ${limit}`;
+    text += ` ORDER BY e.created_at DESC LIMIT ${limit}`;
 
-    const rows = await query;
+    const rows = await (sql as any).query(text, params);
 
     return NextResponse.json({
       success: true,

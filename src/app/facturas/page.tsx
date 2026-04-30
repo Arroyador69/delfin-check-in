@@ -573,7 +573,7 @@ export default function FacturasPage() {
                           </div>
                           <div className="text-sm">
                             <span className="font-bold text-blue-600 text-lg">
-                              {parseFloat(factura.total || 0).toFixed(2)} €
+                              {Number(factura.total || 0).toFixed(2)} €
                             </span>
                           </div>
                         </div>

@@ -119,11 +119,11 @@ export default function CleaningCalendarSettings({ rooms, t }: Props) {
     [configs, t]
   );
 
-  const getConfigForRoom = (roomId: number): CleaningConfig | undefined => {
+  const getConfigForRoom = (roomId: string | number): CleaningConfig | undefined => {
     return configs.find(c => c.room_id === String(roomId));
   };
 
-  const saveConfig = async (roomId: number, updates: Partial<CleaningConfig>) => {
+  const saveConfig = async (roomId: string | number, updates: Partial<CleaningConfig>) => {
     setSaving(String(roomId));
     try {
       const existing = getConfigForRoom(roomId);

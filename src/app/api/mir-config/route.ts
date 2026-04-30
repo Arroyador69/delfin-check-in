@@ -174,7 +174,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         success: false,
         message: 'Error al probar conexión MIR',
-        error: testError.message
+        error: testError instanceof Error ? testError.message : String(testError)
       }, { status: 400 });
     }
 

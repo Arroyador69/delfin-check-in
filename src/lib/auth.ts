@@ -94,7 +94,7 @@ export function generateAccessToken(payload: JWTPayload, expiresIn: string = JWT
 
   try {
     const signOptions: SignOptions = {
-      expiresIn,
+      expiresIn: expiresIn as any,
       algorithm: 'HS256',
     };
     const token = jwt.sign(payload, jwtSecret as Secret, signOptions);

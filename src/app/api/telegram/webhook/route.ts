@@ -359,7 +359,7 @@ export async function POST(request: NextRequest) {
         console.log(`✅ Respuesta estructurada generada:`, mensajeFormateado);
         console.log(`📤 Enviando mensaje a chat ${chatId}...`);
         
-        const telegramResponse = await sendTelegramMessage(chatId, mensajeFormateado);
+        const telegramResponse = await sendTelegramMessage(chatId, mensajeFormateado || '');
         console.log(`📤 Respuesta de Telegram:`, telegramResponse);
         
         return NextResponse.json({ ok: true, method: 'structured-direct' });
@@ -395,6 +395,6 @@ export async function POST(request: NextRequest) {
     
   } catch (error) {
     console.error('❌ Error en webhook de Telegram:', error);
-    return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
+    return NextResponse.json({ ok: false, error: error instanceof Error ? error.message : String(error) }, { status: 500 });
   }
 }

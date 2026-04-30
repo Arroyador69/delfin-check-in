@@ -199,8 +199,8 @@ export async function POST(req: NextRequest) {
         tenant_id_encontrado: dbResult?.rows?.[0]?.tenant_id
       });
 
-      if ((!config.username || !config.password || !config.codigoArrendador) && dbRowsLen > 0 && dbResult.rows[0].activo) {
-        const dbConfig = dbResult.rows[0];
+      if ((!config.username || !config.password || !config.codigoArrendador) && dbRowsLen > 0 && dbResult?.rows?.[0]?.activo) {
+        const dbConfig = dbResult.rows[0] as any;
         config = {
           baseUrl: dbConfig.base_url || 'https://hospedajes.ses.mir.es/hospedajes-web/ws/v1/comunicacion',
           username: dbConfig.usuario || '',
@@ -439,7 +439,7 @@ export async function POST(req: NextRequest) {
           caducidadTarjeta: pago?.caducidadTarjeta
         }
       },
-      personas: personas.map(persona => {
+      personas: personas.map((persona: any) => {
         // CRÍTICO según normas MIR: si hay numeroDocumento, soporteDocumento es OBLIGATORIO
         const numDoc = persona.numeroDocumento || '';
         // Si hay numeroDocumento (no vacío), incluir soporteDocumento con valor 'C' por defecto si no viene
@@ -493,7 +493,7 @@ export async function POST(req: NextRequest) {
           caducidadTarjeta: pago?.caducidadTarjeta
         }
       },
-      personas: personas.map((persona, index) => {
+      personas: personas.map((persona: any, index: number) => {
         // NOTA: Para RH (personaReservaType), NO se incluye soporteDocumento según XSD
         // Solo se usa en PV (personaHospedajeType)
         const numDoc = persona.numeroDocumento || '';

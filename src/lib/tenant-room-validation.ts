@@ -42,7 +42,7 @@ export async function validateRoomIdsBelongToTenant(
     FROM "Room" r
     CROSS JOIN tenants t
     WHERE t.id = ${tenantId}::uuid
-      AND r.id::text = ANY(${unique})
+      AND r.id::text = ANY(${unique as any})
       AND (
         r."lodgingId"::text = t.id::text
         OR (
@@ -71,7 +71,7 @@ export async function validateRoomIdsBelongToTenant(
     FROM "Room" r
     CROSS JOIN tenants t
     WHERE t.id = ${tenantId}::uuid
-      AND r.id::text = ANY(${unique})
+      AND r.id::text = ANY(${unique as any})
       AND (
         r."lodgingId"::text = t.id::text
         OR (

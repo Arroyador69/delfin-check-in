@@ -106,7 +106,6 @@ export async function POST(req: NextRequest) {
       recurring: { interval: 'month' },
       product_data: {
         name: `Delfín Check-in - ${planNames[planId] || planId}`,
-        description: `${planNames[planId] || planId}: ${roomCount} propiedades (${pricing.subtotal}€/mes + IVA)`,
       },
       metadata: {
         plan_id: planId,
@@ -117,7 +116,7 @@ export async function POST(req: NextRequest) {
     });
 
     // Crear suscripción
-    const subscription = await getStripeServer().subscriptions.create({
+    const subscription = (await getStripeServer().subscriptions.create({
       customer: customerId,
       items: [{ price: price.id }],
       metadata: {
@@ -129,7 +128,7 @@ export async function POST(req: NextRequest) {
         vat_amount: pricing.vat.vatAmount.toString(),
         total_price: pricing.total.toString(),
       },
-    });
+    })) as any;
 
     // Guardar suscripción en BD
     await sql`
@@ -144,8 +143,8 @@ export async function POST(req: NextRequest) {
         ${subscription.id},
         ${customerId},
         ${subscription.status},
-        ${new Date(subscription.current_period_start * 1000)},
-        ${new Date(subscription.current_period_end * 1000)},
+        ${subscription.current_period_start ? new Date(subscription.current_period_start * 1000).toISOString() : null},
+        ${subscription.current_period_end ? new Date(subscription.current_period_end * 1000).toISOString() : null},
         ${pricing.subtotal},
         ${pricing.vat.vatRate},
         ${pricing.vat.vatAmount},
@@ -169,7 +168,7 @@ export async function POST(req: NextRequest) {
         extra_room_price = ${pricing.extraRoomsPrice ?? 2},
         max_rooms_included = ${planId === 'checkin' ? 0 : planId === 'standard' ? 4 : 6},
         subscription_status = ${subscription.status},
-        subscription_current_period_end = ${new Date(subscription.current_period_end * 1000)},
+        subscription_current_period_end = ${subscription.current_period_end ? new Date(subscription.current_period_end * 1000).toISOString() : null},
         ads_enabled = ${planId === 'pro' || planId === 'standard' ? false : true},
         legal_module = true,
         status = 'active',
@@ -188,7 +187,7 @@ export async function POST(req: NextRequest) {
         ${pricing.total},
         'EUR',
         ${`Suscripción ${planId} - ${roomCount} habitaciones`},
-        ${subscription.latest_invoice as string || NULL},
+        ${((subscription.latest_invoice as string) || null)},
         (SELECT id FROM subscriptions WHERE stripe_subscription_id = ${subscription.id} LIMIT 1)
       )
     `;

@@ -166,8 +166,8 @@ export async function trackXmlSend(params: {
         ${params.xmlType},
         ${params.sentTo},
         ${params.status},
-        ${params.sentAt || null},
-        ${params.deliveredAt || null},
+        ${params.sentAt ? params.sentAt.toISOString() : null},
+        ${params.deliveredAt ? params.deliveredAt.toISOString() : null},
         ${params.errorMessage || null},
         ${params.retryCount || 0},
         ${params.timeToSend ? `${params.timeToSend} seconds` : null},
@@ -211,8 +211,8 @@ export async function trackSubscriptionEvent(params: {
         ${params.currency || 'EUR'},
         ${params.paymentMethod || null},
         ${params.stripeInvoiceId || null},
-        ${params.periodStart},
-        ${params.periodEnd || null},
+        ${params.periodStart.toISOString()},
+        ${params.periodEnd ? params.periodEnd.toISOString() : null},
         ${params.metadata ? JSON.stringify(params.metadata) : null}
       )
     `

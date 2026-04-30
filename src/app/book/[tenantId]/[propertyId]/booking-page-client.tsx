@@ -216,7 +216,7 @@ function MonthGrid({
     const d = new Date(month.getFullYear(), month.getMonth(), day);
     const iso = d.toISOString().split('T')[0];
     const disabled = blocked.has(iso) || iso < new Date().toISOString().split('T')[0];
-    const inRange = selectedStart && selectedEnd && iso > selectedStart && iso < selectedEnd;
+    const inRange = Boolean(selectedStart && selectedEnd && iso > selectedStart && iso < selectedEnd);
     const isStart = selectedStart === iso;
     const isEnd = selectedEnd === iso;
     cells.push({ d, iso, disabled, inRange, isStart, isEnd });

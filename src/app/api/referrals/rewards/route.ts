@@ -8,9 +8,11 @@ import { getTenantFromRequest } from '@/lib/permissions';
  */
 export async function GET(req: NextRequest) {
   try {
-    const tenant = await getTenantFromRequest(req);
+    const ctx = await getTenantFromRequest(req) as any;
+    const tenant = ctx?.tenant || ctx;
+    const tenantId = tenant?.id || ctx?.tenantId;
     
-    if (!tenant) {
+    if (!tenantId) {
       return NextResponse.json(
         { success: false, error: 'No autenticado' },
         { status: 401 }
@@ -30,7 +32,7 @@ export async function GET(req: NextRequest) {
         revoked_at,
         created_at
       FROM referral_rewards
-      WHERE referrer_tenant_id = ${tenant.id}
+      WHERE referrer_tenant_id = ${tenantId}
       ORDER BY created_at DESC
       LIMIT 50
     `;

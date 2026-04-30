@@ -82,7 +82,6 @@ export async function POST(req: NextRequest) {
       recurring: { interval: 'month' },
       product_data: {
         name: `Delfín Check-in - ${planNames[planType] || planType}`,
-        description: `${planNames[planType] || planType}: ${roomCount} propiedades`,
       },
       metadata: {
         plan_id: planType,
@@ -93,7 +92,7 @@ export async function POST(req: NextRequest) {
     });
 
     // Actualizar suscripción en Stripe
-    const updatedSubscription = await getStripeServer().subscriptions.update(
+    const updatedSubscription = (await getStripeServer().subscriptions.update(
       tenant.stripe_subscription_id,
       {
         items: [{
@@ -111,7 +110,7 @@ export async function POST(req: NextRequest) {
           total_price: pricing.total.toString(),
         },
       }
-    );
+    )) as any;
 
     // Actualizar suscripción en BD
     await sql`
@@ -123,8 +122,8 @@ export async function POST(req: NextRequest) {
         total_price = ${pricing.total},
         room_count = ${roomCount},
         extra_rooms_price = ${pricing.extraRoomsPrice || 0},
-        current_period_start = ${new Date(updatedSubscription.current_period_start * 1000)},
-        current_period_end = ${new Date(updatedSubscription.current_period_end * 1000)},
+        current_period_start = ${updatedSubscription.current_period_start ? new Date(updatedSubscription.current_period_start * 1000).toISOString() : null},
+        current_period_end = ${updatedSubscription.current_period_end ? new Date(updatedSubscription.current_period_end * 1000).toISOString() : null},
         status = ${updatedSubscription.status},
         updated_at = NOW()
       WHERE stripe_subscription_id = ${tenant.stripe_subscription_id}
@@ -137,7 +136,7 @@ export async function POST(req: NextRequest) {
         subscription_price = ${pricing.total},
         base_plan_price = ${pricing.subtotal},
         extra_room_price = ${pricing.extraRoomsPrice ?? 2},
-        subscription_current_period_end = ${new Date(updatedSubscription.current_period_end * 1000)},
+        subscription_current_period_end = ${updatedSubscription.current_period_end ? new Date(updatedSubscription.current_period_end * 1000).toISOString() : null},
         updated_at = NOW()
       WHERE id = ${tenantId}
     `;

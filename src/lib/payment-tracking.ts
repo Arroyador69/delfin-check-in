@@ -37,7 +37,7 @@ export async function recordPaymentAttempt(
       attempt_number, amount, currency, status, failure_reason, failure_code
     )
     VALUES (
-      ${tenantId}, ${invoice.id}, ${invoice.payment_intent || null},
+      ${tenantId}, ${invoice.id}, ${(invoice as any).payment_intent || null},
       ${attemptNumber}, ${amount}, ${invoice.currency || 'eur'}, ${status},
       ${failureReason || null}, ${failureCode || null}
     )
@@ -66,7 +66,7 @@ export async function syncStripeInvoice(invoice: Stripe.Invoice, tenantId: strin
     )
     VALUES (
       ${tenantId}, ${invoice.id}, ${String(invoice.customer || '')}, 
-      ${invoice.subscription ? String(invoice.subscription) : null},
+      ${(invoice as any).subscription ? String((invoice as any).subscription) : null},
       ${invoice.number || null}, ${amountDue}, ${amountPaid}, 
       ${invoice.currency || 'eur'}, ${invoice.status},
       ${invoice.due_date ? new Date(invoice.due_date * 1000).toISOString() : null},
@@ -115,8 +115,8 @@ export async function handlePaymentFailed(invoice: Stripe.Invoice) {
     invoice,
     attemptCount,
     'failed',
-    invoice.last_payment_error?.message || 'Pago fallido',
-    invoice.last_payment_error?.code || 'unknown'
+    (invoice as any).last_payment_error?.message || 'Pago fallido',
+    (invoice as any).last_payment_error?.code || 'unknown'
   );
 
   // Sincronizar factura

@@ -91,7 +91,7 @@ export default function ReputationGooglePage() {
       const data = await r.json();
       if (!data.success) return;
       const list = Array.isArray(data.properties) ? data.properties : [];
-      const mapped = list
+      const mapped: Array<{ id: number; name: string; url: string }> = list
         .map((p: any) => ({
           id: Number(p.id),
           name: String(p.property_name || ''),

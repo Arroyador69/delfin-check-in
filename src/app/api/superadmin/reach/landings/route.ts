@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
     const status = searchParams.get('status');
     const publishedOnly = searchParams.get('published_only') === 'true';
 
-    let query = sql`
+    let text = `
       SELECT 
         dl.*,
         tp.property_name,
@@ -34,26 +34,30 @@ export async function GET(req: NextRequest) {
       LEFT JOIN radar_signals rs ON dl.radar_signal_id = rs.id
       WHERE 1=1
     `;
+    const params: any[] = [];
 
     if (propertyId) {
-      query = sql`${query} AND dl.property_id = ${parseInt(propertyId)}`;
+      params.push(parseInt(propertyId));
+      text += ` AND dl.property_id = $${params.length}`;
     }
 
     if (tenantId) {
-      query = sql`${query} AND dl.tenant_id = ${tenantId}::uuid`;
+      params.push(tenantId);
+      text += ` AND dl.tenant_id = $${params.length}::uuid`;
     }
 
     if (status) {
-      query = sql`${query} AND dl.status = ${status}`;
+      params.push(status);
+      text += ` AND dl.status = $${params.length}`;
     }
 
     if (publishedOnly) {
-      query = sql`${query} AND dl.is_published = true`;
+      text += ` AND dl.is_published = true`;
     }
 
-    query = sql`${query} ORDER BY dl.created_at DESC LIMIT 100`;
+    text += ` ORDER BY dl.created_at DESC LIMIT 100`;
 
-    const result = await query;
+    const result = await (sql as any).query(text, params);
 
     return NextResponse.json({
       success: true,
@@ -152,8 +156,8 @@ export async function POST(req: NextRequest) {
         ${slug},
         ${publicUrl},
         ${JSON.stringify(content)},
-        ${target_date_start ? new Date(target_date_start) : null},
-        ${target_date_end ? new Date(target_date_end) : null},
+        ${target_date_start ? new Date(target_date_start).toISOString() : null},
+        ${target_date_end ? new Date(target_date_end).toISOString() : null},
         ${target_keywords || []},
         ${target_audience || null},
         ${status || 'draft'},
@@ -259,8 +263,8 @@ export async function PUT(req: NextRequest) {
         slug = COALESCE(${slug || null}, slug),
         public_url = ${publicUrl},
         content = COALESCE(${content ? JSON.stringify(content) : null}::jsonb, content),
-        target_date_start = COALESCE(${target_date_start ? new Date(target_date_start) : null}, target_date_start),
-        target_date_end = COALESCE(${target_date_end ? new Date(target_date_end) : null}, target_date_end),
+        target_date_start = COALESCE(${target_date_start ? new Date(target_date_start).toISOString() : null}, target_date_start),
+        target_date_end = COALESCE(${target_date_end ? new Date(target_date_end).toISOString() : null}, target_date_end),
         target_keywords = COALESCE(${target_keywords || null}, target_keywords),
         target_audience = COALESCE(${target_audience || null}, target_audience),
         status = COALESCE(${status || null}, status),

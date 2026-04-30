@@ -318,7 +318,7 @@ export async function POST(req: NextRequest) {
     // Debug específico para datos de dirección
     if (normalized.viajeros && normalized.viajeros.length > 0) {
       console.log('🔍 Debug - Datos de dirección en viajeros:');
-      normalized.viajeros.forEach((viajero, index) => {
+      normalized.viajeros.forEach((viajero: any, index: number) => {
         console.log(`  Viajero ${index + 1}:`, {
           nombre: viajero.nombre,
           direccion: viajero.direccion,
@@ -681,7 +681,7 @@ export async function POST(req: NextRequest) {
         fechaEntrada: c.entrada.split('T')[0],
         fechaSalida: c.salida.split('T')[0],
         ...(room_id ? { room_id } : {}),
-        personas: personasDB.map(persona => ({
+        personas: personasDB.map((persona: any) => ({
           nombre: persona.nombre,
           apellido1: persona.apellido1,
           apellido2: persona.apellido2 || '',
@@ -753,7 +753,7 @@ export async function POST(req: NextRequest) {
         
         // Actualizar el registro con el estado del MIR dual y crear vinculación
         const updatedData = {
-          ...dbData,
+          ...storedData,
           mir_status: {
             lote: dualResult.resultados?.pv?.lote || dualResult.resultados?.rh?.lote || null,
             codigoComunicacion: dualResult.resultados?.pv?.codigoComunicacion || dualResult.resultados?.rh?.codigoComunicacion || null,
@@ -800,7 +800,7 @@ export async function POST(req: NextRequest) {
           // Persistir el estado MIR en guest_registrations (para que el propietario lo vea sin ir a logs)
           try {
             const updatedData = {
-              ...dbData,
+              ...storedData,
               mir_status: {
                 error: (dualError as any)?.message || (dualError as any)?.error || `HTTP ${dualResponse.status}: ${dualResponse.statusText}`,
                 fechaEnvio: new Date().toISOString(),

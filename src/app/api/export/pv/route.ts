@@ -105,8 +105,8 @@ function validateBusinessRules(data: z.infer<typeof PayloadSchema>): string[] {
           details.push(`comunicaciones[${idx}].personas[${i}].direccion.pais requerido (ISO-3)`);
         }
         // Normalizar país para manejar tanto ISO-2 como ISO-3 y textos
-        const esPaisEspana = isSpain(p.direccion.pais);
-        const esNacionalidadEsp = isSpain(p.nacionalidad);
+        const esPaisEspana = isSpain(String(p.direccion.pais || ''));
+        const esNacionalidadEsp = isSpain(String(p.nacionalidad || ''));
         // Normalizar tipo de documento para detección fiable
         const tipoDocNorm = normalizeDocumentType(String(p.tipoDocumento || ''));
         const esPasaporte = tipoDocNorm === 'PAS';
@@ -247,7 +247,7 @@ function buildXML(data: z.infer<typeof PayloadSchema>): string {
         xml += `        <numeroDocumento>${esc(persona.numeroDocumento)}</numeroDocumento>\n`;
       }
       // soporteDocumento es obligatorio para NIF/NIE según MIR
-      const tipoDoc = normalizeDocumentType(persona.tipoDocumento);
+      const tipoDoc = normalizeDocumentType(String(persona.tipoDocumento || ''));
       if (tipoDoc === 'NIF' || tipoDoc === 'NIE') {
         xml += `        <soporteDocumento>${esc(persona.soporteDocumento || 'C')}</soporteDocumento>\n`;
       }

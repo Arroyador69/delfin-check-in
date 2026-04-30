@@ -114,7 +114,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error('❌ Error en test-zoho-direct:', error);
     return NextResponse.json(
-      { error: 'Error interno del servidor', details: error.message },
+      { error: 'Error interno del servidor', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     );
   }

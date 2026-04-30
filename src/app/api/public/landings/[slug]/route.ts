@@ -21,7 +21,7 @@ export async function GET(
     }
 
     // Obtener la landing
-    let query = sql`
+    let text = `
       SELECT 
         dl.*,
         tp.property_name,
@@ -32,16 +32,17 @@ export async function GET(
       FROM dynamic_landings dl
       JOIN tenant_properties tp ON dl.property_id = tp.id
       JOIN tenants t ON dl.tenant_id = t.id
-      WHERE dl.slug = ${slug}
+      WHERE dl.slug = $1
         AND dl.status = 'active'
         AND dl.is_published = true
     `;
-
+    const sqlParams: any[] = [slug];
     if (tenantId) {
-      query = sql`${query} AND dl.tenant_id = ${tenantId}::uuid`;
+      sqlParams.push(tenantId);
+      text += ` AND dl.tenant_id = $${sqlParams.length}::uuid`;
     }
 
-    const result = await query;
+    const result = await (sql as any).query(text, sqlParams);
 
     if (result.rows.length === 0) {
       return NextResponse.json(
@@ -50,21 +51,19 @@ export async function GET(
       );
     }
 
-    const landing = result.rows[0];
+    const landing = result.rows[0] as any;
 
     // Obtener el lodging_id del tenant para buscar las habitaciones reales
-    const tenantInfo = await sql`
-      SELECT lodging_id
-      FROM tenants
-      WHERE id = ${landing.tenant_id}::uuid
-      LIMIT 1
-    `;
+    const tenantInfo = await (sql as any).query(
+      `SELECT lodging_id FROM tenants WHERE id = $1::uuid LIMIT 1`,
+      [landing.tenant_id]
+    );
     
     const lodgingId = tenantInfo.rows[0]?.lodging_id || null;
 
     // Obtener TODAS las habitaciones activas del tenant desde la tabla Room
     // Combinamos con tenant_properties si hay mapping en property_room_map
-    let roomsQuery;
+    let roomsQuery: any;
     if (lodgingId) {
       roomsQuery = sql`
         SELECT 
@@ -147,7 +146,7 @@ export async function GET(
         property_photos: landing.property_photos,
         tenant_name: landing.tenant_name
       },
-      properties: propertiesResult.rows.map(p => ({
+      properties: propertiesResult.rows.map((p: any) => ({
         id: p.property_id || parseInt(p.room_id), // Usar property_id si existe, sino room_id
         room_id: parseInt(p.room_id),
         property_name: p.property_name || p.room_name, // Usar property_name si existe, sino room_name

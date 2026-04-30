@@ -43,7 +43,7 @@ export async function GET(req: NextRequest) {
           ? await sql`
               SELECT email_tracking_id
               FROM waitlist_survey_responses
-              WHERE email_tracking_id = ANY(${ids})
+              WHERE email_tracking_id = ANY(${ids as any})
             `
           : { rows: [] }
       const completedSet = new Set(
@@ -97,7 +97,7 @@ export async function GET(req: NextRequest) {
         ? await sql`
             SELECT campaign_key, COUNT(*)::int AS completed_count
             FROM waitlist_survey_responses
-            WHERE campaign_key = ANY(${campaignKeys})
+            WHERE campaign_key = ANY(${campaignKeys as any})
             GROUP BY campaign_key
           `
         : { rows: [] }

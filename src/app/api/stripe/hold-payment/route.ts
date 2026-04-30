@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
     await sql`
       UPDATE direct_reservations
       SET 
-        payment_hold_until = ${new Date(checkInDate)}::timestamp,
+        payment_hold_until = ${new Date(checkInDate).toISOString()}::timestamp,
         payment_status = 'held',
         updated_at = NOW()
       WHERE id = ${reservationId}::uuid

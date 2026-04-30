@@ -126,7 +126,7 @@ export async function getErrorLogs(options: {
   const limit = Math.min(options.limit || 100, 500)
   const offset = options.offset || 0
 
-  let query = sql`
+  let text = `
     SELECT 
       id,
       level,
@@ -141,45 +141,35 @@ export async function getErrorLogs(options: {
     FROM error_logs
     WHERE 1=1
   `
+  const params: any[] = []
 
   if (options.level && options.level !== 'all') {
-    query = sql`
-      ${query}
-      AND level = ${options.level}
-    `
+    params.push(options.level)
+    text += ` AND level = $${params.length}`
   }
 
   if (options.tenantId) {
-    query = sql`
-      ${query}
-      AND tenant_id = ${options.tenantId}
-    `
+    params.push(options.tenantId)
+    text += ` AND tenant_id = $${params.length}::uuid`
   }
 
   if (options.from) {
-    query = sql`
-      ${query}
-      AND created_at >= ${options.from.toISOString()}
-    `
+    params.push(options.from.toISOString())
+    text += ` AND created_at >= $${params.length}`
   }
 
   if (options.to) {
-    query = sql`
-      ${query}
-      AND created_at <= ${options.to.toISOString()}
-    `
+    params.push(options.to.toISOString())
+    text += ` AND created_at <= $${params.length}`
   }
 
-  query = sql`
-    ${query}
-    ORDER BY created_at DESC
-    LIMIT ${limit}
-    OFFSET ${offset}
-  `
+  params.push(limit)
+  params.push(offset)
+  text += ` ORDER BY created_at DESC LIMIT $${params.length - 1} OFFSET $${params.length}`
 
-  const result = await query
+  const result = await (sql as any).query(text, params)
 
-  return result.rows.map((row) => ({
+  return (result.rows as any[]).map((row: any) => ({
     id: row.id,
     level: row.level as 'error' | 'warning' | 'info',
     message: row.message,

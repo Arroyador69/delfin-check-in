@@ -104,11 +104,9 @@ export function parseICalFeed(icalData: string): ParsedICalEvent[] {
         cur.description = extractDateValue(line);
       } else if (upper.startsWith('DTSTART')) {
         const v = extractDateValue(line);
-        cur._dtstartRaw = line;
         cur.start_date = parseICalDate(v);
       } else if (upper.startsWith('DTEND')) {
         const v = extractDateValue(line);
-        cur._dtendRaw = line;
         cur.end_date = parseICalDate(v);
       }
     }
