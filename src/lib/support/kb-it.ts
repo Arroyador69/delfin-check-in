@@ -9,6 +9,14 @@ export const KB_IT: SupportKB = {
     'Rispondi sempre in italiano, con istruzioni brevi passo per passo (max 8–12 righe). Se manca contesto, chiedi solo in quale schermata si trova l’utente e cosa vuole ottenere.',
   faqs: [
     {
+      q: 'A cosa serve la pagina “Registro di Conformità” (audit)?',
+      a:
+        'Il registro di conformità è una timeline tecnica di azioni e validazioni del sistema. ' +
+        'Serve per capire cosa è successo e quando (es. creazione/validazione, export AEAT/PV e tentativi di reinvio della coda). ' +
+        'Per diagnosticare, filtra per Azione (es. VALIDATE_OK o ERROR), Tipo (es. AEAT_EXPORT/PV_EXPORT) e intervallo di date. ' +
+        'La colonna “Meta” aggiunge contesto e l’“Hash” identifica il payload senza esporre dati sensibili.',
+    },
+    {
       q: 'Che cos’è Delfín Check-in?',
       a: 'Delfín Check-in ti permette di registrare gli ospiti e gestire l’invio obbligatorio al Ministero dell’Interno spagnolo (MIR), oltre a organizzare proprietà/camere e vedere informazioni utili (festività, eventi locali, analitiche).',
     },

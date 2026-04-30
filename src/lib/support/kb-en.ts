@@ -9,6 +9,14 @@ export const KB_EN: SupportKB = {
     'Always answer in clear English, with short step-by-step instructions (max 8–12 lines). If context is missing, ask just for the current screen and the goal.',
   faqs: [
     {
+      q: 'What is the Compliance Log (Audit) page for?',
+      a:
+        'The Compliance Log is a technical timeline of system actions and validations. ' +
+        'It helps you understand what happened and when (e.g., guest record submissions, validations, exports like AEAT/PV, and queue retries). ' +
+        'Use it to troubleshoot: filter by Action (e.g., VALIDATE_OK or ERROR), Type (e.g., AEAT_EXPORT/PV_EXPORT) and date range. ' +
+        '“Meta” adds context and the “Hash” identifies the payload without exposing sensitive data.',
+    },
+    {
       q: 'What is Delfín Check-in and what is it for?',
       a: 'Delfín Check-in lets you register guests and comply with MIR reporting in Spain, while organising properties/rooms and seeing useful information (holidays, local events, analytics).',
     },

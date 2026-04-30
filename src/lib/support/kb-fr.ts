@@ -9,6 +9,14 @@ export const KB_FR: SupportKB = {
     'Réponds toujours en français, avec des étapes courtes (max 8–12 lignes). Si le contexte manque, demande simplement sur quel écran se trouve l’utilisateur et ce qu’il veut faire.',
   faqs: [
     {
+      q: 'À quoi sert la page “Journal de conformité” (audit) ?',
+      a:
+        'Le journal de conformité est une chronologie technique des actions et validations du système. ' +
+        'Il sert à comprendre ce qui s’est passé et quand (ex. créations, validations, exports AEAT/PV, et tentatives de ré-envoi de la file). ' +
+        'Pour diagnostiquer, filtre par Action (ex. VALIDATE_OK ou ERROR), Type (ex. AEAT_EXPORT/PV_EXPORT) et période. ' +
+        'La colonne “Meta” donne du contexte et le “Hash” identifie le payload sans exposer de données sensibles.',
+    },
+    {
       q: 'Qu’est-ce que Delfín Check-in ?',
       a: 'Delfín Check-in permet d’enregistrer les voyageurs et de gérer l’envoi obligatoire au Ministère de l’Intérieur espagnol (MIR), tout en organisant les propriétés/chambres et en affichant des informations utiles (jours fériés, événements locaux, analytique).',
     },

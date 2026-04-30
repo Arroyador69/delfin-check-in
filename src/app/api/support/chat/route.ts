@@ -84,6 +84,41 @@ function getFaqContext(question: string, kb = getKBForLocale('es')): string {
   return ctxLines.join('\n\n');
 }
 
+function getUpgradeNudge(locale: string, upgradePath: string): string {
+  const base = upgradePath || `/${locale}/plans`;
+  if (locale === 'en') {
+    return `If you are not on Pro and you need higher limits or advanced features, consider upgrading to Pro (max plan): ${base}`;
+  }
+  if (locale === 'fr') {
+    return `Si tu n’es pas en Pro et que tu as besoin de limites plus élevées ou de fonctionnalités avancées, pense à passer au plan Pro (max) : ${base}`;
+  }
+  if (locale === 'it') {
+    return `Se non sei su Pro e ti servono limiti più alti o funzionalità avanzate, valuta l’upgrade al piano Pro (massimo): ${base}`;
+  }
+  if (locale === 'pt') {
+    return `Se não estás no Pro e precisas de limites mais altos ou funcionalidades avançadas, considera fazer upgrade para Pro (plano máximo): ${base}`;
+  }
+  // es + default
+  return `Si no estás en Pro y necesitas límites más altos o funcionalidades avanzadas, te recomiendo mejorar al plan Pro (máximo): ${base}`;
+}
+
+function shouldRecommendUpgrade(message: string): boolean {
+  const m = normalizeQuestion(message);
+  return (
+    m.includes('plan') ||
+    m.includes('precio') ||
+    m.includes('coste') ||
+    m.includes('limite') ||
+    m.includes('límite') ||
+    m.includes('upgrade') ||
+    m.includes('pro') ||
+    m.includes('standard') ||
+    m.includes('check-in') ||
+    m.includes('checkin') ||
+    m.includes('free')
+  );
+}
+
 export async function POST(req: NextRequest) {
   try {
     if (!openai) {
@@ -185,9 +220,13 @@ export async function POST(req: NextRequest) {
     const kb = getKBForLocale(pathLocale);
     const faqContext = getFaqContext(message, kb);
     const model = process.env.OPENAI_SUPPORT_MODEL || 'gpt-4o-mini';
+    const upgradePath = `/${pathLocale}/plans`;
 
     const systemPrompt =
       `${kb.intro}\n\n` +
+      `Contexto:\n` +
+      `- Plan del usuario: ${planType}\n` +
+      `- Pro es el plan máximo.\n` +
       `Style / Estilo:\n` +
       `- Máximo 8-12 líneas.\n` +
       `- Usa pasos numerados claros.\n` +
@@ -195,7 +234,11 @@ export async function POST(req: NextRequest) {
       `Prohibiciones:\n` +
       `- No menciones código, ficheros ni rutas internas.\n` +
       `- No inventes datos.\n` +
-      `- No pidas datos personales del huésped.\n`;
+      `- No pidas datos personales del huésped.\n` +
+      `- No menciones pantallas o herramientas internas de superadmin.\n` +
+      (planType !== 'pro'
+        ? `Regla de planes:\n- Si el usuario pregunta por planes, límites o funcionalidades avanzadas, sugiere al final mejorar a Pro (máximo) con el enlace: ${upgradePath}\n`
+        : '');
 
     const userContent =
       `Pregunta del usuario:\n${message}\n\n` +
@@ -212,12 +255,16 @@ export async function POST(req: NextRequest) {
       ],
     });
 
-    const text = completion.choices?.[0]?.message?.content?.trim() || '';
+    let text = completion.choices?.[0]?.message?.content?.trim() || '';
     if (!text) {
       return NextResponse.json(
         { success: false, error: 'No se pudo generar respuesta.' },
         { status: 502 }
       );
+    }
+
+    if (planType !== 'pro' && shouldRecommendUpgrade(message) && !text.toLowerCase().includes('pro (')) {
+      text = `${text}\n\n${getUpgradeNudge(pathLocale, upgradePath)}`;
     }
 
     responseCache.set(cacheKey, { text, createdAt: Date.now() });

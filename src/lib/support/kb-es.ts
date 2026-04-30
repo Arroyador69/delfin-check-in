@@ -9,6 +9,14 @@ export const KB_ES: SupportKB = {
     'Responde en español, con pasos cortos (máx. 8-12 líneas) y, si falta contexto, pide el mínimo: pantalla actual y objetivo.',
   faqs: [
     {
+      q: '¿Para qué sirve la Bitácora de Cumplimiento (Auditoría)?',
+      a:
+        'La Bitácora de Cumplimiento es un registro técnico de acciones y validaciones del sistema. ' +
+        'Sirve para saber “qué pasó” y cuándo: por ejemplo, creación de partes, validaciones, exportaciones (AEAT/PV) y reintentos de cola. ' +
+        'Úsala para diagnosticar incidencias: filtra por Acción (p.ej. VALIDATE_OK o ERROR), Tipo (p.ej. AEAT_EXPORT/PV_EXPORT) y fechas. ' +
+        'La columna “Meta” añade contexto (etapa/resultado) y el “Hash” identifica el payload sin mostrar datos sensibles.',
+    },
+    {
       q: '¿Qué es Delfín Check-in y para qué sirve?',
       a: 'Delfín Check-in te permite registrar huéspedes y gestionar el cumplimiento de envío al Ministerio del Interior (MIR), además de organizar propiedades/habitaciones y ver información útil (festivos/eventos/analítica).',
     },
