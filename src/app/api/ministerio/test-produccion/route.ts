@@ -47,6 +47,31 @@ export async function POST(req: NextRequest) {
 
     const needsDbFallback = (!usuario || !contraseña || !codigoArrendador) && Boolean(tenantId);
     if (needsDbFallback && tenantId) {
+      // Primero: modelo multi (mir_credenciales) si existe.
+      try {
+        const { ensureMirMultiSchema } = await import('@/lib/mir-multi');
+        await ensureMirMultiSchema();
+        const multi = await sql`
+          SELECT usuario, contraseña, codigo_arrendador, base_url, activo
+          FROM mir_credenciales
+          WHERE tenant_id = ${tenantId}::uuid
+            AND activo = true
+          ORDER BY created_at ASC, id ASC
+          LIMIT 1
+        `;
+        if (multi.rows.length > 0) {
+          const row = multi.rows[0] as any;
+          source = 'db';
+          if (!usuario) usuario = String(row.usuario || '').trim();
+          if (!contraseña) contraseña = String(row.contraseña || '');
+          if (!codigoArrendador) codigoArrendador = String(row.codigo_arrendador || '').trim();
+          if (row.base_url) baseUrl = String(row.base_url);
+        }
+      } catch (e) {
+        console.warn('⚠️ test-produccion: no se pudo leer mir_credenciales, usando legacy:', e);
+      }
+
+      // Fallback legacy (mir_configuraciones) para compatibilidad.
       const r = await sql`
         SELECT usuario, contraseña, codigo_arrendador, base_url, aplicacion, simulacion, activo
         FROM mir_configuraciones

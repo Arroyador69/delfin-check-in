@@ -129,6 +129,7 @@ export default function MirSettingsPage() {
   const [savingCredEdit, setSavingCredEdit] = useState(false);
   const [expandedCredId, setExpandedCredId] = useState<number | null>(null);
   const [deletingCred, setDeletingCred] = useState(false);
+  const [testingConnection, setTestingConnection] = useState(false);
 
   useEffect(() => {
     setNavLocale(getCurrentLocale());
@@ -487,6 +488,29 @@ export default function MirSettingsPage() {
     }
   };
 
+  const probarConexionGuardada = async () => {
+    setTestingConnection(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      const response = await fetch('/api/ministerio/test-produccion', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data?.success) {
+        const msg = String(data?.resultado?.descripcion || data?.interpretacion?.mensaje || data?.message || data?.error || '');
+        throw new Error(msg || 'Error en la prueba de conexión');
+      }
+      setSuccess('✅ Conexión con MIR exitosa');
+    } catch (e: any) {
+      setError(`❌ ${e?.message || 'Error de conexión'}`);
+    } finally {
+      setTestingConnection(false);
+    }
+  };
+
   const getConfigStatus = () => {
     const effectiveUsuario = editingUsuario ? Boolean(config.usuario) : serverHasUsuario;
     const effectiveContraseña = editingContraseña ? Boolean(config.contraseña) : serverHasContraseña;
@@ -675,6 +699,9 @@ export default function MirSettingsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            <p className="text-xs text-gray-500">
+              Los cambios se guardan automáticamente al crear/editar credenciales o asignarlas a cada unidad.
+            </p>
             {legacyOnly && (
               <Alert>
                 <Info className="h-4 w-4" />
@@ -692,6 +719,12 @@ export default function MirSettingsPage() {
             <p className="text-xs text-gray-600">
               Regla: un apartamento debe tener su propia credencial MIR. Las habitaciones pueden compartirla.
             </p>
+
+            <div className="flex flex-wrap gap-2">
+              <Button type="button" variant="outline" onClick={probarConexionGuardada} disabled={testingConnection}>
+                {testingConnection ? 'Probando...' : 'Probar conexión'}
+              </Button>
+            </div>
 
             {!canCreateMoreCreds && maxCredenciales > 0 && (
               <Alert variant="destructive">

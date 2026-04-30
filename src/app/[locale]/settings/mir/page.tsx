@@ -123,6 +123,7 @@ export default function MirSettingsPage() {
   const [savingCredEdit, setSavingCredEdit] = useState(false);
   const [expandedCredId, setExpandedCredId] = useState<number | null>(null);
   const [deletingCred, setDeletingCred] = useState(false);
+  const [testingConnection, setTestingConnection] = useState(false);
 
   // Cargar configuración actual
   useEffect(() => {
@@ -506,6 +507,32 @@ export default function MirSettingsPage() {
     }
   };
 
+  const probarConexionGuardada = async () => {
+    setTestingConnection(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      const response = await fetch('/api/ministerio/test-produccion', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        // Enviamos un body vacío para que el backend resuelva credenciales desde BD (mir_credenciales/legacy)
+        body: JSON.stringify({}),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data?.success) {
+        const msg =
+          String(data?.resultado?.descripcion || data?.interpretacion?.mensaje || data?.message || data?.error || '') ||
+          t('connectionTestError', { message: '' });
+        throw new Error(msg);
+      }
+      setSuccess(`✅ ${t('connectionSuccess')}`);
+    } catch (e: any) {
+      setError(`❌ ${e?.message || t('connectionError')}`);
+    } finally {
+      setTestingConnection(false);
+    }
+  };
+
   const getConfigStatus = () => {
     const effectiveUsuario = editingUsuario ? Boolean(config.usuario) : serverHasUsuario;
     const effectiveContraseña = editingContraseña ? Boolean(config.contraseña) : serverHasContraseña;
@@ -627,6 +654,9 @@ export default function MirSettingsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          <p className="text-xs text-gray-500">
+            Los cambios se guardan automáticamente al crear/editar credenciales o asignarlas a cada unidad.
+          </p>
           {legacyOnly && (
             <Alert>
               <Info className="h-4 w-4" />
@@ -644,6 +674,12 @@ export default function MirSettingsPage() {
             {t('multi.rule')}
           </p>
           <p className="text-xs text-gray-500 mt-2">{t('multi.mirRoutingNote')}</p>
+
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" variant="outline" onClick={probarConexionGuardada} disabled={testingConnection}>
+              {testingConnection ? t('testing') : t('testConnection')}
+            </Button>
+          </div>
 
           {!canCreateMoreCreds && maxAllowed > 0 && (
             <Alert variant="destructive">
@@ -855,6 +891,8 @@ export default function MirSettingsPage() {
                         try {
                           await guardarUnitRow(u.room_id, { unit_type });
                           setUnits((prev) => prev.map((x) => (x.room_id === u.room_id ? { ...x, unit_type } : x)));
+                          setSuccess('✅ Guardado');
+                          setTimeout(() => setSuccess(null), 1500);
                         } catch (err: any) {
                           setError(`❌ ${err?.message || t('multi.saveUnitFail')}`);
                         }
@@ -873,6 +911,8 @@ export default function MirSettingsPage() {
                         try {
                           await guardarUnitRow(u.room_id, { credencial_id });
                           setUnits((prev) => prev.map((x) => (x.room_id === u.room_id ? { ...x, credencial_id } : x)));
+                          setSuccess('✅ Guardado');
+                          setTimeout(() => setSuccess(null), 1500);
                         } catch (err: any) {
                           setError(`❌ ${err?.message || t('multi.saveUnitFail')}`);
                         }
