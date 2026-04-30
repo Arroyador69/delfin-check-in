@@ -84,22 +84,26 @@ function getFaqContext(question: string, kb = getKBForLocale('es')): string {
   return ctxLines.join('\n\n');
 }
 
-function getUpgradeNudge(locale: string, upgradePath: string): string {
-  const base = upgradePath || `/${locale}/plans`;
+function getUpgradeNudge(locale: string, upgradeUrl: string, planType?: string | null): string {
+  // Mensaje suave y solo si hay enlace real.
+  if (!upgradeUrl) return '';
+  const lowerPlan = String(planType || '').toLowerCase();
+  const proName = 'Pro';
+
   if (locale === 'en') {
-    return `If you are not on Pro and you need higher limits or advanced features, consider upgrading to Pro (max plan): ${base}`;
+    return `If you want to unlock more limits and advanced features, you can review plans (including ${proName}): ${upgradeUrl}`;
   }
   if (locale === 'fr') {
-    return `Si tu n’es pas en Pro et que tu as besoin de limites plus élevées ou de fonctionnalités avancées, pense à passer au plan Pro (max) : ${base}`;
+    return `Si tu veux débloquer plus de limites et des fonctionnalités avancées, tu peux consulter les offres (dont ${proName}) : ${upgradeUrl}`;
   }
   if (locale === 'it') {
-    return `Se non sei su Pro e ti servono limiti più alti o funzionalità avanzate, valuta l’upgrade al piano Pro (massimo): ${base}`;
+    return `Se vuoi sbloccare più limiti e funzionalità avanzate, puoi vedere i piani (incluso ${proName}): ${upgradeUrl}`;
   }
   if (locale === 'pt') {
-    return `Se não estás no Pro e precisas de limites mais altos ou funcionalidades avançadas, considera fazer upgrade para Pro (plano máximo): ${base}`;
+    return `Se quiser desbloquear mais limites e funcionalidades avançadas, podes ver os planos (incluindo ${proName}): ${upgradeUrl}`;
   }
   // es + default
-  return `Si no estás en Pro y necesitas límites más altos o funcionalidades avanzadas, te recomiendo mejorar al plan Pro (máximo): ${base}`;
+  return `Si quieres desbloquear más límites y funcionalidades avanzadas, puedes revisar los planes (incluido ${proName}): ${upgradeUrl}`;
 }
 
 function shouldRecommendUpgrade(message: string): boolean {
@@ -220,7 +224,10 @@ export async function POST(req: NextRequest) {
     const kb = getKBForLocale(pathLocale);
     const faqContext = getFaqContext(message, kb);
     const model = process.env.OPENAI_SUPPORT_MODEL || 'gpt-4o-mini';
-    const upgradePath = `/${pathLocale}/plans`;
+    const host = req.headers.get('x-forwarded-host') || req.headers.get('host') || '';
+    const proto = req.headers.get('x-forwarded-proto') || 'https';
+    const origin = host ? `${proto}://${host}` : '';
+    const upgradeUrl = origin ? `${origin}/${pathLocale}/plans` : `/${pathLocale}/plans`;
 
     const systemPrompt =
       `${kb.intro}\n\n` +
@@ -237,7 +244,7 @@ export async function POST(req: NextRequest) {
       `- No pidas datos personales del huésped.\n` +
       `- No menciones pantallas o herramientas internas de superadmin.\n` +
       (planType !== 'pro'
-        ? `Regla de planes:\n- Si el usuario pregunta por planes, límites o funcionalidades avanzadas, sugiere al final mejorar a Pro (máximo) con el enlace: ${upgradePath}\n`
+        ? `Regla de planes (suave):\n- Solo si el usuario pregunta por planes/límites o parece necesitar más capacidad, puedes sugerir de forma calmada revisar planes (incluido Pro). Enlace: ${upgradeUrl}\n`
         : '');
 
     const userContent =
@@ -263,8 +270,16 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (planType !== 'pro' && shouldRecommendUpgrade(message) && !text.toLowerCase().includes('pro (')) {
-      text = `${text}\n\n${getUpgradeNudge(pathLocale, upgradePath)}`;
+    const nearUsageLimit = Boolean(usage && usage.remainingMonthly > 0 && usage.remainingMonthly <= 30);
+    if (planType !== 'pro' && (shouldRecommendUpgrade(message) || nearUsageLimit)) {
+      const nudge = getUpgradeNudge(pathLocale, upgradeUrl, planType);
+      if (nudge) {
+        // Evitar sonar agresivo o repetitivo.
+        const alreadyMentionsPlans = /\/plans\b|planes|plan|pricing|precios/i.test(text);
+        if (!alreadyMentionsPlans) {
+          text = `${text}\n\n${nudge}`;
+        }
+      }
     }
 
     responseCache.set(cacheKey, { text, createdAt: Date.now() });
