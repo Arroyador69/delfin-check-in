@@ -1197,7 +1197,28 @@ export default function MirSettingsPage() {
         </CardContent>
       </Card>
 
-        {/* El guardado y prueba de conexión se realizan desde la gestión de credenciales multi por unidad. */}
+        {/* Acciones (abajo del todo, como antes) */}
+        <div className="flex flex-col sm:flex-row gap-3">
+          <Button
+            type="button"
+            onClick={crearCredencial}
+            disabled={creatingCred || !canCreateMoreCreds}
+            className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold px-8 py-4 rounded-xl transition-all duration-300 hover:scale-[1.01] hover:shadow-lg"
+          >
+            <Save className="h-5 w-5 mr-2" />
+            {creatingCred ? 'Guardando…' : 'Guardar credencial'}
+          </Button>
+
+          <Button
+            type="button"
+            variant="outline"
+            onClick={probarConexionGuardada}
+            disabled={testingConnection}
+            className="flex-1 border-2 border-blue-600 text-blue-600 hover:bg-blue-50 font-semibold px-8 py-4 rounded-xl transition-all duration-300 hover:scale-[1.01] hover:shadow-lg"
+          >
+            {testingConnection ? 'Probando…' : 'Probar conexión'}
+          </Button>
+        </div>
       </div>
 
     </div>
