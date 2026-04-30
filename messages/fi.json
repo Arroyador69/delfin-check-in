@@ -333,7 +333,8 @@
       "noReservations": "Ei varauksia",
       "noCurrentGuests": "Ei nykyisiä vieraita",
       "people": "{count} henkilöä",
-      "room": "Huone {number}",
+      "room": "{room}",
+      "roomUnassigned": "Ei määritetty",
       "checkIn": "🟢 Sisäänkirjautuminen:",
       "checkOut": "🔴 Uloskirjautuminen:"
     },
@@ -342,7 +343,8 @@
       "noReservations": "Ei varauksia",
       "noUpcomingReservations": "Ei tulevia varauksia",
       "people": "{count} henkilöä",
-      "room": "Huone {number}",
+      "room": "{room}",
+      "roomUnassigned": "Ei määritetty",
       "checkInTime": "🚪 Sisäänkirjautuminen: klo 16.00",
       "checkOutLabel": "🔴 Uloskirjautuminen:"
     }

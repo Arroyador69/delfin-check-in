@@ -5,7 +5,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "npm run prepare && next build",
+    "build": "npm run prepare && NODE_OPTIONS=--max-old-space-size=4096 next build",
     "start": "next start",
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",

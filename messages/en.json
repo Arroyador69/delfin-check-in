@@ -333,7 +333,8 @@
       "noReservations": "No reservations",
       "noCurrentGuests": "No current guests",
       "people": "{count} people",
-      "room": "Room {number}",
+      "room": "{room}",
+      "roomUnassigned": "Unassigned",
       "checkIn": "🟢 Check-in:",
       "checkOut": "🔴 Check-out:"
     },
@@ -342,7 +343,8 @@
       "noReservations": "No reservations",
       "noUpcomingReservations": "No upcoming reservations",
       "people": "{count} people",
-      "room": "Room {number}",
+      "room": "{room}",
+      "roomUnassigned": "Unassigned",
       "checkInTime": "🚪 Check-in: 4:00 PM",
       "checkOutLabel": "🔴 Check-out:"
     }

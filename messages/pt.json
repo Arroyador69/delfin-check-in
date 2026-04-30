@@ -333,7 +333,8 @@
       "noReservations": "Sem reservas",
       "noCurrentGuests": "Sem hóspedes atuais",
       "people": "{count} pessoas",
-      "room": "Quarto {number}",
+      "room": "{room}",
+      "roomUnassigned": "Sem atribuição",
       "checkIn": "🟢 Check-in:",
       "checkOut": "🔴 Check-out:"
     },
@@ -342,7 +343,8 @@
       "noReservations": "Sem reservas",
       "noUpcomingReservations": "Sem reservas próximas",
       "people": "{count} pessoas",
-      "room": "Quarto {number}",
+      "room": "{room}",
+      "roomUnassigned": "Sem atribuição",
       "checkInTime": "🚪 Check-in: 16:00",
       "checkOutLabel": "🔴 Check-out:"
     }

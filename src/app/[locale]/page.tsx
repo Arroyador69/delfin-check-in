@@ -1,12 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link } from '@/i18n/navigation';
 import NextLink from 'next/link';
 import { useRouter } from 'next/navigation';
 import AdminLayout from '@/components/AdminLayout';
 import { ArrowUpCircle } from 'lucide-react';
-import { getRoomNumber } from '@/lib/db';
 import UnitLimitWarning from '@/components/UnitLimitWarning';
 import { useTranslations, useLocale } from 'next-intl';
 import {
@@ -78,14 +77,21 @@ export default function HomePage() {
         setTenant(null);
       }
       
-      // Obtener habitaciones
+      // Obtener habitaciones (misma fuente que la página de Reservas)
       try {
-        const roomsResponse = await fetch('/api/rooms');
-        if (roomsResponse.ok) {
-          const roomsData = await roomsResponse.json();
-          setRooms(roomsData);
+        const roomsResponse = await fetch('/api/tenant/rooms');
+        const roomsJson = await roomsResponse.json().catch(() => ({}));
+        if (roomsResponse.ok && roomsJson?.success && Array.isArray(roomsJson?.rooms)) {
+          setRooms(roomsJson.rooms);
         } else {
-          setRooms([]);
+          // Fallback legacy (por compatibilidad)
+          const legacy = await fetch('/api/rooms');
+          if (legacy.ok) {
+            const legacyJson = await legacy.json().catch(() => []);
+            setRooms(Array.isArray(legacyJson) ? legacyJson : []);
+          } else {
+            setRooms([]);
+          }
         }
       } catch (error) {
         console.warn('Error obteniendo habitaciones:', error);
@@ -133,6 +139,26 @@ export default function HomePage() {
   };
 
   const filteredReservations = getFilteredReservations();
+
+  const roomNameById = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const r of rooms) {
+      const id = r?.id != null ? String(r.id) : '';
+      const name = r?.name != null ? String(r.name) : '';
+      if (id && name) m.set(id, name);
+    }
+    return m;
+  }, [rooms]);
+
+  const getRoomLabel = (reservation: any): string => {
+    const roomId = reservation?.room_id != null ? String(reservation.room_id) : '';
+    const byMap = roomId ? roomNameById.get(roomId) : undefined;
+    if (byMap) return byMap;
+    if (reservation?.needs_review) return t('currentReservations.roomUnassigned');
+    // Último recurso: evitar heurísticas que sacan números “random” de UUIDs.
+    if (!roomId) return t('currentReservations.roomUnassigned');
+    return roomId.length > 32 ? `${roomId.slice(0, 8)}…` : roomId;
+  };
 
   const handleLogout = async () => {
     try {
@@ -916,9 +942,7 @@ export default function HomePage() {
                             })}
                           </span>
                           <span>
-                            🏨 {t('currentReservations.room', {
-                              number: getRoomNumber(reservation.room_id)
-                            })}
+                            🏨 {t('currentReservations.room', { room: getRoomLabel(reservation) })}
                           </span>
                         </div>
                         <p className="text-xs text-gray-500 mt-1">
@@ -1003,9 +1027,7 @@ export default function HomePage() {
                             })}
                           </span>
                           <span>
-                            🏨 {t('upcomingReservations.room', {
-                              number: getRoomNumber(reservation.room_id)
-                            })}
+                            🏨 {t('upcomingReservations.room', { room: getRoomLabel(reservation) })}
                           </span>
                           <span>{t('upcomingReservations.checkInTime')}</span>
                         </div>

@@ -9,12 +9,12 @@ export async function GET(req: NextRequest) {
     if (!tenantId || tenantId === 'default') {
       console.log('⚠️ No hay tenant ID válido, devolviendo habitaciones por defecto');
       const defaultRooms = [
-        { id: 1, name: 'Habitación 1', value: 'Habitación 1' },
-        { id: 2, name: 'Habitación 2', value: 'Habitación 2' },
-        { id: 3, name: 'Habitación 3', value: 'Habitación 3' },
-        { id: 4, name: 'Habitación 4', value: 'Habitación 4' },
-        { id: 5, name: 'Habitación 5', value: 'Habitación 5' },
-        { id: 6, name: 'Habitación 6', value: 'Habitación 6' }
+        { id: '1', name: 'Habitación 1', value: 'Habitación 1' },
+        { id: '2', name: 'Habitación 2', value: 'Habitación 2' },
+        { id: '3', name: 'Habitación 3', value: 'Habitación 3' },
+        { id: '4', name: 'Habitación 4', value: 'Habitación 4' },
+        { id: '5', name: 'Habitación 5', value: 'Habitación 5' },
+        { id: '6', name: 'Habitación 6', value: 'Habitación 6' }
       ];
       return NextResponse.json(defaultRooms);
     }
@@ -28,10 +28,11 @@ export async function GET(req: NextRequest) {
       ORDER BY id ASC
     `;
 
-    const rooms = result.rows.map(row => ({
-      id: parseInt(row.id),
+    const rooms = result.rows.map((row: any) => ({
+      // Siempre string: evita parseInt sobre UUID (p. ej. "550e8400-…" → 550).
+      id: String(row.id),
       name: row.name,
-      value: row.name
+      value: row.name,
     }));
 
     return NextResponse.json(rooms);
@@ -41,12 +42,12 @@ export async function GET(req: NextRequest) {
     
     // Fallback a habitaciones por defecto si hay error
     const defaultRooms = [
-      { id: 1, name: 'Habitación 1', value: 'Habitación 1' },
-      { id: 2, name: 'Habitación 2', value: 'Habitación 2' },
-      { id: 3, name: 'Habitación 3', value: 'Habitación 3' },
-      { id: 4, name: 'Habitación 4', value: 'Habitación 4' },
-      { id: 5, name: 'Habitación 5', value: 'Habitación 5' },
-      { id: 6, name: 'Habitación 6', value: 'Habitación 6' }
+      { id: '1', name: 'Habitación 1', value: 'Habitación 1' },
+      { id: '2', name: 'Habitación 2', value: 'Habitación 2' },
+      { id: '3', name: 'Habitación 3', value: 'Habitación 3' },
+      { id: '4', name: 'Habitación 4', value: 'Habitación 4' },
+      { id: '5', name: 'Habitación 5', value: 'Habitación 5' },
+      { id: '6', name: 'Habitación 6', value: 'Habitación 6' }
     ];
     
     return NextResponse.json(defaultRooms);

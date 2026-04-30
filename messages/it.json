@@ -333,7 +333,8 @@
       "noReservations": "Nessuna prenotazione",
       "noCurrentGuests": "Nessun ospite corrente",
       "people": "{count} persone",
-      "room": "Camera {number}",
+      "room": "{room}",
+      "roomUnassigned": "Non assegnata",
       "checkIn": "🟢 Check-in:",
       "checkOut": "🔴 Check-out:"
     },
@@ -342,7 +343,8 @@
       "noReservations": "Nessuna prenotazione",
       "noUpcomingReservations": "Nessuna prenotazione imminente",
       "people": "{count} persone",
-      "room": "Camera {number}",
+      "room": "{room}",
+      "roomUnassigned": "Non assegnata",
       "checkInTime": "🚪 Check-in: 16:00",
       "checkOutLabel": "🔴 Check-out:"
     }

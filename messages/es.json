@@ -334,7 +334,8 @@
       "noReservations": "No hay reservas",
       "noCurrentGuests": "No hay huéspedes actuales",
       "people": "{count} personas",
-      "room": "Hab. {number}",
+      "room": "{room}",
+      "roomUnassigned": "Sin asignar",
       "checkIn": "🟢 Check-in:",
       "checkOut": "🔴 Check-out:"
     },
@@ -343,7 +344,8 @@
       "noReservations": "No hay reservas",
       "noUpcomingReservations": "No hay reservas próximas",
       "people": "{count} personas",
-      "room": "Hab. {number}",
+      "room": "{room}",
+      "roomUnassigned": "Sin asignar",
       "checkInTime": "🚪 Check-in: 16:00",
       "checkOutLabel": "🔴 Check-out:"
     }
