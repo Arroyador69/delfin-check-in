@@ -3080,7 +3080,7 @@
       "guestsPlural": "hóspedes"
     },
     "settings": {
-      "mirSubtitle": "Configuração básica do envio automático para o MIR.",
+      "mirSubtitle": "Credenciais do serviço web MIR e dados do estabelecimento.",
       "languageTitle": "Idioma",
       "languageSubtitle": "Interface da app (não altera emails a hóspedes nem o microsite).",
       "languageFollowDevice": "Automático (idioma do telemóvel)",
@@ -3128,6 +3128,10 @@
       "countryInvalid": "Código inválido: use 2 letras (A-Z).",
       "mirEnabledLabel": "MIR ativo",
       "mirAutoSubmitLabel": "Envio automático",
+      "mirAutoSubmitRequiresPaidPlanTitle": "Envio automático para o MIR",
+      "mirAutoSubmitRequiresPaidPlanBody": "No plano Básico gratuito o sistema não envia sozinho as declarações ao Ministério: descarregue o XML em Registos de viajantes e carregue-o no portal MIR. Os planos Check-in, Standard ou Pro (com módulo legal ativo) permitem envio automático.",
+      "mirWsSavedLimitedPlanTitle": "Credenciais guardadas",
+      "mirWsSavedLimitedPlanBody": "As credenciais MIR estão guardadas, mas com o plano atual as declarações não são enviadas automaticamente ao Ministério. Use a descarga em XML ou melhore o plano para ativar o envio automático.",
       "mirTestModeLabel": "Modo de teste",
       "mirDenominacionLabel": "Denominação *",
       "mirDenominacionPh": "Nome do alojamento",

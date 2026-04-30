@@ -3099,7 +3099,7 @@
       "guestsPlural": "vieraita"
     },
     "settings": {
-      "mirSubtitle": "Peruskonfiguraatio automaattista MIR-lähetystä varten.",
+      "mirSubtitle": "MIR-verkkopalvelun tunnukset ja majoituspaikan tiedot.",
       "languageTitle": "Kieli",
       "languageSubtitle": "Sovelluksen käyttöliittymä (ei muuta vierassähköpostiviestejä tai julkista varaussivua).",
       "languageFollowDevice": "Automaattinen (puhelimen kieli)",
@@ -3147,6 +3147,10 @@
       "countryInvalid": "Virheellinen koodi: käytä 2 kirjainta (A-Z).",
       "mirEnabledLabel": "MIR käytössä",
       "mirAutoSubmitLabel": "Automaattinen lähetys",
+      "mirAutoSubmitRequiresPaidPlanTitle": "Automaattinen MIR-lähetys",
+      "mirAutoSubmitRequiresPaidPlanBody": "Ilmaisella Perus-tilauksella järjestelmä ei lähetä ilmoituksia automaattisesti ministeriöön: lataa XML Matkustajarekisteröinneistä ja vie se MIR-portaaliin. Check-in-, Standard- tai Pro-tilaukset (laillinen moduuli käytössä) voivat ottaa automaattisen lähetyksen käyttöön.",
+      "mirWsSavedLimitedPlanTitle": "Tunnukset tallennettu",
+      "mirWsSavedLimitedPlanBody": "MIR-tunnuksesi on tallennettu, mutta nykyisellä tilauksella ilmoituksia ei lähetetä automaattisesti ministeriöön. Käytä XML-latausta tai päivitä tilaus ottaaksesi automaattisen lähetyksen käyttöön.",
       "mirTestModeLabel": "Testitila",
       "mirDenominacionLabel": "Yrityksen nimi *",
       "mirDenominacionPh": "Majoituspaikan nimi",

@@ -3081,7 +3081,7 @@
       "guestsPlural": "hôtes"
     },
     "settings": {
-      "mirSubtitle": "Configuration de base pour l’envoi automatique au MIR.",
+      "mirSubtitle": "Identifiants du service web MIR et données de l’établissement.",
       "languageTitle": "Langue",
       "languageSubtitle": "Interface de l’app (n’influe pas sur les emails aux clients ni le microsite).",
       "languageFollowDevice": "Automatique (langue du téléphone)",
@@ -3129,6 +3129,10 @@
       "countryInvalid": "Code invalide : utilisez 2 lettres (A-Z).",
       "mirEnabledLabel": "MIR activé",
       "mirAutoSubmitLabel": "Envoi automatique",
+      "mirAutoSubmitRequiresPaidPlanTitle": "Envoi automatique au MIR",
+      "mirAutoSubmitRequiresPaidPlanBody": "Avec l’offre Basique gratuite, le système n’envoie pas seul les déclarations au ministère : téléchargez le XML depuis Enregistrements des voyageurs et déposez-le sur le portail MIR. Les offres Check-in, Standard ou Pro (module légal actif) permettent l’envoi automatique.",
+      "mirWsSavedLimitedPlanTitle": "Identifiants enregistrés",
+      "mirWsSavedLimitedPlanBody": "Vos identifiants MIR sont enregistrés, mais avec votre offre actuelle les déclarations ne sont pas envoyées automatiquement au ministère. Utilisez le téléchargement XML ou passez à une offre supérieure pour activer l’envoi automatique.",
       "mirTestModeLabel": "Mode test",
       "mirDenominacionLabel": "Dénomination *",
       "mirDenominacionPh": "Nom de l’hébergement",

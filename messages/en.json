@@ -3100,7 +3100,7 @@
       "guestsPlural": "guests"
     },
     "settings": {
-      "mirSubtitle": "Basic configuration for automatic MIR submission.",
+      "mirSubtitle": "MIR web-service credentials and establishment details.",
       "languageTitle": "Language",
       "languageSubtitle": "App interface (does not change guest emails or the public booking page).",
       "languageFollowDevice": "Automatic (phone language)",
@@ -3148,6 +3148,10 @@
       "countryInvalid": "Invalid code: use 2 letters (A-Z).",
       "mirEnabledLabel": "MIR enabled",
       "mirAutoSubmitLabel": "Auto-submit",
+      "mirAutoSubmitRequiresPaidPlanTitle": "Automatic MIR submission",
+      "mirAutoSubmitRequiresPaidPlanBody": "On the free Basic plan the system does not send traveller reports to the Ministry by itself: download the XML from Guest registrations and upload it in the MIR portal. Check-in, Standard or Pro (with the legal module active) can enable automatic submission.",
+      "mirWsSavedLimitedPlanTitle": "Credentials saved",
+      "mirWsSavedLimitedPlanBody": "Your MIR credentials are saved, but with your current plan reports are not sent automatically to the Ministry. Use XML download or upgrade your plan to enable automatic submission.",
       "mirTestModeLabel": "Test mode",
       "mirDenominacionLabel": "Establishment name *",
       "mirDenominacionPh": "Lodging name",

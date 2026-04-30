@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
+import { canTenantConfigureMirAutoSubmit } from '@/lib/tenant';
 
 /**
  * API para actualizar la configuración MIR del tenant
@@ -41,9 +42,9 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Obtener configuración actual del tenant
+    // Config actual + plan (envío automático solo si módulo legal y no plan básico gratis)
     const tenantResult = await sql`
-      SELECT config FROM tenants WHERE id = ${tenantId}
+      SELECT config, legal_module, plan_type FROM tenants WHERE id = ${tenantId}
     `;
 
     if (tenantResult.rows.length === 0) {
@@ -53,7 +54,17 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const currentConfig = tenantResult.rows[0].config || {};
+    const row = tenantResult.rows[0] as {
+      config: Record<string, unknown> | null;
+      legal_module: boolean | null;
+      plan_type: string | null;
+    };
+    const currentConfig = row.config || {};
+    const autoSubmitAllowed = canTenantConfigureMirAutoSubmit({
+      legal_module: Boolean(row.legal_module),
+      plan_type: row.plan_type,
+    });
+    const autoSubmit = autoSubmitAllowed && Boolean(mir.autoSubmit);
 
     // Actualizar solo la sección MIR de la configuración
     const updatedConfig = {
@@ -63,7 +74,7 @@ export async function POST(req: NextRequest) {
         codigoEstablecimiento: String(mir.codigoEstablecimiento || '').trim(),
         denominacion: String(mir.denominacion || '').trim(),
         direccionCompleta: String(mir.direccionCompleta || '').trim(),
-        autoSubmit: Boolean(mir.autoSubmit),
+        autoSubmit,
         testMode: Boolean(mir.testMode)
       }
     };
@@ -114,9 +125,8 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // Obtener configuración del tenant
     const result = await sql`
-      SELECT config FROM tenants WHERE id = ${tenantId}
+      SELECT config, legal_module, plan_type FROM tenants WHERE id = ${tenantId}
     `;
 
     if (result.rows.length === 0) {
@@ -126,14 +136,24 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const config = result.rows[0].config || {};
-    const mir = config.mir || {
-      enabled: true,
-      codigoEstablecimiento: '',
-      denominacion: '',
-      direccionCompleta: '',
-      autoSubmit: false,
-      testMode: true
+    const row = result.rows[0] as {
+      config: Record<string, unknown> | null;
+      legal_module: boolean | null;
+      plan_type: string | null;
+    };
+    const config = row.config || {};
+    const rawMir = (config.mir || {}) as Record<string, unknown>;
+    const autoSubmitAllowed = canTenantConfigureMirAutoSubmit({
+      legal_module: Boolean(row.legal_module),
+      plan_type: row.plan_type,
+    });
+    const mir = {
+      enabled: rawMir.enabled !== false,
+      codigoEstablecimiento: String(rawMir.codigoEstablecimiento || ''),
+      denominacion: String(rawMir.denominacion || ''),
+      direccionCompleta: String(rawMir.direccionCompleta || ''),
+      autoSubmit: autoSubmitAllowed && Boolean(rawMir.autoSubmit),
+      testMode: rawMir.testMode !== false,
     };
 
     return NextResponse.json({ mir });

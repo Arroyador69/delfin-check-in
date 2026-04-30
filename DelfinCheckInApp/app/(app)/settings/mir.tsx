@@ -21,7 +21,9 @@ import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 
 import { api } from '@/lib/api';
-import { t } from '@/lib/i18n';
+import { getLocale, t } from '@/lib/i18n';
+import { canTenantConfigureMirAutoSubmit } from '@/lib/mir-auto-submit-plan';
+import { openUpgradePlanInBrowser } from '@/lib/upgrade-plan';
 
 type MirSettings = {
   enabled: boolean;
@@ -57,7 +59,7 @@ const emptyMir: MirSettings = {
   codigoEstablecimiento: '',
   denominacion: '',
   direccionCompleta: '',
-  autoSubmit: true,
+  autoSubmit: false,
   testMode: false,
 };
 
@@ -124,6 +126,22 @@ export default function MirSettingsScreen() {
     },
   });
 
+  const { data: tenantMe } = useQuery({
+    queryKey: ['tenant-mir-screen'],
+    queryFn: async () => {
+      const res = await api.get('/api/tenant');
+      return res.data as {
+        success?: boolean;
+        tenant?: { legal_module?: boolean; plan_type?: string };
+      };
+    },
+  });
+
+  const canMirAutoSubmit = useMemo(
+    () => canTenantConfigureMirAutoSubmit(tenantMe?.tenant),
+    [tenantMe?.tenant]
+  );
+
   const { data: credsData, isLoading: credsLoading } = useQuery({
     queryKey: ['mir-credenciales'],
     queryFn: async () => {
@@ -153,10 +171,11 @@ export default function MirSettingsScreen() {
   });
 
   useEffect(() => {
-    if (data?.mir) {
-      setForm((p) => ({ ...p, ...(data.mir as MirSettings) }));
-    }
-  }, [data?.mir]);
+    if (!data?.mir) return;
+    const mir = data.mir as MirSettings;
+    const autoSubmit = canMirAutoSubmit ? Boolean(mir.autoSubmit) : false;
+    setForm((p) => ({ ...p, ...mir, autoSubmit }));
+  }, [data?.mir, canMirAutoSubmit]);
 
   useEffect(() => {
     const c = mirVerifyData?.config;
@@ -218,7 +237,20 @@ export default function MirSettingsScreen() {
       await queryClient.invalidateQueries({ queryKey: ['mir-verificar-config'] });
       await queryClient.invalidateQueries({ queryKey: ['mir-credenciales'] });
       setWsConfig((p) => ({ ...p, contraseña: '' }));
-      Alert.alert(t('common.success'), t('settings.mir.configSaved'));
+      const latestTenant = queryClient.getQueryData(['tenant-mir-screen']) as
+        | { tenant?: { legal_module?: boolean; plan_type?: string } }
+        | undefined;
+      const trow = latestTenant?.tenant;
+      if (trow == null) {
+        Alert.alert(t('common.success'), t('settings.mir.configSaved'));
+      } else if (!canTenantConfigureMirAutoSubmit(trow)) {
+        Alert.alert(
+          t('mobile.settings.mirWsSavedLimitedPlanTitle'),
+          t('mobile.settings.mirWsSavedLimitedPlanBody')
+        );
+      } else {
+        Alert.alert(t('common.success'), t('settings.mir.configSaved'));
+      }
     },
     onError: (e: any) => {
       Alert.alert(t('common.error'), e?.response?.data?.message || e?.response?.data?.error || t('settings.mir.errorSavingConfig'));
@@ -275,10 +307,19 @@ export default function MirSettingsScreen() {
     </View>
   );
 
-  const Toggle = (props: { label: string; value: boolean; onValueChange: (v: boolean) => void }) => (
-    <View style={styles.toggleRow}>
+  const Toggle = (props: {
+    label: string;
+    value: boolean;
+    onValueChange: (v: boolean) => void;
+    disabled?: boolean;
+  }) => (
+    <View style={[styles.toggleRow, props.disabled ? { opacity: 0.45 } : null]}>
       <Text style={styles.toggleLabel}>{props.label}</Text>
-      <Switch value={props.value} onValueChange={props.onValueChange} />
+      <Switch
+        value={props.value}
+        onValueChange={props.onValueChange}
+        disabled={Boolean(props.disabled)}
+      />
     </View>
   );
 
@@ -424,6 +465,19 @@ export default function MirSettingsScreen() {
         </View>
       </View>
 
+      {!canMirAutoSubmit ? (
+        <View style={styles.planNotice}>
+          <Text style={styles.planNoticeTitle}>{t('mobile.settings.mirAutoSubmitRequiresPaidPlanTitle')}</Text>
+          <Text style={styles.planNoticeBody}>{t('mobile.settings.mirAutoSubmitRequiresPaidPlanBody')}</Text>
+          <Pressable
+            style={styles.planNoticeCta}
+            onPress={() => openUpgradePlanInBrowser(getLocale(), { planId: 'checkin' })}
+          >
+            <Text style={styles.planNoticeCtaText}>{t('mobile.settings.upgradePlanButton')}</Text>
+          </Pressable>
+        </View>
+      ) : null}
+
       <View style={styles.card}>
         <Text style={styles.sectionTitleSmall}>{t('settings.mir.credentialsTitle')}</Text>
         <Text style={styles.subtitle}>{t('settings.mir.credentialsDescription')}</Text>
@@ -513,11 +567,13 @@ export default function MirSettingsScreen() {
         {isLoading && !data ? <Text style={styles.loading}>{t('common.loading')}</Text> : null}
 
         <Toggle label={t('mobile.settings.mirEnabledLabel')} value={form.enabled} onValueChange={(v) => setForm((p) => ({ ...p, enabled: v }))} />
-        <Toggle
-          label={t('mobile.settings.mirAutoSubmitLabel')}
-          value={form.autoSubmit}
-          onValueChange={(v) => setForm((p) => ({ ...p, autoSubmit: v }))}
-        />
+        {canMirAutoSubmit ? (
+          <Toggle
+            label={t('mobile.settings.mirAutoSubmitLabel')}
+            value={form.autoSubmit}
+            onValueChange={(v) => setForm((p) => ({ ...p, autoSubmit: v }))}
+          />
+        ) : null}
         <Toggle label={t('mobile.settings.mirTestModeLabel')} value={form.testMode} onValueChange={(v) => setForm((p) => ({ ...p, testMode: v }))} />
 
         {form.enabled ? (
@@ -830,5 +886,24 @@ const styles = StyleSheet.create({
     borderColor: '#e5e7eb',
   },
   modalTitle: { fontSize: 16, fontWeight: '900', color: '#111827', marginBottom: 8 },
+  planNotice: {
+    backgroundColor: '#eff6ff',
+    borderWidth: 1,
+    borderColor: '#bfdbfe',
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 12,
+  },
+  planNoticeTitle: { fontSize: 14, fontWeight: '900', color: '#1e3a8a', marginBottom: 6 },
+  planNoticeBody: { fontSize: 12, color: '#1e40af', lineHeight: 18 },
+  planNoticeCta: {
+    marginTop: 12,
+    alignSelf: 'flex-start',
+    backgroundColor: '#2563eb',
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 10,
+  },
+  planNoticeCtaText: { color: '#fff', fontWeight: '900', fontSize: 13 },
 });
 

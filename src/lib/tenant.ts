@@ -352,6 +352,19 @@ export async function getTenantById(tenantId: string): Promise<Tenant | null> {
  * @param countryCode - Código del país requerido (opcional, para validar país específico)
  * @returns true si tiene acceso, false si no
  */
+/**
+ * Puede activar "envío automático" en la configuración MIR (panel/app).
+ * Plan básico gratuito (`free`): credenciales/XML manual; el servidor no aplica auto-envío sin módulo legal de pago.
+ */
+export function canTenantConfigureMirAutoSubmit(
+  tenant: { legal_module?: boolean | null; plan_type?: string | null } | null | undefined
+): boolean {
+  if (!tenant?.legal_module) return false;
+  const plan = String(tenant.plan_type || 'free').toLowerCase();
+  if (plan === 'free') return false;
+  return true;
+}
+
 export function hasLegalModuleAccess(tenant: Tenant, countryCode?: string): boolean {
   if (!tenant.legal_module) {
     return false;

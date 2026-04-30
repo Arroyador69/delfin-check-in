@@ -3147,7 +3147,7 @@
       "guestsPlural": "ospiti"
     },
     "settings": {
-      "mirSubtitle": "Configurazione di base per l’invio automatico al MIR.",
+      "mirSubtitle": "Credenziali del servizio web MIR e dati della struttura.",
       "languageTitle": "Lingua",
       "languageSubtitle": "Interfaccia dell’app (non modifica le email agli ospiti né il microsito).",
       "languageFollowDevice": "Automatico (lingua del telefono)",
@@ -3195,6 +3195,10 @@
       "countryInvalid": "Codice non valido: usa 2 lettere (A-Z).",
       "mirEnabledLabel": "MIR attivo",
       "mirAutoSubmitLabel": "Invio automatico",
+      "mirAutoSubmitRequiresPaidPlanTitle": "Invio automatico al MIR",
+      "mirAutoSubmitRequiresPaidPlanBody": "Con il piano Base gratuito il sistema non invia da solo le comunicazioni al Ministero: scarica l’XML da Registrazioni ospiti e caricalo sul portale MIR. I piani Check-in, Standard o Pro (con modulo legale attivo) consentono l’invio automatico.",
+      "mirWsSavedLimitedPlanTitle": "Credenziali salvate",
+      "mirWsSavedLimitedPlanBody": "Le credenziali MIR sono salvate, ma con il piano attuale le comunicazioni non vengono inviate automaticamente al Ministero. Usa il download XML o passa a un piano superiore per attivare l’invio automatico.",
       "mirTestModeLabel": "Modalità test",
       "mirDenominacionLabel": "Denominazione *",
       "mirDenominacionPh": "Nome della struttura",
