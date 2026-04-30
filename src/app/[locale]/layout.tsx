@@ -38,10 +38,11 @@ export default async function LocaleLayout({
     <NextIntlClientProvider messages={messages} locale={locale}>
       <div className="min-h-screen bg-gray-50 flex flex-col">
         <Navigation />
-        <AdsBanner />
-        <PWAInstallGuide />
         <AdBlockDetector />
         <ConditionalMainPadding>
+          {/* Mismo pt-16 que el resto del contenido: el nav es fixed y tapaba el banner fuera de main */}
+          <AdsBanner />
+          <PWAInstallGuide />
           {children}
         </ConditionalMainPadding>
         <ConditionalFooter />
