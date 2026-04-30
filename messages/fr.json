@@ -2341,6 +2341,8 @@
         "rule": "Règle : un appartement doit avoir ses propres identifiants MIR. Les chambres peuvent partager.",
         "legacyDetected": "Nous avons détecté une configuration MIR héritée. Pour éviter d’avoir deux façons de configurer le MIR, vous pouvez l’importer dans le modèle multi par unité sans perdre de données.",
         "legacyImportButton": "Importer l’identifiant hérité",
+        "autosaveHint": "Les changements sont enregistrés automatiquement lorsque vous créez/modifiez des identifiants ou que vous les assignez à une unité.",
+        "savedShort": "Enregistré",
         "createTitle": "Créer un identifiant",
         "name": "Nom",
         "user": "Utilisateur MIR (WS)",

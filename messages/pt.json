@@ -2340,6 +2340,8 @@
         "rule": "Regra: um apartamento deve ter as suas próprias credenciais MIR. Os quartos podem partilhar.",
         "legacyDetected": "Detetámos uma configuração MIR antiga (legacy). Para evitar dois modos diferentes de configurar o MIR, podes importá-la para o modelo multi por unidade sem perder dados.",
         "legacyImportButton": "Importar credencial antiga",
+        "autosaveHint": "As alterações são guardadas automaticamente ao criar/editar credenciais ou ao atribuí-las a cada unidade.",
+        "savedShort": "Guardado",
         "createTitle": "Criar credencial",
         "name": "Nome",
         "user": "Utilizador MIR (WS)",

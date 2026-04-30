@@ -654,9 +654,7 @@ export default function MirSettingsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <p className="text-xs text-gray-500">
-            Los cambios se guardan automáticamente al crear/editar credenciales o asignarlas a cada unidad.
-          </p>
+          <p className="text-xs text-gray-500">{t('multi.autosaveHint')}</p>
           {legacyOnly && (
             <Alert>
               <Info className="h-4 w-4" />
@@ -674,12 +672,6 @@ export default function MirSettingsPage() {
             {t('multi.rule')}
           </p>
           <p className="text-xs text-gray-500 mt-2">{t('multi.mirRoutingNote')}</p>
-
-          <div className="flex flex-wrap gap-2">
-            <Button type="button" variant="outline" onClick={probarConexionGuardada} disabled={testingConnection}>
-              {testingConnection ? t('testing') : t('testConnection')}
-            </Button>
-          </div>
 
           {!canCreateMoreCreds && maxAllowed > 0 && (
             <Alert variant="destructive">
@@ -891,7 +883,7 @@ export default function MirSettingsPage() {
                         try {
                           await guardarUnitRow(u.room_id, { unit_type });
                           setUnits((prev) => prev.map((x) => (x.room_id === u.room_id ? { ...x, unit_type } : x)));
-                          setSuccess('✅ Guardado');
+                          setSuccess(`✅ ${t('multi.savedShort')}`);
                           setTimeout(() => setSuccess(null), 1500);
                         } catch (err: any) {
                           setError(`❌ ${err?.message || t('multi.saveUnitFail')}`);
@@ -911,7 +903,7 @@ export default function MirSettingsPage() {
                         try {
                           await guardarUnitRow(u.room_id, { credencial_id });
                           setUnits((prev) => prev.map((x) => (x.room_id === u.room_id ? { ...x, credencial_id } : x)));
-                          setSuccess('✅ Guardado');
+                          setSuccess(`✅ ${t('multi.savedShort')}`);
                           setTimeout(() => setSuccess(null), 1500);
                         } catch (err: any) {
                           setError(`❌ ${err?.message || t('multi.saveUnitFail')}`);
@@ -1111,6 +1103,27 @@ export default function MirSettingsPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Acciones (abajo del todo, como antes) */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <Button
+          type="button"
+          onClick={crearCredencialGlobal}
+          disabled={creatingCred || !canCreateMoreCreds}
+          className="flex-1"
+        >
+          {creatingCred ? t('saving') : t('multi.createButton')}
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={probarConexionGuardada}
+          disabled={testingConnection}
+          className="flex-1"
+        >
+          {testingConnection ? t('testing') : t('testConnection')}
+        </Button>
+      </div>
 
       </div>
 

@@ -2344,6 +2344,8 @@
         "rule": "Rule: an apartment must have its own MIR credential. Rooms can share credentials.",
         "legacyDetected": "We detected a legacy MIR configuration. To avoid having two different ways of configuring MIR, you can import it into the per-unit (multi-credential) model without losing data.",
         "legacyImportButton": "Import legacy credential",
+        "autosaveHint": "Changes are saved automatically when you create/edit credentials or assign them to each unit.",
+        "savedShort": "Saved",
         "createTitle": "Create credential",
         "name": "Name",
         "user": "MIR user (WS)",
