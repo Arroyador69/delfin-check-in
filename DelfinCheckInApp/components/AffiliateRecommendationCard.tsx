@@ -72,11 +72,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#eff6ff',
   },
   badge: {
-    fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 0.6,
-    color: '#1d4ed8',
-    textTransform: 'uppercase',
+    fontSize: 12,
+    fontWeight: '700',
+    lineHeight: 16,
+    color: '#1e40af',
   },
   title: {
     marginTop: 6,
@@ -134,10 +133,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#eff6ff',
   },
   compactLabel: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: '#1d4ed8',
-    textTransform: 'uppercase',
+    fontSize: 11,
+    fontWeight: '700',
+    lineHeight: 15,
+    color: '#1e40af',
   },
   compactTitle: {
     marginTop: 4,

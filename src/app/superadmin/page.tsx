@@ -211,8 +211,8 @@ export default function SuperAdminDashboard() {
               >
                 <span className="text-2xl mr-3">🖱️</span>
                 <div>
-                  <p className="font-semibold text-gray-900">Clics Amazon (recomendaciones)</p>
-                  <p className="text-sm text-gray-700">Estadísticas por banner, menú y conversión</p>
+                  <p className="font-semibold text-gray-900">Clics en recomendaciones</p>
+                  <p className="text-sm text-gray-700">Huéspedes / producto: estadísticas por zona</p>
                 </div>
               </a>
 

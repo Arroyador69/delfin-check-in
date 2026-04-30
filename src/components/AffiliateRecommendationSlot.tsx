@@ -56,7 +56,7 @@ export default function AffiliateRecommendationSlot({ placement }: AffiliateReco
           </a>
         )}
         <div className="min-w-0 flex-1">
-          <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">{t('affiliateLabel')}</p>
+          <p className="text-xs font-semibold leading-snug text-blue-800">{t('affiliateLabel')}</p>
           <a href={href} target="_blank" rel="noopener noreferrer sponsored" className="group block">
             <p className="mt-1 text-sm font-bold text-slate-900 group-hover:underline">{t('affiliateTitle')}</p>
             <p className="mt-1 text-sm text-slate-700">{t('affiliateBody')}</p>
