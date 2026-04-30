@@ -12,9 +12,12 @@ import { getYmdInTimeZone } from '@/lib/calendar-date';
 import { sqlTextArrayForAny } from '@/lib/pg-sql-params';
 import {
   expandRoomIdsForReservationQuery,
-  getAcceptableReservationRoomIdsByLinkedRoom,
-  reservationRowMatchesLinkedRoom,
+  getTenantRoomContext,
+  resolveReservationRoomIdToCanonicalRoomId,
 } from '@/lib/cleaning-reservation-room-match';
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 type TaskJson = CleaningTaskEvent & { note_url: string };
 
@@ -65,9 +68,9 @@ export async function GET(
 
     const roomsData = await sql`
       SELECT r.id::text AS room_id, r.name AS room_name,
-        COALESCE(cc.checkout_time, TIME '11:00') AS checkout_time,
+        COALESCE(cc.checkout_time, TIME '12:00') AS checkout_time,
         COALESCE(cc.checkin_time, TIME '16:00') AS checkin_time,
-        COALESCE(cc.cleaning_duration_minutes, 120) AS cleaning_duration_minutes,
+        COALESCE(cc.cleaning_duration_minutes, 180) AS cleaning_duration_minutes,
         COALESCE(cc.cleaning_trigger::text, 'on_checkout') AS cleaning_trigger,
         COALESCE(cc.same_day_alert, true) AS same_day_alert
       FROM "Room" r
@@ -101,10 +104,6 @@ export async function GET(
     const toStr = toDate.toISOString().slice(0, 10);
 
     const roomIdsForReservations = await expandRoomIdsForReservationQuery(tenantId, roomIds);
-    const acceptableByLinkedRoom = await getAcceptableReservationRoomIdsByLinkedRoom(
-      tenantId,
-      roomIds
-    );
 
     const reservations = await sql`
       SELECT id, guest_name, check_in, check_out, guest_count, channel, room_id
@@ -128,35 +127,42 @@ export async function GET(
       ORDER BY created_at DESC
     `;
 
-    const notesMap = new Map<string, string>();
-    for (const n of ownerNotes.rows) {
-      const key = `${n.room_id}|${new Date(n.cleaning_date).toISOString().slice(0, 10)}`;
-      if (!notesMap.has(key)) notesMap.set(key, n.note as string);
-    }
-
     const baseUrl = getCleaningPublicBaseUrlFromRequest(req);
     const allTasks: TaskJson[] = [];
 
+    // Canonicalizar room_id de reservas para evitar duplicados/cruces (UUID vs dígito legacy, etc.).
+    const roomCtx = await getTenantRoomContext(tenantId);
+    const linkedRoomIdSet = new Set(roomIds);
+    const canonicalReservationsByRoom = new Map<string, Array<Record<string, unknown>>>();
+    for (const r of reservations.rows as Array<Record<string, unknown>>) {
+      const canonical = resolveReservationRoomIdToCanonicalRoomId(
+        r.room_id,
+        roomCtx.orderedRoomIds,
+        roomCtx.displayNumberToRoomId
+      );
+      if (!canonical || !linkedRoomIdSet.has(canonical)) continue;
+      if (!canonicalReservationsByRoom.has(canonical)) canonicalReservationsByRoom.set(canonical, []);
+      canonicalReservationsByRoom.get(canonical)!.push(r);
+    }
+
+    const notesByRoom = new Map<string, Map<string, string>>();
+    for (const n of ownerNotes.rows as Array<Record<string, unknown>>) {
+      const canonical = resolveReservationRoomIdToCanonicalRoomId(
+        n.room_id,
+        roomCtx.orderedRoomIds,
+        roomCtx.displayNumberToRoomId
+      );
+      if (!canonical || !linkedRoomIdSet.has(canonical)) continue;
+      const date = new Date(String(n.cleaning_date)).toISOString().slice(0, 10);
+      if (!notesByRoom.has(canonical)) notesByRoom.set(canonical, new Map());
+      const m = notesByRoom.get(canonical)!;
+      if (!m.has(date)) m.set(date, String(n.note ?? ''));
+    }
+
     for (const row of roomsData.rows) {
       const roomId = row.room_id as string;
-      const acceptable =
-        acceptableByLinkedRoom.get(roomId) ?? new Set<string>([roomId]);
-      const resForRoom = reservations.rows.filter((r) =>
-        reservationRowMatchesLinkedRoom(
-          (r as Record<string, unknown>).room_id,
-          acceptable
-        )
-      );
-      const notesByDate = new Map<string, string>();
-      for (const [k, v] of notesMap) {
-        const pipe = k.indexOf('|');
-        if (pipe === -1) continue;
-        const noteRid = k.slice(0, pipe);
-        const d = k.slice(pipe + 1);
-        if (reservationRowMatchesLinkedRoom(noteRid, acceptable)) {
-          notesByDate.set(d, v);
-        }
-      }
+      const resForRoom = canonicalReservationsByRoom.get(roomId) ?? [];
+      const notesByDate = notesByRoom.get(roomId) ?? new Map<string, string>();
 
       const notePathFor = (rid: string, date: string) =>
         `/api/cleaning/public-link/${token}/note?room_id=${encodeURIComponent(rid)}&date=${encodeURIComponent(date)}`;
@@ -206,6 +212,10 @@ export async function GET(
       label: link.label,
       tenant_name: tenantName,
       tasks: upcoming,
+    }, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+      },
     });
   } catch (error: unknown) {
     const msg = (error as Error).message || '';
