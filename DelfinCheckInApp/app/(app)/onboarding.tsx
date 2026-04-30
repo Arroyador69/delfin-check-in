@@ -34,6 +34,7 @@ import {
   Bell,
   CalendarDays,
   ChevronRight,
+  CreditCard,
   Globe2,
   Languages,
   ShieldCheck,
@@ -76,6 +77,7 @@ export default function OnboardingScreen() {
       { titleKey: 'mobile.onboarding.step3.title', bodyKey: 'mobile.onboarding.step3.body', Icon: Bell },
       { titleKey: 'mobile.onboarding.step4.title', bodyKey: 'mobile.onboarding.step4.body', Icon: ShieldCheck },
       { titleKey: 'mobile.onboarding.step5.title', bodyKey: 'mobile.onboarding.step5.body', Icon: Star },
+      { titleKey: 'mobile.onboarding.step6.title', bodyKey: 'mobile.onboarding.step6.body', Icon: CreditCard },
     ],
     []
   );

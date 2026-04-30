@@ -480,6 +480,19 @@
       "completing": "Completing...",
       "completeSetup": "Complete Setup"
     },
+    "step6": {
+      "title": "💳 Payments and direct bookings (Stripe Connect)",
+      "intro": "Enable Stripe Connect to charge direct bookings from your microsite and use payment links.",
+      "note": "Recommended: complete Stripe Connect to enable charges and payouts. You can do it now or later under Settings → Microsite payments.",
+      "connectButton": "Connect Stripe (Stripe Connect)",
+      "connectLoading": "Opening Stripe…",
+      "connectOpened": "✅ Stripe link opened. Complete the form and come back here.",
+      "openMicrositePayments": "Open microsite payments settings",
+      "openPaymentLinks": "Open payment links",
+      "previous": "Previous",
+      "completing": "Finishing…",
+      "completeSetup": "Go to dashboard"
+    },
     "errors": {
       "mustChangePassword": "You must change your password before continuing",
       "allFieldsRequired": "All fields marked with * are required",
@@ -492,7 +505,8 @@
       "createPropertyFailed": "Error creating property",
       "addPropertyFailed": "Error adding property",
       "completeFailed": "Error completing onboarding. Please try again.",
-      "countryAndLanguageRequired": "Select your business country (ISO) and account language to continue."
+      "countryAndLanguageRequired": "Select your business country (ISO) and account language to continue.",
+      "generic": "Error"
     }
   },
   "reservations": {
@@ -2987,6 +3001,10 @@
       "step5": {
         "title": "Pro plan: future bookings without platforms",
         "body": "Automate Google reviews to improve ranking. Each guest registration can become a future booking… and with direct bookings you rely less on Airbnb/Booking."
+      },
+      "step6": {
+        "title": "Stripe payments and payment links",
+        "body": "Enable Stripe Connect to charge direct bookings from your microsite and create payment links. It’s the key step to sell direct and automate collection."
       }
     },
     "facturas": {

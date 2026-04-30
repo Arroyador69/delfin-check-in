@@ -466,6 +466,19 @@
       "completing": "A completar...",
       "completeSetup": "Completar configuração"
     },
+    "step6": {
+      "title": "💳 Pagamentos e reservas diretas (Stripe Connect)",
+      "intro": "Ative o Stripe Connect para cobrar reservas diretas do seu microsite e usar links de pagamento.",
+      "note": "Recomendado: conclua o Stripe Connect para ativar cobranças e transferências. Pode fazê-lo agora ou mais tarde em Definições → Pagamentos (Microsite).",
+      "connectButton": "Ligar Stripe (Stripe Connect)",
+      "connectLoading": "A abrir Stripe…",
+      "connectOpened": "✅ Link do Stripe aberto. Conclua o formulário e volte aqui.",
+      "openMicrositePayments": "Abrir definições de pagamentos (Microsite)",
+      "openPaymentLinks": "Abrir links de pagamento",
+      "previous": "Anterior",
+      "completing": "A finalizar…",
+      "completeSetup": "Ir para o painel"
+    },
     "errors": {
       "mustChangePassword": "Deve alterar a palavra-passe antes de continuar",
       "allFieldsRequired": "Todos os campos marcados com * são obrigatórios",
@@ -477,7 +490,8 @@
       "propertyNameRequired": "O nome da propriedade é obrigatório",
       "createPropertyFailed": "Erro ao criar a propriedade",
       "addPropertyFailed": "Erro ao adicionar a propriedade",
-      "completeFailed": "Erro ao completar a configuração. Por favor, tente novamente."
+      "completeFailed": "Erro ao completar a configuração. Por favor, tente novamente.",
+      "generic": "Erro"
     }
   },
   "reservations": {
@@ -2963,6 +2977,10 @@
       "step5": {
         "title": "Plano Pro: reservas futuras sem plataformas",
         "body": "Automatize avaliações no Google para melhorar o posicionamento. Cada registo de viajantes pode virar uma reserva futura… e com reservas diretas depende menos de Airbnb/Booking."
+      },
+      "step6": {
+        "title": "Pagamentos Stripe e links de pagamento",
+        "body": "Ative o Stripe Connect para cobrar reservas diretas do seu microsite e criar links de pagamento. É o passo chave para vender direto e automatizar a cobrança."
       }
     },
     "facturas": {

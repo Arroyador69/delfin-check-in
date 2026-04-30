@@ -466,6 +466,19 @@
       "completing": "Finalisation...",
       "completeSetup": "Terminer la configuration"
     },
+    "step6": {
+      "title": "💳 Paiements et réservations directes (Stripe Connect)",
+      "intro": "Activez Stripe Connect pour encaisser les réservations directes depuis votre microsite et utiliser des liens de paiement.",
+      "note": "Recommandé : terminez Stripe Connect pour activer les paiements et les virements. Vous pouvez le faire maintenant ou plus tard dans Paramètres → Paiements (Microsite).",
+      "connectButton": "Connecter Stripe (Stripe Connect)",
+      "connectLoading": "Ouverture de Stripe…",
+      "connectOpened": "✅ Lien Stripe ouvert. Terminez le formulaire puis revenez ici.",
+      "openMicrositePayments": "Ouvrir les réglages de paiements (Microsite)",
+      "openPaymentLinks": "Ouvrir les liens de paiement",
+      "previous": "Précédent",
+      "completing": "Finalisation…",
+      "completeSetup": "Aller au tableau de bord"
+    },
     "errors": {
       "mustChangePassword": "Vous devez changer votre mot de passe avant de continuer",
       "allFieldsRequired": "Tous les champs marqués * sont obligatoires",
@@ -477,7 +490,8 @@
       "propertyNameRequired": "Le nom de la propriété est obligatoire",
       "createPropertyFailed": "Erreur lors de la création de la propriété",
       "addPropertyFailed": "Erreur lors de l'ajout de la propriété",
-      "completeFailed": "Erreur lors de la finalisation. Veuillez réessayer."
+      "completeFailed": "Erreur lors de la finalisation. Veuillez réessayer.",
+      "generic": "Erreur"
     }
   },
   "reservations": {
@@ -2964,6 +2978,10 @@
       "step5": {
         "title": "Plan Pro : réservations futures sans plateformes",
         "body": "Automatisez les avis Google pour améliorer votre classement. Chaque registre des voyageurs peut devenir une réservation future… et avec les réservations directes vous dépendez moins d’Airbnb/Booking."
+      },
+      "step6": {
+        "title": "Paiements Stripe et liens de paiement",
+        "body": "Activez Stripe Connect pour encaisser des réservations directes depuis votre microsite et créer des liens de paiement. C’est l’étape clé pour vendre en direct et automatiser l’encaissement."
       }
     },
     "facturas": {

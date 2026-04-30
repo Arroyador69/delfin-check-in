@@ -481,6 +481,19 @@
       "completing": "Completando...",
       "completeSetup": "Completar Configuración"
     },
+    "step6": {
+      "title": "💳 Cobros y reservas directas (Stripe Connect)",
+      "intro": "Activa Stripe Connect para poder cobrar reservas directas desde tu microsite y usar enlaces de pago.",
+      "note": "Recomendado: completa Stripe Connect para habilitar cobros y transferencias. Puedes hacerlo ahora o más tarde desde Configuración → Cobros (Microsite).",
+      "connectButton": "Conectar Stripe (Stripe Connect)",
+      "connectLoading": "Abriendo Stripe…",
+      "connectOpened": "✅ Enlace de Stripe abierto. Completa el formulario y vuelve aquí.",
+      "openMicrositePayments": "Abrir configuración de cobros (Microsite)",
+      "openPaymentLinks": "Abrir enlaces de pago",
+      "previous": "Anterior",
+      "completing": "Finalizando...",
+      "completeSetup": "Ir al panel"
+    },
     "errors": {
       "mustChangePassword": "Debes cambiar tu contraseña antes de continuar",
       "allFieldsRequired": "Todos los campos marcados con * son obligatorios",
@@ -493,7 +506,8 @@
       "createPropertyFailed": "Error al crear la propiedad",
       "addPropertyFailed": "Error al añadir la propiedad",
       "completeFailed": "Error al completar el onboarding. Por favor, inténtalo de nuevo.",
-      "countryAndLanguageRequired": "Selecciona país e idioma de la cuenta para continuar."
+      "countryAndLanguageRequired": "Selecciona país e idioma de la cuenta para continuar.",
+      "generic": "Error"
     }
   },
   "reservations": {
@@ -3087,6 +3101,10 @@
       "step5": {
         "title": "Plan Pro: reservas futuras sin depender de plataformas",
         "body": "Automatiza reseñas en Google para mejorar tu posicionamiento. Cada parte de viajeros puede convertirse en una reserva futura… y con reservas directas dependes menos de Airbnb/Booking."
+      },
+      "step6": {
+        "title": "Cobros con Stripe y enlaces de pago",
+        "body": "Activa Stripe Connect para cobrar reservas directas desde tu microsite y crear enlaces de pago. Es el paso clave para vender directo y automatizar el cobro."
       }
     },
     "facturas": {

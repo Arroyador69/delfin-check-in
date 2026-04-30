@@ -480,6 +480,19 @@
       "completing": "Valmistetaan...",
       "completeSetup": "Täydellinen asennus"
     },
+    "step6": {
+      "title": "💳 Maksut ja suorat varaukset (Stripe Connect)",
+      "intro": "Ota Stripe Connect käyttöön, jotta voit veloittaa suoria varauksia micrositeltä ja käyttää maksulinkkejä.",
+      "note": "Suositus: viimeistele Stripe Connect, jotta maksut ja tilisiirrot toimivat. Voit tehdä sen nyt tai myöhemmin kohdassa Asetukset → Maksut (Microsite).",
+      "connectButton": "Yhdistä Stripe (Stripe Connect)",
+      "connectLoading": "Avataan Stripe…",
+      "connectOpened": "✅ Stripe-linkki avattu. Täytä lomake ja palaa tänne.",
+      "openMicrositePayments": "Avaa maksujen asetukset (Microsite)",
+      "openPaymentLinks": "Avaa maksulinkit",
+      "previous": "Edellinen",
+      "completing": "Viimeistellään…",
+      "completeSetup": "Siirry hallintapaneeliin"
+    },
     "errors": {
       "mustChangePassword": "Sinun on vaihdettava salasanasi ennen kuin jatkat",
       "allFieldsRequired": "Kaikki *-merkityt kentät ovat pakollisia",
@@ -491,7 +504,8 @@
       "propertyNameRequired": "Omaisuuden nimi vaaditaan",
       "createPropertyFailed": "Virhe ominaisuuden luomisessa",
       "addPropertyFailed": "Virhe lisättäessä omaisuutta",
-      "completeFailed": "Virhe liittymisen viimeistelyssä. Yritä uudelleen."
+      "completeFailed": "Virhe liittymisen viimeistelyssä. Yritä uudelleen.",
+      "generic": "Virhe"
     }
   },
   "reservations": {
@@ -2986,6 +3000,10 @@
       "step5": {
         "title": "Pro-suunnitelma: tulevat varaukset ilman alustoja",
         "body": "Automatisoi Google-arvostelut parantaaksesi sijoitusta. Jokaisesta vierasrekisteröinnistä voi tulla tuleva varaus… ja suorilla varauksilla luotat vähemmän Airbnb/Bookingiin."
+      },
+      "step6": {
+        "title": "Stripe-maksut ja maksulinkit",
+        "body": "Ota Stripe Connect käyttöön, jotta voit veloittaa suoria varauksia micrositeltä ja luoda maksulinkkejä. Se on avain suoramyyntiin ja maksujen automatisointiin."
       }
     },
     "facturas": {

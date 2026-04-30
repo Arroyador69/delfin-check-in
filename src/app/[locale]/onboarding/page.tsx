@@ -69,7 +69,7 @@ export default function OnboardingPage() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const TOTAL_STEPS = 5;
+  const TOTAL_STEPS = 6;
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>('');
@@ -407,6 +407,8 @@ export default function OnboardingPage() {
           return false;
         }
         return true;
+      case 6: // Cobros / Stripe Connect (recomendado)
+        return true;
       default:
         return true;
     }
@@ -623,7 +625,7 @@ export default function OnboardingPage() {
     }
   };
 
-  const handleSubmit = async () => {
+  const handleCompleteOnboarding = async () => {
     setError('');
     if (!validateStep(5)) {
       return;
@@ -673,6 +675,40 @@ export default function OnboardingPage() {
       setError(t('errors.completeFailed'));
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleFinishStep5 = async () => {
+    setError('');
+    if (!validateStep(5)) return;
+    setCurrentStep(6);
+  };
+
+  const [connectLoading, setConnectLoading] = useState(false);
+  const [connectError, setConnectError] = useState<string>('');
+  const [connectSuccess, setConnectSuccess] = useState<string>('');
+
+  const startStripeConnect = async () => {
+    setConnectError('');
+    setConnectSuccess('');
+    setConnectLoading(true);
+    try {
+      const res = await fetch('/api/stripe-connect/onboarding-link', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ return_path: `/${getLocaleFromPath()}/onboarding?connect=return` }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data?.success || !data?.url) {
+        throw new Error(String(data?.error || 'No se pudo iniciar Stripe Connect'));
+      }
+      window.open(String(data.url), '_blank', 'noopener,noreferrer');
+      setConnectSuccess(t('step6.connectOpened'));
+    } catch (e: any) {
+      setConnectError(`❌ ${e?.message || t('errors.generic')}`);
+    } finally {
+      setConnectLoading(false);
     }
   };
 
@@ -1242,16 +1278,88 @@ export default function OnboardingPage() {
             {t('step4.previous')}
           </button>
           <button
-            onClick={handleSubmit}
+            onClick={handleFinishStep5}
             disabled={loading || !formData.propertyAdded}
             className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
           >
-            {loading ? t('step4.completing') : t('step4.completeSetup')}
+            {loading ? t('step4.completing') : t('step4.next')}
           </button>
         </div>
       </div>
     </div>
   );
+
+  const renderPaymentsStep = () => {
+    const localeFromPath = getLocaleFromPath();
+    const settingsHref = `/${localeFromPath}/settings/microsite-payments`;
+    const paymentLinksHref = `/${localeFromPath}/settings/payment-links`;
+
+    return (
+      <div className="max-w-4xl mx-auto p-6">
+        <div className="bg-white rounded-lg shadow-lg p-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-6">{t('step6.title')}</h1>
+          <p className="text-gray-600 mb-6">{t('step6.intro')}</p>
+
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <p className="text-blue-800 text-sm">{t('step6.note')}</p>
+          </div>
+
+          {(connectError || connectSuccess) && (
+            <div className="mb-6 space-y-3">
+              {connectError && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                  <p className="text-red-800">{connectError}</p>
+                </div>
+              )}
+              {connectSuccess && (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                  <p className="text-green-800 font-semibold">{connectSuccess}</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <button
+              type="button"
+              onClick={startStripeConnect}
+              disabled={connectLoading}
+              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-lg hover:from-blue-700 hover:to-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-semibold"
+            >
+              {connectLoading ? t('step6.connectLoading') : t('step6.connectButton')}
+            </button>
+            <button
+              type="button"
+              onClick={() => router.push(settingsHref)}
+              className="w-full bg-white border-2 border-gray-300 text-gray-800 px-6 py-3 rounded-lg hover:border-gray-400 font-semibold"
+            >
+              {t('step6.openMicrositePayments')}
+            </button>
+            <button
+              type="button"
+              onClick={() => router.push(paymentLinksHref)}
+              className="w-full bg-white border-2 border-gray-300 text-gray-800 px-6 py-3 rounded-lg hover:border-gray-400 font-semibold md:col-span-2"
+            >
+              {t('step6.openPaymentLinks')}
+            </button>
+          </div>
+
+          <div className="flex justify-between mt-8">
+            <button onClick={handlePrevious} className="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600">
+              {t('step6.previous')}
+            </button>
+            <button
+              onClick={handleCompleteOnboarding}
+              disabled={loading}
+              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+            >
+              {loading ? t('step6.completing') : t('step6.completeSetup')}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -1287,6 +1395,7 @@ export default function OnboardingPage() {
       {currentStep === 3 && renderPlanAndPaymentStep()}
       {currentStep === 4 && renderMIRStep()}
       {currentStep === 5 && renderPropertyStep()}
+      {currentStep === 6 && renderPaymentsStep()}
     </div>
   );
 

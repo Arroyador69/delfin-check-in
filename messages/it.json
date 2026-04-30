@@ -476,6 +476,19 @@
       "completing": "Completamento...",
       "completeSetup": "Completa Configurazione"
     },
+    "step6": {
+      "title": "💳 Pagamenti e prenotazioni dirette (Stripe Connect)",
+      "intro": "Attiva Stripe Connect per incassare prenotazioni dirette dal tuo microsito e usare i link di pagamento.",
+      "note": "Consigliato: completa Stripe Connect per abilitare pagamenti e trasferimenti. Puoi farlo ora o più tardi in Impostazioni → Pagamenti (Microsito).",
+      "connectButton": "Connetti Stripe (Stripe Connect)",
+      "connectLoading": "Apro Stripe…",
+      "connectOpened": "✅ Link Stripe aperto. Completa il modulo e torna qui.",
+      "openMicrositePayments": "Apri impostazioni pagamenti (Microsito)",
+      "openPaymentLinks": "Apri link di pagamento",
+      "previous": "Indietro",
+      "completing": "Finalizzazione…",
+      "completeSetup": "Vai al pannello"
+    },
     "errors": {
       "mustChangePassword": "Devi cambiare la password prima di continuare",
       "allFieldsRequired": "Tutti i campi contrassegnati con * sono obbligatori",
@@ -487,7 +500,8 @@
       "propertyNameRequired": "Il nome della proprietà è obbligatorio",
       "createPropertyFailed": "Errore nella creazione della proprietà",
       "addPropertyFailed": "Errore nell'aggiunta della proprietà",
-      "completeFailed": "Errore nel completare l'onboarding. Riprova."
+      "completeFailed": "Errore nel completare l'onboarding. Riprova.",
+      "generic": "Errore"
     }
   },
   "reservations": {
@@ -3030,6 +3044,10 @@
       "step5": {
         "title": "Piano Pro: prenotazioni future senza piattaforme",
         "body": "Automatizza le recensioni su Google per migliorare il ranking. Ogni registrazione ospiti può diventare una prenotazione futura… e con le prenotazioni dirette dipendi meno da Airbnb/Booking."
+      },
+      "step6": {
+        "title": "Pagamenti Stripe e link di pagamento",
+        "body": "Attiva Stripe Connect per incassare prenotazioni dirette dal tuo microsito e creare link di pagamento. È il passo chiave per vendere diretto e automatizzare l’incasso."
       }
     },
     "facturas": {
