@@ -3104,7 +3104,9 @@
       },
       "step6": {
         "title": "Cobros con Stripe y enlaces de pago",
-        "body": "Activa Stripe Connect para cobrar reservas directas desde tu microsite y crear enlaces de pago. Es el paso clave para vender directo y automatizar el cobro."
+        "body": "Activa Stripe Connect para cobrar reservas directas desde tu microsite y crear enlaces de pago. Es el paso clave para vender directo y automatizar el cobro.",
+        "ctaPayments": "Abrir cobros (Microsite)",
+        "ctaPaymentLinks": "Abrir enlaces de pago"
       }
     },
     "facturas": {

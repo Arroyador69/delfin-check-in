@@ -3003,7 +3003,9 @@
       },
       "step6": {
         "title": "Stripe-maksut ja maksulinkit",
-        "body": "Ota Stripe Connect käyttöön, jotta voit veloittaa suoria varauksia micrositeltä ja luoda maksulinkkejä. Se on avain suoramyyntiin ja maksujen automatisointiin."
+        "body": "Ota Stripe Connect käyttöön, jotta voit veloittaa suoria varauksia micrositeltä ja luoda maksulinkkejä. Se on avain suoramyyntiin ja maksujen automatisointiin.",
+        "ctaPayments": "Avaa maksut (Microsite)",
+        "ctaPaymentLinks": "Avaa maksulinkit"
       }
     },
     "facturas": {

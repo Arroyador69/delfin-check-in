@@ -85,6 +85,7 @@ export default function OnboardingScreen() {
   const [idx, setIdx] = useState(0);
   const isLast = idx === steps.length - 1;
   const isFirst = idx === 0;
+  const isPaymentsStep = idx === 5; // step6 (1-indexed), 0-based index
 
   const step = steps[idx];
   const anim = useRef(new Animated.Value(0)).current;
@@ -387,6 +388,27 @@ export default function OnboardingScreen() {
           </View>
           <Text style={styles.body}>{t(step.bodyKey)}</Text>
 
+          {isPaymentsStep ? (
+            <View style={styles.quickActions}>
+              <Pressable
+                style={[styles.quickBtn, styles.quickBtnPrimary]}
+                onPress={() => router.push('/(app)/settings/banking' as any)}
+              >
+                <Text style={[styles.quickBtnText, styles.quickBtnPrimaryText]}>
+                  {t('mobile.onboarding.step6.ctaPayments')}
+                </Text>
+              </Pressable>
+              <Pressable
+                style={[styles.quickBtn, styles.quickBtnOutline]}
+                onPress={() => router.push('/(app)/payment-links' as any)}
+              >
+                <Text style={[styles.quickBtnText, styles.quickBtnOutlineText]}>
+                  {t('mobile.onboarding.step6.ctaPaymentLinks')}
+                </Text>
+              </Pressable>
+            </View>
+          ) : null}
+
           <View style={styles.valueRow}>
             <View style={styles.valuePill}>
               <Text style={styles.valuePillText}>{t('mobile.onboarding.value.fast')}</Text>
@@ -463,6 +485,35 @@ const styles = StyleSheet.create({
     opacity: 0.14,
   },
   container: { flex: 1, padding: 16, justifyContent: 'space-between' },
+  quickActions: {
+    marginTop: 14,
+    gap: 10,
+  },
+  quickBtn: {
+    borderRadius: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  quickBtnPrimary: {
+    backgroundColor: '#2563eb',
+  },
+  quickBtnOutline: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: '#334155',
+  },
+  quickBtnText: {
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  quickBtnPrimaryText: {
+    color: '#ffffff',
+  },
+  quickBtnOutlineText: {
+    color: '#e2e8f0',
+  },
   setupScrollContent: {
     padding: 16,
     paddingBottom: 36,

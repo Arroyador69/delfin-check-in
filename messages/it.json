@@ -3047,7 +3047,9 @@
       },
       "step6": {
         "title": "Pagamenti Stripe e link di pagamento",
-        "body": "Attiva Stripe Connect per incassare prenotazioni dirette dal tuo microsito e creare link di pagamento. È il passo chiave per vendere diretto e automatizzare l’incasso."
+        "body": "Attiva Stripe Connect per incassare prenotazioni dirette dal tuo microsito e creare link di pagamento. È il passo chiave per vendere diretto e automatizzare l’incasso.",
+        "ctaPayments": "Apri pagamenti (Microsito)",
+        "ctaPaymentLinks": "Apri link di pagamento"
       }
     },
     "facturas": {

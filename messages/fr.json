@@ -2981,7 +2981,9 @@
       },
       "step6": {
         "title": "Paiements Stripe et liens de paiement",
-        "body": "Activez Stripe Connect pour encaisser des réservations directes depuis votre microsite et créer des liens de paiement. C’est l’étape clé pour vendre en direct et automatiser l’encaissement."
+        "body": "Activez Stripe Connect pour encaisser des réservations directes depuis votre microsite et créer des liens de paiement. C’est l’étape clé pour vendre en direct et automatiser l’encaissement.",
+        "ctaPayments": "Ouvrir les paiements (Microsite)",
+        "ctaPaymentLinks": "Ouvrir les liens de paiement"
       }
     },
     "facturas": {

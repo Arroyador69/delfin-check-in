@@ -3004,7 +3004,9 @@
       },
       "step6": {
         "title": "Stripe payments and payment links",
-        "body": "Enable Stripe Connect to charge direct bookings from your microsite and create payment links. It’s the key step to sell direct and automate collection."
+        "body": "Enable Stripe Connect to charge direct bookings from your microsite and create payment links. It’s the key step to sell direct and automate collection.",
+        "ctaPayments": "Open payments (Microsite)",
+        "ctaPaymentLinks": "Open payment links"
       }
     },
     "facturas": {

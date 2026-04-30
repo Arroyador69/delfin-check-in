@@ -2980,7 +2980,9 @@
       },
       "step6": {
         "title": "Pagamentos Stripe e links de pagamento",
-        "body": "Ative o Stripe Connect para cobrar reservas diretas do seu microsite e criar links de pagamento. É o passo chave para vender direto e automatizar a cobrança."
+        "body": "Ative o Stripe Connect para cobrar reservas diretas do seu microsite e criar links de pagamento. É o passo chave para vender direto e automatizar a cobrança.",
+        "ctaPayments": "Abrir pagamentos (Microsite)",
+        "ctaPaymentLinks": "Abrir links de pagamento"
       }
     },
     "facturas": {
