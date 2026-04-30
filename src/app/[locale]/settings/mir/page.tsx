@@ -15,10 +15,7 @@ import {
   XCircle, 
   AlertTriangle,
   Eye,
-  EyeOff,
   Save,
-  TestTube,
-  ExternalLink,
   Info,
   Globe,
   Pencil,
@@ -86,8 +83,6 @@ export default function MirSettingsPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [showPassword, setShowPassword] = useState(false);
-  const [testResult, setTestResult] = useState<any>(null);
   const [countryCode, setCountryCode] = useState<string>('');
   const [savingCountry, setSavingCountry] = useState(false);
   const [hasConfig, setHasConfig] = useState(false); // Para saber si hay datos configurados
@@ -472,39 +467,40 @@ export default function MirSettingsPage() {
     }
   };
 
-  const probarConexion = async () => {
+  const legacyOnly =
+    credenciales.length === 0 &&
+    (serverHasUsuario || serverHasContraseña || serverHasCodigoArrendador || serverHasCodigoEstablecimiento);
+
+  const importarCredencialHeredada = async () => {
     setLoading(true);
     setError(null);
     setSuccess(null);
-    setTestResult(null);
-    
     try {
-      const response = await fetch('/api/ministerio/test-produccion', {
+      const response = await fetch('/api/ministerio/config-produccion', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(config)
+        // Nota: enviamos contraseña vacía para que el backend conserve la ya guardada (si existe)
+        // y cree/actualice la credencial principal en mir_credenciales.
+        body: JSON.stringify({
+          usuario: config.usuario,
+          contraseña: '',
+          codigoArrendador: config.codigoArrendador,
+          codigoEstablecimiento: config.codigoEstablecimiento,
+          baseUrl: config.baseUrl,
+          aplicacion: config.aplicacion,
+          simulacion: config.simulacion,
+          activo: true,
+        }),
       });
-      
-      const data = await response.json();
-      setTestResult(data);
-      
-      if (data.success) {
-        setSuccess(`✅ ${t('connectionSuccess')}`);
-      } else {
-        const desc =
-          data?.resultado?.descripcion ||
-          data?.interpretacion?.mensaje ||
-          data?.message ||
-          '';
-        const code = data?.resultado?.codigo ? ` (código ${data.resultado.codigo})` : '';
-        const causes = Array.isArray(data?.probableCauses) && data.probableCauses.length
-          ? `\n\nPosibles causas:\n- ${data.probableCauses.join('\n- ')}`
-          : '';
-        setError(`❌ ${t('connectionTestError', { message: `${desc}${code}${causes}` })}`);
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data?.success) {
+        throw new Error(String(data?.message || data?.error || t('errorSavingConfig')));
       }
-    } catch (err) {
-      setError(t('connectionError'));
-      console.error('Error probando conexión:', err);
+      setSuccess(`✅ ${t('configSaved')}`);
+      await cargarMultiMir();
+      await cargarConfiguracion();
+    } catch (e: any) {
+      setError(`❌ ${e?.message || t('errorSavingConfig')}`);
     } finally {
       setLoading(false);
     }
@@ -631,6 +627,20 @@ export default function MirSettingsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          {legacyOnly && (
+            <Alert>
+              <Info className="h-4 w-4" />
+              <AlertDescription className="text-gray-800 font-medium">
+                Detectamos una <strong>configuración MIR heredada</strong> (antigua). Para unificar el sistema y que solo haya
+                una forma de configurarlo, puedes importarla al modo multi-credencial sin perder datos.
+                <div className="mt-3">
+                  <Button type="button" onClick={importarCredencialHeredada} disabled={loading}>
+                    {loading ? t('saving') : 'Importar credencial heredada'}
+                  </Button>
+                </div>
+              </AlertDescription>
+            </Alert>
+          )}
           <p className="text-xs text-gray-600">
             {t('multi.rule')}
           </p>
@@ -974,161 +984,6 @@ export default function MirSettingsPage() {
         </CardContent>
       </Card>
 
-        {/* Formulario de configuración */}
-        <Card className="bg-white/90 backdrop-blur-sm border-white/30 shadow-xl transition-all duration-500 hover:shadow-2xl hover:scale-[1.02]">
-          <CardHeader>
-            <CardTitle className="text-gray-900 font-bold flex items-center">
-              🔐 {t('credentialsTitle')}
-            </CardTitle>
-            <CardDescription className="text-gray-700 font-medium">
-              {t('credentialsDescription')}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="usuario" className="text-gray-800 font-semibold">{t('userLabel')}</Label>
-              <Input
-                id="usuario"
-                name="mir_usuario_ws"
-                autoComplete="off"
-                autoCapitalize="none"
-                placeholder={serverHasUsuario && !editingUsuario ? 'Configurado (pulsa para cambiar)' : '12345678A---WS'}
-                value={editingUsuario ? config.usuario : (config.usuario || '')}
-                onChange={(e) => {
-                  setConfig({...config, usuario: e.target.value});
-                  setEditingUsuario(true);
-                }}
-                onFocus={() => {
-                  if (!editingUsuario) setEditingUsuario(true);
-                }}
-                onBlur={() => {
-                  if (config.usuario) {
-                    setEditingUsuario(false);
-                  }
-                }}
-                className="text-gray-900"
-              />
-              <p className="text-xs text-gray-600 font-medium">
-                {t('userHint')}
-              </p>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="contraseña" className="text-gray-800 font-semibold">{t('passwordLabel')}</Label>
-              <div className="space-y-2">
-                <div className="relative">
-                  <Input
-                    id="contraseña"
-                    type={showPassword ? "text" : "password"}
-                    name="mir_password_ws"
-                    autoComplete="new-password"
-                    placeholder={serverHasContraseña && !editingContraseña ? 'Contraseña configurada (••••••••)' : 'Contraseña del Servicio Web'}
-                    value={editingContraseña ? config.contraseña : (serverHasContraseña ? '••••••••' : '')}
-                    disabled={!editingContraseña && serverHasContraseña}
-                    onChange={(e) => {
-                      setConfig({ ...config, contraseña: e.target.value });
-                    }}
-                    className="text-gray-900 disabled:opacity-100 disabled:cursor-default"
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                    onClick={() => setShowPassword(!showPassword)}
-                    disabled={!editingContraseña && serverHasContraseña}
-                    title={!editingContraseña && serverHasContraseña ? 'Pulsa “Cambiar contraseña” para ver/editar' : 'Mostrar/ocultar'}
-                  >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </Button>
-                </div>
-
-                {serverHasContraseña && !editingContraseña && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full sm:w-auto"
-                    onClick={() => {
-                      setShowPassword(false);
-                      setConfig((prev) => ({ ...prev, contraseña: '' }));
-                      setEditingContraseña(true);
-                    }}
-                  >
-                    Cambiar contraseña
-                  </Button>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="codigoArrendador" className="text-gray-800 font-semibold">{t('codigoArrendadorLabel')}</Label>
-            <Input
-              id="codigoArrendador"
-              placeholder={t('codigoArrendadorPlaceholder')}
-              value={config.codigoArrendador}
-              onChange={(e) => setConfig({...config, codigoArrendador: e.target.value})}
-              className="text-gray-900"
-            />
-            <p className="text-xs text-gray-600 font-medium">
-              {t('codigoArrendadorHint')}
-            </p>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="codigoEstablecimiento" className="text-gray-800 font-semibold">{t('codigoEstablecimientoLabel')}</Label>
-            <Input
-              id="codigoEstablecimiento"
-              placeholder={t('codigoEstablecimientoPlaceholder')}
-              value={config.codigoEstablecimiento}
-              onChange={(e) => setConfig({...config, codigoEstablecimiento: e.target.value})}
-              className="text-gray-900"
-            />
-            <p className="text-xs text-gray-600 font-medium">
-              {t('codigoEstablecimientoHint')}
-            </p>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="baseUrl" className="text-gray-800 font-semibold">{t('baseUrlLabel')}</Label>
-            <Input
-              id="baseUrl"
-              value={config.baseUrl}
-              readOnly
-              className="text-gray-900 bg-gray-50"
-            />
-            <p className="text-xs text-gray-600 font-medium">
-              {t('baseUrlHint')}
-            </p>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="aplicacion" className="text-gray-800 font-semibold">{t('appNameLabel')}</Label>
-            <Input
-              id="aplicacion"
-              value={config.aplicacion}
-              readOnly
-              className="text-gray-900 bg-gray-50"
-            />
-            <p className="text-xs text-gray-600 font-medium">
-              {t('appNameHint')}
-            </p>
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              id="simulacion"
-              checked={config.simulacion}
-              onChange={(e) => setConfig({...config, simulacion: e.target.checked})}
-              className="rounded"
-            />
-            <Label htmlFor="simulacion" className="text-gray-800 font-semibold">{t('simulacionLabel')}</Label>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Selector de País para Módulo Legal */}
       {tenant?.legal_module && (
         <Card className="bg-white/90 backdrop-blur-sm border-white/30 shadow-xl transition-all duration-500 hover:shadow-2xl hover:scale-[1.02]">
@@ -1218,52 +1073,6 @@ export default function MirSettingsPage() {
         </CardContent>
       </Card>
 
-        {/* Botones de acción */}
-        <div className="flex flex-col sm:flex-row gap-4">
-          <Button 
-            onClick={guardarConfiguracion} 
-            disabled={loading}
-            className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold px-8 py-4 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg"
-          >
-            <Save className="h-5 w-5 mr-2" />
-            {loading ? `⏳ ${t('saving')}` : `💾 ${t('saveConfig')}`}
-          </Button>
-          
-          <Button 
-            onClick={probarConexion} 
-            disabled={loading}
-            variant="outline"
-            className="flex-1 border-2 border-blue-600 text-blue-600 hover:bg-blue-50 font-semibold px-8 py-4 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg"
-          >
-            <TestTube className="h-5 w-5 mr-2" />
-            {loading ? `⏳ ${t('testing')}` : `🧪 ${t('testConnection')}`}
-          </Button>
-          
-          <Button 
-            onClick={() => window.open('/admin/mir-comunicaciones', '_blank')}
-            variant="outline"
-            className="flex-1 border-2 border-green-600 text-green-600 hover:bg-green-50 font-semibold px-8 py-4 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg"
-          >
-            <ExternalLink className="h-5 w-5 mr-2" />
-            🌐 {t('goToPanel')}
-          </Button>
-        </div>
-
-        {/* Resultado de la prueba */}
-        {testResult && (
-          <Card className="bg-white/90 backdrop-blur-sm border-white/30 shadow-xl transition-all duration-500 hover:shadow-2xl hover:scale-[1.02]">
-            <CardHeader>
-                <CardTitle className="text-gray-900 font-bold flex items-center">
-                📋 {t('testResultTitle')}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <pre className="bg-gray-100 p-4 rounded-md text-sm overflow-auto text-gray-900 font-mono">
-                {JSON.stringify(testResult, null, 2)}
-              </pre>
-            </CardContent>
-          </Card>
-        )}
       </div>
 
     </div>

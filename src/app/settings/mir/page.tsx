@@ -17,10 +17,7 @@ import {
   XCircle, 
   AlertTriangle,
   Eye,
-  EyeOff,
   Save,
-  TestTube,
-  ExternalLink,
   Info,
   Globe,
   Pencil,
@@ -91,8 +88,6 @@ export default function MirSettingsPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [showPassword, setShowPassword] = useState(false);
-  const [testResult, setTestResult] = useState<any>(null);
   const [countryCode, setCountryCode] = useState<string>('');
   const [savingCountry, setSavingCountry] = useState(false);
   const [hasConfig, setHasConfig] = useState(false); // Para saber si hay datos configurados
@@ -455,66 +450,38 @@ export default function MirSettingsPage() {
     }
   };
 
-  const guardarConfiguracion = async () => {
+  const legacyOnly =
+    credenciales.length === 0 &&
+    (serverHasUsuario || serverHasContraseña || serverHasCodigoArrendador || serverHasCodigoEstablecimiento);
+
+  const importarCredencialHeredada = async () => {
     setLoading(true);
     setError(null);
     setSuccess(null);
-    
     try {
       const response = await fetch('/api/ministerio/config-produccion', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(config)
+        body: JSON.stringify({
+          usuario: config.usuario,
+          contraseña: '',
+          codigoArrendador: config.codigoArrendador,
+          codigoEstablecimiento: config.codigoEstablecimiento,
+          baseUrl: config.baseUrl,
+          aplicacion: config.aplicacion,
+          simulacion: config.simulacion,
+          activo: true,
+        }),
       });
-      
-      const data = await response.json();
-      
-      if (data.success) {
-        setSuccess('✅ Configuración MIR guardada correctamente');
-      } else {
-        setError(`❌ ${data.message || 'Error guardando configuración'}`);
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data?.success) {
+        throw new Error(String(data?.message || data?.error || 'No se pudo importar la credencial'));
       }
-    } catch (err) {
-      setError('Error de conexión');
-      console.error('Error guardando configuración:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const probarConexion = async () => {
-    setLoading(true);
-    setError(null);
-    setSuccess(null);
-    setTestResult(null);
-    
-    try {
-      const response = await fetch('/api/ministerio/test-produccion', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(config)
-      });
-      
-      const data = await response.json();
-      setTestResult(data);
-      
-      if (data.success) {
-        setSuccess('✅ Conexión con MIR exitosa');
-      } else {
-        const desc =
-          data?.resultado?.descripcion ||
-          data?.interpretacion?.mensaje ||
-          data?.message ||
-          'Error desconocido';
-        const code = data?.resultado?.codigo ? ` (código ${data.resultado.codigo})` : '';
-        const causes = Array.isArray(data?.probableCauses) && data.probableCauses.length
-          ? `\n\nPosibles causas:\n- ${data.probableCauses.join('\n- ')}`
-          : '';
-        setError(`❌ Error en la conexión: ${desc}${code}${causes}`);
-      }
-    } catch (err) {
-      setError('Error de conexión');
-      console.error('Error probando conexión:', err);
+      setSuccess('✅ Credencial importada');
+      await cargarMultiMir();
+      await cargarConfiguracion();
+    } catch (e: any) {
+      setError(`❌ ${e?.message || 'No se pudo importar la credencial'}`);
     } finally {
       setLoading(false);
     }
@@ -633,166 +600,8 @@ export default function MirSettingsPage() {
         </Alert>
       )}
 
-        {/* Formulario de configuración */}
-        <Card className="bg-white/90 backdrop-blur-sm border-white/30 shadow-xl transition-all duration-500 hover:shadow-2xl hover:scale-[1.02]">
-          <CardHeader>
-            <CardTitle className="text-gray-900 font-bold flex items-center">
-              🔐 Credenciales MIR
-            </CardTitle>
-            <CardDescription className="text-gray-700 font-medium">
-              Introduce las credenciales proporcionadas por el Ministerio del Interior
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="usuario" className="text-gray-800 font-semibold">Usuario MIR *</Label>
-              <Input
-                id="usuario"
-                name="mir_usuario_ws"
-                autoComplete="off"
-                autoCapitalize="none"
-                placeholder={serverHasUsuario && !editingUsuario ? 'Configurado (pulsa para cambiar)' : '12345678A---WS'}
-                value={editingUsuario ? config.usuario : (config.usuario || '')}
-                onChange={(e) => {
-                  setConfig({...config, usuario: e.target.value});
-                  setEditingUsuario(true);
-                }}
-                onFocus={() => {
-                  if (!editingUsuario) setEditingUsuario(true);
-                }}
-                onBlur={() => {
-                  if (config.usuario) {
-                    setEditingUsuario(false);
-                  }
-                }}
-                className="text-gray-900"
-              />
-              <p className="text-xs text-gray-600 font-medium">
-                Formato habitual (oficial): NIF/CIF/NIE + “---WS” (ejemplo: 12345678A---WS)
-              </p>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="contraseña" className="text-gray-800 font-semibold">Contraseña MIR *</Label>
-              <div className="space-y-2">
-                <div className="relative">
-                  <Input
-                    id="contraseña"
-                    type={showPassword ? "text" : "password"}
-                    name="mir_password_ws"
-                    autoComplete="new-password"
-                    placeholder={serverHasContraseña && !editingContraseña ? 'Contraseña configurada (••••••••)' : 'Contraseña del Servicio Web'}
-                    value={editingContraseña ? config.contraseña : (serverHasContraseña ? '••••••••' : '')}
-                    disabled={!editingContraseña && serverHasContraseña}
-                    onChange={(e) => {
-                      setConfig({ ...config, contraseña: e.target.value });
-                    }}
-                    className="text-gray-900 disabled:opacity-100 disabled:cursor-default"
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                    onClick={() => setShowPassword(!showPassword)}
-                    disabled={!editingContraseña && serverHasContraseña}
-                    title={!editingContraseña && serverHasContraseña ? 'Pulsa “Cambiar contraseña” para ver/editar' : 'Mostrar/ocultar'}
-                  >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </Button>
-                </div>
-
-                {serverHasContraseña && !editingContraseña && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full sm:w-auto"
-                    onClick={() => {
-                      setShowPassword(false);
-                      setConfig((prev) => ({ ...prev, contraseña: '' }));
-                      setEditingContraseña(true);
-                    }}
-                  >
-                    Cambiar contraseña
-                  </Button>
-                )}
-
-                {!serverHasContraseña && (
-                  <p className="text-xs text-gray-600 font-medium">
-                    Introduce la contraseña del “Servicio de Comunicación” (SES Hospedajes).
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="codigoArrendador" className="text-gray-800 font-semibold">Código de Arrendador *</Label>
-            <Input
-              id="codigoArrendador"
-              placeholder="0000256653"
-              value={config.codigoArrendador}
-              onChange={(e) => setConfig({...config, codigoArrendador: e.target.value})}
-              className="text-gray-900"
-            />
-            <p className="text-xs text-gray-600 font-medium">
-              Código único asignado por el MIR para autenticación
-            </p>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="codigoEstablecimiento" className="text-gray-800 font-semibold">Código de Establecimiento *</Label>
-            <Input
-              id="codigoEstablecimiento"
-              placeholder="0000256653"
-              value={config.codigoEstablecimiento}
-              onChange={(e) => setConfig({...config, codigoEstablecimiento: e.target.value})}
-              className="text-gray-900"
-            />
-            <p className="text-xs text-gray-600 font-medium">
-              Código específico del establecimiento para las comunicaciones MIR
-            </p>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="baseUrl" className="text-gray-800 font-semibold">URL del Servicio MIR</Label>
-            <Input
-              id="baseUrl"
-              value={config.baseUrl}
-              readOnly
-              className="text-gray-900 bg-gray-50"
-            />
-            <p className="text-xs text-gray-600 font-medium">
-              URL oficial del servicio de comunicaciones MIR (no editable)
-            </p>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="aplicacion" className="text-gray-800 font-semibold">Nombre de la Aplicación</Label>
-            <Input
-              id="aplicacion"
-              value={config.aplicacion}
-              readOnly
-              className="text-gray-900 bg-gray-50"
-            />
-            <p className="text-xs text-gray-600 font-medium">
-              Nombre fijo de la aplicación (no editable)
-            </p>
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              id="simulacion"
-              checked={config.simulacion}
-              onChange={(e) => setConfig({...config, simulacion: e.target.checked})}
-              className="rounded"
-            />
-            <Label htmlFor="simulacion" className="text-gray-800 font-semibold">Modo simulación (solo para pruebas)</Label>
-          </div>
-        </CardContent>
-      </Card>
+      {/* El modo antiguo (una credencial global) se oculta para evitar confusión:
+          se usa siempre el sistema multi-credencial por unidad. */}
 
       {/* Selector de País para Módulo Legal */}
       {tenant?.legal_module && (
@@ -866,6 +675,20 @@ export default function MirSettingsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            {legacyOnly && (
+              <Alert>
+                <Info className="h-4 w-4" />
+                <AlertDescription className="text-gray-800 font-medium">
+                  Detectamos una <strong>configuración MIR heredada</strong> (antigua). Para unificar el sistema y que solo haya
+                  una forma de configurarlo, puedes importarla al modo multi-credencial sin perder datos.
+                  <div className="mt-3">
+                    <Button type="button" onClick={importarCredencialHeredada} disabled={loading}>
+                      {loading ? 'Guardando…' : 'Importar credencial heredada'}
+                    </Button>
+                  </div>
+                </AlertDescription>
+              </Alert>
+            )}
             <p className="text-xs text-gray-600">
               Regla: un apartamento debe tener su propia credencial MIR. Las habitaciones pueden compartirla.
             </p>
@@ -1341,52 +1164,7 @@ export default function MirSettingsPage() {
         </CardContent>
       </Card>
 
-        {/* Botones de acción */}
-        <div className="flex flex-col sm:flex-row gap-4">
-          <Button 
-            onClick={guardarConfiguracion} 
-            disabled={loading}
-            className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold px-8 py-4 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg"
-          >
-            <Save className="h-5 w-5 mr-2" />
-            {loading ? '⏳ Guardando...' : '💾 Guardar Configuración'}
-          </Button>
-          
-          <Button 
-            onClick={probarConexion} 
-            disabled={loading}
-            variant="outline"
-            className="flex-1 border-2 border-blue-600 text-blue-600 hover:bg-blue-50 font-semibold px-8 py-4 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg"
-          >
-            <TestTube className="h-5 w-5 mr-2" />
-            {loading ? '⏳ Probando...' : '🧪 Probar Conexión'}
-          </Button>
-          
-          <Button 
-            onClick={() => window.open('/admin/mir-comunicaciones', '_blank')}
-            variant="outline"
-            className="flex-1 border-2 border-green-600 text-green-600 hover:bg-green-50 font-semibold px-8 py-4 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg"
-          >
-            <ExternalLink className="h-5 w-5 mr-2" />
-            🌐 Ir al Panel MIR
-          </Button>
-        </div>
-
-        {/* Resultado de la prueba */}
-        {testResult && (
-          <Card className="bg-white/90 backdrop-blur-sm border-white/30 shadow-xl transition-all duration-500 hover:shadow-2xl hover:scale-[1.02]">
-            <CardHeader>
-              <CardTitle className="text-gray-900 font-bold flex items-center">
-                📋 Resultado de la Prueba
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <pre className="bg-gray-100 p-4 rounded-md text-sm overflow-auto text-gray-900 font-mono">
-                {JSON.stringify(testResult, null, 2)}
-              </pre>
-            </CardContent>
-          </Card>
-        )}
+        {/* El guardado y prueba de conexión se realizan desde la gestión de credenciales multi por unidad. */}
       </div>
 
     </div>
