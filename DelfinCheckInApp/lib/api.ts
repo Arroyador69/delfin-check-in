@@ -5,6 +5,15 @@
 import axios, { AxiosInstance, AxiosError } from 'axios';
 import Constants from 'expo-constants';
 import * as SecureStore from 'expo-secure-store';
+import { DeviceEventEmitter } from 'react-native';
+
+/** Emite cuando el refresh falla y se limpian credenciales (AuthProvider debe cerrar sesión en memoria). */
+export const AUTH_SESSION_INVALID_EVENT = 'delfin.auth.session_invalid';
+
+const SESSION_KEY = 'delfin.session.v1';
+
+/** Una sola petición de refresh en vuelo: evita tormenta de logs y carreras con muchos useQuery en paralelo. */
+let refreshInFlight: Promise<string | null> | null = null;
 
 const API_URL = Constants.expoConfig?.extra?.API_URL || process.env.EXPO_PUBLIC_API_URL || 'https://admin.delfincheckin.com';
 
@@ -58,18 +67,38 @@ async function refreshAccessToken(): Promise<string | null> {
     // Esto puede pasar si el refresh token está caducado o es inválido.
     // No es un "error fatal" para el usuario: simplemente se fuerza re-login.
     if (DEBUG_AUTH) console.warn('⚠️ No se pudo refrescar token, limpiando sesión');
-    // Si el refresh falla, limpiar tokens
+    // Si el refresh falla, limpiar tokens y sesión (evita 401 en bucle con session en memoria)
     await SecureStore.deleteItemAsync('accessToken');
     await SecureStore.deleteItemAsync('refreshToken');
-    await SecureStore.deleteItemAsync('delfin.session.v1');
+    await SecureStore.deleteItemAsync(SESSION_KEY);
+    DeviceEventEmitter.emit(AUTH_SESSION_INVALID_EVENT);
     return null;
   }
+}
+
+function refreshAccessTokenSingleFlight(): Promise<string | null> {
+  if (!refreshInFlight) {
+    refreshInFlight = (async () => {
+      try {
+        return await refreshAccessToken();
+      } finally {
+        refreshInFlight = null;
+      }
+    })();
+  }
+  return refreshInFlight;
 }
 
 // Interceptor para agregar token de autenticación
 api.interceptors.request.use(
   async (config) => {
     try {
+      const path = `${config.url || ''}`;
+      // Login y refresh no deben pasar por la lógica de Bearer (evita bucles y 401 ruidosos).
+      if (path.includes('/api/auth/refresh') || path.includes('/api/auth/mobile-login')) {
+        return config;
+      }
+
       let token = await SecureStore.getItemAsync('accessToken');
       let needsRefresh = false;
       
@@ -118,7 +147,7 @@ api.interceptors.request.use(
       
       // Si necesita refresh, intentar refrescar
       if (needsRefresh) {
-        const newToken = await refreshAccessToken();
+        const newToken = await refreshAccessTokenSingleFlight();
         if (newToken) {
           token = newToken;
           config.headers.Authorization = `Bearer ${token}`;
@@ -178,16 +207,17 @@ api.interceptors.response.use(
         if (DEBUG_AUTH) console.warn('⚠️ Error en refresh endpoint, no reintentar');
         return Promise.reject(error);
       }
-      
-      if (DEBUG_AUTH) console.log('🚨 401 recibido, intentando refrescar token y reintentar...');
-      
+
       const refreshToken = await SecureStore.getItemAsync('refreshToken');
       if (!refreshToken) {
-        // Sin refresh token: comportamiento esperado cuando no hay sesión.
         return Promise.reject(error);
       }
 
-      const newToken = await refreshAccessToken();
+      if (DEBUG_AUTH) {
+        console.log('🚨 401: intentando refrescar token y reintentar una vez…');
+      }
+
+      const newToken = await refreshAccessTokenSingleFlight();
       
       if (newToken) {
         // Actualizar header y reintentar request
@@ -232,7 +262,7 @@ export async function getAuthorizedDownloadHeaders(): Promise<Record<string, str
   }
 
   if (needsRefresh) {
-    const refreshed = await refreshAccessToken();
+    const refreshed = await refreshAccessTokenSingleFlight();
     if (refreshed) token = refreshed;
   }
 

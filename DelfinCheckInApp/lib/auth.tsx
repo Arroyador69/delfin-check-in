@@ -2,9 +2,10 @@
 // GESTIÓN DE AUTENTICACIÓN (SecureStore + Context)
 // =====================================================
 
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, useRef, ReactNode } from 'react';
 import * as SecureStore from 'expo-secure-store';
-import { api, LoginResponse } from './api';
+import { DeviceEventEmitter } from 'react-native';
+import { api, LoginResponse, AUTH_SESSION_INVALID_EVENT } from './api';
 
 const SESSION_KEY = 'delfin.session.v1';
 const ACCESS_TOKEN_KEY = 'accessToken';
@@ -44,10 +45,19 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const signOutRef = useRef<() => Promise<void>>(async () => {});
 
   // Cargar sesión al iniciar
   useEffect(() => {
     loadSession();
+  }, []);
+
+  // Si el interceptor de API limpia tokens tras un refresh fallido, cerrar sesión en UI (evita 401 en bucle).
+  useEffect(() => {
+    const sub = DeviceEventEmitter.addListener(AUTH_SESSION_INVALID_EVENT, () => {
+      void signOutRef.current();
+    });
+    return () => sub.remove();
   }, []);
 
   async function loadSession() {
@@ -101,6 +111,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(parsedSession);
         console.log('✅ Sesión cargada correctamente');
       } else {
+        if (sessionStr && !accessToken) {
+          await SecureStore.deleteItemAsync(SESSION_KEY);
+        }
+        setSession(null);
         console.log('ℹ️ No hay sesión válida guardada');
       }
     } catch (error) {
@@ -165,6 +179,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.error('Error cerrando sesión:', error);
     }
   }
+
+  signOutRef.current = signOut;
 
   async function refreshSession(): Promise<boolean> {
     try {
