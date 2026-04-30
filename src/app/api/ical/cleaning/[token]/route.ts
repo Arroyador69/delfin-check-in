@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
+import { getYmdInTimeZone } from '@/lib/calendar-date';
 
 function escapeIcal(text: string): string {
   return text.replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\n/g, '\\n');
@@ -41,19 +42,19 @@ export async function GET(
 
     const config = configResult.rows[0];
     const now = new Date();
-    const pastDays = 30;
     const futureDays = 180;
-    const fromDate = new Date(now.getTime() - pastDays * 86400000);
     const toDate = new Date(now.getTime() + futureDays * 86400000);
+    const fromStr = getYmdInTimeZone(now, 'Europe/Madrid');
+    const toStr = toDate.toISOString().slice(0, 10);
 
     const reservations = await sql`
       SELECT r.id, r.guest_name, r.check_in, r.check_out, r.guest_count, r.channel
       FROM reservations r
       WHERE r.room_id = ${config.room_id}
         AND r.tenant_id = ${config.tenant_id}::uuid
-        AND (r.status IS NULL OR LOWER(TRIM(r.status)) NOT IN ('cancelled', 'canceled'))
-        AND r.check_out >= ${fromDate.toISOString().slice(0, 10)}::date
-        AND r.check_in  <= ${toDate.toISOString().slice(0, 10)}::date
+        AND (r.status IS NULL OR LOWER(TRIM(r.status)) NOT IN ('cancelled', 'canceled', 'completed'))
+        AND r.check_out >= ${fromStr}::date
+        AND r.check_in  <= ${toStr}::date
       ORDER BY r.check_in ASC
     `;
 
@@ -65,8 +66,8 @@ export async function GET(
       WHERE tenant_id = ${config.tenant_id}::uuid
         AND room_id = ${config.room_id}
         AND author_type = 'owner'
-        AND cleaning_date >= ${fromDate.toISOString().slice(0, 10)}::date
-        AND cleaning_date <= ${toDate.toISOString().slice(0, 10)}::date
+        AND cleaning_date >= ${fromStr}::date
+        AND cleaning_date <= ${toStr}::date
       ORDER BY created_at DESC
     `;
     const notesByDate = new Map<string, string>();
@@ -76,9 +77,9 @@ export async function GET(
     });
 
     const roomName = config.room_name || `Room ${config.room_id}`;
-    const checkoutTime = config.checkout_time?.slice(0, 5) || '11:00';
+    const checkoutTime = config.checkout_time?.slice(0, 5) || '12:00';
     const checkinTime = config.checkin_time?.slice(0, 5) || '16:00';
-    const duration = config.cleaning_duration_minutes || 120;
+    const duration = config.cleaning_duration_minutes || 180;
     const trigger = config.cleaning_trigger || 'on_checkout';
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://admin.delfincheckin.com';
     const noteUrl = `${baseUrl}/api/cleaning/public/${token}/note`;

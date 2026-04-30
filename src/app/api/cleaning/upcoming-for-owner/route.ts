@@ -77,9 +77,9 @@ export async function GET(req: NextRequest) {
 
     const roomsData = await sql`
       SELECT r.id::text AS room_id, r.name AS room_name,
-        COALESCE(cc.checkout_time, TIME '11:00') AS checkout_time,
+        COALESCE(cc.checkout_time, TIME '12:00') AS checkout_time,
         COALESCE(cc.checkin_time, TIME '16:00') AS checkin_time,
-        COALESCE(cc.cleaning_duration_minutes, 120) AS cleaning_duration_minutes,
+        COALESCE(cc.cleaning_duration_minutes, 180) AS cleaning_duration_minutes,
         COALESCE(cc.cleaning_trigger::text, 'on_checkout') AS cleaning_trigger,
         COALESCE(cc.same_day_alert, true) AS same_day_alert
       FROM "Room" r
