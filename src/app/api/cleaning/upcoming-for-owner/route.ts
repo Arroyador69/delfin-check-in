@@ -37,11 +37,10 @@ export async function GET(req: NextRequest) {
     await ensureCleaningPublicLinkTables();
 
     const now = new Date();
-    const pastDays = 30;
     const futureDays = 180;
-    const fromDate = new Date(now.getTime() - pastDays * 86400000);
     const toDate = new Date(now.getTime() + futureDays * 86400000);
-    const fromStr = fromDate.toISOString().slice(0, 10);
+    // Solo desde hoy (Europe/Madrid). Evita tareas de reservas antiguas.
+    const fromStr = getYmdInTimeZone(now, 'Europe/Madrid');
     const toStr = toDate.toISOString().slice(0, 10);
 
     const linkedRows = await sql`
@@ -201,8 +200,14 @@ export async function GET(req: NextRequest) {
         new Date(String(a.start_iso)).getTime() - new Date(String(b.start_iso)).getTime()
     );
 
-    const todayMadrid = getYmdInTimeZone(new Date(), 'Europe/Madrid');
-    const upcoming = allTasks.filter((t) => String(t.date) >= todayMadrid);
+    const nowInstant = new Date();
+    const todayMadrid = getYmdInTimeZone(nowInstant, 'Europe/Madrid');
+    const upcoming = allTasks.filter((t) => {
+      const date = String(t.date);
+      if (date < todayMadrid) return false;
+      const end = new Date(String(t.end_iso));
+      return Number.isFinite(end.getTime()) ? end.getTime() > nowInstant.getTime() : true;
+    });
 
     return NextResponse.json({
       success: true,

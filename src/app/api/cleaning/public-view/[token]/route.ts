@@ -96,11 +96,10 @@ export async function GET(
     }
 
     const now = new Date();
-    const pastDays = 30;
     const futureDays = 180;
-    const fromDate = new Date(now.getTime() - pastDays * 86400000);
     const toDate = new Date(now.getTime() + futureDays * 86400000);
-    const fromStr = fromDate.toISOString().slice(0, 10);
+    // Solo desde hoy (Europe/Madrid). Evita que se cuelen reservas antiguas aunque estén mal marcadas.
+    const fromStr = getYmdInTimeZone(now, 'Europe/Madrid');
     const toStr = toDate.toISOString().slice(0, 10);
 
     const roomIdsForReservations = await expandRoomIdsForReservationQuery(tenantId, roomIds);
@@ -203,9 +202,18 @@ export async function GET(
 
     allTasks.sort((a, b) => new Date(a.start_iso).getTime() - new Date(b.start_iso).getTime());
 
-    /** Solo limpiezas desde hoy (Europa/Madrid): no mostrar meses pasados ya ejecutados. */
-    const todayMadrid = getYmdInTimeZone(new Date(), 'Europe/Madrid');
-    const upcoming = allTasks.filter(t => t.date >= todayMadrid);
+    /**
+     * Mostrar solo limpiezas "futuras":
+     * - Desde hoy (Europa/Madrid) para no mostrar meses pasados
+     * - Y que no hayan terminado ya (evita ver limpiezas de esta mañana por la tarde)
+     */
+    const nowInstant = new Date();
+    const todayMadrid = getYmdInTimeZone(nowInstant, 'Europe/Madrid');
+    const upcoming = allTasks.filter((t) => {
+      if (t.date < todayMadrid) return false;
+      const end = new Date(t.end_iso);
+      return Number.isFinite(end.getTime()) ? end.getTime() > nowInstant.getTime() : true;
+    });
 
     return NextResponse.json({
       success: true,
