@@ -1,10 +1,12 @@
-import { View, Text, Pressable, StyleSheet, Linking } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Linking, Image } from 'react-native';
 import type { ViewStyle } from 'react-native';
 import { useAuth } from '@/lib/auth';
 import { shouldShowMobileAds } from '@/lib/plan-ads';
 import { t, useLocaleListener } from '@/lib/i18n';
 import { getAffiliateGoUrl } from '@/lib/affiliate-go-url';
 import type { MobileAffiliatePlacement } from '@/lib/affiliate-go-url';
+
+const PRODUCT_IMAGE = require('../assets/affiliate-recommendation-product.png');
 
 type Props = {
   placement: MobileAffiliatePlacement;
@@ -46,9 +48,16 @@ export function AffiliateRecommendationCard({ placement, variant = 'full', style
 
   return (
     <View style={[styles.wrap, style]}>
-      <Text style={styles.badge}>{t('pwa.affiliateLabel')}</Text>
-      <Text style={styles.title}>{t('pwa.affiliateTitle')}</Text>
-      <Text style={styles.body}>{t('pwa.affiliateBody')}</Text>
+      <View style={styles.row}>
+        <Pressable onPress={open} accessibilityRole="button" accessibilityLabel={t('pwa.affiliateCta')}>
+          <Image source={PRODUCT_IMAGE} style={styles.thumb} resizeMode="contain" accessibilityIgnoresInvertColors />
+        </Pressable>
+        <View style={styles.textCol}>
+          <Text style={styles.badge}>{t('pwa.affiliateLabel')}</Text>
+          <Text style={styles.title}>{t('pwa.affiliateTitle')}</Text>
+          <Text style={styles.body}>{t('pwa.affiliateBody')}</Text>
+        </View>
+      </View>
       <View style={styles.metaRow}>
         <Text style={styles.metaText}>⭐ {t('pwa.affiliateRating')}</Text>
         <Text style={styles.metaDot}> · </Text>
@@ -70,6 +79,23 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#bfdbfe',
     backgroundColor: '#eff6ff',
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+  },
+  thumb: {
+    width: 72,
+    height: 72,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#bfdbfe',
+    backgroundColor: '#fff',
+  },
+  textCol: {
+    flex: 1,
+    minWidth: 0,
   },
   badge: {
     fontSize: 12,

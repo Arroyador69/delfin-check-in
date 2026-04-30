@@ -25,36 +25,28 @@ function affiliateGoHref(placement: AffiliateRecommendationSlotProps['placement'
   return `/api/affiliate/go?${q.toString()}`;
 }
 
+/** Imagen por defecto en `public/`; se puede sustituir con NEXT_PUBLIC_AMAZON_AFFILIATE_PRODUCT_IMAGE (URL absoluta). */
+const DEFAULT_PRODUCT_IMAGE = '/affiliate-recommendation-product.png';
+
 export default function AffiliateRecommendationSlot({ placement }: AffiliateRecommendationSlotProps) {
   const t = useTranslations('pwa');
   const href = affiliateGoHref(placement);
-  const productImage = process.env.NEXT_PUBLIC_AMAZON_AFFILIATE_PRODUCT_IMAGE?.trim();
+  const productImageSrc =
+    process.env.NEXT_PUBLIC_AMAZON_AFFILIATE_PRODUCT_IMAGE?.trim() || DEFAULT_PRODUCT_IMAGE;
 
   return (
     <div className={placementStyles(placement)}>
       <div className="flex items-start gap-3">
-        {productImage ? (
-          // eslint-disable-next-line @next/next/no-img-element -- URL externa opcional (env); sin optimización para evitar dominios en build.
-          <a href={href} target="_blank" rel="noopener noreferrer sponsored" className="shrink-0">
-            <img
-              src={productImage}
-              alt=""
-              className="h-20 w-20 rounded-md border border-blue-100 bg-white object-contain p-1"
-              width={80}
-              height={80}
-            />
-          </a>
-        ) : (
-          <a
-            href={href}
-            target="_blank"
-            rel="noopener noreferrer sponsored"
-            className="flex h-20 w-20 shrink-0 items-center justify-center rounded-md border border-blue-100 bg-white text-3xl"
-            aria-hidden
-          >
-            🧴
-          </a>
-        )}
+        {/* eslint-disable-next-line @next/next/no-img-element -- asset local o URL externa por env */}
+        <a href={href} target="_blank" rel="noopener noreferrer sponsored" className="shrink-0">
+          <img
+            src={productImageSrc}
+            alt={t('affiliateTitle')}
+            className="h-20 w-20 rounded-md border border-blue-100 bg-white object-contain p-1"
+            width={80}
+            height={80}
+          />
+        </a>
         <div className="min-w-0 flex-1">
           <p className="text-xs font-semibold leading-snug text-blue-800">{t('affiliateLabel')}</p>
           <a href={href} target="_blank" rel="noopener noreferrer sponsored" className="group block">
