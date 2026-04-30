@@ -1,18 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
-import { verifyToken } from '@/lib/auth';
+import { getTenantId } from '@/lib/tenant';
 
 export async function GET(req: NextRequest) {
   try {
-    const authToken = req.cookies.get('auth_token')?.value;
-    if (!authToken) {
-      return NextResponse.json({ success: false, error: 'No autorizado' }, { status: 401 });
-    }
-
-    const payload = verifyToken(authToken);
-    const tenantId = payload?.tenantId ? String(payload.tenantId) : '';
-    if (!tenantId) {
-      return NextResponse.json({ success: false, error: 'No autorizado' }, { status: 401 });
+    const tenantId = (await getTenantId(req)) || req.headers.get('x-tenant-id') || '';
+    if (!tenantId || tenantId === 'default' || tenantId.trim() === '') {
+      return NextResponse.json(
+        { success: false, error: 'No autorizado - tenant_id requerido' },
+        { status: 401 }
+      );
     }
 
     const { searchParams } = new URL(req.url);
