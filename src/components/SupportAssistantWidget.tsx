@@ -29,6 +29,55 @@ function getScreenHint(): string {
   }
 }
 
+function isSafeHref(href: string): boolean {
+  const h = String(href || '').trim();
+  if (!h) return false;
+  if (h.startsWith('/')) return true;
+  return h.startsWith('https://') || h.startsWith('http://');
+}
+
+function renderTextWithLinks(text: string) {
+  // Linkify URLs y rutas (/es/plans). Sin markdown completo, solo enlaces.
+  const value = String(text || '');
+  const re = /((?:https?:\/\/)[^\s]+|\/[^\s]+)/g;
+  const parts: Array<{ type: 'text' | 'link'; value: string }> = [];
+
+  let lastIdx = 0;
+  for (const m of value.matchAll(re)) {
+    const idx = m.index ?? 0;
+    const raw = m[0] ?? '';
+    if (idx > lastIdx) parts.push({ type: 'text', value: value.slice(lastIdx, idx) });
+
+    // Recortar puntuación final típica (.,),],})
+    const trimmed = raw.replace(/[)\].,;:!?}]+$/g, '');
+    const tail = raw.slice(trimmed.length);
+    if (trimmed && isSafeHref(trimmed)) {
+      parts.push({ type: 'link', value: trimmed });
+    } else {
+      parts.push({ type: 'text', value: raw });
+    }
+    if (tail) parts.push({ type: 'text', value: tail });
+    lastIdx = idx + raw.length;
+  }
+  if (lastIdx < value.length) parts.push({ type: 'text', value: value.slice(lastIdx) });
+
+  return parts.map((p, i) => {
+    if (p.type !== 'link') return <span key={i}>{p.value}</span>;
+    const isExternal = p.value.startsWith('http://') || p.value.startsWith('https://');
+    return (
+      <a
+        key={i}
+        href={p.value}
+        className="underline underline-offset-2 text-blue-700 hover:text-blue-800"
+        target={isExternal ? '_blank' : undefined}
+        rel={isExternal ? 'noopener noreferrer' : undefined}
+      >
+        {p.value}
+      </a>
+    );
+  });
+}
+
 export default function SupportAssistantWidget() {
   const locale = useLocale();
   const t = useTranslations('supportAssistant');
@@ -227,7 +276,7 @@ export default function SupportAssistantWidget() {
                       : 'bg-gray-100 text-gray-900'
                   }`}
                 >
-                  {m.text}
+                  {m.role === 'assistant' ? renderTextWithLinks(m.text) : m.text}
                 </div>
               </div>
             ))}
