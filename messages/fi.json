@@ -1442,6 +1442,8 @@
   "offlineQueue": {
     "title": "Offline-jono",
     "subtitle": "Hallitse odottavia pyyntöjä, kun yhteys palautetaan",
+    "noteTitle": "Tärkeää",
+    "noteBody": "Tämä näkymä näyttää vain odottavat lähetykset, kun yhteys katkeaa (tai tapahtuu tilapäinen virhe). Jos jono on tyhjä, kaikki on synkronoitu. Tämä ei ole hallintapaneelin täydellinen offline-tila.",
     "btnRefresh": "Päivitä",
     "btnRetryAll": "Yritä uudelleen",
     "retrying": "Yritetään uudelleen...",

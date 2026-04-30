@@ -146,6 +146,11 @@ export default function OfflineQueuePage() {
         </Link>
       </div>
 
+      <div className="mb-6 rounded-xl border border-blue-200 bg-white p-5 shadow-sm">
+        <p className="text-sm font-semibold text-slate-900">{t('noteTitle')}</p>
+        <p className="mt-1 text-sm text-slate-600 leading-relaxed">{t('noteBody')}</p>
+      </div>
+
       {/* Contenido de la cola */}
       <div className="bg-white rounded-xl shadow-lg border border-blue-200 overflow-hidden">
         {items.length === 0 ? (

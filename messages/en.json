@@ -1443,6 +1443,8 @@
   "offlineQueue": {
     "title": "Offline Queue",
     "subtitle": "Manage pending requests when the connection is restored",
+    "noteTitle": "Important",
+    "noteBody": "This screen only shows pending submissions when the connection drops (or there is a temporary failure). If the queue is empty, everything is synced. It is not a full offline mode for the dashboard.",
     "btnRefresh": "Refresh",
     "btnRetryAll": "Retry All",
     "retrying": "Retrying...",

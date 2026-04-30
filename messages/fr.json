@@ -1276,6 +1276,8 @@
   "offlineQueue": {
     "title": "File d'attente hors ligne",
     "subtitle": "Gérez les requêtes en attente lorsque la connexion est rétablie",
+    "noteTitle": "Important",
+    "noteBody": "Cet écran affiche uniquement les envois en attente lorsqu’une coupure de connexion survient (ou en cas d’échec temporaire). Si la file est vide, tout est synchronisé. Ce n’est pas un mode hors ligne complet du tableau de bord.",
     "btnRefresh": "Actualiser",
     "btnRetryAll": "Tout réessayer",
     "retrying": "Nouvelle tentative...",

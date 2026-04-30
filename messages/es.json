@@ -1496,6 +1496,8 @@
   "offlineQueue": {
     "title": "Cola Offline",
     "subtitle": "Gestiona las peticiones pendientes cuando la conexión se restablezca",
+    "noteTitle": "Importante",
+    "noteBody": "Esta pantalla solo muestra envíos pendientes cuando se corta la conexión (o hay un fallo puntual). Si la cola está vacía, todo está sincronizado. No es un modo offline completo del panel.",
     "btnRefresh": "Actualizar",
     "btnRetryAll": "Reintentar Todo",
     "retrying": "Reintentando...",

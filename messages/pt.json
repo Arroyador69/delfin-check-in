@@ -1275,6 +1275,8 @@
   "offlineQueue": {
     "title": "Fila Offline",
     "subtitle": "Gerir os pedidos pendentes quando a ligação for restabelecida",
+    "noteTitle": "Importante",
+    "noteBody": "Este ecrã mostra apenas envios pendentes quando a ligação falha (ou há uma falha temporária). Se a fila estiver vazia, está tudo sincronizado. Não é um modo offline completo do painel.",
     "btnRefresh": "Atualizar",
     "btnRetryAll": "Tentar Tudo Novamente",
     "retrying": "A tentar novamente...",

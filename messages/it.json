@@ -1459,6 +1459,8 @@
   "offlineQueue": {
     "title": "Coda Offline",
     "subtitle": "Gestisci le richieste in sospeso quando la connessione viene ripristinata",
+    "noteTitle": "Importante",
+    "noteBody": "Questa schermata mostra solo gli invii in sospeso quando la connessione si interrompe (o in caso di un errore temporaneo). Se la coda è vuota, è tutto sincronizzato. Non è una modalità offline completa del pannello.",
     "btnRefresh": "Aggiorna",
     "btnRetryAll": "Riprova Tutto",
     "retrying": "Riprova in corso...",
