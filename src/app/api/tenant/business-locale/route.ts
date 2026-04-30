@@ -34,14 +34,18 @@ export async function PUT(req: NextRequest) {
 
     const cc = country_code.toUpperCase();
 
-    await sql`
+    // Neon/Postgres puede no inferir el tipo de parámetros dentro de jsonb_build_object;
+    // forzamos casts explícitos para evitar 42P18.
+    const text = `
       UPDATE tenants
       SET
-        country_code = ${cc},
-        config = COALESCE(config, '{}'::jsonb) || jsonb_build_object('language', ${language}),
+        country_code = $1::text,
+        config = COALESCE(config, '{}'::jsonb) || jsonb_build_object('language', $2::text),
         updated_at = NOW()
-      WHERE id = ${tenantId}::uuid
+      WHERE id = $3::uuid
     `;
+    const params = [cc, language, tenantId];
+    await (sql as any).query(text, params);
 
     return NextResponse.json({ success: true, country_code: cc, language });
   } catch (e) {
