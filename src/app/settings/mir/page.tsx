@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import type { Locale } from '@/i18n/config';
 import { defaultLocale } from '@/i18n/config';
@@ -524,6 +524,27 @@ export default function MirSettingsPage() {
   };
 
   const status = getConfigStatus();
+  const bottomActionsRef = useRef<HTMLDivElement | null>(null);
+
+  const scrollToBottomActions = () => {
+    bottomActionsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  };
+
+  const onClickGuardarCredencial = async () => {
+    if (!canCreateMoreCreds && maxCredenciales > 0) {
+      setSuccess(null);
+      setError('❌ Has alcanzado el máximo de credenciales MIR según tu plan. Para añadir otra, contrata una unidad más.');
+      scrollToBottomActions();
+      return;
+    }
+    await crearCredencial();
+    scrollToBottomActions();
+  };
+
+  const onClickProbarConexion = async () => {
+    await probarConexionGuardada();
+    scrollToBottomActions();
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-6">
@@ -1198,26 +1219,45 @@ export default function MirSettingsPage() {
       </Card>
 
         {/* Acciones (abajo del todo, como antes) */}
-        <div className="flex flex-col sm:flex-row gap-3">
-          <Button
-            type="button"
-            onClick={crearCredencial}
-            disabled={creatingCred || !canCreateMoreCreds}
-            className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold px-8 py-4 rounded-xl transition-all duration-300 hover:scale-[1.01] hover:shadow-lg"
-          >
-            <Save className="h-5 w-5 mr-2" />
-            {creatingCred ? 'Guardando…' : 'Guardar credencial'}
-          </Button>
+        <div ref={bottomActionsRef} className="space-y-3">
+          {(error || success) && (
+            <div className="space-y-3">
+              {error && (
+                <Alert variant="destructive">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertDescription className="text-red-800 font-semibold">{error}</AlertDescription>
+                </Alert>
+              )}
+              {success && (
+                <Alert>
+                  <CheckCircle className="h-4 w-4" />
+                  <AlertDescription className="text-green-800 font-semibold">{success}</AlertDescription>
+                </Alert>
+              )}
+            </div>
+          )}
 
-          <Button
-            type="button"
-            variant="outline"
-            onClick={probarConexionGuardada}
-            disabled={testingConnection}
-            className="flex-1 border-2 border-blue-600 text-blue-600 hover:bg-blue-50 font-semibold px-8 py-4 rounded-xl transition-all duration-300 hover:scale-[1.01] hover:shadow-lg"
-          >
-            {testingConnection ? 'Probando…' : 'Probar conexión'}
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Button
+              type="button"
+              onClick={onClickGuardarCredencial}
+              disabled={creatingCred}
+              className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold px-8 py-4 rounded-xl transition-all duration-300 hover:scale-[1.01] hover:shadow-lg"
+            >
+              <Save className="h-5 w-5 mr-2" />
+              {creatingCred ? 'Guardando…' : 'Guardar credencial'}
+            </Button>
+
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClickProbarConexion}
+              disabled={testingConnection}
+              className="flex-1 border-2 border-blue-600 text-blue-600 hover:bg-blue-50 font-semibold px-8 py-4 rounded-xl transition-all duration-300 hover:scale-[1.01] hover:shadow-lg"
+            >
+              {testingConnection ? 'Probando…' : 'Probar conexión'}
+            </Button>
+          </div>
         </div>
       </div>
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -156,6 +156,27 @@ export default function MirSettingsPage() {
   const configured = credenciales.filter((c) => c.activo).length;
   const maxAllowed = limits?.maxRooms ?? 0;
   const canCreateMoreCreds = maxAllowed > 0 ? configured < maxAllowed : false;
+  const bottomActionsRef = useRef<HTMLDivElement | null>(null);
+
+  const scrollToBottomActions = () => {
+    bottomActionsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  };
+
+  const onClickGuardarCredencial = async () => {
+    if (!canCreateMoreCreds && maxAllowed > 0) {
+      setSuccess(null);
+      setError(`❌ ${t('multi.limitReached')}`);
+      scrollToBottomActions();
+      return;
+    }
+    await crearCredencialGlobal();
+    scrollToBottomActions();
+  };
+
+  const onClickProbarConexion = async () => {
+    await probarConexionGuardada();
+    scrollToBottomActions();
+  };
 
   const credById = useMemo(() => {
     const m = new Map<number, MirCredencialLite>();
@@ -1105,24 +1126,43 @@ export default function MirSettingsPage() {
       </Card>
 
       {/* Acciones (abajo del todo, como antes) */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <Button
-          type="button"
-          onClick={crearCredencialGlobal}
-          disabled={creatingCred || !canCreateMoreCreds}
-          className="flex-1"
-        >
-          {creatingCred ? t('saving') : t('multi.createButton')}
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          onClick={probarConexionGuardada}
-          disabled={testingConnection}
-          className="flex-1"
-        >
-          {testingConnection ? t('testing') : t('testConnection')}
-        </Button>
+      <div ref={bottomActionsRef} className="space-y-3">
+        {(error || success) && (
+          <div className="space-y-3">
+            {error && (
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription className="text-red-800 font-semibold">{error}</AlertDescription>
+              </Alert>
+            )}
+            {success && (
+              <Alert>
+                <CheckCircle className="h-4 w-4" />
+                <AlertDescription className="text-green-800 font-semibold">{success}</AlertDescription>
+              </Alert>
+            )}
+          </div>
+        )}
+
+        <div className="flex flex-col sm:flex-row gap-3">
+          <Button
+            type="button"
+            onClick={onClickGuardarCredencial}
+            disabled={creatingCred}
+            className="flex-1"
+          >
+            {creatingCred ? t('saving') : t('multi.createButton')}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onClickProbarConexion}
+            disabled={testingConnection}
+            className="flex-1"
+          >
+            {testingConnection ? t('testing') : t('testConnection')}
+          </Button>
+        </div>
       </div>
 
       </div>
