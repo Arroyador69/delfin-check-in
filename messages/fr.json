@@ -2348,7 +2348,7 @@
         "landlord": "Code bailleur",
         "establishment": "Code établissement",
         "baseUrl": "Base URL",
-        "createButton": "Créer l’identifiant",
+        "createButton": "Enregistrer l’identifiant",
         "createdOk": "Identifiant MIR créé",
         "createdFail": "Impossible de créer l’identifiant",
         "unitsTitle": "Unités (chambres / appartements)",

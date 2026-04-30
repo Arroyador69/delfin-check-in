@@ -2367,7 +2367,7 @@
         "landlord": "Codice locatore",
         "establishment": "Codice struttura",
         "baseUrl": "Base URL",
-        "createButton": "Crea credenziale",
+        "createButton": "Salva credenziale",
         "createdOk": "Credenziale MIR creata",
         "createdFail": "Impossibile creare la credenziale",
         "unitsTitle": "Unità (camere / appartamenti)",

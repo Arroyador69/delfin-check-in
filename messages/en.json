@@ -2351,7 +2351,7 @@
         "landlord": "Landlord code",
         "establishment": "Establishment code",
         "baseUrl": "Base URL",
-        "createButton": "Create credential",
+        "createButton": "Save credential",
         "createdOk": "MIR credential created",
         "createdFail": "Could not create the credential",
         "unitsTitle": "Units (rooms / apartments)",

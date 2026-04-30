@@ -2347,7 +2347,7 @@
         "landlord": "Código de arrendador",
         "establishment": "Código do estabelecimento",
         "baseUrl": "Base URL",
-        "createButton": "Criar credencial",
+        "createButton": "Guardar credencial",
         "createdOk": "Credencial MIR criada",
         "createdFail": "Não foi possível criar a credencial",
         "unitsTitle": "Unidades (quartos / apartamentos)",
