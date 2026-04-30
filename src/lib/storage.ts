@@ -69,7 +69,7 @@ export interface Reservation {
   guest_email: string;
   check_in: string;
   check_out: string;
-  channel: 'airbnb' | 'booking' | 'manual';
+  channel: string;
   total_price: number;
   status: 'confirmed' | 'cancelled' | 'completed';
   // Datos financieros

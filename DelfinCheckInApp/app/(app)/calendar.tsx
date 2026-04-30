@@ -63,7 +63,7 @@ function translateChannelLabel(channel: string | null | undefined): string {
   if (raw === 'expedia') return t('reservations.channelExpedia');
   if (raw === 'tripadvisor') return t('reservations.channelTripadvisor');
   if (raw === 'manual') return t('reservations.channelManual');
-  if (raw === 'checkin_form') return t('reservations.channelCheckinForm');
+  if (raw === 'direct' || raw === 'checkin_form') return t('reservations.channelDirect');
   return String(channel || '');
 }
 

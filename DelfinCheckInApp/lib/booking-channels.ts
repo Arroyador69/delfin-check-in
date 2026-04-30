@@ -1,9 +1,9 @@
 /**
- * Canales de reserva configurables por tenant (OTAs + manual + formulario check-in).
+ * Canales de reserva configurables por tenant (OTAs + reserva directa).
  * Duplicado de src/lib/booking-channels para la app Expo.
  */
 
-export const BOOKING_CHANNELS_CORE = ['manual', 'checkin_form'] as const;
+export const BOOKING_CHANNELS_CORE = ['direct'] as const;
 
 export const BOOKING_CHANNELS_OTA_PRESETS = [
   'airbnb',
@@ -23,6 +23,8 @@ export function normalizeBookingChannels(raw: unknown): BookingChannelsConfig {
   let presets = Array.isArray(o.presets)
     ? (o.presets as unknown[]).filter((x): x is string => typeof x === 'string' && x.trim() !== '')
     : [];
+  presets = presets.map((id) => (id === 'checkin_form' ? 'direct' : id));
+  presets = presets.filter((id) => id !== 'manual');
   for (const id of BOOKING_CHANNELS_CORE) {
     if (!presets.includes(id)) presets.push(id);
   }
@@ -78,4 +80,10 @@ export function buildChannelSelectOptions(
     out.push({ value: c.id, label: c.label });
   }
   return out;
+}
+
+export function coalesceReservationFormChannel(raw: string | null | undefined): string {
+  const v = String(raw || 'direct').trim().toLowerCase();
+  if (v === 'manual' || v === 'checkin_form') return 'direct';
+  return v || 'direct';
 }

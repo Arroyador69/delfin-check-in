@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
           check_in, check_out, channel, total_price, guest_paid, platform_commission, net_income, currency, status, tenant_id
         ) VALUES (
           ${rv.id || null}, ${rv.external_id}, ${rv.room_id}, ${rv.guest_name}, ${rv.guest_email || ''}, ${rv.guest_phone || ''}, ${rv.guest_count || 1},
-          ${rv.check_in}::timestamp, ${rv.check_out}::timestamp, ${rv.channel || 'manual'}, ${rv.total_price || 0},
+          ${rv.check_in}::timestamp, ${rv.check_out}::timestamp, ${rv.channel || 'direct'}, ${rv.total_price || 0},
           ${rv.guest_paid || 0}, ${rv.platform_commission || 0}, ${rv.net_income || 0}, ${rv.currency || 'EUR'}, ${rv.status || 'confirmed'},
           ${tenantId}::uuid
         )

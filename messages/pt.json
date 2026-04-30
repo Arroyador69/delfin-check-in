@@ -580,7 +580,7 @@
     "markReviewedErrorMsg": "Erro: {message}",
     "noPendingReviewTitle": "Sem reservas pendentes de revisão",
     "noPendingReviewBody": "Todas as reservas criadas a partir do formulário estão revistas, ou ainda não chegou nenhuma.",
-    "channelDirect": "Venda direta",
+    "channelDirect": "Reserva direta",
     "resultsCount": "{count} reserva(s) encontrada(s) (de {total} no total)",
     "columns": {
       "room": "Quarto",
@@ -639,7 +639,7 @@
     "channelVrbo": "Vrbo",
     "channelExpedia": "Expedia",
     "channelTripadvisor": "Tripadvisor",
-    "channelManual": "Manual",
+    "channelManual": "A partir do painel",
     "actions": "Ações",
     "created": "Criada",
     "updated": "Atualizada",
@@ -695,7 +695,7 @@
       "errorGeneric": "Não foi possível enviar o e-mail"
     },
     "createModal": {
-      "title": "Nova reserva manual",
+      "title": "Nova reserva",
       "reservationSection": "Informações da reserva"
     },
     "editModal": {
@@ -2281,17 +2281,16 @@
       "saving": "A guardar…",
       "save": "Guardar",
       "title": "Canais de reserva",
-      "description": "Ative as OTAs que utiliza e adicione outras com nome livre. «Manual» e «Venda direta» estão sempre disponíveis no menu.",
+      "description": "Ative as OTAs que utiliza e adicione outras com nome livre. «Reserva direta» está sempre disponível no menu ao criar ou editar reservas.",
       "coreLabel": "Sempre disponíveis",
-      "coreHint": "Entrada manual (telefone, walk-in) e reservas diretas (site/link de pagamento).",
+      "coreHint": "Reservas pelo seu site, link de pagamento ou registo de viajantes (sem comissão de OTA).",
       "otasLabel": "Plataformas (OTAs)",
       "customLabel": "Outros canais",
       "customPlaceholder": "Ex.: Plum Guide, site próprio…",
       "customAdd": "Adicionar",
       "customRemove": "Remover",
       "preset": {
-        "manual": "Manual",
-        "direct": "Venda direta",
+        "direct": "Reserva direta",
         "airbnb": "Airbnb",
         "booking": "Booking.com",
         "vrbo": "Vrbo",

@@ -43,6 +43,7 @@ import {
 } from '@/lib/reservations';
 import {
   buildChannelSelectOptions,
+  coalesceReservationFormChannel,
   normalizeBookingChannels,
   defaultBookingChannelsConfig,
   type BookingChannelsConfig,
@@ -84,7 +85,7 @@ export default function ReservationsScreen() {
     platform_commission: '',
     currency: 'EUR',
     status: 'confirmed' as 'confirmed' | 'cancelled' | 'completed',
-    channel: 'manual',
+    channel: 'direct',
   });
 
   // Obtener habitaciones
@@ -128,8 +129,9 @@ export default function ReservationsScreen() {
   const channelPickerOptions = useMemo(() => {
     const labelFor = (id: string) => {
       const keyMap: Record<string, string> = {
+        direct: 'reservations.channelDirect',
         manual: 'reservations.channelManual',
-        checkin_form: 'reservations.channelCheckinForm',
+        checkin_form: 'reservations.channelDirect',
         airbnb: 'reservations.channelAirbnb',
         booking: 'reservations.channelBooking',
         vrbo: 'reservations.channelVrbo',
@@ -342,7 +344,7 @@ export default function ReservationsScreen() {
       platform_commission: '',
       currency: bizCurrency,
       status: 'confirmed',
-      channel: 'manual',
+      channel: 'direct',
     });
   };
 
@@ -363,7 +365,7 @@ export default function ReservationsScreen() {
       platform_commission: pc != null ? String(pc) : '',
       currency: reservation.currency || 'EUR',
       status: (getReservationStatus(reservation) as 'confirmed' | 'cancelled' | 'completed') || 'confirmed',
-      channel: reservation.channel || 'manual',
+      channel: coalesceReservationFormChannel(reservation.channel),
     });
     setShowCreateModal(true);
   };

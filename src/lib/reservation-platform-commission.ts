@@ -3,7 +3,7 @@
  * Canales personalizados (custom_*) → 0.
  */
 export function estimatePlatformCommission(amount: number, channel: string | null | undefined): number {
-  const c = String(channel || 'manual').toLowerCase();
+  const c = String(channel || 'direct').toLowerCase();
   if (c.startsWith('custom_')) return 0;
   switch (c) {
     case 'booking':
@@ -15,6 +15,7 @@ export function estimatePlatformCommission(amount: number, channel: string | nul
       return Math.round(amount * 0.14 * 100) / 100;
     case 'manual':
     case 'checkin_form':
+    case 'direct':
     default:
       return 0;
   }

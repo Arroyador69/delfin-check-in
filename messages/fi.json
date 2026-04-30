@@ -590,7 +590,7 @@
     "markReviewedErrorMsg": "Virhe: {message}",
     "noPendingReviewTitle": "Ei tarkistusta odottavia varauksia",
     "noPendingReviewBody": "Kaikki vieraslomakkeella tehdyt varaukset tarkistetaan tai niitä ei ole vielä saapunut.",
-    "channelDirect": "Suora myynti",
+    "channelDirect": "Suora varaus",
     "resultsCount": "{count} varaus(ta) löydetty (yhteensä {total})",
     "columns": {
       "room": "Huone",
@@ -627,7 +627,7 @@
     "channelVrbo": "Vrbo",
     "channelExpedia": "Expedia",
     "channelTripadvisor": "Tripadvisor",
-    "channelManual": "Manuaalinen",
+    "channelManual": "Hallintapaneelista",
     "requiredFields": "Täytä kaikki pakolliset kentät",
     "checkOutBeforeCheckIn": "Uloskirjautumisen tulee tapahtua sisäänkirjautumisen jälkeen",
     "searchPlaceholder": "Hae nimellä, puhelimitse tai sähköpostilla...",
@@ -679,7 +679,7 @@
       "errorGeneric": "Sähköpostia ei voitu lähettää"
     },
     "createModal": {
-      "title": "Uusi manuaalinen varaus",
+      "title": "Uusi varaus",
       "reservationSection": "Varaustiedot"
     },
     "editModal": {
@@ -2280,17 +2280,16 @@
       "saving": "Tallennetaan…",
       "save": "Tallentaa",
       "title": "Kanavien varaus",
-      "description": "Ota käyttöön käyttämäsi OTA:t ja lisää muita vapaatekstinimillä. \"Manuaalinen\" ja \"Suora myynti\" ovat aina saatavilla avattavasta valikosta.",
+      "description": "Ota käyttöön käyttämäsi OTA:t ja lisää muita vapaatekstinimillä. \"Suora varaus\" on aina saatavilla varauksen luonti- ja muokkausvalikossa.",
       "coreLabel": "Aina saatavilla",
-      "coreHint": "Manuaaliset merkinnät (puhelin, walk-in) ja suorat varaukset (sivusto/maksulinkki).",
+      "coreHint": "Varaukset omalta sivustolta, maksulinkistä tai matkustajan rekisteröinnistä (ei OTA-komissiota).",
       "otasLabel": "Alustat (OTA)",
       "customLabel": "Muut kanavat",
       "customPlaceholder": "Esim. Luumuopas, omat nettisivut…",
       "customAdd": "Lisätä",
       "customRemove": "Poistaa",
       "preset": {
-        "manual": "Manuaalinen",
-        "direct": "Suora myynti",
+        "direct": "Suora varaus",
         "airbnb": "Airbnb",
         "booking": "Booking.com",
         "vrbo": "Vrbo",

@@ -591,7 +591,7 @@
     "markReviewedErrorMsg": "Error: {message}",
     "noPendingReviewTitle": "No reservations pending review",
     "noPendingReviewBody": "All reservations created from the guest form are reviewed, or none have arrived yet.",
-    "channelDirect": "Direct sales",
+    "channelDirect": "Direct booking",
     "resultsCount": "{count} reservation(s) found (out of {total} total)",
     "columns": {
       "room": "Room",
@@ -628,7 +628,7 @@
     "channelVrbo": "Vrbo",
     "channelExpedia": "Expedia",
     "channelTripadvisor": "Tripadvisor",
-    "channelManual": "Manual",
+    "channelManual": "From dashboard",
     "requiredFields": "Please fill in all required fields",
     "checkOutBeforeCheckIn": "Check-out must be after check-in",
     "searchPlaceholder": "Search by name, phone or email...",
@@ -680,7 +680,7 @@
       "errorGeneric": "Could not send the email"
     },
     "createModal": {
-      "title": "New manual reservation",
+      "title": "New reservation",
       "reservationSection": "Reservation information"
     },
     "editModal": {
@@ -2281,17 +2281,16 @@
       "saving": "Saving…",
       "save": "Save",
       "title": "Booking channels",
-      "description": "Enable the OTAs you use and add others with a free-text name. “Manual” and “Direct sales” are always available in the dropdown.",
+      "description": "Enable the OTAs you use and add others with a free-text name. “Direct booking” is always available in the create/edit reservation dropdown.",
       "coreLabel": "Always available",
-      "coreHint": "Manual entries (phone, walk-in) and direct bookings (website/payment link).",
+      "coreHint": "Bookings from your website, payment link, or traveler registration (no OTA commission).",
       "otasLabel": "Platforms (OTAs)",
       "customLabel": "Other channels",
       "customPlaceholder": "E.g. Plum Guide, own website…",
       "customAdd": "Add",
       "customRemove": "Remove",
       "preset": {
-        "manual": "Manual",
-        "direct": "Direct sales",
+        "direct": "Direct booking",
         "airbnb": "Airbnb",
         "booking": "Booking.com",
         "vrbo": "Vrbo",

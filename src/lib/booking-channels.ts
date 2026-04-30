@@ -1,11 +1,10 @@
 /**
- * Canales de reserva configurables por tenant (OTAs + manual + formulario check-in).
+ * Canales de reserva configurables por tenant (OTAs + reserva directa).
  * Se guarda en tenants.config.bookingChannels
  */
 
-// Core channels: siempre disponibles para seleccionar canal en reservas.
-// "direct" sustituye al legacy "checkin_form" (se mantiene compatibilidad en normalizeBookingChannels).
-export const BOOKING_CHANNELS_CORE = ['manual', 'direct'] as const;
+// Core: siempre en el desplegable. "manual" y "checkin_form" legacy se fusionan en normalize/coalesce.
+export const BOOKING_CHANNELS_CORE = ['direct'] as const;
 
 /** OTAs predefinidos que el usuario puede activar en onboarding / ajustes */
 export const BOOKING_CHANNELS_OTA_PRESETS = [
@@ -26,8 +25,8 @@ export function normalizeBookingChannels(raw: unknown): BookingChannelsConfig {
   let presets = Array.isArray(o.presets)
     ? (o.presets as unknown[]).filter((x): x is string => typeof x === 'string' && x.trim() !== '')
     : [];
-  // Compatibilidad: mapear el canal legacy a "direct" para que no aparezca "Formulario huésped".
   presets = presets.map((id) => (id === 'checkin_form' ? 'direct' : id));
+  presets = presets.filter((id) => id !== 'manual');
   for (const id of BOOKING_CHANNELS_CORE) {
     if (!presets.includes(id)) presets.push(id);
   }
@@ -85,4 +84,11 @@ export function buildChannelSelectOptions(
     out.push({ value: c.id, label: c.label });
   }
   return out;
+}
+
+/** Valor de canal para formularios: reservas antiguas manual/checkin_form → direct */
+export function coalesceReservationFormChannel(raw: string | null | undefined): string {
+  const v = String(raw || 'direct').trim().toLowerCase();
+  if (v === 'manual' || v === 'checkin_form') return 'direct';
+  return v || 'direct';
 }

@@ -12,6 +12,7 @@ import { PENDING_RESERVATIONS_REVIEW_CHANGED } from '@/components/PendingReserva
 import { toIntlDateLocale, type Locale as AppLocale } from '@/i18n/config';
 import {
   buildChannelSelectOptions,
+  coalesceReservationFormChannel,
   normalizeBookingChannels,
   defaultBookingChannelsConfig,
   type BookingChannelsConfig,
@@ -50,7 +51,7 @@ interface Room {
 
 // Fallbacks en español para el formulario de reserva (si las traducciones no se resuelven)
 const RESERVATION_FORM_FALLBACKS: Record<string, string> = {
-  'createModal.title': 'Nueva reserva manual',
+  'createModal.title': 'Nueva reserva',
   'createModal.reservationSection': 'Información de la reserva',
   'editModal.title': 'Editar reserva',
   'editModal.reservationSection': 'Información de la reserva',
@@ -83,8 +84,8 @@ const RESERVATION_FORM_FALLBACKS: Record<string, string> = {
   'form.createSubmit': 'Crear reserva',
   'form.updating': 'Actualizando...',
   'form.updateSubmit': 'Actualizar reserva',
-  'channelManual': 'Manual',
-  'channelDirect': 'Venta directa',
+  'channelManual': 'Desde el panel',
+  'channelDirect': 'Reserva directa',
   'channelAirbnb': 'Airbnb',
   'channelBooking': 'Booking.com',
   'form.perNight': '/noche',
@@ -142,7 +143,7 @@ export default function ReservationsPage() {
     platform_commission: '',
     currency: 'EUR',
     status: 'confirmed' as 'confirmed' | 'cancelled' | 'completed',
-    channel: 'manual',
+    channel: 'direct',
   });
 
   const [showPendingOnly, setShowPendingOnly] = useState(false);
@@ -166,7 +167,7 @@ export default function ReservationsPage() {
       platform_commission: reservation.platform_commission?.toString() || '',
       currency: reservation.currency || 'EUR',
       status: reservation.status || 'confirmed' as 'confirmed' | 'cancelled' | 'completed',
-      channel: reservation.channel || 'manual',
+      channel: coalesceReservationFormChannel(reservation.channel),
     });
     setShowEditModal(true);
     if (reservation.needs_review) setShowPendingOnly(true);
@@ -397,14 +398,13 @@ export default function ReservationsPage() {
       platform_commission: '',
       currency: 'EUR',
       status: 'confirmed' as 'confirmed' | 'cancelled' | 'completed',
-      channel: 'manual',
+      channel: 'direct',
     });
   };
 
   const mergedChannelOptions = useMemo(() => {
     const labelFor = (id: string) => {
       const keyMap: Record<string, string> = {
-        manual: 'channelManual',
         direct: 'channelDirect',
         checkin_form: 'channelDirect', // legacy
         airbnb: 'channelAirbnb',
@@ -615,7 +615,8 @@ export default function ReservationsPage() {
   const getChannelText = (channel: string) => {
     const keyMap: Record<string, string> = {
       manual: 'channelManual',
-      checkin_form: 'channelCheckinForm',
+      direct: 'channelDirect',
+      checkin_form: 'channelDirect',
       airbnb: 'channelAirbnb',
       booking: 'channelBooking',
       vrbo: 'channelVrbo',

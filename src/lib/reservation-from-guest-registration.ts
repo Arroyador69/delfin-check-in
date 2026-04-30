@@ -189,13 +189,12 @@ export async function syncReservationFromGuestRegistration(
       return { ok: true, reservationId: rid };
     }
 
-    // Anti-duplicado: si el formulario se envía 2 veces, intentamos reusar una reserva "checkin_form"
-    // reciente con mismo huésped y fechas (en vez de crear 2 filas y que una quede con room_id raro).
+    // Anti-duplicado: si el formulario se envía 2 veces, reusar reserva directa reciente (legacy checkin_form).
     const recent = await sql`
       SELECT id
       FROM reservations
       WHERE tenant_id = ${tenantId}::uuid
-        AND channel = 'checkin_form'
+        AND channel IN ('direct', 'checkin_form')
         AND COALESCE(NULLIF(TRIM(guest_name), ''), '') = ${guestName}
         AND check_in = ${checkIn}::timestamp
         AND check_out = ${checkOut}::timestamp
@@ -243,7 +242,7 @@ export async function syncReservationFromGuestRegistration(
         ${guestCount},
         ${checkIn}::timestamp,
         ${checkOut}::timestamp,
-        'checkin_form',
+        'direct',
         0,
         0,
         0,

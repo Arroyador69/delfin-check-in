@@ -16,7 +16,7 @@ export const reservationSchema = z.object({
   guest_email: z.string().email('Email inválido'),
   check_in: z.string().datetime('Fecha de check-in inválida'),
   check_out: z.string().datetime('Fecha de check-out inválida'),
-  channel: z.enum(['airbnb', 'booking', 'manual']),
+  channel: z.string().min(1).max(120),
   total_price: z.number().min(0, 'Precio debe ser mayor a 0'),
   status: z.enum(['confirmed', 'cancelled', 'completed']),
 });
@@ -84,7 +84,7 @@ export const searchFiltersSchema = z.object({
   date_from: z.string().datetime().optional(),
   date_to: z.string().datetime().optional(),
   status: z.enum(['confirmed', 'cancelled', 'completed']).optional(),
-  channel: z.enum(['airbnb', 'booking', 'manual']).optional(),
+  channel: z.string().min(1).max(120).optional(),
 });
 
 // Esquema para exportación de datos

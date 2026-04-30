@@ -59,7 +59,7 @@ export async function GET(req: NextRequest) {
           guest_count INTEGER DEFAULT 1 CHECK (guest_count > 0),
           check_in TIMESTAMP NOT NULL,
           check_out TIMESTAMP NOT NULL,
-          channel VARCHAR(50) DEFAULT 'manual',
+          channel VARCHAR(50) DEFAULT 'direct',
           total_price DECIMAL(10,2) DEFAULT 0,
           guest_paid DECIMAL(10,2) DEFAULT 0,
           platform_commission DECIMAL(10,2) DEFAULT 0,
@@ -198,7 +198,7 @@ export async function POST(request: NextRequest) {
           guest_count INTEGER DEFAULT 1 CHECK (guest_count > 0),
           check_in TIMESTAMP NOT NULL,
           check_out TIMESTAMP NOT NULL,
-          channel VARCHAR(50) DEFAULT 'manual',
+          channel VARCHAR(50) DEFAULT 'direct',
           total_price DECIMAL(10,2) DEFAULT 0,
           guest_paid DECIMAL(10,2) DEFAULT 0,
           platform_commission DECIMAL(10,2) DEFAULT 0,
@@ -256,7 +256,7 @@ export async function POST(request: NextRequest) {
     const guest_paid = parseFloat(body.guest_paid) || total_price;
     const platform_commission =
       parseFloat(body.platform_commission) ||
-      estimatePlatformCommission(guest_paid, body.channel || 'manual');
+      estimatePlatformCommission(guest_paid, body.channel || 'direct');
     const net_income = guest_paid - platform_commission;
 
     // Generar external_id único
@@ -276,7 +276,7 @@ export async function POST(request: NextRequest) {
       guest_count: parseInt(body.guest_count) || 1,
       check_in: body.check_in,
       check_out: body.check_out,
-      channel: body.channel || 'manual',
+      channel: body.channel || 'direct',
       total_price,
       guest_paid,
       platform_commission,
@@ -386,7 +386,7 @@ export async function PUT(request: NextRequest) {
     const guest_paid = parseFloat(body.guest_paid) || total_price;
     const platform_commission =
       parseFloat(body.platform_commission) ||
-      estimatePlatformCommission(guest_paid, body.channel || 'manual');
+      estimatePlatformCommission(guest_paid, body.channel || 'direct');
     const net_income = guest_paid - platform_commission;
 
     const result = await sql`
@@ -399,7 +399,7 @@ export async function PUT(request: NextRequest) {
         guest_count = ${parseInt(body.guest_count) || 1},
         check_in = ${body.check_in}::timestamp,
         check_out = ${body.check_out}::timestamp,
-        channel = ${body.channel || 'manual'},
+        channel = ${body.channel || 'direct'},
         total_price = ${total_price},
         guest_paid = ${guest_paid},
         platform_commission = ${platform_commission},

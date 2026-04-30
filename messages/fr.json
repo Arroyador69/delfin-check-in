@@ -580,7 +580,7 @@
     "markReviewedErrorMsg": "Erreur : {message}",
     "noPendingReviewTitle": "Aucune réservation en attente",
     "noPendingReviewBody": "Toutes les réservations issues du formulaire sont vérifiées, ou aucune n’est encore arrivée.",
-    "channelDirect": "Vente directe",
+    "channelDirect": "Réservation directe",
     "resultsCount": "{count} réservation(s) trouvée(s) (sur {total} au total)",
     "columns": {
       "room": "Chambre",
@@ -639,7 +639,7 @@
     "channelVrbo": "Vrbo",
     "channelExpedia": "Expedia",
     "channelTripadvisor": "Tripadvisor",
-    "channelManual": "Manuel",
+    "channelManual": "Depuis le tableau de bord",
     "actions": "Actions",
     "created": "Créée",
     "updated": "Mise à jour",
@@ -695,7 +695,7 @@
       "errorGeneric": "Impossible d’envoyer l’e-mail"
     },
     "createModal": {
-      "title": "Nouvelle réservation manuelle",
+      "title": "Nouvelle réservation",
       "reservationSection": "Informations sur la réservation"
     },
     "editModal": {
@@ -2282,17 +2282,16 @@
       "saving": "Enregistrement…",
       "save": "Enregistrer",
       "title": "Canaux de réservation",
-      "description": "Activez les OTA utilisées et ajoutez d’autres avec un libellé libre. « Manuel » et « Vente directe » restent toujours disponibles.",
+      "description": "Activez les OTA utilisées et ajoutez d’autres avec un libellé libre. « Réservation directe » est toujours disponible dans le menu de création ou modification.",
       "coreLabel": "Toujours disponibles",
-      "coreHint": "Saisie manuelle (téléphone, walk-in) et réservations directes (site/lien de paiement).",
+      "coreHint": "Réservations via votre site, lien de paiement ou enregistrement voyageurs (sans commission OTA).",
       "otasLabel": "Plateformes (OTA)",
       "customLabel": "Autres canaux",
       "customPlaceholder": "Ex. : Plum Guide, site propre…",
       "customAdd": "Ajouter",
       "customRemove": "Retirer",
       "preset": {
-        "manual": "Manuel",
-        "direct": "Vente directe",
+        "direct": "Réservation directe",
         "airbnb": "Airbnb",
         "booking": "Booking.com",
         "vrbo": "Vrbo",
