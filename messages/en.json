@@ -492,8 +492,6 @@
       "connectButton": "Connect Stripe (Stripe Connect)",
       "connectLoading": "Opening Stripe…",
       "connectOpened": "✅ Stripe link opened. Complete the form and come back here.",
-      "openMicrositePayments": "Open microsite payments settings",
-      "openPaymentLinks": "Open payment links",
       "previous": "Previous",
       "completing": "Finishing…",
       "completeSetup": "Go to dashboard"

@@ -492,8 +492,6 @@
       "connectButton": "Yhdistä Stripe (Stripe Connect)",
       "connectLoading": "Avataan Stripe…",
       "connectOpened": "✅ Stripe-linkki avattu. Täytä lomake ja palaa tänne.",
-      "openMicrositePayments": "Avaa maksujen asetukset (Microsite)",
-      "openPaymentLinks": "Avaa maksulinkit",
       "previous": "Edellinen",
       "completing": "Viimeistellään…",
       "completeSetup": "Siirry hallintapaneeliin"

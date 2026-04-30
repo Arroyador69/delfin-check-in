@@ -482,8 +482,6 @@
       "connectButton": "Ligar Stripe (Stripe Connect)",
       "connectLoading": "A abrir Stripe…",
       "connectOpened": "✅ Link do Stripe aberto. Conclua o formulário e volte aqui.",
-      "openMicrositePayments": "Abrir definições de pagamentos (Microsite)",
-      "openPaymentLinks": "Abrir links de pagamento",
       "previous": "Anterior",
       "completing": "A finalizar…",
       "completeSetup": "Ir para o painel"

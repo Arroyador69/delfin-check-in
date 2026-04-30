@@ -493,8 +493,6 @@
       "connectButton": "Conectar Stripe (Stripe Connect)",
       "connectLoading": "Abriendo Stripe…",
       "connectOpened": "✅ Enlace de Stripe abierto. Completa el formulario y vuelve aquí.",
-      "openMicrositePayments": "Abrir configuración de cobros (Microsite)",
-      "openPaymentLinks": "Abrir enlaces de pago",
       "previous": "Anterior",
       "completing": "Finalizando...",
       "completeSetup": "Ir al panel"
