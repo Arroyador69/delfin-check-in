@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Bed, Calendar, Users, Settings, Menu, X, TrendingUp, FileText, Download, Shield, Calculator, Send, Receipt, Crown, Target, UserPlus, BarChart3, LifeBuoy, Star } from 'lucide-react';
+import { Home, Bed, Calendar, Users, Settings, Menu, X, TrendingUp, FileText, Download, Shield, Calculator, Send, Receipt, Crown, Target, UserPlus, BarChart3, LifeBuoy, Star, MousePointerClick } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { useTenant, hasLegalModule, isFreePlanMirPreview, isProPlanTenant } from '@/hooks/useTenant';
@@ -117,6 +117,7 @@ export default function Navigation() {
     { name: tc('superAdminDashboard'), href: '/superadmin', icon: Crown },
     { name: tc('metrics'), href: '/superadmin/metrics', icon: TrendingUp },
     { name: tc('affiliates'), href: '/superadmin/affiliates', icon: Users },
+    { name: tc('amazonAffiliateClicks'), href: '/superadmin/amazon-affiliate-clicks', icon: MousePointerClick },
     { name: tc('referrals'), href: '/superadmin/referrals', icon: Users },
     { name: tc('emails'), href: '/superadmin/emails', icon: FileText },
     { name: tc('investorMode'), href: '/superadmin/investor-mode', icon: Target },

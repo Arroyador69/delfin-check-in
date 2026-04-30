@@ -1,147 +1,114 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useTenant, hasAds } from '@/hooks/useTenant';
-import { X } from 'lucide-react';
 
 /**
- * Componente para detectar AdBlock y bloquear la página si está activo
- * Solo se muestra para planes FREE y CHECKIN (que tienen anuncios)
+ * Detecta extensiones tipo AdBlock que ocultan la franja de recomendaciones (afiliado).
+ * Solo aplica a planes con franja comercial (p. ej. free / checkin).
+ * No usa adsbygoogle: sin AdSense, esa comprobación generaba falsos positivos.
  */
 export default function AdBlockDetector() {
   const locale = useLocale();
+  const t = useTranslations('adBlockCurated');
   const { tenant, loading } = useTenant();
-  const [adBlockDetected, setAdBlockDetected] = useState(false);
+  const [blocked, setBlocked] = useState(false);
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    // Solo verificar si el tenant tiene anuncios habilitados
     if (loading || !tenant || !hasAds(tenant)) {
       setChecking(false);
       return;
     }
 
-    // Técnica de detección de AdBlock
-    const detectAdBlock = () => {
-      // Crear un elemento que los bloqueadores de anuncios suelen bloquear
-      const testAd = document.createElement('div');
-      testAd.innerHTML = '&nbsp;';
-      testAd.className = 'adsbox';
-      testAd.style.position = 'absolute';
-      testAd.style.left = '-9999px';
-      testAd.style.height = '1px';
-      testAd.style.width = '1px';
-      
-      document.body.appendChild(testAd);
-      
-      // Esperar un momento para que AdBlock procese
-      setTimeout(() => {
-        const isBlocked = testAd.offsetHeight === 0 || 
-                         testAd.offsetWidth === 0 || 
-                         testAd.style.display === 'none' ||
-                         testAd.style.visibility === 'hidden';
-        
-        document.body.removeChild(testAd);
-        
-        // Verificar también si el script de AdSense fue bloqueado
-        const adSenseBlocked = !(window as any).adsbygoogle || 
-                              ((window as any).adsbygoogle && (window as any).adsbygoogle.loaded === false);
-        
-        if (isBlocked || adSenseBlocked) {
-          setAdBlockDetected(true);
-        }
-        
-        setChecking(false);
-      }, 100);
-    };
+    const testAd = document.createElement('div');
+    testAd.innerHTML = '&nbsp;';
+    testAd.className = 'adsbox';
+    testAd.style.position = 'absolute';
+    testAd.style.left = '-9999px';
+    testAd.style.height = '1px';
+    testAd.style.width = '1px';
 
-    // También verificar si el script de AdSense se cargó correctamente
-    const checkAdSense = () => {
-      if (typeof window !== 'undefined') {
-        // Esperar a que el script se intente cargar
-        setTimeout(() => {
-          if (!(window as any).adsbygoogle) {
-            setAdBlockDetected(true);
-            setChecking(false);
-          } else {
-            detectAdBlock();
-          }
-        }, 2000); // Dar tiempo a que AdSense intente cargar
+    document.body.appendChild(testAd);
+
+    const timer = window.setTimeout(() => {
+      const hidden =
+        testAd.offsetHeight === 0 ||
+        testAd.offsetWidth === 0 ||
+        testAd.style.display === 'none' ||
+        testAd.style.visibility === 'hidden';
+      if (testAd.parentNode) {
+        testAd.parentNode.removeChild(testAd);
+      }
+      setBlocked(hidden);
+      setChecking(false);
+    }, 180);
+
+    return () => {
+      window.clearTimeout(timer);
+      if (testAd.parentNode) {
+        testAd.parentNode.removeChild(testAd);
       }
     };
-
-    checkAdSense();
   }, [loading, tenant]);
 
-  // No mostrar nada si está cargando, no hay tenant, o no tiene anuncios
-  if (loading || checking || !tenant || !hasAds(tenant) || !adBlockDetected) {
+  if (loading || checking || !tenant || !hasAds(tenant) || !blocked) {
     return null;
   }
 
-  // Bloquear toda la página si AdBlock está detectado
+  const planKey = (tenant.plan_type || 'free').toUpperCase();
+
   return (
-    <div className="fixed inset-0 z-[9999] bg-white flex items-center justify-center p-4">
-      <div className="max-w-2xl w-full bg-gradient-to-br from-red-50 to-orange-50 border-4 border-red-400 rounded-2xl shadow-2xl p-8 text-center">
-        <div className="mb-6">
-          <div className="text-6xl mb-4">🚫</div>
-          <h1 className="text-3xl font-bold text-red-900 mb-2">
-            Bloqueador de Anuncios Detectado
-          </h1>
-          <p className="text-lg text-red-800 mb-4">
-            Has activado un bloqueador de anuncios en tu navegador
-          </p>
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm">
+      <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-slate-200 bg-white p-8 shadow-2xl">
+        <div className="mb-6 text-center">
+          <div className="mb-4 text-5xl" aria-hidden>
+            🛡️
+          </div>
+          <h1 className="mb-2 text-2xl font-bold text-slate-900 sm:text-3xl">{t('title')}</h1>
+          <p className="text-lg text-slate-600">{t('subtitle')}</p>
         </div>
 
-        <div className="bg-white rounded-lg p-6 mb-6 text-left">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">
-            ¿Por qué necesitamos los anuncios?
-          </h2>
-          <p className="text-gray-700 mb-4">
-            Estás usando el <strong>Plan {tenant.plan_type?.toUpperCase() || 'FREE'}</strong> de Delfín Check-in, 
-            que es completamente gratuito gracias a los anuncios publicitarios.
+        <div className="mb-6 rounded-xl border border-slate-200 bg-slate-50 p-6 text-left">
+          <h2 className="mb-3 text-lg font-semibold text-slate-900">{t('whyTitle')}</h2>
+          <p className="mb-3 text-slate-700">
+            {t('whyLeadPlan', { plan: planKey })}
           </p>
-          <p className="text-gray-700 mb-4">
-            Los anuncios nos permiten ofrecerte el PMS sin coste. Si bloqueas los anuncios, 
-            no podemos mantener el servicio gratuito.
-          </p>
-          <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mt-4">
-            <p className="text-sm text-blue-800">
-              <strong>💡 Alternativa:</strong> Si prefieres no ver anuncios, puedes actualizar a 
-              <strong> Plan PRO (29,99€/mes)</strong> que no incluye anuncios.
-            </p>
+          <p className="mb-3 text-slate-700">{t('whyBodyCurated')}</p>
+          <p className="text-slate-700">{t('whyBodyFair')}</p>
+          <div className="mt-4 rounded-lg border border-blue-200 bg-blue-50 p-4">
+            <p className="text-sm font-semibold text-blue-900">{t('upgradeTitle')}</p>
+            <p className="mt-2 text-sm text-blue-900">{t('upgradeBody')}</p>
           </div>
         </div>
 
-        <div className="bg-yellow-50 border-2 border-yellow-400 rounded-lg p-6 mb-6">
-          <h3 className="text-lg font-semibold text-yellow-900 mb-3">
-            📋 Cómo desactivar el bloqueador de anuncios:
-          </h3>
-          <ol className="text-left text-yellow-800 space-y-2 list-decimal list-inside">
-            <li>Busca el icono del bloqueador de anuncios en la barra de herramientas de tu navegador (generalmente en la esquina superior derecha)</li>
-            <li>Haz clic en el icono y selecciona "Desactivar en este sitio" o "Pausar en esta página"</li>
-            <li>Recarga la página (F5 o Ctrl+R / Cmd+R)</li>
+        <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-6">
+          <h3 className="mb-3 text-base font-semibold text-amber-950">{t('stepsTitle')}</h3>
+          <ol className="list-decimal space-y-2 pl-5 text-left text-amber-950">
+            <li>{t('step1')}</li>
+            <li>{t('step2')}</li>
+            <li>{t('step3')}</li>
           </ol>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+        <div className="flex flex-col justify-center gap-3 sm:flex-row">
           <button
+            type="button"
             onClick={() => window.location.reload()}
-            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold px-8 py-4 rounded-xl shadow-lg transition-all duration-200 transform hover:scale-105"
+            className="rounded-xl bg-slate-800 px-6 py-3 font-semibold text-white transition hover:bg-slate-900"
           >
-            🔄 Recargar Página
+            {t('reload')}
           </button>
           <a
             href={`/${locale}/upgrade-plan`}
-            className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold px-8 py-4 rounded-xl shadow-lg transition-all duration-200 transform hover:scale-105 text-center"
+            className="rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-3 text-center font-semibold text-white shadow-md transition hover:from-blue-700 hover:to-indigo-700"
           >
-            💎 Actualizar a Plan PRO
+            {t('upgradeCta')}
           </a>
         </div>
 
-        <p className="text-sm text-gray-600 mt-6">
-          Una vez que desactives el bloqueador de anuncios, podrás usar el PMS normalmente.
-        </p>
+        <p className="mt-6 text-center text-sm text-slate-500">{t('footerHint')}</p>
       </div>
     </div>
   );

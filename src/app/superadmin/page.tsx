@@ -205,6 +205,17 @@ export default function SuperAdminDashboard() {
                 </div>
               </a>
 
+              <a
+                href="/superadmin/amazon-affiliate-clicks"
+                className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition"
+              >
+                <span className="text-2xl mr-3">🖱️</span>
+                <div>
+                  <p className="font-semibold text-gray-900">Clics Amazon (recomendaciones)</p>
+                  <p className="text-sm text-gray-700">Estadísticas por banner, menú y conversión</p>
+                </div>
+              </a>
+
               <a 
                 href="/superadmin/referrals"
                 className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition"
