@@ -82,6 +82,25 @@ export async function POST(req: NextRequest) {
       const { ensureMirMultiSchema } = await import('@/lib/mir-multi');
       await ensureMirMultiSchema();
 
+      // Política anti-mezcla:
+      // - Si el tenant tiene > 1 credencial MIR activa, se EXIGE room_id + asignación.
+      // - Si tiene exactamente 1 credencial activa, se permite usarla como “default” para habitaciones compartidas.
+      // Esto evita enviar huéspedes de una propiedad con credenciales de otra.
+      let activeCredsCount = 0;
+      if (tenantId !== 'default') {
+        try {
+          const countRes = await sql`
+            SELECT COUNT(*)::int AS n
+            FROM mir_credenciales
+            WHERE tenant_id = ${tenantId}::uuid
+              AND activo = true
+          `;
+          activeCredsCount = Number(countRes.rows?.[0]?.n ?? 0);
+        } catch {
+          activeCredsCount = 0;
+        }
+      }
+
       if (tenantId !== 'default' && roomIdForMir) {
         const multi = await sql`
           SELECT c.usuario, c.contraseña, c.codigo_arrendador, c.codigo_establecimiento, c.base_url, true AS activo
@@ -104,31 +123,61 @@ export async function POST(req: NextRequest) {
             simulacion: false,
           };
           console.log('✅ Config MIR cargada desde mir_credenciales por unidad:', { roomIdForMir });
+        } else if (activeCredsCount > 1) {
+          // Multi-credenciales activas pero la unidad no tiene credencial asignada: NO enviar.
+          return NextResponse.json(
+            {
+              success: false,
+              code: 'MIR_ROOM_CREDENTIAL_REQUIRED',
+              error: 'Falta asignar credencial MIR a la unidad',
+              message:
+                'Este propietario tiene varias credenciales MIR activas. Debes asignar una credencial a esta unidad (room_id) antes de enviar al MIR.',
+              tenantId,
+              room_id: roomIdForMir,
+            },
+            { status: 400 }
+          );
         }
+      } else if (activeCredsCount > 1) {
+        // Sin room_id en el payload y existen varias credenciales: NO enviar para evitar cruces.
+        return NextResponse.json(
+          {
+            success: false,
+            code: 'MIR_ROOM_ID_REQUIRED',
+            error: 'room_id requerido',
+            message:
+              'Este propietario tiene varias credenciales MIR activas. El envío al MIR requiere room_id para seleccionar la credencial correcta por unidad.',
+            tenantId,
+          },
+          { status: 400 }
+        );
       }
 
-      // 2) Si no hay room_id o no hay mapping, usar primera credencial activa del tenant (multi)
+      // 2) Fallback seguro: SOLO si hay exactamente 1 credencial activa en el tenant.
+      // Si hay >1, ya habremos salido con error antes (para evitar mezcla).
       if (!config.username || !config.password || !config.codigoArrendador) {
         if (tenantId !== 'default') {
-          const anyMulti = await sql`
-            SELECT usuario, contraseña, codigo_arrendador, codigo_establecimiento, base_url, activo
-            FROM mir_credenciales
-            WHERE tenant_id = ${tenantId}::uuid AND activo = true
-            ORDER BY created_at ASC, id ASC
-            LIMIT 1
-          `;
-          if (anyMulti.rows.length > 0) {
-            const r = anyMulti.rows[0];
-            config = {
-              baseUrl: r.base_url || config.baseUrl,
-              username: r.usuario || '',
-              password: r.contraseña || '',
-              codigoArrendador: r.codigo_arrendador || '',
-              codigoEstablecimiento: r.codigo_establecimiento || '',
-              aplicacion: 'Delfin_Check_in',
-              simulacion: false,
-            };
-            console.log('✅ Config MIR cargada desde mir_credenciales (fallback tenant):', { roomIdForMir });
+          if (activeCredsCount === 1) {
+            const onlyCred = await sql`
+              SELECT usuario, contraseña, codigo_arrendador, codigo_establecimiento, base_url, activo
+              FROM mir_credenciales
+              WHERE tenant_id = ${tenantId}::uuid AND activo = true
+              ORDER BY created_at ASC, id ASC
+              LIMIT 1
+            `;
+            if (onlyCred.rows.length > 0) {
+              const r = onlyCred.rows[0];
+              config = {
+                baseUrl: r.base_url || config.baseUrl,
+                username: r.usuario || '',
+                password: r.contraseña || '',
+                codigoArrendador: r.codigo_arrendador || '',
+                codigoEstablecimiento: r.codigo_establecimiento || '',
+                aplicacion: 'Delfin_Check_in',
+                simulacion: false,
+              };
+              console.log('✅ Config MIR cargada desde mir_credenciales (única credencial activa):', { roomIdForMir });
+            }
           }
         }
       }
@@ -146,8 +195,8 @@ export async function POST(req: NextRequest) {
       console.log('🔍 Búsqueda de configuración MIR:', {
         tenantIdBuscado: tenantId,
         resultadosEncontrados: dbRowsLen,
-        propietario_id_encontrado: dbResult.rows[0]?.propietario_id,
-        tenant_id_encontrado: dbResult.rows[0]?.tenant_id
+        propietario_id_encontrado: dbResult?.rows?.[0]?.propietario_id,
+        tenant_id_encontrado: dbResult?.rows?.[0]?.tenant_id
       });
 
       if ((!config.username || !config.password || !config.codigoArrendador) && dbRowsLen > 0 && dbResult.rows[0].activo) {
