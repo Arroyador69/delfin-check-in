@@ -488,8 +488,8 @@
     },
     "step6": {
       "title": "💳 Cobros y reservas directas (Stripe Connect)",
-      "intro": "Activa Stripe Connect para poder cobrar reservas directas desde tu microsite y usar enlaces de pago.",
-      "note": "Recomendado: completa Stripe Connect para habilitar cobros y transferencias. Puedes hacerlo ahora o más tarde desde Configuración → Cobros (Microsite).",
+      "intro": "Conecta Stripe Connect para cobrar a tus huéspedes y recibir el dinero en tu Stripe de forma segura.",
+      "note": "Una vez conectado, los pagos entran en tu cuenta de Stripe y Stripe puede transferirlos automáticamente a tu cuenta bancaria (payouts). Esto se usa en (1) reservas directas del microsite y (2) enlaces de pago: tú pones el precio y envías el enlace por WhatsApp/email. Con Pro, también puedes poner tu enlace en Google Business para captar más reservas directas.",
       "connectButton": "Conectar Stripe (Stripe Connect)",
       "connectLoading": "Abriendo Stripe…",
       "connectOpened": "✅ Enlace de Stripe abierto. Completa el formulario y vuelve aquí.",

@@ -487,8 +487,8 @@
     },
     "step6": {
       "title": "💳 Payments and direct bookings (Stripe Connect)",
-      "intro": "Enable Stripe Connect to charge direct bookings from your microsite and use payment links.",
-      "note": "Recommended: complete Stripe Connect to enable charges and payouts. You can do it now or later under Settings → Microsite payments.",
+      "intro": "Connect Stripe Connect to charge your guests and receive money securely in your Stripe account.",
+      "note": "Once connected, payments arrive in Stripe and Stripe can automatically transfer them to your bank account (payouts). This is used for (1) direct bookings from your microsite and (2) payment links: you set the price and send the link via WhatsApp/email. With Pro, you can also add your booking link to Google Business to get more direct bookings.",
       "connectButton": "Connect Stripe (Stripe Connect)",
       "connectLoading": "Opening Stripe…",
       "connectOpened": "✅ Stripe link opened. Complete the form and come back here.",

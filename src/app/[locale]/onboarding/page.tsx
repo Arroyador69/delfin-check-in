@@ -1301,8 +1301,6 @@ export default function OnboardingPage() {
 
   const renderPaymentsStep = () => {
     const localeFromPath = getLocaleFromPath();
-    const settingsHref = `/${localeFromPath}/settings/microsite-payments`;
-    const paymentLinksHref = `/${localeFromPath}/settings/payment-links`;
 
     return (
       <div className="max-w-4xl mx-auto p-6">
@@ -1329,7 +1327,7 @@ export default function OnboardingPage() {
             </div>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
             <button
               type="button"
               onClick={startStripeConnect}
@@ -1337,20 +1335,6 @@ export default function OnboardingPage() {
               className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-lg hover:from-blue-700 hover:to-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-semibold"
             >
               {connectLoading ? t('step6.connectLoading') : t('step6.connectButton')}
-            </button>
-            <button
-              type="button"
-              onClick={() => router.push(settingsHref)}
-              className="w-full bg-white border-2 border-gray-300 text-gray-800 px-6 py-3 rounded-lg hover:border-gray-400 font-semibold"
-            >
-              {t('step6.openMicrositePayments')}
-            </button>
-            <button
-              type="button"
-              onClick={() => router.push(paymentLinksHref)}
-              className="w-full bg-white border-2 border-gray-300 text-gray-800 px-6 py-3 rounded-lg hover:border-gray-400 font-semibold md:col-span-2"
-            >
-              {t('step6.openPaymentLinks')}
             </button>
           </div>
 
