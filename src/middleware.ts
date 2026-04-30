@@ -150,7 +150,9 @@ export async function middleware(req: NextRequest) {
     pathname.startsWith('/icon') ||
     pathname.startsWith('/sw.js') ||
     pathname === '/landing-tracking.js' ||
-    pathname.endsWith('.js') && pathname.startsWith('/landing-')
+    pathname.endsWith('.js') && pathname.startsWith('/landing-') ||
+    /** En `public/`; si no se excluye, i18n redirige a /es/… y el asset no existe ahí (imagen rota en web). */
+    pathname === '/affiliate-recommendation-product.png'
   ) {
     return NextResponse.next();
   }

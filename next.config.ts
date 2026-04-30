@@ -53,6 +53,10 @@ const nextConfig: NextConfig = {
     return locales.flatMap((locale) => [
       { source: `/${locale}/vercel.svg`, destination: '/vercel.svg' },
       { source: `/${locale}/next.svg`, destination: '/vercel.svg' },
+      {
+        source: `/${locale}/affiliate-recommendation-product.png`,
+        destination: '/affiliate-recommendation-product.png',
+      },
     ]);
   },
   // Cabeceras de seguridad (complementan nginx en Docker / proxy en Vercel)
