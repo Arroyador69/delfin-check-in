@@ -471,6 +471,14 @@ export async function POST(req: NextRequest) {
     const json = await req.json();
     console.log(`[PV-EXPORT] ${correlationId} - Datos recibidos:`, JSON.stringify(json, null, 2));
 
+    // Multi-tenant (si aplica): capturar tenantId para auditoría aislada
+    const tenantId =
+      (json as any)?.tenant_id ||
+      (json as any)?.tenantId ||
+      req.headers.get('x-tenant-id') ||
+      req.headers.get('X-Tenant-ID') ||
+      null;
+
     // Bitácora: creación de solicitud
     try {
       const payloadHash = crypto
@@ -482,6 +490,7 @@ export async function POST(req: NextRequest) {
         entityType: 'PV_EXPORT',
         entityId: correlationId,
         payloadHash,
+        tenantId,
         meta: { stage: 'received' }
       });
     } catch (e) {

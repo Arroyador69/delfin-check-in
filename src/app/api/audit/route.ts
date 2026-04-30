@@ -1,8 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
+import { verifyToken } from '@/lib/auth';
 
 export async function GET(req: NextRequest) {
   try {
+    const authToken = req.cookies.get('auth_token')?.value;
+    if (!authToken) {
+      return NextResponse.json({ success: false, error: 'No autorizado' }, { status: 401 });
+    }
+
+    const payload = verifyToken(authToken);
+    const tenantId = payload?.tenantId ? String(payload.tenantId) : '';
+    if (!tenantId) {
+      return NextResponse.json({ success: false, error: 'No autorizado' }, { status: 401 });
+    }
+
     const { searchParams } = new URL(req.url);
     const action = searchParams.get('action') || undefined;
     const entityType = searchParams.get('entityType') || undefined;
@@ -30,6 +42,9 @@ export async function GET(req: NextRequest) {
     const clauses: string[] = [];
     const values: any[] = [];
     const push = (sqlSnippet: string, v?: any) => { clauses.push(sqlSnippet); if (typeof v !== 'undefined') values.push(v); };
+
+    // 🔒 Multi-tenant: siempre filtrar por tenant autenticado
+    push(`tenant_id = $${values.length + 1}::uuid`, tenantId);
 
     if (action) push(`action = $${values.length + 1}`, action);
     if (entityType) push(`entity_type = $${values.length + 1}`, entityType);

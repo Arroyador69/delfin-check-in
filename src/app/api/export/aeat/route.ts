@@ -74,6 +74,7 @@ export async function GET(request: NextRequest) {
         entityType: 'AEAT_EXPORT',
         entityId: correlationId,
         payloadHash,
+        tenantId,
         meta: { stage: 'received' }
       });
     } catch {}

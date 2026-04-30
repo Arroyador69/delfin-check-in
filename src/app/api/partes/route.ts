@@ -26,6 +26,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // ⚠️ CRÍTICO: Obtener tenant_id del body o headers (multi-tenant)
+    const tenantId =
+      body.tenant_id ||
+      body.tenantId ||
+      request.headers.get('X-Tenant-ID') ||
+      request.headers.get('x-tenant-id') ||
+      null;
+
     // Hash del payload para idempotencia y auditoría básica
     const hash = crypto.createHash('sha256').update(JSON.stringify(parsed.data)).digest('hex');
     await logAudit({
@@ -34,6 +42,7 @@ export async function POST(request: NextRequest) {
       entityId: hash,
       payloadHash: hash,
       ip: request.headers.get('x-forwarded-for') || null,
+      tenantId,
       meta: { source: 'form-publico' }
     });
     if (processed.has(hash)) {
@@ -77,13 +86,6 @@ export async function POST(request: NextRequest) {
       audit_hash: hash
     };
 
-    // ⚠️ CRÍTICO: Obtener tenant_id del body o headers
-    const tenantId = body.tenant_id || 
-                     body.tenantId ||
-                     request.headers.get('X-Tenant-ID') ||
-                     request.headers.get('x-tenant-id') ||
-                     null;
-    
     console.log('🏢 Tenant ID detectado en /api/partes:', tenantId);
     
     const insertGr = await sql`
@@ -121,6 +123,7 @@ export async function POST(request: NextRequest) {
       entityId: hash,
       payloadHash: hash,
       ip: request.headers.get('x-forwarded-for') || null,
+      tenantId,
       meta: { saved: true }
     });
 
