@@ -169,6 +169,11 @@
   "pwa": {
     "installButton": "Asenna sovellus",
     "adsLabel": "Mainonta",
+    "affiliateLabel": "Suositus majoituksellesi",
+    "affiliateTitle": "Viikon suositus",
+    "affiliateBody": "Tämä paikka on varattu majoittajille hyödyllisille tuotteille/palveluille (älylukot, vakuutukset, siivous jne.) kumppanilinkin kautta.",
+    "affiliateCardHint": "Vahvistettu arvio",
+    "affiliateCta": "Katso suositus",
     "guideIosTitle": "📱 Asenna sovellus iPhonellesi",
     "guideIosStep1": "Avaa Jaa-valikko Safarissa.",
     "guideIosStep2": "Napauta Lisää aloitusnäyttöön.",

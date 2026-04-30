@@ -169,6 +169,11 @@
   "pwa": {
     "installButton": "Installa app",
     "adsLabel": "Pubblicità",
+    "affiliateLabel": "Consiglio per il tuo alloggio",
+    "affiliateTitle": "Consiglio della settimana",
+    "affiliateBody": "Questo spazio è riservato a prodotti/servizi utili per host (serrature smart, assicurazione, pulizia e altro) con link di affiliazione.",
+    "affiliateCardHint": "Valutazione verificata",
+    "affiliateCta": "Vedi consiglio",
     "guideIosTitle": "📱 Installa l'app sul tuo iPhone",
     "guideIosStep1": "Apri il menu Condividi in Safari.",
     "guideIosStep2": "Tocca Aggiungi a Home.",

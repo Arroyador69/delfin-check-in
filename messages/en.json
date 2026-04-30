@@ -169,6 +169,11 @@
   "pwa": {
     "installButton": "Install app",
     "adsLabel": "Advertising",
+    "affiliateLabel": "Recommendation for your property",
+    "affiliateTitle": "Recommendation of the week",
+    "affiliateBody": "This slot is reserved for useful products/services for hosts (smart locks, insurance, cleaning and more) with affiliate links.",
+    "affiliateCardHint": "Verified rating",
+    "affiliateCta": "View recommendation",
     "guideIosTitle": "📱 Install the app on your iPhone",
     "guideIosStep1": "Open the Share menu in Safari.",
     "guideIosStep2": "Tap Add to Home Screen.",

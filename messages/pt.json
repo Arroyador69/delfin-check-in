@@ -169,6 +169,11 @@
   "pwa": {
     "installButton": "Instalar app",
     "adsLabel": "Publicidade",
+    "affiliateLabel": "Recomendação para o seu alojamento",
+    "affiliateTitle": "Recomendação da semana",
+    "affiliateBody": "Este espaço fica reservado para produtos/serviços úteis para proprietários (fechaduras inteligentes, seguros, limpeza e mais) com link de afiliado.",
+    "affiliateCardHint": "Avaliação verificada",
+    "affiliateCta": "Ver recomendação",
     "guideIosTitle": "📱 Instale a app no seu iPhone",
     "guideIosStep1": "Abra o menu Partilhar no Safari.",
     "guideIosStep2": "Toque em Adicionar ao ecrã principal.",
