@@ -110,7 +110,7 @@ export async function GET(
       FROM reservations
       WHERE tenant_id = ${tenantId}::uuid
         AND room_id = ANY(${sqlTextArrayForAny(roomIdsForReservations)})
-        AND (status IS NULL OR LOWER(TRIM(status)) NOT IN ('cancelled', 'canceled'))
+        AND (status IS NULL OR LOWER(TRIM(status)) NOT IN ('cancelled', 'canceled', 'completed'))
         AND check_out >= ${fromStr}::date
         AND check_in <= ${toStr}::date
       ORDER BY check_in ASC
