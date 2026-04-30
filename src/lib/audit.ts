@@ -7,6 +7,7 @@ type AuditAction =
   | 'QUEUE_FLUSH_ATTEMPT'
   | 'SES_SENT'
   | 'SES_ACK'
+  | 'AFFILIATE_CLICK'
   | 'ERROR';
 
 let auditTableEnsured = false;
