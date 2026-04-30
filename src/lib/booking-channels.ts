@@ -3,7 +3,9 @@
  * Se guarda en tenants.config.bookingChannels
  */
 
-export const BOOKING_CHANNELS_CORE = ['manual', 'checkin_form'] as const;
+// Core channels: siempre disponibles para seleccionar canal en reservas.
+// "direct" sustituye al legacy "checkin_form" (se mantiene compatibilidad en normalizeBookingChannels).
+export const BOOKING_CHANNELS_CORE = ['manual', 'direct'] as const;
 
 /** OTAs predefinidos que el usuario puede activar en onboarding / ajustes */
 export const BOOKING_CHANNELS_OTA_PRESETS = [
@@ -24,6 +26,8 @@ export function normalizeBookingChannels(raw: unknown): BookingChannelsConfig {
   let presets = Array.isArray(o.presets)
     ? (o.presets as unknown[]).filter((x): x is string => typeof x === 'string' && x.trim() !== '')
     : [];
+  // Compatibilidad: mapear el canal legacy a "direct" para que no aparezca "Formulario huésped".
+  presets = presets.map((id) => (id === 'checkin_form' ? 'direct' : id));
   for (const id of BOOKING_CHANNELS_CORE) {
     if (!presets.includes(id)) presets.push(id);
   }

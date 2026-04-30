@@ -84,6 +84,7 @@ const RESERVATION_FORM_FALLBACKS: Record<string, string> = {
   'form.updating': 'Actualizando...',
   'form.updateSubmit': 'Actualizar reserva',
   'channelManual': 'Manual',
+  'channelDirect': 'Venta directa',
   'channelAirbnb': 'Airbnb',
   'channelBooking': 'Booking.com',
   'form.perNight': '/noche',
@@ -404,7 +405,8 @@ export default function ReservationsPage() {
     const labelFor = (id: string) => {
       const keyMap: Record<string, string> = {
         manual: 'channelManual',
-        checkin_form: 'channelCheckinForm',
+        direct: 'channelDirect',
+        checkin_form: 'channelDirect', // legacy
         airbnb: 'channelAirbnb',
         booking: 'channelBooking',
         vrbo: 'channelVrbo',
