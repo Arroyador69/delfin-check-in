@@ -9,12 +9,12 @@
     "start": "next start",
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
-    "type-check": "tsc --noEmit",
+    "type-check": "tsc -p tsconfig.check.json --noEmit",
     "typecheck:mobile": "npm run typecheck --prefix DelfinCheckInApp",
     "format": "prettier --write \"src/**/*.{js,jsx,ts,tsx,json,md}\"",
     "format:check": "prettier --check \"src/**/*.{js,jsx,ts,tsx,json,md}\"",
-    "test": "echo 'Tests will be implemented soon' && exit 0",
-    "test:watch": "echo 'Test watch mode will be implemented soon'",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "analyze": "ANALYZE=true next build",
     "clean": "rm -rf .next out dist",
     "prepare": "echo 'Skipping husky install in production'",
@@ -87,7 +87,8 @@
     "eslint-config-next": "15.5.15",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.17",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^3.2.4"
   },
   "_comment": "FORCE DEPLOYMENT - Timestamp: Tue Sep 2 01:37:00 CEST 2025"
 }
