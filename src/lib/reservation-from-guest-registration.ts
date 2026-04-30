@@ -164,6 +164,9 @@ export async function syncReservationFromGuestRegistration(
     const guestCount = countPersonas(input.data);
     const externalId = (input.reservaRef && String(input.reservaRef).trim()) || `gr-${grId}`;
 
+    const checkIn = toCheckTimestamp(input.fechaEntrada, false);
+    const checkOut = toCheckTimestamp(input.fechaSalida, true);
+
     const dupExt = await sql`
       SELECT id FROM reservations
       WHERE tenant_id = ${tenantId}::uuid AND external_id = ${externalId}
@@ -186,58 +189,43 @@ export async function syncReservationFromGuestRegistration(
       return { ok: true, reservationId: rid };
     }
 
-    // Resolver unidad (habitación/apartamento) para mostrarlo bien en el panel.
-    // Preferencia:
-    // 1) room_id del formulario (si existe y es una Room real)
-    // 2) property_id del formulario (usar nombre de tenant_properties como "unidad" visible)
-    // 3) fallback: primera Room del tenant
-    let resolvedRoomId: string | null = null;
+    // Anti-duplicado: si el formulario se envía 2 veces, intentamos reusar una reserva "checkin_form"
+    // reciente con mismo huésped y fechas (en vez de crear 2 filas y que una quede con room_id raro).
+    const recent = await sql`
+      SELECT id
+      FROM reservations
+      WHERE tenant_id = ${tenantId}::uuid
+        AND channel = 'checkin_form'
+        AND COALESCE(NULLIF(TRIM(guest_name), ''), '') = ${guestName}
+        AND check_in = ${checkIn}::timestamp
+        AND check_out = ${checkOut}::timestamp
+        AND created_at > NOW() - INTERVAL '2 hours'
+      ORDER BY created_at DESC
+      LIMIT 1
+    `.catch(() => ({ rows: [] as any[] }));
+    if (recent.rows.length > 0) {
+      const rid = String(recent.rows[0].id);
+      await sql`
+        UPDATE guest_registrations
+        SET linked_reservation_id = ${rid}
+        WHERE id = ${grId}::uuid
+      `;
+      await sql`
+        UPDATE reservations
+        SET needs_review = true,
+            guest_registration_id = COALESCE(guest_registration_id, ${grId}::uuid),
+            checkin_instructions_opt_in = COALESCE(checkin_instructions_opt_in, ${optIn}),
+            guest_mail_locale = COALESCE(guest_mail_locale, ${guestLocale}),
+            updated_at = NOW()
+        WHERE id = ${rid}::uuid AND tenant_id = ${tenantId}::uuid
+      `;
+      return { ok: true, reservationId: rid };
+    }
 
+    // En reservas creadas desde formulario, NO inventamos un "número de habitación" por defecto:
+    // si no viene room_id, dejamos un placeholder y mantenemos needs_review para que el propietario lo asigne.
     const roomIdFromForm = String((input.data as any)?.room_id || '').trim();
-    if (roomIdFromForm) {
-      const roomExists = await sql`
-        SELECT r.id::text AS id
-        FROM "Room" r
-        WHERE r."lodgingId" = ${tenantId}::text
-          AND r.id::text = ${roomIdFromForm}
-        LIMIT 1
-      `;
-      if (roomExists.rows.length > 0) {
-        resolvedRoomId = roomIdFromForm;
-      }
-    }
-
-    if (!resolvedRoomId) {
-      const propertyIdFromForm = String((input.data as any)?.property_id || '').trim();
-      if (propertyIdFromForm) {
-        const propRow = await sql`
-          SELECT COALESCE(NULLIF(tp.name, ''), NULLIF(tp.display_name, ''), NULLIF(tp.public_name, '')) AS name
-          FROM tenant_properties tp
-          WHERE tp.tenant_id = ${tenantId}::uuid
-            AND tp.id::text = ${propertyIdFromForm}
-          LIMIT 1
-        `;
-        const propName = String(propRow.rows[0]?.name || '').trim();
-        if (propName) {
-          // Guardamos el nombre como "room_id" visible si el tenant no trabaja por habitaciones.
-          resolvedRoomId = propName;
-        }
-      }
-    }
-
-    if (!resolvedRoomId) {
-      const roomRow = await sql`
-        SELECT r.id::text AS room_id
-        FROM "Room" r
-        WHERE r."lodgingId" = ${tenantId}::text
-        ORDER BY COALESCE(r.name, '') ASC NULLS LAST
-        LIMIT 1
-      `;
-      resolvedRoomId = (roomRow.rows[0]?.room_id as string) || '1';
-    }
-
-    const checkIn = toCheckTimestamp(input.fechaEntrada, false);
-    const checkOut = toCheckTimestamp(input.fechaSalida, true);
+    const resolvedRoomId = roomIdFromForm || 'UNASSIGNED';
 
     const ins = await sql`
       INSERT INTO reservations (
