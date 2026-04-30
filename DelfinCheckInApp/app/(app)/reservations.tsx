@@ -30,7 +30,7 @@ import {
   ChevronRight,
 } from 'lucide-react-native';
 import { KeyboardAwareFormModal } from '@/components/KeyboardAwareFormModal';
-import { getLocaleTag, t } from '@/lib/i18n';
+import { getLocaleTag, t, useLocaleListener } from '@/lib/i18n';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
 import {
@@ -48,6 +48,7 @@ import {
   type BookingChannelsConfig,
 } from '@/lib/booking-channels';
 import { FixedBannerAd } from '@/components/FixedBannerAd';
+import { AffiliateRecommendationCard } from '@/components/AffiliateRecommendationCard';
 import { useMajorActionAd } from '@/lib/use-major-action-ad';
 import { formatTenantMoney } from '@/lib/tenant-money';
 
@@ -57,6 +58,7 @@ interface Room {
 }
 
 export default function ReservationsScreen() {
+  useLocaleListener();
   const notifyMajorAd = useMajorActionAd();
   const params = useLocalSearchParams<{ filter?: string; reservationId?: string }>();
   const [refreshing, setRefreshing] = useState(false);
@@ -496,6 +498,8 @@ export default function ReservationsScreen() {
           </Text>
         </Pressable>
       </View>
+
+      <AffiliateRecommendationCard placement="mobile_reservations" style={{ marginBottom: 8 }} />
 
       {/* Lista de reservas */}
       <FlatList

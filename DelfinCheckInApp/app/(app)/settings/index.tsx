@@ -8,8 +8,11 @@ import { useRouter } from 'expo-router';
 import { t } from '@/lib/i18n';
 import { openUpgradePlanInBrowser, suggestedUpgradeTargetPlan } from '@/lib/upgrade-plan';
 import { FixedBannerAd } from '@/components/FixedBannerAd';
+import { AffiliateRecommendationCard } from '@/components/AffiliateRecommendationCard';
+import { useLocaleListener } from '@/lib/i18n';
 
 export default function SettingsScreen() {
+  useLocaleListener();
   const { session, signOut } = useAuth();
   const router = useRouter();
 
@@ -52,6 +55,8 @@ export default function SettingsScreen() {
         <Text style={styles.sectionTitle}>{t('settings.title')}</Text>
         <Text style={styles.sectionSubtitle}>{t('settings.subtitle')}</Text>
       </View>
+
+      <AffiliateRecommendationCard placement="mobile_settings" style={{ marginHorizontal: 0 }} />
 
       <View style={styles.card}>
         <Text style={styles.cardTitle}>{t('settings.tabs.account')}</Text>

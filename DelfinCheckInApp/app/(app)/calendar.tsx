@@ -8,8 +8,9 @@ import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { useState, useMemo, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, ArrowDownCircle, ArrowUpCircle, Users, Info } from 'lucide-react-native';
-import { getLocaleTag, t } from '@/lib/i18n';
+import { getLocaleTag, t, useLocaleListener } from '@/lib/i18n';
 import { FixedBannerAd } from '@/components/FixedBannerAd';
+import { AffiliateRecommendationCard } from '@/components/AffiliateRecommendationCard';
 
 interface Availability {
   property_id: number;
@@ -67,6 +68,7 @@ function translateChannelLabel(channel: string | null | undefined): string {
 }
 
 export default function CalendarScreen() {
+  useLocaleListener();
   const { session } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
@@ -295,6 +297,8 @@ export default function CalendarScreen() {
           <Info size={20} color="#1d4ed8" style={styles.icalNoticeIcon} />
           <Text style={styles.icalNoticeText}>{t('calendar.icalScopeNotice')}</Text>
         </View>
+
+        <AffiliateRecommendationCard placement="mobile_calendar" style={{ marginHorizontal: 16, marginBottom: 8 }} />
 
         {/* Días de la semana */}
         <View style={styles.weekDays}>

@@ -4,6 +4,7 @@
 
 import { View, Text, ScrollView, StyleSheet, RefreshControl, Pressable } from 'react-native';
 import { FixedBannerAd } from '@/components/FixedBannerAd';
+import { AffiliateRecommendationCard } from '@/components/AffiliateRecommendationCard';
 import { useAuth } from '@/lib/auth';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
@@ -271,6 +272,8 @@ export default function DashboardScreen() {
         </Text>
         <Text style={styles.tenantName}>{session?.user.tenant.name}</Text>
       </View>
+
+      <AffiliateRecommendationCard placement="mobile_dashboard" />
 
       {reservationsError ? (
         <View

@@ -5,7 +5,8 @@
 import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { useRouter, usePathname } from 'expo-router';
 import { useAuth } from '@/lib/auth';
-import { t } from '@/lib/i18n';
+import { t, useLocaleListener } from '@/lib/i18n';
+import { AffiliateRecommendationCard } from '@/components/AffiliateRecommendationCard';
 import { 
   Home, 
   Calendar, 
@@ -29,6 +30,7 @@ interface DrawerMenuProps {
 }
 
 export default function DrawerMenu({ isOpen, onClose }: DrawerMenuProps) {
+  useLocaleListener();
   const router = useRouter();
   const pathname = usePathname();
   const { session, signOut } = useAuth();
@@ -94,6 +96,8 @@ export default function DrawerMenu({ isOpen, onClose }: DrawerMenuProps) {
             );
           })}
         </ScrollView>
+
+        <AffiliateRecommendationCard placement="mobile_menu" variant="compact" style={{ marginHorizontal: 0 }} />
 
         <View style={styles.footer}>
           <View style={styles.userInfo}>

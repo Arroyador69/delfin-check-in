@@ -6,7 +6,17 @@ export const DEFAULT_AMAZON_ASSOCIATE_TAG = 'delfincheckin-21';
 
 export const DEFAULT_AMAZON_HOST = 'www.amazon.es';
 
-export const AFFILIATE_PLACEMENTS = ['banner', 'menu', 'sidebar', 'footer'] as const;
+export const AFFILIATE_PLACEMENTS = [
+  'banner',
+  'menu',
+  'sidebar',
+  'footer',
+  'mobile_dashboard',
+  'mobile_menu',
+  'mobile_settings',
+  'mobile_reservations',
+  'mobile_calendar',
+] as const;
 export type AffiliatePlacement = (typeof AFFILIATE_PLACEMENTS)[number];
 
 export function normalizeAffiliatePlacement(raw: string | null): AffiliatePlacement | 'other' {
