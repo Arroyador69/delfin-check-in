@@ -1563,7 +1563,7 @@ export default function OnboardingPage() {
                     setFormData((prev) => ({
                       ...prev,
                       selectedPlanId: p.id,
-                      unitCount: p.id === 'free' ? 1 : Math.max(prev.unitCount || 1, p.defaultUnits),
+                      unitCount: p.id === 'free' ? Math.max(prev.unitCount || 1, 1) : Math.max(prev.unitCount || 1, p.defaultUnits),
                       checkoutCompleted: p.id === 'free' ? true : false,
                     }));
                     loadPricing({ selectedPlanId: p.id });
@@ -1631,7 +1631,7 @@ export default function OnboardingPage() {
                     ...prev,
                     selectedPlanId: v,
                     checkoutCompleted: v === 'free' ? true : false,
-                    unitCount: v === 'free' ? 1 : prev.unitCount,
+                    unitCount: Math.max(prev.unitCount || 1, 1),
                   }));
                   loadPricing({ selectedPlanId: v });
                 }}
@@ -1693,12 +1693,11 @@ export default function OnboardingPage() {
                   const n = Math.max(1, Math.min(500, parseInt(e.target.value || '1', 10)));
                   setFormData(prev => ({
                     ...prev,
-                    unitCount: prev.selectedPlanId === 'free' ? 1 : n,
+                    unitCount: n,
                     checkoutCompleted: prev.selectedPlanId === 'free' ? true : false,
                   }));
                   loadPricing({ unitCount: n });
                 }}
-                disabled={formData.selectedPlanId === 'free'}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
               />
               <p className="text-xs text-gray-500 mt-1">
