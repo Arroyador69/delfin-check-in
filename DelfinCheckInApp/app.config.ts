@@ -65,6 +65,10 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     extra: {
       API_URL: apiUrl,
       CLEANING_PUBLIC_BASE_URL: cleaningPublicBase,
+      /** Amazon afiliado (misma lógica que web; override con EXPO_PUBLIC_AMAZON_*). */
+      AMAZON_MARKETPLACE_HOST: process.env.EXPO_PUBLIC_AMAZON_MARKETPLACE_HOST?.trim() || '',
+      AMAZON_DEFAULT_ASIN: process.env.EXPO_PUBLIC_AMAZON_DEFAULT_ASIN?.trim() || '',
+      AMAZON_ASSOCIATE_TAG: process.env.EXPO_PUBLIC_AMAZON_ASSOCIATE_TAG?.trim() || '',
       /** IDs de unidad (banner / intersticial). iOS intersticial creado en AdMob; banner iOS al crear el bloque. */
       ADMOB_IOS_BANNER_ID: process.env.EXPO_PUBLIC_ADMOB_IOS_BANNER_ID || '',
       ADMOB_ANDROID_BANNER_ID: process.env.EXPO_PUBLIC_ADMOB_ANDROID_BANNER_ID || '',

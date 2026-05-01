@@ -3,8 +3,9 @@ import type { ViewStyle } from 'react-native';
 import { useAuth } from '@/lib/auth';
 import { shouldShowMobileAds } from '@/lib/plan-ads';
 import { t, useLocaleListener } from '@/lib/i18n';
-import { getAffiliateGoUrl } from '@/lib/affiliate-go-url';
+import { getAffiliateTrackClickUrl } from '@/lib/affiliate-go-url';
 import type { MobileAffiliatePlacement } from '@/lib/affiliate-go-url';
+import { getAmazonAffiliateProductUrl } from '@/lib/amazon-affiliate-product-url';
 
 const PRODUCT_IMAGE = require('../assets/affiliate-recommendation-product.png');
 
@@ -17,7 +18,7 @@ type Props = {
 
 /**
  * Recomendación Amazon (afiliado), alineada con la web: mismas claves bajo "pwa" en messages
- * y mismo endpoint /api/affiliate/go para estadísticas en superadmin.
+ * Tracking vía POST /api/public/affiliate-click; enlace directo a Amazon con tag de afiliado.
  */
 export function AffiliateRecommendationCard({ placement, variant = 'full', style }: Props) {
   useLocaleListener();
@@ -26,10 +27,19 @@ export function AffiliateRecommendationCard({ placement, variant = 'full', style
     return null;
   }
 
-  const url = getAffiliateGoUrl(placement);
+  const amazonUrl = getAmazonAffiliateProductUrl();
 
   const open = () => {
-    void Linking.openURL(url);
+    const trackUrl = getAffiliateTrackClickUrl();
+    void fetch(trackUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(session?.accessToken ? { Authorization: `Bearer ${session.accessToken}` } : {}),
+      },
+      body: JSON.stringify({ placement }),
+    }).catch(() => {});
+    void Linking.openURL(amazonUrl);
   };
 
   if (variant === 'compact') {

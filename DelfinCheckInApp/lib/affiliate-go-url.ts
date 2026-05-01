@@ -16,7 +16,7 @@ export function getApiBaseUrl(): string {
   return String(raw).replace(/\/$/, '');
 }
 
-/** URL de tracking: el servidor registra el clic y redirige a Amazon con tag de afiliado. */
-export function getAffiliateGoUrl(placement: MobileAffiliatePlacement): string {
-  return `${getApiBaseUrl()}/api/affiliate/go?placement=${encodeURIComponent(placement)}`;
+/** POST público: registra clic en audit (superadmin); la app abre Amazon con `getAmazonAffiliateProductUrl`. */
+export function getAffiliateTrackClickUrl(): string {
+  return `${getApiBaseUrl()}/api/public/affiliate-click`;
 }
