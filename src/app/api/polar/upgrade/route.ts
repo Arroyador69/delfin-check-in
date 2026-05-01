@@ -3,6 +3,7 @@ import { getTenantId } from '@/lib/tenant';
 import { sql } from '@vercel/postgres';
 
 type UpgradePlanId = 'checkin' | 'standard' | 'pro';
+type BillingInterval = 'month' | 'year';
 
 function baseUrl(req: NextRequest): string {
   const envUrl = process.env.NEXT_PUBLIC_APP_URL?.trim();
@@ -12,24 +13,25 @@ function baseUrl(req: NextRequest): string {
   return `${proto}://${host}`.replace(/\/+$/, '');
 }
 
-function extraUnitProductId(): string | null {
-  const trimmed = String(process.env.POLAR_PRODUCT_EXTRA_UNIT_ID || '').trim();
-  return trimmed ? trimmed : null;
-}
-
-function productIdFor(planId: UpgradePlanId): string | null {
+function productIdFor(planId: UpgradePlanId, interval: BillingInterval): string | null {
   const v =
     planId === 'checkin'
-      ? process.env.POLAR_PRODUCT_CHECKIN_ID
+      ? interval === 'year'
+        ? process.env.POLAR_PRODUCT_CHECKIN_YEARLY_ID || process.env.POLAR_PRODUCT_CHECKIN_ID
+        : process.env.POLAR_PRODUCT_CHECKIN_ID
       : planId === 'standard'
-        ? process.env.POLAR_PRODUCT_STANDARD_ID
-        : process.env.POLAR_PRODUCT_PRO_ID;
+        ? interval === 'year'
+          ? process.env.POLAR_PRODUCT_STANDARD_YEARLY_ID || process.env.POLAR_PRODUCT_STANDARD_ID
+          : process.env.POLAR_PRODUCT_STANDARD_ID
+        : interval === 'year'
+          ? process.env.POLAR_PRODUCT_PRO_YEARLY_ID || process.env.POLAR_PRODUCT_PRO_ID
+          : process.env.POLAR_PRODUCT_PRO_ID;
   const trimmed = String(v || '').trim();
   return trimmed ? trimmed : null;
 }
 
 /**
- * GET /api/polar/upgrade?plan=checkin|standard|pro&rooms=2&locale=es
+ * GET /api/polar/upgrade?plan=checkin|standard|pro&rooms=2&locale=es&interval=month|year
  *
  * Redirige al checkout alojado de Polar (MoR) para "Mejorar plan".
  * En Polar, cada plan debe estar configurado con pricing "seat-based" (1 unidad incluida en el tier base
@@ -44,6 +46,8 @@ export async function GET(req: NextRequest) {
   const u = new URL(req.url);
   const plan = (u.searchParams.get('plan') || '').toLowerCase() as UpgradePlanId;
   const locale = (u.searchParams.get('locale') || 'es').toLowerCase();
+  const intervalParam = (u.searchParams.get('interval') || 'month').toLowerCase();
+  const interval: BillingInterval = intervalParam === 'year' ? 'year' : 'month';
   const source = (u.searchParams.get('source') || '').toLowerCase();
   const roomsParam = u.searchParams.get('rooms');
   const rooms = Math.max(1, Math.min(999, Math.floor(Number(roomsParam || 1) || 1)));
@@ -55,10 +59,16 @@ export async function GET(req: NextRequest) {
   const safePlan: UpgradePlanId =
     plan === 'checkin' || plan === 'standard' || plan === 'pro' ? plan : 'pro';
 
-  const productId = productIdFor(safePlan);
+  const productId = productIdFor(safePlan, interval);
   if (!productId) {
     return NextResponse.json(
-      { success: false, error: `Polar no configurado: falta POLAR_PRODUCT_${safePlan.toUpperCase()}_ID` },
+      {
+        success: false,
+        error:
+          interval === 'year'
+            ? `Polar no configurado: falta POLAR_PRODUCT_${safePlan.toUpperCase()}_YEARLY_ID`
+            : `Polar no configurado: falta POLAR_PRODUCT_${safePlan.toUpperCase()}_ID`,
+      },
       { status: 500 }
     );
   }
@@ -97,6 +107,7 @@ export async function GET(req: NextRequest) {
     seats,
     source: source || 'upgrade_plan',
     locale,
+    interval,
   });
 
   // Usamos el handler oficial en /api/polar/checkout.

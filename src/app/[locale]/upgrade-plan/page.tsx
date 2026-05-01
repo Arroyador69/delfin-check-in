@@ -8,6 +8,7 @@ import Link from 'next/link';
 import AdminLayout from '@/components/AdminLayout';
 
 type PlanId = 'checkin' | 'standard' | 'pro';
+type BillingInterval = 'month' | 'year';
 
 interface Plan {
   id: PlanId;
@@ -81,11 +82,13 @@ function getPlanDesc(t: (k: string) => string, planId: PlanId): string {
 
 function PlanCalculator({
   planId,
+  interval,
   roomCount,
   onRoomCountChange,
   onPriceChange,
 }: {
   planId: PlanId;
+  interval: BillingInterval;
   roomCount: number;
   onRoomCountChange: (n: number) => void;
   onPriceChange: (pricing: any) => void;
@@ -102,7 +105,9 @@ function PlanCalculator({
     (async () => {
       setLoading(true);
       try {
-        const response = await fetch(`/api/plans/calculate-price?planId=${planId}&roomCount=${roomCount}`);
+        const response = await fetch(
+          `/api/plans/calculate-price?planId=${planId}&roomCount=${roomCount}&interval=${interval}`
+        );
         const data = await response.json();
         if (!cancelled && data.success) {
           setPricing(data.pricing);
@@ -117,7 +122,7 @@ function PlanCalculator({
     return () => {
       cancelled = true;
     };
-  }, [roomCount, planId, plan, onPriceChange]);
+  }, [roomCount, planId, interval, plan, onPriceChange]);
 
   if (!plan) return null;
 
@@ -200,6 +205,7 @@ export default function UpgradePlanPage() {
   const [selectedPlan, setSelectedPlan] = useState<PlanId | null>(null);
   const [showCheckout, setShowCheckout] = useState(false);
   const [pricing, setPricing] = useState<any>(null);
+  const [billingInterval, setBillingInterval] = useState<BillingInterval>('month');
   const [roomCount, setRoomCount] = useState(2);
   const [loading, setLoading] = useState(true);
   const appliedQueryRef = useRef(false);
@@ -276,6 +282,7 @@ export default function UpgradePlanPage() {
     if (loading || appliedQueryRef.current) return;
     const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
     const planParam = params.get('plan') as PlanId | null;
+    const intervalParam = (params.get('interval') || '').toLowerCase();
     if (!planParam || !['checkin', 'standard', 'pro'].includes(planParam)) return;
 
     const allowedIds = availablePlans.map((p) => p.id);
@@ -283,6 +290,9 @@ export default function UpgradePlanPage() {
 
     appliedQueryRef.current = true;
     setSelectedPlan(planParam);
+    if (intervalParam === 'year' || intervalParam === 'month') {
+      setBillingInterval(intervalParam);
+    }
     setShowCheckout(true);
   }, [loading, currentPlan, availablePlans]);
 
@@ -294,9 +304,10 @@ export default function UpgradePlanPage() {
     const url = new URL('/api/polar/upgrade', window.location.origin);
     url.searchParams.set('plan', selectedPlan);
     url.searchParams.set('rooms', String(roomCount));
+    url.searchParams.set('interval', billingInterval);
     url.searchParams.set('locale', String(locale || 'es'));
     window.location.href = url.toString();
-  }, [selectedPlan, roomCount, locale]);
+  }, [selectedPlan, roomCount, billingInterval, locale]);
 
   if (loading) {
     return (
@@ -367,6 +378,7 @@ export default function UpgradePlanPage() {
 
                 <PlanCalculator 
                   planId={selectedPlan} 
+                  interval={billingInterval}
                   roomCount={roomCount}
                   onRoomCountChange={(next) => {
                     const min = selectedPlan === currentPlan ? Math.max(1, currentRoomCount) : 1;
@@ -378,6 +390,35 @@ export default function UpgradePlanPage() {
                 {pricing && (
                   <div className="mt-6">
                     <div className="space-y-4">
+                      <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+                        <label className="mb-2 block text-sm font-medium text-gray-700">
+                          {tPlans('currentSubscriptionTitle')}
+                        </label>
+                        <div className="grid grid-cols-2 gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setBillingInterval('month')}
+                            className={`rounded-lg border px-3 py-2 text-sm font-semibold transition-colors ${
+                              billingInterval === 'month'
+                                ? 'border-blue-600 bg-blue-50 text-blue-700'
+                                : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-100'
+                            }`}
+                          >
+                            {tUpgrade('monthly')}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setBillingInterval('year')}
+                            className={`rounded-lg border px-3 py-2 text-sm font-semibold transition-colors ${
+                              billingInterval === 'year'
+                                ? 'border-blue-600 bg-blue-50 text-blue-700'
+                                : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-100'
+                            }`}
+                          >
+                            {tUpgrade('annually')}
+                          </button>
+                        </div>
+                      </div>
                       {isSamePlanSelection && !hasRoomCountChange ? (
                         <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-amber-800">
                           {tPlans('noChangesToSubscription')}
@@ -394,7 +435,8 @@ export default function UpgradePlanPage() {
                         className="w-full rounded-lg bg-blue-600 px-4 py-3 font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         {isSamePlanSelection ? tPlans('updateSubscription') : tPlans('subscribeTo')}{' '}
-                        {money(pricing.total).toFixed(2)}€
+                        {money(pricing.total).toFixed(2)}€ ·{' '}
+                        {billingInterval === 'year' ? tUpgrade('annually') : tUpgrade('monthly')}
                       </button>
                     </div>
                   </div>

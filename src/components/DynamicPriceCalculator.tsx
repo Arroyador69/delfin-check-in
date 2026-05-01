@@ -267,7 +267,7 @@ export default function DynamicPriceCalculator({
 
       {showGoToUpgrade && (
         <Link
-          href={`/${locale}/upgrade-plan?plan=${planId}&rooms=${roomCount}`}
+          href={`/${locale}/upgrade-plan?plan=${planId}&rooms=${roomCount}&interval=${isYearly ? 'year' : 'month'}`}
           className="w-full mt-6 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold py-4 px-6 rounded-xl hover:from-purple-700 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center space-x-2"
         >
           <ArrowUpCircle className="w-6 h-6" />

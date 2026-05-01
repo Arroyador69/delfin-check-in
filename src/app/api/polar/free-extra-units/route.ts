@@ -22,15 +22,28 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ success: false, error: 'Tenant no identificado' }, { status: 401 });
   }
 
-  const productId = String(process.env.POLAR_PRODUCT_FREE_EXTRA_UNITS_ID || '').trim();
+  const u = new URL(req.url);
+  const intervalParam = (u.searchParams.get('interval') || 'month').toLowerCase();
+  const interval = intervalParam === 'year' ? 'year' : 'month';
+
+  const productId = String(
+    interval === 'year'
+      ? process.env.POLAR_PRODUCT_FREE_EXTRA_UNITS_YEARLY_ID || process.env.POLAR_PRODUCT_FREE_EXTRA_UNITS_ID || ''
+      : process.env.POLAR_PRODUCT_FREE_EXTRA_UNITS_ID || ''
+  ).trim();
   if (!productId) {
     return NextResponse.json(
-      { success: false, error: 'Falta POLAR_PRODUCT_FREE_EXTRA_UNITS_ID' },
+      {
+        success: false,
+        error:
+          interval === 'year'
+            ? 'Falta POLAR_PRODUCT_FREE_EXTRA_UNITS_YEARLY_ID'
+            : 'Falta POLAR_PRODUCT_FREE_EXTRA_UNITS_ID',
+      },
       { status: 500 }
     );
   }
 
-  const u = new URL(req.url);
   const locale = (u.searchParams.get('locale') || 'es').toLowerCase();
   const roomsParam = u.searchParams.get('rooms');
   const rooms = Math.max(2, Math.min(999, Math.floor(Number(roomsParam || 2) || 2)));
@@ -44,6 +57,7 @@ export async function GET(req: NextRequest) {
     extra_units: seats,
     source: 'free_extra_units',
     locale,
+    interval,
   });
 
   // Reutilizamos el checkout handler común.
