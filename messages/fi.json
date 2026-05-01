@@ -507,6 +507,10 @@
       "userMirHint": "Muoto: ALV---WS (esim. B12345678---WS)",
       "landlordCode": "Vuokranantajan koodi",
       "establishmentCode": "Perustamiskoodi",
+      "basicIncludedAndExtrasMonthly": "Peruspaketti: 1 yksikkö sisältyy. Jokainen lisäyksikkö maksaa 2€/kk.",
+      "basicIncludedAndExtrasYearly": "Peruspaketti: 1 yksikkö sisältyy. Jokainen lisäyksikkö maksaa 20€/vuosi.",
+      "basicSelectedNoPayment": "Peruspaketti valittu (ei maksua).",
+      "basicSelectedWithExtrasRequiresPayment": "Peruspaketti, {extraCount} lisäyksikkö(ä): maksu Polarissa vaaditaan.",
       "previous": "Edellinen",
       "continueOptional": "Jatka (valinnainen)"
     },

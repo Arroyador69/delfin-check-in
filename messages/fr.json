@@ -497,6 +497,10 @@
       "userMirHint": "Format : TVA---WS (ex. B12345678---WS)",
       "landlordCode": "Code propriétaire",
       "establishmentCode": "Code établissement",
+      "basicIncludedAndExtrasMonthly": "Plan Basique : 1 unité incluse. Chaque unité supplémentaire coûte 2€/mois.",
+      "basicIncludedAndExtrasYearly": "Plan Basique : 1 unité incluse. Chaque unité supplémentaire coûte 20€/an.",
+      "basicSelectedNoPayment": "Plan Basique sélectionné (sans paiement).",
+      "basicSelectedWithExtrasRequiresPayment": "Plan Basique avec {extraCount} unité(s) supplémentaire(s) : paiement Polar requis.",
       "previous": "Précédent",
       "continueOptional": "Continuer (Optionnel)"
     },

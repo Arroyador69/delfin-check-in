@@ -497,6 +497,10 @@
       "userMirHint": "Formato: CIF---WS (ex: B12345678---WS)",
       "landlordCode": "Código do arrendatário",
       "establishmentCode": "Código do estabelecimento",
+      "basicIncludedAndExtrasMonthly": "Plano Básico: 1 unidade incluída. Cada unidade extra custa 2€/mês.",
+      "basicIncludedAndExtrasYearly": "Plano Básico: 1 unidade incluída. Cada unidade extra custa 20€/ano.",
+      "basicSelectedNoPayment": "Plano Básico selecionado (sem pagamento).",
+      "basicSelectedWithExtrasRequiresPayment": "Plano Básico com {extraCount} unidade(s) extra: pagamento no Polar obrigatório.",
       "previous": "Anterior",
       "continueOptional": "Continuar (Opcional)"
     },

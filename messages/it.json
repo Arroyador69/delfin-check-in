@@ -507,6 +507,10 @@
       "userMirHint": "Formato: P.IVA---WS (es. B12345678---WS)",
       "landlordCode": "Codice Locatore",
       "establishmentCode": "Codice Stabilimento",
+      "basicIncludedAndExtrasMonthly": "Piano Base: 1 unità inclusa. Ogni unità extra costa 2€/mese.",
+      "basicIncludedAndExtrasYearly": "Piano Base: 1 unità inclusa. Ogni unità extra costa 20€/anno.",
+      "basicSelectedNoPayment": "Piano Base selezionato (senza pagamento).",
+      "basicSelectedWithExtrasRequiresPayment": "Piano Base con {extraCount} unità extra: pagamento su Polar richiesto.",
       "previous": "Indietro",
       "continueOptional": "Continua (Opzionale)"
     },

@@ -1704,8 +1704,8 @@ export default function OnboardingPage() {
               <p className="text-xs text-gray-500 mt-1">
                 {formData.selectedPlanId === 'free'
                   ? formData.billingInterval === 'year'
-                    ? 'En Básico: 1 unidad incluida. Cada unidad extra se cobra a 20€/año.'
-                    : 'En Básico: 1 unidad incluida. Cada unidad extra se cobra a 2€/mes.'
+                    ? t('step3.basicIncludedAndExtrasYearly')
+                    : t('step3.basicIncludedAndExtrasMonthly')
                   : ''}
               </p>
             </div>
@@ -1735,8 +1735,10 @@ export default function OnboardingPage() {
               <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                 <p className="text-green-800 font-semibold">
                   {formData.unitCount <= 1
-                    ? 'Plan Básico seleccionado (sin pago).'
-                    : `Plan Básico con ${formData.unitCount - 1} unidad(es) extra: requiere pago en Polar.`}
+                    ? t('step3.basicSelectedNoPayment')
+                    : t('step3.basicSelectedWithExtrasRequiresPayment', {
+                        extraCount: formData.unitCount - 1,
+                      })}
                 </p>
               </div>
             )}

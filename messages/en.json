@@ -507,6 +507,10 @@
       "userMirHint": "Format: VAT---WS (e.g. B12345678---WS)",
       "landlordCode": "Landlord Code",
       "establishmentCode": "Establishment Code",
+      "basicIncludedAndExtrasMonthly": "Basic plan: 1 unit included. Each extra unit costs €2/month.",
+      "basicIncludedAndExtrasYearly": "Basic plan: 1 unit included. Each extra unit costs €20/year.",
+      "basicSelectedNoPayment": "Basic plan selected (no payment).",
+      "basicSelectedWithExtrasRequiresPayment": "Basic plan with {extraCount} extra unit(s): payment in Polar is required.",
       "previous": "Previous",
       "continueOptional": "Continue (Optional)"
     },

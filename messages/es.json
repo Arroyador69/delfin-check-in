@@ -508,6 +508,10 @@
       "userMirHint": "Formato: CIF---WS (ejemplo: B12345678---WS)",
       "landlordCode": "Código de Arrendador",
       "establishmentCode": "Código de Establecimiento",
+      "basicIncludedAndExtrasMonthly": "En Básico: 1 unidad incluida. Cada unidad extra se cobra a 2€/mes.",
+      "basicIncludedAndExtrasYearly": "En Básico: 1 unidad incluida. Cada unidad extra se cobra a 20€/año.",
+      "basicSelectedNoPayment": "Plan Básico seleccionado (sin pago).",
+      "basicSelectedWithExtrasRequiresPayment": "Plan Básico con {extraCount} unidad(es) extra: requiere pago en Polar.",
       "previous": "Anterior",
       "continueOptional": "Continuar (Opcional)"
     },
