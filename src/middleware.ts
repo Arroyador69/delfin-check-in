@@ -297,6 +297,8 @@ export async function middleware(req: NextRequest) {
     pathname === '/forgot-password' ||
     pathname.startsWith('/book/') ||
     pathname.startsWith('/limpieza') ||
+    /** Clic afiliado Amazon: GET sin sesión (app abre Safari / navegador externo). */
+    pathname === '/api/affiliate/go' ||
     pathname.startsWith('/api/ical/cleaning/') ||
     pathname.startsWith('/api/cleaning/public-view/') ||
     pathname.startsWith('/api/cleaning/public-link/') ||
@@ -371,6 +373,7 @@ export async function middleware(req: NextRequest) {
       const isPublicApiRoute = (
         pathname.startsWith('/api/public/') ||
         pathname.startsWith('/api/direct-reservations/') ||
+        pathname === '/api/affiliate/go' ||
         pathname.startsWith('/api/test-') ||
         pathname.startsWith('/api/debug-') ||
         pathname.startsWith('/api/check-') ||
