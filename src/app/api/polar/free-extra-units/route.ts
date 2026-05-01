@@ -48,8 +48,20 @@ export async function GET(req: NextRequest) {
   const roomsParam = u.searchParams.get('rooms');
   const rooms = Math.max(2, Math.min(999, Math.floor(Number(roomsParam || 2) || 2)));
   const seats = rooms - 1; // unidades extra
+  const successUrlParam = u.searchParams.get('success_url') || '';
+  const returnUrlParam = u.searchParams.get('return_url') || '';
 
   const app = baseUrl(req);
+  const toAbsoluteAppUrl = (maybeRelative: string) => {
+    const raw = String(maybeRelative || '').trim();
+    if (!raw) return '';
+    // Solo permitimos rutas internas para evitar open-redirects.
+    if (raw.startsWith('/')) return `${app}${raw}`;
+    return '';
+  };
+  const successUrlAbs = toAbsoluteAppUrl(successUrlParam);
+  const returnUrlAbs = toAbsoluteAppUrl(returnUrlParam);
+
   const metadata = JSON.stringify({
     tenant_id: tenantId,
     plan: 'free',
@@ -66,6 +78,8 @@ export async function GET(req: NextRequest) {
   checkoutUrl.searchParams.set('seats', String(seats));
   checkoutUrl.searchParams.set('customerExternalId', tenantId);
   checkoutUrl.searchParams.set('metadata', metadata);
+  if (successUrlAbs) checkoutUrl.searchParams.set('success_url', successUrlAbs);
+  if (returnUrlAbs) checkoutUrl.searchParams.set('return_url', returnUrlAbs);
 
   return NextResponse.redirect(checkoutUrl.toString(), 302);
 }

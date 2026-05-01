@@ -243,7 +243,9 @@ export default function OnboardingPage() {
     if (currentStep !== 3) return;
     loadPricing();
     const checkoutFlag = searchParams?.get('checkout');
-    if (checkoutFlag === 'success' && formData.selectedPlanId !== 'free') {
+    if (checkoutFlag === 'success' && formData.selectedPlanId === 'free' && formData.unitCount > 1) {
+      setFormData(prev => ({ ...prev, checkoutCompleted: true }));
+    } else if (checkoutFlag === 'success' && formData.selectedPlanId !== 'free') {
       pollCheckoutCompletion(formData.selectedPlanId);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -391,11 +393,11 @@ export default function OnboardingPage() {
           setError('El número de unidades debe estar entre 1 y 500');
           return false;
         }
-        if (formData.selectedPlanId === 'free' && formData.unitCount !== 1) {
-          setError('El Plan Básico permite 1 unidad. Para más unidades, selecciona un plan de pago.');
-          return false;
-        }
-        if (formData.selectedPlanId !== 'free' && !formData.checkoutCompleted) {
+        if (
+          ((formData.selectedPlanId === 'free' && formData.unitCount > 1) ||
+            formData.selectedPlanId !== 'free') &&
+          !formData.checkoutCompleted
+        ) {
           setError('Completa el pago del plan seleccionado para continuar');
           return false;
         }
@@ -1485,7 +1487,7 @@ export default function OnboardingPage() {
 
     const onPay = async () => {
       setError('');
-      if (formData.selectedPlanId === 'free') {
+      if (formData.selectedPlanId === 'free' && formData.unitCount <= 1) {
         setFormData(prev => ({ ...prev, checkoutCompleted: true }));
         // En plan gratis no hay pago: continuar con el onboarding
         await handleNext();
@@ -1509,6 +1511,16 @@ export default function OnboardingPage() {
 
       setCreatingCheckout(true);
       try {
+        if (formData.selectedPlanId === 'free' && formData.unitCount > 1) {
+          const url = new URL('/api/polar/free-extra-units', window.location.origin);
+          url.searchParams.set('rooms', String(formData.unitCount));
+          url.searchParams.set('locale', String(locale || 'es'));
+          url.searchParams.set('interval', String(formData.billingInterval || 'month'));
+          url.searchParams.set('success_url', `/${locale}/onboarding?checkout=success`);
+          url.searchParams.set('return_url', `/${locale}/onboarding?checkout=cancel`);
+          window.location.href = url.toString();
+          return;
+        }
         // IMPORTANTE: planes/mensualidades siempre via Polar (Merchant of Record).
         const url = new URL('/api/polar/upgrade', window.location.origin);
         url.searchParams.set('plan', formData.selectedPlanId);
@@ -1528,7 +1540,7 @@ export default function OnboardingPage() {
     };
 
     const canFinish =
-      formData.selectedPlanId === 'free'
+      formData.selectedPlanId === 'free' && formData.unitCount <= 1
         ? true
         : !!formData.checkoutCompleted;
 
@@ -1691,7 +1703,9 @@ export default function OnboardingPage() {
               />
               <p className="text-xs text-gray-500 mt-1">
                 {formData.selectedPlanId === 'free'
-                  ? 'En Básico es 1 unidad.'
+                  ? formData.billingInterval === 'year'
+                    ? 'En Básico: 1 unidad incluida. Cada unidad extra se cobra a 20€/año.'
+                    : 'En Básico: 1 unidad incluida. Cada unidad extra se cobra a 2€/mes.'
                   : ''}
               </p>
             </div>
@@ -1719,7 +1733,11 @@ export default function OnboardingPage() {
             )}
             {formData.selectedPlanId === 'free' && (
               <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                <p className="text-green-800 font-semibold">Plan Básico seleccionado (sin pago).</p>
+                <p className="text-green-800 font-semibold">
+                  {formData.unitCount <= 1
+                    ? 'Plan Básico seleccionado (sin pago).'
+                    : `Plan Básico con ${formData.unitCount - 1} unidad(es) extra: requiere pago en Polar.`}
+                </p>
               </div>
             )}
           </div>
