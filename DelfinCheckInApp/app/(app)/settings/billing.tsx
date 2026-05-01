@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { t } from '@/lib/i18n';
-import { openUpgradePlanInBrowser } from '@/lib/upgrade-plan';
+import { openUpgradePlanInBrowser, type UpgradeBillingInterval } from '@/lib/upgrade-plan';
 
 type PlanCalcId = 'checkin' | 'standard' | 'pro';
 
@@ -33,6 +33,7 @@ export default function BillingSettingsScreen() {
   const { session } = useAuth();
   const [planCalcId, setPlanCalcId] = useState<PlanCalcId>('standard');
   const [roomCount, setRoomCount] = useState(2);
+  const [billingInterval, setBillingInterval] = useState<UpgradeBillingInterval>('month');
   const isIOS = Platform.OS === 'ios';
 
   useEffect(() => {
@@ -41,10 +42,10 @@ export default function BillingSettingsScreen() {
   }, [session?.user?.tenant?.currentRooms]);
 
   const { data: priceRes, isFetching: priceLoading, isError: priceError } = useQuery({
-    queryKey: ['plan-calculate-price', planCalcId, roomCount],
+    queryKey: ['plan-calculate-price', planCalcId, roomCount, billingInterval],
     queryFn: async () => {
       const res = await api.get(
-        `/api/plans/calculate-price?planId=${planCalcId}&roomCount=${roomCount}`
+        `/api/plans/calculate-price?planId=${planCalcId}&roomCount=${roomCount}&interval=${billingInterval}`
       );
       return res.data as {
         success?: boolean;
@@ -132,6 +133,25 @@ export default function BillingSettingsScreen() {
               <Text style={styles.stepBtnText}>+</Text>
             </Pressable>
           </View>
+          <Text style={[styles.calcHint, { marginTop: 10 }]}>{t('upgradePlan.annually')} / {t('upgradePlan.monthly')}</Text>
+          <View style={styles.planRow}>
+            <Pressable
+              style={[styles.planChip, billingInterval === 'month' && styles.planChipOn]}
+              onPress={() => setBillingInterval('month')}
+            >
+              <Text style={[styles.planChipText, billingInterval === 'month' && styles.planChipTextOn]}>
+                {t('upgradePlan.monthly')}
+              </Text>
+            </Pressable>
+            <Pressable
+              style={[styles.planChip, billingInterval === 'year' && styles.planChipOn]}
+              onPress={() => setBillingInterval('year')}
+            >
+              <Text style={[styles.planChipText, billingInterval === 'year' && styles.planChipTextOn]}>
+                {t('upgradePlan.annually')}
+              </Text>
+            </Pressable>
+          </View>
           {priceLoading ? (
             <ActivityIndicator style={{ marginTop: 12 }} color="#2563eb" />
           ) : priceError || !pricing ? (
@@ -159,7 +179,9 @@ export default function BillingSettingsScreen() {
                 <Text style={styles.priceLineMuted}>+{vatAmount.toFixed(2)} €</Text>
               </View>
               <View style={[styles.priceLine, styles.priceTotalRow]}>
-                <Text style={styles.priceTotalLabel}>{t('plans.totalMonthly')}</Text>
+                <Text style={styles.priceTotalLabel}>
+                  {billingInterval === 'year' ? t('upgradePlan.annually') : t('plans.totalMonthly')}
+                </Text>
                 <Text style={styles.priceTotalVal}>{money(pricing.total).toFixed(2)} €</Text>
               </View>
             </View>
@@ -195,6 +217,7 @@ export default function BillingSettingsScreen() {
                     void openUpgradePlanInBrowser(undefined, {
                       planId: planCalcId,
                       roomCount,
+                      billingInterval,
                     })
                   }
                 >
@@ -204,7 +227,7 @@ export default function BillingSettingsScreen() {
               </>
             ) : (
               <Text style={styles.upgradeHint}>
-                Gestiona tu plan desde el panel web de Delfín Check-in.
+                {t('mobile.settings.upgradePlanHint')}
               </Text>
             )}
           </View>

@@ -15,12 +15,15 @@ function adminBaseUrl(): string {
 }
 
 export type UpgradePlanId = 'checkin' | 'standard' | 'pro';
+export type UpgradeBillingInterval = 'month' | 'year';
 
 export type UpgradePlanUrlOptions = {
   /** Plan objetivo en la página web (query `plan`). */
   planId?: UpgradePlanId;
   /** Número de habitaciones/unidades para la calculadora (query `rooms`). */
   roomCount?: number;
+  /** Periodicidad de facturación (query `interval`). */
+  billingInterval?: UpgradeBillingInterval;
 };
 
 /** Siguiente plan recomendado según el plan actual del tenant (para preselección en web). */
@@ -41,6 +44,9 @@ export function getUpgradePlanUrl(locale?: SupportedLocale, opts?: UpgradePlanUr
   }
   if (opts?.roomCount != null && Number.isFinite(opts.roomCount) && opts.roomCount >= 1) {
     q.set('rooms', String(Math.min(999, Math.floor(opts.roomCount))));
+  }
+  if (opts?.billingInterval === 'month' || opts?.billingInterval === 'year') {
+    q.set('interval', opts.billingInterval);
   }
   return `${adminBaseUrl()}/${loc}/upgrade-plan?${q.toString()}`;
 }
