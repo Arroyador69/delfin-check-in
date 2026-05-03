@@ -13,6 +13,64 @@
   const SCROLL_THRESHOLDS = [25, 50, 75, 100]; // Porcentajes de scroll a trackear
   const POPUP_DELAY = 10000; // 10 segundos
   const POPUP_SCROLL_THRESHOLD = 50; // Mostrar popup al 50% de scroll
+  const SUBSCRIBE_BASE = 'https://admin.delfincheckin.com';
+
+  /** Textos del popup según idioma de la landing (html lang). */
+  function popupLangCode() {
+    let l = (document.documentElement.getAttribute('lang') || 'es').toLowerCase().split('-')[0];
+    const ok = ['es', 'en', 'it', 'pt', 'fr', 'fi', 'sv'];
+    if (!ok.includes(l)) l = 'es';
+    return l;
+  }
+
+  function subscribePageUrl() {
+    return SUBSCRIBE_BASE + '/' + popupLangCode() + '/subscribe?source=landing_popup';
+  }
+
+  const POPUP_COPY = {
+    es: {
+      title: 'Elige plan y activa tu suscripción',
+      body: 'Los planes de Delfín Check-in se contratan en la web con pago seguro (Polar). Tras el pago recibirás el acceso por email para completar el onboarding. Sin lista de espera: entra cuando quieras.',
+      cta: 'Ver planes y precios',
+      close: 'Cerrar',
+    },
+    en: {
+      title: 'Choose a plan and subscribe',
+      body: 'Delfín Check-in plans are purchased on the web with secure checkout (Polar). After payment you will receive access by email to finish onboarding. No waitlist.',
+      cta: 'See plans & pricing',
+      close: 'Close',
+    },
+    it: {
+      title: 'Scegli il piano e attiva l’abbonamento',
+      body: 'I piani Delfín Check-in si acquistano sul web con checkout sicuro (Polar). Dopo il pagamento riceverai l’accesso via email per completare l’onboarding.',
+      cta: 'Vedi piani e prezzi',
+      close: 'Chiudi',
+    },
+    pt: {
+      title: 'Escolha o plano e ative a subscrição',
+      body: 'Os planos Delfín Check-in contratam-se na web com pagamento seguro (Polar). Após o pagamento recebe o acesso por email para concluir o onboarding.',
+      cta: 'Ver planos e preços',
+      close: 'Fechar',
+    },
+    fr: {
+      title: 'Choisissez une offre et activez l’abonnement',
+      body: 'Les offres Delfín Check-in s’achètent sur le web avec paiement sécurisé (Polar). Après paiement vous recevrez l’accès par e-mail pour terminer l’onboarding.',
+      cta: 'Voir les offres',
+      close: 'Fermer',
+    },
+    fi: {
+      title: 'Valitse suunnitelma ja tilaa',
+      body: 'Delfín Check-in -suunnitelmat ostetaan verkossa turvallisella kassalla (Polar). Maksun jälkeen saat käyttöoikeuden sähköpostitse onboardingia varten.',
+      cta: 'Katso suunnitelmat',
+      close: 'Sulje',
+    },
+    sv: {
+      title: 'Välj plan och aktivera prenumerationen',
+      body: 'Delfín Check-in-planer köps på webben med säker betalning (Polar). Efter betalning får du åtkomst via e-post för att slutföra onboarding.',
+      cta: 'Se planer och priser',
+      close: 'Stäng',
+    },
+  };
 
   // Generar o recuperar session_id
   function getSessionId() {
@@ -171,6 +229,10 @@
   let popupTimer = null;
 
   function createPopup() {
+    const lang = popupLangCode();
+    const copy = POPUP_COPY[lang] || POPUP_COPY.es;
+    const subUrl = subscribePageUrl();
+
     // Crear overlay
     const overlay = document.createElement('div');
     overlay.id = 'pms-popup-overlay';
@@ -203,9 +265,15 @@
       text-align: center;
     `;
 
-    // Contenido del popup
+    const esc = (s) =>
+      String(s || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/"/g, '&quot;');
+
+    // Contenido del popup (planes / Polar; sin lista de espera)
     popup.innerHTML = `
-      <button id="pms-popup-close" style="
+      <button id="pms-popup-close" type="button" style="
         position: absolute;
         top: 12px;
         right: 12px;
@@ -230,16 +298,16 @@
         color: #0f172a;
         margin: 0 0 12px 0;
         line-height: 1.2;
-      ">PMS Gratis para Siempre</h2>
+      ">${esc(copy.title)}</h2>
       <p style="
         font-size: 18px;
         color: #64748b;
         margin: 0 0 24px 0;
         line-height: 1.6;
-      ">Únete a la lista de espera y obtén acceso prioritario al PMS completo. Sin costes ocultos, sin tarjeta de crédito.</p>
+      ">${esc(copy.body)}</p>
       <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
-        <a href="#waitlist" id="pms-popup-cta" style="
-          background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+        <a href="${esc(subUrl)}" id="pms-popup-cta" style="
+          background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
           color: white;
           padding: 14px 28px;
           border-radius: 12px;
@@ -248,9 +316,9 @@
           font-size: 16px;
           transition: all 0.2s;
           display: inline-block;
-          box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
-        ">🎁 Quiero gratis para siempre</a>
-        <button id="pms-popup-close-btn" style="
+          box-shadow: 0 4px 12px rgba(13, 148, 136, 0.35);
+        ">${esc(copy.cta)}</a>
+        <button type="button" id="pms-popup-close-btn" style="
           background: #f1f5f9;
           color: #64748b;
           padding: 14px 28px;
@@ -260,7 +328,7 @@
           font-size: 16px;
           cursor: pointer;
           transition: all 0.2s;
-        ">Cerrar</button>
+        ">${esc(copy.close)}</button>
       </div>
     `;
 
@@ -287,7 +355,7 @@
       }
       #pms-popup-cta:hover {
         transform: translateY(-2px);
-        box-shadow: 0 6px 16px rgba(37, 99, 235, 0.4);
+        box-shadow: 0 6px 16px rgba(13, 148, 136, 0.45);
       }
       #pms-popup-close-btn:hover {
         background: #e2e8f0;
@@ -319,24 +387,9 @@
       }
     });
 
-    // CTA click
     if (ctaBtn) {
-      ctaBtn.addEventListener('click', function() {
-        trackEvent('popup_click', {
-          action: 'cta_click',
-        });
-        // Scroll suave al formulario
-        const waitlistSection = document.getElementById('waitlistForm') || document.querySelector('[id*="waitlist"]');
-        if (waitlistSection) {
-          waitlistSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          setTimeout(() => {
-            const emailInput = document.getElementById('waitlistEmail');
-            if (emailInput) {
-              emailInput.focus();
-            }
-          }, 500);
-        }
-        closePopup();
+      ctaBtn.addEventListener('click', function () {
+        trackEvent('popup_click', { action: 'subscribe_plans', href: ctaBtn.getAttribute('href') });
       });
     }
 
