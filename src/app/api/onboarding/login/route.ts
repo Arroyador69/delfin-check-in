@@ -64,9 +64,9 @@ export async function POST(req: NextRequest) {
 
     // Generar sesión JWT
     const { accessToken, refreshToken } = generateTokenPair({
-      userId: row.user_id,
-      tenantId: row.tenant_id,
-      email: row.user_email,
+      userId: String(row.user_id),
+      tenantId: String(row.tenant_id),
+      email: String(row.user_email),
       role: row.role,
       isPlatformAdmin: row.is_platform_admin || false,
       tenantName: row.tenant_name,

@@ -395,6 +395,8 @@ export async function middleware(req: NextRequest) {
         pathname.startsWith('/api/auth/verify') ||
         pathname.startsWith('/api/auth/mobile-login') ||
         pathname.startsWith('/api/auth/refresh') ||
+        /** Sesión vía cookie JWT; el handler valida firma y tenant (Node). Edge a veces no alinea con el mismo token. */
+        pathname === '/api/auth/change-password' ||
         pathname === '/api/tenant' ||
         pathname.startsWith('/api/stripe/webhook') ||
         pathname.startsWith('/api/create-payment-intent') ||

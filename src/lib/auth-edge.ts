@@ -43,9 +43,28 @@ export async function verifyTokenEdge(token: string): Promise<JWTPayload | null>
       algorithms: ['HS256'],
     });
 
-    const userId = typeof raw.userId === 'string' ? raw.userId : null;
-    const tenantId = typeof raw.tenantId === 'string' ? raw.tenantId : null;
-    const email = typeof raw.email === 'string' ? raw.email : null;
+    // Coerción a string: jsonwebtoken (Node) y drivers PG pueden serializar UUIDs de forma distinta a jose (Edge).
+    const userIdRaw = raw.userId;
+    const tenantIdRaw = raw.tenantId;
+    const emailRaw = raw.email;
+    const userId =
+      typeof userIdRaw === 'string'
+        ? userIdRaw.trim() || null
+        : userIdRaw != null && String(userIdRaw).trim() !== ''
+          ? String(userIdRaw).trim()
+          : null;
+    const tenantId =
+      typeof tenantIdRaw === 'string'
+        ? tenantIdRaw.trim() || null
+        : tenantIdRaw != null && String(tenantIdRaw).trim() !== ''
+          ? String(tenantIdRaw).trim()
+          : null;
+    const email =
+      typeof emailRaw === 'string'
+        ? emailRaw.trim() || null
+        : emailRaw != null && String(emailRaw).includes('@')
+          ? String(emailRaw).trim()
+          : null;
     const role = raw.role;
 
     if (!userId || !tenantId || !email || !isRole(role)) {
