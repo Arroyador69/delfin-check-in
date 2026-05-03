@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useTranslations, useLocale } from 'next-intl';
 
@@ -17,52 +17,32 @@ export default function OfflineQueuePage() {
   const locale = useLocale();
   const [items, setItems] = useState<OutboxItem[]>([]);
   const [loading, setLoading] = useState(false);
-  const channelRef = useRef<MessagePort | null>(null);
+
+  /** Un MessageChannel por petición: port2 solo se puede transferir una vez (evita DataCloneError). */
+  const requestList = useCallback(async () => {
+    if (!('serviceWorker' in navigator)) return;
+    const reg = await navigator.serviceWorker.ready;
+    const sw = reg.active || reg.waiting || reg.installing;
+    if (!sw) return;
+    const mc = new MessageChannel();
+    mc.port1.onmessage = (ev) => {
+      const data = ev.data || {};
+      if (data.type === 'OUTBOX_LIST_RESULT') {
+        setItems((data.items || []) as OutboxItem[]);
+      }
+    };
+    sw.postMessage({ type: 'OUTBOX_LIST' }, [mc.port2]);
+  }, []);
 
   useEffect(() => {
-    let unreg = () => {};
-    (async () => {
-      if (!('serviceWorker' in navigator)) return;
-      const reg = await navigator.serviceWorker.ready;
-      const sw = reg.active || reg.waiting || reg.installing;
-      if (!sw) return;
-
-      const mc = new MessageChannel();
-      channelRef.current = mc.port1;
-      mc.port1.onmessage = (ev) => {
-        const data = ev.data || {};
-        if (data.type === 'OUTBOX_LIST_RESULT') {
-          setItems((data.items || []) as OutboxItem[]);
-        }
-        if (data.type === 'OUTBOX_DELETE_OK') {
-          setItems((prev) => prev.filter((i) => i.id !== data.id));
-        }
-        if (data.type === 'OUTBOX_RESEND_OK') {
-          setItems((prev) => prev.filter((i) => i.id !== data.id));
-        }
-        if (data.type === 'OUTBOX_FLUSH_DONE') {
-          // Tras flush, pedir lista
-          requestList();
-        }
-      };
-
-      const requestList = () => {
-        sw.postMessage({ type: 'OUTBOX_LIST' }, [mc.port2]);
-      };
-
-      (requestList as any).ref = requestList;
-      (window as any).__requestOutboxList = requestList;
-
-      // pedir lista al cargar
-      requestList();
-
-      unreg = () => {
-        try { mc.port1.close(); } catch {}
-      };
-    })();
-
-    return () => { unreg(); };
-  }, []);
+    (window as unknown as { __requestOutboxList?: () => void }).__requestOutboxList = () => {
+      void requestList();
+    };
+    void requestList();
+    return () => {
+      delete (window as unknown as { __requestOutboxList?: () => void }).__requestOutboxList;
+    };
+  }, [requestList]);
 
   const postToSW = async (msg: any) => {
     if (!('serviceWorker' in navigator)) return;
