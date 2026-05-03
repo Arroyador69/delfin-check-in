@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+import { denyDebugApiInProduction } from '@/lib/security-deployment';
+
 /**
  * 🔍 ENDPOINT SIMPLE PARA VER CHAT_ID DE TELEGRAM
  * 
@@ -8,6 +10,9 @@ import { NextRequest, NextResponse } from 'next/server';
  */
 
 export async function GET(req: NextRequest) {
+  const denied = denyDebugApiInProduction();
+  if (denied) return denied;
+
   try {
     // Datos que obtuvimos del endpoint /api/admin/check-users
     const knownChatIds = {

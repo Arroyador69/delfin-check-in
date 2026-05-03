@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
 
+import { denyDebugApiInProduction } from '@/lib/security-deployment';
+
 /**
  * Endpoint de seguimiento en tiempo real de una comunicación MIR
  * Monitorea todo el flujo desde el envío del formulario hasta mir_comunicaciones
  */
 export async function GET(req: NextRequest) {
+  const denied = denyDebugApiInProduction();
+  if (denied) return denied;
+
   try {
     const searchParams = req.nextUrl.searchParams;
     const reservaRef = searchParams.get('reserva_ref');

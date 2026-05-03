@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
 
+import { denyDebugApiInProduction } from '@/lib/security-deployment';
+
 /**
  * Endpoint de diagnóstico para investigar errores en comunicaciones MIR
  * 
@@ -9,6 +11,9 @@ import { sql } from '@vercel/postgres';
  * GET /api/debug/diagnostico-error-mir?fecha=2025-11-20
  */
 export async function GET(req: NextRequest) {
+  const denied = denyDebugApiInProduction();
+  if (denied) return denied;
+
   try {
     const searchParams = req.nextUrl.searchParams;
     const referencia = searchParams.get('referencia');

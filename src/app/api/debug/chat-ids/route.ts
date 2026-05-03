@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
 
+import { denyDebugApiInProduction } from '@/lib/security-deployment';
+
 /**
  * 🔍 ENDPOINT PARA VER CHAT_ID DE TELEGRAM
  * 
@@ -9,6 +11,9 @@ import { sql } from '@vercel/postgres';
  */
 
 export async function GET(req: NextRequest) {
+  const denied = denyDebugApiInProduction();
+  if (denied) return denied;
+
   try {
     console.log('🔍 Obteniendo chat_id de la base de datos...');
 

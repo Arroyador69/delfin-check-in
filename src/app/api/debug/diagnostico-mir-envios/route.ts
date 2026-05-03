@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
 
+import { denyDebugApiInProduction } from '@/lib/security-deployment';
+
 /**
  * Endpoint de diagnóstico para verificar por qué las comunicaciones MIR no aparecen
  * Verifica:
@@ -9,6 +11,9 @@ import { sql } from '@vercel/postgres';
  * 3. Si el endpoint dual se está ejecutando
  */
 export async function GET(req: NextRequest) {
+  const denied = denyDebugApiInProduction();
+  if (denied) return denied;
+
   try {
     const searchParams = req.nextUrl.searchParams;
     const tenantId = searchParams.get('tenant_id') || '870e589f-d313-4a5a-901f-f25fd4e7240a';

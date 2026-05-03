@@ -1,3 +1,16 @@
+import { NextResponse } from 'next/server';
+
+/**
+ * Defensa en ruta: en producción no se sirven APIs de diagnóstico salvo flag explícita.
+ * El middleware ya bloquea muchas rutas; esto evita filtraciones si el orden cambia.
+ */
+export function denyDebugApiInProduction(): NextResponse | null {
+  if (isProductionNodeEnv() && !shouldExposeDiagnosticApis()) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
+  return null;
+}
+
 /**
  * Rutas de API pensadas solo para desarrollo/diagnóstico.
  * En producción devuelven 404 salvo DELFIN_ALLOW_DEBUG_ROUTES=true (emergencias).

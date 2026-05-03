@@ -2,11 +2,16 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/auth';
 import { sql } from '@/lib/db';
 
+import { denyDebugApiInProduction } from '@/lib/security-deployment';
+
 /**
  * Endpoint de diagnóstico para verificar el contexto del tenant
  * Ayuda a identificar problemas de aislamiento
  */
 export async function GET(req: NextRequest) {
+  const denied = denyDebugApiInProduction();
+  if (denied) return denied;
+
   try {
     // Obtener token de autenticación
     const authToken = req.cookies.get('auth_token')?.value;

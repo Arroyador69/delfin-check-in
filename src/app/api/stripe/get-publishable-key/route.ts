@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server';
 
 /**
  * Endpoint para obtener la clave pública de Stripe que corresponde a la clave secreta del backend
@@ -6,7 +6,8 @@ import { NextRequest, NextResponse } from 'next/server'
  */
 export async function GET(req: NextRequest) {
   try {
-    const secretKey = process.env.STRIPE_SECRET_KEY || ''
+    const secretKey = process.env.STRIPE_SECRET_KEY || '';
+    const publishableFromEnv = (process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '').trim();
     
     if (!secretKey) {
       return NextResponse.json({ 
@@ -33,41 +34,53 @@ export async function GET(req: NextRequest) {
       }, { status: 500 })
     }
 
-    const accountIdPrefix = accountIdMatch[2].substring(0, 8)
-    const keyPrefix = isTest ? 'pk_test_' : 'pk_live_'
-    
-    // NOTA: No podemos obtener la clave pública completa desde la API de Stripe
-    // El usuario debe obtenerla del Dashboard de Stripe
-    // Pero podemos devolver información útil para ayudar
-    
-    const allowedOrigin = process.env.ALLOWED_LANDING_ORIGIN || 'https://delfincheckin.com'
-    const res = NextResponse.json({ 
+    const accountIdPrefix = accountIdMatch[2].substring(0, 8);
+    const keyPrefix = isTest ? 'pk_test_' : 'pk_live_';
+
+    const pubMatch = publishableFromEnv.match(/pk_(test|live)_([A-Za-z0-9]+)/);
+    const pubAccountPrefix = pubMatch?.[2]?.substring(0, 8) ?? null;
+    const keysMatch =
+      Boolean(publishableFromEnv && pubAccountPrefix && pubAccountPrefix === accountIdPrefix) &&
+      ((isTest && publishableFromEnv.startsWith('pk_test_')) ||
+        (isLive && publishableFromEnv.startsWith('pk_live_')));
+
+    const allowedOrigin = process.env.ALLOWED_LANDING_ORIGIN || 'https://delfincheckin.com';
+    const res = NextResponse.json({
       success: true,
       account_id_prefix: accountIdPrefix,
       key_prefix: keyPrefix,
       mode: isTest ? 'test' : 'live',
       instruction: `La clave pública debe empezar con: ${keyPrefix}${accountIdPrefix}...`,
       note: 'Obtén la clave pública completa desde: https://dashboard.stripe.com/test/apikeys (o /apikeys para live)',
-      current_frontend_key: 'pk_test_51RGg0AGayGuUgznn7Prw8EXPA5m5hYQb0aQrvw5Zv4RC9RYQQTJ1wExhoBjPOta67uXD0A9o8Jeu8PHbfVriyb0f008zMneaNb',
-      keys_match: false,
-      recommendation: `Actualiza la clave pública en delfincheckin.com/index.html línea ~2079 para que empiece con ${keyPrefix}${accountIdPrefix}...`
-    })
+      current_frontend_key_preview: publishableFromEnv
+        ? `${publishableFromEnv.substring(0, 12)}…`
+        : null,
+      keys_match: keysMatch,
+      recommendation: publishableFromEnv
+        ? keysMatch
+          ? 'NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY coincide con STRIPE_SECRET_KEY (mismo prefijo de cuenta).'
+          : 'Ajusta NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY para que coincida con la cuenta de STRIPE_SECRET_KEY.'
+        : `Configura NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY con una clave que empiece por ${keyPrefix}${accountIdPrefix}...`,
+    });
     
-    res.headers.set('Access-Control-Allow-Origin', allowedOrigin)
-    res.headers.set('Access-Control-Allow-Methods', 'GET, OPTIONS')
-    res.headers.set('Access-Control-Allow-Headers', 'Content-Type')
-    res.headers.set('Access-Control-Allow-Credentials', 'true')
-    return res
-  } catch (error: any) {
-    return NextResponse.json({ 
-      error: error.message || 'Error obteniendo información de claves',
-      success: false
-    }, { status: 500 })
+    res.headers.set('Access-Control-Allow-Origin', allowedOrigin);
+    res.headers.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.headers.set('Access-Control-Allow-Headers', 'Content-Type');
+    res.headers.set('Access-Control-Allow-Credentials', 'true');
+    return res;
+  } catch (error: unknown) {
+    return NextResponse.json(
+      {
+        error: error instanceof Error ? error.message : 'Error obteniendo información de claves',
+        success: false,
+      },
+      { status: 500 }
+    );
   }
 }
 
-export async function OPTIONS(req: NextRequest) {
-  const allowedOrigin = process.env.ALLOWED_LANDING_ORIGIN || 'https://delfincheckin.com'
+export async function OPTIONS(_req: NextRequest) {
+  const allowedOrigin = process.env.ALLOWED_LANDING_ORIGIN || 'https://delfincheckin.com';
   return new NextResponse(null, {
     status: 200,
     headers: {
@@ -76,6 +89,6 @@ export async function OPTIONS(req: NextRequest) {
       'Access-Control-Allow-Headers': 'Content-Type',
       'Access-Control-Allow-Credentials': 'true',
     },
-  })
+  });
 }
 

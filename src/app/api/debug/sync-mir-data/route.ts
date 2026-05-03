@@ -2,7 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
 import { insertMirComunicacion } from '@/lib/mir-db';
 
+import { denyDebugApiInProduction } from '@/lib/security-deployment';
+
 export async function POST(req: NextRequest) {
+  const denied = denyDebugApiInProduction();
+  if (denied) return denied;
+
   try {
     console.log('🔄 Iniciando sincronización de datos MIR...');
 
@@ -133,6 +138,9 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
+  const denied = denyDebugApiInProduction();
+  if (denied) return denied;
+
   try {
     console.log('🔍 Verificando estado de sincronización...');
 

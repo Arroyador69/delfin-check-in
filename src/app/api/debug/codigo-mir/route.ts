@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
 
+import { denyDebugApiInProduction } from '@/lib/security-deployment';
+
 export async function GET(req: NextRequest) {
+  const denied = denyDebugApiInProduction();
+  if (denied) return denied;
+
   try {
     const { searchParams } = new URL(req.url);
     const codigo = searchParams.get('codigo');
