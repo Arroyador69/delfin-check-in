@@ -40,15 +40,15 @@ function NavigationHandler() {
       return;
     }
 
-    const inAuthGroup = segments[0] === '(auth)';
-    const inAppGroup = segments[0] === '(app)';
+    const path = segments as string[];
+    const inAuthGroup = path[0] === '(auth)';
 
     if (!session && !inAuthGroup) {
       // No hay sesión y no está en auth, redirigir a login
       console.log('➡️ Redirigiendo a login (sin sesión)');
       router.replace('/(auth)');
     } else if (session && inAuthGroup) {
-      // Hay sesión y está en auth, redirigir a app
+      // Hay sesión y está en auth: el onboarding guiado vive en el panel web; la app va al dashboard
       console.log('➡️ Redirigiendo a app (con sesión)');
       router.replace('/(app)');
     } else {

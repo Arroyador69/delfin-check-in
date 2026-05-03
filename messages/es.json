@@ -417,7 +417,6 @@
     "passwordPlaceholder": "Ingresa tu contraseña",
     "loginButton": "Iniciar Sesión",
     "createAccount": "Crear cuenta",
-    "resetAndShowOnboarding": "Resetear y ver onboarding",
     "verifying": "Verificando...",
     "forgotPassword": "¿Has olvidado tu contraseña?",
     "secureConnection": "🔒 Conexión segura con autenticación JWT",
@@ -3134,9 +3133,13 @@
       },
       "checklist": {
         "title": "Configuración mínima",
-        "subtitle": "Completa lo básico para que todo funcione perfecto.",
-        "open": "Abrir"
+        "subtitle": "La configuración guiada completa está en el panel web; aquí tienes un resumen de lo pendiente en este dispositivo.",
+        "open": "Abrir",
+        "openAdminWeb": "Abrir panel web"
       },
+      "webOnboardingBannerTitle": "Onboarding del panel web pendiente",
+      "webOnboardingBannerBody": "Completa la configuración inicial en el navegador (mismo usuario y contraseña). Cuando termines, este aviso desaparecerá.",
+      "webOnboardingBannerCta": "Abrir onboarding en el navegador",
       "tasks": {
         "country": "Indicar país",
         "language": "Elegir idioma de la app",

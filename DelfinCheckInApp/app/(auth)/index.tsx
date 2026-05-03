@@ -7,6 +7,8 @@ import { View, Text, TextInput, Pressable, StyleSheet, ActivityIndicator, Alert,
 import { useAuth } from '@/lib/auth';
 import { useRouter } from 'expo-router';
 import { getLocale, t } from '@/lib/i18n';
+import { api } from '@/lib/api';
+import { getWebOnboardingUrl, isWebOnboardingIncomplete } from '@/lib/web-onboarding';
 
 export default function LoginScreen() {
   const { signIn } = useAuth();
@@ -25,6 +27,15 @@ export default function LoginScreen() {
     try {
       const success = await signIn(email.trim().toLowerCase(), password);
       if (success) {
+        try {
+          const { data } = await api.get<{ tenant?: { onboarding_status?: string } }>('/api/tenant');
+          const st = data?.tenant?.onboarding_status;
+          if (isWebOnboardingIncomplete(st)) {
+            await Linking.openURL(getWebOnboardingUrl(getLocale()));
+          }
+        } catch {
+          /* seguimos al dashboard aunque falle la comprobación */
+        }
         router.replace('/(app)');
       } else {
         Alert.alert(t('common.error'), t('auth.errors.incorrectPassword'));

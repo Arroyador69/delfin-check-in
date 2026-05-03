@@ -415,7 +415,6 @@
     "passwordPlaceholder": "Entrez votre mot de passe",
     "loginButton": "Se Connecter",
     "createAccount": "Créer un compte",
-    "resetAndShowOnboarding": "Réinitialiser et voir l’onboarding",
     "forgotPassword": "Mot de passe oublié ?",
     "errors": {
       "enterEmail": "Veuillez entrer votre email",
@@ -3015,9 +3014,13 @@
       },
       "checklist": {
         "title": "Configuration minimale",
-        "subtitle": "Complétez l’essentiel pour que tout fonctionne parfaitement.",
-        "open": "Ouvrir"
+        "subtitle": "La configuration guidée complète se fait dans l’admin web ; ici vous voyez ce qui reste à faire côté app.",
+        "open": "Ouvrir",
+        "openAdminWeb": "Ouvrir l’admin web"
       },
+      "webOnboardingBannerTitle": "Onboarding web en attente",
+      "webOnboardingBannerBody": "Terminez la configuration initiale dans le navigateur (même email et mot de passe). Ce bandeau disparaîtra une fois terminé.",
+      "webOnboardingBannerCta": "Ouvrir l’onboarding dans le navigateur",
       "tasks": {
         "country": "Indiquer le pays",
         "language": "Choisir la langue de l’app",

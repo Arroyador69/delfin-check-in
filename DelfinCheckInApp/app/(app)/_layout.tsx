@@ -104,13 +104,6 @@ export default function AppLayout() {
             title: t('referrals.title'),
           }}
         />
-        <Tabs.Screen
-          name="onboarding"
-          options={{
-            href: null,
-            title: t('mobile.onboarding.title'),
-          }}
-        />
       </Tabs>
       <DrawerMenu isOpen={drawerOpen} onClose={() => setDrawerOpen(false)} />
     </>

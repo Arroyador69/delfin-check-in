@@ -416,7 +416,6 @@
     "passwordPlaceholder": "Enter your password",
     "loginButton": "Log In",
     "createAccount": "Create account",
-    "resetAndShowOnboarding": "Reset and show onboarding",
     "verifying": "Verifying...",
     "forgotPassword": "Forgot your password?",
     "secureConnection": "🔒 Secure connection with JWT authentication",
@@ -3034,9 +3033,13 @@
       },
       "checklist": {
         "title": "Minimum setup",
-        "subtitle": "Complete the basics so everything runs smoothly.",
-        "open": "Open"
+        "subtitle": "Full guided setup lives in the web admin; here is what is still pending from the app’s point of view.",
+        "open": "Open",
+        "openAdminWeb": "Open web admin"
       },
+      "webOnboardingBannerTitle": "Web onboarding still pending",
+      "webOnboardingBannerBody": "Finish your initial setup in the browser (same email and password). This banner disappears when you are done.",
+      "webOnboardingBannerCta": "Open onboarding in browser",
       "tasks": {
         "country": "Set country",
         "language": "Set app language",

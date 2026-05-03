@@ -2,12 +2,12 @@
 // DASHBOARD - Pantalla principal
 // =====================================================
 
-import { View, Text, ScrollView, StyleSheet, RefreshControl, Pressable } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, RefreshControl, Pressable, Linking } from 'react-native';
 import { FixedBannerAd } from '@/components/FixedBannerAd';
 import { AffiliateRecommendationCard } from '@/components/AffiliateRecommendationCard';
 import { useAuth } from '@/lib/auth';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { api } from '@/lib/api';
+import { api, getPublicApiOrigin } from '@/lib/api';
 import { useState, useMemo } from 'react';
 import type { AxiosError } from 'axios';
 
@@ -18,8 +18,9 @@ function apiErrorMessage(err: unknown): string {
 }
 import { Users, ArrowDownCircle, ArrowUpCircle, Calendar, BellRing } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
-import { getLocaleTag, hasPersistedAppLocale, t, useLocaleListener } from '@/lib/i18n';
+import { getLocale, getLocaleTag, hasPersistedAppLocale, t, useLocaleListener } from '@/lib/i18n';
 import { getAppCountryCode } from '@/lib/country-preference';
+import { getWebOnboardingUrl, isWebOnboardingIncomplete } from '@/lib/web-onboarding';
 
 import {
   PendingReservationItem,
@@ -158,6 +159,18 @@ export default function DashboardScreen() {
   const pendingCount = typeof pendingData?.count === 'number' ? pendingData.count : 0;
   const pendingItems = Array.isArray(pendingData?.items) ? pendingData.items : [];
 
+  const { data: tenantWebOnboarding } = useQuery({
+    queryKey: ['tenant-web-onboarding'],
+    queryFn: async () => {
+      const response = await api.get('/api/tenant');
+      const tenant = (response.data as { tenant?: { onboarding_status?: string } })?.tenant;
+      return tenant?.onboarding_status ?? null;
+    },
+    staleTime: 60 * 1000,
+  });
+
+  const showWebOnboardingBanner = isWebOnboardingIncomplete(tenantWebOnboarding ?? undefined);
+
   // Filtrar reservas por estado
   const { stayingToday, arrivingToday, leavingToday, upcomingReservations } = useMemo(() => {
     const today = new Date();
@@ -227,6 +240,7 @@ export default function DashboardScreen() {
   const onRefresh = async () => {
     setRefreshing(true);
     await queryClient.refetchQueries({ queryKey: ['reservations'] });
+    await queryClient.refetchQueries({ queryKey: ['tenant-web-onboarding'] });
     setRefreshing(false);
   };
 
@@ -273,6 +287,40 @@ export default function DashboardScreen() {
         <Text style={styles.tenantName}>{session?.user.tenant.name}</Text>
       </View>
 
+      {showWebOnboardingBanner ? (
+        <View
+          style={{
+            marginHorizontal: 16,
+            marginBottom: 12,
+            padding: 14,
+            borderRadius: 14,
+            backgroundColor: '#fff7ed',
+            borderWidth: 1,
+            borderColor: '#fed7aa',
+          }}
+        >
+          <Text style={{ fontWeight: '900', color: '#9a3412', fontSize: 15, marginBottom: 6 }}>
+            {t('mobile.onboarding.webOnboardingBannerTitle')}
+          </Text>
+          <Text style={{ color: '#7c2d12', fontSize: 14, lineHeight: 20, marginBottom: 12 }}>
+            {t('mobile.onboarding.webOnboardingBannerBody')}
+          </Text>
+          <Pressable
+            onPress={() => void Linking.openURL(getWebOnboardingUrl(getLocale()))}
+            style={{
+              paddingVertical: 12,
+              paddingHorizontal: 14,
+              borderRadius: 12,
+              backgroundColor: '#ea580c',
+            }}
+          >
+            <Text style={{ color: 'white', fontWeight: '800', textAlign: 'center', fontSize: 15 }}>
+              {t('mobile.onboarding.webOnboardingBannerCta')}
+            </Text>
+          </Pressable>
+        </View>
+      ) : null}
+
       <AffiliateRecommendationCard placement="mobile_dashboard" />
 
       {reservationsError ? (
@@ -311,6 +359,23 @@ export default function DashboardScreen() {
           <Text style={[styles.emptyText, { color: '#475569', fontStyle: 'normal' }]}>
             {t('mobile.onboarding.checklist.subtitle')}
           </Text>
+
+          <Pressable
+            onPress={() => void Linking.openURL(getPublicApiOrigin())}
+            style={{
+              marginTop: 10,
+              paddingVertical: 12,
+              paddingHorizontal: 14,
+              borderRadius: 12,
+              backgroundColor: '#eff6ff',
+              borderWidth: 1,
+              borderColor: '#bfdbfe',
+            }}
+          >
+            <Text style={{ color: '#1d4ed8', fontWeight: '800', textAlign: 'center', fontSize: 14 }}>
+              {t('mobile.onboarding.checklist.openAdminWeb')}
+            </Text>
+          </Pressable>
 
           <View style={{ marginTop: 10, gap: 8 }}>
             {onboardingTasks.tasks.map((task) => (

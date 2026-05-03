@@ -17,6 +17,11 @@ let refreshInFlight: Promise<string | null> | null = null;
 
 const API_URL = Constants.expoConfig?.extra?.API_URL || process.env.EXPO_PUBLIC_API_URL || 'https://admin.delfincheckin.com';
 
+/** Origen del panel web (misma base que la API). */
+export function getPublicApiOrigin(): string {
+  return String(API_URL).replace(/\/$/, '');
+}
+
 if (__DEV__) {
   console.log('🌐 API URL configurada:', API_URL);
 }

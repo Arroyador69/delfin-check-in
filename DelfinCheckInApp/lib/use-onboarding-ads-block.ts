@@ -1,10 +1,7 @@
-import { useSegments } from 'expo-router';
-
 /**
- * Primera experiencia guiada: `/(app)/onboarding`.
- * Ahí no deben mostrarse banners ni intersticiales (independiente del plan).
+ * Antes existía onboarding guiado en móvil; ahora el flujo principal es el panel web.
+ * Se mantiene el hook para no tocar todos los consumidores: siempre false.
  */
 export function useIsOnboardingRoute(): boolean {
-  const segments = useSegments();
-  return segments.includes('onboarding');
+  return false;
 }

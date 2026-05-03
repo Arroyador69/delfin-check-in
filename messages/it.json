@@ -416,7 +416,6 @@
     "passwordPlaceholder": "Inserisci la tua password",
     "loginButton": "Accedi",
     "createAccount": "Crea account",
-    "resetAndShowOnboarding": "Reset e mostra onboarding",
     "verifying": "Verifica in corso...",
     "forgotPassword": "Hai dimenticato la password?",
     "secureConnection": "🔒 Connessione sicura con autenticazione JWT",
@@ -3081,9 +3080,13 @@
       },
       "checklist": {
         "title": "Configurazione minima",
-        "subtitle": "Completa l’essenziale per far funzionare tutto al meglio.",
-        "open": "Apri"
+        "subtitle": "L’onboarding guidato completo è nel pannello web; qui vedi cosa resta da sistemare da mobile.",
+        "open": "Apri",
+        "openAdminWeb": "Apri pannello web"
       },
+      "webOnboardingBannerTitle": "Onboarding web ancora da completare",
+      "webOnboardingBannerBody": "Completa la configurazione iniziale nel browser (stessa email e password). Questo avviso scomparirà al termine.",
+      "webOnboardingBannerCta": "Apri l’onboarding nel browser",
       "tasks": {
         "country": "Imposta il paese",
         "language": "Scegli la lingua dell’app",

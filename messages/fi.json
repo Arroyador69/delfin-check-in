@@ -416,7 +416,6 @@
     "passwordPlaceholder": "Kirjoita salasanasi",
     "loginButton": "Kirjaudu sisään",
     "createAccount": "Luo tili",
-    "resetAndShowOnboarding": "Nollaa ja näytä perehdytys",
     "verifying": "Vahvistetaan...",
     "forgotPassword": "Unohditko salasanasi?",
     "secureConnection": "🔒 Suojattu yhteys JWT-todennuksen avulla",
@@ -3033,9 +3032,13 @@
       },
       "checklist": {
         "title": "Minimi asennus",
-        "subtitle": "Suorita perusasiat loppuun, jotta kaikki sujuu sujuvasti.",
-        "open": "Avata"
+        "subtitle": "Kattava ohjattu käyttöönotto on verkko-adminissa; tässä näet, mitä sovelluksen näkökulmasta puuttuu.",
+        "open": "Avata",
+        "openAdminWeb": "Avaa verkko-admin"
       },
+      "webOnboardingBannerTitle": "Verkko-onboarding kesken",
+      "webOnboardingBannerBody": "Viimeistele alkuperäinen asennus selaimessa (sama sähköposti ja salasana). Tämä ilmoitus katoaa, kun olet valmis.",
+      "webOnboardingBannerCta": "Avaa onboarding selaimessa",
       "tasks": {
         "country": "Aseta maa",
         "language": "Aseta sovelluksen kieli",
