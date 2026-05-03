@@ -7,7 +7,7 @@ import { FixedBannerAd } from '@/components/FixedBannerAd';
 import { AffiliateRecommendationCard } from '@/components/AffiliateRecommendationCard';
 import { useAuth } from '@/lib/auth';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { api, getPublicApiOrigin } from '@/lib/api';
+import { api } from '@/lib/api';
 import { useState, useMemo } from 'react';
 import type { AxiosError } from 'axios';
 
@@ -211,8 +211,9 @@ export default function DashboardScreen() {
         leaving.push(r);
       }
 
-      // Quién hay hoy (check-in <= hoy y check-out >= hoy)
-      if (checkInDate <= today && checkOutDate >= today) {
+      // Quién hay hoy: ocupación en la fecha de hoy, pero sin quienes solo salen hoy (van solo a «Quién se va hoy»)
+      const checkoutIsToday = checkOutStr === todayStr;
+      if (checkInDate <= today && checkOutDate >= today && !checkoutIsToday) {
         staying.push(r);
       }
 
@@ -359,23 +360,6 @@ export default function DashboardScreen() {
           <Text style={[styles.emptyText, { color: '#475569', fontStyle: 'normal' }]}>
             {t('mobile.onboarding.checklist.subtitle')}
           </Text>
-
-          <Pressable
-            onPress={() => void Linking.openURL(getPublicApiOrigin())}
-            style={{
-              marginTop: 10,
-              paddingVertical: 12,
-              paddingHorizontal: 14,
-              borderRadius: 12,
-              backgroundColor: '#eff6ff',
-              borderWidth: 1,
-              borderColor: '#bfdbfe',
-            }}
-          >
-            <Text style={{ color: '#1d4ed8', fontWeight: '800', textAlign: 'center', fontSize: 14 }}>
-              {t('mobile.onboarding.checklist.openAdminWeb')}
-            </Text>
-          </Pressable>
 
           <View style={{ marginTop: 10, gap: 8 }}>
             {onboardingTasks.tasks.map((task) => (

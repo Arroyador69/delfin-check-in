@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
@@ -98,7 +98,10 @@ export default function ReputationSettingsScreen() {
   });
 
   const isPro = Boolean(data?.isPro);
-  const properties = (propsData?.properties || []).filter((p) => Number.isFinite(Number(p.id)) && Number(p.id) > 0);
+  const properties = useMemo(
+    () => (propsData?.properties || []).filter((p) => Number.isFinite(Number(p.id)) && Number(p.id) > 0),
+    [propsData?.properties]
+  );
 
   const { data: limitsData } = useQuery({
     queryKey: ['tenant-limits'],
@@ -120,11 +123,15 @@ export default function ReputationSettingsScreen() {
 
   const maxRooms = Number(limitsData?.tenant?.limits?.maxRooms);
   const currentRooms = Array.isArray(limitsData?.currentRooms) ? limitsData!.currentRooms!.length : 0;
-  const slots = (slotsData?.slots || []).map((s: any) => ({
-    room_id: String((s as any).room_id),
-    room_name: String((s as any).room_name || ''),
-    property_id: (s as any).property_id != null ? Number((s as any).property_id) : null,
-  }));
+  const slots = useMemo(
+    () =>
+      (slotsData?.slots || []).map((s: any) => ({
+        room_id: String((s as any).room_id),
+        room_name: String((s as any).room_name || ''),
+        property_id: (s as any).property_id != null ? Number((s as any).property_id) : null,
+      })),
+    [slotsData?.slots]
+  );
 
   useEffect(() => {
     // Inicializar inputs por unidad con el enlace guardado en la propiedad mapeada
