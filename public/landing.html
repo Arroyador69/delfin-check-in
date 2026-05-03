@@ -1,15 +1,15 @@
 <!DOCTYPE html>
 <!--
   Landing estática (también sirve desde admin en /landing.html).
-  Idiomas alineados con el software: es, en, it, pt, fr, fi.
+  Idiomas: es, en, it, pt, fr, fi, sv (sv = sueco; por defecto en esta página).
   Repo marketing GitHub Pages (si aplica): https://github.com/Arroyador69/delfincheckin.com
 -->
-<html lang="es">
+<html lang="sv">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Delfín Check-in — Software para alojamientos</title>
-  <meta name="description" content="Registro de viajeros, panel de reservas y cumplimiento MIR. Prueba el plan gratuito sin tarjeta." />
+  <title>Delfín Check-in — Programvara för boenden</title>
+  <meta name="description" content="Gästregistrering, bokningspanel och MIR-efterlevnad. Prova gratisplanen utan kort." />
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     /* Misma idea que src/components/LanguageSwitcher.tsx + localeNames/localeFlags en src/i18n/config.ts */
@@ -40,15 +40,15 @@
           class="flex w-full sm:w-auto items-center justify-between gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-left text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 sm:justify-start"
           aria-expanded="false"
           aria-haspopup="listbox"
-          aria-label="Cambiar idioma"
+          aria-label="Byt språk"
         >
           <span class="flex min-w-0 flex-1 items-center gap-2">
             <svg class="h-5 w-5 shrink-0 text-gray-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
               <circle cx="12" cy="12" r="10" stroke-width="2" />
               <path stroke-width="2" d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z" />
             </svg>
-            <span id="lang-trigger-text" class="hidden truncate sm:inline">🇪🇸 Español</span>
-            <span id="lang-trigger-flag-only" class="text-lg sm:hidden" aria-hidden="true">🇪🇸</span>
+            <span id="lang-trigger-text" class="hidden truncate sm:inline">🇸🇪 Svenska</span>
+            <span id="lang-trigger-flag-only" class="text-lg sm:hidden" aria-hidden="true">🇸🇪</span>
           </span>
           <svg id="lang-chevron" class="h-4 w-4 shrink-0 text-gray-600 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
@@ -127,7 +127,8 @@
     { code: 'it', label: 'IT', name: 'Italiano', aria: 'Italiano', flag: '🇮🇹' },
     { code: 'pt', label: 'PT', name: 'Português', aria: 'Português', flag: '🇵🇹' },
     { code: 'fr', label: 'FR', name: 'Français', aria: 'Français', flag: '🇫🇷' },
-    { code: 'fi', label: 'FI', name: 'Suomi', aria: 'Suomi', flag: '🇫🇮' }
+    { code: 'fi', label: 'FI', name: 'Suomi', aria: 'Suomi', flag: '🇫🇮' },
+    { code: 'sv', label: 'SV', name: 'Svenska', aria: 'Svenska', flag: '🇸🇪' }
   ];
 
   var STR = {
@@ -244,6 +245,29 @@
       freeLabel: 'Ilmainen suunnitelma',
       freeBody: 'Voit aloittaa ilmaisella peruspaketilla (1 majoituskohde mukana). Korttia ei tarvita eikä kuukausimaksua ole. Jokainen lisäkohde on 2 €/kk. Digitaalinen check-in + lähetys sisäministeriölle maksaa aina 2 €/kk (valinnainen).',
       footer: '© Delfín Check-in'
+    },
+    sv: {
+      languageLabel: 'Språk',
+      eyebrow: 'För boendeägare och värdar',
+      heroTitle: 'Mindre pappersarbete, bättre koll på dina bokningar',
+      heroSubtitle:
+        'Koppla laglig gästregistrering till din översikt: tydliga data, kopplade vistelser och en tydlig väg till nästa bokning.',
+      tagline:
+        'Varje incheckning du loggar i Delfín Check-in är en chans att stärka relationen med gästen och jobba mot nästa bokning.',
+      ctaPrimary: 'Öppna panelen',
+      ctaSecondary: 'Se gästformuläret',
+      featuresTitle: 'Byggt för din vardag',
+      f1t: 'MIR-registrering i ordning',
+      f1d:
+        'Resenärsuppgifter i linje med kraven från Spaniens inrikesministerium – utan att tappa operativ klarhet.',
+      f2t: 'Bokningar på ett ställe',
+      f2d: 'Kalender, rum och register samlat så att du kan granska och bekräfta med några klick.',
+      f3t: 'Från vistelse till återkomst',
+      f3d: 'När flödet fungerar stöttar varje väl dokumenterad vistelse gästrelationen och framtida bokningar.',
+      freeLabel: 'Gratisplan',
+      freeBody:
+        'Du kan börja med gratis grundplan (1 boende ingår). Inget kort krävs och ingen månadskostnad. Varje ytterligare boende kostar 2 €/månad. Modulen för digital incheckning + inlämning till inrikesministeriet kostar alltid 2 €/månad (valfritt).',
+      footer: '© Delfín Check-in'
     }
   };
 
@@ -271,10 +295,14 @@
     fi: {
       title: 'Delfín Check-in — Majoitusalan ohjelmisto',
       description: 'Vieraiden rekisteröinti, varausten hallinta ja MIR-vaatimukset. Kokeile ilmaista suunnitelmaa ilman korttia.'
+    },
+    sv: {
+      title: 'Delfín Check-in — Programvara för boenden',
+      description: 'Gästregistrering, bokningspanel och MIR-efterlevnad. Prova gratisplanen utan kort.'
     }
   };
 
-  var HTML_LANG = { es: 'es', en: 'en', it: 'it', pt: 'pt', fr: 'fr', fi: 'fi' };
+  var HTML_LANG = { es: 'es', en: 'en', it: 'it', pt: 'pt', fr: 'fr', fi: 'fi', sv: 'sv' };
 
   function adminOrigin() {
     var h = (location.hostname || '').toLowerCase();
@@ -298,9 +326,10 @@
   }
 
   function setLang(lang) {
-    var t = STR[lang] || STR.es;
-    var m = META[lang] || META.es;
-    document.documentElement.lang = HTML_LANG[lang] || 'es';
+    if (!STR[lang]) lang = 'sv';
+    var t = STR[lang];
+    var m = META[lang] || META.sv;
+    document.documentElement.lang = HTML_LANG[lang] || 'sv';
     var titleEl = document.querySelector('title');
     if (titleEl) titleEl.textContent = m.title;
     var metaD = document.querySelector('meta[name="description"]');
@@ -432,6 +461,7 @@
       var u = new URL(location.href);
       var q = (u.searchParams.get('lang') || '').toLowerCase().trim().replace(/_/g, '-');
       if (q === 'pt-br' || q === 'pt-pt') q = 'pt';
+      if (q === 'sv-se' || q === 'sv-fi') q = 'sv';
       if (q && STR[q]) return q;
     } catch (e0) {}
     var saved = null;
@@ -442,7 +472,7 @@
     } catch (e) {}
     if (saved && STR[saved]) return saved;
     if (pref && STR[pref]) return pref;
-    return 'es';
+    return 'sv';
   }
 
   initLangSwitcher();
