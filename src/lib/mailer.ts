@@ -44,10 +44,14 @@ function escapeHtmlText(value: string): string {
     .replace(/>/g, '&gt;');
 }
 
+export type OnboardingEmailVariant = 'default' | 'waitlist_launch';
+
 export async function sendOnboardingEmail(params: {
   to: string;
   onboardingUrl: string;
   tempPassword?: string;
+  /** Solo activación desde waitlist (superadmin): tono más cercano + apps móviles en revisión. */
+  variant?: OnboardingEmailVariant;
 }) {
   try {
     // Validar que SMTP esté configurado antes de intentar enviar
@@ -55,6 +59,8 @@ export async function sendOnboardingEmail(params: {
     
     // Email específico para onboarding de propietarios (admin)
     const from = process.env.SMTP_FROM_ONBOARDING || process.env.SMTP_FROM || `Delfín Check-in <noreply@delfincheckin.com>`;
+
+    const variant: OnboardingEmailVariant = params.variant === 'waitlist_launch' ? 'waitlist_launch' : 'default';
 
     const href = escapeHtmlAttr(params.onboardingUrl);
     const plainUrlText = escapeHtmlText(params.onboardingUrl);
@@ -75,6 +81,35 @@ export async function sendOnboardingEmail(params: {
           </tr>`
       : '';
 
+    const heroTitle =
+      variant === 'waitlist_launch'
+        ? 'Tu software Delfín Check-in ya está listo'
+        : 'Bienvenido a Delfín Check-in';
+    const heroSubtitle =
+      variant === 'waitlist_launch'
+        ? 'Puedes probarlo gratis con una propiedad — te guiamos en el onboarding'
+        : 'Tu plataforma de gestión de alojamientos';
+    const bodyHeading = variant === 'waitlist_launch' ? '¡Gracias por confiar en la lista de espera!' : '¡Listo para empezar!';
+    const bodyLead =
+      variant === 'waitlist_launch'
+        ? 'Ya hemos activado tu acceso. El panel web te guía paso a paso (país, unidades, integraciones). Puedes usar el plan gratuito para <strong>una propiedad</strong> sin coste mientras exploras.'
+        : 'Tu cuenta ha sido creada correctamente. Para completar la configuración inicial y entrar en tu panel, usa el botón siguiente:';
+    const waitlistAppsNote =
+      variant === 'waitlist_launch'
+        ? `
+          <tr>
+            <td style="padding:0 32px 16px 32px;">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color:#eff6ff;border-left:4px solid #2563eb;border-radius:4px;">
+                <tr>
+                  <td style="padding:16px 20px;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.55;color:#1e3a8a;">
+                    <strong>App móvil (propietarios):</strong> las versiones para <strong>Android (Google Play)</strong> e <strong>iOS (App Store)</strong> están <strong>en revisión</strong> en las tiendas. Mientras tanto puedes usar el panel web en el ordenador o el móvil; te avisaremos cuando las tiendas las publiquen.
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>`
+        : '';
+
     // Plantilla en tablas + estilos inline: Gmail y Outlook suelen romper div+margin y <style> en <head>
     const html = `<!DOCTYPE html>
 <html lang="es">
@@ -91,16 +126,17 @@ export async function sendOnboardingEmail(params: {
         <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" style="width:100%;max-width:600px;background-color:#ffffff;border-radius:10px;overflow:hidden;border:1px solid #e5e7eb;">
           <tr>
             <td align="center" style="padding:32px 24px;background-color:#5b63d9;">
-              <h1 style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:26px;line-height:1.25;color:#ffffff;font-weight:bold;">Bienvenido a Delfín Check-in</h1>
-              <p style="margin:12px 0 0 0;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.4;color:#e8e9ff;">Tu plataforma de gestión de alojamientos</p>
+              <h1 style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:26px;line-height:1.25;color:#ffffff;font-weight:bold;">${heroTitle}</h1>
+              <p style="margin:12px 0 0 0;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.4;color:#e8e9ff;">${heroSubtitle}</p>
             </td>
           </tr>
           <tr>
             <td style="padding:32px 32px 8px 32px;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.6;color:#333333;">
-              <h2 style="margin:0 0 16px 0;font-size:20px;line-height:1.3;color:#111827;">¡Listo para empezar!</h2>
-              <p style="margin:0 0 16px 0;">Tu cuenta ha sido creada correctamente. Para completar la configuración inicial y entrar en tu panel, usa el botón siguiente:</p>
+              <h2 style="margin:0 0 16px 0;font-size:20px;line-height:1.3;color:#111827;">${bodyHeading}</h2>
+              <p style="margin:0 0 16px 0;">${bodyLead}</p>
             </td>
           </tr>
+          ${waitlistAppsNote}
           <tr>
             <td align="center" style="padding:8px 32px 24px 32px;">
               <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center">
@@ -153,8 +189,24 @@ export async function sendOnboardingEmail(params: {
       smtpConfigured: !!(process.env.SMTP_HOST && process.env.SMTP_USER && (process.env.SMTP_PASS || process.env.SMTP_PASSWORD))
     });
 
-    // Agregar versión texto plano para mejor deliverability
-    const text = `
+    const text =
+      variant === 'waitlist_launch'
+        ? `
+🐬 Delfín Check-in — acceso desde la lista de espera
+
+Ya puedes probar el software de gestión para una propiedad de forma gratuita.
+
+Enlace para completar el onboarding (panel web):
+${params.onboardingUrl}
+
+${params.tempPassword ? `Contraseña temporal: ${params.tempPassword}\n` : ''}
+App móvil: las versiones Android (Google Play) e iOS (App Store) están en revisión en las tiendas; mientras tanto usa el panel web.
+
+Si no ves el correo, revisa Spam o Promociones.
+
+© ${new Date().getFullYear()} Delfín Check-in
+        `.trim()
+        : `
 🐬 Bienvenido a Delfín Check-in
 
 ¡Bienvenido a Delfín Check-in!
@@ -168,12 +220,17 @@ ${params.tempPassword ? `\n🔑 Contraseña temporal: ${params.tempPassword}\n` 
 Si tienes problemas, revisa tu carpeta de Spam/Correo no deseado.
 
 © ${new Date().getFullYear()} Delfín Check-in
-    `.trim();
+        `.trim();
+
+    const subject =
+      variant === 'waitlist_launch'
+        ? '🐬 Delfín Check-in: ya puedes probarlo (lista de espera)'
+        : '🐬 Bienvenido a Delfín Check-in - Completa tu configuración';
 
     const result = await transporter.sendMail({
       from,
       to: params.to,
-      subject: '🐬 Bienvenido a Delfín Check-in - Completa tu configuración',
+      subject,
       html,
       text, // Versión texto plano para mejor deliverability
       // Headers adicionales para evitar spam

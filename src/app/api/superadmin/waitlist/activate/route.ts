@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
-import { createTenant, createTenantUser } from '@/lib/tenant';
+import { createTenantUser } from '@/lib/tenant';
 import { hash } from 'bcryptjs';
 import crypto from 'crypto';
 import { sendOnboardingEmail } from '@/lib/mailer';
@@ -118,13 +118,14 @@ export async function POST(req: NextRequest) {
           WHERE id = ${existingUser.rows[0].id}
         `;
         
-        const onboardingUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://admin.delfincheckin.com'}/onboarding?token=${onboardingToken}&email=${encodeURIComponent(waitlistEntry.email)}`;
+        const onboardingUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://admin.delfincheckin.com'}/es/onboarding?token=${onboardingToken}&email=${encodeURIComponent(waitlistEntry.email)}`;
         
         // Enviar email de onboarding
         try {
           await sendOnboardingEmail({
             to: waitlistEntry.email,
             onboardingUrl,
+            variant: 'waitlist_launch',
             // No enviamos contraseña temporal si ya existe usuario
           });
         } catch (emailError) {
@@ -137,6 +138,56 @@ export async function POST(req: NextRequest) {
           message: 'Usuario ya tenía tenant, se reenvió email de onboarding',
           tenant_id: tenantId,
           email_sent: true
+        });
+      }
+
+      // Tenant existe pero sin usuario (inconsistencia): crear propietario y enviar acceso
+      const tempPasswordOrphan = crypto.randomBytes(12).toString('base64').slice(0, 16);
+      const passwordHashOrphan = await hash(tempPasswordOrphan, 12);
+      await createTenantUser({
+        tenant_id: tenantId,
+        email: waitlistEntry.email,
+        password_hash: passwordHashOrphan,
+        full_name: waitlistEntry.name || undefined,
+        role: 'owner',
+      });
+
+      const onboardingTokenOrphan = crypto.randomBytes(32).toString('hex');
+      const tokenExpiryOrphan = new Date();
+      tokenExpiryOrphan.setHours(tokenExpiryOrphan.getHours() + 24);
+
+      await sql`
+        UPDATE tenant_users
+        SET
+          reset_token = ${onboardingTokenOrphan},
+          reset_token_expires = ${tokenExpiryOrphan.toISOString()},
+          email_verified = false
+        WHERE tenant_id = ${tenantId}::uuid AND email = ${waitlistEntry.email}
+      `;
+
+      const onboardingUrlOrphan = `${process.env.NEXT_PUBLIC_APP_URL || 'https://admin.delfincheckin.com'}/es/onboarding?token=${onboardingTokenOrphan}&email=${encodeURIComponent(waitlistEntry.email)}`;
+
+      try {
+        await sendOnboardingEmail({
+          to: waitlistEntry.email,
+          onboardingUrl: onboardingUrlOrphan,
+          tempPassword: tempPasswordOrphan,
+          variant: 'waitlist_launch',
+        });
+        return NextResponse.json({
+          success: true,
+          message: 'Tenant existente: se creó usuario y se envió email de acceso',
+          tenant_id: tenantId,
+          email_sent: true,
+        });
+      } catch (emailError: any) {
+        console.error('Error enviando email de onboarding (tenant sin usuario):', emailError);
+        return NextResponse.json({
+          success: true,
+          message: 'Usuario creado pero error enviando email',
+          tenant_id: tenantId,
+          email_sent: false,
+          email_error: emailError?.message,
         });
       }
     } else {
@@ -329,37 +380,44 @@ export async function POST(req: NextRequest) {
       }
       
       // Generar URL de onboarding
-      const onboardingUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://admin.delfincheckin.com'}/onboarding?token=${onboardingToken}&email=${encodeURIComponent(waitlistEntry.email)}`;
+      const onboardingUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://admin.delfincheckin.com'}/es/onboarding?token=${onboardingToken}&email=${encodeURIComponent(waitlistEntry.email)}`;
       
       // Enviar email de onboarding
       try {
         await sendOnboardingEmail({
           to: waitlistEntry.email,
           onboardingUrl,
-          tempPassword
+          tempPassword,
+          variant: 'waitlist_launch',
         });
         
         console.log(`✅ Usuario activado: ${waitlistEntry.email} -> Tenant ${tenantId}`);
         
-        return NextResponse.json({
+        const payload: Record<string, unknown> = {
           success: true,
           message: 'Usuario activado correctamente',
           tenant_id: tenantId,
           email_sent: true,
-          onboarding_url: onboardingUrl // Solo para debugging
-        });
+        };
+        if (process.env.NODE_ENV !== 'production') {
+          payload.onboarding_url = onboardingUrl;
+        }
+        return NextResponse.json(payload);
       } catch (emailError: any) {
         console.error('Error enviando email de onboarding:', emailError);
         
         // Aún así devolver éxito porque el tenant fue creado
-        return NextResponse.json({
+        const payload: Record<string, unknown> = {
           success: true,
           message: 'Usuario activado pero error enviando email',
           tenant_id: tenantId,
           email_sent: false,
           email_error: emailError.message,
-          onboarding_url: onboardingUrl // Para que el admin pueda compartirlo manualmente
-        });
+        };
+        if (process.env.NODE_ENV !== 'production') {
+          payload.onboarding_url = onboardingUrl;
+        }
+        return NextResponse.json(payload);
       }
     }
     

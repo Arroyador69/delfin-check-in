@@ -57,6 +57,11 @@ export async function GET(req: NextRequest) {
     const customerName = u.searchParams.get('customerName') || undefined;
     const customerId = u.searchParams.get('customerId') || undefined;
 
+    // Polar (MoR) calcula impuestos cuando tiene país/dirección del cliente. Si no se exige,
+    // el checkout puede mostrar "Taxes —" hasta rellenar país; forzamos dirección de facturación por defecto.
+    const requireBillingAddress =
+      u.searchParams.get('require_billing_address') === 'false' ? false : true;
+
     const polar = getPolar();
     const checkout = await polar.checkouts.create(
       {
@@ -69,6 +74,7 @@ export async function GET(req: NextRequest) {
         customerName,
         customerId,
         metadata,
+        requireBillingAddress,
       } as any,
       {
         // El SDK permite override del servidor via baseUrl.
