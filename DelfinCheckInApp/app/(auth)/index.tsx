@@ -8,7 +8,7 @@ import { useAuth } from '@/lib/auth';
 import { useRouter } from 'expo-router';
 import { getLocale, t } from '@/lib/i18n';
 import { api } from '@/lib/api';
-import { getWebOnboardingUrl, isWebOnboardingIncomplete } from '@/lib/web-onboarding';
+import { getWebOnboardingUrl, getWebSubscribePlansUrl, isWebOnboardingIncomplete } from '@/lib/web-onboarding';
 
 export default function LoginScreen() {
   const { signIn } = useAuth();
@@ -98,11 +98,7 @@ export default function LoginScreen() {
 
         <Pressable
           style={[styles.secondaryButton, styles.createAccountButton]}
-          onPress={() =>
-            Linking.openURL(
-              `https://delfincheckin.com/signup?source=mobile&lang=${encodeURIComponent(getLocale())}`
-            )
-          }
+          onPress={() => Linking.openURL(getWebSubscribePlansUrl(getLocale()))}
           disabled={loading}
         >
           <Text style={[styles.secondaryButtonText, styles.createAccountText]}>{t('auth.createAccount')}</Text>

@@ -44,13 +44,18 @@ function escapeHtmlText(value: string): string {
     .replace(/>/g, '&gt;');
 }
 
-export type OnboardingEmailVariant = 'default' | 'waitlist_launch';
+export type OnboardingEmailVariant = 'default' | 'waitlist_launch' | 'web_plan_paid';
+
+function normalizeOnboardingVariant(v?: OnboardingEmailVariant): OnboardingEmailVariant {
+  if (v === 'waitlist_launch' || v === 'web_plan_paid') return v;
+  return 'default';
+}
 
 export async function sendOnboardingEmail(params: {
   to: string;
   onboardingUrl: string;
   tempPassword?: string;
-  /** Solo activación desde waitlist (superadmin): tono más cercano + apps móviles en revisión. */
+  /** waitlist_launch: solo activación lista de espera (superadmin). web_plan_paid: alta tras pago en web/Polar (landing o /subscribe). */
   variant?: OnboardingEmailVariant;
 }) {
   try {
@@ -60,7 +65,7 @@ export async function sendOnboardingEmail(params: {
     // Email específico para onboarding de propietarios (admin)
     const from = process.env.SMTP_FROM_ONBOARDING || process.env.SMTP_FROM || `Delfín Check-in <noreply@delfincheckin.com>`;
 
-    const variant: OnboardingEmailVariant = params.variant === 'waitlist_launch' ? 'waitlist_launch' : 'default';
+    const variant = normalizeOnboardingVariant(params.variant);
 
     const href = escapeHtmlAttr(params.onboardingUrl);
     const plainUrlText = escapeHtmlText(params.onboardingUrl);
@@ -84,16 +89,27 @@ export async function sendOnboardingEmail(params: {
     const heroTitle =
       variant === 'waitlist_launch'
         ? 'Tu software Delfín Check-in ya está listo'
-        : 'Bienvenido a Delfín Check-in';
+        : variant === 'web_plan_paid'
+          ? 'Suscripción confirmada'
+          : 'Bienvenido a Delfín Check-in';
     const heroSubtitle =
       variant === 'waitlist_launch'
         ? 'Puedes probarlo gratis con una propiedad — te guiamos en el onboarding'
-        : 'Tu plataforma de gestión de alojamientos';
-    const bodyHeading = variant === 'waitlist_launch' ? '¡Gracias por confiar en la lista de espera!' : '¡Listo para empezar!';
+        : variant === 'web_plan_paid'
+          ? 'Un último paso: configura tu cuenta en el panel web'
+          : 'Tu plataforma de gestión de alojamientos';
+    const bodyHeading =
+      variant === 'waitlist_launch'
+        ? '¡Gracias por confiar en la lista de espera!'
+        : variant === 'web_plan_paid'
+          ? 'Accede y termina la configuración'
+          : '¡Listo para empezar!';
     const bodyLead =
       variant === 'waitlist_launch'
         ? 'Ya hemos activado tu acceso. El panel web te guía paso a paso (país, unidades, integraciones). Puedes usar el plan gratuito para <strong>una propiedad</strong> sin coste mientras exploras.'
-        : 'Tu cuenta ha sido creada correctamente. Para completar la configuración inicial y entrar en tu panel, usa el botón siguiente:';
+        : variant === 'web_plan_paid'
+          ? 'Gracias por contratar Delfín Check-in. Hemos creado tu espacio de trabajo: el enlace siguiente abre el <strong>onboarding</strong> (datos del negocio, unidades, integraciones). La facturación recurrente de tu plan se gestiona de forma segura en la web con nuestro partner de pagos (Polar), como viste en el checkout.'
+          : 'Tu cuenta ha sido creada correctamente. Para completar la configuración inicial y entrar en tu panel, usa el botón siguiente:';
     const waitlistAppsNote =
       variant === 'waitlist_launch'
         ? `
@@ -103,6 +119,19 @@ export async function sendOnboardingEmail(params: {
                 <tr>
                   <td style="padding:16px 20px;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.55;color:#1e3a8a;">
                     <strong>App móvil (propietarios):</strong> las versiones para <strong>Android (Google Play)</strong> e <strong>iOS (App Store)</strong> están <strong>en revisión</strong> en las tiendas. Mientras tanto puedes usar el panel web en el ordenador o el móvil; te avisaremos cuando las tiendas las publiquen.
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>`
+        : variant === 'web_plan_paid'
+          ? `
+          <tr>
+            <td style="padding:0 32px 16px 32px;">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color:#f0fdf4;border-left:4px solid #16a34a;border-radius:4px;">
+                <tr>
+                  <td style="padding:16px 20px;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.55;color:#14532d;">
+                    <strong>Sobre las apps móviles:</strong> puedes gestionar tu alojamiento desde el <strong>panel web</strong> en cualquier dispositivo. La suscripción del software no se contrata dentro de las tiendas de aplicaciones; el cobro recurrente lo haces en la web, como acabas de hacer.
                   </td>
                 </tr>
               </table>
@@ -206,7 +235,22 @@ Si no ves el correo, revisa Spam o Promociones.
 
 © ${new Date().getFullYear()} Delfín Check-in
         `.trim()
-        : `
+        : variant === 'web_plan_paid'
+          ? `
+🐬 Delfín Check-in — suscripción activa
+
+Gracias por contratar Delfín Check-in. Completa el onboarding en el panel web:
+
+${params.onboardingUrl}
+
+${params.tempPassword ? `Contraseña temporal: ${params.tempPassword}\n` : ''}
+La facturación recurrente del plan se gestiona en la web (Polar), como en el checkout. La suscripción del software no se contrata en las tiendas de apps.
+
+Si no ves el correo, revisa Spam o Promociones.
+
+© ${new Date().getFullYear()} Delfín Check-in
+          `.trim()
+          : `
 🐬 Bienvenido a Delfín Check-in
 
 ¡Bienvenido a Delfín Check-in!
@@ -225,7 +269,9 @@ Si tienes problemas, revisa tu carpeta de Spam/Correo no deseado.
     const subject =
       variant === 'waitlist_launch'
         ? '🐬 Delfín Check-in: ya puedes probarlo (lista de espera)'
-        : '🐬 Bienvenido a Delfín Check-in - Completa tu configuración';
+        : variant === 'web_plan_paid'
+          ? '🐬 Delfín Check-in: confirma tu acceso (suscripción web)'
+          : '🐬 Bienvenido a Delfín Check-in - Completa tu configuración';
 
     const result = await transporter.sendMail({
       from,

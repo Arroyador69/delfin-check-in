@@ -1,5 +1,6 @@
 import { Webhooks } from '@polar-sh/nextjs';
 import { sql } from '@vercel/postgres';
+import { provisionTenantFromPolarPublicSubscription } from '@/lib/polar-public-signup';
 
 async function ensurePolarColumns(): Promise<void> {
   await sql`ALTER TABLE tenants ADD COLUMN IF NOT EXISTS polar_customer_id TEXT`;
@@ -59,17 +60,26 @@ export const POST = Webhooks({
           safeTenantIdFromMetadata(sub?.customer?.metadata) ||
           safeTenantIdFromMetadata(sub?.checkout?.metadata) ||
           null;
-        if (!tenantId) return;
 
-        const status = sub?.status ? String(sub.status) : String(type);
-        await sql`
-          UPDATE tenants
-          SET polar_subscription_id = ${String(sub.id)},
-              polar_customer_id = ${sub.customer_id ? String(sub.customer_id) : null},
-              polar_subscription_status = ${status},
-              polar_last_event_at = NOW()
-          WHERE id = ${tenantId}::uuid
-        `;
+        const polarCustomerId =
+          String(sub?.customerId || sub?.customer_id || sub?.customer?.id || '').trim() || null;
+
+        if (tenantId) {
+          const status = sub?.status ? String(sub.status) : String(type);
+          await sql`
+            UPDATE tenants
+            SET polar_subscription_id = ${String(sub.id)},
+                polar_customer_id = ${polarCustomerId},
+                polar_subscription_status = ${status},
+                polar_last_event_at = NOW()
+            WHERE id = ${tenantId}::uuid
+          `;
+          return;
+        }
+
+        if (type === 'subscription.active') {
+          await provisionTenantFromPolarPublicSubscription(sub);
+        }
         return;
       }
     } catch (e) {

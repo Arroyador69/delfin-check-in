@@ -291,10 +291,18 @@ export async function middleware(req: NextRequest) {
     }
   }
   
+  /** Página de planes / Polar (web y app móvil) sin sesión. */
+  const isPublicSubscribePage =
+    localeFromPath &&
+    locales.some((l) => pathname === `/${l}/subscribe`);
+
   // Rutas completamente públicas - no requieren autenticación
   const isPublicRoute = (
     pathname === '/admin-login' ||
     pathname === '/forgot-password' ||
+    isPublicSubscribePage ||
+    pathname.startsWith('/api/polar/checkout') ||
+    pathname.startsWith('/api/polar/subscribe-redirect') ||
     pathname.startsWith('/book/') ||
     pathname.startsWith('/limpieza') ||
     /** Clic afiliado Amazon: GET sin sesión (app abre Safari / navegador externo). */
@@ -323,6 +331,7 @@ export async function middleware(req: NextRequest) {
     pathname.startsWith('/api/blog/waitlist') ||
     pathname.startsWith('/api/cron/') ||
     pathname.startsWith('/api/stripe/webhook') ||
+    pathname.startsWith('/api/webhook/polar') ||
     pathname.startsWith('/api/telegram/webhook')
   );
   
@@ -394,6 +403,7 @@ export async function middleware(req: NextRequest) {
         pathname.startsWith('/api/blog/analytics/') ||
         pathname.startsWith('/api/blog/waitlist') ||
         pathname.startsWith('/api/cron/') ||
+        pathname.startsWith('/api/webhook/polar') ||
         pathname.startsWith('/api/telegram/webhook')
       );
       
