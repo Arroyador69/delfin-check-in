@@ -5,6 +5,17 @@ import { getRoomsForTenant } from '@/lib/tenant-rooms'
 import type { Tenant } from '@/lib/tenant'
 import { getTenantPlanPresentation } from '@/lib/tenant-plan-billing'
 
+async function hasEmailTrackingTable(): Promise<boolean> {
+  try {
+    const meta = await sql`
+      SELECT to_regclass('public.email_tracking') as reg
+    `
+    return Boolean(meta.rows[0]?.reg)
+  } catch {
+    return false
+  }
+}
+
 export async function GET(req: NextRequest) {
   try {
     // Verificar autenticación
@@ -27,24 +38,65 @@ export async function GET(req: NextRequest) {
       )
     }
 
-    // Obtener todos los tenants
-    const tenantsResult = await sql`
-      SELECT 
-        t.id,
-        t.name,
-        t.email,
-        t.plan_id,
-        t.plan_type,
-        t.status,
-        t.max_rooms,
-        t.current_rooms,
-        t.max_rooms_included,
-        t.country_code,
-        t.config,
-        t.created_at
-      FROM tenants t
-      ORDER BY t.created_at DESC
-    `
+    const emailTrackingEnabled = await hasEmailTrackingTable()
+
+    // Obtener todos los tenants (+ último email de onboarding si hay tracking)
+    const tenantsResult = emailTrackingEnabled
+      ? await sql`
+          SELECT
+            t.id,
+            t.name,
+            t.email,
+            t.plan_id,
+            t.plan_type,
+            t.status,
+            t.max_rooms,
+            t.current_rooms,
+            t.max_rooms_included,
+            t.country_code,
+            t.config,
+            t.created_at,
+            ob.id as onboarding_email_id,
+            ob.status as onboarding_email_status,
+            ob.created_at as onboarding_email_sent_at,
+            ob.opened_at as onboarding_email_opened_at,
+            ob.clicked_at as onboarding_email_clicked_at
+          FROM tenants t
+          LEFT JOIN LATERAL (
+            SELECT et.*
+            FROM email_tracking et
+            WHERE et.email_type = 'onboarding'
+              AND (
+                et.tenant_id = t.id::uuid
+                OR LOWER(TRIM(et.recipient_email)) = LOWER(TRIM(t.email))
+              )
+            ORDER BY et.created_at DESC
+            LIMIT 1
+          ) ob ON true
+          ORDER BY t.created_at DESC
+        `
+      : await sql`
+          SELECT
+            t.id,
+            t.name,
+            t.email,
+            t.plan_id,
+            t.plan_type,
+            t.status,
+            t.max_rooms,
+            t.current_rooms,
+            t.max_rooms_included,
+            t.country_code,
+            t.config,
+            t.created_at,
+            NULL::uuid as onboarding_email_id,
+            NULL::varchar as onboarding_email_status,
+            NULL::timestamptz as onboarding_email_sent_at,
+            NULL::timestamptz as onboarding_email_opened_at,
+            NULL::timestamptz as onboarding_email_clicked_at
+          FROM tenants t
+          ORDER BY t.created_at DESC
+        `
 
     const tenantsWithEffectiveLimits = await Promise.all(
       tenantsResult.rows.map(async (row) => {

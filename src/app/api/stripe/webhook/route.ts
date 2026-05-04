@@ -203,7 +203,12 @@ async function createTenantFromPayment(pi: Stripe.PaymentIntent, overrideEmail?:
 
     // Enviar email real de onboarding (Brevo/SMTP)
     try {
-      const emailResult = await sendOnboardingEmail({ to: email, onboardingUrl, tempPassword });
+      const emailResult = await sendOnboardingEmail({
+        to: email,
+        onboardingUrl,
+        tempPassword,
+        tenantId: tenant.id,
+      });
       console.log('✅ [WEBHOOK] Email de onboarding enviado exitosamente:', emailResult);
     } catch (mailErr: any) {
       // Log detallado del error
@@ -340,7 +345,12 @@ async function createTenantFromInvoice(inv: Stripe.Invoice, email: string): Prom
     console.log('🔗 Magic link de onboarding (invoice):', onboardingUrl)
     console.log('📧 Enviando email de onboarding a:', email)
     try {
-      const emailResult = await sendOnboardingEmail({ to: email, onboardingUrl, tempPassword })
+      const emailResult = await sendOnboardingEmail({
+        to: email,
+        onboardingUrl,
+        tempPassword,
+        tenantId: tenant.id,
+      })
       console.log('✅ [WEBHOOK INVOICE] Email de onboarding enviado exitosamente:', emailResult)
     } catch (mailErr: any) {
       console.error('❌ [WEBHOOK INVOICE] Error CRÍTICO enviando email de onboarding:', {

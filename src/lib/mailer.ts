@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer';
+import { sql } from '@/lib/db';
 
 // Usar el mismo transporter que funciona en booking (email-notifications.ts)
 // Esto asegura consistencia y que funcione igual que los emails de reservas
@@ -55,9 +56,12 @@ export async function sendOnboardingEmail(params: {
   to: string;
   onboardingUrl: string;
   tempPassword?: string;
+  /** Si existe, se guarda en email_tracking para métricas/superadmin. */
+  tenantId?: string;
   /** waitlist_launch: solo activación lista de espera (superadmin). web_plan_paid: alta tras pago en web/Polar (landing o /subscribe). */
   variant?: OnboardingEmailVariant;
 }) {
+  let trackingId: string | null = null;
   try {
     // Validar que SMTP esté configurado antes de intentar enviar
     const transporter = getTransport();
@@ -67,8 +71,9 @@ export async function sendOnboardingEmail(params: {
 
     const variant = normalizeOnboardingVariant(params.variant);
 
-    const href = escapeHtmlAttr(params.onboardingUrl);
-    const plainUrlText = escapeHtmlText(params.onboardingUrl);
+    const rawOnboardingUrl = params.onboardingUrl;
+    const href = escapeHtmlAttr(rawOnboardingUrl);
+    const plainUrlText = escapeHtmlText(rawOnboardingUrl);
     const pwdBlock = params.tempPassword
       ? `
           <tr>
@@ -139,84 +144,12 @@ export async function sendOnboardingEmail(params: {
           </tr>`
         : '';
 
-    // Plantilla en tablas + estilos inline: Gmail y Outlook suelen romper div+margin y <style> en <head>
-    const html = `<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <title>Bienvenido a Delfín Check-in</title>
-</head>
-<body style="margin:0;padding:0;background-color:#f5f5f5;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;">
-  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color:#f5f5f5;">
-    <tr>
-      <td align="center" style="padding:24px 12px;">
-        <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" style="width:100%;max-width:600px;background-color:#ffffff;border-radius:10px;overflow:hidden;border:1px solid #e5e7eb;">
-          <tr>
-            <td align="center" style="padding:32px 24px;background-color:#5b63d9;">
-              <h1 style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:26px;line-height:1.25;color:#ffffff;font-weight:bold;">${heroTitle}</h1>
-              <p style="margin:12px 0 0 0;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.4;color:#e8e9ff;">${heroSubtitle}</p>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding:32px 32px 8px 32px;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.6;color:#333333;">
-              <h2 style="margin:0 0 16px 0;font-size:20px;line-height:1.3;color:#111827;">${bodyHeading}</h2>
-              <p style="margin:0 0 16px 0;">${bodyLead}</p>
-            </td>
-          </tr>
-          ${waitlistAppsNote}
-          <tr>
-            <td align="center" style="padding:8px 32px 24px 32px;">
-              <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center">
-                <tr>
-                  <td align="center" bgcolor="#2563eb" style="background-color:#2563eb;border-radius:8px;">
-                    <a href="${href}" target="_blank" rel="noopener noreferrer" style="display:inline-block;padding:14px 28px;font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:bold;color:#ffffff !important;text-decoration:none;border-radius:8px;">Comenzar onboarding</a>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-          ${pwdBlock}
-          <tr>
-            <td style="padding:0 32px 24px 32px;">
-              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color:#fff8e6;border-left:4px solid #e6a800;border-radius:4px;">
-                <tr>
-                  <td style="padding:16px 20px;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;color:#6d5200;">
-                    <strong>Importante:</strong> si no ves este correo en la bandeja de entrada, revisa <strong>Spam</strong> o <strong>Promociones</strong> y márcalo como correo deseado.
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding:0 32px 32px 32px;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;color:#4b5563;">
-              <p style="margin:0 0 8px 0;">Si el botón no funciona, copia y pega este enlace en el navegador:</p>
-              <p style="margin:0;word-break:break-all;font-size:13px;color:#2563eb;">${plainUrlText}</p>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding:20px 24px;background-color:#f8f9fa;border-top:1px solid #e5e7eb;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.5;color:#6b7280;text-align:center;">
-              <p style="margin:0;">Este mensaje es automático; por favor no respondas a este correo.</p>
-              <p style="margin:8px 0 0 0;">© ${new Date().getFullYear()} Delfín Check-in</p>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>`;
-
-    console.log('📧 [SEND ONBOARDING EMAIL] Intentando enviar email:', {
-      to: params.to,
-      from,
-      hasOnboardingUrl: !!params.onboardingUrl,
-      onboardingUrlPrefix: params.onboardingUrl.substring(0, 50) + '...',
-      smtpHost: process.env.SMTP_HOST,
-      smtpUser: process.env.SMTP_USER,
-      smtpConfigured: !!(process.env.SMTP_HOST && process.env.SMTP_USER && (process.env.SMTP_PASS || process.env.SMTP_PASSWORD))
-    });
+    const subject =
+      variant === 'waitlist_launch'
+        ? '🐬 Delfín Check-in: ya puedes probarlo (lista de espera)'
+        : variant === 'web_plan_paid'
+          ? '🐬 Delfín Check-in: confirma tu acceso (suscripción web)'
+          : '🐬 Bienvenido a Delfín Check-in - Completa tu configuración';
 
     const text =
       variant === 'waitlist_launch'
@@ -266,12 +199,126 @@ Si tienes problemas, revisa tu carpeta de Spam/Correo no deseado.
 © ${new Date().getFullYear()} Delfín Check-in
         `.trim();
 
-    const subject =
-      variant === 'waitlist_launch'
-        ? '🐬 Delfín Check-in: ya puedes probarlo (lista de espera)'
-        : variant === 'web_plan_paid'
-          ? '🐬 Delfín Check-in: confirma tu acceso (suscripción web)'
-          : '🐬 Bienvenido a Delfín Check-in - Completa tu configuración';
+    const appBase = String(process.env.NEXT_PUBLIC_APP_URL || 'https://admin.delfincheckin.com').replace(/\/+$/, '');
+
+    let trackedHref = rawOnboardingUrl;
+    let trackingPixel = '';
+
+    try {
+      const meta = await sql`
+        SELECT to_regclass('public.email_tracking') as reg
+      `;
+      if (meta.rows[0]?.reg) {
+        const inserted = await sql`
+          INSERT INTO email_tracking (
+            tenant_id,
+            email_type,
+            recipient_email,
+            subject,
+            status,
+            metadata
+          ) VALUES (
+            ${params.tenantId || null},
+            'onboarding',
+            ${params.to},
+            ${subject},
+            'pending',
+            ${JSON.stringify({ variant })}::jsonb
+          )
+          RETURNING id
+        `;
+        trackingId = String(inserted.rows[0]?.id || '');
+
+        const openPixelUrl = `${appBase}/api/track/email-open?tid=${encodeURIComponent(trackingId)}`;
+        const clickUrl = `${appBase}/api/track/email-click?tid=${encodeURIComponent(trackingId)}&url=${encodeURIComponent(rawOnboardingUrl)}`;
+        trackedHref = clickUrl;
+        trackingPixel = `<img src="${escapeHtmlAttr(openPixelUrl)}" alt="" width="1" height="1" style="display:none;border:0;outline:none;text-decoration:none;" />`;
+      }
+    } catch (e) {
+      console.warn('⚠️ [SEND ONBOARDING EMAIL] No se pudo preparar tracking de email:', e);
+    }
+
+    const hrefTracked = escapeHtmlAttr(trackedHref);
+
+    // Plantilla en tablas + estilos inline: Gmail y Outlook suelen romper div+margin y <style> en <head>
+    const html = `<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>Bienvenido a Delfín Check-in</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f5f5f5;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color:#f5f5f5;">
+    <tr>
+      <td align="center" style="padding:24px 12px;">
+        <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" style="width:100%;max-width:600px;background-color:#ffffff;border-radius:10px;overflow:hidden;border:1px solid #e5e7eb;">
+          <tr>
+            <td align="center" style="padding:32px 24px;background-color:#5b63d9;">
+              <h1 style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:26px;line-height:1.25;color:#ffffff;font-weight:bold;">${heroTitle}</h1>
+              <p style="margin:12px 0 0 0;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.4;color:#e8e9ff;">${heroSubtitle}</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:32px 32px 8px 32px;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.6;color:#333333;">
+              <h2 style="margin:0 0 16px 0;font-size:20px;line-height:1.3;color:#111827;">${bodyHeading}</h2>
+              <p style="margin:0 0 16px 0;">${bodyLead}</p>
+            </td>
+          </tr>
+          ${waitlistAppsNote}
+          <tr>
+            <td align="center" style="padding:8px 32px 24px 32px;">
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center">
+                <tr>
+                  <td align="center" bgcolor="#2563eb" style="background-color:#2563eb;border-radius:8px;">
+                    <a href="${hrefTracked}" target="_blank" rel="noopener noreferrer" style="display:inline-block;padding:14px 28px;font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:bold;color:#ffffff !important;text-decoration:none;border-radius:8px;">Comenzar onboarding</a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          ${pwdBlock}
+          <tr>
+            <td style="padding:0 32px 24px 32px;">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color:#fff8e6;border-left:4px solid #e6a800;border-radius:4px;">
+                <tr>
+                  <td style="padding:16px 20px;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;color:#6d5200;">
+                    <strong>Importante:</strong> si no ves este correo en la bandeja de entrada, revisa <strong>Spam</strong> o <strong>Promociones</strong> y márcalo como correo deseado.
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:0 32px 32px 32px;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;color:#4b5563;">
+              <p style="margin:0 0 8px 0;">Si el botón no funciona, copia y pega este enlace en el navegador:</p>
+              <p style="margin:0;word-break:break-all;font-size:13px;color:#2563eb;">${plainUrlText}</p>
+            </td>
+          </tr>
+          ${trackingPixel}
+          <tr>
+            <td style="padding:20px 24px;background-color:#f8f9fa;border-top:1px solid #e5e7eb;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.5;color:#6b7280;text-align:center;">
+              <p style="margin:0;">Este mensaje es automático; por favor no respondas a este correo.</p>
+              <p style="margin:8px 0 0 0;">© ${new Date().getFullYear()} Delfín Check-in</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
+    console.log('📧 [SEND ONBOARDING EMAIL] Intentando enviar email:', {
+      to: params.to,
+      from,
+      hasOnboardingUrl: !!params.onboardingUrl,
+      onboardingUrlPrefix: params.onboardingUrl.substring(0, 50) + '...',
+      smtpHost: process.env.SMTP_HOST,
+      smtpUser: process.env.SMTP_USER,
+      smtpConfigured: !!(process.env.SMTP_HOST && process.env.SMTP_USER && (process.env.SMTP_PASS || process.env.SMTP_PASSWORD))
+    });
 
     const result = await transporter.sendMail({
       from,
@@ -294,8 +341,40 @@ Si tienes problemas, revisa tu carpeta de Spam/Correo no deseado.
       rejected: result.rejected
     });
 
+    if (trackingId) {
+      try {
+        await sql`
+          UPDATE email_tracking
+          SET
+            status = 'sent',
+            message_id = ${result.messageId || null},
+            updated_at = NOW()
+          WHERE id = ${trackingId}::uuid
+        `;
+      } catch (e) {
+        console.warn('⚠️ [SEND ONBOARDING EMAIL] No se pudo actualizar email_tracking tras envío:', e);
+      }
+    }
+
     return { success: true, messageId: result.messageId };
   } catch (error: any) {
+    if (trackingId) {
+      try {
+        await sql`
+          UPDATE email_tracking
+          SET
+            status = 'failed',
+            metadata = COALESCE(metadata, '{}'::jsonb) || ${JSON.stringify({
+              error: error?.message || 'send_failed',
+            })}::jsonb,
+            updated_at = NOW()
+          WHERE id = ${trackingId}::uuid
+        `;
+      } catch (e) {
+        console.warn('⚠️ [SEND ONBOARDING EMAIL] No se pudo marcar email_tracking como failed:', e);
+      }
+    }
+
     console.error('❌ [SEND ONBOARDING EMAIL] Error enviando email de onboarding:', {
       error: error.message,
       stack: error.stack,
