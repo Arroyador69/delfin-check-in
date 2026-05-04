@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { sql } from '@/lib/db'
 import { verifyToken } from '@/lib/auth'
 
+type TableAvailability = Record<string, boolean>
+
 /**
  * GET /api/superadmin/metrics
  * Obtiene todas las métricas principales del superadmin
@@ -31,24 +33,25 @@ export async function GET(req: NextRequest) {
     const url = new URL(req.url)
     const period = url.searchParams.get('period') || 'month' // 'day', 'week', 'month', 'year'
     const startDate = getStartDate(period)
+    const tableAvailability = await resolveTableAvailability()
 
     // 1. MÉTRICAS DE TRACCIÓN Y USO
-    const tractionMetrics = await getTractionMetrics(startDate)
+    const tractionMetrics = await getTractionMetrics(startDate, tableAvailability)
     
     // 2. MÉTRICAS DE INGRESOS
-    const revenueMetrics = await getRevenueMetrics(startDate)
+    const revenueMetrics = await getRevenueMetrics(startDate, tableAvailability)
     
     // 3. MÉTRICAS DE RETENCIÓN Y CHURN
-    const retentionMetrics = await getRetentionMetrics(startDate)
+    const retentionMetrics = await getRetentionMetrics(startDate, tableAvailability)
     
     // 4. MÉTRICAS LEGALES
-    const legalMetrics = await getLegalMetrics(startDate)
+    const legalMetrics = await getLegalMetrics(startDate, tableAvailability)
     
     // 5. MÉTRICAS DE EMAIL
-    const emailMetrics = await getEmailMetrics(startDate)
+    const emailMetrics = await getEmailMetrics(startDate, tableAvailability)
     
     // 6. FUNNELS
-    const funnelMetrics = await getFunnelMetrics(startDate)
+    const funnelMetrics = await getFunnelMetrics(startDate, tableAvailability)
 
     return NextResponse.json({
       success: true,
@@ -71,6 +74,41 @@ export async function GET(req: NextRequest) {
       { status: 500 }
     )
   }
+}
+
+const REQUIRED_METRICS_TABLES = [
+  'tenants',
+  'user_activity',
+  'tenant_properties',
+  'guest_registrations',
+  'xml_tracking',
+  'subscription_events',
+  'referrals',
+  'affiliates',
+  'email_tracking',
+  'funnel_events',
+] as const
+
+async function tableExists(tableName: string): Promise<boolean> {
+  try {
+    const result = await sql`
+      SELECT to_regclass(${`public.${tableName}`}) as reg
+    `
+    return Boolean(result.rows[0]?.reg)
+  } catch {
+    return false
+  }
+}
+
+async function resolveTableAvailability(): Promise<TableAvailability> {
+  const entries = await Promise.all(
+    REQUIRED_METRICS_TABLES.map(async (name) => [name, await tableExists(name)] as const)
+  )
+  return Object.fromEntries(entries)
+}
+
+function hasAllTables(availability: TableAvailability, required: string[]): boolean {
+  return required.every((t) => Boolean(availability[t]))
 }
 
 /**
@@ -97,7 +135,22 @@ function getStartDate(period: string): Date {
 /**
  * MÉTRICAS DE TRACCIÓN Y USO
  */
-async function getTractionMetrics(startDate: Date) {
+async function getTractionMetrics(startDate: Date, availability: TableAvailability) {
+  if (!hasAllTables(availability, ['tenants'])) {
+    return {
+      totalUsers: 0,
+      activeUsers: 0,
+      dau: 0,
+      wau: 0,
+      mau: 0,
+      activeProperties: 0,
+      checkins: 0,
+      xmlSent: 0,
+      xmlErrors: 0,
+      offlineUsagePercent: 0
+    }
+  }
+
   // Usuarios totales
   const totalUsers = await sql`
     SELECT COUNT(DISTINCT id) as count
@@ -106,80 +159,80 @@ async function getTractionMetrics(startDate: Date) {
   `
 
   // Usuarios activos (han hecho login en el período)
-  const activeUsers = await sql`
+  const activeUsers = hasAllTables(availability, ['user_activity']) ? await sql`
     SELECT COUNT(DISTINCT tenant_id) as count
     FROM user_activity
     WHERE activity_type = 'login' 
       AND created_at >= ${startDate.toISOString()}
-  `
+  ` : { rows: [{ count: '0' }] as any[] }
 
   // DAU (usuarios activos hoy)
   const today = new Date()
   today.setHours(0, 0, 0, 0)
-  const dau = await sql`
+  const dau = hasAllTables(availability, ['user_activity']) ? await sql`
     SELECT COUNT(DISTINCT tenant_id) as count
     FROM user_activity
     WHERE activity_type = 'login' 
       AND created_at >= ${today.toISOString()}
-  `
+  ` : { rows: [{ count: '0' }] as any[] }
 
   // WAU (usuarios activos última semana)
   const weekAgo = new Date()
   weekAgo.setDate(weekAgo.getDate() - 7)
-  const wau = await sql`
+  const wau = hasAllTables(availability, ['user_activity']) ? await sql`
     SELECT COUNT(DISTINCT tenant_id) as count
     FROM user_activity
     WHERE activity_type = 'login' 
       AND created_at >= ${weekAgo.toISOString()}
-  `
+  ` : { rows: [{ count: '0' }] as any[] }
 
   // MAU (usuarios activos último mes)
   const monthAgo = new Date()
   monthAgo.setMonth(monthAgo.getMonth() - 1)
-  const mau = await sql`
+  const mau = hasAllTables(availability, ['user_activity']) ? await sql`
     SELECT COUNT(DISTINCT tenant_id) as count
     FROM user_activity
     WHERE activity_type = 'login' 
       AND created_at >= ${monthAgo.toISOString()}
-  `
+  ` : { rows: [{ count: '0' }] as any[] }
 
   // Propiedades activas
-  const activeProperties = await sql`
+  const activeProperties = hasAllTables(availability, ['tenant_properties']) ? await sql`
     SELECT COUNT(DISTINCT id) as count
     FROM tenant_properties
     WHERE created_at >= ${startDate.toISOString()}
-  `
+  ` : { rows: [{ count: '0' }] as any[] }
 
   // Check-ins realizados
-  const checkins = await sql`
+  const checkins = hasAllTables(availability, ['guest_registrations']) ? await sql`
     SELECT COUNT(*) as count
     FROM guest_registrations
     WHERE created_at >= ${startDate.toISOString()}
-  `
+  ` : { rows: [{ count: '0' }] as any[] }
 
   // XML generados/enviados
-  const xmlSent = await sql`
+  const xmlSent = hasAllTables(availability, ['xml_tracking']) ? await sql`
     SELECT COUNT(*) as count
     FROM xml_tracking
     WHERE status IN ('sent', 'delivered')
       AND created_at >= ${startDate.toISOString()}
-  `
+  ` : { rows: [{ count: '0' }] as any[] }
 
   // Errores de envío
-  const xmlErrors = await sql`
+  const xmlErrors = hasAllTables(availability, ['xml_tracking']) ? await sql`
     SELECT COUNT(*) as count
     FROM xml_tracking
     WHERE status = 'error'
       AND created_at >= ${startDate.toISOString()}
-  `
+  ` : { rows: [{ count: '0' }] as any[] }
 
   // Modo offline usado (si hay tracking de esto)
-  const offlineUsage = await sql`
+  const offlineUsage = hasAllTables(availability, ['user_activity']) ? await sql`
     SELECT COUNT(DISTINCT tenant_id) as count
     FROM user_activity
     WHERE activity_type = 'offline_mode'
       AND created_at >= ${startDate.toISOString()}
-  `
+  ` : { rows: [{ count: '0' }] as any[] }
 
   return {
     totalUsers: parseInt(totalUsers.rows[0]?.count || '0'),
@@ -200,7 +253,19 @@ async function getTractionMetrics(startDate: Date) {
 /**
  * MÉTRICAS DE INGRESOS
  */
-async function getRevenueMetrics(startDate: Date) {
+async function getRevenueMetrics(startDate: Date, availability: TableAvailability) {
+  if (!hasAllTables(availability, ['subscription_events'])) {
+    return {
+      mrr: 0,
+      arr: 0,
+      arpu: 0,
+      revenueByPlan: [],
+      revenueByCountry: [],
+      revenueByAffiliate: [],
+      mrrHistory: []
+    }
+  }
+
   // MRR (Monthly Recurring Revenue)
   const mrr = await sql`
     SELECT COALESCE(SUM(amount), 0) as mrr
@@ -237,7 +302,7 @@ async function getRevenueMetrics(startDate: Date) {
   `
 
   // Ingresos por país
-  const revenueByCountry = await sql`
+  const revenueByCountry = hasAllTables(availability, ['tenants']) ? await sql`
     SELECT 
       t.country_code,
       COALESCE(SUM(se.amount), 0) as revenue
@@ -246,10 +311,10 @@ async function getRevenueMetrics(startDate: Date) {
     WHERE se.event_type = 'payment_received'
       AND se.created_at >= ${startDate.toISOString()}
     GROUP BY t.country_code
-  `
+  ` : { rows: [] as any[] }
 
   // Ingresos por afiliados
-  const revenueByAffiliate = await sql`
+  const revenueByAffiliate = hasAllTables(availability, ['tenants', 'referrals', 'affiliates']) ? await sql`
     SELECT 
       a.id,
       a.name,
@@ -261,7 +326,7 @@ async function getRevenueMetrics(startDate: Date) {
     WHERE se.event_type = 'payment_received'
       AND se.created_at >= ${startDate.toISOString()}
     GROUP BY a.id, a.name
-  `
+  ` : { rows: [] as any[] }
 
   // MRR histórico (últimos 12 meses)
   const mrrHistory = await sql`
@@ -302,7 +367,17 @@ async function getRevenueMetrics(startDate: Date) {
 /**
  * MÉTRICAS DE RETENCIÓN Y CHURN
  */
-async function getRetentionMetrics(startDate: Date) {
+async function getRetentionMetrics(startDate: Date, availability: TableAvailability) {
+  if (!hasAllTables(availability, ['subscription_events', 'tenants'])) {
+    return {
+      churnRate: 0,
+      usersCancelled: 0,
+      cohorts: [],
+      avgLTV: 0,
+      freeToPaid: 0
+    }
+  }
+
   // Churn mensual (%)
   const currentMonthStart = new Date()
   currentMonthStart.setDate(1)
@@ -377,7 +452,18 @@ async function getRetentionMetrics(startDate: Date) {
 /**
  * MÉTRICAS LEGALES
  */
-async function getLegalMetrics(startDate: Date) {
+async function getLegalMetrics(startDate: Date, availability: TableAvailability) {
+  if (!hasAllTables(availability, ['guest_registrations', 'xml_tracking'])) {
+    return {
+      successRate: 0,
+      avgTimeToSendSeconds: 0,
+      avgTimeToSendMinutes: 0,
+      incidentsAvoided: 0,
+      complianceByProperty: [],
+      complianceByCountry: []
+    }
+  }
+
   // % de check-ins correctamente enviados
   const totalCheckins = await sql`
     SELECT COUNT(*) as count
@@ -415,7 +501,7 @@ async function getLegalMetrics(startDate: Date) {
   `
 
   // Logs de cumplimiento por propiedad
-  const complianceByProperty = await sql`
+  const complianceByProperty = hasAllTables(availability, ['tenant_properties']) ? await sql`
     SELECT 
       tp.id,
       tp.name,
@@ -428,10 +514,10 @@ async function getLegalMetrics(startDate: Date) {
     HAVING COUNT(xt.id) > 0
     ORDER BY total_sends DESC
     LIMIT 10
-  `
+  ` : { rows: [] as any[] }
 
   // País / normativa aplicada
-  const complianceByCountry = await sql`
+  const complianceByCountry = hasAllTables(availability, ['tenants']) ? await sql`
     SELECT 
       t.country_code,
       COUNT(xt.id) as total_sends,
@@ -440,7 +526,7 @@ async function getLegalMetrics(startDate: Date) {
     JOIN tenants t ON t.id = xt.tenant_id
     WHERE xt.created_at >= ${startDate.toISOString()}
     GROUP BY t.country_code
-  `
+  ` : { rows: [] as any[] }
 
   return {
     successRate: parseFloat(successRate.toFixed(2)),
@@ -464,7 +550,18 @@ async function getLegalMetrics(startDate: Date) {
 /**
  * MÉTRICAS DE EMAIL
  */
-async function getEmailMetrics(startDate: Date) {
+async function getEmailMetrics(startDate: Date, availability: TableAvailability) {
+  if (!hasAllTables(availability, ['email_tracking'])) {
+    return {
+      totalSent: 0,
+      openRate: 0,
+      clickRate: 0,
+      conversionRate: 0,
+      converted: 0,
+      emailsByType: []
+    }
+  }
+
   // Emails enviados
   const totalSent = await sql`
     SELECT COUNT(*) as count
@@ -536,7 +633,23 @@ async function getEmailMetrics(startDate: Date) {
 /**
  * MÉTRICAS DE FUNNEL
  */
-async function getFunnelMetrics(startDate: Date) {
+async function getFunnelMetrics(startDate: Date, availability: TableAvailability) {
+  if (!hasAllTables(availability, ['funnel_events'])) {
+    return {
+      signups: 0,
+      propertiesCreated: 0,
+      firstCheckins: 0,
+      xmlSent: 0,
+      paid: 0,
+      conversionRates: {
+        signupToProperty: 0,
+        propertyToCheckin: 0,
+        checkinToXml: 0,
+        xmlToPaid: 0
+      }
+    }
+  }
+
   // Paso 1: Registro
   const signups = await sql`
     SELECT COUNT(DISTINCT tenant_id) as count

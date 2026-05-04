@@ -1,0 +1,32 @@
+---
+description: Flujo seguro obligatorio para cambios en producción
+alwaysApply: true
+---
+
+# Despliegue seguro a producción (obligatorio)
+
+Cuando se propongan o apliquen cambios que puedan llegar a producción, seguir este flujo por defecto en todo el proyecto:
+
+1. Crear rama de trabajo (`hotfix/*`, `fix/*`, `feat/*`), evitando trabajar directo en `main`.
+2. Hacer commits pequeños, atómicos y con mensaje claro del impacto.
+3. Subir la rama y abrir PR hacia `main` (no merge directo salvo urgencia explícita).
+4. Validar Preview Deployment y ejecutar smoke test mínimo:
+   - login/admin carga,
+   - endpoint(s) tocados responden,
+   - logs sin errores nuevos críticos.
+5. Hacer merge a `main` solo tras validación.
+6. Monitorizar 10-20 minutos tras deploy:
+   - error rate,
+   - latencia,
+   - logs de funciones/cron,
+   - métricas de negocio afectadas.
+7. Si hay regresión o riesgo de caída:
+   - rollback inmediato al deploy anterior estable,
+   - documentar causa raíz y acción preventiva.
+
+## Excepción de emergencia (solo si el usuario lo pide explícitamente)
+
+Se permite push directo a `main` únicamente para incidentes urgentes de producción. Incluso en ese caso:
+- mantener cambio mínimo,
+- verificar rápidamente post-deploy,
+- preparar PR de seguimiento para hardening.

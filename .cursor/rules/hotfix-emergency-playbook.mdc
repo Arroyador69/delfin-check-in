@@ -1,0 +1,50 @@
+---
+description: Protocolo rápido para hotfix urgente en producción
+alwaysApply: true
+---
+
+# Hotfix urgente en producción (playbook 5 minutos)
+
+Usar este flujo solo cuando hay incidente activo en producción y el usuario pide intervención urgente.
+
+## 1) Antes de tocar código (1 minuto)
+
+- Definir síntoma exacto: qué falla, desde cuándo, a cuántos usuarios afecta.
+- Identificar endpoint/ruta/cron implicado y último cambio relacionado.
+- Confirmar estrategia: hotfix mínimo + verificación inmediata + rollback preparado.
+
+## 2) Implementación mínima segura (2 minutos)
+
+- Crear rama `hotfix/<incidente-corto>`.
+- Aplicar **solo** el cambio mínimo que corta el incidente.
+- Evitar refactors o mejoras no críticas dentro del hotfix.
+- Commit único y descriptivo.
+
+## 3) Validación previa a merge (1 minuto)
+
+- Probar Preview Deployment con smoke test de la ruta afectada.
+- Revisar logs del flujo corregido (sin nuevos 5xx ni timeouts).
+- Si falla preview, no mergear: ajustar o rollback.
+
+## 4) Despliegue y guardia (1-2 minutos)
+
+- Merge a `main` y despliegue.
+- Monitorizar 10-20 min:
+  - error rate,
+  - latencia,
+  - logs del componente afectado,
+  - métrica funcional del incidente.
+
+## 5) Si el hotfix no funciona
+
+- Rollback inmediato al deploy estable anterior.
+- Comunicar causa probable y siguiente acción.
+- Abrir tarea de hardening/postmortem (fuera del hotfix).
+
+## Checklist rápido
+
+- [ ] Cambio mínimo y aislado
+- [ ] Preview probado
+- [ ] Merge a `main`
+- [ ] Monitorización activa
+- [ ] Rollback preparado
