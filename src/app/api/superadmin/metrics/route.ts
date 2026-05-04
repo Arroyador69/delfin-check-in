@@ -100,6 +100,22 @@ async function tableExists(tableName: string): Promise<boolean> {
   }
 }
 
+async function columnExists(tableName: string, columnName: string): Promise<boolean> {
+  try {
+    const result = await sql`
+      SELECT 1
+      FROM information_schema.columns
+      WHERE table_schema = 'public'
+        AND table_name = ${tableName}
+        AND column_name = ${columnName}
+      LIMIT 1
+    `
+    return result.rows.length > 0
+  } catch {
+    return false
+  }
+}
+
 async function resolveTableAvailability(): Promise<TableAvailability> {
   const entries = await Promise.all(
     REQUIRED_METRICS_TABLES.map(async (name) => [name, await tableExists(name)] as const)
@@ -501,20 +517,32 @@ async function getLegalMetrics(startDate: Date, availability: TableAvailability)
   `
 
   // Logs de cumplimiento por propiedad
-  const complianceByProperty = hasAllTables(availability, ['tenant_properties']) ? await sql`
-    SELECT 
-      tp.id,
-      tp.name,
-      COUNT(xt.id) as total_sends,
-      COUNT(xt.id) FILTER (WHERE xt.status IN ('sent', 'delivered')) as successful_sends
-    FROM tenant_properties tp
-    LEFT JOIN xml_tracking xt ON xt.property_id = tp.id
-      AND xt.created_at >= ${startDate.toISOString()}
-    GROUP BY tp.id, tp.name
-    HAVING COUNT(xt.id) > 0
-    ORDER BY total_sends DESC
-    LIMIT 10
-  ` : { rows: [] as any[] }
+  let complianceByProperty: { rows: any[] } = { rows: [] }
+  if (hasAllTables(availability, ['tenant_properties'])) {
+    const hasName = await columnExists('tenant_properties', 'name')
+    const hasPropertyName = await columnExists('tenant_properties', 'property_name')
+    const propertyLabelExpr = hasName
+      ? 'tp.name'
+      : hasPropertyName
+        ? 'tp.property_name'
+        : 'tp.id::text'
+
+    const text = `
+      SELECT
+        tp.id,
+        ${propertyLabelExpr} as property_name,
+        COUNT(xt.id) as total_sends,
+        COUNT(xt.id) FILTER (WHERE xt.status IN ('sent', 'delivered')) as successful_sends
+      FROM tenant_properties tp
+      LEFT JOIN xml_tracking xt ON xt.property_id = tp.id
+        AND xt.created_at >= $1
+      GROUP BY tp.id, ${propertyLabelExpr}
+      HAVING COUNT(xt.id) > 0
+      ORDER BY total_sends DESC
+      LIMIT 10
+    `
+    complianceByProperty = await (sql as any).query(text, [startDate.toISOString()])
+  }
 
   // País / normativa aplicada
   const complianceByCountry = hasAllTables(availability, ['tenants']) ? await sql`
@@ -535,7 +563,7 @@ async function getLegalMetrics(startDate: Date, availability: TableAvailability)
     incidentsAvoided: parseInt(incidentsAvoided.rows[0]?.count || '0'),
     complianceByProperty: complianceByProperty.rows.map((r: any) => ({
       propertyId: r.id,
-      propertyName: r.name,
+      propertyName: r.property_name,
       totalSends: parseInt(r.total_sends || '0'),
       successfulSends: parseInt(r.successful_sends || '0')
     })),
