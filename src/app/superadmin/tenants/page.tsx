@@ -8,6 +8,7 @@ interface Tenant {
   email: string
   plan_id: string
   status: string
+  onboarding_status?: string | null
   max_rooms: number
   current_rooms: number
   created_at: string
@@ -48,6 +49,15 @@ function onboardingLabel(status?: string | null): string {
   if (s === 'failed') return 'fallido'
   if (s === 'bounced') return 'rebotado'
   return s
+}
+
+function tenantOnboardingProgressLabel(status?: string | null): string {
+  const s = String(status || '').toLowerCase()
+  if (!s || s === 'unknown') return ''
+  if (s === 'completed') return 'Onboarding: completado'
+  if (s === 'in_progress') return 'Onboarding: en curso'
+  if (s === 'pending') return 'Onboarding: pendiente'
+  return `Onboarding: ${s}`
 }
 
 export default function TenantsPage() {
@@ -108,6 +118,9 @@ export default function TenantsPage() {
                   Email onboarding
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                  Progreso onboarding
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                   Última acción
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
@@ -118,7 +131,7 @@ export default function TenantsPage() {
             <tbody className="bg-white divide-y divide-gray-200">
               {tenants.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-6 py-4 text-center text-gray-500">
+                  <td colSpan={9} className="px-6 py-4 text-center text-gray-500">
                     No hay tenants registrados
                   </td>
                 </tr>
@@ -156,11 +169,16 @@ export default function TenantsPage() {
                         title={
                           tenant.onboarding_email_id
                             ? `email_tracking.id=${tenant.onboarding_email_id}`
-                            : 'Sin registro en email_tracking (histórico previo o tracking desactivado)'
+                            : tenant.onboarding_status === 'completed'
+                              ? 'Sin tracking de email, pero el onboarding del tenant está marcado como completado en BD.'
+                              : 'Sin registro en email_tracking (histórico previo o no se trackeó el envío).'
                         }
                       >
                         {onboardingLabel(tenant.onboarding_email_status)}
                       </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                      {tenantOnboardingProgressLabel(tenant.onboarding_status) || '—'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                       {tenant.onboarding_email_clicked_at

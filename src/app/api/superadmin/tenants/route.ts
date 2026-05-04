@@ -50,6 +50,7 @@ export async function GET(req: NextRequest) {
             t.plan_id,
             t.plan_type,
             t.status,
+            t.onboarding_status,
             t.max_rooms,
             t.current_rooms,
             t.max_rooms_included,
@@ -65,7 +66,18 @@ export async function GET(req: NextRequest) {
           LEFT JOIN LATERAL (
             SELECT et.*
             FROM email_tracking et
-            WHERE et.email_type = 'onboarding'
+            WHERE (
+                et.email_type = 'onboarding'
+                OR (
+                  et.email_type = 'custom'
+                  AND (
+                    et.subject ILIKE '%onboarding%'
+                    OR et.subject ILIKE '%lista de espera%'
+                    OR et.subject ILIKE '%Bienvenido a Delf%'
+                    OR et.subject ILIKE '%confirma tu acceso%'
+                  )
+                )
+              )
               AND (
                 et.tenant_id = t.id::uuid
                 OR LOWER(TRIM(et.recipient_email)) = LOWER(TRIM(t.email))
@@ -83,6 +95,7 @@ export async function GET(req: NextRequest) {
             t.plan_id,
             t.plan_type,
             t.status,
+            t.onboarding_status,
             t.max_rooms,
             t.current_rooms,
             t.max_rooms_included,
