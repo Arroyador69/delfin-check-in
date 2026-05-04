@@ -4,66 +4,78 @@ import { verifyToken } from '@/lib/auth'
 
 type TableAvailability = Record<string, boolean>
 
-const DEFAULT_TRACTION_METRICS = {
-  totalUsers: 0,
-  activeUsers: 0,
-  dau: 0,
-  wau: 0,
-  mau: 0,
-  activeProperties: 0,
-  checkins: 0,
-  xmlSent: 0,
-  xmlErrors: 0,
-  offlineUsagePercent: 0
+function createDefaultTractionMetrics() {
+  return {
+    totalUsers: 0,
+    activeUsers: 0,
+    dau: 0,
+    wau: 0,
+    mau: 0,
+    activeProperties: 0,
+    checkins: 0,
+    xmlSent: 0,
+    xmlErrors: 0,
+    offlineUsagePercent: 0
+  }
 }
 
-const DEFAULT_REVENUE_METRICS = {
-  mrr: 0,
-  arr: 0,
-  arpu: 0,
-  revenueByPlan: [],
-  revenueByCountry: [],
-  revenueByAffiliate: [],
-  mrrHistory: []
+function createDefaultRevenueMetrics() {
+  return {
+    mrr: 0,
+    arr: 0,
+    arpu: 0,
+    revenueByPlan: [],
+    revenueByCountry: [],
+    revenueByAffiliate: [],
+    mrrHistory: []
+  }
 }
 
-const DEFAULT_RETENTION_METRICS = {
-  churnRate: 0,
-  usersCancelled: 0,
-  cohorts: [],
-  avgLTV: 0,
-  freeToPaid: 0
+function createDefaultRetentionMetrics() {
+  return {
+    churnRate: 0,
+    usersCancelled: 0,
+    cohorts: [],
+    avgLTV: 0,
+    freeToPaid: 0
+  }
 }
 
-const DEFAULT_LEGAL_METRICS = {
-  successRate: 0,
-  avgTimeToSendSeconds: 0,
-  avgTimeToSendMinutes: 0,
-  incidentsAvoided: 0,
-  complianceByProperty: [],
-  complianceByCountry: []
+function createDefaultLegalMetrics() {
+  return {
+    successRate: 0,
+    avgTimeToSendSeconds: 0,
+    avgTimeToSendMinutes: 0,
+    incidentsAvoided: 0,
+    complianceByProperty: [],
+    complianceByCountry: []
+  }
 }
 
-const DEFAULT_EMAIL_METRICS = {
-  totalSent: 0,
-  openRate: 0,
-  clickRate: 0,
-  conversionRate: 0,
-  converted: 0,
-  emailsByType: []
+function createDefaultEmailMetrics() {
+  return {
+    totalSent: 0,
+    openRate: 0,
+    clickRate: 0,
+    conversionRate: 0,
+    converted: 0,
+    emailsByType: []
+  }
 }
 
-const DEFAULT_FUNNEL_METRICS = {
-  signups: 0,
-  propertiesCreated: 0,
-  firstCheckins: 0,
-  xmlSent: 0,
-  paid: 0,
-  conversionRates: {
-    signupToProperty: 0,
-    propertyToCheckin: 0,
-    checkinToXml: 0,
-    xmlToPaid: 0
+function createDefaultFunnelMetrics() {
+  return {
+    signups: 0,
+    propertiesCreated: 0,
+    firstCheckins: 0,
+    xmlSent: 0,
+    paid: 0,
+    conversionRates: {
+      signupToProperty: 0,
+      propertyToCheckin: 0,
+      checkinToXml: 0,
+      xmlToPaid: 0
+    }
   }
 }
 
@@ -115,42 +127,42 @@ export async function GET(req: NextRequest) {
     const tractionMetrics = await safeMetricSection(
       'traction',
       () => getTractionMetrics(startDate, tableAvailability),
-      DEFAULT_TRACTION_METRICS
+      createDefaultTractionMetrics()
     )
     
     // 2. MÉTRICAS DE INGRESOS
     const revenueMetrics = await safeMetricSection(
       'revenue',
       () => getRevenueMetrics(startDate, tableAvailability),
-      DEFAULT_REVENUE_METRICS
+      createDefaultRevenueMetrics()
     )
     
     // 3. MÉTRICAS DE RETENCIÓN Y CHURN
     const retentionMetrics = await safeMetricSection(
       'retention',
       () => getRetentionMetrics(startDate, tableAvailability),
-      DEFAULT_RETENTION_METRICS
+      createDefaultRetentionMetrics()
     )
     
     // 4. MÉTRICAS LEGALES
     const legalMetrics = await safeMetricSection(
       'legal',
       () => getLegalMetrics(startDate, tableAvailability),
-      DEFAULT_LEGAL_METRICS
+      createDefaultLegalMetrics()
     )
     
     // 5. MÉTRICAS DE EMAIL
     const emailMetrics = await safeMetricSection(
       'email',
       () => getEmailMetrics(startDate, tableAvailability),
-      DEFAULT_EMAIL_METRICS
+      createDefaultEmailMetrics()
     )
     
     // 6. FUNNELS
     const funnelMetrics = await safeMetricSection(
       'funnel',
       () => getFunnelMetrics(startDate, tableAvailability),
-      DEFAULT_FUNNEL_METRICS
+      createDefaultFunnelMetrics()
     )
 
     return NextResponse.json({
@@ -253,7 +265,7 @@ function getStartDate(period: string): Date {
  */
 async function getTractionMetrics(startDate: Date, availability: TableAvailability) {
   if (!hasAllTables(availability, ['tenants'])) {
-    return DEFAULT_TRACTION_METRICS
+    return createDefaultTractionMetrics()
   }
 
   // Usuarios totales
@@ -360,7 +372,7 @@ async function getTractionMetrics(startDate: Date, availability: TableAvailabili
  */
 async function getRevenueMetrics(startDate: Date, availability: TableAvailability) {
   if (!hasAllTables(availability, ['subscription_events'])) {
-    return DEFAULT_REVENUE_METRICS
+    return createDefaultRevenueMetrics()
   }
 
   // MRR (Monthly Recurring Revenue)
@@ -466,7 +478,7 @@ async function getRevenueMetrics(startDate: Date, availability: TableAvailabilit
  */
 async function getRetentionMetrics(startDate: Date, availability: TableAvailability) {
   if (!hasAllTables(availability, ['subscription_events', 'tenants'])) {
-    return DEFAULT_RETENTION_METRICS
+    return createDefaultRetentionMetrics()
   }
 
   // Churn mensual (%)
@@ -545,7 +557,7 @@ async function getRetentionMetrics(startDate: Date, availability: TableAvailabil
  */
 async function getLegalMetrics(startDate: Date, availability: TableAvailability) {
   if (!hasAllTables(availability, ['guest_registrations', 'xml_tracking'])) {
-    return DEFAULT_LEGAL_METRICS
+    return createDefaultLegalMetrics()
   }
 
   // % de check-ins correctamente enviados
@@ -648,7 +660,7 @@ async function getLegalMetrics(startDate: Date, availability: TableAvailability)
  */
 async function getEmailMetrics(startDate: Date, availability: TableAvailability) {
   if (!hasAllTables(availability, ['email_tracking'])) {
-    return DEFAULT_EMAIL_METRICS
+    return createDefaultEmailMetrics()
   }
 
   // Emails enviados
@@ -724,7 +736,7 @@ async function getEmailMetrics(startDate: Date, availability: TableAvailability)
  */
 async function getFunnelMetrics(startDate: Date, availability: TableAvailability) {
   if (!hasAllTables(availability, ['funnel_events'])) {
-    return DEFAULT_FUNNEL_METRICS
+    return createDefaultFunnelMetrics()
   }
 
   // Paso 1: Registro
