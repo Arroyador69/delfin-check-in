@@ -273,6 +273,7 @@ export async function provisionTenantFromPolarPublicSubscription(sub: any): Prom
       to: email,
       onboardingUrl,
       tempPassword: tempPassword,
+      tenantId,
       /** Nunca usar copy de lista de espera: este alta viene del pago web / Polar. */
       variant: 'web_plan_paid',
     });

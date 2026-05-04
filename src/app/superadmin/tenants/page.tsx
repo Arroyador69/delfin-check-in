@@ -11,6 +11,43 @@ interface Tenant {
   max_rooms: number
   current_rooms: number
   created_at: string
+  onboarding_email_id?: string | null
+  onboarding_email_status?: string | null
+  onboarding_email_sent_at?: string | null
+  onboarding_email_opened_at?: string | null
+  onboarding_email_clicked_at?: string | null
+}
+
+function formatShortDateTime(iso?: string | null): string {
+  if (!iso) return ''
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return ''
+  return d.toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' })
+}
+
+function onboardingBadgeClasses(status?: string | null): string {
+  const s = String(status || '').toLowerCase()
+  if (!s) return 'bg-gray-100 text-gray-800'
+  if (s === 'clicked') return 'bg-indigo-100 text-indigo-800'
+  if (s === 'opened') return 'bg-purple-100 text-purple-800'
+  if (s === 'delivered') return 'bg-green-100 text-green-800'
+  if (s === 'sent') return 'bg-blue-100 text-blue-800'
+  if (s === 'pending') return 'bg-yellow-100 text-yellow-800'
+  if (s === 'failed' || s === 'bounced') return 'bg-red-100 text-red-800'
+  return 'bg-gray-100 text-gray-800'
+}
+
+function onboardingLabel(status?: string | null): string {
+  const s = String(status || '').toLowerCase()
+  if (!s) return 'sin registro'
+  if (s === 'pending') return 'pendiente envío'
+  if (s === 'sent') return 'enviado'
+  if (s === 'delivered') return 'entregado'
+  if (s === 'opened') return 'abierto'
+  if (s === 'clicked') return 'clic'
+  if (s === 'failed') return 'fallido'
+  if (s === 'bounced') return 'rebotado'
+  return s
 }
 
 export default function TenantsPage() {
@@ -68,6 +105,12 @@ export default function TenantsPage() {
                   Habitaciones
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                  Email onboarding
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                  Última acción
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                   Fecha Creación
                 </th>
               </tr>
@@ -75,7 +118,7 @@ export default function TenantsPage() {
             <tbody className="bg-white divide-y divide-gray-200">
               {tenants.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-4 text-center text-gray-500">
+                  <td colSpan={8} className="px-6 py-4 text-center text-gray-500">
                     No hay tenants registrados
                   </td>
                 </tr>
@@ -104,6 +147,29 @@ export default function TenantsPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {tenant.current_rooms} / {tenant.max_rooms === -1 ? '∞' : tenant.max_rooms}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span
+                        className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${onboardingBadgeClasses(
+                          tenant.onboarding_email_status
+                        )}`}
+                        title={
+                          tenant.onboarding_email_id
+                            ? `email_tracking.id=${tenant.onboarding_email_id}`
+                            : 'Sin registro en email_tracking (histórico previo o tracking desactivado)'
+                        }
+                      >
+                        {onboardingLabel(tenant.onboarding_email_status)}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                      {tenant.onboarding_email_clicked_at
+                        ? `Clic: ${formatShortDateTime(tenant.onboarding_email_clicked_at)}`
+                        : tenant.onboarding_email_opened_at
+                          ? `Abierto: ${formatShortDateTime(tenant.onboarding_email_opened_at)}`
+                          : tenant.onboarding_email_sent_at
+                            ? `Registro: ${formatShortDateTime(tenant.onboarding_email_sent_at)}`
+                            : '—'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {new Date(tenant.created_at).toLocaleDateString('es-ES')}

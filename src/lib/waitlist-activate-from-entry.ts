@@ -80,6 +80,7 @@ export async function activateWaitlistEntryFromRow(
         await sendOnboardingEmail({
           to: waitlistEntry.email,
           onboardingUrl,
+          tenantId,
           variant: 'waitlist_launch',
         });
       } catch (emailError) {
@@ -124,6 +125,7 @@ export async function activateWaitlistEntryFromRow(
         to: waitlistEntry.email,
         onboardingUrl: onboardingUrlOrphan,
         tempPassword: tempPasswordOrphan,
+        tenantId,
         variant: 'waitlist_launch',
       });
       return NextResponse.json({
@@ -322,6 +324,7 @@ export async function activateWaitlistEntryFromRow(
       to: waitlistEntry.email,
       onboardingUrl,
       tempPassword,
+      tenantId,
       variant: 'waitlist_launch',
     });
 

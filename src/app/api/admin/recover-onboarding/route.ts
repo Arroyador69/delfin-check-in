@@ -153,6 +153,7 @@ export async function POST(req: NextRequest) {
       await sendOnboardingEmail({
         to: email,
         onboardingUrl,
+        tenantId: user.tenant_id,
         // No podemos recuperar la contraseña temporal original, pero el usuario puede usar el magic link
       });
 
