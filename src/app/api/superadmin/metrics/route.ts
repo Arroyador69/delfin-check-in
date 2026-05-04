@@ -4,6 +4,82 @@ import { verifyToken } from '@/lib/auth'
 
 type TableAvailability = Record<string, boolean>
 
+const DEFAULT_TRACTION_METRICS = {
+  totalUsers: 0,
+  activeUsers: 0,
+  dau: 0,
+  wau: 0,
+  mau: 0,
+  activeProperties: 0,
+  checkins: 0,
+  xmlSent: 0,
+  xmlErrors: 0,
+  offlineUsagePercent: 0
+}
+
+const DEFAULT_REVENUE_METRICS = {
+  mrr: 0,
+  arr: 0,
+  arpu: 0,
+  revenueByPlan: [],
+  revenueByCountry: [],
+  revenueByAffiliate: [],
+  mrrHistory: []
+}
+
+const DEFAULT_RETENTION_METRICS = {
+  churnRate: 0,
+  usersCancelled: 0,
+  cohorts: [],
+  avgLTV: 0,
+  freeToPaid: 0
+}
+
+const DEFAULT_LEGAL_METRICS = {
+  successRate: 0,
+  avgTimeToSendSeconds: 0,
+  avgTimeToSendMinutes: 0,
+  incidentsAvoided: 0,
+  complianceByProperty: [],
+  complianceByCountry: []
+}
+
+const DEFAULT_EMAIL_METRICS = {
+  totalSent: 0,
+  openRate: 0,
+  clickRate: 0,
+  conversionRate: 0,
+  converted: 0,
+  emailsByType: []
+}
+
+const DEFAULT_FUNNEL_METRICS = {
+  signups: 0,
+  propertiesCreated: 0,
+  firstCheckins: 0,
+  xmlSent: 0,
+  paid: 0,
+  conversionRates: {
+    signupToProperty: 0,
+    propertyToCheckin: 0,
+    checkinToXml: 0,
+    xmlToPaid: 0
+  }
+}
+
+async function safeMetricSection<T>(
+  sectionName: string,
+  compute: () => Promise<T>,
+  fallback: T
+): Promise<T> {
+  try {
+    return await compute()
+  } catch (error) {
+    console.error(`⚠️ [superadmin/metrics] Fallback en sección "${sectionName}":`, error)
+    return fallback
+  }
+}
+
 /**
  * GET /api/superadmin/metrics
  * Obtiene todas las métricas principales del superadmin
@@ -36,22 +112,46 @@ export async function GET(req: NextRequest) {
     const tableAvailability = await resolveTableAvailability()
 
     // 1. MÉTRICAS DE TRACCIÓN Y USO
-    const tractionMetrics = await getTractionMetrics(startDate, tableAvailability)
+    const tractionMetrics = await safeMetricSection(
+      'traction',
+      () => getTractionMetrics(startDate, tableAvailability),
+      DEFAULT_TRACTION_METRICS
+    )
     
     // 2. MÉTRICAS DE INGRESOS
-    const revenueMetrics = await getRevenueMetrics(startDate, tableAvailability)
+    const revenueMetrics = await safeMetricSection(
+      'revenue',
+      () => getRevenueMetrics(startDate, tableAvailability),
+      DEFAULT_REVENUE_METRICS
+    )
     
     // 3. MÉTRICAS DE RETENCIÓN Y CHURN
-    const retentionMetrics = await getRetentionMetrics(startDate, tableAvailability)
+    const retentionMetrics = await safeMetricSection(
+      'retention',
+      () => getRetentionMetrics(startDate, tableAvailability),
+      DEFAULT_RETENTION_METRICS
+    )
     
     // 4. MÉTRICAS LEGALES
-    const legalMetrics = await getLegalMetrics(startDate, tableAvailability)
+    const legalMetrics = await safeMetricSection(
+      'legal',
+      () => getLegalMetrics(startDate, tableAvailability),
+      DEFAULT_LEGAL_METRICS
+    )
     
     // 5. MÉTRICAS DE EMAIL
-    const emailMetrics = await getEmailMetrics(startDate, tableAvailability)
+    const emailMetrics = await safeMetricSection(
+      'email',
+      () => getEmailMetrics(startDate, tableAvailability),
+      DEFAULT_EMAIL_METRICS
+    )
     
     // 6. FUNNELS
-    const funnelMetrics = await getFunnelMetrics(startDate, tableAvailability)
+    const funnelMetrics = await safeMetricSection(
+      'funnel',
+      () => getFunnelMetrics(startDate, tableAvailability),
+      DEFAULT_FUNNEL_METRICS
+    )
 
     return NextResponse.json({
       success: true,
@@ -100,6 +200,22 @@ async function tableExists(tableName: string): Promise<boolean> {
   }
 }
 
+async function columnExists(tableName: string, columnName: string): Promise<boolean> {
+  try {
+    const result = await sql`
+      SELECT 1
+      FROM information_schema.columns
+      WHERE table_schema = 'public'
+        AND table_name = ${tableName}
+        AND column_name = ${columnName}
+      LIMIT 1
+    `
+    return result.rows.length > 0
+  } catch {
+    return false
+  }
+}
+
 async function resolveTableAvailability(): Promise<TableAvailability> {
   const entries = await Promise.all(
     REQUIRED_METRICS_TABLES.map(async (name) => [name, await tableExists(name)] as const)
@@ -137,18 +253,7 @@ function getStartDate(period: string): Date {
  */
 async function getTractionMetrics(startDate: Date, availability: TableAvailability) {
   if (!hasAllTables(availability, ['tenants'])) {
-    return {
-      totalUsers: 0,
-      activeUsers: 0,
-      dau: 0,
-      wau: 0,
-      mau: 0,
-      activeProperties: 0,
-      checkins: 0,
-      xmlSent: 0,
-      xmlErrors: 0,
-      offlineUsagePercent: 0
-    }
+    return DEFAULT_TRACTION_METRICS
   }
 
   // Usuarios totales
@@ -255,15 +360,7 @@ async function getTractionMetrics(startDate: Date, availability: TableAvailabili
  */
 async function getRevenueMetrics(startDate: Date, availability: TableAvailability) {
   if (!hasAllTables(availability, ['subscription_events'])) {
-    return {
-      mrr: 0,
-      arr: 0,
-      arpu: 0,
-      revenueByPlan: [],
-      revenueByCountry: [],
-      revenueByAffiliate: [],
-      mrrHistory: []
-    }
+    return DEFAULT_REVENUE_METRICS
   }
 
   // MRR (Monthly Recurring Revenue)
@@ -369,13 +466,7 @@ async function getRevenueMetrics(startDate: Date, availability: TableAvailabilit
  */
 async function getRetentionMetrics(startDate: Date, availability: TableAvailability) {
   if (!hasAllTables(availability, ['subscription_events', 'tenants'])) {
-    return {
-      churnRate: 0,
-      usersCancelled: 0,
-      cohorts: [],
-      avgLTV: 0,
-      freeToPaid: 0
-    }
+    return DEFAULT_RETENTION_METRICS
   }
 
   // Churn mensual (%)
@@ -454,14 +545,7 @@ async function getRetentionMetrics(startDate: Date, availability: TableAvailabil
  */
 async function getLegalMetrics(startDate: Date, availability: TableAvailability) {
   if (!hasAllTables(availability, ['guest_registrations', 'xml_tracking'])) {
-    return {
-      successRate: 0,
-      avgTimeToSendSeconds: 0,
-      avgTimeToSendMinutes: 0,
-      incidentsAvoided: 0,
-      complianceByProperty: [],
-      complianceByCountry: []
-    }
+    return DEFAULT_LEGAL_METRICS
   }
 
   // % de check-ins correctamente enviados
@@ -501,20 +585,32 @@ async function getLegalMetrics(startDate: Date, availability: TableAvailability)
   `
 
   // Logs de cumplimiento por propiedad
-  const complianceByProperty = hasAllTables(availability, ['tenant_properties']) ? await sql`
-    SELECT 
-      tp.id,
-      tp.name,
-      COUNT(xt.id) as total_sends,
-      COUNT(xt.id) FILTER (WHERE xt.status IN ('sent', 'delivered')) as successful_sends
-    FROM tenant_properties tp
-    LEFT JOIN xml_tracking xt ON xt.property_id = tp.id
-      AND xt.created_at >= ${startDate.toISOString()}
-    GROUP BY tp.id, tp.name
-    HAVING COUNT(xt.id) > 0
-    ORDER BY total_sends DESC
-    LIMIT 10
-  ` : { rows: [] as any[] }
+  let complianceByProperty: { rows: any[] } = { rows: [] }
+  if (hasAllTables(availability, ['tenant_properties'])) {
+    const hasName = await columnExists('tenant_properties', 'name')
+    const hasPropertyName = await columnExists('tenant_properties', 'property_name')
+    const propertyLabelExpr = hasName
+      ? 'tp.name'
+      : hasPropertyName
+        ? 'tp.property_name'
+        : 'tp.id::text'
+
+    const text = `
+      SELECT
+        tp.id,
+        ${propertyLabelExpr} as property_name,
+        COUNT(xt.id) as total_sends,
+        COUNT(xt.id) FILTER (WHERE xt.status IN ('sent', 'delivered')) as successful_sends
+      FROM tenant_properties tp
+      LEFT JOIN xml_tracking xt ON xt.property_id = tp.id
+        AND xt.created_at >= $1
+      GROUP BY tp.id, ${propertyLabelExpr}
+      HAVING COUNT(xt.id) > 0
+      ORDER BY total_sends DESC
+      LIMIT 10
+    `
+    complianceByProperty = await (sql as any).query(text, [startDate.toISOString()])
+  }
 
   // País / normativa aplicada
   const complianceByCountry = hasAllTables(availability, ['tenants']) ? await sql`
@@ -535,7 +631,7 @@ async function getLegalMetrics(startDate: Date, availability: TableAvailability)
     incidentsAvoided: parseInt(incidentsAvoided.rows[0]?.count || '0'),
     complianceByProperty: complianceByProperty.rows.map((r: any) => ({
       propertyId: r.id,
-      propertyName: r.name,
+      propertyName: r.property_name,
       totalSends: parseInt(r.total_sends || '0'),
       successfulSends: parseInt(r.successful_sends || '0')
     })),
@@ -552,14 +648,7 @@ async function getLegalMetrics(startDate: Date, availability: TableAvailability)
  */
 async function getEmailMetrics(startDate: Date, availability: TableAvailability) {
   if (!hasAllTables(availability, ['email_tracking'])) {
-    return {
-      totalSent: 0,
-      openRate: 0,
-      clickRate: 0,
-      conversionRate: 0,
-      converted: 0,
-      emailsByType: []
-    }
+    return DEFAULT_EMAIL_METRICS
   }
 
   // Emails enviados
@@ -635,19 +724,7 @@ async function getEmailMetrics(startDate: Date, availability: TableAvailability)
  */
 async function getFunnelMetrics(startDate: Date, availability: TableAvailability) {
   if (!hasAllTables(availability, ['funnel_events'])) {
-    return {
-      signups: 0,
-      propertiesCreated: 0,
-      firstCheckins: 0,
-      xmlSent: 0,
-      paid: 0,
-      conversionRates: {
-        signupToProperty: 0,
-        propertyToCheckin: 0,
-        checkinToXml: 0,
-        xmlToPaid: 0
-      }
-    }
+    return DEFAULT_FUNNEL_METRICS
   }
 
   // Paso 1: Registro
