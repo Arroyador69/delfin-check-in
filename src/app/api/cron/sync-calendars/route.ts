@@ -16,11 +16,20 @@ export async function GET(req: NextRequest) {
 
   try {
     const calendars = await sql`
-      SELECT id, tenant_id, property_id, calendar_name, calendar_type, calendar_url
+      SELECT id, tenant_id, property_id, calendar_name, calendar_type, calendar_url, sync_frequency, sync_error, updated_at
       FROM external_calendars
       WHERE is_active = true
         AND calendar_url IS NOT NULL
         AND calendar_url != ''
+        AND (
+          last_sync_at IS NULL
+          OR last_sync_at <= NOW() - make_interval(mins => GREATEST(5, COALESCE(sync_frequency, 15)))
+        )
+        AND NOT (
+          sync_status = 'error'
+          AND sync_error LIKE 'HTTP 4%'
+          AND updated_at >= NOW() - interval '6 hours'
+        )
       ORDER BY last_sync_at ASC NULLS FIRST
       LIMIT 50
     `;
@@ -75,14 +84,22 @@ export async function GET(req: NextRequest) {
         `;
         synced++;
       } catch (err) {
-        const msg = err instanceof Error ? err.message : 'Unknown error';
+        const rawMsg = err instanceof Error ? err.message : 'Unknown error';
+        const isClientHttpError = /^HTTP 4\d\d\b/.test(rawMsg);
+        const msg = isClientHttpError
+          ? `${rawMsg} · Revisa URL iCal (expirada/incorrecta) o permisos del calendario externo`
+          : rawMsg;
         await sql`
           UPDATE external_calendars
           SET sync_status = 'error', sync_error = ${msg}
           WHERE id = ${cal.id}
         `;
         errors++;
-        console.error(`[sync-calendars] Error cal #${cal.id} (${cal.calendar_name}):`, msg);
+        if (isClientHttpError) {
+          console.warn(`[sync-calendars] Calendario requiere revisión #${cal.id} (${cal.calendar_name}):`, msg);
+        } else {
+          console.error(`[sync-calendars] Error cal #${cal.id} (${cal.calendar_name}):`, msg);
+        }
       }
     }
 

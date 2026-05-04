@@ -81,6 +81,14 @@ function buildLoginRedirectPath(pathname: string, search: string): string {
 export async function middleware(req: NextRequest) {
   const url = req.nextUrl
   const pathname = url.pathname
+
+  // Evita 404 de metadata internacionalizada (ej. /es/apple-icon, /es/icon, /es/robots.txt)
+  const localeMetadataMatch = pathname.match(/^\/([a-z]{2})\/(apple-icon|icon|robots\.txt)$/i);
+  if (localeMetadataMatch) {
+    const rewritten = url.clone();
+    rewritten.pathname = `/${localeMetadataMatch[2]}`;
+    return NextResponse.rewrite(rewritten);
+  }
   
   // Extraer locale si existe en el pathname (/es/..., /en/...)
   const pathParts = pathname.split('/').filter(Boolean);
@@ -372,7 +380,6 @@ export async function middleware(req: NextRequest) {
         console.log(`👑 SuperAdmin — tenant objetivo: ${tenantId}`);
       } else {
         tenantId = jwtPayload.tenantId;
-        console.log(`🔐 Tenant desde JWT: ${tenantId}`);
       }
       requestHeaders.set('x-tenant-id', tenantId);
     }
@@ -467,7 +474,6 @@ export async function middleware(req: NextRequest) {
     if (payload?.tenantId) {
       const requestHeaders = new Headers(req.headers);
       requestHeaders.set('x-tenant-id', payload.tenantId);
-      console.log(`🔐 Tenant_id extraído del JWT para página: ${payload.tenantId}`);
 
       // ==============================================
       // 5. GATING DE ONBOARDING (primer acceso)

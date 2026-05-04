@@ -110,6 +110,7 @@ export async function POST(
       });
     } catch (syncError) {
       const msg = syncError instanceof Error ? syncError.message : 'Error desconocido';
+      const isClientHttpError = /^HTTP 4\d\d\b/.test(msg);
       await sql`
         UPDATE external_calendars
         SET sync_status = 'error', sync_error = ${msg}
@@ -120,9 +121,11 @@ export async function POST(
         {
           success: false,
           error: 'Error en sincronización',
-          details: msg,
+          details: isClientHttpError
+            ? `${msg}. Revisa la URL iCal y que siga siendo pública/válida en Booking.`
+            : msg,
         },
-        { status: 502 }
+        { status: isClientHttpError ? 400 : 502 }
       );
     }
   } catch (error) {

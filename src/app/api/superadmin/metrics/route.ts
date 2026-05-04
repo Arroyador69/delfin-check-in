@@ -409,9 +409,8 @@ async function getLegalMetrics(startDate: Date) {
   const incidentsAvoided = await sql`
     SELECT COUNT(*) as count
     FROM xml_tracking
-    WHERE status = 'error'
+    WHERE status IN ('sent', 'delivered')
       AND retry_count > 0
-      AND status != 'error' -- Se corrigió después
       AND created_at >= ${startDate.toISOString()}
   `
 
