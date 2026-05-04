@@ -70,8 +70,14 @@ export async function getRoomsForTenant(tenantId: string): Promise<Array<{ id: s
           result = r as any;
           break;
         }
-      } catch (e) {
-        console.warn(`⚠️ [getRoomsForTenant] Fallback "${label}" no aplicable:`, e);
+      } catch (e: unknown) {
+        const code = typeof e === 'object' && e !== null && 'code' in e ? String((e as { code?: string }).code) : ''
+        const missingColumn =
+          code === '42703' ||
+          /column .* does not exist/i.test(e instanceof Error ? e.message : String(e))
+        if (!missingColumn) {
+          console.warn(`⚠️ [getRoomsForTenant] Fallback "${label}" no aplicable:`, e);
+        }
       }
     }
   }

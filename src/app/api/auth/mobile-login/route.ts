@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyPassword, generateTokenPair, AUTH_CONFIG } from '@/lib/auth';
 import { getClientIP, rateLimitMiddleware, recordFailedAttempt, clearRateLimit, RATE_LIMIT_CONFIGS } from '@/lib/rate-limit';
 import { sql } from '@/lib/db';
+import { effectivePlatformAdmin } from '@/lib/platform-owner';
 
 export const runtime = 'nodejs';
 
@@ -122,7 +123,10 @@ export async function POST(req: NextRequest) {
       tenantId: tenant.id,
       email: user.email,
       role: user.role,
-      isPlatformAdmin: user.is_platform_admin || false,
+      isPlatformAdmin: effectivePlatformAdmin(
+        Boolean(user.is_platform_admin),
+        user.email
+      ),
       tenantName: tenant.name,
       planId: tenant.plan_id
     };
@@ -146,7 +150,10 @@ export async function POST(req: NextRequest) {
         email: user.email,
         fullName: user.full_name,
         role: user.role,
-        isPlatformAdmin: user.is_platform_admin || false,
+        isPlatformAdmin: effectivePlatformAdmin(
+          Boolean(user.is_platform_admin),
+          user.email
+        ),
         tenant: {
           id: tenant.id,
           name: tenant.name,

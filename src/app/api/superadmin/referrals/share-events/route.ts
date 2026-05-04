@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
 import { verifyToken } from '@/lib/auth';
+import { isEffectiveSuperAdminPayload } from '@/lib/platform-owner';
 import { ensureReferralShareEventsSchema } from '@/lib/referral-share-events';
 
 /**
@@ -15,7 +16,7 @@ export async function GET(req: NextRequest) {
     }
 
     const payload = verifyToken(authToken);
-    if (!payload || !payload.isPlatformAdmin) {
+    if (!isEffectiveSuperAdminPayload(payload)) {
       return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
     }
 

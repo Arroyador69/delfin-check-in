@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
 import { verifyToken } from '@/lib/auth';
+import { isEffectiveSuperAdminPayload } from '@/lib/platform-owner';
 
 /**
  * Endpoint para actualizar el plan de un tenant (solo SuperAdmin)
@@ -22,7 +23,7 @@ export async function PUT(req: NextRequest) {
     // Verificar que sea superadmin
     const payload = verifyToken(authToken);
     
-    if (!payload || !payload.isPlatformAdmin) {
+    if (!isEffectiveSuperAdminPayload(payload)) {
       return NextResponse.json(
         { success: false, error: 'Acceso denegado. Solo SuperAdmin puede actualizar planes.' },
         { status: 403 }

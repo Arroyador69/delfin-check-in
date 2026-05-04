@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/auth';
 import { sql } from '@/lib/db';
+import { effectivePlatformAdmin } from '@/lib/platform-owner';
 export const runtime = 'nodejs';
 
 /**
@@ -74,7 +75,10 @@ export async function GET(req: NextRequest) {
         lastLogin: user.last_login,
         tenantName: user.tenant_name,
         planId: user.plan_id,
-        isPlatformAdmin: user.is_platform_admin || false,
+        isPlatformAdmin: effectivePlatformAdmin(
+          Boolean(user.is_platform_admin),
+          user.email
+        ),
         recoveryEmail: user.recovery_email || user.email // Usar recovery_email si existe, sino el email principal
       }
     });

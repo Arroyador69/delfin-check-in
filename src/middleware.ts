@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { verifyTokenEdge } from '@/lib/auth-edge'
+import { effectivePlatformAdmin } from '@/lib/platform-owner'
 import { checkRateLimit, getClientIP, isGlobalApiRateLimitExempt, RATE_LIMIT_CONFIGS } from '@/lib/rate-limit';
 import {
   isDangerousDiagnosticApiPath,
@@ -375,7 +376,11 @@ export async function middleware(req: NextRequest) {
       const uuidOk = (id: string) =>
         /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
 
-      if (jwtPayload.isPlatformAdmin === true && rawHeaderTenant && uuidOk(rawHeaderTenant)) {
+      if (
+        effectivePlatformAdmin(jwtPayload.isPlatformAdmin, jwtPayload.email) &&
+        rawHeaderTenant &&
+        uuidOk(rawHeaderTenant)
+      ) {
         tenantId = rawHeaderTenant;
         console.log(`👑 SuperAdmin — tenant objetivo: ${tenantId}`);
       } else {

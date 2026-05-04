@@ -18,6 +18,7 @@ export async function POST(
       tenantId = (await getTenantId(req)) || '';
     }
     if (!tenantId || tenantId === 'default' || tenantId.trim() === '') {
+      console.info('[external-calendars/sync] http=401 reason=no_tenant');
       return NextResponse.json({ success: false, error: 'No se pudo identificar el tenant' }, { status: 401 });
     }
 
@@ -25,6 +26,7 @@ export async function POST(
 
     const calendarIdNum = parseInt(calendarId, 10);
     if (isNaN(calendarIdNum)) {
+      console.info(`[external-calendars/sync] calendar=${calendarId} http=400 reason=invalid_id`);
       return NextResponse.json({ success: false, error: 'ID de calendario inválido' }, { status: 400 });
     }
 
@@ -34,12 +36,14 @@ export async function POST(
     `;
 
     if (calendarResult.rows.length === 0) {
+      console.info(`[external-calendars/sync] calendar=${calendarIdNum} http=404 reason=not_found`);
       return NextResponse.json({ success: false, error: 'Calendario no encontrado o inactivo' }, { status: 404 });
     }
 
     const calendar = calendarResult.rows[0];
 
     if (!calendar.calendar_url) {
+      console.info(`[external-calendars/sync] calendar=${calendarIdNum} http=400 reason=no_url`);
       return NextResponse.json({ success: false, error: 'URL del calendario no configurada' }, { status: 400 });
     }
 
@@ -98,25 +102,35 @@ export async function POST(
         WHERE id = ${calendarIdNum}
       `;
 
-      return NextResponse.json({
-        success: true,
-        message: 'Sincronización completada',
-        result: {
-          events_processed: events.length,
-          events_added: eventsAdded,
-          calendar_type: calendar.calendar_type,
-          calendar_name: calendar.calendar_name,
+      console.info(
+        `[external-calendars/sync] calendar=${calendarIdNum} http=200 events=${events.length} added=${eventsAdded}`
+      );
+      return NextResponse.json(
+        {
+          success: true,
+          message: 'Sincronización completada',
+          result: {
+            events_processed: events.length,
+            events_added: eventsAdded,
+            calendar_type: calendar.calendar_type,
+            calendar_name: calendar.calendar_name,
+          },
         },
-      });
+        { status: 200 }
+      );
     } catch (syncError) {
       const msg = syncError instanceof Error ? syncError.message : 'Error desconocido';
       const isClientHttpError = /^HTTP 4\d\d\b/.test(msg);
+      const httpStatus = isClientHttpError ? 400 : 502;
       await sql`
         UPDATE external_calendars
         SET sync_status = 'error', sync_error = ${msg}
         WHERE id = ${calendarIdNum}
       `;
 
+      console.info(
+        `[external-calendars/sync] calendar=${calendarIdNum} http=${httpStatus} reason=sync_error detail=${msg.slice(0, 120)}`
+      );
       return NextResponse.json(
         {
           success: false,
@@ -125,11 +139,12 @@ export async function POST(
             ? `${msg}. Revisa la URL iCal y que siga siendo pública/válida en Booking.`
             : msg,
         },
-        { status: isClientHttpError ? 400 : 502 }
+        { status: httpStatus }
       );
     }
   } catch (error) {
     console.error('[external-calendars/sync] Error:', error);
+    console.info('[external-calendars/sync] http=500 reason=unhandled');
     return NextResponse.json({ success: false, error: 'Error interno' }, { status: 500 });
   }
 }

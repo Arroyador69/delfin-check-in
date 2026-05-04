@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/auth';
+import { isEffectiveSuperAdminPayload } from '@/lib/platform-owner';
 
 export async function verifySuperAdmin(req: NextRequest) {
   let authToken = req.cookies.get('auth_token')?.value;
@@ -20,10 +21,12 @@ export async function verifySuperAdmin(req: NextRequest) {
 
   const payload = verifyToken(authToken);
 
-  if (!payload || !payload.isPlatformAdmin) {
+  if (!isEffectiveSuperAdminPayload(payload)) {
     return {
       error: NextResponse.json(
-        { error: 'Acceso denegado. Se requiere permisos de SuperAdmin' },
+        {
+          error: 'Acceso denegado. SuperAdmin de plataforma solo para la cuenta operativa autorizada.',
+        },
         { status: 403 }
       ),
       payload: null

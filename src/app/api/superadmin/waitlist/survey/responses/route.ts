@@ -4,6 +4,7 @@
  */
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth'
+import { isEffectiveSuperAdminPayload } from '@/lib/platform-owner'
 import { sql } from '@/lib/db'
 
 export async function GET(req: NextRequest) {
@@ -13,7 +14,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
     }
     const payload = verifyToken(authToken)
-    if (!payload?.isPlatformAdmin) {
+    if (!isEffectiveSuperAdminPayload(payload)) {
       return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 })
     }
 

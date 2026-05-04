@@ -12,6 +12,7 @@ import { sql } from '@vercel/postgres';
 import { NextRequest } from 'next/server';
 import { getTenantId, getTenantById, Tenant, hasLegalModuleAccess, canCreateUnit, hasAdsEnabled } from './tenant';
 import { verifyToken } from './auth';
+import { isEffectiveSuperAdminPayload } from './platform-owner';
 
 // Función helper para verificar token de forma silenciosa (sin logs de error)
 function verifyTokenSilently(token: string): any | null {
@@ -41,7 +42,7 @@ export function isSuperAdmin(req: NextRequest): boolean {
     const authToken = req.cookies.get('auth_token')?.value;
     if (authToken) {
       const payload = verifyTokenSilently(authToken);
-      if (payload?.isPlatformAdmin === true) {
+      if (isEffectiveSuperAdminPayload(payload)) {
         console.log('👑 SuperAdmin detectado desde cookie');
         return true;
       }
@@ -52,7 +53,7 @@ export function isSuperAdmin(req: NextRequest): boolean {
     if (authHeader && authHeader.startsWith('Bearer ')) {
       const token = authHeader.split(' ')[1];
       const payload = verifyTokenSilently(token);
-      if (payload?.isPlatformAdmin === true) {
+      if (isEffectiveSuperAdminPayload(payload)) {
         console.log('👑 SuperAdmin detectado desde Bearer token');
         return true;
       }

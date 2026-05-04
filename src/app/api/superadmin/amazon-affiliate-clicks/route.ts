@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
 import { verifyToken } from '@/lib/auth';
+import { isEffectiveSuperAdminPayload } from '@/lib/platform-owner';
 import { ensureAuditTable } from '@/lib/audit';
 
 export const runtime = 'nodejs';
@@ -19,7 +20,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
     }
     const payload = verifyToken(authToken);
-    if (!payload || !payload.isPlatformAdmin) {
+    if (!isEffectiveSuperAdminPayload(payload)) {
       return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
     }
 
