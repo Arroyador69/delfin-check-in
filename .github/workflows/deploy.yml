@@ -62,4 +62,6 @@ jobs:
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
           vercel-args: '--prod'
-          vercel-version: 47.1.4
+          # Vercel ha empezado a exigir versiones mínimas del CLI por endpoint.
+          # Pin a una versión publicada (evita ETARGET) y suficientemente nueva.
+          vercel-version: 53.1.1
