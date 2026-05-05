@@ -2,6 +2,17 @@ import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
 import { verifyToken } from '@/lib/auth';
 
+function isTooLong(v: unknown, max: number): boolean {
+  return typeof v === 'string' && v.length > max;
+}
+
+function validateMaxLen(fields: Record<string, unknown>, max: number): string | null {
+  for (const [k, v] of Object.entries(fields)) {
+    if (isTooLong(v, max)) return k;
+  }
+  return null;
+}
+
 // GET - Obtener configuración de empresa
 export async function GET(request: NextRequest) {
   try {
@@ -93,6 +104,28 @@ export async function PUT(request: NextRequest) {
       );
     }
 
+    const tooLongKey = validateMaxLen(
+      {
+        nombreEmpresa: data.nombreEmpresa,
+        nifEmpresa: data.nifEmpresa,
+        direccionEmpresa: data.direccionEmpresa,
+        codigoPostal: data.codigoPostal,
+        ciudad: data.ciudad,
+        provincia: data.provincia,
+        pais: data.pais,
+        telefono: data.telefono,
+        email: data.email,
+        web: data.web,
+      },
+      500
+    );
+    if (tooLongKey) {
+      return NextResponse.json(
+        { error: `El campo "${tooLongKey}" es demasiado largo (máx 500 caracteres).` },
+        { status: 400 }
+      );
+    }
+
     const result = await sql`
       UPDATE empresa_config SET
         nombre_empresa = ${data.nombreEmpresa},
@@ -157,6 +190,29 @@ export async function POST(request: NextRequest) {
         !data.telefono || !data.email) {
       return NextResponse.json(
         { error: 'Faltan datos requeridos' },
+        { status: 400 }
+      );
+    }
+
+    const tooLongKey = validateMaxLen(
+      {
+        nombre_empresa: data.nombre_empresa,
+        nif_empresa: data.nif_empresa,
+        direccion_empresa: data.direccion_empresa,
+        codigo_postal: data.codigo_postal,
+        ciudad: data.ciudad,
+        provincia: data.provincia,
+        pais: data.pais,
+        telefono: data.telefono,
+        email: data.email,
+        web: data.web,
+        logo_url: data.logo_url,
+      },
+      500
+    );
+    if (tooLongKey) {
+      return NextResponse.json(
+        { error: `El campo "${tooLongKey}" es demasiado largo (máx 500 caracteres).` },
         { status: 400 }
       );
     }

@@ -19,8 +19,14 @@ export async function GET(
   { params }: { params: Promise<{ propertyId: string; calendarId: string }> }
 ) {
   try {
-    const { propertyId } = await params;
-    const propId = parseInt(propertyId);
+    const { propertyId, calendarId } = await params;
+    const propId = Number.parseInt(String(propertyId), 10);
+    const calId = Number.parseInt(String(calendarId), 10);
+
+    if (!Number.isFinite(propId) || propId <= 0 || !Number.isFinite(calId) || calId <= 0) {
+      // Hardening: evita 500 por URLs inválidas (ej. /api/public/ical/null/...)
+      return new NextResponse('Bad request', { status: 400 });
+    }
 
     const propertyResult = await sql`
       SELECT id, tenant_id, property_name

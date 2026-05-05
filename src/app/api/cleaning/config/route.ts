@@ -11,6 +11,14 @@ async function resolveTenantId(req: NextRequest): Promise<string | null> {
   return tenantId;
 }
 
+function normalizeTimeString(v: unknown, fallback: string): string {
+  const raw = typeof v === 'string' ? v.trim() : '';
+  if (!raw) return fallback;
+  // Acepta HH:MM o HH:MM:SS
+  if (/^\d{2}:\d{2}(:\d{2})?$/.test(raw)) return raw;
+  return fallback;
+}
+
 export async function GET(req: NextRequest) {
   try {
     const tenantId = await resolveTenantId(req);
@@ -64,13 +72,16 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'cleaning_trigger inválido' }, { status: 400 });
     }
 
+    const safeCheckoutTime = normalizeTimeString(checkout_time, '11:00');
+    const safeCheckinTime = normalizeTimeString(checkin_time, '16:00');
+
     const result = await sql`
       INSERT INTO cleaning_config (
         tenant_id, room_id, checkout_time, checkin_time,
         cleaning_duration_minutes, cleaning_trigger, same_day_alert,
         ical_enabled, cleaner_name
       ) VALUES (
-        ${tenantId}::uuid, ${String(room_id)}, ${checkout_time}::time, ${checkin_time}::time,
+        ${tenantId}::uuid, ${String(room_id)}, ${safeCheckoutTime}::time, ${safeCheckinTime}::time,
         ${cleaning_duration_minutes}, ${cleaning_trigger}::cleaning_trigger_type, ${same_day_alert},
         ${ical_enabled}, ${cleaner_name}
       )
