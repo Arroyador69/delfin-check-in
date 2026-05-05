@@ -28,6 +28,74 @@ function estimateReadTimeMinutes(htmlContent: string): number {
   return Math.max(1, Math.round(words / 200));
 }
 
+function plansHtmlBlock(): string {
+  const subscribeEs = 'https://admin.delfincheckin.com/es/subscribe';
+  return `
+<section style="margin: 2.5rem 0; padding: 2.2rem; background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); border-radius: 20px; border: 2px solid rgba(15,23,42,.10); box-shadow: 0 10px 30px rgba(0,0,0,0.06);">
+  <div style="text-align:center;margin-bottom:1.2rem;">
+    <div style="font-size:44px;margin-bottom:8px;">🚀</div>
+    <h2 style="font-size:2rem;margin:0 0 8px;color:#0f172a;font-weight:900;">Planes de Delfín Check-in</h2>
+    <p style="margin:0;color:#475569;font-size:16px;">
+      Contrata en minutos. Registro de viajeros + envío automático al Ministerio del Interior.
+    </p>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;">
+    ${planCard('Starter', '1 propiedad', 'Ideal para empezar', '#e2e8f0', subscribeEs)}
+    ${planCard('Pro', '2–4 propiedades', 'Más volumen, mejor precio', '#bfdbfe', subscribeEs)}
+    ${planCard('Business', '5–9 propiedades', 'Para gestores', '#bbf7d0', subscribeEs)}
+    ${planCard('Enterprise', '10+ propiedades', 'Precio por volumen', '#fde68a', subscribeEs)}
+  </div>
+  <div style="text-align:center;margin-top:16px;">
+    <a href="${subscribeEs}" style="display:inline-block;background:#2563eb;color:#fff;padding:0.9rem 1.4rem;border-radius:0.75rem;font-weight:900;text-decoration:none;">
+      Ver precios y contratar →
+    </a>
+    <div style="margin-top:8px;color:#64748b;font-size:12px;">
+      Pagos seguros (Polar como Merchant of Record). IVA incluido según aplique.
+    </div>
+  </div>
+</section>
+`.trim();
+}
+
+function planCard(name: string, size: string, desc: string, border: string, href: string): string {
+  const esc = (v: string) => escapeAttr(v);
+  return `
+<a href="${href}" style="text-decoration:none;color:inherit;">
+  <div style="border:2px solid ${border};border-radius:16px;padding:16px;background:#fff;box-shadow:0 6px 16px rgba(15,23,42,0.05);height:100%;">
+    <div style="font-size:13px;color:#64748b;font-weight:800;">${esc(size)}</div>
+    <div style="font-size:19px;color:#0f172a;font-weight:950;margin-top:6px;">${esc(name)}</div>
+    <div style="font-size:14px;color:#475569;margin-top:8px;line-height:1.45;">${esc(desc)}</div>
+    <div style="margin-top:12px;font-weight:900;color:#2563eb;">Contratar →</div>
+  </div>
+</a>`.trim();
+}
+
+function replaceWaitlistWithPlans(html: string): string {
+  // 1) Ocultar waitlist + popup incluso si cambia ligeramente el markup (fallback seguro).
+  let out = html;
+  const safetyCss = `<style>
+  .waitlist-section, #popupWaitlist, .popup-overlay { display: none !important; }
+  </style>`;
+  out = out.includes('</head>') ? out.replace('</head>', `${safetyCss}\n</head>`) : out;
+
+  // 2) Reemplazo “best-effort”: si existe una sección waitlist, sustituirla por planes.
+  out = out.replace(
+    /<section[^>]*class="waitlist-section"[\s\S]*?<\/section>/i,
+    plansHtmlBlock()
+  );
+
+  // 3) Si no había waitlist (o no matcheó), insertar planes antes de </article> o antes de </body>.
+  if (!out.includes('Planes de Delfín Check-in')) {
+    if (out.includes('</article>')) {
+      out = out.replace('</article>', `${plansHtmlBlock()}\n</article>`);
+    } else if (out.includes('</body>')) {
+      out = out.replace('</body>', `${plansHtmlBlock()}\n</body>`);
+    }
+  }
+
+  return out;
+}
+
 export async function POST(req: NextRequest) {
   try {
     const { error } = await verifySuperAdmin(req);
@@ -103,6 +171,9 @@ export async function POST(req: NextRequest) {
     if (html.includes(scriptSlugLiteral)) {
       html = html.replace(scriptSlugLiteral, `const ARTICLE_SLUG = '${article.slug}';`);
     }
+
+    // IMPORTANTE: eliminamos waitlist/popup y colocamos CTA de planes en todos los artículos.
+    html = replaceWaitlistWithPlans(html);
 
     const octokit = new Octokit({ auth: token });
     const filePath = `articulos/${article.slug}.html`;
