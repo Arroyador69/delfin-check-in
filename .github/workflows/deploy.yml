@@ -54,7 +54,7 @@ jobs:
       - uses: actions/checkout@v5
 
       # Versión fija: `latest` (p. ej. CLI 51.x) ha provocado "DeploymentError: unexpected internal error" en CI.
-      # 47.2.2 es compatible con la API de Vercel y estable en despliegues.
+      # 47.2.2 ya no existe en npm (ETARGET), por eso fijamos una 47.x publicada y estable.
       - name: Deploy to Vercel
         uses: amondnet/vercel-action@v42.2.0
         with:
@@ -62,4 +62,4 @@ jobs:
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
           vercel-args: '--prod'
-          vercel-version: 47.2.2
+          vercel-version: 47.1.4
