@@ -193,3 +193,4 @@ $RECYCLE.BIN/
 # Linux
 *~
 .nfs*
+tools/__pycache__/

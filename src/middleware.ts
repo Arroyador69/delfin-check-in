@@ -80,7 +80,12 @@ function buildLoginRedirectPath(pathname: string, search: string): string {
 }
 
 function isBenignMissingTenantPath(pathname: string): boolean {
-  return pathname === '/api/tenant' || pathname === '/api/reservations';
+  return (
+    pathname === '/api/tenant' ||
+    pathname === '/api/reservations' ||
+    pathname === '/api/support/chat' ||
+    pathname === '/api/support/usage'
+  );
 }
 
 export async function middleware(req: NextRequest) {
