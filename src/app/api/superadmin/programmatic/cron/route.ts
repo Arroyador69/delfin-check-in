@@ -384,7 +384,7 @@ function generateSEOHTML(page: any): string {
   
   ${generatePriceCalculatorHTML()}
   ${generateBenefitsHTML()}
-  ${generateEmailCaptureHTML()}
+  ${generatePlansHTML()}
   ${generateComponentsScript()}
 </body>
 </html>`;
@@ -555,32 +555,48 @@ function generateBenefitsHTML(): string {
 }
 
 // Generar formulario de captura de email
-function generateEmailCaptureHTML(): string {
+function generatePlansHTML(): string {
+  const subscribeEs = 'https://admin.delfincheckin.com/es/subscribe';
   return `
-<!-- Formulario de Captura de Email -->
-<section style="margin: 3rem 0; padding: 2rem; background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border-radius: 16px; border: 2px solid #bae6fd;">
-  <h2 style="font-size: 2rem; margin-bottom: 1rem; color: #1f2937; text-align: center;">🤔 ¿Te lo estás pensando?</h2>
-  <p style="text-align: center; color: #475569; margin-bottom: 2rem; font-size: 18px;">
-    Deja tu email y nos pondremos en contacto contigo para resolver todas tus dudas
-  </p>
-  
-  <form id="emailCaptureForm" onsubmit="handleEmailCapture(event)" style="max-width: 500px; margin: 0 auto;">
-    <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-      <input type="email" id="leadEmail" required placeholder="tu@email.com" 
-             style="flex: 1; min-width: 250px; height: 50px; padding: 0 16px; border-radius: 12px; border: 2px solid #e2e8f0; font-size: 16px; background: white;"
-             onfocus="this.style.borderColor='#2563eb'; this.style.boxShadow='0 0 0 3px rgba(37, 99, 235, 0.1)'"
-             onblur="this.style.borderColor='#e2e8f0'; this.style.boxShadow='none'">
-      <button type="submit" 
-              style="height: 50px; padding: 0 24px; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); white-space: nowrap;"
-              onmouseover="this.style.transform='translateY(-2px)'"
-              onmouseout="this.style.transform='translateY(0)'">
-        Enviar
-      </button>
+<!-- Planes (CTA principal) -->
+<section style="margin: 3rem 0; padding: 2.5rem; background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); border-radius: 20px; border: 2px solid #e2e8f0; box-shadow: 0 10px 30px rgba(0,0,0,0.05);">
+  <div style="text-align: center; margin-bottom: 1.5rem;">
+    <div style="font-size: 44px; margin-bottom: 10px;">🚀</div>
+    <h2 style="font-size: 2.1rem; margin: 0 0 10px; color: #0f172a; font-weight: 900;">Elige tu plan</h2>
+    <p style="margin: 0; color: #475569; font-size: 17px;">
+      Contrata Delfín Check-in en minutos. Cumplimiento MIR + automatización para tu alquiler vacacional.
+    </p>
+  </div>
+
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; margin-top: 22px;">
+    ${planCard('Starter', '1 propiedad', 'Ideal para empezar', '#e2e8f0', subscribeEs)}
+    ${planCard('Pro', '2–4 propiedades', 'Más volumen, mejor precio', '#bfdbfe', subscribeEs)}
+    ${planCard('Business', '5–9 propiedades', 'Para gestores', '#bbf7d0', subscribeEs)}
+    ${planCard('Enterprise', '10+ propiedades', 'Precio por volumen', '#fde68a', subscribeEs)}
+  </div>
+
+  <div style="text-align: center; margin-top: 18px;">
+    <a href="${subscribeEs}" class="cta-button" style="display:inline-block;background:#2563eb;color:#fff;padding:0.9rem 1.4rem;border-radius:0.75rem;font-weight:800;">
+      Ver precios y contratar →
+    </a>
+    <div style="margin-top: 10px; color:#64748b; font-size: 13px;">
+      Pagos seguros (Polar como Merchant of Record). IVA incluido según aplique.
     </div>
-    <p id="emailCaptureMessage" style="margin-top: 12px; text-align: center; font-size: 14px; color: #16a34a; display: none;"></p>
-  </form>
+  </div>
 </section>
 `;
+}
+
+function planCard(name: string, size: string, desc: string, border: string, href: string): string {
+  return `
+<a href="${href}" style="text-decoration:none;color:inherit;">
+  <div style="border:2px solid ${border};border-radius:16px;padding:18px;background:#fff;box-shadow:0 6px 18px rgba(15,23,42,0.05);height:100%;">
+    <div style="font-size:14px;color:#64748b;font-weight:700;">${escapeHtml(size)}</div>
+    <div style="font-size:20px;color:#0f172a;font-weight:900;margin-top:6px;">${escapeHtml(name)}</div>
+    <div style="font-size:14px;color:#475569;margin-top:8px;line-height:1.4;">${escapeHtml(desc)}</div>
+    <div style="margin-top:14px;font-weight:800;color:#2563eb;">Contratar →</div>
+  </div>
+</a>`;
 }
 
 // Generar JavaScript para los componentes
@@ -660,38 +676,6 @@ function openStripePayment() {
   
   // Redirigir a la landing con parámetros para abrir el modal
   window.location.href = \`https://delfincheckin.com/#precio?properties=\${properties}&plan=\${planType}&openModal=true\`;
-}
-
-// Captura de Email
-async function handleEmailCapture(event) {
-  event.preventDefault();
-  const email = document.getElementById('leadEmail').value;
-  const messageEl = document.getElementById('emailCaptureMessage');
-  
-  try {
-    const response = await fetch('https://admin.delfincheckin.com/api/public/lead-capture', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, source: 'programmatic_page' })
-    });
-    
-    if (response.ok) {
-      messageEl.textContent = '✅ ¡Gracias! Te contactaremos pronto.';
-      messageEl.style.color = '#16a34a';
-      messageEl.style.display = 'block';
-      document.getElementById('leadEmail').value = '';
-      
-      setTimeout(() => {
-        messageEl.style.display = 'none';
-      }, 5000);
-    } else {
-      throw new Error('Error en el servidor');
-    }
-  } catch (error) {
-    messageEl.textContent = '❌ Error al enviar. Por favor, intenta de nuevo.';
-    messageEl.style.color = '#ef4444';
-    messageEl.style.display = 'block';
-  }
 }
 
 // Inicializar calculadora al cargar

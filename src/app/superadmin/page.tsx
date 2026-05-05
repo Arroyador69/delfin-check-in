@@ -24,6 +24,10 @@ export default function SuperAdminDashboard() {
   const [loadingCronCreations, setLoadingCronCreations] = useState(true)
   const [errorCronCreations, setErrorCronCreations] = useState<string | null>(null)
 
+  const [blogCronMsg, setBlogCronMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  const [runningBlogCron, setRunningBlogCron] = useState<'morning' | 'afternoon' | null>(null)
+  const [republishingAll, setRepublishingAll] = useState(false)
+
   useEffect(() => {
     fetchStats()
     fetchRadarReachStats()
@@ -106,6 +110,46 @@ export default function SuperAdminDashboard() {
     }
   }
 
+  const runBlogCron = async (batch: 'morning' | 'afternoon') => {
+    setBlogCronMsg(null)
+    setRunningBlogCron(batch)
+    try {
+      const res = await fetch(`/api/superadmin/blog/cron?batch=${batch}`, { credentials: 'include' })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data?.error || `Error ${res.status}`)
+      const url = data?.url ? ` → ${data.url}` : ''
+      setBlogCronMsg({ type: 'success', text: `Cron ejecutado (${batch}). Artículo: ${data?.slug || 'OK'}${url}` })
+    } catch (e: any) {
+      setBlogCronMsg({ type: 'error', text: e?.message || 'Error ejecutando cron' })
+    } finally {
+      setRunningBlogCron(null)
+    }
+  }
+
+  const republishAllArticles = async () => {
+    if (!confirm('¿Re-publicar (sobrescribir) los artículos en la web para reemplazar waitlist por planes?')) return
+    setBlogCronMsg(null)
+    setRepublishingAll(true)
+    try {
+      const res = await fetch('/api/superadmin/blog/republish-all', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ limit: 100, published_only: true })
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data?.error || `Error ${res.status}`)
+      setBlogCronMsg({
+        type: 'success',
+        text: `Re-publicación completada. OK=${data.ok} / Fallos=${data.failed}.`
+      })
+    } catch (e: any) {
+      setBlogCronMsg({ type: 'error', text: e?.message || 'Error re-publicando' })
+    } finally {
+      setRepublishingAll(false)
+    }
+  }
+
   return (
     <div className="container mx-auto p-6">
       <div className="mb-8">
@@ -177,6 +221,55 @@ export default function SuperAdminDashboard() {
                 ➕ Crear artículo
               </a>
             </div>
+          </div>
+
+          {/* SEO Blog - Cron automático */}
+          <div className="bg-white rounded-lg shadow p-6 mb-8 border border-emerald-200">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">📰 SEO Blog automático</h2>
+                <p className="text-sm text-gray-600 mt-1">
+                  Genera y publica 2 artículos/día (mañana y tarde). Puedes probarlo aquí sin esperar al cron.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => runBlogCron('morning')}
+                  disabled={runningBlogCron !== null}
+                  className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {runningBlogCron === 'morning' ? 'Probando...' : 'Probar cron (mañana)'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => runBlogCron('afternoon')}
+                  disabled={runningBlogCron !== null}
+                  className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {runningBlogCron === 'afternoon' ? 'Probando...' : 'Probar cron (tarde)'}
+                </button>
+                <button
+                  type="button"
+                  onClick={republishAllArticles}
+                  disabled={republishingAll}
+                  className="px-4 py-2 bg-slate-100 text-slate-900 rounded-lg hover:bg-slate-200 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {republishingAll ? 'Re-publicando...' : 'Actualizar artículos (planes)'}
+                </button>
+              </div>
+            </div>
+            {blogCronMsg && (
+              <div
+                className={`mt-4 p-3 rounded-lg border text-sm ${
+                  blogCronMsg.type === 'success'
+                    ? 'bg-green-50 border-green-200 text-green-900'
+                    : 'bg-red-50 border-red-200 text-red-900'
+                }`}
+              >
+                {blogCronMsg.text}
+              </div>
+            )}
           </div>
 
           {/* Acciones Rápidas */}
