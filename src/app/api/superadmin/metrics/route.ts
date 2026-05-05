@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { sql } from '@/lib/db'
 import { verifyToken } from '@/lib/auth'
+import { isEffectiveSuperAdminPayload } from '@/lib/platform-owner'
 
 type TableAvailability = Record<string, boolean>
 
@@ -111,7 +112,7 @@ export async function GET(req: NextRequest) {
     // Verificar que sea superadmin
     const payload = verifyToken(authToken)
     
-    if (!payload || !payload.isPlatformAdmin) {
+    if (!isEffectiveSuperAdminPayload(payload)) {
       return NextResponse.json(
         { error: 'Acceso denegado' },
         { status: 403 }
@@ -216,10 +217,14 @@ async function columnExists(tableName: string, columnName: string): Promise<bool
   try {
     const result = await sql`
       SELECT 1
-      FROM information_schema.columns
-      WHERE table_schema = 'public'
-        AND table_name = ${tableName}
-        AND column_name = ${columnName}
+      FROM pg_catalog.pg_attribute a
+      INNER JOIN pg_catalog.pg_class c ON c.oid = a.attrelid
+      INNER JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+      WHERE n.nspname = 'public'
+        AND c.relname = ${tableName}
+        AND a.attname = ${columnName}
+        AND a.attnum > 0
+        AND NOT a.attisdropped
       LIMIT 1
     `
     return result.rows.length > 0
@@ -599,12 +604,12 @@ async function getLegalMetrics(startDate: Date, availability: TableAvailability)
   // Logs de cumplimiento por propiedad
   let complianceByProperty: { rows: any[] } = { rows: [] }
   if (hasAllTables(availability, ['tenant_properties'])) {
-    const hasName = await columnExists('tenant_properties', 'name')
     const hasPropertyName = await columnExists('tenant_properties', 'property_name')
-    const propertyLabelExpr = hasName
-      ? 'tp.name'
-      : hasPropertyName
-        ? 'tp.property_name'
+    const hasName = await columnExists('tenant_properties', 'name')
+    const propertyLabelExpr = hasPropertyName
+      ? 'tp.property_name'
+      : hasName
+        ? 'tp.name'
         : 'tp.id::text'
 
     const text = `

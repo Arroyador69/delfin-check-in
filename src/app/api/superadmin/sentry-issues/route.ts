@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/auth';
+import { isEffectiveSuperAdminPayload } from '@/lib/platform-owner';
 
 /** Base API Sentry (SaaS US). EU: https://de.sentry.io/api/0 */
 function getSentryApiBase(): string {
@@ -38,7 +39,7 @@ export async function GET(req: NextRequest) {
     }
 
     const payload = verifyToken(authToken);
-    if (!payload || !payload.isPlatformAdmin) {
+    if (!isEffectiveSuperAdminPayload(payload)) {
       return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
     }
 

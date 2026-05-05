@@ -1,5 +1,26 @@
 import { sql } from '@vercel/postgres';
 
+let roomTenantIdColumnExistsCache: boolean | null = null;
+
+async function hasRoomTenantIdColumn(): Promise<boolean> {
+  if (roomTenantIdColumnExistsCache !== null) return roomTenantIdColumnExistsCache;
+  try {
+    const meta = await sql`
+      SELECT EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'Room'
+          AND column_name = 'tenant_id'
+      ) AS exists
+    `;
+    roomTenantIdColumnExistsCache = Boolean(meta.rows[0]?.exists);
+  } catch {
+    roomTenantIdColumnExistsCache = false;
+  }
+  return roomTenantIdColumnExistsCache;
+}
+
 /**
  * Devuelve el número de unidades (habitaciones/apartamentos) del tenant.
  * Usa varios fallbacks porque en algunas BD antiguas `Room.lodgingId` no coincide con `tenants.lodging_id`.
@@ -41,15 +62,6 @@ export async function getRoomsForTenant(tenantId: string): Promise<Array<{ id: s
         `,
       },
       {
-        label: 'Room.tenant_id',
-        run: () => sql`
-          SELECT id, name
-          FROM "Room"
-          WHERE tenant_id = ${tenantId}::uuid
-          ORDER BY id::text ASC
-        `,
-      },
-      {
         label: 'property_room_map',
         run: () => sql`
           SELECT DISTINCT r.id, r.name
@@ -62,6 +74,18 @@ export async function getRoomsForTenant(tenantId: string): Promise<Array<{ id: s
       },
     ];
 
+    if (await hasRoomTenantIdColumn()) {
+      attempts.push({
+        label: 'Room.tenant_id',
+        run: () => sql`
+          SELECT id, name
+          FROM "Room"
+          WHERE tenant_id = ${tenantId}::uuid
+          ORDER BY id::text ASC
+        `,
+      });
+    }
+
     for (const { label, run } of attempts) {
       try {
         const r = await run();
@@ -70,8 +94,14 @@ export async function getRoomsForTenant(tenantId: string): Promise<Array<{ id: s
           result = r as any;
           break;
         }
-      } catch (e) {
-        console.warn(`⚠️ [getRoomsForTenant] Fallback "${label}" no aplicable:`, e);
+      } catch (e: unknown) {
+        const code = typeof e === 'object' && e !== null && 'code' in e ? String((e as { code?: string }).code) : ''
+        const missingColumn =
+          code === '42703' ||
+          /column .* does not exist/i.test(e instanceof Error ? e.message : String(e))
+        if (!missingColumn) {
+          console.warn(`⚠️ [getRoomsForTenant] Fallback "${label}" no aplicable:`, e);
+        }
       }
     }
   }

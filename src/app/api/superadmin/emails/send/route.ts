@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth'
+import { isEffectiveSuperAdminPayload } from '@/lib/platform-owner'
 import { sendEmail } from '@/lib/email'
 import { sql } from '@/lib/db'
 import { z } from 'zod'
@@ -26,7 +27,7 @@ export async function POST(req: NextRequest) {
     }
 
     const payload = verifyToken(authToken)
-    if (!payload || !payload.isPlatformAdmin) {
+    if (!payload || !isEffectiveSuperAdminPayload(payload)) {
       return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 })
     }
 

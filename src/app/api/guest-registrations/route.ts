@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getGuestRegistrations, deleteGuestRegistrationById, deleteGuestRegistrationsByIds } from '@/lib/db';
 import { sql } from '@/lib/db';
+import { isEffectiveSuperAdminPayload } from '@/lib/platform-owner';
 
 // Configuración para evitar caché
 export const dynamic = "force-dynamic";
@@ -39,7 +40,7 @@ export async function GET(req: NextRequest) {
       if (authToken) {
         const payload = verifyTokenSilently(authToken);
         if (payload) {
-          isSuperAdmin = payload?.isPlatformAdmin === true;
+          isSuperAdmin = isEffectiveSuperAdminPayload(payload);
         }
       }
       
@@ -50,7 +51,7 @@ export async function GET(req: NextRequest) {
           const token = authHeader.split(' ')[1];
           const payload = verifyTokenSilently(token);
           if (payload) {
-            isSuperAdmin = payload?.isPlatformAdmin === true;
+            isSuperAdmin = isEffectiveSuperAdminPayload(payload);
           }
         }
       }
@@ -65,7 +66,7 @@ export async function GET(req: NextRequest) {
       if (authHeader && authHeader.startsWith('Bearer ')) {
         const token = authHeader.split(' ')[1];
         const payload = verifyTokenSilently(token);
-        if (payload?.isPlatformAdmin === true) {
+        if (isEffectiveSuperAdminPayload(payload)) {
           isSuperAdmin = true;
           console.log('👑 SuperAdmin detectado desde Bearer token (con tenantId en header)');
         }
@@ -76,7 +77,7 @@ export async function GET(req: NextRequest) {
         const authToken = req.cookies.get('auth_token')?.value;
         if (authToken) {
           const payload = verifyTokenSilently(authToken);
-          if (payload?.isPlatformAdmin === true) {
+          if (isEffectiveSuperAdminPayload(payload)) {
             isSuperAdmin = true;
             console.log('👑 SuperAdmin detectado desde cookie (con tenantId en header)');
           }
@@ -96,7 +97,7 @@ export async function GET(req: NextRequest) {
             const parts = token.split('.');
             if (parts.length === 3) {
               const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString());
-              if (payload?.isPlatformAdmin === true) {
+              if (isEffectiveSuperAdminPayload(payload)) {
                 isSuperAdmin = true;
                 console.log('👑 SuperAdmin detectado desde token decodificado (sin verificar expiración)');
               }
@@ -215,7 +216,7 @@ export async function GET(req: NextRequest) {
           const parts = token.split('.');
           if (parts.length === 3) {
             const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString());
-            if (payload?.isPlatformAdmin === true) {
+            if (isEffectiveSuperAdminPayload(payload)) {
               isSuperAdmin = true;
               console.log('👑 SuperAdmin detectado en último intento (decodificación directa)');
               // Si es superadmin, saltar validación y obtener datos directamente

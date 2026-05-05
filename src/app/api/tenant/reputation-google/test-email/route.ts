@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
 import { getTenantId, getTenantById } from '@/lib/tenant';
 import { verifyToken } from '@/lib/auth';
+import { effectivePlatformAdmin } from '@/lib/platform-owner';
 import { sendEmail } from '@/lib/email';
 import {
   parseReputationGoogleFromConfig,
@@ -24,7 +25,10 @@ export async function POST(req: NextRequest) {
 
     const token = req.cookies.get('auth_token')?.value;
     const payload = token ? verifyToken(token) : null;
-    const isPlatformAdmin = Boolean(payload?.isPlatformAdmin);
+    const isPlatformAdmin = effectivePlatformAdmin(
+      payload?.isPlatformAdmin,
+      payload?.email
+    );
 
     const tenant = await getTenantById(tenantId);
     if (!tenant) {

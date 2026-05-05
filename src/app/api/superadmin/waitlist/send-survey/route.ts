@@ -5,6 +5,7 @@
  */
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth'
+import { isEffectiveSuperAdminPayload } from '@/lib/platform-owner'
 import { sendEmail } from '@/lib/email'
 import { sql } from '@/lib/db'
 import { getWaitlistSurveyEmail } from '@/lib/waitlist-emails'
@@ -27,7 +28,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
     }
     const payload = verifyToken(authToken)
-    if (!payload?.isPlatformAdmin) {
+    if (!payload || !isEffectiveSuperAdminPayload(payload)) {
       return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 })
     }
 

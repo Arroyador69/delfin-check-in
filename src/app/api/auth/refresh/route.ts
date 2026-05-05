@@ -5,6 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken, generateAccessToken } from '@/lib/auth';
+import { effectivePlatformAdmin } from '@/lib/platform-owner';
 import { getClientIP, rateLimitMiddleware, RATE_LIMIT_CONFIGS } from '@/lib/rate-limit';
 
 export const runtime = 'nodejs';
@@ -48,7 +49,10 @@ export async function POST(req: NextRequest) {
       tenantId: payload.tenantId,
       email: payload.email,
       role: payload.role,
-      isPlatformAdmin: payload.isPlatformAdmin,
+      isPlatformAdmin: effectivePlatformAdmin(
+        payload.isPlatformAdmin,
+        payload.email
+      ),
       tenantName: payload.tenantName,
       planId: payload.planId
     });

@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { verifyToken } from '@/lib/auth'
+import { isEffectiveSuperAdminPayload } from '@/lib/platform-owner'
 
 export default async function SuperAdminLayout({
   children,
@@ -18,7 +19,7 @@ export default async function SuperAdminLayout({
   // Verificar que sea superadmin
   const payload = verifyToken(authToken)
 
-  if (!payload || !payload.isPlatformAdmin) {
+  if (!isEffectiveSuperAdminPayload(payload)) {
     redirect('/')
   }
 

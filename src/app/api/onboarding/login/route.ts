@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
 import { generateTokenPair, AUTH_CONFIG } from '@/lib/auth';
+import { effectivePlatformAdmin } from '@/lib/platform-owner';
 
 export const runtime = 'nodejs';
 
@@ -68,7 +69,10 @@ export async function POST(req: NextRequest) {
       tenantId: String(row.tenant_id),
       email: String(row.user_email),
       role: row.role,
-      isPlatformAdmin: row.is_platform_admin || false,
+      isPlatformAdmin: effectivePlatformAdmin(
+        Boolean(row.is_platform_admin),
+        String(row.user_email)
+      ),
       tenantName: row.tenant_name,
       planId: row.plan_id
     });

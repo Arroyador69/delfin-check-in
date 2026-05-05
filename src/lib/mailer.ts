@@ -222,7 +222,7 @@ Si tienes problemas, revisa tu carpeta de Spam/Correo no deseado.
             'onboarding',
             ${params.to},
             ${subject},
-            'pending',
+            'sent',
             ${JSON.stringify({ variant })}::jsonb
           )
           RETURNING id
