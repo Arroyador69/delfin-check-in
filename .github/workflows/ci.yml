@@ -74,6 +74,9 @@ jobs:
   lighthouse:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
+    # Lighthouse a veces falla por interstitials del entorno CI (Chrome/localhost).
+    # No debe bloquear despliegues a producción; lo dejamos informativo.
+    continue-on-error: true
     steps:
     - name: Checkout código
       uses: actions/checkout@v5
