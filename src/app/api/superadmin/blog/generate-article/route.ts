@@ -55,7 +55,6 @@ export async function POST(req: NextRequest) {
 
     const userPrompt = `Genera un artículo nuevo para el blog de Delfín Check-in sobre este tema: "${topic}".
 
-El artículo debe ser útil para propietarios de alquiler vacacional en España (registro de viajeros, normativa, Ministerio del Interior, multas, etc.). Mismo estilo y profundidad que nuestros otros artículos. Entre 600 y 1000 palabras de contenido. Responde solo con el JSON.`;
 El artículo debe ser útil para propietarios de alquiler vacacional en España (registro de viajeros, normativa, Ministerio del Interior, multas, etc.) y puede incluir tutoriales de uso del software cuando aplique. Mismo estilo y profundidad que nuestros otros artículos.
 
 Requisito: el contenido debe tener al menos 1300 palabras (aprox.), y estar bien estructurado con <h2>/<h3> y pasos prácticos cuando aplique.
