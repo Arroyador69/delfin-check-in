@@ -79,6 +79,10 @@ function buildLoginRedirectPath(pathname: string, search: string): string {
   return dest;
 }
 
+function isBenignMissingTenantPath(pathname: string): boolean {
+  return pathname === '/api/tenant' || pathname === '/api/reservations';
+}
+
 export async function middleware(req: NextRequest) {
   const url = req.nextUrl
   const pathname = url.pathname
@@ -424,7 +428,9 @@ export async function middleware(req: NextRequest) {
       );
       
       if (!isPublicApiRoute) {
-        console.warn(`⚠️ [SECURITY] Intento de acceso sin tenant_id a: ${pathname}`);
+        if (!isBenignMissingTenantPath(pathname)) {
+          console.warn(`⚠️ [SECURITY] Intento de acceso sin tenant_id a: ${pathname}`);
+        }
         return NextResponse.json(
           { error: 'No autorizado - tenant_id requerido' },
           { status: 401 }
