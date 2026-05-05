@@ -2,7 +2,7 @@
 // AJUSTES (HUB)
 // =====================================================
 
-import { View, Text, Pressable, StyleSheet, Alert, ScrollView } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Alert, ScrollView, Linking } from 'react-native';
 import { useAuth } from '@/lib/auth';
 import { useRouter } from 'expo-router';
 import { t } from '@/lib/i18n';
@@ -15,6 +15,7 @@ export default function SettingsScreen() {
   useLocaleListener();
   const { session, signOut } = useAuth();
   const router = useRouter();
+  const legalBaseUrl = 'https://admin.delfincheckin.com/legal';
 
   function getPlanLabel(planId?: string | null) {
     const raw = String(planId || '').trim().toLowerCase();
@@ -160,6 +161,30 @@ export default function SettingsScreen() {
         <Text style={styles.webHint}>{t('mobile.settings.webAdvancedHint')}</Text>
       </View>
 
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Legal y cumplimiento</Text>
+        <Text style={styles.legalText}>
+          Los pagos de suscripciones del software se procesan de forma segura con Polar como Merchant of Record
+          (facturacion e impuestos del cobro del software). Consulta las politicas legales vigentes:
+        </Text>
+        <Pressable style={styles.legalLinkRow} onPress={() => void Linking.openURL(`${legalBaseUrl}/terms`)}>
+          <Text style={styles.legalLink}>Terminos y condiciones</Text>
+          <Text style={styles.itemChevron}>›</Text>
+        </Pressable>
+        <Pressable style={styles.legalLinkRow} onPress={() => void Linking.openURL(`${legalBaseUrl}/privacy`)}>
+          <Text style={styles.legalLink}>Politica de privacidad</Text>
+          <Text style={styles.itemChevron}>›</Text>
+        </Pressable>
+        <Pressable style={styles.legalLinkRow} onPress={() => void Linking.openURL(`${legalBaseUrl}/cookies`)}>
+          <Text style={styles.legalLink}>Politica de cookies</Text>
+          <Text style={styles.itemChevron}>›</Text>
+        </Pressable>
+        <Pressable style={styles.legalLinkRow} onPress={() => void Linking.openURL(`${legalBaseUrl}/notice`)}>
+          <Text style={styles.legalLink}>Aviso legal</Text>
+          <Text style={styles.itemChevron}>›</Text>
+        </Pressable>
+      </View>
+
       <Pressable style={styles.signOutButton} onPress={handleSignOut}>
         <Text style={styles.signOutText}>{t('dashboard.logout')}</Text>
       </Pressable>
@@ -260,6 +285,25 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#9ca3af',
     lineHeight: 16,
+  },
+  legalText: {
+    fontSize: 12,
+    color: '#4b5563',
+    lineHeight: 18,
+    marginBottom: 10,
+  },
+  legalLinkRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderTopWidth: 1,
+    borderTopColor: '#f3f4f6',
+    paddingVertical: 10,
+  },
+  legalLink: {
+    color: '#2563eb',
+    fontSize: 14,
+    fontWeight: '700',
   },
   signOutButton: {
     backgroundColor: '#ef4444',

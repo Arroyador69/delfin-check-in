@@ -194,7 +194,7 @@ export async function syncReservationFromGuestRegistration(
       SELECT id
       FROM reservations
       WHERE tenant_id = ${tenantId}::uuid
-        AND channel IN ('direct', 'checkin_form')
+        AND channel IN ('checkin_form')
         AND COALESCE(NULLIF(TRIM(guest_name), ''), '') = ${guestName}
         AND check_in = ${checkIn}::timestamp
         AND check_out = ${checkOut}::timestamp
@@ -242,7 +242,7 @@ export async function syncReservationFromGuestRegistration(
         ${guestCount},
         ${checkIn}::timestamp,
         ${checkOut}::timestamp,
-        'direct',
+        'checkin_form',
         0,
         0,
         0,

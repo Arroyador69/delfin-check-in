@@ -90,6 +90,11 @@ export default function Footer() {
           {/* Bottom Section */}
           <div className="border-t border-gray-200 pt-4">
             <div className="text-center">
+              <p className="text-xs text-gray-500 mb-2 leading-relaxed">
+                Los pagos de suscripciones del software se procesan de forma segura con Polar como Merchant of Record.
+                Polar gestiona la facturación e impuestos aplicables del cobro del software. Delfin Check-in opera bajo
+                normativa europea de protección de datos (RGPD) y mantiene políticas activas de seguridad y privacidad.
+              </p>
               <p className="text-sm text-gray-600">
                 {t('bottomText', { year: currentYear })}{' '}
                 <a href="https://delfincheckin.com" className="text-blue-600 hover:text-blue-800 underline">
