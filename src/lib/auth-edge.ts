@@ -84,7 +84,18 @@ export async function verifyTokenEdge(token: string): Promise<JWTPayload | null>
     };
 
     return out;
-  } catch (error) {
+  } catch (error: unknown) {
+    const code =
+      typeof error === 'object' && error !== null && 'code' in error
+        ? String((error as { code?: unknown }).code ?? '')
+        : '';
+
+    // Tokens expirados o malformados son esperables (sesión caducada, cookies antiguas, bots).
+    // Evitamos ruido en logs de producción y devolvemos null para que middleware responda 401/redirect.
+    if (code === 'ERR_JWT_EXPIRED' || code === 'ERR_JWS_INVALID') {
+      return null;
+    }
+
     console.error('Error al verificar token (Edge):', error);
     return null;
   }

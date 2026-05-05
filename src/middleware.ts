@@ -338,6 +338,7 @@ export async function middleware(req: NextRequest) {
     pathname.startsWith('/api/track/') ||
     pathname.startsWith('/api/blog/analytics/') ||
     pathname.startsWith('/api/blog/waitlist') ||
+    pathname.startsWith('/api/superadmin/programmatic/cron') ||
     pathname.startsWith('/api/cron/') ||
     pathname.startsWith('/api/stripe/webhook') ||
     pathname.startsWith('/api/webhook/polar') ||
@@ -416,6 +417,7 @@ export async function middleware(req: NextRequest) {
         pathname.startsWith('/api/track/') ||
         pathname.startsWith('/api/blog/analytics/') ||
         pathname.startsWith('/api/blog/waitlist') ||
+        pathname.startsWith('/api/superadmin/programmatic/cron') ||
         pathname.startsWith('/api/cron/') ||
         pathname.startsWith('/api/webhook/polar') ||
         pathname.startsWith('/api/telegram/webhook')
