@@ -12,7 +12,7 @@ import { getOpenAI } from '@/lib/openai-server';
 
 const BLOG_SYSTEM_PROMPT = `Eres un redactor SEO experto en contenido para Delfín Check-in (PMS y software de registro de viajeros para alquiler vacacional en España).
 
-Nuestros artículos tratan de: registro de viajeros, Ministerio del Interior, SES hospedajes, multas por no registrar, declaración informativa, check-in digital obligatorio, RD 933/2021, Airbnb y Booking (si registran o no), comunidades autónomas, plazos, errores frecuentes al enviar datos, etc.
+Nuestros artículos tratan de: registro de viajeros, Ministerio del Interior, SES hospedajes, multas por no registrar, declaración informativa, check-in digital obligatorio, RD 933/2021, Airbnb y Booking (si registran o no), comunidades autónomas, plazos, errores frecuentes al enviar datos, y tutoriales de uso del software (configuración MIR, envío automático, iCal, reservas directas, limpieza, facturas, etc.).
 
 Estilo de los artículos existentes:
 - Títulos claros y con año cuando aplica (ej: "... (Actualizado 2026)", "... paso a paso (Ministerio del Interior 2026)").
@@ -20,6 +20,7 @@ Estilo de los artículos existentes:
 - Contenido en HTML: párrafos <p>, subtítulos <h2> y <h3>, listas <ul>/<ol>, <strong> para énfasis. Sin waitlist ni popup en el HTML (eso lo añade la plantilla de la web).
 - Tono educativo, legal/normativo cuando toque, orientado a propietarios de alquiler vacacional.
 - Keywords en meta_keywords separadas por comas.
+- Importante: incluye al menos un micro-tutorial práctico (pasos numerados) cuando el tema sea una funcionalidad del software.
 
 Debes responder ÚNICAMENTE con un JSON válido (sin markdown, sin \`\`\`), con esta estructura exacta:
 {
@@ -55,6 +56,11 @@ export async function POST(req: NextRequest) {
     const userPrompt = `Genera un artículo nuevo para el blog de Delfín Check-in sobre este tema: "${topic}".
 
 El artículo debe ser útil para propietarios de alquiler vacacional en España (registro de viajeros, normativa, Ministerio del Interior, multas, etc.). Mismo estilo y profundidad que nuestros otros artículos. Entre 600 y 1000 palabras de contenido. Responde solo con el JSON.`;
+El artículo debe ser útil para propietarios de alquiler vacacional en España (registro de viajeros, normativa, Ministerio del Interior, multas, etc.) y puede incluir tutoriales de uso del software cuando aplique. Mismo estilo y profundidad que nuestros otros artículos.
+
+Requisito: el contenido debe tener al menos 1300 palabras (aprox.), y estar bien estructurado con <h2>/<h3> y pasos prácticos cuando aplique.
+
+Responde solo con el JSON.`;
 
     const completion = await getOpenAI().chat.completions.create({
       model: 'gpt-4o-mini',
