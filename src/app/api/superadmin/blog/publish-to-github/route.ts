@@ -273,6 +273,12 @@ function replaceWaitlistWithPlans(html: string): string {
 
   // 1) Eliminar la sección waitlist (no solo ocultarla).
   out = out.replace(/<section[^>]*class="waitlist-section"[\s\S]*?<\/section>/gi, '');
+  // Plantilla histórica: la waitlist grande no tenía class waitlist-section,
+  // era un <section id="registro" ...> con el formulario dentro.
+  out = out.replace(
+    /<section\b[^>]*id=["']registro["'][^>]*>[\s\S]*?(waitlistForm|lista de espera|acceso permanente|Quiero acceso anticipado)[\s\S]*?<\/section>/gi,
+    ''
+  );
 
   // 2) Eliminar el popup waitlist y overlay si existen.
   // Nota: el popup contiene divs anidados; si eliminamos solo hasta el primer </div>,
@@ -282,6 +288,11 @@ function replaceWaitlistWithPlans(html: string): string {
 
   // 2b) Eliminar formularios/scripts residuales relacionados con waitlist, si la plantilla cambia.
   out = out.replace(/<form[^>]*>[\s\S]*?(waitlist|popupWaitlist)[\s\S]*?<\/form>/gi, '');
+  // Script inline antiguo (plantilla): endpoint /blog/waitlist
+  out = out.replace(
+    /<script\b[^>]*>(?:(?!<\/script>)[\s\S])*?\/blog\/waitlist(?:(?!<\/script>)[\s\S])*?<\/script>/gi,
+    ''
+  );
   // MUY IMPORTANTE: no cruzar límites de </script>. Si no, puede borrar media página
   // (por ejemplo, si “waitlist” aparece en CSS/HTML fuera del script).
   out = out.replace(
