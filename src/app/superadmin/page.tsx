@@ -223,6 +223,24 @@ export default function SuperAdminDashboard() {
             </div>
           </div>
 
+          {/* Actualizaciones a tenants (campana) */}
+          <div className="bg-white rounded-lg shadow p-6 mb-6 border-2 border-amber-200">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-bold text-gray-900">📣 Actualizaciones a tenants</h2>
+                <p className="text-sm text-gray-600 mt-1">
+                  Envía un aviso a tenants activos (les aparece en la campana).
+                </p>
+              </div>
+              <a
+                href="/superadmin/updates"
+                className="inline-flex items-center px-6 py-3 bg-amber-600 text-white rounded-lg hover:bg-amber-700 font-semibold shadow-md"
+              >
+                📣 Abrir actualizaciones
+              </a>
+            </div>
+          </div>
+
           {/* SEO Blog - Cron automático */}
           <div className="bg-white rounded-lg shadow p-6 mb-8 border border-emerald-200">
             <div className="flex flex-wrap items-center justify-between gap-4">
