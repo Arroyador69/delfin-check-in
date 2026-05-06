@@ -8,6 +8,7 @@ import {
   RefreshCw,
   ChevronRight,
   X,
+  Send,
 } from 'lucide-react';
 import { useClientTranslations, getCurrentLocale } from '@/hooks/useClientTranslations';
 import type { Locale } from '@/i18n/config';
@@ -56,10 +57,13 @@ export default function SuperadminSupportPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>('');
   const [detail, setDetail] = useState<TicketDetail | null>(null);
+  const [detailMessages, setDetailMessages] = useState<any[]>([]);
   const [detailLoading, setDetailLoading] = useState(false);
   const [notes, setNotes] = useState('');
   const [statusEdit, setStatusEdit] = useState('');
   const [saving, setSaving] = useState(false);
+  const [reply, setReply] = useState('');
+  const [sendingReply, setSendingReply] = useState(false);
   const [dateLocale, setDateLocale] = useState(DATE_LOCALE.es);
 
   useEffect(() => {
@@ -96,6 +100,7 @@ export default function SuperadminSupportPage() {
   const openDetail = async (id: string) => {
     setDetailLoading(true);
     setDetail(null);
+    setDetailMessages([]);
     try {
       const res = await fetch(`/api/superadmin/support-tickets/${id}`, { credentials: 'include' });
       const data = await res.json();
@@ -103,9 +108,31 @@ export default function SuperadminSupportPage() {
         setDetail(data.ticket);
         setNotes(data.ticket.superadmin_notes || '');
         setStatusEdit(data.ticket.status);
+        setDetailMessages(Array.isArray(data.messages) ? data.messages : []);
       }
     } finally {
       setDetailLoading(false);
+    }
+  };
+
+  const sendReply = async () => {
+    if (!detail) return;
+    const text = reply.trim();
+    if (text.length < 2) return;
+    setSendingReply(true);
+    try {
+      const res = await fetch(`/api/superadmin/support-tickets/${detail.id}`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: text }),
+      });
+      if (res.ok) {
+        setReply('');
+        openDetail(detail.id);
+      }
+    } finally {
+      setSendingReply(false);
     }
   };
 
@@ -241,9 +268,59 @@ export default function SuperadminSupportPage() {
                   {detail.tenant_name} · {detail.tenant_email} · {t('senderLabel')}:{' '}
                   {detail.reporter_email}
                 </p>
+                <p className="text-xs text-slate-500">
+                  {t('colDate')}: {new Date(detail.created_at).toLocaleString(dateLocale)} ·{' '}
+                  {t('updatedAtLabel')}: {new Date(detail.updated_at).toLocaleString(dateLocale)}
+                </p>
                 <div className="text-sm text-slate-800 whitespace-pre-wrap border border-slate-100 rounded-lg p-4 bg-slate-50">
                   {detail.body}
                 </div>
+
+                <div className="space-y-3">
+                  {detailMessages.length > 0 ? (
+                    detailMessages.map((m: any) => (
+                      <div
+                        key={m.id}
+                        className={`rounded-lg border p-3 text-sm whitespace-pre-wrap ${
+                          m.sender_type === 'superadmin'
+                            ? 'border-amber-200 bg-amber-50/50'
+                            : 'border-slate-200 bg-slate-50'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-2 text-[11px] text-slate-500 mb-1">
+                          <span className="font-medium">
+                            {m.sender_type === 'superadmin' ? 'Superadmin' : 'Tenant'} · {m.sender_email}
+                          </span>
+                          <span>{new Date(m.created_at).toLocaleString(dateLocale)}</span>
+                        </div>
+                        {m.message}
+                      </div>
+                    ))
+                  ) : null}
+                </div>
+
+                <div className="border border-slate-200 rounded-lg p-3">
+                  <label className="block text-xs font-medium text-slate-600 mb-2">
+                    Responder al tenant (notificación en campana)
+                  </label>
+                  <textarea
+                    value={reply}
+                    onChange={(e) => setReply(e.target.value)}
+                    rows={4}
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
+                    placeholder="Escribe tu respuesta…"
+                  />
+                  <button
+                    type="button"
+                    onClick={sendReply}
+                    disabled={sendingReply || reply.trim().length < 2}
+                    className="mt-3 inline-flex items-center justify-center gap-2 rounded-lg bg-amber-600 text-white px-4 py-2 text-sm font-medium hover:bg-amber-700 disabled:opacity-50"
+                  >
+                    {sendingReply ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                    Enviar respuesta
+                  </button>
+                </div>
+
                 <div>
                   <label className="block text-xs font-medium text-slate-600 mb-1">
                     {t('statusLabel')}

@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { LifeBuoy, Send, Loader2, CheckCircle, AlertTriangle, ChevronDown } from 'lucide-react';
+import { LifeBuoy, Send, Loader2, CheckCircle, AlertTriangle, ChevronDown, X } from 'lucide-react';
 
 const CATEGORY_KEYS = [
   'software_issue',
@@ -17,6 +18,7 @@ const STATUS_KEYS = ['open', 'in_review', 'resolved', 'closed'] as const;
 
 export default function SupportTicketsPage() {
   const t = useTranslations('settings.support');
+  const searchParams = useSearchParams();
   const [subject, setSubject] = useState('');
   const [body, setBody] = useState('');
   const [category, setCategory] =
@@ -33,6 +35,29 @@ export default function SupportTicketsPage() {
     }>
   >([]);
   const [loadingList, setLoadingList] = useState(true);
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailTicket, setDetailTicket] = useState<any | null>(null);
+  const [detailMessages, setDetailMessages] = useState<any[]>([]);
+
+  const openDetail = async (id: string) => {
+    setDetailOpen(true);
+    setDetailLoading(true);
+    setDetailTicket(null);
+    setDetailMessages([]);
+    try {
+      const res = await fetch(`/api/tenant/support-tickets/${id}`, { credentials: 'include' });
+      const data = await res.json();
+      if (data?.success) {
+        setDetailTicket(data.ticket);
+        setDetailMessages(Array.isArray(data.messages) ? data.messages : []);
+      }
+    } catch {
+      /* silencioso */
+    } finally {
+      setDetailLoading(false);
+    }
+  };
 
   const loadTickets = async () => {
     try {
@@ -51,6 +76,14 @@ export default function SupportTicketsPage() {
   useEffect(() => {
     loadTickets();
   }, []);
+
+  useEffect(() => {
+    const ticketId = searchParams?.get('ticket');
+    if (ticketId) {
+      openDetail(ticketId);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -176,26 +209,94 @@ export default function SupportTicketsPage() {
         ) : (
           <ul className="divide-y divide-slate-100">
             {tickets.map((tk) => (
-              <li key={tk.id} className="py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
-                <div>
-                  <p className="text-sm font-medium text-slate-900">{tk.subject}</p>
-                  <p className="text-xs text-slate-500">
-                    {CATEGORY_KEYS.includes(tk.category as (typeof CATEGORY_KEYS)[number])
-                      ? t(`categories.${tk.category as (typeof CATEGORY_KEYS)[number]}`)
-                      : tk.category}{' '}
-                    · {new Date(tk.created_at).toLocaleString()}
-                  </p>
-                </div>
-                <span className="text-xs font-medium uppercase tracking-wide text-slate-600 bg-slate-100 px-2 py-0.5 rounded w-fit">
-                  {STATUS_KEYS.includes(tk.status as (typeof STATUS_KEYS)[number])
-                    ? t(`status.${tk.status as (typeof STATUS_KEYS)[number]}`)
-                    : tk.status}
-                </span>
+              <li key={tk.id} className="py-3">
+                <button
+                  type="button"
+                  onClick={() => openDetail(tk.id)}
+                  className="w-full text-left flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 hover:bg-slate-50 rounded-lg px-2 py-2"
+                >
+                  <div>
+                    <p className="text-sm font-medium text-slate-900">{tk.subject}</p>
+                    <p className="text-xs text-slate-500">
+                      {CATEGORY_KEYS.includes(tk.category as (typeof CATEGORY_KEYS)[number])
+                        ? t(`categories.${tk.category as (typeof CATEGORY_KEYS)[number]}`)
+                        : tk.category}{' '}
+                      · {new Date(tk.created_at).toLocaleString()}
+                    </p>
+                  </div>
+                  <span className="text-xs font-medium uppercase tracking-wide text-slate-600 bg-slate-100 px-2 py-0.5 rounded w-fit">
+                    {STATUS_KEYS.includes(tk.status as (typeof STATUS_KEYS)[number])
+                      ? t(`status.${tk.status as (typeof STATUS_KEYS)[number]}`)
+                      : tk.status}
+                  </span>
+                </button>
               </li>
             ))}
           </ul>
         )}
       </div>
+
+      {detailOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
+          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 relative">
+            <button
+              type="button"
+              onClick={() => setDetailOpen(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-700"
+              aria-label="Cerrar"
+            >
+              <X className="w-6 h-6" />
+            </button>
+
+            {detailLoading ? (
+              <div className="flex justify-center py-12">
+                <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
+              </div>
+            ) : detailTicket ? (
+              <div className="space-y-4 pr-6">
+                <div>
+                  <h2 className="text-lg font-bold text-slate-900">{detailTicket.subject}</h2>
+                  <p className="text-xs text-slate-500 mt-1">
+                    {new Date(detailTicket.created_at).toLocaleString()} ·{' '}
+                    {STATUS_KEYS.includes(detailTicket.status as (typeof STATUS_KEYS)[number])
+                      ? t(`status.${detailTicket.status as (typeof STATUS_KEYS)[number]}`)
+                      : detailTicket.status}
+                  </p>
+                </div>
+
+                <div className="space-y-3">
+                  {(detailMessages.length > 0 ? detailMessages : [{
+                    id: 'legacy',
+                    sender_type: 'tenant',
+                    sender_email: detailTicket.reporter_email,
+                    message: detailTicket.body,
+                    created_at: detailTicket.created_at,
+                  }]).map((m: any) => (
+                    <div
+                      key={m.id}
+                      className={`rounded-lg border p-3 text-sm whitespace-pre-wrap ${
+                        m.sender_type === 'superadmin'
+                          ? 'border-amber-200 bg-amber-50/50'
+                          : 'border-slate-200 bg-slate-50'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-2 text-[11px] text-slate-500 mb-1">
+                        <span className="font-medium">
+                          {m.sender_type === 'superadmin' ? 'Soporte' : 'Tú'} · {m.sender_email}
+                        </span>
+                        <span>{new Date(m.created_at).toLocaleString()}</span>
+                      </div>
+                      {m.message}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <p className="text-sm text-slate-500">No se pudo cargar la incidencia.</p>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
