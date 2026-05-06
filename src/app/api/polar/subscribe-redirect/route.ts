@@ -41,6 +41,9 @@ export async function GET(req: NextRequest) {
   const intervalParam = (u.searchParams.get('interval') || 'month').toLowerCase();
   const interval: BillingInterval = intervalParam === 'year' ? 'year' : 'month';
   const seats = Math.max(1, Math.min(999, Math.floor(Number(u.searchParams.get('seats') || 1) || 1)));
+  const customerEmailRaw = String(u.searchParams.get('customerEmail') || '').trim();
+  const customerEmail =
+    customerEmailRaw && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmailRaw) ? customerEmailRaw : '';
 
   const plan: PlanId =
     planRaw === 'checkin' || planRaw === 'standard' || planRaw === 'pro' ? planRaw : 'checkin';
@@ -77,6 +80,9 @@ export async function GET(req: NextRequest) {
   checkoutUrl.searchParams.set('metadata', metadata);
   checkoutUrl.searchParams.set('success_url', successUrl);
   checkoutUrl.searchParams.set('return_url', returnUrl);
+  if (customerEmail) {
+    checkoutUrl.searchParams.set('customerEmail', customerEmail);
+  }
 
   return NextResponse.redirect(checkoutUrl.toString(), 302);
 }
