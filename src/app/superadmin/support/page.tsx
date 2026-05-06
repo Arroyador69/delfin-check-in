@@ -15,6 +15,7 @@ import type { Locale } from '@/i18n/config';
 
 type TicketRow = {
   id: string;
+  ticket_code?: string | null;
   tenant_id: string;
   tenant_name: string;
   tenant_email: string;
@@ -205,6 +206,7 @@ export default function SuperadminSupportPage() {
               <thead className="bg-slate-100 text-slate-700 text-left">
                 <tr>
                   <th className="px-4 py-3 font-medium">{t('colEstablishment')}</th>
+                  <th className="px-4 py-3 font-medium">Ticket</th>
                   <th className="px-4 py-3 font-medium">{t('colSubject')}</th>
                   <th className="px-4 py-3 font-medium">{t('colCategory')}</th>
                   <th className="px-4 py-3 font-medium">{t('colStatus')}</th>
@@ -218,6 +220,11 @@ export default function SuperadminSupportPage() {
                     <td className="px-4 py-3">
                       <div className="font-medium text-slate-900">{tk.tenant_name || t('dash')}</div>
                       <div className="text-xs text-slate-500">{tk.reporter_email}</div>
+                    </td>
+                    <td className="px-4 py-3 text-slate-700 whitespace-nowrap">
+                      <span className="text-xs font-mono bg-slate-100 px-2 py-0.5 rounded">
+                        {tk.ticket_code || '—'}
+                      </span>
                     </td>
                     <td className="px-4 py-3 text-slate-800 max-w-xs truncate">{tk.subject}</td>
                     <td className="px-4 py-3 text-slate-600">{formatCategory(tk.category)}</td>
