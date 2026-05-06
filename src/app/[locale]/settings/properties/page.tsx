@@ -226,7 +226,10 @@ export default function PropertiesManagement() {
             try {
               const r = await fetch('/api/tenant/properties/photos', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                  'Content-Type': 'application/json',
+                  ...(tenantId ? { 'x-tenant-id': tenantId } : {}),
+                },
                 body: JSON.stringify({ property_id: savedPropertyId, data_url: photo })
               });
               const ct = r.headers.get('content-type') || '';

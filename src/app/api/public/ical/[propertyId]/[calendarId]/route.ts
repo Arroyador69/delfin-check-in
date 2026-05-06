@@ -21,11 +21,27 @@ export async function GET(
   try {
     const { propertyId, calendarId } = await params;
     const propId = Number.parseInt(String(propertyId), 10);
-    const calId = Number.parseInt(String(calendarId), 10);
+    const calRaw = String(calendarId || '').trim();
+    // Aceptar formatos:
+    // - "38"
+    // - "system-38"
+    // - "system-38.ics" (algunas OTAs prueban con extensión)
+    const calNormalized = calRaw.replace(/\.ics$/i, '');
+    const calId =
+      /^\d+$/.test(calNormalized)
+        ? Number.parseInt(calNormalized, 10)
+        : /^system-(\d+)$/.test(calNormalized)
+          ? Number.parseInt(calNormalized.replace(/^system-/, ''), 10)
+          : Number.NaN;
 
     if (!Number.isFinite(propId) || propId <= 0 || !Number.isFinite(calId) || calId <= 0) {
       // Hardening: evita 500 por URLs inválidas (ej. /api/public/ical/null/...)
       return new NextResponse('Bad request', { status: 400 });
+    }
+    // El iCal "del sistema" es determinista por propiedad. Si nos pasan system-<n>,
+    // forzamos a que coincida con el propertyId para evitar enlaces inconsistentes.
+    if (/^system-/i.test(calNormalized) && calId !== propId) {
+      return new NextResponse('Not found', { status: 404 });
     }
 
     const propertyResult = await sql`
@@ -125,8 +141,10 @@ export async function GET(
       status: 200,
       headers: {
         'Content-Type': 'text/calendar; charset=utf-8',
-        'Content-Disposition': `attachment; filename="delfin-${propertyId}.ics"`,
+        // Booking/Airbnb prefieren una respuesta directa (sin redirects) y con nombre .ics
+        'Content-Disposition': `inline; filename="delfin-${propertyId}.ics"`,
         'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'X-Content-Type-Options': 'nosniff',
       },
     });
   } catch (error) {

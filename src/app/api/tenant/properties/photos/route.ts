@@ -6,6 +6,12 @@ function isDataUrl(s: string): boolean {
   return typeof s === 'string' && s.startsWith('data:image/');
 }
 
+function maxDataUrlLengthFor5MB(): number {
+  // Aproximación: base64 expande ~4/3. Para 5MB binario -> ~6.7MB base64 + cabecera.
+  // Dejamos margen para evitar falsos 413.
+  return 8_500_000;
+}
+
 export async function POST(req: NextRequest) {
   try {
     let tenantId = req.headers.get('x-tenant-id');
@@ -26,9 +32,9 @@ export async function POST(req: NextRequest) {
     if (!isDataUrl(dataUrl)) {
       return NextResponse.json({ success: false, error: 'data_url inválido' }, { status: 400 });
     }
-    // Límite defensivo: ~1.5MB en texto base64 (evita requests demasiado grandes)
-    if (dataUrl.length > 1_500_000) {
-      return NextResponse.json({ success: false, error: 'Imagen demasiado grande' }, { status: 413 });
+    // Límite defensivo alineado con el UI (5MB). El body llega como texto base64.
+    if (dataUrl.length > maxDataUrlLengthFor5MB()) {
+      return NextResponse.json({ success: false, error: 'Imagen demasiado grande (máximo 5MB)' }, { status: 413 });
     }
 
     // Verificar propiedad pertenece al tenant
@@ -43,7 +49,9 @@ export async function POST(req: NextRequest) {
     }
 
     const currentPhotos = Array.isArray(exists.rows[0].photos) ? exists.rows[0].photos : [];
-    const nextPhotos = [...currentPhotos, dataUrl].slice(0, 24);
+    // Evitar duplicados por reintentos / doble submit.
+    const withoutDup = currentPhotos.includes(dataUrl) ? currentPhotos : [...currentPhotos, dataUrl];
+    const nextPhotos = withoutDup.slice(0, 24);
 
     await sql`
       UPDATE tenant_properties
@@ -51,7 +59,7 @@ export async function POST(req: NextRequest) {
       WHERE id = ${propertyId} AND tenant_id = ${tenantId}::uuid
     `;
 
-    return NextResponse.json({ success: true, photosCount: nextPhotos.length });
+    return NextResponse.json({ success: true, photosCount: nextPhotos.length, photos: nextPhotos });
   } catch (error) {
     console.error('❌ [properties/photos] Error:', error);
     return NextResponse.json({ success: false, error: 'Error interno del servidor' }, { status: 500 });
