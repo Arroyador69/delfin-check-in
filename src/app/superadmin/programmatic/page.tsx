@@ -71,6 +71,9 @@ export default function ProgrammaticPage() {
   const [loading, setLoading] = useState(true)
   const [blogCronRunning, setBlogCronRunning] = useState<string | null>(null)
   const [blogCronResult, setBlogCronResult] = useState<any>(null)
+  const [blogRepairRunning, setBlogRepairRunning] = useState(false)
+  const [blogRepairLimit, setBlogRepairLimit] = useState<number>(30)
+  const [blogRepairResult, setBlogRepairResult] = useState<any>(null)
 
   useEffect(() => {
     fetchMetrics()
@@ -106,6 +109,25 @@ export default function ProgrammaticPage() {
       setBlogCronResult({ ok: false, data: { error: e?.message || String(e) } })
     } finally {
       setBlogCronRunning(null)
+    }
+  }
+
+  const runBlogRepair = async () => {
+    setBlogRepairRunning(true)
+    setBlogRepairResult(null)
+    try {
+      const res = await fetch('/api/superadmin/blog/publish-to-github', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ republishAll: true, limit: blogRepairLimit }),
+      })
+      const data = await res.json().catch(() => ({}))
+      setBlogRepairResult({ ok: res.ok, data })
+    } catch (e: any) {
+      setBlogRepairResult({ ok: false, data: { error: e?.message || String(e) } })
+    } finally {
+      setBlogRepairRunning(false)
     }
   }
 
@@ -246,6 +268,41 @@ export default function ProgrammaticPage() {
           <div className={`mt-4 rounded-lg border p-4 text-sm ${blogCronResult.ok ? 'border-emerald-200 bg-emerald-50 text-emerald-900' : 'border-red-200 bg-red-50 text-red-800'}`}>
             <div className="font-semibold mb-2">{blogCronResult.ok ? 'OK' : 'Error'}</div>
             <pre className="whitespace-pre-wrap break-words">{JSON.stringify(blogCronResult.data, null, 2)}</pre>
+          </div>
+        )}
+      </div>
+
+      {/* Reparación artículos rotos */}
+      <div className="bg-white rounded-lg shadow p-6">
+        <h2 className="text-xl font-bold mb-3 text-gray-900">🛠️ Reparar artículos publicados (recuperar texto)</h2>
+        <p className="text-sm text-gray-700 mb-4">
+          Re-publica en GitHub los últimos artículos publicados para aplicar el fix y que vuelva a aparecer el contenido del artículo.
+        </p>
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="flex flex-col">
+            <label className="text-sm text-gray-800 font-semibold mb-1">Cantidad (máx. 50)</label>
+            <input
+              type="number"
+              min={1}
+              max={50}
+              value={blogRepairLimit}
+              onChange={(e) => setBlogRepairLimit(Math.max(1, Math.min(50, Number(e.target.value) || 1)))}
+              className="w-32 px-3 py-2 border rounded-lg"
+            />
+          </div>
+          <button
+            onClick={runBlogRepair}
+            disabled={blogRepairRunning || blogCronRunning !== null}
+            className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50"
+          >
+            {blogRepairRunning ? 'Re-publicando…' : `Reparar ${blogRepairLimit} artículos`}
+          </button>
+        </div>
+
+        {blogRepairResult && (
+          <div className={`mt-4 rounded-lg border p-4 text-sm ${blogRepairResult.ok ? 'border-emerald-200 bg-emerald-50 text-emerald-900' : 'border-red-200 bg-red-50 text-red-800'}`}>
+            <div className="font-semibold mb-2">{blogRepairResult.ok ? 'OK' : 'Error'}</div>
+            <pre className="whitespace-pre-wrap break-words">{JSON.stringify(blogRepairResult.data, null, 2)}</pre>
           </div>
         )}
       </div>
