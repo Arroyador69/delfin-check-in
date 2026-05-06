@@ -57,6 +57,7 @@ export default function SuperadminSupportPage() {
   const [tickets, setTickets] = useState<TicketRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>('');
+  const [query, setQuery] = useState('');
   const [detail, setDetail] = useState<TicketDetail | null>(null);
   const [detailMessages, setDetailMessages] = useState<any[]>([]);
   const [detailLoading, setDetailLoading] = useState(false);
@@ -84,8 +85,11 @@ export default function SuperadminSupportPage() {
   const load = async () => {
     setLoading(true);
     try {
-      const q = filter ? `?status=${encodeURIComponent(filter)}` : '';
-      const res = await fetch(`/api/superadmin/support-tickets${q}`, { credentials: 'include' });
+      const params = new URLSearchParams();
+      if (filter) params.set('status', filter);
+      if (query.trim()) params.set('q', query.trim());
+      const qs = params.toString();
+      const res = await fetch(`/api/superadmin/support-tickets${qs ? `?${qs}` : ''}`, { credentials: 'include' });
       const data = await res.json();
       if (data.success) setTickets(data.tickets);
     } finally {
@@ -166,6 +170,15 @@ export default function SuperadminSupportPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') load();
+              }}
+              placeholder="Buscar (esther, email, ticket…)"
+              className="border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white w-64 max-w-[40vw]"
+            />
             <select
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
