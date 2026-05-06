@@ -36,6 +36,7 @@ function plansHtmlBlock(): string {
   const hrefCheckin = `${base}&plan=checkin`;
   const hrefStandard = `${base}&plan=standard`;
   const hrefPro = `${base}&plan=pro`;
+  const signupFreeUrl = `${appBase}/api/public/signup-free`;
   // Bloque de planes con el mismo look&feel que la página /plans (tarjetas grandes).
   // Usamos estilos inline para que se vea igual también en HTML estático (sin depender de Tailwind).
   return `
@@ -50,43 +51,10 @@ function plansHtmlBlock(): string {
   </div>
 
   <div style="max-width: 980px; margin: 0 auto; border-radius: 18px; background: #eef6ff; padding: 14px;">
-    <div style="border: 2px solid #fca5a5; background: #fff7ed; color: #7c2d12; border-radius: 14px; padding: 10px 12px; font-weight: 800; font-size: 12px; text-align:center; margin-bottom: 14px;">
-      ⚠️ IMPORTANTE: El acceso permanente al Plan Gratuito (Básico) sin coste mensual solo está disponible si te apuntas ahora. Las plazas son limitadas. Regístrate ya antes de que se agoten.
-    </div>
-
-    <div style="margin: 0 auto 14px; max-width: 540px;">
-      <label for="delfin-plan-email" style="display:block; font-weight: 900; font-size: 13px; color:#0f172a; margin-bottom: 6px;">
-        Email (para agilizar el checkout)
-      </label>
-      <input
-        id="delfin-plan-email"
-        type="email"
-        placeholder="tu@email.com"
-        style="width: 100%; box-sizing: border-box; padding: 12px 14px; border-radius: 12px; border: 2px solid #cbd5e1; font-size: 14px;"
-      />
-      <p style="margin: 6px 0 0; font-size: 12px; color:#64748b;">
-        Si lo dejas vacío, Polar te lo pedirá igualmente.
-      </p>
-    </div>
-
     <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px;">
-      ${pricingCard({
-        badge: 'Solo si te apuntas ya',
-        title: 'Plan Básico',
-        price: '0€',
-        priceSuffix: '/mes',
-        subtitle: 'Hasta 1 propiedad. Con anuncios.',
-        border: '#a7f3d0',
-        buttonText: 'Empezar Gratis',
-        buttonColor: '#16a34a',
-        href: hrefCheckin,
-        bullets: [
-          '✅ Formulario y listado de viajeros',
-          '✅ Descarga XML (subida manual al Ministerio)',
-          '✅ Reservas directas (9% comisión)',
-          '✅ Anuncios discretos',
-          '❌ Envío automático MIR (no incluido)',
-        ],
+      ${freePlanCard({
+        signupFreeUrl,
+        locale: 'es',
       })}
 
       ${pricingCard({
@@ -146,35 +114,91 @@ function plansHtmlBlock(): string {
       })}
     </div>
 
-    <script>
-      (function() {
-        try {
-          var input = document.getElementById('delfin-plan-email');
-          if (!input) return;
-          var links = document.querySelectorAll('a[href*=\"/api/polar/subscribe-redirect\"]');
-          function patchHref(a) {
-            var href = a.getAttribute('href') || '';
-            if (!href) return;
-            var email = String(input.value || '').trim();
-            if (!email) return;
-            // Guard simple: solo emails plausibles
-            if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) return;
-            // Añadir customerEmail si no existe
-            if (href.indexOf('customerEmail=') !== -1) return;
-            var sep = href.indexOf('?') !== -1 ? '&' : '?';
-            a.setAttribute('href', href + sep + 'customerEmail=' + encodeURIComponent(email));
-          }
-          links.forEach(function(a) {
-            a.addEventListener('click', function() {
-              patchHref(a);
-            });
-          });
-        } catch (e) {}
-      })();
-    </script>
   </div>
 </section>
 `.trim();
+}
+
+function freePlanCard(opts: { signupFreeUrl: string; locale: string }): string {
+  return `
+<div style="background:#ffffff;border:3px solid #a7f3d0;border-radius:16px;padding:16px;box-shadow:0 10px 22px rgba(15,23,42,0.08);">
+  <div style="text-align:center;">
+    <div style="display:inline-block; font-size: 11px; font-weight: 900; padding: 6px 10px; border-radius: 999px; background: #e2e8f0; color:#0f172a; margin-bottom: 10px;">Plan Gratis</div>
+    <div style="font-size: 18px; font-weight: 950; color:#0f172a; margin: 0;">Plan Básico</div>
+    <div style="margin-top: 10px;">
+      <span style="font-size: 40px; font-weight: 950; color:#0f172a;">0€</span>
+      <span style="color:#475569; font-weight: 800; font-size: 13px;">/mes</span>
+    </div>
+    <div style="margin-top: 8px; color:#475569; font-size: 13px; font-weight: 700;">Hasta 1 propiedad. Con anuncios.</div>
+  </div>
+  <ul style="list-style:none; padding: 14px 0 0 0; margin: 14px 0 0 0; border-top: 1px solid #e2e8f0;">
+    <li style="display:flex; gap: 8px; align-items:flex-start; margin: 0 0 8px 0; color:#334155; font-size: 13px; line-height: 1.35;">✅ Formulario y listado de viajeros</li>
+    <li style="display:flex; gap: 8px; align-items:flex-start; margin: 0 0 8px 0; color:#334155; font-size: 13px; line-height: 1.35;">✅ Descarga XML (subida manual al Ministerio)</li>
+    <li style="display:flex; gap: 8px; align-items:flex-start; margin: 0 0 8px 0; color:#334155; font-size: 13px; line-height: 1.35;">✅ Reservas directas (9% comisión)</li>
+    <li style="display:flex; gap: 8px; align-items:flex-start; margin: 0 0 8px 0; color:#334155; font-size: 13px; line-height: 1.35;">✅ Anuncios discretos</li>
+    <li style="display:flex; gap: 8px; align-items:flex-start; margin: 0 0 8px 0; color:#334155; font-size: 13px; line-height: 1.35;">❌ Envío automático MIR (no incluido)</li>
+  </ul>
+
+  <button type="button" id="delfin-free-toggle" style="width:100%; margin-top: 14px; text-align:center; background:#16a34a; color:#fff; padding: 12px 14px; border-radius: 12px; font-weight: 900; border: 0; cursor: pointer;">
+    Empezar Gratis
+  </button>
+
+  <div id="delfin-free-form-wrap" style="display:none; margin-top: 12px; border-top: 1px solid #e2e8f0; padding-top: 12px;">
+    <label for="delfin-free-email" style="display:block; font-weight: 900; font-size: 13px; color:#0f172a; margin-bottom: 6px;">Email</label>
+    <input id="delfin-free-email" type="email" placeholder="tu@email.com" style="width: 100%; box-sizing: border-box; padding: 12px 14px; border-radius: 12px; border: 2px solid #cbd5e1; font-size: 14px;" />
+    <button type="button" id="delfin-free-submit" style="width:100%; margin-top: 10px; text-align:center; background:#0f172a; color:#fff; padding: 12px 14px; border-radius: 12px; font-weight: 900; border: 0; cursor: pointer;">
+      Enviar acceso por email
+    </button>
+    <div id="delfin-free-msg" style="margin-top: 10px; font-size: 12px; color:#334155;"></div>
+  </div>
+
+  <script>
+    (function(){
+      try {
+        var toggle = document.getElementById('delfin-free-toggle');
+        var wrap = document.getElementById('delfin-free-form-wrap');
+        var email = document.getElementById('delfin-free-email');
+        var submit = document.getElementById('delfin-free-submit');
+        var msg = document.getElementById('delfin-free-msg');
+        if (!toggle || !wrap || !email || !submit || !msg) return;
+
+        toggle.addEventListener('click', function() {
+          wrap.style.display = wrap.style.display === 'none' ? 'block' : 'none';
+          if (wrap.style.display === 'block') email.focus();
+        });
+
+        submit.addEventListener('click', async function() {
+          var v = String(email.value || '').trim();
+          if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(v)) {
+            msg.textContent = 'Introduce un email válido.';
+            msg.style.color = '#b91c1c';
+            return;
+          }
+          msg.textContent = 'Enviando...';
+          msg.style.color = '#334155';
+          try {
+            var res = await fetch('${escapeAttr(opts.signupFreeUrl)}', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email: v, locale: '${escapeAttr(opts.locale)}' })
+            });
+            var data = await res.json().catch(function(){ return {}; });
+            if (!res.ok || data.success === false) {
+              msg.textContent = (data && data.error) ? String(data.error) : 'No se pudo completar el registro. Inténtalo más tarde.';
+              msg.style.color = '#b91c1c';
+              return;
+            }
+            msg.textContent = 'Listo. Revisa tu correo para continuar con el acceso.';
+            msg.style.color = '#047857';
+          } catch (e) {
+            msg.textContent = 'No se pudo completar el registro. Inténtalo más tarde.';
+            msg.style.color = '#b91c1c';
+          }
+        });
+      } catch (e) {}
+    })();
+  </script>
+</div>`.trim();
 }
 
 function pricingCard(opts: {
@@ -224,6 +248,10 @@ function replaceWaitlistWithPlans(html: string): string {
   // 2) Eliminar el popup waitlist y overlay si existen.
   out = out.replace(/<div[^>]*id="popupWaitlist"[\s\S]*?<\/div>/gi, '');
   out = out.replace(/<div[^>]*class="popup-overlay"[\s\S]*?<\/div>/gi, '');
+
+  // 2b) Eliminar formularios/scripts residuales relacionados con waitlist, si la plantilla cambia.
+  out = out.replace(/<form[^>]*>[\s\S]*?(waitlist|popupWaitlist)[\s\S]*?<\/form>/gi, '');
+  out = out.replace(/<script[^>]*>[\s\S]*?(waitlist|popupWaitlist)[\s\S]*?<\/script>/gi, '');
 
   // 3) Insertar planes antes de </article> o </body>.
   const marker = 'Planes claros y transparentes';
