@@ -154,7 +154,8 @@ export default function IntegrationsSettingsPage() {
   const getSystemICalUrl = (propertyId: number) => {
     // Usar un formato determinista: system-{propertyId}
     // Esto asegura que la URL siempre sea la misma para cada propiedad
-    const calendarId = `system-${propertyId}`;
+    // Añadimos .ics porque algunas OTAs validan mejor con extensión explícita
+    const calendarId = `system-${propertyId}.ics`;
     const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
     return `${baseUrl}/api/public/ical/${propertyId}/${calendarId}`;
   };
