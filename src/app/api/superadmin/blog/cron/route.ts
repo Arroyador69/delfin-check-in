@@ -373,6 +373,114 @@ function injectBillingToggleScript(html: string): string {
   return html;
 }
 
+function injectSoftPopup(html: string): string {
+  const marker = 'id="delfin-soft-popup"';
+  if (html.includes(marker)) return html;
+
+  const popupHtml = `
+<style>
+  #delfin-soft-popup-overlay{position:fixed;inset:0;background:rgba(2,6,23,.55);display:none;align-items:center;justify-content:center;z-index:999999;}
+  #delfin-soft-popup{width:min(520px,calc(100vw - 32px));background:#fff;border-radius:18px;box-shadow:0 16px 48px rgba(2,6,23,.35);border:1px solid rgba(148,163,184,.6);overflow:hidden}
+  #delfin-soft-popup .hd{padding:16px 16px 0 16px}
+  #delfin-soft-popup .ttl{font-weight:950;font-size:20px;line-height:1.2;color:#0f172a;margin:0}
+  #delfin-soft-popup .sub{margin:10px 0 0 0;color:#334155;font-size:14px;line-height:1.45}
+  #delfin-soft-popup .cta{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:16px}
+  #delfin-soft-popup .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:12px;padding:12px 14px;font-weight:900;text-decoration:none}
+  #delfin-soft-popup .btn-primary{background:#0f172a;color:#fff;flex:1}
+  #delfin-soft-popup .btn-ghost{background:#f1f5f9;color:#0f172a}
+  #delfin-soft-popup .x{position:absolute;top:10px;right:10px;border:0;background:transparent;cursor:pointer;font-size:20px;line-height:1;color:#475569}
+  #delfin-soft-popup .wrap{position:relative}
+</style>
+<div id="delfin-soft-popup-overlay" role="dialog" aria-modal="true" aria-label="Delfín Check-in">
+  <div class="wrap">
+    <div id="delfin-soft-popup">
+      <button class="x" type="button" aria-label="Cerrar" id="delfin-soft-popup-close">×</button>
+      <div class="hd">
+        <p class="ttl">Prueba Delfín Check-in gratis (1 propiedad)</p>
+        <p class="sub">
+          Automatiza el <strong>registro de viajeros</strong> y el <strong>envío de partes</strong> al Gobierno de España (MIR).
+          En minutos lo tienes listo.
+        </p>
+      </div>
+      <div class="cta">
+        <a class="btn btn-primary" id="delfin-soft-popup-cta" href="https://delfincheckin.com/#precios" target="_blank" rel="noreferrer">
+          Ver planes y empezar
+        </a>
+        <button class="btn btn-ghost" type="button" id="delfin-soft-popup-later">Más tarde</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+  (function(){
+    try {
+      var overlay = document.getElementById('delfin-soft-popup-overlay');
+      var closeBtn = document.getElementById('delfin-soft-popup-close');
+      var laterBtn = document.getElementById('delfin-soft-popup-later');
+      var cta = document.getElementById('delfin-soft-popup-cta');
+      if (!overlay || !closeBtn || !laterBtn || !cta) return;
+
+      function safeGet(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }
+      function safeSet(k,v){ try { localStorage.setItem(k,v); } catch(e){} }
+
+      var KEY = 'delfin_soft_popup_last';
+      var last = Number(safeGet(KEY) || '0');
+      var now = Date.now();
+      var COOLDOWN_MS = 1000 * 60 * 60 * 24 * 7;
+      if (last && (now - last) < COOLDOWN_MS) return;
+
+      function getSessionId(){
+        var k = 'delfin_blog_session_id';
+        var v = safeGet(k);
+        if (v) return v;
+        v = (Math.random().toString(16).slice(2) + Date.now().toString(16)).slice(0, 32);
+        safeSet(k, v);
+        return v;
+      }
+
+      function track(eventType){
+        try {
+          var slug = (typeof ARTICLE_SLUG === 'string' && ARTICLE_SLUG) ? ARTICLE_SLUG : null;
+          if (!slug) return;
+          fetch('https://admin.delfincheckin.com/api/blog/analytics/track', {
+            method: 'POST',
+            mode: 'cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              article_slug: slug,
+              session_id: getSessionId(),
+              event_type: eventType,
+              event_data: { source: 'soft_popup' }
+            })
+          }).catch(function(){});
+        } catch(e) {}
+      }
+
+      function open(){
+        overlay.style.display = 'flex';
+        safeSet(KEY, String(Date.now()));
+        track('popup_view');
+      }
+      function close(){
+        overlay.style.display = 'none';
+        track('popup_close');
+      }
+
+      closeBtn.addEventListener('click', close);
+      laterBtn.addEventListener('click', close);
+      overlay.addEventListener('click', function(e){ if (e.target === overlay) close(); });
+      cta.addEventListener('click', function(){ track('popup_click'); });
+
+      setTimeout(open, 12000);
+    } catch(e) {}
+  })();
+</script>
+`.trim();
+
+  if (html.includes('</body>')) return html.replace('</body>', `${popupHtml}\n</body>`);
+  return `${html}\n${popupHtml}`;
+}
+
 function toSlug(s: string): string {
   return String(s || '')
     .toLowerCase()
@@ -558,6 +666,7 @@ async function publishToGithub(slug: string): Promise<string> {
   // IMPORTANTE: eliminar waitlist/popup y colocar CTA de planes también en generación automática.
   html = replaceWaitlistWithPlans(html);
   html = injectBillingToggleScript(html);
+  html = injectSoftPopup(html);
 
   const octokit = new Octokit({
     auth: token,
