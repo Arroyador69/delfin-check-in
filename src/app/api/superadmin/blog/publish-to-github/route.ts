@@ -394,6 +394,10 @@ export async function POST(req: NextRequest) {
     }
 
     const octokit = new Octokit({ auth: token });
+    // Evita warning deprecación: API versioning (GitHub REST).
+    (octokit as any).request?.defaults?.({
+      headers: { 'X-GitHub-Api-Version': '2022-11-28' },
+    });
 
     async function publishOne(article: any) {
       const publishedAt = article.published_at ? new Date(article.published_at) : new Date();

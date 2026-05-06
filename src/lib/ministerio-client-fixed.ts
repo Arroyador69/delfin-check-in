@@ -2,6 +2,7 @@
 // Versión optimizada para Vercel con manejo mejorado de autenticación
 
 import JSZip from 'jszip';
+import { Agent } from 'undici';
 
 export interface MinisterioConfig {
   baseUrl: string;
@@ -157,21 +158,13 @@ export class MinisterioClientFixed {
         keepalive: false
       };
 
-      // Deshabilitar verificación SSL temporalmente para pruebas
-      const originalRejectUnauthorized = process.env.NODE_TLS_REJECT_UNAUTHORIZED;
-      process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
-      
-      let res: Response;
-      try {
-        res = await fetch(this.cfg.baseUrl, fetchOptions);
-      } finally {
-        // Siempre restaurar configuración original
-        if (originalRejectUnauthorized !== undefined) {
-          process.env.NODE_TLS_REJECT_UNAUTHORIZED = originalRejectUnauthorized;
-        } else {
-          delete process.env.NODE_TLS_REJECT_UNAUTHORIZED;
-        }
+      // ⚠️ Evitar NODE_TLS_REJECT_UNAUTHORIZED=0 (global). Si hiciera falta, habilitarlo explícitamente.
+      const insecureTls = String(process.env.MIR_TLS_INSECURE || '').toLowerCase() === 'true';
+      if (insecureTls) {
+        (fetchOptions as any).dispatcher = new Agent({ connect: { rejectUnauthorized: false } });
       }
+
+      const res = await fetch(this.cfg.baseUrl, fetchOptions);
 
       console.log('📊 Respuesta del MIR:', {
         status: res.status,

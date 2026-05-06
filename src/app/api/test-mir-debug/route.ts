@@ -126,6 +126,7 @@ export async function POST(req: NextRequest) {
     // Test 2: Sin verificación SSL
     try {
       const originalRejectUnauthorized = process.env.NODE_TLS_REJECT_UNAUTHORIZED;
+      // Debug puntual: NO usar en producción. Preferir MIR_TLS_INSECURE=true y dispatcher por request.
       process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
       
       const res2 = await fetch(config.baseUrl, {

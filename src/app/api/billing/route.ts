@@ -13,6 +13,10 @@ const stripe = process.env.STRIPE_SECRET_KEY
     })
   : null;
 
+function isLegacyStripeBillingEnabled(): boolean {
+  return String(process.env.STRIPE_LEGACY_BILLING_ENABLED || '').toLowerCase() === 'true';
+}
+
 /**
  * API para obtener información de facturación del tenant
  */
@@ -113,7 +117,8 @@ export async function GET(req: NextRequest) {
       billing_interval: 'month' | 'year' | null;
     } | null = null;
 
-    if (tenant.stripe_subscription_id && stripe) {
+    // ✅ MoR actual: Polar. Stripe queda solo como compatibilidad legacy si se habilita explícitamente.
+    if (isLegacyStripeBillingEnabled() && tenant.stripe_subscription_id && stripe) {
       try {
         const subscription = (await stripe.subscriptions.retrieve(
           tenant.stripe_subscription_id
@@ -147,7 +152,9 @@ export async function GET(req: NextRequest) {
           billing_interval: billingInterval,
         };
       } catch (stripeError) {
-        console.error('Error obteniendo información de Stripe:', stripeError);
+        // No elevar a error en logs: es normal que haya tenants con IDs legacy inexistentes
+        // tras migración a Polar.
+        console.warn('⚠️ Stripe legacy: no se pudo obtener subscription:', stripeError);
       }
     }
 
@@ -168,7 +175,7 @@ export async function GET(req: NextRequest) {
 
     // Stripe invoice history: mantener solo como compatibilidad/commission history,
     // pero el plan SaaS es MoR (Polar).
-    if (tenant.stripe_customer_id && stripe) {
+    if (isLegacyStripeBillingEnabled() && tenant.stripe_customer_id && stripe) {
       try {
         const invoices = await stripe.invoices.list({
           customer: tenant.stripe_customer_id,
@@ -183,7 +190,7 @@ export async function GET(req: NextRequest) {
           invoice_pdf: invoice.invoice_pdf,
         }));
       } catch (e) {
-        console.error('Error listando facturas Stripe:', e);
+        console.warn('⚠️ Stripe legacy: no se pudieron listar facturas:', e);
       }
     }
 

@@ -7,7 +7,10 @@ import { marked } from 'marked';
 // Inicializar Octokit con token de GitHub (repo landing)
 // Preferimos GITHUB_TOKEN_LANDING para diferenciar del resto de repos
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN_LANDING || process.env.GITHUB_TOKEN;
-const octokit = new Octokit({ auth: GITHUB_TOKEN });
+const octokit = new Octokit({
+  auth: GITHUB_TOKEN,
+  request: { headers: { 'X-GitHub-Api-Version': '2022-11-28' } },
+});
 if (!GITHUB_TOKEN) {
   console.warn('[programmatic/publish] Falta GITHUB_TOKEN_LANDING (o GITHUB_TOKEN). No se podrá publicar a GitHub Pages.');
 }

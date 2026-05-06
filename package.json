@@ -67,6 +67,7 @@
     "react-dom": "^19.2.3",
     "stripe": "^18.5.0",
     "tailwind-merge": "^2.0.0",
+    "undici": "^7.25.0",
     "xmlbuilder2": "^4.0.3",
     "zod": "^3.22.4"
   },
