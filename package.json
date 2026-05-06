@@ -58,7 +58,7 @@
     "marked": "^16.4.1",
     "next": "15.5.15",
     "next-auth": "^4.24.14",
-    "next-intl": "^4.9.1",
+    "next-intl": "^4.9.2",
     "node-fetch": "^3.3.2",
     "nodemailer": "^8.0.5",
     "openai": "^4.75.0",
