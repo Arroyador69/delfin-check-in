@@ -127,7 +127,9 @@ export default function Navigation() {
     { name: tc('radarReach'), href: '/superadmin/radar-reach', icon: Target },
     { name: tc('productUpdates'), href: '/superadmin/updates', icon: Megaphone },
     { name: tc('customerSupport'), href: '/superadmin/support', icon: LifeBuoy },
-    { name: tc('logs'), href: '/superadmin/sentry', icon: Shield },
+    // Superadmin es solo tuyo → texto fijo en español y rutas separadas.
+    { name: 'Logs (Vercel)', href: '/superadmin/logs', icon: Shield },
+    { name: 'Errores (Sentry)', href: '/superadmin/sentry', icon: Shield },
   ];
 
   const isInSuperAdmin = pathname?.startsWith('/superadmin');
