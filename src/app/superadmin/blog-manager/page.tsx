@@ -113,9 +113,24 @@ export default function BlogManagerPage() {
       if (data.success) {
         setMessage({ type: 'success', text: data.message || 'Artículo guardado correctamente' });
         setShowForm(false);
+        const justSaved = editingArticle;
         setEditingArticle(null);
         resetForm();
         fetchArticles();
+
+        // Si estaba publicado, re-publicar automáticamente el HTML en GitHub para que "Actualizar" se refleje.
+        if (justSaved && formData.is_published) {
+          try {
+            await fetch('/api/superadmin/blog/publish-to-github', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              body: JSON.stringify({ slug: formData.slug })
+            });
+          } catch (_) {
+            // No bloqueamos el guardado si falla la re-publicación.
+          }
+        }
       } else {
         throw new Error(data.error || 'Error al guardar');
       }

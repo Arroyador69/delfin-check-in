@@ -32,10 +32,14 @@ function plansHtmlBlock(): string {
   // Importante: evitar llevar al usuario a una página del panel antes del checkout.
   // Mandamos directo al checkout de Polar via /api/polar/subscribe-redirect (público).
   const appBase = 'https://admin.delfincheckin.com';
-  const base = `${appBase}/api/polar/subscribe-redirect?locale=es&seats=1&interval=month`;
-  const hrefCheckin = `${base}&plan=checkin`;
-  const hrefStandard = `${base}&plan=standard`;
-  const hrefPro = `${base}&plan=pro`;
+  const baseMonth = `${appBase}/api/polar/subscribe-redirect?locale=es&seats=1&interval=month`;
+  const baseYear = `${appBase}/api/polar/subscribe-redirect?locale=es&seats=1&interval=year`;
+  const hrefCheckinM = `${baseMonth}&plan=checkin`;
+  const hrefStandardM = `${baseMonth}&plan=standard`;
+  const hrefProM = `${baseMonth}&plan=pro`;
+  const hrefCheckinY = `${baseYear}&plan=checkin`;
+  const hrefStandardY = `${baseYear}&plan=standard`;
+  const hrefProY = `${baseYear}&plan=pro`;
   const signupFreeUrl = `${appBase}/api/public/signup-free`;
   // Bloque de planes con el mismo look&feel que la página /plans (tarjetas grandes).
   // Usamos estilos inline para que se vea igual también en HTML estático (sin depender de Tailwind).
@@ -51,6 +55,17 @@ function plansHtmlBlock(): string {
   </div>
 
   <div style="max-width: 980px; margin: 0 auto; border-radius: 18px; background: #eef6ff; padding: 14px;">
+    <div style="display:flex; justify-content:center; margin-bottom: 12px;">
+      <div style="display:inline-flex; gap: 6px; background:#e2e8f0; padding: 6px; border-radius: 999px;">
+        <button type="button" id="delfin-billing-month" style="border:0; cursor:pointer; padding: 8px 12px; border-radius: 999px; font-weight: 900; font-size: 12px; background:#ffffff; color:#0f172a;">
+          Mensual
+        </button>
+        <button type="button" id="delfin-billing-year" style="border:0; cursor:pointer; padding: 8px 12px; border-radius: 999px; font-weight: 900; font-size: 12px; background:transparent; color:#0f172a;">
+          Anual <span style="opacity:0.8; font-weight:900;">(2 meses gratis)</span>
+        </button>
+      </div>
+    </div>
+
     <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px;">
       ${freePlanCard({
         signupFreeUrl,
@@ -66,7 +81,9 @@ function plansHtmlBlock(): string {
         border: '#93c5fd',
         buttonText: 'Contratar Check-in',
         buttonColor: '#2563eb',
-        href: hrefCheckin,
+        href: hrefCheckinM,
+        hrefMonth: hrefCheckinM,
+        hrefYear: hrefCheckinY,
         bullets: [
           '✅ Envío automático al Ministerio (MIR)',
           '✅ Check-in digital y registro de viajeros',
@@ -84,7 +101,9 @@ function plansHtmlBlock(): string {
         border: '#fdba74',
         buttonText: 'Contratar Standard',
         buttonColor: '#c2410c',
-        href: hrefStandard,
+        href: hrefStandardM,
+        hrefMonth: hrefStandardM,
+        hrefYear: hrefStandardY,
         bullets: [
           '✅ Todo lo del Check-in',
           '✅ Sin anuncios',
@@ -102,7 +121,9 @@ function plansHtmlBlock(): string {
         border: '#c4b5fd',
         buttonText: 'Contratar Pro',
         buttonColor: '#7c3aed',
-        href: hrefPro,
+        href: hrefProM,
+        hrefMonth: hrefProM,
+        hrefYear: hrefProY,
         bullets: [
           '✅ Todo lo del Standard',
           '✅ 1 propiedad incluida, luego 2€/mes por cada nueva',
@@ -212,6 +233,8 @@ function pricingCard(opts: {
   buttonColor: string;
   border: string;
   href: string;
+  hrefMonth?: string;
+  hrefYear?: string;
 }): string {
   const badge = opts.badge
     ? `<div style="display:inline-block; font-size: 11px; font-weight: 900; padding: 6px 10px; border-radius: 999px; background: #e2e8f0; color:#0f172a; margin-bottom: 10px;">${escapeAttr(opts.badge)}</div>`
@@ -233,7 +256,13 @@ function pricingCard(opts: {
   <ul style="list-style:none; padding: 14px 0 0 0; margin: 14px 0 0 0; border-top: 1px solid #e2e8f0;">
     ${bullets}
   </ul>
-  <a href="${opts.href}" style="display:block; margin-top: 14px; text-align:center; background:${opts.buttonColor}; color:#fff; padding: 12px 14px; border-radius: 12px; font-weight: 900; text-decoration:none;">
+  <a
+    href="${opts.href}"
+    data-href-month="${escapeAttr(opts.hrefMonth || opts.href)}"
+    data-href-year="${escapeAttr(opts.hrefYear || opts.href)}"
+    data-delfin-billing-link="1"
+    style="display:block; margin-top: 14px; text-align:center; background:${opts.buttonColor}; color:#fff; padding: 12px 14px; border-radius: 12px; font-weight: 900; text-decoration:none;"
+  >
     ${escapeAttr(opts.buttonText)}
   </a>
 </div>`.trim();
@@ -266,6 +295,45 @@ function replaceWaitlistWithPlans(html: string): string {
   }
 
   return out;
+}
+
+// Script global: alternar mensual/anual en enlaces de Polar del bloque de planes.
+function injectBillingToggleScript(html: string): string {
+  const script = `<script>
+  (function(){
+    try {
+      var bM = document.getElementById('delfin-billing-month');
+      var bY = document.getElementById('delfin-billing-year');
+      if (!bM || !bY) return;
+      var links = document.querySelectorAll('[data-delfin-billing-link=\"1\"]');
+      function setMode(mode){
+        try { localStorage.setItem('delfin_billing_interval', mode); } catch (e) {}
+        links.forEach(function(a){
+          var h = (mode === 'year') ? a.getAttribute('data-href-year') : a.getAttribute('data-href-month');
+          if (h) a.setAttribute('href', h);
+        });
+        if (mode === 'year') {
+          bY.style.background = '#ffffff';
+          bM.style.background = 'transparent';
+        } else {
+          bM.style.background = '#ffffff';
+          bY.style.background = 'transparent';
+        }
+      }
+      bM.addEventListener('click', function(){ setMode('month'); });
+      bY.addEventListener('click', function(){ setMode('year'); });
+      var saved = 'month';
+      try { saved = localStorage.getItem('delfin_billing_interval') || 'month'; } catch (e2) {}
+      setMode(saved === 'year' ? 'year' : 'month');
+    } catch (e) {}
+  })();
+  </script>`;
+
+  if (html.includes('delfin-billing-month') && !html.includes('delfin_billing_interval')) {
+    if (html.includes('</body>')) return html.replace('</body>', `${script}\n</body>`);
+    return `${html}\n${script}`;
+  }
+  return html;
 }
 
 export async function POST(req: NextRequest) {
@@ -346,6 +414,7 @@ export async function POST(req: NextRequest) {
 
     // IMPORTANTE: eliminamos waitlist/popup y colocamos CTA de planes en todos los artículos.
     html = replaceWaitlistWithPlans(html);
+    html = injectBillingToggleScript(html);
 
     const octokit = new Octokit({ auth: token });
     const filePath = `articulos/${article.slug}.html`;

@@ -69,6 +69,8 @@ interface Metrics {
 export default function ProgrammaticPage() {
   const [metrics, setMetrics] = useState<Metrics | null>(null)
   const [loading, setLoading] = useState(true)
+  const [blogCronRunning, setBlogCronRunning] = useState<string | null>(null)
+  const [blogCronResult, setBlogCronResult] = useState<any>(null)
 
   useEffect(() => {
     fetchMetrics()
@@ -90,6 +92,20 @@ export default function ProgrammaticPage() {
       console.error('Error obteniendo métricas:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const runBlogCron = async (qs: string) => {
+    setBlogCronRunning(qs)
+    setBlogCronResult(null)
+    try {
+      const res = await fetch(`/api/superadmin/blog/cron${qs}`, { method: 'GET', credentials: 'include' })
+      const data = await res.json().catch(() => ({}))
+      setBlogCronResult({ ok: res.ok, data })
+    } catch (e: any) {
+      setBlogCronResult({ ok: false, data: { error: e?.message || String(e) } })
+    } finally {
+      setBlogCronRunning(null)
     }
   }
 
@@ -186,6 +202,52 @@ export default function ProgrammaticPage() {
             <div className="text-xl font-bold text-green-600">€{((metrics.traffic.totalRevenue ?? 0)).toFixed(2)}</div>
           </div>
         </div>
+      </div>
+
+      {/* Cron artículos */}
+      <div className="bg-white rounded-lg shadow p-6">
+        <h2 className="text-xl font-bold mb-3 text-gray-900">📰 Cron de Artículos (Blog)</h2>
+        <p className="text-sm text-gray-700 mb-4">
+          Esto ejecuta el mismo endpoint que Vercel llama automáticamente. Incluye un modo <strong>test</strong> para comprobar
+          publicación y CTA de planes (sin OpenAI).
+        </p>
+        <div className="flex flex-wrap gap-3">
+          <button
+            onClick={() => runBlogCron('?batch=morning&mode=test')}
+            disabled={blogCronRunning !== null}
+            className="px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 disabled:opacity-50"
+          >
+            {blogCronRunning === '?batch=morning&mode=test' ? 'Ejecutando…' : 'Test morning'}
+          </button>
+          <button
+            onClick={() => runBlogCron('?batch=afternoon&mode=test')}
+            disabled={blogCronRunning !== null}
+            className="px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 disabled:opacity-50"
+          >
+            {blogCronRunning === '?batch=afternoon&mode=test' ? 'Ejecutando…' : 'Test afternoon'}
+          </button>
+          <button
+            onClick={() => runBlogCron('?batch=morning')}
+            disabled={blogCronRunning !== null}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+          >
+            {blogCronRunning === '?batch=morning' ? 'Ejecutando…' : 'Run morning real'}
+          </button>
+          <button
+            onClick={() => runBlogCron('?batch=afternoon')}
+            disabled={blogCronRunning !== null}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+          >
+            {blogCronRunning === '?batch=afternoon' ? 'Ejecutando…' : 'Run afternoon real'}
+          </button>
+        </div>
+
+        {blogCronResult && (
+          <div className={`mt-4 rounded-lg border p-4 text-sm ${blogCronResult.ok ? 'border-emerald-200 bg-emerald-50 text-emerald-900' : 'border-red-200 bg-red-50 text-red-800'}`}>
+            <div className="font-semibold mb-2">{blogCronResult.ok ? 'OK' : 'Error'}</div>
+            <pre className="whitespace-pre-wrap break-words">{JSON.stringify(blogCronResult.data, null, 2)}</pre>
+          </div>
+        )}
       </div>
 
       {/* Top Páginas */}
