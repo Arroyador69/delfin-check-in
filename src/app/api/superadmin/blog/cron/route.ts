@@ -559,7 +559,10 @@ async function publishToGithub(slug: string): Promise<string> {
   html = replaceWaitlistWithPlans(html);
   html = injectBillingToggleScript(html);
 
-  const octokit = new Octokit({ auth: token });
+  const octokit = new Octokit({
+    auth: token,
+    request: { headers: { 'X-GitHub-Api-Version': '2022-11-28' } },
+  });
   const filePath = `articulos/${article.slug}.html`;
 
   let sha: string | undefined;

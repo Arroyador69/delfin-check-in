@@ -433,7 +433,9 @@ export async function middleware(req: NextRequest) {
       );
       
       if (!isPublicApiRoute) {
-        if (!isBenignMissingTenantPath(pathname)) {
+        // Solo marcar como SECURITY si venía autenticado (JWT válido) pero faltaba tenantId.
+        // Bots y crawlers pueden golpear endpoints /api/* y no queremos ruido constante en logs.
+        if (jwtPayload && !isBenignMissingTenantPath(pathname)) {
           console.warn(`⚠️ [SECURITY] Intento de acceso sin tenant_id a: ${pathname}`);
         }
         return NextResponse.json(

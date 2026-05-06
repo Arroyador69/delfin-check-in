@@ -39,10 +39,9 @@ export async function POST(req: NextRequest) {
       json.tenant_id ||
       'default';
     
-    // Limpiar tenant_id: si viene duplicado (separado por coma), tomar solo el primero
+    // Limpiar tenant_id: si viene duplicado (separado por coma), tomar solo el primero (sin ensuciar logs)
     if (rawTenantId.includes(',')) {
       rawTenantId = rawTenantId.split(',')[0].trim();
-      console.warn('⚠️ Tenant ID duplicado detectado, usando solo el primero:', rawTenantId);
     }
     
     tenantId = rawTenantId;
@@ -293,6 +292,7 @@ export async function POST(req: NextRequest) {
 
     // Extraer datos del JSON según normas MIR (TODO debe venir parseado del JSON, no de la BD)
     let { referencia, fechaEntrada, fechaSalida, personas, tipoPago, pago } = json;
+    const contratoPayload = json?.contrato ?? null;
 
     // Si desde UI/admin solo llega referencia (+ personas), completar desde BD por referencia.
     if (referencia && (!fechaEntrada || !fechaSalida || !Array.isArray(personas) || personas.length === 0)) {
@@ -405,7 +405,13 @@ export async function POST(req: NextRequest) {
 
     // Parsear tipo de pago SOLO del JSON según normas MIR (pagoType del XSD)
     // pagoType tiene: tipoPago (obligatorio), fechaPago (opcional), medioPago (opcional), etc.
-    let tipoPagoFinal = tipoPago || pago?.tipoPago;
+    let tipoPagoFinal =
+      tipoPago ||
+      pago?.tipoPago ||
+      contratoPayload?.tipoPago ||
+      contratoPayload?.tipoPagoCode ||
+      contratoPayload?.pago?.tipoPago ||
+      contratoPayload?.pago?.tipoPagoCode;
     
     // Si no viene en el JSON, usar 'EFECT' por defecto según normas MIR
     if (!tipoPagoFinal) {

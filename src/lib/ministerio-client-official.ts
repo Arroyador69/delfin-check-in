@@ -1,3 +1,4 @@
+import { Agent } from 'undici';
 // Cliente MIR oficial basado en la documentación v3.1.3
 // Implementa estrictamente las especificaciones WSDL/XSD oficiales
 
@@ -341,19 +342,15 @@ async function makeSoapRequest(cfg: MinisterioConfig, soapXml: string, operation
     keepalive: false
   };
 
-  // Deshabilitar verificación SSL temporalmente
-  const originalRejectUnauthorized = process.env.NODE_TLS_REJECT_UNAUTHORIZED;
-  process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
-  
-  try {
-    return await fetch(cfg.baseUrl, fetchOptions);
-  } finally {
-    if (originalRejectUnauthorized !== undefined) {
-      process.env.NODE_TLS_REJECT_UNAUTHORIZED = originalRejectUnauthorized;
-    } else {
-      delete process.env.NODE_TLS_REJECT_UNAUTHORIZED;
-    }
+  // ⚠️ Evitar NODE_TLS_REJECT_UNAUTHORIZED=0 (global) porque genera warning y es inseguro.
+  // Si hiciera falta por un entorno concreto, habilitarlo explícitamente con MIR_TLS_INSECURE=true
+  // y solo para esta request (dispatcher de undici).
+  const insecureTls = String(process.env.MIR_TLS_INSECURE || '').toLowerCase() === 'true';
+  if (insecureTls) {
+    (fetchOptions as any).dispatcher = new Agent({ connect: { rejectUnauthorized: false } });
   }
+
+  return await fetch(cfg.baseUrl, fetchOptions);
 }
 
 export class MinisterioClientOfficial {

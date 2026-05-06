@@ -5,7 +5,10 @@ import { Octokit } from '@octokit/rest';
 
 // Inicializar Octokit para eliminar archivos de GitHub Pages
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN_LANDING || process.env.GITHUB_TOKEN;
-const octokit = new Octokit({ auth: GITHUB_TOKEN });
+const octokit = new Octokit({
+  auth: GITHUB_TOKEN,
+  request: { headers: { 'X-GitHub-Api-Version': '2022-11-28' } },
+});
 
 const GITHUB_OWNER = 'Arroyador69';
 const GITHUB_REPO = 'delfincheckin.com';
