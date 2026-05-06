@@ -245,7 +245,7 @@ export default function SubscribePage() {
               interval === 'year' ? 'bg-white text-teal-800 shadow-sm' : 'text-slate-600'
             }`}
           >
-            {t.yearly}
+            {t.yearly} <span className="ml-1 text-xs font-semibold text-teal-700">(2 meses gratis)</span>
           </button>
         </div>
       </div>
