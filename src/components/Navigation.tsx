@@ -10,8 +10,7 @@ import { useClientTranslations } from '@/hooks/useClientTranslations';
 import LanguageSwitcher from './LanguageSwitcher';
 import { locales, defaultLocale, type Locale } from '@/i18n/config';
 import { isMarketIntelligenceEnabled } from '@/lib/feature-flags';
-import PendingReservationReviewBadge from '@/components/PendingReservationReviewBadge';
-import SupportNotificationsBell from '@/components/SupportNotificationsBell';
+import UnifiedTenantBell from '@/components/UnifiedTenantBell';
 
 function getLocaleFromPathname(pathname: string): Locale {
   const segment = pathname.split('/').filter(Boolean)[0];
@@ -147,8 +146,7 @@ export default function Navigation() {
           </div>
           {/* Botón de menú (visible en móvil y escritorio) */}
           <div className="flex items-center space-x-2">
-            {!isInSuperAdmin && <PendingReservationReviewBadge />}
-            {!isInSuperAdmin && <SupportNotificationsBell />}
+            {!isInSuperAdmin && <UnifiedTenantBell />}
             <LanguageSwitcher />
             <PWAInstallButton />
             <button
