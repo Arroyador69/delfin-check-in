@@ -29,45 +29,148 @@ function estimateReadTimeMinutes(htmlContent: string): number {
 }
 
 function plansHtmlBlock(): string {
-  const subscribeEs = 'https://admin.delfincheckin.com/es/subscribe';
+  const href = 'https://admin.delfincheckin.com/es/subscribe';
+  // Bloque de planes con el mismo look&feel que la página /plans (tarjetas grandes).
+  // Usamos estilos inline para que se vea igual también en HTML estático (sin depender de Tailwind).
   return `
-<section style="margin: 2.5rem 0; padding: 2.2rem; background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); border-radius: 20px; border: 2px solid rgba(15,23,42,.10); box-shadow: 0 10px 30px rgba(0,0,0,0.06);">
-  <div style="text-align:center;margin-bottom:1.2rem;">
-    <div style="font-size:44px;margin-bottom:8px;">🚀</div>
-    <h2 style="font-size:2rem;margin:0 0 8px;color:#0f172a;font-weight:900;">Planes de Delfín Check-in</h2>
-    <p style="margin:0;color:#475569;font-size:16px;">
-      Contrata en minutos. Registro de viajeros + envío automático al Ministerio del Interior.
+<section style="margin: 2.5rem 0;">
+  <div style="text-align:center;margin-bottom:1.25rem;">
+    <h2 style="font-size: 2rem; line-height: 1.2; font-weight: 900; color: #0f172a; margin: 0;">
+      Planes claros y transparentes
+    </h2>
+    <p style="margin: 0.5rem 0 0; color: #475569; font-size: 1rem;">
+      Sin sorpresas, sin letra pequeña. Sabes exactamente qué obtienes y qué cuesta.
     </p>
   </div>
-  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;">
-    ${planCard('Starter', '1 propiedad', 'Ideal para empezar', '#e2e8f0', subscribeEs)}
-    ${planCard('Pro', '2–4 propiedades', 'Más volumen, mejor precio', '#bfdbfe', subscribeEs)}
-    ${planCard('Business', '5–9 propiedades', 'Para gestores', '#bbf7d0', subscribeEs)}
-    ${planCard('Enterprise', '10+ propiedades', 'Precio por volumen', '#fde68a', subscribeEs)}
-  </div>
-  <div style="text-align:center;margin-top:16px;">
-    <a href="${subscribeEs}" style="display:inline-block;background:#2563eb;color:#fff;padding:0.9rem 1.4rem;border-radius:0.75rem;font-weight:900;text-decoration:none;">
-      Ver precios y contratar →
-    </a>
-    <div style="margin-top:8px;color:#64748b;font-size:12px;">
-      Pagos seguros (Polar como Merchant of Record). IVA incluido según aplique.
+
+  <div style="max-width: 980px; margin: 0 auto; border-radius: 18px; background: #eef6ff; padding: 14px;">
+    <div style="border: 2px solid #fca5a5; background: #fff7ed; color: #7c2d12; border-radius: 14px; padding: 10px 12px; font-weight: 800; font-size: 12px; text-align:center; margin-bottom: 14px;">
+      ⚠️ IMPORTANTE: El acceso permanente al Plan Gratuito (Básico) sin coste mensual solo está disponible si te apuntas ahora. Las plazas son limitadas. Regístrate ya antes de que se agoten.
+    </div>
+
+    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px;">
+      ${pricingCard({
+        badge: 'Solo si te apuntas ya',
+        title: 'Plan Básico',
+        price: '0€',
+        priceSuffix: '/mes',
+        subtitle: 'Hasta 1 propiedad. Con anuncios.',
+        border: '#a7f3d0',
+        buttonText: 'Empezar Gratis',
+        buttonColor: '#16a34a',
+        href,
+        bullets: [
+          '✅ Formulario y listado de viajeros',
+          '✅ Descarga XML (subida manual al Ministerio)',
+          '✅ Reservas directas (9% comisión)',
+          '✅ Anuncios discretos',
+          '❌ Envío automático MIR (no incluido)',
+        ],
+      })}
+
+      ${pricingCard({
+        badge: 'Más popular',
+        title: 'Plan Check-in',
+        price: '2€',
+        priceSuffix: '/mes + 2€/propiedad',
+        subtitle: 'Propiedades ilimitadas. Con anuncios.',
+        border: '#93c5fd',
+        buttonText: 'Contratar Check-in',
+        buttonColor: '#2563eb',
+        href,
+        bullets: [
+          '✅ Envío automático al Ministerio (MIR)',
+          '✅ Check-in digital y registro de viajeros',
+          '✅ Reservas directas (9% comisión)',
+          '✅ Cumplimiento RD 933/2021',
+          '✅ Anuncios discretos',
+        ],
+      })}
+
+      ${pricingCard({
+        title: 'Plan Standard',
+        price: '9,99€',
+        priceSuffix: '/mes',
+        subtitle: '1 propiedad incluida. Sin anuncios.',
+        border: '#fdba74',
+        buttonText: 'Contratar Standard',
+        buttonColor: '#c2410c',
+        href,
+        bullets: [
+          '✅ Todo lo del Check-in',
+          '✅ Sin anuncios',
+          '✅ 1 propiedad incluida, luego 2€/mes por cada nueva',
+          '✅ Reservas directas (9% comisión)',
+          '✅ Instrucciones de check-in por email al huésped (seguimiento de apertura)',
+        ],
+      })}
+
+      ${pricingCard({
+        title: 'Plan Pro',
+        price: '29,99€',
+        priceSuffix: '/mes',
+        subtitle: '1 propiedad incluida, luego 2€/mes por cada adicional. Sin anuncios.',
+        border: '#c4b5fd',
+        buttonText: 'Contratar Pro',
+        buttonColor: '#7c3aed',
+        href,
+        bullets: [
+          '✅ Todo lo del Standard',
+          '✅ 1 propiedad incluida, luego 2€/mes por cada nueva',
+          '✅ Reservas directas con solo 5% comisión',
+          '✅ Instrucciones de check-in por email al huésped (seguimiento de apertura)',
+          '✅ Reseñas Google + microsite en tu ficha (más visibilidad y reservas directas fuera de Airbnb/Booking)',
+          '✅ Sin anuncios, soporte prioritario y copia de seguridad',
+        ],
+      })}
+    </div>
+
+    <div style="text-align:center;margin-top: 14px;">
+      <a href="${href}" style="display:inline-block;background:#2563eb;color:#fff;padding:0.9rem 1.4rem;border-radius:0.9rem;font-weight:900;text-decoration:none;">
+        Ver precios y contratar →
+      </a>
     </div>
   </div>
 </section>
 `.trim();
 }
 
-function planCard(name: string, size: string, desc: string, border: string, href: string): string {
-  const esc = (v: string) => escapeAttr(v);
+function pricingCard(opts: {
+  badge?: string;
+  title: string;
+  price: string;
+  priceSuffix: string;
+  subtitle: string;
+  bullets: string[];
+  buttonText: string;
+  buttonColor: string;
+  border: string;
+  href: string;
+}): string {
+  const badge = opts.badge
+    ? `<div style="display:inline-block; font-size: 11px; font-weight: 900; padding: 6px 10px; border-radius: 999px; background: #e2e8f0; color:#0f172a; margin-bottom: 10px;">${escapeAttr(opts.badge)}</div>`
+    : '';
+  const bullets = opts.bullets
+    .map((b) => `<li style="display:flex; gap: 8px; align-items:flex-start; margin: 0 0 8px 0; color:#334155; font-size: 13px; line-height: 1.35;">${escapeAttr(b)}</li>`)
+    .join('');
   return `
-<a href="${href}" style="text-decoration:none;color:inherit;">
-  <div style="border:2px solid ${border};border-radius:16px;padding:16px;background:#fff;box-shadow:0 6px 16px rgba(15,23,42,0.05);height:100%;">
-    <div style="font-size:13px;color:#64748b;font-weight:800;">${esc(size)}</div>
-    <div style="font-size:19px;color:#0f172a;font-weight:950;margin-top:6px;">${esc(name)}</div>
-    <div style="font-size:14px;color:#475569;margin-top:8px;line-height:1.45;">${esc(desc)}</div>
-    <div style="margin-top:12px;font-weight:900;color:#2563eb;">Contratar →</div>
+<div style="background:#ffffff;border:3px solid ${opts.border};border-radius:16px;padding:16px;box-shadow:0 10px 22px rgba(15,23,42,0.08);">
+  <div style="text-align:center;">
+    ${badge}
+    <div style="font-size: 18px; font-weight: 950; color:#0f172a; margin: 0;">${escapeAttr(opts.title)}</div>
+    <div style="margin-top: 10px;">
+      <span style="font-size: 40px; font-weight: 950; color:#0f172a;">${escapeAttr(opts.price)}</span>
+      <span style="color:#475569; font-weight: 800; font-size: 13px;">${escapeAttr(opts.priceSuffix)}</span>
+    </div>
+    <div style="margin-top: 8px; color:#475569; font-size: 13px; font-weight: 700;">${escapeAttr(opts.subtitle)}</div>
   </div>
-</a>`.trim();
+  <ul style="list-style:none; padding: 14px 0 0 0; margin: 14px 0 0 0; border-top: 1px solid #e2e8f0;">
+    ${bullets}
+  </ul>
+  <a href="${opts.href}" style="display:block; margin-top: 14px; text-align:center; background:${opts.buttonColor}; color:#fff; padding: 12px 14px; border-radius: 12px; font-weight: 900; text-decoration:none;">
+    ${escapeAttr(opts.buttonText)}
+  </a>
+</div>`.trim();
 }
 
 function replaceWaitlistWithPlans(html: string): string {
