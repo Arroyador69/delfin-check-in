@@ -88,6 +88,25 @@ export async function POST(request: NextRequest) {
       return badRequest('Categoría no válida.');
     }
 
+    // Crear tabla de mensajes si falta (hardening)
+    try {
+      await sql`
+        CREATE TABLE IF NOT EXISTS support_ticket_messages (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          ticket_id UUID NOT NULL REFERENCES support_tickets(id) ON DELETE CASCADE,
+          sender_type VARCHAR(16) NOT NULL,
+          sender_email TEXT NOT NULL,
+          message TEXT NOT NULL,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+          CONSTRAINT support_ticket_messages_sender_check CHECK (sender_type IN ('tenant', 'superadmin'))
+        )
+      `;
+      await sql`
+        CREATE INDEX IF NOT EXISTS idx_support_ticket_messages_ticket
+        ON support_ticket_messages(ticket_id, created_at ASC)
+      `;
+    } catch (_) {}
+
     const insert = await sql`
       INSERT INTO support_tickets (
         tenant_id,
@@ -109,6 +128,14 @@ export async function POST(request: NextRequest) {
     `;
 
     const row = insert.rows[0];
+    // Guardar el primer mensaje del ticket como parte del hilo de conversación.
+    try {
+      await sql`
+        INSERT INTO support_ticket_messages (ticket_id, sender_type, sender_email, message)
+        VALUES (${row.id}::uuid, 'tenant', ${payload.email}, ${text})
+      `;
+    } catch (_) {}
+
     return NextResponse.json({
       success: true,
       ticket: { id: row.id, created_at: row.created_at },
