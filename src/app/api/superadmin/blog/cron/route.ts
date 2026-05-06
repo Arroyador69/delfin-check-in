@@ -301,10 +301,20 @@ function replaceWaitlistWithPlans(html: string): string {
   let out = html;
 
   out = out.replace(/<section[^>]*class="waitlist-section"[\s\S]*?<\/section>/gi, '');
+  // Plantilla histórica: sección grande con id="registro" (sin class waitlist-section).
+  out = out.replace(
+    /<section\b[^>]*id=["']registro["'][^>]*>[\s\S]*?(waitlistForm|lista de espera|acceso permanente|Quiero acceso anticipado)[\s\S]*?<\/section>/gi,
+    ''
+  );
   // El popup tiene divs anidados: eliminar solo hasta el primer </div> rompe el HTML.
   out = out.replace(/<div[^>]*id="popupWaitlist"[\s\S]*?<\/div>\s*<\/div>/gi, '');
   out = out.replace(/<div[^>]*class="popup-overlay"[\s\S]*?<\/div>/gi, '');
   out = out.replace(/<form[^>]*>[\s\S]*?(waitlist|popupWaitlist)[\s\S]*?<\/form>/gi, '');
+  // Script inline antiguo (plantilla): endpoint /blog/waitlist
+  out = out.replace(
+    /<script\b[^>]*>(?:(?!<\/script>)[\s\S])*?\/blog\/waitlist(?:(?!<\/script>)[\s\S])*?<\/script>/gi,
+    ''
+  );
   // No cruzar límites de </script> para no borrar HTML fuera del script.
   out = out.replace(
     /<script\b[^>]*>(?:(?!<\/script>)[\s\S])*?(waitlist|popupWaitlist)(?:(?!<\/script>)[\s\S])*?<\/script>/gi,
