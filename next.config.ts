@@ -44,7 +44,6 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       { source: '/', destination: '/admin-login', permanent: false },
-      { source: '/superadmin/logs', destination: '/superadmin/sentry', permanent: false },
     ];
   },
   /** Algunos navegadores resuelven iconos del manifest bajo /{locale}/… y piden /es/vercel.svg (404). */
