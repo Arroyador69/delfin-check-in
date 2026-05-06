@@ -29,7 +29,13 @@ function estimateReadTimeMinutes(htmlContent: string): number {
 }
 
 function plansHtmlBlock(): string {
-  const href = 'https://admin.delfincheckin.com/es/subscribe';
+  // Importante: evitar llevar al usuario a una página del panel antes del checkout.
+  // Mandamos directo al checkout de Polar via /api/polar/subscribe-redirect (público).
+  const appBase = 'https://admin.delfincheckin.com';
+  const base = `${appBase}/api/polar/subscribe-redirect?locale=es&seats=1&interval=month`;
+  const hrefCheckin = `${base}&plan=checkin`;
+  const hrefStandard = `${base}&plan=standard`;
+  const hrefPro = `${base}&plan=pro`;
   // Bloque de planes con el mismo look&feel que la página /plans (tarjetas grandes).
   // Usamos estilos inline para que se vea igual también en HTML estático (sin depender de Tailwind).
   return `
@@ -48,6 +54,21 @@ function plansHtmlBlock(): string {
       ⚠️ IMPORTANTE: El acceso permanente al Plan Gratuito (Básico) sin coste mensual solo está disponible si te apuntas ahora. Las plazas son limitadas. Regístrate ya antes de que se agoten.
     </div>
 
+    <div style="margin: 0 auto 14px; max-width: 540px;">
+      <label for="delfin-plan-email" style="display:block; font-weight: 900; font-size: 13px; color:#0f172a; margin-bottom: 6px;">
+        Email (para agilizar el checkout)
+      </label>
+      <input
+        id="delfin-plan-email"
+        type="email"
+        placeholder="tu@email.com"
+        style="width: 100%; box-sizing: border-box; padding: 12px 14px; border-radius: 12px; border: 2px solid #cbd5e1; font-size: 14px;"
+      />
+      <p style="margin: 6px 0 0; font-size: 12px; color:#64748b;">
+        Si lo dejas vacío, Polar te lo pedirá igualmente.
+      </p>
+    </div>
+
     <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px;">
       ${pricingCard({
         badge: 'Solo si te apuntas ya',
@@ -58,7 +79,7 @@ function plansHtmlBlock(): string {
         border: '#a7f3d0',
         buttonText: 'Empezar Gratis',
         buttonColor: '#16a34a',
-        href,
+        href: hrefCheckin,
         bullets: [
           '✅ Formulario y listado de viajeros',
           '✅ Descarga XML (subida manual al Ministerio)',
@@ -77,7 +98,7 @@ function plansHtmlBlock(): string {
         border: '#93c5fd',
         buttonText: 'Contratar Check-in',
         buttonColor: '#2563eb',
-        href,
+        href: hrefCheckin,
         bullets: [
           '✅ Envío automático al Ministerio (MIR)',
           '✅ Check-in digital y registro de viajeros',
@@ -95,7 +116,7 @@ function plansHtmlBlock(): string {
         border: '#fdba74',
         buttonText: 'Contratar Standard',
         buttonColor: '#c2410c',
-        href,
+        href: hrefStandard,
         bullets: [
           '✅ Todo lo del Check-in',
           '✅ Sin anuncios',
@@ -113,7 +134,7 @@ function plansHtmlBlock(): string {
         border: '#c4b5fd',
         buttonText: 'Contratar Pro',
         buttonColor: '#7c3aed',
-        href,
+        href: hrefPro,
         bullets: [
           '✅ Todo lo del Standard',
           '✅ 1 propiedad incluida, luego 2€/mes por cada nueva',
@@ -125,11 +146,32 @@ function plansHtmlBlock(): string {
       })}
     </div>
 
-    <div style="text-align:center;margin-top: 14px;">
-      <a href="${href}" style="display:inline-block;background:#2563eb;color:#fff;padding:0.9rem 1.4rem;border-radius:0.9rem;font-weight:900;text-decoration:none;">
-        Ver precios y contratar →
-      </a>
-    </div>
+    <script>
+      (function() {
+        try {
+          var input = document.getElementById('delfin-plan-email');
+          if (!input) return;
+          var links = document.querySelectorAll('a[href*=\"/api/polar/subscribe-redirect\"]');
+          function patchHref(a) {
+            var href = a.getAttribute('href') || '';
+            if (!href) return;
+            var email = String(input.value || '').trim();
+            if (!email) return;
+            // Guard simple: solo emails plausibles
+            if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) return;
+            // Añadir customerEmail si no existe
+            if (href.indexOf('customerEmail=') !== -1) return;
+            var sep = href.indexOf('?') !== -1 ? '&' : '?';
+            a.setAttribute('href', href + sep + 'customerEmail=' + encodeURIComponent(email));
+          }
+          links.forEach(function(a) {
+            a.addEventListener('click', function() {
+              patchHref(a);
+            });
+          });
+        } catch (e) {}
+      })();
+    </script>
   </div>
 </section>
 `.trim();
@@ -174,25 +216,24 @@ function pricingCard(opts: {
 }
 
 function replaceWaitlistWithPlans(html: string): string {
-  // 1) Ocultar waitlist + popup incluso si cambia ligeramente el markup (fallback seguro).
   let out = html;
-  const safetyCss = `<style>
-  .waitlist-section, #popupWaitlist, .popup-overlay { display: none !important; }
-  </style>`;
-  out = out.includes('</head>') ? out.replace('</head>', `${safetyCss}\n</head>`) : out;
 
-  // 2) Reemplazo “best-effort”: si existe una sección waitlist, sustituirla por planes.
-  out = out.replace(
-    /<section[^>]*class="waitlist-section"[\s\S]*?<\/section>/i,
-    plansHtmlBlock()
-  );
+  // 1) Eliminar la sección waitlist (no solo ocultarla).
+  out = out.replace(/<section[^>]*class="waitlist-section"[\s\S]*?<\/section>/gi, '');
 
-  // 3) Si no había waitlist (o no matcheó), insertar planes antes de </article> o antes de </body>.
-  if (!out.includes('Planes de Delfín Check-in')) {
+  // 2) Eliminar el popup waitlist y overlay si existen.
+  out = out.replace(/<div[^>]*id="popupWaitlist"[\s\S]*?<\/div>/gi, '');
+  out = out.replace(/<div[^>]*class="popup-overlay"[\s\S]*?<\/div>/gi, '');
+
+  // 3) Insertar planes antes de </article> o </body>.
+  const marker = 'Planes claros y transparentes';
+  if (!out.includes(marker)) {
     if (out.includes('</article>')) {
       out = out.replace('</article>', `${plansHtmlBlock()}\n</article>`);
     } else if (out.includes('</body>')) {
       out = out.replace('</body>', `${plansHtmlBlock()}\n</body>`);
+    } else {
+      out = `${out}\n${plansHtmlBlock()}`;
     }
   }
 
