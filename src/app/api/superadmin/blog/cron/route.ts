@@ -301,10 +301,15 @@ function replaceWaitlistWithPlans(html: string): string {
   let out = html;
 
   out = out.replace(/<section[^>]*class="waitlist-section"[\s\S]*?<\/section>/gi, '');
-  out = out.replace(/<div[^>]*id="popupWaitlist"[\s\S]*?<\/div>/gi, '');
+  // El popup tiene divs anidados: eliminar solo hasta el primer </div> rompe el HTML.
+  out = out.replace(/<div[^>]*id="popupWaitlist"[\s\S]*?<\/div>\s*<\/div>/gi, '');
   out = out.replace(/<div[^>]*class="popup-overlay"[\s\S]*?<\/div>/gi, '');
   out = out.replace(/<form[^>]*>[\s\S]*?(waitlist|popupWaitlist)[\s\S]*?<\/form>/gi, '');
-  out = out.replace(/<script[^>]*>[\s\S]*?(waitlist|popupWaitlist)[\s\S]*?<\/script>/gi, '');
+  // No cruzar límites de </script> para no borrar HTML fuera del script.
+  out = out.replace(
+    /<script\b[^>]*>(?:(?!<\/script>)[\s\S])*?(waitlist|popupWaitlist)(?:(?!<\/script>)[\s\S])*?<\/script>/gi,
+    ''
+  );
 
   const marker = 'Planes claros y transparentes';
   if (!out.includes(marker)) {
