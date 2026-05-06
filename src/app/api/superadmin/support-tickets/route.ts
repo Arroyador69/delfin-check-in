@@ -14,6 +14,7 @@ export async function GET(req: NextRequest) {
       ? await sql`
           SELECT
             st.id,
+            st.ticket_code,
             st.tenant_id,
             t.name AS tenant_name,
             t.email AS tenant_email,
@@ -33,6 +34,7 @@ export async function GET(req: NextRequest) {
       : await sql`
           SELECT
             st.id,
+            st.ticket_code,
             st.tenant_id,
             t.name AS tenant_name,
             t.email AS tenant_email,

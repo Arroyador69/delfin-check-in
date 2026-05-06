@@ -3,9 +3,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { Bell } from 'lucide-react';
+import { useClientTranslations } from '@/hooks/useClientTranslations';
 
 type NotificationItem = {
   id: string;
+  type?: string;
   title: string;
   body?: string | null;
   link?: string | null;
@@ -16,13 +18,15 @@ type NotificationItem = {
 export default function SupportNotificationsBell() {
   const pathname = usePathname();
   const router = useRouter();
+  const t = useClientTranslations('navigation');
   const [count, setCount] = useState(0);
   const [items, setItems] = useState<NotificationItem[]>([]);
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
 
   const load = useCallback(() => {
-    fetch('/api/tenant/notifications?type=support_reply', { credentials: 'include' })
+    // Cargamos notificaciones generales (soporte + actualizaciones)
+    fetch('/api/tenant/notifications', { credentials: 'include' })
       .then((r) => r.json())
       .then((d) => {
         setCount(typeof d.unreadCount === 'number' ? d.unreadCount : 0);
@@ -88,10 +92,10 @@ export default function SupportNotificationsBell() {
             ? 'text-amber-800 hover:bg-amber-50'
             : 'text-gray-400 hover:bg-gray-100 hover:text-gray-600'
         }`}
-        title={hasUnread ? 'Tienes respuestas de soporte' : 'No hay respuestas nuevas de soporte'}
+        title={hasUnread ? t('notificationsTitleUnread') : t('notificationsTitleNone')}
         aria-expanded={open}
         aria-haspopup="true"
-        aria-label="Notificaciones de soporte"
+        aria-label={t('notificationsAria')}
       >
         <Bell className="h-5 w-5 shrink-0" aria-hidden />
         {hasUnread ? (
@@ -104,20 +108,20 @@ export default function SupportNotificationsBell() {
       {open ? (
         <div className="absolute right-0 mt-2 w-80 max-w-[85vw] rounded-xl border border-slate-200 bg-white shadow-xl overflow-hidden z-50">
           <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
-            <div className="text-sm font-semibold text-slate-900">Soporte</div>
+            <div className="text-sm font-semibold text-slate-900">{t('notificationsTitle')}</div>
             {hasUnread ? (
               <button
                 type="button"
                 className="text-xs text-slate-600 hover:text-slate-900"
                 onClick={() => markRead(items.filter((i) => !i.is_read).map((i) => i.id))}
               >
-                Marcar todo como leído
+                {t('notificationsMarkAllRead')}
               </button>
             ) : null}
           </div>
           <div className="max-h-96 overflow-auto">
             {items.length === 0 ? (
-              <div className="p-4 text-sm text-slate-500">No hay notificaciones.</div>
+              <div className="p-4 text-sm text-slate-500">{t('notificationsEmpty')}</div>
             ) : (
               <ul className="divide-y divide-slate-100">
                 {items.map((n) => (
@@ -134,7 +138,9 @@ export default function SupportNotificationsBell() {
                         setOpen(false);
                       }}
                     >
-                      <div className="text-sm font-semibold text-slate-900">{n.title}</div>
+                      <div className="text-sm font-semibold text-slate-900">
+                        {n.type === 'support_reply' ? t('notificationsSupportReply') : n.type === 'product_update' ? t('notificationsProductUpdate') : n.title}
+                      </div>
                       {n.body ? <div className="text-xs text-slate-600 mt-0.5 line-clamp-2">{n.body}</div> : null}
                       <div className="text-[11px] text-slate-500 mt-1">
                         {new Date(n.created_at).toLocaleString()}

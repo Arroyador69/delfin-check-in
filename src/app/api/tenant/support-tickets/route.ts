@@ -11,6 +11,17 @@ const CATEGORIES = [
   'other_technical',
 ] as const;
 
+function makeTicketCode() {
+  const d = new Date();
+  const y = d.getUTCFullYear();
+  const m = String(d.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(d.getUTCDate()).padStart(2, '0');
+  const rand = Math.floor(Math.random() * 10_000)
+    .toString()
+    .padStart(4, '0');
+  return `SUP-${y}${m}${day}-${rand}`;
+}
+
 function badRequest(message: string) {
   return NextResponse.json({ success: false, error: message }, { status: 400 });
 }
@@ -88,6 +99,12 @@ export async function POST(request: NextRequest) {
       return badRequest('Categoría no válida.');
     }
 
+    // Hardening esquema: código público de ticket
+    try {
+      await sql`ALTER TABLE support_tickets ADD COLUMN IF NOT EXISTS ticket_code TEXT`;
+      await sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_support_tickets_ticket_code ON support_tickets(ticket_code)`;
+    } catch (_) {}
+
     // Crear tabla de mensajes si falta (hardening)
     try {
       await sql`
@@ -114,7 +131,8 @@ export async function POST(request: NextRequest) {
         reporter_email,
         subject,
         body,
-        category
+        category,
+        ticket_code
       )
       VALUES (
         ${tenantId},
@@ -122,7 +140,8 @@ export async function POST(request: NextRequest) {
         ${payload.email},
         ${subject},
         ${text},
-        ${category}
+        ${category},
+        ${makeTicketCode()}
       )
       RETURNING id, created_at
     `;

@@ -164,13 +164,37 @@ export async function GET(req: NextRequest) {
       room_id: row.room_id || null,
       is_placeholder: row.is_placeholder || false
     }));
+
+    // Evitar duplicados (ej. placeholder + mapped para la misma habitación/slot)
+    // Preferimos siempre el registro "real" (id != null) frente al placeholder.
+    const byRoom = new Map<string, any>();
+    for (const p of properties) {
+      const key = p.room_id ? String(p.room_id) : `property:${p.id ?? p.property_name}`;
+      const prev = byRoom.get(key);
+      if (!prev) {
+        byRoom.set(key, p);
+        continue;
+      }
+      const prevIsReal = prev.id != null;
+      const curIsReal = p.id != null;
+      if (curIsReal && !prevIsReal) {
+        byRoom.set(key, p);
+        continue;
+      }
+      if (curIsReal === prevIsReal) {
+        const prevUpdated = prev.updated_at ? new Date(prev.updated_at).getTime() : 0;
+        const curUpdated = p.updated_at ? new Date(p.updated_at).getTime() : 0;
+        if (curUpdated >= prevUpdated) byRoom.set(key, p);
+      }
+    }
+    const dedupedProperties = Array.from(byRoom.values());
     
-    console.log(`✅ Encontradas ${properties.length} propiedades`);
+    console.log(`✅ Encontradas ${dedupedProperties.length} propiedades (dedup aplicado)`);
     
     return NextResponse.json({
       success: true,
-      properties,
-      total: properties.length
+      properties: dedupedProperties,
+      total: dedupedProperties.length
     });
     
   } catch (error) {

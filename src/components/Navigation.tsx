@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Bed, Calendar, Users, Settings, Menu, X, TrendingUp, FileText, Download, Shield, Calculator, Send, Receipt, Crown, Target, UserPlus, BarChart3, LifeBuoy, Star, MousePointerClick } from 'lucide-react';
+import { Home, Bed, Calendar, Users, Settings, Menu, X, TrendingUp, FileText, Download, Shield, Calculator, Send, Receipt, Crown, Target, UserPlus, BarChart3, LifeBuoy, Star, MousePointerClick, Megaphone } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { useTenant, hasLegalModule, isFreePlanMirPreview, isProPlanTenant } from '@/hooks/useTenant';
@@ -10,8 +10,7 @@ import { useClientTranslations } from '@/hooks/useClientTranslations';
 import LanguageSwitcher from './LanguageSwitcher';
 import { locales, defaultLocale, type Locale } from '@/i18n/config';
 import { isMarketIntelligenceEnabled } from '@/lib/feature-flags';
-import PendingReservationReviewBadge from '@/components/PendingReservationReviewBadge';
-import SupportNotificationsBell from '@/components/SupportNotificationsBell';
+import UnifiedTenantBell from '@/components/UnifiedTenantBell';
 
 function getLocaleFromPathname(pathname: string): Locale {
   const segment = pathname.split('/').filter(Boolean)[0];
@@ -126,6 +125,7 @@ export default function Navigation() {
     { name: tc('analytics'), href: '/superadmin/analytics', icon: TrendingUp },
     { name: tc('programmaticPages'), href: '/superadmin/programmatic', icon: FileText },
     { name: tc('radarReach'), href: '/superadmin/radar-reach', icon: Target },
+    { name: tc('productUpdates'), href: '/superadmin/updates', icon: Megaphone },
     { name: tc('customerSupport'), href: '/superadmin/support', icon: LifeBuoy },
     { name: tc('logs'), href: '/superadmin/sentry', icon: Shield },
   ];
@@ -146,8 +146,7 @@ export default function Navigation() {
           </div>
           {/* Botón de menú (visible en móvil y escritorio) */}
           <div className="flex items-center space-x-2">
-            {!isInSuperAdmin && <PendingReservationReviewBadge />}
-            {!isInSuperAdmin && <SupportNotificationsBell />}
+            {!isInSuperAdmin && <UnifiedTenantBell />}
             <LanguageSwitcher />
             <PWAInstallButton />
             <button
