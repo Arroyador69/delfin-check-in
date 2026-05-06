@@ -294,6 +294,17 @@ export default function SuperAdminDashboard() {
           <div className="bg-white rounded-lg shadow p-6 mb-8">
             <h2 className="text-xl font-bold mb-4 text-gray-900">⚡ Acciones Rápidas</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <a
+                href="/superadmin/logs"
+                className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition"
+              >
+                <span className="text-2xl mr-3">🧾</span>
+                <div>
+                  <p className="font-semibold text-gray-900">Logs (Errores)</p>
+                  <p className="text-sm text-gray-700">Inbox interno en Neon</p>
+                </div>
+              </a>
+
               <a 
                 href="/superadmin/metrics"
                 className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition"
