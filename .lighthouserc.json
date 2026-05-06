@@ -7,8 +7,12 @@
         "http://localhost:3000/admin-login"
       ],
       "startServerCommand": "npm run build && npm run start",
-      "startServerReadyPattern": "ready on",
-      "numberOfRuns": 1
+      "startServerReadyPattern": "Ready in|started server on|ready - started server|ready on",
+      "startServerReadyTimeout": 120000,
+      "numberOfRuns": 1,
+      "settings": {
+        "chromeFlags": "--no-sandbox --disable-dev-shm-usage"
+      }
     },
     "assert": {
       "assertions": {
