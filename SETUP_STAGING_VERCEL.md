@@ -61,7 +61,7 @@ JWT_REFRESH_SECRET=tu_jwt_refresh_secret (mismo que producción)
 # Stripe (modo TEST)
 STRIPE_SECRET_KEY=sk_test_... (Stripe Test Mode)
 STRIPE_PUBLISHABLE_KEY=pk_test_...
-STRIPE_WEBHOOK_SECRET=whsec_... (crear nuevo webhook en Stripe para staging)
+STRIPE_WEBHOOK_SECRET=<STRIPE_SIGNING_SECRET_STAGING> (crear nuevo webhook en Stripe para staging)
 
 # Email (Zoho o tu proveedor)
 ZOHO_CLIENT_ID=...

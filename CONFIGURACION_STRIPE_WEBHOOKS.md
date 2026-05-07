@@ -30,7 +30,7 @@ Actualmente, Stripe puede estar enviando ambos tipos de eventos al mismo webhook
    - `customer.subscription.deleted`
 
 5. Haz clic en **"Add endpoint"**
-6. **Copia el "Signing secret"** (empieza con `whsec_...`)
+6. **Copia el "Signing secret"** (Stripe lo muestra como "Signing secret")
 7. Este será tu `STRIPE_WEBHOOK_SECRET` en Vercel
 
 ### Paso 3: Configurar Webhook para Reservas Directas
@@ -43,7 +43,7 @@ Actualmente, Stripe puede estar enviando ambos tipos de eventos al mismo webhook
    - `payment_intent.payment_failed`
 
 5. Haz clic en **"Add endpoint"**
-6. **Copia el "Signing secret"** (empieza con `whsec_...`)
+6. **Copia el "Signing secret"** (Stripe lo muestra como "Signing secret")
 7. Este será tu `STRIPE_WEBHOOK_DIRECT_RESERVATIONS_SECRET` en Vercel
 
 ### Paso 4: Configurar Variables de Entorno en Vercel
@@ -52,10 +52,10 @@ Ve a tu proyecto en Vercel → **Settings** → **Environment Variables** y agre
 
 ```bash
 # Webhook para onboarding de propietarios
-STRIPE_WEBHOOK_SECRET=whsec_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+STRIPE_WEBHOOK_SECRET=<STRIPE_SIGNING_SECRET_ONBOARDING>
 
 # Webhook para reservas directas (IMPORTANTE: diferente al anterior)
-STRIPE_WEBHOOK_DIRECT_RESERVATIONS_SECRET=whsec_yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+STRIPE_WEBHOOK_DIRECT_RESERVATIONS_SECRET=<STRIPE_SIGNING_SECRET_RESERVAS_DIRECTAS>
 ```
 
 ⚠️ **IMPORTANTE**: Cada webhook tiene su propio secreto único. NO uses el mismo secreto para ambos.
@@ -96,7 +96,7 @@ Después de hacer una reserva, revisa los logs en Vercel. Deberías ver:
 **Causa**: El secreto del webhook no coincide o está mal configurado.
 
 **Solución**:
-- Verifica que copiaste el secreto completo (empieza con `whsec_`)
+- Verifica que copiaste el secreto completo (Stripe lo muestra como "Signing secret")
 - Asegúrate de usar el secreto correcto para cada webhook
 - Verifica que las variables de entorno estén configuradas en Vercel
 
