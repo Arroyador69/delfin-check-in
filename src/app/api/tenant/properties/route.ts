@@ -6,8 +6,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
 import { CreatePropertyRequest, UpdatePropertyRequest, TenantProperty } from '@/lib/direct-reservations-types';
 import { getTenantById, getTenantId } from '@/lib/tenant';
-import type { Tenant } from '@/lib/tenant';
-import { getTenantPlanPresentation } from '@/lib/tenant-plan-billing';
 
 // =====================================================
 // GET: Obtener propiedades del tenant
@@ -45,34 +43,6 @@ export async function GET(req: NextRequest) {
         ? String(tenant.lodging_id)
         : String(tenantId);
 
-    // Limitar placeholders/slots a lo permitido por el plan para que "Propiedades" no permita crecer sin control.
-    // Importante: no bloquea operaciones del PMS/check-in; solo afecta al listado/configuración de reservas directas.
-    let allowedRoomIds: string[] | null = null;
-    try {
-      const tenantRow = await sql`
-        SELECT id, plan_id, plan_type, max_rooms, country_code, config
-        FROM tenants
-        WHERE id = ${tenantId}::uuid
-        LIMIT 1
-      `;
-      const fullTenant = tenantRow.rows?.[0] as Tenant | undefined;
-      if (fullTenant) {
-        const roomsRes = await sql`
-          SELECT id::text AS id
-          FROM "Room"
-          WHERE "lodgingId" = ${lodgingId}::text
-          ORDER BY id::text ASC
-        `;
-        const roomIdsAll = roomsRes.rows.map((r: any) => String(r.id));
-        const present = await getTenantPlanPresentation(fullTenant, roomIdsAll.length);
-        if (present.max_rooms_effective !== -1) {
-          allowedRoomIds = roomIdsAll.slice(0, Math.max(0, present.max_rooms_effective));
-        }
-      }
-    } catch (e) {
-      allowedRoomIds = null;
-    }
-
     try {
       await sql`
         WITH unmapped_props AS (
@@ -102,7 +72,6 @@ export async function GET(req: NextRequest) {
             ON prm.tenant_id = ${tenantId}::uuid AND prm.room_id = r.id
           WHERE r."lodgingId" = ${lodgingId}
             AND prm.room_id IS NULL
-            ${allowedRoomIds ? sql`AND r.id::text = ANY(${allowedRoomIds})` : sql``}
         )
         INSERT INTO property_room_map (tenant_id, property_id, room_id, created_at, updated_at)
         SELECT ${tenantId}::uuid, up.property_id, ur.room_id, NOW(), NOW()
@@ -114,7 +83,7 @@ export async function GET(req: NextRequest) {
     } catch (mappingError) {
       console.warn('⚠️ No se pudo hacer backfill de property_room_map:', mappingError);
     }
-    
+
     // Unir propiedades existentes con placeholders derivados de Room sin mapping
     const result = await sql`
       WITH mapped AS (
@@ -129,7 +98,6 @@ export async function GET(req: NextRequest) {
         LEFT JOIN property_room_map prm
           ON prm.tenant_id = tp.tenant_id::uuid AND prm.property_id = tp.id
         WHERE tp.tenant_id = ${tenantId}::uuid
-          ${allowedRoomIds ? sql`AND (prm.room_id IS NULL OR prm.room_id::text = ANY(${allowedRoomIds}))` : sql``}
       ),
       placeholders AS (
       SELECT 
@@ -159,7 +127,6 @@ export async function GET(req: NextRequest) {
           ON prm.tenant_id = ${tenantId}::uuid AND prm.room_id = r.id
         WHERE r."lodgingId" = ${lodgingId}
           AND prm.room_id IS NULL
-          ${allowedRoomIds ? sql`AND r.id::text = ANY(${allowedRoomIds})` : sql``}
           AND NOT EXISTS (
             SELECT 1 FROM tenant_properties tp
             WHERE tp.tenant_id = ${tenantId}::uuid
@@ -267,13 +234,14 @@ export async function POST(req: NextRequest) {
       );
     }
     
-    const data: CreatePropertyRequest & { room_id?: number } = await req.json();
+    const data: CreatePropertyRequest & { room_id?: string | number } = await req.json();
     
     console.log('🏠 Creando nueva propiedad para tenant:', tenantId);
     console.log('📋 Datos de la propiedad:', data);
     
     // Validaciones básicas: obligamos a indicar el slot (room_id)
-    if (!data.room_id) {
+    const roomId = data.room_id != null ? String(data.room_id).trim() : '';
+    if (!roomId) {
       return NextResponse.json(
         { success: false, error: 'room_id es obligatorio (slot a completar)' },
         { status: 400 }
@@ -310,7 +278,7 @@ export async function POST(req: NextRequest) {
       const roomExists = await sql`
         SELECT 1
         FROM "Room" r
-        WHERE r.id = ${data.room_id}
+        WHERE r.id::text = ${roomId}::text
           AND r."lodgingId" = ${lodgingId}::text
         LIMIT 1
       `;
@@ -327,7 +295,7 @@ export async function POST(req: NextRequest) {
     // Comprobar si el room_id ya está mapeado a una propiedad
     const mapping = await sql`
       SELECT prm.property_id FROM property_room_map prm
-      WHERE prm.tenant_id = ${tenantId}::uuid AND prm.room_id = ${data.room_id}
+      WHERE prm.tenant_id = ${tenantId}::uuid AND prm.room_id::text = ${roomId}::text
       LIMIT 1
     `;
 
@@ -385,7 +353,7 @@ export async function POST(req: NextRequest) {
       propertyId = created.rows[0].id;
       await sql`
         INSERT INTO property_room_map (tenant_id, property_id, room_id, created_at, updated_at)
-        VALUES (${tenantId}::uuid, ${propertyId}, ${data.room_id}, NOW(), NOW())
+        VALUES (${tenantId}::uuid, ${propertyId}, ${roomId}, NOW(), NOW())
         ON CONFLICT (tenant_id, property_id) DO UPDATE SET room_id = EXCLUDED.room_id, updated_at = NOW()
       `;
     }
