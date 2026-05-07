@@ -204,8 +204,8 @@ export default function PropertiesManagement() {
       const payload: Record<string, unknown> = {
         ...formData,
         photos: safePhotos,
-        // Si estamos creando (incluye placeholders), necesitamos room_id para asignar el slot
-        room_id: isUpdate ? undefined : (formData as any).room_id,
+        // Slot: requerido en creación; opcional en edición (para re-asignar)
+        room_id: (formData as any).room_id,
         amenities: (formData.amenities || []).map((a) =>
           AMENITY_KEYS.includes(a as typeof AMENITY_KEYS[number]) ? t(`amenitiesList.${a}`) : a
         )
@@ -284,9 +284,12 @@ export default function PropertiesManagement() {
       maximum_nights: property.maximum_nights,
       availability_rules: property.availability_rules || {}
     });
+    if (property.room_id) {
+      setFormData((prev: any) => ({ ...prev, room_id: String(property.room_id) }));
+    }
     // Si es placeholder (id null), permitir seleccionar el slot y guardar como creación.
     if (property.id == null && property.room_id) {
-      setFormData((prev: any) => ({ ...prev, room_id: property.room_id }));
+      setFormData((prev: any) => ({ ...prev, room_id: String(property.room_id) }));
     }
     setShowForm(true);
   };
@@ -647,28 +650,57 @@ export default function PropertiesManagement() {
                   </div>
 
                   {/* Selector de Slot (Room) */}
-                  {(!editingProperty || editingProperty.id == null) && (
+                  {(() => {
+                    const isUpdate = Boolean(editingProperty && editingProperty.id != null);
+                    const available = slots.filter((s) => s.is_placeholder);
+                    const canCreateNew = available.length > 0;
+                    const optionList = isUpdate ? slots : available;
+                    const selected = String((formData as any).room_id || '');
+                    return (
                     <div className="bg-white p-6 rounded-xl border border-blue-200 shadow-sm">
                       <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
                         <span className="text-xl sm:text-2xl" style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>🧩</span>
                         {t('form.selectSlot')}
                       </h3>
-                      <p className="text-sm text-gray-600 mb-3">{t('form.selectSlotDescription')}</p>
+                      <p className="text-sm text-gray-600 mb-3">
+                        {isUpdate
+                          ? 'Asigna esta propiedad a una habitación/apartamento (slot) de tu configuración.'
+                          : 'Solo puedes crear propiedades para slots disponibles (según tu plan y tu configuración de habitaciones).'}
+                      </p>
+                      {!isUpdate && !canCreateNew && (
+                        <div className="mb-3 p-3 rounded-lg border border-orange-200 bg-orange-50 text-orange-800 text-sm">
+                          Has configurado todos tus slots disponibles. Si necesitas más, añade habitaciones en Configuración (si tu plan lo permite).
+                        </div>
+                      )}
                       <select
-                        required
-                        value={(formData as any).room_id || ''}
-                        onChange={(e)=> setFormData({ ...formData, room_id: e.target.value })}
+                        required={!isUpdate}
+                        disabled={!isUpdate && !canCreateNew}
+                        value={selected}
+                        onChange={(e)=> setFormData({ ...formData, room_id: e.target.value } as any)}
                         className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                       >
                         <option value="" disabled>{t('form.selectSlotPlaceholder')}</option>
-                        {slots.map((s, idx) => (
-                          <option key={s.room_id || `slot-${idx}`} value={s.room_id}>
-                            {s.property_name || s.room_name} {s.property_id ? '' : t('form.slotNotConfigured')}
-                          </option>
-                        ))}
+                        {optionList.map((s, idx) => {
+                          const takenByOther =
+                            isUpdate &&
+                            s.property_id != null &&
+                            editingProperty?.id != null &&
+                            Number(s.property_id) !== Number(editingProperty.id);
+                          const label = `${s.room_name}${s.property_id ? ` · asignado a ${s.property_name || `#${s.property_id}`}` : ''}`;
+                          return (
+                            <option
+                              key={s.room_id || `slot-${idx}`}
+                              value={s.room_id}
+                              disabled={Boolean(takenByOther)}
+                            >
+                              {label}
+                            </option>
+                          );
+                        })}
                       </select>
                     </div>
-                  )}
+                    );
+                  })()}
 
                   {/* Precios por día (override) */}
                   {editingProperty?.id != null && (

@@ -413,7 +413,7 @@ export async function PUT(req: NextRequest) {
       );
     }
     
-    const data: UpdatePropertyRequest = await req.json();
+    const data: (UpdatePropertyRequest & { room_id?: string | number | null }) = await req.json();
     
     console.log('🏠 Actualizando propiedad ID:', propertyId, 'para tenant:', tenantId);
     
@@ -428,6 +428,56 @@ export async function PUT(req: NextRequest) {
         { success: false, error: 'Propiedad no encontrada' },
         { status: 404 }
       );
+    }
+
+    // Si viene room_id, actualizar mapping del slot (sin romper schema legacy donde Room.id es UUID/texto)
+    const rawRoomId = data?.room_id;
+    const roomId = rawRoomId == null ? '' : String(rawRoomId).trim();
+    if (roomId) {
+      const tenant = (await getTenantById(tenantId)) as ({ lodging_id?: string | null } & Record<string, unknown>) | null;
+      const lodgingId =
+        tenant?.lodging_id && String(tenant.lodging_id).trim() !== '' ? String(tenant.lodging_id) : String(tenantId);
+
+      // Validar que el slot existe y pertenece al lodging del tenant
+      try {
+        const roomExists = await sql`
+          SELECT 1
+          FROM "Room" r
+          WHERE r.id::text = ${roomId}::text
+            AND r."lodgingId" = ${lodgingId}::text
+          LIMIT 1
+        `;
+        if ((roomExists as any).rowCount <= 0) {
+          return NextResponse.json(
+            { success: false, error: 'El slot (room_id) no existe o no pertenece a este alojamiento' },
+            { status: 400 }
+          );
+        }
+      } catch (e) {
+        console.warn('⚠️ No se pudo validar room_id contra Room:', e);
+      }
+
+      // Evitar que dos propiedades usen el mismo slot
+      const slotTaken = await sql`
+        SELECT property_id
+        FROM property_room_map
+        WHERE tenant_id = ${tenantId}::uuid
+          AND room_id::text = ${roomId}::text
+        LIMIT 1
+      `;
+      if (slotTaken.rows.length > 0 && String(slotTaken.rows[0].property_id) !== String(propertyId)) {
+        return NextResponse.json(
+          { success: false, error: 'Ese slot ya está asignado a otra propiedad' },
+          { status: 409 }
+        );
+      }
+
+      await sql`
+        INSERT INTO property_room_map (tenant_id, property_id, room_id, created_at, updated_at)
+        VALUES (${tenantId}::uuid, ${propertyId}::int, ${roomId}, NOW(), NOW())
+        ON CONFLICT (tenant_id, property_id)
+        DO UPDATE SET room_id = EXCLUDED.room_id, updated_at = NOW()
+      `;
     }
     
     // Construir query de actualización dinámicamente
@@ -514,10 +564,11 @@ export async function PUT(req: NextRequest) {
       updateValues.push(data.is_active);
     }
     
+    // Si solo venía room_id, permitimos el update (mapping) sin tocar campos de la propiedad.
     if (updateFields.length === 0) {
       return NextResponse.json(
-        { success: false, error: 'No hay campos para actualizar' },
-        { status: 400 }
+        { success: true, message: 'Slot actualizado correctamente' },
+        { status: 200 }
       );
     }
     
