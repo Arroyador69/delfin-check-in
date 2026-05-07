@@ -151,6 +151,43 @@ export async function GET(req: NextRequest) {
           total_registrations: parseTenantStat(row.total_registrations),
         };
       }
+
+      // Fallbacks adicionales: hay instalaciones donde Room no se vincula por lodgingId.
+      if (stats.total_rooms === 0) {
+        try {
+          const r1 = await sql`
+            SELECT COUNT(DISTINCT r.id)::int AS c
+            FROM "Room" r
+            WHERE r.tenant_id = ${tenantId}::uuid
+          `;
+          const c1 = parseTenantStat(r1.rows[0]?.c);
+          if (c1 > 0) stats.total_rooms = c1;
+        } catch (_) {}
+      }
+      if (stats.total_rooms === 0) {
+        try {
+          const r2 = await sql`
+            SELECT COUNT(DISTINCT m.room_id)::int AS c
+            FROM property_room_map m
+            WHERE m.tenant_id = ${tenantId}::uuid
+          `;
+          const c2 = parseTenantStat(r2.rows[0]?.c);
+          if (c2 > 0) stats.total_rooms = c2;
+        } catch (_) {}
+      }
+      if (stats.total_rooms === 0) {
+        try {
+          const r3 = await sql`
+            SELECT COUNT(DISTINCT r.id)::int AS c
+            FROM "Room" r
+            INNER JOIN property_room_map m
+              ON m.tenant_id = ${tenantId}::uuid
+             AND m.room_id::text = r.id::text
+          `;
+          const c3 = parseTenantStat(r3.rows[0]?.c);
+          if (c3 > 0) stats.total_rooms = c3;
+        } catch (_) {}
+      }
     } catch (error) {
       console.log('⚠️ Error obteniendo estadísticas:', error);
       console.log('⚠️ Algunas tablas no existen aún, usando valores por defecto');
