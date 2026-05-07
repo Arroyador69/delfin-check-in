@@ -52,7 +52,7 @@ npm install
 4. **Crea archivo** `.env`:
 ```
 STRIPE_SECRET_KEY=sk_test_tu_clave_secreta_aqui
-STRIPE_WEBHOOK_SECRET=whsec_tu_webhook_secret_aqui
+STRIPE_WEBHOOK_SECRET=<STRIPE_SIGNING_SECRET>
 PORT=3000
 ```
 

@@ -56,7 +56,7 @@ delfincheckin_notif_bot
 ### 1.5 Guardar el TOKEN
 BotFather te dará un mensaje con el **TOKEN** del bot. Se verá así:
 ```
-7123456789:AAHdqTcvCH1vGEMyIrdq2bP8v5r3uL4sW7A
+<TU_TOKEN_DEL_BOTFATHER>
 ```
 
 **🔴 IMPORTANTE:** Guarda este TOKEN, lo necesitarás más adelante.
@@ -78,7 +78,7 @@ https://api.telegram.org/bot<TU_TOKEN>/getUpdates
 
 Ejemplo:
 ```
-https://api.telegram.org/bot7123456789:AAHdqTcvCH1vGEMyIrdq2bP8v5r3uL4sW7A/getUpdates
+https://api.telegram.org/bot<TU_TOKEN_DEL_BOTFATHER>/getUpdates
 ```
 
 2. Busca en la respuesta JSON algo como:
@@ -114,7 +114,7 @@ Agrega estas **3 variables nuevas**:
 
 #### Variable 1: TELEGRAM_WAITLIST_BOT_TOKEN
 - **Name:** `TELEGRAM_WAITLIST_BOT_TOKEN`
-- **Value:** El token que te dio BotFather (ej: `7123456789:AAHdqTcvCH1vGEMyIrdq2bP8v5r3uL4sW7A`)
+- **Value:** El token que te dio BotFather (ej: `<TU_TOKEN_DEL_BOTFATHER>`)
 - **Environments:** Marca **Production**, **Preview** y **Development**
 - Haz clic en **"Save"**
 
