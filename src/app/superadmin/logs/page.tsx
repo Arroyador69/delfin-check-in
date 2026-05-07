@@ -13,6 +13,8 @@ type GroupedItem = {
   count: number
   last_seen: string
   sample_id: string
+  is_resolved?: boolean
+  resolved_at?: string | null
 }
 
 export default function SuperadminLogsPage() {
@@ -22,6 +24,7 @@ export default function SuperadminLogsPage() {
   const [level, setLevel] = useState<Level>('all')
   const [hours, setHours] = useState<number>(24)
   const [q, setQ] = useState<string>('')
+  const [hideResolved, setHideResolved] = useState(true)
 
   const [items, setItems] = useState<GroupedItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -33,9 +36,10 @@ export default function SuperadminLogsPage() {
     sp.set('level', level)
     if (hours > 0) sp.set('hours', String(hours))
     if (q.trim()) sp.set('q', q.trim())
+    sp.set('hide_resolved', hideResolved ? '1' : '0')
     sp.set('limit', '200')
     return sp.toString()
-  }, [level, hours, q])
+  }, [level, hours, q, hideResolved])
 
   useEffect(() => {
     let cancelled = false
@@ -85,6 +89,25 @@ export default function SuperadminLogsPage() {
     }
     await navigator.clipboard.writeText(JSON.stringify(payload, null, 2))
     alert('Copiado al portapapeles (resumen JSON). Pégamelo en Cursor cuando quieras.')
+  }
+
+  const setResolved = async (signature: string, resolved: boolean) => {
+    try {
+      const res = await fetch('/api/superadmin/error-logs', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ signature, resolved }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data?.error || `Error ${res.status}`)
+      // refrescar lista
+      const r2 = await fetch(`/api/superadmin/error-logs?${queryString}`, { credentials: 'include' })
+      const d2 = await r2.json().catch(() => ({}))
+      if (r2.ok) setItems(Array.isArray(d2?.items) ? d2.items : [])
+    } catch (e: any) {
+      alert(e?.message || 'No se pudo actualizar el estado')
+    }
   }
 
   return (
@@ -153,6 +176,15 @@ export default function SuperadminLogsPage() {
             />
           </div>
 
+          <label className="flex items-center gap-2 text-sm text-gray-700 select-none">
+            <input
+              type="checkbox"
+              checked={hideResolved}
+              onChange={(e) => setHideResolved(e.target.checked)}
+            />
+            Ocultar resueltos
+          </label>
+
           <button
             type="button"
             onClick={copySummary}
@@ -184,6 +216,7 @@ export default function SuperadminLogsPage() {
                 <th className="text-left px-4 py-2">URL</th>
                 <th className="text-right px-4 py-2">Count</th>
                 <th className="text-left px-4 py-2">Último</th>
+                <th className="text-right px-4 py-2">Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -203,8 +236,18 @@ export default function SuperadminLogsPage() {
                     </span>
                   </td>
                   <td className="px-4 py-2">
-                    <div className="font-medium text-gray-900">{it.message}</div>
+                    <div className="flex items-center gap-2">
+                      <div className="font-medium text-gray-900">{it.message}</div>
+                      {it.is_resolved ? (
+                        <span className="text-[11px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-semibold">
+                          Resuelto
+                        </span>
+                      ) : null}
+                    </div>
                     {it.error_name ? <div className="text-xs text-gray-600">{it.error_name}</div> : null}
+                    {it.is_resolved && it.resolved_at ? (
+                      <div className="text-xs text-gray-500">Resuelto: {new Date(it.resolved_at).toLocaleString()}</div>
+                    ) : null}
                   </td>
                   <td className="px-4 py-2 text-gray-700">
                     {it.url ? (
@@ -217,11 +260,30 @@ export default function SuperadminLogsPage() {
                   </td>
                   <td className="px-4 py-2 text-right font-semibold">{it.count}</td>
                   <td className="px-4 py-2 text-gray-700">{new Date(it.last_seen).toLocaleString()}</td>
+                  <td className="px-4 py-2 text-right">
+                    {it.is_resolved ? (
+                      <button
+                        type="button"
+                        onClick={() => setResolved(it.signature, false)}
+                        className="px-3 py-1.5 rounded-md text-xs font-semibold border hover:bg-gray-50"
+                      >
+                        Deshacer
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setResolved(it.signature, true)}
+                        className="px-3 py-1.5 rounded-md text-xs font-semibold bg-emerald-600 text-white hover:bg-emerald-700"
+                      >
+                        Marcar resuelto
+                      </button>
+                    )}
+                  </td>
                 </tr>
               ))}
               {!loading && items.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-gray-500">
+                  <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
                     No hay entradas con estos filtros.
                   </td>
                 </tr>

@@ -42,6 +42,17 @@ export async function ensureErrorLogTable(): Promise<void> {
     );
   `
 
+  // Tabla para marcar firmas como "resueltas" (no borra histórico)
+  await sql`
+    CREATE TABLE IF NOT EXISTS error_log_resolutions (
+      signature CHAR(32) PRIMARY KEY,
+      resolved_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      resolved_by UUID,
+      note TEXT
+    );
+  `
+  await sql`CREATE INDEX IF NOT EXISTS idx_error_log_resolutions_at ON error_log_resolutions(resolved_at DESC);`
+
   // Índices para búsquedas rápidas
   await sql`
     CREATE INDEX IF NOT EXISTS idx_error_logs_level ON error_logs(level);

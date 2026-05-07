@@ -19,6 +19,7 @@ function parseBool(v: string | null): boolean {
  * - level=error|warning|info|all
  * - q=texto (busca en message/url/error_name/error_stack)
  * - hours=24 (últimas N horas)
+ * - hide_resolved=1 (default): oculta firmas marcadas como resueltas
  * - limit=100 (máx 500)
  * - offset=0 (solo cuando grouped=0)
  */
@@ -35,6 +36,7 @@ export async function GET(req: NextRequest) {
     const q = (searchParams.get('q') || '').trim();
     const hoursRaw = Number(searchParams.get('hours') || '');
     const hours = Number.isFinite(hoursRaw) && hoursRaw > 0 ? Math.min(24 * 30, hoursRaw) : null; // hasta 30 días
+    const hideResolved = !searchParams.has('hide_resolved') || parseBool(searchParams.get('hide_resolved'));
     const limit = clampInt(Number(searchParams.get('limit') || 100), 1, 500);
     const offset = clampInt(Number(searchParams.get('offset') || 0), 0, 50_000);
 
@@ -62,23 +64,39 @@ export async function GET(req: NextRequest) {
     if (grouped) {
       // Firma estable para agrupar: level + error_name + message + url
       const text = `
+        WITH base AS (
+          SELECT
+            md5(
+              level || '|' ||
+              COALESCE(error_name,'') || '|' ||
+              message || '|' ||
+              COALESCE(url,'')
+            ) AS signature,
+            level,
+            message,
+            COALESCE(error_name,'') AS error_name,
+            COALESCE(url,'') AS url,
+            created_at,
+            id
+          FROM error_logs
+          WHERE ${where.join(' AND ')}
+        )
         SELECT
-          md5(
-            level || '|' ||
-            COALESCE(error_name,'') || '|' ||
-            message || '|' ||
-            COALESCE(url,'')
-          ) AS signature,
-          level,
-          message,
-          COALESCE(error_name,'') AS error_name,
-          COALESCE(url,'') AS url,
+          b.signature,
+          b.level,
+          b.message,
+          b.error_name,
+          b.url,
           COUNT(*)::int AS count,
-          MAX(created_at) AS last_seen,
-          MIN(id) AS sample_id
-        FROM error_logs
-        WHERE ${where.join(' AND ')}
-        GROUP BY signature, level, message, error_name, url
+          MAX(b.created_at) AS last_seen,
+          MIN(b.id) AS sample_id,
+          (r.signature IS NOT NULL) AS is_resolved,
+          r.resolved_at
+        FROM base b
+        LEFT JOIN error_log_resolutions r
+          ON r.signature = b.signature
+        ${hideResolved ? 'WHERE r.signature IS NULL' : ''}
+        GROUP BY b.signature, b.level, b.message, b.error_name, b.url, r.signature, r.resolved_at
         ORDER BY last_seen DESC
         LIMIT ${limit}
       `;
@@ -96,6 +114,8 @@ export async function GET(req: NextRequest) {
           count: Number(r.count || 0),
           last_seen: r.last_seen?.toISOString?.() ?? String(r.last_seen),
           sample_id: r.sample_id,
+          is_resolved: Boolean(r.is_resolved),
+          resolved_at: r.resolved_at?.toISOString?.() ?? (r.resolved_at ? String(r.resolved_at) : null),
         })),
       });
     }
@@ -123,6 +143,48 @@ export async function GET(req: NextRequest) {
     });
   } catch (e: any) {
     console.error('[superadmin/error-logs]', e);
+    return NextResponse.json({ error: e?.message || 'Error interno' }, { status: 500 });
+  }
+}
+
+type ResolveBody = {
+  signature?: string;
+  resolved?: boolean; // default true
+  note?: string | null;
+};
+
+export async function POST(req: NextRequest) {
+  try {
+    const { error, payload } = await verifySuperAdmin(req);
+    if (error) return error;
+
+    await ensureErrorLogTable();
+
+    const body = (await req.json().catch(() => ({}))) as ResolveBody;
+    const signature = String(body?.signature || '').trim();
+    const resolved = body?.resolved !== false;
+    const note = body?.note != null ? String(body.note).slice(0, 500) : null;
+
+    if (!/^[a-f0-9]{32}$/i.test(signature)) {
+      return NextResponse.json({ error: 'signature inválida' }, { status: 400 });
+    }
+
+    const userId = (payload as any)?.userId || (payload as any)?.id || null;
+
+    if (resolved) {
+      await sql`
+        INSERT INTO error_log_resolutions (signature, resolved_at, resolved_by, note)
+        VALUES (${signature}, now(), ${userId || null}::uuid, ${note})
+        ON CONFLICT (signature)
+        DO UPDATE SET resolved_at = now(), resolved_by = EXCLUDED.resolved_by, note = EXCLUDED.note
+      `;
+    } else {
+      await sql`DELETE FROM error_log_resolutions WHERE signature = ${signature}`;
+    }
+
+    return NextResponse.json({ success: true, signature, resolved });
+  } catch (e: any) {
+    console.error('[superadmin/error-logs:POST]', e);
     return NextResponse.json({ error: e?.message || 'Error interno' }, { status: 500 });
   }
 }
