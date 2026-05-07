@@ -448,68 +448,8 @@ export default function HomePage() {
                       : t('roomUsage')}
                   </div>
                   <div className="text-base sm:text-lg font-bold text-gray-900">
-                    {tenant.stats?.rooms_used || 0}/{tenant.tenant?.max_rooms === -1 ? '∞' : (tenant.tenant?.max_rooms || 2)}
+                    {tenant.tenant?.max_rooms === -1 ? '∞' : (tenant.tenant?.max_rooms ?? 2)}
                   </div>
-                  {tenant.tenant?.max_rooms !== -1 && (
-                    <div className="w-24 sm:w-32 bg-gray-200 rounded-full h-2 mt-1">
-                      <div 
-                        className={`h-2 rounded-full transition-all duration-300 ${
-                          (tenant.limits?.rooms_usage_percentage || 0) >= 100 
-                            ? 'bg-red-600' 
-                            : (tenant.limits?.rooms_usage_percentage || 0) >= 80 
-                            ? 'bg-orange-500' 
-                            : 'bg-blue-600'
-                        }`}
-                        style={{ width: `${tenant.limits?.rooms_usage_percentage || 0}%` }}
-                      ></div>
-                    </div>
-                  )}
-                  {/* Mensajes informativos de límites */}
-                  {tenant.limits && tenant.tenant && tenant.tenant.max_rooms !== -1 && (
-                    <div className="mt-2">
-                      {tenant.limits.rooms_usage_percentage >= 100 ? (
-                        <div className="p-2 bg-red-50 border border-red-200 rounded-md">
-                          <p className="text-xs sm:text-sm text-red-800 font-medium">
-                            {t('limitReached', {
-                              used: tenant.stats?.rooms_used || 0,
-                              max: tenant.tenant.max_rooms
-                            })}
-                          </p>
-                          <p className="text-xs text-red-700 mt-1">
-                            {t('limitReachedAction')}{' '}
-                            <NextLink href={`/${locale}/upgrade-plan`} className="underline font-semibold">
-                              {t('upgradeLink')}
-                            </NextLink>.
-                          </p>
-                        </div>
-                      ) : tenant.limits.rooms_usage_percentage >= 80 ? (
-                        <div className="p-2 bg-orange-50 border border-orange-200 rounded-md">
-                          <p className="text-xs sm:text-sm text-orange-800">
-                            {t('nearLimit', {
-                              used: tenant.stats?.rooms_used || 0,
-                              max: tenant.tenant.max_rooms,
-                              percentage: tenant.limits.rooms_usage_percentage
-                            })}
-                          </p>
-                          <p className="text-xs text-orange-700 mt-1">
-                            {t('nearLimitRemaining', {
-                              remaining: tenant.stats?.rooms_remaining || 0
-                            })}{' '}
-                            <NextLink href={`/${locale}/upgrade-plan`} className="underline font-semibold">
-                              {t('nearLimitAction')}
-                            </NextLink>{' '}
-                            {t('nearLimitSuffix')}
-                          </p>
-                        </div>
-                      ) : tenant.stats?.rooms_remaining !== undefined && tenant.stats.rooms_remaining > 0 && (
-                        <p className="text-xs text-gray-600 mt-1">
-                          {t('unitsAvailableToAdd', {
-                            remaining: tenant.stats.rooms_remaining
-                          })}
-                        </p>
-                      )}
-                    </div>
-                  )}
                 </div>
                 {tenant.limits && !tenant.limits.can_add_rooms && (
                   <NextLink
@@ -770,15 +710,7 @@ export default function HomePage() {
             <div className="ic" style={{background:'#e0ecff'}}>🏠</div>
             <div>
               <div className="meta">{t('kpis.rooms')}</div>
-              <div className="value">{totalRooms}</div>
-              {tenant && (
-                <div className="text-xs text-gray-600 mt-1">
-                  {tenant.limits.rooms_remaining === -1 
-                    ? t('unlimited') 
-                    : t('available', { count: tenant.limits.rooms_remaining })
-                  }
-                </div>
-              )}
+              <div className="value">{tenant?.tenant?.max_rooms === -1 ? '∞' : (tenant?.tenant?.max_rooms ?? totalRooms)}</div>
             </div>
           </div>
 
