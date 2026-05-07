@@ -39,6 +39,10 @@ export async function POST(req: NextRequest) {
       await sql`ALTER TABLE tenant_properties ADD COLUMN IF NOT EXISTS included_guests INT DEFAULT 2`;
       await sql`ALTER TABLE tenant_properties ADD COLUMN IF NOT EXISTS extra_guest_fee DECIMAL(10,2) DEFAULT 0`;
     } catch (_) {}
+    // Hardening: permitir override de precio por día en property_availability
+    try {
+      await sql`ALTER TABLE property_availability ADD COLUMN IF NOT EXISTS price DECIMAL(10,2)`;
+    } catch (_) {}
     const data = await req.json();
     const {
       property_id,
@@ -193,7 +197,36 @@ export async function POST(req: NextRequest) {
     const extraGuestFee = parseFloat(String(property.extra_guest_fee || 0));
     const extraGuests = Math.max(0, Number(guests) - includedGuests);
     const extraGuestsAmount = extraGuests > 0 ? (extraGuestFee * extraGuests * nights) : 0;
-    const subtotal = (basePrice * nights) + cleaningFee + extraGuestsAmount;
+
+    // Precio por noche: si hay overrides por día (property_availability.price), sumamos por fecha.
+    // Mantiene compatibilidad: si no hay overrides, equivale a basePrice * nights.
+    let baseAmount = basePrice * nights;
+    try {
+      const daily = await sql`
+        WITH nights AS (
+          SELECT generate_series(${check_in_date}::date, (${check_out_date}::date - INTERVAL '1 day'), '1 day')::date AS d
+        )
+        SELECT
+          COALESCE(SUM(COALESCE(pa.price, ${basePrice}::decimal(10,2))), 0)::decimal(12,2) AS base_amount,
+          COUNT(*)::int AS night_count
+        FROM nights n
+        LEFT JOIN property_availability pa
+          ON pa.property_id = ${property_id}::int
+         AND pa.date = n.d
+      `;
+      const row = daily.rows?.[0] as any;
+      const computedNights = Number(row?.night_count ?? nights);
+      const computedBase = parseFloat(String(row?.base_amount ?? baseAmount));
+      if (Number.isFinite(computedNights) && computedNights > 0) {
+        // Si por alguna razón el conteo difiere, preferimos el server-side.
+        baseAmount = Number.isFinite(computedBase) && computedBase > 0 ? computedBase : baseAmount;
+      }
+    } catch (e) {
+      // Si la tabla no existe o falla, caemos a pricing legacy
+      baseAmount = basePrice * nights;
+    }
+
+    const subtotal = baseAmount + cleaningFee + extraGuestsAmount;
     const { getDirectReservationCommissionRate } = await import('@/lib/plan-pricing');
     const commissionRate = property.commission_rate != null
       ? parseFloat(String(property.commission_rate))
@@ -205,6 +238,7 @@ export async function POST(req: NextRequest) {
     const pricing = {
       nights,
       base_price: basePrice.toFixed(2),
+      base_amount: baseAmount.toFixed(2),
       cleaning_fee: cleaningFee.toFixed(2),
       included_guests: includedGuests,
       extra_guest_fee: extraGuestFee.toFixed(2),

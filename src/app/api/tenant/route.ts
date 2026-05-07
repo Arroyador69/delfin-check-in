@@ -118,16 +118,25 @@ export async function GET(req: NextRequest) {
     };
 
     try {
-      // Obtener lodging_id del tenant primero
+      // Obtener lodging_id del tenant primero (puede estar vacío o tener espacios en tenants legacy)
       const tenantLodgingResult = await sql`
         SELECT lodging_id FROM tenants WHERE id = ${tenantId}
       `;
-      
-      const lodgingId = tenantLodgingResult.rows[0]?.lodging_id || tenantId;
-      
+
+      const rawLodgingId = tenantLodgingResult.rows[0]?.lodging_id;
+      const lodgingId =
+        rawLodgingId != null && String(rawLodgingId).trim() !== '' ? String(rawLodgingId).trim() : String(tenantId);
+
+      // Conteo robusto de unidades: algunas BDs guardan Room.lodgingId=tenantId, otras usan tenants.lodging_id.
+      // Además, si lodging_id está mal poblado, no queremos que el dashboard muestre 0/x erróneo.
       const statsResult = await sql`
         SELECT 
-          (SELECT COUNT(*) FROM "Room" r WHERE r."lodgingId" = ${lodgingId}::text) as total_rooms,
+          (
+            SELECT COUNT(DISTINCT r.id)::int
+            FROM "Room" r
+            WHERE r."lodgingId"::text = ${tenantId}::text
+               OR r."lodgingId"::text = ${lodgingId}::text
+          ) as total_rooms,
           (SELECT COUNT(*) FROM reservations WHERE tenant_id = ${tenantId}::uuid) as total_reservations,
           (SELECT COUNT(*) FROM guests WHERE tenant_id = ${tenantId}::uuid) as total_guests,
           (SELECT COUNT(*) FROM guest_registrations WHERE tenant_id = ${tenantId}::uuid) as total_registrations
@@ -141,23 +150,6 @@ export async function GET(req: NextRequest) {
           total_guests: parseTenantStat(row.total_guests),
           total_registrations: parseTenantStat(row.total_registrations),
         };
-        // Si no hay lodging_id configurado, intentar contar usando tenant_id como fallback
-        if (stats.total_rooms === 0 && !tenantLodgingResult.rows[0]?.lodging_id) {
-          console.log(`⚠️ No se encontraron habitaciones usando lodging_id. Intentando con tenant_id...`);
-          const fallbackStats = await sql`
-            SELECT COUNT(*) as total_rooms
-            FROM "Room" r 
-            WHERE r."lodgingId" = ${tenantId}::text
-          `;
-          if (fallbackStats.rows.length > 0) {
-            const fr = fallbackStats.rows[0] as Record<string, unknown>;
-            const tr = parseTenantStat(fr.total_rooms);
-            if (tr > 0) {
-              stats.total_rooms = tr;
-              console.log(`✅ Encontradas ${stats.total_rooms} habitaciones usando tenant_id como fallback`);
-            }
-          }
-        }
       }
     } catch (error) {
       console.log('⚠️ Error obteniendo estadísticas:', error);

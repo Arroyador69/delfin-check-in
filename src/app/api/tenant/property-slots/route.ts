@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { sql } from '@vercel/postgres'
 import { getTenantId } from '@/lib/tenant'
+import type { Tenant } from '@/lib/tenant'
+import { getTenantPlanPresentation } from '@/lib/tenant-plan-billing'
 
 export async function GET(req: NextRequest) {
   try {
@@ -33,6 +35,29 @@ export async function GET(req: NextRequest) {
     `
     console.log('📦 [property-slots] Rooms encontrados:', (rooms as any).rowCount)
 
+    // Aplicar límite por plan: exponer solo los slots permitidos (evita configurar ilimitado desde "Propiedades")
+    let maxRoomsEffective: number = -1;
+    try {
+      const tenantRes = await sql`
+        SELECT id, plan_id, plan_type, max_rooms, country_code, config
+        FROM tenants
+        WHERE id = ${tenantId}::uuid
+        LIMIT 1
+      `;
+      const tenant = tenantRes.rows?.[0] as Tenant | undefined;
+      if (tenant) {
+        const roomsUsed = rooms.rows.length;
+        const present = await getTenantPlanPresentation(tenant, roomsUsed);
+        maxRoomsEffective = present.max_rooms_effective;
+      }
+    } catch (e) {
+      // Si falla, no bloqueamos: devolvemos todos los rooms (comportamiento legacy)
+      maxRoomsEffective = -1;
+    }
+
+    const cappedRooms =
+      maxRoomsEffective === -1 ? rooms.rows : rooms.rows.slice(0, Math.max(0, maxRoomsEffective));
+
     // Traer mappings existentes y sus propiedades
     const mappings = await sql`
       SELECT prm.room_id, prm.property_id, tp.property_name
@@ -48,7 +73,7 @@ export async function GET(req: NextRequest) {
       mapByRoom.set(String(r.room_id), { property_id: Number(r.property_id), property_name: r.property_name })
     }
 
-    const slots = rooms.rows.map(r => {
+    const slots = cappedRooms.map(r => {
       const key = String(r.room_id)
       const m = mapByRoom.get(key)
       return {
