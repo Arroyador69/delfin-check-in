@@ -8,6 +8,7 @@ import { CreatePropertyRequest, UpdatePropertyRequest, TenantProperty } from '@/
 import { getTenantById, getTenantId } from '@/lib/tenant';
 import type { Tenant } from '@/lib/tenant';
 import { getTenantPlanPresentation } from '@/lib/tenant-plan-billing';
+import { sqlTextArrayForAny } from '@/lib/pg-sql-params';
 
 // =====================================================
 // GET: Obtener propiedades del tenant
@@ -74,103 +75,197 @@ export async function GET(req: NextRequest) {
     }
 
     try {
-      await sql`
-        WITH unmapped_props AS (
-          SELECT
-            tp.id AS property_id,
-            lower(trim(tp.property_name)) AS norm_name,
-            ROW_NUMBER() OVER (
-              PARTITION BY lower(trim(tp.property_name))
-              ORDER BY tp.created_at ASC, tp.id ASC
-            ) AS rn
-          FROM tenant_properties tp
-          LEFT JOIN property_room_map prm
-            ON prm.tenant_id = tp.tenant_id::uuid AND prm.property_id = tp.id
-          WHERE tp.tenant_id = ${tenantId}::uuid
-            AND prm.property_id IS NULL
-        ),
-        unmapped_rooms AS (
-          SELECT
-            r.id AS room_id,
-            lower(trim(r.name)) AS norm_name,
-            ROW_NUMBER() OVER (
-              PARTITION BY lower(trim(r.name))
-              ORDER BY r.id ASC
-            ) AS rn
-          FROM "Room" r
-          LEFT JOIN property_room_map prm
-            ON prm.tenant_id = ${tenantId}::uuid AND prm.room_id = r.id
-          WHERE r."lodgingId" = ${lodgingId}
-            AND prm.room_id IS NULL
-            ${allowedRoomIds ? sql`AND r.id::text = ANY(${allowedRoomIds})` : sql``}
-        )
-        INSERT INTO property_room_map (tenant_id, property_id, room_id, created_at, updated_at)
-        SELECT ${tenantId}::uuid, up.property_id, ur.room_id, NOW(), NOW()
-        FROM unmapped_props up
-        JOIN unmapped_rooms ur
-          ON ur.norm_name = up.norm_name AND ur.rn = up.rn
-        ON CONFLICT (tenant_id, property_id) DO NOTHING
-      `;
+      if (allowedRoomIds && allowedRoomIds.length > 0) {
+        await sql`
+          WITH unmapped_props AS (
+            SELECT
+              tp.id AS property_id,
+              lower(trim(tp.property_name)) AS norm_name,
+              ROW_NUMBER() OVER (
+                PARTITION BY lower(trim(tp.property_name))
+                ORDER BY tp.created_at ASC, tp.id ASC
+              ) AS rn
+            FROM tenant_properties tp
+            LEFT JOIN property_room_map prm
+              ON prm.tenant_id = tp.tenant_id::uuid AND prm.property_id = tp.id
+            WHERE tp.tenant_id = ${tenantId}::uuid
+              AND prm.property_id IS NULL
+          ),
+          unmapped_rooms AS (
+            SELECT
+              r.id AS room_id,
+              lower(trim(r.name)) AS norm_name,
+              ROW_NUMBER() OVER (
+                PARTITION BY lower(trim(r.name))
+                ORDER BY r.id ASC
+              ) AS rn
+            FROM "Room" r
+            LEFT JOIN property_room_map prm
+              ON prm.tenant_id = ${tenantId}::uuid AND prm.room_id = r.id
+            WHERE r."lodgingId" = ${lodgingId}
+              AND prm.room_id IS NULL
+              AND r.id::text = ANY(${sqlTextArrayForAny(allowedRoomIds)})::text[]
+          )
+          INSERT INTO property_room_map (tenant_id, property_id, room_id, created_at, updated_at)
+          SELECT ${tenantId}::uuid, up.property_id, ur.room_id, NOW(), NOW()
+          FROM unmapped_props up
+          JOIN unmapped_rooms ur
+            ON ur.norm_name = up.norm_name AND ur.rn = up.rn
+          ON CONFLICT (tenant_id, property_id) DO NOTHING
+        `;
+      } else {
+        await sql`
+          WITH unmapped_props AS (
+            SELECT
+              tp.id AS property_id,
+              lower(trim(tp.property_name)) AS norm_name,
+              ROW_NUMBER() OVER (
+                PARTITION BY lower(trim(tp.property_name))
+                ORDER BY tp.created_at ASC, tp.id ASC
+              ) AS rn
+            FROM tenant_properties tp
+            LEFT JOIN property_room_map prm
+              ON prm.tenant_id = tp.tenant_id::uuid AND prm.property_id = tp.id
+            WHERE tp.tenant_id = ${tenantId}::uuid
+              AND prm.property_id IS NULL
+          ),
+          unmapped_rooms AS (
+            SELECT
+              r.id AS room_id,
+              lower(trim(r.name)) AS norm_name,
+              ROW_NUMBER() OVER (
+                PARTITION BY lower(trim(r.name))
+                ORDER BY r.id ASC
+              ) AS rn
+            FROM "Room" r
+            LEFT JOIN property_room_map prm
+              ON prm.tenant_id = ${tenantId}::uuid AND prm.room_id = r.id
+            WHERE r."lodgingId" = ${lodgingId}
+              AND prm.room_id IS NULL
+          )
+          INSERT INTO property_room_map (tenant_id, property_id, room_id, created_at, updated_at)
+          SELECT ${tenantId}::uuid, up.property_id, ur.room_id, NOW(), NOW()
+          FROM unmapped_props up
+          JOIN unmapped_rooms ur
+            ON ur.norm_name = up.norm_name AND ur.rn = up.rn
+          ON CONFLICT (tenant_id, property_id) DO NOTHING
+        `;
+      }
     } catch (mappingError) {
       console.warn('⚠️ No se pudo hacer backfill de property_room_map:', mappingError);
     }
-    
+
     // Unir propiedades existentes con placeholders derivados de Room sin mapping
-    const result = await sql`
-      WITH mapped AS (
-        SELECT 
-          tp.id, tp.tenant_id, tp.property_name, tp.description, tp.photos, tp.max_guests,
-          tp.bedrooms, tp.bathrooms, tp.amenities, tp.base_price, tp.cleaning_fee,
-          tp.security_deposit, tp.minimum_nights, tp.maximum_nights,
-          tp.availability_rules, tp.is_active, tp.created_at, tp.updated_at,
-          tp.google_review_url,
-          prm.room_id, FALSE AS is_placeholder
-        FROM tenant_properties tp
-        LEFT JOIN property_room_map prm
-          ON prm.tenant_id = tp.tenant_id::uuid AND prm.property_id = tp.id
-        WHERE tp.tenant_id = ${tenantId}::uuid
-          ${allowedRoomIds ? sql`AND (prm.room_id IS NULL OR prm.room_id::text = ANY(${allowedRoomIds}))` : sql``}
-      ),
-      placeholders AS (
-      SELECT 
-          NULL::int AS id,
-          ${tenantId}::uuid AS tenant_id,
-          r.name     AS property_name,
-          NULL::text AS description,
-          '[]'::jsonb AS photos,
-          2 AS max_guests,
-          1 AS bedrooms,
-          1 AS bathrooms,
-          '[]'::jsonb AS amenities,
-          50.00::decimal(10,2) AS base_price,
-          0.00::decimal(10,2) AS cleaning_fee,
-          0.00::decimal(10,2) AS security_deposit,
-          1 AS minimum_nights,
-          30 AS maximum_nights,
-          '{}'::jsonb AS availability_rules,
-          TRUE AS is_active,
-          NOW() AS created_at,
-          NOW() AS updated_at,
-          NULL::text AS google_review_url,
-          r.id AS room_id,
-          TRUE AS is_placeholder
-        FROM "Room" r
-        LEFT JOIN property_room_map prm
-          ON prm.tenant_id = ${tenantId}::uuid AND prm.room_id = r.id
-        WHERE r."lodgingId" = ${lodgingId}
-          AND prm.room_id IS NULL
-          ${allowedRoomIds ? sql`AND r.id::text = ANY(${allowedRoomIds})` : sql``}
-          AND NOT EXISTS (
-            SELECT 1 FROM tenant_properties tp
-            WHERE tp.tenant_id = ${tenantId}::uuid
-              AND lower(trim(tp.property_name)) = lower(trim(r.name))
-          )
-      )
-      SELECT * FROM mapped
-      UNION ALL
-      SELECT * FROM placeholders
-      ORDER BY created_at DESC
-    `;
+    const result =
+      allowedRoomIds && allowedRoomIds.length > 0
+        ? await sql`
+            WITH mapped AS (
+              SELECT 
+                tp.id, tp.tenant_id, tp.property_name, tp.description, tp.photos, tp.max_guests,
+                tp.bedrooms, tp.bathrooms, tp.amenities, tp.base_price, tp.cleaning_fee,
+                tp.security_deposit, tp.minimum_nights, tp.maximum_nights,
+                tp.availability_rules, tp.is_active, tp.created_at, tp.updated_at,
+                tp.google_review_url,
+                prm.room_id, FALSE AS is_placeholder
+              FROM tenant_properties tp
+              LEFT JOIN property_room_map prm
+                ON prm.tenant_id = tp.tenant_id::uuid AND prm.property_id = tp.id
+              WHERE tp.tenant_id = ${tenantId}::uuid
+                AND (prm.room_id IS NULL OR prm.room_id::text = ANY(${sqlTextArrayForAny(allowedRoomIds)})::text[])
+            ),
+            placeholders AS (
+            SELECT 
+                NULL::int AS id,
+                ${tenantId}::uuid AS tenant_id,
+                r.name     AS property_name,
+                NULL::text AS description,
+                '[]'::jsonb AS photos,
+                2 AS max_guests,
+                1 AS bedrooms,
+                1 AS bathrooms,
+                '[]'::jsonb AS amenities,
+                50.00::decimal(10,2) AS base_price,
+                0.00::decimal(10,2) AS cleaning_fee,
+                0.00::decimal(10,2) AS security_deposit,
+                1 AS minimum_nights,
+                30 AS maximum_nights,
+                '{}'::jsonb AS availability_rules,
+                TRUE AS is_active,
+                NOW() AS created_at,
+                NOW() AS updated_at,
+                NULL::text AS google_review_url,
+                r.id AS room_id,
+                TRUE AS is_placeholder
+              FROM "Room" r
+              LEFT JOIN property_room_map prm
+                ON prm.tenant_id = ${tenantId}::uuid AND prm.room_id = r.id
+              WHERE r."lodgingId" = ${lodgingId}
+                AND prm.room_id IS NULL
+                AND r.id::text = ANY(${sqlTextArrayForAny(allowedRoomIds)})::text[]
+                AND NOT EXISTS (
+                  SELECT 1 FROM tenant_properties tp
+                  WHERE tp.tenant_id = ${tenantId}::uuid
+                    AND lower(trim(tp.property_name)) = lower(trim(r.name))
+                )
+            )
+            SELECT * FROM mapped
+            UNION ALL
+            SELECT * FROM placeholders
+            ORDER BY created_at DESC
+          `
+        : await sql`
+            WITH mapped AS (
+              SELECT 
+                tp.id, tp.tenant_id, tp.property_name, tp.description, tp.photos, tp.max_guests,
+                tp.bedrooms, tp.bathrooms, tp.amenities, tp.base_price, tp.cleaning_fee,
+                tp.security_deposit, tp.minimum_nights, tp.maximum_nights,
+                tp.availability_rules, tp.is_active, tp.created_at, tp.updated_at,
+                tp.google_review_url,
+                prm.room_id, FALSE AS is_placeholder
+              FROM tenant_properties tp
+              LEFT JOIN property_room_map prm
+                ON prm.tenant_id = tp.tenant_id::uuid AND prm.property_id = tp.id
+              WHERE tp.tenant_id = ${tenantId}::uuid
+            ),
+            placeholders AS (
+            SELECT 
+                NULL::int AS id,
+                ${tenantId}::uuid AS tenant_id,
+                r.name     AS property_name,
+                NULL::text AS description,
+                '[]'::jsonb AS photos,
+                2 AS max_guests,
+                1 AS bedrooms,
+                1 AS bathrooms,
+                '[]'::jsonb AS amenities,
+                50.00::decimal(10,2) AS base_price,
+                0.00::decimal(10,2) AS cleaning_fee,
+                0.00::decimal(10,2) AS security_deposit,
+                1 AS minimum_nights,
+                30 AS maximum_nights,
+                '{}'::jsonb AS availability_rules,
+                TRUE AS is_active,
+                NOW() AS created_at,
+                NOW() AS updated_at,
+                NULL::text AS google_review_url,
+                r.id AS room_id,
+                TRUE AS is_placeholder
+              FROM "Room" r
+              LEFT JOIN property_room_map prm
+                ON prm.tenant_id = ${tenantId}::uuid AND prm.room_id = r.id
+              WHERE r."lodgingId" = ${lodgingId}
+                AND prm.room_id IS NULL
+                AND NOT EXISTS (
+                  SELECT 1 FROM tenant_properties tp
+                  WHERE tp.tenant_id = ${tenantId}::uuid
+                    AND lower(trim(tp.property_name)) = lower(trim(r.name))
+                )
+            )
+            SELECT * FROM mapped
+            UNION ALL
+            SELECT * FROM placeholders
+            ORDER BY created_at DESC
+          `;
     
     const properties: any[] = result.rows.map(row => ({
       id: row.id,
