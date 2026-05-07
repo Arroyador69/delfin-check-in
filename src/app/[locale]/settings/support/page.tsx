@@ -40,6 +40,26 @@ export default function SupportTicketsPage() {
   const [detailTicket, setDetailTicket] = useState<any | null>(null);
   const [detailMessages, setDetailMessages] = useState<any[]>([]);
 
+  const markSupportReplyNotifsRead = async (ticketId: string) => {
+    try {
+      const r = await fetch('/api/tenant/notifications?type=support_reply', { credentials: 'include' });
+      const d = await r.json();
+      const items = Array.isArray(d?.items) ? (d.items as any[]) : [];
+      const ids = items
+        .filter((n) => typeof n?.id === 'string' && String(n?.link || '').includes(`ticket=${ticketId}`))
+        .map((n) => String(n.id));
+      if (ids.length === 0) return;
+      await fetch('/api/tenant/notifications', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids }),
+      });
+    } catch {
+      // silencioso
+    }
+  };
+
   const openDetail = async (id: string) => {
     setDetailOpen(true);
     setDetailLoading(true);
@@ -51,6 +71,8 @@ export default function SupportTicketsPage() {
       if (data?.success) {
         setDetailTicket(data.ticket);
         setDetailMessages(Array.isArray(data.messages) ? data.messages : []);
+        // Si entras desde la campana, marcamos la notificación como leída
+        markSupportReplyNotifsRead(id);
       }
     } catch {
       /* silencioso */

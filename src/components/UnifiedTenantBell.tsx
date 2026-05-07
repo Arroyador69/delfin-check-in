@@ -64,6 +64,20 @@ export default function UnifiedTenantBell() {
     loadNotifs();
   }, [loadPending, loadNotifs]);
 
+  const normalizeTenantLink = useCallback(
+    (raw: string) => {
+      const link = String(raw || '').trim();
+      if (!link.startsWith('/')) return '/settings/support';
+      // Si ya viene con /es/... o /en/... no tocar
+      const parts = link.split('/').filter(Boolean);
+      const first = parts[0];
+      if (first && first.length === 2) return link;
+      // En tenant app siempre navegamos con prefijo de locale
+      return `/${locale}${link}`;
+    },
+    [locale]
+  );
+
   const markRead = useCallback(
     async (ids: string[]) => {
       if (!ids.length) return;
@@ -86,6 +100,14 @@ export default function UnifiedTenantBell() {
   useEffect(() => {
     loadAll();
   }, [loadAll, pathname]);
+
+  // Polling suave: si llega una respuesta de soporte sin navegar, que aparezca igualmente.
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      loadAll();
+    }, 60_000);
+    return () => window.clearInterval(id);
+  }, [loadAll]);
 
   useEffect(() => {
     if (!open) return;
@@ -204,9 +226,9 @@ export default function UnifiedTenantBell() {
                         n.is_read ? 'bg-white' : 'bg-amber-50/30'
                       }`}
                       onClick={() => {
-                        const link = n.link || '/settings/support';
+                        const link = normalizeTenantLink(n.link || '/settings/support');
                         markRead([n.id]);
-                        router.push(link.startsWith('/') ? link : '/settings/support');
+                        router.push(link);
                         setOpen(false);
                       }}
                     >

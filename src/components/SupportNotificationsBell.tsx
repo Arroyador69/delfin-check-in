@@ -4,6 +4,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { Bell } from 'lucide-react';
 import { useClientTranslations } from '@/hooks/useClientTranslations';
+import { getCurrentLocale } from '@/hooks/useClientTranslations';
+import { type Locale as AppLocale } from '@/i18n/config';
 
 type NotificationItem = {
   id: string;
@@ -19,10 +21,23 @@ export default function SupportNotificationsBell() {
   const pathname = usePathname();
   const router = useRouter();
   const t = useClientTranslations('navigation');
+  const locale = getCurrentLocale() as AppLocale;
   const [count, setCount] = useState(0);
   const [items, setItems] = useState<NotificationItem[]>([]);
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
+
+  const normalizeTenantLink = useCallback(
+    (raw: string) => {
+      const link = String(raw || '').trim();
+      if (!link.startsWith('/')) return '/settings/support';
+      const parts = link.split('/').filter(Boolean);
+      const first = parts[0];
+      if (first && first.length === 2) return link;
+      return `/${locale}${link}`;
+    },
+    [locale]
+  );
 
   const load = useCallback(() => {
     // Cargamos notificaciones generales (soporte + actualizaciones)
@@ -57,6 +72,13 @@ export default function SupportNotificationsBell() {
   useEffect(() => {
     load();
   }, [load, pathname]);
+
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      load();
+    }, 60_000);
+    return () => window.clearInterval(id);
+  }, [load]);
 
   useEffect(() => {
     if (!open) return;
@@ -132,9 +154,9 @@ export default function SupportNotificationsBell() {
                         n.is_read ? 'bg-white' : 'bg-amber-50/40'
                       }`}
                       onClick={() => {
-                        const link = n.link || '/settings/support';
+                        const link = normalizeTenantLink(n.link || '/settings/support');
                         markRead([n.id]);
-                        router.push(link.startsWith('/') ? link : '/settings/support');
+                        router.push(link);
                         setOpen(false);
                       }}
                     >
