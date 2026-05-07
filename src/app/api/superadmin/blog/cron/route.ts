@@ -674,29 +674,38 @@ async function publishToGithub(slug: string): Promise<string> {
   });
   const filePath = `articulos/${article.slug}.html`;
 
-  let sha: string | undefined;
+  const contentBase64 = Buffer.from(html, 'utf-8').toString('base64');
+  // Evitar 404 ruidoso: primero intentamos crear sin leer sha.
+  // Si ya existe, GitHub devuelve 409 y entonces hacemos update con sha.
   try {
+    await octokit.repos.createOrUpdateFileContents({
+      owner: GITHUB_OWNER,
+      repo: GITHUB_REPO,
+      path: filePath,
+      message: `Publicar artículo: ${article.title}`,
+      content: contentBase64,
+      branch: GITHUB_BRANCH,
+    });
+  } catch (e: any) {
+    if (e?.status !== 409) throw e;
     const { data } = await octokit.repos.getContent({
       owner: GITHUB_OWNER,
       repo: GITHUB_REPO,
       path: filePath,
       ref: GITHUB_BRANCH,
     });
-    if (!Array.isArray(data) && (data as any).sha) sha = (data as any).sha;
-  } catch (e: any) {
-    if (e.status !== 404) throw e;
+    const sha = !Array.isArray(data) && (data as any).sha ? String((data as any).sha) : undefined;
+    if (!sha) throw new Error('No se pudo obtener sha del fichero existente en GitHub');
+    await octokit.repos.createOrUpdateFileContents({
+      owner: GITHUB_OWNER,
+      repo: GITHUB_REPO,
+      path: filePath,
+      message: `Actualizar artículo: ${article.title}`,
+      content: contentBase64,
+      branch: GITHUB_BRANCH,
+      sha,
+    });
   }
-
-  const contentBase64 = Buffer.from(html, 'utf-8').toString('base64');
-  await octokit.repos.createOrUpdateFileContents({
-    owner: GITHUB_OWNER,
-    repo: GITHUB_REPO,
-    path: filePath,
-    message: `Publicar artículo: ${article.title}`,
-    content: contentBase64,
-    branch: GITHUB_BRANCH,
-    ...(sha ? { sha } : {}),
-  });
 
   return `https://delfincheckin.com/articulos/${article.slug}.html`;
 }
