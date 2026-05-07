@@ -188,6 +188,22 @@ export async function GET(req: NextRequest) {
           if (c3 > 0) stats.total_rooms = c3;
         } catch (_) {}
       }
+
+      // Último recurso: en instalaciones donde el modelo Room no está bien ligado,
+      // contamos unidades por ids de room usados en reservas (operacional).
+      if (stats.total_rooms === 0) {
+        try {
+          const r4 = await sql`
+            SELECT COUNT(DISTINCT r.room_id)::int AS c
+            FROM reservations r
+            WHERE r.tenant_id = ${tenantId}::uuid
+              AND r.room_id IS NOT NULL
+              AND BTRIM(r.room_id::text) <> ''
+          `;
+          const c4 = parseTenantStat(r4.rows[0]?.c);
+          if (c4 > 0) stats.total_rooms = c4;
+        } catch (_) {}
+      }
     } catch (error) {
       console.log('⚠️ Error obteniendo estadísticas:', error);
       console.log('⚠️ Algunas tablas no existen aún, usando valores por defecto');

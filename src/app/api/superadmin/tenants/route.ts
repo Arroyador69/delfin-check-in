@@ -115,6 +115,7 @@ export async function GET(req: NextRequest) {
     const tenantsWithEffectiveLimits = await Promise.all(
       tenantsResult.rows.map(async (row) => {
         const tenant = row as Tenant
+        // getRoomsForTenant ya incluye todos los fallbacks (incluido reservations.room_id)
         const currentRooms = (await getRoomsForTenant(tenant.id)).length
         const presentation = await getTenantPlanPresentation(
           {
