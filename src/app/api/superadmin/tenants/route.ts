@@ -115,24 +115,8 @@ export async function GET(req: NextRequest) {
     const tenantsWithEffectiveLimits = await Promise.all(
       tenantsResult.rows.map(async (row) => {
         const tenant = row as Tenant
-        let currentRooms = (await getRoomsForTenant(tenant.id)).length
-        // Consistencia con dashboard: si Room/property_room_map no están bien ligados,
-        // usamos el último recurso operativo: unidades distintas usadas en reservas.
-        if (currentRooms === 0) {
-          try {
-            const r = await sql`
-              SELECT COUNT(DISTINCT r.room_id)::int AS c
-              FROM reservations r
-              WHERE r.tenant_id = ${tenant.id}::uuid
-                AND r.room_id IS NOT NULL
-                AND BTRIM(r.room_id::text) <> ''
-            `
-            const n = Number((r.rows?.[0] as any)?.c ?? 0)
-            if (Number.isFinite(n) && n > 0) currentRooms = n
-          } catch {
-            // silencioso: si no existe reservations en alguna instalación
-          }
-        }
+        // getRoomsForTenant ya incluye todos los fallbacks (incluido reservations.room_id)
+        const currentRooms = (await getRoomsForTenant(tenant.id)).length
         const presentation = await getTenantPlanPresentation(
           {
             ...tenant,

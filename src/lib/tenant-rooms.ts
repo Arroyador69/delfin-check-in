@@ -72,6 +72,23 @@ export async function getRoomsForTenant(tenantId: string): Promise<Array<{ id: s
           ORDER BY r.id::text ASC
         `,
       },
+      {
+        // Último recurso: instalaciones legacy donde solo existe el vínculo operativo
+        // en reservations.room_id (Room/lodging/property_room_map pueden estar desalineados).
+        label: 'reservations_room_id',
+        run: () => sql`
+          SELECT DISTINCT
+            COALESCE(rm.id::text, r.room_id::text) AS id,
+            COALESCE(NULLIF(BTRIM(rm.name), ''), r.room_id::text) AS name
+          FROM reservations r
+          LEFT JOIN "Room" rm
+            ON rm.id::text = r.room_id::text
+          WHERE r.tenant_id = ${tenantId}::uuid
+            AND r.room_id IS NOT NULL
+            AND BTRIM(r.room_id::text) <> ''
+          ORDER BY COALESCE(rm.id::text, r.room_id::text) ASC
+        `,
+      },
     ];
 
     if (await hasRoomTenantIdColumn()) {
@@ -96,10 +113,11 @@ export async function getRoomsForTenant(tenantId: string): Promise<Array<{ id: s
         }
       } catch (e: unknown) {
         const code = typeof e === 'object' && e !== null && 'code' in e ? String((e as { code?: string }).code) : ''
-        const missingColumn =
-          code === '42703' ||
+        const missingSchemaPiece =
+          code === '42703' || // undefined_column
+          code === '42P01' || // undefined_table
           /column .* does not exist/i.test(e instanceof Error ? e.message : String(e))
-        if (!missingColumn) {
+        if (!missingSchemaPiece) {
           console.warn(`⚠️ [getRoomsForTenant] Fallback "${label}" no aplicable:`, e);
         }
       }
