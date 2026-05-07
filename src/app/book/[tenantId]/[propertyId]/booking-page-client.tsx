@@ -405,6 +405,7 @@ export default function BookingPageClient({ params }: BookingPageClientProps) {
     extra_guests?: number;
     extra_guest_fee?: number;
     extra_guests_amount?: number;
+    base_amount?: number | string;
     reservation_code?: string;
   } | null>(null);
   const [blockedDates, setBlockedDates] = useState<Set<string>>(new Set());
@@ -591,7 +592,13 @@ export default function BookingPageClient({ params }: BookingPageClientProps) {
                         })}
                       </span>
                       <span>
-                        {((pricing.nights ?? 0) * Number(property.base_price)).toFixed(2)}€
+                        {(() => {
+                          const raw = (pricing as any).base_amount;
+                          const n = typeof raw === 'string' ? parseFloat(raw) : Number(raw);
+                          if (Number.isFinite(n) && n > 0) return n.toFixed(2);
+                          return ((pricing.nights ?? 0) * Number(property.base_price)).toFixed(2);
+                        })()}
+                        €
                       </span>
                     </div>
                     {pricing.extra_guests && Number(pricing.extra_guests) > 0 && (
