@@ -12,6 +12,7 @@ export default function PropertiesManagement() {
   type PropertyItem = Omit<TenantProperty, 'id'> & {
     id: number | null;
     room_id?: string | null;
+    room_name?: string | null;
     is_placeholder?: boolean;
   };
   const [properties, setProperties] = useState<PropertyItem[]>([]);
@@ -459,6 +460,15 @@ export default function PropertiesManagement() {
                   <h3 className="text-xl font-semibold text-gray-900 mb-2">
                     {property.property_name}
                   </h3>
+
+                  {property.room_name && (
+                    <p className="text-xs text-gray-500 mb-3">
+                      Slot:{' '}
+                      <span className="font-medium text-gray-700">
+                        {property.room_name}
+                      </span>
+                    </p>
+                  )}
                   
                   {property.description && (
                     <p className="text-gray-600 text-sm mb-4 line-clamp-2">

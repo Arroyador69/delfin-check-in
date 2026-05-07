@@ -84,7 +84,8 @@ export async function GET(req: NextRequest) {
       console.warn('⚠️ No se pudo hacer backfill de property_room_map:', mappingError);
     }
 
-    // Unir propiedades existentes con placeholders derivados de Room sin mapping
+    // Unir propiedades existentes con placeholders derivados de Room sin mapping.
+    // Además, devolvemos room_name para que la UI muestre el slot de forma clara (no solo el nombre de la propiedad).
     const result = await sql`
       WITH mapped AS (
         SELECT 
@@ -93,10 +94,15 @@ export async function GET(req: NextRequest) {
           tp.security_deposit, tp.minimum_nights, tp.maximum_nights,
           tp.availability_rules, tp.is_active, tp.created_at, tp.updated_at,
           tp.google_review_url,
-          prm.room_id, FALSE AS is_placeholder
+          prm.room_id,
+          r.name AS room_name,
+          FALSE AS is_placeholder
         FROM tenant_properties tp
         LEFT JOIN property_room_map prm
           ON prm.tenant_id = tp.tenant_id::uuid AND prm.property_id = tp.id
+        LEFT JOIN "Room" r
+          ON r."lodgingId" = ${lodgingId}::text
+         AND r.id::text = prm.room_id::text
         WHERE tp.tenant_id = ${tenantId}::uuid
       ),
       placeholders AS (
@@ -121,10 +127,11 @@ export async function GET(req: NextRequest) {
           NOW() AS updated_at,
           NULL::text AS google_review_url,
           r.id AS room_id,
+          r.name AS room_name,
           TRUE AS is_placeholder
         FROM "Room" r
         LEFT JOIN property_room_map prm
-          ON prm.tenant_id = ${tenantId}::uuid AND prm.room_id = r.id
+          ON prm.tenant_id = ${tenantId}::uuid AND prm.room_id::text = r.id::text
         WHERE r."lodgingId" = ${lodgingId}
           AND prm.room_id IS NULL
           AND NOT EXISTS (
@@ -162,6 +169,7 @@ export async function GET(req: NextRequest) {
       updated_at: row.updated_at,
       google_review_url: row.google_review_url || '',
       room_id: row.room_id || null,
+      room_name: row.room_name || null,
       is_placeholder: row.is_placeholder || false
     }));
 
