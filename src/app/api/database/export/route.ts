@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
-import { verifyToken } from '@/lib/auth';
+import { extractBearerToken, verifyToken } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -8,7 +8,9 @@ export const revalidate = 0;
 export async function GET(request: NextRequest) {
   try {
     // ⚠️ SEGURIDAD: Verificar autenticación y obtener tenant_id
-    const authToken = request.cookies.get('auth_token')?.value;
+    const cookieToken = request.cookies.get('auth_token')?.value;
+    const headerToken = extractBearerToken(request.headers.get('authorization'));
+    const authToken = cookieToken || headerToken;
     
     if (!authToken) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
