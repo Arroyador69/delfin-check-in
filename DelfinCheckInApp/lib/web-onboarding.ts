@@ -9,11 +9,21 @@ export function getWebOnboardingUrl(appLocale: string): string {
   return `${base}/${loc}/onboarding`;
 }
 
-/** Página pública de planes → Polar (sin waitlist; cumplimiento tiendas). */
+/**
+ * Página pública de planes (para usuarios que aún no tienen cuenta).
+ *
+ * - Preferimos un origen público/estático (repo landing) para no acoplarlo al admin.
+ * - Fallback: ruta legacy en el admin si no está configurada.
+ */
 export function getWebSubscribePlansUrl(appLocale: string): string {
-  const base = getPublicApiOrigin();
+  const configured = process.env.EXPO_PUBLIC_PUBLIC_PLANS_URL;
+  const base = configured ? String(configured).replace(/\/$/, '') : getPublicApiOrigin();
   const loc = WEB_LOCALES.has(appLocale) ? appLocale : 'es';
-  return `${base}/${loc}/subscribe?source=mobile_app`;
+  // Si estamos en el fallback del admin, mantenemos el path legacy.
+  if (!configured) {
+    return `${base}/${loc}/subscribe?source=mobile_app`;
+  }
+  return `${base}/${loc}/planes?source=mobile_app`;
 }
 
 /** Alineado con `tenants.onboarding_status` y gating del middleware web. */
