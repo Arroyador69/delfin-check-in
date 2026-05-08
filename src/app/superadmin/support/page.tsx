@@ -26,6 +26,8 @@ type TicketRow = {
   created_at: string;
   updated_at: string;
   superadmin_notes: string | null;
+  last_support_reply_is_read?: boolean | null;
+  last_support_reply_read_at?: string | null;
 };
 
 type TicketDetail = TicketRow & { body: string };
@@ -224,6 +226,7 @@ export default function SuperadminSupportPage() {
                   <th className="px-4 py-3 font-medium">{t('colCategory')}</th>
                   <th className="px-4 py-3 font-medium">{t('colStatus')}</th>
                   <th className="px-4 py-3 font-medium">{t('colDate')}</th>
+                  <th className="px-4 py-3 font-medium">Leído</th>
                   <th className="px-4 py-3 w-10" />
                 </tr>
               </thead>
@@ -248,6 +251,24 @@ export default function SuperadminSupportPage() {
                     </td>
                     <td className="px-4 py-3 text-slate-500 whitespace-nowrap">
                       {new Date(tk.created_at).toLocaleString(dateLocale)}
+                    </td>
+                    <td className="px-4 py-3">
+                      {tk.last_support_reply_is_read ? (
+                        <span className="inline-flex items-center rounded-full bg-emerald-50 px-2 py-1 text-xs font-bold text-emerald-700">
+                          Sí
+                        </span>
+                      ) : tk.last_support_reply_is_read === false ? (
+                        <span className="inline-flex items-center rounded-full bg-amber-50 px-2 py-1 text-xs font-bold text-amber-800">
+                          No
+                        </span>
+                      ) : (
+                        <span className="text-xs text-slate-400">—</span>
+                      )}
+                      {tk.last_support_reply_read_at ? (
+                        <div className="mt-1 text-[11px] text-slate-500 whitespace-nowrap">
+                          {new Date(tk.last_support_reply_read_at).toLocaleString(dateLocale)}
+                        </div>
+                      ) : null}
                     </td>
                     <td className="px-4 py-3">
                       <button

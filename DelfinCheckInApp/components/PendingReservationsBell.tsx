@@ -34,15 +34,25 @@ export default function PendingReservationsBell({
     refetchInterval: 30000,
   });
 
+  const { data: tenantNotifs } = useQuery({
+    queryKey: ['tenant-notifications-unread'],
+    queryFn: async () => {
+      const response = await api.get('/api/tenant/notifications');
+      return response.data as { unreadCount?: number };
+    },
+    refetchInterval: 30000,
+  });
+
   const pendingReservations = typeof data?.count === 'number' ? data.count : 0;
   const pendingMir = typeof mirPending?.missing === 'number' ? mirPending.missing : 0;
-  const total = pendingReservations + pendingMir;
+  const unreadNotifs = typeof tenantNotifs?.unreadCount === 'number' ? tenantNotifs.unreadCount : 0;
+  const total = pendingReservations + pendingMir + unreadNotifs;
   const label = total > 9 ? '9+' : String(total);
 
   return (
     <Pressable
       onPress={() => {
-        if (pendingReservations > 0 && pendingMir > 0) {
+        if (pendingReservations > 0 && pendingMir > 0 && unreadNotifs > 0) {
           Alert.alert(t('mobile.notifications.title'), t('mobile.notifications.choose'), [
             {
               text: t('mobile.notifications.pendingReservations'),
@@ -56,12 +66,20 @@ export default function PendingReservationsBell({
               text: t('mobile.notifications.pendingMirConfig'),
               onPress: () => router.push('/(app)/settings/mir' as any),
             },
+            {
+              text: t('mobile.notifications.otherNotifications'),
+              onPress: () => router.push('/(app)/notifications' as any),
+            },
             { text: t('common.cancel'), style: 'cancel' },
           ]);
           return;
         }
-        if (pendingMir > 0 && pendingReservations === 0) {
+        if (pendingMir > 0 && pendingReservations === 0 && unreadNotifs === 0) {
           router.push('/(app)/settings/mir' as any);
+          return;
+        }
+        if (unreadNotifs > 0 && pendingReservations === 0 && pendingMir === 0) {
+          router.push('/(app)/notifications' as any);
           return;
         }
         router.push({
