@@ -5,6 +5,28 @@ import { logError } from '@/lib/error-logger';
 import { getTenantById, hasLegalModuleAccess } from '@/lib/tenant';
 import { insertMirComunicacion } from '@/lib/mir-db';
 
+async function ensureTenantNotificationsSchema() {
+  try {
+    await sql`
+      CREATE TABLE IF NOT EXISTS tenant_notifications (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+        type VARCHAR(48) NOT NULL DEFAULT 'generic',
+        title TEXT NOT NULL,
+        body TEXT,
+        link TEXT,
+        is_read BOOLEAN NOT NULL DEFAULT FALSE,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        read_at TIMESTAMPTZ
+      )
+    `;
+    await sql`
+      CREATE INDEX IF NOT EXISTS idx_tenant_notifications_tenant_unread
+      ON tenant_notifications(tenant_id, is_read, created_at DESC)
+    `;
+  } catch {}
+}
+
 // Configuración CORS robusta - Fix definitivo
 const ALLOWED_ORIGINS = new Set([
   'https://form.delfincheckin.com',
@@ -251,6 +273,27 @@ export async function POST(req: NextRequest) {
     });
 
     console.log('✅ Registro guardado en DB con ID:', id);
+
+    // Notificación para el tenant: nuevo registro de viajeros (campana web + app móvil)
+    try {
+      if (tenantId && tenantId !== 'default') {
+        await ensureTenantNotificationsSchema();
+        const persona0 = comunicacion?.personas?.[0];
+        const nombre = persona0 ? `${persona0.nombre || ''} ${persona0.apellido1 || ''}`.trim() : '';
+        await sql`
+          INSERT INTO tenant_notifications (tenant_id, type, title, body, link)
+          VALUES (
+            ${tenantId}::uuid,
+            'guest_registration',
+            ${'Nuevo registro de viajeros'},
+            ${nombre || null},
+            ${'/guest-registrations-dashboard'}
+          )
+        `;
+      }
+    } catch {
+      // best-effort
+    }
 
     // Solo planes con módulo legal (FREE+LEGAL, PRO) envían automáticamente al MIR. Plan básico solo guarda y puede descargar XML.
     const countryCodeISO = parsed.data.comunicaciones[0]?.personas[0]?.direccion?.pais

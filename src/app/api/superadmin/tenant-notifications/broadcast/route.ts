@@ -76,9 +76,11 @@ export async function POST(req: NextRequest) {
     }
 
     const createdBy = payload?.email ? String(payload.email) : 'contacto@delfincheckin.com';
+    const effectiveLink = link || '/updates';
+
     await sql`
       INSERT INTO platform_updates (created_by_email, title, body, link)
-      VALUES (${createdBy}, ${title}, ${text}, ${link || null})
+      VALUES (${createdBy}, ${title}, ${text}, ${effectiveLink || null})
     `;
 
     // Inserción por lotes (simple): una notificación por tenant
@@ -87,7 +89,7 @@ export async function POST(req: NextRequest) {
       try {
         await sql`
           INSERT INTO tenant_notifications (tenant_id, type, title, body, link)
-          VALUES (${tenantId}::uuid, 'product_update', ${title}, ${text}, ${link || null})
+          VALUES (${tenantId}::uuid, 'product_update', ${title}, ${text}, ${effectiveLink || null})
         `;
         inserted += 1;
       } catch (_) {
