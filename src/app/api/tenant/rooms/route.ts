@@ -2,6 +2,23 @@ import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
 import { getTenantId } from '@/lib/tenant';
 
+function isExpectedSchemaMismatchError(err: unknown): boolean {
+  const e = err as any;
+  const code = typeof e?.code === 'string' ? e.code : '';
+  const msg = typeof e?.message === 'string' ? e.message : '';
+
+  // Postgres:
+  // - 42703 undefined_column
+  // - 42P01 undefined_table
+  if (code === '42703' || code === '42P01') {
+    return true;
+  }
+  if (msg.includes('does not exist') && (msg.includes('tenant_id') || msg.includes('property_room_map'))) {
+    return true;
+  }
+  return false;
+}
+
 async function selectRoomsWithFallbacks(tenantId: string): Promise<{ rows: { id: unknown; name: string }[] }> {
   let result = await sql<{ id: unknown; name: string }>`
       SELECT DISTINCT r.id, r.name
@@ -72,7 +89,11 @@ async function selectRoomsWithFallbacks(tenantId: string): Promise<{ rows: { id:
         return r;
       }
     } catch (e) {
-      console.warn(`⚠️ [GET /api/tenant/rooms] Fallback "${label}" no aplicable:`, e);
+      // Es normal que algunas BDs no tengan columnas/tablas legacy (tenant_id, property_room_map, etc).
+      // Evitamos ruido en logs y seguimos con el siguiente fallback.
+      if (!isExpectedSchemaMismatchError(e)) {
+        console.warn(`⚠️ [GET /api/tenant/rooms] Fallback "${label}" no aplicable:`, e);
+      }
     }
   }
 
@@ -558,11 +579,31 @@ export async function POST(req: NextRequest) {
 
     if (requestedLodgingType === 'hostal' || requestedLodgingType === 'apartamentos') {
       try {
-        await sql`
-          UPDATE tenants
-          SET config = COALESCE(config, '{}'::jsonb) || jsonb_build_object('lodgingType', ${requestedLodgingType})
-          WHERE id = ${tenantId}::uuid
+        // tenants.config puede ser JSON o JSONB según la BD. Adaptamos el cast para no fallar.
+        const cfgType = await sql`
+          SELECT data_type
+          FROM information_schema.columns
+          WHERE table_schema = 'public'
+            AND table_name = 'tenants'
+            AND column_name = 'config'
+          LIMIT 1
         `;
+        const dataType = cfgType.rows.length > 0 ? String((cfgType.rows[0] as any).data_type || '') : '';
+        const configIsJson = dataType === 'json';
+
+        if (configIsJson) {
+          await sql`
+            UPDATE tenants
+            SET config = (COALESCE(config, '{}'::json)::jsonb || jsonb_build_object('lodgingType', ${requestedLodgingType}))::json
+            WHERE id = ${tenantId}::uuid
+          `;
+        } else {
+          await sql`
+            UPDATE tenants
+            SET config = COALESCE(config, '{}'::jsonb) || jsonb_build_object('lodgingType', ${requestedLodgingType})
+            WHERE id = ${tenantId}::uuid
+          `;
+        }
       } catch (cfgErr) {
         console.warn('⚠️ No se pudo persistir lodgingType en tenants.config:', cfgErr);
       }
