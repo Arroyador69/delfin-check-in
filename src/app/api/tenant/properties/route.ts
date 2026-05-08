@@ -43,43 +43,53 @@ export async function GET(req: NextRequest) {
         ? String(tenant.lodging_id)
         : String(tenantId);
 
+    // property_room_map puede no existir en algunos entornos legacy; evitamos queries rotas.
     try {
-      await sql`
-        WITH unmapped_props AS (
-          SELECT
-            tp.id AS property_id,
-            lower(trim(tp.property_name)) AS norm_name,
-            ROW_NUMBER() OVER (
-              PARTITION BY lower(trim(tp.property_name))
-              ORDER BY tp.created_at ASC, tp.id ASC
-            ) AS rn
-          FROM tenant_properties tp
-          LEFT JOIN property_room_map prm
-            ON prm.tenant_id = tp.tenant_id::uuid AND prm.property_id = tp.id
-          WHERE tp.tenant_id = ${tenantId}::uuid
-            AND prm.property_id IS NULL
-        ),
-        unmapped_rooms AS (
-          SELECT
-            r.id AS room_id,
-            lower(trim(r.name)) AS norm_name,
-            ROW_NUMBER() OVER (
-              PARTITION BY lower(trim(r.name))
-              ORDER BY r.id ASC
-            ) AS rn
-          FROM "Room" r
-          LEFT JOIN property_room_map prm
-            ON prm.tenant_id = ${tenantId}::uuid AND prm.room_id = r.id
-          WHERE r."lodgingId" = ${lodgingId}
-            AND prm.room_id IS NULL
-        )
-        INSERT INTO property_room_map (tenant_id, property_id, room_id, created_at, updated_at)
-        SELECT ${tenantId}::uuid, up.property_id, ur.room_id, NOW(), NOW()
-        FROM unmapped_props up
-        JOIN unmapped_rooms ur
-          ON ur.norm_name = up.norm_name AND ur.rn = up.rn
-        ON CONFLICT (tenant_id, property_id) DO NOTHING
+      const prmTable = await sql`
+        SELECT 1
+        FROM information_schema.tables
+        WHERE table_schema = 'public' AND table_name = 'property_room_map'
+        LIMIT 1
       `;
+      const hasPropertyRoomMap = prmTable.rows.length > 0;
+      if (hasPropertyRoomMap) {
+        await sql`
+          WITH unmapped_props AS (
+            SELECT
+              tp.id AS property_id,
+              lower(trim(tp.property_name)) AS norm_name,
+              ROW_NUMBER() OVER (
+                PARTITION BY lower(trim(tp.property_name))
+                ORDER BY tp.created_at ASC, tp.id ASC
+              ) AS rn
+            FROM tenant_properties tp
+            LEFT JOIN property_room_map prm
+              ON prm.tenant_id = tp.tenant_id::uuid AND prm.property_id = tp.id
+            WHERE tp.tenant_id = ${tenantId}::uuid
+              AND prm.property_id IS NULL
+          ),
+          unmapped_rooms AS (
+            SELECT
+              r.id AS room_id,
+              lower(trim(r.name)) AS norm_name,
+              ROW_NUMBER() OVER (
+                PARTITION BY lower(trim(r.name))
+                ORDER BY r.id ASC
+              ) AS rn
+            FROM "Room" r
+            LEFT JOIN property_room_map prm
+              ON prm.tenant_id = ${tenantId}::uuid AND prm.room_id::text = r.id::text
+            WHERE r."lodgingId"::text = ${lodgingId}::text
+              AND prm.room_id IS NULL
+          )
+          INSERT INTO property_room_map (tenant_id, property_id, room_id, created_at, updated_at)
+          SELECT ${tenantId}::uuid, up.property_id, ur.room_id, NOW(), NOW()
+          FROM unmapped_props up
+          JOIN unmapped_rooms ur
+            ON ur.norm_name = up.norm_name AND ur.rn = up.rn
+          ON CONFLICT (tenant_id, property_id) DO NOTHING
+        `;
+      }
     } catch (mappingError) {
       console.warn('⚠️ No se pudo hacer backfill de property_room_map:', mappingError);
     }
@@ -101,7 +111,7 @@ export async function GET(req: NextRequest) {
         LEFT JOIN property_room_map prm
           ON prm.tenant_id = tp.tenant_id::uuid AND prm.property_id = tp.id
         LEFT JOIN "Room" r
-          ON r."lodgingId" = ${lodgingId}::text
+          ON r."lodgingId"::text = ${lodgingId}::text
          AND r.id::text = prm.room_id::text
         WHERE tp.tenant_id = ${tenantId}::uuid
       ),
@@ -132,7 +142,7 @@ export async function GET(req: NextRequest) {
         FROM "Room" r
         LEFT JOIN property_room_map prm
           ON prm.tenant_id = ${tenantId}::uuid AND prm.room_id::text = r.id::text
-        WHERE r."lodgingId" = ${lodgingId}
+        WHERE r."lodgingId"::text = ${lodgingId}::text
           AND prm.room_id IS NULL
           AND NOT EXISTS (
             SELECT 1 FROM tenant_properties tp
