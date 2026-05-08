@@ -20,6 +20,7 @@ jobs:
       - name: Fetch and compress export (with retries)
         env:
           EXPORT_URL: ${{ secrets.BACKUP_EXPORT_URL }}
+          EXPORT_TOKEN: ${{ secrets.BACKUP_EXPORT_TOKEN }}
         run: |
           if [ -z "$EXPORT_URL" ]; then
             echo "BACKUP_EXPORT_URL secret is not set" >&2
@@ -27,8 +28,12 @@ jobs:
           fi
           timestamp=$(date -u +"%Y-%m-%dT%H-%M-%SZ")
           target="backups/backup-$timestamp.json"
-          echo "Downloading from: $EXPORT_URL"
-          curl -fsS --retry 5 --retry-delay 5 "$EXPORT_URL" -o "$target"
+          echo "Downloading database export..."
+          if [ -n "$EXPORT_TOKEN" ]; then
+            curl -fsS --retry 5 --retry-delay 5 -H "Authorization: Bearer $EXPORT_TOKEN" "$EXPORT_URL" -o "$target"
+          else
+            curl -fsS --retry 5 --retry-delay 5 "$EXPORT_URL" -o "$target"
+          fi
           # Tamaño mínimo para considerar válido
           if [ ! -s "$target" ]; then
             echo "Empty backup file" >&2
