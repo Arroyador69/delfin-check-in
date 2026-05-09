@@ -2,6 +2,9 @@ import { ExpoConfig, ConfigContext } from 'expo/config';
 
 export default ({ config }: ConfigContext): ExpoConfig => {
   const apiUrl = process.env.EXPO_PUBLIC_API_URL || 'https://admin.delfincheckin.com';
+  /** Misma base que la API salvo override: "Crear cuenta" abre /plans.html en la landing (p. ej. delfincheckin.com). */
+  const webPublicBaseUrl =
+    process.env.EXPO_PUBLIC_WEB_PUBLIC_BASE_URL?.trim().replace(/\/$/, '') || apiUrl.replace(/\/$/, '');
   const cleaningPublicBase =
     process.env.EXPO_PUBLIC_CLEANING_PUBLIC_BASE_URL?.trim().replace(/\/$/, '') || '';
 
@@ -64,6 +67,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     },
     extra: {
       API_URL: apiUrl,
+      WEB_PUBLIC_BASE_URL: webPublicBaseUrl,
       CLEANING_PUBLIC_BASE_URL: cleaningPublicBase,
       /** Amazon afiliado (misma lógica que web; override con EXPO_PUBLIC_AMAZON_*). */
       AMAZON_MARKETPLACE_HOST: process.env.EXPO_PUBLIC_AMAZON_MARKETPLACE_HOST?.trim() || '',

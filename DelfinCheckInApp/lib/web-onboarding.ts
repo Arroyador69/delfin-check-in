@@ -1,4 +1,4 @@
-import { getPublicApiOrigin } from '@/lib/api';
+import { getPublicApiOrigin, getPublicWebsiteOrigin } from '@/lib/api';
 
 const WEB_LOCALES = new Set(['es', 'en', 'fr', 'it', 'pt', 'fi']);
 
@@ -9,11 +9,12 @@ export function getWebOnboardingUrl(appLocale: string): string {
   return `${base}/${loc}/onboarding`;
 }
 
-/** Página pública de planes → Polar (sin waitlist; cumplimiento tiendas). */
+/** Página pública de planes (plans.html en la landing / GitHub Pages) → Polar vía admin. */
 export function getWebSubscribePlansUrl(appLocale: string): string {
-  const base = getPublicApiOrigin();
+  const base = getPublicWebsiteOrigin();
   const loc = WEB_LOCALES.has(appLocale) ? appLocale : 'es';
-  return `${base}/${loc}/subscribe?source=mobile_app`;
+  const q = new URLSearchParams({ lang: loc, source: 'mobile_app' });
+  return `${base}/plans.html?${q.toString()}`;
 }
 
 /** Alineado con `tenants.onboarding_status` y gating del middleware web. */

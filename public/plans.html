@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<!--
+  Página pública de planes (GitHub Pages / estático junto a landing.html).
+  — Plan gratuito: POST /api/public/signup-free (CORS abierto en admin).
+  — Planes de pago: GET /api/polar/subscribe-redirect (checkout Polar en el mismo origen admin).
+  Si sirves esta página desde admin.delfincheckin.com, los enlaces usan rutas relativas.
+-->
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Delfín Check-in — Planes</title>
+  <meta name="description" content="Planes Delfín Check-in: gratuito y suscripciones con pago seguro en la web (Polar)." />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+    #lang-dropdown:not(.hidden) { animation: langDdIn 0.2s ease-out; }
+    @keyframes langDdIn {
+      from { opacity: 0; transform: translateY(-6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    #lang-chevron.lang-dd-open { transform: rotate(180deg); }
+  </style>
+</head>
+<body class="min-h-screen bg-slate-50 text-slate-900 antialiased">
+  <header class="border-b border-slate-200/80 bg-white/90 backdrop-blur-sm sticky top-0 z-10">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3 flex-wrap">
+        <a href="landing.html" class="flex items-center gap-3 hover:opacity-90" id="link-home">
+          <span class="text-2xl" aria-hidden="true">🐬</span>
+          <span class="font-bold text-lg text-slate-900 tracking-tight">Delfín Check-in</span>
+        </a>
+        <span class="text-slate-300 hidden sm:inline">|</span>
+        <a href="landing.html" class="text-sm font-medium text-teal-700 hover:underline" data-key="backLanding"></a>
+      </div>
+      <div id="lang-switcher-root" class="relative z-[60] flex w-full justify-end sm:w-auto" data-landing-lang-switcher>
+        <button
+          type="button"
+          id="lang-trigger"
+          class="flex w-full sm:w-auto items-center justify-between gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-left text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-teal-500 sm:justify-start"
+          aria-expanded="false"
+          aria-haspopup="listbox"
+        >
+          <span class="flex min-w-0 flex-1 items-center gap-2">
+            <span id="lang-trigger-text" class="hidden truncate sm:inline">🇸🇪 Svenska</span>
+            <span id="lang-trigger-flag-only" class="text-lg sm:hidden" aria-hidden="true">🇸🇪</span>
+          </span>
+          <svg id="lang-chevron" class="h-4 w-4 shrink-0 text-gray-600 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+        <div
+          id="lang-dropdown"
+          class="absolute right-0 top-full z-[70] mt-2 hidden w-[min(100vw-2rem,13.5rem)] rounded-lg border border-gray-200 bg-white py-2 shadow-lg sm:w-52"
+          role="listbox"
+          aria-labelledby="lang-trigger"
+        ></div>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
+    <h1 class="text-3xl sm:text-4xl font-bold text-slate-900" data-key="title"></h1>
+    <p class="mt-3 text-slate-600 leading-relaxed max-w-3xl" data-key="intro"></p>
+    <p class="mt-2 text-sm text-slate-500 leading-relaxed max-w-3xl" data-key="storesNote"></p>
+
+    <div id="free-msg" class="hidden mt-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-900 text-sm" role="status"></div>
+    <div id="free-err" class="hidden mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-red-900 text-sm" role="alert"></div>
+
+    <div class="mt-8 flex flex-wrap items-center gap-4">
+      <div class="flex items-center gap-2">
+        <span class="text-sm font-medium text-slate-700" data-key="seats"></span>
+        <button type="button" id="seats-dec" class="h-9 w-9 rounded-lg border border-slate-200 bg-white text-lg font-medium text-slate-700 hover:bg-slate-50" aria-label="−1">−</button>
+        <span id="seats-val" class="min-w-[2ch] text-center font-semibold text-slate-900">1</span>
+        <button type="button" id="seats-inc" class="h-9 w-9 rounded-lg border border-slate-200 bg-white text-lg font-medium text-slate-700 hover:bg-slate-50" aria-label="+1">+</button>
+      </div>
+      <div class="flex rounded-lg border border-slate-200 p-0.5 bg-slate-100">
+        <button type="button" id="iv-month" class="rounded-md px-3 py-1.5 text-sm font-medium bg-white text-teal-800 shadow-sm" data-key="monthly"></button>
+        <button type="button" id="iv-year" class="rounded-md px-3 py-1.5 text-sm font-medium text-slate-600">
+          <span data-key="yearly"></span>
+          <span class="ml-1 text-xs font-semibold text-teal-700" data-key="yearlyHint"></span>
+        </button>
+      </div>
+    </div>
+
+    <div class="mt-10 grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
+      <!-- Gratis -->
+      <div class="flex flex-col rounded-2xl border-2 border-teal-200 bg-white p-6 shadow-sm xl:col-span-1">
+        <p class="text-xs font-semibold uppercase tracking-wider text-teal-700" data-key="freeBadge"></p>
+        <h2 class="mt-1 text-xl font-semibold text-slate-900" data-key="freeName"></h2>
+        <p class="mt-2 flex-1 text-sm text-slate-600 leading-relaxed" data-key="freeBlurb"></p>
+        <p class="mt-3 text-lg font-bold text-slate-900" data-key="freePrice"></p>
+        <form id="free-form" class="mt-4 space-y-3">
+          <label class="block">
+            <span class="text-xs font-semibold text-slate-600" data-key="emailLabel"></span>
+            <input id="free-email" type="email" required class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm" />
+          </label>
+          <label class="block">
+            <span class="text-xs font-semibold text-slate-600" data-key="nameLabel"></span>
+            <input id="free-name" type="text" class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm" />
+          </label>
+          <button type="submit" id="free-submit" class="w-full rounded-xl bg-teal-600 px-4 py-3 text-center text-sm font-semibold text-white hover:bg-teal-700" data-key="ctaFree"></button>
+        </form>
+      </div>
+
+      <!-- Check-in -->
+      <div class="flex flex-col rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 class="text-xl font-semibold text-slate-900" data-key="pCheckinName"></h2>
+        <p class="mt-2 flex-1 text-sm text-slate-600" data-key="pCheckinBlurb"></p>
+        <p class="mt-4 text-sm font-medium text-teal-700" data-key="pCheckinPrice"></p>
+        <a id="href-checkin" href="#" class="mt-6 inline-flex justify-center rounded-xl bg-teal-600 px-4 py-3 text-center text-sm font-semibold text-white hover:bg-teal-700" data-key="ctaPolar"></a>
+      </div>
+
+      <!-- Standard -->
+      <div class="flex flex-col rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 class="text-xl font-semibold text-slate-900" data-key="pStdName"></h2>
+        <p class="mt-2 flex-1 text-sm text-slate-600" data-key="pStdBlurb"></p>
+        <p class="mt-4 text-sm font-medium text-teal-700" data-key="pStdPrice"></p>
+        <a id="href-standard" href="#" class="mt-6 inline-flex justify-center rounded-xl bg-teal-600 px-4 py-3 text-center text-sm font-semibold text-white hover:bg-teal-700" data-key="ctaPolar"></a>
+      </div>
+
+      <!-- Pro -->
+      <div class="flex flex-col rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 class="text-xl font-semibold text-slate-900" data-key="pProName"></h2>
+        <p class="mt-2 flex-1 text-sm text-slate-600" data-key="pProBlurb"></p>
+        <p class="mt-4 text-sm font-medium text-teal-700" data-key="pProPrice"></p>
+        <a id="href-pro" href="#" class="mt-6 inline-flex justify-center rounded-xl bg-teal-600 px-4 py-3 text-center text-sm font-semibold text-white hover:bg-teal-700" data-key="ctaPolar"></a>
+      </div>
+    </div>
+
+    <p class="mt-10 text-center text-sm text-slate-600">
+      <span data-key="loginHint"></span>
+      <a id="link-login" href="#" class="font-medium text-teal-700 underline underline-offset-2" data-key="loginLink"></a>
+    </p>
+  </main>
+
+  <footer class="border-t border-slate-200 bg-slate-100/50 py-8 text-center text-sm text-slate-500">
+    <p data-key="footer"></p>
+    <p class="mt-2">
+      <a href="mailto:contacto@delfincheckin.com" class="text-teal-700 hover:underline">contacto@delfincheckin.com</a>
+    </p>
+  </footer>
+
+  <script src="/landing-tracking.js" defer></script>
+  <script>
+(function () {
+  var LANGS = [
+    { code: 'es', name: 'Español', flag: '🇪🇸' },
+    { code: 'en', name: 'English', flag: '🇬🇧' },
+    { code: 'it', name: 'Italiano', flag: '🇮🇹' },
+    { code: 'pt', name: 'Português', flag: '🇵🇹' },
+    { code: 'fr', name: 'Français', flag: '🇫🇷' },
+    { code: 'fi', name: 'Suomi', flag: '🇫🇮' },
+    { code: 'sv', name: 'Svenska', flag: '🇸🇪' }
+  ];
+
+  var STR = {
+    es: {
+      backLanding: 'Inicio',
+      title: 'Planes y pago seguro',
+      intro:
+        'Elige el plan gratuito o una suscripción de pago. El cobro recurrente del software se completa en Polar (navegador), no dentro de las apps móviles.',
+      storesNote:
+        'Cumplimos con las normas de App Store y Google Play: la suscripción de pago se gestiona en la web.',
+      seats: 'Unidades (asientos)',
+      monthly: 'Mensual',
+      yearly: 'Anual',
+      yearlyHint: '(2 meses gratis)',
+      freeBadge: 'Sin tarjeta',
+      freeName: 'Básico gratis',
+      freeBlurb:
+        '1 propiedad incluida, sin coste mensual. Propiedades extra: 2 €/mes. Módulo check-in digital + MIR: 2 €/mes opcional.',
+      freePrice: '0 €/mes',
+      emailLabel: 'Email',
+      nameLabel: 'Nombre (opcional)',
+      ctaFree: 'Crear cuenta gratis',
+      ctaPolar: 'Continuar con Polar',
+      loginHint: '¿Ya tienes cuenta?',
+      loginLink: 'Iniciar sesión',
+      footer: '© Delfín Check-in',
+      freeSuccess: 'Listo. Revisa tu correo para activar la cuenta y el onboarding.',
+      freeError: 'No se pudo completar. Inténtalo de nuevo o escribe a contacto@delfincheckin.com.',
+      freeSending: 'Enviando…',
+      pCheckinName: 'Check-in',
+      pCheckinBlurb: 'Módulo legal MIR y check-in digital.',
+      pCheckinPrice: 'desde 2 €/mes',
+      pStdName: 'Standard',
+      pStdBlurb: 'Sin anuncios en el panel y más capacidad.',
+      pStdPrice: 'desde 9,99 €/mes',
+      pProName: 'Pro',
+      pProBlurb: 'Máxima capacidad y funciones avanzadas.',
+      pProPrice: 'desde 29,99 €/mes'
+    },
+    en: {
+      backLanding: 'Home',
+      title: 'Plans & secure checkout',
+      intro:
+        'Choose the free plan or a paid subscription. Recurring software billing is completed with Polar in your browser, not inside the mobile apps.',
+      storesNote:
+        'We follow App Store and Google Play rules: paid subscriptions are handled on the web.',
+      seats: 'Units (seats)',
+      monthly: 'Monthly',
+      yearly: 'Yearly',
+      yearlyHint: '(2 months free)',
+      freeBadge: 'No card',
+      freeName: 'Basic free',
+      freeBlurb:
+        '1 property included, no monthly fee. Extra properties: €2/mo. Digital check-in + MIR module: €2/mo optional.',
+      freePrice: '€0/mo',
+      emailLabel: 'Email',
+      nameLabel: 'Name (optional)',
+      ctaFree: 'Create free account',
+      ctaPolar: 'Continue with Polar',
+      loginHint: 'Already have an account?',
+      loginLink: 'Log in',
+      footer: '© Delfín Check-in',
+      freeSuccess: 'Done. Check your email to activate your account and onboarding.',
+      freeError: 'Could not complete. Please try again or email contacto@delfincheckin.com.',
+      freeSending: 'Sending…',
+      pCheckinName: 'Check-in',
+      pCheckinBlurb: 'MIR legal module and digital check-in.',
+      pCheckinPrice: 'from €2/mo',
+      pStdName: 'Standard',
+      pStdBlurb: 'No ads in the dashboard and more capacity.',
+      pStdPrice: 'from €9.99/mo',
+      pProName: 'Pro',
+      pProBlurb: 'Highest capacity and advanced features.',
+      pProPrice: 'from €29.99/mo'
+    },
+    it: {
+      backLanding: 'Home',
+      title: 'Piani e pagamento sicuro',
+      intro:
+        'Scegli il piano gratuito o un abbonamento a pagamento. Il rinnovo si completa con Polar nel browser, non nelle app mobili.',
+      storesNote: 'Regole App Store / Google Play: gli abbonamenti a pagamento avvengono sul web.',
+      seats: 'Unità (posti)',
+      monthly: 'Mensile',
+      yearly: 'Annuale',
+      yearlyHint: '(2 mesi gratis)',
+      freeBadge: 'Senza carta',
+      freeName: 'Base gratuito',
+      freeBlurb:
+        '1 struttura inclusa, nessun canone mensile. Strutture extra: 2 €/mese. Check-in digitale + MIR: 2 €/mese opzionale.',
+      freePrice: '0 €/mese',
+      emailLabel: 'Email',
+      nameLabel: 'Nome (opzionale)',
+      ctaFree: 'Crea account gratuito',
+      ctaPolar: 'Continua con Polar',
+      loginHint: 'Hai già un account?',
+      loginLink: 'Accedi',
+      footer: '© Delfín Check-in',
+      freeSuccess: 'Fatto. Controlla l’email per attivare l’account e l’onboarding.',
+      freeError: 'Operazione non riuscita. Riprova o scrivi a contacto@delfincheckin.com.',
+      freeSending: 'Invio…',
+      pCheckinName: 'Check-in',
+      pCheckinBlurb: 'Modulo legale MIR e check-in digitale.',
+      pCheckinPrice: 'da 2 €/mese',
+      pStdName: 'Standard',
+      pStdBlurb: 'Senza annunci e più capacità.',
+      pStdPrice: 'da 9,99 €/mese',
+      pProName: 'Pro',
+      pProBlurb: 'Massima capacità.',
+      pProPrice: 'da 29,99 €/mese'
+    },
+    pt: {
+      backLanding: 'Início',
+      title: 'Planos e pagamento seguro',
+      intro:
+        'Escolha o plano gratuito ou uma subscrição paga. A faturação recorrente faz-se com Polar no navegador, não nas apps móveis.',
+      storesNote: 'Regras App Store / Google Play: pagamentos recorrentes na web.',
+      seats: 'Unidades (lugares)',
+      monthly: 'Mensal',
+      yearly: 'Anual',
+      yearlyHint: '(2 meses grátis)',
+      freeBadge: 'Sem cartão',
+      freeName: 'Básico grátis',
+      freeBlurb:
+        '1 propriedade incluída, sem mensalidade. Propriedades extra: 2 €/mês. Check-in digital + MIR: 2 €/mês opcional.',
+      freePrice: '0 €/mês',
+      emailLabel: 'E-mail',
+      nameLabel: 'Nome (opcional)',
+      ctaFree: 'Criar conta grátis',
+      ctaPolar: 'Continuar com Polar',
+      loginHint: 'Já tem conta?',
+      loginLink: 'Iniciar sessão',
+      footer: '© Delfín Check-in',
+      freeSuccess: 'Feito. Verifique o email para ativar a conta e o onboarding.',
+      freeError: 'Não foi possível concluir. Tenta novamente ou contacta contacto@delfincheckin.com.',
+      freeSending: 'A enviar…',
+      pCheckinName: 'Check-in',
+      pCheckinBlurb: 'Módulo legal MIR e check-in digital.',
+      pCheckinPrice: 'desde 2 €/mês',
+      pStdName: 'Standard',
+      pStdBlurb: 'Sem anúncios e mais capacidade.',
+      pStdPrice: 'desde 9,99 €/mês',
+      pProName: 'Pro',
+      pProBlurb: 'Máxima capacidade.',
+      pProPrice: 'desde 29,99 €/mês'
+    },
+    fr: {
+      backLanding: 'Accueil',
+      title: 'Offres et paiement sécurisé',
+      intro:
+        'Choisissez l’offre gratuite ou un abonnement payant. La facturation récurrente se fait avec Polar dans le navigateur, pas dans les apps mobiles.',
+      storesNote: 'Règles App Store / Google Play : l’abonnement payant passe par le web.',
+      seats: 'Unités (sièges)',
+      monthly: 'Mensuel',
+      yearly: 'Annuel',
+      yearlyHint: '(2 mois offerts)',
+      freeBadge: 'Sans carte',
+      freeName: 'Basique gratuit',
+      freeBlurb:
+        '1 établissement inclus, sans frais mensuels. Établissements supplémentaires : 2 €/mois. Check-in numérique + MIR : 2 €/mois en option.',
+      freePrice: '0 €/mois',
+      emailLabel: 'E-mail',
+      nameLabel: 'Nom (facultatif)',
+      ctaFree: 'Créer un compte gratuit',
+      ctaPolar: 'Continuer avec Polar',
+      loginHint: 'Vous avez déjà un compte ?',
+      loginLink: 'Connexion',
+      footer: '© Delfín Check-in',
+      freeSuccess: 'C’est fait. Vérifiez votre e-mail pour activer le compte et l’onboarding.',
+      freeError: 'Impossible de terminer. Réessayez ou écrivez à contacto@delfincheckin.com.',
+      freeSending: 'Envoi…',
+      pCheckinName: 'Check-in',
+      pCheckinBlurb: 'Module légal MIR et check-in numérique.',
+      pCheckinPrice: 'dès 2 €/mois',
+      pStdName: 'Standard',
+      pStdBlurb: 'Sans publicités et plus de capacité.',
+      pStdPrice: 'dès 9,99 €/mois',
+      pProName: 'Pro',
+      pProBlurb: 'Capacité maximale.',
+      pProPrice: 'dès 29,99 €/mois'
+    },
+    fi: {
+      backLanding: 'Etusivu',
+      title: 'Suunnitelmat ja turvallinen maksu',
+      intro:
+        'Valitse ilmainen tai maksullinen tilaus. Toistuva veloitus Polarilla selaimessa, ei mobiilisovelluksissa.',
+      storesNote: 'App Store / Google Play: maksulliset tilaukset verkossa.',
+      seats: 'Yksiköt (paikat)',
+      monthly: 'Kuukausi',
+      yearly: 'Vuosi',
+      yearlyHint: '(2 kk ilmaiseksi)',
+      freeBadge: 'Ei korttia',
+      freeName: 'Ilmainen perus',
+      freeBlurb:
+        '1 kohde mukana, ei kuukausimaksua. Lisäkohteet: 2 €/kk. Digitaalinen sisäänkirjautuminen + MIR: 2 €/kk valinnainen.',
+      freePrice: '0 €/kk',
+      emailLabel: 'Sähköposti',
+      nameLabel: 'Nimi (valinnainen)',
+      ctaFree: 'Luo ilmainen tili',
+      ctaPolar: 'Jatka Polarilla',
+      loginHint: 'Onko sinulla jo tili?',
+      loginLink: 'Kirjaudu',
+      footer: '© Delfín Check-in',
+      freeSuccess: 'Valmis. Tarkista sähköposti tilin aktivointia ja onboardingia varten.',
+      freeError: 'Ei onnistunut. Yritä uudelleen tai kirjoita contacto@delfincheckin.com.',
+      freeSending: 'Lähetetään…',
+      pCheckinName: 'Check-in',
+      pCheckinBlurb: 'MIR-oikeusmoduuli ja digitaalinen sisäänkirjautuminen.',
+      pCheckinPrice: 'alk. 2 €/kk',
+      pStdName: 'Standard',
+      pStdBlurb: 'Ei mainoksia ja enemmän kapasiteettia.',
+      pStdPrice: 'alk. 9,99 €/kk',
+      pProName: 'Pro',
+      pProBlurb: 'Suurin kapasiteetti.',
+      pProPrice: 'alk. 29,99 €/kk'
+    },
+    sv: {
+      backLanding: 'Startsida',
+      title: 'Planer och säker betalning',
+      intro:
+        'Välj gratisplan eller betald prenumeration. Återkommande debitering sker med Polar i webbläsaren, inte i mobilapparna.',
+      storesNote: 'Enligt App Store / Google Play: betalda prenumerationer på webben.',
+      seats: 'Enheter (platser)',
+      monthly: 'Månadsvis',
+      yearly: 'Årlig',
+      yearlyHint: '(2 månader gratis)',
+      freeBadge: 'Inget kort',
+      freeName: 'Gratis bas',
+      freeBlurb:
+        '1 objekt ingår, ingen månadskostnad. Extra objekt: 2 €/mån. Digital incheckning + MIR: 2 €/mån valfritt.',
+      freePrice: '0 €/mån',
+      emailLabel: 'E-post',
+      nameLabel: 'Namn (valfritt)',
+      ctaFree: 'Skapa gratis konto',
+      ctaPolar: 'Fortsätt med Polar',
+      loginHint: 'Har du redan konto?',
+      loginLink: 'Logga in',
+      footer: '© Delfín Check-in',
+      freeSuccess: 'Klart. Kolla din e-post för att aktivera kontot och onboarding.',
+      freeError: 'Det gick inte. Försök igen eller mejla contacto@delfincheckin.com.',
+      freeSending: 'Skickar…',
+      pCheckinName: 'Check-in',
+      pCheckinBlurb: 'MIR-modul och digital incheckning.',
+      pCheckinPrice: 'från 2 €/mån',
+      pStdName: 'Standard',
+      pStdBlurb: 'Inga annonser och mer kapacitet.',
+      pStdPrice: 'från 9,99 €/mån',
+      pProName: 'Pro',
+      pProBlurb: 'Högsta kapacitet.',
+      pProPrice: 'från 29,99 €/mån'
+    }
+  };
+
+  var META = {
+    es: { title: 'Delfín Check-in — Planes', description: 'Cuatro planes: gratis, Check-in, Standard y Pro. Pago seguro con Polar en la web.' },
+    en: { title: 'Delfín Check-in — Plans', description: 'Four plans: free, Check-in, Standard and Pro. Secure checkout with Polar on the web.' },
+    it: { title: 'Delfín Check-in — Piani', description: 'Quattro piani: gratuito, Check-in, Standard e Pro.' },
+    pt: { title: 'Delfín Check-in — Planos', description: 'Quatro planos: grátis, Check-in, Standard e Pro.' },
+    fr: { title: 'Delfín Check-in — Offres', description: 'Quatre offres : gratuit, Check-in, Standard et Pro.' },
+    fi: { title: 'Delfín Check-in — Suunnitelmat', description: 'Neljä suunnitelmaa: ilmainen, Check-in, Standard ja Pro.' },
+    sv: { title: 'Delfín Check-in — Planer', description: 'Fyra planer: gratis, Check-in, Standard och Pro.' }
+  };
+
+  var HTML_LANG = { es: 'es', en: 'en', it: 'it', pt: 'pt', fr: 'fr', fi: 'fi', sv: 'sv' };
+
+  var seats = 1;
+  var interval = 'month';
+  var currentLang = 'es';
+
+  function adminOrigin() {
+    var h = (location.hostname || '').toLowerCase();
+    if (h === 'admin.delfincheckin.com' || h.endsWith('.vercel.app') || h === 'localhost' || h === '127.0.0.1')
+      return '';
+    return 'https://admin.delfincheckin.com';
+  }
+
+  function apiBase() {
+    return adminOrigin();
+  }
+
+  /** Next solo sirve es|en|it|pt|fr|fi en /[locale]/subscribe; sueco → es para URLs Polar. */
+  function polarLocaleParam() {
+    return currentLang === 'sv' ? 'es' : currentLang;
+  }
+
+  function polarHref(plan) {
+    var q =
+      'plan=' +
+      encodeURIComponent(plan) +
+      '&locale=' +
+      encodeURIComponent(polarLocaleParam()) +
+      '&seats=' +
+      encodeURIComponent(String(seats)) +
+      '&interval=' +
+      encodeURIComponent(interval);
+    return apiBase() + '/api/polar/subscribe-redirect?' + q;
+  }
+
+  function signupLocaleForApi() {
+    if (currentLang === 'sv') return 'es';
+    return currentLang;
+  }
+
+  function updatePaidLinks() {
+    var a = document.getElementById('href-checkin');
+    var b = document.getElementById('href-standard');
+    var c = document.getElementById('href-pro');
+    if (a) a.href = polarHref('checkin');
+    if (b) b.href = polarHref('standard');
+    if (c) c.href = polarHref('pro');
+  }
+
+  function setSeatsControls() {
+    var v = document.getElementById('seats-val');
+    if (v) v.textContent = String(seats);
+    updatePaidLinks();
+  }
+
+  function setIntervalUi() {
+    var m = document.getElementById('iv-month');
+    var y = document.getElementById('iv-year');
+    if (!m || !y) return;
+    var onM = interval === 'month';
+    m.className =
+      'rounded-md px-3 py-1.5 text-sm font-medium ' +
+      (onM ? 'bg-white text-teal-800 shadow-sm' : 'text-slate-600');
+    y.className =
+      'rounded-md px-3 py-1.5 text-sm font-medium ' +
+      (!onM ? 'bg-white text-teal-800 shadow-sm' : 'text-slate-600');
+    updatePaidLinks();
+  }
+
+  function setLang(lang) {
+    if (!STR[lang]) lang = 'es';
+    currentLang = lang;
+    var t = STR[lang];
+    var m = META[lang] || META.es;
+    document.documentElement.lang = HTML_LANG[lang] || 'es';
+    var titleEl = document.querySelector('title');
+    if (titleEl) titleEl.textContent = m.title;
+    var metaD = document.querySelector('meta[name="description"]');
+    if (metaD) metaD.setAttribute('content', m.description);
+
+    document.querySelectorAll('[data-key]').forEach(function (el) {
+      var k = el.getAttribute('data-key');
+      if (k && t[k] != null) {
+        if (el.tagName === 'A' && (k === 'ctaPolar' || k === 'ctaFree')) {
+          el.textContent = t[k];
+        } else if (el.tagName === 'BUTTON' && k === 'ctaFree') {
+          el.textContent = t.ctaFree;
+        } else {
+          el.textContent = t[k];
+        }
+      }
+    });
+
+    var login = document.getElementById('link-login');
+    if (login) login.href = apiBase() + '/admin-login';
+
+    updatePaidLinks();
+    setIntervalUi();
+
+    try {
+      localStorage.setItem('landing_lang', lang);
+      localStorage.setItem('preferred-locale', lang);
+    } catch (e) {}
+    try {
+      var url = new URL(location.href);
+      url.searchParams.set('lang', lang);
+      if (history.replaceState) history.replaceState(null, '', url.toString());
+    } catch (e2) {}
+
+    syncLangSwitcher(lang);
+  }
+
+  function syncLangSwitcher(lang) {
+    var L = LANGS.filter(function (x) { return x.code === lang; })[0] || LANGS[0];
+    var tx = document.getElementById('lang-trigger-text');
+    var fo = document.getElementById('lang-trigger-flag-only');
+    if (tx) tx.textContent = (L.flag ? L.flag + ' ' : '') + L.name;
+    if (fo) fo.textContent = L.flag || '';
+    document.querySelectorAll('[data-lang-item]').forEach(function (btn) {
+      var c = btn.getAttribute('data-lang-code');
+      var active = c === lang;
+      btn.setAttribute('aria-selected', active ? 'true' : 'false');
+      btn.classList.toggle('bg-teal-50', active);
+      btn.classList.toggle('text-teal-800', active);
+      btn.classList.toggle('font-medium', active);
+      btn.classList.toggle('text-gray-700', !active);
+    });
+  }
+
+  function pickInitialLang() {
+    try {
+      var u = new URL(location.href);
+      var q = (u.searchParams.get('lang') || '').toLowerCase().trim().replace(/_/g, '-');
+      if (q === 'pt-br' || q === 'pt-pt') q = 'pt';
+      if (q === 'sv-se' || q === 'sv-fi') q = 'sv';
+      if (q && STR[q]) return q;
+    } catch (e0) {}
+    try {
+      var s = localStorage.getItem('landing_lang');
+      var p = localStorage.getItem('preferred-locale');
+      if (s && STR[s]) return s;
+      if (p && STR[p]) return p;
+    } catch (e1) {}
+    return 'es';
+  }
+
+  function setDropdownOpen(open) {
+    var dd = document.getElementById('lang-dropdown');
+    var ch = document.getElementById('lang-chevron');
+    var tr = document.getElementById('lang-trigger');
+    if (!dd) return;
+    if (open) {
+      dd.classList.remove('hidden');
+      if (ch) ch.classList.add('lang-dd-open');
+      if (tr) tr.setAttribute('aria-expanded', 'true');
+    } else {
+      dd.classList.add('hidden');
+      if (ch) ch.classList.remove('lang-dd-open');
+      if (tr) tr.setAttribute('aria-expanded', 'false');
+    }
+  }
+
+  function initLangSwitcher() {
+    var dd = document.getElementById('lang-dropdown');
+    var tr = document.getElementById('lang-trigger');
+    if (!dd || !tr) return;
+    LANGS.forEach(function (L) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.setAttribute('role', 'option');
+      btn.setAttribute('data-lang-item', '');
+      btn.setAttribute('data-lang-code', L.code);
+      btn.className =
+        'flex w-full items-center gap-3 px-4 py-2 text-left text-sm text-gray-700 transition-colors hover:bg-gray-100';
+      var sf = document.createElement('span');
+      sf.className = 'text-xl shrink-0';
+      sf.textContent = L.flag;
+      var sn = document.createElement('span');
+      sn.className = 'flex-1';
+      sn.textContent = L.name;
+      btn.appendChild(sf);
+      btn.appendChild(sn);
+      btn.addEventListener('click', function () {
+        setLang(L.code);
+        setDropdownOpen(false);
+      });
+      dd.appendChild(btn);
+    });
+    tr.addEventListener('click', function (e) {
+      e.stopPropagation();
+      setDropdownOpen(dd.classList.contains('hidden'));
+    });
+    document.addEventListener('mousedown', function (e) {
+      var root = document.getElementById('lang-switcher-root');
+      if (root && e.target && !root.contains(e.target)) setDropdownOpen(false);
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') setDropdownOpen(false);
+    });
+  }
+
+  document.getElementById('seats-dec').addEventListener('click', function () {
+    seats = Math.max(1, seats - 1);
+    setSeatsControls();
+  });
+  document.getElementById('seats-inc').addEventListener('click', function () {
+    seats = Math.min(99, seats + 1);
+    setSeatsControls();
+  });
+  document.getElementById('iv-month').addEventListener('click', function () {
+    interval = 'month';
+    setIntervalUi();
+  });
+  document.getElementById('iv-year').addEventListener('click', function () {
+    interval = 'year';
+    setIntervalUi();
+  });
+
+  document.getElementById('free-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var email = (document.getElementById('free-email').value || '').trim();
+    var name = (document.getElementById('free-name').value || '').trim();
+    var t = STR[currentLang] || STR.es;
+    var msg = document.getElementById('free-msg');
+    var err = document.getElementById('free-err');
+    var btn = document.getElementById('free-submit');
+    if (msg) {
+      msg.classList.add('hidden');
+      msg.textContent = '';
+    }
+    if (err) {
+      err.classList.add('hidden');
+      err.textContent = '';
+    }
+    if (!email) return;
+    var orig = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = t.freeSending;
+    fetch(apiBase() + '/api/public/signup-free', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email, name: name || undefined, locale: signupLocaleForApi() })
+    })
+      .then(function (r) {
+        return r.json().then(function (data) {
+          return { ok: r.ok, data: data };
+        });
+      })
+      .then(function (x) {
+        if (x.ok && x.data && x.data.success) {
+          if (msg) {
+            msg.textContent = t.freeSuccess;
+            msg.classList.remove('hidden');
+          }
+          document.getElementById('free-email').value = '';
+          document.getElementById('free-name').value = '';
+        } else {
+          var em = (x.data && (x.data.error || x.data.message)) || t.freeError;
+          if (err) {
+            err.textContent = em;
+            err.classList.remove('hidden');
+          }
+        }
+      })
+      .catch(function () {
+        if (err) {
+          err.textContent = t.freeError;
+          err.classList.remove('hidden');
+        }
+      })
+      .finally(function () {
+        btn.disabled = false;
+        btn.textContent = orig;
+      });
+  });
+
+  initLangSwitcher();
+  setLang(pickInitialLang());
+  setSeatsControls();
+})();
+  </script>
+</body>
+</html>

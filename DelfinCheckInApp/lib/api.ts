@@ -16,14 +16,29 @@ const SESSION_KEY = 'delfin.session.v1';
 let refreshInFlight: Promise<string | null> | null = null;
 
 const API_URL = Constants.expoConfig?.extra?.API_URL || process.env.EXPO_PUBLIC_API_URL || 'https://admin.delfincheckin.com';
+/**
+ * Base para enlaces web públicos (p. ej. https://…/plans.html con checkout Polar vía admin).
+ * Por defecto coincide con la API; para la app móvil conviene https://delfincheckin.com si ahí publicas la landing estática.
+ */
+const WEB_PUBLIC_BASE_URL_RAW =
+  Constants.expoConfig?.extra?.WEB_PUBLIC_BASE_URL || process.env.EXPO_PUBLIC_WEB_PUBLIC_BASE_URL || '';
+const WEB_PUBLIC_BASE_URL = String(WEB_PUBLIC_BASE_URL_RAW || API_URL)
+  .trim()
+  .replace(/\/$/, '');
 
 /** Origen del panel web (misma base que la API). */
 export function getPublicApiOrigin(): string {
   return String(API_URL).replace(/\/$/, '');
 }
 
+/** Origen web público (landing), separado del panel/admin. */
+export function getPublicWebsiteOrigin(): string {
+  return String(WEB_PUBLIC_BASE_URL).trim().replace(/\/$/, '');
+}
+
 if (__DEV__) {
   console.log('🌐 API URL configurada:', API_URL);
+  console.log('🌍 WEB public base configurada:', WEB_PUBLIC_BASE_URL);
 }
 const DEBUG_AUTH = __DEV__;
 

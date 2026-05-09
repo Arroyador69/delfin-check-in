@@ -380,8 +380,7 @@
     });
     var plansEl = document.getElementById('link-plans');
     if (plansEl) {
-      var pb = adminOrigin();
-      plansEl.href = pb + '/' + lang + '/subscribe?source=landing';
+      plansEl.href = 'plans.html?lang=' + encodeURIComponent(lang) + '&source=landing';
     }
     syncLangSwitcher(lang);
     try {
