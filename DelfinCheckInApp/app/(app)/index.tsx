@@ -45,6 +45,16 @@ export default function DashboardScreen() {
     },
   });
 
+  const { data: mirVerifyData } = useQuery({
+    queryKey: ['mir-verificar-config'],
+    queryFn: async () => {
+      const res = await api.get('/api/ministerio/verificar-config');
+      return res.data as { status?: { configurado?: boolean } };
+    },
+    staleTime: 60 * 1000,
+    retry: 1,
+  });
+
   const { data: limitsData } = useQuery({
     queryKey: ['tenant-limits'],
     queryFn: async () => {
@@ -87,12 +97,15 @@ export default function DashboardScreen() {
 
   const onboardingTasks = useMemo(() => {
     const mir = mirData?.mir || {};
-    const mirReady = Boolean(
-      mir?.enabled &&
-        String(mir?.codigoEstablecimiento || '').trim() &&
-        String(mir?.denominacion || '').trim() &&
-        String(mir?.direccionCompleta || '').trim()
-    );
+    // En la app móvil, el checklist debe considerar las credenciales WS (verificar-config)
+    // además de los campos “básicos” del panel (settings/mir).
+    const mirBasicDone =
+      Boolean(mir?.enabled) &&
+      Boolean(String(mir?.codigoEstablecimiento || '').trim()) &&
+      Boolean(String(mir?.denominacion || '').trim()) &&
+      Boolean(String(mir?.direccionCompleta || '').trim());
+    const mirWsDone = Boolean(mirVerifyData?.status?.configurado);
+    const mirReady = mirWsDone || mirBasicDone;
     const roomsReady = Array.isArray(limitsData?.currentRooms) && limitsData!.currentRooms!.length > 0;
     const propertiesReady = Array.isArray(propsData?.properties) && propsData!.properties!.length > 0;
     const googleReady = Boolean(repData?.enabled);
@@ -128,7 +141,7 @@ export default function DashboardScreen() {
 
     const doneCount = tasks.filter((x) => x.done).length;
     return { tasks, doneCount, total: tasks.length };
-  }, [mirData, limitsData, propsData, repData, regionPrefs, tenantCountryData]);
+  }, [mirData, mirVerifyData, limitsData, propsData, repData, regionPrefs, tenantCountryData]);
 
   // Obtener reservas normales
   const {

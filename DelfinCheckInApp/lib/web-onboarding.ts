@@ -9,12 +9,29 @@ export function getWebOnboardingUrl(appLocale: string): string {
   return `${base}/${loc}/onboarding`;
 }
 
-/** Página pública de planes (plans.html en la landing / GitHub Pages) → Polar vía admin. */
+/**
+ * Página pública de planes (para usuarios que aún no tienen cuenta).
+ * Preferimos la landing estática (GitHub Pages) y preservamos `?lang=…`.
+ *
+ * - Si `EXPO_PUBLIC_PUBLIC_PLANS_URL` está configurada: usamos ese origen público.
+ * - Si no: fallback a la ruta del admin `/[locale]/subscribe`.
+ */
 export function getWebSubscribePlansUrl(appLocale: string): string {
-  const base = getPublicWebsiteOrigin();
   const loc = WEB_LOCALES.has(appLocale) ? appLocale : 'es';
+  const configured = process.env.EXPO_PUBLIC_PUBLIC_PLANS_URL;
+  const basePublic = configured
+    ? String(configured).replace(/\/$/, '')
+    : getPublicWebsiteOrigin();
+
+  // Si no hay origen público, mantenemos el fallback del admin.
+  if (!basePublic) {
+    const adminBase = getPublicApiOrigin();
+    return `${adminBase}/${loc}/subscribe?source=mobile_app`;
+  }
+
   const q = new URLSearchParams({ lang: loc, source: 'mobile_app' });
-  return `${base}/plans.html?${q.toString()}`;
+  // `plans.html` existe en la raíz (y puede redirigir a /planes/).
+  return `${basePublic}/plans.html?${q.toString()}`;
 }
 
 /** Alineado con `tenants.onboarding_status` y gating del middleware web. */
