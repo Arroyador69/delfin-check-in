@@ -276,6 +276,7 @@ export async function provisionTenantFromPolarPublicSubscription(sub: any): Prom
       tenantId,
       /** Nunca usar copy de lista de espera: este alta viene del pago web / Polar. */
       variant: 'web_plan_paid',
+      locale: loc,
     });
   } catch (e) {
     console.error('[polar public] Error enviando email de onboarding:', e);
