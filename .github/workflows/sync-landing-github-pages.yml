@@ -1,0 +1,47 @@
+# Copia archivos estáticos de `public/` al repo que alimenta GitHub Pages (delfincheckin.com).
+# Sin esto, enlaces como /plans.html dan 404 en Pages aunque el fichero exista en este monorepo.
+#
+# Requisitos en el repo delfin-check-in → Settings → Secrets:
+#   LANDING_SYNC_TOKEN  — PAT con contenido (write) en el repo de la landing.
+#
+# Opcional: variable LANDING_GITHUB_REPO (por defecto Arroyador69/delfincheckin.com).
+
+name: Sync landing static (GitHub Pages)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'public/plans.html'
+      - 'public/landing-tracking.js'
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Push plans + tracking to landing repo
+        env:
+          TOKEN: ${{ secrets.LANDING_SYNC_TOKEN }}
+          LANDING_REPO: ${{ vars.LANDING_GITHUB_REPO }}
+        run: |
+          set -e
+          if [ -z "${TOKEN}" ]; then
+            echo "::notice::LANDING_SYNC_TOKEN no está definido: no se sincroniza con GitHub Pages. Sube public/plans.html manualmente al repo de la landing o configura el secret."
+            exit 0
+          fi
+          REPO="${LANDING_REPO:-Arroyador69/delfincheckin.com}"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+          git clone --depth 1 "https://x-access-token:${TOKEN}@github.com/${REPO}.git" landing-gh-pages
+          cp public/plans.html public/landing-tracking.js landing-gh-pages/
+          cd landing-gh-pages
+          git add plans.html landing-tracking.js
+          if git diff --staged --quiet; then
+            echo "Sin cambios respecto al repo de la landing."
+            exit 0
+          fi
+          git commit -m "chore: sync plans.html and landing-tracking.js from delfin-check-in"
+          git push origin HEAD

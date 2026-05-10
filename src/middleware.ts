@@ -229,7 +229,11 @@ export async function middleware(req: NextRequest) {
   }
 
   // Formulario estático MIR / registro de viajeros + landing de marketing (huéspedes / propietarios, sin sesión ni /es/)
-  if (pathname === '/index.html' || pathname === '/landing.html') {
+  if (
+    pathname === '/index.html' ||
+    pathname === '/landing.html' ||
+    pathname === '/plans.html'
+  ) {
     return NextResponse.next();
   }
 
