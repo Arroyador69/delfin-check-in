@@ -261,12 +261,464 @@ function onboardingEmailCopy(locale: EmailLocale, variant: OnboardingEmailVarian
             .join('\n'),
       },
     },
+    it: {
+      subject: {
+        waitlist_launch: '🐬 Delfín Check-in: puoi iniziare ora (lista d’attesa)',
+        web_plan_paid: '🐬 Delfín Check-in: accesso confermato (abbonamento web)',
+        default: '🐬 Benvenuto in Delfín Check-in — completa la configurazione',
+      },
+      heroTitle: {
+        waitlist_launch: 'Il tuo accesso a Delfín Check-in è pronto',
+        web_plan_paid: 'Abbonamento confermato',
+        default: 'Benvenuto in Delfín Check-in',
+      },
+      heroSubtitle: {
+        waitlist_launch: 'Inizia gratis con una proprietà — ti guidiamo nell’onboarding',
+        web_plan_paid: 'Ultimo passo: configura il tuo account nel pannello web',
+        default: 'La tua piattaforma di gestione per strutture ricettive',
+      },
+      bodyHeading: {
+        waitlist_launch: 'Grazie per esserti iscritto alla lista d’attesa!',
+        web_plan_paid: 'Accedi e completa la configurazione',
+        default: 'Pronto per iniziare!',
+      },
+      bodyLead: {
+        waitlist_launch:
+          'Il tuo accesso è attivo. Il pannello web ti guida passo dopo passo (paese, unità, integrazioni). Puoi usare il piano gratuito per <strong>una proprietà</strong> mentre esplori.',
+        web_plan_paid:
+          'Grazie per aver sottoscritto Delfín Check-in. Abbiamo creato il tuo spazio di lavoro: il link qui sotto apre l’<strong>onboarding</strong> (dati aziendali, unità, integrazioni). La fatturazione ricorrente è gestita in modo sicuro sul web con il nostro partner (Polar), come visto al checkout.',
+        default:
+          'Il tuo account è stato creato. Per completare la configurazione iniziale e accedere al pannello, usa il pulsante qui sotto:',
+      },
+      cta: 'Avvia onboarding',
+      importantTitle: 'Importante:',
+      importantBody:
+        'se non trovi questa email in arrivo, controlla <strong>Spam</strong> o <strong>Promozioni</strong> e contrassegnala come sicura.',
+      fallbackLine: 'Se il pulsante non funziona, copia e incolla questo link nel browser:',
+      autoMsg: 'Questo è un messaggio automatico; per favore non rispondere.',
+      tempPwdTitle: 'Password temporanea:',
+      tempPwdHint: 'Potrai cambiarla durante l’onboarding.',
+      text: {
+        waitlist_launch: (url: string, pwd?: string) =>
+          [
+            '🐬 Delfín Check-in — accesso dalla lista d’attesa',
+            '',
+            'Ora puoi provare il software per una proprietà gratuitamente.',
+            '',
+            'Link per completare l’onboarding (pannello web):',
+            url,
+            '',
+            pwd ? `Password temporanea: ${pwd}` : '',
+            'App mobile: le versioni Android (Google Play) e iOS (App Store) sono in revisione; nel frattempo usa il pannello web.',
+            '',
+            'Se non vedi l’email, controlla Spam o Promozioni.',
+            '',
+            `© ${new Date().getFullYear()} Delfín Check-in`,
+          ]
+            .filter(Boolean)
+            .join('\n'),
+        web_plan_paid: (url: string, pwd?: string) =>
+          [
+            '🐬 Delfín Check-in — abbonamento attivo',
+            '',
+            'Grazie per l’abbonamento. Completa l’onboarding nel pannello web:',
+            '',
+            url,
+            '',
+            pwd ? `Password temporanea: ${pwd}` : '',
+            'La fatturazione ricorrente è gestita sul web (Polar), come al checkout. L’abbonamento non viene acquistato negli store delle app.',
+            '',
+            'Se non vedi l’email, controlla Spam o Promozioni.',
+            '',
+            `© ${new Date().getFullYear()} Delfín Check-in`,
+          ]
+            .filter(Boolean)
+            .join('\n'),
+        default: (url: string, pwd?: string) =>
+          [
+            '🐬 Benvenuto in Delfín Check-in',
+            '',
+            'Il tuo account è stato creato. Per completare la configurazione, visita:',
+            '',
+            url,
+            '',
+            pwd ? `Password temporanea: ${pwd}` : '',
+            '',
+            'Se hai problemi, controlla la cartella Spam.',
+            '',
+            `© ${new Date().getFullYear()} Delfín Check-in`,
+          ]
+            .filter(Boolean)
+            .join('\n'),
+      },
+    },
+    pt: {
+      subject: {
+        waitlist_launch: '🐬 Delfín Check-in: já pode começar (lista de espera)',
+        web_plan_paid: '🐬 Delfín Check-in: acesso confirmado (subscrição web)',
+        default: '🐬 Bem-vindo ao Delfín Check-in — conclua a configuração',
+      },
+      heroTitle: {
+        waitlist_launch: 'O seu acesso ao Delfín Check-in está pronto',
+        web_plan_paid: 'Subscrição confirmada',
+        default: 'Bem-vindo ao Delfín Check-in',
+      },
+      heroSubtitle: {
+        waitlist_launch: 'Comece grátis com uma propriedade — guiamos o onboarding',
+        web_plan_paid: 'Último passo: configure a sua conta no painel web',
+        default: 'A sua plataforma de gestão de alojamentos',
+      },
+      bodyHeading: {
+        waitlist_launch: 'Obrigado por entrar na lista de espera!',
+        web_plan_paid: 'Aceda e conclua a configuração',
+        default: 'Pronto para começar!',
+      },
+      bodyLead: {
+        waitlist_launch:
+          'O seu acesso está ativo. O painel web guia-o passo a passo (país, unidades, integrações). Pode usar o plano grátis para <strong>uma propriedade</strong> enquanto explora.',
+        web_plan_paid:
+          'Obrigado por subscrever o Delfín Check-in. Criámos o seu espaço de trabalho: o link abaixo abre o <strong>onboarding</strong> (dados do negócio, unidades, integrações). A faturação recorrente é gerida de forma segura na web com o nosso parceiro (Polar), como viu no checkout.',
+        default:
+          'A sua conta foi criada. Para concluir a configuração inicial e aceder ao painel, use o botão abaixo:',
+      },
+      cta: 'Iniciar onboarding',
+      importantTitle: 'Importante:',
+      importantBody:
+        'se não vir este email na caixa de entrada, verifique <strong>Spam</strong> ou <strong>Promoções</strong> e marque-o como seguro.',
+      fallbackLine: 'Se o botão não funcionar, copie e cole este link no navegador:',
+      autoMsg: 'Esta é uma mensagem automática; por favor não responda.',
+      tempPwdTitle: 'Palavra-passe temporária:',
+      tempPwdHint: 'Pode alterá-la durante o onboarding.',
+      text: {
+        waitlist_launch: (url: string, pwd?: string) =>
+          [
+            '🐬 Delfín Check-in — acesso pela lista de espera',
+            '',
+            'Já pode experimentar o software para uma propriedade gratuitamente.',
+            '',
+            'Link para concluir o onboarding (painel web):',
+            url,
+            '',
+            pwd ? `Palavra-passe temporária: ${pwd}` : '',
+            'Apps móveis: Android (Google Play) e iOS (App Store) estão em revisão; entretanto, use o painel web.',
+            '',
+            'Se não vir o email, verifique Spam ou Promoções.',
+            '',
+            `© ${new Date().getFullYear()} Delfín Check-in`,
+          ]
+            .filter(Boolean)
+            .join('\n'),
+        web_plan_paid: (url: string, pwd?: string) =>
+          [
+            '🐬 Delfín Check-in — subscrição ativa',
+            '',
+            'Obrigado por subscrever. Conclua o onboarding no painel web:',
+            '',
+            url,
+            '',
+            pwd ? `Palavra-passe temporária: ${pwd}` : '',
+            'A faturação recorrente é gerida na web (Polar), como no checkout. A subscrição não é comprada dentro das lojas de apps.',
+            '',
+            'Se não vir o email, verifique Spam ou Promoções.',
+            '',
+            `© ${new Date().getFullYear()} Delfín Check-in`,
+          ]
+            .filter(Boolean)
+            .join('\n'),
+        default: (url: string, pwd?: string) =>
+          [
+            '🐬 Bem-vindo ao Delfín Check-in',
+            '',
+            'A sua conta foi criada. Para concluir a configuração, visite:',
+            '',
+            url,
+            '',
+            pwd ? `Palavra-passe temporária: ${pwd}` : '',
+            '',
+            'Se tiver problemas, verifique a pasta de Spam.',
+            '',
+            `© ${new Date().getFullYear()} Delfín Check-in`,
+          ]
+            .filter(Boolean)
+            .join('\n'),
+      },
+    },
+    fr: {
+      subject: {
+        waitlist_launch: '🐬 Delfín Check-in : vous pouvez commencer (liste d’attente)',
+        web_plan_paid: '🐬 Delfín Check-in : accès confirmé (abonnement web)',
+        default: '🐬 Bienvenue sur Delfín Check-in — terminez la configuration',
+      },
+      heroTitle: {
+        waitlist_launch: 'Votre accès à Delfín Check-in est prêt',
+        web_plan_paid: 'Abonnement confirmé',
+        default: 'Bienvenue sur Delfín Check-in',
+      },
+      heroSubtitle: {
+        waitlist_launch: 'Commencez gratuitement avec un logement — onboarding guidé',
+        web_plan_paid: 'Dernière étape : configurez votre compte dans le tableau de bord web',
+        default: 'Votre plateforme de gestion d’hébergements',
+      },
+      bodyHeading: {
+        waitlist_launch: 'Merci d’avoir rejoint la liste d’attente !',
+        web_plan_paid: 'Accédez et terminez la configuration',
+        default: 'Prêt à démarrer !',
+      },
+      bodyLead: {
+        waitlist_launch:
+          'Votre accès est actif. Le tableau de bord web vous guide pas à pas (pays, unités, intégrations). Vous pouvez utiliser l’offre gratuite pour <strong>un logement</strong> pendant que vous explorez.',
+        web_plan_paid:
+          'Merci d’avoir souscrit à Delfín Check-in. Nous avons créé votre espace : le lien ci-dessous ouvre l’<strong>onboarding</strong> (infos entreprise, unités, intégrations). La facturation récurrente est gérée de manière sécurisée sur le web avec notre partenaire (Polar), comme au checkout.',
+        default:
+          'Votre compte a été créé. Pour terminer la configuration initiale et accéder au tableau de bord, utilisez le bouton ci-dessous :',
+      },
+      cta: 'Démarrer l’onboarding',
+      importantTitle: 'Important :',
+      importantBody:
+        'si vous ne voyez pas cet email dans votre boîte de réception, vérifiez <strong>Spam</strong> ou <strong>Promotions</strong> et marquez-le comme sûr.',
+      fallbackLine: 'Si le bouton ne fonctionne pas, copiez-collez ce lien dans votre navigateur :',
+      autoMsg: 'Ceci est un message automatique ; merci de ne pas répondre.',
+      tempPwdTitle: 'Mot de passe temporaire :',
+      tempPwdHint: 'Vous pourrez le modifier pendant l’onboarding.',
+      text: {
+        waitlist_launch: (url: string, pwd?: string) =>
+          [
+            '🐬 Delfín Check-in — accès liste d’attente',
+            '',
+            'Vous pouvez maintenant essayer le logiciel gratuitement pour un logement.',
+            '',
+            'Lien pour terminer l’onboarding (tableau de bord web) :',
+            url,
+            '',
+            pwd ? `Mot de passe temporaire : ${pwd}` : '',
+            'Apps mobiles : Android (Google Play) et iOS (App Store) sont en cours de revue ; en attendant, utilisez le tableau de bord web.',
+            '',
+            'Si vous ne voyez pas l’email, vérifiez Spam ou Promotions.',
+            '',
+            `© ${new Date().getFullYear()} Delfín Check-in`,
+          ]
+            .filter(Boolean)
+            .join('\n'),
+        web_plan_paid: (url: string, pwd?: string) =>
+          [
+            '🐬 Delfín Check-in — abonnement actif',
+            '',
+            'Merci pour votre abonnement. Terminez l’onboarding dans le tableau de bord web :',
+            '',
+            url,
+            '',
+            pwd ? `Mot de passe temporaire : ${pwd}` : '',
+            'La facturation récurrente est gérée sur le web (Polar), comme au checkout. L’abonnement n’est pas acheté dans les stores d’apps.',
+            '',
+            'Si vous ne voyez pas l’email, vérifiez Spam ou Promotions.',
+            '',
+            `© ${new Date().getFullYear()} Delfín Check-in`,
+          ]
+            .filter(Boolean)
+            .join('\n'),
+        default: (url: string, pwd?: string) =>
+          [
+            '🐬 Bienvenue sur Delfín Check-in',
+            '',
+            'Votre compte a été créé. Pour terminer la configuration, rendez-vous sur :',
+            '',
+            url,
+            '',
+            pwd ? `Mot de passe temporaire : ${pwd}` : '',
+            '',
+            'En cas de problème, vérifiez votre dossier Spam.',
+            '',
+            `© ${new Date().getFullYear()} Delfín Check-in`,
+          ]
+            .filter(Boolean)
+            .join('\n'),
+      },
+    },
+    fi: {
+      subject: {
+        waitlist_launch: '🐬 Delfín Check-in: voit aloittaa nyt (jonotuslista)',
+        web_plan_paid: '🐬 Delfín Check-in: pääsy vahvistettu (web-tilaus)',
+        default: '🐬 Tervetuloa Delfín Check-iniin — viimeistele käyttöönotto',
+      },
+      heroTitle: {
+        waitlist_launch: 'Delfín Check-in -tilisi on valmis',
+        web_plan_paid: 'Tilaus vahvistettu',
+        default: 'Tervetuloa Delfín Check-iniin',
+      },
+      heroSubtitle: {
+        waitlist_launch: 'Aloita ilmaiseksi yhdellä kohteella — opastettu käyttöönotto',
+        web_plan_paid: 'Vielä yksi vaihe: viimeistele tili web-hallinnassa',
+        default: 'Majoituksen hallinta-alustasi',
+      },
+      bodyHeading: {
+        waitlist_launch: 'Kiitos jonotuslistalle liittymisestä!',
+        web_plan_paid: 'Siirry ja viimeistele käyttöönotto',
+        default: 'Valmiina aloittamaan!',
+      },
+      bodyLead: {
+        waitlist_launch:
+          'Pääsysi on aktiivinen. Web-hallintapaneeli opastaa vaihe vaiheelta (maa, yksiköt, integraatiot). Voit käyttää ilmaista pakettia <strong>yhdelle kohteelle</strong> kun tutustut palveluun.',
+        web_plan_paid:
+          'Kiitos tilauksesta. Loimme työtilasi: alla oleva linkki avaa <strong>käyttöönoton</strong> (yritystiedot, yksiköt, integraatiot). Toistuva laskutus hoidetaan turvallisesti webissä kumppanimme (Polar) kautta, kuten kassalla.',
+        default:
+          'Tilisi on luotu. Viimeistele alkuasetukset ja siirry hallintapaneeliin painikkeella:',
+      },
+      cta: 'Aloita käyttöönotto',
+      importantTitle: 'Tärkeää:',
+      importantBody:
+        'jos et näe viestiä saapuneissa, tarkista <strong>roskaposti</strong> tai <strong>mainokset</strong> ja merkitse viesti turvalliseksi.',
+      fallbackLine: 'Jos painike ei toimi, kopioi ja liitä tämä linkki selaimeen:',
+      autoMsg: 'Tämä on automaattinen viesti; älä vastaa tähän sähköpostiin.',
+      tempPwdTitle: 'Väliaikainen salasana:',
+      tempPwdHint: 'Voit vaihtaa sen käyttöönoton aikana.',
+      text: {
+        waitlist_launch: (url: string, pwd?: string) =>
+          [
+            '🐬 Delfín Check-in — jonotuslistan pääsy',
+            '',
+            'Voit nyt kokeilla ohjelmistoa ilmaiseksi yhdelle kohteelle.',
+            '',
+            'Linkki käyttöönottoon (web-hallinta):',
+            url,
+            '',
+            pwd ? `Väliaikainen salasana: ${pwd}` : '',
+            'Mobiilisovellukset: Android (Google Play) ja iOS (App Store) ovat tarkistuksessa; käytä sillä välin web-hallintaa.',
+            '',
+            'Jos et näe viestiä, tarkista roskaposti tai mainokset.',
+            '',
+            `© ${new Date().getFullYear()} Delfín Check-in`,
+          ]
+            .filter(Boolean)
+            .join('\n'),
+        web_plan_paid: (url: string, pwd?: string) =>
+          [
+            '🐬 Delfín Check-in — tilaus aktiivinen',
+            '',
+            'Kiitos tilauksesta. Viimeistele käyttöönotto web-hallinnassa:',
+            '',
+            url,
+            '',
+            pwd ? `Väliaikainen salasana: ${pwd}` : '',
+            'Toistuva laskutus hoidetaan webissä (Polar), kuten kassalla. Tilausta ei osteta sovelluskaupoista.',
+            '',
+            'Jos et näe viestiä, tarkista roskaposti tai mainokset.',
+            '',
+            `© ${new Date().getFullYear()} Delfín Check-in`,
+          ]
+            .filter(Boolean)
+            .join('\n'),
+        default: (url: string, pwd?: string) =>
+          [
+            '🐬 Tervetuloa Delfín Check-iniin',
+            '',
+            'Tilisi on luotu. Viimeistele asetukset osoitteessa:',
+            '',
+            url,
+            '',
+            pwd ? `Väliaikainen salasana: ${pwd}` : '',
+            '',
+            'Jos jokin ei toimi, tarkista roskapostikansio.',
+            '',
+            `© ${new Date().getFullYear()} Delfín Check-in`,
+          ]
+            .filter(Boolean)
+            .join('\n'),
+      },
+    },
+    sv: {
+      subject: {
+        waitlist_launch: '🐬 Delfín Check-in: du kan börja nu (väntelista)',
+        web_plan_paid: '🐬 Delfín Check-in: åtkomst bekräftad (webbprenumeration)',
+        default: '🐬 Välkommen till Delfín Check-in — slutför konfigurationen',
+      },
+      heroTitle: {
+        waitlist_launch: 'Ditt Delfín Check-in-konto är klart',
+        web_plan_paid: 'Prenumeration bekräftad',
+        default: 'Välkommen till Delfín Check-in',
+      },
+      heroSubtitle: {
+        waitlist_launch: 'Börja gratis med ett boende — vi guidar onboarding',
+        web_plan_paid: 'Ett sista steg: konfigurera kontot i webbpanelen',
+        default: 'Din plattform för boendehantering',
+      },
+      bodyHeading: {
+        waitlist_launch: 'Tack för att du gick med i väntelistan!',
+        web_plan_paid: 'Öppna och slutför konfigurationen',
+        default: 'Redo att börja!',
+      },
+      bodyLead: {
+        waitlist_launch:
+          'Din åtkomst är aktiv. Webbpanelen guidar dig steg för steg (land, enheter, integrationer). Du kan använda gratisplanen för <strong>ett boende</strong> medan du utforskar.',
+        web_plan_paid:
+          'Tack för att du prenumererar. Vi skapade din arbetsyta: länken nedan öppnar <strong>onboarding</strong> (företagsuppgifter, enheter, integrationer). Återkommande debitering hanteras säkert på webben via vår partner (Polar), som i kassan.',
+        default:
+          'Ditt konto har skapats. För att slutföra installationen och gå till panelen, använd knappen nedan:',
+      },
+      cta: 'Starta onboarding',
+      importantTitle: 'Viktigt:',
+      importantBody:
+        'om du inte ser mejlet i inkorgen, kolla <strong>Skräppost</strong> eller <strong>Reklam</strong> och markera som säkert.',
+      fallbackLine: 'Om knappen inte fungerar, kopiera och klistra in länken i webbläsaren:',
+      autoMsg: 'Detta är ett automatiskt meddelande; vänligen svara inte på detta mejl.',
+      tempPwdTitle: 'Tillfälligt lösenord:',
+      tempPwdHint: 'Du kan ändra det under onboarding.',
+      text: {
+        waitlist_launch: (url: string, pwd?: string) =>
+          [
+            '🐬 Delfín Check-in — väntelisteåtkomst',
+            '',
+            'Du kan nu prova programvaran gratis för ett boende.',
+            '',
+            'Länk för att slutföra onboarding (webbpanel):',
+            url,
+            '',
+            pwd ? `Tillfälligt lösenord: ${pwd}` : '',
+            'Mobilappar: Android (Google Play) och iOS (App Store) granskas; använd webbpanelen under tiden.',
+            '',
+            'Om du inte ser mejlet, kolla Skräppost eller Reklam.',
+            '',
+            `© ${new Date().getFullYear()} Delfín Check-in`,
+          ]
+            .filter(Boolean)
+            .join('\n'),
+        web_plan_paid: (url: string, pwd?: string) =>
+          [
+            '🐬 Delfín Check-in — prenumeration aktiv',
+            '',
+            'Tack för din prenumeration. Slutför onboarding i webbpanelen:',
+            '',
+            url,
+            '',
+            pwd ? `Tillfälligt lösenord: ${pwd}` : '',
+            'Återkommande debitering hanteras på webben (Polar), som i kassan. Prenumerationen köps inte i appbutikerna.',
+            '',
+            'Om du inte ser mejlet, kolla Skräppost eller Reklam.',
+            '',
+            `© ${new Date().getFullYear()} Delfín Check-in`,
+          ]
+            .filter(Boolean)
+            .join('\n'),
+        default: (url: string, pwd?: string) =>
+          [
+            '🐬 Välkommen till Delfín Check-in',
+            '',
+            'Ditt konto har skapats. För att slutföra konfigurationen, besök:',
+            '',
+            url,
+            '',
+            pwd ? `Tillfälligt lösenord: ${pwd}` : '',
+            '',
+            'Om du får problem, kolla skräpposten.',
+            '',
+            `© ${new Date().getFullYear()} Delfín Check-in`,
+          ]
+            .filter(Boolean)
+            .join('\n'),
+      },
+    },
   } as const;
 
-  // Para it/pt/fr/fi/sv usamos inglés si falta copy específico (mejor que mandar español).
-  const selected =
-    (base as any)[locale] ||
-    base.en;
+  const selected = (base as any)[locale] || base.es;
 
   const v = variant;
   return {
