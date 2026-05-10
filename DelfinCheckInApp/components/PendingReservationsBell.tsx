@@ -11,6 +11,14 @@ interface PendingReservationsBellProps {
   color?: string;
 }
 
+type TenantNotificationItem = {
+  id: string;
+  type?: string | null;
+  link?: string | null;
+  is_read?: boolean;
+  created_at?: string;
+};
+
 export default function PendingReservationsBell({
   color = '#1f2937',
 }: PendingReservationsBellProps) {
@@ -38,7 +46,7 @@ export default function PendingReservationsBell({
     queryKey: ['tenant-notifications-unread'],
     queryFn: async () => {
       const response = await api.get('/api/tenant/notifications');
-      return response.data as { unreadCount?: number };
+      return response.data as { unreadCount?: number; items?: TenantNotificationItem[] };
     },
     refetchInterval: 30000,
   });
@@ -46,46 +54,69 @@ export default function PendingReservationsBell({
   const pendingReservations = typeof data?.count === 'number' ? data.count : 0;
   const pendingMir = typeof mirPending?.missing === 'number' ? mirPending.missing : 0;
   const unreadNotifs = typeof tenantNotifs?.unreadCount === 'number' ? tenantNotifs.unreadCount : 0;
+  const notifItems = Array.isArray(tenantNotifs?.items) ? tenantNotifs!.items! : [];
   const total = pendingReservations + pendingMir + unreadNotifs;
   const label = total > 9 ? '9+' : String(total);
+
+  const goPendingReservations = () =>
+    router.push({
+      pathname: '/(app)/reservations',
+      params: { filter: 'pending' },
+    });
+
+  const goPendingMir = () => router.push('/(app)/settings/mir' as any);
+
+  const goByNotification = () => {
+    const firstUnread =
+      notifItems.find((n) => n && (n.is_read === false || n.is_read == null)) || notifItems[0];
+    const type = String(firstUnread?.type || '');
+
+    // Mapear a pantallas internas (sin "bandeja de notificaciones")
+    if (type === 'support_reply') {
+      router.push('/(app)/settings/support' as any);
+      return;
+    }
+    if (type === 'guest_registration') {
+      router.push('/(app)/reservations' as any);
+      return;
+    }
+    if (type === 'reservation_created' || type === 'reservation_updated') {
+      router.push('/(app)/reservations' as any);
+      return;
+    }
+    // Fallback: llevar al punto más útil (reservas)
+    router.push('/(app)/reservations' as any);
+  };
 
   return (
     <Pressable
       onPress={() => {
-        if (pendingReservations > 0 && pendingMir > 0 && unreadNotifs > 0) {
+        // Si hay varias cosas pendientes, dejamos elegir entre las 2 principales
+        // (reservas pendientes y configuración MIR). Las notificaciones genéricas se resuelven
+        // llevando al destino directamente (sin pantalla "notificaciones").
+        if (pendingReservations > 0 && pendingMir > 0) {
           Alert.alert(t('mobile.notifications.title'), t('mobile.notifications.choose'), [
-            {
-              text: t('mobile.notifications.pendingReservations'),
-              onPress: () =>
-                router.push({
-                  pathname: '/(app)/reservations',
-                  params: { filter: 'pending' },
-                }),
-            },
-            {
-              text: t('mobile.notifications.pendingMirConfig'),
-              onPress: () => router.push('/(app)/settings/mir' as any),
-            },
-            {
-              text: t('mobile.notifications.otherNotifications'),
-              onPress: () => router.push('/(app)/notifications' as any),
-            },
+            { text: t('mobile.notifications.pendingReservations'), onPress: goPendingReservations },
+            { text: t('mobile.notifications.pendingMirConfig'), onPress: goPendingMir },
             { text: t('common.cancel'), style: 'cancel' },
           ]);
           return;
         }
-        if (pendingMir > 0 && pendingReservations === 0 && unreadNotifs === 0) {
-          router.push('/(app)/settings/mir' as any);
+
+        if (pendingReservations > 0) {
+          goPendingReservations();
           return;
         }
-        if (unreadNotifs > 0 && pendingReservations === 0 && pendingMir === 0) {
-          router.push('/(app)/notifications' as any);
+        if (pendingMir > 0) {
+          goPendingMir();
           return;
         }
-        router.push({
-          pathname: '/(app)/reservations',
-          params: { filter: 'pending' },
-        });
+        if (unreadNotifs > 0) {
+          goByNotification();
+          return;
+        }
+
+        goPendingReservations();
       }}
       style={styles.button}
       hitSlop={8}
