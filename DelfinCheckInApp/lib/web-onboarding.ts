@@ -1,4 +1,4 @@
-import { getPublicApiOrigin } from '@/lib/api';
+import { getPublicApiOrigin, getPublicWebsiteOrigin } from '@/lib/api';
 
 const WEB_LOCALES = new Set(['es', 'en', 'fr', 'it', 'pt', 'fi']);
 
@@ -11,19 +11,27 @@ export function getWebOnboardingUrl(appLocale: string): string {
 
 /**
  * Página pública de planes (para usuarios que aún no tienen cuenta).
+ * Preferimos la landing estática (GitHub Pages) y preservamos `?lang=…`.
  *
- * - Preferimos un origen público/estático (repo landing) para no acoplarlo al admin.
- * - Fallback: ruta legacy en el admin si no está configurada.
+ * - Si `EXPO_PUBLIC_PUBLIC_PLANS_URL` está configurada: usamos ese origen público.
+ * - Si no: fallback a la ruta del admin `/[locale]/subscribe`.
  */
 export function getWebSubscribePlansUrl(appLocale: string): string {
-  const configured = process.env.EXPO_PUBLIC_PUBLIC_PLANS_URL;
-  const base = configured ? String(configured).replace(/\/$/, '') : getPublicApiOrigin();
   const loc = WEB_LOCALES.has(appLocale) ? appLocale : 'es';
-  // Si estamos en el fallback del admin, mantenemos el path legacy.
-  if (!configured) {
-    return `${base}/${loc}/subscribe?source=mobile_app`;
+  const configured = process.env.EXPO_PUBLIC_PUBLIC_PLANS_URL;
+  const basePublic = configured
+    ? String(configured).replace(/\/$/, '')
+    : getPublicWebsiteOrigin();
+
+  // Si no hay origen público, mantenemos el fallback del admin.
+  if (!basePublic) {
+    const adminBase = getPublicApiOrigin();
+    return `${adminBase}/${loc}/subscribe?source=mobile_app`;
   }
-  return `${base}/${loc}/planes?source=mobile_app`;
+
+  const q = new URLSearchParams({ lang: loc, source: 'mobile_app' });
+  // `plans.html` existe en la raíz (y puede redirigir a /planes/).
+  return `${basePublic}/plans.html?${q.toString()}`;
 }
 
 /** Alineado con `tenants.onboarding_status` y gating del middleware web. */
