@@ -34,6 +34,7 @@ export async function activateWaitlistEntryFromRow(
   body: Record<string, unknown>,
   options?: { onboardingLocale?: string }
 ): Promise<NextResponse> {
+  const requestedLocale = options?.onboardingLocale;
   const onboardingBasePath = onboardingPathForLocale(options?.onboardingLocale);
   const appBase = String(
     process.env.NEXT_PUBLIC_APP_URL || 'https://admin.delfincheckin.com'
@@ -82,6 +83,7 @@ export async function activateWaitlistEntryFromRow(
           onboardingUrl,
           tenantId,
           variant: 'waitlist_launch',
+          locale: requestedLocale,
         });
       } catch (emailError) {
         console.error('Error enviando email de onboarding:', emailError);
@@ -127,6 +129,7 @@ export async function activateWaitlistEntryFromRow(
         tempPassword: tempPasswordOrphan,
         tenantId,
         variant: 'waitlist_launch',
+        locale: requestedLocale,
       });
       return NextResponse.json({
         success: true,
@@ -326,6 +329,7 @@ export async function activateWaitlistEntryFromRow(
       tempPassword,
       tenantId,
       variant: 'waitlist_launch',
+      locale: requestedLocale,
     });
 
     console.log(`✅ Usuario activado: ${waitlistEntry.email} -> Tenant ${tenantId}`);

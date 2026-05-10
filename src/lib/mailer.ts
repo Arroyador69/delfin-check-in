@@ -52,6 +52,240 @@ function normalizeOnboardingVariant(v?: OnboardingEmailVariant): OnboardingEmail
   return 'default';
 }
 
+type EmailLocale = 'es' | 'en' | 'it' | 'pt' | 'fr' | 'fi' | 'sv';
+
+function normalizeEmailLocale(loc?: string | null): EmailLocale {
+  const v = String(loc || '')
+    .trim()
+    .toLowerCase()
+    .replace(/_/g, '-');
+  const base = v.split('-')[0] || '';
+  if (base === 'es' || base === 'en' || base === 'it' || base === 'pt' || base === 'fr' || base === 'fi' || base === 'sv') {
+    return base;
+  }
+  return 'es';
+}
+
+function guessLocaleFromOnboardingUrl(onboardingUrl: string): EmailLocale {
+  try {
+    const u = new URL(onboardingUrl);
+    const m = u.pathname.match(/^\/([a-z]{2})\//i);
+    if (m?.[1]) return normalizeEmailLocale(m[1]);
+  } catch {
+    // ignore
+  }
+  return 'es';
+}
+
+function onboardingEmailCopy(locale: EmailLocale, variant: OnboardingEmailVariant) {
+  const base = {
+    es: {
+      subject: {
+        waitlist_launch: '🐬 Delfín Check-in: ya puedes probarlo (lista de espera)',
+        web_plan_paid: '🐬 Delfín Check-in: confirma tu acceso (suscripción web)',
+        default: '🐬 Bienvenido a Delfín Check-in - Completa tu configuración',
+      },
+      heroTitle: {
+        waitlist_launch: 'Tu software Delfín Check-in ya está listo',
+        web_plan_paid: 'Suscripción confirmada',
+        default: 'Bienvenido a Delfín Check-in',
+      },
+      heroSubtitle: {
+        waitlist_launch: 'Puedes probarlo gratis con una propiedad — te guiamos en el onboarding',
+        web_plan_paid: 'Un último paso: configura tu cuenta en el panel web',
+        default: 'Tu plataforma de gestión de alojamientos',
+      },
+      bodyHeading: {
+        waitlist_launch: '¡Gracias por confiar en la lista de espera!',
+        web_plan_paid: 'Accede y termina la configuración',
+        default: '¡Listo para empezar!',
+      },
+      bodyLead: {
+        waitlist_launch:
+          'Ya hemos activado tu acceso. El panel web te guía paso a paso (país, unidades, integraciones). Puedes usar el plan gratuito para <strong>una propiedad</strong> sin coste mientras exploras.',
+        web_plan_paid:
+          'Gracias por contratar Delfín Check-in. Hemos creado tu espacio de trabajo: el enlace siguiente abre el <strong>onboarding</strong> (datos del negocio, unidades, integraciones). La facturación recurrente de tu plan se gestiona de forma segura en la web con nuestro partner de pagos (Polar), como viste en el checkout.',
+        default:
+          'Tu cuenta ha sido creada correctamente. Para completar la configuración inicial y entrar en tu panel, usa el botón siguiente:',
+      },
+      cta: 'Comenzar onboarding',
+      importantTitle: 'Importante:',
+      importantBody:
+        'si no ves este correo en la bandeja de entrada, revisa <strong>Spam</strong> o <strong>Promociones</strong> y márcalo como correo deseado.',
+      fallbackLine: 'Si el botón no funciona, copia y pega este enlace en el navegador:',
+      autoMsg: 'Este mensaje es automático; por favor no respondas a este correo.',
+      tempPwdTitle: 'Contraseña temporal:',
+      tempPwdHint: 'Podrás cambiarla durante el proceso de onboarding.',
+      text: {
+        waitlist_launch: (url: string, pwd?: string) =>
+          [
+            '🐬 Delfín Check-in — acceso desde la lista de espera',
+            '',
+            'Ya puedes probar el software de gestión para una propiedad de forma gratuita.',
+            '',
+            'Enlace para completar el onboarding (panel web):',
+            url,
+            '',
+            pwd ? `Contraseña temporal: ${pwd}` : '',
+            'App móvil: las versiones Android (Google Play) e iOS (App Store) están en revisión en las tiendas; mientras tanto usa el panel web.',
+            '',
+            'Si no ves el correo, revisa Spam o Promociones.',
+            '',
+            `© ${new Date().getFullYear()} Delfín Check-in`,
+          ]
+            .filter(Boolean)
+            .join('\n'),
+        web_plan_paid: (url: string, pwd?: string) =>
+          [
+            '🐬 Delfín Check-in — suscripción activa',
+            '',
+            'Gracias por contratar Delfín Check-in. Completa el onboarding en el panel web:',
+            '',
+            url,
+            '',
+            pwd ? `Contraseña temporal: ${pwd}` : '',
+            'La facturación recurrente del plan se gestiona en la web (Polar), como en el checkout. La suscripción del software no se contrata en las tiendas de apps.',
+            '',
+            'Si no ves el correo, revisa Spam o Promociones.',
+            '',
+            `© ${new Date().getFullYear()} Delfín Check-in`,
+          ]
+            .filter(Boolean)
+            .join('\n'),
+        default: (url: string, pwd?: string) =>
+          [
+            '🐬 Bienvenido a Delfín Check-in',
+            '',
+            'Tu cuenta ha sido creada exitosamente. Para completar tu configuración inicial, visita:',
+            '',
+            url,
+            '',
+            pwd ? `Contraseña temporal: ${pwd}` : '',
+            '',
+            'Si tienes problemas, revisa tu carpeta de Spam/Correo no deseado.',
+            '',
+            `© ${new Date().getFullYear()} Delfín Check-in`,
+          ]
+            .filter(Boolean)
+            .join('\n'),
+      },
+    },
+    en: {
+      subject: {
+        waitlist_launch: '🐬 Delfín Check-in: you can start now (waitlist)',
+        web_plan_paid: '🐬 Delfín Check-in: access confirmed (web subscription)',
+        default: '🐬 Welcome to Delfín Check-in — complete setup',
+      },
+      heroTitle: {
+        waitlist_launch: 'Your Delfín Check-in account is ready',
+        web_plan_paid: 'Subscription confirmed',
+        default: 'Welcome to Delfín Check-in',
+      },
+      heroSubtitle: {
+        waitlist_launch: 'Start free with one property — we’ll guide you through onboarding',
+        web_plan_paid: 'One last step: set up your account in the web dashboard',
+        default: 'Your accommodation management platform',
+      },
+      bodyHeading: {
+        waitlist_launch: 'Thanks for joining the waitlist!',
+        web_plan_paid: 'Access and finish setup',
+        default: 'Ready to start!',
+      },
+      bodyLead: {
+        waitlist_launch:
+          'Your access is active. The web dashboard guides you step by step (country, units, integrations). You can use the free plan for <strong>one property</strong> while you explore.',
+        web_plan_paid:
+          'Thanks for subscribing to Delfín Check-in. We created your workspace: the link below opens <strong>onboarding</strong> (business details, units, integrations). Your recurring billing is handled securely on the web with our payments partner (Polar), as shown at checkout.',
+        default:
+          'Your account has been created. To finish the initial setup and access your dashboard, use the button below:',
+      },
+      cta: 'Start onboarding',
+      importantTitle: 'Important:',
+      importantBody:
+        "if you don't see this email in your inbox, check <strong>Spam</strong> or <strong>Promotions</strong> and mark it as safe.",
+      fallbackLine: "If the button doesn't work, copy and paste this link into your browser:",
+      autoMsg: 'This is an automated message; please do not reply.',
+      tempPwdTitle: 'Temporary password:',
+      tempPwdHint: 'You can change it during onboarding.',
+      text: {
+        waitlist_launch: (url: string, pwd?: string) =>
+          [
+            '🐬 Delfín Check-in — waitlist access',
+            '',
+            'You can now try the software for one property for free.',
+            '',
+            'Onboarding link (web dashboard):',
+            url,
+            '',
+            pwd ? `Temporary password: ${pwd}` : '',
+            'Mobile apps: Android (Google Play) and iOS (App Store) are under review; meanwhile, use the web dashboard.',
+            '',
+            "If you don't see the email, check Spam or Promotions.",
+            '',
+            `© ${new Date().getFullYear()} Delfín Check-in`,
+          ]
+            .filter(Boolean)
+            .join('\n'),
+        web_plan_paid: (url: string, pwd?: string) =>
+          [
+            '🐬 Delfín Check-in — subscription active',
+            '',
+            'Thanks for subscribing. Complete onboarding in the web dashboard:',
+            '',
+            url,
+            '',
+            pwd ? `Temporary password: ${pwd}` : '',
+            'Recurring billing is handled on the web (Polar), as at checkout. The software subscription is not purchased inside app stores.',
+            '',
+            "If you don't see the email, check Spam or Promotions.",
+            '',
+            `© ${new Date().getFullYear()} Delfín Check-in`,
+          ]
+            .filter(Boolean)
+            .join('\n'),
+        default: (url: string, pwd?: string) =>
+          [
+            '🐬 Welcome to Delfín Check-in',
+            '',
+            'Your account has been created. To complete setup, visit:',
+            '',
+            url,
+            '',
+            pwd ? `Temporary password: ${pwd}` : '',
+            '',
+            'If you have issues, check your Spam folder.',
+            '',
+            `© ${new Date().getFullYear()} Delfín Check-in`,
+          ]
+            .filter(Boolean)
+            .join('\n'),
+      },
+    },
+  } as const;
+
+  // Para it/pt/fr/fi/sv usamos inglés si falta copy específico (mejor que mandar español).
+  const selected =
+    (base as any)[locale] ||
+    base.en;
+
+  const v = variant;
+  return {
+    subject: selected.subject[v] || selected.subject.default,
+    heroTitle: selected.heroTitle[v] || selected.heroTitle.default,
+    heroSubtitle: selected.heroSubtitle[v] || selected.heroSubtitle.default,
+    bodyHeading: selected.bodyHeading[v] || selected.bodyHeading.default,
+    bodyLead: selected.bodyLead[v] || selected.bodyLead.default,
+    cta: selected.cta,
+    importantTitle: selected.importantTitle,
+    importantBody: selected.importantBody,
+    fallbackLine: selected.fallbackLine,
+    autoMsg: selected.autoMsg,
+    tempPwdTitle: selected.tempPwdTitle,
+    tempPwdHint: selected.tempPwdHint,
+    text: selected.text[v] || selected.text.default,
+  };
+}
+
 export async function sendOnboardingEmail(params: {
   to: string;
   onboardingUrl: string;
@@ -60,6 +294,8 @@ export async function sendOnboardingEmail(params: {
   tenantId?: string;
   /** waitlist_launch: solo activación lista de espera (superadmin). web_plan_paid: alta tras pago en web/Polar (landing o /subscribe). */
   variant?: OnboardingEmailVariant;
+  /** Idioma del email (si no se pasa, se infiere de la URL o cae a es). */
+  locale?: string;
 }) {
   let trackingId: string | null = null;
   try {
@@ -70,6 +306,8 @@ export async function sendOnboardingEmail(params: {
     const from = process.env.SMTP_FROM_ONBOARDING || process.env.SMTP_FROM || `Delfín Check-in <noreply@delfincheckin.com>`;
 
     const variant = normalizeOnboardingVariant(params.variant);
+    const emailLocale = normalizeEmailLocale(params.locale || guessLocaleFromOnboardingUrl(params.onboardingUrl));
+    const copy = onboardingEmailCopy(emailLocale, variant);
 
     const rawOnboardingUrl = params.onboardingUrl;
     const href = escapeHtmlAttr(rawOnboardingUrl);
@@ -81,9 +319,9 @@ export async function sendOnboardingEmail(params: {
               <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color:#f8f9fa;border-left:4px solid #2563eb;border-radius:4px;">
                 <tr>
                   <td style="padding:16px 20px;font-family:Arial,Helvetica,sans-serif;font-size:15px;color:#333333;line-height:1.5;">
-                    <p style="margin:0 0 8px 0;"><strong>Contraseña temporal:</strong></p>
+                    <p style="margin:0 0 8px 0;"><strong>${copy.tempPwdTitle}</strong></p>
                     <p style="margin:0;font-size:18px;font-family:Consolas,Monaco,monospace;letter-spacing:1px;"><strong>${escapeHtmlText(params.tempPassword)}</strong></p>
-                    <p style="margin:12px 0 0 0;font-size:12px;color:#666666;">Podrás cambiarla durante el proceso de onboarding.</p>
+                    <p style="margin:12px 0 0 0;font-size:12px;color:#666666;">${copy.tempPwdHint}</p>
                   </td>
                 </tr>
               </table>
@@ -91,30 +329,10 @@ export async function sendOnboardingEmail(params: {
           </tr>`
       : '';
 
-    const heroTitle =
-      variant === 'waitlist_launch'
-        ? 'Tu software Delfín Check-in ya está listo'
-        : variant === 'web_plan_paid'
-          ? 'Suscripción confirmada'
-          : 'Bienvenido a Delfín Check-in';
-    const heroSubtitle =
-      variant === 'waitlist_launch'
-        ? 'Puedes probarlo gratis con una propiedad — te guiamos en el onboarding'
-        : variant === 'web_plan_paid'
-          ? 'Un último paso: configura tu cuenta en el panel web'
-          : 'Tu plataforma de gestión de alojamientos';
-    const bodyHeading =
-      variant === 'waitlist_launch'
-        ? '¡Gracias por confiar en la lista de espera!'
-        : variant === 'web_plan_paid'
-          ? 'Accede y termina la configuración'
-          : '¡Listo para empezar!';
-    const bodyLead =
-      variant === 'waitlist_launch'
-        ? 'Ya hemos activado tu acceso. El panel web te guía paso a paso (país, unidades, integraciones). Puedes usar el plan gratuito para <strong>una propiedad</strong> sin coste mientras exploras.'
-        : variant === 'web_plan_paid'
-          ? 'Gracias por contratar Delfín Check-in. Hemos creado tu espacio de trabajo: el enlace siguiente abre el <strong>onboarding</strong> (datos del negocio, unidades, integraciones). La facturación recurrente de tu plan se gestiona de forma segura en la web con nuestro partner de pagos (Polar), como viste en el checkout.'
-          : 'Tu cuenta ha sido creada correctamente. Para completar la configuración inicial y entrar en tu panel, usa el botón siguiente:';
+    const heroTitle = copy.heroTitle;
+    const heroSubtitle = copy.heroSubtitle;
+    const bodyHeading = copy.bodyHeading;
+    const bodyLead = copy.bodyLead;
     const waitlistAppsNote =
       variant === 'waitlist_launch'
         ? `
@@ -144,60 +362,9 @@ export async function sendOnboardingEmail(params: {
           </tr>`
         : '';
 
-    const subject =
-      variant === 'waitlist_launch'
-        ? '🐬 Delfín Check-in: ya puedes probarlo (lista de espera)'
-        : variant === 'web_plan_paid'
-          ? '🐬 Delfín Check-in: confirma tu acceso (suscripción web)'
-          : '🐬 Bienvenido a Delfín Check-in - Completa tu configuración';
+    const subject = copy.subject;
 
-    const text =
-      variant === 'waitlist_launch'
-        ? `
-🐬 Delfín Check-in — acceso desde la lista de espera
-
-Ya puedes probar el software de gestión para una propiedad de forma gratuita.
-
-Enlace para completar el onboarding (panel web):
-${params.onboardingUrl}
-
-${params.tempPassword ? `Contraseña temporal: ${params.tempPassword}\n` : ''}
-App móvil: las versiones Android (Google Play) e iOS (App Store) están en revisión en las tiendas; mientras tanto usa el panel web.
-
-Si no ves el correo, revisa Spam o Promociones.
-
-© ${new Date().getFullYear()} Delfín Check-in
-        `.trim()
-        : variant === 'web_plan_paid'
-          ? `
-🐬 Delfín Check-in — suscripción activa
-
-Gracias por contratar Delfín Check-in. Completa el onboarding en el panel web:
-
-${params.onboardingUrl}
-
-${params.tempPassword ? `Contraseña temporal: ${params.tempPassword}\n` : ''}
-La facturación recurrente del plan se gestiona en la web (Polar), como en el checkout. La suscripción del software no se contrata en las tiendas de apps.
-
-Si no ves el correo, revisa Spam o Promociones.
-
-© ${new Date().getFullYear()} Delfín Check-in
-          `.trim()
-          : `
-🐬 Bienvenido a Delfín Check-in
-
-¡Bienvenido a Delfín Check-in!
-
-Tu cuenta ha sido creada exitosamente. Para completar tu configuración inicial, visita:
-
-${params.onboardingUrl}
-
-${params.tempPassword ? `\n🔑 Contraseña temporal: ${params.tempPassword}\n` : ''}
-
-Si tienes problemas, revisa tu carpeta de Spam/Correo no deseado.
-
-© ${new Date().getFullYear()} Delfín Check-in
-        `.trim();
+    const text = copy.text(params.onboardingUrl, params.tempPassword);
 
     const appBase = String(process.env.NEXT_PUBLIC_APP_URL || 'https://admin.delfincheckin.com').replace(/\/+$/, '');
 
@@ -242,12 +409,12 @@ Si tienes problemas, revisa tu carpeta de Spam/Correo no deseado.
 
     // Plantilla en tablas + estilos inline: Gmail y Outlook suelen romper div+margin y <style> en <head>
     const html = `<!DOCTYPE html>
-<html lang="es">
+<html lang="${escapeHtmlAttr(emailLocale)}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <title>Bienvenido a Delfín Check-in</title>
+  <title>${escapeHtmlText(copy.subject)}</title>
 </head>
 <body style="margin:0;padding:0;background-color:#f5f5f5;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;">
   <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color:#f5f5f5;">
@@ -272,7 +439,7 @@ Si tienes problemas, revisa tu carpeta de Spam/Correo no deseado.
               <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center">
                 <tr>
                   <td align="center" bgcolor="#2563eb" style="background-color:#2563eb;border-radius:8px;">
-                    <a href="${hrefTracked}" target="_blank" rel="noopener noreferrer" style="display:inline-block;padding:14px 28px;font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:bold;color:#ffffff !important;text-decoration:none;border-radius:8px;">Comenzar onboarding</a>
+                    <a href="${hrefTracked}" target="_blank" rel="noopener noreferrer" style="display:inline-block;padding:14px 28px;font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:bold;color:#ffffff !important;text-decoration:none;border-radius:8px;">${escapeHtmlText(copy.cta)}</a>
                   </td>
                 </tr>
               </table>
@@ -284,7 +451,7 @@ Si tienes problemas, revisa tu carpeta de Spam/Correo no deseado.
               <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color:#fff8e6;border-left:4px solid #e6a800;border-radius:4px;">
                 <tr>
                   <td style="padding:16px 20px;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;color:#6d5200;">
-                    <strong>Importante:</strong> si no ves este correo en la bandeja de entrada, revisa <strong>Spam</strong> o <strong>Promociones</strong> y márcalo como correo deseado.
+                    <strong>${escapeHtmlText(copy.importantTitle)}</strong> ${copy.importantBody}
                   </td>
                 </tr>
               </table>
@@ -292,14 +459,14 @@ Si tienes problemas, revisa tu carpeta de Spam/Correo no deseado.
           </tr>
           <tr>
             <td style="padding:0 32px 32px 32px;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;color:#4b5563;">
-              <p style="margin:0 0 8px 0;">Si el botón no funciona, copia y pega este enlace en el navegador:</p>
+              <p style="margin:0 0 8px 0;">${escapeHtmlText(copy.fallbackLine)}</p>
               <p style="margin:0;word-break:break-all;font-size:13px;color:#2563eb;">${plainUrlText}</p>
             </td>
           </tr>
           ${trackingPixel}
           <tr>
             <td style="padding:20px 24px;background-color:#f8f9fa;border-top:1px solid #e5e7eb;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.5;color:#6b7280;text-align:center;">
-              <p style="margin:0;">Este mensaje es automático; por favor no respondas a este correo.</p>
+              <p style="margin:0;">${escapeHtmlText(copy.autoMsg)}</p>
               <p style="margin:8px 0 0 0;">© ${new Date().getFullYear()} Delfín Check-in</p>
             </td>
           </tr>
