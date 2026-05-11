@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getReservations, insertReservation, sql, normalizeRoomId } from '@/lib/db';
+import { ensureReservationsChannelWriteCompat } from '@/lib/ensure-reservations-write-compat';
 import { ensureReservationCheckinEmailColumns } from '@/lib/reservation-checkin-email-db';
 import { ensureReservationGuestFormColumns } from '@/lib/reservation-from-guest-registration';
 import { sendReservationConfirmation } from '@/lib/whatsapp';
@@ -242,6 +243,22 @@ export async function POST(request: NextRequest) {
       CREATE UNIQUE INDEX IF NOT EXISTS uq_reservations_tenant_external_id
       ON reservations(tenant_id, external_id);
     `;
+
+    try {
+      await ensureReservationsChannelWriteCompat();
+    } catch (e) {
+      console.warn('⚠️ ensureReservationsChannelWriteCompat:', e);
+    }
+    try {
+      await ensureReservationGuestFormColumns();
+    } catch (e) {
+      console.warn('⚠️ ensureReservationGuestFormColumns:', e);
+    }
+    try {
+      await ensureReservationCheckinEmailColumns();
+    } catch (e) {
+      console.warn('⚠️ ensureReservationCheckinEmailColumns:', e);
+    }
     
     // Validar datos requeridos
     if (!body.guest_name || !body.room_id || !body.check_in || !body.check_out) {
@@ -343,9 +360,29 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(newReservation);
   } catch (error: any) {
-    console.error('Error creating reservation:', error);
+    const code = error?.code ?? error?.cause?.code;
+    const msg = String(error?.message ?? error);
+    console.error('Error creating reservation:', code || '', msg, error);
+    if (code === '23505') {
+      return NextResponse.json(
+        { error: 'Ya existe una reserva con ese identificador externo para este establecimiento.' },
+        { status: 409 }
+      );
+    }
+    if (code === '23503') {
+      return NextResponse.json(
+        { error: 'La habitación o referencia no es válida en la base de datos.' },
+        { status: 400 }
+      );
+    }
+    if (code === '22P02') {
+      return NextResponse.json(
+        { error: 'Datos no válidos (por ejemplo UUID de habitación o fechas).', details: msg },
+        { status: 400 }
+      );
+    }
     return NextResponse.json(
-      { error: 'Error al crear la reserva', details: error.message },
+      { error: 'Error al crear la reserva', details: msg, code: code || undefined },
       { status: 500 }
     );
   }
