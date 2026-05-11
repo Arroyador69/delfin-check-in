@@ -87,6 +87,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     },
     plugins: [
       'expo-router',
+      'expo-web-browser',
       'expo-secure-store',
       'expo-notifications',
       './plugins/withNoMacCatalyst',

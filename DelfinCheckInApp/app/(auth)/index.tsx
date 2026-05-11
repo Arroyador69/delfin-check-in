@@ -3,12 +3,13 @@
 // =====================================================
 
 import { useState } from 'react';
-import { View, Text, TextInput, Pressable, StyleSheet, ActivityIndicator, Alert, Linking } from 'react-native';
+import { View, Text, TextInput, Pressable, StyleSheet, ActivityIndicator, Alert } from 'react-native';
 import { useAuth } from '@/lib/auth';
 import { useRouter } from 'expo-router';
 import { getLocale, t } from '@/lib/i18n';
-import { api } from '@/lib/api';
+import { api, getPublicApiOrigin } from '@/lib/api';
 import { getWebOnboardingUrl, getWebSubscribePlansUrl, isWebOnboardingIncomplete } from '@/lib/web-onboarding';
+import { openAccountWebUrl } from '@/lib/in-app-browser';
 
 export default function LoginScreen() {
   const { signIn } = useAuth();
@@ -31,7 +32,7 @@ export default function LoginScreen() {
           const { data } = await api.get<{ tenant?: { onboarding_status?: string } }>('/api/tenant');
           const st = data?.tenant?.onboarding_status;
           if (isWebOnboardingIncomplete(st)) {
-            await Linking.openURL(getWebOnboardingUrl(getLocale()));
+            await openAccountWebUrl(getWebOnboardingUrl(getLocale()));
           }
         } catch {
           /* seguimos al dashboard aunque falle la comprobación */
@@ -89,7 +90,7 @@ export default function LoginScreen() {
         </Pressable>
 
         <Pressable
-          onPress={() => Linking.openURL('https://admin.delfincheckin.com/forgot-password')}
+          onPress={() => void openAccountWebUrl(`${getPublicApiOrigin()}/forgot-password`)}
           disabled={loading}
           style={styles.linkRow}
         >
@@ -98,7 +99,7 @@ export default function LoginScreen() {
 
         <Pressable
           style={[styles.secondaryButton, styles.createAccountButton]}
-          onPress={() => Linking.openURL(getWebSubscribePlansUrl(getLocale()))}
+          onPress={() => void openAccountWebUrl(getWebSubscribePlansUrl(getLocale()))}
           disabled={loading}
         >
           <Text style={[styles.secondaryButtonText, styles.createAccountText]}>{t('auth.createAccount')}</Text>
