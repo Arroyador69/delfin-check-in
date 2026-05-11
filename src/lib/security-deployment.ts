@@ -26,7 +26,7 @@ export function isDangerousDiagnosticApiPath(pathname: string): boolean {
   if (pathname.startsWith('/api/admin/test-')) return true;
   if (pathname.startsWith('/api/email/test')) return true;
   if (pathname.startsWith('/api/public/test-')) return true;
-  if (pathname.includes('/reputation-google/test-email')) return true;
+  // POST /api/tenant/reputation-google/test-email es función de producto (panel Pro), no diagnóstico.
   return false;
 }
 

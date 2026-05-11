@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { useTenant, isProPlanTenant } from '@/hooks/useTenant';
@@ -42,7 +42,6 @@ export default function ReputationGooglePage() {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [testEmailTo, setTestEmailTo] = useState('');
-  const testEmailInitializedRef = useRef(false);
 
   useEffect(() => {
     fetch('/api/auth/me')
@@ -77,6 +76,7 @@ export default function ReputationGooglePage() {
       setGuestLocale(s.guestEmailLocale === 'en' ? 'en' : 'es');
       setMessageEs((s.guestMessageEs ?? '').trim() ? String(s.guestMessageEs) : rec.es);
       setMessageEn((s.guestMessageEn ?? '').trim() ? String(s.guestMessageEn) : rec.en);
+      setTestEmailTo(String(s.testRecipientEmail || '').trim());
     } catch {
       setError(t('errLoad'));
     } finally {
@@ -181,13 +181,6 @@ export default function ReputationGooglePage() {
     }
   }, [unlocked, loadSettings, loadProperties, loadSlots, loadLimits]);
 
-  useEffect(() => {
-    if (unlocked && settingsLoaded && tenant?.email && !testEmailInitializedRef.current) {
-      setTestEmailTo(tenant.email);
-      testEmailInitializedRef.current = true;
-    }
-  }, [unlocked, settingsLoaded, tenant?.email]);
-
   const save = async () => {
     if (!unlocked) return;
     setSaveBusy(true);
@@ -204,6 +197,7 @@ export default function ReputationGooglePage() {
           guestEmailLocale: guestLocale,
           guestMessageEs: messageEs,
           guestMessageEn: messageEn,
+          testRecipientEmail: testEmailTo.trim(),
         }),
       });
       const data = await r.json();
@@ -235,9 +229,9 @@ export default function ReputationGooglePage() {
       return;
     }
 
-    const to = testEmailTo.trim() || tenant?.email?.trim() || '';
+    const to = testEmailTo.trim();
     if (!to || !isValidEmailAddress(to)) {
-      setError(t('testEmailInvalidAddress'));
+      setError(t('testEmailNeedRecipient'));
       return;
     }
 
@@ -631,10 +625,10 @@ export default function ReputationGooglePage() {
                 </div>
 
                 <div className="rounded-xl border-2 border-dashed border-blue-300 bg-gradient-to-br from-sky-50 to-blue-50/80 p-4 sm:p-5 space-y-3 shadow-sm">
-                  <p className="text-sm font-semibold text-gray-900">{t('testSectionTitle')}</p>
-                  <p className="text-xs text-gray-600">
+                  <div className="text-sm font-semibold text-gray-900">{t('testSectionTitle')}</div>
+                  <div className="text-xs text-gray-600">
                     {guestLocale === 'en' ? t('localeEn') : t('localeEs')} · {t('testEmailHint')}
-                  </p>
+                  </div>
                   <div>
                     <Label htmlFor="rg-test-email" className="text-sm font-medium text-gray-800">
                       {t('labelTestEmail')}
@@ -646,9 +640,9 @@ export default function ReputationGooglePage() {
                       className="mt-1.5 bg-white"
                       value={testEmailTo}
                       onChange={(e) => setTestEmailTo(e.target.value)}
-                      placeholder={tenant?.email || 'email@ejemplo.com'}
+                      placeholder={t('placeholderTestEmail')}
                     />
-                    <p className="text-xs text-gray-600 mt-1">{t('hintTestEmail')}</p>
+                    <div className="text-xs text-gray-600 mt-1">{t('hintTestEmail')}</div>
                   </div>
                   <Button
                     type="button"
