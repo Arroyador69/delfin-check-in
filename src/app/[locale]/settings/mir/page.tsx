@@ -64,6 +64,10 @@ interface MirUnitConfigRow {
 
 const COUNTRY_CODES = ['ES', 'IT', 'PT', 'FR', 'DE'] as const;
 
+/** Sede electrónica del Ministerio del Interior — trámites (agrupación 18): alta y credenciales registro hospedajes. */
+const INTERIOR_SEDE_TRAMITES_URL =
+  'https://sede.interior.gob.es/portal/sede/tramites?idAgrupacion=18';
+
 export default function MirSettingsPage() {
   const t = useTranslations('settings.mir');
   const tCommon = useTranslations('common');
@@ -611,6 +615,54 @@ export default function MirSettingsPage() {
           </div>
         )}
 
+        {/* Instrucciones oficiales: credenciales en Sede del Interior (antes del estado y del formulario) */}
+        <Card className="bg-white/90 backdrop-blur-sm border-white/30 shadow-xl transition-all duration-500 hover:shadow-2xl hover:scale-[1.02]">
+          <CardHeader>
+            <CardTitle className="flex items-center text-gray-900 font-bold">
+              <Info className="h-5 w-5 mr-2" />
+              ℹ️ {t('infoTitle')}
+            </CardTitle>
+            <CardDescription className="text-gray-700 font-medium">{t('infoHowToTitle')}</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4 text-sm text-gray-700">
+            <p className="font-medium">{t('governmentIntro')}</p>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 flex-wrap">
+              <Button asChild className="w-full sm:w-auto">
+                <a href={INTERIOR_SEDE_TRAMITES_URL} target="_blank" rel="noopener noreferrer">
+                  {t('governmentOpenButton')}
+                </a>
+              </Button>
+              <span className="text-xs text-gray-500 break-all">
+                {t('governmentOpenUrlNote')}{' '}
+                <a
+                  href={INTERIOR_SEDE_TRAMITES_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:underline font-mono"
+                >
+                  {INTERIOR_SEDE_TRAMITES_URL}
+                </a>
+              </span>
+            </div>
+            <ol className="list-decimal list-inside space-y-2 pl-0.5">
+              <li>{t('governmentStep1')}</li>
+              <li>{t('governmentStep2')}</li>
+              <li>{t('governmentStep3')}</li>
+              <li>{t('governmentStep4')}</li>
+              <li>{t('governmentStep5')}</li>
+              <li>{t('governmentStep6')}</li>
+              <li>{t('governmentStep7')}</li>
+            </ol>
+            <p className="text-xs text-gray-600 border-t border-gray-100 pt-3">{t('governmentSesNote')}</p>
+            <div className="flex items-start space-x-2">
+              <AlertTriangle className="h-4 w-4 text-orange-500 mt-0.5 shrink-0" />
+              <p className="text-sm text-orange-700">
+                <strong>{t('infoWarning')}</strong>
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Estado de configuración */}
         <Card className="bg-white/90 backdrop-blur-sm border-white/30 shadow-xl transition-all duration-500 hover:shadow-2xl hover:scale-[1.02]">
           <CardHeader>
@@ -1096,34 +1148,6 @@ export default function MirSettingsPage() {
           </CardContent>
         </Card>
       )}
-
-        {/* Información importante */}
-        <Card className="bg-white/90 backdrop-blur-sm border-white/30 shadow-xl transition-all duration-500 hover:shadow-2xl hover:scale-[1.02]">
-          <CardHeader>
-            <CardTitle className="flex items-center text-gray-900 font-bold">
-              <Info className="h-5 w-5 mr-2" />
-              ℹ️ {t('infoTitle')}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-          <div className="text-sm text-gray-600">
-            <p><strong>{t('infoHowToTitle')}</strong></p>
-            <ol className="list-decimal list-inside space-y-1 mt-2">
-              <li>{t('infoStep1')} <a href="https://hospedajes.ses.mir.es" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">hospedajes.ses.mir.es</a></li>
-              <li>{t('infoStep2')}</li>
-              <li>{t('infoStep3')}</li>
-              <li>{t('infoStep4')}</li>
-            </ol>
-          </div>
-          
-          <div className="flex items-start space-x-2">
-            <AlertTriangle className="h-4 w-4 text-orange-500 mt-0.5" />
-            <p className="text-sm text-orange-600">
-              <strong>{t('infoWarning')}</strong>
-            </p>
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Acciones (abajo del todo, como antes) */}
       <div ref={bottomActionsRef} className="space-y-3">
