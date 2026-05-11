@@ -22,6 +22,8 @@ export interface ReputationGoogleSettings {
   /** Cuerpo del mensaje (sin saludo fijo). Vacío = usar recomendado por defecto. */
   guestMessageEs: string;
   guestMessageEn: string;
+  /** Email de destino por defecto para «Enviar prueba» (se guarda con Guardar en esta pantalla). */
+  testRecipientEmail: string;
 }
 
 const DEFAULT_SETTINGS: ReputationGoogleSettings = {
@@ -30,6 +32,7 @@ const DEFAULT_SETTINGS: ReputationGoogleSettings = {
   guestEmailLocale: 'es',
   guestMessageEs: '',
   guestMessageEn: '',
+  testRecipientEmail: '',
 };
 
 export function parseReputationGoogleFromConfig(
@@ -46,6 +49,8 @@ export function parseReputationGoogleFromConfig(
     guestEmailLocale: locale,
     guestMessageEs: typeof raw.guestMessageEs === 'string' ? raw.guestMessageEs : '',
     guestMessageEn: typeof raw.guestMessageEn === 'string' ? raw.guestMessageEn : '',
+    testRecipientEmail:
+      typeof raw.testRecipientEmail === 'string' ? raw.testRecipientEmail.trim().slice(0, 254) : '',
   };
 }
 
@@ -61,6 +66,7 @@ export function mergeReputationIntoConfig(
       guestEmailLocale: next.guestEmailLocale,
       guestMessageEs: next.guestMessageEs,
       guestMessageEn: next.guestMessageEn,
+      testRecipientEmail: next.testRecipientEmail.trim().slice(0, 254),
     },
   };
 }

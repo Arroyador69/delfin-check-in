@@ -83,6 +83,18 @@ export async function PUT(req: NextRequest) {
     const clip = (s: unknown) =>
       typeof s === 'string' ? s.slice(0, GUEST_MESSAGE_MAX_LENGTH) : '';
 
+    const emailOk = (s: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
+    const testRecipientRaw =
+      typeof body.testRecipientEmail === 'string'
+        ? body.testRecipientEmail.trim().slice(0, 254)
+        : prev.testRecipientEmail;
+    if (testRecipientRaw && !emailOk(testRecipientRaw)) {
+      return NextResponse.json(
+        { success: false, error: 'El email para pruebas no tiene un formato válido.' },
+        { status: 400 }
+      );
+    }
+
     const next: ReputationGoogleSettings = {
       enabled: typeof body.enabled === 'boolean' ? body.enabled : prev.enabled,
       reviewUrl: typeof body.reviewUrl === 'string' ? body.reviewUrl : prev.reviewUrl,
@@ -96,6 +108,7 @@ export async function PUT(req: NextRequest) {
         typeof body.guestMessageEs === 'string' ? clip(body.guestMessageEs) : prev.guestMessageEs,
       guestMessageEn:
         typeof body.guestMessageEn === 'string' ? clip(body.guestMessageEn) : prev.guestMessageEn,
+      testRecipientEmail: testRecipientRaw,
     };
 
     if (next.enabled) {

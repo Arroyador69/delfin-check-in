@@ -79,7 +79,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    let targetEmail = String(tenant.email || '').trim();
+    // Destino: cuerpo de la petición (campo del formulario) o valor guardado en reputación Google (no email de contacto del tenant).
+    let targetEmail = settings.testRecipientEmail.trim();
     if (typeof body.to === 'string' && body.to.trim()) {
       const addr = body.to.trim();
       if (!isValidEmailAddress(addr)) {
@@ -92,7 +93,11 @@ export async function POST(req: NextRequest) {
     }
     if (!targetEmail || !isValidEmailAddress(targetEmail)) {
       return NextResponse.json(
-        { success: false, error: 'No hay email de destino válido.' },
+        {
+          success: false,
+          error:
+            'Indica un email en «Enviar la prueba a este email» y guarda la configuración, o escribe uno válido en el campo antes de probar.',
+        },
         { status: 400 }
       );
     }
