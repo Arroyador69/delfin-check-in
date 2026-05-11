@@ -3,6 +3,8 @@ import { Agent } from 'undici';
 // Implementa estrictamente las especificaciones WSDL/XSD oficiales
 
 import JSZip from 'jszip';
+import fs from 'node:fs';
+import path from 'node:path';
 
 export interface MinisterioConfig {
   baseUrl: string;
@@ -342,12 +344,23 @@ async function makeSoapRequest(cfg: MinisterioConfig, soapXml: string, operation
     keepalive: false
   };
 
-  // ⚠️ Evitar NODE_TLS_REJECT_UNAUTHORIZED=0 (global) porque genera warning y es inseguro.
-  // Si hiciera falta por un entorno concreto, habilitarlo explícitamente con MIR_TLS_INSECURE=true
-  // y solo para esta request (dispatcher de undici).
+  // El endpoint del MIR (`*.ses.mir.es`) no siempre entrega la cadena completa de certificados (falta intermedio),
+  // lo que provoca `UNABLE_TO_VERIFY_LEAF_SIGNATURE` en runtimes tipo Vercel/Node.
+  // Solución: añadir el intermedio FNMT como CA únicamente para estas requests.
   const insecureTls = String(process.env.MIR_TLS_INSECURE || '').toLowerCase() === 'true';
+  const caBundle = (() => {
+    try {
+      const pemPath = path.join(process.cwd(), 'certs', 'ACCOMP.pem');
+      return fs.readFileSync(pemPath, 'utf8');
+    } catch {
+      return undefined;
+    }
+  })();
+
   if (insecureTls) {
     (fetchOptions as any).dispatcher = new Agent({ connect: { rejectUnauthorized: false } });
+  } else if (caBundle) {
+    (fetchOptions as any).dispatcher = new Agent({ connect: { ca: caBundle } });
   }
 
   return await fetch(cfg.baseUrl, fetchOptions);
