@@ -5,6 +5,7 @@ import { Agent } from 'undici';
 import JSZip from 'jszip';
 import fs from 'node:fs';
 import path from 'node:path';
+import tls from 'node:tls';
 
 export interface MinisterioConfig {
   baseUrl: string;
@@ -344,14 +345,17 @@ async function makeSoapRequest(cfg: MinisterioConfig, soapXml: string, operation
     keepalive: false
   };
 
-  // El endpoint del MIR (`*.ses.mir.es`) no siempre entrega la cadena completa de certificados (falta intermedio),
-  // lo que provoca `UNABLE_TO_VERIFY_LEAF_SIGNATURE` en runtimes tipo Vercel/Node.
-  // Solución: añadir el intermedio FNMT como CA únicamente para estas requests.
+  // El MIR (`*.ses.mir.es`) a veces no envía el intermedio FNMT (ACCOMP) en la cadena TLS.
+  // En `undici`/`fetch`, `connect.ca` sustituye por completo el almacén de confianza del runtime:
+  // si solo pasamos ACCOMP.pem, Node no puede anclar al emisor de ACCOMP → UNABLE_TO_GET_ISSUER_CERT.
+  // Solución: raíces del runtime (`tls.rootCertificates`) + intermedio embebido en `certs/`.
   const insecureTls = String(process.env.MIR_TLS_INSECURE || '').toLowerCase() === 'true';
-  const caBundle = (() => {
+  const mirTlsCaBundle = (() => {
     try {
       const pemPath = path.join(process.cwd(), 'certs', 'ACCOMP.pem');
-      return fs.readFileSync(pemPath, 'utf8');
+      const intermediate = fs.readFileSync(pemPath, 'utf8').trim();
+      const roots = tls.rootCertificates.join('\n');
+      return `${roots}\n${intermediate}\n`;
     } catch {
       return undefined;
     }
@@ -359,8 +363,8 @@ async function makeSoapRequest(cfg: MinisterioConfig, soapXml: string, operation
 
   if (insecureTls) {
     (fetchOptions as any).dispatcher = new Agent({ connect: { rejectUnauthorized: false } });
-  } else if (caBundle) {
-    (fetchOptions as any).dispatcher = new Agent({ connect: { ca: caBundle } });
+  } else if (mirTlsCaBundle) {
+    (fetchOptions as any).dispatcher = new Agent({ connect: { ca: mirTlsCaBundle } });
   }
 
   return await fetch(cfg.baseUrl, fetchOptions);
