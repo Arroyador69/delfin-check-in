@@ -72,6 +72,10 @@ const COUNTRIES = [
   { code: 'DE', name: 'Alemania' },
 ];
 
+/** Sede electrónica — trámites (agrupación hospedajes / registro): credenciales MIR */
+const INTERIOR_SEDE_TRAMITES_URL =
+  'https://sede.interior.gob.es/portal/sede/tramites?idAgrupacion=18';
+
 export default function MirSettingsPage() {
   const { tenant } = useTenant();
   const [config, setConfig] = useState<MirConfig>({
@@ -588,6 +592,81 @@ export default function MirSettingsPage() {
             </div>
           </div>
         )}
+
+        {/* Instrucciones oficiales: credenciales en Sede del Interior (antes del estado y del formulario) */}
+        <Card className="bg-white/90 backdrop-blur-sm border-white/30 shadow-xl transition-all duration-500 hover:shadow-2xl hover:scale-[1.02]">
+          <CardHeader>
+            <CardTitle className="flex items-center text-gray-900 font-bold">
+              <Info className="h-5 w-5 mr-2" />
+              ℹ️ Instrucciones: credenciales MIR (Sede del Interior)
+            </CardTitle>
+            <CardDescription className="text-gray-700 font-medium">
+              Pasos para obtener usuario, contraseña, entidad y establecimiento
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4 text-sm text-gray-700">
+            <p className="font-medium">
+              Para configurar las credenciales MIR (usuario, contraseña, código de entidad/arrendador y número de
+              establecimiento) debes hacerlo en la Sede electrónica del Ministerio del Interior, siguiendo el trámite
+              oficial.
+            </p>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 flex-wrap">
+              <Button asChild className="w-full sm:w-auto">
+                <a href={INTERIOR_SEDE_TRAMITES_URL} target="_blank" rel="noopener noreferrer">
+                  Abrir enlace del Ministerio (Sede — trámites)
+                </a>
+              </Button>
+              <span className="text-xs text-gray-500 break-all">
+                Enlace oficial:{' '}
+                <a
+                  href={INTERIOR_SEDE_TRAMITES_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:underline font-mono"
+                >
+                  {INTERIOR_SEDE_TRAMITES_URL}
+                </a>
+              </span>
+            </div>
+            <ol className="list-decimal list-inside space-y-2 pl-0.5">
+              <li>
+                Abre el enlace del gobierno y entra por «Acceso al registro de establecimientos y entidades» (dentro de
+                esa página).
+              </li>
+              <li>Identifícate con DNI electrónico, certificado electrónico o Cl@ve.</li>
+              <li>Si es la primera vez, rellena los datos que te pida el registro.</li>
+              <li>
+                Muy importante: marca que las comunicaciones se enviarán automáticamente; solo así podrán darte las
+                credenciales de acceso al servicio web.
+              </li>
+              <li>
+                Cuando lo hayas completado (solo la primera vez), en el apartado «Servicio de comunicación» pulsa el
+                botón «Credenciales».
+              </li>
+              <li>
+                Ahí verás el usuario del servicio web (suele ser tu identificador acabado en WS, relacionado con tu
+                DNI/NIF), la contraseña, el código de entidad (arrendador) y el número de código de establecimiento.
+              </li>
+              <li>
+                Copia esos datos aquí en Delfín Check-in, en «Credenciales MIR» / cada credencial de unidad, tal como te
+                los muestra el Ministerio.
+              </li>
+            </ol>
+            <p className="text-xs text-gray-600 border-t border-gray-100 pt-3">
+              Después, el envío técnico de partes se realiza contra el servicio MIR (SES); los cuatro datos anteriores son
+              los que debes pegar en esta pantalla.
+            </p>
+            <div className="flex items-start space-x-2">
+              <AlertTriangle className="h-4 w-4 text-orange-500 mt-0.5 shrink-0" />
+              <p className="text-sm text-orange-700">
+                <strong>
+                  Importante: Las credenciales son sensibles. Asegúrate de que estén configuradas correctamente antes de
+                  usar el sistema en producción.
+                </strong>
+              </p>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Estado de configuración */}
         <Card className="bg-white/90 backdrop-blur-sm border-white/30 shadow-xl transition-all duration-500 hover:shadow-2xl hover:scale-[1.02]">
@@ -1111,112 +1190,6 @@ export default function MirSettingsPage() {
             </div>
           </CardContent>
         </Card>
-
-        {/* Información importante */}
-        <Card className="bg-white/90 backdrop-blur-sm border-white/30 shadow-xl transition-all duration-500 hover:shadow-2xl hover:scale-[1.02]">
-          <CardHeader>
-            <CardTitle className="flex items-center text-gray-900 font-bold">
-              <Info className="h-5 w-5 mr-2" />
-              ℹ️ Guía oficial: credenciales MIR (SES Hospedajes)
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="text-sm text-gray-700 space-y-3">
-              <p className="font-medium">
-                Para que Delfín Check-in pueda <strong>enviar automáticamente</strong> los partes al Ministerio del Interior, el
-                propietario debe obtener sus credenciales técnicas en el portal oficial de SES Hospedajes.
-              </p>
-
-              <div className="rounded-xl border border-blue-200 bg-blue-50/60 p-4">
-                <p className="font-semibold text-blue-900 mb-2">✅ Resumen (los 4 datos que debes pegar aquí)</p>
-                <ul className="list-disc list-inside space-y-1 text-blue-900">
-                  <li><strong>Código de Arrendador</strong> (Entidad/propietario)</li>
-                  <li><strong>Código de Establecimiento</strong> (<strong>10 dígitos</strong>, por cada propiedad)</li>
-                  <li><strong>Usuario WS</strong> (normalmente <strong>NIF/CIF</strong> en mayúsculas + <strong>“---WS”</strong>, ej. <code>12345678A---WS</code>)</li>
-                  <li><strong>Contraseña WS</strong> (la del apartado “Servicio de Comunicación”)</li>
-                </ul>
-              </div>
-
-              <div>
-                <p className="font-semibold text-gray-900 mb-2">Paso 1: Alta de la Entidad (Propietario)</p>
-                <ol className="list-decimal list-inside space-y-1">
-                  <li>
-                    Accede a la Sede Electrónica del Ministerio del Interior y entra en{' '}
-                    <span className="font-semibold">“Acceso al registro de establecimientos y entidades”</span>.
-                  </li>
-                  <li>Identifícate con <strong>certificado digital</strong> o <strong>Cl@ve</strong>.</li>
-                  <li>
-                    Rellena el formulario de alta y selecciona tipo de entidad <strong>“Hospedaje”</strong>.
-                  </li>
-                  <li>
-                    <strong>Crítico:</strong> marca la casilla <strong>“Envío de comunicaciones por servicio web”</strong>.
-                    Si no se marca, el sistema no generará las credenciales que tu software necesita.
-                  </li>
-                  <li>Indica un <strong>correo de notificaciones de error</strong> (el MIR avisará si algún dato es incorrecto).</li>
-                </ol>
-              </div>
-
-              <div>
-                <p className="font-semibold text-gray-900 mb-2">Paso 2: Registro de los Establecimientos (Propiedades)</p>
-                <ol className="list-decimal list-inside space-y-1">
-                  <li>En el mismo módulo, entra en <strong>“Registro de establecimiento”</strong>.</li>
-                  <li>Completa los datos de cada propiedad y firma (por ejemplo, con <strong>AutoFirma</strong>).</li>
-                  <li>
-                    Al finalizar, se asigna un <strong>Código de Establecimiento</strong> de <strong>10 dígitos</strong> para cada propiedad.
-                  </li>
-                </ol>
-              </div>
-
-              <div>
-                <p className="font-semibold text-gray-900 mb-2">Paso 3: Dónde ver cada credencial (muy importante)</p>
-                <ul className="list-disc list-inside space-y-1">
-                  <li>
-                    En <strong>“Mis datos registrados”</strong> verás el <strong>Código de Arrendador</strong> y los <strong>Códigos de Establecimiento</strong>.
-                  </li>
-                  <li>
-                    En <strong>“Servicio de Comunicación”</strong> verás el <strong>Usuario del Servicio Web</strong> (formato <strong>NIF/CIF + “---WS”</strong>)
-                    y la <strong>Contraseña del Servicio Web</strong> (asignada o modificable).
-                  </li>
-                </ul>
-              </div>
-
-              <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
-                <p className="font-semibold text-amber-900 mb-1">⏱️ Plazo legal</p>
-                <p className="text-amber-900">
-                  Recuerda: las comunicaciones (partes de viajeros) deben enviarse en un plazo máximo de <strong>24 horas</strong> desde el inicio del hospedaje.
-                </p>
-              </div>
-
-              <p className="text-sm text-gray-600">
-                Enlaces oficiales:{" "}
-                <a
-                  href="https://hospedajes.ses.mir.es/hospedajes-sede/#/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-600 hover:underline font-semibold"
-                >
-                  Sede SES Hospedajes
-                </a>
-                {" · "}
-                <a
-                  href="https://hospedajes.ses.mir.es/hospedajes-sede/#/comunicacion/inicio"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-600 hover:underline font-semibold"
-                >
-                  Servicio de Comunicación
-                </a>
-              </p>
-            </div>
-          
-          <div className="flex items-start space-x-2">
-            <AlertTriangle className="h-4 w-4 text-orange-500 mt-0.5" />
-            <p className="text-sm text-orange-600">
-              <strong>Importante:</strong> Las credenciales son sensibles. Asegúrate de que estén configuradas correctamente antes de usar el sistema en producción.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
 
         {/* Acciones (abajo del todo, como antes) */}
         <div ref={bottomActionsRef} className="space-y-3">
