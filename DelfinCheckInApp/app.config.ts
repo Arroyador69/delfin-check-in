@@ -24,7 +24,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     name: 'Delfín Check-in',
     slug: 'delfin-owner',
     scheme: 'delfin',
-    version: '1.1.1',
+    version: '1.1.0',
     orientation: 'portrait',
     icon: './assets/icon.png',
     userInterfaceStyle: 'automatic',
