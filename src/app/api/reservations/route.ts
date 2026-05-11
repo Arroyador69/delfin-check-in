@@ -362,7 +362,19 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     const code = error?.code ?? error?.cause?.code;
     const msg = String(error?.message ?? error);
-    console.error('Error creating reservation:', code || '', msg, error);
+    const detail = error?.detail ?? error?.cause?.detail;
+    const constraint = error?.constraint ?? error?.cause?.constraint;
+    // Un solo string como 1er arg: con DB_LOGS_ENABLED, instrumentation guarda solo args[0] en `message`.
+    const logLine = [
+      'Error creating reservation:',
+      code ? `[${code}]` : '',
+      msg,
+      detail ? `detail=${detail}` : '',
+      constraint ? `constraint=${constraint}` : '',
+    ]
+      .filter(Boolean)
+      .join(' ');
+    console.error(logLine, error);
     if (code === '23505') {
       return NextResponse.json(
         { error: 'Ya existe una reserva con ese identificador externo para este establecimiento.' },
@@ -460,9 +472,22 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json(result.rows[0]);
     
   } catch (error: any) {
-    console.error('Error updating reservation:', error);
+    const code = error?.code ?? error?.cause?.code;
+    const msg = String(error?.message ?? error);
+    const detail = error?.detail ?? error?.cause?.detail;
+    const constraint = error?.constraint ?? error?.cause?.constraint;
+    const logLine = [
+      'Error updating reservation:',
+      code ? `[${code}]` : '',
+      msg,
+      detail ? `detail=${detail}` : '',
+      constraint ? `constraint=${constraint}` : '',
+    ]
+      .filter(Boolean)
+      .join(' ');
+    console.error(logLine, error);
     return NextResponse.json(
-      { error: 'Error al actualizar la reserva', details: error.message },
+      { error: 'Error al actualizar la reserva', details: msg, code: code || undefined },
       { status: 500 }
     );
   }
