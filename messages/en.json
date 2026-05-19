@@ -99,6 +99,18 @@
     "viewMyTenantPanel": "View My Tenant Panel",
     "superAdminDashboardTitle": "👑 SuperAdmin Dashboard"
   },
+  "tutorialVideos": {
+    "watchOnYouTube": "Watch on YouTube",
+    "spanishAudioNote": "Video audio is in Spanish.",
+    "mirTitle": "Video: MIR credentials step by step",
+    "mirDescription": "How to obtain them from the official Spanish portal and paste them in MIR settings (Spain regulations).",
+    "cleaningTitle": "Video: cleaner calendar link",
+    "cleaningDescription": "Create one link per team; the calendar updates automatically from your bookings.",
+    "micrositeTitle": "Video: microsite and Stripe payouts",
+    "micrositeDescription": "Enable direct payments and publish your property on book.delfincheckin.com.",
+    "reputationTitle": "Video: automated Google reviews (Pro plan)",
+    "reputationDescription": "After checkout, guests get a reminder to review you on Google and boost local visibility."
+  },
   "reputationGoogle": {
     "title": "Google reviews and more direct bookings",
     "subtitle": "Flagship Pro feature: stand out from Airbnb, Booking.com and other OTAs. Improve local ranking on Google, collect reviews with automated reminders, and drive traffic to your direct booking microsite (no big-platform commission).",
@@ -343,8 +355,9 @@
       "activateButton": "Enable MIR add-on"
     },
     "videoTutorial": {
-      "title": "Video walkthrough",
-      "description": "A quick tour of the main tools in your Delfín Check-in panel.",
+      "title": "What is Delfín Check-in?",
+      "description": "Guest registration, booking in your dashboard, and submission to the Spanish Ministry (MIR).",
+      "spanishAudioNote": "Video audio is in Spanish.",
       "watchOnYouTube": "Open on YouTube",
       "hide": "Hide video",
       "show": "Show video",

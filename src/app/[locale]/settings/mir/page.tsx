@@ -21,6 +21,7 @@ import {
   Pencil,
   Trash2,
 } from 'lucide-react';
+import TutorialVideoEmbed from '@/components/TutorialVideoEmbed';
 
 interface MirConfig {
   usuario: string;
@@ -70,6 +71,7 @@ const INTERIOR_SEDE_TRAMITES_URL =
 
 export default function MirSettingsPage() {
   const t = useTranslations('settings.mir');
+  const tVideos = useTranslations('tutorialVideos');
   const tCommon = useTranslations('common');
   const locale = useLocale();
   const { tenant } = useTenant();
@@ -614,6 +616,15 @@ export default function MirSettingsPage() {
             </div>
           </div>
         )}
+
+        <TutorialVideoEmbed
+          videoKey="mirCredentials"
+          title={tVideos('mirTitle')}
+          description={tVideos('mirDescription')}
+          watchOnYouTubeLabel={tVideos('watchOnYouTube')}
+          spanishAudioNote={tVideos('spanishAudioNote')}
+          className="mb-6"
+        />
 
         {/* Instrucciones oficiales: credenciales en Sede del Interior (antes del estado y del formulario) */}
         <Card className="bg-white/90 backdrop-blur-sm border-white/30 shadow-xl transition-all duration-500 hover:shadow-2xl hover:scale-[1.02]">

@@ -22,6 +22,10 @@ import {
   localTodayYMD,
 } from '@/lib/dashboard-period';
 import { localizedPlanFeatureSummary } from '@/lib/dashboard-plan-features';
+import {
+  getTutorialVideoEmbedUrl,
+  getTutorialVideoWatchUrl,
+} from '@/lib/tutorial-videos';
 import LocalizedDateInput from '@/components/LocalizedDateInput';
 import { toIntlDateLocale, type Locale as AppLocale } from '@/i18n/config';
 
@@ -478,6 +482,9 @@ export default function HomePage() {
                   <p className="text-xs sm:text-sm text-gray-600 mt-1">
                     {t('videoTutorial.description')}
                   </p>
+                  <p className="text-xs text-amber-800/90 mt-1.5 italic">
+                    {t('videoTutorial.spanishAudioNote')}
+                  </p>
                 </div>
                 <button
                   type="button"
@@ -507,7 +514,7 @@ export default function HomePage() {
                     border: 'none',
                     borderRadius: '12px'
                   }}
-                  src="https://www.youtube.com/embed/Ttr6aefFLbg"
+                  src={getTutorialVideoEmbedUrl('whatIsDelfin')}
                   title={t('videoTutorial.title')}
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   allowFullScreen
@@ -515,7 +522,7 @@ export default function HomePage() {
               </div>
               <div className="text-center">
                 <a
-                  href="https://youtu.be/Ttr6aefFLbg"
+                  href={getTutorialVideoWatchUrl('whatIsDelfin')}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-sm text-blue-600 hover:text-blue-700 font-medium inline-flex items-center gap-1"

@@ -99,6 +99,18 @@
     "viewMyTenantPanel": "Näytä vuokralaiseni paneeli",
     "superAdminDashboardTitle": "👑 SuperAdminin hallintapaneeli"
   },
+  "tutorialVideos": {
+    "watchOnYouTube": "Katso YouTubessa",
+    "spanishAudioNote": "Videon ääni on espanjaksi.",
+    "mirTitle": "Video: MIR-tunnukset vaihe vaiheelta",
+    "mirDescription": "Näin haet ne Espanjan viralliselta portaalilta ja liität MIR-asetuksiin (Espanjan sääntely).",
+    "cleaningTitle": "Video: siivouslinkki",
+    "cleaningDescription": "Luo linkki tiimille; kalenteri päivittyy automaattisesti varausten mukaan.",
+    "micrositeTitle": "Video: microsite ja Stripe-maksut",
+    "micrositeDescription": "Ota suorat maksut käyttöön ja julkaise majoitus book.delfincheckin.com-sivustolla.",
+    "reputationTitle": "Video: automaattiset Google-arvostelut (Pro-sopimus)",
+    "reputationDescription": "Check-outin jälkeen vieras saa muistutuksen arvioida sinut Googlessa ja parantaa paikallista näkyvyyttä."
+  },
   "reputationGoogle": {
     "title": "Google-arvostelut ja muita suoria varauksia",
     "subtitle": "Flagship Pro -ominaisuus: erotu Airbnb:stä, Booking.comista ja muista OTA-palveluista. Paranna paikallista sijoitusta Googlessa, kerää arvosteluja automaattisten muistutusten avulla ja ohjaa liikennettä suoravarauksesi mikrosivustollesi (ei ison alustan välityspalkkiota).",
@@ -343,9 +355,10 @@
       "activateButton": "Ota MIR-lisäosa käyttöön"
     },
     "videoTutorial": {
-      "title": "Videon esittely",
-      "description": "Pikakierros Delfín Check-in -paneelin tärkeimmistä työkaluista.",
-      "watchOnYouTube": "Avaa YouTubessa",
+      "title": "Mikä on Delfín Check-in?",
+      "description": "Matkustajarekisteröinti, varaus hallintapaneelissa ja lähetys Espanjan sisäministeriölle (MIR).",
+      "spanishAudioNote": "Videon ääni on espanjaksi.",
+      "watchOnYouTube": "Katso YouTubessa",
       "hide": "Piilota video",
       "show": "Näytä video",
       "collapsedHint": "Opetusohjelma on minimoitu tilan säästämiseksi. Voit avata sen uudelleen milloin tahansa."

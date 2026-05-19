@@ -4,11 +4,12 @@ import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { useTenant, isProPlanTenant } from '@/hooks/useTenant';
-import { Star, Lock } from 'lucide-react';
+import { Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { isPlausibleGoogleReviewUrl, type ReputationGuestLocale } from '@/lib/reputation-google';
+import TutorialVideoEmbed from '@/components/TutorialVideoEmbed';
 
 function isValidEmailAddress(s: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s.trim());
@@ -16,6 +17,7 @@ function isValidEmailAddress(s: string): boolean {
 
 export default function ReputationGooglePage() {
   const t = useTranslations('reputationGoogle');
+  const tVideos = useTranslations('tutorialVideos');
   const locale = useLocale();
   const { tenant, loading: tenantLoading } = useTenant();
   const [isPlatformAdmin, setIsPlatformAdmin] = useState(false);
@@ -425,13 +427,30 @@ export default function ReputationGooglePage() {
         <div className="flex justify-center py-16">
           <div className="animate-spin rounded-full h-10 w-10 border-2 border-blue-600 border-t-transparent" />
         </div>
+      ) : !unlocked ? (
+        <TutorialVideoEmbed
+          videoKey="googleReputation"
+          title={tVideos('reputationTitle')}
+          description={tVideos('reputationDescription')}
+          watchOnYouTubeLabel={tVideos('watchOnYouTube')}
+          spanishAudioNote={tVideos('spanishAudioNote')}
+        />
       ) : (
         <>
+          <TutorialVideoEmbed
+            videoKey="googleReputation"
+            title={tVideos('reputationTitle')}
+            description={tVideos('reputationDescription')}
+            watchOnYouTubeLabel={tVideos('watchOnYouTube')}
+            spanishAudioNote={tVideos('spanishAudioNote')}
+            className="mb-6"
+          />
+
           <div className="relative rounded-xl border border-gray-200 bg-white p-5 shadow-sm mb-8">
             <h2 className="text-lg font-semibold text-gray-900 mb-1">{t('formTitle')}</h2>
             <p className="text-sm text-gray-600 mb-4">{t('formSubtitle')}</p>
 
-            {unlocked && settingsLoaded ? (
+            {settingsLoaded ? (
               <div className="space-y-5">
                 <div className="flex items-center justify-between gap-4">
                   <Label htmlFor="rg-enabled" className="text-sm font-medium text-gray-800">
@@ -664,37 +683,12 @@ export default function ReputationGooglePage() {
               </div>
             ) : null}
 
-            {unlocked && !settingsLoaded ? (
+            {!settingsLoaded ? (
               <div className="py-8 flex justify-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-600 border-t-transparent" />
               </div>
             ) : null}
 
-            {!unlocked && (
-              <>
-                <div className="space-y-4 opacity-40 pointer-events-none select-none">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">{t('labelEnabled')}</span>
-                    <div className="h-6 w-11 rounded-full bg-gray-200" />
-                  </div>
-                  <div>
-                    <span className="text-sm font-medium">{t('labelUrl')}</span>
-                    <div className="mt-1.5 h-10 bg-gray-100 rounded-md border" />
-                  </div>
-                  <div className="h-24 bg-gray-100 rounded-md border" />
-                  <div className="h-24 bg-gray-100 rounded-md border" />
-                </div>
-                <div
-                  className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-white/75 backdrop-blur-[1px] px-4"
-                  aria-hidden
-                >
-                  <div className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 shadow-sm text-sm font-medium text-gray-700">
-                    <Lock className="h-4 w-4" />
-                    {t('cardLockedLabel')}
-                  </div>
-                </div>
-              </>
-            )}
           </div>
 
           <article className="prose prose-gray max-w-none text-gray-800 space-y-6">

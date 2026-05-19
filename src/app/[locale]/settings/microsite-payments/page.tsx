@@ -6,6 +6,7 @@ import { useLocale } from 'next-intl';
 import { Wallet, CheckCircle, XCircle, Download, CreditCard, Calendar, AlertCircle, ExternalLink } from 'lucide-react';
 import { useTenant } from '@/hooks/useTenant';
 import { useTenantMoneyFormat } from '@/hooks/use-tenant-money-format';
+import TutorialVideoEmbed from '@/components/TutorialVideoEmbed';
 
 type StripeConnectStatus =
   | {
@@ -38,6 +39,7 @@ interface Payment {
 
 export default function MicrositePaymentsPage() {
   const t = useTranslations('settings.micrositePayments');
+  const tVideos = useTranslations('tutorialVideos');
   const locale = useLocale();
   const { formatCurrency } = useTenantMoneyFormat();
   const { tenant } = useTenant();
@@ -171,6 +173,14 @@ export default function MicrositePaymentsPage() {
           </div>
         </div>
       )}
+
+      <TutorialVideoEmbed
+        videoKey="micrositeStripe"
+        title={tVideos('micrositeTitle')}
+        description={tVideos('micrositeDescription')}
+        watchOnYouTubeLabel={tVideos('watchOnYouTube')}
+        spanishAudioNote={tVideos('spanishAudioNote')}
+      />
 
       {/* Configuración de cobros (Stripe Connect Express) */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">

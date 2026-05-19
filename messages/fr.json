@@ -99,6 +99,18 @@
     "viewMyTenantPanel": "Voir Mon Panneau Locataire",
     "superAdminDashboardTitle": "👑 Tableau de bord SuperAdmin"
   },
+  "tutorialVideos": {
+    "watchOnYouTube": "Voir sur YouTube",
+    "spanishAudioNote": "L'audio de la vidéo est en espagnol.",
+    "mirTitle": "Vidéo : identifiants MIR étape par étape",
+    "mirDescription": "Comment les obtenir sur le portail officiel espagnol et les coller dans Configuration MIR (réglementation Espagne).",
+    "cleaningTitle": "Vidéo : lien pour les équipes de ménage",
+    "cleaningDescription": "Créez un lien par équipe ; le calendrier se met à jour automatiquement avec vos réservations.",
+    "micrositeTitle": "Vidéo : microsite et paiements Stripe",
+    "micrositeDescription": "Activez les paiements directs et publiez votre logement sur book.delfincheckin.com.",
+    "reputationTitle": "Vidéo : avis Google automatiques (offre Pro)",
+    "reputationDescription": "Après le check-out, le client reçoit un rappel pour vous noter sur Google et gagner en visibilité locale."
+  },
   "reputationGoogle": {
     "title": "Avis Google et plus de réservations directes",
     "subtitle": "Fonction phare du forfait Pro : démarquez-vous d’Airbnb, Booking et autres OTAs. Améliorez votre visibilité locale sur Google, obtenez des avis grâce aux rappels automatiques et orientez le trafic vers votre microsite de réservation directe (sans commission de grande plateforme).",
@@ -343,9 +355,10 @@
       "activateButton": "Activer le module MIR"
     },
     "videoTutorial": {
-      "title": "Vidéo de présentation",
-      "description": "Un rapide tour d’horizon des outils principaux de votre espace Delfín Check-in.",
-      "watchOnYouTube": "Ouvrir sur YouTube",
+      "title": "Qu'est-ce que Delfín Check-in ?",
+      "description": "Enregistrement des voyageurs, réservation dans le tableau de bord et envoi au ministère espagnol (MIR).",
+      "spanishAudioNote": "L'audio de la vidéo est en espagnol.",
+      "watchOnYouTube": "Voir sur YouTube",
       "hide": "Masquer la vidéo",
       "show": "Afficher la vidéo",
       "collapsedHint": "La vidéo est réduite pour libérer de la place. Vous pouvez la rouvrir quand vous voulez."
