@@ -2,7 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
 import { sendOnboardingEmail } from '@/lib/mailer';
 import { getTenantId } from '@/lib/tenant';
-import { buildOnboardingUrl, issueFreshOnboardingToken } from '@/lib/onboarding-magic-link';
+import {
+  buildOnboardingUrl,
+  issueFreshOnboardingCredentials,
+  onboardingEmailVariantForOwner,
+} from '@/lib/onboarding-magic-link';
 
 function resolveInternalAuth(req: NextRequest): boolean {
   const secret = process.env.INTERNAL_ONBOARDING_RECOVER_SECRET;
@@ -76,6 +80,7 @@ export async function POST(req: NextRequest) {
         t.email,
         t.status,
         t.onboarding_status,
+        t.plan_type,
         tu.id as user_id,
         tu.onboarding_magic_token,
         tu.onboarding_magic_token_expires,
@@ -103,6 +108,7 @@ export async function POST(req: NextRequest) {
       email: string;
       status: string;
       onboarding_status: string | null;
+      plan_type: string | null;
       user_id: string;
       onboarding_magic_token: string | null;
       onboarding_magic_token_expires: Date | string | null;
@@ -124,31 +130,18 @@ export async function POST(req: NextRequest) {
       `;
     }
 
-    // Si el token expiró o no existe, o forzamos reinicio del flujo, generar uno nuevo
-    let onboardingToken = user.onboarding_magic_token || user.reset_token;
-    let tokenExpiry = user.onboarding_magic_token_expires || user.reset_token_expires;
+    const { token: onboardingToken, tempPassword } = await issueFreshOnboardingCredentials(
+      user.user_id
+    );
+    const onboardingUrl = buildOnboardingUrl(onboardingToken, email, 'es');
 
-    const needsNewToken =
-      resetOnboardingFlow ||
-      !onboardingToken ||
-      !tokenExpiry ||
-      new Date(tokenExpiry) < new Date();
-
-    if (needsNewToken) {
-      const issued = await issueFreshOnboardingToken(user.user_id);
-      onboardingToken = issued.token;
-      tokenExpiry = issued.expires;
-    }
-
-    const onboardingUrl = buildOnboardingUrl(onboardingToken!, email, 'es');
-
-    // Reenviar el email de onboarding
     try {
       await sendOnboardingEmail({
         to: email,
         onboardingUrl,
+        tempPassword,
         tenantId: user.tenant_id,
-        // No podemos recuperar la contraseña temporal original, pero el usuario puede usar el magic link
+        variant: onboardingEmailVariantForOwner(user.plan_type),
       });
 
       return NextResponse.json({
