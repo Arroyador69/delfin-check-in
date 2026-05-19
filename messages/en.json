@@ -593,7 +593,17 @@
       "addPropertyFailed": "Error adding property",
       "completeFailed": "Error completing onboarding. Please try again.",
       "countryAndLanguageRequired": "Select your business country (ISO) and account language to continue.",
-      "generic": "Error"
+      "generic": "Error",
+      "magicLinkInvalid": "The activation link is invalid or has expired.",
+      "magicLinkValidateFailed": "Could not validate the activation link.",
+      "magicLinkHelp": "This can happen if the link was already used, expired (72h), or opened in multiple tabs. We will send a new link only to {email}. The previous link will stop working.",
+      "magicLinkHelpNoEmail": "This can happen if the link was already used, expired, or opened in multiple tabs. Email us at contacto@delfincheckin.com with your registration email.",
+      "resendMagicLink": "Send new activation link",
+      "resending": "Sending…",
+      "resendSuccess": "If your account is pending activation, you will receive a new email shortly. Check spam and promotions.",
+      "resendFailed": "Could not send the link. Contact us at contacto@delfincheckin.com.",
+      "resendEmailRequired": "We could not find your email in the link. Contact contacto@delfincheckin.com.",
+      "validatingMagicLink": "Validating your activation link…"
     }
   },
   "reservations": {

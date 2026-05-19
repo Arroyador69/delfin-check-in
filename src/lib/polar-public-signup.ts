@@ -246,7 +246,7 @@ export async function provisionTenantFromPolarPublicSubscription(sub: any): Prom
 
   const onboardingToken = crypto.randomBytes(32).toString('hex');
   const tokenExpiry = new Date();
-  tokenExpiry.setHours(tokenExpiry.getHours() + 24);
+  tokenExpiry.setHours(tokenExpiry.getHours() + 72);
 
   await sql`
     UPDATE tenant_users
