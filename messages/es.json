@@ -99,6 +99,17 @@
     "viewMyTenantPanel": "Ver Mi Panel Tenant",
     "superAdminDashboardTitle": "👑 SuperAdmin Dashboard"
   },
+  "tutorialVideos": {
+    "watchOnYouTube": "Ver en YouTube",
+    "mirTitle": "Vídeo: credenciales MIR paso a paso",
+    "mirDescription": "Cómo obtenerlas en la Sede del Interior y pegarlas en Configuración MIR.",
+    "cleaningTitle": "Vídeo: enlace para limpiadoras",
+    "cleaningDescription": "Crea un enlace por equipo; el calendario se actualiza solo con tus reservas.",
+    "micrositeTitle": "Vídeo: microsite y cobros con Stripe",
+    "micrositeDescription": "Activa cobros directos y publica tu propiedad en book.delfincheckin.com.",
+    "reputationTitle": "Vídeo: reseñas en Google automáticas (Plan Pro)",
+    "reputationDescription": "Tras el checkout, el huésped recibe un recordatorio para valorarte en Google y ganar visibilidad local."
+  },
   "reputationGoogle": {
     "title": "Reseñas en Google y más reservas directas",
     "subtitle": "Función estrella del plan Pro: diferénciate de Airbnb, Booking y otros portales. Mejora tu posicionamiento local en Google, gana reseñas con recordatorios automáticos y dirige tráfico a tu microsite de reservas directas (sin comisión de plataforma grande).",
@@ -344,8 +355,8 @@
       "activateButton": "Activar Módulo MIR"
     },
     "videoTutorial": {
-      "title": "Video tutorial del panel",
-      "description": "Recorrido breve por las herramientas principales de Delfín Check-in.",
+      "title": "¿Qué es Delfín Check-in?",
+      "description": "Registro de viajeros, reserva en el panel y envío al Ministerio del Interior (MIR).",
       "watchOnYouTube": "Abrir en YouTube",
       "hide": "Ocultar vídeo",
       "show": "Mostrar vídeo",

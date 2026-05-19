@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
+import TutorialVideoEmbed from '@/components/TutorialVideoEmbed';
 import {
   Calendar,
   Check,
@@ -61,6 +62,7 @@ interface Props {
 
 export default function CleaningCalendarSettings({ rooms, t }: Props) {
   const locale = useLocale();
+  const tVideos = useTranslations('tutorialVideos');
   const intlDateLocale = toIntlDateLocale(locale as AppLocale);
   const [configs, setConfigs] = useState<CleaningConfig[]>([]);
   const [notes, setNotes] = useState<CleaningNote[]>([]);
@@ -222,6 +224,14 @@ export default function CleaningCalendarSettings({ rooms, t }: Props) {
         <span className="font-semibold text-slate-800">{t('cleaning.notesAdminHintTitle')}</span>{' '}
         {t('cleaning.notesAdminHintBody')}
       </div>
+
+      <TutorialVideoEmbed
+        videoKey="cleaningLinks"
+        title={tVideos('cleaningTitle')}
+        description={tVideos('cleaningDescription')}
+        watchOnYouTubeLabel={tVideos('watchOnYouTube')}
+        className="mb-6"
+      />
 
       <CleaningPublicLinksSection
         rooms={rooms}

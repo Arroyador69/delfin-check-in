@@ -104,6 +104,16 @@
       </div>
     </section>
 
+    <section id="video-intro-section" class="border-t border-slate-200 bg-slate-50/80 py-12 sm:py-14">
+      <div class="max-w-3xl mx-auto px-4 sm:px-6">
+        <h2 class="text-xl sm:text-2xl font-bold text-center text-slate-900 mb-2" data-key="videoIntroTitle"></h2>
+        <p class="text-sm sm:text-base text-center text-slate-600 mb-6 max-w-2xl mx-auto leading-relaxed" data-key="videoIntroBody"></p>
+        <div class="rounded-2xl overflow-hidden shadow-md border border-slate-200" style="position:relative;padding-bottom:56.25%;height:0">
+          <iframe style="position:absolute;top:0;left:0;width:100%;height:100%;border:0" src="https://www.youtube.com/embed/sH4Yv5t5hdI" title="Qué es Delfín Check-in" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+        </div>
+      </div>
+    </section>
+
     <section id="mir-compliance-section" class="hidden border-t border-slate-200 bg-blue-50/60 py-12 sm:py-14">
       <div class="max-w-4xl mx-auto px-4 sm:px-6">
         <div class="rounded-2xl border border-blue-200 bg-white p-6 sm:p-8 shadow-sm">
@@ -114,12 +124,36 @@
       </div>
     </section>
 
+    <section id="video-onboarding-section" class="border-t border-slate-200 bg-white py-12 sm:py-14">
+      <div class="max-w-3xl mx-auto px-4 sm:px-6">
+        <h2 class="text-xl sm:text-2xl font-bold text-center text-slate-900 mb-2" data-key="videoOnboardingTitle"></h2>
+        <p class="text-sm sm:text-base text-center text-slate-600 mb-6 max-w-2xl mx-auto leading-relaxed" data-key="videoOnboardingBody"></p>
+        <div class="rounded-2xl overflow-hidden shadow-md border border-slate-200" style="position:relative;padding-bottom:56.25%;height:0">
+          <iframe style="position:absolute;top:0;left:0;width:100%;height:100%;border:0" src="https://www.youtube.com/embed/-bcIKsL1vsM" title="Onboarding Delfín Check-in" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+        </div>
+      </div>
+    </section>
+
     <section class="py-12 sm:py-14 px-4 sm:px-6">
       <div class="max-w-2xl mx-auto rounded-2xl border border-slate-200 bg-white px-6 py-6 sm:px-8 sm:py-7 shadow-sm">
         <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2" data-key="freeLabel"></p>
         <p class="text-slate-700 text-sm sm:text-base leading-relaxed" data-key="freeBody"></p>
       </div>
     </section>
+    <section id="video-reputation-pro-section" class="border-t border-amber-200/80 bg-gradient-to-br from-amber-50 via-white to-orange-50 py-12 sm:py-16">
+      <div class="max-w-3xl mx-auto px-4 sm:px-6">
+        <p class="text-center text-xs font-bold uppercase tracking-wider text-amber-800 mb-2" data-key="videoReputationBadge"></p>
+        <h2 class="text-xl sm:text-2xl font-bold text-center text-slate-900 mb-2" data-key="videoReputationTitle"></h2>
+        <p class="text-sm sm:text-base text-center text-slate-700 mb-6 max-w-2xl mx-auto leading-relaxed" data-key="videoReputationBody"></p>
+        <div class="rounded-2xl overflow-hidden shadow-md border border-amber-200/60 mb-8" style="position:relative;padding-bottom:56.25%;height:0">
+          <iframe style="position:absolute;top:0;left:0;width:100%;height:100%;border:0" src="https://www.youtube.com/embed/TZuY8RAgSj4" title="Reputación Google Plan Pro" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+        </div>
+        <div class="text-center">
+          <a id="link-reputation-pro" href="#" class="inline-flex items-center justify-center px-8 py-3.5 rounded-xl bg-amber-600 text-white font-semibold text-base shadow-md shadow-amber-600/25 hover:bg-amber-700 transition-colors" data-key="videoReputationCta"></a>
+        </div>
+      </div>
+    </section>
+
   </main>
 
   <footer class="border-t border-slate-200 bg-slate-100/50 py-8 text-center text-sm text-slate-500">
@@ -164,7 +198,15 @@
       mirComplianceBody2: 'Centralizas datos de huéspedes y reservas en un flujo operativo para enviar la información exigida por ley con trazabilidad y control, cumpliendo al 100% con el marco legal aplicable en España.',
       freeLabel: 'Plan gratuito',
       freeBody: 'Puedes empezar con el Plan Básico Gratis (solo para 1 propiedad). No hace falta tarjeta y no tiene coste mensual. Cada propiedad extra son 2 €/mes. El módulo de check-in digital y envío al Ministerio del Interior siempre cuesta 2 €/mes (opcional).',
-      footer: '© Delfín Check-in'
+      videoIntroTitle: '¿Qué es Delfín Check-in?',
+      videoIntroBody: 'Registro de viajeros, reserva en el panel y envío al Ministerio del Interior (MIR). Mira cómo encaja todo en un solo flujo.',
+      videoOnboardingTitle: 'Empieza gratis en 6 pasos',
+      videoOnboardingBody: 'Regístrate sin tarjeta, recibe el email de onboarding y en minutos tienes el panel listo. El sistema trabaja por ti.',
+      videoReputationBadge: 'Plan Pro',
+      videoReputationTitle: 'Reseñas en Google y más reservas directas',
+      videoReputationBody: 'Tras cada checkout, tus huéspedes reciben un recordatorio para valorarte en Google. Te encuentran en Maps antes de entrar en Airbnb o Booking.',
+      videoReputationCta: 'Contratar Plan Pro',
+ '© Delfín Check-in'
     },
     en: {
       languageLabel: 'Language',
@@ -187,7 +229,15 @@
       mirComplianceBody2: 'You centralize guest and booking data in one operational flow, so required legal information is sent with traceability and control, fully aligned with the applicable legal framework in Spain.',
       freeLabel: 'Free plan',
       freeBody: 'Start with the Basic Free plan (1 property included). No card required and no monthly cost. Each additional property is €2/month. The digital check-in + Ministry submission module is always €2/month (optional).',
-      footer: '© Delfín Check-in'
+      videoIntroTitle: 'What is Delfín Check-in?',
+      videoIntroBody: 'Guest registration, booking in your dashboard, and submission to the Spanish Ministry (MIR). See how it fits together.',
+      videoOnboardingTitle: 'Start free in 6 steps',
+      videoOnboardingBody: 'Sign up with no card, open the onboarding email, and have your panel ready in minutes. The system works for you.',
+      videoReputationBadge: 'Pro plan',
+      videoReputationTitle: 'Google reviews and more direct bookings',
+      videoReputationBody: 'After each checkout, guests get a reminder to review you on Google. They find you on Maps before opening Airbnb or Booking.',
+      videoReputationCta: 'Get Pro plan',
+ '© Delfín Check-in'
     },
     it: {
       languageLabel: 'Lingua',
@@ -210,7 +260,15 @@
       mirComplianceBody2: 'Centralizzi dati di ospiti e prenotazioni in un unico flusso operativo per inviare le informazioni richieste dalla legge con tracciabilità e controllo, in pieno allineamento con il quadro normativo applicabile in Spagna.',
       freeLabel: 'Piano gratuito',
       freeBody: 'Puoi iniziare con il Piano Base Gratis (1 proprietà inclusa). Nessuna carta richiesta e nessun costo mensile. Ogni proprietà aggiuntiva costa 2 €/mese. Il modulo di check-in digitale e invio al Ministero dell’Interno costa sempre 2 €/mese (opzionale).',
-      footer: '© Delfín Check-in'
+      videoIntroTitle: 'What is Delfín Check-in?',
+      videoIntroBody: 'Guest registration, booking in your dashboard, and submission to the Spanish Ministry (MIR). See how it fits together.',
+      videoOnboardingTitle: 'Start free in 6 steps',
+      videoOnboardingBody: 'Sign up with no card, open the onboarding email, and have your panel ready in minutes. The system works for you.',
+      videoReputationBadge: 'Pro plan',
+      videoReputationTitle: 'Google reviews and more direct bookings',
+      videoReputationBody: 'After each checkout, guests get a reminder to review you on Google. They find you on Maps before opening Airbnb or Booking.',
+      videoReputationCta: 'Get Pro plan',
+ '© Delfín Check-in'
     },
     pt: {
       languageLabel: 'Idioma',
@@ -233,7 +291,15 @@
       mirComplianceBody2: 'Centraliza dados de hóspedes e reservas num único fluxo operacional para enviar a informação legal obrigatória com rastreabilidade e controlo, em total alinhamento com o quadro legal aplicável em Espanha.',
       freeLabel: 'Plano gratuito',
       freeBody: 'Pode começar com o Plano Básico Gratuito (1 propriedade incluída). Não é preciso cartão e não tem custo mensal. Cada propriedade extra custa 2 €/mês. O módulo de check-in digital e envio ao Ministério do Interior custa sempre 2 €/mês (opcional).',
-      footer: '© Delfín Check-in'
+      videoIntroTitle: 'What is Delfín Check-in?',
+      videoIntroBody: 'Guest registration, booking in your dashboard, and submission to the Spanish Ministry (MIR). See how it fits together.',
+      videoOnboardingTitle: 'Start free in 6 steps',
+      videoOnboardingBody: 'Sign up with no card, open the onboarding email, and have your panel ready in minutes. The system works for you.',
+      videoReputationBadge: 'Pro plan',
+      videoReputationTitle: 'Google reviews and more direct bookings',
+      videoReputationBody: 'After each checkout, guests get a reminder to review you on Google. They find you on Maps before opening Airbnb or Booking.',
+      videoReputationCta: 'Get Pro plan',
+ '© Delfín Check-in'
     },
     fr: {
       languageLabel: 'Langue',
@@ -256,7 +322,15 @@
       mirComplianceBody2: 'Vous centralisez les données clients et réservations dans un flux unique pour transmettre les informations légales requises avec traçabilité et contrôle, en conformité totale avec le cadre légal applicable en Espagne.',
       freeLabel: 'Offre gratuite',
       freeBody: 'Vous pouvez commencer avec l’offre gratuite (1 propriété incluse). Pas de carte bancaire et aucun coût mensuel. Chaque propriété supplémentaire coûte 2 €/mois. Le module de check-in digital et envoi au Ministère de l’Intérieur coûte toujours 2 €/mois (optionnel).',
-      footer: '© Delfín Check-in'
+      videoIntroTitle: 'What is Delfín Check-in?',
+      videoIntroBody: 'Guest registration, booking in your dashboard, and submission to the Spanish Ministry (MIR). See how it fits together.',
+      videoOnboardingTitle: 'Start free in 6 steps',
+      videoOnboardingBody: 'Sign up with no card, open the onboarding email, and have your panel ready in minutes. The system works for you.',
+      videoReputationBadge: 'Pro plan',
+      videoReputationTitle: 'Google reviews and more direct bookings',
+      videoReputationBody: 'After each checkout, guests get a reminder to review you on Google. They find you on Maps before opening Airbnb or Booking.',
+      videoReputationCta: 'Get Pro plan',
+ '© Delfín Check-in'
     },
     fi: {
       languageLabel: 'Kieli',
@@ -279,6 +353,14 @@
       mirComplianceBody2: 'Keskität vieras- ja varaustiedot yhteen operatiiviseen prosessiin, jotta lakisääteiset tiedot voidaan lähettää jäljitettävästi ja hallitusti Espanjan sovellettavan lainsäädännön mukaisesti.',
       freeLabel: 'Ilmainen suunnitelma',
       freeBody: 'Voit aloittaa ilmaisella peruspaketilla (1 majoituskohde mukana). Korttia ei tarvita eikä kuukausimaksua ole. Jokainen lisäkohde on 2 €/kk. Digitaalinen check-in + lähetys sisäministeriölle maksaa aina 2 €/kk (valinnainen).',
+      videoIntroTitle: 'What is Delfín Check-in?',
+      videoIntroBody: 'Guest registration, booking in your dashboard, and submission to the Spanish Ministry (MIR). See how it fits together.',
+      videoOnboardingTitle: 'Start free in 6 steps',
+      videoOnboardingBody: 'Sign up with no card, open the onboarding email, and have your panel ready in minutes. The system works for you.',
+      videoReputationBadge: 'Pro plan',
+      videoReputationTitle: 'Google reviews and more direct bookings',
+      videoReputationBody: 'After each checkout, guests get a reminder to review you on Google. They find you on Maps before opening Airbnb or Booking.',
+      videoReputationCta: 'Get Pro plan',
       footer: '© Delfín Check-in'
     },
     sv: {
@@ -306,6 +388,14 @@
       freeLabel: 'Gratisplan',
       freeBody:
         'Du kan börja med gratis grundplan (1 boende ingår). Inget kort krävs och ingen månadskostnad. Varje ytterligare boende kostar 2 €/månad. Modulen för digital incheckning + inlämning till inrikesministeriet kostar alltid 2 €/månad (valfritt).',
+      videoIntroTitle: 'What is Delfín Check-in?',
+      videoIntroBody: 'Guest registration, booking in your dashboard, and submission to the Spanish Ministry (MIR). See how it fits together.',
+      videoOnboardingTitle: 'Start free in 6 steps',
+      videoOnboardingBody: 'Sign up with no card, open the onboarding email, and have your panel ready in minutes. The system works for you.',
+      videoReputationBadge: 'Pro plan',
+      videoReputationTitle: 'Google reviews and more direct bookings',
+      videoReputationBody: 'After each checkout, guests get a reminder to review you on Google. They find you on Maps before opening Airbnb or Booking.',
+      videoReputationCta: 'Get Pro plan',
       footer: '© Delfín Check-in'
     }
   };
@@ -381,6 +471,10 @@
     var plansEl = document.getElementById('link-plans');
     if (plansEl) {
       plansEl.href = 'plans.html?lang=' + encodeURIComponent(lang) + '&source=landing';
+    }
+    var repProEl = document.getElementById('link-reputation-pro');
+    if (repProEl) {
+      repProEl.href = 'plans.html?lang=' + encodeURIComponent(lang) + '&source=landing-reputation#plan-pro';
     }
     syncLangSwitcher(lang);
     try {

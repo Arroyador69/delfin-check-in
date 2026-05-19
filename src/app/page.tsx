@@ -498,7 +498,7 @@ export default function HomePage() {
                   border: 'none',
                   borderRadius: '12px'
                 }}
-                src="https://www.youtube.com/embed/Ttr6aefFLbg"
+                  src="https://www.youtube.com/embed/sH4Yv5t5hdI"
                 title={t('videoTutorial.title')}
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
@@ -506,7 +506,7 @@ export default function HomePage() {
             </div>
             <div className="text-center">
               <a
-                href="https://youtu.be/Ttr6aefFLbg"
+                  href="https://www.youtube.com/watch?v=sH4Yv5t5hdI"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-sm text-blue-600 hover:text-blue-700 font-medium inline-flex items-center gap-1"
