@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
 import { generateTokenPair, AUTH_CONFIG, verifyToken } from '@/lib/auth';
 import { effectivePlatformAdmin } from '@/lib/platform-owner';
-import { findOnboardingOwnerByEmail } from '@/lib/onboarding-magic-link';
+import {
+  ensureOnboardingMagicTokenSchema,
+  findOnboardingOwnerByEmail,
+} from '@/lib/onboarding-magic-link';
 
 export const runtime = 'nodejs';
 
@@ -24,6 +27,7 @@ export async function POST(req: NextRequest) {
     }
 
     const emailNorm = email.trim().toLowerCase();
+    await ensureOnboardingMagicTokenSchema();
 
     let row: Record<string, unknown> | undefined;
 
@@ -39,8 +43,6 @@ export async function POST(req: NextRequest) {
         tu.role,
         tu.is_active,
         tu.is_platform_admin,
-        tu.reset_token,
-        tu.reset_token_expires,
         tu.email_verified
       FROM tenants t
       JOIN tenant_users tu ON t.id = tu.tenant_id
@@ -50,8 +52,15 @@ export async function POST(req: NextRequest) {
           LOWER(TRIM(t.email)) = ${emailNorm}
           OR LOWER(TRIM(tu.email)) = ${emailNorm}
         )
-        AND tu.reset_token = ${token}
-        AND tu.reset_token_expires > NOW()
+        AND (
+          (tu.onboarding_magic_token = ${token} AND tu.onboarding_magic_token_expires > NOW())
+          OR (
+            tu.onboarding_magic_token IS NULL
+            AND tu.reset_token = ${token}
+            AND tu.reset_token_expires > NOW()
+            AND length(tu.reset_token) >= 32
+          )
+        )
       ORDER BY tu.created_at DESC
       LIMIT 1
     `;

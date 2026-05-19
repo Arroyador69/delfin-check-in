@@ -77,6 +77,8 @@ export async function POST(req: NextRequest) {
         t.status,
         t.onboarding_status,
         tu.id as user_id,
+        tu.onboarding_magic_token,
+        tu.onboarding_magic_token_expires,
         tu.reset_token,
         tu.reset_token_expires,
         tu.email_verified
@@ -102,6 +104,8 @@ export async function POST(req: NextRequest) {
       status: string;
       onboarding_status: string | null;
       user_id: string;
+      onboarding_magic_token: string | null;
+      onboarding_magic_token_expires: Date | string | null;
       reset_token: string | null;
       reset_token_expires: Date | string | null;
       email_verified: boolean;
@@ -121,8 +125,8 @@ export async function POST(req: NextRequest) {
     }
 
     // Si el token expiró o no existe, o forzamos reinicio del flujo, generar uno nuevo
-    let onboardingToken = user.reset_token;
-    let tokenExpiry = user.reset_token_expires;
+    let onboardingToken = user.onboarding_magic_token || user.reset_token;
+    let tokenExpiry = user.onboarding_magic_token_expires || user.reset_token_expires;
 
     const needsNewToken =
       resetOnboardingFlow ||
@@ -210,6 +214,8 @@ export async function GET(req: NextRequest) {
         t.plan_id,
         t.onboarding_status,
         tu.id as user_id,
+        tu.onboarding_magic_token,
+        tu.onboarding_magic_token_expires,
         tu.reset_token,
         tu.reset_token_expires,
         tu.email_verified,
@@ -237,6 +243,8 @@ export async function GET(req: NextRequest) {
       plan_id: string;
       onboarding_status: string | null;
       user_id: string;
+      onboarding_magic_token: string | null;
+      onboarding_magic_token_expires: Date | string | null;
       reset_token: string | null;
       reset_token_expires: Date | string | null;
       email_verified: boolean;
@@ -247,13 +255,13 @@ export async function GET(req: NextRequest) {
       return gate.response;
     }
 
+    const magicToken = user.onboarding_magic_token || user.reset_token;
+    const magicExpiry = user.onboarding_magic_token_expires || user.reset_token_expires;
     const hasValidToken =
-      user.reset_token &&
-      user.reset_token_expires &&
-      new Date(user.reset_token_expires) > new Date();
+      magicToken && magicExpiry && new Date(magicExpiry) > new Date();
 
     const onboardingUrl = hasValidToken
-      ? `${process.env.NEXT_PUBLIC_APP_URL}/onboarding?token=${user.reset_token}&email=${encodeURIComponent(email)}`
+      ? buildOnboardingUrl(magicToken!, email, 'es')
       : null;
 
     return NextResponse.json({
@@ -267,9 +275,9 @@ export async function GET(req: NextRequest) {
         onboarding_status: user.onboarding_status,
       },
       onboarding: {
-        hasToken: !!user.reset_token,
+        hasToken: !!magicToken,
         tokenValid: hasValidToken,
-        tokenExpires: user.reset_token_expires,
+        tokenExpires: magicExpiry,
         emailVerified: user.email_verified,
         onboardingUrl: onboardingUrl,
       },

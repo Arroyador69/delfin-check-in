@@ -244,15 +244,21 @@ export async function provisionTenantFromPolarPublicSubscription(sub: any): Prom
     role: 'owner',
   });
 
-  const onboardingToken = crypto.randomBytes(32).toString('hex');
-  const tokenExpiry = new Date();
-  tokenExpiry.setHours(tokenExpiry.getHours() + 72);
+  const {
+    buildOnboardingUrl,
+    ensureOnboardingMagicTokenSchema,
+    generateOnboardingToken,
+    onboardingTokenExpiry,
+  } = await import('@/lib/onboarding-magic-link');
+  await ensureOnboardingMagicTokenSchema();
+  const onboardingToken = generateOnboardingToken();
+  const tokenExpiry = onboardingTokenExpiry();
 
   await sql`
     UPDATE tenant_users
     SET
-      reset_token = ${onboardingToken},
-      reset_token_expires = ${tokenExpiry.toISOString()},
+      onboarding_magic_token = ${onboardingToken},
+      onboarding_magic_token_expires = ${tokenExpiry.toISOString()},
       email_verified = false
     WHERE tenant_id = ${tenantId}::uuid AND email = ${email}
   `;
@@ -265,8 +271,7 @@ export async function provisionTenantFromPolarPublicSubscription(sub: any): Prom
   }
 
   const loc = String((meta as Record<string, unknown>).locale || 'es');
-  const base = String(process.env.NEXT_PUBLIC_APP_URL || 'https://admin.delfincheckin.com').replace(/\/+$/, '');
-  const onboardingUrl = `${base}/${loc}/onboarding?token=${onboardingToken}&email=${encodeURIComponent(email)}`;
+  const onboardingUrl = buildOnboardingUrl(onboardingToken, email, loc);
 
   try {
     await sendOnboardingEmail({

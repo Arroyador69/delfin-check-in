@@ -11,6 +11,12 @@ import {
 } from '@/lib/referrals';
 import { parseReferralCookie } from '@/lib/referral-tracking';
 import { defaultLocale, isValidLocale, type Locale } from '@/i18n/config';
+import {
+  buildOnboardingUrl,
+  ensureOnboardingMagicTokenSchema,
+  generateOnboardingToken,
+  onboardingTokenExpiry,
+} from '@/lib/onboarding-magic-link';
 
 export type WaitlistEntryForActivate = {
   id: string;
@@ -62,20 +68,24 @@ export async function activateWaitlistEntryFromRow(
     `;
 
     if (existingUser.rows.length > 0) {
-      const onboardingToken = crypto.randomBytes(32).toString('hex');
-      const tokenExpiry = new Date();
-      tokenExpiry.setHours(tokenExpiry.getHours() + 72);
+      await ensureOnboardingMagicTokenSchema();
+      const onboardingToken = generateOnboardingToken();
+      const tokenExpiry = onboardingTokenExpiry();
 
       await sql`
         UPDATE tenant_users
         SET
-          reset_token = ${onboardingToken},
-          reset_token_expires = ${tokenExpiry.toISOString()},
+          onboarding_magic_token = ${onboardingToken},
+          onboarding_magic_token_expires = ${tokenExpiry.toISOString()},
           email_verified = false
         WHERE id = ${existingUser.rows[0].id}
       `;
 
-      const onboardingUrl = `${appBase}${onboardingBasePath}?token=${onboardingToken}&email=${encodeURIComponent(waitlistEntry.email)}`;
+      const onboardingUrl = buildOnboardingUrl(
+        onboardingToken,
+        waitlistEntry.email,
+        requestedLocale
+      );
 
       try {
         await sendOnboardingEmail({
@@ -107,20 +117,24 @@ export async function activateWaitlistEntryFromRow(
       role: 'owner',
     });
 
-    const onboardingTokenOrphan = crypto.randomBytes(32).toString('hex');
-    const tokenExpiryOrphan = new Date();
-    tokenExpiryOrphan.setHours(tokenExpiryOrphan.getHours() + 72);
+    await ensureOnboardingMagicTokenSchema();
+    const onboardingTokenOrphan = generateOnboardingToken();
+    const tokenExpiryOrphan = onboardingTokenExpiry();
 
     await sql`
       UPDATE tenant_users
       SET
-        reset_token = ${onboardingTokenOrphan},
-        reset_token_expires = ${tokenExpiryOrphan.toISOString()},
+        onboarding_magic_token = ${onboardingTokenOrphan},
+        onboarding_magic_token_expires = ${tokenExpiryOrphan.toISOString()},
         email_verified = false
       WHERE tenant_id = ${tenantId}::uuid AND email = ${waitlistEntry.email}
     `;
 
-    const onboardingUrlOrphan = `${appBase}${onboardingBasePath}?token=${onboardingTokenOrphan}&email=${encodeURIComponent(waitlistEntry.email)}`;
+    const onboardingUrlOrphan = buildOnboardingUrl(
+      onboardingTokenOrphan,
+      waitlistEntry.email,
+      requestedLocale
+    );
 
     try {
       await sendOnboardingEmail({
@@ -199,15 +213,15 @@ export async function activateWaitlistEntryFromRow(
     role: 'owner',
   });
 
-  const onboardingToken = crypto.randomBytes(32).toString('hex');
-  const tokenExpiry = new Date();
-  tokenExpiry.setHours(tokenExpiry.getHours() + 72);
+  await ensureOnboardingMagicTokenSchema();
+  const onboardingToken = generateOnboardingToken();
+  const tokenExpiry = onboardingTokenExpiry();
 
   await sql`
     UPDATE tenant_users
     SET
-      reset_token = ${onboardingToken},
-      reset_token_expires = ${tokenExpiry.toISOString()},
+      onboarding_magic_token = ${onboardingToken},
+      onboarding_magic_token_expires = ${tokenExpiry.toISOString()},
       email_verified = false
     WHERE tenant_id = ${tenantId} AND email = ${waitlistEntry.email}
   `;
@@ -320,7 +334,11 @@ export async function activateWaitlistEntryFromRow(
     console.warn('Error en integración de afiliados (no crítico):', m);
   }
 
-  const onboardingUrl = `${appBase}${onboardingBasePath}?token=${onboardingToken}&email=${encodeURIComponent(waitlistEntry.email)}`;
+  const onboardingUrl = buildOnboardingUrl(
+    onboardingToken,
+    waitlistEntry.email,
+    requestedLocale
+  );
 
   try {
     await sendOnboardingEmail({

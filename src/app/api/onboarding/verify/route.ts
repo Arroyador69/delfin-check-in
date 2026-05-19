@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
+import { ensureOnboardingMagicTokenSchema } from '@/lib/onboarding-magic-link';
 
 /**
  * API para verificar el token de onboarding
@@ -18,19 +19,28 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // Buscar el tenant por email y verificar que tiene un token de onboarding
+    await ensureOnboardingMagicTokenSchema();
+    const emailNorm = email.trim().toLowerCase();
+
     const result = await sql`
       SELECT 
         t.*,
-        tu.reset_token,
-        tu.reset_token_expires,
         tu.email_verified
       FROM tenants t
       JOIN tenant_users tu ON t.id = tu.tenant_id
-      WHERE t.email = ${email} 
-        AND tu.reset_token = ${token}
-        AND tu.reset_token_expires > NOW()
-        AND tu.email_verified = false
+      WHERE (
+          LOWER(TRIM(t.email)) = ${emailNorm}
+          OR LOWER(TRIM(tu.email)) = ${emailNorm}
+        )
+        AND (
+          (tu.onboarding_magic_token = ${token} AND tu.onboarding_magic_token_expires > NOW())
+          OR (
+            tu.onboarding_magic_token IS NULL
+            AND tu.reset_token = ${token}
+            AND tu.reset_token_expires > NOW()
+            AND length(tu.reset_token) >= 32
+          )
+        )
     `;
 
     if (result.rows.length === 0) {
