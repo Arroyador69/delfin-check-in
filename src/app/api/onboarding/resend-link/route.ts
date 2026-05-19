@@ -3,7 +3,8 @@ import { sendOnboardingEmail } from '@/lib/mailer';
 import {
   buildOnboardingUrl,
   findOnboardingOwnerByEmail,
-  issueFreshOnboardingToken,
+  issueFreshOnboardingCredentials,
+  onboardingEmailVariantForOwner,
 } from '@/lib/onboarding-magic-link';
 
 export const runtime = 'nodejs';
@@ -47,16 +48,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(genericOk);
     }
 
-    // Un solo enlace válido: el nuevo sustituye al anterior en base de datos.
-    const { token } = await issueFreshOnboardingToken(owner.user_id);
+    const { token, tempPassword } = await issueFreshOnboardingCredentials(owner.user_id);
     const onboardingUrl = buildOnboardingUrl(token, email, locale);
 
     try {
       await sendOnboardingEmail({
         to: email,
         onboardingUrl,
+        tempPassword,
         tenantId: owner.tenant_id,
-        variant: 'web_plan_paid',
+        variant: onboardingEmailVariantForOwner(owner.plan_type),
         locale,
       });
     } catch (mailErr) {

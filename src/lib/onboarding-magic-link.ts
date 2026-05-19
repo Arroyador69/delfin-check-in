@@ -1,5 +1,7 @@
 import crypto from 'crypto';
 import { sql } from '@/lib/db';
+import { hashPassword } from '@/lib/auth';
+import type { OnboardingEmailVariant } from '@/lib/mailer';
 
 export const ONBOARDING_TOKEN_HOURS = 72;
 
@@ -50,6 +52,8 @@ export async function findOnboardingOwnerByEmail(emailRaw: string) {
       t.email as tenant_email,
       t.status,
       t.onboarding_status,
+      t.plan_id,
+      t.plan_type,
       tu.id as user_id,
       tu.email as user_email,
       tu.onboarding_magic_token,
@@ -75,6 +79,8 @@ export async function findOnboardingOwnerByEmail(emailRaw: string) {
         tenant_email: string;
         status: string;
         onboarding_status: string | null;
+        plan_id: string | null;
+        plan_type: string | null;
         user_id: string;
         user_email: string;
         onboarding_magic_token: string | null;
@@ -102,6 +108,36 @@ export async function issueFreshOnboardingToken(userId: string): Promise<{
     WHERE id = ${userId}
   `;
   return { token, expires };
+}
+
+export function generateOnboardingTempPassword(): string {
+  return crypto.randomBytes(12).toString('base64').slice(0, 16);
+}
+
+export async function rotateOnboardingTempPassword(userId: string): Promise<string> {
+  const tempPassword = generateOnboardingTempPassword();
+  const passwordHash = await hashPassword(tempPassword);
+  await sql`
+    UPDATE tenant_users
+    SET password_hash = ${passwordHash}, updated_at = NOW()
+    WHERE id = ${userId}
+  `;
+  return tempPassword;
+}
+
+export async function issueFreshOnboardingCredentials(userId: string): Promise<{
+  token: string;
+  expires: Date;
+  tempPassword: string;
+}> {
+  const tempPassword = await rotateOnboardingTempPassword(userId);
+  const { token, expires } = await issueFreshOnboardingToken(userId);
+  return { token, expires, tempPassword };
+}
+
+export function onboardingEmailVariantForOwner(planType?: string | null): OnboardingEmailVariant {
+  if (planType === 'free') return 'waitlist_launch';
+  return 'default';
 }
 
 /** Invalida el magic link de onboarding (p. ej. tras cambiar contraseña o completar). */

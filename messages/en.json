@@ -468,7 +468,7 @@
     },
     "step1": {
       "title": "🔐 Change Password",
-      "intro": "For security, you must change your temporary password before continuing.",
+      "intro": "For security, you must change your temporary password before continuing. Use the temporary password from your most recent activation email (if you requested a new link, use the one in the latest email).",
       "passwordChangedSuccess": "✅ Password changed successfully",
       "currentPassword": "Current Password *",
       "newPassword": "New Password *",

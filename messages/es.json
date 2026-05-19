@@ -469,7 +469,7 @@
     },
     "step1": {
       "title": "🔐 Cambiar Contraseña",
-      "intro": "Por seguridad, debes cambiar tu contraseña temporal antes de continuar.",
+      "intro": "Por seguridad, debes cambiar tu contraseña temporal antes de continuar. Usa la contraseña temporal del email de activación más reciente (si pediste un enlace nuevo, la del último correo).",
       "passwordChangedSuccess": "✅ Contraseña cambiada exitosamente",
       "currentPassword": "Contraseña Actual *",
       "newPassword": "Nueva Contraseña *",
