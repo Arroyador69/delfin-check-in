@@ -99,6 +99,18 @@
     "viewMyTenantPanel": "Visualizza Il Mio Pannello Tenant",
     "superAdminDashboardTitle": "👑 Dashboard SuperAdmin"
   },
+  "tutorialVideos": {
+    "watchOnYouTube": "Guarda su YouTube",
+    "spanishAudioNote": "L'audio del video è in spagnolo.",
+    "mirTitle": "Video: credenziali MIR passo passo",
+    "mirDescription": "Come ottenerle dal portale ufficiale spagnolo e incollarle in Configurazione MIR (normativa Spagna).",
+    "cleaningTitle": "Video: link per le addette alle pulizie",
+    "cleaningDescription": "Crea un link per squadra; il calendario si aggiorna automaticamente con le prenotazioni.",
+    "micrositeTitle": "Video: microsite e pagamenti Stripe",
+    "micrositeDescription": "Attiva i pagamenti diretti e pubblica la struttura su book.delfincheckin.com.",
+    "reputationTitle": "Video: recensioni Google automatiche (piano Pro)",
+    "reputationDescription": "Dopo il check-out l'ospite riceve un promemoria per recensirti su Google e migliorare la visibilità locale."
+  },
   "reputationGoogle": {
     "title": "Recensioni Google e più prenotazioni dirette",
     "subtitle": "Funzione chiave del piano Pro: distinguersi da Airbnb, Booking e altre OTA. Migliora il posizionamento locale su Google, raccogli recensioni con promemoria automatici e indirizza il traffico al microsite di prenotazione diretta (senza commissioni da grande piattaforma).",
@@ -343,9 +355,10 @@
       "activateButton": "Attiva Modulo MIR"
     },
     "videoTutorial": {
-      "title": "Video di presentazione",
-      "description": "Una panoramica veloce degli strumenti principali del pannello Delfín Check-in.",
-      "watchOnYouTube": "Apri su YouTube",
+      "title": "Cos'è Delfín Check-in?",
+      "description": "Registrazione ospiti, prenotazione nel pannello e invio al Ministero dell'Interno spagnolo (MIR).",
+      "spanishAudioNote": "L'audio del video è in spagnolo.",
+      "watchOnYouTube": "Guarda su YouTube",
       "hide": "Nascondi video",
       "show": "Mostra video",
       "collapsedHint": "Il tutorial è ridotto per risparmiare spazio. Puoi riaprirlo in qualsiasi momento."

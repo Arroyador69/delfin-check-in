@@ -230,6 +230,7 @@ export default function CleaningCalendarSettings({ rooms, t }: Props) {
         title={tVideos('cleaningTitle')}
         description={tVideos('cleaningDescription')}
         watchOnYouTubeLabel={tVideos('watchOnYouTube')}
+        spanishAudioNote={tVideos('spanishAudioNote')}
         className="mb-6"
       />
 

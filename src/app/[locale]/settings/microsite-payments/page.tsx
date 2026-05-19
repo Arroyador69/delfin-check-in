@@ -179,6 +179,7 @@ export default function MicrositePaymentsPage() {
         title={tVideos('micrositeTitle')}
         description={tVideos('micrositeDescription')}
         watchOnYouTubeLabel={tVideos('watchOnYouTube')}
+        spanishAudioNote={tVideos('spanishAudioNote')}
       />
 
       {/* Configuración de cobros (Stripe Connect Express) */}

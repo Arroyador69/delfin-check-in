@@ -433,6 +433,7 @@ export default function ReputationGooglePage() {
           title={tVideos('reputationTitle')}
           description={tVideos('reputationDescription')}
           watchOnYouTubeLabel={tVideos('watchOnYouTube')}
+          spanishAudioNote={tVideos('spanishAudioNote')}
         />
       ) : (
         <>
@@ -441,6 +442,7 @@ export default function ReputationGooglePage() {
             title={tVideos('reputationTitle')}
             description={tVideos('reputationDescription')}
             watchOnYouTubeLabel={tVideos('watchOnYouTube')}
+            spanishAudioNote={tVideos('spanishAudioNote')}
             className="mb-6"
           />
 

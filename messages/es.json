@@ -101,8 +101,9 @@
   },
   "tutorialVideos": {
     "watchOnYouTube": "Ver en YouTube",
+    "spanishAudioNote": "El audio del vídeo está en español.",
     "mirTitle": "Vídeo: credenciales MIR paso a paso",
-    "mirDescription": "Cómo obtenerlas en la Sede del Interior y pegarlas en Configuración MIR.",
+    "mirDescription": "Cómo obtenerlas en la Sede del Interior y pegarlas en Configuración MIR. Normativa aplicable en España.",
     "cleaningTitle": "Vídeo: enlace para limpiadoras",
     "cleaningDescription": "Crea un enlace por equipo; el calendario se actualiza solo con tus reservas.",
     "micrositeTitle": "Vídeo: microsite y cobros con Stripe",
@@ -357,6 +358,7 @@
     "videoTutorial": {
       "title": "¿Qué es Delfín Check-in?",
       "description": "Registro de viajeros, reserva en el panel y envío al Ministerio del Interior (MIR).",
+      "spanishAudioNote": "El audio del vídeo está en español.",
       "watchOnYouTube": "Abrir en YouTube",
       "hide": "Ocultar vídeo",
       "show": "Mostrar vídeo",

@@ -101,8 +101,9 @@
   },
   "tutorialVideos": {
     "watchOnYouTube": "Watch on YouTube",
+    "spanishAudioNote": "Video audio is in Spanish.",
     "mirTitle": "Video: MIR credentials step by step",
-    "mirDescription": "How to get them from the official portal and paste them in MIR settings.",
+    "mirDescription": "How to obtain them from the official Spanish portal and paste them in MIR settings (Spain regulations).",
     "cleaningTitle": "Video: cleaner calendar link",
     "cleaningDescription": "Create one link per team; the calendar updates automatically from your bookings.",
     "micrositeTitle": "Video: microsite and Stripe payouts",
@@ -356,6 +357,7 @@
     "videoTutorial": {
       "title": "What is Delfín Check-in?",
       "description": "Guest registration, booking in your dashboard, and submission to the Spanish Ministry (MIR).",
+      "spanishAudioNote": "Video audio is in Spanish.",
       "watchOnYouTube": "Open on YouTube",
       "hide": "Hide video",
       "show": "Show video",

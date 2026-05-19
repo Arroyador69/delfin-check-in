@@ -482,6 +482,9 @@ export default function HomePage() {
                   <p className="text-xs sm:text-sm text-gray-600 mt-1">
                     {t('videoTutorial.description')}
                   </p>
+                  <p className="text-xs text-amber-800/90 mt-1.5 italic">
+                    {t('videoTutorial.spanishAudioNote')}
+                  </p>
                 </div>
                 <button
                   type="button"

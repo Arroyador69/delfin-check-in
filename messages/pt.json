@@ -99,6 +99,18 @@
     "viewMyTenantPanel": "Ver Meu Painel de Inquilino",
     "superAdminDashboardTitle": "👑 Painel SuperAdmin"
   },
+  "tutorialVideos": {
+    "watchOnYouTube": "Ver no YouTube",
+    "spanishAudioNote": "O áudio do vídeo está em espanhol.",
+    "mirTitle": "Vídeo: credenciais MIR passo a passo",
+    "mirDescription": "Como obtê-las no portal oficial espanhol e colá-las em Configuração MIR (normativa Espanha).",
+    "cleaningTitle": "Vídeo: link para equipas de limpeza",
+    "cleaningDescription": "Crie um link por equipa; o calendário atualiza-se automaticamente com as reservas.",
+    "micrositeTitle": "Vídeo: microsite e cobranças Stripe",
+    "micrositeDescription": "Ative cobranças diretas e publique o alojamento em book.delfincheckin.com.",
+    "reputationTitle": "Vídeo: avaliações Google automáticas (plano Pro)",
+    "reputationDescription": "Após o check-out o hóspede recebe um lembrete para avaliar no Google e ganhar visibilidade local."
+  },
   "reputationGoogle": {
     "title": "Avaliações no Google e mais reservas diretas",
     "subtitle": "Funcionalidade de destaque do plano Pro: diferencie-se do Airbnb, Booking e outras OTAs. Melhore o posicionamento local no Google, obtenha avaliações com lembretes automáticos e encaminhe tráfego para o microsite de reserva direta (sem comissão de grande plataforma).",
@@ -343,9 +355,10 @@
       "activateButton": "Ativar Módulo MIR"
     },
     "videoTutorial": {
-      "title": "Vídeo de apresentação",
-      "description": "Um tour rápido pelas ferramentas principais do painel Delfín Check-in.",
-      "watchOnYouTube": "Abrir no YouTube",
+      "title": "O que é o Delfín Check-in?",
+      "description": "Registo de hóspedes, reserva no painel e envio ao Ministério do Interior espanhol (MIR).",
+      "spanishAudioNote": "O áudio do vídeo está em espanhol.",
+      "watchOnYouTube": "Ver no YouTube",
       "hide": "Ocultar vídeo",
       "show": "Mostrar vídeo",
       "collapsedHint": "O tutorial está minimizado para poupar espaço. Pode voltar a abri-lo quando quiser."

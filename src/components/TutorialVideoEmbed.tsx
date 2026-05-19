@@ -11,6 +11,8 @@ type Props = {
   title: string;
   description?: string;
   watchOnYouTubeLabel?: string;
+  /** UI in account language; video narration is Spanish only. */
+  spanishAudioNote?: string;
   className?: string;
 };
 
@@ -19,6 +21,7 @@ export default function TutorialVideoEmbed({
   title,
   description,
   watchOnYouTubeLabel = 'Ver en YouTube',
+  spanishAudioNote,
   className = '',
 }: Props) {
   const embedUrl = getTutorialVideoEmbedUrl(videoKey);
@@ -34,6 +37,9 @@ export default function TutorialVideoEmbed({
           <h3 className="text-base sm:text-lg font-semibold text-gray-900">{title}</h3>
           {description ? (
             <p className="text-xs sm:text-sm text-gray-600 mt-1 leading-relaxed">{description}</p>
+          ) : null}
+          {spanishAudioNote ? (
+            <p className="text-xs text-gray-500 mt-1 italic">{spanishAudioNote}</p>
           ) : null}
         </div>
       </div>

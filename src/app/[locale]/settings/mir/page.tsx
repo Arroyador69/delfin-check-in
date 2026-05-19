@@ -622,6 +622,7 @@ export default function MirSettingsPage() {
           title={tVideos('mirTitle')}
           description={tVideos('mirDescription')}
           watchOnYouTubeLabel={tVideos('watchOnYouTube')}
+          spanishAudioNote={tVideos('spanishAudioNote')}
           className="mb-6"
         />
 
