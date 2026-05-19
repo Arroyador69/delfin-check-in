@@ -99,6 +99,8 @@ export async function POST(req: NextRequest) {
       SET password_hash = $1,
           reset_token = NULL,
           reset_token_expires = NULL,
+          onboarding_magic_token = NULL,
+          onboarding_magic_token_expires = NULL,
           updated_at = NOW()
       WHERE id = $2 AND tenant_id = $3 AND is_active = true
       RETURNING email, full_name

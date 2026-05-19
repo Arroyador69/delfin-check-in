@@ -19,6 +19,12 @@ import {
   findTenantByStripeCustomerId 
 } from '@/lib/payment-tracking'
 import { getStripeServer } from '@/lib/stripe-server'
+import {
+  buildOnboardingUrl,
+  ensureOnboardingMagicTokenSchema,
+  generateOnboardingToken,
+  onboardingTokenExpiry,
+} from '@/lib/onboarding-magic-link'
 import { calculatePlanPriceWithInterval, type BillingInterval, type PlanId } from '@/lib/plan-pricing'
 
 export const config = {
@@ -180,23 +186,20 @@ async function createTenantFromPayment(pi: Stripe.PaymentIntent, overrideEmail?:
       // No es crítico, se asociará en onboarding si hay cookie
     }
 
-    // Generar token para onboarding (usar reset_token como token temporal)
-    const onboardingToken = Math.random().toString(36).slice(-32) + Math.random().toString(36).slice(-32);
-    const tokenExpiry = new Date();
-    tokenExpiry.setHours(tokenExpiry.getHours() + 72); // Token válido por 72 horas
+    await ensureOnboardingMagicTokenSchema();
+    const onboardingToken = generateOnboardingToken();
+    const tokenExpiry = onboardingTokenExpiry();
 
-    // Actualizar usuario con token de onboarding
     await sql`
       UPDATE tenant_users 
       SET 
-        reset_token = ${onboardingToken},
-        reset_token_expires = ${tokenExpiry.toISOString()},
+        onboarding_magic_token = ${onboardingToken},
+        onboarding_magic_token_expires = ${tokenExpiry.toISOString()},
         email_verified = false
       WHERE id = ${user.id}
     `;
 
-    // Generar magic link para onboarding
-    const onboardingUrl = `${process.env.NEXT_PUBLIC_APP_URL}/onboarding?token=${onboardingToken}&email=${encodeURIComponent(email)}`;
+    const onboardingUrl = buildOnboardingUrl(onboardingToken, email, 'es');
     
     console.log('🔗 Magic link de onboarding:', onboardingUrl);
     console.log('📧 Enviando email de onboarding a:', email);
@@ -328,20 +331,20 @@ async function createTenantFromInvoice(inv: Stripe.Invoice, email: string): Prom
       // No es crítico, se asociará en onboarding si hay cookie
     }
 
-    const onboardingToken = Math.random().toString(36).slice(-32) + Math.random().toString(36).slice(-32)
-    const tokenExpiry = new Date()
-    tokenExpiry.setHours(tokenExpiry.getHours() + 72)
+    await ensureOnboardingMagicTokenSchema();
+    const onboardingToken = generateOnboardingToken();
+    const tokenExpiry = onboardingTokenExpiry();
 
     await sql`
       UPDATE tenant_users 
       SET 
-        reset_token = ${onboardingToken},
-        reset_token_expires = ${tokenExpiry.toISOString()},
+        onboarding_magic_token = ${onboardingToken},
+        onboarding_magic_token_expires = ${tokenExpiry.toISOString()},
         email_verified = false
       WHERE id = ${user.id}
     `
 
-    const onboardingUrl = `${process.env.NEXT_PUBLIC_APP_URL}/onboarding?token=${onboardingToken}&email=${encodeURIComponent(email)}`
+    const onboardingUrl = buildOnboardingUrl(onboardingToken, email, 'es');
     console.log('🔗 Magic link de onboarding (invoice):', onboardingUrl)
     console.log('📧 Enviando email de onboarding a:', email)
     try {

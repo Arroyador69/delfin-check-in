@@ -3,6 +3,7 @@ import { sql } from '@/lib/db';
 import { verifyToken } from '@/lib/auth';
 import { generateReferralCodeForTenant, associateTenantWithReferrer, getReferrerFromCookie } from '@/lib/referrals';
 import { parseReferralCookie } from '@/lib/referral-tracking';
+import { clearOnboardingMagicToken } from '@/lib/onboarding-magic-link';
 
 interface OnboardingData {
   dpaAceptado: boolean;
@@ -213,6 +214,10 @@ export async function POST(request: NextRequest) {
         SET onboarding_status = 'completed', updated_at = NOW()
         WHERE id = ${tenantId}
       `;
+
+      if (payload.userId) {
+        await clearOnboardingMagicToken(String(payload.userId));
+      }
 
       // 6. Generar código de referido para el tenant (si no existe)
       try {
