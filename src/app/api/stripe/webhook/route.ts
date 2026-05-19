@@ -183,7 +183,7 @@ async function createTenantFromPayment(pi: Stripe.PaymentIntent, overrideEmail?:
     // Generar token para onboarding (usar reset_token como token temporal)
     const onboardingToken = Math.random().toString(36).slice(-32) + Math.random().toString(36).slice(-32);
     const tokenExpiry = new Date();
-    tokenExpiry.setHours(tokenExpiry.getHours() + 24); // Token válido por 24 horas
+    tokenExpiry.setHours(tokenExpiry.getHours() + 72); // Token válido por 72 horas
 
     // Actualizar usuario con token de onboarding
     await sql`
@@ -330,7 +330,7 @@ async function createTenantFromInvoice(inv: Stripe.Invoice, email: string): Prom
 
     const onboardingToken = Math.random().toString(36).slice(-32) + Math.random().toString(36).slice(-32)
     const tokenExpiry = new Date()
-    tokenExpiry.setHours(tokenExpiry.getHours() + 24)
+    tokenExpiry.setHours(tokenExpiry.getHours() + 72)
 
     await sql`
       UPDATE tenant_users 

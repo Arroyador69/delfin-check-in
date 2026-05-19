@@ -64,7 +64,7 @@ export async function activateWaitlistEntryFromRow(
     if (existingUser.rows.length > 0) {
       const onboardingToken = crypto.randomBytes(32).toString('hex');
       const tokenExpiry = new Date();
-      tokenExpiry.setHours(tokenExpiry.getHours() + 24);
+      tokenExpiry.setHours(tokenExpiry.getHours() + 72);
 
       await sql`
         UPDATE tenant_users
@@ -109,7 +109,7 @@ export async function activateWaitlistEntryFromRow(
 
     const onboardingTokenOrphan = crypto.randomBytes(32).toString('hex');
     const tokenExpiryOrphan = new Date();
-    tokenExpiryOrphan.setHours(tokenExpiryOrphan.getHours() + 24);
+    tokenExpiryOrphan.setHours(tokenExpiryOrphan.getHours() + 72);
 
     await sql`
       UPDATE tenant_users
@@ -201,7 +201,7 @@ export async function activateWaitlistEntryFromRow(
 
   const onboardingToken = crypto.randomBytes(32).toString('hex');
   const tokenExpiry = new Date();
-  tokenExpiry.setHours(tokenExpiry.getHours() + 24);
+  tokenExpiry.setHours(tokenExpiry.getHours() + 72);
 
   await sql`
     UPDATE tenant_users

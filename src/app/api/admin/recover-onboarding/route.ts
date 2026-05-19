@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
 import { sendOnboardingEmail } from '@/lib/mailer';
 import { getTenantId } from '@/lib/tenant';
+import { buildOnboardingUrl, issueFreshOnboardingToken } from '@/lib/onboarding-magic-link';
 
 function resolveInternalAuth(req: NextRequest): boolean {
   const secret = process.env.INTERNAL_ONBOARDING_RECOVER_SECRET;
@@ -130,23 +131,12 @@ export async function POST(req: NextRequest) {
       new Date(tokenExpiry) < new Date();
 
     if (needsNewToken) {
-      onboardingToken =
-        Math.random().toString(36).slice(-32) +
-        Math.random().toString(36).slice(-32);
-      tokenExpiry = new Date();
-      tokenExpiry.setHours(tokenExpiry.getHours() + 24); // Válido por 24 horas
-
-      await sql`
-        UPDATE tenant_users 
-        SET 
-          reset_token = ${onboardingToken},
-          reset_token_expires = ${tokenExpiry.toISOString()}
-        WHERE id = ${user.user_id}
-      `;
+      const issued = await issueFreshOnboardingToken(user.user_id);
+      onboardingToken = issued.token;
+      tokenExpiry = issued.expires;
     }
 
-    // Generar el URL de onboarding
-    const onboardingUrl = `${process.env.NEXT_PUBLIC_APP_URL}/onboarding?token=${onboardingToken}&email=${encodeURIComponent(email)}`;
+    const onboardingUrl = buildOnboardingUrl(onboardingToken!, email, 'es');
 
     // Reenviar el email de onboarding
     try {

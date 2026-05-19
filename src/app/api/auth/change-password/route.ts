@@ -96,7 +96,10 @@ export async function POST(req: NextRequest) {
     // Actualizar contraseña en la base de datos
     const updateQuery = `
       UPDATE tenant_users 
-      SET password_hash = $1, updated_at = NOW()
+      SET password_hash = $1,
+          reset_token = NULL,
+          reset_token_expires = NULL,
+          updated_at = NOW()
       WHERE id = $2 AND tenant_id = $3 AND is_active = true
       RETURNING email, full_name
     `;

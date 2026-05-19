@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import LocalizedDateInput from '@/components/LocalizedDateInput';
@@ -76,6 +76,10 @@ export default function OnboardingPage() {
   const [rooms, setRooms] = useState<Array<{ id: number | string; name: string }>>([]);
   const [tenant, setTenant] = useState<{ email?: string } | null>(null);
   const [bootstrappingSession, setBootstrappingSession] = useState(false);
+  const [magicLinkFailed, setMagicLinkFailed] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendMessage, setResendMessage] = useState('');
+  const bootstrapRanRef = useRef(false);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -215,7 +219,13 @@ export default function OnboardingPage() {
   }, [currentStep, formData]);
 
   useEffect(() => {
-    bootstrapSessionFromToken();
+    if (bootstrapRanRef.current) return;
+    bootstrapRanRef.current = true;
+    void bootstrapSessionFromToken();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
     if (currentStep === 5) {
       loadRooms();
     }
@@ -268,11 +278,9 @@ export default function OnboardingPage() {
   }, [locale]);
 
   const bootstrapSessionFromToken = async () => {
-    // Si venimos desde email con token, intercambiarlo por cookies de sesión
     const token = searchParams?.get('token');
     const email = searchParams?.get('email');
 
-    // Si no hay token/email, solo verificar status normal
     if (!token || !email) {
       await checkOnboardingStatus();
       return;
@@ -280,6 +288,8 @@ export default function OnboardingPage() {
 
     setBootstrappingSession(true);
     setError('');
+    setMagicLinkFailed(false);
+    setResendMessage('');
     try {
       const res = await fetch('/api/onboarding/login', {
         method: 'POST',
@@ -289,19 +299,56 @@ export default function OnboardingPage() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok || !data?.success) {
-        setError(data?.error || 'No se pudo validar el enlace de onboarding');
+        const meRes = await fetch('/api/auth/me', { credentials: 'include' });
+        if (meRes.ok) {
+          const loc = getLocaleFromPath();
+          router.replace(`/${loc}/onboarding`);
+          await checkOnboardingStatus();
+          return;
+        }
+        setMagicLinkFailed(true);
+        setError(data?.error || t('errors.magicLinkInvalid'));
         return;
       }
 
-      // Limpiar query params para evitar reintentos y dejar URL limpia
-      const locale = getLocaleFromPath();
-      router.replace(`/${locale}/onboarding`);
-      // Luego revisar status ya autenticado
+      const loc = getLocaleFromPath();
+      router.replace(`/${loc}/onboarding`);
       await checkOnboardingStatus();
-    } catch (e) {
-      setError('Error validando el enlace de onboarding');
+    } catch {
+      setError(t('errors.magicLinkValidateFailed'));
+      setMagicLinkFailed(true);
     } finally {
       setBootstrappingSession(false);
+    }
+  };
+
+  const handleResendMagicLink = async () => {
+    // Solo el email del enlace original (no permitir otro distinto desde la UI).
+    const email = searchParams?.get('email')?.trim().toLowerCase();
+    if (!email || !email.includes('@')) {
+      setError(t('errors.resendEmailRequired'));
+      return;
+    }
+    setResendLoading(true);
+    setResendMessage('');
+    setError('');
+    try {
+      const res = await fetch('/api/onboarding/resend-link', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, locale: getLocaleFromPath() }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(data?.error || t('errors.resendFailed'));
+        return;
+      }
+      setResendMessage(data?.message || t('errors.resendSuccess'));
+      setMagicLinkFailed(false);
+    } catch {
+      setError(t('errors.resendFailed'));
+    } finally {
+      setResendLoading(false);
     }
   };
 
@@ -739,6 +786,37 @@ export default function OnboardingPage() {
         {error && (
           <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
             <p className="text-red-800">{error}</p>
+            {magicLinkFailed && (
+              <div className="mt-4 pt-4 border-t border-red-200">
+                <p className="text-sm text-red-900 mb-3">
+                  {searchParams?.get('email')
+                    ? t('errors.magicLinkHelp', { email: searchParams.get('email')! })
+                    : t('errors.magicLinkHelpNoEmail')}
+                </p>
+                {searchParams?.get('email') && (
+                  <button
+                    type="button"
+                    onClick={() => void handleResendMagicLink()}
+                    disabled={resendLoading || bootstrappingSession}
+                    className="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    {resendLoading ? t('errors.resending') : t('errors.resendMagicLink')}
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {resendMessage && (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+            <p className="text-green-800 text-sm">{resendMessage}</p>
+          </div>
+        )}
+
+        {bootstrappingSession && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <p className="text-blue-800 text-sm">{t('errors.validatingMagicLink')}</p>
           </div>
         )}
 

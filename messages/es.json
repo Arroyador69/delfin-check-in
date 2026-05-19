@@ -594,7 +594,17 @@
       "addPropertyFailed": "Error al añadir la propiedad",
       "completeFailed": "Error al completar el onboarding. Por favor, inténtalo de nuevo.",
       "countryAndLanguageRequired": "Selecciona país e idioma de la cuenta para continuar.",
-      "generic": "Error"
+      "generic": "Error",
+      "magicLinkInvalid": "El enlace de activación no es válido o ya caducó.",
+      "magicLinkValidateFailed": "No se pudo validar el enlace de activación.",
+      "magicLinkHelp": "Puede ocurrir si el enlace ya se usó, caducó (72 h) o se abrió en varias pestañas. Te enviaremos un enlace nuevo solo a {email}. El enlace anterior dejará de funcionar.",
+      "magicLinkHelpNoEmail": "Puede ocurrir si el enlace ya se usó, caducó o se abrió en varias pestañas. Escríbenos a contacto@delfincheckin.com con tu email de registro.",
+      "resendMagicLink": "Enviar nuevo enlace de activación",
+      "resending": "Enviando…",
+      "resendSuccess": "Si tu cuenta está pendiente de activación, recibirás un nuevo email en unos minutos. Revisa spam y promociones.",
+      "resendFailed": "No se pudo enviar el enlace. Escríbenos a contacto@delfincheckin.com.",
+      "resendEmailRequired": "No encontramos tu email en el enlace. Escríbenos a contacto@delfincheckin.com.",
+      "validatingMagicLink": "Validando tu enlace de activación…"
     }
   },
   "reservations": {

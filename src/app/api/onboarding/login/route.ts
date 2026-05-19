@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
-import { generateTokenPair, AUTH_CONFIG } from '@/lib/auth';
+import { generateTokenPair, AUTH_CONFIG, verifyToken } from '@/lib/auth';
 import { effectivePlatformAdmin } from '@/lib/platform-owner';
+import { findOnboardingOwnerByEmail } from '@/lib/onboarding-magic-link';
 
 export const runtime = 'nodejs';
 
@@ -22,8 +23,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Validar token contra tenant_users.reset_token
-    const result = await sql`
+    const emailNorm = email.trim().toLowerCase();
+
+    let row: Record<string, unknown> | undefined;
+
+    const tokenResult = await sql`
       SELECT
         t.id as tenant_id,
         t.name as tenant_name,
@@ -40,51 +44,78 @@ export async function POST(req: NextRequest) {
         tu.email_verified
       FROM tenants t
       JOIN tenant_users tu ON t.id = tu.tenant_id
-      WHERE t.email = ${email.toLowerCase()}
+      WHERE tu.role = 'owner'
+        AND tu.is_active = true
+        AND (
+          LOWER(TRIM(t.email)) = ${emailNorm}
+          OR LOWER(TRIM(tu.email)) = ${emailNorm}
+        )
         AND tu.reset_token = ${token}
         AND tu.reset_token_expires > NOW()
-        AND tu.is_active = true
       ORDER BY tu.created_at DESC
       LIMIT 1
     `;
 
-    if (result.rows.length === 0) {
+    if (tokenResult.rows.length > 0) {
+      row = tokenResult.rows[0] as Record<string, unknown>;
+    } else {
+      // Enlace ya usado o expirado: si ya hay sesión válida del mismo email, continuar sin error.
+      const authToken = req.cookies.get(AUTH_CONFIG.cookieName)?.value;
+      if (authToken) {
+        const payload = verifyToken(authToken);
+        if (payload?.email?.toLowerCase() === emailNorm && payload.tenantId) {
+          const owner = await findOnboardingOwnerByEmail(emailNorm);
+          if (owner && ['trial', 'active'].includes(owner.status)) {
+            const planRow = await sql`SELECT plan_id FROM tenants WHERE id = ${owner.tenant_id} LIMIT 1`;
+            row = {
+              tenant_id: owner.tenant_id,
+              tenant_name: owner.tenant_name,
+              plan_id: planRow.rows[0]?.plan_id ?? null,
+              tenant_status: owner.status,
+              onboarding_status: owner.onboarding_status,
+              user_id: owner.user_id,
+              user_email: owner.user_email,
+              role: 'owner',
+              is_active: true,
+              is_platform_admin: false,
+            };
+          }
+        }
+      }
+    }
+
+    if (!row) {
       return NextResponse.json(
-        { success: false, error: 'Token inválido o expirado' },
+        { success: false, error: 'Token inválido o expirado', code: 'ONBOARDING_TOKEN_INVALID' },
         { status: 404 }
       );
     }
 
-    const row = result.rows[0];
-    if (!['trial', 'active'].includes(row.tenant_status)) {
+    if (!['trial', 'active'].includes(String(row.tenant_status))) {
       return NextResponse.json(
         { success: false, error: 'La cuenta no está activa' },
         { status: 403 }
       );
     }
 
-    // Generar sesión JWT
     const { accessToken, refreshToken } = generateTokenPair({
       userId: String(row.user_id),
       tenantId: String(row.tenant_id),
       email: String(row.user_email),
-      role: row.role,
+      role: row.role as 'owner' | 'admin' | 'staff',
       isPlatformAdmin: effectivePlatformAdmin(
         Boolean(row.is_platform_admin),
         String(row.user_email)
       ),
-      tenantName: row.tenant_name,
-      planId: row.plan_id
+      tenantName: String(row.tenant_name),
+      planId: row.plan_id as string | null,
     });
 
-    // Marcar token como usado (evita reuso); no dependemos de email_verified.
+    // No borrar reset_token aquí: el usuario puede recargar o abrir el enlace dos veces.
+    // Se invalida al cambiar la contraseña o al completar el onboarding.
     await sql`
       UPDATE tenant_users
-      SET
-        email_verified = true,
-        reset_token = NULL,
-        reset_token_expires = NULL,
-        updated_at = NOW()
+      SET email_verified = true, updated_at = NOW()
       WHERE id = ${row.user_id}
     `;
 
@@ -107,8 +138,7 @@ export async function POST(req: NextRequest) {
       path: '/api/auth',
     });
 
-    // Cookie para gating en middleware Edge
-    res.cookies.set('onboarding_status', row.onboarding_status || 'pending', {
+    res.cookies.set('onboarding_status', String(row.onboarding_status || 'pending'), {
       httpOnly: true,
       secure: isProduction,
       sameSite: 'lax',
@@ -117,7 +147,7 @@ export async function POST(req: NextRequest) {
     });
 
     return res;
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('❌ Error en onboarding/login:', error);
     return NextResponse.json(
       { success: false, error: 'Error interno del servidor' },
@@ -125,4 +155,3 @@ export async function POST(req: NextRequest) {
     );
   }
 }
-
