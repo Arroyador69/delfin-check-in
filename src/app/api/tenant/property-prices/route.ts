@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { sql } from '@vercel/postgres';
+import { sql } from '@/lib/db';
 import { getTenantId } from '@/lib/tenant';
 
 export const runtime = 'nodejs';
@@ -43,59 +43,72 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'price inválido' }, { status: 400 });
     }
 
-    // Asegurar que la propiedad pertenece al tenant
     const owner = await sql`
       SELECT 1
       FROM tenant_properties tp
       WHERE tp.id = ${propertyId}::int
-        AND tp.tenant_id = ${tenantId}::uuid
+        AND tp.tenant_id::text = ${tenantId}
       LIMIT 1
     `;
-    if ((owner as any).rowCount <= 0) {
+    if (owner.rows.length === 0) {
       return NextResponse.json({ success: false, error: 'Propiedad no encontrada' }, { status: 404 });
     }
 
-    // Hardening: permitir precio por día sin migración manual
     try {
       await sql`ALTER TABLE property_availability ADD COLUMN IF NOT EXISTS price DECIMAL(10,2)`;
     } catch (_) {
-      // no crítico (si la tabla no existe en esta instalación, fallará más abajo)
+      // tabla puede no existir aún en instalaciones antiguas
     }
 
-    // Crear tabla si no existe (schema mínimo compatible con lo que ya usa el sistema)
-    // Nota: si ya existe con otro schema, esta sentencia no lo rompe.
-    await sql`
-      CREATE TABLE IF NOT EXISTS property_availability (
-        id SERIAL PRIMARY KEY,
-        property_id INT NOT NULL,
-        date DATE NOT NULL,
-        available BOOLEAN NOT NULL DEFAULT TRUE,
-        blocked_reason TEXT,
-        price DECIMAL(10,2),
-        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-        updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-        UNIQUE(property_id, date)
-      )
-    `;
-
-    // Upsert por día en el rango. Si price es null -> borra override (price=NULL) manteniendo available/blocked.
-    await sql`
-      WITH days AS (
-        SELECT generate_series(${from}::date, ${to}::date, '1 day'::interval)::date AS d
-      )
-      INSERT INTO property_availability (property_id, date, available, price, created_at, updated_at)
-      SELECT ${propertyId}::int, d, TRUE, ${price}::decimal(10,2), NOW(), NOW()
-      FROM days
-      ON CONFLICT (property_id, date) DO UPDATE
-      SET
-        price = EXCLUDED.price,
-        updated_at = NOW()
-    `;
+    try {
+      await sql`
+        INSERT INTO property_availability (property_id, date, available, price, created_at)
+        SELECT ${propertyId}::int, d, TRUE, ${price}::decimal(10,2), NOW()
+        FROM generate_series(${from}::date, ${to}::date, '1 day'::interval) AS d
+        ON CONFLICT (property_id, date) DO UPDATE
+        SET
+          price = EXCLUDED.price,
+          available = COALESCE(property_availability.available, TRUE)
+      `;
+    } catch (insertErr: unknown) {
+      const msg = insertErr instanceof Error ? insertErr.message : String(insertErr);
+      if (msg.includes('property_availability') && msg.includes('does not exist')) {
+        return NextResponse.json(
+          {
+            success: false,
+            error:
+              'La tabla property_availability no existe. Ejecuta database/create-direct-reservations-system.sql.',
+          },
+          { status: 503 }
+        );
+      }
+      if (msg.includes('price_override') || msg.includes('updated_at')) {
+        await sql`
+          INSERT INTO property_availability (property_id, date, available, price_override, created_at)
+          SELECT ${propertyId}::int, d, TRUE, ${price}::decimal(10,2), NOW()
+          FROM generate_series(${from}::date, ${to}::date, '1 day'::interval) AS d
+          ON CONFLICT (property_id, date) DO UPDATE
+          SET price_override = EXCLUDED.price_override
+        `;
+        if (price !== null) {
+          try {
+            await sql`
+              UPDATE property_availability pa
+              SET price = ${price}::decimal(10,2)
+              FROM generate_series(${from}::date, ${to}::date, '1 day'::interval) AS d
+              WHERE pa.property_id = ${propertyId}::int AND pa.date = d::date
+            `;
+          } catch (_) {}
+        }
+      } else {
+        throw insertErr;
+      }
+    }
 
     return NextResponse.json({ success: true });
   } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
     console.error('❌ [tenant/property-prices] error:', e);
-    return NextResponse.json({ success: false, error: 'Error interno' }, { status: 500 });
+    return NextResponse.json({ success: false, error: 'Error interno', details: msg }, { status: 500 });
   }
 }
-
