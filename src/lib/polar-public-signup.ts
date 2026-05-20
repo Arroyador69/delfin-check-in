@@ -271,7 +271,7 @@ export async function provisionTenantFromPolarPublicSubscription(sub: any): Prom
   }
 
   const loc = String((meta as Record<string, unknown>).locale || 'es');
-  const onboardingUrl = buildOnboardingUrl(onboardingToken, email, loc);
+  const onboardingUrl = buildOnboardingUrl(onboardingToken, loc);
 
   try {
     await sendOnboardingEmail({

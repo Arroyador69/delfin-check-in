@@ -599,14 +599,39 @@
       "magicLinkInvalid": "The activation link is invalid or has expired.",
       "magicLinkValidateFailed": "Could not validate the activation link.",
       "magicLinkHelp": "This can happen if the link was already used, expired (72h), or opened in multiple tabs. We will send a new link only to {email}. The previous link will stop working.",
-      "magicLinkHelpNoEmail": "This can happen if the link was already used, expired, or opened in multiple tabs. Email us at contacto@delfincheckin.com with your registration email.",
+      "magicLinkHelpNoEmail": "This can happen if the link was already used, expired (72h), or opened in multiple tabs. Enter your email below and we will send a new link; the old one will stop working.",
       "resendMagicLink": "Send new activation link",
       "resending": "Sending…",
       "resendSuccess": "If your account is pending activation, you will receive a new email shortly. Check spam and promotions.",
       "resendFailed": "Could not send the link. Contact us at contacto@delfincheckin.com.",
-      "resendEmailRequired": "We could not find your email in the link. Contact contacto@delfincheckin.com.",
+      "resendEmailRequired": "Enter the email you registered with to receive a new link.",
+      "resendEmailLabel": "Your account email",
+      "resendEmailPlaceholder": "you@email.com",
       "validatingMagicLink": "Validating your activation link…"
+    },
+    "antivirus": {
+      "bannerTitle": "Official Delfín Check-in link",
+      "bannerBody": "If Avast or another antivirus shows «phishing» or blocks the page, it is usually a false positive on activation links. The legitimate panel is admin.delfincheckin.com.",
+      "helpLink": "Guide: what to do if your antivirus blocks the link"
     }
+  },
+  "helpAntivirus": {
+    "title": "If your antivirus blocks the activation link",
+    "intro": "Some programs (Avast, Defender, etc.) wrongly flag welcome emails. This is not a scam — it is the official Delfín Check-in panel.",
+    "officialDomain": "Official panel domain:",
+    "stepAvastTitle": "Avast / AVG",
+    "stepAvast1": "In the alert, open «More options» or «Details».",
+    "stepAvast2": "Choose «Report a false positive» or add an exception for admin.delfincheckin.com.",
+    "stepAvast3": "Or copy the link from the email and paste it in Chrome after allowing the exception.",
+    "stepGenericTitle": "Other options",
+    "stepGeneric1": "Copy the full link from the email (or the new one we resend) and open it in your browser.",
+    "stepGeneric2": "Try from your phone on mobile data (not restrictive corporate WiFi) or another browser.",
+    "stepGeneric3": "Request a new link from the onboarding screen (the old one will stop working).",
+    "reportTitle": "Reports to vendors",
+    "reportBody": "We can report the URL to Avast and Google Safe Browsing as a false positive; global lists may take hours or days to update.",
+    "contact": "If you are still blocked:",
+    "backOnboarding": "Back to onboarding",
+    "login": "Go to login"
   },
   "reservations": {
     "title": "Reservations",

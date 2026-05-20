@@ -101,7 +101,7 @@ export async function GET(req: NextRequest) {
         !!legacy && legacy.length < 32 && /^\d+$/.test(legacy),
       canActivate: magicValid || legacyValid,
       sampleUrl: activeToken
-        ? buildOnboardingUrl(activeToken, email, 'es')
+        ? buildOnboardingUrl(activeToken, 'es')
         : null,
     },
   });

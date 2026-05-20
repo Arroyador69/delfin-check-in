@@ -133,7 +133,7 @@ export async function POST(req: NextRequest) {
     const { token: onboardingToken, tempPassword } = await issueFreshOnboardingCredentials(
       user.user_id
     );
-    const onboardingUrl = buildOnboardingUrl(onboardingToken, email, 'es');
+    const onboardingUrl = buildOnboardingUrl(onboardingToken, 'es');
 
     try {
       await sendOnboardingEmail({
@@ -254,7 +254,7 @@ export async function GET(req: NextRequest) {
       magicToken && magicExpiry && new Date(magicExpiry) > new Date();
 
     const onboardingUrl = hasValidToken
-      ? buildOnboardingUrl(magicToken!, email, 'es')
+      ? buildOnboardingUrl(magicToken!, 'es')
       : null;
 
     return NextResponse.json({

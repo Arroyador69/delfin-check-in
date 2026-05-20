@@ -318,11 +318,16 @@ export async function middleware(req: NextRequest) {
     localeFromPath &&
     locales.some((l) => pathname === `/${l}/subscribe`);
 
+  const isPublicHelpPage = locales.some(
+    (l) => pathname === `/${l}/help/blocked-by-antivirus`
+  );
+
   // Rutas completamente públicas - no requieren autenticación
   const isPublicRoute = (
     pathname === '/admin-login' ||
     pathname === '/forgot-password' ||
     isPublicSubscribePage ||
+    isPublicHelpPage ||
     pathname.startsWith('/api/polar/checkout') ||
     pathname.startsWith('/api/polar/subscribe-redirect') ||
     pathname.startsWith('/book/') ||
@@ -458,11 +463,13 @@ export async function middleware(req: NextRequest) {
   if (!pathname.startsWith('/api/')) {
     const magicToken = url.searchParams.get('token');
     const magicEmail = url.searchParams.get('email');
+    const hasValidToken =
+      typeof magicToken === 'string' && magicToken.trim().length >= 16;
     const hasMagicLinkParams =
-      typeof magicToken === 'string' &&
-      magicToken.trim().length >= 16 &&
-      typeof magicEmail === 'string' &&
-      magicEmail.trim().includes('@');
+      hasValidToken &&
+      (typeof magicEmail !== 'string' ||
+        magicEmail.trim().length === 0 ||
+        magicEmail.trim().includes('@'));
 
     const isOnboardingPage =
       pathname === '/onboarding' ||

@@ -199,7 +199,7 @@ async function createTenantFromPayment(pi: Stripe.PaymentIntent, overrideEmail?:
       WHERE id = ${user.id}
     `;
 
-    const onboardingUrl = buildOnboardingUrl(onboardingToken, email, 'es');
+    const onboardingUrl = buildOnboardingUrl(onboardingToken, 'es');
     
     console.log('🔗 Magic link de onboarding:', onboardingUrl);
     console.log('📧 Enviando email de onboarding a:', email);
@@ -344,7 +344,7 @@ async function createTenantFromInvoice(inv: Stripe.Invoice, email: string): Prom
       WHERE id = ${user.id}
     `
 
-    const onboardingUrl = buildOnboardingUrl(onboardingToken, email, 'es');
+    const onboardingUrl = buildOnboardingUrl(onboardingToken, 'es');
     console.log('🔗 Magic link de onboarding (invoice):', onboardingUrl)
     console.log('📧 Enviando email de onboarding a:', email)
     try {
