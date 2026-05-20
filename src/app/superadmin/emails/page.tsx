@@ -56,7 +56,9 @@ export default function SuperAdminEmails() {
     try {
       setLoading(true)
       setForbidden(false)
-      const res = await fetch('/api/superadmin/emails/waitlist-broadcast')
+      const res = await fetch('/api/superadmin/emails/waitlist-broadcast', {
+        credentials: 'include',
+      })
       const data = await res.json()
       if (res.status === 403) {
         setForbidden(true)
@@ -97,6 +99,7 @@ export default function SuperAdminEmails() {
     try {
       const res = await fetch('/api/superadmin/emails/waitlist-broadcast', {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           mode: 'test',
@@ -149,6 +152,7 @@ export default function SuperAdminEmails() {
 
       const res = await fetch('/api/superadmin/emails/waitlist-broadcast', {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       })

@@ -402,6 +402,15 @@ export async function middleware(req: NextRequest) {
       }
       requestHeaders.set('x-tenant-id', tenantId);
     }
+
+    /** Superadmin de plataforma: APIs bajo /api/superadmin/* no dependen del tenant del JWT. */
+    if (
+      pathname.startsWith('/api/superadmin/') &&
+      jwtPayload &&
+      effectivePlatformAdmin(jwtPayload.isPlatformAdmin, jwtPayload.email)
+    ) {
+      return NextResponse.next({ request: { headers: requestHeaders } });
+    }
     
     // Si no hay tenant_id válido, las rutas protegidas deben fallar con 401
     if (!tenantId) {
