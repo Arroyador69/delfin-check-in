@@ -159,6 +159,8 @@ coverage/
 # Secrets y configuración sensible
 .env.secret
 .env.private
+.env.security
+.env.security.local
 *.pem
 # Intermedio FNMT público (cadena TLS MIR); necesario en Vercel/Node
 !certs/ACCOMP.pem
