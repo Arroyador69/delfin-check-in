@@ -32,14 +32,22 @@ export function onboardingTokenExpiry(): Date {
   return d;
 }
 
-/** Ruta pública de ayuda si un antivirus bloquea el enlace de activación. */
+/** Artículo público en la landing (GitHub Pages) si un antivirus bloquea el enlace. */
+const ANTIVIRUS_HELP_LANDING_PATHS: Record<string, string> = {
+  es: '/articulos/antivirus-bloquea-enlace-activacion',
+  en: '/en/articulos/antivirus-blocks-activation-link',
+  fr: '/fr/articulos/antivirus-bloque-lien-activation',
+  it: '/it/articulos/antivirus-blocca-link-attivazione',
+  pt: '/pt/articulos/antivirus-bloqueia-link-ativacao',
+  fi: '/fi/articulos/antivirus-estaa-aktivointilinkki',
+};
+
 export function buildAntivirusHelpUrl(locale = 'es'): string {
-  const base = String(process.env.NEXT_PUBLIC_APP_URL || 'https://admin.delfincheckin.com').replace(
-    /\/+$/,
-    ''
-  );
-  const loc = locale && locale !== 'es' ? `/${locale}` : '/es';
-  return `${base}${loc}/help/blocked-by-antivirus`;
+  const base = String(
+    process.env.NEXT_PUBLIC_LANDING_URL || 'https://delfincheckin.com'
+  ).replace(/\/+$/, '');
+  const loc = locale in ANTIVIRUS_HELP_LANDING_PATHS ? locale : 'es';
+  return `${base}${ANTIVIRUS_HELP_LANDING_PATHS[loc]}`;
 }
 
 /**

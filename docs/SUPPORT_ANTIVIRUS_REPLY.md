@@ -12,7 +12,7 @@ El aviso de tu antivirus es un **falso positivo** muy habitual: el enlace del em
 
 1. En Avast: «Más opciones» → **Informar de un falso positivo** o añadir excepción para `admin.delfincheckin.com`.
 2. Copia el enlace del último email que te enviamos y pégalo en Chrome (o pide un **nuevo enlace** desde la pantalla de onboarding si el anterior caducó).
-3. Guía con capturas y pasos: https://admin.delfincheckin.com/es/help/blocked-by-antivirus
+3. Guía pública (landing): https://delfincheckin.com/articulos/antivirus-bloquea-enlace-activacion
 
 Nosotros también reportamos la URL a Avast y a los listados de navegadores; puede tardar unos días en actualizarse globalmente.
 
