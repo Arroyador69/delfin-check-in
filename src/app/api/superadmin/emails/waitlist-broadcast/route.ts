@@ -11,6 +11,7 @@ import { sql } from '@/lib/db';
 import { buildWaitlistBroadcastEmail } from '@/lib/waitlist-emails';
 
 const CAMPAIGN_KEY_PREFIX = 'waitlist_broadcast';
+const MAX_CHUNK_SIZE = 10;
 
 function getCampaignKey(): string {
   const now = new Date();
@@ -28,6 +29,12 @@ const postSchema = z.object({
   audience: z.enum(['pending', 'all', 'selected']).optional(),
   emails: z.array(z.string().email()).optional(),
   confirmSend: z.boolean().optional(),
+  /** Envío por lotes: offset del destinatario (0 en el primer lote). */
+  chunkOffset: z.number().int().min(0).optional(),
+  /** Cuántos emails por petición (1–10). Por defecto 3. */
+  chunkSize: z.number().int().min(1).max(MAX_CHUNK_SIZE).optional(),
+  /** Obligatorio desde el segundo lote. */
+  campaignKey: z.string().min(1).optional(),
 });
 
 async function requirePlatformOwner(req: NextRequest) {
@@ -79,14 +86,93 @@ async function resolveRecipients(
   return rows.rows as { email: string; name: string | null }[];
 }
 
+async function sendToRecipient(params: {
+  email: string;
+  name: string | null;
+  subject: string;
+  message: string;
+  campaignKey: string;
+  audience: string;
+  sentBy?: string;
+  from: string;
+  adminBaseUrl: string;
+}): Promise<{ email: string; success: boolean; error?: string }> {
+  const email = normalizeEmail(params.email);
+  const displayName = (params.name || email.split('@')[0] || 'amigo/a').trim();
+
+  try {
+    let trackingId: string | null = null;
+    try {
+      const meta = await sql`SELECT to_regclass('public.email_tracking') as reg`;
+      if (meta.rows[0]?.reg) {
+        const ins = await sql`
+          INSERT INTO email_tracking (
+            tenant_id, email_type, recipient_email, subject, status, metadata
+          ) VALUES (
+            NULL, 'waitlist_broadcast', ${email}, ${params.subject}, 'sent',
+            ${JSON.stringify({
+              campaign_key: params.campaignKey,
+              audience: params.audience,
+              sentBy: params.sentBy,
+            })}::jsonb
+          )
+          RETURNING id
+        `;
+        trackingId = String(ins.rows[0]?.id || '');
+      }
+    } catch (e) {
+      console.warn('tracking broadcast:', e);
+    }
+
+    const { html, text, subject } = buildWaitlistBroadcastEmail({
+      userName: displayName,
+      message: params.message,
+      subject: params.subject,
+      trackingId: trackingId || undefined,
+      adminBaseUrl: params.adminBaseUrl,
+    });
+
+    const result = await sendEmail({ from: params.from, to: email, subject, html, text });
+
+    if (trackingId) {
+      try {
+        await sql`
+          UPDATE email_tracking
+          SET
+            status = ${result.success ? 'sent' : 'failed'},
+            message_id = ${result.messageId || null},
+            updated_at = NOW()
+          WHERE id = ${trackingId}::uuid
+        `;
+      } catch {
+        /* ignore */
+      }
+    }
+
+    return {
+      email,
+      success: result.success,
+      error: result.error,
+    };
+  } catch (err) {
+    return {
+      email,
+      success: false,
+      error: err instanceof Error ? err.message : 'Error',
+    };
+  }
+}
+
 /**
- * GET — waitlist + campañas recientes de comunicación.
+ * GET — waitlist + campañas recientes.
+ * ?campaign_key=X — detalle por destinatario (abierto, fecha, etc.).
  */
 export async function GET(req: NextRequest) {
   const auth = await requirePlatformOwner(req);
   if ('error' in auth && auth.error) return auth.error;
 
   const sessionEmail = normalizeEmail(String(auth.payload?.email || ''));
+  const campaignKeyParam = req.nextUrl.searchParams.get('campaign_key');
 
   const stats = await sql`
     SELECT
@@ -97,44 +183,110 @@ export async function GET(req: NextRequest) {
   `;
   const s = stats.rows[0] as { total: number; pending: number; activated: number };
 
-  let recentCampaigns: Array<{
-    campaign_key: string;
-    sent_count: number;
-    opened_count: number;
-  }> = [];
-
   try {
     const meta = await sql`SELECT to_regclass('public.email_tracking') as reg`;
-    if (meta.rows[0]?.reg) {
-      const camps = await sql`
-        SELECT
-          metadata->>'campaign_key' AS campaign_key,
-          COUNT(*)::int AS sent_count,
-          COUNT(*) FILTER (WHERE opened_at IS NOT NULL)::int AS opened_count
-        FROM email_tracking
-        WHERE email_type = 'waitlist_broadcast'
-          AND metadata->>'campaign_key' IS NOT NULL
-        GROUP BY metadata->>'campaign_key'
-        ORDER BY MAX(created_at) DESC
-        LIMIT 12
-      `;
-      recentCampaigns = camps.rows as typeof recentCampaigns;
+    if (!meta.rows[0]?.reg) {
+      return NextResponse.json({
+        success: true,
+        stats: s,
+        defaultTestEmail: sessionEmail,
+        allowedTestEmails: getPlatformOwnerEmails(),
+        recentCampaigns: [],
+      });
     }
-  } catch (e) {
-    console.warn('waitlist-broadcast GET campaigns:', e);
-  }
 
-  return NextResponse.json({
-    success: true,
-    stats: s,
-    defaultTestEmail: sessionEmail,
-    allowedTestEmails: getPlatformOwnerEmails(),
-    recentCampaigns,
-  });
+    if (campaignKeyParam) {
+      const rows = await sql`
+        SELECT
+          et.id,
+          et.recipient_email,
+          et.subject,
+          et.status,
+          et.created_at AS sent_at,
+          et.opened_at,
+          et.opened_count,
+          w.name AS waitlist_name
+        FROM email_tracking et
+        LEFT JOIN waitlist w ON LOWER(TRIM(w.email)) = LOWER(TRIM(et.recipient_email))
+        WHERE et.email_type = 'waitlist_broadcast'
+          AND et.metadata->>'campaign_key' = ${campaignKeyParam}
+          AND COALESCE((et.metadata->>'test')::boolean, false) = false
+        ORDER BY et.created_at ASC
+      `;
+
+      const detail = (
+        rows.rows as Array<{
+          id: string;
+          recipient_email: string;
+          subject: string;
+          status: string;
+          sent_at: string;
+          opened_at: string | null;
+          opened_count: number;
+          waitlist_name: string | null;
+        }>
+      ).map((r) => ({
+        id: r.id,
+        email: r.recipient_email,
+        name: r.waitlist_name,
+        subject: r.subject,
+        status: r.status,
+        sent_at: r.sent_at,
+        opened: !!r.opened_at || (r.opened_count ?? 0) > 0,
+        opened_at: r.opened_at,
+      }));
+
+      const openedEmails = detail.filter((d) => d.opened).map((d) => d.email);
+
+      return NextResponse.json({
+        success: true,
+        campaign_key: campaignKeyParam,
+        detail,
+        opened_emails: openedEmails,
+        stats: {
+          sent_count: detail.length,
+          opened_count: openedEmails.length,
+        },
+      });
+    }
+
+    const camps = await sql`
+      SELECT
+        metadata->>'campaign_key' AS campaign_key,
+        MAX(subject) AS subject,
+        MIN(created_at) AS first_sent_at,
+        COUNT(*)::int AS sent_count,
+        COUNT(*) FILTER (WHERE opened_at IS NOT NULL OR opened_count > 0)::int AS opened_count
+      FROM email_tracking
+      WHERE email_type = 'waitlist_broadcast'
+        AND metadata->>'campaign_key' IS NOT NULL
+        AND COALESCE((metadata->>'test')::boolean, false) = false
+      GROUP BY metadata->>'campaign_key'
+      ORDER BY MAX(created_at) DESC
+      LIMIT 20
+    `;
+
+    return NextResponse.json({
+      success: true,
+      stats: s,
+      defaultTestEmail: sessionEmail,
+      allowedTestEmails: getPlatformOwnerEmails(),
+      recentCampaigns: camps.rows,
+    });
+  } catch (e) {
+    console.warn('waitlist-broadcast GET:', e);
+    return NextResponse.json({
+      success: true,
+      stats: s,
+      defaultTestEmail: sessionEmail,
+      allowedTestEmails: getPlatformOwnerEmails(),
+      recentCampaigns: [],
+    });
+  }
 }
 
 /**
- * POST — prueba a tu email o envío a la waitlist.
+ * POST — prueba a tu email o envío a la waitlist (por lotes con progreso).
  */
 export async function POST(req: NextRequest) {
   const auth = await requirePlatformOwner(req);
@@ -150,7 +302,6 @@ export async function POST(req: NextRequest) {
       (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ||
       'https://admin.delfincheckin.com';
 
-    const campaignKey = getCampaignKey();
     const from =
       process.env.SMTP_FROM_ONBOARDING ||
       process.env.ZOHO_FROM_EMAIL ||
@@ -158,6 +309,7 @@ export async function POST(req: NextRequest) {
       'Delfín Check-in <noreply@delfincheckin.com>';
 
     if (data.mode === 'test') {
+      const campaignKey = getCampaignKey();
       if (!isPlatformOwnerEmail(sessionEmail)) {
         return NextResponse.json({ error: 'Email de sesión no permitido' }, { status: 403 });
       }
@@ -237,95 +389,79 @@ export async function POST(req: NextRequest) {
     }
 
     const audience = data.audience || 'pending';
-    const recipients = await resolveRecipients(audience, data.emails);
+    const chunkOffset = data.chunkOffset ?? 0;
+    const chunkSize = Math.min(data.chunkSize ?? 3, MAX_CHUNK_SIZE);
 
-    if (recipients.length === 0) {
+    if (chunkOffset > 0 && !data.campaignKey) {
+      return NextResponse.json(
+        { error: 'Falta campaignKey para continuar el envío por lotes' },
+        { status: 400 }
+      );
+    }
+
+    const campaignKey = data.campaignKey || getCampaignKey();
+    const recipients = await resolveRecipients(audience, data.emails);
+    const total = recipients.length;
+
+    if (total === 0) {
       return NextResponse.json({
         success: true,
         message: 'No hay destinatarios para esta audiencia',
         sent: 0,
+        total: 0,
+        processed: 0,
+        done: true,
         campaign_key: campaignKey,
       });
     }
 
+    if (chunkOffset >= total) {
+      return NextResponse.json({
+        success: true,
+        message: 'Envío ya completado',
+        sent: 0,
+        total,
+        processed: total,
+        done: true,
+        campaign_key: campaignKey,
+      });
+    }
+
+    const slice = recipients.slice(chunkOffset, chunkOffset + chunkSize);
     const results: Array<{ email: string; success: boolean; error?: string }> = [];
     let sent = 0;
 
-    for (const r of recipients) {
-      const email = normalizeEmail(r.email);
-      const displayName = (r.name || email.split('@')[0] || 'amigo/a').trim();
-
-      try {
-        let trackingId: string | null = null;
-        try {
-          const meta = await sql`SELECT to_regclass('public.email_tracking') as reg`;
-          if (meta.rows[0]?.reg) {
-            const ins = await sql`
-              INSERT INTO email_tracking (
-                tenant_id, email_type, recipient_email, subject, status, metadata
-              ) VALUES (
-                NULL, 'waitlist_broadcast', ${email}, ${data.subject}, 'sent',
-                ${JSON.stringify({
-                  campaign_key: campaignKey,
-                  audience,
-                  sentBy: auth.payload?.userId,
-                })}::jsonb
-              )
-              RETURNING id
-            `;
-            trackingId = String(ins.rows[0]?.id || '');
-          }
-        } catch (e) {
-          console.warn('tracking broadcast:', e);
-        }
-
-        const { html, text, subject } = buildWaitlistBroadcastEmail({
-          userName: displayName,
-          message: data.message,
-          subject: data.subject,
-          trackingId: trackingId || undefined,
-          adminBaseUrl,
-        });
-
-        const result = await sendEmail({ from, to: email, subject, html, text });
-
-        if (trackingId) {
-          try {
-            await sql`
-              UPDATE email_tracking
-              SET
-                status = ${result.success ? 'sent' : 'failed'},
-                message_id = ${result.messageId || null},
-                updated_at = NOW()
-              WHERE id = ${trackingId}::uuid
-            `;
-          } catch {
-            /* ignore */
-          }
-        }
-
-        if (result.success) sent++;
-        results.push({
-          email,
-          success: result.success,
-          error: result.error,
-        });
-      } catch (err) {
-        results.push({
-          email,
-          success: false,
-          error: err instanceof Error ? err.message : 'Error',
-        });
-      }
+    for (const r of slice) {
+      const one = await sendToRecipient({
+        email: r.email,
+        name: r.name,
+        subject: data.subject,
+        message: data.message,
+        campaignKey,
+        audience,
+        sentBy: auth.payload?.userId,
+        from,
+        adminBaseUrl,
+      });
+      results.push(one);
+      if (one.success) sent++;
     }
 
+    const processed = chunkOffset + slice.length;
+    const done = processed >= total;
+
     return NextResponse.json({
-      success: sent > 0,
-      message: `Enviados ${sent} de ${recipients.length} emails (waitlist)`,
+      success: sent > 0 || done,
+      message: done
+        ? `Enviados ${processed} de ${total} emails (waitlist)`
+        : `Lote enviado: ${processed} de ${total}`,
       sent,
-      total: recipients.length,
+      total,
+      processed,
+      done,
       campaign_key: campaignKey,
-      results: results.slice(0, 50),
+      chunk_offset: chunkOffset,
+      results,
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
