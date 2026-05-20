@@ -525,7 +525,9 @@
       "basicSelectedNoPayment": "Plan Basique sélectionné (sans paiement).",
       "basicSelectedWithExtrasRequiresPayment": "Plan Basique avec {extraCount} unité(s) supplémentaire(s) : paiement Polar requis.",
       "previous": "Précédent",
-      "continueOptional": "Continuer (Optionnel)"
+      "continueOptional": "Continuer (Optionnel)",
+      "mirVideoBoxTitle": "Configurer le MIR en moins de 5 minutes",
+      "mirVideoBoxDescription": "Regardez la vidéo, collez vos identifiants ci-dessous et enregistrez-les définitivement. Vous pouvez passer cette étape et le faire plus tard dans Paramètres → Configuration MIR."
     },
     "step4": {
       "title": "🏠 Ajouter une propriété",

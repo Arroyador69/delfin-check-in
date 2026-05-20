@@ -535,7 +535,9 @@
       "basicSelectedNoPayment": "Basic plan selected (no payment).",
       "basicSelectedWithExtrasRequiresPayment": "Basic plan with {extraCount} extra unit(s): payment in Polar is required.",
       "previous": "Previous",
-      "continueOptional": "Continue (Optional)"
+      "continueOptional": "Continue (Optional)",
+      "mirVideoBoxTitle": "Set up MIR in under 5 minutes",
+      "mirVideoBoxDescription": "Watch the video, paste your credentials below, and save them for good. You can skip this step and finish later under Settings → MIR configuration."
     },
     "step4": {
       "title": "🏠 Add Property",

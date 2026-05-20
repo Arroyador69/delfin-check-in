@@ -535,7 +535,9 @@
       "basicSelectedNoPayment": "Piano Base selezionato (senza pagamento).",
       "basicSelectedWithExtrasRequiresPayment": "Piano Base con {extraCount} unità extra: pagamento su Polar richiesto.",
       "previous": "Indietro",
-      "continueOptional": "Continua (Opzionale)"
+      "continueOptional": "Continua (Opzionale)",
+      "mirVideoBoxTitle": "Configura il MIR in meno di 5 minuti",
+      "mirVideoBoxDescription": "Guarda il video, incolla le credenziali qui sotto e salvale per sempre. Puoi saltare questo passaggio e farlo dopo in Impostazioni → Configurazione MIR."
     },
     "step4": {
       "title": "🏠 Aggiungi Proprietà",
