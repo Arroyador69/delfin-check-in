@@ -340,3 +340,68 @@ Gracias. El equipo de Delfín Check-in
     subject: '📋 Encuesta Delfín Check-in – 2 minutos y nos ayudas mucho'
   };
 }
+
+function escapeBroadcastHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+/**
+ * Email de comunicación / marketing a personas en la waitlist (mensaje en texto plano).
+ */
+export function buildWaitlistBroadcastEmail(params: {
+  userName: string;
+  message: string;
+  subject: string;
+  trackingId?: string;
+  adminBaseUrl?: string;
+}): { html: string; text: string; subject: string } {
+  const name = (params.userName || '').trim() || 'amigo/a';
+  const greeting = `Hola ${escapeBroadcastHtml(name)},`;
+  const paragraphs = params.message
+    .trim()
+    .split(/\n{2,}|\r\n{2,}/)
+    .map((block) => block.trim())
+    .filter(Boolean)
+    .map(
+      (block) =>
+        `<p style="margin: 0 0 16px 0; line-height: 1.65;">${escapeBroadcastHtml(block).replace(/\n/g, '<br/>')}</p>`
+    )
+    .join('');
+
+  const adminBase = (params.adminBaseUrl || 'https://admin.delfincheckin.com').replace(/\/+$/, '');
+  const openPixel =
+    params.trackingId
+      ? `<img src="${adminBase}/api/track/email-open?tid=${encodeURIComponent(params.trackingId)}" width="1" height="1" alt="" style="display:block;width:1px;height:1px;border:0;" />`
+      : '';
+
+  const html = getBaseEmailTemplate(`
+    ${openPixel}
+    <p style="margin-top: 0; font-size: 16px;">${greeting}</p>
+    ${paragraphs || '<p style="margin: 0 0 16px 0;"></p>'}
+    <p style="margin: 24px 0 0 0;">Un saludo,<br/><strong>El equipo de Delfín Check-in</strong></p>
+    <p style="margin: 16px 0 0 0; font-size: 13px; color: #64748b;">¿Dudas? <a href="mailto:contacto@delfincheckin.com" style="color: #2563eb;">contacto@delfincheckin.com</a></p>
+  `);
+
+  const text = [
+    `Hola ${name},`,
+    '',
+    params.message.trim(),
+    '',
+    'Un saludo,',
+    'El equipo de Delfín Check-in',
+    '',
+    'contacto@delfincheckin.com',
+    '',
+    'Recibes este correo porque te registraste en la lista de espera de Delfín Check-in.',
+  ].join('\n');
+
+  return {
+    html,
+    text,
+    subject: params.subject.trim(),
+  };
+}
