@@ -22,12 +22,6 @@ export default function SuperAdminWaitlist() {
     activated: 0
   });
   const [selectedEmails, setSelectedEmails] = useState<Set<string>>(new Set());
-  const [showEmailModal, setShowEmailModal] = useState(false);
-  const [emailForm, setEmailForm] = useState({
-    subject: '',
-    html: '',
-    text: ''
-  });
   const [activating, setActivating] = useState<Set<string>>(new Set());
   const [cleaning, setCleaning] = useState<Set<string>>(new Set());
   const [surveySending, setSurveySending] = useState(false);
@@ -197,41 +191,13 @@ export default function SuperAdminWaitlist() {
     setSelectedEmails(new Set());
   };
 
-  const handleSendEmail = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
+  const openWaitlistEmailComposer = () => {
     if (selectedEmails.size === 0) {
       alert('Selecciona al menos un email');
       return;
     }
-
-    try {
-      const response = await fetch('/api/superadmin/emails/send', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          to: Array.from(selectedEmails),
-          subject: emailForm.subject,
-          html: emailForm.html,
-          text: emailForm.text,
-          emailType: 'custom'
-        })
-      });
-
-      const data = await response.json();
-      
-      if (data.success) {
-        alert(`✅ ${data.message}`);
-        setShowEmailModal(false);
-        setEmailForm({ subject: '', html: '', text: '' });
-        setSelectedEmails(new Set());
-      } else {
-        alert(`❌ Error: ${data.error || 'Error al enviar emails'}`);
-      }
-    } catch (error) {
-      console.error('Error sending email:', error);
-      alert('Error al enviar emails');
-    }
+    const q = encodeURIComponent(Array.from(selectedEmails).join(','));
+    window.location.href = `/superadmin/emails?selected=${q}`;
   };
 
   const handleActivateUser = async (entryId: string, email: string) => {
@@ -341,10 +307,10 @@ export default function SuperAdminWaitlist() {
         {selectedEmails.size > 0 && (
           <div className="flex gap-2">
             <button
-              onClick={() => setShowEmailModal(true)}
+              onClick={openWaitlistEmailComposer}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
             >
-              📧 Enviar Email ({selectedEmails.size})
+              📧 Redactar email ({selectedEmails.size})
             </button>
             <button
               onClick={clearSelection}
@@ -678,84 +644,6 @@ export default function SuperAdminWaitlist() {
         </div>
       )}
 
-      {/* Modal de envío de email */}
-      {showEmailModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <h2 className="text-2xl font-bold mb-4">Enviar Email a {selectedEmails.size} destinatarios</h2>
-            
-            <form onSubmit={handleSendEmail}>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Destinatarios
-                </label>
-                <div className="bg-gray-50 p-3 rounded border max-h-32 overflow-y-auto">
-                  {Array.from(selectedEmails).map((email) => (
-                    <div key={email} className="text-sm text-gray-700">{email}</div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Asunto *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={emailForm.subject}
-                  onChange={(e) => setEmailForm({ ...emailForm, subject: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                  placeholder="Asunto del email"
-                />
-              </div>
-
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Contenido HTML *
-                </label>
-                <textarea
-                  required
-                  value={emailForm.html}
-                  onChange={(e) => setEmailForm({ ...emailForm, html: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                  rows={10}
-                  placeholder="<html>...</html>"
-                />
-              </div>
-
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Contenido Texto (opcional)
-                </label>
-                <textarea
-                  value={emailForm.text}
-                  onChange={(e) => setEmailForm({ ...emailForm, text: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                  rows={5}
-                  placeholder="Versión texto del email"
-                />
-              </div>
-
-              <div className="flex gap-2">
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                >
-                  Enviar
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowEmailModal(false)}
-                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
-                >
-                  Cancelar
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
