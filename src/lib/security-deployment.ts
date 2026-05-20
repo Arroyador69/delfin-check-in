@@ -19,6 +19,8 @@ export function isDangerousDiagnosticApiPath(pathname: string): boolean {
   if (pathname.startsWith('/api/debug/')) return true;
   if (pathname.startsWith('/api/test-')) return true;
   if (pathname.startsWith('/api/check-db')) return true;
+  if (pathname === '/api/audit-mir-config') return true;
+  if (pathname === '/api/audit-pablo') return true;
   // Permitir test de conexión MIR en producción (ruta usada por la UI; requiere sesión).
   // Bloqueamos el resto de endpoints "test-*" bajo /api/ministerio/.
   if (pathname === '/api/ministerio/test-produccion') return false;

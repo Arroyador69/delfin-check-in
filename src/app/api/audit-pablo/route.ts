@@ -1,9 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
+import { denyDebugApiInProduction } from '@/lib/security-deployment';
+import { isSuperAdmin } from '@/lib/permissions';
 
 export async function GET(req: NextRequest) {
+  const denied = denyDebugApiInProduction();
+  if (denied) return denied;
+
+  if (!isSuperAdmin(req)) {
+    return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+  }
+
   try {
-    console.log('🔍 AUDITORÍA ESPECÍFICA: Buscando registro de Pablo...');
     
     // Buscar registros que contengan "Pablo" en el nombre
     const registros = await sql`
