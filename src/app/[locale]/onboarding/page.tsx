@@ -12,6 +12,7 @@ import {
 } from '@/lib/booking-channels';
 import { isValidLocale, locales, localeNames, type Locale } from '@/i18n/config';
 import { ISO3166_ALPHA2 } from '@/lib/iso3166-alpha2';
+import TutorialVideoEmbed from '@/components/TutorialVideoEmbed';
 
 type PlanId = 'free' | 'checkin' | 'standard' | 'pro';
 type BillingInterval = 'month' | 'year';
@@ -65,6 +66,7 @@ interface OnboardingData {
 export default function OnboardingPage() {
   const t = useTranslations('onboarding');
   const tPlans = useTranslations('plans');
+  const tVideos = useTranslations('tutorialVideos');
   const locale = useLocale();
   const router = useRouter();
   const pathname = usePathname();
@@ -1193,6 +1195,20 @@ export default function OnboardingPage() {
             {t('step3.activateModule')}
           </button>
         </div>
+
+        <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4 mb-6">
+          <p className="text-sm font-semibold text-emerald-900 mb-1">{t('step3.mirVideoBoxTitle')}</p>
+          <p className="text-sm text-emerald-800">{t('step3.mirVideoBoxDescription')}</p>
+        </div>
+
+        <TutorialVideoEmbed
+          videoKey="mirCredentials"
+          title={tVideos('mirTitle')}
+          description={tVideos('mirDescription')}
+          watchOnYouTubeLabel={tVideos('watchOnYouTube')}
+          spanishAudioNote={tVideos('spanishAudioNote')}
+          className="mb-6"
+        />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
