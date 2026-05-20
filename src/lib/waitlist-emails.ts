@@ -41,7 +41,6 @@ function getBaseEmailTemplate(content: string): string {
       <div class="container">
         <div class="header">
           <h1 style="margin: 0; font-size: 28px;">🐬 Delfín Check-in</h1>
-          <p style="margin: 10px 0 0; opacity: 0.9;">PMS Gratis para Propietarios</p>
         </div>
         <div class="content">
           ${content}
@@ -65,7 +64,7 @@ export function getWaitlistEmail7Days(params: WaitlistEmailParams): { html: stri
   const html = getBaseEmailTemplate(`
     <h2 style="color: #1d4ed8; margin-top: 0;">¡Faltan solo 7 días, ${userName}!</h2>
     
-    <p>Estamos muy cerca del lanzamiento de Delfín Check-in y queríamos recordarte que como <strong>Early Adopter</strong>, tendrás acceso prioritario al PMS completamente gratis.</p>
+    <p>Estamos muy cerca del lanzamiento de Delfín Check-in y queríamos recordarte que como <strong>Early Adopter</strong>, tendrás acceso prioritario al sistema completamente gratis.</p>
     
     <div class="countdown-box">
       <div class="countdown-number">7</div>
@@ -75,14 +74,14 @@ export function getWaitlistEmail7Days(params: WaitlistEmailParams): { html: stri
     <p>Esto es lo que te espera cuando lancemos:</p>
     
     <ul style="line-height: 2;">
-      <li>✅ <strong>PMS completo gratis para siempre</strong> - Gestión de reservas, habitaciones y más</li>
+      <li>✅ <strong>Plan Básico gratis para siempre</strong> - Gestión de reservas, habitaciones y más</li>
       <li>✅ <strong>De propietarios, para propietarios</strong> - Hecho por personas que entienden tu negocio</li>
       <li>✅ <strong>Sin costes ocultos</strong> - El plan gratuito se financia con anuncios elegantes y discretos</li>
       <li>✅ <strong>App móvil</strong> - Próximamente disponible para iOS y Android</li>
     </ul>
     
     <div class="info-box">
-      <p style="margin: 0;"><strong>💡 Nota importante:</strong> El módulo de check-in digital (envío al Ministerio del Interior) tendrá un coste de 2€/mes (+ IVA 21%), pero el PMS completo será gratis para siempre.</p>
+      <p style="margin: 0;"><strong>💡 Nota importante:</strong> El módulo de check-in digital (envío al Ministerio del Interior) tendrá un coste de 2€/mes (+ IVA 21%), pero el plan Básico será gratis para siempre.</p>
     </div>
     
     <p>Te enviaremos otro email cuando falten 48 horas para que estés preparado. ¡Estamos muy emocionados de tenerte con nosotros!</p>
@@ -96,18 +95,18 @@ export function getWaitlistEmail7Days(params: WaitlistEmailParams): { html: stri
   const text = `
 ¡Faltan solo 7 días, ${userName}!
 
-Estamos muy cerca del lanzamiento de Delfín Check-in y queríamos recordarte que como Early Adopter, tendrás acceso prioritario al PMS completamente gratis.
+Estamos muy cerca del lanzamiento de Delfín Check-in y queríamos recordarte que como Early Adopter, tendrás acceso prioritario al sistema completamente gratis.
 
 7 DÍAS RESTANTES
 
 Esto es lo que te espera cuando lancemos:
 
-✅ PMS completo gratis para siempre - Gestión de reservas, habitaciones y más
+✅ Plan Básico gratis para siempre - Gestión de reservas, habitaciones y más
 ✅ De propietarios, para propietarios - Hecho por personas que entienden tu negocio
 ✅ Sin costes ocultos - El plan gratuito se financia con anuncios elegantes y discretos
 ✅ App móvil - Próximamente disponible para iOS y Android
 
-Nota importante: El módulo de check-in digital (envío al Ministerio del Interior) tendrá un coste de 2€/mes (+ IVA 21%), pero el PMS completo será gratis para siempre.
+Nota importante: El módulo de check-in digital (envío al Ministerio del Interior) tendrá un coste de 2€/mes (+ IVA 21%), pero el plan Básico será gratis para siempre.
 
 Te enviaremos otro email cuando falten 48 horas para que estés preparado. ¡Estamos muy emocionados de tenerte con nosotros!
 
@@ -163,7 +162,7 @@ export function getWaitlistEmail48Hours(params: WaitlistEmailParams): { html: st
     </ul>
     
     <div class="info-box">
-      <p style="margin: 0;"><strong>💡 Recordatorio:</strong> El módulo de check-in digital (envío al Ministerio del Interior) tendrá un coste de 2€/mes (+ IVA 21%), pero el PMS completo será gratis para siempre.</p>
+      <p style="margin: 0;"><strong>💡 Recordatorio:</strong> El módulo de check-in digital (envío al Ministerio del Interior) tendrá un coste de 2€/mes (+ IVA 21%), pero el plan Básico será gratis para siempre.</p>
     </div>
     
     <p>Si tienes alguna pregunta antes del lanzamiento, no dudes en contactarnos en <a href="mailto:contacto@delfincheckin.com" style="color: #2563eb;">contacto@delfincheckin.com</a></p>
@@ -191,7 +190,7 @@ Cuando recibas el email de activación, podrás:
 ✅ Empezar a gestionar tus reservas inmediatamente
 ✅ Configurar tus habitaciones y precios
 
-Recordatorio: El módulo de check-in digital (envío al Ministerio del Interior) tendrá un coste de 2€/mes (+ IVA 21%), pero el PMS completo será gratis para siempre.
+Recordatorio: El módulo de check-in digital (envío al Ministerio del Interior) tendrá un coste de 2€/mes (+ IVA 21%), pero el plan Básico será gratis para siempre.
 
 Si tienes alguna pregunta antes del lanzamiento, no dudes en contactarnos en contacto@delfincheckin.com
 
@@ -227,7 +226,7 @@ export function getWaitlistActivationEmail(params: {
     <p>¡Bienvenido a Delfín Check-in! Tu cuenta ha sido activada con el plan <strong>FREE</strong> y ya puedes empezar a gestionar tus alojamientos.</p>
     
     <div class="highlight-box">
-      <p style="margin: 0;"><strong>🎉 Early Adopter:</strong> Como uno de los primeros en registrarte, tienes acceso completo al PMS de manera completamente gratuita para siempre.</p>
+      <p style="margin: 0;"><strong>🎉 Early Adopter:</strong> Como uno de los primeros en registrarte, tienes acceso completo a Delfín Check-in de manera completamente gratuita para siempre.</p>
     </div>
     
     <p style="text-align: center;">
@@ -240,7 +239,7 @@ export function getWaitlistActivationEmail(params: {
       <p style="margin: 10px 0 0; font-size: 12px; color: #666;">Podrás cambiarla durante el proceso de onboarding.</p>
     </div>
     
-    <p>El onboarding te llevará menos de 5 minutos y podrás empezar a usar el PMS inmediatamente después.</p>
+    <p>El onboarding te llevará menos de 5 minutos y podrás empezar a usar Delfín Check-in inmediatamente después.</p>
     
     <p>Si tienes problemas para acceder, puedes usar este enlace directo:</p>
     <p style="word-break: break-all; color: #2563eb; font-size: 12px; background: #f8f9fa; padding: 10px; border-radius: 4px;">${onboardingUrl}</p>
@@ -260,14 +259,14 @@ export function getWaitlistActivationEmail(params: {
 
 ¡Bienvenido a Delfín Check-in! Tu cuenta ha sido activada con el plan FREE y ya puedes empezar a gestionar tus alojamientos.
 
-🎉 Early Adopter: Como uno de los primeros en registrarte, tienes acceso completo al PMS de manera completamente gratuita para siempre.
+🎉 Early Adopter: Como uno de los primeros en registrarte, tienes acceso completo a Delfín Check-in de manera completamente gratuita para siempre.
 
 Comenzar Onboarding: ${onboardingUrl}
 
 🔑 Contraseña temporal: ${tempPassword}
 Podrás cambiarla durante el proceso de onboarding.
 
-El onboarding te llevará menos de 5 minutos y podrás empezar a usar el PMS inmediatamente después.
+El onboarding te llevará menos de 5 minutos y podrás empezar a usar Delfín Check-in inmediatamente después.
 
 ⚠️ Importante: Si no ves este correo en tu bandeja de entrada, revisa la carpeta Spam/Correo no deseado y márcalo como No es spam.
 
@@ -359,8 +358,10 @@ export function buildWaitlistBroadcastEmail(params: {
   trackingId?: string;
   adminBaseUrl?: string;
 }): { html: string; text: string; subject: string } {
-  const name = (params.userName || '').trim() || 'amigo/a';
-  const greeting = `Hola ${escapeBroadcastHtml(name)},`;
+  const rawName = (params.userName || '').trim();
+  const name =
+    rawName && !/^prueba$/i.test(rawName) ? rawName : '';
+  const greeting = name ? `Hola ${escapeBroadcastHtml(name)},` : 'Hola,';
   const paragraphs = params.message
     .trim()
     .split(/\n{2,}|\r\n{2,}/)
@@ -387,7 +388,7 @@ export function buildWaitlistBroadcastEmail(params: {
   `);
 
   const text = [
-    `Hola ${name},`,
+    name ? `Hola ${name},` : 'Hola,',
     '',
     params.message.trim(),
     '',
