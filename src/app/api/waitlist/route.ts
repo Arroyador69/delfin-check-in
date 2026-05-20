@@ -146,7 +146,6 @@ export async function POST(req: NextRequest) {
           <div class="container">
             <div class="header">
               <h1 style="margin: 0; font-size: 28px;">🐬 Delfín Check-in</h1>
-              <p style="margin: 10px 0 0; opacity: 0.9;">PMS Gratis para Propietarios</p>
             </div>
             <div class="content">
               <h2 style="color: #1d4ed8; margin-top: 0;">¡Bienvenido a la lista de espera, ${userName}!</h2>
@@ -154,15 +153,15 @@ export async function POST(req: NextRequest) {
               <p>Gracias por registrarte en Delfín Check-in. Estamos muy contentos de tenerte con nosotros.</p>
               
               <p style="background: #fef3c7; padding: 16px; border-radius: 8px; border-left: 4px solid #f59e0b; margin: 20px 0;">
-                <strong>🎉 Early Adopter:</strong> Como uno de los primeros en registrarte, tendrás acceso prioritario al PMS de manera completamente gratuita cuando lo lancemos. Serás uno de nuestros early adopters y podrás ayudarnos a mejorar el producto con tus comentarios.
+                <strong>🎉 Early Adopter:</strong> Como uno de los primeros en registrarte, tendrás acceso prioritario a Delfín Check-in de manera completamente gratuita cuando lo lancemos. Serás uno de nuestros early adopters y podrás ayudarnos a mejorar el producto con tus comentarios.
               </p>
               
-              <p><strong>En los próximos días, cuando todo esté listo, te enviaremos un email con las instrucciones para acceder al PMS.</strong></p>
+              <p><strong>En los próximos días, cuando todo esté listo, te enviaremos un email con las instrucciones para acceder a tu cuenta.</strong></p>
               
               <p>Mientras tanto, esto es lo que puedes esperar:</p>
               
               <ul style="line-height: 2;">
-                <li>✅ <strong>PMS completo gratis para siempre</strong> - Gestión de reservas, habitaciones y más</li>
+                <li>✅ <strong>Plan Básico gratis para siempre</strong> - Gestión de reservas, habitaciones y más</li>
                 <li>✅ <strong>De propietarios, para propietarios</strong> - Hecho por personas que entienden tu negocio</li>
                 <li>✅ <strong>Crea enlaces de pago personalizados</strong> - Define fechas, importe acordado y genera un enlace único de pago. Compártelo por WhatsApp o email y el huésped paga de forma segura</li>
                 <li>✅ <strong>Microsite para reservas directas</strong> - Crea en minutos una página pública para tu alojamiento, comparte el enlace y recibe reservas directas con pagos directos</li>
@@ -170,10 +169,10 @@ export async function POST(req: NextRequest) {
               </ul>
               
               <p style="background: #f0f9ff; padding: 16px; border-radius: 8px; border-left: 4px solid #2563eb; margin: 20px 0;">
-                <strong>💡 Nota importante:</strong> El módulo de check-in digital (envío al Ministerio del Interior) tendrá un coste de 2€/mes (+ IVA 21%), pero el PMS completo (a excepción del envío al Ministerio del Interior) será gratis para siempre.
+                <strong>💡 Nota importante:</strong> El módulo de check-in digital (envío al Ministerio del Interior) tendrá un coste de 2€/mes (+ IVA 21%), pero el plan Básico (a excepción del envío al Ministerio del Interior) será gratis para siempre.
               </p>
               
-              <p>Te notificaremos por email en cuanto el PMS esté listo para que puedas empezar a usarlo como early adopter.</p>
+              <p>Te notificaremos por email en cuanto Delfín Check-in esté listo para que puedas empezar a usarlo como early adopter.</p>
               
               <p>Si tienes alguna pregunta, no dudes en contactarnos en <a href="mailto:contacto@delfincheckin.com" style="color: #2563eb;">contacto@delfincheckin.com</a></p>
               
@@ -195,21 +194,21 @@ export async function POST(req: NextRequest) {
 
 Gracias por registrarte en Delfín Check-in. Estamos muy contentos de tenerte con nosotros.
 
-🎉 Early Adopter: Como uno de los primeros en registrarte, tendrás acceso prioritario al PMS de manera completamente gratuita cuando lo lancemos. Serás uno de nuestros early adopters y podrás ayudarnos a mejorar el producto con tus comentarios.
+🎉 Early Adopter: Como uno de los primeros en registrarte, tendrás acceso prioritario a Delfín Check-in de manera completamente gratuita cuando lo lancemos. Serás uno de nuestros early adopters y podrás ayudarnos a mejorar el producto con tus comentarios.
 
-En los próximos días, cuando todo esté listo, te enviaremos un email con las instrucciones para acceder al PMS.
+En los próximos días, cuando todo esté listo, te enviaremos un email con las instrucciones para acceder a tu cuenta.
 
 Mientras tanto, esto es lo que puedes esperar:
 
-✅ PMS completo gratis para siempre - Gestión de reservas, habitaciones y más
+✅ Plan Básico gratis para siempre - Gestión de reservas, habitaciones y más
 ✅ De propietarios, para propietarios - Hecho por personas que entienden tu negocio
 ✅ Crea enlaces de pago personalizados - Define fechas, importe acordado y genera un enlace único de pago. Compártelo por WhatsApp o email y el huésped paga de forma segura
 ✅ Microsite para reservas directas - Crea en minutos una página pública para tu alojamiento, comparte el enlace y recibe reservas directas con pagos directos
 ✅ App móvil - Próximamente disponible para iOS y Android
 
-Nota importante: El módulo de check-in digital (envío al Ministerio del Interior) tendrá un coste de 2€/mes (+ IVA 21%), pero el PMS completo (a excepción del envío al Ministerio del Interior) será gratis para siempre.
+Nota importante: El módulo de check-in digital (envío al Ministerio del Interior) tendrá un coste de 2€/mes (+ IVA 21%), pero el plan Básico (a excepción del envío al Ministerio del Interior) será gratis para siempre.
 
-Te notificaremos por email en cuanto el PMS esté listo para que puedas empezar a usarlo como early adopter.
+Te notificaremos por email en cuanto Delfín Check-in esté listo para que puedas empezar a usarlo como early adopter.
 
 Si tienes alguna pregunta, no dudes en contactarnos en contacto@delfincheckin.com
 
@@ -235,7 +234,7 @@ El equipo de Delfín Check-in
     
     return NextResponse.json({
       success: true,
-      message: 'Te hemos agregado a la lista de espera. Te notificaremos cuando el PMS esté disponible.',
+      message: 'Te hemos agregado a la lista de espera. Te notificaremos cuando Delfín Check-in esté disponible.',
       data: result.rows[0]
     }, {
       headers: corsHeaders

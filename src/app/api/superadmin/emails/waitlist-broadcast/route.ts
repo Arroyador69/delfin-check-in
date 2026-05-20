@@ -186,8 +186,15 @@ export async function POST(req: NextRequest) {
         console.warn('tracking test:', e);
       }
 
+      const testGreetingName = (() => {
+        const local = sessionEmail.split('@')[0] || '';
+        const cleaned = local.replace(/[._+-]/g, ' ').trim();
+        if (!cleaned) return '';
+        return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+      })();
+
       const { html, text, subject } = buildWaitlistBroadcastEmail({
-        userName: 'Prueba',
+        userName: testGreetingName,
         message: data.message,
         subject: data.subject,
         trackingId: trackingId || undefined,
