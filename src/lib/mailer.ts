@@ -1,5 +1,6 @@
 import nodemailer from 'nodemailer';
 import { sql } from '@/lib/db';
+import { buildAntivirusHelpUrl } from '@/lib/onboarding-magic-link';
 
 // Usar el mismo transporter que funciona en booking (email-notifications.ts)
 // Esto asegura consistencia y que funcione igual que los emails de reservas
@@ -113,6 +114,10 @@ function onboardingEmailCopy(locale: EmailLocale, variant: OnboardingEmailVarian
       importantBody:
         'si no ves este correo en la bandeja de entrada, revisa <strong>Spam</strong> o <strong>Promociones</strong> y márcalo como correo deseado.',
       fallbackLine: 'Si el botón no funciona, copia y pega este enlace en el navegador:',
+      antivirusTitle: '¿Tu antivirus (Avast u otro) bloquea el enlace?',
+      antivirusBody:
+        'A veces marcan por error los enlaces de activación. Es el panel oficial de Delfín Check-in en <strong>admin.delfincheckin.com</strong>, no es phishing.',
+      antivirusHelpLink: 'Ver guía paso a paso',
       autoMsg: 'Este mensaje es automático; por favor no respondas a este correo.',
       tempPwdTitle: 'Contraseña temporal:',
       tempPwdHint: 'Podrás cambiarla durante el proceso de onboarding.',
@@ -204,6 +209,10 @@ function onboardingEmailCopy(locale: EmailLocale, variant: OnboardingEmailVarian
       importantBody:
         "if you don't see this email in your inbox, check <strong>Spam</strong> or <strong>Promotions</strong> and mark it as safe.",
       fallbackLine: "If the button doesn't work, copy and paste this link into your browser:",
+      antivirusTitle: 'Is your antivirus (Avast, etc.) blocking the link?',
+      antivirusBody:
+        'Activation links are sometimes flagged by mistake. This is the official Delfín Check-in dashboard at <strong>admin.delfincheckin.com</strong> — not phishing.',
+      antivirusHelpLink: 'Step-by-step guide',
       autoMsg: 'This is an automated message; please do not reply.',
       tempPwdTitle: 'Temporary password:',
       tempPwdHint: 'You can change it during onboarding.',
@@ -295,6 +304,10 @@ function onboardingEmailCopy(locale: EmailLocale, variant: OnboardingEmailVarian
       importantBody:
         'se non trovi questa email in arrivo, controlla <strong>Spam</strong> o <strong>Promozioni</strong> e contrassegnala come sicura.',
       fallbackLine: 'Se il pulsante non funziona, copia e incolla questo link nel browser:',
+      antivirusTitle: 'L’antivirus (Avast, ecc.) blocca il link?',
+      antivirusBody:
+        'A volte i link di attivazione sono segnalati per errore. È il pannello ufficiale Delfín Check-in su <strong>admin.delfincheckin.com</strong>, non phishing.',
+      antivirusHelpLink: 'Guida passo passo',
       autoMsg: 'Questo è un messaggio automatico; per favore non rispondere.',
       tempPwdTitle: 'Password temporanea:',
       tempPwdHint: 'Potrai cambiarla durante l’onboarding.',
@@ -386,6 +399,10 @@ function onboardingEmailCopy(locale: EmailLocale, variant: OnboardingEmailVarian
       importantBody:
         'se não vir este email na caixa de entrada, verifique <strong>Spam</strong> ou <strong>Promoções</strong> e marque-o como seguro.',
       fallbackLine: 'Se o botão não funcionar, copie e cole este link no navegador:',
+      antivirusTitle: 'O seu antivírus (Avast, etc.) bloqueia o link?',
+      antivirusBody:
+        'Por vezes os links de ativação são marcados por engano. É o painel oficial Delfín Check-in em <strong>admin.delfincheckin.com</strong>, não é phishing.',
+      antivirusHelpLink: 'Guia passo a passo',
       autoMsg: 'Esta é uma mensagem automática; por favor não responda.',
       tempPwdTitle: 'Palavra-passe temporária:',
       tempPwdHint: 'Pode alterá-la durante o onboarding.',
@@ -477,6 +494,10 @@ function onboardingEmailCopy(locale: EmailLocale, variant: OnboardingEmailVarian
       importantBody:
         'si vous ne voyez pas cet email dans votre boîte de réception, vérifiez <strong>Spam</strong> ou <strong>Promotions</strong> et marquez-le comme sûr.',
       fallbackLine: 'Si le bouton ne fonctionne pas, copiez-collez ce lien dans votre navigateur :',
+      antivirusTitle: 'Votre antivirus (Avast, etc.) bloque le lien ?',
+      antivirusBody:
+        'Les liens d’activation sont parfois signalés à tort. Il s’agit du tableau de bord officiel Delfín Check-in sur <strong>admin.delfincheckin.com</strong>, pas d’hameçonnage.',
+      antivirusHelpLink: 'Guide pas à pas',
       autoMsg: 'Ceci est un message automatique ; merci de ne pas répondre.',
       tempPwdTitle: 'Mot de passe temporaire :',
       tempPwdHint: 'Vous pourrez le modifier pendant l’onboarding.',
@@ -568,6 +589,10 @@ function onboardingEmailCopy(locale: EmailLocale, variant: OnboardingEmailVarian
       importantBody:
         'jos et näe viestiä saapuneissa, tarkista <strong>roskaposti</strong> tai <strong>mainokset</strong> ja merkitse viesti turvalliseksi.',
       fallbackLine: 'Jos painike ei toimi, kopioi ja liitä tämä linkki selaimeen:',
+      antivirusTitle: 'Estääkö virustentorjunta (Avast jne.) linkin?',
+      antivirusBody:
+        'Aktivointilinkit merkitään joskus virheellisesti. Tämä on virallinen Delfín Check-in -hallintapaneeli osoitteessa <strong>admin.delfincheckin.com</strong>, ei phishing.',
+      antivirusHelpLink: 'Ohje vaihe vaiheelta',
       autoMsg: 'Tämä on automaattinen viesti; älä vastaa tähän sähköpostiin.',
       tempPwdTitle: 'Väliaikainen salasana:',
       tempPwdHint: 'Voit vaihtaa sen käyttöönoton aikana.',
@@ -659,6 +684,10 @@ function onboardingEmailCopy(locale: EmailLocale, variant: OnboardingEmailVarian
       importantBody:
         'om du inte ser mejlet i inkorgen, kolla <strong>Skräppost</strong> eller <strong>Reklam</strong> och markera som säkert.',
       fallbackLine: 'Om knappen inte fungerar, kopiera och klistra in länken i webbläsaren:',
+      antivirusTitle: 'Blockerar ditt antivirus (Avast m.fl.) länken?',
+      antivirusBody:
+        'Aktiveringslänkar flaggas ibland av misstag. Det är den officiella Delfín Check-in-panelen på <strong>admin.delfincheckin.com</strong>, inte nätfiske.',
+      antivirusHelpLink: 'Steg-för-steg-guide',
       autoMsg: 'Detta är ett automatiskt meddelande; vänligen svara inte på detta mejl.',
       tempPwdTitle: 'Tillfälligt lösenord:',
       tempPwdHint: 'Du kan ändra det under onboarding.',
@@ -731,6 +760,9 @@ function onboardingEmailCopy(locale: EmailLocale, variant: OnboardingEmailVarian
     importantTitle: selected.importantTitle,
     importantBody: selected.importantBody,
     fallbackLine: selected.fallbackLine,
+    antivirusTitle: selected.antivirusTitle,
+    antivirusBody: selected.antivirusBody,
+    antivirusHelpLink: selected.antivirusHelpLink,
     autoMsg: selected.autoMsg,
     tempPwdTitle: selected.tempPwdTitle,
     tempPwdHint: selected.tempPwdHint,
@@ -820,7 +852,9 @@ export async function sendOnboardingEmail(params: {
 
     const appBase = String(process.env.NEXT_PUBLIC_APP_URL || 'https://admin.delfincheckin.com').replace(/\/+$/, '');
 
-    let trackedHref = rawOnboardingUrl;
+    /** CTA directo al onboarding (sin redirect /api/track/email-click: menos falsos positivos AV). */
+    const ctaHref = escapeHtmlAttr(rawOnboardingUrl);
+    const helpUrl = escapeHtmlAttr(buildAntivirusHelpUrl(emailLocale));
     let trackingPixel = '';
 
     try {
@@ -842,22 +876,34 @@ export async function sendOnboardingEmail(params: {
             ${params.to},
             ${subject},
             'sent',
-            ${JSON.stringify({ variant })}::jsonb
+            ${JSON.stringify({ variant, cta_direct: true })}::jsonb
           )
           RETURNING id
         `;
         trackingId = String(inserted.rows[0]?.id || '');
 
         const openPixelUrl = `${appBase}/api/track/email-open?tid=${encodeURIComponent(trackingId)}`;
-        const clickUrl = `${appBase}/api/track/email-click?tid=${encodeURIComponent(trackingId)}&url=${encodeURIComponent(rawOnboardingUrl)}`;
-        trackedHref = clickUrl;
         trackingPixel = `<img src="${escapeHtmlAttr(openPixelUrl)}" alt="" width="1" height="1" style="display:none;border:0;outline:none;text-decoration:none;" />`;
       }
     } catch (e) {
       console.warn('⚠️ [SEND ONBOARDING EMAIL] No se pudo preparar tracking de email:', e);
     }
 
-    const hrefTracked = escapeHtmlAttr(trackedHref);
+    const antivirusBlock = `
+          <tr>
+            <td style="padding:0 32px 16px 32px;">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color:#eff6ff;border-left:4px solid #2563eb;border-radius:4px;">
+                <tr>
+                  <td style="padding:16px 20px;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.55;color:#1e3a8a;">
+                    <strong>${escapeHtmlText(copy.antivirusTitle)}</strong><br/>
+                    ${copy.antivirusBody}
+                    <br/><br/>
+                    <a href="${helpUrl}" target="_blank" rel="noopener noreferrer" style="color:#2563eb;font-weight:bold;">${escapeHtmlText(copy.antivirusHelpLink)}</a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>`;
 
     // Plantilla en tablas + estilos inline: Gmail y Outlook suelen romper div+margin y <style> en <head>
     const html = `<!DOCTYPE html>
@@ -891,13 +937,14 @@ export async function sendOnboardingEmail(params: {
               <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center">
                 <tr>
                   <td align="center" bgcolor="#2563eb" style="background-color:#2563eb;border-radius:8px;">
-                    <a href="${hrefTracked}" target="_blank" rel="noopener noreferrer" style="display:inline-block;padding:14px 28px;font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:bold;color:#ffffff !important;text-decoration:none;border-radius:8px;">${escapeHtmlText(copy.cta)}</a>
+                    <a href="${ctaHref}" target="_blank" rel="noopener noreferrer" style="display:inline-block;padding:14px 28px;font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:bold;color:#ffffff !important;text-decoration:none;border-radius:8px;">${escapeHtmlText(copy.cta)}</a>
                   </td>
                 </tr>
               </table>
             </td>
           </tr>
           ${pwdBlock}
+          ${antivirusBlock}
           <tr>
             <td style="padding:0 32px 24px 32px;">
               <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color:#fff8e6;border-left:4px solid #e6a800;border-radius:4px;">

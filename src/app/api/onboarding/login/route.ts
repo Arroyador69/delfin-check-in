@@ -5,29 +5,56 @@ import { effectivePlatformAdmin } from '@/lib/platform-owner';
 import {
   ensureOnboardingMagicTokenSchema,
   findOnboardingOwnerByEmail,
+  findOnboardingOwnerByMagicToken,
 } from '@/lib/onboarding-magic-link';
 
 export const runtime = 'nodejs';
 
 /**
  * Intercambia token de onboarding por sesión (cookies auth_token + onboarding_status).
- * Se usa desde el enlace del email: /{locale}/onboarding?token=...&email=...
+ * Enlace del email: /{locale}/onboarding?token=... (email opcional en URL legacy).
  */
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}));
     const token = body?.token;
-    const email = body?.email;
+    const emailRaw = body?.email;
 
-    if (!token || typeof token !== 'string' || !email || typeof email !== 'string') {
+    if (!token || typeof token !== 'string') {
       return NextResponse.json(
-        { success: false, error: 'token y email son requeridos' },
+        { success: false, error: 'token es requerido' },
         { status: 400 }
       );
     }
 
-    const emailNorm = email.trim().toLowerCase();
+    const emailFromBody =
+      typeof emailRaw === 'string' && emailRaw.includes('@')
+        ? emailRaw.trim().toLowerCase()
+        : null;
+
     await ensureOnboardingMagicTokenSchema();
+
+    let emailNorm = emailFromBody;
+
+    if (!emailNorm) {
+      const byToken = await findOnboardingOwnerByMagicToken(token);
+      if (byToken) {
+        emailNorm = String(byToken.user_email || byToken.tenant_email || '')
+          .trim()
+          .toLowerCase();
+      }
+    }
+
+    if (!emailNorm) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Token inválido o expirado',
+          code: 'ONBOARDING_TOKEN_INVALID',
+        },
+        { status: 404 }
+      );
+    }
 
     let row: Record<string, unknown> | undefined;
 
@@ -68,7 +95,6 @@ export async function POST(req: NextRequest) {
     if (tokenResult.rows.length > 0) {
       row = tokenResult.rows[0] as Record<string, unknown>;
     } else {
-      // Enlace ya usado o expirado: si ya hay sesión válida del mismo email, continuar sin error.
       const authToken = req.cookies.get(AUTH_CONFIG.cookieName)?.value;
       if (authToken) {
         const payload = verifyToken(authToken);
@@ -95,7 +121,11 @@ export async function POST(req: NextRequest) {
 
     if (!row) {
       return NextResponse.json(
-        { success: false, error: 'Token inválido o expirado', code: 'ONBOARDING_TOKEN_INVALID' },
+        {
+          success: false,
+          error: 'Token inválido o expirado',
+          code: 'ONBOARDING_TOKEN_INVALID',
+        },
         { status: 404 }
       );
     }
@@ -120,8 +150,6 @@ export async function POST(req: NextRequest) {
       planId: row.plan_id as string | null,
     });
 
-    // No borrar reset_token aquí: el usuario puede recargar o abrir el enlace dos veces.
-    // Se invalida al cambiar la contraseña o al completar el onboarding.
     await sql`
       UPDATE tenant_users
       SET email_verified = true, updated_at = NOW()

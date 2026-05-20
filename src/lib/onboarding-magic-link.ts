@@ -32,13 +32,82 @@ export function onboardingTokenExpiry(): Date {
   return d;
 }
 
-export function buildOnboardingUrl(token: string, email: string, locale = 'es'): string {
+/** Artículo público en la landing (GitHub Pages) si un antivirus bloquea el enlace. */
+const ANTIVIRUS_HELP_LANDING_PATHS: Record<string, string> = {
+  es: '/articulos/antivirus-bloquea-enlace-activacion',
+  en: '/en/articulos/antivirus-blocks-activation-link',
+  fr: '/fr/articulos/antivirus-bloque-lien-activation',
+  it: '/it/articulos/antivirus-blocca-link-attivazione',
+  pt: '/pt/articulos/antivirus-bloqueia-link-ativacao',
+  fi: '/fi/articulos/antivirus-estaa-aktivointilinkki',
+};
+
+export function buildAntivirusHelpUrl(locale = 'es'): string {
+  const base = String(
+    process.env.NEXT_PUBLIC_LANDING_URL || 'https://delfincheckin.com'
+  ).replace(/\/+$/, '');
+  const loc = locale in ANTIVIRUS_HELP_LANDING_PATHS ? locale : 'es';
+  return `${base}${ANTIVIRUS_HELP_LANDING_PATHS[loc]}`;
+}
+
+/**
+ * Enlace de activación (magic link). Solo `token` en la URL (menos falsos positivos AV).
+ * Enlaces antiguos con `&email=` siguen funcionando en login/onboarding.
+ */
+export function buildOnboardingUrl(token: string, locale = 'es'): string {
   const base = String(process.env.NEXT_PUBLIC_APP_URL || 'https://admin.delfincheckin.com').replace(
     /\/+$/,
     ''
   );
   const loc = locale && locale !== 'es' ? `/${locale}` : '/es';
-  return `${base}${loc}/onboarding?token=${token}&email=${encodeURIComponent(email)}`;
+  return `${base}${loc}/onboarding?token=${encodeURIComponent(token)}`;
+}
+
+/** Resuelve owner por token activo (onboarding_magic_token o reset_token legacy). */
+export async function findOnboardingOwnerByMagicToken(token: string) {
+  await ensureOnboardingMagicTokenSchema();
+  const result = await sql`
+    SELECT
+      t.id as tenant_id,
+      t.name as tenant_name,
+      t.email as tenant_email,
+      t.status,
+      t.onboarding_status,
+      t.plan_id,
+      t.plan_type,
+      tu.id as user_id,
+      tu.email as user_email,
+      tu.onboarding_magic_token,
+      tu.onboarding_magic_token_expires
+    FROM tenants t
+    JOIN tenant_users tu ON t.id = tu.tenant_id
+    WHERE tu.role = 'owner'
+      AND tu.is_active = true
+      AND (
+        (tu.onboarding_magic_token = ${token} AND tu.onboarding_magic_token_expires > NOW())
+        OR (
+          tu.onboarding_magic_token IS NULL
+          AND tu.reset_token = ${token}
+          AND tu.reset_token_expires > NOW()
+          AND length(tu.reset_token) >= 32
+        )
+      )
+    ORDER BY tu.created_at DESC
+    LIMIT 1
+  `;
+  return result.rows[0] as
+    | {
+        tenant_id: string;
+        tenant_name: string;
+        tenant_email: string;
+        status: string;
+        onboarding_status: string | null;
+        plan_id: string | null;
+        plan_type: string | null;
+        user_id: string;
+        user_email: string;
+      }
+    | undefined;
 }
 
 /** Owner row for onboarding magic link (tenant + user). */

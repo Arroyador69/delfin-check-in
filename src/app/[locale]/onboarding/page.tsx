@@ -13,6 +13,7 @@ import {
 import { isValidLocale, locales, localeNames, type Locale } from '@/i18n/config';
 import { ISO3166_ALPHA2 } from '@/lib/iso3166-alpha2';
 import TutorialVideoEmbed from '@/components/TutorialVideoEmbed';
+import { buildAntivirusHelpUrl } from '@/lib/onboarding-magic-link';
 
 type PlanId = 'free' | 'checkin' | 'standard' | 'pro';
 type BillingInterval = 'month' | 'year';
@@ -81,6 +82,7 @@ export default function OnboardingPage() {
   const [magicLinkFailed, setMagicLinkFailed] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
   const [resendMessage, setResendMessage] = useState('');
+  const [resendEmailInput, setResendEmailInput] = useState('');
   const bootstrapRanRef = useRef(false);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
@@ -221,6 +223,13 @@ export default function OnboardingPage() {
   }, [currentStep, formData]);
 
   useEffect(() => {
+    const fromUrl = searchParams?.get('email')?.trim().toLowerCase();
+    if (fromUrl && fromUrl.includes('@')) {
+      setResendEmailInput(fromUrl);
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
     if (bootstrapRanRef.current) return;
     bootstrapRanRef.current = true;
     void bootstrapSessionFromToken();
@@ -281,9 +290,9 @@ export default function OnboardingPage() {
 
   const bootstrapSessionFromToken = async () => {
     const token = searchParams?.get('token');
-    const email = searchParams?.get('email');
+    const emailFromUrl = searchParams?.get('email')?.trim().toLowerCase();
 
-    if (!token || !email) {
+    if (!token) {
       await checkOnboardingStatus();
       return;
     }
@@ -293,11 +302,15 @@ export default function OnboardingPage() {
     setMagicLinkFailed(false);
     setResendMessage('');
     try {
+      const payload: { token: string; email?: string } = { token };
+      if (emailFromUrl && emailFromUrl.includes('@')) {
+        payload.email = emailFromUrl;
+      }
       const res = await fetch('/api/onboarding/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ token, email }),
+        body: JSON.stringify(payload),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok || !data?.success) {
@@ -325,8 +338,9 @@ export default function OnboardingPage() {
   };
 
   const handleResendMagicLink = async () => {
-    // Solo el email del enlace original (no permitir otro distinto desde la UI).
-    const email = searchParams?.get('email')?.trim().toLowerCase();
+    const email =
+      searchParams?.get('email')?.trim().toLowerCase() ||
+      resendEmailInput.trim().toLowerCase();
     if (!email || !email.includes('@')) {
       setError(t('errors.resendEmailRequired'));
       return;
@@ -779,6 +793,21 @@ export default function OnboardingPage() {
           {t('step1.intro')}
         </p>
 
+        {searchParams?.get('token') && !magicLinkFailed && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <p className="text-blue-900 font-semibold text-sm mb-1">{t('antivirus.bannerTitle')}</p>
+            <p className="text-blue-800 text-sm mb-2">{t('antivirus.bannerBody')}</p>
+            <a
+              href={buildAntivirusHelpUrl(getLocaleFromPath())}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm font-semibold text-blue-700 hover:underline"
+            >
+              {t('antivirus.helpLink')}
+            </a>
+          </div>
+        )}
+
         {formData.passwordChanged && (
           <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
             <p className="text-green-800 font-semibold">{t('step1.passwordChangedSuccess')}</p>
@@ -795,16 +824,39 @@ export default function OnboardingPage() {
                     ? t('errors.magicLinkHelp', { email: searchParams.get('email')! })
                     : t('errors.magicLinkHelpNoEmail')}
                 </p>
-                {searchParams?.get('email') && (
-                  <button
-                    type="button"
-                    onClick={() => void handleResendMagicLink()}
-                    disabled={resendLoading || bootstrappingSession}
-                    className="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 disabled:opacity-50"
-                  >
-                    {resendLoading ? t('errors.resending') : t('errors.resendMagicLink')}
-                  </button>
+                {!searchParams?.get('email') && (
+                  <div className="mb-3">
+                    <label className="block text-xs font-medium text-red-900 mb-1">
+                      {t('errors.resendEmailLabel')}
+                    </label>
+                    <input
+                      type="email"
+                      value={resendEmailInput}
+                      onChange={(e) => setResendEmailInput(e.target.value)}
+                      placeholder={t('errors.resendEmailPlaceholder')}
+                      className="w-full max-w-md px-3 py-2 border border-red-200 rounded-lg text-sm"
+                      autoComplete="email"
+                    />
+                  </div>
                 )}
+                <button
+                  type="button"
+                  onClick={() => void handleResendMagicLink()}
+                  disabled={resendLoading || bootstrappingSession}
+                  className="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 disabled:opacity-50"
+                >
+                  {resendLoading ? t('errors.resending') : t('errors.resendMagicLink')}
+                </button>
+                <p className="mt-3 text-xs text-red-800">
+                  <a
+                    href={buildAntivirusHelpUrl(getLocaleFromPath())}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-semibold underline"
+                  >
+                    {t('antivirus.helpLink')}
+                  </a>
+                </p>
               </div>
             )}
           </div>

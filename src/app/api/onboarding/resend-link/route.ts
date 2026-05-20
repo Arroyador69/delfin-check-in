@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
     }
 
     const { token, tempPassword } = await issueFreshOnboardingCredentials(owner.user_id);
-    const onboardingUrl = buildOnboardingUrl(token, email, locale);
+    const onboardingUrl = buildOnboardingUrl(token, locale);
 
     try {
       await sendOnboardingEmail({

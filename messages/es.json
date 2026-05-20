@@ -600,14 +600,39 @@
       "magicLinkInvalid": "El enlace de activación no es válido o ya caducó.",
       "magicLinkValidateFailed": "No se pudo validar el enlace de activación.",
       "magicLinkHelp": "Puede ocurrir si el enlace ya se usó, caducó (72 h) o se abrió en varias pestañas. Te enviaremos un enlace nuevo solo a {email}. El enlace anterior dejará de funcionar.",
-      "magicLinkHelpNoEmail": "Puede ocurrir si el enlace ya se usó, caducó o se abrió en varias pestañas. Escríbenos a contacto@delfincheckin.com con tu email de registro.",
+      "magicLinkHelpNoEmail": "Puede ocurrir si el enlace ya se usó, caducó (72 h) o se abrió en varias pestañas. Indica tu email abajo y te enviaremos un enlace nuevo; el anterior dejará de funcionar.",
       "resendMagicLink": "Enviar nuevo enlace de activación",
       "resending": "Enviando…",
       "resendSuccess": "Si tu cuenta está pendiente de activación, recibirás un nuevo email en unos minutos. Revisa spam y promociones.",
       "resendFailed": "No se pudo enviar el enlace. Escríbenos a contacto@delfincheckin.com.",
-      "resendEmailRequired": "No encontramos tu email en el enlace. Escríbenos a contacto@delfincheckin.com.",
+      "resendEmailRequired": "Introduce el email con el que te registraste para recibir un enlace nuevo.",
+      "resendEmailLabel": "Email de tu cuenta",
+      "resendEmailPlaceholder": "tu@email.com",
       "validatingMagicLink": "Validando tu enlace de activación…"
+    },
+    "antivirus": {
+      "bannerTitle": "Enlace oficial de Delfín Check-in",
+      "bannerBody": "Si Avast u otro antivirus muestra «phishing» o bloquea la página, es un falso positivo habitual en enlaces de activación. El panel legítimo es admin.delfincheckin.com.",
+      "helpLink": "Guía: qué hacer si tu antivirus bloquea el enlace"
     }
+  },
+  "helpAntivirus": {
+    "title": "Si tu antivirus bloquea el enlace de activación",
+    "intro": "Algunos programas (Avast, Defender, etc.) marcan por error los enlaces del email de bienvenida. No es una estafa: es el panel oficial de Delfín Check-in.",
+    "officialDomain": "Dominio oficial del panel:",
+    "stepAvastTitle": "Avast / AVG",
+    "stepAvast1": "En la alerta, abre «Más opciones» o «Detalles».",
+    "stepAvast2": "Elige «Informar de un falso positivo» o «Excepción / No bloquear» para admin.delfincheckin.com.",
+    "stepAvast3": "O copia el enlace del email y pégalo en Chrome tras permitir la excepción.",
+    "stepGenericTitle": "Otras opciones",
+    "stepGeneric1": "Copia el enlace completo del email (o el nuevo que te reenviamos) y ábrelo en el navegador.",
+    "stepGeneric2": "Prueba desde el móvil con datos (sin WiFi corporativa restrictiva) o otro navegador.",
+    "stepGeneric3": "Pide un nuevo enlace desde la pantalla de onboarding (caduca el anterior).",
+    "reportTitle": "Reporte a fabricantes",
+    "reportBody": "Podemos reportar la URL a Avast y Google Safe Browsing como falso positivo; la lista global tarda unas horas o días en actualizarse.",
+    "contact": "Si sigues bloqueado:",
+    "backOnboarding": "Volver al onboarding",
+    "login": "Ir al login"
   },
   "reservations": {
     "title": "Reservas",

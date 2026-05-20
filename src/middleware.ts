@@ -458,11 +458,13 @@ export async function middleware(req: NextRequest) {
   if (!pathname.startsWith('/api/')) {
     const magicToken = url.searchParams.get('token');
     const magicEmail = url.searchParams.get('email');
+    const hasValidToken =
+      typeof magicToken === 'string' && magicToken.trim().length >= 16;
     const hasMagicLinkParams =
-      typeof magicToken === 'string' &&
-      magicToken.trim().length >= 16 &&
-      typeof magicEmail === 'string' &&
-      magicEmail.trim().includes('@');
+      hasValidToken &&
+      (typeof magicEmail !== 'string' ||
+        magicEmail.trim().length === 0 ||
+        magicEmail.trim().includes('@'));
 
     const isOnboardingPage =
       pathname === '/onboarding' ||

@@ -81,11 +81,7 @@ export async function activateWaitlistEntryFromRow(
         WHERE id = ${existingUser.rows[0].id}
       `;
 
-      const onboardingUrl = buildOnboardingUrl(
-        onboardingToken,
-        waitlistEntry.email,
-        requestedLocale
-      );
+      const onboardingUrl = buildOnboardingUrl(onboardingToken, requestedLocale);
 
       try {
         await sendOnboardingEmail({
@@ -130,11 +126,7 @@ export async function activateWaitlistEntryFromRow(
       WHERE tenant_id = ${tenantId}::uuid AND email = ${waitlistEntry.email}
     `;
 
-    const onboardingUrlOrphan = buildOnboardingUrl(
-      onboardingTokenOrphan,
-      waitlistEntry.email,
-      requestedLocale
-    );
+    const onboardingUrlOrphan = buildOnboardingUrl(onboardingTokenOrphan, requestedLocale);
 
     try {
       await sendOnboardingEmail({
@@ -334,11 +326,7 @@ export async function activateWaitlistEntryFromRow(
     console.warn('Error en integración de afiliados (no crítico):', m);
   }
 
-  const onboardingUrl = buildOnboardingUrl(
-    onboardingToken,
-    waitlistEntry.email,
-    requestedLocale
-  );
+  const onboardingUrl = buildOnboardingUrl(onboardingToken, requestedLocale);
 
   try {
     await sendOnboardingEmail({
