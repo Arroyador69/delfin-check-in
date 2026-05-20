@@ -17,7 +17,10 @@ export interface WaitlistEmailParams {
 /**
  * Plantilla base HTML para emails de waitlist
  */
-function getBaseEmailTemplate(content: string): string {
+function getBaseEmailTemplate(content: string, footerNote?: string): string {
+  const footerLine =
+    footerNote ??
+    'Este email fue enviado porque te registraste en nuestra lista de espera.';
   return `
     <!DOCTYPE html>
     <html>
@@ -47,7 +50,7 @@ function getBaseEmailTemplate(content: string): string {
         </div>
         <div class="footer">
           <p>© 2026 Delfín Check-in · <a href="https://delfincheckin.com" style="color: #2563eb;">delfincheckin.com</a></p>
-          <p style="font-size: 12px; margin-top: 10px;">Este email fue enviado porque te registraste en nuestra lista de espera.</p>
+          <p style="font-size: 12px; margin-top: 10px;">${footerLine}</p>
         </div>
       </div>
     </body>
@@ -379,25 +382,23 @@ export function buildWaitlistBroadcastEmail(params: {
       ? `<img src="${adminBase}/api/track/email-open?tid=${encodeURIComponent(params.trackingId)}" width="1" height="1" alt="" style="display:block;width:1px;height:1px;border:0;" />`
       : '';
 
-  const html = getBaseEmailTemplate(`
+  const html = getBaseEmailTemplate(
+    `
     ${openPixel}
     <p style="margin-top: 0; font-size: 16px;">${greeting}</p>
     ${paragraphs || '<p style="margin: 0 0 16px 0;"></p>'}
-    <p style="margin: 24px 0 0 0;">Un saludo,<br/><strong>El equipo de Delfín Check-in</strong></p>
     <p style="margin: 16px 0 0 0; font-size: 13px; color: #64748b;">¿Dudas? <a href="mailto:contacto@delfincheckin.com" style="color: #2563eb;">contacto@delfincheckin.com</a></p>
-  `);
+  `,
+    'Actualización de Delfín Check-in.'
+  );
 
   const text = [
     name ? `Hola ${name},` : 'Hola,',
     '',
     params.message.trim(),
     '',
-    'Un saludo,',
     'El equipo de Delfín Check-in',
-    '',
     'contacto@delfincheckin.com',
-    '',
-    'Recibes este correo porque te registraste en la lista de espera de Delfín Check-in.',
   ].join('\n');
 
   return {
