@@ -207,7 +207,7 @@ export async function POST(req: NextRequest) {
           SELECT generate_series(${check_in_date}::date, (${check_out_date}::date - INTERVAL '1 day'), '1 day')::date AS d
         )
         SELECT
-          COALESCE(SUM(COALESCE(pa.price, ${basePrice}::decimal(10,2))), 0)::decimal(12,2) AS base_amount,
+          COALESCE(SUM(COALESCE(pa.price, pa.price_override, ${basePrice}::decimal(10,2))), 0)::decimal(12,2) AS base_amount,
           COUNT(*)::int AS night_count
         FROM nights n
         LEFT JOIN property_availability pa
