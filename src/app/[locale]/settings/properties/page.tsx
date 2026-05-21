@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useTranslations } from 'next-intl';
 import { Plus, Edit, Trash2, Camera, Euro, Users, Bed, Bath, Upload, X, Image as ImageIcon, Copy, Link as LinkIcon } from 'lucide-react';
 import { TenantProperty, CreatePropertyRequest } from '@/lib/direct-reservations-types';
+import MicrositePricingCalendar from '@/components/MicrositePricingCalendar';
 
 const AMENITY_KEYS = ['wifi', 'airConditioning', 'heating', 'kitchen', 'washingMachine', 'dryer', 'pool', 'garden', 'terrace', 'parking', 'elevator', 'gym', 'spa', 'reception24h', 'dailyCleaning'] as const;
 
@@ -24,12 +25,6 @@ export default function PropertiesManagement() {
   const [copiedLink, setCopiedLink] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [slots, setSlots] = useState<{ room_id: string; room_name: string; property_id: number|null; property_name: string|null; is_placeholder: boolean }[]>([]);
-  const [priceRange, setPriceRange] = useState<{ from: string; to: string; price: string }>({
-    from: '',
-    to: '',
-    price: ''
-  });
-  const [savingDailyPrices, setSavingDailyPrices] = useState(false);
   const [formData, setFormData] = useState<CreatePropertyRequest>({
     property_name: '',
     description: '',
@@ -293,44 +288,6 @@ export default function PropertiesManagement() {
       setFormData((prev: any) => ({ ...prev, room_id: String(property.room_id) }));
     }
     setShowForm(true);
-  };
-
-  const applyDailyPrice = async () => {
-    if (!editingProperty?.id) {
-      alert(t('saveError'));
-      return;
-    }
-    const from = priceRange.from.trim();
-    const to = priceRange.to.trim();
-    const priceNum = parseFloat(priceRange.price);
-    if (!from || !to || from > to || !Number.isFinite(priceNum) || priceNum <= 0) {
-      alert('Rango o precio inválido.');
-      return;
-    }
-    setSavingDailyPrices(true);
-    try {
-      const r = await fetch('/api/tenant/property-prices', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...(tenantId ? { 'x-tenant-id': tenantId } : {}) },
-        body: JSON.stringify({
-          property_id: editingProperty.id,
-          from,
-          to,
-          price: priceNum,
-        }),
-      });
-      const d = await r.json().catch(() => ({}));
-      if (!r.ok || !d?.success) {
-        throw new Error(d?.error || 'Error guardando precios');
-      }
-      alert('Precio por día actualizado.');
-      setPriceRange({ from: '', to: '', price: '' });
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : 'Error guardando precios';
-      alert(msg);
-    } finally {
-      setSavingDailyPrices(false);
-    }
   };
 
   const handleDelete = async (propertyId: number) => {
@@ -712,57 +669,18 @@ export default function PropertiesManagement() {
                     );
                   })()}
 
-                  {/* Precios por día (override) */}
-                  {editingProperty?.id != null && (
+                  {/* Tarifas microsite — calendario */}
+                  {editingProperty?.id != null && tenantId && (
                     <div className="bg-white p-6 rounded-xl border border-blue-200 shadow-sm">
                       <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-2 flex items-center gap-2">
                         <span className="text-xl sm:text-2xl" style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>📅</span>
-                        Precio por día (microsite)
+                        {t('micrositePricing.title')}
                       </h3>
-                      <p className="text-sm text-gray-600 mb-4">
-                        Esto afecta solo a reservas del microsite. Si no defines precios por día, se usa el precio base.
-                      </p>
-                      <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-                        <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-1">Desde</label>
-                          <input
-                            type="date"
-                            value={priceRange.from}
-                            onChange={(e) => setPriceRange((p) => ({ ...p, from: e.target.value }))}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-1">Hasta</label>
-                          <input
-                            type="date"
-                            value={priceRange.to}
-                            onChange={(e) => setPriceRange((p) => ({ ...p, to: e.target.value }))}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-1">Precio (€)</label>
-                          <input
-                            type="number"
-                            min="1"
-                            step="0.01"
-                            value={priceRange.price}
-                            onChange={(e) => setPriceRange((p) => ({ ...p, price: e.target.value }))}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          />
-                        </div>
-                        <div className="flex items-end">
-                          <button
-                            type="button"
-                            onClick={applyDailyPrice}
-                            disabled={savingDailyPrices}
-                            className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300"
-                          >
-                            {savingDailyPrices ? 'Guardando…' : 'Aplicar'}
-                          </button>
-                        </div>
-                      </div>
+                      <MicrositePricingCalendar
+                        propertyId={editingProperty.id}
+                        tenantId={tenantId}
+                        basePrice={Number(formData.base_price) || Number(editingProperty.base_price) || 50}
+                      />
                     </div>
                   )}
 
