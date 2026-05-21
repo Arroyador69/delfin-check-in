@@ -1,7 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
+import { toIntlDateLocale, type Locale as AppLocale } from '@/i18n/config';
 import { ChevronLeft, ChevronRight, Euro, RefreshCw } from 'lucide-react';
 
 type DayRow = {
@@ -33,6 +34,7 @@ export default function MicrositePricingCalendar({
   basePrice,
 }: MicrositePricingCalendarProps) {
   const t = useTranslations('settings.properties.micrositePricing');
+  const locale = useLocale();
   const [viewMonth, setViewMonth] = useState(() => {
     const n = new Date();
     return new Date(n.getFullYear(), n.getMonth(), 1);
@@ -102,7 +104,10 @@ export default function MicrositePricingCalendar({
     return cells;
   }, [viewMonth]);
 
-  const monthLabel = viewMonth.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+  const monthLabel = viewMonth.toLocaleDateString(toIntlDateLocale(locale as AppLocale), {
+    month: 'long',
+    year: 'numeric',
+  });
 
   const postPrices = async (body: Record<string, unknown>) => {
     setSaving(true);
