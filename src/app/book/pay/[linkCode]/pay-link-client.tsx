@@ -3,7 +3,13 @@
 import { use, useEffect, useState } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useElements, useStripe } from '@stripe/react-stripe-js';
-import { bookFmt, getBookStrings } from '@/lib/book-guest-i18n';
+import {
+  bookFmt,
+  bookLocaleToIntl,
+  getBookStrings,
+  resolveBookLocale,
+} from '@/lib/book-guest-i18n';
+import { parseYmd } from '@/lib/date-ymd';
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
@@ -20,7 +26,10 @@ type PaymentLinkRow = {
 };
 
 function formatDate(iso: string, localeStr: string) {
-  const d = new Date(iso);
+  const p = parseYmd(iso);
+  const d = p
+    ? new Date(Date.UTC(p.y, p.m - 1, p.d, 12, 0, 0))
+    : new Date(iso);
   if (Number.isNaN(d.getTime())) return iso;
   return d.toLocaleDateString(localeStr, {
     day: 'numeric',
@@ -274,8 +283,12 @@ export default function PayLinkClient({ params }: { params: Promise<{ linkCode: 
   const [loading, setLoading] = useState(true);
   const [paid, setPaid] = useState(false);
 
-  const s = getBookStrings();
-  const localeStr = 'es-ES';
+  const bookLocale = resolveBookLocale(
+    link?.guest_locale,
+    typeof navigator !== 'undefined' ? navigator.language : 'es'
+  );
+  const s = getBookStrings(bookLocale);
+  const localeStr = bookLocaleToIntl(bookLocale);
 
   useEffect(() => {
     let cancelled = false;

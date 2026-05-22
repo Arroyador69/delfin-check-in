@@ -7,6 +7,11 @@ import { sql } from '@vercel/postgres';
 import { calculateCommission } from '@/lib/direct-reservations-utils';
 import { sqlTextArrayForAny } from '@/lib/pg-sql-params';
 import { getAcceptableReservationIdsArrayForProperty } from '@/lib/cleaning-reservation-room-match';
+import { nightsBetweenYmd } from '@/lib/date-ymd';
+import {
+  computeGuestStayAmounts,
+  sumLodgingForStay,
+} from '@/lib/microsite-booking-pricing';
 
 function corsHeaders(origin: string | null) {
   const allowedOrigins = [
@@ -105,10 +110,7 @@ export async function POST(req: NextRequest) {
       return response;
     }
 
-    // Calcular fechas y noches
-    const checkInDate = new Date(check_in_date);
-    const checkOutDate = new Date(check_out_date);
-    const nights = Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24));
+    const nights = nightsBetweenYmd(String(check_in_date), String(check_out_date));
 
     if (nights < property.minimum_nights) {
       const response = NextResponse.json(
@@ -195,38 +197,22 @@ export async function POST(req: NextRequest) {
     const cleaningFee = parseFloat(String(property.cleaning_fee || 0));
     const includedGuests = Math.max(1, parseInt(String(property.included_guests ?? Math.min(2, property.max_guests ?? 2)), 10) || 1);
     const extraGuestFee = parseFloat(String(property.extra_guest_fee || 0));
-    const extraGuests = Math.max(0, Number(guests) - includedGuests);
-    const extraGuestsAmount = extraGuests > 0 ? (extraGuestFee * extraGuests * nights) : 0;
-
-    // Precio por noche: si hay overrides por día (property_availability.price), sumamos por fecha.
-    // Mantiene compatibilidad: si no hay overrides, equivale a basePrice * nights.
-    let baseAmount = basePrice * nights;
-    try {
-      const daily = await sql`
-        WITH nights AS (
-          SELECT generate_series(${check_in_date}::date, (${check_out_date}::date - INTERVAL '1 day'), '1 day')::date AS d
-        )
-        SELECT
-          COALESCE(SUM(COALESCE(pa.price, pa.price_override, ${basePrice}::decimal(10,2))), 0)::decimal(12,2) AS base_amount,
-          COUNT(*)::int AS night_count
-        FROM nights n
-        LEFT JOIN property_availability pa
-          ON pa.property_id = ${property_id}::int
-         AND pa.date = n.d
-      `;
-      const row = daily.rows?.[0] as any;
-      const computedNights = Number(row?.night_count ?? nights);
-      const computedBase = parseFloat(String(row?.base_amount ?? baseAmount));
-      if (Number.isFinite(computedNights) && computedNights > 0) {
-        // Si por alguna razón el conteo difiere, preferimos el server-side.
-        baseAmount = Number.isFinite(computedBase) && computedBase > 0 ? computedBase : baseAmount;
-      }
-    } catch (e) {
-      // Si la tabla no existe o falla, caemos a pricing legacy
-      baseAmount = basePrice * nights;
-    }
-
-    const subtotal = baseAmount + cleaningFee + extraGuestsAmount;
+    const { baseAmount, nights: lodgingNights } = await sumLodgingForStay(
+      Number(property_id),
+      String(check_in_date),
+      String(check_out_date),
+      basePrice
+    );
+    const stay = computeGuestStayAmounts({
+      nights: lodgingNights,
+      baseAmount,
+      basePrice,
+      cleaningFee,
+      guests: Number(guests),
+      includedGuests,
+      extraGuestFee,
+    });
+    const { extraGuests, extraGuestsAmount, subtotal, uniformNightly, averageNightly } = stay;
     const { getDirectReservationCommissionRate } = await import('@/lib/plan-pricing');
     const commissionRate = property.commission_rate != null
       ? parseFloat(String(property.commission_rate))
@@ -236,21 +222,24 @@ export async function POST(req: NextRequest) {
     const commission = calculateCommission(subtotal, commissionRate, stripeFeeRate);
 
     const pricing = {
-      nights,
+      nights: lodgingNights,
       base_price: basePrice.toFixed(2),
       base_amount: baseAmount.toFixed(2),
+      average_nightly: averageNightly.toFixed(2),
+      uniform_nightly: uniformNightly,
       cleaning_fee: cleaningFee.toFixed(2),
       included_guests: includedGuests,
       extra_guest_fee: extraGuestFee.toFixed(2),
       extra_guests: extraGuests,
       extra_guests_amount: extraGuestsAmount.toFixed(2),
       subtotal: subtotal.toFixed(2),
+      guest_total: subtotal.toFixed(2),
       delfin_commission_rate: commissionRate,
       delfin_commission_amount: commission.delfin_commission_amount.toFixed(2),
       stripe_fee_amount: commission.stripe_fee_amount.toFixed(2),
       property_owner_amount: commission.property_owner_amount.toFixed(2),
-      total_amount: commission.total_amount.toFixed(2),
-      available: isAvailable
+      total_amount: subtotal.toFixed(2),
+      available: isAvailable,
     };
 
     console.log('✅ Disponibilidad verificada:', pricing);

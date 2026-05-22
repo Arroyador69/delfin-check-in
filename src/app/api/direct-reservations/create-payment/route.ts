@@ -9,6 +9,11 @@ import { getDirectReservationCommissionRate } from '@/lib/plan-pricing';
 import { getStripeServer } from '@/lib/stripe-server';
 import { sqlTextArrayForAny } from '@/lib/pg-sql-params';
 import { getAcceptableReservationIdsArrayForProperty } from '@/lib/cleaning-reservation-room-match';
+import { nightsBetweenYmd, parseYmd } from '@/lib/date-ymd';
+import {
+  computeGuestStayAmounts,
+  sumLodgingForStay,
+} from '@/lib/microsite-booking-pricing';
 
 function corsHeaders(origin: string | null) {
   const allowedOrigins = [
@@ -127,10 +132,7 @@ export async function POST(req: NextRequest) {
       return response;
     }
 
-    // Calcular fechas y noches
-    const checkInDate = new Date(check_in_date);
-    const checkOutDate = new Date(check_out_date);
-    const nights = Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24));
+    const nights = nightsBetweenYmd(String(check_in_date), String(check_out_date));
 
     if (nights < property.minimum_nights) {
       const response = NextResponse.json(
@@ -148,9 +150,22 @@ export async function POST(req: NextRequest) {
     const cleaningFee = parseFloat(String(property.cleaning_fee || 0));
     const includedGuests = Math.max(1, parseInt(String(property.included_guests ?? Math.min(2, property.max_guests ?? 2)), 10) || 1);
     const extraGuestFee = parseFloat(String(property.extra_guest_fee || 0));
-    const extraGuests = Math.max(0, Number(guests || 1) - includedGuests);
-    const extraGuestsAmount = extraGuests > 0 ? (extraGuestFee * extraGuests * nights) : 0;
-    const subtotal = (basePrice * nights) + cleaningFee + extraGuestsAmount;
+    const { baseAmount, nights: lodgingNights } = await sumLodgingForStay(
+      Number(property_id),
+      String(check_in_date),
+      String(check_out_date),
+      basePrice
+    );
+    const stay = computeGuestStayAmounts({
+      nights: lodgingNights,
+      baseAmount,
+      basePrice,
+      cleaningFee,
+      guests: Number(guests || 1),
+      includedGuests,
+      extraGuestFee,
+    });
+    const { extraGuests, extraGuestsAmount, subtotal } = stay;
     const commissionRate = property.commission_rate != null
       ? parseFloat(String(property.commission_rate))
       : getDirectReservationCommissionRate(property.tenant_plan_type);
@@ -223,7 +238,7 @@ export async function POST(req: NextRequest) {
     console.log('💳 [CREATE PAYMENT] Preparando Payment Intent sin crear reserva aún:', {
       reservationCode,
       amount: commission.total_amount,
-      nights
+      nights: lodgingNights,
     });
 
     // Crear Payment Intent en Stripe
@@ -234,14 +249,23 @@ export async function POST(req: NextRequest) {
       currency: 'eur',
       reservationCode,
       guestEmail: guest_email,
-      nights,
-      guests
+      nights: lodgingNights,
+      guests,
     });
 
     // Crear Payment Intent en Stripe (modo test)
     // IMPORTANTE: Guardamos toda la info en metadata para crear la reserva después del pago
     // Calcular días hasta check-in para determinar si retener el pago
-    const daysUntilCheckIn = Math.ceil((checkInDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+    const checkInParts = parseYmd(String(check_in_date));
+    const checkInUtc = checkInParts
+      ? Date.UTC(checkInParts.y, checkInParts.m - 1, checkInParts.d)
+      : Date.now();
+    const todayUtc = Date.UTC(
+      new Date().getFullYear(),
+      new Date().getMonth(),
+      new Date().getDate()
+    );
+    const daysUntilCheckIn = Math.ceil((checkInUtc - todayUtc) / 86400000);
     const shouldHoldPayment = daysUntilCheckIn > 0; // Retener si el check-in es en el futuro
 
     const applicationFeeAmount = Math.round(commission.delfin_commission_amount * 100);
@@ -264,9 +288,10 @@ export async function POST(req: NextRequest) {
         guest_nationality: guest_nationality || '',
         check_in_date: check_in_date,
         check_out_date: check_out_date,
-        nights: nights.toString(),
+        nights: lodgingNights.toString(),
         guests: guests.toString(),
         base_price: basePrice.toString(),
+        base_amount: baseAmount.toString(),
         cleaning_fee: cleaningFee.toString(),
         included_guests: includedGuests.toString(),
         extra_guest_fee: extraGuestFee.toString(),
@@ -344,7 +369,8 @@ export async function POST(req: NextRequest) {
       currency: 'eur',
       breakdown: {
         subtotal: subtotal,
-        nights: nights,
+        nights: lodgingNights,
+        base_amount: baseAmount,
         base_price: property.base_price,
         cleaning_fee: property.cleaning_fee || 0,
         delfin_commission: commission.delfin_commission_amount,

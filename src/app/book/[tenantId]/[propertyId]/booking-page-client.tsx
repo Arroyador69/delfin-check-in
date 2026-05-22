@@ -1,11 +1,23 @@
 'use client';
 
 import { useState, useEffect, use } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Users, Euro, CreditCard, CheckCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { TenantProperty } from '@/lib/direct-reservations-types';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
-import { type BookGuestStrings, bookFmt, getBookStrings } from '@/lib/book-guest-i18n';
+import {
+  type BookGuestStrings,
+  type BookLocale,
+  bookFmt,
+  bookLocaleToIntl,
+  formatEuroAmount,
+  getBookStrings,
+  guestPayableTotal,
+  lodgingLineLabel,
+  resolveBookLocale,
+} from '@/lib/book-guest-i18n';
+import { formatDateYmdLocal, isYmdBeforeToday } from '@/lib/date-ymd';
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
@@ -14,6 +26,7 @@ interface BookingPageClientProps {
     tenantId: string;
     propertyId: string;
   }>;
+  initialLocale?: string;
 }
 
 function PaymentForm({
@@ -91,8 +104,7 @@ function PaymentForm({
     }
   };
 
-  const totalStr =
-    pricing?.total_amount != null ? String(pricing.total_amount) : '—';
+  const totalStr = pricing ? guestPayableTotal(pricing) : '—';
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -214,8 +226,8 @@ function MonthGrid({
   for (let i = 0; i < startWeekday; i++) cells.push({ d: null });
   for (let day = 1; day <= daysInMonth; day++) {
     const d = new Date(month.getFullYear(), month.getMonth(), day);
-    const iso = d.toISOString().split('T')[0];
-    const disabled = blocked.has(iso) || iso < new Date().toISOString().split('T')[0];
+    const iso = formatDateYmdLocal(d);
+    const disabled = blocked.has(iso) || isYmdBeforeToday(iso);
     const inRange = Boolean(selectedStart && selectedEnd && iso > selectedStart && iso < selectedEnd);
     const isStart = selectedStart === iso;
     const isEnd = selectedEnd === iso;
@@ -285,7 +297,7 @@ function DateRangePicker({
     const start = new Date(a);
     const end = new Date(b);
     for (let d = new Date(start); d < end; d.setDate(d.getDate() + 1)) {
-      const iso = d.toISOString().split('T')[0];
+      const iso = formatDateYmdLocal(d);
       if (blockedDates.has(iso)) return true;
     }
     return false;
@@ -378,11 +390,16 @@ function DateRangePicker({
   );
 }
 
-export default function BookingPageClient({ params }: BookingPageClientProps) {
+export default function BookingPageClient({ params, initialLocale }: BookingPageClientProps) {
   const resolvedParams = use(params);
   const { tenantId, propertyId } = resolvedParams;
-  const s = getBookStrings();
-  const localeStr = 'es-ES';
+  const searchParams = useSearchParams();
+  const langParam = searchParams.get('lang') ?? initialLocale;
+  const [bookLocale] = useState<BookLocale>(() =>
+    resolveBookLocale(langParam, typeof navigator !== 'undefined' ? navigator.language : 'es')
+  );
+  const s = getBookStrings(bookLocale);
+  const localeStr = bookLocaleToIntl(bookLocale);
 
   const [property, setProperty] = useState<TenantProperty | null>(null);
   const [loading, setLoading] = useState(true);
@@ -401,11 +418,16 @@ export default function BookingPageClient({ params }: BookingPageClientProps) {
   });
   const [pricing, setPricing] = useState<{
     nights?: number;
-    total_amount?: number;
+    total_amount?: number | string;
+    subtotal?: number | string;
+    guest_total?: number | string;
     extra_guests?: number;
     extra_guest_fee?: number;
     extra_guests_amount?: number;
     base_amount?: number | string;
+    base_price?: number | string;
+    uniform_nightly?: boolean;
+    average_nightly?: number | string;
     reservation_code?: string;
   } | null>(null);
   const [blockedDates, setBlockedDates] = useState<Set<string>>(new Set());
@@ -431,8 +453,8 @@ export default function BookingPageClient({ params }: BookingPageClientProps) {
         const from = new Date();
         const to = new Date();
         to.setMonth(to.getMonth() + 12);
-        const fromStr = from.toISOString().split('T')[0];
-        const toStr = to.toISOString().split('T')[0];
+        const fromStr = formatDateYmdLocal(from);
+        const toStr = formatDateYmdLocal(to);
         try {
           const calRes = await fetch(
             `/api/public/availability-calendar?property_id=${propertyId}&from=${fromStr}&to=${toStr}`
@@ -585,21 +607,8 @@ export default function BookingPageClient({ params }: BookingPageClientProps) {
                   <h3 className="font-semibold text-blue-900 mb-2">{s.priceSummary}</h3>
                   <div className="space-y-1 text-sm">
                     <div className="flex justify-between">
-                      <span>
-                        {bookFmt(s.nightsX, {
-                          n: pricing.nights ?? 0,
-                          price: property.base_price,
-                        })}
-                      </span>
-                      <span>
-                        {(() => {
-                          const raw = (pricing as any).base_amount;
-                          const n = typeof raw === 'string' ? parseFloat(raw) : Number(raw);
-                          if (Number.isFinite(n) && n > 0) return n.toFixed(2);
-                          return ((pricing.nights ?? 0) * Number(property.base_price)).toFixed(2);
-                        })()}
-                        €
-                      </span>
+                      <span>{lodgingLineLabel(s, pricing, Number(property.base_price))}</span>
+                      <span>{formatEuroAmount(pricing.base_amount)}€</span>
                     </div>
                     {pricing.extra_guests && Number(pricing.extra_guests) > 0 && (
                       <div className="flex justify-between">
@@ -622,7 +631,7 @@ export default function BookingPageClient({ params }: BookingPageClientProps) {
                     )}
                     <div className="flex justify-between font-semibold border-t pt-2">
                       <span>{s.total}</span>
-                      <span>{pricing.total_amount}€</span>
+                      <span>{guestPayableTotal(pricing)}€</span>
                     </div>
                   </div>
                 </div>

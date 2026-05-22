@@ -11,12 +11,15 @@ function BookingFallback() {
 
 export default async function BookPropertyPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ tenantId: string; propertyId: string }>;
+  searchParams: Promise<{ lang?: string }>;
 }) {
+  const { lang } = await searchParams;
   return (
     <Suspense fallback={<BookingFallback />}>
-      <BookingPageClient params={params} />
+      <BookingPageClient params={params} initialLocale={lang} />
     </Suspense>
   );
 }

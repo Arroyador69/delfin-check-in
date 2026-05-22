@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { toIntlDateLocale, type Locale as AppLocale } from '@/i18n/config';
+import { formatDateYmdLocal } from '@/lib/date-ymd';
 import { ChevronLeft, ChevronRight, Euro, RefreshCw } from 'lucide-react';
 
 type DayRow = {
@@ -13,7 +14,7 @@ type DayRow = {
 };
 
 function formatYmd(d: Date): string {
-  return d.toISOString().slice(0, 10);
+  return formatDateYmdLocal(d);
 }
 
 function monthBounds(view: Date): { from: string; to: string } {
