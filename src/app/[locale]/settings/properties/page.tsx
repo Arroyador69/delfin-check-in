@@ -5,6 +5,8 @@ import { useTranslations } from 'next-intl';
 import { Plus, Edit, Trash2, Camera, Euro, Users, Bed, Bath, Upload, X, Image as ImageIcon, Copy, Link as LinkIcon } from 'lucide-react';
 import { TenantProperty, CreatePropertyRequest } from '@/lib/direct-reservations-types';
 import MicrositePricingCalendar from '@/components/MicrositePricingCalendar';
+import PropertyPhotosEditor from '@/components/PropertyPhotosEditor';
+import { preparePropertyImageFile } from '@/lib/property-image-upload';
 
 const AMENITY_KEYS = ['wifi', 'airConditioning', 'heating', 'kitchen', 'washingMachine', 'dryer', 'pool', 'garden', 'terrace', 'parking', 'elevator', 'gym', 'spa', 'reception24h', 'dailyCleaning'] as const;
 
@@ -130,40 +132,33 @@ export default function PropertiesManagement() {
 
     setUploadingImages(true);
     const newPhotos: string[] = [];
+    let added = 0;
 
     try {
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        
-        // Validar tipo de archivo
-        if (!file.type.startsWith('image/')) {
-          alert(t('invalidImage', { name: file.name }));
+        const prepared = await preparePropertyImageFile(file);
+        if (!prepared.ok) {
+          if (prepared.reason === 'invalid_type') {
+            alert(t('invalidImage', { name: file.name }));
+          } else if (prepared.reason === 'too_large') {
+            alert(t('imageTooBig', { name: file.name }));
+          } else {
+            alert(t('imageDecodeFailed', { name: file.name }));
+          }
           continue;
         }
-
-        // Validar tamaño (máximo 5MB)
-        if (file.size > 5 * 1024 * 1024) {
-          alert(t('imageTooBig', { name: file.name }));
-          continue;
-        }
-
-        // Convertir a base64
-        const reader = new FileReader();
-        const base64 = await new Promise<string>((resolve, reject) => {
-          reader.onload = () => resolve(reader.result as string);
-          reader.onerror = reject;
-          reader.readAsDataURL(file);
-        });
-
-        newPhotos.push(base64);
+        newPhotos.push(prepared.dataUrl);
+        added++;
       }
 
-      setFormData({
-        ...formData,
-        photos: [...(formData.photos || []), ...newPhotos]
-      });
+      if (added > 0) {
+        setFormData({
+          ...formData,
+          photos: [...(formData.photos || []), ...newPhotos],
+        });
+      }
 
-      // Limpiar el input
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
@@ -175,10 +170,8 @@ export default function PropertiesManagement() {
     }
   };
 
-  const removeImage = (index: number) => {
-    const newPhotos = [...(formData.photos || [])];
-    newPhotos.splice(index, 1);
-    setFormData({ ...formData, photos: newPhotos });
+  const setPhotos = (photos: string[]) => {
+    setFormData({ ...formData, photos });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -564,27 +557,10 @@ export default function PropertiesManagement() {
                       <span className="text-xs sm:text-sm text-gray-500 font-normal">{t('form.imagesLimit')}</span>
                     </label>
                     
-                    {/* Vista previa de imágenes */}
-                    {formData.photos && formData.photos.length > 0 && (
-                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4 mb-4">
-                        {formData.photos.map((photo, index) => (
-                          <div key={index} className="relative group">
-                            <img 
-                              src={photo} 
-                              alt={`Imagen ${index + 1}`}
-                              className="w-full h-32 sm:h-40 object-cover rounded-lg border-2 border-blue-200"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => removeImage(index)}
-                              className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
-                            >
-                              <X className="w-4 h-4" />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                    <PropertyPhotosEditor
+                      photos={(formData.photos || []) as string[]}
+                      onChange={setPhotos}
+                    />
                     
                     {/* Botón de subida */}
                     <div className="flex justify-center">
