@@ -5,12 +5,14 @@ import { buildRhXml, RhSolicitud } from '@/lib/mir-xml-rh';
 import { insertMirComunicacion, MirComunicacion } from '@/lib/mir-db';
 import { sql } from '@vercel/postgres';
 import { logError } from '@/lib/error-logger';
+import { resolveMirTipoPago } from '@/lib/mir-tipo-pago';
 
 export async function POST(req: NextRequest) {
   let json: any = undefined;
   let tenantId = 'default';
   let referenciaNorm = 'ERROR-' + Date.now();
   let loadedFromDb = false;
+  let dbRegistrationData: unknown = null;
   let roomIdForMir: string | null = null;
   
   try {
@@ -310,6 +312,7 @@ export async function POST(req: NextRequest) {
         const data = row?.data as any | undefined;
         if (row) {
           loadedFromDb = true;
+          dbRegistrationData = data;
           fechaEntrada =
             fechaEntrada ??
             row.fecha_entrada ??
@@ -341,8 +344,16 @@ export async function POST(req: NextRequest) {
             data.huespedes ??
             data?.comunicaciones?.[0]?.personas;
 
-          tipoPago = tipoPago ?? data.tipoPago ?? data.pago?.tipoPago;
-          pago = pago ?? data.pago;
+          tipoPago =
+            tipoPago ??
+            data.tipoPago ??
+            data.pago?.tipoPago ??
+            data.comunicaciones?.[0]?.contrato?.pago?.tipoPago ??
+            data.comunicaciones?.[0]?.contrato?.tipoPago;
+          pago =
+            pago ??
+            data.pago ??
+            data.comunicaciones?.[0]?.contrato?.pago;
         }
       } catch (e) {
         console.warn('⚠️ No se pudo completar payload desde guest_registrations:', e);
@@ -403,28 +414,12 @@ export async function POST(req: NextRequest) {
     const fechaSalidaDT = asDateTime(fechaSalida);
     const codigoEstablecimientoFinal = config.codigoEstablecimiento || config.codigoArrendador || '0000256653';
 
-    // Parsear tipo de pago SOLO del JSON según normas MIR (pagoType del XSD)
-    // pagoType tiene: tipoPago (obligatorio), fechaPago (opcional), medioPago (opcional), etc.
-    let tipoPagoFinal =
-      tipoPago ||
-      pago?.tipoPago ||
-      contratoPayload?.tipoPago ||
-      contratoPayload?.tipoPagoCode ||
-      contratoPayload?.pago?.tipoPago ||
-      contratoPayload?.pago?.tipoPagoCode;
-    
-    // Si no viene en el JSON, usar 'EFECT' por defecto según normas MIR
-    if (!tipoPagoFinal) {
-      console.warn('⚠️ tipoPago no viene en el JSON, usando "EFECT" por defecto');
-      tipoPagoFinal = 'EFECT';
-    }
-    
-    // Normalizar tipoPago según catálogo MIR (valores válidos según normas)
-    // NOTA: Los valores deben coincidir exactamente con el catálogo MIR
-    const tipoPagoNorm = tipoPagoFinal === 'EFECT' || tipoPagoFinal === 'EFECTIVO' ? 'EFECT' :
-                        tipoPagoFinal === 'TARJ' || tipoPagoFinal === 'TARJETA' || tipoPagoFinal === 'CARD' ? 'TARJ' :
-                        tipoPagoFinal === 'TRANSF' || tipoPagoFinal === 'TRANSFERENCIA' ? 'TRANSF' :
-                        tipoPagoFinal; // Usar el valor tal cual si no coincide con los anteriores
+    // tipoPago: payload, contrato anidado o registro guardado (comunicaciones[].contrato.pago)
+    const tipoPagoNorm = resolveMirTipoPago([
+      { tipoPago, pago, contrato: contratoPayload },
+      json,
+      dbRegistrationData,
+    ]);
 
     // Preparar datos para PV (Parte de Hospedaje)
     const datosPV: PvSolicitud = {
