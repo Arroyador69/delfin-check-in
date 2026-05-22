@@ -200,12 +200,19 @@ export default function PropertiesManagement() {
       const payload: Record<string, unknown> = {
         ...formData,
         photos: safePhotos,
-        // Slot: requerido en creación; opcional en edición (para re-asignar)
-        room_id: (formData as any).room_id,
         amenities: (formData.amenities || []).map((a) =>
           AMENITY_KEYS.includes(a as typeof AMENITY_KEYS[number]) ? t(`amenitiesList.${a}`) : a
-        )
+        ),
       };
+      const formRoomId = String((formData as { room_id?: string }).room_id || '').trim();
+      const existingRoomId = editingProperty?.room_id
+        ? String(editingProperty.room_id).trim()
+        : '';
+      if (!isUpdate) {
+        payload.room_id = formRoomId;
+      } else if (formRoomId && formRoomId !== existingRoomId) {
+        payload.room_id = formRoomId;
+      }
       const response = await fetch(url, {
         method,
         headers: {
@@ -278,15 +285,9 @@ export default function PropertiesManagement() {
       security_deposit: property.security_deposit,
       minimum_nights: property.minimum_nights,
       maximum_nights: property.maximum_nights,
-      availability_rules: property.availability_rules || {}
-    });
-    if (property.room_id) {
-      setFormData((prev: any) => ({ ...prev, room_id: String(property.room_id) }));
-    }
-    // Si es placeholder (id null), permitir seleccionar el slot y guardar como creación.
-    if (property.id == null && property.room_id) {
-      setFormData((prev: any) => ({ ...prev, room_id: String(property.room_id) }));
-    }
+      availability_rules: property.availability_rules || {},
+      ...(property.room_id ? { room_id: String(property.room_id) } : {}),
+    } as CreatePropertyRequest & { room_id?: string });
     setShowForm(true);
   };
 
