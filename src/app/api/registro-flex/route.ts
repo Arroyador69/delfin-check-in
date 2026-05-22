@@ -680,6 +680,12 @@ export async function POST(req: NextRequest) {
         referencia: reserva_ref,
         fechaEntrada: c.entrada.split('T')[0],
         fechaSalida: c.salida.split('T')[0],
+        tipoPago: c.tipoPago,
+        pago: {
+          tipoPago: c.tipoPago,
+          fechaPago: c.fechaPago || undefined,
+          medioPago: c.medioPago || undefined,
+        },
         ...(room_id ? { room_id } : {}),
         personas: personasDB.map((persona: any) => ({
           nombre: persona.nombre,
