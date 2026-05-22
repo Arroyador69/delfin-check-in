@@ -319,10 +319,13 @@ export async function POST(req: NextRequest) {
         SELECT 1
         FROM "Room" r
         WHERE r.id::text = ${roomId}::text
-          AND r."lodgingId" = ${lodgingId}::text
+          AND (
+            r."lodgingId"::text = ${lodgingId}::text
+            OR r."lodgingId"::text = ${tenantId}::text
+          )
         LIMIT 1
       `;
-      if ((roomExists as any).rowCount <= 0) {
+      if ((roomExists as { rowCount?: number }).rowCount <= 0) {
         return NextResponse.json(
           { success: false, error: 'El slot (room_id) no existe o no pertenece a este alojamiento' },
           { status: 400 }
@@ -470,34 +473,54 @@ export async function PUT(req: NextRequest) {
       );
     }
 
-    // Si viene room_id, actualizar mapping del slot (sin romper schema legacy donde Room.id es UUID/texto)
+    // Slot (room_id): solo validar/cambiar si el cliente envía un id distinto al mapping actual
     const rawRoomId = data?.room_id;
-    const roomId = rawRoomId == null ? '' : String(rawRoomId).trim();
-    if (roomId) {
+    const roomId = rawRoomId == null || String(rawRoomId).trim() === '' ? '' : String(rawRoomId).trim();
+
+    let currentRoomId = '';
+    try {
+      const cur = await sql`
+        SELECT room_id::text AS room_id
+        FROM property_room_map
+        WHERE tenant_id = ${tenantId}::uuid AND property_id = ${propertyId}::int
+        LIMIT 1
+      `;
+      currentRoomId = cur.rows[0]?.room_id ? String(cur.rows[0].room_id) : '';
+    } catch (e) {
+      console.warn('⚠️ No se pudo leer mapping actual de room_id:', e);
+    }
+
+    if (roomId && roomId !== currentRoomId) {
       const tenant = (await getTenantById(tenantId)) as ({ lodging_id?: string | null } & Record<string, unknown>) | null;
       const lodgingId =
-        tenant?.lodging_id && String(tenant.lodging_id).trim() !== '' ? String(tenant.lodging_id) : String(tenantId);
+        tenant?.lodging_id && String(tenant.lodging_id).trim() !== ''
+          ? String(tenant.lodging_id)
+          : String(tenantId);
 
-      // Validar que el slot existe y pertenece al lodging del tenant
+      let roomValid = false;
       try {
         const roomExists = await sql`
           SELECT 1
           FROM "Room" r
           WHERE r.id::text = ${roomId}::text
-            AND r."lodgingId" = ${lodgingId}::text
+            AND (
+              r."lodgingId"::text = ${lodgingId}::text
+              OR r."lodgingId"::text = ${tenantId}::text
+            )
           LIMIT 1
         `;
-        if ((roomExists as any).rowCount <= 0) {
-          return NextResponse.json(
-            { success: false, error: 'El slot (room_id) no existe o no pertenece a este alojamiento' },
-            { status: 400 }
-          );
-        }
+        roomValid = ((roomExists as { rowCount?: number }).rowCount ?? 0) > 0;
       } catch (e) {
         console.warn('⚠️ No se pudo validar room_id contra Room:', e);
       }
 
-      // Evitar que dos propiedades usen el mismo slot
+      if (!roomValid) {
+        return NextResponse.json(
+          { success: false, error: 'El slot (room_id) no existe o no pertenece a este alojamiento' },
+          { status: 400 }
+        );
+      }
+
       const slotTaken = await sql`
         SELECT property_id
         FROM property_room_map
