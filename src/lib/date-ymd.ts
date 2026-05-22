@@ -31,3 +31,14 @@ export function ymdTodayLocal(): string {
 export function isYmdBeforeToday(ymd: string): boolean {
   return ymd < ymdTodayLocal();
 }
+
+/** Devuelve [desde, hasta] en orden cronológico (inclusive). */
+export function normalizeYmdRange(a: string, b: string): { from: string; to: string } {
+  if (a <= b) return { from: a, to: b };
+  return { from: b, to: a };
+}
+
+export function isYmdInRange(date: string, from: string, to: string): boolean {
+  const { from: f, to: t } = normalizeYmdRange(from, to);
+  return date >= f && date <= t;
+}

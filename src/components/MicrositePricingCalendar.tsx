@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { toIntlDateLocale, type Locale as AppLocale } from '@/i18n/config';
-import { formatDateYmdLocal } from '@/lib/date-ymd';
+import { formatDateYmdLocal, isYmdInRange, normalizeYmdRange } from '@/lib/date-ymd';
 import { ChevronLeft, ChevronRight, Euro, RefreshCw } from 'lucide-react';
 
 type DayRow = {
@@ -46,6 +46,8 @@ export default function MicrositePricingCalendar({
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [rangeFrom, setRangeFrom] = useState<string | null>(null);
+  const [rangeTo, setRangeTo] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [dayPriceInput, setDayPriceInput] = useState('');
 
@@ -193,15 +195,41 @@ export default function MicrositePricingCalendar({
     setSelectedDate(null);
   };
 
-  const openDay = (date: string) => {
-    const row = priceByDate.get(date);
-    setSelectedDate(date);
-    setDayPriceInput(
-      row?.is_override ? String(row.effective_price) : String(loadedBase || basePrice)
-    );
+  const applyRangeToFields = (from: string, to: string) => {
+    const { from: f, to: t } = normalizeYmdRange(from, to);
+    setRangeFrom(f);
+    setRangeTo(t);
+    setRuleFrom(f);
+    setRuleTo(t);
+  };
+
+  const handleDayClick = (date: string) => {
     setMessage('');
     setError('');
+
+    if (!rangeFrom || (rangeFrom && rangeTo)) {
+      setRangeFrom(date);
+      setRangeTo(null);
+      applyRangeToFields(date, date);
+      const row = priceByDate.get(date);
+      setSelectedDate(date);
+      setDayPriceInput(
+        row?.is_override ? String(row.effective_price) : String(loadedBase || basePrice)
+      );
+      return;
+    }
+
+    applyRangeToFields(rangeFrom, date);
+    setRangeTo(normalizeYmdRange(rangeFrom, date).to);
+    setSelectedDate(null);
   };
+
+  const rangeLabel =
+    rangeFrom && rangeTo
+      ? `${rangeFrom} → ${rangeTo}`
+      : rangeFrom
+        ? `${rangeFrom} → …`
+        : '';
 
   return (
     <div className="space-y-5">
@@ -251,6 +279,12 @@ export default function MicrositePricingCalendar({
         </button>
       </div>
 
+      <p className="text-xs text-gray-600 mb-2">{t('calendarRangeHint')}</p>
+      {rangeFrom && (
+        <p className="text-sm font-medium text-blue-900 mb-2">
+          {t('calendarRangeSelected')}: <span className="font-mono">{rangeLabel}</span>
+        </p>
+      )}
       <div className="flex flex-wrap gap-3 text-xs text-gray-600 mb-1">
         <span className="inline-flex items-center gap-1">
           <span className="w-3 h-3 rounded bg-white border border-gray-300" />
@@ -259,6 +293,10 @@ export default function MicrositePricingCalendar({
         <span className="inline-flex items-center gap-1">
           <span className="w-3 h-3 rounded bg-blue-100 border border-blue-400" />
           {t('legendCustom')}
+        </span>
+        <span className="inline-flex items-center gap-1">
+          <span className="w-3 h-3 rounded bg-indigo-100 border border-indigo-400" />
+          {t('legendRange')}
         </span>
       </div>
 
@@ -276,18 +314,26 @@ export default function MicrositePricingCalendar({
             const row = priceByDate.get(cell.date);
             const isCustom = row?.is_override;
             const price = row?.effective_price ?? loadedBase ?? basePrice;
+            const isRangeStart = rangeFrom === cell.date;
+            const isRangeEnd = rangeTo === cell.date;
+            const inRange =
+              rangeFrom &&
+              rangeTo &&
+              isYmdInRange(cell.date, rangeFrom, rangeTo);
             const isSelected = selectedDate === cell.date;
             return (
               <button
                 key={cell.date}
                 type="button"
-                onClick={() => openDay(cell.date!)}
+                onClick={() => handleDayClick(cell.date!)}
                 className={`min-h-[52px] rounded-lg border p-1 text-left transition-all hover:ring-2 hover:ring-blue-300 ${
-                  isSelected
+                  isSelected || isRangeStart || isRangeEnd
                     ? 'ring-2 ring-blue-500 border-blue-500 bg-blue-50'
-                    : isCustom
-                      ? 'bg-blue-50 border-blue-300'
-                      : 'bg-white border-gray-200'
+                    : inRange
+                      ? 'bg-indigo-50 border-indigo-300'
+                      : isCustom
+                        ? 'bg-blue-50 border-blue-300'
+                        : 'bg-white border-gray-200'
                 }`}
               >
                 <div className="text-[10px] sm:text-xs font-semibold text-gray-600">
