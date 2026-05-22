@@ -278,7 +278,21 @@
     "saving": "Enregistrement…",
     "dash": "—",
     "dashboardLinkTitle": "Support technique (clients)",
-    "dashboardLinkDesc": "Voir et gérer les incidents des établissements"
+    "dashboardLinkDesc": "Voir et gérer les incidents des établissements",
+    "updatedAtLabel": "Mis à jour",
+    "conversationTitle": "Conversation",
+    "noMessagesYet": "Aucun message supplémentaire dans le fil.",
+    "replyLabel": "Répondre à l'établissement (notification)",
+    "replyPlaceholder": "Écrivez votre réponse…",
+    "sendReply": "Envoyer la réponse",
+    "closeDetail": "Fermer",
+    "openErrorTitle": "Impossible d'ouvrir l'incident",
+    "openErrorInvalidId": "Identifiant d'incident non valide.",
+    "openErrorGeneric": "Impossible de charger le détail. Réessayez.",
+    "openErrorNetwork": "Erreur réseau lors du chargement.",
+    "replyError": "Impossible d'envoyer la réponse.",
+    "saveError": "Impossible d'enregistrer les modifications.",
+    "openTicketAria": "Ouvrir l'incident et voir la conversation"
   },
   "dashboard": {
     "title": "Delfín Check-in",

@@ -278,7 +278,21 @@
     "saving": "Saving…",
     "dash": "—",
     "dashboardLinkTitle": "Technical support (customers)",
-    "dashboardLinkDesc": "View and manage property tickets"
+    "dashboardLinkDesc": "View and manage property tickets",
+    "updatedAtLabel": "Updated",
+    "conversationTitle": "Conversation",
+    "noMessagesYet": "No additional messages in the thread.",
+    "replyLabel": "Reply to the property (bell notification)",
+    "replyPlaceholder": "Write your reply…",
+    "sendReply": "Send reply",
+    "closeDetail": "Close",
+    "openErrorTitle": "Could not open ticket",
+    "openErrorInvalidId": "Invalid ticket identifier.",
+    "openErrorGeneric": "Could not load details. Try again or check logs.",
+    "openErrorNetwork": "Network error while loading the ticket.",
+    "replyError": "Could not send reply.",
+    "saveError": "Could not save changes.",
+    "openTicketAria": "Open ticket and view conversation"
   },
   "dashboard": {
     "title": "Delfín Check-in",

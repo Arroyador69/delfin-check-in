@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
   LifeBuoy,
@@ -9,13 +9,19 @@ import {
   ChevronRight,
   X,
   Send,
+  MessageSquare,
 } from 'lucide-react';
 import { useClientTranslations, getCurrentLocale } from '@/hooks/useClientTranslations';
 import type { Locale } from '@/i18n/config';
+import {
+  isValidTicketUuid,
+  normalizeSupportTicketStatus,
+} from '@/lib/support-ticket-status';
 
 type TicketRow = {
   id: string;
   ticket_code?: string | null;
+  body?: string;
   tenant_id: string;
   tenant_name: string;
   tenant_email: string;
@@ -68,6 +74,7 @@ export default function SuperadminSupportPage() {
   const [saving, setSaving] = useState(false);
   const [reply, setReply] = useState('');
   const [sendingReply, setSendingReply] = useState(false);
+  const [openError, setOpenError] = useState<string | null>(null);
   const [dateLocale, setDateLocale] = useState(DATE_LOCALE.es);
 
   useEffect(() => {
@@ -79,10 +86,12 @@ export default function SuperadminSupportPage() {
       ? tSettings(`support.categories.${key}`)
       : key;
 
-  const formatStatus = (key: string) =>
-    STATUS_EDIT_KEYS.includes(key as (typeof STATUS_EDIT_KEYS)[number])
-      ? tSettings(`support.status.${key}`)
+  const formatStatus = (key: string) => {
+    const normalized = normalizeSupportTicketStatus(key);
+    return STATUS_EDIT_KEYS.includes(normalized as (typeof STATUS_EDIT_KEYS)[number])
+      ? tSettings(`support.status.${normalized}`)
       : key;
+  };
 
   const load = async () => {
     setLoading(true);
@@ -104,23 +113,59 @@ export default function SuperadminSupportPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- reload al cambiar filtro
   }, [filter]);
 
-  const openDetail = async (id: string) => {
+  const closeDetail = () => {
+    setDetail(null);
+    setOpenError(null);
+    setDetailMessages([]);
+    setReply('');
+  };
+
+  const openDetail = useCallback(async (id: string) => {
+    const ticketId = String(id || '').trim();
+    if (!ticketId) {
+      setOpenError(t('openErrorInvalidId'));
+      setDetail(null);
+      return;
+    }
+    if (!isValidTicketUuid(ticketId)) {
+      setOpenError(t('openErrorInvalidId'));
+      setDetail(null);
+      return;
+    }
+
     setDetailLoading(true);
     setDetail(null);
     setDetailMessages([]);
+    setOpenError(null);
     try {
-      const res = await fetch(`/api/superadmin/support-tickets/${id}`, { credentials: 'include' });
-      const data = await res.json();
-      if (data.success && data.ticket) {
-        setDetail(data.ticket);
-        setNotes(data.ticket.superadmin_notes || '');
-        setStatusEdit(data.ticket.status);
-        setDetailMessages(Array.isArray(data.messages) ? data.messages : []);
+      const res = await fetch(
+        `/api/superadmin/support-tickets/${encodeURIComponent(ticketId)}`,
+        { credentials: 'include' }
+      );
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.success || !data.ticket) {
+        setOpenError(data.error || data.details || t('openErrorGeneric'));
+        return;
       }
+      const ticket = data.ticket as TicketDetail;
+      setDetail(ticket);
+      setNotes(ticket.superadmin_notes || '');
+      setStatusEdit(normalizeSupportTicketStatus(ticket.status));
+      setDetailMessages(Array.isArray(data.messages) ? data.messages : []);
+    } catch {
+      setOpenError(t('openErrorNetwork'));
     } finally {
       setDetailLoading(false);
     }
-  };
+  }, [t]);
+
+  useEffect(() => {
+    const ticketParam = new URLSearchParams(window.location.search).get('ticket')?.trim();
+    if (ticketParam && isValidTicketUuid(ticketParam)) {
+      openDetail(ticketParam);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- deep link una vez al montar
+  }, []);
 
   const sendReply = async () => {
     if (!detail) return;
@@ -128,15 +173,21 @@ export default function SuperadminSupportPage() {
     if (text.length < 2) return;
     setSendingReply(true);
     try {
-      const res = await fetch(`/api/superadmin/support-tickets/${detail.id}`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text }),
-      });
-      if (res.ok) {
+      const res = await fetch(
+        `/api/superadmin/support-tickets/${encodeURIComponent(detail.id)}`,
+        {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: text }),
+        }
+      );
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.success) {
         setReply('');
         openDetail(detail.id);
+      } else {
+        setOpenError(data.error || t('replyError'));
       }
     } finally {
       setSendingReply(false);
@@ -145,15 +196,20 @@ export default function SuperadminSupportPage() {
 
   const saveDetail = async () => {
     if (!detail) return;
-    setSaving(true);
+      setSaving(true);
     try {
-      await fetch(`/api/superadmin/support-tickets/${detail.id}`, {
+      const res = await fetch(`/api/superadmin/support-tickets/${encodeURIComponent(detail.id)}`, {
         method: 'PATCH',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: statusEdit, superadmin_notes: notes }),
       });
-      setDetail(null);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.success) {
+        setOpenError(data.error || t('saveError'));
+        return;
+      }
+      closeDetail();
       load();
     } finally {
       setSaving(false);
@@ -232,7 +288,28 @@ export default function SuperadminSupportPage() {
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {tickets.map((tk) => (
-                  <tr key={tk.id} className="hover:bg-slate-50">
+                  <tr
+                    key={tk.id}
+                    className="hover:bg-slate-50 cursor-pointer focus-within:bg-slate-50"
+                    onClick={() => {
+                      if (!isValidTicketUuid(tk.id)) {
+                        setOpenError(t('openErrorInvalidId'));
+                        setDetail(null);
+                        setDetailLoading(false);
+                        return;
+                      }
+                      openDetail(tk.id);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        openDetail(tk.id);
+                      }
+                    }}
+                    tabIndex={0}
+                    role="button"
+                    aria-label={`${t('openTicketAria')}: ${tk.subject}`}
+                  >
                     <td className="px-4 py-3">
                       <div className="font-medium text-slate-900">{tk.tenant_name || t('dash')}</div>
                       <div className="text-xs text-slate-500">{tk.reporter_email}</div>
@@ -270,15 +347,8 @@ export default function SuperadminSupportPage() {
                         </div>
                       ) : null}
                     </td>
-                    <td className="px-4 py-3">
-                      <button
-                        type="button"
-                        onClick={() => openDetail(tk.id)}
-                        className="text-slate-700 hover:text-slate-900"
-                        title={t('detailTooltip')}
-                      >
-                        <ChevronRight className="w-5 h-5" />
-                      </button>
+                    <td className="px-4 py-3 text-slate-500" aria-hidden>
+                      <ChevronRight className="w-5 h-5" />
                     </td>
                   </tr>
                 ))}
@@ -288,13 +358,24 @@ export default function SuperadminSupportPage() {
         </div>
       </div>
 
-      {(detail || detailLoading) && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
-          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 relative">
+      {(detail || detailLoading || openError) && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40"
+          onClick={closeDetail}
+          role="presentation"
+        >
+          <div
+            className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 relative"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="support-detail-title"
+          >
             <button
               type="button"
-              onClick={() => setDetail(null)}
+              onClick={closeDetail}
               className="absolute top-4 right-4 text-slate-400 hover:text-slate-700"
+              aria-label={t('closeDetail')}
             >
               <X className="w-6 h-6" />
             </button>
@@ -302,9 +383,32 @@ export default function SuperadminSupportPage() {
               <div className="flex justify-center py-12">
                 <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
               </div>
+            ) : openError && !detail ? (
+              <div className="pr-6 space-y-3">
+                <h2 id="support-detail-title" className="text-lg font-bold text-slate-900">
+                  {t('openErrorTitle')}
+                </h2>
+                <p className="text-sm text-red-700 bg-red-50 border border-red-100 rounded-lg p-3">
+                  {openError}
+                </p>
+                <button
+                  type="button"
+                  onClick={closeDetail}
+                  className="text-sm text-slate-600 hover:text-slate-900 underline"
+                >
+                  {t('closeDetail')}
+                </button>
+              </div>
             ) : detail ? (
               <div className="space-y-4 pr-6">
-                <h2 className="text-lg font-bold text-slate-900">{detail.subject}</h2>
+                <h2 id="support-detail-title" className="text-lg font-bold text-slate-900">
+                  {detail.subject}
+                </h2>
+                {detail.ticket_code ? (
+                  <p className="text-xs font-mono text-slate-600 bg-slate-100 inline-block px-2 py-0.5 rounded">
+                    {detail.ticket_code}
+                  </p>
+                ) : null}
                 <p className="text-xs text-slate-500">
                   {detail.tenant_name} · {detail.tenant_email} · {t('senderLabel')}:{' '}
                   {detail.reporter_email}
@@ -313,11 +417,17 @@ export default function SuperadminSupportPage() {
                   {t('colDate')}: {new Date(detail.created_at).toLocaleString(dateLocale)} ·{' '}
                   {t('updatedAtLabel')}: {new Date(detail.updated_at).toLocaleString(dateLocale)}
                 </p>
-                <div className="text-sm text-slate-800 whitespace-pre-wrap border border-slate-100 rounded-lg p-4 bg-slate-50">
-                  {detail.body}
-                </div>
+                {detail.body ? (
+                  <div className="text-sm text-slate-800 whitespace-pre-wrap border border-slate-100 rounded-lg p-4 bg-slate-50">
+                    {detail.body}
+                  </div>
+                ) : null}
 
                 <div className="space-y-3">
+                  <h3 className="text-sm font-semibold text-slate-800 flex items-center gap-2">
+                    <MessageSquare className="w-4 h-4" />
+                    {t('conversationTitle')}
+                  </h3>
                   {detailMessages.length > 0 ? (
                     detailMessages.map((m: any) => (
                       <div
@@ -337,19 +447,21 @@ export default function SuperadminSupportPage() {
                         {m.message}
                       </div>
                     ))
-                  ) : null}
+                  ) : (
+                    <p className="text-sm text-slate-500">{t('noMessagesYet')}</p>
+                  )}
                 </div>
 
                 <div className="border border-slate-200 rounded-lg p-3">
                   <label className="block text-xs font-medium text-slate-600 mb-2">
-                    Responder al tenant (notificación en campana)
+                    {t('replyLabel')}
                   </label>
                   <textarea
                     value={reply}
                     onChange={(e) => setReply(e.target.value)}
                     rows={4}
                     className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
-                    placeholder="Escribe tu respuesta…"
+                    placeholder={t('replyPlaceholder')}
                   />
                   <button
                     type="button"
@@ -358,7 +470,7 @@ export default function SuperadminSupportPage() {
                     className="mt-3 inline-flex items-center justify-center gap-2 rounded-lg bg-amber-600 text-white px-4 py-2 text-sm font-medium hover:bg-amber-700 disabled:opacity-50"
                   >
                     {sendingReply ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                    Enviar respuesta
+                    {t('sendReply')}
                   </button>
                 </div>
 
