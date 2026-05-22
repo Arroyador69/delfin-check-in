@@ -278,7 +278,21 @@
     "saving": "Salvataggio…",
     "dash": "—",
     "dashboardLinkTitle": "Supporto tecnico (clienti)",
-    "dashboardLinkDesc": "Visualizza e gestisci le segnalazioni delle strutture"
+    "dashboardLinkDesc": "Visualizza e gestisci le segnalazioni delle strutture",
+    "updatedAtLabel": "Aggiornato",
+    "conversationTitle": "Conversazione",
+    "noMessagesYet": "Nessun messaggio aggiuntivo nel thread.",
+    "replyLabel": "Rispondi alla struttura (notifica campana)",
+    "replyPlaceholder": "Scrivi la risposta…",
+    "sendReply": "Invia risposta",
+    "closeDetail": "Chiudi",
+    "openErrorTitle": "Impossibile aprire il ticket",
+    "openErrorInvalidId": "Identificativo ticket non valido.",
+    "openErrorGeneric": "Impossibile caricare il dettaglio. Riprova.",
+    "openErrorNetwork": "Errore di rete durante il caricamento.",
+    "replyError": "Impossibile inviare la risposta.",
+    "saveError": "Impossibile salvare le modifiche.",
+    "openTicketAria": "Apri ticket e visualizza conversazione"
   },
   "dashboard": {
     "title": "Delfín Check-in",

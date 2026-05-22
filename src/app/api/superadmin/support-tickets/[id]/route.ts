@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
 import { verifySuperAdmin } from '@/lib/auth-superadmin';
-
-const STATUSES = ['open', 'in_review', 'resolved', 'closed'] as const;
+import { ensureSupportTicketsSchema } from '@/lib/support-tickets-schema';
+import {
+  isValidTicketUuid,
+  normalizeSupportTicketStatus,
+  SUPPORT_TICKET_STATUSES,
+} from '@/lib/support-ticket-status';
 
 async function ensureSupportMessageSchema() {
   try {
@@ -54,8 +58,17 @@ export async function GET(
   if (error) return error;
 
   const { id } = await context.params;
+  const ticketId = String(id || '').trim();
+
+  if (!isValidTicketUuid(ticketId)) {
+    return NextResponse.json(
+      { success: false, error: 'Identificador de incidencia no válido' },
+      { status: 400 }
+    );
+  }
 
   try {
+    await ensureSupportTicketsSchema();
     await ensureSupportMessageSchema();
     const result = await sql`
       SELECT
@@ -64,30 +77,49 @@ export async function GET(
         t.email AS tenant_email
       FROM support_tickets st
       INNER JOIN tenants t ON t.id = st.tenant_id
-      WHERE st.id = ${id}::uuid
+      WHERE st.id = ${ticketId}::uuid
       LIMIT 1
     `;
 
     if (!result.rows.length) {
-      return NextResponse.json({ error: 'Incidencia no encontrada' }, { status: 404 });
+      return NextResponse.json(
+        { success: false, error: 'Incidencia no encontrada' },
+        { status: 404 }
+      );
     }
 
-    let messages: any[] = [];
+    const ticket = result.rows[0] as Record<string, unknown>;
+    ticket.status = normalizeSupportTicketStatus(String(ticket.status ?? 'open'));
+
+    let messages: Array<Record<string, unknown>> = [];
     try {
       const msg = await sql`
         SELECT id, sender_type, sender_email, message, created_at
         FROM support_ticket_messages
-        WHERE ticket_id = ${id}::uuid
+        WHERE ticket_id = ${ticketId}::uuid
         ORDER BY created_at ASC
         LIMIT 200
       `;
-      messages = msg.rows;
+      messages = msg.rows as Array<Record<string, unknown>>;
     } catch (_) {}
 
-    return NextResponse.json({ success: true, ticket: result.rows[0], messages });
+    if (messages.length === 0 && ticket.body) {
+      messages = [
+        {
+          id: 'initial',
+          sender_type: 'tenant',
+          sender_email: ticket.reporter_email,
+          message: ticket.body,
+          created_at: ticket.created_at,
+        },
+      ];
+    }
+
+    return NextResponse.json({ success: true, ticket, messages });
   } catch (e) {
     console.error('superadmin support ticket GET:', e);
-    return NextResponse.json({ error: 'Error al cargar' }, { status: 500 });
+    const msg = e instanceof Error ? e.message : 'Error al cargar';
+    return NextResponse.json({ success: false, error: msg }, { status: 500 });
   }
 }
 
@@ -99,23 +131,27 @@ export async function PATCH(
   if (error) return error;
 
   const { id } = await context.params;
+  const ticketId = String(id || '').trim();
+  if (!isValidTicketUuid(ticketId)) {
+    return NextResponse.json({ success: false, error: 'ID no válido' }, { status: 400 });
+  }
 
   try {
     const body = await req.json();
     const cur = await sql`
-      SELECT status, superadmin_notes FROM support_tickets WHERE id = ${id}::uuid LIMIT 1
+      SELECT status, superadmin_notes FROM support_tickets WHERE id = ${ticketId}::uuid LIMIT 1
     `;
     if (!cur.rows.length) {
-      return NextResponse.json({ error: 'Incidencia no encontrada' }, { status: 404 });
+      return NextResponse.json({ success: false, error: 'Incidencia no encontrada' }, { status: 404 });
     }
 
-    let nextStatus = cur.rows[0].status as string;
+    let nextStatus = normalizeSupportTicketStatus(cur.rows[0].status as string);
     let nextNotes = (cur.rows[0].superadmin_notes as string | null) ?? null;
 
     if (body.status != null && String(body.status).trim() !== '') {
-      const s = String(body.status).trim();
-      if (!STATUSES.includes(s as (typeof STATUSES)[number])) {
-        return NextResponse.json({ error: 'Estado no válido' }, { status: 400 });
+      const s = normalizeSupportTicketStatus(String(body.status).trim());
+      if (!SUPPORT_TICKET_STATUSES.includes(s)) {
+        return NextResponse.json({ success: false, error: 'Estado no válido' }, { status: 400 });
       }
       nextStatus = s;
     }
@@ -130,13 +166,13 @@ export async function PATCH(
         status = ${nextStatus},
         superadmin_notes = ${nextNotes},
         updated_at = NOW()
-      WHERE id = ${id}::uuid
+      WHERE id = ${ticketId}::uuid
     `;
 
     return NextResponse.json({ success: true });
   } catch (e) {
     console.error('superadmin support ticket PATCH:', e);
-    return NextResponse.json({ error: 'Error al actualizar' }, { status: 500 });
+    return NextResponse.json({ success: false, error: 'Error al actualizar' }, { status: 500 });
   }
 }
 
@@ -148,6 +184,10 @@ export async function POST(
   if (error) return error;
 
   const { id } = await context.params;
+  const ticketId = String(id || '').trim();
+  if (!isValidTicketUuid(ticketId)) {
+    return NextResponse.json({ success: false, error: 'ID no válido' }, { status: 400 });
+  }
 
   try {
     await ensureSupportMessageSchema();
@@ -156,17 +196,20 @@ export async function POST(
     const body = await req.json();
     const message = String(body?.message ?? '').trim();
     if (message.length < 2 || message.length > 8000) {
-      return NextResponse.json({ error: 'El mensaje debe tener entre 2 y 8000 caracteres.' }, { status: 400 });
+      return NextResponse.json(
+        { success: false, error: 'El mensaje debe tener entre 2 y 8000 caracteres.' },
+        { status: 400 }
+      );
     }
 
     const ticketRes = await sql`
       SELECT id, tenant_id, reporter_email, subject
       FROM support_tickets
-      WHERE id = ${id}::uuid
+      WHERE id = ${ticketId}::uuid
       LIMIT 1
     `;
     if (!ticketRes.rows.length) {
-      return NextResponse.json({ error: 'Incidencia no encontrada' }, { status: 404 });
+      return NextResponse.json({ success: false, error: 'Incidencia no encontrada' }, { status: 404 });
     }
     const ticket = ticketRes.rows[0] as any;
 
@@ -174,12 +217,11 @@ export async function POST(
 
     await sql`
       INSERT INTO support_ticket_messages (ticket_id, sender_type, sender_email, message)
-      VALUES (${id}::uuid, 'superadmin', ${senderEmail}, ${message})
+      VALUES (${ticketId}::uuid, 'superadmin', ${senderEmail}, ${message})
     `;
 
-    // Notificación para el tenant (campana)
     const shortSubject = String(ticket.subject || '').slice(0, 120);
-    const link = `/settings/support?ticket=${encodeURIComponent(String(id))}`;
+    const link = `/settings/support?ticket=${encodeURIComponent(ticketId)}`;
     await sql`
       INSERT INTO tenant_notifications (tenant_id, type, title, body, link)
       VALUES (
@@ -192,11 +234,11 @@ export async function POST(
     `;
 
     // Touch updated_at del ticket
-    await sql`UPDATE support_tickets SET updated_at = NOW() WHERE id = ${id}::uuid`;
+    await sql`UPDATE support_tickets SET updated_at = NOW() WHERE id = ${ticketId}::uuid`;
 
     return NextResponse.json({ success: true });
   } catch (e) {
     console.error('superadmin support ticket POST reply:', e);
-    return NextResponse.json({ error: 'Error al enviar respuesta' }, { status: 500 });
+    return NextResponse.json({ success: false, error: 'Error al enviar respuesta' }, { status: 500 });
   }
 }

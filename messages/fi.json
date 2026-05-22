@@ -278,7 +278,21 @@
     "saving": "Tallennetaan…",
     "dash": "—",
     "dashboardLinkTitle": "Tekninen tuki (asiakkaat)",
-    "dashboardLinkDesc": "Tarkastele ja hallinnoi kiinteistöjen lippuja"
+    "dashboardLinkDesc": "Tarkastele ja hallinnoi kiinteistöjen lippuja",
+    "updatedAtLabel": "Päivitetty",
+    "conversationTitle": "Keskustelu",
+    "noMessagesYet": "Ei lisäviestejä ketjussa.",
+    "replyLabel": "Vastaa kiinteistölle (ilmoitus)",
+    "replyPlaceholder": "Kirjoita vastaus…",
+    "sendReply": "Lähetä vastaus",
+    "closeDetail": "Sulje",
+    "openErrorTitle": "Tikettiä ei voitu avata",
+    "openErrorInvalidId": "Virheellinen tiketin tunniste.",
+    "openErrorGeneric": "Tietoja ei voitu ladata. Yritä uudelleen.",
+    "openErrorNetwork": "Verkkovirhe ladattaessa tikettiä.",
+    "replyError": "Vastausta ei voitu lähettää.",
+    "saveError": "Muutoksia ei voitu tallentaa.",
+    "openTicketAria": "Avaa tiketti ja näe keskustelu"
   },
   "dashboard": {
     "title": "Delfín Check-in",

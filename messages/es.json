@@ -279,7 +279,21 @@
     "saving": "Guardando…",
     "dash": "—",
     "dashboardLinkTitle": "Soporte técnico (clientes)",
-    "dashboardLinkDesc": "Ver y gestionar incidencias de los establecimientos"
+    "dashboardLinkDesc": "Ver y gestionar incidencias de los establecimientos",
+    "updatedAtLabel": "Actualizado",
+    "conversationTitle": "Conversación",
+    "noMessagesYet": "Sin mensajes adicionales en el hilo.",
+    "replyLabel": "Responder al establecimiento (notificación en campana)",
+    "replyPlaceholder": "Escribe tu respuesta…",
+    "sendReply": "Enviar respuesta",
+    "closeDetail": "Cerrar",
+    "openErrorTitle": "No se pudo abrir la incidencia",
+    "openErrorInvalidId": "Identificador de incidencia no válido.",
+    "openErrorGeneric": "No se pudo cargar el detalle. Prueba de nuevo o revisa los logs.",
+    "openErrorNetwork": "Error de red al cargar la incidencia.",
+    "replyError": "No se pudo enviar la respuesta.",
+    "saveError": "No se pudieron guardar los cambios.",
+    "openTicketAria": "Abrir incidencia y ver conversación"
   },
   "dashboard": {
     "title": "Delfín Check-in",
