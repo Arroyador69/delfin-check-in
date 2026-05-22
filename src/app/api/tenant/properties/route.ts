@@ -95,66 +95,88 @@ export async function GET(req: NextRequest) {
     }
 
     // Unir propiedades existentes con placeholders derivados de Room sin mapping.
-    // Además, devolvemos room_name para que la UI muestre el slot de forma clara (no solo el nombre de la propiedad).
-    const result = await sql`
-      WITH mapped AS (
-        SELECT 
+    let result;
+    try {
+      result = await sql`
+        WITH mapped AS (
+          SELECT 
+            tp.id, tp.tenant_id, tp.property_name, tp.description, tp.photos, tp.max_guests,
+            tp.included_guests, tp.extra_guest_fee,
+            tp.bedrooms, tp.bathrooms, tp.amenities, tp.base_price, tp.cleaning_fee,
+            tp.security_deposit, tp.minimum_nights, tp.maximum_nights,
+            tp.availability_rules, tp.is_active, tp.created_at, tp.updated_at,
+            tp.google_review_url,
+            prm.room_id,
+            r.name AS room_name,
+            FALSE AS is_placeholder
+          FROM tenant_properties tp
+          LEFT JOIN property_room_map prm
+            ON prm.tenant_id = tp.tenant_id::uuid AND prm.property_id = tp.id
+          LEFT JOIN "Room" r
+            ON r."lodgingId"::text = ${lodgingId}::text
+           AND r.id::text = prm.room_id::text
+          WHERE tp.tenant_id = ${tenantId}::uuid
+        ),
+        placeholders AS (
+          SELECT 
+            NULL::int AS id,
+            ${tenantId}::uuid AS tenant_id,
+            r.name     AS property_name,
+            NULL::text AS description,
+            '[]'::jsonb AS photos,
+            2 AS max_guests,
+            2 AS included_guests,
+            0.00::decimal(10,2) AS extra_guest_fee,
+            1 AS bedrooms,
+            1 AS bathrooms,
+            '[]'::jsonb AS amenities,
+            50.00::decimal(10,2) AS base_price,
+            0.00::decimal(10,2) AS cleaning_fee,
+            0.00::decimal(10,2) AS security_deposit,
+            1 AS minimum_nights,
+            30 AS maximum_nights,
+            '{}'::jsonb AS availability_rules,
+            TRUE AS is_active,
+            NOW() AS created_at,
+            NOW() AS updated_at,
+            NULL::text AS google_review_url,
+            r.id AS room_id,
+            r.name AS room_name,
+            TRUE AS is_placeholder
+          FROM "Room" r
+          LEFT JOIN property_room_map prm
+            ON prm.tenant_id = ${tenantId}::uuid AND prm.room_id::text = r.id::text
+          WHERE r."lodgingId"::text = ${lodgingId}::text
+            AND prm.room_id IS NULL
+            AND NOT EXISTS (
+              SELECT 1 FROM tenant_properties tp
+              WHERE tp.tenant_id = ${tenantId}::uuid
+                AND lower(trim(tp.property_name)) = lower(trim(r.name))
+            )
+        )
+        SELECT * FROM mapped
+        UNION ALL
+        SELECT * FROM placeholders
+        ORDER BY created_at DESC
+      `;
+    } catch (queryError) {
+      console.warn('⚠️ Listado propiedades (modo simple, sin Room/placeholders):', queryError);
+      result = await sql`
+        SELECT
           tp.id, tp.tenant_id, tp.property_name, tp.description, tp.photos, tp.max_guests,
+          tp.included_guests, tp.extra_guest_fee,
           tp.bedrooms, tp.bathrooms, tp.amenities, tp.base_price, tp.cleaning_fee,
           tp.security_deposit, tp.minimum_nights, tp.maximum_nights,
           tp.availability_rules, tp.is_active, tp.created_at, tp.updated_at,
           tp.google_review_url,
-          prm.room_id,
-          r.name AS room_name,
+          NULL::text AS room_id,
+          NULL::text AS room_name,
           FALSE AS is_placeholder
         FROM tenant_properties tp
-        LEFT JOIN property_room_map prm
-          ON prm.tenant_id = tp.tenant_id::uuid AND prm.property_id = tp.id
-        LEFT JOIN "Room" r
-          ON r."lodgingId"::text = ${lodgingId}::text
-         AND r.id::text = prm.room_id::text
         WHERE tp.tenant_id = ${tenantId}::uuid
-      ),
-      placeholders AS (
-      SELECT 
-          NULL::int AS id,
-          ${tenantId}::uuid AS tenant_id,
-          r.name     AS property_name,
-          NULL::text AS description,
-          '[]'::jsonb AS photos,
-          2 AS max_guests,
-          1 AS bedrooms,
-          1 AS bathrooms,
-          '[]'::jsonb AS amenities,
-          50.00::decimal(10,2) AS base_price,
-          0.00::decimal(10,2) AS cleaning_fee,
-          0.00::decimal(10,2) AS security_deposit,
-          1 AS minimum_nights,
-          30 AS maximum_nights,
-          '{}'::jsonb AS availability_rules,
-          TRUE AS is_active,
-          NOW() AS created_at,
-          NOW() AS updated_at,
-          NULL::text AS google_review_url,
-          r.id AS room_id,
-          r.name AS room_name,
-          TRUE AS is_placeholder
-        FROM "Room" r
-        LEFT JOIN property_room_map prm
-          ON prm.tenant_id = ${tenantId}::uuid AND prm.room_id::text = r.id::text
-        WHERE r."lodgingId"::text = ${lodgingId}::text
-          AND prm.room_id IS NULL
-          AND NOT EXISTS (
-            SELECT 1 FROM tenant_properties tp
-            WHERE tp.tenant_id = ${tenantId}::uuid
-              AND lower(trim(tp.property_name)) = lower(trim(r.name))
-          )
-      )
-      SELECT * FROM mapped
-      UNION ALL
-      SELECT * FROM placeholders
-      ORDER BY created_at DESC
-    `;
+        ORDER BY tp.created_at DESC
+      `;
+    }
     
     const properties: any[] = result.rows.map(row => ({
       id: row.id,

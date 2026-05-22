@@ -31,7 +31,11 @@ export default function OfflineQueuePage() {
         setItems((data.items || []) as OutboxItem[]);
       }
     };
-    sw.postMessage({ type: 'OUTBOX_LIST' }, [mc.port2]);
+    try {
+      sw.postMessage({ type: 'OUTBOX_LIST' }, [mc.port2]);
+    } catch {
+      /* Puerto ya transferido (navegación rápida); ignorar */
+    }
   }, []);
 
   useEffect(() => {
@@ -60,7 +64,11 @@ export default function OfflineQueuePage() {
         (window as any).__requestOutboxList?.();
       }
     };
-    sw.postMessage(msg, [mc.port2]);
+    try {
+      sw.postMessage(msg, [mc.port2]);
+    } catch {
+      setLoading(false);
+    }
   };
 
   const flushAll = async () => {

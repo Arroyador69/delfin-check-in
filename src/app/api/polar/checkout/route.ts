@@ -85,7 +85,9 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(checkout.url, 302);
   } catch (e: any) {
     const msg = e?.message || String(e);
-    const status = Number(e?.statusCode) || 500;
+    const rawStatus = Number(e?.statusCode);
+    const status =
+      Number.isFinite(rawStatus) && rawStatus >= 400 && rawStatus <= 599 ? rawStatus : 500;
     console.error('❌ [polar checkout] Error:', e);
     return NextResponse.json(
       {
