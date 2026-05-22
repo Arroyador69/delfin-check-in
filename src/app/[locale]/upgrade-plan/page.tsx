@@ -26,6 +26,10 @@ interface Plan {
   icon: any;
 }
 
+function formatMoney(v: unknown): number {
+  return Number(v ?? 0);
+}
+
 const UPGRADE_PLANS_CONFIG: (Omit<Plan, 'name' | 'description' | 'features'> & { featuresKeys: string[] })[] = [
   {
     id: 'checkin',
@@ -96,7 +100,6 @@ function PlanCalculator({
   const t = useTranslations('plans');
   const [pricing, setPricing] = useState<any>(null);
   const [loading, setLoading] = useState(false);
-  const money = (v: any) => Number(v ?? 0);
   const plan = UPGRADE_PLANS_CONFIG.find(p => p.id === planId);
 
   useEffect(() => {
@@ -160,25 +163,25 @@ function PlanCalculator({
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span>{t('basePrice')}</span>
-                <span>{money(pricing.base_price).toFixed(2)}€</span>
+                <span>{formatMoney(pricing.base_price).toFixed(2)}€</span>
               </div>
-              {money(pricing.extra_rooms_price) > 0 && (
+              {formatMoney(pricing.extra_rooms_price) > 0 && (
                 <div className="flex justify-between text-sm text-gray-600">
                   <span>{t('extraRooms', { count: pricing.extra_rooms || 0 })}</span>
-                  <span>+{money(pricing.extra_rooms_price).toFixed(2)}€</span>
+                  <span>+{formatMoney(pricing.extra_rooms_price).toFixed(2)}€</span>
                 </div>
               )}
               <div className="flex justify-between text-sm">
                 <span>{t('subtotal')}</span>
-                <span>{money(pricing.subtotal).toFixed(2)}€</span>
+                <span>{formatMoney(pricing.subtotal).toFixed(2)}€</span>
               </div>
               <div className="flex justify-between text-sm text-gray-600">
                 <span>{t('vat', { rate: pricing?.vat?.vat_rate ?? pricing?.vat_rate ?? 21 })}</span>
-                <span>+{money(pricing?.vat?.vat_amount ?? pricing?.vat_amount).toFixed(2)}€</span>
+                <span>+{formatMoney(pricing?.vat?.vat_amount ?? pricing?.vat_amount).toFixed(2)}€</span>
               </div>
               <div className="flex justify-between font-bold text-lg pt-2 border-t">
                 <span>{t('totalMonthly')}</span>
-                <span className="text-blue-600">{money(pricing.total).toFixed(2)}€</span>
+                <span className="text-blue-600">{formatMoney(pricing.total).toFixed(2)}€</span>
               </div>
             </div>
           </div>
@@ -199,7 +202,6 @@ export default function UpgradePlanPage() {
   const tUpgrade = useTranslations('upgradePlan');
   const locale = useLocale();
   const router = useRouter();
-  const money = useCallback((v: unknown) => Number(v ?? 0), []);
   const [currentPlan, setCurrentPlan] = useState<string | null>(null);
   const [currentRoomCount, setCurrentRoomCount] = useState(1);
   const [selectedPlan, setSelectedPlan] = useState<PlanId | null>(null);
@@ -435,7 +437,7 @@ export default function UpgradePlanPage() {
                         className="w-full rounded-lg bg-blue-600 px-4 py-3 font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         {isSamePlanSelection ? tPlans('updateSubscription') : tPlans('subscribeTo')}{' '}
-                        {money(pricing.total).toFixed(2)}€ ·{' '}
+                        {formatMoney(pricing?.total).toFixed(2)}€ ·{' '}
                         {billingInterval === 'year' ? tUpgrade('annually') : tUpgrade('monthly')}
                       </button>
                     </div>
