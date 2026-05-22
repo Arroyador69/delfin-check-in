@@ -1,15 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
 import { getTenantId } from '@/lib/tenant';
+import { maxPropertyImageDataUrlLength } from '@/lib/property-image-upload';
 
 function isDataUrl(s: string): boolean {
   return typeof s === 'string' && s.startsWith('data:image/');
-}
-
-function maxDataUrlLengthFor5MB(): number {
-  // Aproximación: base64 expande ~4/3. Para 5MB binario -> ~6.7MB base64 + cabecera.
-  // Dejamos margen para evitar falsos 413.
-  return 8_500_000;
 }
 
 export async function POST(req: NextRequest) {
@@ -32,9 +27,11 @@ export async function POST(req: NextRequest) {
     if (!isDataUrl(dataUrl)) {
       return NextResponse.json({ success: false, error: 'data_url inválido' }, { status: 400 });
     }
-    // Límite defensivo alineado con el UI (5MB). El body llega como texto base64.
-    if (dataUrl.length > maxDataUrlLengthFor5MB()) {
-      return NextResponse.json({ success: false, error: 'Imagen demasiado grande (máximo 5MB)' }, { status: 413 });
+    if (dataUrl.length > maxPropertyImageDataUrlLength()) {
+      return NextResponse.json(
+        { success: false, error: 'Imagen demasiado grande (máximo 12MB; se recomienda JPG/PNG)' },
+        { status: 413 }
+      );
     }
 
     // Verificar propiedad pertenece al tenant
