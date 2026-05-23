@@ -355,7 +355,8 @@ export async function middleware(req: NextRequest) {
     pathname.startsWith('/api/cron/') ||
     pathname.startsWith('/api/stripe/webhook') ||
     pathname.startsWith('/api/webhook/polar') ||
-    pathname.startsWith('/api/telegram/webhook')
+    pathname.startsWith('/api/telegram/webhook') ||
+    pathname.startsWith('/api/webhooks/meta-leads')
   );
   
   if (isPublicRoute) {
@@ -442,7 +443,8 @@ export async function middleware(req: NextRequest) {
         pathname.startsWith('/api/superadmin/programmatic/cron') ||
         pathname.startsWith('/api/cron/') ||
         pathname.startsWith('/api/webhook/polar') ||
-        pathname.startsWith('/api/telegram/webhook')
+        pathname.startsWith('/api/telegram/webhook') ||
+        pathname.startsWith('/api/webhooks/meta-leads')
       );
       
       if (!isPublicApiRoute) {
