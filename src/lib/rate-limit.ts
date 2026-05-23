@@ -67,6 +67,7 @@ export function isGlobalApiRateLimitExempt(pathname: string): boolean {
   if (pathname.startsWith('/api/stripe/webhook')) return true;
   if (pathname.startsWith('/api/telegram/webhook')) return true;
   if (pathname.startsWith('/api/whatsapp/webhook')) return true;
+  if (pathname.startsWith('/api/webhooks/meta-leads')) return true;
   if (pathname.startsWith('/api/cron/')) return true;
   if (pathname === '/api/health' || pathname.startsWith('/api/health/')) return true;
   if (pathname === '/api/database/status' || pathname.startsWith('/api/database/status/')) return true;
