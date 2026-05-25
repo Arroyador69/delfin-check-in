@@ -23,17 +23,19 @@ Sesión en admin → **Mejorar plan** → debe abrir checkout Polar (302), no JS
 En Neon / SQL:
 
 ```sql
+-- Si polar_last_upgrade_intent_at no existe, créala primero (ver abajo).
 SELECT
   id,
   name,
   email,
-  polar_last_upgrade_intent_at,
-  polar_last_checkout_context
+  polar_last_upgrade_intent_at
 FROM tenants
 WHERE polar_last_upgrade_intent_at >= '2026-05-25 06:00:00+00'
   AND polar_last_upgrade_intent_at <  '2026-05-25 06:10:00+00'
 ORDER BY polar_last_upgrade_intent_at DESC;
 ```
+
+Tras merge/deploy de #116 también puedes usar `polar_last_checkout_context` (JSON con origen del clic).
 
 `polar_last_checkout_context` indica origen, por ejemplo:
 
