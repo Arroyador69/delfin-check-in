@@ -26,3 +26,18 @@ export function polarErrorMeta(e: unknown): Record<string, unknown> {
     polar_server: polarServer(),
   };
 }
+
+export function isPolarInvalidTokenError(e: unknown): boolean {
+  const meta = polarErrorMeta(e);
+  if (meta.polar_status === 401) return true;
+  const body = String(meta.polar_body || '');
+  return body.includes('invalid_token');
+}
+
+/** Mensaje operativo cuando Polar rechaza el PAT (caducado/revocado). */
+export function polarInvalidTokenUserMessage(): string {
+  return (
+    'El pago no está disponible temporalmente: el token de Polar en el servidor no es válido. ' +
+    'El equipo debe renovar POLAR_ACCESS_TOKEN en Vercel (producción) y redeploy.'
+  );
+}

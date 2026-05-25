@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { logError } from '@/lib/error-logger';
-import { getPolarClient, polarErrorMeta } from '@/lib/polar-server';
+import { getTenantContactForPolarLog } from '@/lib/polar-checkout-intent';
+import {
+  getPolarClient,
+  isPolarInvalidTokenError,
+  polarErrorMeta,
+  polarInvalidTokenUserMessage,
+} from '@/lib/polar-server';
 
 /**
  * Polar checkout redirection (SaaS subscriptions).
@@ -97,19 +103,28 @@ export async function GET(req: NextRequest) {
       // ignore
     }
 
-    const logMsg = `❌ [polar checkout] ${msg}`;
+    const customerExternalId = u.searchParams.get('customerExternalId') || undefined;
+    const contact = await getTenantContactForPolarLog(tenantId, customerExternalId);
+    const invalidToken = isPolarInvalidTokenError(e);
+    const logMsg = invalidToken
+      ? `❌ [polar checkout] Polar token inválido (401) tenant=${contact.tenant_id || '?'} email=${contact.email || '?'}`
+      : `❌ [polar checkout] ${msg}`;
+
     console.error(logMsg, e);
     void logError({
       level: 'error',
       message: logMsg,
       error: e,
-      tenantId,
+      tenantId: contact.tenant_id,
       url: `${u.pathname}${u.search}`.slice(0, 2000),
       metadata: {
         products,
         seats: u.searchParams.get('seats'),
         source: metaSource,
         plan: metaPlan,
+        tenant_email: contact.email,
+        tenant_name: contact.name,
+        customer_external_id: customerExternalId,
         ...polarErrorMeta(e),
       },
     });
@@ -117,11 +132,14 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        error: msg,
-        hint:
-          'Revisa POLAR_ACCESS_TOKEN (scope checkouts:write) y que POLAR_SERVER coincida con el entorno del token (sandbox|production).',
+        error: invalidToken ? polarInvalidTokenUserMessage() : msg,
+        hint: invalidToken
+          ? 'Renovar Organization Access Token en Polar (producción) → Vercel POLAR_ACCESS_TOKEN → Redeploy.'
+          : 'Revisa POLAR_ACCESS_TOKEN (scope checkouts:write) y POLAR_SERVER=production.',
+        tenant_id: contact.tenant_id,
+        support_email: contact.email,
       },
-      { status }
+      { status: invalidToken ? 503 : status }
     );
   }
 }
