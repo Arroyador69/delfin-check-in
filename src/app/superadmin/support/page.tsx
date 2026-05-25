@@ -75,6 +75,7 @@ export default function SuperadminSupportPage() {
   const [reply, setReply] = useState('');
   const [sendingReply, setSendingReply] = useState(false);
   const [openError, setOpenError] = useState<string | null>(null);
+  const [listError, setListError] = useState<string | null>(null);
   const [dateLocale, setDateLocale] = useState(DATE_LOCALE.es);
 
   useEffect(() => {
@@ -93,25 +94,35 @@ export default function SuperadminSupportPage() {
       : key;
   };
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
+    setListError(null);
     try {
       const params = new URLSearchParams();
       if (filter) params.set('status', filter);
       if (query.trim()) params.set('q', query.trim());
       const qs = params.toString();
-      const res = await fetch(`/api/superadmin/support-tickets${qs ? `?${qs}` : ''}`, { credentials: 'include' });
-      const data = await res.json();
-      if (data.success) setTickets(data.tickets);
+      const res = await fetch(`/api/superadmin/support-tickets${qs ? `?${qs}` : ''}`, {
+        credentials: 'include',
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.success) {
+        setTickets([]);
+        setListError(data.error || data.details || t('listLoadError'));
+        return;
+      }
+      setTickets(Array.isArray(data.tickets) ? data.tickets : []);
+    } catch {
+      setTickets([]);
+      setListError(t('openErrorNetwork'));
     } finally {
       setLoading(false);
     }
-  };
+  }, [filter, query, t]);
 
   useEffect(() => {
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- reload al cambiar filtro
-  }, [filter]);
+    void load();
+  }, [load]);
 
   const closeDetail = () => {
     setDetail(null);
@@ -189,6 +200,8 @@ export default function SuperadminSupportPage() {
       } else {
         setOpenError(data.error || t('replyError'));
       }
+    } catch {
+      setOpenError(t('openErrorNetwork'));
     } finally {
       setSendingReply(false);
     }
@@ -210,7 +223,9 @@ export default function SuperadminSupportPage() {
         return;
       }
       closeDetail();
-      load();
+      void load();
+    } catch {
+      setOpenError(t('openErrorNetwork'));
     } finally {
       setSaving(false);
     }
@@ -264,6 +279,22 @@ export default function SuperadminSupportPage() {
             </Link>
           </div>
         </div>
+
+        {listError ? (
+          <div
+            className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 flex flex-wrap items-center justify-between gap-2"
+            role="alert"
+          >
+            <span>{listError}</span>
+            <button
+              type="button"
+              onClick={() => void load()}
+              className="text-sm font-medium text-red-900 underline hover:no-underline"
+            >
+              {t('retryList')}
+            </button>
+          </div>
+        ) : null}
 
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
           {loading ? (
