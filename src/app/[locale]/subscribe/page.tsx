@@ -19,6 +19,7 @@ const COPY: Record<
     yearly: string;
     cta: string;
     success: string;
+    payUnavailable: string;
     loginHint: string;
     plans: Record<PlanKey, { name: string; blurb: string; price: string }>;
   }
@@ -35,6 +36,8 @@ const COPY: Record<
     cta: 'Continuar con Polar',
     success:
       'Pago recibido. Si es tu primera vez, revisa tu correo en unos minutos para crear tu acceso y el onboarding.',
+    payUnavailable:
+      'El pago no está disponible en este momento por un problema técnico en nuestro servidor. Inténtalo de nuevo en unas horas o escribe a contacto@delfincheckin.com.',
     loginHint: '¿Ya tienes cuenta?',
     plans: {
       checkin: {
@@ -66,6 +69,8 @@ const COPY: Record<
     cta: 'Continue with Polar',
     success:
       'Payment received. If you are new, check your email shortly to finish access and onboarding.',
+    payUnavailable:
+      'Checkout is temporarily unavailable due to a server configuration issue. Please try again later or email contacto@delfincheckin.com.',
     loginHint: 'Already have an account?',
     plans: {
       checkin: {
@@ -97,6 +102,8 @@ const COPY: Record<
     cta: 'Continuer avec Polar',
     success:
       'Paiement reçu. Si c’est votre première fois, vérifiez votre e-mail pour l’accès et l’onboarding.',
+    payUnavailable:
+      'Le paiement est temporairement indisponible. Réessayez plus tard ou écrivez à contacto@delfincheckin.com.',
     loginHint: 'Vous avez déjà un compte ?',
     plans: {
       checkin: { name: 'Check-in', blurb: 'Module légal MIR et check-in numérique.', price: 'dès 2 €/mois' },
@@ -116,6 +123,8 @@ const COPY: Record<
     cta: 'Continua con Polar',
     success:
       'Pagamento ricevuto. Se è la prima volta, controlla l’email per l’accesso e l’onboarding.',
+    payUnavailable:
+      'Il pagamento non è disponibile al momento. Riprova più tardi o scrivi a contacto@delfincheckin.com.',
     loginHint: 'Hai già un account?',
     plans: {
       checkin: { name: 'Check-in', blurb: 'Modulo legale MIR e check-in digitale.', price: 'da 2 €/mese' },
@@ -135,6 +144,8 @@ const COPY: Record<
     cta: 'Continuar com Polar',
     success:
       'Pagamento recebido. Se for a primeira vez, verifique o email para o acesso e onboarding.',
+    payUnavailable:
+      'O pagamento não está disponível de momento. Tente mais tarde ou contacte contacto@delfincheckin.com.',
     loginHint: 'Já tem conta?',
     plans: {
       checkin: { name: 'Check-in', blurb: 'Módulo legal MIR e check-in digital.', price: 'desde 2 €/mês' },
@@ -154,6 +165,8 @@ const COPY: Record<
     cta: 'Jatka Polarilla',
     success:
       'Maksu vastaanotettu. Jos olet uusi, tarkista sähköpostisi käyttöoikeutta ja onboardingia varten.',
+    payUnavailable:
+      'Maksu ei ole juuri nyt käytettävissä. Yritä myöhemmin tai kirjoita contacto@delfincheckin.com.',
     loginHint: 'Onko sinulla jo tili?',
     plans: {
       checkin: { name: 'Check-in', blurb: 'MIR-oikeusmoduuli ja digitaalinen sisäänkirjautuminen.', price: 'alk. 2 €/kk' },
@@ -183,6 +196,7 @@ export default function SubscribePage() {
   const locale = isValidLocale(rawLocale) ? rawLocale : 'es';
   const sp = useSearchParams();
   const polarOk = sp.get('polar_success') === '1';
+  const polarTokenError = sp.get('polar_error') === 'token';
 
   const [seats, setSeats] = useState(1);
   const [interval, setInterval] = useState<'month' | 'year'>('month');
@@ -204,6 +218,15 @@ export default function SubscribePage() {
           role="status"
         >
           {t.success}
+        </div>
+      )}
+
+      {polarTokenError && (
+        <div
+          className="mt-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-950 text-sm"
+          role="alert"
+        >
+          {t.payUnavailable}
         </div>
       )}
 

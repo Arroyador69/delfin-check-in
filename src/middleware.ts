@@ -324,6 +324,7 @@ export async function middleware(req: NextRequest) {
     pathname === '/forgot-password' ||
     isPublicSubscribePage ||
     pathname.startsWith('/api/polar/checkout') ||
+    pathname.startsWith('/api/polar/health') ||
     pathname.startsWith('/api/polar/subscribe-redirect') ||
     pathname.startsWith('/book/') ||
     pathname.startsWith('/limpieza') ||
