@@ -290,6 +290,8 @@
     "openErrorInvalidId": "Invalid ticket identifier.",
     "openErrorGeneric": "Could not load details. Try again or check logs.",
     "openErrorNetwork": "Network error while loading the ticket.",
+    "listLoadError": "Could not load the support ticket list. Please try again.",
+    "retryList": "Retry",
     "replyError": "Could not send reply.",
     "saveError": "Could not save changes.",
     "openTicketAria": "Open ticket and view conversation"

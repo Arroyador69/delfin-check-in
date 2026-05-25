@@ -290,6 +290,8 @@
     "openErrorInvalidId": "Identificador de ticket inválido.",
     "openErrorGeneric": "Não foi possível carregar o detalhe. Tente novamente.",
     "openErrorNetwork": "Erro de rede ao carregar o ticket.",
+    "listLoadError": "Não foi possível carregar a lista de tickets. Tente novamente.",
+    "retryList": "Tentar novamente",
     "replyError": "Não foi possível enviar a resposta.",
     "saveError": "Não foi possível guardar as alterações.",
     "openTicketAria": "Abrir ticket e ver conversação"

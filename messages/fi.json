@@ -290,6 +290,8 @@
     "openErrorInvalidId": "Virheellinen tiketin tunniste.",
     "openErrorGeneric": "Tietoja ei voitu ladata. Yritä uudelleen.",
     "openErrorNetwork": "Verkkovirhe ladattaessa tikettiä.",
+    "listLoadError": "Tukipyyntöjen listaa ei voitu ladata. Yritä uudelleen.",
+    "retryList": "Yritä uudelleen",
     "replyError": "Vastausta ei voitu lähettää.",
     "saveError": "Muutoksia ei voitu tallentaa.",
     "openTicketAria": "Avaa tiketti ja näe keskustelu"

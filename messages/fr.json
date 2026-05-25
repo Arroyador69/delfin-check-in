@@ -290,6 +290,8 @@
     "openErrorInvalidId": "Identifiant d'incident non valide.",
     "openErrorGeneric": "Impossible de charger le détail. Réessayez.",
     "openErrorNetwork": "Erreur réseau lors du chargement.",
+    "listLoadError": "Impossible de charger la liste des tickets. Réessayez.",
+    "retryList": "Réessayer",
     "replyError": "Impossible d'envoyer la réponse.",
     "saveError": "Impossible d'enregistrer les modifications.",
     "openTicketAria": "Ouvrir l'incident et voir la conversation"
