@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getTenantId } from '@/lib/tenant';
+import { recordPolarCheckoutIntent } from '@/lib/polar-checkout-intent';
 
 function baseUrl(req: NextRequest): string {
   const envUrl = process.env.NEXT_PUBLIC_APP_URL?.trim();
@@ -61,6 +62,15 @@ export async function GET(req: NextRequest) {
   };
   const successUrlAbs = toAbsoluteAppUrl(successUrlParam);
   const returnUrlAbs = toAbsoluteAppUrl(returnUrlParam);
+
+  await recordPolarCheckoutIntent(tenantId, {
+    source: 'free_extra_units',
+    path: '/api/polar/free-extra-units',
+    plan: 'free',
+    rooms,
+    interval,
+    extra_units: seats,
+  });
 
   const metadata = JSON.stringify({
     tenant_id: tenantId,

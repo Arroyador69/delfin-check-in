@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getTenantId } from '@/lib/tenant';
-import { sql } from '@vercel/postgres';
+import { recordPolarCheckoutIntent } from '@/lib/polar-checkout-intent';
 
 type UpgradePlanId = 'checkin' | 'standard' | 'pro';
 type BillingInterval = 'month' | 'year';
@@ -75,17 +75,13 @@ export async function GET(req: NextRequest) {
 
   const seats = rooms; // número total de unidades
 
-  // Guardamos intención en BD (útil para soporte/analytics).
-  try {
-    await sql`ALTER TABLE tenants ADD COLUMN IF NOT EXISTS polar_last_upgrade_intent_at TIMESTAMP`;
-    await sql`
-      UPDATE tenants
-      SET polar_last_upgrade_intent_at = NOW()
-      WHERE id = ${tenantId}::uuid
-    `;
-  } catch {
-    // No bloquear el checkout si falla el ALTER/UPDATE.
-  }
+  await recordPolarCheckoutIntent(tenantId, {
+    source: source || 'upgrade_plan',
+    path: '/api/polar/upgrade',
+    plan: safePlan,
+    rooms,
+    interval,
+  });
 
   const app = baseUrl(req);
   const toAbsoluteAppUrl = (maybeRelative: string) => {
