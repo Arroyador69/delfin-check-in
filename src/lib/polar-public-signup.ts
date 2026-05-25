@@ -1,22 +1,11 @@
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
-import { Polar } from '@polar-sh/sdk';
 import { sql } from '@vercel/postgres';
 import { createTenantUser, findTenantByEmail } from '@/lib/tenant';
 import { sendOnboardingEmail } from '@/lib/mailer';
+import { getPolarClient } from '@/lib/polar-server';
 
 export type PolarPublicPlan = 'checkin' | 'standard' | 'pro';
-
-function polarServer(): 'sandbox' | 'production' {
-  const server = (process.env.POLAR_SERVER as 'sandbox' | 'production' | undefined) || 'sandbox';
-  return server === 'production' ? 'production' : 'sandbox';
-}
-
-function getPolar(): Polar {
-  const token = String(process.env.POLAR_ACCESS_TOKEN || '').trim();
-  if (!token) throw new Error('POLAR_ACCESS_TOKEN no configurado');
-  return new Polar({ accessToken: token, server: polarServer() });
-}
 
 /** Alineado con `superadmin/tenants/update-plan` para columnas de negocio. */
 const PLAN_ROWS: Record<
@@ -98,7 +87,7 @@ async function resolveEmailFromSubscription(sub: any): Promise<string | null> {
   if (!cid) return null;
 
   try {
-    const polar = getPolar();
+    const polar = getPolarClient();
     const customer = await polar.customers.get({ id: cid });
     const e = String((customer as { email?: string | null }).email || '').trim();
     return e ? e.toLowerCase() : null;

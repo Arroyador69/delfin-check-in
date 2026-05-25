@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Polar } from '@polar-sh/sdk';
+import { logError } from '@/lib/error-logger';
+import { getPolarClient, polarErrorMeta } from '@/lib/polar-server';
 
 /**
  * Polar checkout redirection (SaaS subscriptions).
@@ -8,18 +9,6 @@ import { Polar } from '@polar-sh/sdk';
  * Ejemplo:
  * - /api/polar/checkout?products=PROD_ID&metadata=%7B%22tenant_id%22%3A%22...%22%7D
  */
-function getPolar(): Polar {
-  const token = String(process.env.POLAR_ACCESS_TOKEN || '').trim();
-  if (!token) {
-    throw new Error('POLAR_ACCESS_TOKEN no configurado');
-  }
-  return new Polar({ accessToken: token });
-}
-
-function apiBaseUrl(): string {
-  const server = (process.env.POLAR_SERVER as 'sandbox' | 'production' | undefined) || 'sandbox';
-  return server === 'production' ? 'https://api.polar.sh' : 'https://sandbox-api.polar.sh';
-}
 
 function baseUrlFromReq(req: NextRequest): string {
   const envUrl = process.env.NEXT_PUBLIC_APP_URL?.trim();
@@ -47,7 +36,15 @@ export async function GET(req: NextRequest) {
       u.searchParams.get('return_url') || process.env.POLAR_RETURN_URL || process.env.NEXT_PUBLIC_APP_URL || app;
 
     const metadataRaw = u.searchParams.get('metadata');
-    const metadata = metadataRaw ? JSON.parse(metadataRaw) : undefined;
+    let metadata: Record<string, unknown> | undefined;
+    if (metadataRaw) {
+      try {
+        const parsed = JSON.parse(metadataRaw);
+        metadata = parsed && typeof parsed === 'object' ? (parsed as Record<string, unknown>) : undefined;
+      } catch {
+        return NextResponse.json({ success: false, error: 'metadata JSON inválido' }, { status: 400 });
+      }
+    }
 
     const seatsParam = u.searchParams.get('seats');
     const seats = seatsParam != null && seatsParam !== '' ? Number(seatsParam) : undefined;
@@ -62,25 +59,19 @@ export async function GET(req: NextRequest) {
     const requireBillingAddress =
       u.searchParams.get('require_billing_address') === 'false' ? false : true;
 
-    const polar = getPolar();
-    const checkout = await polar.checkouts.create(
-      {
-        products,
-        successUrl,
-        returnUrl,
-        seats,
-        customerExternalId,
-        customerEmail,
-        customerName,
-        customerId,
-        metadata,
-        requireBillingAddress,
-      } as any,
-      {
-        // El SDK permite override del servidor via baseUrl.
-        baseUrl: apiBaseUrl(),
-      } as any
-    );
+    const polar = getPolarClient();
+    const checkout = await polar.checkouts.create({
+      products,
+      successUrl,
+      returnUrl,
+      seats: Number.isFinite(seats) ? seats : undefined,
+      customerExternalId,
+      customerEmail,
+      customerName,
+      customerId,
+      metadata,
+      requireBillingAddress,
+    } as any);
 
     return NextResponse.redirect(checkout.url, 302);
   } catch (e: any) {
@@ -88,13 +79,47 @@ export async function GET(req: NextRequest) {
     const rawStatus = Number(e?.statusCode);
     const status =
       Number.isFinite(rawStatus) && rawStatus >= 400 && rawStatus <= 599 ? rawStatus : 500;
-    console.error('❌ [polar checkout] Error:', e);
+
+    const u = new URL(req.url);
+    const products = u.searchParams.getAll('products').filter(Boolean);
+    let tenantId: string | null = null;
+    let metaSource: string | undefined;
+    let metaPlan: string | undefined;
+    try {
+      const raw = u.searchParams.get('metadata');
+      if (raw) {
+        const m = JSON.parse(raw) as Record<string, unknown>;
+        tenantId = typeof m.tenant_id === 'string' ? m.tenant_id : null;
+        metaSource = typeof m.source === 'string' ? m.source : undefined;
+        metaPlan = typeof m.plan === 'string' ? m.plan : undefined;
+      }
+    } catch {
+      // ignore
+    }
+
+    const logMsg = `❌ [polar checkout] ${msg}`;
+    console.error(logMsg, e);
+    void logError({
+      level: 'error',
+      message: logMsg,
+      error: e,
+      tenantId,
+      url: `${u.pathname}${u.search}`.slice(0, 2000),
+      metadata: {
+        products,
+        seats: u.searchParams.get('seats'),
+        source: metaSource,
+        plan: metaPlan,
+        ...polarErrorMeta(e),
+      },
+    });
+
     return NextResponse.json(
       {
         success: false,
         error: msg,
         hint:
-          'Revisa que POLAR_ACCESS_TOKEN tenga scope checkouts:write y que POLAR_SERVER coincida con el entorno del token.',
+          'Revisa POLAR_ACCESS_TOKEN (scope checkouts:write) y que POLAR_SERVER coincida con el entorno del token (sandbox|production).',
       },
       { status }
     );
