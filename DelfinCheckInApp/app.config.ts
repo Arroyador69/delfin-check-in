@@ -2,29 +2,18 @@ import { ExpoConfig, ConfigContext } from 'expo/config';
 
 export default ({ config }: ConfigContext): ExpoConfig => {
   const apiUrl = process.env.EXPO_PUBLIC_API_URL || 'https://admin.delfincheckin.com';
-  /** Misma base que la API salvo override: "Crear cuenta" abre /plans.html en la landing (p. ej. delfincheckin.com). */
+  /** Base pública (landing). La app iOS no expone registro/planes dentro (App Store 3.1.1). */
   const webPublicBaseUrl =
     process.env.EXPO_PUBLIC_WEB_PUBLIC_BASE_URL?.trim().replace(/\/$/, '') ||
     'https://delfincheckin.com';
   const cleaningPublicBase =
     process.env.EXPO_PUBLIC_CLEANING_PUBLIC_BASE_URL?.trim().replace(/\/$/, '') || '';
 
-  /**
-   * AdMob App ID (incluye ~): distinto por app iOS/Android en la consola.
-   * iOS: perfil Delfín Check-in. Android: sustituir cuando exista el perfil en AdMob.
-   */
-  const admobIosAppId =
-    process.env.EXPO_PUBLIC_ADMOB_IOS_APP_ID?.trim() ||
-    'ca-app-pub-6039298229774115~4354523068';
-  const admobAndroidAppId =
-    process.env.EXPO_PUBLIC_ADMOB_ANDROID_APP_ID?.trim() ||
-    'ca-app-pub-3940256099942544~3347511711';
-
   return {
     name: 'Delfín Check-in',
     slug: 'delfin-owner',
     scheme: 'delfin',
-    version: '1.1.0',
+    version: '1.1.2',
     orientation: 'portrait',
     icon: './assets/icon.png',
     userInterfaceStyle: 'automatic',
@@ -42,7 +31,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     ios: {
       bundleIdentifier: 'com.desarroyo.delfinowner',
       supportsTablet: false,
-      buildNumber: '4',
+      buildNumber: '6',
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
         // Deshabilitar Mac Catalyst para evitar crashes en macOS
@@ -74,13 +63,6 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       AMAZON_MARKETPLACE_HOST: process.env.EXPO_PUBLIC_AMAZON_MARKETPLACE_HOST?.trim() || '',
       AMAZON_DEFAULT_ASIN: process.env.EXPO_PUBLIC_AMAZON_DEFAULT_ASIN?.trim() || '',
       AMAZON_ASSOCIATE_TAG: process.env.EXPO_PUBLIC_AMAZON_ASSOCIATE_TAG?.trim() || '',
-      /** IDs de unidad (banner / intersticial). iOS intersticial creado en AdMob; banner iOS al crear el bloque. */
-      ADMOB_IOS_BANNER_ID: process.env.EXPO_PUBLIC_ADMOB_IOS_BANNER_ID || '',
-      ADMOB_ANDROID_BANNER_ID: process.env.EXPO_PUBLIC_ADMOB_ANDROID_BANNER_ID || '',
-      ADMOB_IOS_INTERSTITIAL_ID:
-        process.env.EXPO_PUBLIC_ADMOB_IOS_INTERSTITIAL_ID?.trim() ||
-        'ca-app-pub-6039298229774115/7074688196',
-      ADMOB_ANDROID_INTERSTITIAL_ID: process.env.EXPO_PUBLIC_ADMOB_ANDROID_INTERSTITIAL_ID || '',
       eas: {
         projectId: '1408210e-72cc-49ab-b045-f91d89452a4e'
       }
@@ -101,15 +83,6 @@ export default ({ config }: ConfigContext): ExpoConfig => {
           android: {
             kotlinVersion: '1.9.0'
           }
-        }
-      ],
-      [
-        'react-native-google-mobile-ads',
-        {
-          androidAppId: admobAndroidAppId,
-          iosAppId: admobIosAppId,
-          userTrackingUsageDescription:
-            'Delfín Check-in puede usar este identificador para mostrar anuncios más relevantes. Puedes cambiarlo en Privacidad del iPhone.'
         }
       ]
     ]

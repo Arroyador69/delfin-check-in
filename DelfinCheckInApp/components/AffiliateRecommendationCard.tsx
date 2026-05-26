@@ -7,6 +7,8 @@ import { getAffiliateTrackClickUrl } from '@/lib/affiliate-go-url';
 import type { MobileAffiliatePlacement } from '@/lib/affiliate-go-url';
 import { getAmazonAffiliateProductUrl } from '@/lib/amazon-affiliate-product-url';
 
+// RN bundler soporta require(); TypeScript no puede resolver .png sin declaración global.
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const PRODUCT_IMAGE = require('../assets/affiliate-recommendation-product.png');
 
 type Props = {
