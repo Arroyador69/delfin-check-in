@@ -25,8 +25,8 @@
   ],
   "crons": [
     {"path":"/api/superadmin/programmatic/cron","schedule":"0 9,17 * * *"},
-    {"path":"/api/superadmin/blog/cron?batch=morning","schedule":"0 10 * * *"},
-    {"path":"/api/superadmin/blog/cron?batch=afternoon","schedule":"0 18 * * *"},
+    {"path":"/api/cron/blog-morning","schedule":"0 10 * * *"},
+    {"path":"/api/cron/blog-afternoon","schedule":"0 18 * * *"},
     {"path":"/api/cron/daily-report","schedule":"0 7 * * *"},
     {"path":"/api/cron/weekly-report","schedule":"0 7 * * 0"},
     {"path":"/api/cron/sync-calendars","schedule":"*/15 * * * *"},
