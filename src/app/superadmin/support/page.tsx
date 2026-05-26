@@ -106,6 +106,15 @@ export default function SuperadminSupportPage() {
         credentials: 'include',
       });
       const data = await res.json().catch(() => ({}));
+      if (res.status === 429) {
+        setTickets([]);
+        const secs = typeof data.retryAfter === 'number' ? data.retryAfter : 60;
+        setListError(
+          data.message ||
+            `Demasiadas peticiones. Espera ${secs} s y pulsa Reintentar (no recargues la página en bucle).`
+        );
+        return;
+      }
       if (!res.ok || !data.success) {
         setTickets([]);
         setListError(data.error || data.details || t('listLoadError'));
@@ -118,7 +127,9 @@ export default function SuperadminSupportPage() {
     } finally {
       setLoading(false);
     }
-  }, [filter, query, t]);
+    // `t` no va en deps: useClientTranslations devuelve función nueva cada render → bucle infinito de fetch.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filter, query]);
 
   useEffect(() => {
     void load();
