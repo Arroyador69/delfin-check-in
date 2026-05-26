@@ -641,9 +641,25 @@ async function publishToGithub(slug: string): Promise<string> {
   const modifiedDate = updatedAt.toISOString().split('T')[0];
   const readTime = estimateReadTimeMinutes(article.content || '');
 
-  const res = await fetch(TEMPLATE_URL, { cache: 'no-store' });
-  if (!res.ok) throw new Error(`No se pudo descargar plantilla: HTTP ${res.status}`);
-  let html = await res.text();
+  async function fetchTemplateWithRetry(): Promise<string> {
+    let lastErr: any = null;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        const res = await fetch(TEMPLATE_URL, { cache: 'no-store' });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return await res.text();
+      } catch (e: any) {
+        lastErr = e;
+        // Pequeño backoff lineal (no bloquea demasiado el cron)
+        await new Promise((r) => setTimeout(r, attempt * 250));
+      }
+    }
+    throw new Error(
+      `No se pudo descargar plantilla (${TEMPLATE_URL}). Último error: ${String(lastErr?.message || lastErr)}`
+    );
+  }
+
+  let html = await fetchTemplateWithRetry();
 
   const replacements: [string, string][] = [
     ['{{ARTICLE_TITLE}}', escapeAttr(article.title || '')],
@@ -687,7 +703,10 @@ async function publishToGithub(slug: string): Promise<string> {
       branch: GITHUB_BRANCH,
     });
   } catch (e: any) {
-    if (e?.status !== 409) throw e;
+    if (e?.status !== 409) {
+      const msg = String(e?.message || e);
+      throw new Error(`GitHub createOrUpdate falló (status ${e?.status || 'unknown'}): ${msg}`);
+    }
     const { data } = await octokit.repos.getContent({
       owner: GITHUB_OWNER,
       repo: GITHUB_REPO,
