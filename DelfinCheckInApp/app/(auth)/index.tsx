@@ -8,7 +8,7 @@ import { useAuth } from '@/lib/auth';
 import { useRouter } from 'expo-router';
 import { getLocale, t } from '@/lib/i18n';
 import { api, getPublicApiOrigin } from '@/lib/api';
-import { getWebOnboardingUrl, getWebSubscribePlansUrl, isWebOnboardingIncomplete } from '@/lib/web-onboarding';
+import { getWebOnboardingUrl, isWebOnboardingIncomplete } from '@/lib/web-onboarding';
 import { openAccountWebUrl } from '@/lib/in-app-browser';
 
 export default function LoginScreen() {
@@ -97,13 +97,7 @@ export default function LoginScreen() {
           <Text style={styles.linkText}>{t('auth.forgotPassword')}</Text>
         </Pressable>
 
-        <Pressable
-          style={[styles.secondaryButton, styles.createAccountButton]}
-          onPress={() => void openAccountWebUrl(getWebSubscribePlansUrl(getLocale()))}
-          disabled={loading}
-        >
-          <Text style={[styles.secondaryButtonText, styles.createAccountText]}>{t('auth.createAccount')}</Text>
-        </Pressable>
+        {/* App Store: sin registro/upgrade dentro de la app (3.1.1). */}
       </View>
     </View>
   );
@@ -177,14 +171,6 @@ const styles = StyleSheet.create({
     color: '#6b7280',
     fontSize: 14,
     fontWeight: '600',
-  },
-  createAccountButton: {
-    backgroundColor: 'white',
-    borderColor: '#bfdbfe',
-  },
-  createAccountText: {
-    color: '#2563eb',
-    fontWeight: '800',
   },
   linkRow: {
     marginTop: 12,
