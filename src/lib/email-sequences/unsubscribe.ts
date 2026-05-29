@@ -27,7 +27,7 @@ export function verifyUnsubscribeSignature(email: string, signature: string): bo
   }
 }
 
-export function buildUnsubscribeUrl(email: string): string {
+export function buildUnsubscribeUrl(email: string, locale = 'es'): string {
   const base = String(process.env.NEXT_PUBLIC_APP_URL || 'https://admin.delfincheckin.com').replace(
     /\/+$/,
     ''
@@ -35,7 +35,8 @@ export function buildUnsubscribeUrl(email: string): string {
   const normalized = email.trim().toLowerCase();
   const sig = signUnsubscribeEmail(normalized);
   const e = Buffer.from(normalized, 'utf8').toString('base64url');
-  return `${base}/api/email/unsubscribe?e=${encodeURIComponent(e)}&s=${encodeURIComponent(sig)}`;
+  const loc = locale.trim() || 'es';
+  return `${base}/${loc}/baja-emails?e=${encodeURIComponent(e)}&s=${encodeURIComponent(sig)}`;
 }
 
 export async function recordUnsubscribe(

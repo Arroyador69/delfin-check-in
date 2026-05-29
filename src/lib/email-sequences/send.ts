@@ -2,6 +2,11 @@ import { sql } from '@/lib/db';
 import { getTransport } from '@/lib/mailer';
 import { renderLifecycleTemplate } from '@/lib/email-sequences/templates';
 import { buildUnsubscribeUrl } from '@/lib/email-sequences/unsubscribe';
+import {
+  buildLifecycleAntivirusHelpUrl,
+  buildLifecycleOpenPixelUrl,
+  getAppBaseUrl,
+} from '@/lib/email-sequences/email-links';
 import type { LifecycleTemplateParams } from '@/lib/email-sequences/templates';
 
 export interface SendLifecycleEmailParams {
@@ -15,6 +20,21 @@ export interface SendLifecycleEmailParams {
   /** Reintento del mismo paso (sin apertura previa). */
   isRetry?: boolean;
   retryNumber?: number;
+}
+
+function lifecycleAntivirusBlock(helpUrl: string): string {
+  return `<tr>
+    <td style="padding:0 32px 16px 32px;">
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#eff6ff;border-left:4px solid #2563eb;border-radius:6px;">
+        <tr><td style="padding:16px 18px;font-size:14px;line-height:1.55;color:#1e3a8a;">
+          <strong>¿Tu antivirus (Avast u otro) bloquea el enlace?</strong><br/>
+          Algunos antivirus marcan enlaces de activación como «phishing» por error. Puedes copiar el enlace del botón en el navegador o seguir nuestra guía.
+          <br/><br/>
+          <a href="${helpUrl.replace(/"/g, '&quot;')}" target="_blank" rel="noopener noreferrer" style="color:#2563eb;font-weight:bold;">Ver guía paso a paso</a>
+        </td></tr>
+      </table>
+    </td>
+  </tr>`;
 }
 
 export async function sendLifecycleEmail(
@@ -34,10 +54,7 @@ export async function sendLifecycleEmail(
         ? `¿Viste nuestro mensaje? — ${content.subject}`
         : content.subject;
 
-  const appBase = String(process.env.NEXT_PUBLIC_APP_URL || 'https://admin.delfincheckin.com').replace(
-    /\/+$/,
-    ''
-  );
+  const helpUrl = buildLifecycleAntivirusHelpUrl('es');
 
   let trackingId: string | null = null;
 
@@ -64,6 +81,7 @@ export async function sendLifecycleEmail(
           enrollment_id: params.enrollmentId,
           is_retry: Boolean(params.isRetry),
           retry_number: params.retryNumber ?? 0,
+          cta_direct: true,
         })}::jsonb
       )
       RETURNING id
@@ -73,12 +91,16 @@ export async function sendLifecycleEmail(
     console.warn('sendLifecycleEmail: tracking insert failed', e);
   }
 
-  const openPixel =
-    trackingId
-      ? `<img src="${appBase}/api/track/email-open?tid=${encodeURIComponent(trackingId)}" alt="" width="1" height="1" style="display:none;border:0;" />`
-      : '';
+  const openPixel = trackingId
+    ? `<img src="${buildLifecycleOpenPixelUrl(trackingId)}" alt="" width="1" height="1" style="display:none;border:0;outline:none;text-decoration:none;" />`
+    : '';
 
-  const html = content.html.replace('</body>', `${openPixel}</body>`);
+  const html = content.html
+    .replace(
+      '<!-- LIFECYCLE_ANTIVIRUS_BLOCK -->',
+      lifecycleAntivirusBlock(helpUrl)
+    )
+    .replace('</body>', `${openPixel}</body>`);
 
   const from =
     process.env.SMTP_FROM_ONBOARDING ||
@@ -115,19 +137,13 @@ export async function sendLifecycleEmail(
   }
 }
 
-export function buildTrackedCtaUrl(trackingId: string, targetUrl: string): string {
-  const appBase = String(process.env.NEXT_PUBLIC_APP_URL || 'https://admin.delfincheckin.com').replace(
-    /\/+$/,
-    ''
-  );
-  return `${appBase}/api/track/email-click?tid=${encodeURIComponent(trackingId)}&url=${encodeURIComponent(targetUrl)}`;
+/** @deprecated CTAs lifecycle van directos; no usar redirect de clic. */
+export function buildTrackedCtaUrl(_trackingId: string, targetUrl: string): string {
+  return targetUrl;
 }
 
 export function buildLifecycleUrls(tenantId: string): { onboardingUrl: string; billingUrl: string } {
-  const appBase = String(process.env.NEXT_PUBLIC_APP_URL || 'https://admin.delfincheckin.com').replace(
-    /\/+$/,
-    ''
-  );
+  const appBase = getAppBaseUrl();
   return {
     onboardingUrl: `${appBase}/es/onboarding`,
     billingUrl: `${appBase}/es/settings/billing`,
