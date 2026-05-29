@@ -349,6 +349,7 @@ export async function middleware(req: NextRequest) {
     pathname.startsWith('/api/landing/') ||
     pathname.startsWith('/api/waitlist') ||
     pathname.startsWith('/api/track/') ||
+    pathname.startsWith('/api/email/unsubscribe') ||
     pathname.startsWith('/api/blog/analytics/') ||
     pathname.startsWith('/api/blog/waitlist') ||
     pathname.startsWith('/api/superadmin/programmatic/cron') ||
@@ -438,6 +439,7 @@ export async function middleware(req: NextRequest) {
         pathname.startsWith('/api/create-payment-intent') ||
         pathname.startsWith('/api/waitlist') ||
         pathname.startsWith('/api/track/') ||
+    pathname.startsWith('/api/email/unsubscribe') ||
         pathname.startsWith('/api/blog/analytics/') ||
         pathname.startsWith('/api/blog/waitlist') ||
         pathname.startsWith('/api/superadmin/programmatic/cron') ||
