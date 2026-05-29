@@ -93,13 +93,7 @@ const PHASE_1_STEPS: StepSeed[] = [
     condition_json: { onboarding_status_in: ['in_progress', 'pending'] },
   },
   { step_order: 5, template_key: 'p1_help', delay_days: 3 },
-  { step_order: 6, template_key: 'p1_last_push', delay_days: 4 },
-  {
-    step_order: 7,
-    template_key: 'p1_reengagement',
-    delay_days: 5,
-    condition_json: { require_not_opened_previous: true },
-  },
+  { step_order: 6, template_key: 'p1_last_push', delay_days: 0 },
 ];
 
 const PHASE_2_STEPS: StepSeed[] = [
@@ -161,6 +155,15 @@ export async function seedEmailSequences(): Promise<void> {
     'onboarding_status=completed y al menos 1 unidad creada',
     PHASE_1_STEPS
   );
+  const phase1Seq = await getSequenceByKey(SEQUENCE_KEY_PHASE_1);
+  if (phase1Seq) {
+    await sql`
+      UPDATE email_sequence_steps
+      SET active = false
+      WHERE sequence_id = ${phase1Seq.id}::uuid
+        AND template_key = 'p1_reengagement'
+    `;
+  }
   await upsertSequence(
     SEQUENCE_KEY_PHASE_2,
     'Fase 2 — Conversión a plan de pago',

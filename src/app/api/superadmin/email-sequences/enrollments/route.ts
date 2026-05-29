@@ -88,6 +88,7 @@ export async function GET(req: NextRequest) {
       e.last_sent_at,
       e.next_send_at,
       e.completed_at,
+      e.metadata,
       s.key AS sequence_key,
       s.name AS sequence_name,
       s.phase,
@@ -99,7 +100,15 @@ export async function GET(req: NextRequest) {
         WHERE et.tenant_id = e.tenant_id
           AND et.metadata->>'lifecycle' = 'true'
           AND et.metadata->>'sequence_key' = s.key
-          AND (et.opened_at IS NOT NULL OR et.status IN ('opened', 'clicked'))) AS emails_opened
+          AND (et.opened_at IS NOT NULL OR et.clicked_at IS NOT NULL OR et.status IN ('opened', 'clicked'))) AS emails_opened,
+      (SELECT COUNT(*)::int FROM email_tracking et
+        WHERE et.metadata->>'enrollment_id' = e.id::text
+          AND (et.metadata->>'step_order')::int = e.current_step) AS sends_on_current_step,
+      (SELECT BOOL_OR(et.opened_at IS NOT NULL OR et.clicked_at IS NOT NULL OR et.status IN ('opened', 'clicked'))
+        FROM email_tracking et
+        WHERE et.metadata->>'enrollment_id' = e.id::text
+          AND (et.metadata->>'step_order')::int = e.current_step) AS current_step_opened,
+      COALESCE((e.metadata->>'step_retry_count')::int, 0) AS step_retry_count
     FROM email_sequence_enrollments e
     JOIN email_sequences s ON s.id = e.sequence_id
     JOIN tenants t ON t.id = e.tenant_id
@@ -109,9 +118,31 @@ export async function GET(req: NextRequest) {
     LIMIT 200
   `;
 
+  const enrollments = rows.rows.map((row) => {
+    const sendsOnStep = Number(row.sends_on_current_step || 0);
+    const stepOpened = Boolean(row.current_step_opened);
+    const retries = Number(row.step_retry_count || 0);
+    let engagement_status = 'pendiente_primer_envio';
+    if (sendsOnStep === 0) {
+      engagement_status = 'pendiente_primer_envio';
+    } else if (stepOpened) {
+      engagement_status = 'abierto_siguiente_paso';
+    } else if (retries > 0) {
+      engagement_status = 'reintento_sin_abrir';
+    } else {
+      engagement_status = 'esperando_apertura';
+    }
+    return { ...row, engagement_status };
+  });
+
   return NextResponse.json({
     success: true,
-    enrollments: rows.rows,
+    enrollments,
     filters: { phase: phaseParam, status: statusVal },
+    engagement_rules: {
+      days_after_open: 1,
+      days_without_open_retry: 4,
+      max_retries_per_step: 12,
+    },
   });
 }

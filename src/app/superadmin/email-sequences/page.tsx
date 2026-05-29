@@ -30,6 +30,27 @@ interface EnrollmentRow {
   phase: number;
   emails_sent: number;
   emails_opened: number;
+  sends_on_current_step?: number;
+  current_step_opened?: boolean;
+  step_retry_count?: number;
+  engagement_status?: string;
+}
+
+const ENGAGEMENT_LABELS: Record<string, string> = {
+  pendiente_primer_envio: 'Pendiente Mail actual',
+  esperando_apertura: 'Esperando apertura',
+  abierto_siguiente_paso: 'Abrió → siguiente paso',
+  reintento_sin_abrir: 'Reintento (sin abrir)',
+};
+
+function engagementBadge(status: string): string {
+  const map: Record<string, string> = {
+    pendiente_primer_envio: 'bg-slate-100 text-slate-700',
+    esperando_apertura: 'bg-amber-100 text-amber-900',
+    abierto_siguiente_paso: 'bg-green-100 text-green-800',
+    reintento_sin_abrir: 'bg-orange-100 text-orange-900',
+  };
+  return map[status] || 'bg-gray-100 text-gray-700';
 }
 
 interface StepStat {
@@ -109,6 +130,7 @@ export default function EmailSequencesPage() {
   const [dueNow, setDueNow] = useState(0);
   const [phaseFilter, setPhaseFilter] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('');
+  const [engagementFilter, setEngagementFilter] = useState<string>('');
   const [initialSyncDone, setInitialSyncDone] = useState(false);
   const [selectedTenantId, setSelectedTenantId] = useState<string | null>(null);
   const [detail, setDetail] = useState<TenantDetail | null>(null);
@@ -142,14 +164,18 @@ export default function EmailSequencesPage() {
       if (!listRes.ok || !list.success) {
         setActionError((prev) => prev || list.error || `Error API listado (${listRes.status})`);
       } else {
-        setEnrollments(list.enrollments || []);
+        let rows = (list.enrollments || []) as EnrollmentRow[];
+        if (engagementFilter) {
+          rows = rows.filter((r) => r.engagement_status === engagementFilter);
+        }
+        setEnrollments(rows);
       }
     } catch (e) {
       console.error(e);
     } finally {
       setLoading(false);
     }
-  }, [phaseFilter, statusFilter]);
+  }, [phaseFilter, statusFilter, engagementFilter]);
 
   useEffect(() => {
     void loadOverview();
@@ -395,7 +421,10 @@ export default function EmailSequencesPage() {
               <strong>Pendientes de envío:</strong> {dueNow}
             </li>
             <li className="text-gray-500 pt-2 border-t">
-              Cada email incluye enlace de baja (RGPD/LSSI). Cron diario 09:30 UTC.
+              <strong>Lógica inteligente:</strong> si abre → siguiente mail al día siguiente. Si no abre → reintento a los 4 días (mismo paso). Cron 09:30 UTC.
+            </li>
+            <li className="text-gray-500">
+              Cada email incluye enlace de baja (RGPD/LSSI).
             </li>
           </ul>
           <Link href="/superadmin/tenants" className="inline-block mt-4 text-sm text-blue-600 hover:underline">
@@ -426,6 +455,17 @@ export default function EmailSequencesPage() {
             <option value="completed">Completados</option>
             <option value="paused">Pausados (baja)</option>
           </select>
+          <select
+            value={engagementFilter}
+            onChange={(e) => setEngagementFilter(e.target.value)}
+            className="text-sm border rounded-lg px-2 py-1"
+          >
+            <option value="">Toda la interacción</option>
+            <option value="pendiente_primer_envio">Pendiente mail actual</option>
+            <option value="esperando_apertura">Esperando apertura</option>
+            <option value="abierto_siguiente_paso">Abrió → siguiente</option>
+            <option value="reintento_sin_abrir">Reintento sin abrir</option>
+          </select>
         </div>
 
         {loading ? (
@@ -443,8 +483,8 @@ export default function EmailSequencesPage() {
                   <th className="text-left p-3">Propietario</th>
                   <th className="text-left p-3">Fase</th>
                   <th className="text-left p-3">Paso</th>
-                  <th className="text-left p-3">Estado</th>
-                  <th className="text-left p-3">Onboarding</th>
+                  <th className="text-left p-3">Interacción</th>
+                  <th className="text-left p-3">Inscripción</th>
                   <th className="text-left p-3">Emails</th>
                   <th className="text-left p-3">Próximo envío</th>
                   <th className="text-left p-3"></th>
@@ -461,14 +501,29 @@ export default function EmailSequencesPage() {
                     <td className="p-3">Mail {e.current_step + 1}</td>
                     <td className="p-3">
                       <span
+                        className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${engagementBadge(e.engagement_status || '')}`}
+                      >
+                        {ENGAGEMENT_LABELS[e.engagement_status || ''] || e.engagement_status || '—'}
+                      </span>
+                      {e.current_step_opened && (
+                        <span className="block text-xs text-green-700 mt-1">✓ Abierto paso actual</span>
+                      )}
+                      {(e.step_retry_count ?? 0) > 0 && (
+                        <span className="block text-xs text-orange-700 mt-0.5">
+                          Reintentos: {e.step_retry_count}
+                        </span>
+                      )}
+                    </td>
+                    <td className="p-3">
+                      <span
                         className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${statusBadge(e.enrollment_status)}`}
                       >
                         {e.enrollment_status}
                       </span>
-                    </td>
-                    <td className="p-3">
-                      {e.onboarding_status || 'pending'}
-                      {e.current_rooms > 0 && ` · ${e.current_rooms} u.`}
+                      <div className="text-xs text-gray-500 mt-1">
+                        {e.onboarding_status || 'pending'}
+                        {e.current_rooms > 0 && ` · ${e.current_rooms} u.`}
+                      </div>
                     </td>
                     <td className="p-3">
                       {e.emails_sent} env. · {e.emails_opened} ab.

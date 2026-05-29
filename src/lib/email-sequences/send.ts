@@ -12,6 +12,9 @@ export interface SendLifecycleEmailParams {
   stepOrder: number;
   enrollmentId: string;
   templateParams: Omit<LifecycleTemplateParams, 'unsubscribeUrl'>;
+  /** Reintento del mismo paso (sin apertura previa). */
+  isRetry?: boolean;
+  retryNumber?: number;
 }
 
 export async function sendLifecycleEmail(
@@ -23,6 +26,13 @@ export async function sendLifecycleEmail(
     ...params.templateParams,
     unsubscribeUrl,
   });
+
+  const subject =
+    params.isRetry && params.retryNumber
+      ? `¿Viste nuestro mensaje? (${params.retryNumber}) — ${content.subject}`
+      : params.isRetry
+        ? `¿Viste nuestro mensaje? — ${content.subject}`
+        : content.subject;
 
   const appBase = String(process.env.NEXT_PUBLIC_APP_URL || 'https://admin.delfincheckin.com').replace(
     /\/+$/,
@@ -44,7 +54,7 @@ export async function sendLifecycleEmail(
         ${params.tenantId}::uuid,
         'custom',
         ${to},
-        ${content.subject},
+        ${subject},
         'sent',
         ${JSON.stringify({
           lifecycle: true,
@@ -52,6 +62,8 @@ export async function sendLifecycleEmail(
           template_key: params.templateKey,
           step_order: params.stepOrder,
           enrollment_id: params.enrollmentId,
+          is_retry: Boolean(params.isRetry),
+          retry_number: params.retryNumber ?? 0,
         })}::jsonb
       )
       RETURNING id
@@ -78,7 +90,7 @@ export async function sendLifecycleEmail(
     const info = await transporter.sendMail({
       from,
       to,
-      subject: content.subject,
+      subject,
       html,
       text: content.text,
     });
