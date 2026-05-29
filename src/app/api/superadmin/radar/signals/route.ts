@@ -53,10 +53,15 @@ export async function GET(req: NextRequest) {
 
     const result = await (sql as any).query(text, params);
 
+    const signals = result.rows.map((row: Record<string, unknown>) => ({
+      ...row,
+      signal_intensity: Number(row.signal_intensity) || 0,
+    }));
+
     return NextResponse.json({
       success: true,
-      signals: result.rows,
-      count: result.rows.length
+      signals,
+      count: signals.length
     });
 
   } catch (error: any) {

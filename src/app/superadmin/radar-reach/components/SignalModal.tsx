@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { toFiniteNumber } from '../utils';
 
 interface Property {
   id: number;
@@ -33,7 +34,7 @@ export default function SignalModal({ signal, properties, onClose, onSave }: Sig
     property_id: signal?.property_id || '',
     tenant_id: signal?.tenant_id || '',
     signal_type: signal?.signal_type || 'google_trends',
-    signal_intensity: signal?.signal_intensity || 50,
+    signal_intensity: toFiniteNumber(signal?.signal_intensity, 50),
     signal_data: signal?.signal_data ? JSON.stringify(signal.signal_data, null, 2) : '{}',
     expires_at: signal?.expires_at ? signal.expires_at.split('T')[0] : '',
     is_active: signal?.is_active !== false

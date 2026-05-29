@@ -59,10 +59,19 @@ export async function GET(req: NextRequest) {
 
     const result = await (sql as any).query(text, params);
 
+    const landings = result.rows.map((row: Record<string, unknown>) => ({
+      ...row,
+      signal_intensity:
+        row.signal_intensity == null ? null : Number(row.signal_intensity) || 0,
+      conversion_rate: Number(row.conversion_rate) || 0,
+      views: Number(row.views) || 0,
+      conversions: Number(row.conversions) || 0,
+    }));
+
     return NextResponse.json({
       success: true,
-      landings: result.rows,
-      count: result.rows.length
+      landings,
+      count: landings.length
     });
 
   } catch (error: any) {
