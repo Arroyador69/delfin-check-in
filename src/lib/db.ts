@@ -4,6 +4,15 @@ import { sql } from "@vercel/postgres";
 // Vercel inyecta automáticamente las credenciales desde POSTGRES_URL
 export { sql };
 
+function isBenignRlsContextError(error: unknown): boolean {
+  const msg = error instanceof Error ? error.message : String(error);
+  return (
+    msg.includes('unrecognized configuration parameter') ||
+    msg.includes('app.current_tenant_id') ||
+    msg.includes('could not determine data type')
+  );
+}
+
 /**
  * 🔒 FUNCIÓN WRAPPER PARA QUERIES CON CONTEXTO DE TENANT
  * 
@@ -33,8 +42,10 @@ export async function withTenantContext<T>(
     try {
       await sql`SET LOCAL app.current_tenant_id = ${tenantId}`;
     } catch (rlsError) {
-      // Si falla, no es crítico - el filtrado explícito por tenant_id ya protege
-      console.warn('⚠️ No se pudo establecer app.current_tenant_id para RLS (puede ser normal en Vercel Postgres):', rlsError);
+      // Neon/serverless suele no soportar GUC custom; el filtro explícito por tenant_id ya protege.
+      if (!isBenignRlsContextError(rlsError) && process.env.NODE_ENV !== 'production') {
+        console.warn('⚠️ No se pudo establecer app.current_tenant_id para RLS:', rlsError);
+      }
     }
 
     // Ejecutar la query

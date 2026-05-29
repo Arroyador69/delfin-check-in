@@ -139,16 +139,18 @@ export default function EmailSequencesPage() {
   const [actionError, setActionError] = useState('');
   const [running, setRunning] = useState<string | null>(null);
 
-  const loadOverview = useCallback(async () => {
+  const loadOverview = useCallback(async (signal?: AbortSignal) => {
     setLoading(true);
     try {
+      const fetchOpts = { credentials: 'include' as const, signal };
       const [overviewRes, listRes] = await Promise.all([
-        fetch('/api/superadmin/email-sequences'),
+        fetch('/api/superadmin/email-sequences', fetchOpts),
         fetch(
           `/api/superadmin/email-sequences/enrollments?${new URLSearchParams({
             ...(phaseFilter ? { phase: phaseFilter } : {}),
             ...(statusFilter ? { status: statusFilter } : {}),
-          })}`
+          })}`,
+          fetchOpts
         ),
       ]);
       const overview = await overviewRes.json();
@@ -171,14 +173,18 @@ export default function EmailSequencesPage() {
         setEnrollments(rows);
       }
     } catch (e) {
+      if (signal?.aborted) return;
       console.error(e);
+      setActionError('No se pudo cargar el panel. Reintenta en unos segundos.');
     } finally {
-      setLoading(false);
+      if (!signal?.aborted) setLoading(false);
     }
   }, [phaseFilter, statusFilter, engagementFilter]);
 
   useEffect(() => {
-    void loadOverview();
+    const ac = new AbortController();
+    void loadOverview(ac.signal);
+    return () => ac.abort();
   }, [loadOverview]);
 
   useEffect(() => {

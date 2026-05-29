@@ -94,7 +94,7 @@ export default function SuperadminSupportPage() {
       : key;
   };
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (signal?: AbortSignal) => {
     setLoading(true);
     setListError(null);
     try {
@@ -104,6 +104,7 @@ export default function SuperadminSupportPage() {
       const qs = params.toString();
       const res = await fetch(`/api/superadmin/support-tickets${qs ? `?${qs}` : ''}`, {
         credentials: 'include',
+        signal,
       });
       const data = await res.json().catch(() => ({}));
       if (res.status === 429) {
@@ -121,18 +122,21 @@ export default function SuperadminSupportPage() {
         return;
       }
       setTickets(Array.isArray(data.tickets) ? data.tickets : []);
-    } catch {
+    } catch (err) {
+      if (signal?.aborted) return;
       setTickets([]);
       setListError(t('openErrorNetwork'));
     } finally {
-      setLoading(false);
+      if (!signal?.aborted) setLoading(false);
     }
     // `t` no va en deps: useClientTranslations devuelve función nueva cada render → bucle infinito de fetch.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filter, query]);
 
   useEffect(() => {
-    void load();
+    const ac = new AbortController();
+    void load(ac.signal);
+    return () => ac.abort();
   }, [load]);
 
   const closeDetail = () => {
@@ -142,7 +146,7 @@ export default function SuperadminSupportPage() {
     setReply('');
   };
 
-  const openDetail = useCallback(async (id: string) => {
+  const openDetail = useCallback(async (id: string, signal?: AbortSignal) => {
     const ticketId = String(id || '').trim();
     if (!ticketId) {
       setOpenError(t('openErrorInvalidId'));
@@ -162,7 +166,7 @@ export default function SuperadminSupportPage() {
     try {
       const res = await fetch(
         `/api/superadmin/support-tickets/${encodeURIComponent(ticketId)}`,
-        { credentials: 'include' }
+        { credentials: 'include', signal }
       );
       const data = await res.json().catch(() => ({}));
       if (!res.ok || !data.success || !data.ticket) {
@@ -174,18 +178,20 @@ export default function SuperadminSupportPage() {
       setNotes(ticket.superadmin_notes || '');
       setStatusEdit(normalizeSupportTicketStatus(ticket.status));
       setDetailMessages(Array.isArray(data.messages) ? data.messages : []);
-    } catch {
+    } catch (err) {
+      if (signal?.aborted) return;
       setOpenError(t('openErrorNetwork'));
     } finally {
-      setDetailLoading(false);
+      if (!signal?.aborted) setDetailLoading(false);
     }
   }, [t]);
 
   useEffect(() => {
     const ticketParam = new URLSearchParams(window.location.search).get('ticket')?.trim();
-    if (ticketParam && isValidTicketUuid(ticketParam)) {
-      openDetail(ticketParam);
-    }
+    if (!ticketParam || !isValidTicketUuid(ticketParam)) return;
+    const ac = new AbortController();
+    void openDetail(ticketParam, ac.signal);
+    return () => ac.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps -- deep link una vez al montar
   }, []);
 
