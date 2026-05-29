@@ -120,6 +120,7 @@ export default function Navigation() {
     { name: tc('amazonAffiliateClicks'), href: '/superadmin/amazon-affiliate-clicks', icon: MousePointerClick },
     { name: tc('referrals'), href: '/superadmin/referrals', icon: Users },
     { name: tc('emails'), href: '/superadmin/emails', icon: FileText },
+    { name: 'Secuencias lifecycle', href: '/superadmin/email-sequences', icon: FileText },
     { name: tc('investorMode'), href: '/superadmin/investor-mode', icon: Target },
     { name: tc('tenants'), href: '/superadmin/tenants', icon: Users },
     { name: tc('analytics'), href: '/superadmin/analytics', icon: TrendingUp },
