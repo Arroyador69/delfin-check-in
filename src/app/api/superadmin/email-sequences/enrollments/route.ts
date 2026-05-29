@@ -4,6 +4,7 @@ import { verifyToken } from '@/lib/auth';
 import { isEffectiveSuperAdminPayload } from '@/lib/platform-owner';
 import { loadTenantLifecycleState } from '@/lib/email-sequences/segment';
 import { seedEmailSequences } from '@/lib/email-sequences/schema';
+import { listLifecycleEnrollments } from '@/lib/email-sequences/list-enrollments-query';
 
 async function requireSuperAdmin(req: NextRequest) {
   const authToken = req.cookies.get('auth_token')?.value;
@@ -14,6 +15,7 @@ async function requireSuperAdmin(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
+  try {
   const admin = await requireSuperAdmin(req);
   if (!admin) {
     return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
@@ -23,7 +25,8 @@ export async function GET(req: NextRequest) {
 
   const phaseParam = req.nextUrl.searchParams.get('phase');
   const statusParam = req.nextUrl.searchParams.get('status');
-  const phaseNum = phaseParam ? parseInt(phaseParam, 10) : null;
+  const parsedPhase = phaseParam ? parseInt(phaseParam, 10) : NaN;
+  const phaseNum = Number.isFinite(parsedPhase) ? parsedPhase : null;
   const statusVal = statusParam && statusParam.length > 0 ? statusParam : null;
 
   const tenantId = req.nextUrl.searchParams.get('tenant_id');
@@ -73,50 +76,7 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  const rows = await sql`
-    SELECT
-      e.id AS enrollment_id,
-      e.tenant_id,
-      t.name AS tenant_name,
-      t.email,
-      t.onboarding_status,
-      COALESCE(t.current_rooms, 0)::int AS current_rooms,
-      t.plan_type,
-      e.current_step,
-      e.status AS enrollment_status,
-      e.enrolled_at,
-      e.last_sent_at,
-      e.next_send_at,
-      e.completed_at,
-      e.metadata,
-      s.key AS sequence_key,
-      s.name AS sequence_name,
-      s.phase,
-      (SELECT COUNT(*)::int FROM email_tracking et
-        WHERE et.tenant_id = e.tenant_id
-          AND et.metadata->>'lifecycle' = 'true'
-          AND et.metadata->>'sequence_key' = s.key) AS emails_sent,
-      (SELECT COUNT(*)::int FROM email_tracking et
-        WHERE et.tenant_id = e.tenant_id
-          AND et.metadata->>'lifecycle' = 'true'
-          AND et.metadata->>'sequence_key' = s.key
-          AND (et.opened_at IS NOT NULL OR et.clicked_at IS NOT NULL OR et.status IN ('opened', 'clicked'))) AS emails_opened,
-      (SELECT COUNT(*)::int FROM email_tracking et
-        WHERE et.metadata->>'enrollment_id' = e.id::text
-          AND (et.metadata->>'step_order')::int = e.current_step) AS sends_on_current_step,
-      (SELECT BOOL_OR(et.opened_at IS NOT NULL OR et.clicked_at IS NOT NULL OR et.status IN ('opened', 'clicked'))
-        FROM email_tracking et
-        WHERE et.metadata->>'enrollment_id' = e.id::text
-          AND (et.metadata->>'step_order')::int = e.current_step) AS current_step_opened,
-      COALESCE((e.metadata->>'step_retry_count')::int, 0) AS step_retry_count
-    FROM email_sequence_enrollments e
-    JOIN email_sequences s ON s.id = e.sequence_id
-    JOIN tenants t ON t.id = e.tenant_id
-    WHERE (${phaseNum} IS NULL OR s.phase = ${phaseNum})
-      AND (${statusVal} IS NULL OR e.status = ${statusVal})
-    ORDER BY e.next_send_at ASC NULLS LAST, e.enrolled_at DESC
-    LIMIT 200
-  `;
+  const rows = await listLifecycleEnrollments({ phase: phaseNum, status: statusVal });
 
   const enrollments = rows.rows.map((row) => {
     const sendsOnStep = Number(row.sends_on_current_step || 0);
@@ -145,4 +105,12 @@ export async function GET(req: NextRequest) {
       max_retries_per_step: 12,
     },
   });
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error('[email-sequences/enrollments]', e);
+    return NextResponse.json(
+      { success: false, error: 'Error al cargar inscripciones', details: msg },
+      { status: 500 }
+    );
+  }
 }
