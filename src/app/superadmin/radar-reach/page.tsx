@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import SignalModal from './components/SignalModal';
 import LandingModal from './components/LandingModal';
+import { formatPercent, toFiniteNumber } from './utils';
 
 interface Tenant {
   id: string;
@@ -95,13 +96,29 @@ export default function RadarReachPage() {
         const signalsRes = await fetch('/api/superadmin/radar/signals');
         if (signalsRes.ok) {
           const signalsData = await signalsRes.json();
-          setSignals(signalsData.signals || []);
+          const raw = signalsData.signals || [];
+          setSignals(
+            raw.map((s: RadarSignal) => ({
+              ...s,
+              signal_intensity: toFiniteNumber(s.signal_intensity),
+            }))
+          );
         }
       } else {
         const landingsRes = await fetch('/api/superadmin/reach/landings');
         if (landingsRes.ok) {
           const landingsData = await landingsRes.json();
-          setLandings(landingsData.landings || []);
+          const rawLandings = landingsData.landings || [];
+          setLandings(
+            rawLandings.map((l: DynamicLanding) => ({
+              ...l,
+              conversion_rate: toFiniteNumber(l.conversion_rate),
+              signal_intensity:
+                l.signal_intensity == null ? null : toFiniteNumber(l.signal_intensity),
+              views: toFiniteNumber(l.views, 0),
+              conversions: toFiniteNumber(l.conversions, 0),
+            }))
+          );
         }
       }
     } catch (error) {
@@ -258,7 +275,9 @@ export default function RadarReachPage() {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {signals.map((signal) => (
+                      {signals.map((signal) => {
+                        const intensity = toFiniteNumber(signal.signal_intensity);
+                        return (
                         <tr key={signal.id} className="hover:bg-gray-50">
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm font-medium text-gray-900">{signal.property_name}</div>
@@ -272,10 +291,10 @@ export default function RadarReachPage() {
                               <div className="w-16 bg-gray-200 rounded-full h-2 mr-2">
                                 <div
                                   className="bg-blue-600 h-2 rounded-full"
-                                  style={{ width: `${signal.signal_intensity}%` }}
+                                  style={{ width: `${Math.min(100, Math.max(0, intensity))}%` }}
                                 ></div>
                               </div>
-                              <span className="text-sm text-gray-900">{signal.signal_intensity.toFixed(0)}%</span>
+                              <span className="text-sm text-gray-900">{formatPercent(intensity, 0)}</span>
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
@@ -313,7 +332,8 @@ export default function RadarReachPage() {
                             </button>
                           </td>
                         </tr>
-                      ))}
+                      );
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -397,7 +417,7 @@ export default function RadarReachPage() {
                             <div>👁️ {landing.views} vistas</div>
                             <div>✅ {landing.conversions} conversiones</div>
                             <div className="text-xs text-gray-500">
-                              {landing.conversion_rate.toFixed(2)}% tasa
+                              {formatPercent(landing.conversion_rate, 2)} tasa
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
