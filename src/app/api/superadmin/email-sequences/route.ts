@@ -91,8 +91,15 @@ export async function GET(req: NextRequest) {
     due_now: dueNow.rows[0]?.c ?? 0,
     video_url: ONBOARDING_VIDEO_URL,
     mir_video_url: MIR_CREDENTIALS_VIDEO_URL,
+    engagement_rules: {
+      days_after_open: 1,
+      days_without_open_retry: 4,
+      max_retries_per_step: 12,
+      description:
+        'Solo avanza al siguiente mail si abrió el actual (+1 día). Sin apertura: reintento del mismo mail a los 4 días.',
+    },
     sequences: [
-      { key: SEQUENCE_KEY_PHASE_1, phase: 1, steps: 8 },
+      { key: SEQUENCE_KEY_PHASE_1, phase: 1, steps: 7 },
       { key: SEQUENCE_KEY_PHASE_2, phase: 2, steps: 4 },
     ],
   });
