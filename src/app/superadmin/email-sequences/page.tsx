@@ -128,6 +128,7 @@ export default function EmailSequencesPage() {
   const [stepStats, setStepStats] = useState<StepStat[]>([]);
   const [unsubCount, setUnsubCount] = useState(0);
   const [dueNow, setDueNow] = useState(0);
+  const [activeEnrollments, setActiveEnrollments] = useState(0);
   const [phaseFilter, setPhaseFilter] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [engagementFilter, setEngagementFilter] = useState<string>('');
@@ -162,6 +163,7 @@ export default function EmailSequencesPage() {
         setStepStats(overview.step_stats || []);
         setUnsubCount(overview.unsubscribed_count || 0);
         setDueNow(overview.due_now || 0);
+        setActiveEnrollments(overview.active_enrollments || 0);
       }
       if (!listRes.ok || !list.success) {
         setActionError((prev) => prev || list.error || `Error API listado (${listRes.status})`);
@@ -198,13 +200,14 @@ export default function EmailSequencesPage() {
       try {
         const res = await fetch('/api/superadmin/email-sequences', {
           method: 'POST',
+          credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action: 'sync' }),
         });
         const data = await res.json();
         if (data.success) {
           setActionMsg(
-            `Auto-sync: ${data.synced} propietarios · Fase 1: +${data.enrolled_phase_1} · Fase 2: +${data.enrolled_phase_2}. Pulsa «Activar y enviar Mail 1» para comenzar.`
+            `Auto-sync: ${data.synced} revisados · Fase 1: +${data.enrolled_phase_1} (elegibles ${data.eligible_phase_1 ?? '?'}) · Fase 2: +${data.enrolled_phase_2} · Pendientes envío: ${data.due_now ?? 0}. Pulsa «Activar y enviar Mail 1».`
           );
           await loadOverview();
         } else {
@@ -226,8 +229,9 @@ export default function EmailSequencesPage() {
     try {
       const res = await fetch('/api/superadmin/email-sequences', {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, dryRun, maxSends: 40 }),
+        body: JSON.stringify({ action, dryRun, maxSends: action === 'activate' ? 80 : 40 }),
       });
       const data = await res.json();
       if (!res.ok || !data.success) {
@@ -235,12 +239,14 @@ export default function EmailSequencesPage() {
         return;
       }
       if (action === 'sync') {
+        setDueNow(data.due_now ?? dueNow);
         setActionMsg(
-          `Sync OK: ${data.synced} tenants · Fase1 +${data.enrolled_phase_1} · Fase2 +${data.enrolled_phase_2} · completados ${data.completed}`
+          `Sync OK: ${data.synced} revisados · Fase 1: +${data.enrolled_phase_1} (elegibles ${data.eligible_phase_1 ?? 0}) · Fase 2: +${data.enrolled_phase_2} · Ajustados paso: ${data.bootstrapped ?? 0} · Pendientes envío: ${data.due_now ?? 0}`
         );
       } else if (action === 'activate') {
+        setDueNow(data.due_now ?? 0);
         setActionMsg(
-          `¡Secuencias activadas! Sync: ${data.synced} · Fase1 +${data.enrolled_phase_1} · Enviados: ${data.sent}${data.errors?.length ? ` · ${data.errors.length} errores` : ''}`
+          `¡Secuencias activadas! Fase1 +${data.enrolled_phase_1} · Enviados: ${data.sent} · Pendientes restantes: ${Math.max(0, (data.due_now ?? 0) - (data.sent ?? 0))}${data.errors?.length ? ` · ${data.errors.length} errores` : ''}`
         );
       } else {
         setActionMsg(
@@ -307,7 +313,7 @@ export default function EmailSequencesPage() {
             onClick={() => {
               if (
                 !window.confirm(
-                  `¿Activar secuencias y enviar Mail 1 a hasta 40 propietarios ahora? (${dueNow} pendientes)`
+                  `¿Activar secuencias y enviar el mail correspondiente a hasta 80 propietarios ahora? (${dueNow} pendientes, ${activeEnrollments} inscritos activos)`
                 )
               )
                 return;
@@ -424,6 +430,9 @@ export default function EmailSequencesPage() {
               <strong>Bajas lifecycle:</strong> {unsubCount}
             </li>
             <li>
+              <strong>Inscripciones activas:</strong> {activeEnrollments}
+            </li>
+            <li>
               <strong>Pendientes de envío:</strong> {dueNow}
             </li>
             <li className="text-gray-500 pt-2 border-t">
@@ -477,10 +486,31 @@ export default function EmailSequencesPage() {
         {loading ? (
           <p className="p-6 text-gray-500 text-sm">Cargando…</p>
         ) : enrollments.length === 0 ? (
-          <p className="p-6 text-gray-500 text-sm">
-            No hay inscripciones con estos filtros. Pulsa &quot;Sincronizar inscripciones&quot; para
-            inscribir propietarios elegibles.
-          </p>
+          <div className="p-6 text-sm text-gray-600 space-y-3">
+            <p className="font-medium text-gray-900">Aún no hay inscripciones visibles</p>
+            <ol className="list-decimal list-inside space-y-1">
+              <li>
+                Asegúrate de tener desplegado el fix del panel (PR #128) y las tablas SQL (
+                <code className="text-xs bg-gray-100 px-1 rounded">database/create-email-sequences.sql</code>
+                ).
+              </li>
+              <li>
+                Pulsa <strong>Sincronizar</strong> — inscribe propietarios en Fase 1 (onboarding incompleto) o Fase 2 (onboarding OK sin plan de pago).
+              </li>
+              <li>
+                Pulsa <strong>Activar y enviar Mail 1</strong> — envía el mail del paso que toca a cada uno (no siempre el de bienvenida).
+              </li>
+              <li>
+                El cron diario (09:30 UTC) seguirá con reintentos y siguiente paso solo si abren el email.
+              </li>
+            </ol>
+            {funnel && (
+              <p className="text-xs text-gray-500">
+                Elegibles aprox.: Fase 1 ≈ {funnel.onboarding_incomplete} con onboarding incompleto · Fase 2 ≈{' '}
+                {Math.max(0, (funnel.with_property || 0) - (funnel.paid_plan || 0))} con propiedad sin plan de pago.
+              </p>
+            )}
+          </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">

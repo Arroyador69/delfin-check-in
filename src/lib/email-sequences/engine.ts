@@ -13,6 +13,7 @@ import {
   seedEmailSequences,
 } from '@/lib/email-sequences/schema';
 import {
+  inferPhase1StartStep,
   isEmailUnsubscribed,
   loadAllTenantsForLifecycleSync,
   loadTenantLifecycleState,
@@ -231,7 +232,9 @@ function stepMatchesConditions(
 async function enrollTenant(
   tenantId: string,
   sequenceId: string,
-  startAt: Date
+  sequenceKey: string,
+  startAt: Date,
+  state: TenantLifecycleState
 ): Promise<boolean> {
   const existing = await sql`
     SELECT id, status FROM email_sequence_enrollments
@@ -242,19 +245,84 @@ async function enrollTenant(
     return false;
   }
 
+  const steps = await getStepsForSequence(sequenceId);
+  let startStep = 0;
+  if (sequenceKey === SEQUENCE_KEY_PHASE_1) {
+    const inferred = inferPhase1StartStep(state);
+    startStep = await resolveApplicableStepIndex(steps, inferred, state, sequenceKey);
+  }
+
   await sql`
     INSERT INTO email_sequence_enrollments (
       tenant_id, sequence_id, current_step, status, enrolled_at, next_send_at
     ) VALUES (
       ${tenantId}::uuid,
       ${sequenceId}::uuid,
-      0,
+      ${startStep},
       'active',
       NOW(),
       ${startAt.toISOString()}
     )
   `;
   return true;
+}
+
+/** Sin envíos lifecycle aún: ajusta paso según onboarding y deja listo para enviar. */
+async function bootstrapEnrollmentIfNeeded(
+  enrollmentId: string,
+  tenantId: string,
+  sequenceId: string,
+  sequenceKey: string,
+  currentStep: number
+): Promise<boolean> {
+  const sent = await sql`
+    SELECT 1 FROM email_tracking
+    WHERE metadata->>'lifecycle' = 'true'
+      AND metadata->>'enrollment_id' = ${enrollmentId}
+    LIMIT 1
+  `;
+  if (sent.rows.length > 0) return false;
+
+  const state = await loadTenantLifecycleState(tenantId);
+  if (!state) return false;
+
+  const steps = await getStepsForSequence(sequenceId);
+  let targetStep = currentStep;
+  if (sequenceKey === SEQUENCE_KEY_PHASE_1) {
+    const inferred = inferPhase1StartStep(state);
+    targetStep = await resolveApplicableStepIndex(
+      steps,
+      Math.max(currentStep, inferred),
+      state,
+      sequenceKey
+    );
+  }
+
+  await sql`
+    UPDATE email_sequence_enrollments
+    SET
+      current_step = ${targetStep},
+      next_send_at = ${immediateSendAt().toISOString()},
+      updated_at = NOW()
+    WHERE id = ${enrollmentId}::uuid
+      AND status = 'active'
+  `;
+  return targetStep !== currentStep;
+}
+
+/** Sin ningún envío lifecycle: deja la inscripción lista para el cron o «Activar». */
+async function queueEnrollmentForFirstSend(enrollmentId: string): Promise<void> {
+  await sql`
+    UPDATE email_sequence_enrollments
+    SET next_send_at = ${immediateSendAt().toISOString()}, updated_at = NOW()
+    WHERE id = ${enrollmentId}::uuid
+      AND status = 'active'
+      AND NOT EXISTS (
+        SELECT 1 FROM email_tracking et
+        WHERE et.metadata->>'lifecycle' = 'true'
+          AND et.metadata->>'enrollment_id' = ${enrollmentId}
+      )
+  `;
 }
 
 async function markEnrollmentCompleted(enrollmentId: string): Promise<void> {
@@ -304,7 +372,8 @@ async function refreshEnrollmentGoals(
       LIMIT 1
     `;
     if (already.rows.length === 0) {
-      await enrollTenant(tenantId, phase2.id, immediateSendAt());
+      const st = await loadTenantLifecycleState(tenantId);
+      if (st) await enrollTenant(tenantId, phase2.id, SEQUENCE_KEY_PHASE_2, immediateSendAt(), st);
     }
   }
 
@@ -316,7 +385,14 @@ export async function syncLifecycleEnrollments(): Promise<{
   enrolled_phase_1: number;
   enrolled_phase_2: number;
   completed: number;
+  bootstrapped: number;
+  due_now: number;
+  eligible_phase_1: number;
+  eligible_phase_2: number;
+  skipped_unsubscribed: number;
+  skipped_paid: number;
 }> {
+  await ensureEmailSequenceSchema();
   await seedEmailSequences();
   const phase1 = await getSequenceByKey(SEQUENCE_KEY_PHASE_1);
   const phase2 = await getSequenceByKey(SEQUENCE_KEY_PHASE_2);
@@ -326,36 +402,97 @@ export async function syncLifecycleEnrollments(): Promise<{
   let enrolledP1 = 0;
   let enrolledP2 = 0;
   let completed = 0;
+  let bootstrapped = 0;
+  let eligibleP1 = 0;
+  let eligibleP2 = 0;
+  let skippedUnsub = 0;
+  let skippedPaid = 0;
 
   for (const state of tenants) {
     completed += await refreshEnrollmentGoals(state.tenant_id, state);
 
-    if (state.is_unsubscribed) continue;
-    if (state.phase_2_goal_met) continue;
+    if (state.is_unsubscribed) {
+      skippedUnsub++;
+      continue;
+    }
+    if (state.phase_2_goal_met) {
+      skippedPaid++;
+      continue;
+    }
 
     if (!state.phase_1_goal_met) {
-      const ok = await enrollTenant(state.tenant_id, phase1.id, immediateSendAt());
+      eligibleP1++;
+      const ok = await enrollTenant(
+        state.tenant_id,
+        phase1.id,
+        SEQUENCE_KEY_PHASE_1,
+        immediateSendAt(),
+        state
+      );
       if (ok) enrolledP1++;
     }
 
     if (state.phase_1_goal_met && !state.phase_2_goal_met && phase2) {
+      eligibleP2++;
       const existing = await sql`
         SELECT id FROM email_sequence_enrollments
         WHERE tenant_id = ${state.tenant_id}::uuid AND sequence_id = ${phase2.id}::uuid
         LIMIT 1
       `;
       if (existing.rows.length === 0) {
-        const ok = await enrollTenant(state.tenant_id, phase2.id, immediateSendAt());
+        const ok = await enrollTenant(
+          state.tenant_id,
+          phase2.id,
+          SEQUENCE_KEY_PHASE_2,
+          immediateSendAt(),
+          state
+        );
         if (ok) enrolledP2++;
       }
     }
   }
+
+  const activeEnrollments = await sql`
+    SELECT
+      e.id,
+      e.tenant_id,
+      e.sequence_id,
+      e.current_step,
+      s.key AS sequence_key
+    FROM email_sequence_enrollments e
+    JOIN email_sequences s ON s.id = e.sequence_id
+    WHERE e.status = 'active'
+  `;
+
+  for (const row of activeEnrollments.rows) {
+    const id = String(row.id);
+    const changed = await bootstrapEnrollmentIfNeeded(
+      id,
+      String(row.tenant_id),
+      String(row.sequence_id),
+      String(row.sequence_key),
+      Number(row.current_step)
+    );
+    if (changed) bootstrapped++;
+    await queueEnrollmentForFirstSend(id);
+  }
+
+  const dueR = await sql`
+    SELECT COUNT(*)::int AS c FROM email_sequence_enrollments
+    WHERE status = 'active' AND next_send_at IS NOT NULL AND next_send_at <= NOW()
+  `;
 
   return {
     synced: tenants.length,
     enrolled_phase_1: enrolledP1,
     enrolled_phase_2: enrolledP2,
     completed,
+    bootstrapped,
+    due_now: Number(dueR.rows[0]?.c || 0),
+    eligible_phase_1: eligibleP1,
+    eligible_phase_2: eligibleP2,
+    skipped_unsubscribed: skippedUnsub,
+    skipped_paid: skippedPaid,
   };
 }
 
@@ -620,7 +757,13 @@ export async function maybeEnrollNewTenantInLifecycle(tenantId: string): Promise
     const state = await loadTenantLifecycleState(tenantId);
     if (!state || state.is_unsubscribed || state.phase_1_goal_met || state.phase_2_goal_met) return;
 
-    await enrollTenant(tenantId, phase1.id, immediateSendAt());
+    await enrollTenant(
+      tenantId,
+      phase1.id,
+      SEQUENCE_KEY_PHASE_1,
+      immediateSendAt(),
+      state
+    );
   } catch (e) {
     console.warn('maybeEnrollNewTenantInLifecycle:', e);
   }

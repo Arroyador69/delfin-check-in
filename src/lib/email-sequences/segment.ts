@@ -60,6 +60,20 @@ export function computePhase2GoalMet(planType: string | null, planId: string | n
   return effective !== 'free';
 }
 
+/**
+ * Paso inicial en Fase 1 según estado real del propietario (evita reenviar bienvenida a cuentas antiguas).
+ * Índices alineados con email_sequence_steps.step_order en schema.ts.
+ */
+export function inferPhase1StartStep(state: TenantLifecycleState): number {
+  const st = (state.onboarding_status || 'pending').toLowerCase();
+  if (state.phase_1_goal_met) return 6;
+  if (st === 'completed' && state.current_rooms < 1 && state.properties_count < 1) {
+    return 3; // p1_social_proof — falta propiedad
+  }
+  if (st === 'in_progress') return 4; // p1_resume
+  return 0; // p1_welcome — pending / sin empezar
+}
+
 export function resolveLifecycleSegment(
   state: Omit<TenantLifecycleState, 'segment'>,
   isUnsubscribed: boolean

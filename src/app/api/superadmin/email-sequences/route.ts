@@ -82,6 +82,10 @@ export async function GET(req: NextRequest) {
     WHERE status = 'active' AND next_send_at IS NOT NULL AND next_send_at <= NOW()
   `;
 
+  const activeEnrollments = await sql`
+    SELECT COUNT(*)::int AS c FROM email_sequence_enrollments WHERE status = 'active'
+  `;
+
   return NextResponse.json({
     success: true,
     funnel: funnel.rows[0] || {},
@@ -89,6 +93,7 @@ export async function GET(req: NextRequest) {
     step_stats: stepStats.rows,
     unsubscribed_count: unsubCount.rows[0]?.c ?? 0,
     due_now: dueNow.rows[0]?.c ?? 0,
+    active_enrollments: activeEnrollments.rows[0]?.c ?? 0,
     video_url: ONBOARDING_VIDEO_URL,
     mir_video_url: MIR_CREDENTIALS_VIDEO_URL,
     engagement_rules: {
@@ -131,7 +136,7 @@ export async function POST(req: NextRequest) {
       const sync = await syncLifecycleEnrollments();
       const result = await processLifecycleEmailQueue({
         dryRun: false,
-        maxSends: body.maxSends ? Number(body.maxSends) : 40,
+        maxSends: body.maxSends ? Number(body.maxSends) : 80,
       });
       return NextResponse.json({
         success: true,
