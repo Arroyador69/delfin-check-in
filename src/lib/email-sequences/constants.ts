@@ -1,7 +1,12 @@
-/** Video de onboarding en YouTube (mail 2 de Fase 1). */
+/** Video de onboarding general (mail 2 de Fase 1). */
 export const ONBOARDING_VIDEO_URL = 'https://www.youtube.com/watch?v=-bcIKsL1vsM';
 
 export const ONBOARDING_VIDEO_ID = '-bcIKsL1vsM';
+
+/** Video: configurar credenciales MIR / envío parte de viajeros (mail 3 de Fase 1). */
+export const MIR_CREDENTIALS_VIDEO_URL = 'https://www.youtube.com/watch?v=FVI2aoR05ww';
+
+export const MIR_CREDENTIALS_VIDEO_ID = 'FVI2aoR05ww';
 
 export const SEQUENCE_KEY_PHASE_1 = 'phase_1_activation';
 

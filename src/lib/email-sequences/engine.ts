@@ -56,6 +56,11 @@ function addDays(date: Date, days: number): Date {
   return d;
 }
 
+/** Envío inmediato en el siguiente cron / run manual. */
+function immediateSendAt(): Date {
+  return new Date(Date.now() - 60_000);
+}
+
 function parseCondition(json: Record<string, unknown> | null): {
   onboarding_status_in?: string[];
   require_not_opened_previous?: boolean;
@@ -206,7 +211,7 @@ async function refreshEnrollmentGoals(
       LIMIT 1
     `;
     if (already.rows.length === 0) {
-      await enrollTenant(tenantId, phase2.id, new Date());
+      await enrollTenant(tenantId, phase2.id, immediateSendAt());
     }
   }
 
@@ -236,7 +241,7 @@ export async function syncLifecycleEnrollments(): Promise<{
     if (state.phase_2_goal_met) continue;
 
     if (!state.phase_1_goal_met) {
-      const ok = await enrollTenant(state.tenant_id, phase1.id, new Date());
+      const ok = await enrollTenant(state.tenant_id, phase1.id, immediateSendAt());
       if (ok) enrolledP1++;
     }
 
@@ -247,7 +252,7 @@ export async function syncLifecycleEnrollments(): Promise<{
         LIMIT 1
       `;
       if (existing.rows.length === 0) {
-        const ok = await enrollTenant(state.tenant_id, phase2.id, new Date());
+        const ok = await enrollTenant(state.tenant_id, phase2.id, immediateSendAt());
         if (ok) enrolledP2++;
       }
     }
@@ -431,4 +436,20 @@ export async function processLifecycleEmailQueue(options?: {
   }
 
   return result;
+}
+
+/** Inscribe un tenant recién creado en Fase 1 si aplica (no lanza errores). */
+export async function maybeEnrollNewTenantInLifecycle(tenantId: string): Promise<void> {
+  try {
+    await seedEmailSequences();
+    const phase1 = await getSequenceByKey(SEQUENCE_KEY_PHASE_1);
+    if (!phase1) return;
+
+    const state = await loadTenantLifecycleState(tenantId);
+    if (!state || state.is_unsubscribed || state.phase_1_goal_met || state.phase_2_goal_met) return;
+
+    await enrollTenant(tenantId, phase1.id, immediateSendAt());
+  } catch (e) {
+    console.warn('maybeEnrollNewTenantInLifecycle:', e);
+  }
 }

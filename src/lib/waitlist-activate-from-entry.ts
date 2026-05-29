@@ -17,6 +17,7 @@ import {
   generateOnboardingToken,
   onboardingTokenExpiry,
 } from '@/lib/onboarding-magic-link';
+import { maybeEnrollNewTenantInLifecycle } from '@/lib/email-sequences/engine';
 
 export type WaitlistEntryForActivate = {
   id: string;
@@ -193,6 +194,8 @@ export async function activateWaitlistEntryFromRow(
   `;
 
   tenantId = tenantResult.rows[0].id;
+
+  void maybeEnrollNewTenantInLifecycle(String(tenantId));
 
   const tempPassword = crypto.randomBytes(12).toString('base64').slice(0, 16);
   const passwordHash = await hash(tempPassword, 12);

@@ -1,8 +1,10 @@
 import {
+  MIR_CREDENTIALS_VIDEO_ID,
+  MIR_CREDENTIALS_VIDEO_URL,
   ONBOARDING_VIDEO_ID,
   ONBOARDING_VIDEO_URL,
 } from '@/lib/email-sequences/constants';
-import { getOnboardingVideoThumbnailUrl } from '@/lib/email-sequences/schema';
+import { getMirVideoThumbnailUrl, getOnboardingVideoThumbnailUrl } from '@/lib/email-sequences/schema';
 
 export interface LifecycleTemplateParams {
   ownerName: string;
@@ -83,14 +85,14 @@ function infoBox(inner: string, color = '#eff6ff', border = '#2563eb'): string {
   </table>`;
 }
 
-function videoBlock(videoUrl: string, thumbnailUrl: string): string {
+function videoBlock(videoUrl: string, thumbnailUrl: string, label: string): string {
   return `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin:20px 0;">
     <tr><td align="center">
       <a href="${escAttr(videoUrl)}" style="text-decoration:none;display:block;">
-        <img src="${escAttr(thumbnailUrl)}" alt="Ver vídeo: completar onboarding" width="520" style="max-width:100%;border-radius:8px;border:0;display:block;" />
+        <img src="${escAttr(thumbnailUrl)}" alt="${escAttr(label)}" width="520" style="max-width:100%;border-radius:8px;border:0;display:block;" />
       </a>
       <p style="margin:10px 0 0 0;font-size:14px;color:#2563eb;text-align:center;">
-        <a href="${escAttr(videoUrl)}" style="color:#2563eb;font-weight:600;">▶ Ver vídeo: cómo completar tu onboarding (≈2 min)</a>
+        <a href="${escAttr(videoUrl)}" style="color:#2563eb;font-weight:600;">▶ ${esc(label)}</a>
       </p>
     </td></tr>
   </table>`;
@@ -106,7 +108,7 @@ const TEMPLATES: Record<
     const body = contentBlock(`
       <h1 style="margin:0 0 16px 0;font-size:22px;color:#0f172a;">Hola ${esc(name)},</h1>
       <p style="margin:0 0 12px 0;">Creaste tu cuenta en <strong>Delfín Check-in</strong> pero aún no has terminado de configurarla. Solo te faltan unos minutos para tener listo el check-in digital y el registro de viajeros.</p>
-      ${infoBox('<strong>⏱ Tiempo estimado:</strong> unos 10 minutos · <strong>Resultado:</strong> tu primera unidad lista para recibir huéspedes.')}
+      ${infoBox('<strong>Plan gratuito:</strong> puedes configurar tu alojamiento y las credenciales MIR para enviar el parte de viajeros sin coste de suscripción.')}
       ${ctaButton(p.onboardingUrl, 'Continuar mi configuración')}
       <p style="margin:16px 0 0 0;font-size:13px;color:#64748b;">Si el botón no funciona, copia este enlace en el navegador:<br/><span style="word-break:break-all;">${esc(p.onboardingUrl)}</span></p>
     `);
@@ -124,7 +126,7 @@ const TEMPLATES: Record<
     const body = contentBlock(`
       <h1 style="margin:0 0 16px 0;font-size:22px;color:#0f172a;">${esc(name)}, no hace falta ser técnico</h1>
       <p style="margin:0 0 12px 0;">Preparé un vídeo corto donde te muestro paso a paso cómo completar el onboarding de Delfín Check-in: datos del negocio, unidades e integración con el registro de viajeros.</p>
-      ${videoBlock(ONBOARDING_VIDEO_URL, thumb)}
+      ${videoBlock(ONBOARDING_VIDEO_URL, thumb, 'Ver vídeo: completar onboarding (≈2 min)')}
       ${infoBox('No enviamos nada al SES/MIR hasta que tú lo confirmes. Configuras primero, pruebas cuando quieras.')}
       ${ctaButton(p.onboardingUrl, 'Abrir mi onboarding')}
     `);
@@ -135,13 +137,31 @@ const TEMPLATES: Record<
     };
   },
 
+  p1_mir_video: (p) => {
+    const name = firstName(p.ownerName);
+    const thumb = getMirVideoThumbnailUrl();
+    const subject = `${name}, configura tus credenciales MIR (parte de viajeros)`;
+    const body = contentBlock(`
+      <h1 style="margin:0 0 16px 0;font-size:22px;color:#0f172a;">El paso clave: credenciales MIR</h1>
+      <p style="margin:0 0 12px 0;">Para enviar el <strong>parte de viajeros</strong> al registro oficial (SES/MIR) necesitas conectar tus credenciales. En el <strong>plan gratuito</strong> también puedes configurarlo y probarlo cuando quieras.</p>
+      ${videoBlock(MIR_CREDENTIALS_VIDEO_URL, thumb, 'Ver vídeo: configurar credenciales MIR paso a paso')}
+      ${infoBox('<strong>Importante:</strong> Delfín Check-in no envía nada al MIR hasta que tú lo confirmes. Primero configuras, luego pruebas con calma.', '#f0fdf4', '#16a34a')}
+      ${ctaButton(p.onboardingUrl, 'Configurar credenciales MIR ahora')}
+    `);
+    return {
+      subject,
+      html: wrapEmail(body, p.unsubscribeUrl),
+      text: `Hola ${name},\n\nVídeo credenciales MIR: ${MIR_CREDENTIALS_VIDEO_URL}\n\nOnboarding: ${p.onboardingUrl}\n\nBaja: ${p.unsubscribeUrl}`,
+    };
+  },
+
   p1_social_proof: (p) => {
     const name = firstName(p.ownerName);
-    const subject = `${name}, así de sencillo es el check-in para tus huéspedes`;
+    const subject = `${name}, check-in digital + parte de viajeros automático`;
     const body = contentBlock(`
       <h1 style="margin:0 0 16px 0;font-size:22px;color:#0f172a;">Tus huéspedes rellenan el formulario solos</h1>
-      <p style="margin:0 0 12px 0;">Con Delfín Check-in el huésped recibe un enlace, completa sus datos desde el móvil y tú recibes el parte listo para el registro de viajeros — sin papeles ni perseguir documentación.</p>
-      ${infoBox('<strong>Lo que consigues al terminar:</strong><br/>✓ Formulario digital para huéspedes<br/>✓ Panel para gestionar reservas y unidades<br/>✓ Envío al registro de viajeros cuando lo actives', '#f0fdf4', '#16a34a')}
+      <p style="margin:0 0 12px 0;">Con Delfín Check-in el huésped recibe un enlace, completa sus datos desde el móvil y tú recibes el parte listo para el <strong>registro de viajeros</strong> — sin papeles ni perseguir documentación.</p>
+      ${infoBox('<strong>En plan gratuito consigues:</strong><br/>✓ Formulario digital para huéspedes<br/>✓ Panel para gestionar reservas y unidades<br/>✓ Conexión MIR para enviar el parte de viajeros<br/>✓ Vídeo guía MIR: <a href="' + escAttr(MIR_CREDENTIALS_VIDEO_URL) + '" style="color:#2563eb;">Ver tutorial</a>', '#f0fdf4', '#16a34a')}
       ${ctaButton(p.onboardingUrl, 'Configurar mi primera unidad')}
     `);
     return {
@@ -193,9 +213,9 @@ const TEMPLATES: Record<
     const body = contentBlock(`
       <h1 style="margin:0 0 16px 0;font-size:22px;color:#0f172a;">Último recordatorio amable</h1>
       <p style="margin:0 0 12px 0;">Tu cuenta en Delfín Check-in sigue activa, pero sin completar la configuración no puedes usar el check-in digital ni cumplir cómodamente con el registro de viajeros.</p>
-      ${infoBox('<strong>Solo te faltan unos pasos.</strong> La mayoría de propietarios lo terminan en una sola sesión.')}
+      ${infoBox('Recuerda: con el plan gratuito puedes configurar tus credenciales MIR y enviar el parte de viajeros. Te dejamos el vídeo por si te ayuda: <a href="' + escAttr(MIR_CREDENTIALS_VIDEO_URL) + '" style="color:#2563eb;">Configurar credenciales MIR</a>')}
       ${ctaButton(p.onboardingUrl, 'Terminar ahora (≈10 min)')}
-      <p style="margin:16px 0 0 0;font-size:13px;color:#64748b;">También puedes ver el vídeo guía: <a href="${escAttr(ONBOARDING_VIDEO_URL)}" style="color:#2563eb;">Ver tutorial en YouTube</a></p>
+      <p style="margin:16px 0 0 0;font-size:13px;color:#64748b;">Vídeos guía: <a href="${escAttr(ONBOARDING_VIDEO_URL)}" style="color:#2563eb;">Onboarding</a> · <a href="${escAttr(MIR_CREDENTIALS_VIDEO_URL)}" style="color:#2563eb;">Credenciales MIR</a></p>
     `);
     return {
       subject,
@@ -210,7 +230,7 @@ const TEMPLATES: Record<
     const body = contentBlock(`
       <h1 style="margin:0 0 16px 0;font-size:22px;color:#0f172a;">Te escribimos de nuevo por si se perdió el anterior</h1>
       <p style="margin:0 0 12px 0;">Queríamos asegurarnos de que recibiste la invitación para completar tu configuración en Delfín Check-in.</p>
-      ${videoBlock(ONBOARDING_VIDEO_URL, getOnboardingVideoThumbnailUrl())}
+      ${videoBlock(ONBOARDING_VIDEO_URL, getOnboardingVideoThumbnailUrl(), 'Ver vídeo: completar onboarding')}
       ${ctaButton(p.onboardingUrl, 'Acceder a mi cuenta')}
     `);
     return {
@@ -225,8 +245,8 @@ const TEMPLATES: Record<
     const subject = `${name}, ya tienes todo listo — esto es lo que puedes desbloquear`;
     const body = contentBlock(`
       <h1 style="margin:0 0 16px 0;font-size:22px;color:#0f172a;">¡Enhorabuena, ${esc(name)}!</h1>
-      <p style="margin:0 0 12px 0;">Has completado la configuración básica. Con un plan de pago puedes desbloquear más unidades, funciones legales avanzadas y automatizaciones que ahorran horas cada semana.</p>
-      ${infoBox('<strong>Plan gratuito:</strong> 1 unidad · ideal para empezar<br/><strong>Planes de pago:</strong> más unidades, legal completo, soporte prioritario', '#fef3c7', '#f59e0b')}
+      <p style="margin:0 0 12px 0;">Has completado la configuración básica. Con un plan de pago puedes desbloquear más unidades, el módulo legal completo y automatizaciones avanzadas del parte de viajeros.</p>
+      ${infoBox('<strong>Plan gratuito:</strong> 1 unidad + credenciales MIR · ideal para empezar<br/><strong>Planes de pago:</strong> más unidades, legal completo, soporte prioritario', '#fef3c7', '#f59e0b')}
       ${ctaButton(p.billingUrl, 'Ver planes y precios')}
     `);
     return {

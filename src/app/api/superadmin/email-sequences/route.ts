@@ -8,6 +8,8 @@ import {
 } from '@/lib/email-sequences/engine';
 import { seedEmailSequences } from '@/lib/email-sequences/schema';
 import {
+  MIR_CREDENTIALS_VIDEO_URL,
+  ONBOARDING_VIDEO_URL,
   SEQUENCE_KEY_PHASE_1,
   SEQUENCE_KEY_PHASE_2,
 } from '@/lib/email-sequences/constants';
@@ -87,9 +89,10 @@ export async function GET(req: NextRequest) {
     step_stats: stepStats.rows,
     unsubscribed_count: unsubCount.rows[0]?.c ?? 0,
     due_now: dueNow.rows[0]?.c ?? 0,
-    video_url: 'https://www.youtube.com/watch?v=-bcIKsL1vsM',
+    video_url: ONBOARDING_VIDEO_URL,
+    mir_video_url: MIR_CREDENTIALS_VIDEO_URL,
     sequences: [
-      { key: SEQUENCE_KEY_PHASE_1, phase: 1, steps: 7 },
+      { key: SEQUENCE_KEY_PHASE_1, phase: 1, steps: 8 },
       { key: SEQUENCE_KEY_PHASE_2, phase: 2, steps: 4 },
     ],
   });
@@ -115,6 +118,22 @@ export async function POST(req: NextRequest) {
       const maxSends = body.maxSends ? Number(body.maxSends) : 40;
       const result = await processLifecycleEmailQueue({ dryRun, maxSends });
       return NextResponse.json({ success: true, action, dryRun, ...result });
+    }
+
+    if (action === 'activate') {
+      const sync = await syncLifecycleEnrollments();
+      const result = await processLifecycleEmailQueue({
+        dryRun: false,
+        maxSends: body.maxSends ? Number(body.maxSends) : 40,
+      });
+      return NextResponse.json({
+        success: true,
+        action,
+        ...sync,
+        sent: result.sent,
+        skipped: result.skipped,
+        errors: result.errors,
+      });
     }
 
     return NextResponse.json({ error: 'Acción desconocida' }, { status: 400 });

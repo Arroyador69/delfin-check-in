@@ -1,5 +1,7 @@
 import { sql } from '@/lib/db';
 import {
+  MIR_CREDENTIALS_VIDEO_ID,
+  MIR_CREDENTIALS_VIDEO_URL,
   ONBOARDING_VIDEO_ID,
   ONBOARDING_VIDEO_URL,
   SEQUENCE_KEY_PHASE_1,
@@ -82,17 +84,18 @@ type StepSeed = {
 const PHASE_1_STEPS: StepSeed[] = [
   { step_order: 0, template_key: 'p1_welcome', delay_days: 0 },
   { step_order: 1, template_key: 'p1_video', delay_days: 2 },
-  { step_order: 2, template_key: 'p1_social_proof', delay_days: 3 },
+  { step_order: 2, template_key: 'p1_mir_video', delay_days: 2 },
+  { step_order: 3, template_key: 'p1_social_proof', delay_days: 2 },
   {
-    step_order: 3,
+    step_order: 4,
     template_key: 'p1_resume',
     delay_days: 3,
     condition_json: { onboarding_status_in: ['in_progress', 'pending'] },
   },
-  { step_order: 4, template_key: 'p1_help', delay_days: 4 },
-  { step_order: 5, template_key: 'p1_last_push', delay_days: 4 },
+  { step_order: 5, template_key: 'p1_help', delay_days: 3 },
+  { step_order: 6, template_key: 'p1_last_push', delay_days: 4 },
   {
-    step_order: 6,
+    step_order: 7,
     template_key: 'p1_reengagement',
     delay_days: 5,
     condition_json: { require_not_opened_previous: true },
@@ -181,4 +184,8 @@ export function getOnboardingVideoThumbnailUrl(): string {
   return `https://img.youtube.com/vi/${ONBOARDING_VIDEO_ID}/hqdefault.jpg`;
 }
 
-export { ONBOARDING_VIDEO_URL };
+export function getMirVideoThumbnailUrl(): string {
+  return `https://img.youtube.com/vi/${MIR_CREDENTIALS_VIDEO_ID}/hqdefault.jpg`;
+}
+
+export { ONBOARDING_VIDEO_URL, MIR_CREDENTIALS_VIDEO_URL };
