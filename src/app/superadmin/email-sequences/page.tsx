@@ -69,6 +69,7 @@ interface TenantDetail {
 const TEMPLATE_LABELS: Record<string, string> = {
   p1_welcome: 'Bienvenida / activar',
   p1_video: 'Vídeo onboarding (YouTube)',
+  p1_mir_video: 'Vídeo credenciales MIR',
   p1_social_proof: 'Prueba social check-in',
   p1_resume: 'Retomar a medias',
   p1_help: 'Oferta ayuda 15 min',
@@ -107,7 +108,8 @@ export default function EmailSequencesPage() {
   const [unsubCount, setUnsubCount] = useState(0);
   const [dueNow, setDueNow] = useState(0);
   const [phaseFilter, setPhaseFilter] = useState<string>('');
-  const [statusFilter, setStatusFilter] = useState<string>('active');
+  const [statusFilter, setStatusFilter] = useState<string>('');
+  const [initialSyncDone, setInitialSyncDone] = useState(false);
   const [selectedTenantId, setSelectedTenantId] = useState<string | null>(null);
   const [detail, setDetail] = useState<TenantDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
@@ -129,13 +131,19 @@ export default function EmailSequencesPage() {
       ]);
       const overview = await overviewRes.json();
       const list = await listRes.json();
-      if (overview.success) {
+      if (!overviewRes.ok || !overview.success) {
+        setActionError(overview.error || `Error API overview (${overviewRes.status})`);
+      } else {
         setFunnel(overview.funnel);
         setStepStats(overview.step_stats || []);
         setUnsubCount(overview.unsubscribed_count || 0);
         setDueNow(overview.due_now || 0);
       }
-      if (list.success) setEnrollments(list.enrollments || []);
+      if (!listRes.ok || !list.success) {
+        setActionError((prev) => prev || list.error || `Error API listado (${listRes.status})`);
+      } else {
+        setEnrollments(list.enrollments || []);
+      }
     } catch (e) {
       console.error(e);
     } finally {
@@ -146,6 +154,74 @@ export default function EmailSequencesPage() {
   useEffect(() => {
     void loadOverview();
   }, [loadOverview]);
+
+  useEffect(() => {
+    if (initialSyncDone || loading) return;
+    if (enrollments.length > 0) {
+      setInitialSyncDone(true);
+      return;
+    }
+    setInitialSyncDone(true);
+    void (async () => {
+      try {
+        const res = await fetch('/api/superadmin/email-sequences', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'sync' }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          setActionMsg(
+            `Auto-sync: ${data.synced} propietarios · Fase 1: +${data.enrolled_phase_1} · Fase 2: +${data.enrolled_phase_2}. Pulsa «Activar y enviar Mail 1» para comenzar.`
+          );
+          await loadOverview();
+        } else {
+          setActionError(data.error || 'Error en auto-sync');
+        }
+      } catch (e) {
+        setActionError(e instanceof Error ? e.message : 'Error en auto-sync');
+      }
+    })();
+  }, [loading, enrollments.length, initialSyncDone, loadOverview]);
+
+  const runAction = async (
+    action: 'sync' | 'run' | 'activate',
+    dryRun = false
+  ) => {
+    setRunning(action + (dryRun ? '-dry' : ''));
+    setActionMsg('');
+    setActionError('');
+    try {
+      const res = await fetch('/api/superadmin/email-sequences', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, dryRun, maxSends: 40 }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setActionError(data.error || 'Error en la acción');
+        return;
+      }
+      if (action === 'sync') {
+        setActionMsg(
+          `Sync OK: ${data.synced} tenants · Fase1 +${data.enrolled_phase_1} · Fase2 +${data.enrolled_phase_2} · completados ${data.completed}`
+        );
+      } else if (action === 'activate') {
+        setActionMsg(
+          `¡Secuencias activadas! Sync: ${data.synced} · Fase1 +${data.enrolled_phase_1} · Enviados: ${data.sent}${data.errors?.length ? ` · ${data.errors.length} errores` : ''}`
+        );
+      } else {
+        setActionMsg(
+          `Envío OK: ${data.sent} enviados · ${data.skipped} omitidos · ${data.completed} completados${data.errors?.length ? ` · ${data.errors.length} errores` : ''}`
+        );
+      }
+      await loadOverview();
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : 'Error');
+    } finally {
+      setRunning(null);
+    }
+  };
 
   const loadDetail = async (tenantId: string) => {
     setSelectedTenantId(tenantId);
@@ -161,34 +237,6 @@ export default function EmailSequencesPage() {
     }
   };
 
-  const runAction = async (action: 'sync' | 'run', dryRun = false) => {
-    setRunning(action + (dryRun ? '-dry' : ''));
-    setActionMsg('');
-    setActionError('');
-    try {
-      const res = await fetch('/api/superadmin/email-sequences', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, dryRun, maxSends: 40 }),
-      });
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        setActionError(data.error || 'Error en la acción');
-        return;
-      }
-      setActionMsg(
-        action === 'sync'
-          ? `Sync OK: ${data.synced} tenants · Fase1 +${data.enrolled_phase_1} · Fase2 +${data.enrolled_phase_2} · completados ${data.completed}`
-          : `Envío OK: ${data.sent} enviados · ${data.skipped} omitidos · ${data.completed} completados${data.errors?.length ? ` · ${data.errors.length} errores` : ''}`
-      );
-      await loadOverview();
-    } catch (e) {
-      setActionError(e instanceof Error ? e.message : 'Error');
-    } finally {
-      setRunning(null);
-    }
-  };
-
   const pct = (n: number, d: number) => (d > 0 ? `${Math.round((n / d) * 100)}%` : '—');
 
   return (
@@ -200,14 +248,23 @@ export default function EmailSequencesPage() {
             Fase 1: completar onboarding · Fase 2: conversión a plan de pago
           </p>
           <p className="text-sm text-gray-500 mt-1">
-            Vídeo onboarding:{' '}
+            Vídeos:{' '}
             <a
               href="https://www.youtube.com/watch?v=-bcIKsL1vsM"
               target="_blank"
               rel="noopener noreferrer"
               className="text-blue-600 hover:underline"
             >
-              YouTube
+              Onboarding
+            </a>
+            {' · '}
+            <a
+              href="https://www.youtube.com/watch?v=FVI2aoR05ww"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 hover:underline"
+            >
+              Credenciales MIR
             </a>
           </p>
         </div>
@@ -215,10 +272,18 @@ export default function EmailSequencesPage() {
           <button
             type="button"
             disabled={!!running}
-            onClick={() => runAction('sync')}
-            className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 disabled:opacity-50"
+            onClick={() => {
+              if (
+                !window.confirm(
+                  `¿Activar secuencias y enviar Mail 1 a hasta 40 propietarios ahora? (${dueNow} pendientes)`
+                )
+              )
+                return;
+              void runAction('activate');
+            }}
+            className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-semibold hover:bg-green-700 disabled:opacity-50"
           >
-            {running === 'sync' ? 'Sincronizando…' : 'Sincronizar inscripciones'}
+            {running === 'activate' ? 'Activando…' : '🚀 Activar y enviar Mail 1'}
           </button>
           <button
             type="button"
@@ -243,6 +308,14 @@ export default function EmailSequencesPage() {
             className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
           >
             {running === 'run' ? 'Enviando…' : `Enviar pendientes (${dueNow})`}
+          </button>
+          <button
+            type="button"
+            disabled={!!running}
+            onClick={() => runAction('sync')}
+            className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 disabled:opacity-50"
+          >
+            {running === 'sync' ? 'Sincronizando…' : 'Sincronizar'}
           </button>
         </div>
       </div>

@@ -33,7 +33,8 @@ export async function getTenantPropertiesCount(tenantId: string): Promise<number
   try {
     const r = await sql`
       SELECT COUNT(*)::int AS c FROM tenant_properties
-      WHERE tenant_id = ${tenantId}::uuid AND (active IS NULL OR active = true)
+      WHERE tenant_id = ${tenantId}::uuid
+        AND (is_active IS NULL OR is_active = true)
     `;
     return Number(r.rows[0]?.c || 0);
   } catch {
