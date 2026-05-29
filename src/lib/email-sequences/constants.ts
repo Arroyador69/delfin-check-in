@@ -12,6 +12,18 @@ export const SEQUENCE_KEY_PHASE_1 = 'phase_1_activation';
 
 export const SEQUENCE_KEY_PHASE_2 = 'phase_2_upgrade';
 
+/** Tras abrir un mail, esperar N días antes del siguiente paso. */
+export const LIFECYCLE_DAYS_AFTER_OPEN = 1;
+
+/** Sin apertura, reintentar el mismo paso tras N días. */
+export const LIFECYCLE_DAYS_WITHOUT_OPEN_RETRY = 4;
+
+/** Máximo de reintentos por paso antes de espaciar (sigue intentando). */
+export const LIFECYCLE_MAX_RETRIES_PER_STEP = 12;
+
+/** Tras agotar reintentos, días entre intentos adicionales. */
+export const LIFECYCLE_SLOW_RETRY_DAYS = 7;
+
 export type LifecycleSegment =
   | 'not_eligible'
   | 'phase_1_eligible'

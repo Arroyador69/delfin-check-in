@@ -40,6 +40,7 @@ function firstName(fullName: string): string {
 
 function wrapEmail(body: string, unsubscribeUrl: string): string {
   const unsub = escAttr(unsubscribeUrl);
+  const unsubPlain = esc(unsubscribeUrl);
   return `<!DOCTYPE html>
 <html lang="es">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
@@ -53,11 +54,13 @@ function wrapEmail(body: string, unsubscribeUrl: string): string {
           </td>
         </tr>
         ${body}
+        <!-- LIFECYCLE_ANTIVIRUS_BLOCK -->
         <tr>
           <td style="padding:24px 32px 28px 32px;border-top:1px solid #e2e8f0;font-size:12px;line-height:1.6;color:#64748b;text-align:center;">
             <p style="margin:0 0 8px 0;">© 2026 Delfín Check-in · <a href="https://delfincheckin.com" style="color:#2563eb;">delfincheckin.com</a></p>
             <p style="margin:0 0 8px 0;">Recibes este email porque creaste una cuenta en Delfín Check-in.</p>
-            <p style="margin:0;"><a href="${unsub}" style="color:#64748b;">Darme de baja de estos recordatorios</a></p>
+            <p style="margin:0;"><a href="${unsub}" target="_blank" rel="noopener noreferrer" style="color:#64748b;">Darme de baja de estos recordatorios</a></p>
+            <p style="margin:8px 0 0 0;font-size:11px;color:#94a3b8;word-break:break-all;">${unsubPlain}</p>
           </td>
         </tr>
       </table>
@@ -88,11 +91,11 @@ function infoBox(inner: string, color = '#eff6ff', border = '#2563eb'): string {
 function videoBlock(videoUrl: string, thumbnailUrl: string, label: string): string {
   return `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin:20px 0;">
     <tr><td align="center">
-      <a href="${escAttr(videoUrl)}" style="text-decoration:none;display:block;">
+      <a href="${escAttr(videoUrl)}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;display:block;">
         <img src="${escAttr(thumbnailUrl)}" alt="${escAttr(label)}" width="520" style="max-width:100%;border-radius:8px;border:0;display:block;" />
       </a>
       <p style="margin:10px 0 0 0;font-size:14px;color:#2563eb;text-align:center;">
-        <a href="${escAttr(videoUrl)}" style="color:#2563eb;font-weight:600;">▶ ${esc(label)}</a>
+        <a href="${escAttr(videoUrl)}" target="_blank" rel="noopener noreferrer" style="color:#2563eb;font-weight:600;">▶ ${esc(label)}</a>
       </p>
     </td></tr>
   </table>`;

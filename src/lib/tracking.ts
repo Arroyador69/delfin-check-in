@@ -118,6 +118,8 @@ export async function updateEmailTracking(params: {
           updated_at = NOW()
         WHERE id = ${params.emailId}
       `
+      const { accelerateLifecycleOnEmailOpen } = await import('@/lib/email-sequences/on-open')
+      await accelerateLifecycleOnEmailOpen(params.emailId)
     } else if (params.status === 'clicked') {
       await sql`
         UPDATE email_tracking
@@ -129,6 +131,8 @@ export async function updateEmailTracking(params: {
           updated_at = NOW()
         WHERE id = ${params.emailId}
       `
+      const { accelerateLifecycleOnEmailOpen } = await import('@/lib/email-sequences/on-open')
+      await accelerateLifecycleOnEmailOpen(params.emailId)
     }
   } catch (error) {
     console.error('⚠️ Error updating email tracking:', error)

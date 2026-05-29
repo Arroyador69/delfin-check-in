@@ -2,6 +2,10 @@ import { sql } from '@/lib/db';
 import {
   SEQUENCE_KEY_PHASE_1,
   SEQUENCE_KEY_PHASE_2,
+  LIFECYCLE_DAYS_AFTER_OPEN,
+  LIFECYCLE_DAYS_WITHOUT_OPEN_RETRY,
+  LIFECYCLE_MAX_RETRIES_PER_STEP,
+  LIFECYCLE_SLOW_RETRY_DAYS,
 } from '@/lib/email-sequences/constants';
 import {
   ensureEmailSequenceSchema,
@@ -48,7 +52,80 @@ type EnrollmentRow = {
   status: string;
   next_send_at: Date | string | null;
   last_sent_at: Date | string | null;
+  metadata: Record<string, unknown> | null;
 };
+
+type StepEmailState = {
+  has_any_send: boolean;
+  has_opened: boolean;
+  latest_sent_at: Date | null;
+  first_opened_at: Date | null;
+  send_count: number;
+};
+
+function parseMetadata(raw: unknown): { step_retry_count: number } {
+  if (!raw || typeof raw !== 'object') return { step_retry_count: 0 };
+  const m = raw as { step_retry_count?: number };
+  return { step_retry_count: Number(m.step_retry_count || 0) };
+}
+
+async function getStepEmailState(
+  enrollmentId: string,
+  stepOrder: number
+): Promise<StepEmailState> {
+  const r = await sql`
+    SELECT
+      COUNT(*)::int AS send_count,
+      MAX(created_at) AS latest_sent_at,
+      MIN(opened_at) FILTER (WHERE opened_at IS NOT NULL) AS first_opened_at,
+      MIN(clicked_at) FILTER (WHERE clicked_at IS NOT NULL) AS first_clicked_at,
+      BOOL_OR(opened_at IS NOT NULL OR status IN ('opened', 'clicked')) AS has_opened
+    FROM email_tracking
+    WHERE metadata->>'lifecycle' = 'true'
+      AND metadata->>'enrollment_id' = ${enrollmentId}
+      AND (metadata->>'step_order')::int = ${stepOrder}
+  `;
+  const row = r.rows[0];
+  const sendCount = Number(row?.send_count || 0);
+  const opened =
+    Boolean(row?.has_opened) ||
+    Boolean(row?.first_opened_at) ||
+    Boolean(row?.first_clicked_at);
+  const openAt = row?.first_opened_at || row?.first_clicked_at;
+  return {
+    has_any_send: sendCount > 0,
+    has_opened: opened,
+    latest_sent_at: row?.latest_sent_at ? new Date(row.latest_sent_at) : null,
+    first_opened_at: openAt ? new Date(openAt) : null,
+    send_count: sendCount,
+  };
+}
+
+async function updateEnrollmentSchedule(
+  enrollmentId: string,
+  patch: {
+    current_step?: number;
+    next_send_at: Date | null;
+    status?: string;
+    completed_at?: Date | null;
+    metadata?: Record<string, unknown>;
+    touch_last_sent?: boolean;
+  }
+): Promise<void> {
+  const metaJson = patch.metadata ? JSON.stringify(patch.metadata) : null;
+  await sql`
+    UPDATE email_sequence_enrollments
+    SET
+      current_step = COALESCE(${patch.current_step ?? null}, current_step),
+      last_sent_at = CASE WHEN ${patch.touch_last_sent === true} THEN NOW() ELSE last_sent_at END,
+      next_send_at = ${patch.next_send_at ? patch.next_send_at.toISOString() : null},
+      status = COALESCE(${patch.status ?? null}, status),
+      completed_at = ${patch.completed_at ? patch.completed_at.toISOString() : null},
+      metadata = COALESCE(${metaJson}::jsonb, metadata),
+      updated_at = NOW()
+    WHERE id = ${enrollmentId}::uuid
+  `;
+}
 
 function addDays(date: Date, days: number): Date {
   const d = new Date(date);
@@ -115,10 +192,26 @@ async function previousStepWasOpened(
     WHERE et.tenant_id = ${tenantId}::uuid
       AND et.metadata->>'sequence_key' = ${sequenceKey}
       AND (et.metadata->>'step_order')::int = ${stepOrder - 1}
-      AND (et.opened_at IS NOT NULL OR et.status IN ('opened', 'clicked'))
+      AND (et.opened_at IS NOT NULL OR et.clicked_at IS NOT NULL OR et.status IN ('opened', 'clicked'))
     LIMIT 1
   `;
   return r.rows.length > 0;
+}
+
+/** Encuentra el índice del primer paso aplicable desde `fromIndex`. */
+async function resolveApplicableStepIndex(
+  steps: StepRow[],
+  fromIndex: number,
+  state: TenantLifecycleState,
+  sequenceKey: string
+): Promise<number> {
+  let idx = fromIndex;
+  while (idx < steps.length) {
+    const prevOpened = await previousStepWasOpened(state.tenant_id, sequenceKey, idx);
+    if (stepMatchesConditions(steps[idx], state, prevOpened)) return idx;
+    idx++;
+  }
+  return idx;
 }
 
 function stepMatchesConditions(
@@ -276,6 +369,7 @@ async function loadDueEnrollments(limit = 50): Promise<EnrollmentRow[]> {
       e.status,
       e.next_send_at,
       e.last_sent_at,
+      e.metadata,
       s.key AS sequence_key
     FROM email_sequence_enrollments e
     JOIN email_sequences s ON s.id = e.sequence_id
@@ -294,6 +388,7 @@ async function loadDueEnrollments(limit = 50): Promise<EnrollmentRow[]> {
     status: String(row.status),
     next_send_at: row.next_send_at,
     last_sent_at: row.last_sent_at,
+    metadata: row.metadata as Record<string, unknown> | null,
   }));
 }
 
@@ -348,7 +443,12 @@ export async function processLifecycleEmailQueue(options?: {
       }
 
       const steps = await getStepsForSequence(enrollment.sequence_id);
-      let stepIdx = enrollment.current_step;
+      let stepIdx = await resolveApplicableStepIndex(
+        steps,
+        enrollment.current_step,
+        state,
+        enrollment.sequence_key
+      );
 
       if (stepIdx >= steps.length) {
         await markEnrollmentCompleted(enrollment.id);
@@ -356,28 +456,18 @@ export async function processLifecycleEmailQueue(options?: {
         continue;
       }
 
-      let step = steps[stepIdx];
-      const prevOpened = await previousStepWasOpened(
-        state.tenant_id,
-        enrollment.sequence_key,
-        stepIdx
-      );
-
-      while (step && !stepMatchesConditions(step, state, prevOpened)) {
-        stepIdx++;
-        if (stepIdx >= steps.length) {
-          await markEnrollmentCompleted(enrollment.id);
-          result.completed++;
-          step = undefined;
-          break;
-        }
-        step = steps[stepIdx];
+      if (stepIdx !== enrollment.current_step) {
+        await sql`
+          UPDATE email_sequence_enrollments
+          SET current_step = ${stepIdx}, updated_at = NOW()
+          WHERE id = ${enrollment.id}::uuid
+        `;
       }
 
-      if (!step) {
-        result.skipped++;
-        continue;
-      }
+      const step = steps[stepIdx];
+      const meta = parseMetadata(enrollment.metadata);
+      const emailState = await getStepEmailState(enrollment.id, step.step_order);
+      const now = new Date();
 
       if (options?.dryRun) {
         result.skipped++;
@@ -387,47 +477,129 @@ export async function processLifecycleEmailQueue(options?: {
       const onboardingUrl = await resolveOnboardingUrlForTenant(state.email, state.tenant_id);
       const { billingUrl } = buildLifecycleUrls(state.tenant_id);
 
-      const sendResult = await sendLifecycleEmail({
-        tenantId: state.tenant_id,
-        to: state.email,
-        templateKey: step.template_key,
-        sequenceKey: enrollment.sequence_key,
-        stepOrder: step.step_order,
-        enrollmentId: enrollment.id,
-        templateParams: {
-          ownerName: state.name,
-          onboardingUrl,
-          billingUrl,
-          onboardingStatus: state.onboarding_status,
-        },
-      });
+      const sendStep = async (isRetry: boolean, retryNumber: number) => {
+        return sendLifecycleEmail({
+          tenantId: state.tenant_id,
+          to: state.email,
+          templateKey: step.template_key,
+          sequenceKey: enrollment.sequence_key,
+          stepOrder: step.step_order,
+          enrollmentId: enrollment.id,
+          isRetry,
+          retryNumber,
+          templateParams: {
+            ownerName: state.name,
+            onboardingUrl,
+            billingUrl,
+            onboardingStatus: state.onboarding_status,
+          },
+        });
+      };
 
+      // --- Sin envío aún en este paso: primer mail del paso ---
+      if (!emailState.has_any_send) {
+        const sendResult = await sendStep(false, 0);
+        if (!sendResult.success) {
+          result.errors.push(`${state.email}: ${sendResult.error || 'send failed'}`);
+          continue;
+        }
+        await updateEnrollmentSchedule(enrollment.id, {
+          next_send_at: addDays(now, LIFECYCLE_DAYS_WITHOUT_OPEN_RETRY),
+          metadata: { ...meta, step_retry_count: 0 },
+          touch_last_sent: true,
+        });
+        result.sent++;
+        continue;
+      }
+
+      // --- Abrió (o clic): al día siguiente, siguiente paso ---
+      if (emailState.has_opened && emailState.first_opened_at) {
+        const sendNextAt = addDays(emailState.first_opened_at, LIFECYCLE_DAYS_AFTER_OPEN);
+        if (now < sendNextAt) {
+          await updateEnrollmentSchedule(enrollment.id, {
+            next_send_at: sendNextAt,
+            metadata: { step_retry_count: 0 },
+          });
+          result.skipped++;
+          continue;
+        }
+
+        const nextIdx = await resolveApplicableStepIndex(
+          steps,
+          stepIdx + 1,
+          state,
+          enrollment.sequence_key
+        );
+
+        if (nextIdx >= steps.length) {
+          await markEnrollmentCompleted(enrollment.id);
+          result.completed++;
+          continue;
+        }
+
+        const nextStep = steps[nextIdx];
+        const sendResult = await sendLifecycleEmail({
+          tenantId: state.tenant_id,
+          to: state.email,
+          templateKey: nextStep.template_key,
+          sequenceKey: enrollment.sequence_key,
+          stepOrder: nextStep.step_order,
+          enrollmentId: enrollment.id,
+          templateParams: {
+            ownerName: state.name,
+            onboardingUrl,
+            billingUrl,
+            onboardingStatus: state.onboarding_status,
+          },
+        });
+        if (!sendResult.success) {
+          result.errors.push(`${state.email}: ${sendResult.error || 'send failed'}`);
+          continue;
+        }
+
+        await sql`
+          UPDATE email_sequence_enrollments
+          SET
+            current_step = ${nextIdx},
+            last_sent_at = NOW(),
+            next_send_at = ${addDays(now, LIFECYCLE_DAYS_WITHOUT_OPEN_RETRY).toISOString()},
+            metadata = ${JSON.stringify({ step_retry_count: 0 })}::jsonb,
+            updated_at = NOW()
+          WHERE id = ${enrollment.id}::uuid
+        `;
+        result.sent++;
+        continue;
+      }
+
+      // --- No abrió: reintentar tras N días (mismo paso) ---
+      const lastSent = emailState.latest_sent_at || now;
+      const retryDelay =
+        meta.step_retry_count >= LIFECYCLE_MAX_RETRIES_PER_STEP
+          ? LIFECYCLE_SLOW_RETRY_DAYS
+          : LIFECYCLE_DAYS_WITHOUT_OPEN_RETRY;
+      const retryAt = addDays(lastSent, retryDelay);
+
+      if (now < retryAt) {
+        await updateEnrollmentSchedule(enrollment.id, {
+          next_send_at: retryAt,
+          metadata: meta,
+        });
+        result.skipped++;
+        continue;
+      }
+
+      const retryNum = meta.step_retry_count + 1;
+      const sendResult = await sendStep(true, retryNum);
       if (!sendResult.success) {
         result.errors.push(`${state.email}: ${sendResult.error || 'send failed'}`);
         continue;
       }
 
-      const nextStepIndex = stepIdx + 1;
-      const now = new Date();
-      let nextSendAt: Date | null = null;
-
-      if (nextStepIndex < steps.length) {
-        nextSendAt = addDays(now, steps[nextStepIndex].delay_days);
-      }
-
-      await sql`
-        UPDATE email_sequence_enrollments
-        SET
-          current_step = ${nextStepIndex},
-          last_sent_at = NOW(),
-          next_send_at = ${nextSendAt ? nextSendAt.toISOString() : null},
-          status = ${nextStepIndex >= steps.length ? 'completed' : 'active'},
-          completed_at = ${nextStepIndex >= steps.length ? new Date().toISOString() : null},
-          updated_at = NOW()
-        WHERE id = ${enrollment.id}::uuid
-      `;
-
-      if (nextStepIndex >= steps.length) result.completed++;
+      await updateEnrollmentSchedule(enrollment.id, {
+        next_send_at: addDays(now, retryDelay),
+        metadata: { step_retry_count: retryNum },
+        touch_last_sent: true,
+      });
       result.sent++;
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
