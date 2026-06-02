@@ -56,7 +56,10 @@ export async function GET(req: NextRequest) {
         metadata
       FROM email_tracking
       WHERE tenant_id = ${tenantId}::uuid
-        AND metadata->>'lifecycle' = 'true'
+        AND (
+          metadata @> '{"lifecycle":true}'::jsonb
+          OR metadata->>'lifecycle' = 'true'
+        )
       ORDER BY created_at DESC
     `;
 

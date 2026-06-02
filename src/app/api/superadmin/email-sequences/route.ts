@@ -13,6 +13,7 @@ import {
   SEQUENCE_KEY_PHASE_1,
   SEQUENCE_KEY_PHASE_2,
 } from '@/lib/email-sequences/constants';
+import { LIFECYCLE_ET_OPENED, LIFECYCLE_ET_WHERE } from '@/lib/email-sequences/lifecycle-tracking-sql';
 
 async function requireSuperAdmin(req: NextRequest) {
   const authToken = req.cookies.get('auth_token')?.value;
@@ -35,7 +36,15 @@ export async function GET(req: NextRequest) {
       COUNT(*) FILTER (WHERE onboarding_status IS DISTINCT FROM 'completed')::int AS onboarding_incomplete,
       COUNT(*) FILTER (WHERE onboarding_status = 'completed')::int AS onboarding_complete,
       COUNT(*) FILTER (
-        WHERE onboarding_status = 'completed' AND COALESCE(current_rooms, 0) >= 1
+        WHERE onboarding_status = 'completed'
+          AND (
+            COALESCE(current_rooms, 0) >= 1
+            OR EXISTS (
+              SELECT 1 FROM tenant_properties tp
+              WHERE tp.tenant_id = tenants.id
+                AND (tp.is_active IS NULL OR tp.is_active = true)
+            )
+          )
       )::int AS with_property,
       COUNT(*) FILTER (
         WHERE plan_type IN ('checkin', 'standard', 'pro')
@@ -59,19 +68,19 @@ export async function GET(req: NextRequest) {
     ORDER BY s.phase, s.key, e.status
   `;
 
-  const stepStats = await sql`
+  const stepStats = await sql.query(`
     SELECT
       et.metadata->>'sequence_key' AS sequence_key,
       et.metadata->>'template_key' AS template_key,
       (et.metadata->>'step_order')::int AS step_order,
       COUNT(*)::int AS sent,
-      COUNT(*) FILTER (WHERE et.opened_at IS NOT NULL OR et.status IN ('opened', 'clicked'))::int AS opened,
+      COUNT(*) FILTER (WHERE ${LIFECYCLE_ET_OPENED})::int AS opened,
       COUNT(*) FILTER (WHERE et.clicked_at IS NOT NULL OR et.status = 'clicked')::int AS clicked
     FROM email_tracking et
-    WHERE et.metadata->>'lifecycle' = 'true'
+    WHERE ${LIFECYCLE_ET_WHERE}
     GROUP BY 1, 2, 3
     ORDER BY sequence_key, step_order
-  `;
+  `);
 
   const unsubCount = await sql`
     SELECT COUNT(*)::int AS c FROM email_unsubscribes WHERE scope IN ('all', 'lifecycle')
@@ -90,7 +99,7 @@ export async function GET(req: NextRequest) {
     success: true,
     funnel: funnel.rows[0] || {},
     enrollments: enrollments.rows,
-    step_stats: stepStats.rows,
+    step_stats: stepStats.rows ?? [],
     unsubscribed_count: unsubCount.rows[0]?.c ?? 0,
     due_now: dueNow.rows[0]?.c ?? 0,
     active_enrollments: activeEnrollments.rows[0]?.c ?? 0,

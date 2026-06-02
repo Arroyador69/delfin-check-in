@@ -17,7 +17,10 @@ export async function accelerateLifecycleOnEmailOpen(emailId: string): Promise<v
         et.clicked_at
       FROM email_tracking et
       WHERE et.id = ${emailId}::uuid
-        AND et.metadata->>'lifecycle' = 'true'
+        AND (
+          et.metadata @> '{"lifecycle":true}'::jsonb
+          OR et.metadata->>'lifecycle' = 'true'
+        )
       LIMIT 1
     `;
     if (!row.rows[0]) return;

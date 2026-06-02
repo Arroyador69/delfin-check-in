@@ -318,9 +318,15 @@ async function getTractionMetrics(startDate: Date, availability: TableAvailabili
       AND created_at >= ${monthAgo.toISOString()}
   ` : { rows: [{ count: '0' }] as any[] }
 
-  // Propiedades activas
+  // Propiedades activas en plataforma (no solo altas en el período)
   const activeProperties = hasAllTables(availability, ['tenant_properties']) ? await sql`
-    SELECT COUNT(DISTINCT id) as count
+    SELECT COUNT(DISTINCT id)::int as count
+    FROM tenant_properties
+    WHERE is_active IS NULL OR is_active = true
+  ` : { rows: [{ count: '0' }] as any[] }
+
+  const newPropertiesInPeriod = hasAllTables(availability, ['tenant_properties']) ? await sql`
+    SELECT COUNT(DISTINCT id)::int as count
     FROM tenant_properties
     WHERE created_at >= ${startDate.toISOString()}
   ` : { rows: [{ count: '0' }] as any[] }
@@ -363,6 +369,7 @@ async function getTractionMetrics(startDate: Date, availability: TableAvailabili
     wau: parseInt(wau.rows[0]?.count || '0'),
     mau: parseInt(mau.rows[0]?.count || '0'),
     activeProperties: parseInt(activeProperties.rows[0]?.count || '0'),
+    newPropertiesInPeriod: parseInt(newPropertiesInPeriod.rows[0]?.count || '0'),
     checkins: parseInt(checkins.rows[0]?.count || '0'),
     xmlSent: parseInt(xmlSent.rows[0]?.count || '0'),
     xmlErrors: parseInt(xmlErrors.rows[0]?.count || '0'),
