@@ -220,7 +220,7 @@ export default function EmailSequencesPage() {
   }, [loading, enrollments.length, initialSyncDone, loadOverview]);
 
   const runAction = async (
-    action: 'sync' | 'run' | 'activate',
+    action: 'sync' | 'run' | 'activate' | 'reconcile',
     dryRun = false
   ) => {
     setRunning(action + (dryRun ? '-dry' : ''));
@@ -239,9 +239,16 @@ export default function EmailSequencesPage() {
         return;
       }
       if (action === 'sync') {
-        setDueNow(data.due_now ?? dueNow);
+        setDueNow(data.reconcile?.due_now_after ?? data.due_now ?? dueNow);
         setActionMsg(
-          `Sync OK: ${data.synced} revisados · Fase 1: +${data.enrolled_phase_1} (elegibles ${data.eligible_phase_1 ?? 0}) · Fase 2: +${data.enrolled_phase_2} · Ajustados paso: ${data.bootstrapped ?? 0} · Pendientes envío: ${data.due_now ?? 0}`
+          `Sync OK: ${data.synced} revisados · Fase 1: +${data.enrolled_phase_1} · Reconciliados: ${data.reconcile?.opens_inferred ?? 0} aperturas inferidas, ${data.reconcile?.schedules_corrected ?? 0} calendarios · Pendientes: ${data.reconcile?.due_now_after ?? data.due_now ?? 0}`
+        );
+      } else if (action === 'reconcile') {
+        setDueNow(data.due_now_after ?? dueNow);
+        setActionMsg(
+          dryRun
+            ? `[Simulación] ${data.enrollments_scanned} inscripciones · Se inferirían ${data.opens_inferred} aperturas · ${data.schedules_corrected} calendarios`
+            : `Reconciliación OK: ${data.opens_inferred} aperturas recuperadas (actividad en app) · ${data.schedules_corrected} calendarios ajustados · Pendientes envío: ${data.due_now_after ?? 0}. Pulsa «Enviar pendientes».`
         );
       } else if (action === 'activate') {
         setDueNow(data.due_now ?? 0);
@@ -355,6 +362,22 @@ export default function EmailSequencesPage() {
           >
             {running === 'sync' ? 'Sincronizando…' : 'Sincronizar'}
           </button>
+          <button
+            type="button"
+            disabled={!!running}
+            onClick={() => {
+              if (
+                !window.confirm(
+                  '¿Reconciliar mails ya enviados? Recupera aperturas si el propietario entró en la app tras el envío, y programa reintentos si llevan 4+ días sin abrir.'
+                )
+              )
+                return;
+              void runAction('reconcile');
+            }}
+            className="px-4 py-2 bg-violet-50 border border-violet-200 text-violet-900 rounded-lg text-sm font-medium hover:bg-violet-100 disabled:opacity-50"
+          >
+            {running === 'reconcile' ? 'Reconciliando…' : 'Reconciliar enviados'}
+          </button>
         </div>
       </div>
 
@@ -440,6 +463,9 @@ export default function EmailSequencesPage() {
             </li>
             <li className="text-gray-500">
               Cada email incluye enlace de baja (RGPD/LSSI).
+            </li>
+            <li className="text-gray-500 text-xs">
+              Aperturas: pixel en mails nuevos. Mails ya enviados: usa «Reconciliar enviados» (login/actividad en app = apertura; 4+ días sin abrir = reintento).
             </li>
           </ul>
           <Link href="/superadmin/tenants" className="inline-block mt-4 text-sm text-blue-600 hover:underline">

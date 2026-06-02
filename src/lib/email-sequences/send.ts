@@ -82,6 +82,7 @@ export async function sendLifecycleEmail(
           is_retry: Boolean(params.isRetry),
           retry_number: params.retryNumber ?? 0,
           cta_direct: true,
+          tracking_pixel_v: 2,
         })}::jsonb
       )
       RETURNING id
