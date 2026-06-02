@@ -107,32 +107,46 @@ export async function updateEmailTracking(params: {
   status: 'opened' | 'clicked'
   clickUrl?: string
 }): Promise<void> {
+  const emailId = String(params.emailId || '').trim()
+  if (!emailId) return
+
   try {
     if (params.status === 'opened') {
-      await sql`
+      const updated = await sql`
         UPDATE email_tracking
-        SET 
-          status = 'opened',
-          opened_at = NOW(),
-          opened_count = opened_count + 1,
+        SET
+          status = CASE WHEN status = 'clicked' THEN status ELSE 'opened' END,
+          opened_at = COALESCE(opened_at, NOW()),
+          opened_count = COALESCE(opened_count, 0) + 1,
           updated_at = NOW()
-        WHERE id = ${params.emailId}
+        WHERE id = ${emailId}::uuid
+        RETURNING id
       `
+      if (!updated.rows.length) {
+        console.warn('[email-tracking] open: id no encontrado', emailId)
+        return
+      }
       const { accelerateLifecycleOnEmailOpen } = await import('@/lib/email-sequences/on-open')
-      await accelerateLifecycleOnEmailOpen(params.emailId)
+      await accelerateLifecycleOnEmailOpen(emailId)
     } else if (params.status === 'clicked') {
-      await sql`
+      const updated = await sql`
         UPDATE email_tracking
-        SET 
+        SET
           status = 'clicked',
-          clicked_at = NOW(),
-          clicked_count = clicked_count + 1,
-          click_url = ${params.clickUrl || null},
+          clicked_at = COALESCE(clicked_at, NOW()),
+          clicked_count = COALESCE(clicked_count, 0) + 1,
+          click_url = COALESCE(${params.clickUrl || null}, click_url),
+          opened_at = COALESCE(opened_at, NOW()),
           updated_at = NOW()
-        WHERE id = ${params.emailId}
+        WHERE id = ${emailId}::uuid
+        RETURNING id
       `
+      if (!updated.rows.length) {
+        console.warn('[email-tracking] click: id no encontrado', emailId)
+        return
+      }
       const { accelerateLifecycleOnEmailOpen } = await import('@/lib/email-sequences/on-open')
-      await accelerateLifecycleOnEmailOpen(params.emailId)
+      await accelerateLifecycleOnEmailOpen(emailId)
     }
   } catch (error) {
     console.error('⚠️ Error updating email tracking:', error)

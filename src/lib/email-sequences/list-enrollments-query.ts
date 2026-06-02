@@ -1,4 +1,9 @@
 import { sql } from '@/lib/db';
+import {
+  LIFECYCLE_ET2_OPENED,
+  LIFECYCLE_ET_OPENED,
+  LIFECYCLE_ET_WHERE,
+} from '@/lib/email-sequences/lifecycle-tracking-sql';
 
 const ENROLLMENTS_LIST_SELECT = `
     SELECT
@@ -21,20 +26,20 @@ const ENROLLMENTS_LIST_SELECT = `
       s.phase,
       (SELECT COUNT(*)::int FROM email_tracking et
         WHERE et.tenant_id = e.tenant_id
-          AND et.metadata->>'lifecycle' = 'true'
+          AND ${LIFECYCLE_ET_WHERE}
           AND et.metadata->>'sequence_key' = s.key) AS emails_sent,
       (SELECT COUNT(*)::int FROM email_tracking et
         WHERE et.tenant_id = e.tenant_id
-          AND et.metadata->>'lifecycle' = 'true'
+          AND ${LIFECYCLE_ET_WHERE}
           AND et.metadata->>'sequence_key' = s.key
-          AND (et.opened_at IS NOT NULL OR et.clicked_at IS NOT NULL OR et.status IN ('opened', 'clicked'))) AS emails_opened,
+          AND ${LIFECYCLE_ET_OPENED}) AS emails_opened,
       (SELECT COUNT(*)::int FROM email_tracking et
         WHERE et.metadata->>'enrollment_id' = e.id::text
           AND (et.metadata->>'step_order')::int = e.current_step) AS sends_on_current_step,
-      (SELECT BOOL_OR(et.opened_at IS NOT NULL OR et.clicked_at IS NOT NULL OR et.status IN ('opened', 'clicked'))
-        FROM email_tracking et
-        WHERE et.metadata->>'enrollment_id' = e.id::text
-          AND (et.metadata->>'step_order')::int = e.current_step) AS current_step_opened,
+      (SELECT BOOL_OR(${LIFECYCLE_ET2_OPENED})
+        FROM email_tracking et2
+        WHERE et2.metadata->>'enrollment_id' = e.id::text
+          AND (et2.metadata->>'step_order')::int = e.current_step) AS current_step_opened,
       COALESCE((e.metadata->>'step_retry_count')::int, 0) AS step_retry_count
     FROM email_sequence_enrollments e
     JOIN email_sequences s ON s.id = e.sequence_id
