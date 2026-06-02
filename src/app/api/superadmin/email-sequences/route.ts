@@ -14,6 +14,10 @@ import {
   SEQUENCE_KEY_PHASE_1,
   SEQUENCE_KEY_PHASE_2,
 } from '@/lib/email-sequences/constants';
+import {
+  SQL_TENANT_PAID_PLAN_CONFIGURED,
+  SQL_TENANT_PAYING_CUSTOMER,
+} from '@/lib/email-sequences/funnel-metrics-sql';
 import { LIFECYCLE_ET_OPENED, LIFECYCLE_ET_WHERE } from '@/lib/email-sequences/lifecycle-tracking-sql';
 
 async function requireSuperAdmin(req: NextRequest) {
@@ -32,7 +36,7 @@ export async function GET(req: NextRequest) {
 
   await seedEmailSequences();
 
-  const funnel = await sql`
+  const funnel = await sql.query(`
     SELECT
       COUNT(*) FILTER (WHERE onboarding_status IS DISTINCT FROM 'completed')::int AS onboarding_incomplete,
       COUNT(*) FILTER (WHERE onboarding_status = 'completed')::int AS onboarding_complete,
@@ -47,14 +51,12 @@ export async function GET(req: NextRequest) {
             )
           )
       )::int AS with_property,
-      COUNT(*) FILTER (
-        WHERE plan_type IN ('checkin', 'standard', 'pro')
-          OR plan_id IN ('standard', 'pro', 'enterprise', 'premium', 'checkin')
-      )::int AS paid_plan,
+      COUNT(*) FILTER (WHERE ${SQL_TENANT_PAID_PLAN_CONFIGURED})::int AS plan_assigned,
+      COUNT(*) FILTER (WHERE ${SQL_TENANT_PAYING_CUSTOMER})::int AS paying_customers,
       COUNT(*)::int AS total
     FROM tenants
     WHERE email IS NOT NULL AND TRIM(email) <> ''
-  `;
+  `);
 
   const enrollments = await sql`
     SELECT
