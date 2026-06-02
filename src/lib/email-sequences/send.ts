@@ -4,9 +4,9 @@ import { renderLifecycleTemplate } from '@/lib/email-sequences/templates';
 import { buildUnsubscribeUrl } from '@/lib/email-sequences/unsubscribe';
 import {
   buildLifecycleAntivirusHelpUrl,
-  buildLifecycleOpenPixelUrl,
   getAppBaseUrl,
 } from '@/lib/email-sequences/email-links';
+import { buildOpenTrackingPixelHtml } from '@/lib/email-tracking-pixel';
 import type { LifecycleTemplateParams } from '@/lib/email-sequences/templates';
 
 export interface SendLifecycleEmailParams {
@@ -82,6 +82,7 @@ export async function sendLifecycleEmail(
           is_retry: Boolean(params.isRetry),
           retry_number: params.retryNumber ?? 0,
           cta_direct: true,
+          tracking_pixel_v: 2,
         })}::jsonb
       )
       RETURNING id
@@ -91,9 +92,7 @@ export async function sendLifecycleEmail(
     console.warn('sendLifecycleEmail: tracking insert failed', e);
   }
 
-  const openPixel = trackingId
-    ? `<img src="${buildLifecycleOpenPixelUrl(trackingId)}" alt="" width="1" height="1" style="display:none;border:0;outline:none;text-decoration:none;" />`
-    : '';
+  const openPixel = trackingId ? buildOpenTrackingPixelHtml(trackingId) : '';
 
   const html = content.html
     .replace(
