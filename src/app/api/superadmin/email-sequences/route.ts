@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
 import { verifyToken } from '@/lib/auth';
 import { isEffectiveSuperAdminPayload } from '@/lib/platform-owner';
+import { reconcileLifecycleEngagement } from '@/lib/email-sequences/engagement-reconcile';
 import {
   processLifecycleEmailQueue,
   syncLifecycleEnrollments,
@@ -131,7 +132,16 @@ export async function POST(req: NextRequest) {
   try {
     if (action === 'sync') {
       const sync = await syncLifecycleEnrollments();
-      return NextResponse.json({ success: true, action, ...sync });
+      const reconcile = await reconcileLifecycleEngagement();
+      return NextResponse.json({ success: true, action, ...sync, reconcile });
+    }
+
+    if (action === 'reconcile') {
+      const reconcile = await reconcileLifecycleEngagement({
+        dryRun: Boolean(body.dryRun),
+        maxInferences: body.maxInferences ? Number(body.maxInferences) : 200,
+      });
+      return NextResponse.json({ success: true, action, ...reconcile });
     }
 
     if (action === 'run') {
@@ -143,9 +153,11 @@ export async function POST(req: NextRequest) {
 
     if (action === 'activate') {
       const sync = await syncLifecycleEnrollments();
+      await reconcileLifecycleEngagement();
       const result = await processLifecycleEmailQueue({
         dryRun: false,
         maxSends: body.maxSends ? Number(body.maxSends) : 80,
+        skipReconcile: true,
       });
       return NextResponse.json({
         success: true,

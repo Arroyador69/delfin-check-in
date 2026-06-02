@@ -19,6 +19,7 @@ import {
   loadTenantLifecycleState,
   type TenantLifecycleState,
 } from '@/lib/email-sequences/segment';
+import { reconcileLifecycleEngagement } from '@/lib/email-sequences/engagement-reconcile';
 import { sendLifecycleEmail, buildLifecycleUrls } from '@/lib/email-sequences/send';
 import {
   buildOnboardingUrl,
@@ -80,7 +81,11 @@ async function getStepEmailState(
       MAX(created_at) AS latest_sent_at,
       MIN(opened_at) FILTER (WHERE opened_at IS NOT NULL) AS first_opened_at,
       MIN(clicked_at) FILTER (WHERE clicked_at IS NOT NULL) AS first_clicked_at,
-      BOOL_OR(opened_at IS NOT NULL OR status IN ('opened', 'clicked')) AS has_opened
+      BOOL_OR(
+        opened_at IS NOT NULL
+        OR status IN ('opened', 'clicked')
+        OR COALESCE(opened_count, 0) > 0
+      ) AS has_opened
     FROM email_tracking
     WHERE (
         metadata @> '{"lifecycle":true}'::jsonb
@@ -541,9 +546,13 @@ async function loadDueEnrollments(limit = 50): Promise<EnrollmentRow[]> {
 export async function processLifecycleEmailQueue(options?: {
   dryRun?: boolean;
   maxSends?: number;
+  skipReconcile?: boolean;
 }): Promise<ProcessResult> {
   await ensureEmailSequenceSchema();
   const sync = await syncLifecycleEnrollments();
+  if (!options?.skipReconcile && !options?.dryRun) {
+    await reconcileLifecycleEngagement();
+  }
 
   const result: ProcessResult = {
     synced: sync.synced,
