@@ -441,6 +441,9 @@ export default function EmailSequencesPage() {
             <li className="text-gray-500">
               Cada email incluye enlace de baja (RGPD/LSSI).
             </li>
+            <li className="text-gray-500 text-xs">
+              Las aperturas se registran con un pixel al abrir el correo (imágenes activadas). Los mails enviados antes del último fix pueden mostrar 0 % aunque se hayan leído.
+            </li>
           </ul>
           <Link href="/superadmin/tenants" className="inline-block mt-4 text-sm text-blue-600 hover:underline">
             Ver todos los tenants →

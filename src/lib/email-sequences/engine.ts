@@ -82,7 +82,10 @@ async function getStepEmailState(
       MIN(clicked_at) FILTER (WHERE clicked_at IS NOT NULL) AS first_clicked_at,
       BOOL_OR(opened_at IS NOT NULL OR status IN ('opened', 'clicked')) AS has_opened
     FROM email_tracking
-    WHERE metadata->>'lifecycle' = 'true'
+    WHERE (
+        metadata @> '{"lifecycle":true}'::jsonb
+        OR metadata->>'lifecycle' = 'true'
+      )
       AND metadata->>'enrollment_id' = ${enrollmentId}
       AND (metadata->>'step_order')::int = ${stepOrder}
   `;
@@ -277,7 +280,10 @@ async function bootstrapEnrollmentIfNeeded(
 ): Promise<boolean> {
   const sent = await sql`
     SELECT 1 FROM email_tracking
-    WHERE metadata->>'lifecycle' = 'true'
+    WHERE (
+        metadata @> '{"lifecycle":true}'::jsonb
+        OR metadata->>'lifecycle' = 'true'
+      )
       AND metadata->>'enrollment_id' = ${enrollmentId}
     LIMIT 1
   `;
@@ -319,7 +325,10 @@ async function queueEnrollmentForFirstSend(enrollmentId: string): Promise<void> 
       AND status = 'active'
       AND NOT EXISTS (
         SELECT 1 FROM email_tracking et
-        WHERE et.metadata->>'lifecycle' = 'true'
+        WHERE (
+        et.metadata @> '{"lifecycle":true}'::jsonb
+        OR et.metadata->>'lifecycle' = 'true'
+      )
           AND et.metadata->>'enrollment_id' = ${enrollmentId}
       )
   `;

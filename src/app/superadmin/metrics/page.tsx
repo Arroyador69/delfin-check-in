@@ -92,7 +92,14 @@ export default function SuperAdminMetrics() {
           <MetricCard label="DAU" value={metrics.traction.dau} />
           <MetricCard label="WAU" value={metrics.traction.wau} />
           <MetricCard label="MAU" value={metrics.traction.mau} />
-          <MetricCard label="Propiedades Activas" value={metrics.traction.activeProperties} />
+          <MetricCard
+            label="Propiedades activas (total)"
+            value={metrics.traction.activeProperties}
+          />
+          <MetricCard
+            label="Nuevas propiedades (período)"
+            value={metrics.traction.newPropertiesInPeriod ?? 0}
+          />
           <MetricCard label="Check-ins" value={metrics.traction.checkins} />
           <MetricCard label="XML Enviados" value={metrics.traction.xmlSent} />
           <MetricCard label="Errores XML" value={metrics.traction.xmlErrors} />
