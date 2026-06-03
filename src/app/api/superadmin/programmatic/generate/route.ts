@@ -50,6 +50,23 @@ export async function POST(req: NextRequest) {
     // Generar contenido con OpenAI
     const generated = await generateContentWithOpenAI(template, variables);
 
+    const titleTaken = await sql`
+      SELECT id FROM programmatic_pages WHERE LOWER(TRIM(title)) = LOWER(TRIM(${generated.title}))
+      UNION ALL
+      SELECT id::text FROM blog_articles WHERE LOWER(TRIM(title)) = LOWER(TRIM(${generated.title}))
+      LIMIT 1
+    `;
+    if (titleTaken.rows.length > 0) {
+      return NextResponse.json(
+        {
+          error:
+            'Ya existe un artículo con un título equivalente. Cambia las variables o el enfoque y vuelve a generar.',
+          duplicateTitle: generated.title,
+        },
+        { status: 409 }
+      );
+    }
+
     // Generar slug único (verificar duplicados)
     const slugBase = await generateUniqueSlug({
       requestedSlug: variables.slug,

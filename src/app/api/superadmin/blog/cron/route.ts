@@ -2,22 +2,17 @@ import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
 import { verifySuperAdmin } from '@/lib/auth-superadmin';
 import { getOpenAI } from '@/lib/openai-server';
+import {
+  type BlogTopicAngle,
+  isNormalizedTitleTaken,
+  loadExistingNormalizedTitles,
+  loadRecentTitlesForPrompt,
+  normalizeArticleTitle,
+  pickBlogAngleForBatch,
+} from '@/lib/blog-article-dedup';
 import { Octokit } from '@octokit/rest';
 
 type Batch = 'morning' | 'afternoon';
-
-const TOPICS: Array<{ key: string; title: string }> = [
-  { key: 'mir-config', title: 'Cómo configurar el MIR (Ministerio del Interior) en Delfín Check-in paso a paso (2026)' },
-  { key: 'rd933-guia', title: 'RD 933/2021 explicado: obligaciones, plazos y cómo cumplir con Delfín Check-in (Actualizado 2026)' },
-  { key: 'errores-ses', title: 'Errores frecuentes al enviar partes al SES Hospedajes y cómo solucionarlos (Guía 2026)' },
-  { key: 'airbnb-booking', title: 'Airbnb y Booking: ¿quién registra a los viajeros? Qué exige el Ministerio (Actualizado 2026)' },
-  { key: 'checkin-digital', title: 'Check-in digital: cómo automatizar el registro de viajeros y evitar multas (Guía práctica 2026)' },
-  { key: 'ical-sync', title: 'Sincronización iCal: evita overbooking y mantén calendarios al día (tutorial con Delfín Check-in)' },
-  { key: 'reservas-directas', title: 'Reservas directas: cómo reducir comisiones con el microsite de Delfín Check-in (paso a paso)' },
-  { key: 'limpieza', title: 'Gestión de limpieza en alquiler vacacional: checklist, horarios y automatización con Delfín Check-in' },
-  { key: 'facturas', title: 'Cómo emitir facturas a huéspedes en alquiler vacacional (y automatizarlo) - Guía 2026' },
-  { key: 'multas', title: 'Multas por no registrar viajeros en España: importes, casos reales y cómo evitarlas (2026)' },
-];
 
 const BLOG_SYSTEM_PROMPT = `Eres un redactor SEO experto en contenido para Delfín Check-in (software de registro de viajeros y gestión de alquiler vacacional en España).
 
@@ -30,6 +25,8 @@ Requisitos:
 - HTML limpio: <p>, <h2>, <h3>, <ul>/<ol>, <strong>.
 - Meta description 150-160 caracteres con keywords.
 - Sin formularios/waitlist ni popups en el HTML (la plantilla pública se encarga de CTAs).
+- El título y el contenido deben ser ORIGINALES: no copies ni parafrasees mínimamente artículos ya publicados.
+- El título final debe ser claramente distinto (palabras y enfoque) a cualquier título de la lista "Títulos ya publicados" que recibas.
 - Responde ÚNICAMENTE con JSON válido (sin markdown), con estructura:
 {
   "slug": "...",
@@ -495,56 +492,43 @@ function utcDayKey(d = new Date()): string {
   return d.toISOString().slice(0, 10);
 }
 
-async function pickTopicKeyForToday(batch: Batch): Promise<{ key: string; title: string }> {
-  // 1) No repetir en el mismo día/batch
-  const day = utcDayKey();
-  const usedToday = await sql`
-    SELECT meta_keywords
-    FROM blog_articles
-    WHERE created_at >= ${`${day}T00:00:00.000Z`}::timestamptz
-      AND created_at <  ${`${day}T23:59:59.999Z`}::timestamptz
-      AND meta_keywords ILIKE ${`%auto_topic:${batch}:%`}
-  `;
-  if (usedToday.rows.length > 0) {
-    // ya generamos para ese batch hoy
-    throw new Error(`already_generated:${batch}`);
-  }
-
-  // 2) Evitar repetir keys recientes (últimos 30 posts)
-  const recent = await sql`
-    SELECT meta_keywords
-    FROM blog_articles
-    ORDER BY created_at DESC
-    LIMIT 30
-  `;
-  const recentKeys = new Set<string>();
-  for (const r of recent.rows as any[]) {
-    const mk = String(r.meta_keywords || '');
-    const m = mk.match(/auto_topic_key:([a-z0-9-]+)/i);
-    if (m?.[1]) recentKeys.add(m[1]);
-  }
-
-  const candidates = TOPICS.filter(t => !recentKeys.has(t.key));
-  const pool = candidates.length > 0 ? candidates : TOPICS;
-
-  // simple reparto: morning usa pares, afternoon impares, pero cae a pool si no hay
-  const filtered = pool.filter((_, idx) => (batch === 'morning' ? idx % 2 === 0 : idx % 2 === 1));
-  const finalPool = filtered.length > 0 ? filtered : pool;
-  return finalPool[Math.floor(Math.random() * finalPool.length)];
-}
-
-async function generateArticle(topicTitle: string) {
+async function generateArticle(angle: BlogTopicAngle, attempt = 1): Promise<{
+  slugBase: string;
+  title: string;
+  meta_description: string;
+  meta_keywords: string;
+  excerpt: string;
+  content: string;
+}> {
   if (!process.env.OPENAI_API_KEY) {
     throw new Error('OPENAI_API_KEY no configurada');
   }
+
+  const recentTitles = await loadRecentTitlesForPrompt(30);
+  const forbiddenNote =
+    recentTitles.length > 0
+      ? `\n\nTítulos ya publicados (NO reutilizar ni parafrasear de forma casi idéntica):\n${recentTitles.map((t) => `- ${t}`).join('\n')}`
+      : '';
+
+  const userPrompt = [
+    `Ángulo editorial (familia: ${angle.topicKey}, id: ${angle.angleId}).`,
+    `Enfoque guía: "${angle.seedTitle}".`,
+    attempt > 1
+      ? `IMPORTANTE: el intento anterior generó un título duplicado. Crea un título COMPLETAMENTE nuevo y un contenido con estructura distinta.`
+      : '',
+    'Genera un artículo nuevo siguiendo los requisitos.',
+    forbiddenNote,
+  ]
+    .filter(Boolean)
+    .join('\n');
 
   const completion = await getOpenAI().chat.completions.create({
     model: 'gpt-4o-mini',
     messages: [
       { role: 'system', content: BLOG_SYSTEM_PROMPT },
-      { role: 'user', content: `Tema: "${topicTitle}". Genera un artículo nuevo siguiendo los requisitos.` },
+      { role: 'user', content: userPrompt },
     ],
-    temperature: 0.6,
+    temperature: attempt > 1 ? 0.85 : 0.72,
     max_tokens: 5000,
   });
 
@@ -561,8 +545,26 @@ async function generateArticle(topicTitle: string) {
     content?: string;
   };
 
-  const slugBase = toSlug(data.slug || data.title || topicTitle) || `articulo-${Date.now()}`;
-  const title = String(data.title || topicTitle).slice(0, 500);
+  const slugBase = toSlug(data.slug || data.title || angle.seedTitle) || `articulo-${Date.now()}`;
+  let title = String(data.title || '').trim().slice(0, 500);
+  if (!title || normalizeArticleTitle(title) === normalizeArticleTitle(angle.seedTitle)) {
+    title = `${angle.seedTitle.replace(/\s*\(\d{4}\)\s*$/, '').trim()} — enfoque ${angle.angleId.split('-').pop()} (${new Date().getFullYear()})`.slice(
+      0,
+      500
+    );
+  }
+
+  const existingTitles = await loadExistingNormalizedTitles();
+  if (isNormalizedTitleTaken(title, existingTitles)) {
+    if (attempt < 3) {
+      return generateArticle(angle, attempt + 1);
+    }
+    title = `${title.replace(/\s*\(\d{4}\)\s*$/, '')} — edición ${Date.now().toString(36)}`.slice(0, 500);
+    if (isNormalizedTitleTaken(title, existingTitles)) {
+      throw new Error(`duplicate_title:${normalizeArticleTitle(title)}`);
+    }
+  }
+
   const meta_description = String(data.meta_description || '').slice(0, 500);
   const meta_keywords = String(data.meta_keywords || '').slice(0, 1000);
   const excerpt = String(data.excerpt || '').slice(0, 1000);
@@ -580,6 +582,7 @@ async function insertDraft(args: {
   content: string;
   batch: Batch;
   topicKey: string;
+  angleId: string;
 }) {
   // Asegurar slug único
   let finalSlug = args.slugBase;
@@ -600,10 +603,24 @@ async function insertDraft(args: {
   };
 
   // Metemos marcas internas en meta_keywords para deduplicar sin tocar esquema de BD:
-  const mk = [args.meta_keywords, `auto_topic:${args.batch}:1`, `auto_topic_key:${args.topicKey}`]
+  const mk = [
+    args.meta_keywords,
+    `auto_topic:${args.batch}:1`,
+    `auto_topic_key:${args.topicKey}`,
+    `auto_topic_angle:${args.angleId}`,
+  ]
     .filter(Boolean)
     .join(', ')
     .slice(0, 1000);
+
+  const titleCheck = await sql`
+    SELECT id FROM blog_articles
+    WHERE LOWER(TRIM(title)) = LOWER(TRIM(${args.title}))
+    LIMIT 1
+  `;
+  if (titleCheck.rows.length > 0) {
+    throw new Error(`duplicate_title_db:${args.title}`);
+  }
 
   const result = await sql`
     INSERT INTO blog_articles (
@@ -794,27 +811,33 @@ export async function GET(req: NextRequest) {
         content,
         batch,
         topicKey: 'test',
+        angleId: 'test-a1',
       });
       const url = await publishToGithub(draft.slug);
       await markPublished(draft.id);
       return NextResponse.json({ success: true, mode: 'test', batch, slug: draft.slug, url });
     }
 
-    let topic;
+    let angle: BlogTopicAngle;
     try {
-      topic = await pickTopicKeyForToday(batch);
+      angle = await pickBlogAngleForBatch(batch);
     } catch (e: any) {
-      if (String(e?.message || '').startsWith('already_generated:')) {
+      const msg = String(e?.message || '');
+      if (msg.startsWith('already_generated:')) {
         return NextResponse.json({ success: true, skipped: 'already_generated', batch });
+      }
+      if (msg.startsWith('no_topics_available')) {
+        return NextResponse.json({ success: true, skipped: 'no_topics_available', batch });
       }
       throw e;
     }
 
-    const generated = await generateArticle(topic.title);
+    const generated = await generateArticle(angle);
     const draft = await insertDraft({
       ...generated,
       batch,
-      topicKey: topic.key,
+      topicKey: angle.topicKey,
+      angleId: angle.angleId,
     });
 
     const url = await publishToGithub(draft.slug);
@@ -823,7 +846,9 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       success: true,
       batch,
-      topic: topic.title,
+      topic: angle.seedTitle,
+      angle_id: angle.angleId,
+      title: draft.title,
       slug: draft.slug,
       url,
     });
