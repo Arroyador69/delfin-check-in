@@ -1,4 +1,5 @@
 import * as Sentry from '@sentry/nextjs';
+import { shouldPersistConsoleLogToDb } from '@/lib/console-db-log-filter';
 import { logError } from '@/lib/error-logger';
 
 export async function register() {
@@ -75,6 +76,7 @@ function installConsoleDbLogger() {
   async function write(level: Level, args: unknown[]) {
     if (inLogger) return;
     const message = toMessage(args);
+    if (!shouldPersistConsoleLogToDb(message)) return;
     const meta = {
       runtime: process.env.NEXT_RUNTIME,
       node_env: process.env.NODE_ENV,

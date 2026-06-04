@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
         AND NOT (
           sync_status = 'error'
           AND sync_error LIKE 'HTTP 4%'
-          AND updated_at >= NOW() - interval '6 hours'
+          AND updated_at >= NOW() - interval '7 days'
         )
       ORDER BY last_sync_at ASC NULLS FIRST
       LIMIT 50
@@ -96,7 +96,10 @@ export async function GET(req: NextRequest) {
         `;
         errors++;
         if (isClientHttpError) {
-          console.warn(`[sync-calendars] Calendario requiere revisión #${cal.id} (${cal.calendar_name}):`, msg);
+          // URL iCal inválida/expirada: ya queda en external_calendars.sync_error; el tenant lo ve en Integraciones.
+          console.info(
+            `[sync-calendars] Calendario requiere revisión #${cal.id} (${cal.calendar_name}): ${msg}`
+          );
         } else {
           console.error(`[sync-calendars] Error cal #${cal.id} (${cal.calendar_name}):`, msg);
         }

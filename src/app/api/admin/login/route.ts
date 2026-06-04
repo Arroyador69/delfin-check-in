@@ -119,7 +119,9 @@ export async function POST(req: NextRequest) {
       // Registrar intento fallido
       const rateLimitStatus = recordFailedAttempt(clientIP, RATE_LIMIT_CONFIGS.login);
       
-      console.warn(`⚠️ Tenant no encontrado: ${email} desde IP: ${clientIP} (${rateLimitStatus.remaining} intentos restantes)`);
+      console.info(
+        `Login fallido (tenant no encontrado): ${redactEmailForLog(email)} IP ${clientIP} (${rateLimitStatus.remaining} intentos restantes)`
+      );
       
       return NextResponse.json(
         { 
@@ -160,7 +162,9 @@ export async function POST(req: NextRequest) {
       // Registrar intento fallido
       const rateLimitStatus = recordFailedAttempt(clientIP, RATE_LIMIT_CONFIGS.login);
       
-      console.warn(`⚠️ Usuario no encontrado para tenant ${tenant.name} desde IP: ${clientIP} (${rateLimitStatus.remaining} intentos restantes)`);
+      console.info(
+        `Login fallido (usuario no encontrado): ${redactEmailForLog(email)} tenant ${tenant.name} IP ${clientIP} (${rateLimitStatus.remaining} intentos restantes)`
+      );
       
       return NextResponse.json(
         { 
