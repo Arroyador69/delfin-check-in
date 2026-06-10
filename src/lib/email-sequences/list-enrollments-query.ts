@@ -27,15 +27,19 @@ const ENROLLMENTS_LIST_SELECT = `
       (SELECT COUNT(*)::int FROM email_tracking et
         WHERE et.tenant_id = e.tenant_id
           AND ${LIFECYCLE_ET_WHERE}
-          AND et.metadata->>'sequence_key' = s.key) AS emails_sent,
+          AND et.metadata->>'sequence_key' = s.key) AS emails_sent_sequence,
       (SELECT COUNT(*)::int FROM email_tracking et
         WHERE et.tenant_id = e.tenant_id
           AND ${LIFECYCLE_ET_WHERE}
           AND et.metadata->>'sequence_key' = s.key
-          AND ${LIFECYCLE_ET_OPENED}) AS emails_opened,
+          AND ${LIFECYCLE_ET_OPENED}) AS emails_opened_sequence,
       (SELECT COUNT(*)::int FROM email_tracking et
         WHERE et.metadata->>'enrollment_id' = e.id::text
           AND (et.metadata->>'step_order')::int = e.current_step) AS sends_on_current_step,
+      (SELECT COUNT(*)::int FROM email_tracking et
+        WHERE et.metadata->>'enrollment_id' = e.id::text
+          AND (et.metadata->>'step_order')::int = e.current_step
+          AND ${LIFECYCLE_ET_OPENED}) AS opens_on_current_step,
       (SELECT BOOL_OR(${LIFECYCLE_ET2_OPENED})
         FROM email_tracking et2
         WHERE et2.metadata->>'enrollment_id' = e.id::text
