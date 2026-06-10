@@ -38,13 +38,6 @@ type PendingRow = {
   has_open: boolean;
 };
 
-/** Mails lifecycle sin pixel fiable (antes del fix de apertura). */
-function isLegacyUntrackedPixel(meta: unknown): boolean {
-  if (!meta || typeof meta !== 'object') return true;
-  const m = meta as { tracking_pixel_v?: number };
-  return Number(m.tracking_pixel_v || 0) < 2;
-}
-
 async function tenantHadEngagementAfter(
   tenantId: string,
   after: Date
@@ -183,10 +176,8 @@ export async function reconcileLifecycleEngagement(options?: {
     const retryAt = addDays(row.latest_sent_at, retryDelay);
 
     if (!row.has_open) {
-      if (
-        isLegacyUntrackedPixel(row.tracking_metadata) &&
-        opensInferred < maxInferences
-      ) {
+      // Si entró en la app tras el envío (aunque el pixel no cargara), cuenta como apertura.
+      if (opensInferred < maxInferences) {
         const engagement = await tenantHadEngagementAfter(
           row.tenant_id,
           row.latest_sent_at

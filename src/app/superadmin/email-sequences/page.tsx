@@ -28,8 +28,10 @@ interface EnrollmentRow {
   sequence_key: string;
   sequence_name: string;
   phase: number;
-  emails_sent: number;
-  emails_opened: number;
+  emails_sent?: number;
+  emails_opened?: number;
+  sends_on_current_step?: number;
+  opens_on_current_step?: number;
   sends_on_current_step?: number;
   current_step_opened?: boolean;
   step_retry_count?: number;
@@ -40,7 +42,7 @@ const ENGAGEMENT_LABELS: Record<string, string> = {
   pendiente_primer_envio: 'Pendiente Mail actual',
   esperando_apertura: 'Esperando apertura',
   abierto_siguiente_paso: 'Abrió → siguiente paso',
-  reintento_sin_abrir: 'Reintento (sin abrir)',
+  reintento_sin_abrir: 'Recordatorio (sin apertura)',
 };
 
 function engagementBadge(status: string): string {
@@ -459,13 +461,16 @@ export default function EmailSequencesPage() {
               <strong>Pendientes de envío:</strong> {dueNow}
             </li>
             <li className="text-gray-500 pt-2 border-t">
-              <strong>Lógica inteligente:</strong> si abre → siguiente mail al día siguiente. Si no abre → reintento a los 4 días (mismo paso). Cron 09:30 UTC.
+              <strong>Lógica inteligente:</strong> si abre → siguiente mail al día siguiente. Si no abre → recordatorio a los 4 días (mismo paso). Cron 09:30 UTC.
             </li>
             <li className="text-gray-500">
               Cada email incluye enlace de baja (RGPD/LSSI).
             </li>
             <li className="text-gray-500 text-xs">
-              Aperturas: pixel al abrir el correo (imágenes activadas). Mails ya enviados sin señal: «Reconciliar enviados» (login/actividad en app = apertura; 4+ días sin abrir = reintento).
+              <strong>Naranja «Recordatorio»</strong> no es un error: es el flujo normal cuando no hay pixel de apertura. Si entraron en la app tras el mail, pulsa «Reconciliar enviados».
+            </li>
+            <li className="text-gray-500 text-xs">
+              Columna Emails = envíos/ab. del <strong>paso actual</strong> (no toda la secuencia).
             </li>
           </ul>
           <Link href="/superadmin/tenants" className="inline-block mt-4 text-sm text-blue-600 hover:underline">
@@ -505,7 +510,7 @@ export default function EmailSequencesPage() {
             <option value="pendiente_primer_envio">Pendiente mail actual</option>
             <option value="esperando_apertura">Esperando apertura</option>
             <option value="abierto_siguiente_paso">Abrió → siguiente</option>
-            <option value="reintento_sin_abrir">Reintento sin abrir</option>
+            <option value="reintento_sin_abrir">Recordatorio sin apertura</option>
           </select>
         </div>
 
@@ -572,7 +577,7 @@ export default function EmailSequencesPage() {
                       )}
                       {(e.step_retry_count ?? 0) > 0 && (
                         <span className="block text-xs text-orange-700 mt-0.5">
-                          Reintentos: {e.step_retry_count}
+                          Recordatorios enviados: {e.step_retry_count}
                         </span>
                       )}
                     </td>
@@ -588,7 +593,8 @@ export default function EmailSequencesPage() {
                       </div>
                     </td>
                     <td className="p-3">
-                      {e.emails_sent} env. · {e.emails_opened} ab.
+                      {e.sends_on_current_step ?? e.emails_sent ?? 0} env. paso ·{' '}
+                      {e.opens_on_current_step ?? e.emails_opened ?? 0} ab.
                     </td>
                     <td className="p-3 text-xs">{fmtDate(e.next_send_at)}</td>
                     <td className="p-3">
