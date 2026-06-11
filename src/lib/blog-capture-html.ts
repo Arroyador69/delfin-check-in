@@ -1,8 +1,10 @@
 /** Bloques HTML de captación (solo plan gratis) para artículos del blog y popup. */
 
 const APP_BASE = 'https://admin.delfincheckin.com';
-const LANDING_SIGNUP = 'https://delfincheckin.com/#registro';
+const SIGNUP_FREE_URL = `${APP_BASE}/api/public/signup-free`;
 const SUPPORT_EMAIL = 'contacto@delfincheckin.com';
+
+export const CAPTURE_POPUP_MARKER = 'data-delfin-capture-popup="email-v2"';
 
 function escapeAttr(value: string): string {
   return value.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
@@ -38,7 +40,7 @@ function signupSuccessHtml(): string {
 }
 
 export function freePlanCaptureCard(opts: { signupFreeUrl?: string; locale?: string } = {}): string {
-  const signupFreeUrl = opts.signupFreeUrl ?? `${APP_BASE}/api/public/signup-free`;
+  const signupFreeUrl = opts.signupFreeUrl ?? SIGNUP_FREE_URL;
   const locale = opts.locale ?? 'es';
   const uid = `dcf-${Math.random().toString(36).slice(2, 9)}`;
 
@@ -58,6 +60,8 @@ export function freePlanCaptureCard(opts: { signupFreeUrl?: string; locale?: str
     </ol>
     <label class="delfin-capture-label" for="${uid}-email">Email *</label>
     <input id="${uid}-email" class="delfin-capture-input" type="email" placeholder="tu@email.com" autocomplete="email" />
+    <label class="delfin-capture-label" for="${uid}-name" style="margin-top:12px">Nombre (opcional)</label>
+    <input id="${uid}-name" class="delfin-capture-input" type="text" placeholder="Tu nombre (opcional)" autocomplete="name" />
     <button type="button" id="${uid}-submit" class="delfin-capture-btn">Empezar ahora — es gratis</button>
     <div id="${uid}-msg" class="delfin-capture-msg" role="status"></div>
   </div>
@@ -66,6 +70,7 @@ export function freePlanCaptureCard(opts: { signupFreeUrl?: string; locale?: str
   (function(){
     try {
       var email = document.getElementById('${uid}-email');
+      var name = document.getElementById('${uid}-name');
       var submit = document.getElementById('${uid}-submit');
       var msg = document.getElementById('${uid}-msg');
       if (!email || !submit || !msg) return;
@@ -73,6 +78,7 @@ export function freePlanCaptureCard(opts: { signupFreeUrl?: string; locale?: str
 
       submit.addEventListener('click', async function() {
         var v = String(email.value || '').trim();
+        var n = name ? String(name.value || '').trim() : '';
         if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(v)) {
           msg.innerHTML = 'Introduce un email válido.';
           msg.className = 'delfin-capture-msg err';
@@ -82,10 +88,12 @@ export function freePlanCaptureCard(opts: { signupFreeUrl?: string; locale?: str
         msg.innerHTML = 'Enviando…';
         msg.className = 'delfin-capture-msg ok';
         try {
+          var body = { email: v, locale: '${escapeAttr(locale)}' };
+          if (n) body.name = n;
           var res = await fetch('${escapeAttr(signupFreeUrl)}', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email: v, locale: '${escapeAttr(locale)}' })
+            body: JSON.stringify(body)
           });
           var data = await res.json().catch(function(){ return {}; });
           if (!res.ok || data.success === false) {
@@ -96,6 +104,7 @@ export function freePlanCaptureCard(opts: { signupFreeUrl?: string; locale?: str
           msg.innerHTML = successHtml;
           msg.className = 'delfin-capture-msg ok';
           email.value = '';
+          if (name) name.value = '';
         } catch (e) {
           msg.innerHTML = 'No se pudo completar el registro. Inténtalo más tarde.';
           msg.className = 'delfin-capture-msg err';
@@ -142,24 +151,26 @@ export function softPopupHtml(): string {
   #delfin-soft-popup .btn-ghost{background:#f1f5f9;color:#475569}
   #delfin-soft-popup .x{position:absolute;top:10px;right:10px;border:0;background:#fff;width:34px;height:34px;border-radius:50%;cursor:pointer;font-size:20px;color:#475569;z-index:2}
   #delfin-popup-email{width:100%;box-sizing:border-box;height:46px;padding:0 12px;border-radius:12px;border:2px solid #cbd5e1;font-size:14px}
-  #delfin-popup-msg{font-size:12px;line-height:1.45;display:none}
-  #delfin-popup-msg.ok{display:block;color:#047857}
-  #delfin-popup-msg.err{display:block;color:#b91c1c}
+  #delfin-popup-msg{font-size:12px;line-height:1.45;display:none;padding:10px;border-radius:10px}
+  #delfin-popup-msg.ok{display:block;background:#ecfdf5;color:#047857}
+  #delfin-popup-msg.err{display:block;background:#fef2f2;color:#b91c1c}
 </style>
-<div id="delfin-soft-popup-overlay" role="dialog" aria-modal="true" aria-label="Delfín Check-in">
+<div id="delfin-soft-popup-overlay" ${CAPTURE_POPUP_MARKER} role="dialog" aria-modal="true" aria-label="Delfín Check-in">
   <div style="position:relative">
     <div id="delfin-soft-popup">
       <button class="x" type="button" aria-label="Cerrar" id="delfin-soft-popup-close">×</button>
       <div class="popup-hero">
         <div class="popup-emoji">🐬</div>
         <p class="ttl">Pruébalo ahora — gratis</p>
-        <p class="sub">Parte de viajeros al <strong>Ministerio del Interior</strong>. <strong>En ~2 minutos</strong> puedes entrar al panel con 1 propiedad.</p>
-        <span class="popup-highlight">⏱️ Solo email · sin tarjeta</span>
+        <p class="sub">Digitaliza el parte de viajeros y cumple con el <strong>Ministerio del Interior</strong>. <strong>En ~2 minutos</strong> puedes entrar al panel.</p>
+        <span class="popup-highlight">⏱️ Solo email · 1 propiedad · sin tarjeta</span>
       </div>
       <div class="cta">
-        <input type="email" id="delfin-popup-email" placeholder="tu@email.com" autocomplete="email" />
-        <a class="btn btn-primary" id="delfin-soft-popup-cta" href="${LANDING_SIGNUP}" target="_blank" rel="noreferrer">Empezar ahora con mi email</a>
-        <button class="btn btn-ghost" type="button" id="delfin-soft-popup-later">Más tarde</button>
+        <input type="email" id="delfin-popup-email" placeholder="tu@email.com" autocomplete="email" aria-label="Email" />
+        <button type="button" id="delfin-popup-submit" class="btn btn-primary">Probar ahora con mi email</button>
+        <div id="delfin-popup-msg" role="status"></div>
+        <button type="button" id="delfin-soft-popup-scroll" class="btn btn-ghost">Ir al formulario en el artículo</button>
+        <button type="button" id="delfin-soft-popup-later" class="btn btn-ghost">Más tarde</button>
       </div>
     </div>
   </div>
@@ -170,17 +181,22 @@ export function softPopupHtml(): string {
       var overlay = document.getElementById('delfin-soft-popup-overlay');
       var closeBtn = document.getElementById('delfin-soft-popup-close');
       var laterBtn = document.getElementById('delfin-soft-popup-later');
-      var cta = document.getElementById('delfin-soft-popup-cta');
-      if (!overlay || !closeBtn || !laterBtn || !cta) return;
+      var scrollBtn = document.getElementById('delfin-soft-popup-scroll');
+      var submitBtn = document.getElementById('delfin-popup-submit');
+      var emailEl = document.getElementById('delfin-popup-email');
+      var msg = document.getElementById('delfin-popup-msg');
+      if (!overlay || !closeBtn || !laterBtn || !submitBtn || !emailEl || !msg) return;
 
       function safeGet(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }
       function safeSet(k,v){ try { localStorage.setItem(k,v); } catch(e){} }
 
       var KEY = 'delfin_soft_popup_last';
       var last = Number(safeGet(KEY) || '0');
-      var now = Date.now();
       var COOLDOWN_MS = 1000 * 60 * 60 * 24 * 7;
-      if (last && (now - last) < COOLDOWN_MS) return;
+      if (last && (Date.now() - last) < COOLDOWN_MS) return;
+
+      var successHtml = ${JSON.stringify(signupSuccessHtml())};
+      var signupUrl = ${JSON.stringify(SIGNUP_FREE_URL)};
 
       function getSessionId(){
         var k = 'delfin_blog_session_id';
@@ -191,11 +207,11 @@ export function softPopupHtml(): string {
         return v;
       }
 
-      function track(eventType){
+      function track(eventType, extra){
         try {
           var slug = (typeof ARTICLE_SLUG === 'string' && ARTICLE_SLUG) ? ARTICLE_SLUG : null;
           if (!slug) return;
-          fetch('https://admin.delfincheckin.com/api/blog/analytics/track', {
+          fetch('${APP_BASE}/api/blog/analytics/track', {
             method: 'POST',
             mode: 'cors',
             headers: { 'Content-Type': 'application/json' },
@@ -203,26 +219,70 @@ export function softPopupHtml(): string {
               article_slug: slug,
               session_id: getSessionId(),
               event_type: eventType,
-              event_data: { source: 'soft_popup' }
+              event_data: Object.assign({ source: 'email_capture_popup' }, extra || {})
             })
           }).catch(function(){});
         } catch(e) {}
       }
 
-      function open(){
-        overlay.style.display = 'flex';
-        safeSet(KEY, String(Date.now()));
-        track('popup_view');
-      }
       function close(){
         overlay.style.display = 'none';
+        safeSet(KEY, String(Date.now()));
         track('popup_close');
+      }
+
+      function open(){
+        overlay.style.display = 'flex';
+        window.popupShown = true;
+        track('popup_view');
+        setTimeout(function(){ emailEl.focus(); }, 200);
       }
 
       closeBtn.addEventListener('click', close);
       laterBtn.addEventListener('click', close);
       overlay.addEventListener('click', function(e){ if (e.target === overlay) close(); });
-      cta.addEventListener('click', function(){ track('popup_click'); });
+
+      if (scrollBtn) {
+        scrollBtn.addEventListener('click', function(){
+          close();
+          var card = document.querySelector('.delfin-capture-wrap');
+          if (card && card.scrollIntoView) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+      }
+
+      submitBtn.addEventListener('click', async function(){
+        var v = String(emailEl.value || '').trim();
+        if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(v)) {
+          msg.innerHTML = 'Introduce un email válido.';
+          msg.className = 'err';
+          return;
+        }
+        submitBtn.disabled = true;
+        msg.innerHTML = 'Enviando…';
+        msg.className = '';
+        try {
+          var res = await fetch(signupUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: v, locale: 'es' })
+          });
+          var data = await res.json().catch(function(){ return {}; });
+          if (!res.ok || data.success === false) {
+            msg.innerHTML = (data && data.error) ? String(data.error) : 'No se pudo completar el registro. Inténtalo más tarde.';
+            msg.className = 'err';
+            return;
+          }
+          msg.innerHTML = successHtml;
+          msg.className = 'ok';
+          emailEl.value = '';
+          track('popup_click', { action: 'signup_success' });
+        } catch (e) {
+          msg.innerHTML = 'No se pudo completar el registro. Inténtalo más tarde.';
+          msg.className = 'err';
+        } finally {
+          submitBtn.disabled = false;
+        }
+      });
 
       setTimeout(open, 10000);
     } catch (e) {}
@@ -234,6 +294,25 @@ export const PLANS_CAPTURE_MARKER = 'Pruébalo ahora — en 2 minutos';
 export const PLANS_CAPTURE_MARKER_LEGACY = 'Prueba gratis con 1 propiedad';
 export const PLANS_CAPTURE_MARKER_EN = 'Try free with 1 property';
 const LEGACY_PLANS_MARKER = 'Planes claros y transparentes';
+
+/** Elimina popups antiguos (promo MIR+precios, soft-popup legacy, pms-popup). */
+export function stripLegacyPopups(html: string): string {
+  let out = html;
+
+  out = out.replace(
+    /\s*\/\/ Popup ligero de conversión: prueba gratis \+ MIR[\s\S]*?\}\)\(\);\s*/g,
+    '\n'
+  );
+
+  out = out.replace(
+    /<style>\s*#delfin-soft-popup[\s\S]*?<\/script>\s*/gi,
+    ''
+  );
+
+  out = out.replace(/<div[^>]*id="pms-popup-overlay"[\s\S]*?<\/div>\s*<\/div>/gi, '');
+
+  return out;
+}
 
 /** Solo artículos nuevos sin bloque de planes previo (no toca publicados). */
 export function injectPlansCaptureBlock(html: string): string {
@@ -254,17 +333,10 @@ export function injectPlansCaptureBlock(html: string): string {
   return `${html}\n${plansHtmlBlock()}`;
 }
 
-function upgradeExistingSoftPopup(html: string): string {
-  return html
-    .replace(/https:\/\/delfincheckin\.com\/#precios/g, LANDING_SIGNUP)
-    .replace(/>Ver planes y empezar</g, '>Empezar ahora — es gratis<')
-    .replace(/Prueba Delfín Check-in gratis \(1 propiedad\)/g, 'Pruébalo ahora — gratis');
-}
-
 export function injectSoftPopup(html: string): string {
-  const marker = 'id="delfin-soft-popup"';
-  if (html.includes(marker)) return upgradeExistingSoftPopup(html);
+  let out = stripLegacyPopups(html);
+  if (out.includes(CAPTURE_POPUP_MARKER)) return out;
   const popupHtml = softPopupHtml();
-  if (html.includes('</body>')) return html.replace('</body>', `${popupHtml}\n</body>`);
-  return `${html}\n${popupHtml}`;
+  if (out.includes('</body>')) return out.replace('</body>', `${popupHtml}\n</body>`);
+  return `${out}\n${popupHtml}`;
 }

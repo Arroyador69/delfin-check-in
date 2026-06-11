@@ -8,7 +8,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifySuperAdmin } from '@/lib/auth-superadmin';
 import { sql } from '@/lib/db';
 import { Octokit } from '@octokit/rest';
-import { injectPlansCaptureBlock, injectSoftPopup } from '@/lib/blog-capture-html';
+import { injectPlansCaptureBlock, injectSoftPopup, stripLegacyPopups } from '@/lib/blog-capture-html';
 
 const GITHUB_OWNER = 'Arroyador69';
 const GITHUB_REPO = 'delfincheckin.com';
@@ -123,7 +123,7 @@ export async function POST(req: NextRequest) {
         html = html.replace(scriptSlugLiteral, `const ARTICLE_SLUG = '${article.slug}';`);
       }
 
-      // IMPORTANTE: eliminamos waitlist/popup y colocamos CTA de planes en todos los artículos.
+      html = stripLegacyPopups(html);
       html = replaceWaitlistWithPlans(html);
       html = injectSoftPopup(html);
 
