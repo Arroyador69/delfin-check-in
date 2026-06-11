@@ -11,7 +11,7 @@ import {
   pickBlogAngleForBatch,
 } from '@/lib/blog-article-dedup';
 import { Octokit } from '@octokit/rest';
-import { injectPlansCaptureBlock, injectSoftPopup } from '@/lib/blog-capture-html';
+import { injectPlansCaptureBlock, injectSoftPopup, stripLegacyPopups } from '@/lib/blog-capture-html';
 
 type Batch = 'morning' | 'afternoon';
 
@@ -299,7 +299,7 @@ async function publishToGithub(slug: string): Promise<string> {
     html = html.replace(scriptSlugLiteral, `const ARTICLE_SLUG = '${article.slug}';`);
   }
 
-  // IMPORTANTE: eliminar waitlist/popup y colocar CTA de planes también en generación automática.
+  html = stripLegacyPopups(html);
   html = replaceWaitlistWithPlans(html);
   html = injectSoftPopup(html);
 
