@@ -2,109 +2,126 @@
 
 const APP_BASE = 'https://admin.delfincheckin.com';
 const LANDING_SIGNUP = 'https://delfincheckin.com/#registro';
+const SUPPORT_EMAIL = 'contacto@delfincheckin.com';
 
 function escapeAttr(value: string): string {
   return value.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
 }
 
+const CAPTURE_STYLES = `
+<style>
+  .delfin-capture-wrap{max-width:560px;margin:2rem auto;padding:0 4px}
+  .delfin-capture-card{position:relative;overflow:hidden;border-radius:22px;border:2px solid rgba(68,192,255,.4);background:linear-gradient(145deg,#f0f9ff 0%,#fff 45%,#f0fdf4 100%);box-shadow:0 20px 50px rgba(37,99,235,.12);padding:24px}
+  .delfin-capture-badge{display:inline-block;font-size:12px;font-weight:900;padding:8px 12px;border-radius:999px;background:linear-gradient(135deg,#dcfce7,#bbf7d0);color:#166534;margin-bottom:12px}
+  .delfin-capture-title{margin:0 0 8px;font-size:1.65rem;font-weight:950;line-height:1.15;color:#0f172a}
+  .delfin-capture-sub{margin:0 0 16px;color:#475569;font-size:15px;line-height:1.55}
+  .delfin-capture-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:0 0 18px;padding:0;list-style:none}
+  .delfin-capture-steps li{text-align:center;padding:10px 8px;border-radius:12px;background:#fff;border:1px solid #e2e8f0;font-size:11px;font-weight:700;color:#334155;line-height:1.35}
+  .delfin-capture-steps strong{display:block;font-size:16px;color:#2563eb;margin-bottom:2px}
+  .delfin-capture-input{width:100%;box-sizing:border-box;height:48px;padding:0 14px;border-radius:12px;border:2px solid #cbd5e1;font-size:15px;margin-top:6px}
+  .delfin-capture-input:focus{outline:none;border-color:#44c0ff;box-shadow:0 0 0 3px rgba(68,192,255,.25)}
+  .delfin-capture-label{display:block;font-weight:800;font-size:13px;color:#0f172a}
+  .delfin-capture-btn{width:100%;margin-top:14px;padding:14px 16px;border:0;border-radius:12px;cursor:pointer;font-weight:900;font-size:15px;color:#fff;background:linear-gradient(135deg,#44c0ff,#2563eb,#16a34a);box-shadow:0 8px 22px rgba(37,99,235,.3)}
+  .delfin-capture-msg{margin-top:12px;padding:14px;border-radius:12px;font-size:13px;line-height:1.55;display:none}
+  .delfin-capture-msg.ok{display:block;background:#ecfdf5;border:2px solid #6ee7b7;color:#065f46}
+  .delfin-capture-msg.err{display:block;background:#fef2f2;border:2px solid #fca5a5;color:#991b1b}
+  .delfin-capture-msg a{color:#047857;font-weight:700}
+  @media(max-width:520px){.delfin-capture-steps{grid-template-columns:1fr}}
+</style>`.trim();
+
+function signupSuccessHtml(): string {
+  return (
+    '<strong>¡Revisa tu correo!</strong> Te hemos enviado el enlace para <strong>entrar al sistema</strong> y completar el onboarding. En unos <strong>2 minutos</strong> puedes estar usándolo.<br><br>' +
+    'Si no lo ves, busca en <strong>spam, correo no deseado o promociones</strong>. ¿Nada? Escríbenos a ' +
+    `<a href="mailto:${SUPPORT_EMAIL}">${SUPPORT_EMAIL}</a>.`
+  );
+}
+
 export function freePlanCaptureCard(opts: { signupFreeUrl?: string; locale?: string } = {}): string {
   const signupFreeUrl = opts.signupFreeUrl ?? `${APP_BASE}/api/public/signup-free`;
   const locale = opts.locale ?? 'es';
+  const uid = `dcf-${Math.random().toString(36).slice(2, 9)}`;
 
   return `
-<div style="max-width: 520px; margin: 0 auto; background:#ffffff;border:3px solid #a7f3d0;border-radius:20px;padding:24px;box-shadow:0 12px 32px rgba(15,23,42,0.1);">
-  <div style="text-align:center;">
-    <div style="display:inline-block; font-size: 11px; font-weight: 900; padding: 6px 12px; border-radius: 999px; background: #dcfce7; color:#166534; margin-bottom: 12px;">Sin tarjeta · Solo email</div>
-    <div style="font-size: 22px; font-weight: 950; color:#0f172a; margin: 0;">Plan Básico gratis</div>
-    <p style="margin: 10px 0 0; color:#475569; font-size: 14px; line-height: 1.5;">
-      <strong>1 propiedad</strong> para probar el registro de viajeros y el cumplimiento del <strong>RD 933/2021</strong> con el Ministerio del Interior.
+<div class="delfin-capture-wrap">
+  <div class="delfin-capture-card">
+    <span class="delfin-capture-badge">🐬 Pruébalo ahora · en 2 minutos lo usas</span>
+    <h3 class="delfin-capture-title">Prueba gratis con 1 propiedad</h3>
+    <p class="delfin-capture-sub">
+      Cumple el <strong>parte de viajeros</strong> y el envío al <strong>Ministerio del Interior</strong> (RD 933/2021).
+      Solo tu email — sin tarjeta. Te enviamos el acceso al panel para registrar tu alojamiento.
     </p>
+    <ol class="delfin-capture-steps">
+      <li><strong>1</strong>Tu email</li>
+      <li><strong>2</strong>Revisa el correo</li>
+      <li><strong>3</strong>1 propiedad</li>
+    </ol>
+    <label class="delfin-capture-label" for="${uid}-email">Email *</label>
+    <input id="${uid}-email" class="delfin-capture-input" type="email" placeholder="tu@email.com" autocomplete="email" />
+    <button type="button" id="${uid}-submit" class="delfin-capture-btn">Empezar ahora — es gratis</button>
+    <div id="${uid}-msg" class="delfin-capture-msg" role="status"></div>
   </div>
-  <ul style="list-style:none; padding: 16px 0 0 0; margin: 16px 0 0 0; border-top: 1px solid #e2e8f0; text-align:left;">
-    <li style="margin: 0 0 10px 0; color:#334155; font-size: 14px; line-height: 1.45;">✅ <strong>Parte de viajeros</strong> y formulario digital para huéspedes</li>
-    <li style="margin: 0 0 10px 0; color:#334155; font-size: 14px; line-height: 1.45;">✅ Descarga XML para el <strong>Ministerio del Interior</strong> (MIR)</li>
-    <li style="margin: 0 0 10px 0; color:#334155; font-size: 14px; line-height: 1.45;">✅ Calendario, reservas y gestión del alojamiento incluidos</li>
-    <li style="margin: 0; color:#334155; font-size: 14px; line-height: 1.45;">✅ Activa tu cuenta en minutos — solo necesitas un email</li>
-  </ul>
+</div>
+<script>
+  (function(){
+    try {
+      var email = document.getElementById('${uid}-email');
+      var submit = document.getElementById('${uid}-submit');
+      var msg = document.getElementById('${uid}-msg');
+      if (!email || !submit || !msg) return;
+      var successHtml = ${JSON.stringify(signupSuccessHtml())};
 
-  <button type="button" id="delfin-free-toggle" style="width:100%; margin-top: 18px; text-align:center; background:#16a34a; color:#fff; padding: 14px 16px; border-radius: 12px; font-weight: 900; font-size: 15px; border: 0; cursor: pointer;">
-    Prueba gratis con 1 propiedad
-  </button>
-
-  <div id="delfin-free-form-wrap" style="display:none; margin-top: 14px; border-top: 1px solid #e2e8f0; padding-top: 14px;">
-    <label for="delfin-free-email" style="display:block; font-weight: 900; font-size: 13px; color:#0f172a; margin-bottom: 6px;">Email</label>
-    <input id="delfin-free-email" type="email" placeholder="tu@email.com" style="width: 100%; box-sizing: border-box; padding: 12px 14px; border-radius: 12px; border: 2px solid #cbd5e1; font-size: 14px;" />
-    <button type="button" id="delfin-free-submit" style="width:100%; margin-top: 10px; text-align:center; background:#0f172a; color:#fff; padding: 12px 14px; border-radius: 12px; font-weight: 900; border: 0; cursor: pointer;">
-      Enviar acceso por email
-    </button>
-    <div id="delfin-free-msg" style="margin-top: 10px; font-size: 12px; color:#334155;"></div>
-  </div>
-
-  <script>
-    (function(){
-      try {
-        var toggle = document.getElementById('delfin-free-toggle');
-        var wrap = document.getElementById('delfin-free-form-wrap');
-        var email = document.getElementById('delfin-free-email');
-        var submit = document.getElementById('delfin-free-submit');
-        var msg = document.getElementById('delfin-free-msg');
-        if (!toggle || !wrap || !email || !submit || !msg) return;
-
-        toggle.addEventListener('click', function() {
-          wrap.style.display = wrap.style.display === 'none' ? 'block' : 'none';
-          if (wrap.style.display === 'block') email.focus();
-        });
-
-        submit.addEventListener('click', async function() {
-          var v = String(email.value || '').trim();
-          if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(v)) {
-            msg.textContent = 'Introduce un email válido.';
-            msg.style.color = '#b91c1c';
+      submit.addEventListener('click', async function() {
+        var v = String(email.value || '').trim();
+        if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(v)) {
+          msg.innerHTML = 'Introduce un email válido.';
+          msg.className = 'delfin-capture-msg err';
+          return;
+        }
+        submit.disabled = true;
+        msg.innerHTML = 'Enviando…';
+        msg.className = 'delfin-capture-msg ok';
+        try {
+          var res = await fetch('${escapeAttr(signupFreeUrl)}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: v, locale: '${escapeAttr(locale)}' })
+          });
+          var data = await res.json().catch(function(){ return {}; });
+          if (!res.ok || data.success === false) {
+            msg.innerHTML = (data && data.error) ? String(data.error) : 'No se pudo completar el registro. Inténtalo más tarde.';
+            msg.className = 'delfin-capture-msg err';
             return;
           }
-          msg.textContent = 'Enviando...';
-          msg.style.color = '#334155';
-          try {
-            var res = await fetch('${escapeAttr(signupFreeUrl)}', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ email: v, locale: '${escapeAttr(locale)}' })
-            });
-            var data = await res.json().catch(function(){ return {}; });
-            if (!res.ok || data.success === false) {
-              msg.textContent = (data && data.error) ? String(data.error) : 'No se pudo completar el registro. Inténtalo más tarde.';
-              msg.style.color = '#b91c1c';
-              return;
-            }
-            msg.textContent = 'Listo. Revisa tu correo para activar tu cuenta y registrar tu propiedad.';
-            msg.style.color = '#047857';
-          } catch (e) {
-            msg.textContent = 'No se pudo completar el registro. Inténtalo más tarde.';
-            msg.style.color = '#b91c1c';
-          }
-        });
-      } catch (e) {}
-    })();
-  </script>
-</div>`.trim();
+          msg.innerHTML = successHtml;
+          msg.className = 'delfin-capture-msg ok';
+          email.value = '';
+        } catch (e) {
+          msg.innerHTML = 'No se pudo completar el registro. Inténtalo más tarde.';
+          msg.className = 'delfin-capture-msg err';
+        } finally {
+          submit.disabled = false;
+        }
+      });
+    } catch (e) {}
+  })();
+</script>`.trim();
 }
 
 export function plansHtmlBlock(): string {
   return `
+${CAPTURE_STYLES}
 <section style="margin: 2.5rem 0;">
-  <div style="text-align:center;margin-bottom:1.5rem;">
+  <div style="text-align:center;margin-bottom:1.25rem;">
     <h2 style="font-size: 2rem; line-height: 1.2; font-weight: 900; color: #0f172a; margin: 0;">
-      Prueba gratis con 1 propiedad
+      Pruébalo ahora — en 2 minutos puedes estar usándolo
     </h2>
     <p style="margin: 0.75rem auto 0; max-width: 640px; color: #475569; font-size: 1rem; line-height: 1.55;">
-      Cumple la legalidad del <strong>parte de viajeros</strong> y el envío al
-      <strong>Ministerio del Interior</strong> (RD 933/2021). Sin tarjeta: regístrate solo con tu email.
+      Registro de viajeros y cumplimiento del <strong>Ministerio del Interior</strong> (RD 933/2021).
+      <strong>1 propiedad gratis</strong> — solo email, sin tarjeta.
     </p>
   </div>
   ${freePlanCaptureCard()}
-  <p style="text-align:center; margin: 1.25rem auto 0; max-width: 560px; color: #64748b; font-size: 13px; line-height: 1.5;">
-    Si necesitas envío automático MIR o más propiedades, verás las opciones dentro del panel tras activar tu cuenta.
-  </p>
 </section>
 `.trim();
 }
@@ -112,33 +129,36 @@ export function plansHtmlBlock(): string {
 export function softPopupHtml(): string {
   return `
 <style>
-  #delfin-soft-popup-overlay{position:fixed;inset:0;background:rgba(2,6,23,.55);display:none;align-items:center;justify-content:center;z-index:999999;}
-  #delfin-soft-popup{width:min(520px,calc(100vw - 32px));background:#fff;border-radius:18px;box-shadow:0 16px 48px rgba(2,6,23,.35);border:1px solid rgba(148,163,184,.6);overflow:hidden}
-  #delfin-soft-popup .hd{padding:16px 16px 0 16px}
-  #delfin-soft-popup .ttl{font-weight:950;font-size:20px;line-height:1.2;color:#0f172a;margin:0}
-  #delfin-soft-popup .sub{margin:10px 0 0 0;color:#334155;font-size:14px;line-height:1.45}
-  #delfin-soft-popup .cta{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:16px}
-  #delfin-soft-popup .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:12px;padding:12px 14px;font-weight:900;text-decoration:none}
-  #delfin-soft-popup .btn-primary{background:#16a34a;color:#fff;flex:1}
-  #delfin-soft-popup .btn-ghost{background:#f1f5f9;color:#0f172a}
-  #delfin-soft-popup .x{position:absolute;top:10px;right:10px;border:0;background:transparent;cursor:pointer;font-size:20px;line-height:1;color:#475569}
-  #delfin-soft-popup .wrap{position:relative}
+  #delfin-soft-popup-overlay{position:fixed;inset:0;background:rgba(2,6,23,.62);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:999999;padding:16px}
+  #delfin-soft-popup{position:relative;width:min(560px,calc(100vw - 32px));background:#fff;border-radius:22px;overflow:hidden;box-shadow:0 28px 80px rgba(2,6,23,.35);border:2px solid rgba(68,192,255,.35)}
+  #delfin-soft-popup .popup-hero{padding:22px;background:linear-gradient(135deg,#e0f2fe,#dcfce7);border-bottom:1px solid rgba(148,163,184,.3)}
+  #delfin-soft-popup .popup-emoji{font-size:34px;margin-bottom:6px}
+  #delfin-soft-popup .ttl{font-weight:950;font-size:22px;line-height:1.2;color:#0f172a;margin:0}
+  #delfin-soft-popup .sub{margin:10px 0 0;color:#334155;font-size:14px;line-height:1.5}
+  #delfin-soft-popup .popup-highlight{display:inline-block;margin-top:10px;padding:8px 12px;border-radius:10px;background:rgba(255,255,255,.8);font-size:12px;font-weight:800;color:#1d4ed8}
+  #delfin-soft-popup .cta{padding:16px 18px 18px;display:grid;gap:10px}
+  #delfin-soft-popup .btn{display:inline-flex;align-items:center;justify-content:center;border-radius:12px;padding:12px 14px;font-weight:800;font-size:14px;text-decoration:none;border:0;cursor:pointer}
+  #delfin-soft-popup .btn-primary{background:linear-gradient(135deg,#44c0ff,#2563eb);color:#fff}
+  #delfin-soft-popup .btn-ghost{background:#f1f5f9;color:#475569}
+  #delfin-soft-popup .x{position:absolute;top:10px;right:10px;border:0;background:#fff;width:34px;height:34px;border-radius:50%;cursor:pointer;font-size:20px;color:#475569;z-index:2}
+  #delfin-popup-email{width:100%;box-sizing:border-box;height:46px;padding:0 12px;border-radius:12px;border:2px solid #cbd5e1;font-size:14px}
+  #delfin-popup-msg{font-size:12px;line-height:1.45;display:none}
+  #delfin-popup-msg.ok{display:block;color:#047857}
+  #delfin-popup-msg.err{display:block;color:#b91c1c}
 </style>
 <div id="delfin-soft-popup-overlay" role="dialog" aria-modal="true" aria-label="Delfín Check-in">
-  <div class="wrap">
+  <div style="position:relative">
     <div id="delfin-soft-popup">
       <button class="x" type="button" aria-label="Cerrar" id="delfin-soft-popup-close">×</button>
-      <div class="hd">
-        <p class="ttl">Prueba gratis con 1 propiedad</p>
-        <p class="sub">
-          Digitaliza el <strong>parte de viajeros</strong> y cumple con el
-          <strong>Ministerio del Interior</strong> (RD 933/2021). Solo email, sin tarjeta.
-        </p>
+      <div class="popup-hero">
+        <div class="popup-emoji">🐬</div>
+        <p class="ttl">Pruébalo ahora — gratis</p>
+        <p class="sub">Parte de viajeros al <strong>Ministerio del Interior</strong>. <strong>En ~2 minutos</strong> puedes entrar al panel con 1 propiedad.</p>
+        <span class="popup-highlight">⏱️ Solo email · sin tarjeta</span>
       </div>
       <div class="cta">
-        <a class="btn btn-primary" id="delfin-soft-popup-cta" href="${LANDING_SIGNUP}" target="_blank" rel="noreferrer">
-          Prueba gratis con 1 propiedad
-        </a>
+        <input type="email" id="delfin-popup-email" placeholder="tu@email.com" autocomplete="email" />
+        <a class="btn btn-primary" id="delfin-soft-popup-cta" href="${LANDING_SIGNUP}" target="_blank" rel="noreferrer">Empezar ahora con mi email</a>
         <button class="btn btn-ghost" type="button" id="delfin-soft-popup-later">Más tarde</button>
       </div>
     </div>
@@ -204,13 +224,14 @@ export function softPopupHtml(): string {
       overlay.addEventListener('click', function(e){ if (e.target === overlay) close(); });
       cta.addEventListener('click', function(){ track('popup_click'); });
 
-      setTimeout(open, 12000);
+      setTimeout(open, 10000);
     } catch (e) {}
   })();
 </script>`.trim();
 }
 
-export const PLANS_CAPTURE_MARKER = 'Prueba gratis con 1 propiedad';
+export const PLANS_CAPTURE_MARKER = 'Pruébalo ahora — en 2 minutos';
+export const PLANS_CAPTURE_MARKER_LEGACY = 'Prueba gratis con 1 propiedad';
 export const PLANS_CAPTURE_MARKER_EN = 'Try free with 1 property';
 const LEGACY_PLANS_MARKER = 'Planes claros y transparentes';
 
@@ -218,6 +239,7 @@ const LEGACY_PLANS_MARKER = 'Planes claros y transparentes';
 export function injectPlansCaptureBlock(html: string): string {
   if (
     html.includes(PLANS_CAPTURE_MARKER) ||
+    html.includes(PLANS_CAPTURE_MARKER_LEGACY) ||
     html.includes(PLANS_CAPTURE_MARKER_EN) ||
     html.includes(LEGACY_PLANS_MARKER)
   ) {
@@ -235,12 +257,8 @@ export function injectPlansCaptureBlock(html: string): string {
 function upgradeExistingSoftPopup(html: string): string {
   return html
     .replace(/https:\/\/delfincheckin\.com\/#precios/g, LANDING_SIGNUP)
-    .replace(/>Ver planes y empezar</g, '>Prueba gratis con 1 propiedad<')
-    .replace(/Prueba Delfín Check-in gratis \(1 propiedad\)/g, 'Prueba gratis con 1 propiedad')
-    .replace(
-      /#delfin-soft-popup \.btn-primary\{background:#0f172a/g,
-      '#delfin-soft-popup .btn-primary{background:#16a34a'
-    );
+    .replace(/>Ver planes y empezar</g, '>Empezar ahora — es gratis<')
+    .replace(/Prueba Delfín Check-in gratis \(1 propiedad\)/g, 'Pruébalo ahora — gratis');
 }
 
 export function injectSoftPopup(html: string): string {
