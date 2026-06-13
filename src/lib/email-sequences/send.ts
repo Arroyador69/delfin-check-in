@@ -141,10 +141,15 @@ export function buildTrackedCtaUrl(_trackingId: string, targetUrl: string): stri
   return targetUrl;
 }
 
-export function buildLifecycleUrls(tenantId: string): { onboardingUrl: string; billingUrl: string } {
+export function buildLifecycleUrls(_tenantId: string): {
+  onboardingUrl: string;
+  billingUrl: string;
+  checkinUpgradeUrl: string;
+} {
   const appBase = getAppBaseUrl();
   return {
     onboardingUrl: `${appBase}/es/onboarding`,
     billingUrl: `${appBase}/es/settings/billing`,
+    checkinUpgradeUrl: `${appBase}/es/upgrade-plan?plan=checkin&source=lifecycle_f2`,
   };
 }
