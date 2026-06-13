@@ -10,9 +10,12 @@ export interface LifecycleTemplateParams {
   ownerName: string;
   onboardingUrl: string;
   billingUrl: string;
+  /** Checkout Plan Check-in (Fase 2 — upsell principal). */
+  checkinUpgradeUrl: string;
   unsubscribeUrl: string;
   daysSinceSignup?: number;
   onboardingStatus?: string | null;
+  currentRooms?: number;
 }
 
 export interface LifecycleEmailContent {
@@ -245,65 +248,77 @@ const TEMPLATES: Record<
 
   p2_unlock: (p) => {
     const name = firstName(p.ownerName);
-    const subject = `${name}, ya tienes todo listo — esto es lo que puedes desbloquear`;
+    const subject = `${name}, activa el envío automático al Ministerio del Interior`;
     const body = contentBlock(`
       <h1 style="margin:0 0 16px 0;font-size:22px;color:#0f172a;">¡Enhorabuena, ${esc(name)}!</h1>
-      <p style="margin:0 0 12px 0;">Has completado la configuración básica. Con un plan de pago puedes desbloquear más unidades, el módulo legal completo y automatizaciones avanzadas del parte de viajeros.</p>
-      ${infoBox('<strong>Plan gratuito:</strong> 1 unidad + credenciales MIR · ideal para empezar<br/><strong>Planes de pago:</strong> más unidades, legal completo, soporte prioritario', '#fef3c7', '#f59e0b')}
-      ${ctaButton(p.billingUrl, 'Ver planes y precios')}
+      <p style="margin:0 0 12px 0;">Ya tienes tu alojamiento configurado en Delfín Check-in. El siguiente paso natural para muchos propietarios es <strong>automatizar el parte de viajeros</strong> y el envío al registro oficial (SES/MIR, RD 933/2021).</p>
+      ${infoBox('<strong>Plan gratuito:</strong> formulario digital, panel y credenciales MIR para probar el flujo.<br/><strong>Plan Check-in:</strong> envío automático al Ministerio del Interior, check-in digital completo y soporte prioritario — desde <strong>2€/mes + 2€/propiedad</strong>.', '#f0fdf4', '#16a34a')}
+      ${ctaButton(p.checkinUpgradeUrl, 'Activar Plan Check-in')}
+      <p style="margin:16px 0 0 0;font-size:13px;color:#64748b;">¿Solo quieres comparar? <a href="${escAttr(p.billingUrl)}" style="color:#2563eb;">Ver todos los planes en el panel</a></p>
     `);
     return {
       subject,
       html: wrapEmail(body, p.unsubscribeUrl),
-      text: `Hola ${name},\n\nVer planes: ${p.billingUrl}\n\nBaja: ${p.unsubscribeUrl}`,
+      text: `Hola ${name},\n\nActiva Plan Check-in: ${p.checkinUpgradeUrl}\n\nVer todos los planes: ${p.billingUrl}\n\nBaja: ${p.unsubscribeUrl}`,
     };
   },
 
   p2_use_case: (p) => {
     const name = firstName(p.ownerName);
-    const subject = `${name}, ¿gestionas más de una unidad o quieres el módulo legal?`;
+    const rooms = Math.max(1, p.currentRooms ?? 1);
+    const multiUnit = rooms > 1;
+    const subject = multiUnit
+      ? `${name}, automatiza el MIR en tus ${rooms} unidades`
+      : `${name}, tus huéspedes rellenan el formulario — Delfín envía al MIR`;
+    const growthNote = multiUnit
+      ? '<br/><br/>Con varias unidades, el <strong>Plan Check-in</strong> centraliza el envío legal. Si más adelante quieres más propiedades sin anuncios, en el panel verás Standard y Pro.'
+      : '';
     const body = contentBlock(`
-      <h1 style="margin:0 0 16px 0;font-size:22px;color:#0f172a;">Cuando creces, el plan crece contigo</h1>
-      <p style="margin:0 0 12px 0;">Muchos propietarios empiezan con una unidad y luego añaden apartamentos, habitaciones o el envío legal automatizado al registro de viajeros.</p>
-      ${infoBox('Con un plan de pago centralizas varias propiedades, reduces tareas manuales y tienes facturación clara desde el panel.')}
-      ${ctaButton(p.billingUrl, 'Comparar planes')}
+      <h1 style="margin:0 0 16px 0;font-size:22px;color:#0f172a;">Menos papeles, más cumplimiento</h1>
+      <p style="margin:0 0 12px 0;">El huésped recibe un enlace, completa sus datos desde el móvil y tú recibes el parte listo. Con el <strong>Plan Check-in</strong>, Delfín puede enviarlo al <strong>Ministerio del Interior</strong> por ti, sin perseguir documentación ni hacerlo a mano.</p>
+      ${infoBox('<strong>Ideal si:</strong> quieres cumplir con el registro de viajeros sin complicarte · necesitas el envío MIR automático · ya usas el panel y quieres dar el siguiente paso.' + growthNote, '#eff6ff', '#2563eb')}
+      ${ctaButton(p.checkinUpgradeUrl, 'Ver Plan Check-in')}
     `);
     return {
       subject,
       html: wrapEmail(body, p.unsubscribeUrl),
-      text: `Hola ${name},\n\nComparar planes: ${p.billingUrl}\n\nBaja: ${p.unsubscribeUrl}`,
+      text: `Hola ${name},\n\nPlan Check-in: ${p.checkinUpgradeUrl}\n\nBaja: ${p.unsubscribeUrl}`,
     };
   },
 
   p2_offer: (p) => {
     const name = firstName(p.ownerName);
-    const subject = `${name}, elige el plan que encaja con tu alojamiento`;
+    const subject = `${name}, Plan Check-in — envío MIR automático desde 2€/mes`;
     const body = contentBlock(`
-      <h1 style="margin:0 0 16px 0;font-size:22px;color:#0f172a;">Planes claros, sin sorpresas</h1>
-      <p style="margin:0 0 12px 0;">Puedes mejorar tu plan cuando quieras desde el panel. El pago recurrente se gestiona de forma segura en la web (Polar).</p>
-      ${ctaButton(p.billingUrl, 'Elegir mi plan')}
-      <p style="margin:16px 0 0 0;font-size:13px;color:#64748b;">¿Dudas? Responde a este email o escribe a soporte@delfincheckin.com</p>
+      <h1 style="margin:0 0 16px 0;font-size:22px;color:#0f172a;">El plan que encaja cuando ya usas Delfín</h1>
+      <p style="margin:0 0 12px 0;">Recomendamos el <strong>Plan Check-in</strong> como primer paso de pago: check-in digital, envío automático al Ministerio del Interior y soporte prioritario.</p>
+      ${infoBox('✓ Parte de viajeros automatizado<br/>✓ Envío al registro oficial (MIR)<br/>✓ Desde 2€/mes + 2€ por propiedad adicional<br/>✓ Pago seguro en la web (Polar) — sin sorpresas', '#fef3c7', '#f59e0b')}
+      ${ctaButton(p.checkinUpgradeUrl, 'Activar Plan Check-in ahora')}
+      <p style="margin:16px 0 0 0;font-size:13px;color:#64748b;">¿Gestionas muchas unidades o quieres funciones avanzadas? <a href="${escAttr(p.billingUrl)}" style="color:#2563eb;">Comparar Standard y Pro</a> · ¿Dudas? soporte@delfincheckin.com</p>
     `);
     return {
       subject,
       html: wrapEmail(body, p.unsubscribeUrl),
-      text: `Hola ${name},\n\nElegir plan: ${p.billingUrl}\n\nBaja: ${p.unsubscribeUrl}`,
+      text: `Hola ${name},\n\nActivar Check-in: ${p.checkinUpgradeUrl}\n\nComparar planes: ${p.billingUrl}\n\nBaja: ${p.unsubscribeUrl}`,
     };
   },
 
   p2_questions: (p) => {
     const name = firstName(p.ownerName);
-    const subject = `${name}, ¿alguna duda sobre los planes?`;
+    const subject = `${name}, ¿qué plan necesitas? Te orientamos`;
     const body = contentBlock(`
       <h1 style="margin:0 0 16px 0;font-size:22px;color:#0f172a;">Estamos a un email de distancia</h1>
-      <p style="margin:0 0 12px 0;">Si no estás seguro de qué plan necesitas, cuéntanos cuántas unidades gestionas y te orientamos sin compromiso.</p>
+      <p style="margin:0 0 12px 0;">Resumen rápido:</p>
+      ${infoBox('<strong>Solo cumplir con el parte de viajeros / MIR</strong> → Plan Check-in (nuestra recomendación para empezar)<br/><strong>Varias propiedades sin anuncios</strong> → Plan Standard<br/><strong>Google, reputación y reservas directas avanzadas</strong> → Plan Pro', '#f8fafc', '#64748b')}
+      <p style="margin:0 0 12px 0;">Cuéntanos cuántas unidades gestionas y te orientamos sin compromiso.</p>
       ${infoBox('Email: <a href="mailto:soporte@delfincheckin.com" style="color:#2563eb;">soporte@delfincheckin.com</a>')}
-      ${ctaButton(p.billingUrl, 'Ver planes en el panel')}
+      ${ctaButton(p.checkinUpgradeUrl, 'Empezar con Plan Check-in')}
+      <p style="margin:12px 0 0 0;font-size:13px;color:#64748b;"><a href="${escAttr(p.billingUrl)}" style="color:#2563eb;">Ver comparativa completa en el panel</a></p>
     `);
     return {
       subject,
       html: wrapEmail(body, p.unsubscribeUrl),
-      text: `Hola ${name},\n\nVer planes: ${p.billingUrl}\n\nBaja: ${p.unsubscribeUrl}`,
+      text: `Hola ${name},\n\nPlan Check-in: ${p.checkinUpgradeUrl}\n\nComparar: ${p.billingUrl}\n\nBaja: ${p.unsubscribeUrl}`,
     };
   },
 };

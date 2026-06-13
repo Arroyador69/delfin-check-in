@@ -630,7 +630,7 @@ export async function processLifecycleEmailQueue(options?: {
       }
 
       const onboardingUrl = await resolveOnboardingUrlForTenant(state.email, state.tenant_id);
-      const { billingUrl } = buildLifecycleUrls(state.tenant_id);
+      const { billingUrl, checkinUpgradeUrl } = buildLifecycleUrls(state.tenant_id);
 
       const sendStep = async (isRetry: boolean, retryNumber: number) => {
         return sendLifecycleEmail({
@@ -646,7 +646,9 @@ export async function processLifecycleEmailQueue(options?: {
             ownerName: state.name,
             onboardingUrl,
             billingUrl,
+            checkinUpgradeUrl,
             onboardingStatus: state.onboarding_status,
+            currentRooms: state.current_rooms,
           },
         });
       };
@@ -704,7 +706,9 @@ export async function processLifecycleEmailQueue(options?: {
             ownerName: state.name,
             onboardingUrl,
             billingUrl,
+            checkinUpgradeUrl,
             onboardingStatus: state.onboarding_status,
+            currentRooms: state.current_rooms,
           },
         });
         if (!sendResult.success) {

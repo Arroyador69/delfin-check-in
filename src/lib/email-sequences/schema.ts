@@ -166,8 +166,8 @@ export async function seedEmailSequences(): Promise<void> {
   }
   await upsertSequence(
     SEQUENCE_KEY_PHASE_2,
-    'Fase 2 — Conversión a plan de pago',
-    'Secuencia para propietarios activos en plan gratuito que pueden mejorar su plan.',
+    'Fase 2 — Conversión a Plan Check-in',
+    'Secuencia para propietarios activos en plan gratuito: upsell al Plan Check-in (MIR automático) antes que Standard/Pro.',
     2,
     'plan de pago activo (checkin, standard o pro)',
     PHASE_2_STEPS

@@ -98,10 +98,10 @@ const TEMPLATE_LABELS: Record<string, string> = {
   p1_help: 'Oferta ayuda 15 min',
   p1_last_push: 'Último empujón',
   p1_reengagement: 'Reengagement no-openers',
-  p2_unlock: 'Desbloquear plan Pro',
-  p2_use_case: 'Caso de uso multi-unidad',
-  p2_offer: 'Oferta planes',
-  p2_questions: '¿Dudas sobre planes?',
+  p2_unlock: 'Recomendar Plan Check-in (MIR)',
+  p2_use_case: 'Caso de uso: envío automático MIR',
+  p2_offer: 'Oferta Plan Check-in',
+  p2_questions: '¿Qué plan necesitas?',
 };
 
 function fmtDate(v: string | null | undefined): string {
