@@ -13,7 +13,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     name: 'Delfín Check-in',
     slug: 'delfin-owner',
     scheme: 'delfin',
-    version: '1.1.2',
+    version: '1.1.3',
     orientation: 'portrait',
     icon: './assets/icon.png',
     userInterfaceStyle: 'automatic',
@@ -31,7 +31,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     ios: {
       bundleIdentifier: 'com.desarroyo.delfinowner',
       supportsTablet: false,
-      buildNumber: '6',
+      buildNumber: '7',
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
         // Deshabilitar Mac Catalyst para evitar crashes en macOS

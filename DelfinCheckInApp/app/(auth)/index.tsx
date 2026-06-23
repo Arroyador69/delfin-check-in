@@ -7,9 +7,9 @@ import { View, Text, TextInput, Pressable, StyleSheet, ActivityIndicator, Alert 
 import { useAuth } from '@/lib/auth';
 import { useRouter } from 'expo-router';
 import { getLocale, t } from '@/lib/i18n';
-import { api, getPublicApiOrigin } from '@/lib/api';
-import { getWebOnboardingUrl, isWebOnboardingIncomplete } from '@/lib/web-onboarding';
+import { getPublicApiOrigin } from '@/lib/api';
 import { openAccountWebUrl } from '@/lib/in-app-browser';
+import { isIosAppStoreBuild } from '@/lib/ios-app-store-compliance';
 
 export default function LoginScreen() {
   const { signIn } = useAuth();
@@ -17,6 +17,7 @@ export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const iosLogin = isIosAppStoreBuild();
 
   async function handleLogin() {
     if (!email || !password) {
@@ -28,15 +29,6 @@ export default function LoginScreen() {
     try {
       const success = await signIn(email.trim().toLowerCase(), password);
       if (success) {
-        try {
-          const { data } = await api.get<{ tenant?: { onboarding_status?: string } }>('/api/tenant');
-          const st = data?.tenant?.onboarding_status;
-          if (isWebOnboardingIncomplete(st)) {
-            await openAccountWebUrl(getWebOnboardingUrl(getLocale()));
-          }
-        } catch {
-          /* seguimos al dashboard aunque falle la comprobación */
-        }
         router.replace('/(app)');
       } else {
         Alert.alert(t('common.error'), t('auth.errors.incorrectPassword'));
@@ -52,7 +44,12 @@ export default function LoginScreen() {
     <View style={styles.container}>
       <View style={styles.content}>
         <Text style={styles.title}>Delfín Check-in</Text>
-        <Text style={styles.subtitle}>{t('auth.welcome')}</Text>
+        <Text style={styles.subtitle}>
+          {iosLogin ? t('auth.iosWelcome') : t('auth.welcome')}
+        </Text>
+        {iosLogin ? (
+          <Text style={styles.iosHint}>{t('auth.iosExistingAccountOnly')}</Text>
+        ) : null}
 
         <TextInput
           style={styles.input}
@@ -96,8 +93,6 @@ export default function LoginScreen() {
         >
           <Text style={styles.linkText}>{t('auth.forgotPassword')}</Text>
         </Pressable>
-
-        {/* App Store: sin registro/upgrade dentro de la app (3.1.1). */}
       </View>
     </View>
   );
@@ -121,30 +116,38 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#1f2937',
+    fontSize: 28,
+    fontWeight: '800',
+    color: '#0f172a',
     textAlign: 'center',
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    color: '#6b7280',
+    color: '#64748b',
     textAlign: 'center',
-    marginBottom: 32,
+    marginBottom: 12,
+  },
+  iosHint: {
+    fontSize: 14,
+    color: '#475569',
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 20,
+    paddingHorizontal: 4,
   },
   input: {
     borderWidth: 1,
-    borderColor: '#e5e7eb',
+    borderColor: '#e2e8f0',
     borderRadius: 12,
-    padding: 16,
+    padding: 14,
     fontSize: 16,
-    marginBottom: 16,
-    backgroundColor: '#f9fafb',
-    color: '#1f2937',
+    marginBottom: 12,
+    backgroundColor: '#f8fafc',
+    color: '#0f172a',
   },
   button: {
-    backgroundColor: '#2563eb',
+    backgroundColor: '#0d9488',
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
@@ -156,31 +159,15 @@ const styles = StyleSheet.create({
   buttonText: {
     color: 'white',
     fontSize: 16,
-    fontWeight: '600',
-  },
-  secondaryButton: {
-    marginTop: 12,
-    paddingVertical: 12,
-    alignItems: 'center',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-    backgroundColor: '#f9fafb',
-  },
-  secondaryButtonText: {
-    color: '#6b7280',
-    fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   linkRow: {
-    marginTop: 12,
+    marginTop: 16,
     alignItems: 'center',
   },
   linkText: {
     color: '#2563eb',
     fontSize: 14,
-    fontWeight: '700',
-    textDecorationLine: 'underline',
+    fontWeight: '600',
   },
 });
-

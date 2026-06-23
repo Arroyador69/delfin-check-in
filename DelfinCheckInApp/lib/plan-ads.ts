@@ -1,9 +1,12 @@
+import { canShowAffiliateMonetizationInApp } from '@/lib/ios-app-store-compliance';
+
 /**
  * Anuncios solo plan Gratis y Check-in (alineado con web: hasAds).
  * Standard, Pro y Enterprise: sin anuncios.
- * Legacy plan_id: basic ≈ gratis, premium ≈ check-in (tenant-plan-billing).
+ * iOS App Store: sin afiliado ni bloques de monetización.
  */
 export function shouldShowMobileAds(planId?: string | null): boolean {
+  if (!canShowAffiliateMonetizationInApp()) return false;
   const p = String(planId || '')
     .trim()
     .toLowerCase();

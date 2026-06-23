@@ -21,6 +21,7 @@ import { useRouter } from 'expo-router';
 import { getLocale, getLocaleTag, hasPersistedAppLocale, t, useLocaleListener } from '@/lib/i18n';
 import { getAppCountryCode } from '@/lib/country-preference';
 import { getWebOnboardingUrl, isWebOnboardingIncomplete } from '@/lib/web-onboarding';
+import { canOpenWebAccountOnboardingFromApp } from '@/lib/ios-app-store-compliance';
 
 import {
   PendingReservationItem,
@@ -182,7 +183,8 @@ export default function DashboardScreen() {
     staleTime: 60 * 1000,
   });
 
-  const showWebOnboardingBanner = isWebOnboardingIncomplete(tenantWebOnboarding ?? undefined);
+  const showWebOnboardingBanner =
+    canOpenWebAccountOnboardingFromApp() && isWebOnboardingIncomplete(tenantWebOnboarding ?? undefined);
 
   // Filtrar reservas por estado
   const { stayingToday, arrivingToday, leavingToday, upcomingReservations } = useMemo(() => {
