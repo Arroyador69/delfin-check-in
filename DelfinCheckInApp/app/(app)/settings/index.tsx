@@ -7,6 +7,7 @@ import { useAuth } from '@/lib/auth';
 import { useRouter } from 'expo-router';
 import { t } from '@/lib/i18n';
 import { openUpgradePlanInBrowser, suggestedUpgradeTargetPlan } from '@/lib/upgrade-plan';
+import { canShowSubscriptionUpgradeInApp } from '@/lib/ios-app-store-compliance';
 import { FixedBannerAd } from '@/components/FixedBannerAd';
 import { AffiliateRecommendationCard } from '@/components/AffiliateRecommendationCard';
 import { useLocaleListener } from '@/lib/i18n';
@@ -77,18 +78,24 @@ export default function SettingsScreen() {
           <Text style={styles.infoLabel}>{t('mobile.settings.planLabel')}</Text>
           <Text style={styles.infoValue}>{getPlanLabel(session?.user.tenant.planId)}</Text>
         </View>
-        <Pressable
-          style={styles.upgradeCta}
-          onPress={() =>
-            void openUpgradePlanInBrowser(undefined, {
-              planId: suggestedUpgradeTargetPlan(session?.user?.tenant?.planId),
-              roomCount: Math.max(1, session?.user?.tenant?.currentRooms ?? 1),
-            })
-          }
-        >
-          <Text style={styles.upgradeCtaText}>{t('mobile.settings.upgradePlanButton')}</Text>
-        </Pressable>
-        <Text style={styles.upgradeHint}>{t('mobile.settings.upgradePlanHint')}</Text>
+        {canShowSubscriptionUpgradeInApp() ? (
+          <>
+            <Pressable
+              style={styles.upgradeCta}
+              onPress={() =>
+                void openUpgradePlanInBrowser(undefined, {
+                  planId: suggestedUpgradeTargetPlan(session?.user?.tenant?.planId),
+                  roomCount: Math.max(1, session?.user?.tenant?.currentRooms ?? 1),
+                })
+              }
+            >
+              <Text style={styles.upgradeCtaText}>{t('mobile.settings.upgradePlanButton')}</Text>
+            </Pressable>
+            <Text style={styles.upgradeHint}>{t('mobile.settings.upgradePlanHint')}</Text>
+          </>
+        ) : (
+          <Text style={styles.upgradeHint}>{t('mobile.settings.iosPlanManageHint')}</Text>
+        )}
       </View>
 
       <View style={styles.card}>
@@ -164,8 +171,9 @@ export default function SettingsScreen() {
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Legal y cumplimiento</Text>
         <Text style={styles.legalText}>
-          Los pagos de suscripciones del software se procesan de forma segura con Polar como Merchant of Record
-          (facturacion e impuestos del cobro del software). Consulta las politicas legales vigentes:
+          {canShowSubscriptionUpgradeInApp()
+            ? 'Los pagos de suscripciones del software se procesan de forma segura con Polar como Merchant of Record (facturacion e impuestos del cobro del software). Consulta las politicas legales vigentes:'
+            : t('mobile.settings.iosLegalBlurb')}
         </Text>
         <Pressable style={styles.legalLinkRow} onPress={() => void Linking.openURL(`${legalBaseUrl}/terms`)}>
           <Text style={styles.legalLink}>Terminos y condiciones</Text>

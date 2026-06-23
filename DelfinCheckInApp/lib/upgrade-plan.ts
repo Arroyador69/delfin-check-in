@@ -5,6 +5,7 @@
 import { Linking } from 'react-native';
 import Constants from 'expo-constants';
 
+import { canShowSubscriptionUpgradeInApp } from '@/lib/ios-app-store-compliance';
 import { getLocale, type SupportedLocale } from './i18n';
 
 const ADMIN_ORIGIN =
@@ -55,5 +56,6 @@ export async function openUpgradePlanInBrowser(
   locale?: SupportedLocale,
   opts?: UpgradePlanUrlOptions
 ): Promise<void> {
+  if (!canShowSubscriptionUpgradeInApp()) return;
   await Linking.openURL(getUpgradePlanUrl(locale, opts));
 }

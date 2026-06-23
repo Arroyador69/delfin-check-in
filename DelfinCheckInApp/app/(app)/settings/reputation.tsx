@@ -20,6 +20,7 @@ import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { t } from '@/lib/i18n';
 import { openUpgradePlanInBrowser, suggestedUpgradeTargetPlan } from '@/lib/upgrade-plan';
+import { canShowSubscriptionUpgradeInApp } from '@/lib/ios-app-store-compliance';
 
 type RepSettings = {
   enabled: boolean;
@@ -229,18 +230,24 @@ export default function ReputationSettingsScreen() {
       {!isPro ? (
         <View style={styles.card}>
           <Text style={styles.warn}>{t('mobile.settings.repNotPro')}</Text>
-          <Pressable
-            style={styles.upgradeCta}
-            onPress={() =>
-              void openUpgradePlanInBrowser(undefined, {
-                planId: suggestedUpgradeTargetPlan(session?.user?.tenant?.planId),
-                roomCount: Math.max(1, session?.user?.tenant?.currentRooms ?? 1),
-              })
-            }
-          >
-            <Text style={styles.upgradeCtaText}>{t('mobile.settings.upgradePlanButton')}</Text>
-          </Pressable>
-          <Text style={styles.upgradeHint}>{t('mobile.settings.upgradePlanHint')}</Text>
+          {canShowSubscriptionUpgradeInApp() ? (
+            <>
+              <Pressable
+                style={styles.upgradeCta}
+                onPress={() =>
+                  void openUpgradePlanInBrowser(undefined, {
+                    planId: suggestedUpgradeTargetPlan(session?.user?.tenant?.planId),
+                    roomCount: Math.max(1, session?.user?.tenant?.currentRooms ?? 1),
+                  })
+                }
+              >
+                <Text style={styles.upgradeCtaText}>{t('mobile.settings.upgradePlanButton')}</Text>
+              </Pressable>
+              <Text style={styles.upgradeHint}>{t('mobile.settings.upgradePlanHint')}</Text>
+            </>
+          ) : (
+            <Text style={styles.upgradeHint}>{t('mobile.settings.iosPlanManageHint')}</Text>
+          )}
         </View>
       ) : null}
 

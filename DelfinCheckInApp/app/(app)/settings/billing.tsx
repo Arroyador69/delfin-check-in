@@ -226,9 +226,7 @@ export default function BillingSettingsScreen() {
                 <Text style={styles.upgradeHint}>{t('mobile.settings.upgradePlanHint')}</Text>
               </>
             ) : (
-              <Text style={styles.upgradeHint}>
-                {t('mobile.settings.upgradePlanHint')}
-              </Text>
+              <Text style={styles.upgradeHint}>{t('mobile.settings.iosPlanManageHint')}</Text>
             )}
           </View>
 

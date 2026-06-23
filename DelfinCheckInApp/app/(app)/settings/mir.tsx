@@ -24,6 +24,7 @@ import { api } from '@/lib/api';
 import { getLocale, t } from '@/lib/i18n';
 import { canTenantConfigureMirAutoSubmit } from '@/lib/mir-auto-submit-plan';
 import { openUpgradePlanInBrowser } from '@/lib/upgrade-plan';
+import { canShowSubscriptionUpgradeInApp } from '@/lib/ios-app-store-compliance';
 
 type MirSettings = {
   enabled: boolean;
@@ -468,13 +469,19 @@ export default function MirSettingsScreen() {
       {!canMirAutoSubmit ? (
         <View style={styles.planNotice}>
           <Text style={styles.planNoticeTitle}>{t('mobile.settings.mirAutoSubmitRequiresPaidPlanTitle')}</Text>
-          <Text style={styles.planNoticeBody}>{t('mobile.settings.mirAutoSubmitRequiresPaidPlanBody')}</Text>
-          <Pressable
-            style={styles.planNoticeCta}
-            onPress={() => openUpgradePlanInBrowser(getLocale(), { planId: 'checkin' })}
-          >
-            <Text style={styles.planNoticeCtaText}>{t('mobile.settings.upgradePlanButton')}</Text>
-          </Pressable>
+          <Text style={styles.planNoticeBody}>
+            {canShowSubscriptionUpgradeInApp()
+              ? t('mobile.settings.mirAutoSubmitRequiresPaidPlanBody')
+              : t('mobile.settings.mirIosPaidPlanHint')}
+          </Text>
+          {canShowSubscriptionUpgradeInApp() ? (
+            <Pressable
+              style={styles.planNoticeCta}
+              onPress={() => openUpgradePlanInBrowser(getLocale(), { planId: 'checkin' })}
+            >
+              <Text style={styles.planNoticeCtaText}>{t('mobile.settings.upgradePlanButton')}</Text>
+            </Pressable>
+          ) : null}
         </View>
       ) : null}
 
