@@ -4,75 +4,17 @@ import { sql } from '@vercel/postgres';
 import { createTenantUser, findTenantByEmail } from '@/lib/tenant';
 import { sendOnboardingEmail } from '@/lib/mailer';
 import { getPolarClient } from '@/lib/polar-server';
+import {
+  inferPolarPlanFromSubscription,
+  POLAR_PAID_PLAN_ROWS,
+  safePlanFromPolarMetadata,
+  type PolarPaidPlan,
+} from '@/lib/polar-plan-config';
+import { applyPaidPlanToTenant } from '@/lib/polar-subscription-sync';
 
-export type PolarPublicPlan = 'checkin' | 'standard' | 'pro';
+export type PolarPublicPlan = PolarPaidPlan;
 
-/** Alineado con `superadmin/tenants/update-plan` para columnas de negocio. */
-const PLAN_ROWS: Record<
-  PolarPublicPlan,
-  {
-    plan_id: string;
-    ads_enabled: boolean;
-    legal_module: boolean;
-    max_rooms: number;
-    max_rooms_included: number;
-    base_plan_price: number;
-    extra_room_price: number | null;
-  }
-> = {
-  checkin: {
-    plan_id: 'premium',
-    ads_enabled: true,
-    legal_module: true,
-    max_rooms: -1,
-    max_rooms_included: 0,
-    base_plan_price: 2,
-    extra_room_price: 2,
-  },
-  standard: {
-    plan_id: 'standard',
-    ads_enabled: false,
-    legal_module: true,
-    max_rooms: -1,
-    max_rooms_included: 4,
-    base_plan_price: 9.99,
-    extra_room_price: 2,
-  },
-  pro: {
-    plan_id: 'enterprise',
-    ads_enabled: false,
-    legal_module: true,
-    max_rooms: -1,
-    max_rooms_included: 6,
-    base_plan_price: 29.99,
-    extra_room_price: 2,
-  },
-};
-
-function safePlanFromMetadata(meta: unknown): PolarPublicPlan | null {
-  if (!meta || typeof meta !== 'object') return null;
-  const p = String((meta as Record<string, unknown>).plan || '').toLowerCase();
-  if (p === 'checkin' || p === 'standard' || p === 'pro') return p;
-  return null;
-}
-
-/** Respaldo si Polar no reenvía `metadata.plan` en la suscripción (comparando IDs de producto). */
-function inferPlanFromProductId(sub: any): PolarPublicPlan | null {
-  const pid = String(sub?.productId || sub?.product_id || '').trim();
-  if (!pid) return null;
-  const ids: [PolarPublicPlan, string][] = [
-    ['checkin', String(process.env.POLAR_PRODUCT_CHECKIN_ID || '').trim()],
-    ['checkin', String(process.env.POLAR_PRODUCT_CHECKIN_YEARLY_ID || '').trim()],
-    ['standard', String(process.env.POLAR_PRODUCT_STANDARD_ID || '').trim()],
-    ['standard', String(process.env.POLAR_PRODUCT_STANDARD_YEARLY_ID || '').trim()],
-    ['pro', String(process.env.POLAR_PRODUCT_PRO_ID || '').trim()],
-    ['pro', String(process.env.POLAR_PRODUCT_PRO_YEARLY_ID || '').trim()],
-  ];
-  for (const [plan, envId] of ids) {
-    if (envId && pid === envId) return plan;
-  }
-  return null;
-}
+const PLAN_ROWS = POLAR_PAID_PLAN_ROWS;
 
 function isPublicSubscribeMetadata(meta: unknown): boolean {
   if (!meta || typeof meta !== 'object') return false;
@@ -103,7 +45,7 @@ export async function provisionTenantFromPolarPublicSubscription(sub: any): Prom
   const meta = sub?.metadata;
   if (!isPublicSubscribeMetadata(meta)) return;
 
-  const plan = safePlanFromMetadata(meta) ?? inferPlanFromProductId(sub);
+  const plan = safePlanFromPolarMetadata(meta) ?? inferPolarPlanFromSubscription(sub);
   if (!plan) return;
 
   const email = await resolveEmailFromSubscription(sub);
@@ -127,23 +69,11 @@ export async function provisionTenantFromPolarPublicSubscription(sub: any): Prom
 
   const existing = await findTenantByEmail(email);
   if (existing?.id) {
-    await sql`
-      UPDATE tenants
-      SET polar_customer_id = ${customerId},
-          polar_subscription_id = ${subId},
-          polar_subscription_status = 'active',
-          polar_last_event_at = NOW(),
-          plan_type = ${plan},
-          plan_id = ${cfg.plan_id},
-          ads_enabled = ${cfg.ads_enabled},
-          legal_module = ${cfg.legal_module},
-          max_rooms = ${cfg.max_rooms},
-          max_rooms_included = ${cfg.max_rooms_included},
-          base_plan_price = ${cfg.base_plan_price},
-          extra_room_price = ${cfg.extra_room_price},
-          updated_at = NOW()
-      WHERE id = ${existing.id}::uuid
-    `;
+    await applyPaidPlanToTenant(existing.id, plan, {
+      subscriptionId: subId,
+      customerId,
+      status: 'active',
+    });
     return;
   }
 
@@ -200,23 +130,11 @@ export async function provisionTenantFromPolarPublicSubscription(sub: any): Prom
     if (code === '23505') {
       const again = await findTenantByEmail(email);
       if (again?.id) {
-        await sql`
-          UPDATE tenants
-          SET polar_customer_id = ${customerId},
-              polar_subscription_id = ${subId},
-              polar_subscription_status = 'active',
-              polar_last_event_at = NOW(),
-              plan_type = ${plan},
-              plan_id = ${cfg.plan_id},
-              ads_enabled = ${cfg.ads_enabled},
-              legal_module = ${cfg.legal_module},
-              max_rooms = ${cfg.max_rooms},
-              max_rooms_included = ${cfg.max_rooms_included},
-              base_plan_price = ${cfg.base_plan_price},
-              extra_room_price = ${cfg.extra_room_price},
-              updated_at = NOW()
-          WHERE id = ${again.id}::uuid
-        `;
+        await applyPaidPlanToTenant(again.id, plan, {
+          subscriptionId: subId,
+          customerId,
+          status: 'active',
+        });
       }
       return;
     }
