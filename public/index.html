@@ -484,7 +484,7 @@
                                     autocomplete="off"
                                 />
                                 <p class="text-xs text-gray-500 mt-1" data-i18n="travelers.documentSupportHint">
-                                    Obligatorio para DNI/NIE (MIR). Código del reverso del DNI o soporte de la tarjeta NIE.
+                                    Obligatorio con DNI español o NIE (normativa MIR). Para DNI: código del reverso. Para NIE: número de soporte de la tarjeta. No aplica a pasaporte ni otros documentos extranjeros.
                                 </p>
                                 <div class="error-message hidden text-red-500 text-sm mt-1"></div>
                             </div>
@@ -743,7 +743,7 @@
                                     autocomplete="off"
                                 />
                                 <p class="text-xs text-gray-500 mt-1" data-i18n="travelers.documentSupportHint">
-                                    Obligatorio para DNI/NIE (MIR). Código del reverso del DNI o soporte de la tarjeta NIE.
+                                    Obligatorio con DNI español o NIE (normativa MIR). Para DNI: código del reverso. Para NIE: número de soporte de la tarjeta. No aplica a pasaporte ni otros documentos extranjeros.
                                 </p>
                             </div>
                             
@@ -12078,10 +12078,20 @@
             return t === 'NIF' || t === 'NIE';
         }
         function validateSoporteDocumento(tipo, soporte) {
-            if (!requiresSoporteDocumento(tipo)) return null;
+            const t = String(tipo || '').toUpperCase();
+            if (!requiresSoporteDocumento(t)) return null;
             const s = String(soporte || '').trim();
-            if (!s) return 'El número de soporte del documento es obligatorio para DNI/NIE';
-            if (s.length < 2 || s.length > 20) return 'Número de soporte inválido (2-20 caracteres)';
+            if (!s) {
+                return t === 'NIE'
+                    ? 'El número de soporte del NIE es obligatorio (impreso en la tarjeta NIE, normativa MIR)'
+                    : 'El número de soporte del DNI es obligatorio (código del reverso del documento, normativa MIR)';
+            }
+            const normalized = s.toUpperCase();
+            if (normalized.length < 2 || normalized.length > 20 || !/^[A-Z0-9]+$/.test(normalized)) {
+                return t === 'NIE'
+                    ? 'Número de soporte del NIE inválido (2-20 caracteres alfanuméricos)'
+                    : 'Número de soporte del DNI inválido (2-20 caracteres alfanuméricos)';
+            }
             return null;
         }
         window.delfinToggleSoporteDoc = function delfinToggleSoporteDoc(which) {

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { insertGuestRegistration } from '@/lib/db';
+import { validateMirSoporteDocumento } from '@/lib/mir-soporte-documento';
 
 // ===== ADAPTADOR FLEXIBLE CON ERRORES DETALLADOS =====
 
@@ -364,14 +365,11 @@ export async function POST(req: NextRequest) {
       if (!v.fechaNacimiento) issues.push({ path: `${prefix}.fechaNacimiento`, message: 'Requerido (YYYY-MM-DD)' });
       if (!v.tipoDocumento) issues.push({ path: `${prefix}.tipoDocumento`, message: 'Requerido' });
       if (!v.numeroDocumento) issues.push({ path: `${prefix}.numeroDocumento`, message: 'Requerido' });
-      if (
-        (v.tipoDocumento === 'NIF' || v.tipoDocumento === 'NIE') &&
-        v.numeroDocumento &&
-        !String(v.soporteDocumento || '').trim()
-      ) {
+      const soporteErr = validateMirSoporteDocumento(v.tipoDocumento, v.soporteDocumento, v.numeroDocumento);
+      if (soporteErr) {
         issues.push({
           path: `${prefix}.soporteDocumento`,
-          message: 'Número de soporte del documento requerido para DNI/NIE',
+          message: soporteErr,
         });
       }
       if (!v.direccion) issues.push({ path: `${prefix}.direccion`, message: 'Requerido' });

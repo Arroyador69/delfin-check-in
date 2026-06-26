@@ -4,6 +4,7 @@ import crypto from 'crypto';
 import { logAudit } from '@/lib/audit';
 import { obtenerINEPorNombre } from '@/lib/municipios-ine-top';
 import { isSpain } from '@/lib/countries-data';
+import { resolveSoporteDocumentoForMir } from '@/lib/mir-soporte-documento';
 
 // Utilidades de normalización/detección de país
 function normalizeCountryString(value?: string): string {
@@ -246,10 +247,10 @@ function buildXML(data: z.infer<typeof PayloadSchema>): string {
       if (persona.numeroDocumento) {
         xml += `        <numeroDocumento>${esc(persona.numeroDocumento)}</numeroDocumento>\n`;
       }
-      // soporteDocumento es obligatorio para NIF/NIE según MIR
       const tipoDoc = normalizeDocumentType(String(persona.tipoDocumento || ''));
-      if (tipoDoc === 'NIF' || tipoDoc === 'NIE') {
-        xml += `        <soporteDocumento>${esc(persona.soporteDocumento || 'C')}</soporteDocumento>\n`;
+      const soporteDoc = resolveSoporteDocumentoForMir(tipoDoc, persona.soporteDocumento, persona.numeroDocumento);
+      if (soporteDoc) {
+        xml += `        <soporteDocumento>${esc(soporteDoc)}</soporteDocumento>\n`;
       }
       xml += `        <fechaNacimiento>${esc(formatDateOnly(persona.fechaNacimiento))}</fechaNacimiento>\n`;
       if (persona.nacionalidad) {
