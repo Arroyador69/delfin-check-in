@@ -99,7 +99,7 @@ export default function MirSettingsPage() {
   const [serverHasCodigoArrendador, setServerHasCodigoArrendador] = useState(false);
   const [serverHasCodigoEstablecimiento, setServerHasCodigoEstablecimiento] = useState(false);
 
-  const [limits, setLimits] = useState<{ maxRooms: number } | null>(null);
+  const [limits, setLimits] = useState<{ maxRooms: number; mirCredentialsMax?: number } | null>(null);
   const [credenciales, setCredenciales] = useState<MirCredencialLite[]>([]);
   const [units, setUnits] = useState<MirUnitConfigRow[]>([]);
   const [loadingMulti, setLoadingMulti] = useState(false);
@@ -149,7 +149,10 @@ export default function MirSettingsPage() {
       const limitsJson = await limitsRes.json().catch(() => ({}));
       const credsJson = await credsRes.json().catch(() => ({}));
       const unitsJson = await unitsRes.json().catch(() => ({}));
-      setLimits({ maxRooms: Number(limitsJson?.tenant?.limits?.maxRooms ?? 0) });
+      setLimits({
+        maxRooms: Number(limitsJson?.tenant?.limits?.maxRooms ?? 0),
+        mirCredentialsMax: Number(limitsJson?.tenant?.limits?.mirCredentialsMax ?? 0),
+      });
       setCredenciales(Array.isArray(credsJson?.credenciales) ? credsJson.credenciales : []);
       setUnits(Array.isArray(unitsJson?.units) ? unitsJson.units : []);
     } catch (e) {
@@ -160,7 +163,12 @@ export default function MirSettingsPage() {
   };
 
   const configured = credenciales.filter((c) => c.activo).length;
-  const maxAllowed = limits?.maxRooms ?? 0;
+  const maxAllowed =
+    limits?.mirCredentialsMax && limits.mirCredentialsMax > 0
+      ? limits.mirCredentialsMax
+      : limits?.maxRooms === -1
+        ? 1
+        : (limits?.maxRooms ?? 0);
   const canCreateMoreCreds = maxAllowed > 0 ? configured < maxAllowed : false;
   const bottomActionsRef = useRef<HTMLDivElement | null>(null);
 

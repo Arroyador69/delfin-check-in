@@ -184,6 +184,7 @@ const normalize = (body: any) => {
         fechaNacimiento: normalizeDate(viajero.fechaNacimiento),
         tipoDocumento: mapDocTypeIn(viajero.tipoDocumento || doc.tipo),
         numeroDocumento: String(viajero.numeroDocumento || doc.numero || '').toUpperCase().replace(/\s+/g, ''),
+        soporteDocumento: String(viajero.soporteDocumento || doc.soporte || '').trim().toUpperCase() || undefined,
         sexo: mapSexoIn(viajero.sexo),
         nacionalidad: viajero.nacionalidad || viajero.nacionalidadISO3, // Ya viene en ISO3 desde el frontend
         nacionalidadISO2: iso3to2(viajero.nacionalidad || viajero.nacionalidadISO3), // Convertir ISO3 a ISO2 para compatibilidad
@@ -363,6 +364,16 @@ export async function POST(req: NextRequest) {
       if (!v.fechaNacimiento) issues.push({ path: `${prefix}.fechaNacimiento`, message: 'Requerido (YYYY-MM-DD)' });
       if (!v.tipoDocumento) issues.push({ path: `${prefix}.tipoDocumento`, message: 'Requerido' });
       if (!v.numeroDocumento) issues.push({ path: `${prefix}.numeroDocumento`, message: 'Requerido' });
+      if (
+        (v.tipoDocumento === 'NIF' || v.tipoDocumento === 'NIE') &&
+        v.numeroDocumento &&
+        !String(v.soporteDocumento || '').trim()
+      ) {
+        issues.push({
+          path: `${prefix}.soporteDocumento`,
+          message: 'Número de soporte del documento requerido para DNI/NIE',
+        });
+      }
       if (!v.direccion) issues.push({ path: `${prefix}.direccion`, message: 'Requerido' });
       if (!v.nacionalidad) issues.push({ path: `${prefix}.nacionalidad`, message: 'Requerido' });
       if (!v.sexo) issues.push({ path: `${prefix}.sexo`, message: 'Requerido' });

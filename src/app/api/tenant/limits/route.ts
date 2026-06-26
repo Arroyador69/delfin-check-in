@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getTenantById, getTenantId } from '@/lib/tenant';
 import type { Tenant } from '@/lib/tenant';
-import { getTenantPlanPresentation } from '@/lib/tenant-plan-billing';
+import { getTenantPlanPresentation, resolveMirCredentialsMaxAllowed } from '@/lib/tenant-plan-billing';
 import { getRoomsForTenant } from '@/lib/tenant-rooms';
 
 export async function GET(req: NextRequest) {
@@ -37,9 +37,12 @@ export async function GET(req: NextRequest) {
     const roomsUsed = currentRooms.length;
 
     const presentation = await getTenantPlanPresentation(tenant as Tenant, roomsUsed);
+    const mirCredentialsMax = resolveMirCredentialsMaxAllowed(presentation);
 
     const limits = {
       max_rooms: presentation.max_rooms_effective,
+      mir_credentials_max: mirCredentialsMax,
+      billing_rooms: presentation.billing_rooms,
       max_reservations: 1000,
       max_guests: 500,
     };
@@ -53,6 +56,8 @@ export async function GET(req: NextRequest) {
         plan_type: presentation.effective_plan_type,
         limits: {
           maxRooms: limits.max_rooms,
+          mirCredentialsMax: limits.mir_credentials_max,
+          billingRooms: limits.billing_rooms,
           maxReservations: limits.max_reservations,
           maxGuests: limits.max_guests,
         },
