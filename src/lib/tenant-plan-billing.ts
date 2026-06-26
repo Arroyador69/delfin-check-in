@@ -48,6 +48,20 @@ export function resolveDisplayMaxRooms(
   return billingRooms;
 }
 
+/**
+ * Máximo de credenciales MIR que puede crear el tenant.
+ * max_rooms_effective = -1 significa plan con unidades ilimitadas (checkin/standard/pro):
+ * usamos billing_rooms (mín. 1), no rechazar con "No se pudo determinar el límite del plan".
+ */
+export function resolveMirCredentialsMaxAllowed(
+  presentation: Pick<TenantPlanPresentation, 'max_rooms_effective' | 'billing_rooms'>
+): number {
+  const max = presentation.max_rooms_effective;
+  if (max === -1) return Math.max(1, presentation.billing_rooms || 1);
+  if (Number.isFinite(max) && max >= 1) return max;
+  return 0;
+}
+
 function lodgingUnitWord(tenant: Tenant): { singular: string; plural: string } {
   const lt = (tenant.config as { lodgingType?: string } | null | undefined)?.lodgingType;
   if (lt === 'apartamentos') {

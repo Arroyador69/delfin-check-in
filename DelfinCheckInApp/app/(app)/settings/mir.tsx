@@ -191,7 +191,12 @@ export default function MirSettingsScreen() {
     }));
   }, [mirVerifyData?.config]);
 
-  const maxAllowed = Number(limitsData?.tenant?.limits?.maxRooms ?? 0);
+  const maxAllowed = Number(
+    limitsData?.tenant?.limits?.mirCredentialsMax ??
+      (limitsData?.tenant?.limits?.maxRooms === -1
+        ? 1
+        : limitsData?.tenant?.limits?.maxRooms ?? 0)
+  );
   const credenciales: MirCredencialLite[] = Array.isArray(credsData?.credenciales) ? credsData!.credenciales! : [];
   const credById = useMemo(() => {
     const m = new Map<number, MirCredencialLite>();

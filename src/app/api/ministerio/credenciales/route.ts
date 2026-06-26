@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
 import { getTenantById } from '@/lib/tenant';
 import type { Tenant } from '@/lib/tenant';
-import { getTenantPlanPresentation } from '@/lib/tenant-plan-billing';
+import { getTenantPlanPresentation, resolveMirCredentialsMaxAllowed } from '@/lib/tenant-plan-billing';
 import { getRoomsForTenant } from '@/lib/tenant-rooms';
 
 function maskCredentialRow(row: any) {
@@ -97,8 +97,8 @@ export async function POST(req: NextRequest) {
     const rooms = await getRoomsForTenant(tenantId);
     const roomsUsed = rooms.length;
     const presentation = await getTenantPlanPresentation(tenant as Tenant, roomsUsed);
-    const maxRooms = Number(presentation.max_rooms_effective ?? 0);
-    if (!maxRooms || maxRooms < 1) {
+    const maxRooms = resolveMirCredentialsMaxAllowed(presentation);
+    if (maxRooms < 1) {
       return NextResponse.json(
         { success: false, error: 'No se pudo determinar el límite del plan' },
         { status: 400 }
