@@ -1,6 +1,8 @@
 // Generador de XML MIR oficial basado en los esquemas XSD v3.1.3
 // Implementa estrictamente las especificaciones de altaParteHospedaje.xsd
 
+import { resolveSoporteDocumentoForMir } from '@/lib/mir-soporte-documento';
+
 export interface PvPersona {
   rol: 'VI' | 'CP' | 'CS' | 'TI'; // Viajero, Contacto Principal, Contacto Secundario, Titular
   nombre: string;
@@ -118,10 +120,11 @@ function buildPersonaXml(persona: PvPersona): string {
   const apellido2Xml = persona.apellido2 ? `\n        <apellido2>${esc(persona.apellido2)}</apellido2>` : '';
   const tipoDocumentoXml = persona.tipoDocumento ? `\n        <tipoDocumento>${esc(persona.tipoDocumento)}</tipoDocumento>` : '';
   const numeroDocumentoXml = persona.numeroDocumento ? `\n        <numeroDocumento>${esc(persona.numeroDocumento)}</numeroDocumento>` : '';
-  // CRÍTICO según normas MIR: si hay numeroDocumento, soporteDocumento es OBLIGATORIO
-  // Si numeroDocumento existe (no vacío), incluir soporteDocumento con valor 'C' por defecto si no viene
-  const tieneDoc = persona.numeroDocumento && persona.numeroDocumento.trim() !== '';
-  const soporteDoc = tieneDoc ? (persona.soporteDocumento || 'C') : undefined;
+  const soporteDoc = resolveSoporteDocumentoForMir(
+    persona.tipoDocumento,
+    persona.soporteDocumento,
+    persona.numeroDocumento
+  );
   const soporteDocumentoXml = soporteDoc ? `\n        <soporteDocumento>${esc(soporteDoc)}</soporteDocumento>` : '';
   const nacionalidadXml = persona.nacionalidad ? `\n        <nacionalidad>${esc(persona.nacionalidad)}</nacionalidad>` : '';
   const sexoXml = persona.sexo ? `\n        <sexo>${esc(persona.sexo)}</sexo>` : '';

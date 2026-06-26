@@ -6,6 +6,7 @@ import { insertMirComunicacion, MirComunicacion } from '@/lib/mir-db';
 import { sql } from '@vercel/postgres';
 import { logError } from '@/lib/error-logger';
 import { resolveMirTipoPago } from '@/lib/mir-tipo-pago';
+import { resolveSoporteDocumentoForMir } from '@/lib/mir-soporte-documento';
 
 export async function POST(req: NextRequest) {
   let json: any = undefined;
@@ -441,12 +442,9 @@ export async function POST(req: NextRequest) {
         }
       },
       personas: personas.map((persona: any) => {
-        // CRÍTICO según normas MIR: si hay numeroDocumento, soporteDocumento es OBLIGATORIO
         const numDoc = persona.numeroDocumento || '';
-        // Si hay numeroDocumento (no vacío), incluir soporteDocumento con valor 'C' por defecto si no viene
-        const soporteDoc = numDoc && numDoc.trim() !== '' 
-          ? (persona.soporteDocumento || 'C') 
-          : undefined;
+        const tipoDoc = persona.tipoDocumento || 'NIF';
+        const soporteDoc = resolveSoporteDocumentoForMir(tipoDoc, persona.soporteDocumento, numDoc);
         
         const sexoRaw = String(persona.sexo || '').toUpperCase();
         const sexoNorm = sexoRaw === 'H' || sexoRaw === 'M' ? sexoRaw : 'M';
