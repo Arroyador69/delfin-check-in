@@ -1,14 +1,10 @@
 import { Webhooks } from '@polar-sh/nextjs';
 import { sql } from '@vercel/postgres';
 import { provisionTenantFromPolarPublicSubscription } from '@/lib/polar-public-signup';
-
-async function ensurePolarColumns(): Promise<void> {
-  await sql`ALTER TABLE tenants ADD COLUMN IF NOT EXISTS polar_customer_id TEXT`;
-  await sql`ALTER TABLE tenants ADD COLUMN IF NOT EXISTS polar_subscription_id TEXT`;
-  await sql`ALTER TABLE tenants ADD COLUMN IF NOT EXISTS polar_checkout_id TEXT`;
-  await sql`ALTER TABLE tenants ADD COLUMN IF NOT EXISTS polar_subscription_status TEXT`;
-  await sql`ALTER TABLE tenants ADD COLUMN IF NOT EXISTS polar_last_event_at TIMESTAMP`;
-}
+import {
+  ensurePolarTenantColumns,
+  syncTenantFromPolarSubscription,
+} from '@/lib/polar-subscription-sync';
 
 function safeTenantIdFromMetadata(meta: unknown): string | null {
   if (!meta || typeof meta !== 'object') return null;
@@ -21,18 +17,16 @@ function safeTenantIdFromMetadata(meta: unknown): string | null {
 export const POST = Webhooks({
   webhookSecret: process.env.POLAR_WEBHOOK_SECRET!,
   onPayload: async (payload) => {
-    await ensurePolarColumns();
+    await ensurePolarTenantColumns();
 
-    // Polar puede incluir metadata en checkout/order/subscription dependiendo del flujo.
-    // Para MVP: usamos metadata.tenant_id (cuando viene) y, si no, dejamos el evento sin persistencia.
     try {
       const type = payload.type;
 
       if (type === 'checkout.created' || type === 'checkout.updated') {
-        const checkout = payload.data as any;
+        const checkout = payload.data as Record<string, unknown>;
         const tenantId =
           safeTenantIdFromMetadata(checkout?.metadata) ||
-          safeTenantIdFromMetadata(checkout?.customer?.metadata) ||
+          safeTenantIdFromMetadata((checkout?.customer as Record<string, unknown> | undefined)?.metadata) ||
           null;
         if (!tenantId) return;
 
@@ -54,38 +48,22 @@ export const POST = Webhooks({
         type === 'subscription.revoked' ||
         type === 'subscription.uncanceled'
       ) {
-        const sub = payload.data as any;
-        const tenantId =
-          safeTenantIdFromMetadata(sub?.metadata) ||
-          safeTenantIdFromMetadata(sub?.customer?.metadata) ||
-          safeTenantIdFromMetadata(sub?.checkout?.metadata) ||
-          null;
+        const sub = payload.data;
 
-        const polarCustomerId =
-          String(sub?.customerId || sub?.customer_id || sub?.customer?.id || '').trim() || null;
+        const syncResult = await syncTenantFromPolarSubscription(sub, type);
 
-        if (tenantId) {
-          const status = sub?.status ? String(sub.status) : String(type);
-          await sql`
-            UPDATE tenants
-            SET polar_subscription_id = ${String(sub.id)},
-                polar_customer_id = ${polarCustomerId},
-                polar_subscription_status = ${status},
-                polar_last_event_at = NOW()
-            WHERE id = ${tenantId}::uuid
-          `;
+        if (syncResult.action === 'activated' || syncResult.action === 'downgraded') {
           return;
         }
 
-        if (type === 'subscription.active') {
+        // Alta pública sin tenant (nuevo cliente desde landing/subscribe)
+        if (type === 'subscription.active' && syncResult.detail === 'no_tenant') {
           await provisionTenantFromPolarPublicSubscription(sub);
         }
         return;
       }
     } catch (e) {
-      // No debemos tumbar el webhook por un fallo de persistencia.
       console.error('❌ [polar webhook] Error procesando payload:', e);
     }
   },
 });
-
