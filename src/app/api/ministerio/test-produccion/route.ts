@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { MinisterioClientOfficial } from '@/lib/ministerio-client-official';
-import { sql } from '@vercel/postgres';
 
 export async function POST(req: NextRequest) {
   try {
@@ -47,48 +46,16 @@ export async function POST(req: NextRequest) {
 
     const needsDbFallback = (!usuario || !contraseña || !codigoArrendador) && Boolean(tenantId);
     if (needsDbFallback && tenantId) {
-      // Primero: modelo multi (mir_credenciales) si existe.
-      try {
-        const { ensureMirMultiSchema } = await import('@/lib/mir-multi');
-        await ensureMirMultiSchema();
-        const multi = await sql`
-          SELECT usuario, contraseña, codigo_arrendador, base_url, activo
-          FROM mir_credenciales
-          WHERE tenant_id = ${tenantId}::uuid
-            AND activo = true
-          ORDER BY created_at ASC, id ASC
-          LIMIT 1
-        `;
-        if (multi.rows.length > 0) {
-          const row = multi.rows[0] as any;
-          source = 'db';
-          if (!usuario) usuario = String(row.usuario || '').trim();
-          if (!contraseña) contraseña = String(row.contraseña || '');
-          if (!codigoArrendador) codigoArrendador = String(row.codigo_arrendador || '').trim();
-          if (row.base_url) baseUrl = String(row.base_url);
-        }
-      } catch (e) {
-        console.warn('⚠️ test-produccion: no se pudo leer mir_credenciales, usando legacy:', e);
-      }
-
-      // Fallback legacy (mir_configuraciones) para compatibilidad.
-      const r = await sql`
-        SELECT usuario, contraseña, codigo_arrendador, base_url, aplicacion, simulacion, activo
-        FROM mir_configuraciones
-        WHERE (propietario_id = ${tenantId} OR tenant_id = ${tenantId})
-        ORDER BY updated_at DESC
-        LIMIT 1
-      `;
-      const row = r.rows[0];
-      if (row) {
+      const { resolveMirTenantConfig } = await import('@/lib/mir-tenant-config');
+      const fromDb = await resolveMirTenantConfig(tenantId);
+      if (fromDb) {
         source = 'db';
-        if (!usuario) usuario = String(row.usuario || '').trim();
-        if (!contraseña) contraseña = String(row.contraseña || '');
-        if (!codigoArrendador) codigoArrendador = String(row.codigo_arrendador || '').trim();
-        // En SaaS, la fuente de verdad es la BD del tenant: si está, úsala también para URL/aplicación/simulación.
-        if (row.base_url) baseUrl = String(row.base_url);
-        if (row.aplicacion) aplicacion = String(row.aplicacion);
-        if (row.simulacion !== undefined && row.simulacion !== null) simulacion = Boolean(row.simulacion);
+        if (!usuario) usuario = fromDb.username;
+        if (!contraseña) contraseña = fromDb.password;
+        if (!codigoArrendador) codigoArrendador = fromDb.codigoArrendador;
+        baseUrl = fromDb.baseUrl;
+        aplicacion = fromDb.aplicacion;
+        simulacion = fromDb.simulacion;
       }
     }
 

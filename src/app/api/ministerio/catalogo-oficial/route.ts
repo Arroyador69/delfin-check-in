@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { MinisterioClientOfficial } from '@/lib/ministerio-client-official';
-import { sql } from '@vercel/postgres';
+import { resolveMirTenantConfig } from '@/lib/mir-tenant-config';
 
 export async function POST(req: NextRequest) {
   try {
@@ -42,15 +42,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'No autorizado' }, { status: 401 });
     }
 
-    const cfgRes = await sql`
-      SELECT usuario, contraseña, codigo_arrendador, base_url, aplicacion, simulacion, activo
-      FROM mir_configuraciones
-      WHERE propietario_id = ${tenantId} OR tenant_id = ${tenantId}
-      ORDER BY updated_at DESC
-      LIMIT 1
-    `;
-    const row = cfgRes.rows[0];
-    if (!row || row.activo === false) {
+    const cfgResolved = await resolveMirTenantConfig(tenantId);
+    if (!cfgResolved) {
       return NextResponse.json(
         {
           success: false,
@@ -62,14 +55,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Configuración del MIR con credenciales correctas
     const config = {
-      baseUrl: row.base_url || 'https://hospedajes.ses.mir.es/hospedajes-web/ws/v1/comunicacion',
-      username: String(row.usuario || '').trim().toUpperCase(),
-      password: String(row.contraseña || ''),
-      codigoArrendador: String(row.codigo_arrendador || '').trim(),
-      aplicacion: row.aplicacion || 'Delfin_Check_in',
-      simulacion: Boolean(row.simulacion)
+      baseUrl: cfgResolved.baseUrl,
+      username: cfgResolved.username,
+      password: cfgResolved.password,
+      codigoArrendador: cfgResolved.codigoArrendador,
+      aplicacion: cfgResolved.aplicacion,
+      simulacion: cfgResolved.simulacion,
     };
 
     console.log('📋 Configuración MIR oficial para catálogo:', {

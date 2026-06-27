@@ -145,13 +145,47 @@ async function zipAndBase64(xmlContent: string): Promise<string> {
   return Buffer.from(zipped).toString('base64');
 }
 
-function escapeXml(value: string): string {
-  return value
+function escapeXml(value: string | null | undefined): string {
+  const s = value == null ? '' : String(value);
+  return s
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&apos;');
+}
+
+function createAbortSignal(timeoutMs: number): AbortSignal {
+  if (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function') {
+    return AbortSignal.timeout(timeoutMs);
+  }
+  const controller = new AbortController();
+  setTimeout(() => controller.abort(), timeoutMs);
+  return controller.signal;
+}
+
+function soapTransportErrorMessage(error: unknown): string {
+  if (!(error instanceof Error)) return 'Error desconocido en transporte SOAP';
+  if (error.name === 'AbortError') return 'Timeout en la conexión con el MIR';
+  const msg = error.message || error.name;
+  if (/fetch failed|ECONNREF|ENOTFOUND|certificate|TLS|SSL|UNABLE_TO_VERIFY/i.test(msg)) {
+    return `Error de conectividad/TLS con el MIR: ${msg}`;
+  }
+  return msg;
+}
+
+function soapTransportErrorCode(error: unknown, descripcion: string): string {
+  if (error instanceof Error && error.name === 'AbortError') return 'TIMEOUT';
+  if (/fetch failed|ECONNREF|certificate|TLS|SSL|TypeError/i.test(descripcion)) {
+    return 'NETWORK_ERROR';
+  }
+  return 'ERROR';
+}
+
+/** Errores de transporte MIR controlados: warning en consola (no inbox de errores). */
+function logMirTransportIssue(operation: string, error: unknown): void {
+  const descripcion = soapTransportErrorMessage(error);
+  console.warn(`⚠️ ${operation}: ${descripcion}`);
 }
 
 function wrapSoapEnvelope(innerXml: string): string {
@@ -340,7 +374,7 @@ async function makeSoapRequest(cfg: MinisterioConfig, soapXml: string, operation
       'Connection': 'close'
     },
     body: soapXml,
-    signal: AbortSignal.timeout(60000),
+    signal: createAbortSignal(60000),
     redirect: 'follow',
     keepalive: false
   };
@@ -362,12 +396,29 @@ async function makeSoapRequest(cfg: MinisterioConfig, soapXml: string, operation
   })();
 
   if (insecureTls) {
-    (fetchOptions as any).dispatcher = new Agent({ connect: { rejectUnauthorized: false } });
+    try {
+      (fetchOptions as any).dispatcher = new Agent({ connect: { rejectUnauthorized: false } });
+    } catch (agentErr) {
+      console.warn('⚠️ No se pudo crear Agent TLS insecure, usando fetch por defecto:', agentErr);
+    }
   } else if (mirTlsCaBundle) {
-    (fetchOptions as any).dispatcher = new Agent({ connect: { ca: mirTlsCaBundle } });
+    try {
+      (fetchOptions as any).dispatcher = new Agent({ connect: { ca: mirTlsCaBundle } });
+    } catch (agentErr) {
+      console.warn('⚠️ No se pudo crear Agent TLS con CA MIR, usando fetch por defecto:', agentErr);
+    }
   }
 
-  return await fetch(cfg.baseUrl, fetchOptions);
+  try {
+    return await fetch(cfg.baseUrl, fetchOptions);
+  } catch (firstErr) {
+    if ((fetchOptions as any).dispatcher) {
+      console.warn('⚠️ fetch MIR con dispatcher TLS falló, reintentando sin dispatcher:', firstErr);
+      const { dispatcher: _d, ...rest } = fetchOptions as RequestInit & { dispatcher?: unknown };
+      return await fetch(cfg.baseUrl, rest);
+    }
+    throw firstErr;
+  }
 }
 
 export class MinisterioClientOfficial {
@@ -425,27 +476,14 @@ export class MinisterioClientOfficial {
       };
 
     } catch (error) {
-      console.error('❌ Error en altaPV:', error);
-      
-      if (error instanceof Error && error.name === 'AbortError') {
-        return {
-          ok: false,
-          codigo: 'TIMEOUT',
-          descripcion: 'Timeout en la conexión con el MIR',
-          rawResponse: ''
-        };
-      }
-      
-      if (error instanceof Error && error.message.includes('fetch failed')) {
-        return {
-          ok: false,
-          codigo: 'NETWORK_ERROR',
-          descripcion: 'Error de conectividad con el MIR',
-          rawResponse: ''
-        };
-      }
-      
-      throw error;
+      logMirTransportIssue('altaPV', error);
+      const descripcion = soapTransportErrorMessage(error);
+      return {
+        ok: false,
+        codigo: soapTransportErrorCode(error, descripcion),
+        descripcion,
+        rawResponse: '',
+      };
     }
   }
 
@@ -502,27 +540,14 @@ export class MinisterioClientOfficial {
       };
 
     } catch (error) {
-      console.error('❌ Error en altaRH:', error);
-      
-      if (error instanceof Error && error.name === 'AbortError') {
-        return {
-          ok: false,
-          codigo: 'TIMEOUT',
-          descripcion: 'Timeout en la conexión con el MIR',
-          rawResponse: ''
-        };
-      }
-      
-      if (error instanceof Error && error.message.includes('fetch failed')) {
-        return {
-          ok: false,
-          codigo: 'NETWORK_ERROR',
-          descripcion: 'Error de conectividad con el MIR',
-          rawResponse: ''
-        };
-      }
-      
-      throw error;
+      logMirTransportIssue('altaRH', error);
+      const descripcion = soapTransportErrorMessage(error);
+      return {
+        ok: false,
+        codigo: soapTransportErrorCode(error, descripcion),
+        descripcion,
+        rawResponse: '',
+      };
     }
   }
 
@@ -565,11 +590,12 @@ export class MinisterioClientOfficial {
       return parseConsultaResponse(text);
 
     } catch (error) {
-      console.error('❌ Error en consultaComunicacion:', error);
+      logMirTransportIssue('consultaComunicacion', error);
+      const descripcion = soapTransportErrorMessage(error);
       return {
         ok: false,
-        codigo: 'ERROR',
-        descripcion: error instanceof Error ? error.message : 'Error desconocido',
+        codigo: soapTransportErrorCode(error, descripcion),
+        descripcion,
         comunicaciones: [],
         rawResponse: ''
       };
@@ -637,11 +663,12 @@ export class MinisterioClientOfficial {
       return parseConsultaLoteResponse(text);
 
     } catch (error) {
-      console.error('❌ Error en consultaLote:', error);
+      logMirTransportIssue('consultaLote', error);
+      const descripcion = soapTransportErrorMessage(error);
       return {
         ok: false,
-        codigo: 'ERROR',
-        descripcion: error instanceof Error ? error.message : 'Error desconocido',
+        codigo: soapTransportErrorCode(error, descripcion),
+        descripcion,
         resultados: [],
         rawResponse: ''
       };
@@ -685,11 +712,12 @@ export class MinisterioClientOfficial {
       return parseAnulacionResponse(text);
 
     } catch (error) {
-      console.error('❌ Error en anulacionLote:', error);
+      logMirTransportIssue('anulacionLote', error);
+      const descripcion = soapTransportErrorMessage(error);
       return {
         ok: false,
-        codigo: 'ERROR',
-        descripcion: error instanceof Error ? error.message : 'Error desconocido',
+        codigo: soapTransportErrorCode(error, descripcion),
+        descripcion,
         rawResponse: ''
       };
     }
@@ -738,11 +766,12 @@ export class MinisterioClientOfficial {
       return parseCatalogoResponse(text);
 
     } catch (error) {
-      console.error('❌ Error en consultaCatalogo:', error);
+      logMirTransportIssue('consultaCatalogo', error);
+      const descripcion = soapTransportErrorMessage(error);
       return {
         ok: false,
-        codigo: 'ERROR',
-        descripcion: error instanceof Error ? error.message : 'Error desconocido',
+        codigo: soapTransportErrorCode(error, descripcion),
+        descripcion,
         elementos: [],
         rawResponse: ''
       };

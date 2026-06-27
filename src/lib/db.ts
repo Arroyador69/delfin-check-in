@@ -468,8 +468,63 @@ export async function getReservationsByTenant(tenantId: string, limit: number = 
 // FUNCIONES PARA MENSAJES DE WHATSAPP
 // ========================================
 
+let whatsAppSchemaEnsured = false;
+
+/** Crea tablas de WhatsApp si aún no existen (best-effort, sin romper el flujo). */
+export async function ensureWhatsAppMessagesSchema(): Promise<void> {
+  if (whatsAppSchemaEnsured) return;
+  try {
+    await sql`
+      CREATE TABLE IF NOT EXISTS message_templates (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        trigger_type VARCHAR(100) NOT NULL,
+        channel VARCHAR(50) NOT NULL DEFAULT 'whatsapp' CHECK (channel IN ('whatsapp', 'email', 'telegram')),
+        language VARCHAR(10) NOT NULL DEFAULT 'es' CHECK (language IN ('es', 'en')),
+        template_content TEXT NOT NULL,
+        variables JSONB DEFAULT '[]'::jsonb,
+        is_active BOOLEAN NOT NULL DEFAULT true,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+      )
+    `;
+    await sql`
+      CREATE TABLE IF NOT EXISTS sent_messages (
+        id SERIAL PRIMARY KEY,
+        template_id INTEGER REFERENCES message_templates(id) ON DELETE CASCADE,
+        reservation_id INTEGER,
+        guest_phone VARCHAR(50) NOT NULL,
+        guest_name VARCHAR(255),
+        message_content TEXT NOT NULL,
+        whatsapp_message_id VARCHAR(255),
+        status VARCHAR(50) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'sent', 'delivered', 'read', 'failed')),
+        error_message TEXT,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+        sent_at TIMESTAMP WITH TIME ZONE,
+        delivered_at TIMESTAMP WITH TIME ZONE,
+        read_at TIMESTAMP WITH TIME ZONE
+      )
+    `;
+    await sql`
+      CREATE TABLE IF NOT EXISTS whatsapp_config (
+        id SERIAL PRIMARY KEY,
+        phone_number VARCHAR(50),
+        access_token TEXT,
+        webhook_verify_token VARCHAR(255),
+        is_active BOOLEAN NOT NULL DEFAULT false,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+      )
+    `;
+    whatsAppSchemaEnsured = true;
+  } catch (e) {
+    console.warn('⚠️ ensureWhatsAppMessagesSchema: no se pudo crear schema (ignorado):', e);
+  }
+}
+
 // Función para obtener plantillas de mensajes
 export async function getMessageTemplates(): Promise<any[]> {
+  await ensureWhatsAppMessagesSchema();
   const result = await sql`
     SELECT * FROM message_templates 
     ORDER BY created_at ASC
