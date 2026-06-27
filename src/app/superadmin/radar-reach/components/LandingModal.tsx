@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { formatPercent } from '@/lib/numbers';
 
 interface Property {
   id: number;
@@ -235,7 +236,7 @@ export default function LandingModal({ landing, properties, signals, onClose, on
               <option value="">Ninguna (manual)</option>
               {availableSignals.map((signal) => (
                 <option key={signal.id} value={signal.id}>
-                  {signal.signal_type} (Intensidad: {signal.signal_intensity}%)
+                  {signal.signal_type} (Intensidad: {formatPercent(signal.signal_intensity, 0)})
                 </option>
               ))}
             </select>
