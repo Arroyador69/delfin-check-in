@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useClientTranslations } from '@/hooks/useClientTranslations'
+import { formatPercent } from '@/lib/numbers'
 
 export default function SuperAdminDashboard() {
   const tSupport = useClientTranslations('superadminSupport')
@@ -610,7 +611,7 @@ export default function SuperAdminDashboard() {
 
                   <div className="bg-orange-50 rounded-lg p-4 border border-orange-200">
                     <p className="text-xs text-gray-600 mb-1">Tasa Conversión</p>
-                    <p className="text-2xl font-bold text-gray-900">{(radarReachStats.landings?.conversion_rate || 0).toFixed(1)}%</p>
+                    <p className="text-2xl font-bold text-gray-900">{formatPercent(radarReachStats.landings?.conversion_rate, 1)}</p>
                     <p className="text-xs text-gray-500 mt-1">
                       Promedio general
                     </p>

@@ -53,25 +53,34 @@ const ENROLLMENTS_LIST_SELECT = `
 /**
  * Listado de inscripciones lifecycle con filtros opcionales.
  * No usar (${x} IS NULL OR col = ${x}): Postgres/Neon no infiere el tipo de $1 cuando x es null.
+ * Cast explícito ($n::int / $n::text) para evitar NeonDbError en sql.query.
  */
-export async function listLifecycleEnrollments(filters: {
+export function buildLifecycleEnrollmentsQuery(filters: {
   phase: number | null;
   status: string | null;
-}) {
+}): { text: string; params: unknown[] } {
   const conditions: string[] = [];
   const params: unknown[] = [];
 
   if (filters.phase != null) {
     params.push(filters.phase);
-    conditions.push(`s.phase = $${params.length}`);
+    conditions.push(`s.phase = $${params.length}::int`);
   }
   if (filters.status) {
     params.push(filters.status);
-    conditions.push(`e.status = $${params.length}`);
+    conditions.push(`e.status = $${params.length}::text`);
   }
 
   const whereClause = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
   const text = `${ENROLLMENTS_LIST_SELECT} ${whereClause} ORDER BY e.next_send_at ASC NULLS LAST, e.enrolled_at DESC LIMIT 200`;
 
+  return { text, params };
+}
+
+export async function listLifecycleEnrollments(filters: {
+  phase: number | null;
+  status: string | null;
+}) {
+  const { text, params } = buildLifecycleEnrollmentsQuery(filters);
   return sql.query(text, params);
 }

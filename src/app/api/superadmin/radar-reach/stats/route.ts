@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifySuperAdmin } from '@/lib/auth-superadmin';
 import { sql } from '@/lib/db';
+import { toFiniteNumber } from '@/lib/numbers';
 
 // =====================================================
 // GET: Obtener estadísticas de Radar Reach
@@ -88,24 +89,31 @@ export async function GET(req: NextRequest) {
       success: true,
       stats: {
         signals: {
-          total: parseInt(signalsData.total_signals || '0'),
-          active: parseInt(signalsData.active_signals || '0'),
-          processed: parseInt(signalsData.processed_signals || '0'),
-          unprocessed: parseInt(signalsData.unprocessed_signals || '0'),
-          avg_intensity: parseFloat(signalsData.avg_intensity || '0')
+          total: toFiniteNumber(signalsData.total_signals, 0),
+          active: toFiniteNumber(signalsData.active_signals, 0),
+          processed: toFiniteNumber(signalsData.processed_signals, 0),
+          unprocessed: toFiniteNumber(signalsData.unprocessed_signals, 0),
+          avg_intensity: toFiniteNumber(signalsData.avg_intensity, 0),
         },
         landings: {
-          total: parseInt(landingsData.total_landings || '0'),
-          published: parseInt(landingsData.published_landings || '0'),
-          draft: parseInt(landingsData.draft_landings || '0'),
-          total_views: parseInt(landingsData.total_views || '0'),
-          total_conversions: parseInt(landingsData.total_conversions || '0'),
-          conversion_rate: parseFloat(landingsData.overall_conversion_rate || '0')
+          total: toFiniteNumber(landingsData.total_landings, 0),
+          published: toFiniteNumber(landingsData.published_landings, 0),
+          draft: toFiniteNumber(landingsData.draft_landings, 0),
+          total_views: toFiniteNumber(landingsData.total_views, 0),
+          total_conversions: toFiniteNumber(landingsData.total_conversions, 0),
+          conversion_rate: toFiniteNumber(landingsData.overall_conversion_rate, 0),
         },
-        signals_by_type: signalsByType.rows,
+        signals_by_type: signalsByType.rows.map((row: Record<string, unknown>) => ({
+          signal_type: row.signal_type,
+          count: toFiniteNumber(row.count, 0),
+          avg_intensity: toFiniteNumber(row.avg_intensity, 0),
+        })),
         top_landings: topLandings.rows,
-        recent_signals: recentSignals.rows
-      }
+        recent_signals: recentSignals.rows.map((row: Record<string, unknown>) => ({
+          ...row,
+          signal_intensity: toFiniteNumber(row.signal_intensity, 0),
+        })),
+      },
     });
 
   } catch (error: any) {

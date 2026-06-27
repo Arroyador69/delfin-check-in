@@ -1,6 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifySuperAdmin } from '@/lib/auth-superadmin';
 import { sql } from '@/lib/db';
+import { toFiniteNumber } from '@/lib/numbers';
+
+function normalizeSignalRow(row: Record<string, unknown>) {
+  return {
+    ...row,
+    signal_intensity: toFiniteNumber(row.signal_intensity, 0),
+  };
+}
 
 // =====================================================
 // GET: Obtener todas las señales del Radar
@@ -53,10 +61,7 @@ export async function GET(req: NextRequest) {
 
     const result = await (sql as any).query(text, params);
 
-    const signals = result.rows.map((row: Record<string, unknown>) => ({
-      ...row,
-      signal_intensity: Number(row.signal_intensity) || 0,
-    }));
+    const signals = result.rows.map((row: Record<string, unknown>) => normalizeSignalRow(row));
 
     return NextResponse.json({
       success: true,
@@ -138,7 +143,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      signal: result.rows[0],
+      signal: normalizeSignalRow(result.rows[0] as Record<string, unknown>),
       message: 'Señal del Radar creada correctamente'
     });
 
@@ -199,7 +204,7 @@ export async function PUT(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      signal: result.rows[0],
+      signal: normalizeSignalRow(result.rows[0] as Record<string, unknown>),
       message: 'Señal actualizada correctamente'
     });
 
