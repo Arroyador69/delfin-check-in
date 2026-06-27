@@ -4,7 +4,7 @@ import { verifyToken } from '@/lib/auth'
 import { isEffectiveSuperAdminPayload } from '@/lib/platform-owner'
 import { getRoomsForTenant } from '@/lib/tenant-rooms'
 import type { Tenant } from '@/lib/tenant'
-import { getTenantPlanPresentation } from '@/lib/tenant-plan-billing'
+import { getTenantPlanPresentation, resolveSuperadminRoomsLimit } from '@/lib/tenant-plan-billing'
 
 async function hasEmailTrackingTable(): Promise<boolean> {
   try {
@@ -55,6 +55,7 @@ export async function GET(req: NextRequest) {
             t.max_rooms,
             t.current_rooms,
             t.max_rooms_included,
+            t.polar_last_checkout_context,
             t.country_code,
             t.config,
             t.created_at,
@@ -100,6 +101,7 @@ export async function GET(req: NextRequest) {
             t.max_rooms,
             t.current_rooms,
             t.max_rooms_included,
+            t.polar_last_checkout_context,
             t.country_code,
             t.config,
             t.created_at,
@@ -128,6 +130,11 @@ export async function GET(req: NextRequest) {
         return {
           ...row,
           current_rooms: currentRooms,
+          billing_rooms: presentation.billing_rooms,
+          rooms_limit_display: resolveSuperadminRoomsLimit(presentation, {
+            polar_checkout_context: (row as { polar_last_checkout_context?: unknown })
+              .polar_last_checkout_context,
+          }),
           max_rooms: presentation.max_rooms_effective,
         }
       })

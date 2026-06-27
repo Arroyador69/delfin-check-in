@@ -35,7 +35,7 @@ export function resolveBillingRoomCount(
 }
 
 /**
- * Límite mostrado en UI (barra de uso). -1 = ilimitado.
+ * Límite mostrado en UI (barra de uso). -1 = ilimitado en BD (planes de pago por unidad).
  */
 export function resolveDisplayMaxRooms(
   effectivePlanType: BillingPlanType,
@@ -46,6 +46,33 @@ export function resolveDisplayMaxRooms(
   if (tenant.max_rooms === -1) return -1;
   if (tenant.max_rooms > 0) return tenant.max_rooms;
   return billingRooms;
+}
+
+/** Unidades contratadas en Polar (checkout / metadata suscripción). */
+export function extractPolarSubscribedRooms(context: unknown): number | null {
+  if (!context || typeof context !== 'object') return null;
+  const c = context as Record<string, unknown>;
+  const raw = c.rooms ?? c.seats;
+  const n = Number(raw);
+  if (!Number.isFinite(n) || n < 1) return null;
+  return Math.floor(n);
+}
+
+/**
+ * Límite para columna Habitaciones del superadmin: nunca ∞ en planes de pago;
+ * muestra unidades facturadas (Polar o uso actual, mín. 1).
+ */
+export function resolveSuperadminRoomsLimit(
+  presentation: Pick<TenantPlanPresentation, 'max_rooms_effective' | 'billing_rooms'>,
+  options?: { polar_checkout_context?: unknown }
+): number {
+  if (presentation.max_rooms_effective !== -1) {
+    return presentation.max_rooms_effective;
+  }
+  const billing = Math.max(1, presentation.billing_rooms || 1);
+  const polarRooms = extractPolarSubscribedRooms(options?.polar_checkout_context);
+  if (polarRooms != null) return Math.max(billing, polarRooms);
+  return billing;
 }
 
 /**

@@ -10,6 +10,8 @@ interface Tenant {
   status: string
   onboarding_status?: string | null
   max_rooms: number
+  rooms_limit_display: number
+  billing_rooms?: number
   current_rooms: number
   created_at: string
   onboarding_email_id?: string | null
@@ -159,7 +161,7 @@ export default function TenantsPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {tenant.current_rooms} / {tenant.max_rooms === -1 ? '∞' : tenant.max_rooms}
+                      {tenant.current_rooms} / {tenant.rooms_limit_display ?? tenant.max_rooms}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span
