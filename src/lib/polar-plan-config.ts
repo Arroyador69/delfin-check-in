@@ -112,6 +112,16 @@ export function polarSubscriptionStatus(sub: unknown): string {
   return String(s.status || '').trim().toLowerCase();
 }
 
+/** Asientos/unidades contratadas en checkout Polar (metadata rooms o seats). */
+export function subscribedRoomsFromPolarSubscription(sub: unknown): number | null {
+  const meta = mergePolarMetadataSources(sub);
+  if (!meta) return null;
+  const raw = meta.rooms ?? meta.seats;
+  const n = Number(raw);
+  if (!Number.isFinite(n) || n < 1) return null;
+  return Math.floor(n);
+}
+
 export function isPolarSubscriptionActiveStatus(status: string): boolean {
   return status === 'active' || status === 'trialing';
 }

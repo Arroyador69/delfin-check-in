@@ -10,6 +10,7 @@ import {
   type PolarPaidPlan,
   polarSubscriptionStatus,
   safePlanFromPolarMetadata,
+  subscribedRoomsFromPolarSubscription,
 } from '@/lib/polar-plan-config';
 
 export type PolarSyncResult = {
@@ -97,9 +98,38 @@ export async function applyPaidPlanToTenant(
     subscriptionId: string;
     customerId: string | null;
     status: string;
+    subscribedRooms?: number | null;
   }
 ): Promise<void> {
   const cfg = POLAR_PAID_PLAN_ROWS[plan];
+  const roomsJson =
+    polar.subscribedRooms != null && polar.subscribedRooms >= 1
+      ? JSON.stringify({ rooms: polar.subscribedRooms, seats: polar.subscribedRooms })
+      : null;
+
+  if (roomsJson) {
+    await sql`
+      UPDATE tenants
+      SET
+        plan_type = ${plan},
+        plan_id = ${cfg.plan_id},
+        ads_enabled = ${cfg.ads_enabled},
+        legal_module = ${cfg.legal_module},
+        max_rooms = ${cfg.max_rooms},
+        max_rooms_included = ${cfg.max_rooms_included},
+        base_plan_price = ${cfg.base_plan_price},
+        extra_room_price = ${cfg.extra_room_price},
+        polar_subscription_id = ${polar.subscriptionId},
+        polar_customer_id = ${polar.customerId},
+        polar_subscription_status = ${polar.status},
+        polar_last_event_at = NOW(),
+        polar_last_checkout_context = COALESCE(polar_last_checkout_context, '{}'::jsonb) || ${roomsJson}::jsonb,
+        updated_at = NOW()
+      WHERE id = ${tenantId}::uuid
+    `;
+    return;
+  }
+
   await sql`
     UPDATE tenants
     SET
@@ -232,6 +262,7 @@ export async function syncTenantFromPolarSubscription(
   await applyPaidPlanToTenant(tenantId, plan, {
     ...polarRefs,
     status: status || 'active',
+    subscribedRooms: subscribedRoomsFromPolarSubscription(sub),
   });
 
   console.log(`✅ [polar sync] plan=${plan} tenant=${tenantId} event=${eventType}`);
