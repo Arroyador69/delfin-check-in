@@ -4,6 +4,7 @@ import { getTenantById } from '@/lib/tenant';
 import type { Tenant } from '@/lib/tenant';
 import { getTenantPlanPresentation, resolveMirCredentialsMaxAllowed } from '@/lib/tenant-plan-billing';
 import { getRoomsForTenant } from '@/lib/tenant-rooms';
+import { syncMirConfiguracionesLegacy } from '@/lib/mir-tenant-config';
 
 function maskCredentialRow(row: any) {
   return {
@@ -132,6 +133,15 @@ export async function POST(req: NextRequest) {
       )
       RETURNING *
     `;
+
+    // Compatibilidad con rutas legacy que aún leen mir_configuraciones.
+    await syncMirConfiguracionesLegacy(tenantId, {
+      usuario,
+      contraseña,
+      codigoArrendador,
+      codigoEstablecimiento,
+      baseUrl,
+    });
 
     return NextResponse.json({
       success: true,
