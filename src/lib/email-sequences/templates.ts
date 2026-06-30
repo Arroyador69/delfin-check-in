@@ -104,19 +104,36 @@ function videoBlock(videoUrl: string, thumbnailUrl: string, label: string): stri
   </table>`;
 }
 
+function onboardingStepsBox(): string {
+  return infoBox(
+    `<strong>Los 6 pasos del onboarding</strong> (≈15 min, también desde el móvil):<br/>
+    1️⃣ Contraseña segura<br/>
+    2️⃣ Datos del alojamiento<br/>
+    3️⃣ Plan y pago (si aplica)<br/>
+    4️⃣ Credenciales MIR (vídeo incluido)<br/>
+    5️⃣ Primera unidad / habitación<br/>
+    6️⃣ Cobros con Stripe (opcional)`,
+    '#f0f9ff',
+    '#0284c7'
+  );
+}
+
 const TEMPLATES: Record<
   string,
   (p: LifecycleTemplateParams) => LifecycleEmailContent
 > = {
   p1_welcome: (p) => {
     const name = firstName(p.ownerName);
-    const subject = `${name}, tu espacio en Delfín Check-in te está esperando`;
+    const thumb = getOnboardingVideoThumbnailUrl();
+    const subject = `${name}, termina la configuración de tu alojamiento (6 pasos)`;
     const body = contentBlock(`
       <h1 style="margin:0 0 16px 0;font-size:22px;color:#0f172a;">Hola ${esc(name)},</h1>
-      <p style="margin:0 0 12px 0;">Creaste tu cuenta en <strong>Delfín Check-in</strong> pero aún no has terminado de configurarla. Solo te faltan unos minutos para tener listo el check-in digital y el registro de viajeros.</p>
-      ${infoBox('<strong>Plan gratuito:</strong> puedes configurar tu alojamiento y las credenciales MIR para enviar el parte de viajeros sin coste de suscripción.')}
+      <p style="margin:0 0 12px 0;">Creaste tu cuenta en <strong>Delfín Check-in</strong> pero aún no has terminado de <strong>configurar tu alojamiento</strong>. Es un asistente guiado de 6 pasos — no hace falta ser técnico.</p>
+      ${onboardingStepsBox()}
+      ${videoBlock(ONBOARDING_VIDEO_URL, thumb, 'Ver vídeo: recorrido del onboarding (≈2 min)')}
+      ${infoBox('<strong>Plan gratuito:</strong> puedes configurar tu alojamiento y las credenciales MIR para el parte de viajeros sin coste de suscripción.')}
       ${ctaButton(p.onboardingUrl, 'Continuar mi configuración')}
-      <p style="margin:16px 0 0 0;font-size:13px;color:#64748b;">Si el botón no funciona, copia este enlace en el navegador:<br/><span style="word-break:break-all;">${esc(p.onboardingUrl)}</span></p>
+      <p style="margin:16px 0 0 0;font-size:13px;color:#64748b;">Si el botón no funciona, copia este enlace en el navegador del móvil:<br/><span style="word-break:break-all;">${esc(p.onboardingUrl)}</span></p>
     `);
     return {
       subject,
@@ -186,8 +203,10 @@ const TEMPLATES: Record<
     const subject = `${name}, retoma tu configuración (${statusLabel})`;
     const body = contentBlock(`
       <h1 style="margin:0 0 16px 0;font-size:22px;color:#0f172a;">¿Te quedaste a medias?</h1>
-      <p style="margin:0 0 12px 0;">Vimos que tu onboarding está <strong>${esc(statusLabel)}</strong>. No pasa nada — puedes retomarlo exactamente donde lo dejaste con un clic.</p>
-      ${infoBox('Tu cuenta gratuita sigue activa. Terminar la configuración no tiene coste.')}
+      <p style="margin:0 0 12px 0;">Tu configuración está <strong>${esc(statusLabel)}</strong>. Retómala con un clic: el asistente te indica qué hacer en cada paso (también desde el móvil).</p>
+      ${onboardingStepsBox()}
+      ${videoBlock(ONBOARDING_VIDEO_URL, getOnboardingVideoThumbnailUrl(), 'Ver vídeo del onboarding')}
+      ${infoBox('Tu cuenta sigue activa. Terminar la configuración no tiene coste adicional en plan gratuito.')}
       ${ctaButton(p.onboardingUrl, 'Retomar donde lo dejé')}
     `);
     return {

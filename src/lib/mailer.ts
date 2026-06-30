@@ -84,22 +84,22 @@ function onboardingEmailCopy(locale: EmailLocale, variant: OnboardingEmailVarian
       subject: {
         waitlist_launch: '🐬 Delfín Check-in: ya puedes probarlo (lista de espera)',
         web_plan_paid: '🐬 Delfín Check-in: confirma tu acceso (suscripción web)',
-        default: '🐬 Bienvenido a Delfín Check-in - Completa tu configuración',
+        default: '🐬 Delfín Check-in: configura tu alojamiento en 6 pasos',
       },
       heroTitle: {
         waitlist_launch: 'Tu software Delfín Check-in ya está listo',
         web_plan_paid: 'Suscripción confirmada',
-        default: 'Bienvenido a Delfín Check-in',
+        default: 'Configuración guiada en 6 pasos',
       },
       heroSubtitle: {
         waitlist_launch: 'Puedes probarlo gratis con una propiedad — te guiamos en el onboarding',
         web_plan_paid: 'Un último paso: configura tu cuenta en el panel web',
-        default: 'Tu plataforma de gestión de alojamientos',
+        default: 'Te llevamos de la mano: contraseña, datos, plan, MIR, unidades y cobros',
       },
       bodyHeading: {
         waitlist_launch: '¡Gracias por confiar en la lista de espera!',
         web_plan_paid: 'Accede y termina la configuración',
-        default: '¡Listo para empezar!',
+        default: 'Estás configurando Delfín Check-in',
       },
       bodyLead: {
         waitlist_launch:
@@ -107,7 +107,7 @@ function onboardingEmailCopy(locale: EmailLocale, variant: OnboardingEmailVarian
         web_plan_paid:
           'Gracias por contratar Delfín Check-in. Hemos creado tu espacio de trabajo: el enlace siguiente abre el <strong>onboarding</strong> (datos del negocio, unidades, integraciones). La facturación recurrente de tu plan se gestiona de forma segura en la web con nuestro partner de pagos (Polar), como viste en el checkout.',
         default:
-          'Tu cuenta ha sido creada correctamente. Para completar la configuración inicial y entrar en tu panel, usa el botón siguiente:',
+          'Tu cuenta ya está creada. El asistente del panel te guía en <strong>6 pasos sencillos</strong> (desde el móvil también): contraseña, datos del alojamiento, plan, credenciales MIR, primera unidad y cobros opcionales. Pulsa el botón para continuar donde lo dejaste:',
       },
       cta: 'Comenzar onboarding',
       importantTitle: 'Importante:',
@@ -179,22 +179,22 @@ function onboardingEmailCopy(locale: EmailLocale, variant: OnboardingEmailVarian
       subject: {
         waitlist_launch: '🐬 Delfín Check-in: you can start now (waitlist)',
         web_plan_paid: '🐬 Delfín Check-in: access confirmed (web subscription)',
-        default: '🐬 Welcome to Delfín Check-in — complete setup',
+        default: '🐬 Delfín Check-in: set up your property in 6 easy steps',
       },
       heroTitle: {
         waitlist_launch: 'Your Delfín Check-in account is ready',
         web_plan_paid: 'Subscription confirmed',
-        default: 'Welcome to Delfín Check-in',
+        default: 'Guided setup in 6 steps',
       },
       heroSubtitle: {
         waitlist_launch: 'Start free with one property — we’ll guide you through onboarding',
         web_plan_paid: 'One last step: set up your account in the web dashboard',
-        default: 'Your accommodation management platform',
+        default: 'We walk you through password, details, plan, MIR, units and payouts',
       },
       bodyHeading: {
         waitlist_launch: 'Thanks for joining the waitlist!',
         web_plan_paid: 'Access and finish setup',
-        default: 'Ready to start!',
+        default: 'You are setting up Delfín Check-in',
       },
       bodyLead: {
         waitlist_launch:
@@ -202,7 +202,7 @@ function onboardingEmailCopy(locale: EmailLocale, variant: OnboardingEmailVarian
         web_plan_paid:
           'Thanks for subscribing to Delfín Check-in. We created your workspace: the link below opens <strong>onboarding</strong> (business details, units, integrations). Your recurring billing is handled securely on the web with our payments partner (Polar), as shown at checkout.',
         default:
-          'Your account has been created. To finish the initial setup and access your dashboard, use the button below:',
+          'Your account is ready. The guided wizard has <strong>6 simple steps</strong> (mobile-friendly): password, property details, plan, MIR credentials, first unit, and optional payouts. Tap below to continue:',
       },
       cta: 'Start onboarding',
       importantTitle: 'Important:',

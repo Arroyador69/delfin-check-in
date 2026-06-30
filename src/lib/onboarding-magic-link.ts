@@ -205,7 +205,9 @@ export async function issueFreshOnboardingCredentials(userId: string): Promise<{
 }
 
 export function onboardingEmailVariantForOwner(planType?: string | null): OnboardingEmailVariant {
-  if (planType === 'free') return 'waitlist_launch';
+  if (planType === 'checkin' || planType === 'standard' || planType === 'pro') {
+    return 'web_plan_paid';
+  }
   return 'default';
 }
 
