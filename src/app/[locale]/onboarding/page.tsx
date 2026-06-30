@@ -73,6 +73,10 @@ export default function OnboardingPage() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const TOTAL_STEPS = 6;
+  const ONBOARDING_PAGE = 'max-w-4xl mx-auto px-3 py-4 sm:px-6 sm:py-6 pb-10';
+  const ONBOARDING_CARD = 'bg-white rounded-xl sm:rounded-lg shadow-lg p-4 sm:p-6 md:p-8';
+  const getStepLabel = (step: number) =>
+    t(`progress.stepLabels.${step}` as 'progress.stepLabels.1');
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>('');
@@ -783,13 +787,35 @@ export default function OnboardingPage() {
 
   // Paso 1: Cambiar contraseña
   const renderPasswordStep = () => (
-    <div className="max-w-4xl mx-auto p-6">
-      <div className="bg-white rounded-lg shadow-lg p-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-6">
+    <div className={ONBOARDING_PAGE}>
+      <div className={ONBOARDING_CARD}>
+        <div className="mb-6 rounded-xl border border-blue-100 bg-gradient-to-br from-blue-50 to-indigo-50 p-4 sm:p-5">
+          <h2 className="text-lg sm:text-xl font-bold text-gray-900 leading-snug">{t('welcome.title')}</h2>
+          <p className="text-sm text-gray-700 mt-2 leading-relaxed">{t('welcome.subtitle')}</p>
+          <p className="text-sm font-semibold text-gray-900 mt-4">{t('welcome.stepsTitle')}</p>
+          <ul className="mt-2 space-y-1.5 text-xs sm:text-sm text-gray-700">
+            <li>{t('welcome.step1')}</li>
+            <li>{t('welcome.step2')}</li>
+            <li>{t('welcome.step3')}</li>
+            <li>{t('welcome.step4')}</li>
+            <li>{t('welcome.step5')}</li>
+            <li>{t('welcome.step6')}</li>
+          </ul>
+          <TutorialVideoEmbed
+            videoKey="onboarding"
+            title={tVideos('onboardingTitle')}
+            description={tVideos('onboardingDescription')}
+            watchOnYouTubeLabel={tVideos('watchOnYouTube')}
+            spanishAudioNote={tVideos('spanishAudioNote')}
+            className="mt-4 !p-3 sm:!p-4"
+          />
+        </div>
+
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">
           {t('step1.title')}
         </h1>
         
-        <p className="text-gray-600 mb-6">
+        <p className="text-sm sm:text-base text-gray-600 mb-6 leading-relaxed">
           {t('step1.intro')}
         </p>
 
@@ -977,8 +1003,8 @@ export default function OnboardingPage() {
 
   // Paso 2: Datos empresa
   const renderEmpresaStep = () => (
-    <div className="max-w-4xl mx-auto p-6">
-      <div className="bg-white rounded-lg shadow-lg p-8">
+    <div className={ONBOARDING_PAGE}>
+      <div className={ONBOARDING_CARD}>
         <h1 className="text-3xl font-bold text-gray-900 mb-6">
           {t('step2.title')}
         </h1>
@@ -1203,8 +1229,8 @@ export default function OnboardingPage() {
 
   // Paso 3: MIR (opcional)
   const renderMIRStep = () => (
-    <div className="max-w-4xl mx-auto p-6">
-      <div className="bg-white rounded-lg shadow-lg p-8">
+    <div className={ONBOARDING_PAGE}>
+      <div className={ONBOARDING_CARD}>
         <h1 className="text-3xl font-bold text-gray-900 mb-6">
           {t('step3.title')}
         </h1>
@@ -1336,8 +1362,8 @@ export default function OnboardingPage() {
 
   // Paso 5: Crear unidades (obligatorio)
   const renderPropertyStep = () => (
-    <div className="max-w-4xl mx-auto p-6">
-      <div className="bg-white rounded-lg shadow-lg p-8">
+    <div className={ONBOARDING_PAGE}>
+      <div className={ONBOARDING_CARD}>
         <h1 className="text-3xl font-bold text-gray-900 mb-6">
           {t('step4.title')}
         </h1>
@@ -1451,8 +1477,8 @@ export default function OnboardingPage() {
     const localeFromPath = getLocaleFromPath();
 
     return (
-      <div className="max-w-4xl mx-auto p-6">
-        <div className="bg-white rounded-lg shadow-lg p-8">
+      <div className={ONBOARDING_PAGE}>
+        <div className={ONBOARDING_CARD}>
           <h1 className="text-3xl font-bold text-gray-900 mb-6">{t('step6.title')}</h1>
           <p className="text-gray-600 mb-6">{t('step6.intro')}</p>
 
@@ -1505,29 +1531,41 @@ export default function OnboardingPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="bg-white shadow-sm">
-        <div className="max-w-4xl mx-auto px-4 py-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <span className="text-2xl">🐬</span>
-              <h1 className="text-xl font-bold text-gray-900">{t('appName')}</h1>
+      <div className="bg-white shadow-sm sticky top-0 z-30 border-b border-gray-100">
+        <div className="max-w-4xl mx-auto px-3 sm:px-4 py-4 sm:py-5">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+              <span className="text-xl sm:text-2xl shrink-0">🐬</span>
+              <div className="min-w-0">
+                <h1 className="text-base sm:text-xl font-bold text-gray-900 truncate">{t('appName')}</h1>
+                <p className="text-xs sm:text-sm text-blue-700 font-medium mt-0.5">{t('progress.configuring')}</p>
+              </div>
             </div>
-            <div className="text-sm text-gray-500">
-              {t('stepOf', { currentStep, totalSteps: TOTAL_STEPS })}
+            <div className="text-xs sm:text-sm text-gray-500 shrink-0 text-right">
+              <div>{t('stepOf', { currentStep, totalSteps: TOTAL_STEPS })}</div>
+              <div className="font-semibold text-gray-800 mt-0.5 max-w-[9rem] sm:max-w-none truncate">
+                {t('progress.currentStepLabel', { label: getStepLabel(currentStep) })}
+              </div>
             </div>
           </div>
           
-          <div className="mt-4">
-            <div className="flex space-x-2">
-              {Array.from({ length: TOTAL_STEPS }, (_, i) => i + 1).map((step) => (
+          <div className="mt-3 flex gap-1">
+            {Array.from({ length: TOTAL_STEPS }, (_, i) => i + 1).map((step) => (
+              <div key={step} className="flex-1 min-w-0">
                 <div
-                  key={step}
-                  className={`h-2 flex-1 rounded-full ${
+                  className={`h-2 rounded-full ${
                     step <= currentStep ? 'bg-blue-600' : 'bg-gray-200'
                   }`}
                 />
-              ))}
-            </div>
+                <p
+                  className={`hidden sm:block text-[10px] mt-1 truncate text-center ${
+                    step === currentStep ? 'text-blue-700 font-semibold' : 'text-gray-400'
+                  }`}
+                >
+                  {getStepLabel(step)}
+                </p>
+              </div>
+            ))}
           </div>
         </div>
       </div>
@@ -1703,8 +1741,8 @@ export default function OnboardingPage() {
         : !!formData.checkoutCompleted;
 
     return (
-      <div className="max-w-4xl mx-auto p-6">
-        <div className="bg-white rounded-lg shadow-lg p-8">
+      <div className={ONBOARDING_PAGE}>
+        <div className={ONBOARDING_CARD}>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">💳 Plan y pago</h1>
           <p className="text-gray-600 mb-6">Elige tu plan, unidades y si prefieres pago mensual o anual.</p>
 
@@ -1940,8 +1978,9 @@ export default function OnboardingPage() {
           </div>
 
           {formData.selectedPlanId !== 'free' && !formData.checkoutCompleted && (
-            <p className="text-xs text-gray-500 mt-4">
-              Si ya pagaste y aún no se refleja, espera unos segundos: el sistema confirma el pago vía webhook.
+            <p className="text-xs sm:text-sm text-gray-600 mt-4 leading-relaxed">
+              Si ya pagaste, espera unos segundos: confirmamos el pago automáticamente. Si no avanza, revisa tu email
+              (te enviamos un enlace para continuar el onboarding).
             </p>
           )}
         </div>

@@ -104,6 +104,8 @@
     "spanishAudioNote": "El audio del vídeo está en español.",
     "mirTitle": "Vídeo: credenciales MIR paso a paso",
     "mirDescription": "Cómo obtenerlas en la Sede del Interior y pegarlas en Configuración MIR. Normativa aplicable en España.",
+    "onboardingTitle": "Vídeo: recorrido del onboarding (≈2 min)",
+    "onboardingDescription": "Te enseñamos las 6 pantallas del asistente. Puedes verlo en el móvil antes de empezar.",
     "cleaningTitle": "Vídeo: enlace para limpiadoras",
     "cleaningDescription": "Crea un enlace por equipo; el calendario se actualiza solo con tus reservas.",
     "micrositeTitle": "Vídeo: microsite y cobros con Stripe",
@@ -479,6 +481,29 @@
   "onboarding": {
     "appName": "Delfín Check-in",
     "stepOf": "Paso {currentStep} de {totalSteps}",
+    "progress": {
+      "configuring": "Configurando tu alojamiento",
+      "currentStepLabel": "Ahora: {label}",
+      "stepLabels": {
+        "1": "Contraseña",
+        "2": "Datos del negocio",
+        "3": "Plan y pago",
+        "4": "Registro MIR",
+        "5": "Primera unidad",
+        "6": "Cobros (opcional)"
+      }
+    },
+    "welcome": {
+      "title": "Bienvenido: dejamos tu alojamiento listo en 6 pasos",
+      "subtitle": "No hace falta ser técnico. Este asistente te dice qué hacer en cada pantalla. Funciona en el móvil y guardamos tu progreso si sales y vuelves.",
+      "stepsTitle": "Qué vas a configurar",
+      "step1": "1. Contraseña personal",
+      "step2": "2. Datos del alojamiento (facturas y formulario huéspedes)",
+      "step3": "3. Plan y pago (si eliges Check-in u otro de pago)",
+      "step4": "4. Credenciales MIR para el parte de viajeros (España)",
+      "step5": "5. Tu primera unidad o habitación",
+      "step6": "6. Cobros con Stripe (opcional)"
+    },
     "common": {
       "show": "Ver",
       "hide": "Ocultar"

@@ -104,6 +104,8 @@
     "spanishAudioNote": "Video audio is in Spanish.",
     "mirTitle": "Video: MIR credentials step by step",
     "mirDescription": "How to obtain them from the official Spanish portal and paste them in MIR settings (Spain regulations).",
+    "onboardingTitle": "Video: onboarding walkthrough (≈2 min)",
+    "onboardingDescription": "See all 6 wizard screens. Watch on mobile before you start.",
     "cleaningTitle": "Video: cleaner calendar link",
     "cleaningDescription": "Create one link per team; the calendar updates automatically from your bookings.",
     "micrositeTitle": "Video: microsite and Stripe payouts",
@@ -478,6 +480,29 @@
   "onboarding": {
     "appName": "Delfín Check-in",
     "stepOf": "Step {currentStep} of {totalSteps}",
+    "progress": {
+      "configuring": "Setting up your property",
+      "currentStepLabel": "Now: {label}",
+      "stepLabels": {
+        "1": "Password",
+        "2": "Business details",
+        "3": "Plan & payment",
+        "4": "MIR registration",
+        "5": "First unit",
+        "6": "Payouts (optional)"
+      }
+    },
+    "welcome": {
+      "title": "Welcome: get your property ready in 6 steps",
+      "subtitle": "No tech skills needed. This wizard tells you what to do on each screen. Works on mobile; we save your progress if you leave and come back.",
+      "stepsTitle": "What you will set up",
+      "step1": "1. Personal password",
+      "step2": "2. Property details (invoices & guest form)",
+      "step3": "3. Plan & payment (if you choose a paid plan)",
+      "step4": "4. MIR credentials for guest registration (Spain)",
+      "step5": "5. Your first unit or room",
+      "step6": "6. Stripe payouts (optional)"
+    },
     "common": {
       "show": "Show",
       "hide": "Hide"
