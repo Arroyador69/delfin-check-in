@@ -3,6 +3,9 @@ import { sql } from '@/lib/db';
 import { getTenantById } from '@/lib/tenant';
 import { hasCheckinInstructionsEmailPlan } from '@/lib/checkin-email-plan';
 
+const TENANT_ID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 /**
  * URL base del HTML del formulario (sin querystring). Cada tenant sigue usando la misma página;
  * el desambiguado va en la query (tenant_id, api_endpoint, etc.).
@@ -46,6 +49,16 @@ export async function GET(
       );
     }
 
+    // Evita NeonDbError (invalid input syntax for type uuid) con slugs malformados o bots.
+    if (!TENANT_ID_RE.test(slug.trim())) {
+      return NextResponse.json(
+        { error: 'Formulario no encontrado o inactivo' },
+        { status: 404 }
+      );
+    }
+
+    const tenantId = slug.trim();
+
     // Buscar tenant por slug (usar ID del tenant como slug)
     const result = await sql`
       SELECT 
@@ -55,7 +68,7 @@ export async function GET(
         t.status,
         t.config
       FROM tenants t
-      WHERE t.id = ${slug}
+      WHERE t.id = ${tenantId}
         AND t.status = 'active'
     `;
 
@@ -134,7 +147,7 @@ export async function GET(
     try {
       const propRow = await sql`
         SELECT id::text AS id FROM tenant_properties
-        WHERE tenant_id = ${tenant.id}::uuid
+        WHERE tenant_id = ${tenant.id}
         ORDER BY id ASC
         LIMIT 1
       `;
