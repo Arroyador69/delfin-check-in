@@ -16,22 +16,38 @@ export async function PUT(req: NextRequest) {
       );
     }
 
-    const { onboarding_status } = await req.json();
+    const body = await req.json().catch(() => ({}));
+    const { onboarding_status, deferred_tasks } = body as {
+      onboarding_status?: string;
+      deferred_tasks?: string[];
+    };
 
     // Validar status
-    if (!['pending', 'in_progress', 'completed'].includes(onboarding_status)) {
+    if (!onboarding_status || !['pending', 'in_progress', 'completed'].includes(onboarding_status)) {
       return NextResponse.json(
         { success: false, error: 'Estado de onboarding inválido' },
         { status: 400 }
       );
     }
 
-    // Actualizar onboarding_status
-    await sql`
-      UPDATE tenants
-      SET onboarding_status = ${onboarding_status}, updated_at = NOW()
-      WHERE id = ${tenantId}
-    `;
+    // Actualizar onboarding_status (+ tareas aplazadas en config)
+    if (Array.isArray(deferred_tasks) && deferred_tasks.length > 0) {
+      const patch = JSON.stringify({ onboarding_deferred: deferred_tasks });
+      await sql`
+        UPDATE tenants
+        SET
+          onboarding_status = ${onboarding_status},
+          config = COALESCE(config, '{}'::jsonb) || ${patch}::jsonb,
+          updated_at = NOW()
+        WHERE id = ${tenantId}
+      `;
+    } else {
+      await sql`
+        UPDATE tenants
+        SET onboarding_status = ${onboarding_status}, updated_at = NOW()
+        WHERE id = ${tenantId}
+      `;
+    }
 
     const isProduction = process.env.NODE_ENV === 'production';
     const res = NextResponse.json({

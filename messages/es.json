@@ -306,6 +306,20 @@
     "upgradePlan": "Mejorar Plan",
     "logout": "Cerrar Sesión",
     "loadingDashboard": "Cargando dashboard...",
+    "onboardingBanner": {
+      "title": "Te faltan {count, plural, one {# paso} other {# pasos}} para terminar la configuración",
+      "body": "Estás a mitad del asistente inicial. Puedes continuar desde el móvil en unos minutos.",
+      "cta": "Continuar configuración",
+      "video": "Ver vídeo guía (2 min)",
+      "dismiss": "Ocultar por ahora",
+      "steps": {
+        "password": "Contraseña",
+        "company": "Datos negocio",
+        "plan": "Plan",
+        "units": "Unidades",
+        "mir": "MIR"
+      }
+    },
     "planInfo": "Plan {planName}",
     "monthlyPrice": "€{price}/mes",
     "roomUsage": "Uso de habitaciones",
@@ -595,7 +609,9 @@
       "next": "Siguiente",
       "completing": "Completando...",
       "completeSetup": "Completar Configuración",
-      "cleaningHint": "El calendario de limpieza y los horarios por habitación los configuras cuando quieras en Configuración; no hace falta hacerlo ahora."
+      "cleaningHint": "El calendario de limpieza y los horarios por habitación los configuras cuando quieras en Configuración; no hace falta hacerlo ahora.",
+      "skipForNow": "Terminar sin añadir unidades ahora",
+      "skipHint": "Podrás crear habitaciones o apartamentos más tarde desde Ajustes → Propiedades. El panel te recordará los pasos pendientes."
     },
     "step5": {
       "title": "Calendario de Limpieza",

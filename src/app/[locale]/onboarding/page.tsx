@@ -698,9 +698,9 @@ export default function OnboardingPage() {
     }
   };
 
-  const handleCompleteOnboarding = async () => {
+  const handleCompleteOnboarding = async (opts?: { skipUnits?: boolean }) => {
     setError('');
-    if (!validateStep(5)) {
+    if (!opts?.skipUnits && !validateStep(5)) {
       return;
     }
     setLoading(true);
@@ -735,7 +735,10 @@ export default function OnboardingPage() {
       await fetch('/api/tenant/onboarding-status', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ onboarding_status: 'completed' })
+        body: JSON.stringify({
+          onboarding_status: 'completed',
+          deferred_tasks: opts?.skipUnits ? ['units', 'mir', 'stripe'] : undefined,
+        }),
       });
 
       const dashLocale =
@@ -1454,21 +1457,34 @@ export default function OnboardingPage() {
           <p className="text-blue-800 text-sm">{t('step4.cleaningHint')}</p>
         </div>
 
-        <div className="flex justify-between mt-8">
+        <div className="flex flex-col sm:flex-row sm:justify-between gap-3 mt-8">
           <button
             onClick={handlePrevious}
-            className="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600"
+            className="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 min-h-[44px]"
           >
             {t('step4.previous')}
           </button>
-          <button
-            onClick={handleFinishStep5}
-            disabled={loading || !formData.propertyAdded}
-            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
-          >
-            {loading ? t('step4.completing') : t('step4.next')}
-          </button>
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+            {!formData.propertyAdded && (
+              <button
+                type="button"
+                onClick={() => void handleCompleteOnboarding({ skipUnits: true })}
+                disabled={loading}
+                className="border border-gray-300 text-gray-800 px-6 py-2 rounded-lg hover:bg-gray-50 disabled:opacity-50 min-h-[44px] text-sm"
+              >
+                {t('step4.skipForNow')}
+              </button>
+            )}
+            <button
+              onClick={handleFinishStep5}
+              disabled={loading || !formData.propertyAdded}
+              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed min-h-[44px]"
+            >
+              {loading ? t('step4.completing') : t('step4.next')}
+            </button>
+          </div>
         </div>
+        <p className="text-xs text-gray-500 mt-3 leading-relaxed">{t('step4.skipHint')}</p>
       </div>
     </div>
   );

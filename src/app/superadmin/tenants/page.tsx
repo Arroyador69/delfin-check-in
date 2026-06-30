@@ -65,9 +65,18 @@ function tenantOnboardingProgressLabel(status?: string | null): string {
 export default function TenantsPage() {
   const [tenants, setTenants] = useState<Tenant[]>([])
   const [loading, setLoading] = useState(true)
+  const [duplicateGroups, setDuplicateGroups] = useState<
+    Array<{ key: string; reason: string; tenants: Array<{ id: string; email: string; name: string }> }>
+  >([])
 
   useEffect(() => {
     fetchTenants()
+    fetch('/api/superadmin/tenant-duplicates')
+      .then((r) => r.json())
+      .then((d) => {
+        if (d?.success && Array.isArray(d.groups)) setDuplicateGroups(d.groups)
+      })
+      .catch(() => {})
   }, [])
 
   const fetchTenants = async () => {
@@ -90,6 +99,31 @@ export default function TenantsPage() {
         <h1 className="text-3xl font-bold text-gray-900">📋 Todos los Tenants</h1>
         <p className="text-gray-700 mt-2">Gestión de todos los clientes de la plataforma</p>
       </div>
+
+      {duplicateGroups.length > 0 && (
+        <div className="mb-6 rounded-lg border border-amber-300 bg-amber-50 p-4">
+          <h2 className="font-semibold text-amber-950 mb-2">⚠️ Posibles cuentas duplicadas ({duplicateGroups.length})</h2>
+          <p className="text-sm text-amber-900 mb-3">
+            Mismo nombre o parte local del email distinta (ej. Gmail vs Yahoo). Revisa Polar y unifica el plan en el tenant correcto.
+          </p>
+          <ul className="space-y-3 text-sm">
+            {duplicateGroups.slice(0, 8).map((g) => (
+              <li key={`${g.reason}-${g.key}`} className="bg-white/80 rounded-md p-3 border border-amber-200">
+                <span className="font-medium text-gray-800">
+                  {g.reason === 'name' ? 'Nombre' : 'Email local'}: {g.key}
+                </span>
+                <ul className="mt-1 text-gray-700 list-disc list-inside">
+                  {g.tenants.map((t) => (
+                    <li key={t.id}>
+                      {t.email} · {t.name} · <code className="text-xs">{t.id.slice(0, 8)}…</code>
+                    </li>
+                  ))}
+                </ul>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {loading ? (
         <div className="text-center py-12">
