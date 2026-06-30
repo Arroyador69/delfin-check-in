@@ -41,13 +41,9 @@ describe('MinisterioClientOfficial (transporte SOAP)', () => {
     vi.restoreAllMocks();
   });
 
-  it('altaPV no lanza TypeError si fetch falla (error controlado)', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async () => {
-        throw new TypeError('fetch failed');
-      })
-    );
+  it('altaPV devuelve error controlado si el transporte HTTPS falla', async () => {
+    const transport = await import('@/lib/mir-soap-transport');
+    vi.spyOn(transport, 'mirSoapPost').mockRejectedValue(new TypeError('fetch failed'));
 
     const client = new MinisterioClientOfficial({
       baseUrl: 'https://hospedajes.ses.mir.es/hospedajes-web/ws/v1/comunicacion',
@@ -65,11 +61,9 @@ describe('MinisterioClientOfficial (transporte SOAP)', () => {
   });
 
   it('consultaCatalogo devuelve error controlado ante fallo TLS', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async () => {
-        throw new TypeError('unable to verify the first certificate');
-      })
+    const transport = await import('@/lib/mir-soap-transport');
+    vi.spyOn(transport, 'mirSoapPost').mockRejectedValue(
+      new Error('unable to verify the first certificate')
     );
 
     const client = new MinisterioClientOfficial({

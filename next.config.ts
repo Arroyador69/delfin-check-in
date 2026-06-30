@@ -17,6 +17,12 @@ const nextConfig: NextConfig = {
   // Evita que Next infiera la raíz del workspace (p.ej. $HOME) por múltiples lockfiles.
   // Esto mejora el output file tracing y previene errores en runtime en Vercel.
   outputFileTracingRoot: path.resolve(__dirname),
+  // Certificado intermedio FNMT para TLS con hospedajes.ses.mir.es (lectura en runtime vía fs).
+  outputFileTracingIncludes: {
+    '/api/ministerio': ['./certs/ACCOMP.pem'],
+    '/api/registro-flex': ['./certs/ACCOMP.pem'],
+    '/api/public/form': ['./certs/ACCOMP.pem'],
+  },
   productionBrowserSourceMaps: false,
   // output: 'standalone' REMOVIDO - causaba conflictos con next-intl
   // Usamos dynamic: 'force-dynamic' en layouts en su lugar
