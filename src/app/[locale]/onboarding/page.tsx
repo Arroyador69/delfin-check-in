@@ -1562,14 +1562,26 @@ export default function OnboardingPage() {
   }
 
   async function pollCheckoutCompletion(targetPlan: PlanId) {
+    try {
+      await fetch('/api/polar/confirm-payment', {
+        method: 'POST',
+        credentials: 'include',
+      });
+    } catch {
+      // El polling sigue aunque falle la sincronización puntual.
+    }
+
     const start = Date.now();
-    while (Date.now() - start < 25000) {
+    while (Date.now() - start < 30000) {
       try {
         const res = await fetch('/api/tenant', { credentials: 'include' });
         const data = await res.json();
         const planType = data?.tenant?.plan_type || 'free';
-        const subStatus = data?.tenant?.subscription_status || '';
-        if (planType === targetPlan && (subStatus === 'active' || subStatus === 'trialing' || subStatus === 'past_due')) {
+        const polarStatus = String(data?.tenant?.polar_subscription_status || '').toLowerCase();
+        const legalModule = !!data?.tenant?.legal_module;
+        const polarOk =
+          polarStatus === 'active' || polarStatus === 'trialing' || polarStatus === 'past_due';
+        if (planType === targetPlan && (polarOk || legalModule)) {
           setFormData(prev => ({ ...prev, checkoutCompleted: true }));
           return;
         }

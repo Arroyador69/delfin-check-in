@@ -10,7 +10,7 @@ export default defineConfig({
   test: {
     environment: 'node',
     // Smoke tests críticos para MIR (sin depender de DB ni de endpoints reales)
-    include: ['tests/mir-*.test.ts', 'tests/ministerio-*.test.ts', 'tests/superadmin-*.test.ts'],
+    include: ['tests/mir-*.test.ts', 'tests/ministerio-*.test.ts', 'tests/superadmin-*.test.ts', 'tests/polar-*.test.ts'],
     exclude: ['tests/tenant-isolation.test.ts'],
     testTimeout: 60_000,
   },

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getTenantId } from '@/lib/tenant';
-import { recordPolarCheckoutIntent } from '@/lib/polar-checkout-intent';
+import { getTenantContactForPolarLog, recordPolarCheckoutIntent } from '@/lib/polar-checkout-intent';
 
 function baseUrl(req: NextRequest): string {
   const envUrl = process.env.NEXT_PUBLIC_APP_URL?.trim();
@@ -88,6 +88,13 @@ export async function GET(req: NextRequest) {
   checkoutUrl.searchParams.set('seats', String(seats));
   checkoutUrl.searchParams.set('customerExternalId', tenantId);
   checkoutUrl.searchParams.set('metadata', metadata);
+  const contact = await getTenantContactForPolarLog(tenantId);
+  if (contact.email) {
+    checkoutUrl.searchParams.set('customerEmail', contact.email);
+  }
+  if (contact.name) {
+    checkoutUrl.searchParams.set('customerName', contact.name);
+  }
   if (successUrlAbs) checkoutUrl.searchParams.set('success_url', successUrlAbs);
   if (returnUrlAbs) checkoutUrl.searchParams.set('return_url', returnUrlAbs);
 
