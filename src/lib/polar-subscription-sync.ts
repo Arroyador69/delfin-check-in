@@ -12,6 +12,7 @@ import {
   safePlanFromPolarMetadata,
   subscribedRoomsFromPolarSubscription,
 } from '@/lib/polar-plan-config';
+import { maybeSendPostPaymentOnboardingEmail } from '@/lib/polar-post-payment-onboarding';
 
 export type PolarSyncResult = {
   ok: boolean;
@@ -264,6 +265,8 @@ export async function syncTenantFromPolarSubscription(
     status: status || 'active',
     subscribedRooms: subscribedRoomsFromPolarSubscription(sub),
   });
+
+  await maybeSendPostPaymentOnboardingEmail(tenantId, sub, eventType);
 
   console.log(`✅ [polar sync] plan=${plan} tenant=${tenantId} event=${eventType}`);
   return { ok: true, tenantId, plan, action: 'activated' };

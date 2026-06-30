@@ -5,6 +5,7 @@ import type { Tenant } from '@/lib/tenant';
 import { getTenantPlanPresentation } from '@/lib/tenant-plan-billing';
 import { getTenantBusinessCurrency, getTenantMoneyFormatLocale } from '@/lib/tenant-currency';
 import { hasCheckinInstructionsEmailPlan } from '@/lib/checkin-email-plan';
+import { ensurePolarTenantColumns } from '@/lib/polar-subscription-sync';
 
 function parseTenantStat(value: unknown): number {
   if (value == null) return 0;
@@ -32,6 +33,8 @@ export async function GET(req: NextRequest) {
         { status: 401 }
       );
     }
+
+    await ensurePolarTenantColumns();
 
     // Asegurar que las tablas de tenant existen
     try {
@@ -72,7 +75,8 @@ export async function GET(req: NextRequest) {
       SELECT 
         id, name, email, plan_id, plan_type, max_rooms, current_rooms, 
         ads_enabled, legal_module, country_code, onboarding_status,
-        status, config, created_at
+        status, config, created_at,
+        polar_subscription_status, polar_subscription_id
       FROM tenants 
       WHERE id = ${tenantId}
     `;
@@ -240,6 +244,10 @@ export async function GET(req: NextRequest) {
             ? 'completed'
             : tenant.onboarding_status,
         status: tenant.status,
+        polar_subscription_status: (tenant as { polar_subscription_status?: string | null })
+          .polar_subscription_status || null,
+        polar_subscription_id: (tenant as { polar_subscription_id?: string | null })
+          .polar_subscription_id || null,
         config: tenant.config,
         created_at: tenant.created_at,
         checkin_instructions_email: hasCheckinInstructionsEmailPlan(tenant as Tenant),

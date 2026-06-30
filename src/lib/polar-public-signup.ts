@@ -11,6 +11,7 @@ import {
   type PolarPaidPlan,
 } from '@/lib/polar-plan-config';
 import { applyPaidPlanToTenant } from '@/lib/polar-subscription-sync';
+import { maybeSendPostPaymentOnboardingEmail } from '@/lib/polar-post-payment-onboarding';
 
 export type PolarPublicPlan = PolarPaidPlan;
 
@@ -74,6 +75,7 @@ export async function provisionTenantFromPolarPublicSubscription(sub: any): Prom
       customerId,
       status: 'active',
     });
+    await maybeSendPostPaymentOnboardingEmail(existing.id, sub, 'subscription.active');
     return;
   }
 

@@ -123,3 +123,21 @@ WHERE polar_subscription_id IS NOT NULL
 ```
 
 Debe devolver **0 filas** tras arreglar manualmente los casos pendientes.
+
+## 5. Post-pago en onboarding (2026)
+
+- `pollCheckoutCompletion` usa `polar_subscription_status` / `legal_module` (no `subscription_status` de Stripe).
+- `POST /api/polar/confirm-payment` sincroniza desde Polar si el webhook va tarde.
+- Tras `subscription.active`, email con magic link si `onboarding_status != 'completed'`.
+- Checkout con sesión fuerza `customerEmail` del tenant en Polar (evita duplicados Gmail/Yahoo).
+
+### Arreglo manual — email distinto en Polar vs tenant
+
+```sql
+SELECT id, email, plan_type, legal_module, polar_subscription_id, polar_customer_id,
+       onboarding_status, polar_last_checkout_context
+FROM tenants
+WHERE LOWER(email) IN ('gabbyfrancy@yahoo.it', 'gabbyfrancy67@gmail.com');
+```
+
+Activar plan en el tenant correcto y alinear `polar_customer_id` con el cliente Polar que pagó.
