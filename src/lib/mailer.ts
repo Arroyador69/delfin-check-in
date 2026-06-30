@@ -55,6 +55,17 @@ function normalizeOnboardingVariant(v?: OnboardingEmailVariant): OnboardingEmail
 
 type EmailLocale = 'es' | 'en' | 'it' | 'pt' | 'fr' | 'fi' | 'sv';
 
+/** Texto de los 6 pasos del onboarding (HTML inline para clientes de correo). */
+const ONBOARDING_STEPS_HTML: Record<EmailLocale, string> = {
+  es: '<strong>1.</strong> Contraseña de acceso &nbsp;·&nbsp; <strong>2.</strong> Datos del negocio &nbsp;·&nbsp; <strong>3.</strong> Plan &nbsp;·&nbsp; <strong>4.</strong> MIR (opcional) &nbsp;·&nbsp; <strong>5.</strong> Primera propiedad &nbsp;·&nbsp; <strong>6.</strong> Cobros',
+  en: '<strong>1.</strong> Password &nbsp;·&nbsp; <strong>2.</strong> Business details &nbsp;·&nbsp; <strong>3.</strong> Plan &nbsp;·&nbsp; <strong>4.</strong> MIR (optional) &nbsp;·&nbsp; <strong>5.</strong> First property &nbsp;·&nbsp; <strong>6.</strong> Payouts',
+  it: '<strong>1.</strong> Password &nbsp;·&nbsp; <strong>2.</strong> Dati aziendali &nbsp;·&nbsp; <strong>3.</strong> Piano &nbsp;·&nbsp; <strong>4.</strong> MIR (opzionale) &nbsp;·&nbsp; <strong>5.</strong> Prima proprietà &nbsp;·&nbsp; <strong>6.</strong> Pagamenti',
+  pt: '<strong>1.</strong> Palavra-passe &nbsp;·&nbsp; <strong>2.</strong> Dados do negócio &nbsp;·&nbsp; <strong>3.</strong> Plano &nbsp;·&nbsp; <strong>4.</strong> MIR (opcional) &nbsp;·&nbsp; <strong>5.</strong> Primeira propriedade &nbsp;·&nbsp; <strong>6.</strong> Cobranças',
+  fr: '<strong>1.</strong> Mot de passe &nbsp;·&nbsp; <strong>2.</strong> Infos entreprise &nbsp;·&nbsp; <strong>3.</strong> Forfait &nbsp;·&nbsp; <strong>4.</strong> MIR (optionnel) &nbsp;·&nbsp; <strong>5.</strong> Premier logement &nbsp;·&nbsp; <strong>6.</strong> Paiements',
+  fi: '<strong>1.</strong> Salasana &nbsp;·&nbsp; <strong>2.</strong> Yritystiedot &nbsp;·&nbsp; <strong>3.</strong> Paketti &nbsp;·&nbsp; <strong>4.</strong> MIR (valinnainen) &nbsp;·&nbsp; <strong>5.</strong> Ensimmäinen kohde &nbsp;·&nbsp; <strong>6.</strong> Maksut',
+  sv: '<strong>1.</strong> Lösenord &nbsp;·&nbsp; <strong>2.</strong> Företagsuppgifter &nbsp;·&nbsp; <strong>3.</strong> Plan &nbsp;·&nbsp; <strong>4.</strong> MIR (valfritt) &nbsp;·&nbsp; <strong>5.</strong> Första boendet &nbsp;·&nbsp; <strong>6.</strong> Utbetalningar',
+};
+
 function normalizeEmailLocale(loc?: string | null): EmailLocale {
   const v = String(loc || '')
     .trim()
@@ -82,32 +93,32 @@ function onboardingEmailCopy(locale: EmailLocale, variant: OnboardingEmailVarian
   const base = {
     es: {
       subject: {
-        waitlist_launch: '🐬 Delfín Check-in: ya puedes probarlo (lista de espera)',
-        web_plan_paid: '🐬 Delfín Check-in: confirma tu acceso (suscripción web)',
+        waitlist_launch: '🐬 Delfín Check-in: tu cuenta está lista — empieza gratis',
+        web_plan_paid: '🐬 Delfín Check-in: pago confirmado — termina tu configuración',
         default: '🐬 Delfín Check-in: configura tu alojamiento en 6 pasos',
       },
       heroTitle: {
-        waitlist_launch: 'Tu software Delfín Check-in ya está listo',
-        web_plan_paid: 'Suscripción confirmada',
+        waitlist_launch: 'Bienvenido a Delfín Check-in',
+        web_plan_paid: 'Pago confirmado — ya casi está',
         default: 'Configuración guiada en 6 pasos',
       },
       heroSubtitle: {
-        waitlist_launch: 'Puedes probarlo gratis con una propiedad — te guiamos en el onboarding',
-        web_plan_paid: 'Un último paso: configura tu cuenta en el panel web',
-        default: 'Te llevamos de la mano: contraseña, datos, plan, MIR, unidades y cobros',
+        waitlist_launch: 'Plan gratuito con 1 propiedad · panel web adaptado a móvil',
+        web_plan_paid: 'Tu plan ya está activo · un último paso en el panel',
+        default: 'Contraseña, datos, plan, MIR, propiedad y cobros — desde el móvil también',
       },
       bodyHeading: {
-        waitlist_launch: '¡Gracias por confiar en la lista de espera!',
-        web_plan_paid: 'Accede y termina la configuración',
-        default: 'Estás configurando Delfín Check-in',
+        waitlist_launch: '¡Gracias por registrarte!',
+        web_plan_paid: 'Continúa donde lo dejaste',
+        default: 'Tu cuenta en Delfín Check-in está lista',
       },
       bodyLead: {
         waitlist_launch:
-          'Ya hemos activado tu acceso. El panel web te guía paso a paso (país, unidades, integraciones). Puedes usar el plan gratuito para <strong>una propiedad</strong> sin coste mientras exploras.',
+          'Hemos activado tu acceso en <strong>admin.delfincheckin.com</strong>. Pulsa el botón y sigue el asistente: primero crearás tu <strong>contraseña</strong> y después completarás los datos de tu alojamiento. Puedes empezar con el <strong>plan gratuito (1 propiedad)</strong> o contratar un plan de pago cuando quieras.',
         web_plan_paid:
-          'Gracias por contratar Delfín Check-in. Hemos creado tu espacio de trabajo: el enlace siguiente abre el <strong>onboarding</strong> (datos del negocio, unidades, integraciones). La facturación recurrente de tu plan se gestiona de forma segura en la web con nuestro partner de pagos (Polar), como viste en el checkout.',
+          'Gracias por contratar Delfín Check-in. Tu suscripción ya está activa (gestión segura en la web con Polar). Abre el enlace, define tu <strong>contraseña</strong> si aún no lo hiciste y termina el asistente: datos del negocio, unidades, MIR y cobros.',
         default:
-          'Tu cuenta ya está creada. El asistente del panel te guía en <strong>6 pasos sencillos</strong> (desde el móvil también): contraseña, datos del alojamiento, plan, credenciales MIR, primera unidad y cobros opcionales. Pulsa el botón para continuar donde lo dejaste:',
+          'Tu cuenta ya está creada. El asistente del panel te guía en <strong>6 pasos</strong> (móvil u ordenador): contraseña, datos del alojamiento, plan, credenciales MIR, primera propiedad y cobros opcionales. Pulsa el botón para continuar:',
       },
       cta: 'Comenzar onboarding',
       importantTitle: 'Importante:',
@@ -120,19 +131,21 @@ function onboardingEmailCopy(locale: EmailLocale, variant: OnboardingEmailVarian
       antivirusHelpLink: 'Ver guía paso a paso',
       autoMsg: 'Este mensaje es automático; por favor no respondas a este correo.',
       tempPwdTitle: 'Contraseña temporal:',
-      tempPwdHint: 'Podrás cambiarla durante el proceso de onboarding.',
+      tempPwdHint: 'En el paso 1 del asistente podrás cambiarla por la que prefieras.',
       text: {
         waitlist_launch: (url: string, pwd?: string) =>
           [
-            '🐬 Delfín Check-in — acceso desde la lista de espera',
+            '🐬 Delfín Check-in — tu cuenta está lista',
             '',
-            'Ya puedes probar el software de gestión para una propiedad de forma gratuita.',
+            'Gracias por registrarte en delfincheckin.com. Tu acceso en producción ya está activo.',
             '',
-            'Enlace para completar el onboarding (panel web):',
+            'Pasos del asistente: 1) Contraseña  2) Datos del negocio  3) Plan  4) MIR (opcional)  5) Primera propiedad  6) Cobros',
+            '',
+            'Enlace al panel (móvil u ordenador):',
             url,
             '',
-            pwd ? `Contraseña temporal: ${pwd}` : '',
-            'App móvil: las versiones Android (Google Play) e iOS (App Store) están en revisión en las tiendas; mientras tanto usa el panel web.',
+            pwd ? `Contraseña temporal (paso 1): ${pwd}` : '',
+            'El panel web está adaptado al móvil. Las apps nativas para tiendas están en revisión.',
             '',
             'Si no ves el correo, revisa Spam o Promociones.',
             '',
@@ -144,12 +157,14 @@ function onboardingEmailCopy(locale: EmailLocale, variant: OnboardingEmailVarian
           [
             '🐬 Delfín Check-in — suscripción activa',
             '',
-            'Gracias por contratar Delfín Check-in. Completa el onboarding en el panel web:',
+            'Tu pago se ha confirmado. Termina la configuración en el panel:',
+            '',
+            'Pasos: contraseña → datos del negocio → plan (ya activo) → MIR → propiedad → cobros',
             '',
             url,
             '',
             pwd ? `Contraseña temporal: ${pwd}` : '',
-            'La facturación recurrente del plan se gestiona en la web (Polar), como en el checkout. La suscripción del software no se contrata en las tiendas de apps.',
+            'La facturación recurrente se gestiona en la web (Polar).',
             '',
             'Si no ves el correo, revisa Spam o Promociones.',
             '',
@@ -177,32 +192,32 @@ function onboardingEmailCopy(locale: EmailLocale, variant: OnboardingEmailVarian
     },
     en: {
       subject: {
-        waitlist_launch: '🐬 Delfín Check-in: you can start now (waitlist)',
-        web_plan_paid: '🐬 Delfín Check-in: access confirmed (web subscription)',
-        default: '🐬 Delfín Check-in: set up your property in 6 easy steps',
+        waitlist_launch: '🐬 Delfín Check-in: your account is ready — start free',
+        web_plan_paid: '🐬 Delfín Check-in: payment confirmed — finish setup',
+        default: '🐬 Delfín Check-in: set up your property in 6 steps',
       },
       heroTitle: {
-        waitlist_launch: 'Your Delfín Check-in account is ready',
-        web_plan_paid: 'Subscription confirmed',
+        waitlist_launch: 'Welcome to Delfín Check-in',
+        web_plan_paid: 'Payment confirmed — almost there',
         default: 'Guided setup in 6 steps',
       },
       heroSubtitle: {
-        waitlist_launch: 'Start free with one property — we’ll guide you through onboarding',
-        web_plan_paid: 'One last step: set up your account in the web dashboard',
-        default: 'We walk you through password, details, plan, MIR, units and payouts',
+        waitlist_launch: 'Free plan with 1 property · mobile-friendly web dashboard',
+        web_plan_paid: 'Your plan is active · one last step in the dashboard',
+        default: 'Password, details, plan, MIR, property and payouts — on mobile too',
       },
       bodyHeading: {
-        waitlist_launch: 'Thanks for joining the waitlist!',
-        web_plan_paid: 'Access and finish setup',
-        default: 'You are setting up Delfín Check-in',
+        waitlist_launch: 'Thanks for signing up!',
+        web_plan_paid: 'Continue where you left off',
+        default: 'Your Delfín Check-in account is ready',
       },
       bodyLead: {
         waitlist_launch:
-          'Your access is active. The web dashboard guides you step by step (country, units, integrations). You can use the free plan for <strong>one property</strong> while you explore.',
+          'Your access at <strong>admin.delfincheckin.com</strong> is active. Tap the button and follow the wizard: first set your <strong>password</strong>, then complete your property details. Start on the <strong>free plan (1 property)</strong> or upgrade anytime.',
         web_plan_paid:
-          'Thanks for subscribing to Delfín Check-in. We created your workspace: the link below opens <strong>onboarding</strong> (business details, units, integrations). Your recurring billing is handled securely on the web with our payments partner (Polar), as shown at checkout.',
+          'Thanks for subscribing. Your plan is already active (secure billing on the web with Polar). Open the link, set your <strong>password</strong> if needed, and finish: business details, units, MIR and payouts.',
         default:
-          'Your account is ready. The guided wizard has <strong>6 simple steps</strong> (mobile-friendly): password, property details, plan, MIR credentials, first unit, and optional payouts. Tap below to continue:',
+          'Your account is ready. The dashboard wizard has <strong>6 steps</strong> (mobile or desktop): password, property details, plan, MIR credentials, first unit, optional payouts. Tap below to continue:',
       },
       cta: 'Start onboarding',
       importantTitle: 'Important:',
@@ -215,19 +230,21 @@ function onboardingEmailCopy(locale: EmailLocale, variant: OnboardingEmailVarian
       antivirusHelpLink: 'Step-by-step guide',
       autoMsg: 'This is an automated message; please do not reply.',
       tempPwdTitle: 'Temporary password:',
-      tempPwdHint: 'You can change it during onboarding.',
+      tempPwdHint: 'You can change it in step 1 of the wizard.',
       text: {
         waitlist_launch: (url: string, pwd?: string) =>
           [
-            '🐬 Delfín Check-in — waitlist access',
+            '🐬 Delfín Check-in — your account is ready',
             '',
-            'You can now try the software for one property for free.',
+            'Thanks for signing up at delfincheckin.com. Your production access is active.',
             '',
-            'Onboarding link (web dashboard):',
+            'Wizard steps: 1) Password  2) Business details  3) Plan  4) MIR (optional)  5) First property  6) Payouts',
+            '',
+            'Dashboard link (mobile or desktop):',
             url,
             '',
-            pwd ? `Temporary password: ${pwd}` : '',
-            'Mobile apps: Android (Google Play) and iOS (App Store) are under review; meanwhile, use the web dashboard.',
+            pwd ? `Temporary password (step 1): ${pwd}` : '',
+            'The web dashboard works on mobile. Native store apps are under review.',
             '',
             "If you don't see the email, check Spam or Promotions.",
             '',
@@ -239,12 +256,14 @@ function onboardingEmailCopy(locale: EmailLocale, variant: OnboardingEmailVarian
           [
             '🐬 Delfín Check-in — subscription active',
             '',
-            'Thanks for subscribing. Complete onboarding in the web dashboard:',
+            'Your payment is confirmed. Finish setup in the dashboard:',
+            '',
+            'Steps: password → business details → plan (active) → MIR → property → payouts',
             '',
             url,
             '',
             pwd ? `Temporary password: ${pwd}` : '',
-            'Recurring billing is handled on the web (Polar), as at checkout. The software subscription is not purchased inside app stores.',
+            'Recurring billing is handled on the web (Polar).',
             '',
             "If you don't see the email, check Spam or Promotions.",
             '',
@@ -272,28 +291,28 @@ function onboardingEmailCopy(locale: EmailLocale, variant: OnboardingEmailVarian
     },
     it: {
       subject: {
-        waitlist_launch: '🐬 Delfín Check-in: puoi iniziare ora (lista d’attesa)',
+        waitlist_launch: '🐬 Delfín Check-in: il tuo account è pronto — inizia gratis',
         web_plan_paid: '🐬 Delfín Check-in: accesso confermato (abbonamento web)',
         default: '🐬 Benvenuto in Delfín Check-in — completa la configurazione',
       },
       heroTitle: {
-        waitlist_launch: 'Il tuo accesso a Delfín Check-in è pronto',
+        waitlist_launch: 'Benvenuto in Delfín Check-in',
         web_plan_paid: 'Abbonamento confermato',
         default: 'Benvenuto in Delfín Check-in',
       },
       heroSubtitle: {
-        waitlist_launch: 'Inizia gratis con una proprietà — ti guidiamo nell’onboarding',
+        waitlist_launch: 'Piano gratuito con 1 proprietà · pannello web adatto al mobile',
         web_plan_paid: 'Ultimo passo: configura il tuo account nel pannello web',
         default: 'La tua piattaforma di gestione per strutture ricettive',
       },
       bodyHeading: {
-        waitlist_launch: 'Grazie per esserti iscritto alla lista d’attesa!',
+        waitlist_launch: 'Grazie per esserti registrato!',
         web_plan_paid: 'Accedi e completa la configurazione',
         default: 'Pronto per iniziare!',
       },
       bodyLead: {
         waitlist_launch:
-          'Il tuo accesso è attivo. Il pannello web ti guida passo dopo passo (paese, unità, integrazioni). Puoi usare il piano gratuito per <strong>una proprietà</strong> mentre esplori.',
+          'Il tuo accesso su <strong>admin.delfincheckin.com</strong> è attivo. Apri il link e segui la procedura guidata: prima la <strong>password</strong>, poi i dati della struttura. Puoi iniziare con il <strong>piano gratuito (1 proprietà)</strong> o passare a un piano a pagamento quando vuoi.',
         web_plan_paid:
           'Grazie per aver sottoscritto Delfín Check-in. Abbiamo creato il tuo spazio di lavoro: il link qui sotto apre l’<strong>onboarding</strong> (dati aziendali, unità, integrazioni). La fatturazione ricorrente è gestita in modo sicuro sul web con il nostro partner (Polar), come visto al checkout.',
         default:
@@ -367,12 +386,12 @@ function onboardingEmailCopy(locale: EmailLocale, variant: OnboardingEmailVarian
     },
     pt: {
       subject: {
-        waitlist_launch: '🐬 Delfín Check-in: já pode começar (lista de espera)',
+        waitlist_launch: '🐬 Delfín Check-in: a sua conta está pronta — comece grátis',
         web_plan_paid: '🐬 Delfín Check-in: acesso confirmado (subscrição web)',
         default: '🐬 Bem-vindo ao Delfín Check-in — conclua a configuração',
       },
       heroTitle: {
-        waitlist_launch: 'O seu acesso ao Delfín Check-in está pronto',
+        waitlist_launch: 'Bem-vindo ao Delfín Check-in',
         web_plan_paid: 'Subscrição confirmada',
         default: 'Bem-vindo ao Delfín Check-in',
       },
@@ -382,7 +401,7 @@ function onboardingEmailCopy(locale: EmailLocale, variant: OnboardingEmailVarian
         default: 'A sua plataforma de gestão de alojamentos',
       },
       bodyHeading: {
-        waitlist_launch: 'Obrigado por entrar na lista de espera!',
+        waitlist_launch: 'Obrigado por se registar!',
         web_plan_paid: 'Aceda e conclua a configuração',
         default: 'Pronto para começar!',
       },
@@ -409,7 +428,7 @@ function onboardingEmailCopy(locale: EmailLocale, variant: OnboardingEmailVarian
       text: {
         waitlist_launch: (url: string, pwd?: string) =>
           [
-            '🐬 Delfín Check-in — acesso pela lista de espera',
+            '🐬 Delfín Check-in — a sua conta está pronta',
             '',
             'Já pode experimentar o software para uma propriedade gratuitamente.',
             '',
@@ -462,12 +481,12 @@ function onboardingEmailCopy(locale: EmailLocale, variant: OnboardingEmailVarian
     },
     fr: {
       subject: {
-        waitlist_launch: '🐬 Delfín Check-in : vous pouvez commencer (liste d’attente)',
+        waitlist_launch: '🐬 Delfín Check-in : votre compte est prêt — commencez gratuitement',
         web_plan_paid: '🐬 Delfín Check-in : accès confirmé (abonnement web)',
         default: '🐬 Bienvenue sur Delfín Check-in — terminez la configuration',
       },
       heroTitle: {
-        waitlist_launch: 'Votre accès à Delfín Check-in est prêt',
+        waitlist_launch: 'Bienvenue sur Delfín Check-in',
         web_plan_paid: 'Abonnement confirmé',
         default: 'Bienvenue sur Delfín Check-in',
       },
@@ -477,7 +496,7 @@ function onboardingEmailCopy(locale: EmailLocale, variant: OnboardingEmailVarian
         default: 'Votre plateforme de gestion d’hébergements',
       },
       bodyHeading: {
-        waitlist_launch: 'Merci d’avoir rejoint la liste d’attente !',
+        waitlist_launch: 'Merci pour votre inscription !',
         web_plan_paid: 'Accédez et terminez la configuration',
         default: 'Prêt à démarrer !',
       },
@@ -504,7 +523,7 @@ function onboardingEmailCopy(locale: EmailLocale, variant: OnboardingEmailVarian
       text: {
         waitlist_launch: (url: string, pwd?: string) =>
           [
-            '🐬 Delfín Check-in — accès liste d’attente',
+            '🐬 Delfín Check-in — votre compte est prêt',
             '',
             'Vous pouvez maintenant essayer le logiciel gratuitement pour un logement.',
             '',
@@ -557,7 +576,7 @@ function onboardingEmailCopy(locale: EmailLocale, variant: OnboardingEmailVarian
     },
     fi: {
       subject: {
-        waitlist_launch: '🐬 Delfín Check-in: voit aloittaa nyt (jonotuslista)',
+        waitlist_launch: '🐬 Delfín Check-in: tilisi on valmis — aloita ilmaiseksi',
         web_plan_paid: '🐬 Delfín Check-in: pääsy vahvistettu (web-tilaus)',
         default: '🐬 Tervetuloa Delfín Check-iniin — viimeistele käyttöönotto',
       },
@@ -572,7 +591,7 @@ function onboardingEmailCopy(locale: EmailLocale, variant: OnboardingEmailVarian
         default: 'Majoituksen hallinta-alustasi',
       },
       bodyHeading: {
-        waitlist_launch: 'Kiitos jonotuslistalle liittymisestä!',
+        waitlist_launch: 'Kiitos rekisteröitymisestä!',
         web_plan_paid: 'Siirry ja viimeistele käyttöönotto',
         default: 'Valmiina aloittamaan!',
       },
@@ -599,7 +618,7 @@ function onboardingEmailCopy(locale: EmailLocale, variant: OnboardingEmailVarian
       text: {
         waitlist_launch: (url: string, pwd?: string) =>
           [
-            '🐬 Delfín Check-in — jonotuslistan pääsy',
+            '🐬 Delfín Check-in — tilisi on valmis',
             '',
             'Voit nyt kokeilla ohjelmistoa ilmaiseksi yhdelle kohteelle.',
             '',
@@ -652,7 +671,7 @@ function onboardingEmailCopy(locale: EmailLocale, variant: OnboardingEmailVarian
     },
     sv: {
       subject: {
-        waitlist_launch: '🐬 Delfín Check-in: du kan börja nu (väntelista)',
+        waitlist_launch: '🐬 Delfín Check-in: ditt konto är klart — börja gratis',
         web_plan_paid: '🐬 Delfín Check-in: åtkomst bekräftad (webbprenumeration)',
         default: '🐬 Välkommen till Delfín Check-in — slutför konfigurationen',
       },
@@ -667,7 +686,7 @@ function onboardingEmailCopy(locale: EmailLocale, variant: OnboardingEmailVarian
         default: 'Din plattform för boendehantering',
       },
       bodyHeading: {
-        waitlist_launch: 'Tack för att du gick med i väntelistan!',
+        waitlist_launch: 'Tack för din registrering!',
         web_plan_paid: 'Öppna och slutför konfigurationen',
         default: 'Redo att börja!',
       },
@@ -694,7 +713,7 @@ function onboardingEmailCopy(locale: EmailLocale, variant: OnboardingEmailVarian
       text: {
         waitlist_launch: (url: string, pwd?: string) =>
           [
-            '🐬 Delfín Check-in — väntelisteåtkomst',
+            '🐬 Delfín Check-in — ditt konto är klart',
             '',
             'Du kan nu prova programvaran gratis för ett boende.',
             '',
@@ -776,7 +795,7 @@ export async function sendOnboardingEmail(params: {
   tempPassword?: string;
   /** Si existe, se guarda en email_tracking para métricas/superadmin. */
   tenantId?: string;
-  /** waitlist_launch: solo activación lista de espera (superadmin). web_plan_paid: alta tras pago en web/Polar (landing o /subscribe). */
+  /** waitlist_launch: registro desde landing/waitlist. web_plan_paid: tras pago Polar. default: reenvío/recuperación. */
   variant?: OnboardingEmailVariant;
   /** Idioma del email (si no se pasa, se infiere de la URL o cae a es). */
   locale?: string;
@@ -817,28 +836,21 @@ export async function sendOnboardingEmail(params: {
     const heroSubtitle = copy.heroSubtitle;
     const bodyHeading = copy.bodyHeading;
     const bodyLead = copy.bodyLead;
-    const waitlistAppsNote =
-      variant === 'waitlist_launch'
+    const onboardingStepsNote =
+      variant === 'waitlist_launch' || variant === 'default' || variant === 'web_plan_paid'
         ? `
           <tr>
             <td style="padding:0 32px 16px 32px;">
               <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color:#eff6ff;border-left:4px solid #2563eb;border-radius:4px;">
                 <tr>
                   <td style="padding:16px 20px;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.55;color:#1e3a8a;">
-                    <strong>App móvil (propietarios):</strong> las versiones para <strong>Android (Google Play)</strong> e <strong>iOS (App Store)</strong> están <strong>en revisión</strong> en las tiendas. Mientras tanto puedes usar el panel web en el ordenador o el móvil; te avisaremos cuando las tiendas las publiquen.
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>`
-        : variant === 'web_plan_paid'
-          ? `
-          <tr>
-            <td style="padding:0 32px 16px 32px;">
-              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color:#f0fdf4;border-left:4px solid #16a34a;border-radius:4px;">
-                <tr>
-                  <td style="padding:16px 20px;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.55;color:#14532d;">
-                    <strong>Sobre las apps móviles:</strong> puedes gestionar tu alojamiento desde el <strong>panel web</strong> en cualquier dispositivo. La suscripción del software no se contrata dentro de las tiendas de aplicaciones; el cobro recurrente lo haces en la web, como acabas de hacer.
+                    <strong>${emailLocale === 'es' ? 'Pasos del asistente' : emailLocale === 'en' ? 'Setup wizard' : 'Onboarding'}:</strong><br/>
+                    ${ONBOARDING_STEPS_HTML[emailLocale]}<br/><br/>
+                    ${emailLocale === 'es'
+                      ? 'El panel en <strong>admin.delfincheckin.com</strong> está optimizado para <strong>móvil y ordenador</strong>. Las apps nativas para tiendas están en revisión; puedes gestionar todo desde el navegador.'
+                      : emailLocale === 'en'
+                        ? 'The dashboard at <strong>admin.delfincheckin.com</strong> works on <strong>mobile and desktop</strong>. Native store apps are under review; manage everything in your browser.'
+                        : 'Use the web dashboard on <strong>admin.delfincheckin.com</strong> (mobile-friendly).'}
                   </td>
                 </tr>
               </table>
@@ -931,7 +943,7 @@ export async function sendOnboardingEmail(params: {
               <p style="margin:0 0 16px 0;">${bodyLead}</p>
             </td>
           </tr>
-          ${waitlistAppsNote}
+          ${onboardingStepsNote}
           <tr>
             <td align="center" style="padding:8px 32px 24px 32px;">
               <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center">

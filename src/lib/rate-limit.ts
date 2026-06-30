@@ -65,6 +65,7 @@ export const RATE_LIMIT_CONFIGS = {
  */
 export function isGlobalApiRateLimitExempt(pathname: string): boolean {
   if (pathname.startsWith('/api/stripe/webhook')) return true;
+  if (pathname.startsWith('/api/webhook/polar')) return true;
   if (pathname.startsWith('/api/telegram/webhook')) return true;
   if (pathname.startsWith('/api/whatsapp/webhook')) return true;
   if (pathname.startsWith('/api/webhooks/meta-leads')) return true;

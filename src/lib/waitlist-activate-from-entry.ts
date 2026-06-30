@@ -32,7 +32,7 @@ function onboardingPathForLocale(locale: string | undefined): string {
 
 /**
  * Activa una fila de waitlist aún no activada: enlaza tenant existente o crea tenant FREE,
- * genera token de onboarding y envía email (variant waitlist_launch).
+ * genera token de onboarding y envía email (variant waitlist_launch = alta desde landing).
  * No comprueba activated_at: debe hacerlo el caller.
  */
 export async function activateWaitlistEntryFromRow(
