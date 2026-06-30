@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
+import OnboardingIncompleteBanner from '@/components/OnboardingIncompleteBanner'
 
 /**
  * 🎨 LAYOUT ADMINISTRATIVO
@@ -153,9 +154,17 @@ export default function AdminLayout({ children, showHeader = true }: AdminLayout
     return null
   }
 
+  const hideOnboardingBanner =
+    pathname?.includes('/onboarding') || pathname?.includes('/admin-login')
+
   return (
     <div className="min-h-screen bg-gray-50">
       <main className="flex-1">
+        {!hideOnboardingBanner ? (
+          <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 pt-3 sm:pt-4">
+            <OnboardingIncompleteBanner />
+          </div>
+        ) : null}
         {children}
       </main>
     </div>
