@@ -1,11 +1,8 @@
-import { Agent } from 'undici';
 // Cliente MIR oficial basado en la documentación v3.1.3
 // Implementa estrictamente las especificaciones WSDL/XSD oficiales
 
 import JSZip from 'jszip';
-import fs from 'node:fs';
-import path from 'node:path';
-import tls from 'node:tls';
+import { mirSoapPost, type MirSoapResponse } from '@/lib/mir-soap-transport';
 
 export interface MinisterioConfig {
   baseUrl: string;
@@ -155,14 +152,6 @@ function escapeXml(value: string | null | undefined): string {
     .replace(/'/g, '&apos;');
 }
 
-function createAbortSignal(timeoutMs: number): AbortSignal {
-  if (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function') {
-    return AbortSignal.timeout(timeoutMs);
-  }
-  const controller = new AbortController();
-  setTimeout(() => controller.abort(), timeoutMs);
-  return controller.signal;
-}
 
 function soapTransportErrorMessage(error: unknown): string {
   if (!(error instanceof Error)) return 'Error desconocido en transporte SOAP';
@@ -335,7 +324,7 @@ function matchTag(xml: string, tag: string): string | null {
   return m ? m[1].trim() : null;
 }
 
-async function makeSoapRequest(cfg: MinisterioConfig, soapXml: string, operation: string): Promise<Response> {
+async function makeSoapRequest(cfg: MinisterioConfig, soapXml: string, operation: string): Promise<MirSoapResponse> {
   const contentLength = Buffer.byteLength(soapXml, 'utf8');
   
   // Validar credenciales antes de construir el header
@@ -355,70 +344,24 @@ async function makeSoapRequest(cfg: MinisterioConfig, soapXml: string, operation
     usernameLength: cfg.username.length,
     passwordLength: cfg.password.length,
     authHeaderPrefix: authHeader.substring(0, 20) + '...',
-    codigoArrendador: cfg.codigoArrendador
+    codigoArrendador: cfg.codigoArrendador,
+    operation,
   });
-  
-  const fetchOptions: RequestInit = {
-    method: 'POST',
-    headers: {
-      'Authorization': authHeader,
-      'Content-Type': 'text/xml; charset=utf-8',
-      'Content-Length': contentLength.toString(),
-      // Según WSDL oficial v3.1.3: soapAction="" en todas las operaciones (SOAP 1.1)
-      // En la práctica, muchos endpoints esperan exactamente: SOAPAction: ""
-      'SOAPAction': '""',
-      'User-Agent': 'Delfin_Check_in/1.0',
-      'Accept': 'text/xml, application/xml, */*',
-      'Cache-Control': 'no-cache',
-      'Pragma': 'no-cache',
-      'Connection': 'close'
-    },
-    body: soapXml,
-    signal: createAbortSignal(60000),
-    redirect: 'follow',
-    keepalive: false
+
+  const headers: Record<string, string> = {
+    Authorization: authHeader,
+    'Content-Type': 'text/xml; charset=utf-8',
+    'Content-Length': contentLength.toString(),
+    // Según WSDL oficial v3.1.3: soapAction="" en todas las operaciones (SOAP 1.1)
+    SOAPAction: '""',
+    'User-Agent': 'Delfin_Check_in/1.0',
+    Accept: 'text/xml, application/xml, */*',
+    'Cache-Control': 'no-cache',
+    Pragma: 'no-cache',
+    Connection: 'close',
   };
 
-  // El MIR (`*.ses.mir.es`) a veces no envía el intermedio FNMT (ACCOMP) en la cadena TLS.
-  // En `undici`/`fetch`, `connect.ca` sustituye por completo el almacén de confianza del runtime:
-  // si solo pasamos ACCOMP.pem, Node no puede anclar al emisor de ACCOMP → UNABLE_TO_GET_ISSUER_CERT.
-  // Solución: raíces del runtime (`tls.rootCertificates`) + intermedio embebido en `certs/`.
-  const insecureTls = String(process.env.MIR_TLS_INSECURE || '').toLowerCase() === 'true';
-  const mirTlsCaBundle = (() => {
-    try {
-      const pemPath = path.join(process.cwd(), 'certs', 'ACCOMP.pem');
-      const intermediate = fs.readFileSync(pemPath, 'utf8').trim();
-      const roots = tls.rootCertificates.join('\n');
-      return `${roots}\n${intermediate}\n`;
-    } catch {
-      return undefined;
-    }
-  })();
-
-  if (insecureTls) {
-    try {
-      (fetchOptions as any).dispatcher = new Agent({ connect: { rejectUnauthorized: false } });
-    } catch (agentErr) {
-      console.warn('⚠️ No se pudo crear Agent TLS insecure, usando fetch por defecto:', agentErr);
-    }
-  } else if (mirTlsCaBundle) {
-    try {
-      (fetchOptions as any).dispatcher = new Agent({ connect: { ca: mirTlsCaBundle } });
-    } catch (agentErr) {
-      console.warn('⚠️ No se pudo crear Agent TLS con CA MIR, usando fetch por defecto:', agentErr);
-    }
-  }
-
-  try {
-    return await fetch(cfg.baseUrl, fetchOptions);
-  } catch (firstErr) {
-    if ((fetchOptions as any).dispatcher) {
-      console.warn('⚠️ fetch MIR con dispatcher TLS falló, reintentando sin dispatcher:', firstErr);
-      const { dispatcher: _d, ...rest } = fetchOptions as RequestInit & { dispatcher?: unknown };
-      return await fetch(cfg.baseUrl, rest);
-    }
-    throw firstErr;
-  }
+  return mirSoapPost(cfg.baseUrl, headers, soapXml, 60000);
 }
 
 export class MinisterioClientOfficial {
