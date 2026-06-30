@@ -305,6 +305,20 @@
     "upgradePlan": "Upgrade Plan",
     "logout": "Logout",
     "loadingDashboard": "Loading dashboard...",
+    "onboardingBanner": {
+      "title": "{count, plural, one {# step} other {# steps}} left to finish setup",
+      "body": "You are mid-way through the initial wizard. You can continue from your phone in a few minutes.",
+      "cta": "Continue setup",
+      "video": "Watch guide video (2 min)",
+      "dismiss": "Hide for now",
+      "steps": {
+        "password": "Password",
+        "company": "Business details",
+        "plan": "Plan",
+        "units": "Units",
+        "mir": "MIR"
+      }
+    },
     "planInfo": "{planName} Plan",
     "monthlyPrice": "€{price}/month",
     "roomUsage": "Room usage",
@@ -594,7 +608,9 @@
       "next": "Next",
       "completing": "Completing...",
       "completeSetup": "Complete Setup",
-      "cleaningHint": "You can set up the cleaning calendar and per-room schedules anytime in Settings—no need to do it now."
+      "cleaningHint": "You can set up the cleaning calendar and per-room schedules anytime in Settings—no need to do it now.",
+      "skipForNow": "Finish without adding units now",
+      "skipHint": "You can add rooms or apartments later in Settings → Properties. The dashboard will remind you of pending steps."
     },
     "step5": {
       "title": "Cleaning Calendar",

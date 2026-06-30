@@ -478,6 +478,29 @@
   "onboarding": {
     "appName": "Delfín Check-in",
     "stepOf": "Passo {currentStep} di {totalSteps}",
+    "progress": {
+      "configuring": "Configurazione del tuo alloggio",
+      "currentStepLabel": "Ora: {label}",
+      "stepLabels": {
+        "1": "Password",
+        "2": "Dati attività",
+        "3": "Piano e pagamento",
+        "4": "Registro MIR",
+        "5": "Prima unità",
+        "6": "Pagamenti (opz.)"
+      }
+    },
+    "welcome": {
+      "title": "Benvenuto: alloggio pronto in 6 passi",
+      "subtitle": "Non serve essere tecnici. Questa guida ti dice cosa fare in ogni schermata. Funziona da mobile e salviamo i progressi.",
+      "stepsTitle": "Cosa configurerai",
+      "step1": "1. Password personale",
+      "step2": "2. Dati dell'alloggio",
+      "step3": "3. Piano e pagamento",
+      "step4": "4. Credenziali MIR (Spagna)",
+      "step5": "5. Prima unità o camera",
+      "step6": "6. Pagamenti Stripe (opzionale)"
+    },
     "common": {
       "show": "Mostra",
       "hide": "Nascondi"
