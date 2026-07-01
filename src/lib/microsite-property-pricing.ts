@@ -94,43 +94,75 @@ async function upsertDaysWithPriceFiltered(
 ): Promise<void> {
   await ensureAvailabilityPriceColumn();
 
-  const dowFilter = weekendsOnly
-    ? sql`EXTRACT(DOW FROM d) IN (0, 5, 6)`
-    : sql`EXTRACT(DOW FROM d) NOT IN (0, 5, 6)`;
-
   try {
-    await sql`
-      INSERT INTO property_availability (property_id, date, available, price, created_at)
-      SELECT ${propertyId}::int, d::date, TRUE, ${price}::decimal(10,2), NOW()
-      FROM generate_series(${from}::date, ${to}::date, '1 day'::interval) AS d
-      WHERE ${dowFilter}
-      ON CONFLICT (property_id, date) DO UPDATE
-      SET
-        price = EXCLUDED.price,
-        available = COALESCE(property_availability.available, TRUE)
-    `;
+    if (weekendsOnly) {
+      await sql`
+        INSERT INTO property_availability (property_id, date, available, price, created_at)
+        SELECT ${propertyId}::int, d::date, TRUE, ${price}::decimal(10,2), NOW()
+        FROM generate_series(${from}::date, ${to}::date, '1 day'::interval) AS d
+        WHERE EXTRACT(DOW FROM d) IN (0, 5, 6)
+        ON CONFLICT (property_id, date) DO UPDATE
+        SET
+          price = EXCLUDED.price,
+          available = COALESCE(property_availability.available, TRUE)
+      `;
+    } else {
+      await sql`
+        INSERT INTO property_availability (property_id, date, available, price, created_at)
+        SELECT ${propertyId}::int, d::date, TRUE, ${price}::decimal(10,2), NOW()
+        FROM generate_series(${from}::date, ${to}::date, '1 day'::interval) AS d
+        WHERE EXTRACT(DOW FROM d) NOT IN (0, 5, 6)
+        ON CONFLICT (property_id, date) DO UPDATE
+        SET
+          price = EXCLUDED.price,
+          available = COALESCE(property_availability.available, TRUE)
+      `;
+    }
   } catch (insertErr: unknown) {
     const msg = insertErr instanceof Error ? insertErr.message : String(insertErr);
     if (msg.includes('price_override')) {
-      await sql`
-        INSERT INTO property_availability (property_id, date, available, price_override, created_at)
-        SELECT ${propertyId}::int, d::date, TRUE, ${price}::decimal(10,2), NOW()
-        FROM generate_series(${from}::date, ${to}::date, '1 day'::interval) AS d
-        WHERE ${dowFilter}
-        ON CONFLICT (property_id, date) DO UPDATE
-        SET price_override = EXCLUDED.price_override
-      `;
-      try {
+      if (weekendsOnly) {
         await sql`
-          UPDATE property_availability pa
-          SET price = ${price}::decimal(10,2)
+          INSERT INTO property_availability (property_id, date, available, price_override, created_at)
+          SELECT ${propertyId}::int, d::date, TRUE, ${price}::decimal(10,2), NOW()
           FROM generate_series(${from}::date, ${to}::date, '1 day'::interval) AS d
-          WHERE pa.property_id = ${propertyId}::int
-            AND pa.date = d::date
-            AND ${dowFilter}
+          WHERE EXTRACT(DOW FROM d) IN (0, 5, 6)
+          ON CONFLICT (property_id, date) DO UPDATE
+          SET price_override = EXCLUDED.price_override
         `;
-      } catch {
-        /* ignore */
+        try {
+          await sql`
+            UPDATE property_availability pa
+            SET price = ${price}::decimal(10,2)
+            FROM generate_series(${from}::date, ${to}::date, '1 day'::interval) AS d
+            WHERE pa.property_id = ${propertyId}::int
+              AND pa.date = d::date
+              AND EXTRACT(DOW FROM d) IN (0, 5, 6)
+          `;
+        } catch {
+          /* ignore */
+        }
+      } else {
+        await sql`
+          INSERT INTO property_availability (property_id, date, available, price_override, created_at)
+          SELECT ${propertyId}::int, d::date, TRUE, ${price}::decimal(10,2), NOW()
+          FROM generate_series(${from}::date, ${to}::date, '1 day'::interval) AS d
+          WHERE EXTRACT(DOW FROM d) NOT IN (0, 5, 6)
+          ON CONFLICT (property_id, date) DO UPDATE
+          SET price_override = EXCLUDED.price_override
+        `;
+        try {
+          await sql`
+            UPDATE property_availability pa
+            SET price = ${price}::decimal(10,2)
+            FROM generate_series(${from}::date, ${to}::date, '1 day'::interval) AS d
+            WHERE pa.property_id = ${propertyId}::int
+              AND pa.date = d::date
+              AND EXTRACT(DOW FROM d) NOT IN (0, 5, 6)
+          `;
+        } catch {
+          /* ignore */
+        }
       }
     } else {
       throw insertErr;
