@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
+import { upsertOnboardingReminders } from '@/lib/onboarding-reminders';
 import { getTenantId } from '@/lib/tenant';
 
 /**
@@ -47,6 +48,14 @@ export async function PUT(req: NextRequest) {
         SET onboarding_status = ${onboarding_status}, updated_at = NOW()
         WHERE id = ${tenantId}
       `;
+    }
+
+    if (Array.isArray(deferred_tasks) && deferred_tasks.length > 0) {
+      try {
+        await upsertOnboardingReminders(tenantId, deferred_tasks);
+      } catch (reminderErr) {
+        console.warn('[onboarding-status] No se pudieron crear recordatorios:', reminderErr);
+      }
     }
 
     const isProduction = process.env.NODE_ENV === 'production';

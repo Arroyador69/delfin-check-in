@@ -31,19 +31,10 @@ export async function GET(req: NextRequest) {
     }
 
     const onboardingStatus = String(tenant.onboarding_status || 'pending').toLowerCase();
-    if (onboardingStatus === 'completed') {
-      return NextResponse.json({
-        success: true,
-        onboarding_status: 'completed',
-        pending_steps: [] as OnboardingProgressStep[],
-        pending_count: 0,
-      });
-    }
-
-    const empresa = await sql`
-      SELECT 1 FROM empresa_config WHERE tenant_id = ${tenantId} LIMIT 1
-    `;
-    const hasCompany = empresa.rows.length > 0;
+    const config = (tenant.config as Record<string, unknown> | null) || {};
+    const deferredRaw = Array.isArray(config.onboarding_deferred)
+      ? (config.onboarding_deferred as string[])
+      : [];
 
     let roomCount = 0;
     try {
@@ -68,13 +59,46 @@ export async function GET(req: NextRequest) {
       hasMir = false;
     }
 
+    if (onboardingStatus === 'completed') {
+      const deferredPending: OnboardingProgressStep[] = [];
+      if (deferredRaw.includes('units') && roomCount === 0) {
+        deferredPending.push({ id: 'units', done: false });
+      }
+      if (deferredRaw.includes('mir') && !hasMir) {
+        deferredPending.push({ id: 'mir', done: false });
+      }
+      if (deferredRaw.includes('stripe')) {
+        deferredPending.push({ id: 'stripe', done: false });
+      }
+      if (deferredRaw.includes('property_profile')) {
+        deferredPending.push({ id: 'property_profile', done: false });
+      }
+
+      return NextResponse.json({
+        success: true,
+        onboarding_status: 'completed',
+        pending_steps: deferredPending,
+        pending_count: deferredPending.length,
+        deferred_setup: deferredPending.length > 0,
+        room_count: roomCount,
+        has_mir: hasMir,
+      });
+    }
+
+    const empresa = await sql`
+      SELECT 1 FROM empresa_config WHERE tenant_id = ${tenantId} LIMIT 1
+    `;
+    const hasCompany = empresa.rows.length > 0;
+
+    let roomCountInProgress = roomCount;
+
     const passwordDone = onboardingStatus !== 'pending';
 
     const steps: OnboardingProgressStep[] = [
       { id: 'password', done: passwordDone },
       { id: 'company', done: hasCompany },
       { id: 'plan', done: onboardingStatus === 'in_progress' || hasCompany },
-      { id: 'units', done: roomCount > 0 },
+      { id: 'units', done: roomCountInProgress > 0 },
       { id: 'mir', done: hasMir },
     ];
 
