@@ -207,8 +207,8 @@ export async function POST(req: NextRequest) {
       // Registrar intento fallido
       const rateLimitStatus = recordFailedAttempt(clientIP, RATE_LIMIT_CONFIGS.login);
       
-      console.warn(
-        `⚠️ Contraseña incorrecta para ${redactEmailForLog(email)} desde IP: ${clientIP} (${rateLimitStatus.remaining} intentos restantes)`
+      console.info(
+        `Login fallido (contraseña incorrecta): ${redactEmailForLog(email)} IP ${clientIP} (${rateLimitStatus.remaining} intentos restantes)`
       );
       
       return NextResponse.json(
