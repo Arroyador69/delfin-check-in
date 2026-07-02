@@ -136,6 +136,21 @@ export default function UnifiedTenantBell() {
     }
   };
 
+  const onboardingReminderLabel = (taskBody?: string | null) => {
+    switch (taskBody) {
+      case 'units':
+        return t('notificationsOnboardingUnits');
+      case 'property_profile':
+        return t('notificationsOnboardingProperty');
+      case 'mir':
+        return t('notificationsOnboardingMir');
+      case 'stripe':
+        return t('notificationsOnboardingStripe');
+      default:
+        return null;
+    }
+  };
+
   const unreadTotal = pendingCount + notifCount;
   const hasUnread = unreadTotal > 0;
   const label = unreadTotal > 9 ? '9+' : String(unreadTotal);
@@ -237,7 +252,9 @@ export default function UnifiedTenantBell() {
                           ? t('notificationsSupportReply')
                           : n.type === 'product_update'
                             ? t('notificationsProductUpdate')
-                            : n.title}
+                            : n.type === 'onboarding_reminder'
+                              ? onboardingReminderLabel(n.body) || n.title
+                              : n.title}
                       </div>
                       {n.body ? <div className="text-xs text-slate-600 mt-0.5 line-clamp-2">{n.body}</div> : null}
                       <div className="text-[11px] text-slate-500 mt-1">{new Date(n.created_at).toLocaleString()}</div>

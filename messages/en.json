@@ -83,6 +83,10 @@
     "notificationsEmpty": "No notifications.",
     "notificationsSupportReply": "Support reply",
     "notificationsProductUpdate": "Delfín Check-in update",
+    "notificationsOnboardingUnits": "Set up your units",
+    "notificationsOnboardingProperty": "Complete your property profile",
+    "notificationsOnboardingMir": "Set up MIR submission",
+    "notificationsOnboardingStripe": "Connect Stripe payments",
     "superAdminDashboard": "SuperAdmin Dashboard",
     "metrics": "Metrics",
     "affiliates": "Affiliates",
@@ -307,8 +311,11 @@
     "loadingDashboard": "Loading dashboard...",
     "onboardingBanner": {
       "title": "{count, plural, one {# step} other {# steps}} left to finish setup",
+      "titleDeferred": "You have {count, plural, one {# pending setup step} other {# pending setup steps}}",
       "body": "You are mid-way through the initial wizard. You can continue from your phone in a few minutes.",
+      "bodyDeferred": "Explore the dashboard at your own pace. We will remind you in the bell icon when you want to finish setup.",
       "cta": "Continue setup",
+      "ctaDeferred": "Go to Settings",
       "video": "Watch guide video (2 min)",
       "dismiss": "Hide for now",
       "steps": {
@@ -316,7 +323,9 @@
         "company": "Business details",
         "plan": "Plan",
         "units": "Units",
-        "mir": "MIR"
+        "mir": "MIR",
+        "stripe": "Stripe payments",
+        "property_profile": "Property profile"
       }
     },
     "planInfo": "{planName} Plan",
@@ -609,8 +618,10 @@
       "completing": "Completing...",
       "completeSetup": "Complete Setup",
       "cleaningHint": "You can set up the cleaning calendar and per-room schedules anytime in Settings—no need to do it now.",
-      "skipForNow": "Finish without adding units now",
-      "skipHint": "You can add rooms or apartments later in Settings → Properties. The dashboard will remind you of pending steps."
+      "tryFirstTitle": "Prefer to explore the dashboard first?",
+      "tryFirstBody": "You can enter the dashboard without creating units now. We will remind you in the notification bell when you are ready.",
+      "skipForNow": "Try first — set up units later",
+      "skipHint": "You can also create units below if you are ready. Reminders appear in the panel bell icon 🔔."
     },
     "step5": {
       "title": "Cleaning Calendar",
@@ -3359,6 +3370,8 @@
       "hubPaymentLinksSubtitle": "Create and manage payment links.",
       "upgradePlanButton": "Upgrade or change plan",
       "upgradePlanHint": "Opens your browser to the web panel in your app language. Sign in with the same account if needed; the plan applies to your current property.",
+      "iosSubscriptionManageHint": "Software plan and subscription management is available on the web panel at admin.delfincheckin.com (not inside the iOS app). Sign in with the same account.",
+      "iosLoginExistingAccountsOnly": "This app is for property owners with an existing account only. New business sign-up and plan purchases are not available on iOS.",
       "webAdvancedHint": "Very advanced options (e.g. detailed cleaning calendar) remain on the web panel.",
       "calendarName": "Name",
       "calendarUrl": "iCal URL",

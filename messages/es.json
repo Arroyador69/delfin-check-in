@@ -83,6 +83,10 @@
     "notificationsEmpty": "No hay notificaciones.",
     "notificationsSupportReply": "Respuesta de soporte",
     "notificationsProductUpdate": "Actualización de Delfín Check-in",
+    "notificationsOnboardingUnits": "Configura tus unidades",
+    "notificationsOnboardingProperty": "Completa la ficha del alojamiento",
+    "notificationsOnboardingMir": "Configura el envío MIR",
+    "notificationsOnboardingStripe": "Conecta pagos con Stripe",
     "superAdminDashboard": "Dashboard SuperAdmin",
     "metrics": "Métricas",
     "affiliates": "Afiliados",
@@ -308,8 +312,11 @@
     "loadingDashboard": "Cargando dashboard...",
     "onboardingBanner": {
       "title": "Te faltan {count, plural, one {# paso} other {# pasos}} para terminar la configuración",
+      "titleDeferred": "Tienes {count, plural, one {# paso pendiente} other {# pasos pendientes}} de configuración",
       "body": "Estás a mitad del asistente inicial. Puedes continuar desde el móvil en unos minutos.",
+      "bodyDeferred": "Puedes explorar el panel con calma. Te lo recordamos en la campanita y aquí cuando quieras completarlo.",
       "cta": "Continuar configuración",
+      "ctaDeferred": "Ir a Ajustes",
       "video": "Ver vídeo guía (2 min)",
       "dismiss": "Ocultar por ahora",
       "steps": {
@@ -317,7 +324,9 @@
         "company": "Datos negocio",
         "plan": "Plan",
         "units": "Unidades",
-        "mir": "MIR"
+        "mir": "MIR",
+        "stripe": "Pagos Stripe",
+        "property_profile": "Ficha del alojamiento"
       }
     },
     "planInfo": "Plan {planName}",
@@ -610,8 +619,10 @@
       "completing": "Completando...",
       "completeSetup": "Completar Configuración",
       "cleaningHint": "El calendario de limpieza y los horarios por habitación los configuras cuando quieras en Configuración; no hace falta hacerlo ahora.",
-      "skipForNow": "Terminar sin añadir unidades ahora",
-      "skipHint": "Podrás crear habitaciones o apartamentos más tarde desde Ajustes → Propiedades. El panel te recordará los pasos pendientes."
+      "tryFirstTitle": "¿Prefieres probar el panel primero?",
+      "tryFirstBody": "Puedes entrar al dashboard sin crear unidades ahora. Te recordaremos en la campanita cuando quieras configurar tu alojamiento.",
+      "skipForNow": "Probar primero — configurar unidades más tarde",
+      "skipHint": "También puedes crear unidades abajo si ya lo tienes claro. Los recordatorios aparecen en la campanita 🔔 del panel."
     },
     "step5": {
       "title": "Calendario de Limpieza",
@@ -3459,6 +3470,8 @@
       "hubPaymentLinksSubtitle": "Crear y gestionar enlaces de pago.",
       "upgradePlanButton": "Mejorar o cambiar plan",
       "upgradePlanHint": "Se abrirá el navegador en el panel web, en el idioma de la app. Inicia sesión con la misma cuenta si hace falta; el plan se aplica a tu establecimiento actual.",
+      "iosSubscriptionManageHint": "La gestión de planes y suscripciones del software está disponible en el panel web admin.delfincheckin.com (no dentro de la app iOS). Inicia sesión con la misma cuenta.",
+      "iosLoginExistingAccountsOnly": "Esta app es solo para propietarios con cuenta ya creada. El alta de nuevas empresas y la contratación de planes no están disponibles en iOS.",
       "webAdvancedHint": "Opciones muy avanzadas (p. ej. calendario de limpieza detallado) siguen en el panel web.",
       "calendarName": "Nombre",
       "calendarUrl": "URL iCal",

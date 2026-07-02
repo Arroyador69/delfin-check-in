@@ -1363,7 +1363,7 @@ export default function OnboardingPage() {
     </div>
   );
 
-  // Paso 5: Crear unidades (obligatorio)
+  // Paso 5: Crear unidades (opcional — recordatorio en campanita si se aplaza)
   const renderPropertyStep = () => (
     <div className={ONBOARDING_PAGE}>
       <div className={ONBOARDING_CARD}>
@@ -1374,6 +1374,21 @@ export default function OnboardingPage() {
         <p className="text-gray-600 mb-6">
           {t('step4.intro')}
         </p>
+
+        {!formData.propertyAdded && (
+          <div className="rounded-xl border-2 border-dashed border-blue-200 bg-blue-50/80 p-5 mb-6">
+            <p className="text-sm font-medium text-blue-950 mb-1">{t('step4.tryFirstTitle')}</p>
+            <p className="text-sm text-blue-900/90 mb-4 leading-relaxed">{t('step4.tryFirstBody')}</p>
+            <button
+              type="button"
+              onClick={() => void handleCompleteOnboarding({ skipUnits: true })}
+              disabled={loading}
+              className="w-full sm:w-auto bg-white border-2 border-blue-300 text-blue-900 px-6 py-2.5 rounded-lg hover:bg-blue-100/60 disabled:opacity-50 min-h-[44px] text-sm font-semibold"
+            >
+              {t('step4.skipForNow')}
+            </button>
+          </div>
+        )}
 
         {tenant?.email !== 'contacto@delfincheckin.com' && (
           <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
@@ -1465,16 +1480,6 @@ export default function OnboardingPage() {
             {t('step4.previous')}
           </button>
           <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-            {!formData.propertyAdded && (
-              <button
-                type="button"
-                onClick={() => void handleCompleteOnboarding({ skipUnits: true })}
-                disabled={loading}
-                className="border border-gray-300 text-gray-800 px-6 py-2 rounded-lg hover:bg-gray-50 disabled:opacity-50 min-h-[44px] text-sm"
-              >
-                {t('step4.skipForNow')}
-              </button>
-            )}
             <button
               onClick={handleFinishStep5}
               disabled={loading || !formData.propertyAdded}

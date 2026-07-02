@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
+import { resolveOnboardingReminder } from '@/lib/onboarding-reminders';
 import { getTenantId } from '@/lib/tenant';
 
 function isExpectedSchemaMismatchError(err: unknown): boolean {
@@ -607,6 +608,12 @@ export async function POST(req: NextRequest) {
       } catch (cfgErr) {
         console.warn('⚠️ No se pudo persistir lodgingType en tenants.config:', cfgErr);
       }
+    }
+
+    try {
+      await resolveOnboardingReminder(tenantId, 'units');
+    } catch {
+      // best-effort
     }
 
     return NextResponse.json({
