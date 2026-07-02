@@ -31,6 +31,10 @@ describe('onboarding-notification-routes (móvil)', () => {
     expect(onboardingReminderMobileRoute('units')).toBe('/(app)/settings/general');
   });
 
+  it('enruta datos empresa a ajustes en móvil', () => {
+    expect(onboardingReminderMobileRoute('company')).toBe('/(app)/settings/company');
+  });
+
   it('enruta recordatorio onboarding desde notificación API', () => {
     expect(
       tenantNotificationMobileRoute({
