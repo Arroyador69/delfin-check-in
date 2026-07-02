@@ -18,9 +18,10 @@ export async function PUT(req: NextRequest) {
     }
 
     const body = await req.json().catch(() => ({}));
-    const { onboarding_status, deferred_tasks } = body as {
+    const { onboarding_status, deferred_tasks, merge_deferred } = body as {
       onboarding_status?: string;
       deferred_tasks?: string[];
+      merge_deferred?: boolean;
     };
 
     // Validar status
@@ -31,9 +32,22 @@ export async function PUT(req: NextRequest) {
       );
     }
 
+    let tasksToPersist = Array.isArray(deferred_tasks) ? deferred_tasks : [];
+
+    if (tasksToPersist.length > 0 && merge_deferred) {
+      const row = await sql`
+        SELECT config FROM tenants WHERE id = ${tenantId}::uuid LIMIT 1
+      `;
+      const config = (row.rows[0]?.config as Record<string, unknown> | null) || {};
+      const existing = Array.isArray(config.onboarding_deferred)
+        ? (config.onboarding_deferred as string[])
+        : [];
+      tasksToPersist = [...new Set([...existing, ...tasksToPersist])];
+    }
+
     // Actualizar onboarding_status (+ tareas aplazadas en config)
-    if (Array.isArray(deferred_tasks) && deferred_tasks.length > 0) {
-      const patch = JSON.stringify({ onboarding_deferred: deferred_tasks });
+    if (tasksToPersist.length > 0) {
+      const patch = JSON.stringify({ onboarding_deferred: tasksToPersist });
       await sql`
         UPDATE tenants
         SET
@@ -50,9 +64,9 @@ export async function PUT(req: NextRequest) {
       `;
     }
 
-    if (Array.isArray(deferred_tasks) && deferred_tasks.length > 0) {
+    if (tasksToPersist.length > 0) {
       try {
-        await upsertOnboardingReminders(tenantId, deferred_tasks);
+        await upsertOnboardingReminders(tenantId, tasksToPersist);
       } catch (reminderErr) {
         console.warn('[onboarding-status] No se pudieron crear recordatorios:', reminderErr);
       }

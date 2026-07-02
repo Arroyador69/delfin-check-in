@@ -138,6 +138,8 @@ export default function UnifiedTenantBell() {
 
   const onboardingReminderLabel = (taskBody?: string | null) => {
     switch (taskBody) {
+      case 'company':
+        return t('notificationsOnboardingCompany');
       case 'units':
         return t('notificationsOnboardingUnits');
       case 'property_profile':
@@ -256,7 +258,9 @@ export default function UnifiedTenantBell() {
                               ? onboardingReminderLabel(n.body) || n.title
                               : n.title}
                       </div>
-                      {n.body ? <div className="text-xs text-slate-600 mt-0.5 line-clamp-2">{n.body}</div> : null}
+                      {n.body && n.type !== 'onboarding_reminder' ? (
+                        <div className="text-xs text-slate-600 mt-0.5 line-clamp-2">{n.body}</div>
+                      ) : null}
                       <div className="text-[11px] text-slate-500 mt-1">{new Date(n.created_at).toLocaleString()}</div>
                     </button>
                   </li>

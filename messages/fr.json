@@ -3093,6 +3093,7 @@
       "pendingReservations": "Réservations en attente",
       "pendingMirConfig": "Configurer MIR (unités non assignées)",
       "onboardingUnits": "Configurer vos unités",
+      "onboardingCompany": "Compléter les données de l'hébergement",
       "onboardingProperty": "Compléter la fiche de l'hébergement",
       "onboardingMir": "Configurer l'envoi MIR",
       "onboardingStripe": "Connecter les paiements Stripe",

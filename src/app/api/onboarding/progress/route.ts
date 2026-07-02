@@ -61,6 +61,9 @@ export async function GET(req: NextRequest) {
 
     if (onboardingStatus === 'completed') {
       const deferredPending: OnboardingProgressStep[] = [];
+      if (deferredRaw.includes('company') && !hasCompany) {
+        deferredPending.push({ id: 'company', done: false });
+      }
       if (deferredRaw.includes('units') && roomCount === 0) {
         deferredPending.push({ id: 'units', done: false });
       }

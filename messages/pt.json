@@ -3092,6 +3092,7 @@
       "pendingReservations": "Reservas pendentes",
       "pendingMirConfig": "Configurar MIR (unidades sem atribuição)",
       "onboardingUnits": "Configura as tuas unidades",
+      "onboardingCompany": "Completa os dados do alojamento",
       "onboardingProperty": "Completa a ficha do alojamento",
       "onboardingMir": "Configura o envio MIR",
       "onboardingStripe": "Liga pagamentos Stripe",

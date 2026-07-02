@@ -2,9 +2,9 @@
  * Rutas y etiquetas de notificaciones de onboarding (web + móvil).
  * Sin dependencias de DB — testeable en CI con Vitest.
  */
-export type OnboardingDeferredTask = 'units' | 'mir' | 'stripe' | 'property_profile';
+export type OnboardingDeferredTask = 'company' | 'units' | 'mir' | 'stripe' | 'property_profile';
 
-const ONBOARDING_TASKS = new Set<string>(['units', 'mir', 'stripe', 'property_profile']);
+const ONBOARDING_TASKS = new Set<string>(['company', 'units', 'mir', 'stripe', 'property_profile']);
 
 export function isOnboardingDeferredTask(value: string | null | undefined): value is OnboardingDeferredTask {
   return Boolean(value && ONBOARDING_TASKS.has(value));
@@ -13,6 +13,8 @@ export function isOnboardingDeferredTask(value: string | null | undefined): valu
 /** Ruta Expo Router al pulsar un recordatorio de onboarding. */
 export function onboardingReminderMobileRoute(taskBody: string | null | undefined): string {
   switch (taskBody) {
+    case 'company':
+      return '/(app)/settings/company';
     case 'units':
       return '/(app)/settings/general';
     case 'property_profile':
@@ -31,6 +33,8 @@ export function onboardingReminderMobileLabelKey(
   taskBody: string | null | undefined
 ): string | null {
   switch (taskBody) {
+    case 'company':
+      return 'mobile.notifications.onboardingCompany';
     case 'units':
       return 'mobile.notifications.onboardingUnits';
     case 'property_profile':

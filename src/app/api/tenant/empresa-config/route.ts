@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql, ensureFacturasTables } from '@/lib/db';
+import { resolveOnboardingReminder } from '@/lib/onboarding-reminders';
 
 async function resolveTenantId(req: NextRequest): Promise<string | null> {
   return req.headers.get('x-tenant-id') || req.headers.get('X-Tenant-ID');
@@ -118,6 +119,12 @@ export async function POST(req: NextRequest) {
               RETURNING *
             `
           ).rows[0];
+
+    try {
+      await resolveOnboardingReminder(String(tenantId), 'company');
+    } catch {
+      // best-effort
+    }
 
     return NextResponse.json({ success: true, empresa: result });
   } catch (e) {

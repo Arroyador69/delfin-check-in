@@ -3111,6 +3111,7 @@
       "pendingReservations": "Odottaa varauksia",
       "pendingMirConfig": "Määritä MIR (yksiköt ilman määritystä)",
       "onboardingUnits": "Määritä yksiköt",
+      "onboardingCompany": "Täydennä majoituksen tiedot",
       "onboardingProperty": "Täydennä majoituksen tiedot",
       "onboardingMir": "Määritä MIR-lähetys",
       "onboardingStripe": "Yhdistä Stripe-maksut",
