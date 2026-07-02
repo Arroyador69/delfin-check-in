@@ -6,6 +6,8 @@ const SKIP_DB_PATTERNS: RegExp[] = [
   /\[sync-calendars\]\s+Calendario requiere revisión/i,
   /Tenant no encontrado:/i,
   /Usuario no encontrado para tenant/i,
+  /Login fallido/i,
+  /Contraseña incorrecta para/i,
   /Rate limit exceeded for IP/i,
   /Credenciales inválidas/i,
 ];
