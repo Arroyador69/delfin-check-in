@@ -3180,7 +3180,15 @@
       "title": "Notifiche",
       "choose": "Cosa vuoi controllare?",
       "pendingReservations": "Prenotazioni in sospeso",
-      "pendingMirConfig": "Configura MIR (unità non assegnate)"
+      "pendingMirConfig": "Configura MIR (unità non assegnate)",
+      "onboardingUnits": "Configura le tue unità",
+      "onboardingProperty": "Completa la scheda dell'alloggio",
+      "onboardingMir": "Configura l'invio MIR",
+      "onboardingStripe": "Collega i pagamenti Stripe",
+      "supportReply": "Risposta del supporto",
+      "guestRegistration": "Nuova registrazione ospiti",
+      "productUpdate": "Aggiornamento Delfín Check-in",
+      "generic": "Notifica"
     },
     "onboarding": {
       "title": "Onboarding",
@@ -3353,6 +3361,8 @@
       "hubPaymentLinksSubtitle": "Crea e gestisci link di pagamento.",
       "upgradePlanButton": "Migliora o cambia piano",
       "upgradePlanHint": "Si apre il browser sul pannello web nella lingua dell’app. Accedi con lo stesso account se necessario; il piano vale per la struttura attuale.",
+      "iosSubscriptionManageHint": "La gestione di piani e abbonamenti del software è disponibile sul pannello web admin.delfincheckin.com (non nell’app iOS). Accedi con lo stesso account.",
+      "iosLoginExistingAccountsOnly": "Questa app è solo per titolari con account già creato. La registrazione di nuove attività e l’acquisto di piani non sono disponibili su iOS.",
       "webAdvancedHint": "Le opzioni più avanzate restano nel pannello web.",
       "calendarName": "Nome",
       "calendarUrl": "URL iCal",

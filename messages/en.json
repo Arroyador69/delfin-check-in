@@ -3197,7 +3197,15 @@
       "title": "Notifications",
       "choose": "What do you want to review?",
       "pendingReservations": "Pending reservations",
-      "pendingMirConfig": "Configure MIR (units without assignment)"
+      "pendingMirConfig": "Configure MIR (units without assignment)",
+      "onboardingUnits": "Set up your units",
+      "onboardingProperty": "Complete your property profile",
+      "onboardingMir": "Set up MIR submission",
+      "onboardingStripe": "Connect Stripe payments",
+      "supportReply": "Support reply",
+      "guestRegistration": "New guest registration",
+      "productUpdate": "Delfín Check-in update",
+      "generic": "Notification"
     },
     "onboarding": {
       "title": "Onboarding",
@@ -3226,7 +3234,7 @@
       },
       "checklist": {
         "title": "Minimum setup",
-        "subtitle": "Full guided setup lives in the web admin; here is what is still pending from the app’s point of view.",
+        "subtitle": "If you deferred steps in web onboarding, the bell icon 🔔 will remind you. Here is what is still pending on this device.",
         "open": "Open",
         "openAdminWeb": "Open web admin"
       },

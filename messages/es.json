@@ -3297,7 +3297,15 @@
       "title": "Notificaciones",
       "choose": "¿Qué quieres revisar?",
       "pendingReservations": "Reservas pendientes",
-      "pendingMirConfig": "Configurar MIR (unidades sin asignar)"
+      "pendingMirConfig": "Configurar MIR (unidades sin asignar)",
+      "onboardingUnits": "Configura tus unidades",
+      "onboardingProperty": "Completa la ficha del alojamiento",
+      "onboardingMir": "Configura el envío MIR",
+      "onboardingStripe": "Conecta pagos con Stripe",
+      "supportReply": "Respuesta de soporte",
+      "guestRegistration": "Nuevo registro de viajeros",
+      "productUpdate": "Actualización de Delfín Check-in",
+      "generic": "Notificación"
     },
     "onboarding": {
       "title": "Onboarding",
@@ -3326,7 +3334,7 @@
       },
       "checklist": {
         "title": "Configuración mínima",
-        "subtitle": "La configuración guiada completa está en el panel web; aquí tienes un resumen de lo pendiente en este dispositivo.",
+        "subtitle": "Si aplazaste pasos en el onboarding web, la campanita 🔔 te lo recordará. Aquí tienes un resumen de lo pendiente en este dispositivo.",
         "open": "Abrir",
         "openAdminWeb": "Abrir panel web"
       },
