@@ -3091,7 +3091,15 @@
       "title": "Notifications",
       "choose": "Que voulez-vous vérifier ?",
       "pendingReservations": "Réservations en attente",
-      "pendingMirConfig": "Configurer MIR (unités non assignées)"
+      "pendingMirConfig": "Configurer MIR (unités non assignées)",
+      "onboardingUnits": "Configurer vos unités",
+      "onboardingProperty": "Compléter la fiche de l'hébergement",
+      "onboardingMir": "Configurer l'envoi MIR",
+      "onboardingStripe": "Connecter les paiements Stripe",
+      "supportReply": "Réponse du support",
+      "guestRegistration": "Nouvel enregistrement voyageurs",
+      "productUpdate": "Mise à jour Delfín Check-in",
+      "generic": "Notification"
     },
     "onboarding": {
       "title": "Onboarding",
@@ -3264,6 +3272,8 @@
       "hubPaymentLinksSubtitle": "Créer et gérer les liens de paiement.",
       "upgradePlanButton": "Améliorer ou changer de formule",
       "upgradePlanHint": "Ouvre le panneau web dans le navigateur, dans la langue de l’app. Connectez-vous avec le même compte si besoin ; la formule s’applique à votre établissement actuel.",
+      "iosSubscriptionManageHint": "La gestion des formules et abonnements est disponible sur le panneau web admin.delfincheckin.com (pas dans l’app iOS). Connectez-vous avec le même compte.",
+      "iosLoginExistingAccountsOnly": "Cette app est réservée aux propriétaires ayant déjà un compte. L’inscription de nouvelles entreprises et l’achat de formules ne sont pas disponibles sur iOS.",
       "webAdvancedHint": "Les options très avancées restent sur le panneau web.",
       "calendarName": "Nom",
       "calendarUrl": "URL iCal",

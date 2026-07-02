@@ -10,6 +10,7 @@ type ProgressResponse = {
   onboarding_status?: string;
   pending_count?: number;
   pending_steps?: Array<{ id: string; done: boolean }>;
+  deferred_setup?: boolean;
 };
 
 const DISMISS_KEY = 'onboarding_banner_dismissed_v1';
@@ -45,9 +46,11 @@ export default function OnboardingIncompleteBanner() {
     };
   }, []);
 
-  if (dismissed || !data || data.onboarding_status === 'completed') return null;
+  if (dismissed || !data) return null;
   const pendingCount = data.pending_count ?? 0;
   if (pendingCount <= 0) return null;
+
+  const isDeferredSetup = Boolean(data.deferred_setup && data.onboarding_status === 'completed');
 
   const stepLabels = (data.pending_steps || [])
     .slice(0, 4)
@@ -69,20 +72,22 @@ export default function OnboardingIncompleteBanner() {
         <ListChecks className="w-6 h-6 text-blue-700 shrink-0 mt-0.5" aria-hidden />
         <div className="flex-1 min-w-0">
           <h3 className="font-semibold text-blue-950 text-sm sm:text-base leading-snug">
-            {t('onboardingBanner.title', { count: pendingCount })}
+            {isDeferredSetup
+              ? t('onboardingBanner.titleDeferred', { count: pendingCount })
+              : t('onboardingBanner.title', { count: pendingCount })}
           </h3>
           <p className="text-xs sm:text-sm text-blue-900/90 mt-1 leading-relaxed">
-            {t('onboardingBanner.body')}
+            {isDeferredSetup ? t('onboardingBanner.bodyDeferred') : t('onboardingBanner.body')}
           </p>
           {stepLabels ? (
             <p className="text-xs text-blue-800 mt-2 font-medium break-words">{stepLabels}</p>
           ) : null}
           <div className="mt-3 flex flex-wrap gap-2">
             <Link
-              href={`/${locale}/onboarding`}
+              href={isDeferredSetup ? `/${locale}/settings` : `/${locale}/onboarding`}
               className="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 min-h-[44px]"
             >
-              {t('onboardingBanner.cta')}
+              {isDeferredSetup ? t('onboardingBanner.ctaDeferred') : t('onboardingBanner.cta')}
             </Link>
             <a
               href="https://www.youtube.com/watch?v=-bcIKsL1vsM"

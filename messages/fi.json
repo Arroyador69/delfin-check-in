@@ -3109,7 +3109,15 @@
       "title": "Ilmoitukset",
       "choose": "Mitä haluat tarkistaa?",
       "pendingReservations": "Odottaa varauksia",
-      "pendingMirConfig": "Määritä MIR (yksiköt ilman määritystä)"
+      "pendingMirConfig": "Määritä MIR (yksiköt ilman määritystä)",
+      "onboardingUnits": "Määritä yksiköt",
+      "onboardingProperty": "Täydennä majoituksen tiedot",
+      "onboardingMir": "Määritä MIR-lähetys",
+      "onboardingStripe": "Yhdistä Stripe-maksut",
+      "supportReply": "Tukivastaus",
+      "guestRegistration": "Uusi matkustajarekisteröinti",
+      "productUpdate": "Delfín Check-in -päivitys",
+      "generic": "Ilmoitus"
     },
     "onboarding": {
       "title": "Käyttöönotto",
@@ -3282,6 +3290,8 @@
       "hubPaymentLinksSubtitle": "Luo ja hallinnoi maksulinkkejä.",
       "upgradePlanButton": "Päivitä tai muuta suunnitelmaa",
       "upgradePlanHint": "Avaa selaimen verkkopaneelin sovelluksesi kielellä. Kirjaudu tarvittaessa sisään samalla tilillä; suunnitelma koskee nykyistä omaisuuttasi.",
+      "iosSubscriptionManageHint": "Ohjelmiston suunnitelmien ja tilausten hallinta on saatavilla verkkopaneelissa admin.delfincheckin.com (ei iOS-sovelluksessa). Kirjaudu samalla tilillä.",
+      "iosLoginExistingAccountsOnly": "Tämä sovellus on vain jo luodun tilin omaaville majoittajille. Uusien yritysten rekisteröinti ja suunnitelmien osto eivät ole saatavilla iOS:ssä.",
       "webAdvancedHint": "Erittäin kehittyneet vaihtoehdot (esim. yksityiskohtainen puhdistuskalenteri) jäävät verkkopaneeliin.",
       "calendarName": "Nimi",
       "calendarUrl": "iCal URL",
