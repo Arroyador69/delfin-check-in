@@ -6,6 +6,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
 import { CreatePropertyRequest, UpdatePropertyRequest, TenantProperty } from '@/lib/direct-reservations-types';
 import { getTenantById, getTenantId } from '@/lib/tenant';
+import { dedupeTenantPropertiesList } from '@/lib/tenant-properties-dedup';
 
 // =====================================================
 // GET: Obtener propiedades del tenant
@@ -149,6 +150,12 @@ export async function GET(req: NextRequest) {
           WHERE r."lodgingId"::text = ${lodgingId}::text
             AND prm.room_id IS NULL
             AND NOT EXISTS (
+              SELECT 1 FROM property_room_map prm2
+              JOIN tenant_properties tp2 ON tp2.id = prm2.property_id AND tp2.tenant_id = prm2.tenant_id
+              WHERE prm2.tenant_id = ${tenantId}::uuid
+                AND prm2.room_id::text = r.id::text
+            )
+            AND NOT EXISTS (
               SELECT 1 FROM tenant_properties tp
               WHERE tp.tenant_id = ${tenantId}::uuid
                 AND lower(trim(tp.property_name)) = lower(trim(r.name))
@@ -205,29 +212,8 @@ export async function GET(req: NextRequest) {
       is_placeholder: row.is_placeholder || false
     }));
 
-    // Evitar duplicados (ej. placeholder + mapped para la misma habitación/slot)
-    // Preferimos siempre el registro "real" (id != null) frente al placeholder.
-    const byRoom = new Map<string, any>();
-    for (const p of properties) {
-      const key = p.room_id ? String(p.room_id) : `property:${p.id ?? p.property_name}`;
-      const prev = byRoom.get(key);
-      if (!prev) {
-        byRoom.set(key, p);
-        continue;
-      }
-      const prevIsReal = prev.id != null;
-      const curIsReal = p.id != null;
-      if (curIsReal && !prevIsReal) {
-        byRoom.set(key, p);
-        continue;
-      }
-      if (curIsReal === prevIsReal) {
-        const prevUpdated = prev.updated_at ? new Date(prev.updated_at).getTime() : 0;
-        const curUpdated = p.updated_at ? new Date(p.updated_at).getTime() : 0;
-        if (curUpdated >= prevUpdated) byRoom.set(key, p);
-      }
-    }
-    const dedupedProperties = Array.from(byRoom.values());
+    // Solo fichas reales; sin placeholders €50 duplicados (ver tenant-properties-dedup).
+    const dedupedProperties = dedupeTenantPropertiesList(properties);
     
     console.log(`✅ Encontradas ${dedupedProperties.length} propiedades (dedup aplicado)`);
     

@@ -1,6 +1,7 @@
 import { View, Text, StyleSheet, Pressable, ScrollView, TextInput, Alert, FlatList } from 'react-native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useEffect } from 'react';
 import { useState } from 'react';
 
 import { api } from '@/lib/api';
@@ -20,6 +21,15 @@ type TicketRow = {
   category: string;
   status: string;
   created_at: string;
+  body?: string;
+};
+
+type TicketMessage = {
+  id: string;
+  sender_type: string;
+  sender_email?: string;
+  message: string;
+  created_at: string;
 };
 
 function categoryLabel(cat: string): string {
@@ -36,10 +46,19 @@ function statusLabel(st: string): string {
 
 export default function SupportSettingsScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ ticket?: string | string[] }>();
   const queryClient = useQueryClient();
   const [subject, setSubject] = useState('');
   const [body, setBody] = useState('');
   const [category, setCategory] = useState<(typeof CATEGORIES)[number]>('software_issue');
+
+  const ticketParam = params.ticket;
+  const deepLinkTicketId =
+    typeof ticketParam === 'string'
+      ? ticketParam
+      : Array.isArray(ticketParam)
+        ? ticketParam[0]
+        : undefined;
 
   const { data, isLoading } = useQuery({
     queryKey: ['support-tickets'],
@@ -50,6 +69,34 @@ export default function SupportSettingsScreen() {
   });
 
   const tickets = data?.tickets || [];
+
+  const { data: ticketDetail } = useQuery({
+    queryKey: ['support-ticket', deepLinkTicketId],
+    enabled: Boolean(deepLinkTicketId),
+    queryFn: async () => {
+      const res = await api.get(`/api/tenant/support-tickets/${deepLinkTicketId}`);
+      return res.data as { success?: boolean; ticket?: TicketRow; messages?: TicketMessage[] };
+    },
+  });
+
+  useEffect(() => {
+    if (!deepLinkTicketId) return;
+    void (async () => {
+      try {
+        const res = await api.get('/api/tenant/notifications');
+        const items = (res.data?.items || []) as Array<{ id: string; link?: string | null; is_read?: boolean }>;
+        const ids = items
+          .filter((n) => n.is_read === false && String(n.link || '').includes(`ticket=${deepLinkTicketId}`))
+          .map((n) => n.id);
+        if (ids.length) {
+          await api.post('/api/tenant/notifications', { ids });
+          await queryClient.invalidateQueries({ queryKey: ['tenant-notifications-unread'] });
+        }
+      } catch {
+        // silencioso
+      }
+    })();
+  }, [deepLinkTicketId, queryClient]);
 
   const submitMutation = useMutation({
     mutationFn: async () => {
@@ -83,6 +130,42 @@ export default function SupportSettingsScreen() {
         <Text style={styles.intro}>{t('settings.support.intro')}</Text>
         <Text style={styles.notFor}>{t('settings.support.notFor')}</Text>
       </View>
+
+      {deepLinkTicketId && ticketDetail?.ticket ? (
+        <View style={[styles.card, styles.detailCard]}>
+          <Text style={styles.cardTitle}>{ticketDetail.ticket.subject}</Text>
+          <Text style={styles.ticketMeta}>
+            {categoryLabel(ticketDetail.ticket.category)} · {statusLabel(ticketDetail.ticket.status)}
+          </Text>
+          {(ticketDetail.messages && ticketDetail.messages.length > 0
+            ? ticketDetail.messages
+            : ticketDetail.ticket.body
+              ? [
+                  {
+                    id: 'initial',
+                    sender_type: 'tenant',
+                    message: ticketDetail.ticket.body,
+                    created_at: ticketDetail.ticket.created_at,
+                  },
+                ]
+              : []
+          ).map((msg) => (
+            <View
+              key={msg.id}
+              style={[
+                styles.messageBubble,
+                msg.sender_type === 'superadmin' ? styles.messageSuperadmin : styles.messageTenant,
+              ]}
+            >
+              <Text style={styles.messageAuthor}>
+                {msg.sender_type === 'superadmin' ? 'Soporte' : 'Tú'}
+              </Text>
+              <Text style={styles.messageText}>{msg.message}</Text>
+              <Text style={styles.ticketDate}>{new Date(msg.created_at).toLocaleString()}</Text>
+            </View>
+          ))}
+        </View>
+      ) : null}
 
       <View style={styles.card}>
         <Text style={styles.cardTitle}>{t('mobile.settings.supportNewTitle')}</Text>
@@ -138,13 +221,18 @@ export default function SupportSettingsScreen() {
             scrollEnabled={false}
             keyExtractor={(x) => String(x.id)}
             renderItem={({ item }) => (
-              <View style={styles.ticketRow}>
+              <Pressable
+                style={styles.ticketRow}
+                onPress={() =>
+                  router.push(`/(app)/settings/support?ticket=${encodeURIComponent(item.id)}` as any)
+                }
+              >
                 <Text style={styles.ticketSubject}>{item.subject}</Text>
                 <Text style={styles.ticketMeta}>
                   {categoryLabel(item.category)} · {statusLabel(item.status)}
                 </Text>
                 <Text style={styles.ticketDate}>{new Date(item.created_at).toLocaleString()}</Text>
-              </View>
+              </Pressable>
             )}
           />
         )}
@@ -216,6 +304,12 @@ const styles = StyleSheet.create({
   disabled: { opacity: 0.55 },
   muted: { fontSize: 13, color: '#6b7280' },
   ticketRow: { paddingVertical: 12, borderTopWidth: 1, borderTopColor: '#f3f4f6' },
+  detailCard: { borderColor: '#bfdbfe', backgroundColor: '#f8fafc' },
+  messageBubble: { marginTop: 10, padding: 12, borderRadius: 12, borderWidth: 1 },
+  messageSuperadmin: { backgroundColor: '#ecfdf5', borderColor: '#a7f3d0' },
+  messageTenant: { backgroundColor: '#eff6ff', borderColor: '#bfdbfe' },
+  messageAuthor: { fontSize: 11, fontWeight: '800', color: '#374151', marginBottom: 4 },
+  messageText: { fontSize: 13, color: '#111827', lineHeight: 20 },
   ticketSubject: { fontSize: 14, fontWeight: '800', color: '#111827' },
   ticketMeta: { fontSize: 12, color: '#6b7280', marginTop: 4 },
   ticketDate: { fontSize: 11, color: '#9ca3af', marginTop: 4 },
