@@ -592,13 +592,14 @@ export default function OnboardingPage() {
         return false;
       }
 
-      const response = await fetch('/api/empresa/config', {
+      const response = await fetch('/api/tenant/empresa-config', {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           nombre_empresa: formData.nombreEmpresa,
-          nif: formData.nifEmpresa,
-          direccion: formData.direccionEmpresa,
+          nif_empresa: formData.nifEmpresa,
+          direccion_empresa: formData.direccionEmpresa,
           codigo_postal: formData.codigoPostal,
           ciudad: formData.ciudad,
           provincia: formData.provincia,
@@ -606,12 +607,13 @@ export default function OnboardingPage() {
           telefono: formData.telefono,
           email: formData.email,
           web: formData.web,
-          fecha_creacion: formData.fechaCreacion
-        })
+        }),
       });
 
       if (!response.ok) {
-        console.error('Error guardando datos de empresa');
+        const errData = await response.json().catch(() => ({}));
+        setError((errData as { error?: string }).error || t('errors.saveCompanyFailed'));
+        return false;
       }
 
       await fetch('/api/tenant/booking-channels', {
@@ -624,6 +626,57 @@ export default function OnboardingPage() {
     } catch (error) {
       console.error('Error guardando datos de empresa:', error);
       return false;
+    }
+  };
+
+  const handleSkipCompanyStep = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      if (formData.businessCountryCode && formData.businessLanguage) {
+        const blRes = await fetch('/api/tenant/business-locale', {
+          method: 'PUT',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            country_code: formData.businessCountryCode.toUpperCase(),
+            language: formData.businessLanguage,
+          }),
+        });
+        if (!blRes.ok) {
+          const errData = await blRes.json().catch(() => ({}));
+          setError((errData as { error?: string }).error || t('errors.countryAndLanguageRequired'));
+          return;
+        }
+      }
+
+      await fetch('/api/tenant/booking-channels', {
+        method: 'PUT',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bookingChannels: formData.bookingChannels }),
+      });
+
+      const statusRes = await fetch('/api/tenant/onboarding-status', {
+        method: 'PUT',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          onboarding_status: 'in_progress',
+          deferred_tasks: ['company'],
+          merge_deferred: true,
+        }),
+      });
+      if (!statusRes.ok) {
+        setError(t('errors.deferCompanyFailed'));
+        return;
+      }
+
+      setCurrentStep(3);
+    } catch {
+      setError(t('errors.deferCompanyFailed'));
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -1016,6 +1069,19 @@ export default function OnboardingPage() {
           {t('step2.intro')}
         </p>
 
+        <div className="rounded-xl border-2 border-dashed border-blue-200 bg-blue-50/80 p-5 mb-6">
+          <p className="text-sm font-medium text-blue-950 mb-1">{t('step2.tryFirstTitle')}</p>
+          <p className="text-sm text-blue-900/90 mb-4 leading-relaxed">{t('step2.tryFirstBody')}</p>
+          <button
+            type="button"
+            onClick={() => void handleSkipCompanyStep()}
+            disabled={loading}
+            className="w-full sm:w-auto bg-white border-2 border-blue-300 text-blue-900 px-6 py-2.5 rounded-lg hover:bg-blue-100/60 disabled:opacity-50 min-h-[44px] text-sm font-semibold"
+          >
+            {t('step2.skipForNow')}
+          </button>
+        </div>
+
         {error && (
           <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
             <p className="text-red-800">{error}</p>
@@ -1226,6 +1292,7 @@ export default function OnboardingPage() {
             {t('step2.continue')}
           </button>
         </div>
+        <p className="text-xs text-gray-500 mt-3 leading-relaxed">{t('step2.skipHint')}</p>
       </div>
     </div>
   );

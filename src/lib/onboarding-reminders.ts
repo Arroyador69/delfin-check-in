@@ -1,6 +1,6 @@
 import { sql } from '@/lib/db';
 
-export type OnboardingDeferredTask = 'units' | 'mir' | 'stripe' | 'property_profile';
+export type OnboardingDeferredTask = 'company' | 'units' | 'mir' | 'stripe' | 'property_profile';
 
 export const ONBOARDING_REMINDER_TYPE = 'onboarding_reminder';
 
@@ -9,6 +9,11 @@ export const ONBOARDING_DEFERRED_META: Record<
   OnboardingDeferredTask,
   { title: string; body: string; link: string }
 > = {
+  company: {
+    title: 'Completa los datos de tu alojamiento',
+    body: 'company',
+    link: '/settings/empresa',
+  },
   units: {
     title: 'Configura tus unidades',
     body: 'units',
