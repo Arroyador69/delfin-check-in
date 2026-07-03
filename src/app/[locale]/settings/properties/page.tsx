@@ -394,7 +394,7 @@ export default function PropertiesManagement() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-8">
             {properties.map((property) => (
-              <div key={property.id} className="bg-white rounded-xl shadow-lg overflow-hidden border border-blue-200 hover:shadow-xl transition-all duration-200 transform hover:scale-105">
+              <div key={property.id ?? property.room_id ?? property.property_name} className="bg-white rounded-xl shadow-lg overflow-hidden border border-blue-200 hover:shadow-xl transition-all duration-200 transform hover:scale-105">
                 {property.photos && property.photos.length > 0 ? (
                   <img 
                     src={property.photos[0]} 

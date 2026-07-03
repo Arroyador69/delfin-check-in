@@ -79,6 +79,11 @@ export default function PendingReservationsBell({
 
   const notificationMenuLabel = (n: TenantNotificationItem) => {
     const key = tenantNotificationMobileLabelKey(n);
+    if (n.type === 'support_reply' && n.body) {
+      const base = key ? t(key) : String(n.title || '').trim();
+      const preview = String(n.body).slice(0, 72);
+      return base ? `${base}: ${preview}` : preview;
+    }
     if (key) return t(key);
     const title = String(n.title || '').trim();
     return title || t('mobile.notifications.generic');

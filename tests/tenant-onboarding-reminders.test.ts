@@ -44,4 +44,14 @@ describe('onboarding-notification-routes (móvil)', () => {
       })
     ).toBe('/(app)/settings/properties');
   });
+
+  it('enruta respuesta de soporte al ticket concreto', () => {
+    expect(
+      tenantNotificationMobileRoute({
+        id: '2',
+        type: 'support_reply',
+        link: '/settings/support?ticket=uuid-1',
+      })
+    ).toBe('/(app)/settings/support?ticket=uuid-1');
+  });
 });

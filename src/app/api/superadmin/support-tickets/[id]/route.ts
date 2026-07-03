@@ -221,6 +221,8 @@ export async function POST(
     `;
 
     const shortSubject = String(ticket.subject || '').slice(0, 120);
+    const preview = message.length > 160 ? `${message.slice(0, 157)}…` : message;
+    const notifBody = shortSubject ? `${shortSubject} — ${preview}` : preview;
     const link = `/settings/support?ticket=${encodeURIComponent(ticketId)}`;
     await sql`
       INSERT INTO tenant_notifications (tenant_id, type, title, body, link)
@@ -228,7 +230,7 @@ export async function POST(
         ${ticket.tenant_id}::uuid,
         'support_reply',
         ${'Respuesta de soporte'},
-        ${shortSubject},
+        ${notifBody},
         ${link}
       )
     `;

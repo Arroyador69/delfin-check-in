@@ -61,12 +61,28 @@ export function isUnreadTenantNotification(n: TenantNotificationLike): boolean {
   return n.is_read === false || n.is_read == null;
 }
 
+/** Extrae el UUID del ticket desde el link de notificación de soporte. */
+export function supportTicketIdFromNotificationLink(link: string | null | undefined): string | null {
+  const s = String(link || '');
+  const m = s.match(/[?&]ticket=([^&]+)/);
+  if (!m?.[1]) return null;
+  try {
+    return decodeURIComponent(m[1]);
+  } catch {
+    return m[1];
+  }
+}
+
 export function tenantNotificationMobileRoute(n: TenantNotificationLike): string {
   const type = String(n.type || '');
   if (type === 'onboarding_reminder') {
     return onboardingReminderMobileRoute(n.body);
   }
   if (type === 'support_reply') {
+    const ticketId = supportTicketIdFromNotificationLink(n.link);
+    if (ticketId) {
+      return `/(app)/settings/support?ticket=${encodeURIComponent(ticketId)}`;
+    }
     return '/(app)/settings/support';
   }
   if (type === 'guest_registration' || type === 'reservation_created' || type === 'reservation_updated') {
