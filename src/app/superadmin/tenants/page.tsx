@@ -94,7 +94,7 @@ export default function TenantsPage() {
   }
 
   return (
-    <div className="container mx-auto p-6">
+    <div className="container mx-auto p-6 max-w-full">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">📋 Todos los Tenants</h1>
         <p className="text-gray-700 mt-2">Gestión de todos los clientes de la plataforma</p>
@@ -132,7 +132,11 @@ export default function TenantsPage() {
         </div>
       ) : (
         <div className="bg-white rounded-lg shadow overflow-hidden">
-          <table className="min-w-full divide-y divide-gray-200">
+          <p className="px-4 py-2 text-xs text-gray-500 border-b border-gray-100 sm:hidden">
+            Desliza horizontalmente para ver todas las columnas →
+          </p>
+          <div className="overflow-x-auto">
+          <table className="min-w-[1180px] w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
@@ -233,6 +237,7 @@ export default function TenantsPage() {
               )}
             </tbody>
           </table>
+          </div>
         </div>
       )}
     </div>
