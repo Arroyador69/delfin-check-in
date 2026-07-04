@@ -68,6 +68,23 @@ export default function TenantsPage() {
   const [duplicateGroups, setDuplicateGroups] = useState<
     Array<{ key: string; reason: string; tenants: Array<{ id: string; email: string; name: string }> }>
   >([])
+  const [cleanupLoading, setCleanupLoading] = useState(false)
+  const [cleanupResult, setCleanupResult] = useState<{
+    success?: boolean
+    dry_run?: boolean
+    total_deleted?: number
+    tenants_affected?: number
+    tenants_with_errors?: number
+    error?: string
+    pagination?: { has_more?: boolean; next_offset?: number | null; total_tenants?: number }
+    summary?: Array<{
+      tenant_id: string
+      tenant_name: string
+      deleted_ids: number[]
+      skipped_ids: number[]
+      error?: string
+    }>
+  } | null>(null)
 
   useEffect(() => {
     fetchTenants()
@@ -93,11 +110,111 @@ export default function TenantsPage() {
     }
   }
 
+  const runPropertyCleanup = async (dryRun: boolean, offset = 0) => {
+    setCleanupLoading(true)
+    try {
+      const response = await fetch('/api/superadmin/cleanup-duplicate-properties', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dry_run: dryRun, limit: 40, offset }),
+      })
+      const data = await response.json()
+      setCleanupResult(data)
+      if (!response.ok || !data.success) {
+        alert(data.error || 'Error al limpiar propiedades duplicadas')
+      }
+    } catch (err) {
+      console.error('cleanup-duplicate-properties:', err)
+      alert('Error de red al limpiar propiedades')
+    } finally {
+      setCleanupLoading(false)
+    }
+  }
+
   return (
     <div className="container mx-auto p-6 max-w-full">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">📋 Todos los Tenants</h1>
         <p className="text-gray-700 mt-2">Gestión de todos los clientes de la plataforma</p>
+      </div>
+
+      <div className="mb-6 rounded-lg border border-blue-200 bg-blue-50 p-4">
+        <h2 className="font-semibold text-blue-950 mb-2">🏠 Limpiar propiedades duplicadas (stub €50)</h2>
+        <p className="text-sm text-blue-900 mb-3">
+          Elimina de la base de datos las fichas de prueba (€50, sin fotos) cuando ya existe la propiedad real del
+          tenant. Primero simula; luego ejecuta. No borra propiedades con reservas.
+        </p>
+        <div className="flex flex-wrap gap-2 mb-3">
+          <button
+            type="button"
+            disabled={cleanupLoading}
+            onClick={() => runPropertyCleanup(true, 0)}
+            className="px-4 py-2 rounded-lg bg-white border border-blue-300 text-sm font-medium text-blue-900 hover:bg-blue-100 disabled:opacity-50"
+          >
+            {cleanupLoading ? 'Procesando…' : 'Simular (dry run)'}
+          </button>
+          <button
+            type="button"
+            disabled={cleanupLoading}
+            onClick={() => {
+              if (
+                !confirm(
+                  '¿Eliminar stubs duplicados en todos los tenants? Solo se borran fichas €50 sin fotos con otra ficha mejor.'
+                )
+              ) {
+                return
+              }
+              runPropertyCleanup(false, 0)
+            }}
+            className="px-4 py-2 rounded-lg bg-blue-700 text-sm font-medium text-white hover:bg-blue-800 disabled:opacity-50"
+          >
+            Ejecutar limpieza
+          </button>
+          {cleanupResult?.pagination?.has_more ? (
+            <button
+              type="button"
+              disabled={cleanupLoading}
+              onClick={() =>
+                runPropertyCleanup(Boolean(cleanupResult?.dry_run), cleanupResult?.pagination?.next_offset || 0)
+              }
+              className="px-4 py-2 rounded-lg bg-white border border-blue-300 text-sm font-medium text-blue-900 hover:bg-blue-100 disabled:opacity-50"
+            >
+              Siguiente lote
+            </button>
+          ) : null}
+        </div>
+        {cleanupResult?.success ? (
+          <div className="text-sm text-blue-950 bg-white/80 rounded-md p-3 border border-blue-100">
+            <p>
+              {cleanupResult.dry_run ? 'Simulación' : 'Ejecutado'}:{' '}
+              <strong>{cleanupResult.total_deleted ?? 0}</strong> stub(s){' '}
+              {cleanupResult.dry_run ? 'a borrar' : 'borrados'} en{' '}
+              <strong>{cleanupResult.tenants_affected ?? 0}</strong> tenant(s).
+              {(cleanupResult.tenants_with_errors ?? 0) > 0 ? (
+                <span className="text-red-700"> Errores en {cleanupResult.tenants_with_errors} tenant(s).</span>
+              ) : null}
+            </p>
+            {Array.isArray(cleanupResult.summary) && cleanupResult.summary.length > 0 ? (
+              <ul className="mt-2 space-y-1 max-h-40 overflow-auto text-xs">
+                {cleanupResult.summary.slice(0, 12).map((row) => (
+                  <li key={row.tenant_id}>
+                    <strong>{row.tenant_name}</strong>
+                    {row.error ? (
+                      <span className="text-red-700"> — error: {row.error}</span>
+                    ) : (
+                      <>
+                        {row.deleted_ids.length ? ` — borrar IDs: ${row.deleted_ids.join(', ')}` : ''}
+                        {row.skipped_ids.length ? ` — omitidos (reservas): ${row.skipped_ids.join(', ')}` : ''}
+                      </>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="mt-2 text-blue-800">No se encontraron stubs duplicados en este lote.</p>
+            )}
+          </div>
+        ) : null}
       </div>
 
       {duplicateGroups.length > 0 && (
