@@ -2,6 +2,15 @@ import { sql } from '@/lib/db';
 
 export const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
+/** PG date_part('dow'): 0=dom, 1=lun … 5=vie, 6=sáb. Finde = vie–dom. */
+export function isPostgresWeekendDow(dow: number): boolean {
+  return dow === 0 || dow === 5 || dow === 6;
+}
+
+export function isPostgresWeekdayDow(dow: number): boolean {
+  return !isPostgresWeekendDow(dow);
+}
+
 export async function assertTenantOwnsProperty(
   tenantId: string,
   propertyId: number
@@ -98,9 +107,9 @@ async function upsertDaysWithPriceFiltered(
     if (weekendsOnly) {
       await sql`
         INSERT INTO property_availability (property_id, date, available, price, created_at)
-        SELECT ${propertyId}::int, d::date, TRUE, ${price}::decimal(10,2), NOW()
-        FROM generate_series(${from}::date, ${to}::date, '1 day'::interval) AS d
-        WHERE EXTRACT(DOW FROM d) IN (0, 5, 6)
+        SELECT ${propertyId}::int, gs.day::date, TRUE, ${price}::decimal(10,2), NOW()
+        FROM generate_series(${from}::date, ${to}::date, '1 day'::interval) AS gs(day)
+        WHERE date_part('dow', gs.day::date) IN (0, 5, 6)
         ON CONFLICT (property_id, date) DO UPDATE
         SET
           price = EXCLUDED.price,
@@ -109,9 +118,9 @@ async function upsertDaysWithPriceFiltered(
     } else {
       await sql`
         INSERT INTO property_availability (property_id, date, available, price, created_at)
-        SELECT ${propertyId}::int, d::date, TRUE, ${price}::decimal(10,2), NOW()
-        FROM generate_series(${from}::date, ${to}::date, '1 day'::interval) AS d
-        WHERE EXTRACT(DOW FROM d) NOT IN (0, 5, 6)
+        SELECT ${propertyId}::int, gs.day::date, TRUE, ${price}::decimal(10,2), NOW()
+        FROM generate_series(${from}::date, ${to}::date, '1 day'::interval) AS gs(day)
+        WHERE date_part('dow', gs.day::date) NOT IN (0, 5, 6)
         ON CONFLICT (property_id, date) DO UPDATE
         SET
           price = EXCLUDED.price,
@@ -124,9 +133,9 @@ async function upsertDaysWithPriceFiltered(
       if (weekendsOnly) {
         await sql`
           INSERT INTO property_availability (property_id, date, available, price_override, created_at)
-          SELECT ${propertyId}::int, d::date, TRUE, ${price}::decimal(10,2), NOW()
-          FROM generate_series(${from}::date, ${to}::date, '1 day'::interval) AS d
-          WHERE EXTRACT(DOW FROM d) IN (0, 5, 6)
+          SELECT ${propertyId}::int, gs.day::date, TRUE, ${price}::decimal(10,2), NOW()
+          FROM generate_series(${from}::date, ${to}::date, '1 day'::interval) AS gs(day)
+          WHERE date_part('dow', gs.day::date) IN (0, 5, 6)
           ON CONFLICT (property_id, date) DO UPDATE
           SET price_override = EXCLUDED.price_override
         `;
@@ -134,10 +143,10 @@ async function upsertDaysWithPriceFiltered(
           await sql`
             UPDATE property_availability pa
             SET price = ${price}::decimal(10,2)
-            FROM generate_series(${from}::date, ${to}::date, '1 day'::interval) AS d
+            FROM generate_series(${from}::date, ${to}::date, '1 day'::interval) AS gs(day)
             WHERE pa.property_id = ${propertyId}::int
-              AND pa.date = d::date
-              AND EXTRACT(DOW FROM d) IN (0, 5, 6)
+              AND pa.date = gs.day::date
+              AND date_part('dow', gs.day::date) IN (0, 5, 6)
           `;
         } catch {
           /* ignore */
@@ -145,9 +154,9 @@ async function upsertDaysWithPriceFiltered(
       } else {
         await sql`
           INSERT INTO property_availability (property_id, date, available, price_override, created_at)
-          SELECT ${propertyId}::int, d::date, TRUE, ${price}::decimal(10,2), NOW()
-          FROM generate_series(${from}::date, ${to}::date, '1 day'::interval) AS d
-          WHERE EXTRACT(DOW FROM d) NOT IN (0, 5, 6)
+          SELECT ${propertyId}::int, gs.day::date, TRUE, ${price}::decimal(10,2), NOW()
+          FROM generate_series(${from}::date, ${to}::date, '1 day'::interval) AS gs(day)
+          WHERE date_part('dow', gs.day::date) NOT IN (0, 5, 6)
           ON CONFLICT (property_id, date) DO UPDATE
           SET price_override = EXCLUDED.price_override
         `;
@@ -155,10 +164,10 @@ async function upsertDaysWithPriceFiltered(
           await sql`
             UPDATE property_availability pa
             SET price = ${price}::decimal(10,2)
-            FROM generate_series(${from}::date, ${to}::date, '1 day'::interval) AS d
+            FROM generate_series(${from}::date, ${to}::date, '1 day'::interval) AS gs(day)
             WHERE pa.property_id = ${propertyId}::int
-              AND pa.date = d::date
-              AND EXTRACT(DOW FROM d) NOT IN (0, 5, 6)
+              AND pa.date = gs.day::date
+              AND date_part('dow', gs.day::date) NOT IN (0, 5, 6)
           `;
         } catch {
           /* ignore */
