@@ -493,6 +493,9 @@
     "mobileApp": {
       "banner": "Stai usando lo stesso onboarding in 6 passi del desktop. I progressi si salvano automaticamente."
     },
+    "mobileWeb": {
+      "banner": "Stesso onboarding in 6 passi del desktop: password, dati, piano, MIR, unità e pagamenti. I progressi si salvano se esci e torni."
+    },
     "welcome": {
       "title": "Benvenuto: alloggio pronto in 6 passi",
       "subtitle": "Non serve essere tecnici. Questa guida ti dice cosa fare in ogni schermata. Funziona da mobile e salviamo i progressi.",

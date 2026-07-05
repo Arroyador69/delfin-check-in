@@ -13,6 +13,7 @@ import {
 import { isValidLocale, locales, localeNames, type Locale } from '@/i18n/config';
 import { ISO3166_ALPHA2 } from '@/lib/iso3166-alpha2';
 import TutorialVideoEmbed from '@/components/TutorialVideoEmbed';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { buildAntivirusHelpUrl } from '@/lib/onboarding-magic-link';
 
 type PlanId = 'free' | 'checkin' | 'standard' | 'pro';
@@ -1618,18 +1619,21 @@ export default function OnboardingPage() {
       <div className="bg-white shadow-sm sticky top-0 z-30 border-b border-gray-100 pt-[env(safe-area-inset-top)]">
         <div className="max-w-4xl mx-auto px-3 sm:px-4 py-4 sm:py-5">
           <div className="flex items-start justify-between gap-3">
-            <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+            <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
               <span className="text-xl sm:text-2xl shrink-0">🐬</span>
               <div className="min-w-0">
                 <h1 className="text-base sm:text-xl font-bold text-gray-900 truncate">{t('appName')}</h1>
                 <p className="text-xs sm:text-sm text-blue-700 font-medium mt-0.5">{t('progress.configuring')}</p>
               </div>
             </div>
-            <div className="text-xs sm:text-sm text-gray-500 shrink-0 text-right">
-              <div>{t('stepOf', { currentStep, totalSteps: TOTAL_STEPS })}</div>
-              <div className="font-semibold text-gray-800 mt-0.5 max-w-[9rem] sm:max-w-none truncate">
-                {t('progress.currentStepLabel', { label: getStepLabel(currentStep) })}
+            <div className="flex items-start gap-2 shrink-0">
+              <div className="text-xs sm:text-sm text-gray-500 text-right">
+                <div>{t('stepOf', { currentStep, totalSteps: TOTAL_STEPS })}</div>
+                <div className="font-semibold text-gray-800 mt-0.5 max-w-[9rem] sm:max-w-none truncate">
+                  {t('progress.currentStepLabel', { label: getStepLabel(currentStep) })}
+                </div>
               </div>
+              <LanguageSwitcher />
             </div>
           </div>
           
@@ -1652,11 +1656,9 @@ export default function OnboardingPage() {
             ))}
           </div>
 
-          {fromMobileApp && (
-            <div className="mt-3 rounded-lg border border-orange-200 bg-orange-50 px-3 py-2.5 text-xs sm:text-sm text-orange-900 leading-relaxed">
-              {t('mobileApp.banner')}
-            </div>
-          )}
+          <div className="mt-3 lg:hidden rounded-lg border border-blue-200 bg-blue-50 px-3 py-2.5 text-xs sm:text-sm text-blue-900 leading-relaxed">
+            {fromMobileApp ? t('mobileApp.banner') : t('mobileWeb.banner')}
+          </div>
         </div>
       </div>
 

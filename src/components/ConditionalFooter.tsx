@@ -2,6 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import Footer from './Footer';
+import { isOnboardingPath } from '@/lib/onboarding-route';
 
 export default function ConditionalFooter() {
   const pathname = usePathname();
@@ -14,7 +15,7 @@ export default function ConditionalFooter() {
   ];
   
   // Si es una página excluida, no mostrar footer
-  if (EXCLUDED_PAGES.includes(pathname)) {
+  if (EXCLUDED_PAGES.includes(pathname) || isOnboardingPath(pathname)) {
     return null;
   }
   

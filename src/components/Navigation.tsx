@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { isOnboardingPath } from '@/lib/onboarding-route';
 import { Home, Bed, Calendar, Users, Settings, Menu, X, TrendingUp, FileText, Download, Shield, Calculator, Send, Receipt, Crown, Target, UserPlus, BarChart3, LifeBuoy, Star, MousePointerClick, Megaphone } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
@@ -46,25 +47,9 @@ export default function Navigation() {
       .catch(err => console.error('Error fetching user:', err));
   }, [pathname]);
 
-  // En onboarding mostramos solo el logo (sin navegación) y NO debe navegar al dashboard.
-  if (pathname?.includes('/onboarding')) {
-    return (
-      <nav className="bg-white shadow-lg fixed w-full top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center">
-              <div className="flex-shrink-0 flex items-center select-none cursor-default">
-                <span className="text-2xl mr-2">🐬</span>
-                <span className="text-xl font-bold text-gray-900">Delfín Check-in</span>
-              </div>
-            </div>
-            <div className="flex items-center">
-              <LanguageSwitcher />
-            </div>
-          </div>
-        </div>
-      </nav>
-    );
+  // En onboarding el propio asistente incluye cabecera y selector de idioma (misma UX móvil y escritorio).
+  if (isOnboardingPath(pathname)) {
+    return null;
   }
 
   const locale = getLocaleFromPathname(pathname ?? '');

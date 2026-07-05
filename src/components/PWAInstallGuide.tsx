@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { usePathname } from 'next/navigation';
+import { isOnboardingPath } from '@/lib/onboarding-route';
 
 function isStandalone(): boolean {
   // iOS Safari
@@ -29,6 +31,7 @@ export default function PWAInstallGuide() {
 
   const platform = useMemo(detectPlatform, []);
   const standalone = useMemo(isStandalone, []);
+  const pathname = usePathname();
 
   useEffect(() => {
     const handler = (e: any) => {
@@ -43,6 +46,7 @@ export default function PWAInstallGuide() {
   if (!ready) return null;
   if (dismissed) return null;
   if (standalone) return null;
+  if (isOnboardingPath(pathname)) return null;
 
   const show = platform.ios || (platform.android && !installable); // Android con prompt nativo usará PWAInstallButton
   if (!show) return null;

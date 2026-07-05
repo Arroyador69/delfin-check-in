@@ -471,6 +471,9 @@
     "mobileApp": {
       "banner": "Vous êtes sur le même onboarding en 6 étapes que sur ordinateur. Votre progression est enregistrée automatiquement."
     },
+    "mobileWeb": {
+      "banner": "Même onboarding en 6 étapes qu’en ordinateur : mot de passe, données, forfait, MIR, unité et paiements. La progression est sauvegardée."
+    },
     "common": {
       "show": "Afficher",
       "hide": "Masquer"

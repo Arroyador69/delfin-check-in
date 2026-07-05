@@ -471,6 +471,9 @@
     "mobileApp": {
       "banner": "Está no mesmo onboarding de 6 passos do computador. O progresso é guardado automaticamente."
     },
+    "mobileWeb": {
+      "banner": "Mesmo onboarding de 6 passos do computador: palavra-passe, dados, plano, MIR, unidade e pagamentos. O progresso guarda-se se sair e voltar."
+    },
     "common": {
       "show": "Ver",
       "hide": "Ocultar"

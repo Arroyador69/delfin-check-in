@@ -1,7 +1,9 @@
 'use client';
 
 import { useTenant, hasAds } from '@/hooks/useTenant';
+import { usePathname } from 'next/navigation';
 import AffiliateRecommendationSlot from '@/components/AffiliateRecommendationSlot';
+import { isOnboardingPath } from '@/lib/onboarding-route';
 
 /**
  * Componente de anuncios para planes FREE y CHECKIN
@@ -10,8 +12,9 @@ import AffiliateRecommendationSlot from '@/components/AffiliateRecommendationSlo
  */
 export default function AdsBanner() {
   const { tenant, loading } = useTenant();
+  const pathname = usePathname();
 
-  if (loading || !tenant || !hasAds(tenant)) return null;
+  if (loading || !tenant || !hasAds(tenant) || isOnboardingPath(pathname)) return null;
   return <AffiliateRecommendationSlot placement="banner" />;
 }
 

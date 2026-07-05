@@ -1,6 +1,7 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
+import { isOnboardingPath } from '@/lib/onboarding-route';
 
 interface ConditionalMainPaddingProps {
   children: React.ReactNode;
@@ -16,7 +17,7 @@ export default function ConditionalMainPadding({ children }: ConditionalMainPadd
   ];
   
   // Si es una página sin header, no aplicar padding-top
-  const hasHeader = !PAGES_WITHOUT_HEADER.includes(pathname);
+  const hasHeader = !PAGES_WITHOUT_HEADER.includes(pathname) && !isOnboardingPath(pathname);
   
   return (
     <main className={hasHeader ? 'pt-16 flex-1' : 'flex-1'}>

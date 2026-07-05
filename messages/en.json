@@ -519,6 +519,9 @@
     "mobileApp": {
       "banner": "You're on the same 6-step onboarding as on desktop. Your progress is saved automatically if you leave and come back."
     },
+    "mobileWeb": {
+      "banner": "Same 6-step onboarding as on desktop: password, business details, plan, MIR, unit, and payouts. Progress is saved if you leave and return."
+    },
     "welcome": {
       "title": "Welcome: get your property ready in 6 steps",
       "subtitle": "No tech skills needed. This wizard tells you what to do on each screen. Works on mobile; we save your progress if you leave and come back.",

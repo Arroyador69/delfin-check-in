@@ -520,6 +520,9 @@
     "mobileApp": {
       "banner": "Estás en el mismo onboarding de 6 pasos que en ordenador. Tu progreso se guarda automáticamente si sales y vuelves."
     },
+    "mobileWeb": {
+      "banner": "Mismo onboarding de 6 pasos que en ordenador: contraseña, datos, plan, MIR, unidad y cobros. El progreso se guarda si sales y vuelves."
+    },
     "welcome": {
       "title": "Bienvenido: dejamos tu alojamiento listo en 6 pasos",
       "subtitle": "No hace falta ser técnico. Este asistente te dice qué hacer en cada pantalla. Funciona en el móvil y guardamos tu progreso si sales y vuelves.",
