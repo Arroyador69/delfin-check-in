@@ -474,6 +474,33 @@
     "mobileWeb": {
       "banner": "Même onboarding en 6 étapes qu’en ordinateur : mot de passe, données, forfait, MIR, unité et paiements. La progression est sauvegardée."
     },
+    "stepPlan": {
+      "title": "💳 Forfait et paiement",
+      "intro": "Choisissez votre forfait, vos unités et la facturation mensuelle ou annuelle.",
+      "paymentCancelled": "Paiement annulé. Vous pouvez réessayer quand vous voulez.",
+      "calculatingPrice": "Calcul du prix…",
+      "previous": "Précédent",
+      "continue": "Continuer",
+      "payPlan": "Payer le forfait",
+      "startingPayment": "Démarrage du paiement…",
+      "paymentPendingHint": "Si vous avez déjà payé, attendez quelques secondes pendant la confirmation automatique. Sinon, vérifiez votre email (lien pour continuer l’onboarding).",
+      "subtotal": "Sous-total (HT)",
+      "vat": "TVA ({rate}%)",
+      "totalMonthly": "Total mensuel",
+      "totalYearly": "Total annuel",
+      "planLabel": "Forfait",
+      "typeLabel": "Type",
+      "billingLabel": "Facturation",
+      "billingMonthly": "Mensuel",
+      "billingYearly": "Annuel (2 mois offerts)",
+      "unitsToCreate": "Unités à créer",
+      "createUnits": "Créer {count} unités",
+      "moreFeatures": "+ {count} de plus",
+      "planBasic": "Basique (Gratuit)",
+      "planCheckin": "Check-in",
+      "planStandard": "Standard",
+      "planPro": "Pro"
+    },
     "common": {
       "show": "Afficher",
       "hide": "Masquer"

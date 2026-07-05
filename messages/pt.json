@@ -474,6 +474,33 @@
     "mobileWeb": {
       "banner": "Mesmo onboarding de 6 passos do computador: palavra-passe, dados, plano, MIR, unidade e pagamentos. O progresso guarda-se se sair e voltar."
     },
+    "stepPlan": {
+      "title": "💳 Plano e pagamento",
+      "intro": "Escolha o plano, unidades e faturação mensal ou anual.",
+      "paymentCancelled": "Pagamento cancelado. Pode tentar novamente quando quiser.",
+      "calculatingPrice": "A calcular preço…",
+      "previous": "Anterior",
+      "continue": "Continuar",
+      "payPlan": "Pagar plano",
+      "startingPayment": "A iniciar pagamento…",
+      "paymentPendingHint": "Se já pagou, aguarde alguns segundos pela confirmação automática. Se não avançar, verifique o email (link para continuar o onboarding).",
+      "subtotal": "Subtotal (sem IVA)",
+      "vat": "IVA ({rate}%)",
+      "totalMonthly": "Total mensal",
+      "totalYearly": "Total anual",
+      "planLabel": "Plano",
+      "typeLabel": "Tipo",
+      "billingLabel": "Faturação",
+      "billingMonthly": "Mensal",
+      "billingYearly": "Anual (2 meses grátis)",
+      "unitsToCreate": "Unidades a criar",
+      "createUnits": "Criar {count} unidades",
+      "moreFeatures": "+ {count} mais",
+      "planBasic": "Básico (Grátis)",
+      "planCheckin": "Check-in",
+      "planStandard": "Standard",
+      "planPro": "Pro"
+    },
     "common": {
       "show": "Ver",
       "hide": "Ocultar"

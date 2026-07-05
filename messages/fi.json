@@ -484,6 +484,33 @@
     "mobileWeb": {
       "banner": "Sama 6-vaiheinen käyttöönotto kuin tietokoneella: salasana, tiedot, paketti, MIR, yksikkö ja maksut. Edistyminen tallentuu."
     },
+    "stepPlan": {
+      "title": "💳 Paketti ja maksu",
+      "intro": "Valitse paketti, yksiköt ja kuukausi- tai vuosilaskutus.",
+      "paymentCancelled": "Maksu peruutettiin. Voit yrittää uudelleen milloin tahansa.",
+      "calculatingPrice": "Lasketaan hintaa…",
+      "previous": "Edellinen",
+      "continue": "Jatka",
+      "payPlan": "Maksa paketti",
+      "startingPayment": "Aloitetaan maksua…",
+      "paymentPendingHint": "Jos olet jo maksanut, odota hetki automaattista vahvistusta. Jos eteneminen ei jatku, tarkista sähköposti (linkki onboardingin jatkamiseen).",
+      "subtotal": "Välisumma (ilman ALV)",
+      "vat": "ALV ({rate}%)",
+      "totalMonthly": "Kuukausiyhteensä",
+      "totalYearly": "Vuosiyhteensä",
+      "planLabel": "Paketti",
+      "typeLabel": "Tyyppi",
+      "billingLabel": "Laskutus",
+      "billingMonthly": "Kuukausittain",
+      "billingYearly": "Vuosittain (2 kk ilmaiseksi)",
+      "unitsToCreate": "Luotavat yksiköt",
+      "createUnits": "Luo {count} yksikköä",
+      "moreFeatures": "+ {count} lisää",
+      "planBasic": "Perus (ilmainen)",
+      "planCheckin": "Check-in",
+      "planStandard": "Standard",
+      "planPro": "Pro"
+    },
     "common": {
       "show": "Show",
       "hide": "Piilottaa"
