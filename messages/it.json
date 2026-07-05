@@ -652,7 +652,7 @@
       "connectOpened": "✅ Link Stripe aperto. Completa il modulo e torna qui.",
       "previous": "Indietro",
       "completing": "Finalizzazione…",
-      "completeSetup": "Vai al pannello"
+      "completeSetup": "Termina"
     },
     "errors": {
       "mustChangePassword": "Devi cambiare la password prima di continuare",

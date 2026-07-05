@@ -686,8 +686,8 @@
       "connectLoading": "Abriendo Stripe…",
       "connectOpened": "✅ Enlace de Stripe abierto. Completa el formulario y vuelve aquí.",
       "previous": "Anterior",
-      "completing": "Finalizando...",
-      "completeSetup": "Ir al panel"
+      "completing": "Terminando...",
+      "completeSetup": "Terminar"
     },
     "errors": {
       "mustChangePassword": "Debes cambiar tu contraseña antes de continuar",
