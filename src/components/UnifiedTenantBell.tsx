@@ -158,14 +158,14 @@ export default function UnifiedTenantBell() {
   const label = unreadTotal > 9 ? '9+' : String(unreadTotal);
 
   return (
-    <div ref={wrapRef} className="relative">
+    <div ref={wrapRef} className="relative shrink-0">
       <button
         type="button"
         onClick={() => {
           setOpen((v) => !v);
           loadAll();
         }}
-        className={`relative inline-flex items-center justify-center rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-amber-400 ${
+        className={`relative inline-flex items-center justify-center rounded-lg min-h-[44px] min-w-[44px] p-2 focus:outline-none focus:ring-2 focus:ring-amber-400 ${
           hasUnread
             ? 'text-amber-800 hover:bg-amber-50'
             : 'text-gray-400 hover:bg-gray-100 hover:text-gray-600'
@@ -184,13 +184,20 @@ export default function UnifiedTenantBell() {
       </button>
 
       {open ? (
-        <div className="absolute right-0 mt-2 w-[22rem] max-w-[85vw] rounded-xl border border-slate-200 bg-white shadow-xl overflow-hidden z-50">
-          <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+        <>
+          <button
+            type="button"
+            className="fixed inset-0 z-[55] bg-black/20 sm:hidden"
+            aria-label={t('notificationsClose')}
+            onClick={() => setOpen(false)}
+          />
+          <div className="fixed left-3 right-3 top-[calc(4rem+env(safe-area-inset-top)+0.5rem)] z-[60] max-h-[min(70vh,24rem)] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl sm:absolute sm:inset-auto sm:left-auto sm:right-0 sm:top-full sm:mt-2 sm:w-[22rem] sm:max-w-[85vw]">
+          <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between gap-2">
             <div className="text-sm font-semibold text-slate-900">{t('notificationsTitle')}</div>
             {notifCount > 0 ? (
               <button
                 type="button"
-                className="text-xs text-slate-600 hover:text-slate-900"
+                className="text-xs text-slate-600 hover:text-slate-900 shrink-0 whitespace-nowrap"
                 onClick={() => markRead(notifs.filter((i) => !i.is_read).map((i) => i.id))}
               >
                 {t('notificationsMarkAllRead')}
@@ -198,7 +205,7 @@ export default function UnifiedTenantBell() {
             ) : null}
           </div>
 
-          <div className="max-h-96 overflow-auto">
+          <div className="max-h-[min(60vh,20rem)] sm:max-h-96 overflow-auto">
             {/* Reservas por revisar */}
             <div className="border-b border-slate-100 bg-amber-50/60 px-4 py-2 text-xs font-semibold text-amber-900">
               {t('pendingReservationsReviewDropdownTitle')}
@@ -269,6 +276,7 @@ export default function UnifiedTenantBell() {
             )}
           </div>
         </div>
+        </>
       ) : null}
     </div>
   );

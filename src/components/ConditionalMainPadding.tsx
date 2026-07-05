@@ -20,7 +20,7 @@ export default function ConditionalMainPadding({ children }: ConditionalMainPadd
   const hasHeader = !PAGES_WITHOUT_HEADER.includes(pathname) && !isOnboardingPath(pathname);
   
   return (
-    <main className={hasHeader ? 'pt-16 flex-1' : 'flex-1'}>
+    <main className={hasHeader ? 'pt-[calc(4rem+env(safe-area-inset-top))] flex-1' : 'flex-1'}>
       {children}
     </main>
   );

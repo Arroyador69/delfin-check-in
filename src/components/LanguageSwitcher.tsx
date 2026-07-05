@@ -72,7 +72,7 @@ export default function LanguageSwitcher() {
       {/* Botón de selector */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[44px]"
         aria-label="Cambiar idioma"
         title="Cambiar idioma"
       >
@@ -95,7 +95,7 @@ export default function LanguageSwitcher() {
 
       {/* Dropdown de idiomas */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50 animate-fadeIn">
+        <div className="absolute right-0 mt-2 w-48 max-w-[calc(100vw-1.5rem)] bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50 animate-fadeIn">
           {locales.map((loc) => (
             <button
               key={loc}
