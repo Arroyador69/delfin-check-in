@@ -517,6 +517,9 @@
         "6": "Cobros (opcional)"
       }
     },
+    "mobileApp": {
+      "banner": "Estás en el mismo onboarding de 6 pasos que en ordenador. Tu progreso se guarda automáticamente si sales y vuelves."
+    },
     "welcome": {
       "title": "Bienvenido: dejamos tu alojamiento listo en 6 pasos",
       "subtitle": "No hace falta ser técnico. Este asistente te dice qué hacer en cada pantalla. Funciona en el móvil y guardamos tu progreso si sales y vuelves.",
@@ -3346,9 +3349,9 @@
         "open": "Abrir",
         "openAdminWeb": "Abrir panel web"
       },
-      "webOnboardingBannerTitle": "Onboarding del panel web pendiente",
-      "webOnboardingBannerBody": "Completa la configuración inicial en el navegador (mismo usuario y contraseña). Cuando termines, este aviso desaparecerá.",
-      "webOnboardingBannerCta": "Abrir onboarding en el navegador",
+      "webOnboardingBannerTitle": "Completa tu configuración (mismo onboarding que en ordenador)",
+      "webOnboardingBannerBody": "Son los mismos 6 pasos del panel web: contraseña, datos del negocio, plan, MIR, unidad y cobros. Se abre aquí con tu mismo usuario; el progreso se guarda igual que en el ordenador.",
+      "webOnboardingBannerCta": "Continuar configuración",
       "tasks": {
         "country": "Indicar país",
         "language": "Elegir idioma de la app",

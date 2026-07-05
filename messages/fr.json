@@ -468,6 +468,9 @@
   "onboarding": {
     "appName": "Delfín Check-in",
     "stepOf": "Étape {currentStep} sur {totalSteps}",
+    "mobileApp": {
+      "banner": "Vous êtes sur le même onboarding en 6 étapes que sur ordinateur. Votre progression est enregistrée automatiquement."
+    },
     "common": {
       "show": "Afficher",
       "hide": "Masquer"
@@ -3133,9 +3136,9 @@
         "open": "Ouvrir",
         "openAdminWeb": "Ouvrir l’admin web"
       },
-      "webOnboardingBannerTitle": "Onboarding web en attente",
-      "webOnboardingBannerBody": "Terminez la configuration initiale dans le navigateur (même email et mot de passe). Ce bandeau disparaîtra une fois terminé.",
-      "webOnboardingBannerCta": "Ouvrir l’onboarding dans le navigateur",
+      "webOnboardingBannerTitle": "Terminez la configuration (même onboarding qu’en ordinateur)",
+      "webOnboardingBannerBody": "Les mêmes 6 étapes web : mot de passe, données, forfait, MIR, unité et paiements. S’ouvre ici avec le même compte ; la progression est sauvegardée comme sur ordinateur.",
+      "webOnboardingBannerCta": "Continuer la configuration",
       "tasks": {
         "country": "Indiquer le pays",
         "language": "Choisir la langue de l’app",

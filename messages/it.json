@@ -490,6 +490,9 @@
         "6": "Pagamenti (opz.)"
       }
     },
+    "mobileApp": {
+      "banner": "Stai usando lo stesso onboarding in 6 passi del desktop. I progressi si salvano automaticamente."
+    },
     "welcome": {
       "title": "Benvenuto: alloggio pronto in 6 passi",
       "subtitle": "Non serve essere tecnici. Questa guida ti dice cosa fare in ogni schermata. Funziona da mobile e salviamo i progressi.",
@@ -3222,9 +3225,9 @@
         "open": "Apri",
         "openAdminWeb": "Apri pannello web"
       },
-      "webOnboardingBannerTitle": "Onboarding web ancora da completare",
-      "webOnboardingBannerBody": "Completa la configurazione iniziale nel browser (stessa email e password). Questo avviso scomparirà al termine.",
-      "webOnboardingBannerCta": "Apri l’onboarding nel browser",
+      "webOnboardingBannerTitle": "Completa la configurazione (stesso onboarding del desktop)",
+      "webOnboardingBannerBody": "Gli stessi 6 passi web: password, dati, piano, MIR, unità e pagamenti. Si apre qui con lo stesso account; i progressi si salvano come sul desktop.",
+      "webOnboardingBannerCta": "Continua configurazione",
       "tasks": {
         "country": "Imposta il paese",
         "language": "Scegli la lingua dell’app",

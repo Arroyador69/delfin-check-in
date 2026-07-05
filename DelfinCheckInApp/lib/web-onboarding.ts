@@ -6,7 +6,7 @@ const WEB_LOCALES = new Set(['es', 'en', 'fr', 'it', 'pt', 'fi']);
 export function getWebOnboardingUrl(appLocale: string): string {
   const base = getPublicApiOrigin();
   const loc = WEB_LOCALES.has(appLocale) ? appLocale : 'es';
-  return `${base}/${loc}/onboarding`;
+  return `${base}/${loc}/onboarding?source=mobile_app`;
 }
 
 /**
