@@ -824,11 +824,17 @@
     },
     "editModal": {
       "title": "Edit reservation",
-      "reservationSection": "Reservation information"
+      "completeFromGuestFormTitle": "Complete reservation from guest form",
+      "reservationSection": "Reservation information",
+      "needsReviewBannerTitle": "Registration received from your guest form",
+      "needsReviewBannerBody": "Guest details are already saved. Assign the room (and review price/channel if needed), then save to clear the bell notification."
     },
     "form": {
       "roomLabel": "Room *",
       "roomPlaceholder": "Select room",
+      "roomRequiredFromGuestForm": "Select your room from the dropdown to complete this form reservation.",
+      "noRoomsRegistered": "You have not registered a room in the panel yet. The guest form works without this, but to complete the reservation from the bell you must add your unit first.",
+      "goRegisterRoom": "Go to Settings → General and register my room",
       "statusLabel": "Status *",
       "guestSectionTitle": "Guest information",
       "guestNameLabel": "Guest name *",

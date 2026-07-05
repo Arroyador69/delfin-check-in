@@ -17,6 +17,7 @@ import {
   defaultBookingChannelsConfig,
   type BookingChannelsConfig,
 } from '@/lib/booking-channels';
+import { isUnassignedReservationRoomId } from '@/lib/reservation-from-guest-registration';
 // Base de datos: Neon PostgreSQL
 
 interface Reservation {
@@ -54,9 +55,18 @@ const RESERVATION_FORM_FALLBACKS: Record<string, string> = {
   'createModal.title': 'Nueva reserva',
   'createModal.reservationSection': 'Información de la reserva',
   'editModal.title': 'Editar reserva',
+  'editModal.completeFromGuestFormTitle': 'Completar reserva del formulario',
   'editModal.reservationSection': 'Información de la reserva',
+  'editModal.needsReviewBannerTitle': 'Registro recibido desde tu formulario de huéspedes',
+  'editModal.needsReviewBannerBody':
+    'Los datos del huésped ya están guardados. Solo tienes que asignar la habitación (y revisar precio/canal si quieres) y guardar para quitar el aviso de la campanita.',
   'form.roomLabel': 'Habitación *',
   'form.roomPlaceholder': 'Seleccionar habitación',
+  'form.roomRequiredFromGuestForm':
+    'Elige tu habitación en el desplegable para completar esta reserva del formulario.',
+  'form.noRoomsRegistered':
+    'Aún no tienes ninguna habitación registrada en el panel. El formulario de huéspedes funciona sin esto, pero para completar la reserva desde la campanita debes dar de alta tu unidad primero.',
+  'form.goRegisterRoom': 'Ir a Ajustes → General y registrar mi habitación',
   'form.statusLabel': 'Estado *',
   'form.guestSectionTitle': 'Información del huésped',
   'form.guestNameLabel': 'Nombre del huésped *',
@@ -154,8 +164,11 @@ export default function ReservationsPage() {
 
   const openEditReservationModal = useCallback((reservation: Reservation) => {
     setReservationToEdit(reservation);
+    const roomId = isUnassignedReservationRoomId(reservation.room_id)
+      ? ''
+      : reservation.room_id;
     setFormData({
-      room_id: reservation.room_id,
+      room_id: roomId,
       guest_name: reservation.guest_name,
       guest_email: reservation.guest_email || '',
       guest_phone: reservation.guest_phone || '',
@@ -205,6 +218,14 @@ export default function ReservationsPage() {
     fetchReservations();
     fetchRooms();
   }, []);
+
+  // Reserva desde formulario de huéspedes: si solo hay 1 habitación, preseleccionarla.
+  useEffect(() => {
+    if (!showEditModal || !reservationToEdit?.needs_review) return;
+    if (rooms.length !== 1) return;
+    if (!isUnassignedReservationRoomId(formData.room_id)) return;
+    setFormData((prev) => ({ ...prev, room_id: rooms[0]!.id }));
+  }, [showEditModal, reservationToEdit, rooms, formData.room_id]);
 
   useEffect(() => {
     let cancelled = false;
@@ -465,6 +486,15 @@ export default function ReservationsPage() {
   const handleUpdateReservation = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!reservationToEdit) return;
+
+    if (isUnassignedReservationRoomId(formData.room_id) || !formData.room_id) {
+      if (rooms.length === 0) {
+        alert(t('form.noRoomsRegistered'));
+        return;
+      }
+      alert(t('form.roomRequiredFromGuestForm'));
+      return;
+    }
 
     setUpdating(true);
     try {
@@ -1352,7 +1382,9 @@ export default function ReservationsPage() {
               <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 flex items-center">
                 <span className="text-3xl sm:text-4xl mr-2" style={{fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'}}>✏️</span>
                   <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                    {safeT('editModal.title')}
+                    {reservationToEdit.needs_review
+                      ? safeT('editModal.completeFromGuestFormTitle')
+                      : safeT('editModal.title')}
                   </span>
               </h2>
               <button
@@ -1368,6 +1400,12 @@ export default function ReservationsPage() {
             </div>
             
             <form onSubmit={handleUpdateReservation} className="p-6 space-y-6">
+              {reservationToEdit.needs_review ? (
+                <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+                  <p className="font-semibold">{safeT('editModal.needsReviewBannerTitle')}</p>
+                  <p className="mt-1 text-amber-900">{safeT('editModal.needsReviewBannerBody')}</p>
+                </div>
+              ) : null}
               {/* Información de la habitación */}
               <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-200">
                 <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
@@ -1380,19 +1418,31 @@ export default function ReservationsPage() {
                       <Bed className="h-4 w-4 inline mr-2" />
                       {safeT('form.roomLabel')}
                     </label>
-                    <select
-                      required
-                      value={formData.room_id}
-                      onChange={(e) => setFormData({...formData, room_id: e.target.value})}
-                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white"
-                    >
-                      <option value="">{safeT('form.roomPlaceholder')}</option>
-                      {rooms.map(room => (
-                        <option key={room.id} value={room.id}>
-                          {room.name} - €{room.basePrice}{safeT('form.perNight')}
-                        </option>
-                      ))}
-                    </select>
+                    {rooms.length === 0 ? (
+                      <div className="rounded-xl border border-amber-300 bg-white px-4 py-3 text-sm text-amber-950">
+                        <p>{safeT('form.noRoomsRegistered')}</p>
+                        <Link
+                          href="/settings/general"
+                          className="mt-2 inline-block font-semibold text-blue-700 underline"
+                        >
+                          {safeT('form.goRegisterRoom')}
+                        </Link>
+                      </div>
+                    ) : (
+                      <select
+                        required
+                        value={formData.room_id}
+                        onChange={(e) => setFormData({...formData, room_id: e.target.value})}
+                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white"
+                      >
+                        <option value="">{safeT('form.roomPlaceholder')}</option>
+                        {rooms.map(room => (
+                          <option key={room.id} value={room.id}>
+                            {room.name} - €{room.basePrice}{safeT('form.perNight')}
+                          </option>
+                        ))}
+                      </select>
+                    )}
                   </div>
                   
                   <div>

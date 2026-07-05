@@ -80,6 +80,14 @@ function toCheckTimestamp(dateOrIso: string, endOfDay: boolean): string {
   return endOfDay ? `${s}T23:59:59` : `${s}T14:00:00`;
 }
 
+/** room_id provisional cuando el huésped envía el formulario antes de que el propietario asigne habitación. */
+export const UNASSIGNED_RESERVATION_ROOM_ID = 'UNASSIGNED';
+
+export function isUnassignedReservationRoomId(roomId: string | null | undefined): boolean {
+  const s = String(roomId || '').trim();
+  return !s || s === UNASSIGNED_RESERVATION_ROOM_ID;
+}
+
 export type SyncReservationFromGuestRegistrationInput = {
   guestRegistrationId: string;
   tenantId: string | null | undefined;
@@ -224,7 +232,7 @@ export async function syncReservationFromGuestRegistration(
     // En reservas creadas desde formulario, NO inventamos un "número de habitación" por defecto:
     // si no viene room_id, dejamos un placeholder y mantenemos needs_review para que el propietario lo asigne.
     const roomIdFromForm = String((input.data as any)?.room_id || '').trim();
-    const resolvedRoomId = roomIdFromForm || 'UNASSIGNED';
+    const resolvedRoomId = roomIdFromForm || UNASSIGNED_RESERVATION_ROOM_ID;
 
     const ins = await sql`
       INSERT INTO reservations (

@@ -851,11 +851,17 @@
     },
     "editModal": {
       "title": "Editar reserva",
-      "reservationSection": "Información de la reserva"
+      "completeFromGuestFormTitle": "Completar reserva del formulario",
+      "reservationSection": "Información de la reserva",
+      "needsReviewBannerTitle": "Registro recibido desde tu formulario de huéspedes",
+      "needsReviewBannerBody": "Los datos del huésped ya están guardados. Solo tienes que asignar la habitación (y revisar precio/canal si quieres) y guardar para quitar el aviso de la campanita."
     },
     "form": {
       "roomLabel": "Habitación *",
       "roomPlaceholder": "Seleccionar habitación",
+      "roomRequiredFromGuestForm": "Elige tu habitación en el desplegable para completar esta reserva del formulario.",
+      "noRoomsRegistered": "Aún no tienes ninguna habitación registrada en el panel. El formulario de huéspedes funciona sin esto, pero para completar la reserva desde la campanita debes dar de alta tu unidad primero.",
+      "goRegisterRoom": "Ir a Ajustes → General y registrar mi habitación",
       "statusLabel": "Estado *",
       "guestSectionTitle": "Información del huésped",
       "guestNameLabel": "Nombre del huésped *",
