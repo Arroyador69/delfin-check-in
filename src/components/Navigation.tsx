@@ -141,23 +141,29 @@ export default function Navigation() {
   const prefix = isInSuperAdmin ? '' : `/${locale}`;
 
   return (
-    <nav className="bg-white shadow-lg fixed w-full top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
-          <div className="flex items-center">
-            <Link href={isInSuperAdmin ? '/superadmin' : `/${locale}/dashboard`} className="flex-shrink-0 flex items-center">
-              <span className="text-2xl mr-2">🐬</span>
-              <span className="text-xl font-bold text-gray-900">Delfín Check-in</span>
+    <nav className="bg-white shadow-lg fixed w-full top-0 z-50 pt-[env(safe-area-inset-top)]">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between gap-2 h-16 min-w-0">
+          <div className="flex items-center min-w-0 flex-1">
+            <Link
+              href={isInSuperAdmin ? '/superadmin' : `/${locale}/dashboard`}
+              className="flex items-center min-w-0 gap-1.5 sm:gap-2"
+            >
+              <span className="text-2xl shrink-0 leading-none">🐬</span>
+              <span className="text-base sm:text-xl font-bold text-gray-900 truncate hidden min-[400px]:inline">
+                Delfín Check-in
+              </span>
             </Link>
           </div>
-          {/* Botón de menú (visible en móvil y escritorio) */}
-          <div className="flex items-center space-x-2">
+          {/* Acciones de cabecera: campana, idioma, menú */}
+          <div className="flex items-center gap-0.5 sm:gap-2 shrink-0">
             {!isInSuperAdmin && <UnifiedTenantBell />}
             <LanguageSwitcher />
             <PWAInstallButton />
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="ml-4 inline-flex items-center px-3 py-2 rounded-md text-gray-700 hover:text-gray-900 hover:bg-gray-50 focus:outline-none"
+              className="inline-flex items-center justify-center min-h-[44px] min-w-[44px] rounded-md text-gray-700 hover:text-gray-900 hover:bg-gray-50 focus:outline-none sm:ml-1"
+              aria-label={mobileMenuOpen ? t('closeMenu') : t('menu')}
             >
               {mobileMenuOpen ? (
                 <X className="h-6 w-6" />
@@ -180,7 +186,7 @@ export default function Navigation() {
             onClick={() => setMobileMenuOpen(false)}
           />
           <div
-            className="fixed inset-x-0 top-16 bottom-0 z-50 flex flex-col bg-white border-t shadow"
+            className="fixed inset-x-0 top-[calc(4rem+env(safe-area-inset-top))] bottom-0 z-50 flex flex-col bg-white border-t shadow"
             role="dialog"
             aria-modal="true"
             aria-label={t('menu')}
