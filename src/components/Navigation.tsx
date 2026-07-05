@@ -47,6 +47,24 @@ export default function Navigation() {
       .catch(err => console.error('Error fetching user:', err));
   }, [pathname]);
 
+  // Cerrar menú al cambiar de ruta
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [pathname]);
+
+  // Bloquear scroll del body mientras el menú móvil está abierto (evita scroll fantasma en iOS)
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+    const prevOverflow = document.body.style.overflow;
+    const prevTouchAction = document.body.style.touchAction;
+    document.body.style.overflow = 'hidden';
+    document.body.style.touchAction = 'none';
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      document.body.style.touchAction = prevTouchAction;
+    };
+  }, [mobileMenuOpen]);
+
   // En onboarding el propio asistente incluye cabecera y selector de idioma (misma UX móvil y escritorio).
   if (isOnboardingPath(pathname)) {
     return null;
@@ -158,71 +176,87 @@ export default function Navigation() {
         </div>
       </div>
 
-      {/* Menú desplegable adaptativo (alto de pantalla y scroll) */}
-      {mobileMenuOpen && (
-        <div className="fixed inset-x-0 top-[calc(4rem+env(safe-area-inset-top))] bottom-0 bg-white border-t shadow overflow-y-auto">
-          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-            {/* Anuncio en el menú - arriba */}
-            <AdMenu />
-            
-            {navigation.map((item) => {
-              const fullHref = prefix ? `${prefix}${item.href}` : item.href;
-              const isActive = pathname === fullHref;
-              return (
-                <Link
-                  key={item.name}
-                  href={fullHref}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={`flex items-center px-3 py-2 rounded-md text-base font-medium transition-colors ${
-                    isActive
-                      ? 'bg-blue-100 text-blue-700'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                  }`}
-                >
-                  <item.icon className="w-5 h-5 mr-3 flex-shrink-0" />
-                  <span className="flex items-center gap-2 flex-wrap">
-                    {item.name}
-                    {'proFeature' in item &&
-                    item.proFeature &&
-                    tenant &&
-                    !isPlatformAdmin &&
-                    !isProPlanTenant(tenant) ? (
-                      <span className="text-[10px] font-semibold uppercase tracking-wide text-amber-800 bg-amber-100 px-1.5 py-0.5 rounded">
-                        Pro
+      {/* Menú desplegable: scroll propio y anuncio de afiliados al final (planes free/checkin) */}
+      {mobileMenuOpen ? (
+        <>
+          <button
+            type="button"
+            className="fixed inset-0 z-40 bg-black/20"
+            aria-label={t('closeMenu')}
+            onClick={() => setMobileMenuOpen(false)}
+          />
+          <div
+            className="fixed inset-x-0 top-[calc(4rem+env(safe-area-inset-top))] bottom-0 z-50 flex flex-col bg-white border-t shadow"
+            role="dialog"
+            aria-modal="true"
+            aria-label={t('menu')}
+          >
+            <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain touch-pan-y [-webkit-overflow-scrolling:touch]">
+              <div className="px-2 pt-2 pb-[max(5.5rem,calc(1.5rem+env(safe-area-inset-bottom)))] space-y-1 sm:px-3">
+                {navigation.map((item) => {
+                  const fullHref = prefix ? `${prefix}${item.href}` : item.href;
+                  const isActive = pathname === fullHref;
+                  return (
+                    <Link
+                      key={item.name}
+                      href={fullHref}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className={`flex items-center px-3 py-2.5 rounded-md text-base font-medium transition-colors min-h-[44px] ${
+                        isActive
+                          ? 'bg-blue-100 text-blue-700'
+                          : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                      }`}
+                    >
+                      <item.icon className="w-5 h-5 mr-3 flex-shrink-0" />
+                      <span className="flex items-center gap-2 flex-wrap">
+                        {item.name}
+                        {'proFeature' in item &&
+                        item.proFeature &&
+                        tenant &&
+                        !isPlatformAdmin &&
+                        !isProPlanTenant(tenant) ? (
+                          <span className="text-[10px] font-semibold uppercase tracking-wide text-amber-800 bg-amber-100 px-1.5 py-0.5 rounded">
+                            Pro
+                          </span>
+                        ) : null}
                       </span>
-                    ) : null}
-                  </span>
-                </Link>
-              );
-            })}
-            
-            {/* Botón para cambiar entre modos (solo si es superadmin) */}
-            {isPlatformAdmin && (
-              <Link
-                href={isInSuperAdmin ? "/" : "/superadmin"}
-                onClick={() => setMobileMenuOpen(false)}
-                className={`flex items-center px-3 py-2 rounded-md text-base font-medium transition-colors border-t border-gray-200 mt-2 pt-3 ${
-                  isInSuperAdmin 
-                    ? 'text-gray-600 hover:text-gray-900 hover:bg-gray-50' 
-                    : 'text-purple-600 hover:text-purple-900 hover:bg-purple-50'
-                }`}
-              >
-                {isInSuperAdmin ? (
-                  <>
-                    <Home className="w-5 h-5 mr-3" />
-                    {t('viewMyTenantPanel')}
-                  </>
-                ) : (
-                  <>
-                    <Crown className="w-5 h-5 mr-3" />
-                    {t('superAdminDashboardTitle')}
-                  </>
-                )}
-              </Link>
-            )}
+                    </Link>
+                  );
+                })}
+
+                {isPlatformAdmin ? (
+                  <Link
+                    href={isInSuperAdmin ? '/' : '/superadmin'}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`flex items-center px-3 py-2.5 rounded-md text-base font-medium transition-colors border-t border-gray-200 mt-2 pt-3 min-h-[44px] ${
+                      isInSuperAdmin
+                        ? 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                        : 'text-purple-600 hover:text-purple-900 hover:bg-purple-50'
+                    }`}
+                  >
+                    {isInSuperAdmin ? (
+                      <>
+                        <Home className="w-5 h-5 mr-3" />
+                        {t('viewMyTenantPanel')}
+                      </>
+                    ) : (
+                      <>
+                        <Crown className="w-5 h-5 mr-3" />
+                        {t('superAdminDashboardTitle')}
+                      </>
+                    )}
+                  </Link>
+                ) : null}
+
+                {/* Anuncio al final: no bloquea el acceso a las secciones del menú */}
+                <div className="mt-3 border-t border-gray-100 pt-2">
+                  <AdMenu />
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-      )}
+        </>
+      ) : null}
     </nav>
   );
 }
