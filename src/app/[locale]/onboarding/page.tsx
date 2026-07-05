@@ -13,6 +13,7 @@ import {
 import { isValidLocale, locales, localeNames, type Locale } from '@/i18n/config';
 import { ISO3166_ALPHA2 } from '@/lib/iso3166-alpha2';
 import TutorialVideoEmbed from '@/components/TutorialVideoEmbed';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { buildAntivirusHelpUrl } from '@/lib/onboarding-magic-link';
 
 type PlanId = 'free' | 'checkin' | 'standard' | 'pro';
@@ -81,7 +82,10 @@ export default function OnboardingPage() {
     'bg-blue-600 text-white px-6 py-3 sm:py-2 rounded-lg hover:bg-blue-700 font-semibold min-h-[44px] touch-manipulation text-base sm:text-sm disabled:bg-gray-400 disabled:cursor-not-allowed';
   const BTN_SECONDARY =
     'bg-gray-500 text-white px-6 py-3 sm:py-2 rounded-lg hover:bg-gray-600 font-semibold min-h-[44px] touch-manipulation text-base sm:text-sm';
+  const BTN_OUTLINE =
+    'w-full bg-white border-2 border-blue-300 text-blue-900 px-6 py-3 sm:py-2 rounded-lg hover:bg-blue-100/60 disabled:opacity-50 font-semibold min-h-[44px] touch-manipulation text-base sm:text-sm';
   const BTN_NAV = 'flex flex-col-reverse sm:flex-row sm:justify-between gap-3 mt-8';
+  const BTN_NAV_ACTIONS = 'flex flex-col sm:flex-row gap-3 w-full sm:w-auto';
   const fromMobileApp = searchParams?.get('source') === 'mobile_app';
   const getStepLabel = (step: number) =>
     t(`progress.stepLabels.${step}` as 'progress.stepLabels.1');
@@ -933,7 +937,7 @@ export default function OnboardingPage() {
                   type="button"
                   onClick={() => void handleResendMagicLink()}
                   disabled={resendLoading || bootstrappingSession}
-                  className="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 disabled:opacity-50"
+                  className={`inline-flex items-center justify-center ${BTN_PRIMARY} px-4`}
                 >
                   {resendLoading ? t('errors.resending') : t('errors.resendMagicLink')}
                 </button>
@@ -1040,13 +1044,13 @@ export default function OnboardingPage() {
           </div>
         </div>
 
-        <div className="flex justify-end mt-8 gap-3">
+        <div className={BTN_NAV}>
           {!formData.passwordChanged ? (
             <button
               type="button"
               onClick={handlePasswordChange}
               disabled={loading || bootstrappingSession}
-              className={BTN_PRIMARY}
+              className={`w-full sm:ml-auto sm:w-auto ${BTN_PRIMARY}`}
             >
               {loading ? t('step1.changing') : t('step1.changePassword')}
             </button>
@@ -1055,7 +1059,7 @@ export default function OnboardingPage() {
               type="button"
               onClick={() => void handleContinueFromPasswordStep()}
               disabled={loading || bootstrappingSession}
-              className={BTN_PRIMARY}
+              className={`w-full sm:ml-auto sm:w-auto ${BTN_PRIMARY}`}
             >
               {loading ? t('step1.changing') : t('step1.continueNext')}
             </button>
@@ -1069,7 +1073,7 @@ export default function OnboardingPage() {
   const renderEmpresaStep = () => (
     <div className={ONBOARDING_PAGE}>
       <div className={ONBOARDING_CARD}>
-        <h1 className="text-3xl font-bold text-gray-900 mb-6">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6">
           {t('step2.title')}
         </h1>
         
@@ -1084,7 +1088,7 @@ export default function OnboardingPage() {
             type="button"
             onClick={() => void handleSkipCompanyStep()}
             disabled={loading}
-            className="w-full sm:w-auto bg-white border-2 border-blue-300 text-blue-900 px-6 py-2.5 rounded-lg hover:bg-blue-100/60 disabled:opacity-50 min-h-[44px] text-sm font-semibold"
+            className={BTN_OUTLINE}
           >
             {t('step2.skipForNow')}
           </button>
@@ -1287,10 +1291,10 @@ export default function OnboardingPage() {
         </div>
 
         <div className={BTN_NAV}>
-          <button onClick={handlePrevious} className={BTN_SECONDARY}>
+          <button onClick={handlePrevious} className={`w-full sm:w-auto ${BTN_SECONDARY}`}>
             {t('step2.previous')}
           </button>
-          <button onClick={handleNext} className={BTN_PRIMARY}>
+          <button onClick={handleNext} className={`w-full sm:w-auto ${BTN_PRIMARY}`}>
             {t('step2.continue')}
           </button>
         </div>
@@ -1340,7 +1344,7 @@ export default function OnboardingPage() {
               setCurrentStep(3);
               try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch {}
             }}
-            className="inline-block mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-semibold"
+            className={`mt-4 ${BTN_PRIMARY}`}
           >
             {t('step3.activateModule')}
           </button>
@@ -1415,10 +1419,10 @@ export default function OnboardingPage() {
         </div>
 
         <div className={BTN_NAV}>
-          <button onClick={handlePrevious} className={BTN_SECONDARY}>
+          <button onClick={handlePrevious} className={`w-full sm:w-auto ${BTN_SECONDARY}`}>
             {t('step3.previous')}
           </button>
-          <button onClick={handleNext} className={BTN_PRIMARY}>
+          <button onClick={handleNext} className={`w-full sm:w-auto ${BTN_PRIMARY}`}>
             {t('step3.continueOptional')}
           </button>
         </div>
@@ -1446,7 +1450,7 @@ export default function OnboardingPage() {
               type="button"
               onClick={() => void handleCompleteOnboarding({ skipUnits: true })}
               disabled={loading}
-              className="w-full sm:w-auto bg-white border-2 border-blue-300 text-blue-900 px-6 py-2.5 rounded-lg hover:bg-blue-100/60 disabled:opacity-50 min-h-[44px] text-sm font-semibold"
+              className={BTN_OUTLINE}
             >
               {t('step4.skipForNow')}
             </button>
@@ -1486,7 +1490,7 @@ export default function OnboardingPage() {
           <div className="bg-gray-50 border rounded-lg p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-semibold text-gray-900">Unidades a crear</p>
+                <p className="text-sm font-semibold text-gray-900">{t('stepPlan.unitsToCreate')}</p>
                 <p className="text-xs text-gray-600">
                   {formData.unitCount}{' '}
                   {formData.lodgingType === 'apartamentos'
@@ -1526,7 +1530,7 @@ export default function OnboardingPage() {
               disabled={loading}
               className={`w-full ${BTN_PRIMARY}`}
             >
-              {loading ? t('step4.adding') : `Crear ${formData.unitCount} unidades`}
+              {loading ? t('step4.adding') : t('stepPlan.createUnits', { count: formData.unitCount })}
             </button>
           )}
         </div>
@@ -1535,18 +1539,15 @@ export default function OnboardingPage() {
           <p className="text-blue-800 text-sm">{t('step4.cleaningHint')}</p>
         </div>
 
-        <div className="flex flex-col sm:flex-row sm:justify-between gap-3 mt-8">
-          <button
-            onClick={handlePrevious}
-            className={BTN_SECONDARY}
-          >
+        <div className={BTN_NAV}>
+          <button onClick={handlePrevious} className={`w-full sm:w-auto ${BTN_SECONDARY}`}>
             {t('step4.previous')}
           </button>
-          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+          <div className={BTN_NAV_ACTIONS}>
             <button
               onClick={handleFinishStep5}
               disabled={loading || !formData.propertyAdded}
-              className={BTN_PRIMARY}
+              className={`w-full sm:w-auto ${BTN_PRIMARY}`}
             >
               {loading ? t('step4.completing') : t('step4.next')}
             </button>
@@ -1597,13 +1598,13 @@ export default function OnboardingPage() {
           </div>
 
           <div className={BTN_NAV}>
-            <button onClick={handlePrevious} className={BTN_SECONDARY}>
+            <button onClick={handlePrevious} className={`w-full sm:w-auto ${BTN_SECONDARY}`}>
               {t('step6.previous')}
             </button>
             <button
               onClick={handleCompleteOnboarding}
               disabled={loading}
-              className={BTN_PRIMARY}
+              className={`w-full sm:w-auto ${BTN_PRIMARY}`}
             >
               {loading ? t('step6.completing') : t('step6.completeSetup')}
             </button>
@@ -1618,18 +1619,21 @@ export default function OnboardingPage() {
       <div className="bg-white shadow-sm sticky top-0 z-30 border-b border-gray-100 pt-[env(safe-area-inset-top)]">
         <div className="max-w-4xl mx-auto px-3 sm:px-4 py-4 sm:py-5">
           <div className="flex items-start justify-between gap-3">
-            <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+            <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
               <span className="text-xl sm:text-2xl shrink-0">🐬</span>
               <div className="min-w-0">
                 <h1 className="text-base sm:text-xl font-bold text-gray-900 truncate">{t('appName')}</h1>
                 <p className="text-xs sm:text-sm text-blue-700 font-medium mt-0.5">{t('progress.configuring')}</p>
               </div>
             </div>
-            <div className="text-xs sm:text-sm text-gray-500 shrink-0 text-right">
-              <div>{t('stepOf', { currentStep, totalSteps: TOTAL_STEPS })}</div>
-              <div className="font-semibold text-gray-800 mt-0.5 max-w-[9rem] sm:max-w-none truncate">
-                {t('progress.currentStepLabel', { label: getStepLabel(currentStep) })}
+            <div className="flex items-start gap-2 shrink-0">
+              <div className="text-xs sm:text-sm text-gray-500 text-right">
+                <div>{t('stepOf', { currentStep, totalSteps: TOTAL_STEPS })}</div>
+                <div className="font-semibold text-gray-800 mt-0.5 max-w-[9rem] sm:max-w-none truncate">
+                  {t('progress.currentStepLabel', { label: getStepLabel(currentStep) })}
+                </div>
               </div>
+              <LanguageSwitcher />
             </div>
           </div>
           
@@ -1652,11 +1656,9 @@ export default function OnboardingPage() {
             ))}
           </div>
 
-          {fromMobileApp && (
-            <div className="mt-3 rounded-lg border border-orange-200 bg-orange-50 px-3 py-2.5 text-xs sm:text-sm text-orange-900 leading-relaxed">
-              {t('mobileApp.banner')}
-            </div>
-          )}
+          <div className="mt-3 lg:hidden rounded-lg border border-blue-200 bg-blue-50 px-3 py-2.5 text-xs sm:text-sm text-blue-900 leading-relaxed">
+            {fromMobileApp ? t('mobileApp.banner') : t('mobileWeb.banner')}
+          </div>
         </div>
       </div>
 
@@ -1833,8 +1835,8 @@ export default function OnboardingPage() {
     return (
       <div className={ONBOARDING_PAGE}>
         <div className={ONBOARDING_CARD}>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">💳 Plan y pago</h1>
-          <p className="text-gray-600 mb-6">Elige tu plan, unidades y si prefieres pago mensual o anual.</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">{t('stepPlan.title')}</h1>
+          <p className="text-gray-600 mb-6">{t('stepPlan.intro')}</p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             {PLAN_CARDS.map((p) => {
@@ -1854,7 +1856,7 @@ export default function OnboardingPage() {
                     }));
                     loadPricing({ selectedPlanId: p.id });
                   }}
-                  className={`text-left border rounded-xl p-4 transition-all ${
+                  className={`text-left border rounded-xl p-4 transition-all min-h-[44px] touch-manipulation ${
                     isSelected ? 'border-blue-600 ring-2 ring-blue-200' : 'border-gray-200 hover:border-gray-300'
                   }`}
                 >
@@ -1886,7 +1888,7 @@ export default function OnboardingPage() {
                       </li>
                     ))}
                     {p.featuresKeys.length > 5 && (
-                      <li className="text-xs text-gray-500">+ {p.featuresKeys.length - 5} más</li>
+                      <li className="text-xs text-gray-500">{t('stepPlan.moreFeatures', { count: p.featuresKeys.length - 5 })}</li>
                     )}
                   </ul>
                 </button>
@@ -1896,7 +1898,7 @@ export default function OnboardingPage() {
 
           {checkoutFlag === 'cancel' && (
             <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
-              <p className="text-amber-800">Pago cancelado. Puedes intentarlo de nuevo cuando quieras.</p>
+              <p className="text-amber-800">{t('stepPlan.paymentCancelled')}</p>
             </div>
           )}
 
@@ -1908,7 +1910,7 @@ export default function OnboardingPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Plan</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('stepPlan.planLabel')}</label>
               <select
                 value={formData.selectedPlanId}
                 onChange={(e) => {
@@ -1923,15 +1925,15 @@ export default function OnboardingPage() {
                 }}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
               >
-                <option value="free">Básico (Gratis)</option>
-                <option value="checkin">Check-in</option>
-                <option value="standard">Standard</option>
-                <option value="pro">Pro</option>
+                <option value="free">{t('stepPlan.planBasic')}</option>
+                <option value="checkin">{t('stepPlan.planCheckin')}</option>
+                <option value="standard">{t('stepPlan.planStandard')}</option>
+                <option value="pro">{t('stepPlan.planPro')}</option>
               </select>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Tipo</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('stepPlan.typeLabel')}</label>
               <select
                 value={formData.lodgingType}
                 onChange={(e) => {
@@ -1946,7 +1948,7 @@ export default function OnboardingPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Facturación</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('stepPlan.billingLabel')}</label>
               <select
                 value={formData.billingInterval}
                 onChange={(e) => {
@@ -1956,8 +1958,8 @@ export default function OnboardingPage() {
                 }}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
               >
-                <option value="month">Mensual</option>
-                <option value="year">Anual (2 meses gratis)</option>
+                <option value="month">{t('stepPlan.billingMonthly')}</option>
+                <option value="year">{t('stepPlan.billingYearly')}</option>
               </select>
             </div>
 
@@ -1998,20 +2000,20 @@ export default function OnboardingPage() {
 
           <div className="mt-6">
             {pricingLoading && (
-              <div className="text-sm text-gray-500">Calculando precio…</div>
+              <div className="text-sm text-gray-500">{t('stepPlan.calculatingPrice')}</div>
             )}
             {formData.selectedPlanId !== 'free' && pricing && (
               <div className="bg-gray-50 border rounded-lg p-4">
                 <div className="flex justify-between text-sm">
-                  <span>Subtotal (sin IVA)</span>
+                  <span>{t('stepPlan.subtotal')}</span>
                   <span>{Number(pricing.subtotal).toFixed(2)}€</span>
                 </div>
                 <div className="flex justify-between text-sm text-gray-600">
-                  <span>IVA ({pricing.vat?.vat_rate ?? pricing.vat?.vatRate ?? 21}%)</span>
+                  <span>{t('stepPlan.vat', { rate: pricing.vat?.vat_rate ?? pricing.vat?.vatRate ?? 21 })}</span>
                   <span>+{Number(pricing.vat?.vat_amount ?? pricing.vat?.vatAmount ?? 0).toFixed(2)}€</span>
                 </div>
                 <div className="flex justify-between font-bold text-lg pt-2 border-t mt-2">
-                  <span>Total {formData.billingInterval === 'year' ? 'anual' : 'mensual'}</span>
+                  <span>{formData.billingInterval === 'year' ? t('stepPlan.totalYearly') : t('stepPlan.totalMonthly')}</span>
                   <span className="text-blue-700">{Number(pricing.total).toFixed(2)}€</span>
                 </div>
               </div>
@@ -2029,39 +2031,33 @@ export default function OnboardingPage() {
             )}
           </div>
 
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-8">
-            <button
-              onClick={handlePrevious}
-              className={BTN_SECONDARY}
-            >
-              Volver
+          <div className={BTN_NAV}>
+            <button onClick={handlePrevious} className={`w-full sm:w-auto ${BTN_SECONDARY}`}>
+              {t('stepPlan.previous')}
             </button>
 
-            <div className="flex flex-col sm:flex-row gap-3">
+            <div className={BTN_NAV_ACTIONS}>
               {formData.selectedPlanId !== 'free' ? (
                 formData.checkoutCompleted ? (
                   <button
                     type="button"
                     onClick={() => void handleNext()}
-                    className={BTN_PRIMARY}
+                    className={`w-full sm:w-auto ${BTN_PRIMARY}`}
                   >
-                    Continuar
+                    {t('stepPlan.continue')}
                   </button>
                 ) : (
                   <button
                     onClick={onPay}
                     disabled={creatingCheckout}
-                    className={BTN_PRIMARY}
+                    className={`w-full sm:w-auto ${BTN_PRIMARY}`}
                   >
-                    {creatingCheckout ? 'Iniciando pago…' : 'Pagar plan'}
+                    {creatingCheckout ? t('stepPlan.startingPayment') : t('stepPlan.payPlan')}
                   </button>
                 )
               ) : (
-                <button
-                  onClick={onPay}
-                  className={BTN_PRIMARY}
-                >
-                  Continuar
+                <button onClick={onPay} className={`w-full sm:w-auto ${BTN_PRIMARY}`}>
+                  {t('stepPlan.continue')}
                 </button>
               )}
             </div>
@@ -2069,8 +2065,7 @@ export default function OnboardingPage() {
 
           {formData.selectedPlanId !== 'free' && !formData.checkoutCompleted && (
             <p className="text-xs sm:text-sm text-gray-600 mt-4 leading-relaxed">
-              Si ya pagaste, espera unos segundos: confirmamos el pago automáticamente. Si no avanza, revisa tu email
-              (te enviamos un enlace para continuar el onboarding).
+              {t('stepPlan.paymentPendingHint')}
             </p>
           )}
         </div>

@@ -519,6 +519,36 @@
     "mobileApp": {
       "banner": "You're on the same 6-step onboarding as on desktop. Your progress is saved automatically if you leave and come back."
     },
+    "mobileWeb": {
+      "banner": "Same 6-step onboarding as on desktop: password, business details, plan, MIR, unit, and payouts. Progress is saved if you leave and return."
+    },
+    "stepPlan": {
+      "title": "💳 Plan and payment",
+      "intro": "Choose your plan, units, and monthly or yearly billing.",
+      "paymentCancelled": "Payment cancelled. You can try again whenever you want.",
+      "calculatingPrice": "Calculating price…",
+      "previous": "Previous",
+      "continue": "Continue",
+      "payPlan": "Pay for plan",
+      "startingPayment": "Starting payment…",
+      "paymentPendingHint": "If you already paid, wait a few seconds while we confirm it automatically. If it does not advance, check your email (we sent a link to continue onboarding).",
+      "subtotal": "Subtotal (excl. VAT)",
+      "vat": "VAT ({rate}%)",
+      "totalMonthly": "Monthly total",
+      "totalYearly": "Yearly total",
+      "planLabel": "Plan",
+      "typeLabel": "Type",
+      "billingLabel": "Billing",
+      "billingMonthly": "Monthly",
+      "billingYearly": "Yearly (2 months free)",
+      "unitsToCreate": "Units to create",
+      "createUnits": "Create {count} units",
+      "moreFeatures": "+ {count} more",
+      "planBasic": "Basic (Free)",
+      "planCheckin": "Check-in",
+      "planStandard": "Standard",
+      "planPro": "Pro"
+    },
     "welcome": {
       "title": "Welcome: get your property ready in 6 steps",
       "subtitle": "No tech skills needed. This wizard tells you what to do on each screen. Works on mobile; we save your progress if you leave and come back.",

@@ -493,6 +493,36 @@
     "mobileApp": {
       "banner": "Stai usando lo stesso onboarding in 6 passi del desktop. I progressi si salvano automaticamente."
     },
+    "mobileWeb": {
+      "banner": "Stesso onboarding in 6 passi del desktop: password, dati, piano, MIR, unità e pagamenti. I progressi si salvano se esci e torni."
+    },
+    "stepPlan": {
+      "title": "💳 Piano e pagamento",
+      "intro": "Scegli piano, unità e fatturazione mensile o annuale.",
+      "paymentCancelled": "Pagamento annullato. Puoi riprovare quando vuoi.",
+      "calculatingPrice": "Calcolo del prezzo…",
+      "previous": "Indietro",
+      "continue": "Continua",
+      "payPlan": "Paga piano",
+      "startingPayment": "Avvio pagamento…",
+      "paymentPendingHint": "Se hai già pagato, attendi qualche secondo per la conferma automatica. Se non avanza, controlla l’email (link per continuare l’onboarding).",
+      "subtotal": "Subtotale (IVA esclusa)",
+      "vat": "IVA ({rate}%)",
+      "totalMonthly": "Totale mensile",
+      "totalYearly": "Totale annuale",
+      "planLabel": "Piano",
+      "typeLabel": "Tipo",
+      "billingLabel": "Fatturazione",
+      "billingMonthly": "Mensile",
+      "billingYearly": "Annuale (2 mesi gratis)",
+      "unitsToCreate": "Unità da creare",
+      "createUnits": "Crea {count} unità",
+      "moreFeatures": "+ altre {count}",
+      "planBasic": "Base (Gratis)",
+      "planCheckin": "Check-in",
+      "planStandard": "Standard",
+      "planPro": "Pro"
+    },
     "welcome": {
       "title": "Benvenuto: alloggio pronto in 6 passi",
       "subtitle": "Non serve essere tecnici. Questa guida ti dice cosa fare in ogni schermata. Funziona da mobile e salviamo i progressi.",

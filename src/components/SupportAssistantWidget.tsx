@@ -3,7 +3,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { MessageCircle, X, Send } from 'lucide-react';
+import { isOnboardingPath } from '@/lib/onboarding-route';
 
 type ChatMsg = { role: 'user' | 'assistant'; text: string };
 
@@ -81,6 +83,7 @@ function renderTextWithLinks(text: string) {
 export default function SupportAssistantWidget() {
   const locale = useLocale();
   const t = useTranslations('supportAssistant');
+  const pathname = usePathname();
 
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState('');
@@ -208,6 +211,8 @@ export default function SupportAssistantWidget() {
       setLoading(false);
     }
   };
+
+  if (isOnboardingPath(pathname)) return null;
 
   return (
     <div className="fixed bottom-4 right-4 z-[60]">
