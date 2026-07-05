@@ -629,7 +629,7 @@
       "connectOpened": "✅ Stripe-linkki avattu. Täytä lomake ja palaa tänne.",
       "previous": "Edellinen",
       "completing": "Viimeistellään…",
-      "completeSetup": "Siirry hallintapaneeliin"
+      "completeSetup": "Viimeistä"
     },
     "errors": {
       "mustChangePassword": "Sinun on vaihdettava salasanasi ennen kuin jatkat",

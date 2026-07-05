@@ -619,7 +619,7 @@
       "connectOpened": "✅ Lien Stripe ouvert. Terminez le formulaire puis revenez ici.",
       "previous": "Précédent",
       "completing": "Finalisation…",
-      "completeSetup": "Aller au tableau de bord"
+      "completeSetup": "Terminer"
     },
     "errors": {
       "mustChangePassword": "Vous devez changer votre mot de passe avant de continuer",

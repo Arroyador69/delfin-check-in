@@ -686,7 +686,7 @@
       "connectOpened": "✅ Stripe link opened. Complete the form and come back here.",
       "previous": "Previous",
       "completing": "Finishing…",
-      "completeSetup": "Go to dashboard"
+      "completeSetup": "Finish"
     },
     "errors": {
       "mustChangePassword": "You must change your password before continuing",
