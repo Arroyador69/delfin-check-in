@@ -478,6 +478,9 @@
   "onboarding": {
   "appName": "Delfín Check-in",
     "stepOf": "Vaihe {currentStep}/{totalSteps}",
+    "mobileApp": {
+      "banner": "Käytät samaa 6-vaiheista käyttöönottoa kuin tietokoneella. Edistyminen tallentuu automaattisesti."
+    },
     "common": {
       "show": "Show",
       "hide": "Piilottaa"
@@ -3151,9 +3154,9 @@
         "open": "Avata",
         "openAdminWeb": "Avaa verkko-admin"
       },
-      "webOnboardingBannerTitle": "Verkko-onboarding kesken",
-      "webOnboardingBannerBody": "Viimeistele alkuperäinen asennus selaimessa (sama sähköposti ja salasana). Tämä ilmoitus katoaa, kun olet valmis.",
-      "webOnboardingBannerCta": "Avaa onboarding selaimessa",
+      "webOnboardingBannerTitle": "Viimeistele asennus (sama onboarding kuin tietokoneella)",
+      "webOnboardingBannerBody": "Samat 6 verkkovaihetta: salasana, tiedot, paketti, MIR, yksikkö ja maksut. Avautuu tässä samalla tilillä; edistyminen tallentuu kuten tietokoneella.",
+      "webOnboardingBannerCta": "Jatka asennusta",
       "tasks": {
         "country": "Aseta maa",
         "language": "Aseta sovelluksen kieli",

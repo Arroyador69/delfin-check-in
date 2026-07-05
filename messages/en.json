@@ -516,6 +516,9 @@
         "6": "Payouts (optional)"
       }
     },
+    "mobileApp": {
+      "banner": "You're on the same 6-step onboarding as on desktop. Your progress is saved automatically if you leave and come back."
+    },
     "welcome": {
       "title": "Welcome: get your property ready in 6 steps",
       "subtitle": "No tech skills needed. This wizard tells you what to do on each screen. Works on mobile; we save your progress if you leave and come back.",
@@ -3252,9 +3255,9 @@
         "open": "Open",
         "openAdminWeb": "Open web admin"
       },
-      "webOnboardingBannerTitle": "Web onboarding still pending",
-      "webOnboardingBannerBody": "Finish your initial setup in the browser (same email and password). This banner disappears when you are done.",
-      "webOnboardingBannerCta": "Open onboarding in browser",
+      "webOnboardingBannerTitle": "Complete your setup (same onboarding as desktop)",
+      "webOnboardingBannerBody": "These are the same 6 web steps: password, business details, plan, MIR, unit, and payouts. It opens here with your same login; progress is saved just like on desktop.",
+      "webOnboardingBannerCta": "Continue setup",
       "tasks": {
         "country": "Set country",
         "language": "Set app language",

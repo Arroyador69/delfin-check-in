@@ -73,8 +73,16 @@ export default function OnboardingPage() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const TOTAL_STEPS = 6;
-  const ONBOARDING_PAGE = 'max-w-4xl mx-auto px-3 py-4 sm:px-6 sm:py-6 pb-10';
-  const ONBOARDING_CARD = 'bg-white rounded-xl sm:rounded-lg shadow-lg p-4 sm:p-6 md:p-8';
+  const ONBOARDING_PAGE =
+    'max-w-4xl mx-auto px-3 py-4 sm:px-6 sm:py-6 pb-10 pb-[max(2.5rem,env(safe-area-inset-bottom))]';
+  const ONBOARDING_CARD =
+    'bg-white rounded-xl sm:rounded-lg shadow-lg p-4 sm:p-6 md:p-8 [&_input]:text-base [&_input]:min-h-[44px] [&_input]:py-3 [&_input]:sm:py-2 [&_select]:text-base [&_select]:min-h-[44px] [&_textarea]:text-base';
+  const BTN_PRIMARY =
+    'bg-blue-600 text-white px-6 py-3 sm:py-2 rounded-lg hover:bg-blue-700 font-semibold min-h-[44px] touch-manipulation text-base sm:text-sm disabled:bg-gray-400 disabled:cursor-not-allowed';
+  const BTN_SECONDARY =
+    'bg-gray-500 text-white px-6 py-3 sm:py-2 rounded-lg hover:bg-gray-600 font-semibold min-h-[44px] touch-manipulation text-base sm:text-sm';
+  const BTN_NAV = 'flex flex-col-reverse sm:flex-row sm:justify-between gap-3 mt-8';
+  const fromMobileApp = searchParams?.get('source') === 'mobile_app';
   const getStepLabel = (step: number) =>
     t(`progress.stepLabels.${step}` as 'progress.stepLabels.1');
   const [currentStep, setCurrentStep] = useState(1);
@@ -1038,7 +1046,7 @@ export default function OnboardingPage() {
               type="button"
               onClick={handlePasswordChange}
               disabled={loading || bootstrappingSession}
-              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+              className={BTN_PRIMARY}
             >
               {loading ? t('step1.changing') : t('step1.changePassword')}
             </button>
@@ -1047,7 +1055,7 @@ export default function OnboardingPage() {
               type="button"
               onClick={() => void handleContinueFromPasswordStep()}
               disabled={loading || bootstrappingSession}
-              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+              className={BTN_PRIMARY}
             >
               {loading ? t('step1.changing') : t('step1.continueNext')}
             </button>
@@ -1278,17 +1286,11 @@ export default function OnboardingPage() {
           />
         </div>
 
-        <div className="flex justify-between mt-8">
-          <button
-            onClick={handlePrevious}
-            className="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600"
-          >
+        <div className={BTN_NAV}>
+          <button onClick={handlePrevious} className={BTN_SECONDARY}>
             {t('step2.previous')}
           </button>
-          <button
-            onClick={handleNext}
-            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
-          >
+          <button onClick={handleNext} className={BTN_PRIMARY}>
             {t('step2.continue')}
           </button>
         </div>
@@ -1301,7 +1303,7 @@ export default function OnboardingPage() {
   const renderMIRStep = () => (
     <div className={ONBOARDING_PAGE}>
       <div className={ONBOARDING_CARD}>
-        <h1 className="text-3xl font-bold text-gray-900 mb-6">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6">
           {t('step3.title')}
         </h1>
         
@@ -1412,17 +1414,11 @@ export default function OnboardingPage() {
           </div>
         </div>
 
-        <div className="flex justify-between mt-8">
-          <button
-            onClick={handlePrevious}
-            className="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600"
-          >
+        <div className={BTN_NAV}>
+          <button onClick={handlePrevious} className={BTN_SECONDARY}>
             {t('step3.previous')}
           </button>
-          <button
-            onClick={handleNext}
-            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
-          >
+          <button onClick={handleNext} className={BTN_PRIMARY}>
             {t('step3.continueOptional')}
           </button>
         </div>
@@ -1434,7 +1430,7 @@ export default function OnboardingPage() {
   const renderPropertyStep = () => (
     <div className={ONBOARDING_PAGE}>
       <div className={ONBOARDING_CARD}>
-        <h1 className="text-3xl font-bold text-gray-900 mb-6">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6">
           {t('step4.title')}
         </h1>
         
@@ -1528,7 +1524,7 @@ export default function OnboardingPage() {
             <button
               onClick={handleAddProperty}
               disabled={loading}
-              className="w-full bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+              className={`w-full ${BTN_PRIMARY}`}
             >
               {loading ? t('step4.adding') : `Crear ${formData.unitCount} unidades`}
             </button>
@@ -1542,7 +1538,7 @@ export default function OnboardingPage() {
         <div className="flex flex-col sm:flex-row sm:justify-between gap-3 mt-8">
           <button
             onClick={handlePrevious}
-            className="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 min-h-[44px]"
+            className={BTN_SECONDARY}
           >
             {t('step4.previous')}
           </button>
@@ -1550,7 +1546,7 @@ export default function OnboardingPage() {
             <button
               onClick={handleFinishStep5}
               disabled={loading || !formData.propertyAdded}
-              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed min-h-[44px]"
+              className={BTN_PRIMARY}
             >
               {loading ? t('step4.completing') : t('step4.next')}
             </button>
@@ -1567,7 +1563,7 @@ export default function OnboardingPage() {
     return (
       <div className={ONBOARDING_PAGE}>
         <div className={ONBOARDING_CARD}>
-          <h1 className="text-3xl font-bold text-gray-900 mb-6">{t('step6.title')}</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6">{t('step6.title')}</h1>
           <p className="text-gray-600 mb-6">{t('step6.intro')}</p>
 
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
@@ -1594,20 +1590,20 @@ export default function OnboardingPage() {
               type="button"
               onClick={startStripeConnect}
               disabled={connectLoading}
-              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-lg hover:from-blue-700 hover:to-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-semibold"
+              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 sm:py-2 rounded-lg hover:from-blue-700 hover:to-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-semibold min-h-[44px] touch-manipulation text-base sm:text-sm"
             >
               {connectLoading ? t('step6.connectLoading') : t('step6.connectButton')}
             </button>
           </div>
 
-          <div className="flex justify-between mt-8">
-            <button onClick={handlePrevious} className="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600">
+          <div className={BTN_NAV}>
+            <button onClick={handlePrevious} className={BTN_SECONDARY}>
               {t('step6.previous')}
             </button>
             <button
               onClick={handleCompleteOnboarding}
               disabled={loading}
-              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+              className={BTN_PRIMARY}
             >
               {loading ? t('step6.completing') : t('step6.completeSetup')}
             </button>
@@ -1618,8 +1614,8 @@ export default function OnboardingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-white shadow-sm sticky top-0 z-30 border-b border-gray-100">
+    <div className="min-h-screen bg-gray-50 pb-[env(safe-area-inset-bottom)]">
+      <div className="bg-white shadow-sm sticky top-0 z-30 border-b border-gray-100 pt-[env(safe-area-inset-top)]">
         <div className="max-w-4xl mx-auto px-3 sm:px-4 py-4 sm:py-5">
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-center gap-2 sm:gap-4 min-w-0">
@@ -1646,7 +1642,7 @@ export default function OnboardingPage() {
                   }`}
                 />
                 <p
-                  className={`hidden sm:block text-[10px] mt-1 truncate text-center ${
+                  className={`text-[9px] sm:text-[10px] leading-tight mt-1 truncate text-center ${
                     step === currentStep ? 'text-blue-700 font-semibold' : 'text-gray-400'
                   }`}
                 >
@@ -1655,6 +1651,12 @@ export default function OnboardingPage() {
               </div>
             ))}
           </div>
+
+          {fromMobileApp && (
+            <div className="mt-3 rounded-lg border border-orange-200 bg-orange-50 px-3 py-2.5 text-xs sm:text-sm text-orange-900 leading-relaxed">
+              {t('mobileApp.banner')}
+            </div>
+          )}
         </div>
       </div>
 
@@ -2030,7 +2032,7 @@ export default function OnboardingPage() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-8">
             <button
               onClick={handlePrevious}
-              className="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600"
+              className={BTN_SECONDARY}
             >
               Volver
             </button>
@@ -2041,7 +2043,7 @@ export default function OnboardingPage() {
                   <button
                     type="button"
                     onClick={() => void handleNext()}
-                    className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
+                    className={BTN_PRIMARY}
                   >
                     Continuar
                   </button>
@@ -2049,7 +2051,7 @@ export default function OnboardingPage() {
                   <button
                     onClick={onPay}
                     disabled={creatingCheckout}
-                    className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                    className={BTN_PRIMARY}
                   >
                     {creatingCheckout ? 'Iniciando pago…' : 'Pagar plan'}
                   </button>
@@ -2057,7 +2059,7 @@ export default function OnboardingPage() {
               ) : (
                 <button
                   onClick={onPay}
-                  className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
+                  className={BTN_PRIMARY}
                 >
                   Continuar
                 </button>

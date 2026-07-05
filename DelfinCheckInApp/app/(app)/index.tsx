@@ -2,13 +2,13 @@
 // DASHBOARD - Pantalla principal
 // =====================================================
 
-import { View, Text, ScrollView, StyleSheet, RefreshControl, Pressable, Linking } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, RefreshControl, Pressable, AppState } from 'react-native';
 import { FixedBannerAd } from '@/components/FixedBannerAd';
 import { AffiliateRecommendationCard } from '@/components/AffiliateRecommendationCard';
 import { useAuth } from '@/lib/auth';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import type { AxiosError } from 'axios';
 
 function apiErrorMessage(err: unknown): string {
@@ -21,6 +21,7 @@ import { useRouter } from 'expo-router';
 import { getLocale, getLocaleTag, hasPersistedAppLocale, t, useLocaleListener } from '@/lib/i18n';
 import { getAppCountryCode } from '@/lib/country-preference';
 import { getWebOnboardingUrl, isWebOnboardingIncomplete } from '@/lib/web-onboarding';
+import { openAccountWebUrl } from '@/lib/in-app-browser';
 
 import {
   PendingReservationItem,
@@ -184,6 +185,15 @@ export default function DashboardScreen() {
 
   const showWebOnboardingBanner = isWebOnboardingIncomplete(tenantWebOnboarding ?? undefined);
 
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (next) => {
+      if (next === 'active') {
+        void queryClient.refetchQueries({ queryKey: ['tenant-web-onboarding'] });
+      }
+    });
+    return () => sub.remove();
+  }, [queryClient]);
+
   // Filtrar reservas por estado
   const { stayingToday, arrivingToday, leavingToday, upcomingReservations } = useMemo(() => {
     const today = new Date();
@@ -320,7 +330,7 @@ export default function DashboardScreen() {
             {t('mobile.onboarding.webOnboardingBannerBody')}
           </Text>
           <Pressable
-            onPress={() => void Linking.openURL(getWebOnboardingUrl(getLocale()))}
+            onPress={() => void openAccountWebUrl(getWebOnboardingUrl(getLocale()))}
             style={{
               paddingVertical: 12,
               paddingHorizontal: 14,
@@ -358,7 +368,7 @@ export default function DashboardScreen() {
         </View>
       ) : null}
 
-      {onboardingTasks.doneCount < onboardingTasks.total ? (
+      {!showWebOnboardingBanner && onboardingTasks.doneCount < onboardingTasks.total ? (
         <View style={[styles.card, { borderWidth: 1, borderColor: '#e0e7ff', backgroundColor: '#f8fafc' }]}>
           <View style={styles.cardHeader}>
             <View style={styles.cardHeaderLeft}>

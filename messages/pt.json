@@ -468,6 +468,9 @@
   "onboarding": {
     "appName": "Delfín Check-in",
     "stepOf": "Passo {currentStep} de {totalSteps}",
+    "mobileApp": {
+      "banner": "Está no mesmo onboarding de 6 passos do computador. O progresso é guardado automaticamente."
+    },
     "common": {
       "show": "Ver",
       "hide": "Ocultar"
@@ -3132,9 +3135,9 @@
         "open": "Abrir",
         "openAdminWeb": "Abrir painel web"
       },
-      "webOnboardingBannerTitle": "Onboarding web por concluir",
-      "webOnboardingBannerBody": "Conclua a configuração inicial no browser (mesmo email e palavra-passe). Este aviso desaparece quando terminar.",
-      "webOnboardingBannerCta": "Abrir onboarding no browser",
+      "webOnboardingBannerTitle": "Conclua a configuração (mesmo onboarding do computador)",
+      "webOnboardingBannerBody": "Os mesmos 6 passos web: palavra-passe, dados, plano, MIR, unidade e pagamentos. Abre aqui com a mesma conta; o progresso guarda-se como no computador.",
+      "webOnboardingBannerCta": "Continuar configuração",
       "tasks": {
         "country": "Indicar país",
         "language": "Escolher idioma da app",
