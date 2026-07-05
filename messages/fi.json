@@ -481,6 +481,9 @@
     "mobileApp": {
       "banner": "Käytät samaa 6-vaiheista käyttöönottoa kuin tietokoneella. Edistyminen tallentuu automaattisesti."
     },
+    "mobileWeb": {
+      "banner": "Sama 6-vaiheinen käyttöönotto kuin tietokoneella: salasana, tiedot, paketti, MIR, yksikkö ja maksut. Edistyminen tallentuu."
+    },
     "common": {
       "show": "Show",
       "hide": "Piilottaa"
