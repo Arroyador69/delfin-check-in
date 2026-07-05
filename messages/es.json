@@ -67,6 +67,7 @@
     "referrals": "Referidos",
     "settings": "Configuración",
     "menu": "Menú",
+    "closeMenu": "Cerrar menú",
     "pendingReservationsReviewTitle": "Reservas por completar (desde registro de huéspedes)",
     "pendingReservationsReviewNoPending": "Sin reservas pendientes de revisar. Ir a Reservas.",
     "pendingReservationsReviewAria": "{count} reservas pendientes de revisar",

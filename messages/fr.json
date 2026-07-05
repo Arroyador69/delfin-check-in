@@ -67,6 +67,7 @@
     "referrals": "Références",
     "settings": "Paramètres",
     "menu": "Menu",
+    "closeMenu": "Fermer le menu",
     "pendingReservationsReviewTitle": "Réservations à compléter (formulaire voyageurs)",
     "pendingReservationsReviewNoPending": "Aucune réservation en attente. Aller aux réservations.",
     "pendingReservationsReviewAria": "{count} réservations en attente de vérification",

@@ -67,6 +67,7 @@
     "referrals": "Viittaukset",
     "settings": "Asetukset",
     "menu": "Valikko",
+    "closeMenu": "Sulje valikko",
     "pendingReservationsReviewTitle": "Suoritettavat varaukset (vieraan ilmoittautumisesta)",
     "pendingReservationsReviewNoPending": "Ei tarkistusta odottavia varauksia. Siirry kohtaan Varaukset.",
     "pendingReservationsReviewAria": "{count} varaus odottaa tarkistusta",

@@ -11,7 +11,7 @@ type AffiliateRecommendationSlotProps = {
 
 function placementStyles(placement: AffiliateRecommendationSlotProps['placement']) {
   if (placement === 'menu') {
-    return 'mx-2 my-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-3';
+    return 'mx-2 my-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2.5 sm:py-3';
   }
   if (placement === 'sidebar') {
     return 'mb-6 rounded-lg border border-blue-200 bg-blue-50 p-4';
@@ -51,9 +51,55 @@ export default function AffiliateRecommendationSlot({ placement }: AffiliateReco
     trackAffiliateClick(placement);
   };
 
+  const isMenu = placement === 'menu';
+
   return (
     <div className={placementStyles(placement)}>
-      <div className="flex items-start gap-3">
+      {/* Menú móvil: tarjeta compacta para no bloquear el scroll ni tapar enlaces */}
+      {isMenu ? (
+        <div className="flex items-center gap-2.5 sm:hidden">
+          <a
+            href={amazonHref}
+            target="_blank"
+            rel="noopener noreferrer sponsored"
+            className="shrink-0"
+            onClick={onAffiliatePress}
+          >
+            <img
+              src={productImageSrc}
+              alt={t('affiliateTitle')}
+              className="h-12 w-12 rounded-md border border-blue-100 bg-white object-contain p-0.5"
+              width={48}
+              height={48}
+            />
+          </a>
+          <div className="min-w-0 flex-1">
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-blue-700 truncate">
+              {t('affiliateLabel')}
+            </p>
+            <a
+              href={amazonHref}
+              target="_blank"
+              rel="noopener noreferrer sponsored"
+              className="block truncate text-xs font-bold text-slate-900"
+              onClick={onAffiliatePress}
+            >
+              {t('affiliateTitle')}
+            </a>
+            <a
+              href={amazonHref}
+              target="_blank"
+              rel="noopener noreferrer sponsored"
+              className="mt-1 inline-block text-xs font-semibold text-blue-700 underline"
+              onClick={onAffiliatePress}
+            >
+              {t('affiliateCta')}
+            </a>
+          </div>
+        </div>
+      ) : null}
+
+      <div className={`flex items-start gap-3 ${isMenu ? 'hidden sm:flex' : ''}`}>
         {/* eslint-disable-next-line @next/next/no-img-element -- asset local o URL externa por env */}
         <a
           href={amazonHref}

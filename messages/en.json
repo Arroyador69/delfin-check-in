@@ -67,6 +67,7 @@
     "referrals": "Referrals",
     "settings": "Settings",
     "menu": "Menu",
+    "closeMenu": "Close menu",
     "pendingReservationsReviewTitle": "Reservations to complete (from guest registration)",
     "pendingReservationsReviewNoPending": "No reservations pending review. Go to Reservations.",
     "pendingReservationsReviewAria": "{count} reservations pending review",
