@@ -661,7 +661,9 @@
       "tryFirstTitle": "Prefer to explore the dashboard first?",
       "tryFirstBody": "You can enter the dashboard without creating units now. We will remind you in the notification bell when you are ready.",
       "skipForNow": "Try first — set up units later",
-      "skipHint": "You can also create units below if you are ready. Reminders appear in the panel bell icon 🔔."
+      "skipHint": "You can also create units below if you are ready. Reminders appear in the panel bell icon 🔔.",
+      "maxGuestsLabel": "Maximum travelers (MIR form)",
+      "maxGuestsHint": "How many people can register in one traveler form submission (max. 50, MIR rules)."
     },
     "step5": {
       "title": "Cleaning Calendar",
@@ -2101,6 +2103,7 @@
         "descriptionPlaceholder": "Describe your property in detail...",
         "characteristics": "Characteristics",
         "maxGuests": "Max Guests",
+        "maxGuestsFormHint": "Sets how many travelers a guest can register in one submission (MIR traveler form). The public link respects this limit.",
         "bedrooms": "Bedrooms",
         "bathrooms": "Bathrooms",
         "minNights": "Min Nights",

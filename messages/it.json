@@ -627,7 +627,9 @@
       "next": "Avanti",
       "completing": "Completamento...",
       "completeSetup": "Completa Configurazione",
-      "cleaningHint": "Calendario pulizie e orari per stanza li imposti quando vuoi in Impostazioni; non serve farlo adesso."
+      "cleaningHint": "Calendario pulizie e orari per stanza li imposti quando vuoi in Impostazioni; non serve farlo adesso.",
+      "maxGuestsLabel": "Massimo viaggiatori (modulo MIR)",
+      "maxGuestsHint": "Quante persone possono registrarsi in un unico invio del modulo (max. 50, norme MIR)."
     },
     "step5": {
       "title": "Calendario pulizie",
@@ -2044,6 +2046,7 @@
         "descriptionPlaceholder": "Descrivi la tua proprietà in dettaglio...",
         "characteristics": "Caratteristiche",
         "maxGuests": "Ospiti Max",
+        "maxGuestsFormHint": "Imposta quanti viaggiatori l'ospite può registrare in un invio (modulo MIR). Il link pubblico rispetta questo limite.",
         "bedrooms": "Camere da letto",
         "bathrooms": "Bagni",
         "minNights": "Notti Min",

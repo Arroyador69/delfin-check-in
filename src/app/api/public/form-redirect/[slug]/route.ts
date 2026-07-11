@@ -144,16 +144,36 @@ export async function GET(
     }
 
     let propertyId = '';
+    let maxGuests = 2;
     try {
-      const propRow = await sql`
-        SELECT id::text AS id FROM tenant_properties
-        WHERE tenant_id = ${tenant.id}
-        ORDER BY id ASC
-        LIMIT 1
-      `;
-      propertyId = propRow.rows[0]?.id || '';
+      const { resolveMaxGuestsForTravelerForm } = await import('@/lib/form-max-guests');
+      maxGuests = await resolveMaxGuestsForTravelerForm(String(tenant.id), {
+        roomId: roomId || null,
+      });
+
+      if (roomId) {
+        const propByRoom = await sql`
+          SELECT tp.id::text AS id
+          FROM property_room_map prm
+          JOIN tenant_properties tp ON tp.id = prm.property_id AND tp.tenant_id = prm.tenant_id
+          WHERE prm.tenant_id = ${tenant.id}::uuid
+            AND prm.room_id::text = ${roomId}
+          LIMIT 1
+        `;
+        propertyId = propByRoom.rows[0]?.id || '';
+      }
+      if (!propertyId) {
+        const propRow = await sql`
+          SELECT id::text AS id FROM tenant_properties
+          WHERE tenant_id = ${tenant.id}
+          ORDER BY id ASC
+          LIMIT 1
+        `;
+        propertyId = propRow.rows[0]?.id || '';
+      }
     } catch {
       propertyId = '';
+      maxGuests = 2;
     }
 
     const apiOrigin = (
@@ -195,6 +215,7 @@ export async function GET(
       ui_locale: locale,
       checkin_email_enabled: canEmailCheckinInstructions ? '1' : '0',
       property_id: propertyId,
+      max_guests: String(maxGuests),
     });
     if (roomId) {
       tenantParams.set('room_id', roomId);
