@@ -703,8 +703,8 @@ export default function OnboardingPage() {
     }));
   };
 
-  const [unitNames, setUnitNames] = useState<Array<{ id: string; name: string }>>(() =>
-    generateDefaultUnits(1, 'apartamentos')
+  const [unitNames, setUnitNames] = useState<Array<{ id: string; name: string; max_guests: number }>>(() =>
+    generateDefaultUnits(1, 'apartamentos').map((u) => ({ ...u, max_guests: 2 }))
   );
 
   useEffect(() => {
@@ -712,8 +712,15 @@ export default function OnboardingPage() {
     setUnitNames((prev) => {
       const next = generateDefaultUnits(formData.unitCount, formData.lodgingType);
       // Mantener nombres ya editados si coinciden ids
-      const map = new Map(prev.map((u) => [u.id, u.name]));
-      return next.map((u) => ({ ...u, name: map.get(u.id) ?? u.name }));
+      const map = new Map(prev.map((u) => [u.id, u]));
+      return next.map((u) => {
+        const existing = map.get(u.id);
+        return {
+          ...u,
+          name: existing?.name ?? u.name,
+          max_guests: existing?.max_guests ?? 2,
+        };
+      });
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formData.unitCount, formData.lodgingType]);
@@ -723,7 +730,13 @@ export default function OnboardingPage() {
     setLoading(true);
 
     // Si el usuario no tocó nombres, al menos habrá defaults
-    const payloadRooms = (unitNames || []).map((u) => ({ id: u.id, name: u.name })).filter((u) => u.name.trim());
+    const payloadRooms = (unitNames || [])
+      .map((u) => ({
+        id: u.id,
+        name: u.name,
+        max_guests: Math.max(1, Math.min(50, Number(u.max_guests) || 2)),
+      }))
+      .filter((u) => u.name.trim());
     if (payloadRooms.length === 0) {
       setError('Indica al menos una unidad');
       setLoading(false);
@@ -1501,8 +1514,8 @@ export default function OnboardingPage() {
             </div>
             <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
               {unitNames.map((u, idx) => (
-                <div key={u.id}>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                <div key={u.id} className="space-y-2 rounded-lg border border-gray-200 bg-white p-3">
+                  <label className="block text-xs font-medium text-gray-700">
                     {formData.lodgingType === 'apartamentos'
                       ? t('step3.lodgingTypeWholeHome')
                       : t('step3.lodgingTypeRooms')}{' '}
@@ -1519,6 +1532,29 @@ export default function OnboardingPage() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
                     disabled={formData.propertyAdded}
                   />
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                      {t('step4.maxGuestsLabel')}
+                    </label>
+                    <input
+                      type="number"
+                      min={1}
+                      max={50}
+                      value={u.max_guests}
+                      onChange={(e) =>
+                        setUnitNames((prev) =>
+                          prev.map((x) =>
+                            x.id === u.id
+                              ? { ...x, max_guests: Math.max(1, Math.min(50, parseInt(e.target.value, 10) || 2)) }
+                              : x
+                          )
+                        )
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                      disabled={formData.propertyAdded}
+                    />
+                    <p className="text-xs text-gray-500 mt-1">{t('step4.maxGuestsHint')}</p>
+                  </div>
                 </div>
               ))}
             </div>

@@ -208,6 +208,10 @@ export async function POST(req: NextRequest) {
       .map((r: any, idx: number) => ({
         id: r?.id != null && String(r.id).trim() !== '' ? String(r.id) : String(idx + 1),
         name: String(r?.name || '').trim(),
+        max_guests:
+          r?.max_guests != null || r?.maxGuests != null
+            ? Number(r.max_guests ?? r.maxGuests)
+            : undefined,
       }))
       .filter((r: any) => r.name);
 
@@ -576,6 +580,26 @@ export async function POST(req: NextRequest) {
       const room = rooms[i];
       await insertRoomForTenant(room, lodgingId, tenantId);
       console.log(`✅ Habitación guardada: ${room.name} (lodging ${lodgingId})`);
+    }
+
+    // Crear/actualizar tenant_properties con max_guests para el formulario de viajeros
+    try {
+      const savedRooms = await sql`
+        SELECT id::text AS id, name
+        FROM "Room"
+        WHERE "lodgingId" = ${lodgingId}
+        ORDER BY name ASC, id::text ASC
+      `;
+      const maxByName = new Map(rooms.map((r) => [r.name.toLowerCase(), r.max_guests]));
+      const roomsForProps = savedRooms.rows.map((row) => ({
+        id: String(row.id),
+        name: String(row.name),
+        max_guests: maxByName.get(String(row.name).toLowerCase()),
+      }));
+      const { ensureTenantPropertiesForRooms } = await import('@/lib/form-max-guests');
+      await ensureTenantPropertiesForRooms(tenantId, roomsForProps);
+    } catch (propErr) {
+      console.warn('⚠️ No se pudieron crear propiedades tras rooms:', propErr);
     }
 
     if (requestedLodgingType === 'hostal' || requestedLodgingType === 'apartamentos') {

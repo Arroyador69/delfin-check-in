@@ -662,7 +662,9 @@
       "tryFirstTitle": "¿Prefieres probar el panel primero?",
       "tryFirstBody": "Puedes entrar al dashboard sin crear unidades ahora. Te recordaremos en la campanita cuando quieras configurar tu alojamiento.",
       "skipForNow": "Probar primero — configurar unidades más tarde",
-      "skipHint": "También puedes crear unidades abajo si ya lo tienes claro. Los recordatorios aparecen en la campanita 🔔 del panel."
+      "skipHint": "También puedes crear unidades abajo si ya lo tienes claro. Los recordatorios aparecen en la campanita 🔔 del panel.",
+      "maxGuestsLabel": "Máximo de viajeros (formulario MIR)",
+      "maxGuestsHint": "Cuántas personas pueden registrarse en un mismo envío del formulario de viajeros (máx. 50, normativa MIR)."
     },
     "step5": {
       "title": "Calendario de Limpieza",
@@ -2154,6 +2156,7 @@
         "descriptionPlaceholder": "Describe tu propiedad con detalle...",
         "characteristics": "Características",
         "maxGuests": "Huéspedes Máx.",
+        "maxGuestsFormHint": "Define cuántos viajeros puede registrar el huésped en un mismo formulario (parte MIR). El enlace público respeta este límite.",
         "bedrooms": "Dormitorios",
         "bathrooms": "Baños",
         "minNights": "Noches Mín.",

@@ -604,7 +604,9 @@
       "next": "Seuraavaksi",
       "completing": "Valmistetaan...",
       "completeSetup": "Täydellinen asennus",
-      "cleaningHint": "Voit määrittää siivouskalenterin ja huonekohtaiset aikataulut milloin tahansa asetuksissa – sinun ei tarvitse tehdä sitä nyt."
+      "cleaningHint": "Voit määrittää siivouskalenterin ja huonekohtaiset aikataulut milloin tahansa asetuksissa – sinun ei tarvitse tehdä sitä nyt.",
+      "maxGuestsLabel": "Matkustajien enimmäismäärä (MIR-lomake)",
+      "maxGuestsHint": "Kuinka monta henkilöä voi rekisteröityä yhdellä lomakkeen lähetyksellä (enint. 50, MIR-säännöt)."
     },
     "step5": {
       "title": "Puhdistuskalenteri",
@@ -2000,6 +2002,7 @@
         "descriptionPlaceholder": "Kuvaile kiinteistösi yksityiskohtaisesti...",
         "characteristics": "Ominaisuudet",
         "maxGuests": "Max vieraita",
+        "maxGuestsFormHint": "Määrittää kuinka monta matkustajaa vieraat voivat rekisteröidä yhdellä lähetyksellä (MIR-lomake). Julkinen linkki noudattaa tätä rajaa.",
         "bedrooms": "Makuuhuoneita",
         "bathrooms": "Kylpyhuoneet",
         "minNights": "Min yöt",

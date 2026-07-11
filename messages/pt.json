@@ -594,7 +594,9 @@
       "next": "Seguinte",
       "completing": "A completar...",
       "completeSetup": "Completar configuração",
-      "cleaningHint": "O calendário de limpeza e os horários por quarto pode configurá-los quando quiser em Definições; não é necessário agora."
+      "cleaningHint": "O calendário de limpeza e os horários por quarto pode configurá-los quando quiser em Definições; não é necessário agora.",
+      "maxGuestsLabel": "Máximo de viajantes (formulário MIR)",
+      "maxGuestsHint": "Quantas pessoas podem registar-se num único envio do formulário (máx. 50, normas MIR)."
     },
     "step5": {
       "title": "Calendário de limpeza",
@@ -2001,6 +2003,7 @@
         "descriptionPlaceholder": "Descreva a sua propriedade em detalhe...",
         "characteristics": "Características",
         "maxGuests": "Hóspedes Máx",
+        "maxGuestsFormHint": "Define quantos viajantes o hóspede pode registar num envio (formulário MIR). O link público respeita este limite.",
         "bedrooms": "Quartos de Dormir",
         "bathrooms": "Casas de Banho",
         "minNights": "Noites Mín",
