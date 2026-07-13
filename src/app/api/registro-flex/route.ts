@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { insertGuestRegistration } from '@/lib/db';
 import { validateMirSoporteDocumento } from '@/lib/mir-soporte-documento';
+import { MIR_MAX_PERSONAS_PER_COMUNICACION } from '@/lib/form-max-guests';
 
 // ===== ADAPTADOR FLEXIBLE CON ERRORES DETALLADOS =====
 
@@ -348,6 +349,11 @@ export async function POST(req: NextRequest) {
     // Validar que haya al menos un viajero
     if (!viajeros.length) {
       issues.push({ path: 'viajeros', message: 'Se requiere al menos un viajero' });
+    } else if (viajeros.length > MIR_MAX_PERSONAS_PER_COMUNICACION) {
+      issues.push({
+        path: 'viajeros',
+        message: `Máximo ${MIR_MAX_PERSONAS_PER_COMUNICACION} viajeros por comunicación MIR`,
+      });
     } else {
     // Validar cada viajero
     viajeros.forEach((v: any, index: number) => {
