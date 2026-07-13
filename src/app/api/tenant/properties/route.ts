@@ -7,6 +7,7 @@ import { sql } from '@vercel/postgres';
 import { CreatePropertyRequest, UpdatePropertyRequest, TenantProperty } from '@/lib/direct-reservations-types';
 import { getTenantById, getTenantId } from '@/lib/tenant';
 import { dedupeTenantPropertiesList } from '@/lib/tenant-properties-dedup';
+import { clampMaxGuests } from '@/lib/form-max-guests';
 
 // =====================================================
 // GET: Obtener propiedades del tenant
@@ -549,8 +550,15 @@ export async function PUT(req: NextRequest) {
     }
     
     if (data.max_guests !== undefined) {
+      const maxGuests = clampMaxGuests(data.max_guests);
       updateFields.push('max_guests = $' + (updateValues.length + 1));
-      updateValues.push(data.max_guests);
+      updateValues.push(maxGuests);
+      if ((data as any).included_guests === undefined) {
+        updateFields.push(
+          'included_guests = LEAST(COALESCE(included_guests, 2), $' + (updateValues.length + 1) + ')'
+        );
+        updateValues.push(maxGuests);
+      }
     }
 
     if ((data as any).included_guests !== undefined) {
