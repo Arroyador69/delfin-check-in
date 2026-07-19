@@ -4,7 +4,7 @@
  * Configuración de Sentry para Edge Runtime
  */
 import * as Sentry from '@sentry/nextjs'
-import { isNextJsNavigationControlError } from '@/lib/sentry-filter-next-navigation'
+import { shouldDropSentryEvent } from '@/lib/sentry-filter-next-navigation'
 
 Sentry.init({
   dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
@@ -16,8 +16,10 @@ Sentry.init({
   // Debug mode
   debug: process.env.NODE_ENV === 'development',
 
+  ignoreErrors: ['Connection closed', 'Connection closed.'],
+
   beforeSend(_event, hint) {
-    if (isNextJsNavigationControlError(hint.originalException)) {
+    if (shouldDropSentryEvent(hint.originalException ?? hint.syntheticException)) {
       return null;
     }
     return _event;

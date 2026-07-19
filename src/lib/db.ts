@@ -797,7 +797,8 @@ export async function ensureFacturasTables(): Promise<void> {
         WHERE tenant_id = p_tenant_id;
         
         -- Generar nuevo número (año + número correlativo)
-        nuevo_numero := EXTRACT(YEAR FROM CURRENT_DATE)::TEXT || '-' || LPAD((ultimo_numero + 1)::TEXT, 4, '0');
+        -- date_part evita EXTRACT(... FROM ...) en tagged templates de Neon/Vercel
+        nuevo_numero := date_part('year', CURRENT_DATE)::INT::TEXT || '-' || LPAD((ultimo_numero + 1)::TEXT, 4, '0');
         
         RETURN nuevo_numero;
       END;
@@ -885,7 +886,7 @@ export async function ensureFacturasTables(): Promise<void> {
         INTO ultimo_numero
         FROM recibos
         WHERE tenant_id = p_tenant_id;
-        nuevo_numero := 'REC-' || EXTRACT(YEAR FROM CURRENT_DATE)::TEXT || '-' || LPAD((ultimo_numero + 1)::TEXT, 4, '0');
+        nuevo_numero := 'REC-' || date_part('year', CURRENT_DATE)::INT::TEXT || '-' || LPAD((ultimo_numero + 1)::TEXT, 4, '0');
         RETURN nuevo_numero;
       END;
       $$ LANGUAGE plpgsql

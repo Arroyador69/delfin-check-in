@@ -5,7 +5,7 @@
  * Esto reemplaza el uso de `sentry.client.config.ts` (deprecado con Turbopack).
  */
 import * as Sentry from '@sentry/nextjs';
-import { isNextJsNavigationControlError } from '@/lib/sentry-filter-next-navigation';
+import { shouldDropSentryEvent } from '@/lib/sentry-filter-next-navigation';
 
 Sentry.init({
   dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
@@ -22,8 +22,17 @@ Sentry.init({
     }),
   ],
 
+  ignoreErrors: [
+    'Connection closed',
+    'Connection closed.',
+    'Failed to fetch',
+    'NetworkError',
+    'Load failed',
+    'AbortError',
+  ],
+
   beforeSend(event, hint) {
-    if (isNextJsNavigationControlError(hint.originalException)) {
+    if (shouldDropSentryEvent(hint.originalException ?? hint.syntheticException)) {
       return null;
     }
 
