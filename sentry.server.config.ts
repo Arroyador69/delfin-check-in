@@ -4,7 +4,7 @@
  * Configuración de Sentry para el lado del servidor
  */
 import * as Sentry from '@sentry/nextjs'
-import { isNextJsNavigationControlError } from '@/lib/sentry-filter-next-navigation'
+import { shouldDropSentryEvent } from '@/lib/sentry-filter-next-navigation'
 
 Sentry.init({
   dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
@@ -22,10 +22,15 @@ Sentry.init({
     // Si necesitas profiling, instala: npm install @sentry/profiling-node
     // Sentry.nodeProfilingIntegration(),
   ],
+
+  ignoreErrors: [
+    'Connection closed',
+    'Connection closed.',
+  ],
   
   // Filtrado de errores
   beforeSend(event, hint) {
-    if (isNextJsNavigationControlError(hint.originalException)) {
+    if (shouldDropSentryEvent(hint.originalException ?? hint.syntheticException)) {
       return null;
     }
     // Enriquecer con información adicional
