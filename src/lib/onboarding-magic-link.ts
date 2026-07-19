@@ -204,6 +204,37 @@ export async function issueFreshOnboardingCredentials(userId: string): Promise<{
   return { token, expires, tempPassword };
 }
 
+/** Genera credenciales en memoria (no toca BD). Útil para enviar el email antes de invalidar el enlace anterior. */
+export async function prepareOnboardingCredentials(): Promise<{
+  token: string;
+  expires: Date;
+  tempPassword: string;
+  passwordHash: string;
+}> {
+  const token = generateOnboardingToken();
+  const expires = onboardingTokenExpiry();
+  const tempPassword = generateOnboardingTempPassword();
+  const passwordHash = await hashPassword(tempPassword);
+  return { token, expires, tempPassword, passwordHash };
+}
+
+/** Persiste token + password temporal tras un envío de email exitoso. */
+export async function persistOnboardingCredentials(
+  userId: string,
+  creds: { token: string; expires: Date; passwordHash: string }
+): Promise<void> {
+  await ensureOnboardingMagicTokenSchema();
+  await sql`
+    UPDATE tenant_users
+    SET
+      onboarding_magic_token = ${creds.token},
+      onboarding_magic_token_expires = ${creds.expires.toISOString()},
+      password_hash = ${creds.passwordHash},
+      updated_at = NOW()
+    WHERE id = ${userId}
+  `;
+}
+
 export function onboardingEmailVariantForOwner(planType?: string | null): OnboardingEmailVariant {
   if (planType === 'checkin' || planType === 'standard' || planType === 'pro') {
     return 'web_plan_paid';
