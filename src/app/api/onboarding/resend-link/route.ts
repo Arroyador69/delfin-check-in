@@ -3,16 +3,17 @@ import { sendOnboardingEmail } from '@/lib/mailer';
 import {
   buildOnboardingUrl,
   findOnboardingOwnerByEmail,
-  issueFreshOnboardingCredentials,
   onboardingEmailVariantForOwner,
+  persistOnboardingCredentials,
+  prepareOnboardingCredentials,
 } from '@/lib/onboarding-magic-link';
 
 export const runtime = 'nodejs';
 
 /**
  * Reenvío público del enlace de onboarding (sin auth).
- * - Respuesta genérica (no revela si el email existe).
- * - Solo cuentas con onboarding pendiente; al reenviar se invalida el enlace anterior (uno activo).
+ * - Respuesta genérica si el email no existe / ya completó (no revela existencia).
+ * - Solo invalida el enlace anterior **después** de enviar el email con éxito.
  */
 export async function POST(req: NextRequest) {
   try {
@@ -48,23 +49,39 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(genericOk);
     }
 
-    const { token, tempPassword } = await issueFreshOnboardingCredentials(owner.user_id);
-    const onboardingUrl = buildOnboardingUrl(token, locale);
+    const creds = await prepareOnboardingCredentials();
+    const onboardingUrl = buildOnboardingUrl(creds.token, locale);
 
     try {
       await sendOnboardingEmail({
         to: email,
         onboardingUrl,
-        tempPassword,
+        tempPassword: creds.tempPassword,
         tenantId: owner.tenant_id,
         variant: onboardingEmailVariantForOwner(owner.plan_type),
         locale,
       });
     } catch (mailErr) {
       console.error('resend-link: error enviando email', mailErr);
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            'No pudimos enviar el email ahora. Inténtalo de nuevo en unos minutos o escribe a contacto@delfincheckin.com.',
+          email_sent: false,
+        },
+        { status: 503 }
+      );
     }
 
-    return NextResponse.json(genericOk);
+    // Solo invalidar el enlace anterior tras envío OK.
+    await persistOnboardingCredentials(owner.user_id, {
+      token: creds.token,
+      expires: creds.expires,
+      passwordHash: creds.passwordHash,
+    });
+
+    return NextResponse.json({ ...genericOk, email_sent: true });
   } catch (error) {
     console.error('resend-link:', error);
     return NextResponse.json(
