@@ -29,10 +29,24 @@ Sentry.init({
     'NetworkError',
     'Load failed',
     'AbortError',
+    'Failed to connect to MetaMask',
+    'MetaMask extension not found',
+    /MetaMask/i,
+    /Object captured as promise rejection with keys:\s*\[object has no keys\]/i,
+  ],
+
+  // Scripts de extensiones (wallets, etc.)
+  denyUrls: [
+    /extensions\//i,
+    /^chrome:\/\//i,
+    /^chrome-extension:\/\//i,
+    /^moz-extension:\/\//i,
+    /^safari-extension:\/\//i,
+    /scripts\/inpage\.js/i,
   ],
 
   beforeSend(event, hint) {
-    if (shouldDropSentryEvent(hint.originalException ?? hint.syntheticException)) {
+    if (shouldDropSentryEvent(hint.originalException ?? hint.syntheticException, event)) {
       return null;
     }
 

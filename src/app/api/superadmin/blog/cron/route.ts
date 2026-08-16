@@ -10,6 +10,7 @@ import {
   normalizeArticleTitle,
   pickBlogAngleForBatch,
 } from '@/lib/blog-article-dedup';
+import { withNeonRetry } from '@/lib/neon-retry';
 import { Octokit } from '@octokit/rest';
 import { injectPlansCaptureBlock, injectSoftPopup, stripLegacyPopups } from '@/lib/blog-capture-html';
 
@@ -189,7 +190,10 @@ async function insertDraft(args: {
 }) {
   // Asegurar slug único
   let finalSlug = args.slugBase;
-  const existing = await sql`SELECT id FROM blog_articles WHERE slug = ${finalSlug}`;
+  const existing = await withNeonRetry(
+    () => sql`SELECT id FROM blog_articles WHERE slug = ${finalSlug}`,
+    { label: 'blog-cron-slug' }
+  );
   if (existing.rows.length > 0) {
     finalSlug = `${args.slugBase}-${Date.now().toString(36)}`;
   }
@@ -216,28 +220,34 @@ async function insertDraft(args: {
     .join(', ')
     .slice(0, 1000);
 
-  const titleCheck = await sql`
-    SELECT id FROM blog_articles
-    WHERE LOWER(TRIM(title)) = LOWER(TRIM(${args.title}))
-    LIMIT 1
-  `;
+  const titleCheck = await withNeonRetry(
+    () => sql`
+      SELECT id FROM blog_articles
+      WHERE LOWER(TRIM(title)) = LOWER(TRIM(${args.title}))
+      LIMIT 1
+    `,
+    { label: 'blog-cron-title-check' }
+  );
   if (titleCheck.rows.length > 0) {
     throw new Error(`duplicate_title_db:${args.title}`);
   }
 
-  const result = await sql`
-    INSERT INTO blog_articles (
-      slug, title, meta_description, meta_keywords,
-      content, excerpt, canonical_url, schema_json,
-      status, is_published, author_name
-    ) VALUES (
-      ${finalSlug}, ${args.title}, ${args.meta_description}, ${mk},
-      ${args.content}, ${args.excerpt}, ${`https://delfincheckin.com/articulos/${finalSlug}.html`},
-      ${JSON.stringify(schema_json)}::jsonb,
-      'draft', false, 'Delfín Check-in'
-    )
-    RETURNING id, slug, title, created_at
-  `;
+  const result = await withNeonRetry(
+    () => sql`
+      INSERT INTO blog_articles (
+        slug, title, meta_description, meta_keywords,
+        content, excerpt, canonical_url, schema_json,
+        status, is_published, author_name
+      ) VALUES (
+        ${finalSlug}, ${args.title}, ${args.meta_description}, ${mk},
+        ${args.content}, ${args.excerpt}, ${`https://delfincheckin.com/articulos/${finalSlug}.html`},
+        ${JSON.stringify(schema_json)}::jsonb,
+        'draft', false, 'Delfín Check-in'
+      )
+      RETURNING id, slug, title, created_at
+    `,
+    { label: 'blog-cron-insert' }
+  );
   return result.rows[0] as { id: string; slug: string; title: string; created_at: string };
 }
 
@@ -245,13 +255,16 @@ async function publishToGithub(slug: string): Promise<string> {
   const token = process.env.GITHUB_TOKEN || process.env.GITHUB_TOKEN_LANDING;
   if (!token) throw new Error('GITHUB_TOKEN (o GITHUB_TOKEN_LANDING) no configurado');
 
-  const articleResult = await sql`
-    SELECT id, slug, title, meta_description, meta_keywords, content, excerpt,
-           published_at, updated_at, is_published, status
-    FROM blog_articles
-    WHERE slug = ${slug}
-    LIMIT 1
-  `;
+  const articleResult = await withNeonRetry(
+    () => sql`
+      SELECT id, slug, title, meta_description, meta_keywords, content, excerpt,
+             published_at, updated_at, is_published, status
+      FROM blog_articles
+      WHERE slug = ${slug}
+      LIMIT 1
+    `,
+    { label: 'blog-cron-load-article' }
+  );
   if (articleResult.rows.length === 0) throw new Error('Artículo no encontrado en BD');
   const article = articleResult.rows[0] as any;
 
@@ -350,14 +363,17 @@ async function publishToGithub(slug: string): Promise<string> {
 
 async function markPublished(id: string) {
   const now = new Date().toISOString();
-  await sql`
-    UPDATE blog_articles
-    SET is_published = true,
-        status = 'published',
-        published_at = COALESCE(published_at, ${now}),
-        updated_at = ${now}
-    WHERE id = ${id}::uuid
-  `;
+  await withNeonRetry(
+    () => sql`
+      UPDATE blog_articles
+      SET is_published = true,
+          status = 'published',
+          published_at = COALESCE(published_at, ${now}),
+          updated_at = ${now}
+      WHERE id = ${id}::uuid
+    `,
+    { label: 'blog-cron-mark-published' }
+  );
 }
 
 export async function GET(req: NextRequest) {
@@ -383,13 +399,16 @@ export async function GET(req: NextRequest) {
     // En mode=test, NO aplicamos cuota (sirve para probar el cron sin esperar al día siguiente).
     const day = utcDayKey();
     if (mode !== 'test') {
-      const countToday = await sql`
-        SELECT COUNT(*)::int AS c
-        FROM blog_articles
-        WHERE created_at >= ${`${day}T00:00:00.000Z`}::timestamptz
-          AND created_at <  ${`${day}T23:59:59.999Z`}::timestamptz
-          AND meta_keywords ILIKE '%auto_topic:%'
-      `;
+      const countToday = await withNeonRetry(
+        () => sql`
+          SELECT COUNT(*)::int AS c
+          FROM blog_articles
+          WHERE created_at >= ${`${day}T00:00:00.000Z`}::timestamptz
+            AND created_at <  ${`${day}T23:59:59.999Z`}::timestamptz
+            AND meta_keywords ILIKE '%auto_topic:%'
+        `,
+        { label: 'blog-cron-quota' }
+      );
       const c = Number(countToday.rows[0]?.c ?? 0);
       if (c >= 2) {
         return NextResponse.json({ success: true, skipped: 'daily_quota_reached', today: c });
@@ -455,8 +474,15 @@ export async function GET(req: NextRequest) {
       url,
     });
   } catch (err: any) {
-    console.error('[blog-cron]', err);
-    return NextResponse.json({ error: err?.message || 'Error interno' }, { status: 500 });
+    const message = String(err?.message || 'Error interno');
+    console.error(`[blog-cron] ${message}`, {
+      name: err?.name,
+      code: err?.code,
+      detail: err?.detail,
+      severity: err?.severity,
+      source: err?.sourceError?.message || err?.cause?.message || null,
+    }, err);
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 
