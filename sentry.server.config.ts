@@ -30,7 +30,7 @@ Sentry.init({
   
   // Filtrado de errores
   beforeSend(event, hint) {
-    if (shouldDropSentryEvent(hint.originalException ?? hint.syntheticException)) {
+    if (shouldDropSentryEvent(hint.originalException ?? hint.syntheticException, event)) {
       return null;
     }
     // Enriquecer con información adicional

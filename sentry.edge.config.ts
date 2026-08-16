@@ -19,7 +19,7 @@ Sentry.init({
   ignoreErrors: ['Connection closed', 'Connection closed.'],
 
   beforeSend(_event, hint) {
-    if (shouldDropSentryEvent(hint.originalException ?? hint.syntheticException)) {
+    if (shouldDropSentryEvent(hint.originalException ?? hint.syntheticException, _event)) {
       return null;
     }
     return _event;

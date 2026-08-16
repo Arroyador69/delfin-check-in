@@ -54,15 +54,24 @@ function AdminLoginContent() {
 
   // Si ya hay sesión, ir al panel. Por defecto /{locale}/dashboard; si hay ?redirect= válido, allí.
   useEffect(() => {
-    fetch('/api/tenant', { credentials: 'include' })
-      .then((r) => {
-        if (r.ok) {
-          const raw = getSafeRedirect(redirectParam)
-          const target = raw === '/' ? getDashboardPath() : raw
-          router.replace(target)
-        }
-      })
-      .catch(() => {})
+    let cancelled = false
+
+    ;(async () => {
+      try {
+        const r = await fetch('/api/tenant', { credentials: 'include' })
+        if (!r.ok || cancelled) return
+        const raw = getSafeRedirect(redirectParam)
+        const target = raw === '/' ? getDashboardPath() : raw
+        // router.replace a veces rechaza con {} (ruido en Sentry); no debe tumbar la página.
+        await Promise.resolve(router.replace(target)).catch(() => {})
+      } catch {
+        // Sesión inválida / red: el usuario sigue en login.
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
   }, [router, redirectParam])
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -113,7 +122,7 @@ function AdminLoginContent() {
         const raw = getSafeRedirect(redirectParam)
         const target = raw === '/' ? getDashboardPath() : raw
         setTimeout(() => {
-          router.replace(target)
+          void Promise.resolve(router.replace(target)).catch(() => {})
         }, 300)
         setTimeout(() => {
           if (typeof window !== 'undefined' && window.location.pathname === '/admin-login') {

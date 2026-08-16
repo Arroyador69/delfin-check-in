@@ -1,4 +1,5 @@
 import { sql } from '@/lib/db';
+import { withNeonRetry } from '@/lib/neon-retry';
 
 /** Normaliza título para comparar duplicados (sin acentos ni puntuación). */
 export function normalizeArticleTitle(title: string): string {
@@ -146,18 +147,22 @@ export const BLOG_TOPIC_ANGLES: BlogTopicAngle[] = [
 ];
 
 export async function loadUsedBlogAngleIds(): Promise<Set<string>> {
-  const r = await sql`
-    SELECT meta_keywords, title
-    FROM blog_articles
-    WHERE meta_keywords ILIKE '%auto_topic_angle:%'
-       OR meta_keywords ILIKE '%auto_topic_key:%'
-  `;
+  const r = await withNeonRetry(
+    () => sql`
+      SELECT meta_keywords, title
+      FROM blog_articles
+      WHERE meta_keywords ILIKE '%auto_topic_angle:%'
+         OR meta_keywords ILIKE '%auto_topic_key:%'
+    `,
+    { label: 'blog-dedup-used-angles' }
+  );
   const used = new Set<string>();
   for (const row of r.rows as { meta_keywords?: string; title?: string }[]) {
     const mk = String(row.meta_keywords || '');
     const angleMatch = mk.match(/auto_topic_angle:([a-z0-9-]+)/i);
     if (angleMatch?.[1]) {
-      used.add(angleMatch[1]);
+      // Normaliza ids reciclados (…-r<base36>) al ángulo base.
+      used.add(angleMatch[1].replace(/-r[a-z0-9]+$/i, ''));
       continue;
     }
     const keyMatch = mk.match(/auto_topic_key:([a-z0-9-]+)/i);
@@ -169,7 +174,9 @@ export async function loadUsedBlogAngleIds(): Promise<Set<string>> {
 }
 
 export async function loadExistingNormalizedTitles(): Promise<Set<string>> {
-  const r = await sql`SELECT title FROM blog_articles`;
+  const r = await withNeonRetry(() => sql`SELECT title FROM blog_articles`, {
+    label: 'blog-dedup-titles',
+  });
   const set = new Set<string>();
   for (const row of r.rows as { title?: string }[]) {
     const n = normalizeArticleTitle(String(row.title || ''));
@@ -179,11 +186,15 @@ export async function loadExistingNormalizedTitles(): Promise<Set<string>> {
 }
 
 export async function loadRecentTitlesForPrompt(limit = 25): Promise<string[]> {
-  const r = await sql`
-    SELECT title FROM blog_articles
-    ORDER BY created_at DESC
-    LIMIT ${limit}
-  `;
+  const safeLimit = Math.max(1, Math.min(100, Math.floor(Number(limit) || 25)));
+  const r = await withNeonRetry(
+    () => sql`
+      SELECT title FROM blog_articles
+      ORDER BY created_at DESC
+      LIMIT ${safeLimit}
+    `,
+    { label: 'blog-dedup-recent-titles' }
+  );
   return (r.rows as { title?: string }[]).map((row) => String(row.title || '')).filter(Boolean);
 }
 
@@ -201,13 +212,16 @@ export type BlogCronBatch = 'morning' | 'afternoon';
 export async function pickBlogAngleForBatch(batch: BlogCronBatch): Promise<BlogTopicAngle> {
   const day = new Date().toISOString().slice(0, 10);
 
-  const usedToday = await sql`
-    SELECT id FROM blog_articles
-    WHERE created_at >= ${`${day}T00:00:00.000Z`}::timestamptz
-      AND created_at < ${`${day}T23:59:59.999Z`}::timestamptz
-      AND meta_keywords ILIKE ${`%auto_topic:${batch}:%`}
-    LIMIT 1
-  `;
+  const usedToday = await withNeonRetry(
+    () => sql`
+      SELECT id FROM blog_articles
+      WHERE created_at >= ${`${day}T00:00:00.000Z`}::timestamptz
+        AND created_at < ${`${day}T23:59:59.999Z`}::timestamptz
+        AND meta_keywords ILIKE ${`%auto_topic:${batch}:%`}
+      LIMIT 1
+    `,
+    { label: 'blog-dedup-used-today' }
+  );
   if (usedToday.rows.length > 0) {
     throw new Error(`already_generated:${batch}`);
   }
@@ -225,13 +239,27 @@ export async function pickBlogAngleForBatch(batch: BlogCronBatch): Promise<BlogT
     (angle) => !isNormalizedTitleTaken(angle.seedTitle, existingTitles)
   );
 
-  if (pool.length === 0) {
+  // Si todos los seeds ya existen como título, reciclamos el ángulo con id único:
+  // OpenAI debe inventar un título nuevo (generateArticle lo fuerza si choca).
+  const finalCandidates =
+    pool.length > 0
+      ? pool
+      : BLOG_TOPIC_ANGLES.map((angle, idx) => {
+          const stamp = `${Date.now().toString(36)}${idx.toString(36)}`;
+          return {
+            ...angle,
+            angleId: `${angle.angleId}-r${stamp}`,
+            seedTitle: `${angle.seedTitle.replace(/\s*\(\d{4}\)\s*$/, '').trim()} — nueva perspectiva ${stamp}`,
+          };
+        });
+
+  if (finalCandidates.length === 0) {
     throw new Error('no_topics_available: todos los ángulos/títulos base ya están usados');
   }
 
-  const parityPool = pool.filter((_, idx) =>
+  const parityPool = finalCandidates.filter((_, idx) =>
     batch === 'morning' ? idx % 2 === 0 : idx % 2 === 1
   );
-  const finalPool = parityPool.length > 0 ? parityPool : pool;
+  const finalPool = parityPool.length > 0 ? parityPool : finalCandidates;
   return finalPool[Math.floor(Math.random() * finalPool.length)];
 }

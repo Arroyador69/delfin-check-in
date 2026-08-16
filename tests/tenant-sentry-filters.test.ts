@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   isBenignNetworkOrAbortError,
+  isBrowserExtensionNoise,
+  isEmptyObjectRejection,
   isNextJsNavigationControlError,
   shouldDropSentryEvent,
 } from '@/lib/sentry-filter-next-navigation';
@@ -20,9 +22,42 @@ describe('sentry filters', () => {
     expect(isBenignNetworkOrAbortError(err)).toBe(true);
   });
 
+  it('ignora ruido MetaMask / extensiones wallet', () => {
+    const err = new Error('Failed to connect to MetaMask');
+    err.name = 'i';
+    expect(isBrowserExtensionNoise(err)).toBe(true);
+    expect(shouldDropSentryEvent(err)).toBe(true);
+    expect(
+      shouldDropSentryEvent(null, {
+        exception: {
+          values: [
+            {
+              type: 'Error',
+              value: 'MetaMask extension not found',
+              stacktrace: {
+                frames: [{ filename: 'app:///scripts/inpage.js' }],
+              },
+            },
+          ],
+        },
+      })
+    ).toBe(true);
+  });
+
+  it('ignora Promise.reject({}) (Object captured as promise rejection)', () => {
+    expect(isEmptyObjectRejection({})).toBe(true);
+    expect(
+      shouldDropSentryEvent({
+        name: 'UnhandledRejection',
+        message: 'Object captured as promise rejection with keys: [object has no keys]',
+      })
+    ).toBe(true);
+  });
+
   it('no ignora errores de aplicación reales', () => {
     expect(isBenignNetworkOrAbortError(new Error('Validación MIR fallida'))).toBe(false);
     expect(shouldDropSentryEvent(new Error('NeonDbError: syntax error'))).toBe(false);
+    expect(isBrowserExtensionNoise(new Error('Login fallido'))).toBe(false);
   });
 
   it('sigue filtrando NEXT_REDIRECT', () => {
