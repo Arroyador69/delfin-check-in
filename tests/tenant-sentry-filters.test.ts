@@ -63,6 +63,19 @@ describe('sentry filters', () => {
   it('sigue filtrando NEXT_REDIRECT', () => {
     expect(isNextJsNavigationControlError(new Error('NEXT_REDIRECT'))).toBe(true);
   });
+
+  it('ignora ruido MetaMask también por title/tags del evento Sentry', () => {
+    expect(
+      shouldDropSentryEvent(null, {
+        title: 'i: Failed to connect to MetaMask',
+        culprit: '/admin-login',
+        tags: [{ key: 'transaction', value: '/admin-login' }],
+        exception: {
+          values: [{ type: 'i', value: 'Failed to connect to MetaMask' }],
+        },
+      })
+    ).toBe(true);
+  });
 });
 
 describe('microsite-property-pricing SQL (regresión EXTRACT)', () => {

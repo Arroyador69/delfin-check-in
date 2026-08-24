@@ -127,8 +127,22 @@ type SentryExceptionValue = {
 
 type SentryEventLike = {
   message?: string | null;
+  title?: string | null;
+  culprit?: string | null;
   exception?: { values?: SentryExceptionValue[] | null } | null;
+  tags?: Array<{ key?: string; value?: string }> | Record<string, string> | null;
 } | null;
+
+function eventTextBlob(event: SentryEventLike): string {
+  if (!event) return '';
+  const parts = [event.message || '', event.title || '', event.culprit || ''];
+  if (Array.isArray(event.tags)) {
+    for (const t of event.tags) parts.push(`${t.key || ''}=${t.value || ''}`);
+  } else if (event.tags && typeof event.tags === 'object') {
+    for (const [k, v] of Object.entries(event.tags)) parts.push(`${k}=${v}`);
+  }
+  return parts.join(' ');
+}
 
 function framesLookLikeExtension(frames: SentryExceptionFrame[] | null | undefined): boolean {
   if (!frames?.length) return false;
@@ -160,9 +174,11 @@ export function shouldDropSentryEvent(
 
   if (!event) return false;
 
+  const blob = eventTextBlob(event);
   if (
-    isEmptyObjectRejection({ message: event.message || '' }) ||
-    isBrowserExtensionNoise({ message: event.message || '' })
+    isEmptyObjectRejection({ message: blob }) ||
+    isBrowserExtensionNoise({ message: blob }) ||
+    /Object captured as promise rejection with keys:\s*\[object has no keys\]/i.test(blob)
   ) {
     return true;
   }
