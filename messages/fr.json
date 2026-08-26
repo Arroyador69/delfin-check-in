@@ -508,17 +508,19 @@
       "hide": "Masquer"
     },
     "step1": {
-      "title": "🔐 Changer le mot de passe",
-      "intro": "Pour la sécurité, vous devez changer votre mot de passe temporaire avant de continuer.",
+      "title": "🔐 Créer votre mot de passe",
+      "intro": "Pour votre sécurité, changez le mot de passe temporaire avant de continuer. Utilisez celui du dernier e-mail d’activation. Il n’expire pas ; il ne vaut plus si un e-mail plus récent en envoie un autre.",
       "passwordChangedSuccess": "✅ Mot de passe changé avec succès",
-      "currentPassword": "Mot de passe actuel *",
+      "currentPassword": "Mot de passe temporaire de l’e-mail *",
       "newPassword": "Nouveau mot de passe *",
       "confirmPassword": "Confirmer le nouveau mot de passe *",
       "minChars": "Minimum 8 caractères",
       "changing": "Changement...",
       "passwordChanged": "Mot de passe changé",
-      "changePassword": "Changer le mot de passe",
-      "continueNext": "Continuer à l'étape suivante"
+      "changePassword": "Enregistrer et continuer",
+      "continueNext": "Continuer à l'étape suivante",
+      "introSkipCurrent": "Vous êtes déjà connecté avec votre lien d’activation. Choisissez seulement un nouveau mot de passe (min. 8 caractères). Pas besoin de ressaisir le temporaire.",
+      "currentPasswordHint": "Copiez-le depuis l’e-mail. Attention à 1, I et l. Si vous avez demandé un nouveau lien, utilisez uniquement le dernier e-mail."
     },
     "step2": {
       "title": "📋 Données de l'hébergement",
@@ -637,7 +639,10 @@
       "createPropertyFailed": "Erreur lors de la création de la propriété",
       "addPropertyFailed": "Erreur lors de l'ajout de la propriété",
       "completeFailed": "Erreur lors de la finalisation. Veuillez réessayer.",
-      "generic": "Erreur"
+      "generic": "Erreur",
+      "passwordHelp": "Si le temporaire ne correspond pas, c’est souvent une erreur de copie (1 / I / l) ou un ancien e-mail. Nous pouvons vous en envoyer un nouveau.",
+      "forgotPasswordLink": "Ou réinitialiser via « Mot de passe oublié »",
+      "resendWillGoTo": "Un nouvel e-mail sera envoyé à {email}. L’ancien lien et mot de passe ne fonctionneront plus."
     }
   },
   "reservations": {
@@ -722,7 +727,14 @@
     "channelExpedia": "Expedia",
     "channelTripadvisor": "Tripadvisor",
     "channelManual": "Depuis le tableau de bord",
-    "actions": "Actions",
+    "actions": {
+      "view": "Voir",
+      "viewTitle": "Voir / modifier la réservation",
+      "edit": "Modifier",
+      "editTitle": "Modifier la réservation",
+      "delete": "Supprimer",
+      "deleting": "Suppression..."
+    },
     "created": "Créée",
     "updated": "Mise à jour",
     "saving": "Enregistrement...",
@@ -745,14 +757,6 @@
     "invalidDates": "Les dates ne sont pas valides",
     "checkOutBeforeCheckIn": "La date de départ doit être postérieure à la date d'arrivée",
     "roomFallback": "Chambre {number}",
-    "actions": {
-      "view": "Voir",
-      "viewTitle": "Voir / modifier la réservation",
-      "edit": "Modifier",
-      "editTitle": "Modifier la réservation",
-      "delete": "Supprimer",
-      "deleting": "Suppression..."
-    },
     "checkinMail": {
       "send": "Instructions d’arrivée",
       "sendTitle": "Envoyer les instructions d’arrivée par e-mail",
@@ -1220,7 +1224,13 @@
     "noEncontrado": "Non trouvé",
     "comunicacionNoEncontrada": "Communication non trouvée",
     "noExisteEnSistema": "N'existe pas dans le système",
-    "countries": { "ES": "Espagne", "IT": "Italie", "PT": "Portugal", "FR": "France", "DE": "Allemagne" },
+    "countries": {
+      "ES": "Espagne",
+      "IT": "Italie",
+      "PT": "Portugal",
+      "FR": "France",
+      "DE": "Allemagne"
+    },
     "statusConfirmado": "CONFIRMÉ",
     "statusEnviado": "ENVOYÉ",
     "statusError": "ERREUR",

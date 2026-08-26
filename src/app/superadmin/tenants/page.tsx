@@ -85,6 +85,17 @@ export default function TenantsPage() {
       error?: string
     }>
   } | null>(null)
+  const [recoverEmail, setRecoverEmail] = useState('')
+  const [recoverLoading, setRecoverLoading] = useState(false)
+  const [recoverResetFlow, setRecoverResetFlow] = useState(false)
+  const [recoverResult, setRecoverResult] = useState<{
+    success?: boolean
+    message?: string
+    error?: string
+    onboardingUrl?: string
+    tempPassword?: string
+    note?: string
+  } | null>(null)
 
   useEffect(() => {
     fetchTenants()
@@ -107,6 +118,48 @@ export default function TenantsPage() {
       console.error('Error fetching tenants:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleRecoverOnboarding = async () => {
+    const email = recoverEmail.trim().toLowerCase()
+    if (!email || !email.includes('@')) {
+      setRecoverResult({ success: false, error: 'Introduce un email válido' })
+      return
+    }
+    setRecoverLoading(true)
+    setRecoverResult(null)
+    try {
+      const res = await fetch('/api/superadmin/recover-onboarding', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          email,
+          resetOnboardingFlow: recoverResetFlow,
+          locale: 'es',
+        }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok && !data?.onboardingUrl) {
+        setRecoverResult({
+          success: false,
+          error: data?.error || 'No se pudo reenviar el onboarding',
+        })
+        return
+      }
+      setRecoverResult({
+        success: !!data?.success,
+        message: data?.message,
+        error: data?.error,
+        onboardingUrl: data?.onboardingUrl,
+        tempPassword: data?.tempPassword,
+        note: data?.note,
+      })
+    } catch {
+      setRecoverResult({ success: false, error: 'Error de red al reenviar onboarding' })
+    } finally {
+      setRecoverLoading(false)
     }
   }
 
@@ -136,6 +189,68 @@ export default function TenantsPage() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">📋 Todos los Tenants</h1>
         <p className="text-gray-700 mt-2">Gestión de todos los clientes de la plataforma</p>
+      </div>
+
+      <div className="mb-6 rounded-lg border border-emerald-200 bg-emerald-50 p-4">
+        <h2 className="font-semibold text-emerald-950 mb-2">🔑 Reenviar onboarding (enlace + contraseña temporal)</h2>
+        <p className="text-sm text-emerald-900 mb-3">
+          Para clientes atascados en el paso Contraseña: regenera enlace y temp, invalida las anteriores y envía un
+          email nuevo. Usa el email del tenant.
+        </p>
+        <div className="flex flex-col sm:flex-row gap-2 sm:items-end mb-3">
+          <div className="flex-1">
+            <label className="block text-xs font-medium text-emerald-900 mb-1">Email del cliente</label>
+            <input
+              type="email"
+              value={recoverEmail}
+              onChange={(e) => setRecoverEmail(e.target.value)}
+              placeholder="cliente@email.com"
+              className="w-full px-3 py-2 rounded-lg border border-emerald-300 text-sm bg-white"
+            />
+          </div>
+          <label className="inline-flex items-center gap-2 text-sm text-emerald-950 pb-2">
+            <input
+              type="checkbox"
+              checked={recoverResetFlow}
+              onChange={(e) => setRecoverResetFlow(e.target.checked)}
+            />
+            Reiniciar onboarding a pendiente
+          </label>
+          <button
+            type="button"
+            disabled={recoverLoading}
+            onClick={() => void handleRecoverOnboarding()}
+            className="px-4 py-2 rounded-lg bg-emerald-700 text-sm font-medium text-white hover:bg-emerald-800 disabled:opacity-50"
+          >
+            {recoverLoading ? 'Enviando…' : 'Reenviar onboarding'}
+          </button>
+        </div>
+        {recoverResult ? (
+          <div
+            className={`text-sm rounded-md p-3 border ${
+              recoverResult.success
+                ? 'bg-white/80 border-emerald-100 text-emerald-950'
+                : 'bg-red-50 border-red-200 text-red-900'
+            }`}
+          >
+            {recoverResult.message ? <p className="font-medium">{recoverResult.message}</p> : null}
+            {recoverResult.error ? <p>{recoverResult.error}</p> : null}
+            {recoverResult.note ? <p className="mt-1 text-xs">{recoverResult.note}</p> : null}
+            {recoverResult.tempPassword ? (
+              <p className="mt-2 font-mono text-sm">
+                Temp: <strong>{recoverResult.tempPassword}</strong>
+              </p>
+            ) : null}
+            {recoverResult.onboardingUrl ? (
+              <p className="mt-1 break-all text-xs">
+                Enlace:{' '}
+                <a className="underline" href={recoverResult.onboardingUrl} target="_blank" rel="noreferrer">
+                  {recoverResult.onboardingUrl}
+                </a>
+              </p>
+            ) : null}
+          </div>
+        ) : null}
       </div>
 
       <div className="mb-6 rounded-lg border border-blue-200 bg-blue-50 p-4">

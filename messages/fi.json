@@ -478,7 +478,7 @@
     }
   },
   "onboarding": {
-  "appName": "Delfín Check-in",
+    "appName": "Delfín Check-in",
     "stepOf": "Vaihe {currentStep}/{totalSteps}",
     "mobileApp": {
       "banner": "Käytät samaa 6-vaiheista käyttöönottoa kuin tietokoneella. Edistyminen tallentuu automaattisesti."
@@ -518,17 +518,19 @@
       "hide": "Piilottaa"
     },
     "step1": {
-      "title": "🔐 Vaihda salasana",
-      "intro": "Turvallisuussyistä sinun on vaihdettava väliaikainen salasanasi ennen kuin jatkat.",
+      "title": "🔐 Luo salasanasi",
+      "intro": "Vaihda väliaikainen salasana ennen jatkamista. Käytä uusimman aktivointisähköpostin salasanaa. Se ei vanhene; se vaihtuu vain jos lähetetään uusi.",
       "passwordChangedSuccess": "✅ Salasanan vaihto onnistui",
-      "currentPassword": "Nykyinen salasana *",
+      "currentPassword": "Väliaikainen salasana sähköpostista *",
       "newPassword": "Uusi salasana *",
       "confirmPassword": "Vahvista uusi salasana *",
       "minChars": "Vähintään 8 merkkiä",
       "changing": "Muutetaan...",
       "passwordChanged": "Salasana vaihdettu",
-      "changePassword": "Vaihda salasana",
-      "continueNext": "Jatka seuraavaan vaiheeseen"
+      "changePassword": "Tallenna ja jatka",
+      "continueNext": "Jatka seuraavaan vaiheeseen",
+      "introSkipCurrent": "Olet jo kirjautunut aktivointilinkillä. Valitse vain uusi salasana (väh. 8 merkkiä). Väliaikaista ei tarvitse syöttää uudelleen.",
+      "currentPasswordHint": "Kopioi sähköpostista. Älä sekoita 1, I ja l. Jos pyysit uuden linkin, käytä vain viimeisintä viestiä."
     },
     "step2": {
       "title": "📋 Majoitustiedot",
@@ -647,7 +649,10 @@
       "createPropertyFailed": "Virhe ominaisuuden luomisessa",
       "addPropertyFailed": "Virhe lisättäessä omaisuutta",
       "completeFailed": "Virhe liittymisen viimeistelyssä. Yritä uudelleen.",
-      "generic": "Virhe"
+      "generic": "Virhe",
+      "passwordHelp": "Jos väliaikainen ei täsmää, kyseessä on usein kopiointivirhe (1 / I / l) tai vanha sähköposti. Voimme lähettää uuden linkin ja salasanan.",
+      "forgotPasswordLink": "Tai palauta «Unohtuiko salasana» -sivulta",
+      "resendWillGoTo": "Uusi sähköposti lähetetään osoitteeseen {email}. Vanha linkki ja salasana lakkaavat toimimasta."
     }
   },
   "reservations": {
