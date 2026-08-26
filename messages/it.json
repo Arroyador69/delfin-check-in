@@ -541,17 +541,19 @@
       "hide": "Nascondi"
     },
     "step1": {
-      "title": "🔐 Cambia Password",
-      "intro": "Per sicurezza, devi cambiare la password temporanea prima di continuare.",
+      "title": "🔐 Crea la tua password",
+      "intro": "Per sicurezza, cambia la password temporanea prima di continuare. Usa quella dell’email di attivazione più recente. Non scade; smette di valere solo se ne viene inviata una nuova.",
       "passwordChangedSuccess": "✅ Password cambiata con successo",
-      "currentPassword": "Password Attuale *",
+      "currentPassword": "Password temporanea dall’email *",
       "newPassword": "Nuova Password *",
       "confirmPassword": "Conferma Nuova Password *",
       "minChars": "Minimo 8 caratteri",
       "changing": "Cambio in corso...",
       "passwordChanged": "Password Cambiata",
-      "changePassword": "Cambia Password",
-      "continueNext": "Continua al passaggio successivo"
+      "changePassword": "Salva e continua",
+      "continueNext": "Continua al passaggio successivo",
+      "introSkipCurrent": "Sei già entrato con il link di attivazione. Scegli solo una nuova password (min. 8 caratteri). Non serve digitar di nuovo quella temporanea.",
+      "currentPasswordHint": "Copiala dall’email. Attenzione a 1, I e l. Se hai chiesto un nuovo link, usa solo l’ultima email."
     },
     "step2": {
       "title": "📋 Dati dell'alloggio",
@@ -670,7 +672,10 @@
       "createPropertyFailed": "Errore nella creazione della proprietà",
       "addPropertyFailed": "Errore nell'aggiunta della proprietà",
       "completeFailed": "Errore nel completare l'onboarding. Riprova.",
-      "generic": "Errore"
+      "generic": "Errore",
+      "passwordHelp": "Se la temporanea non corrisponde, spesso è un errore di copia (1 / I / l) o un’email vecchia. Possiamo inviarti un nuovo link e password.",
+      "forgotPasswordLink": "Oppure reimposta da «Password dimenticata»",
+      "resendWillGoTo": "Verrà inviata una nuova email a {email}. Link e password precedenti smetteranno di funzionare."
     }
   },
   "reservations": {
@@ -755,7 +760,14 @@
     "channelExpedia": "Expedia",
     "channelTripadvisor": "Tripadvisor",
     "channelManual": "Dal pannello",
-    "actions": "Azioni",
+    "actions": {
+      "view": "Vedi",
+      "viewTitle": "Vedi / modifica prenotazione",
+      "edit": "Modifica",
+      "editTitle": "Modifica prenotazione",
+      "delete": "Elimina",
+      "deleting": "Eliminazione..."
+    },
     "created": "Creata",
     "updated": "Aggiornata",
     "saving": "Salvataggio...",
@@ -778,14 +790,6 @@
     "invalidDates": "Le date non sono valide",
     "checkOutBeforeCheckIn": "Il check-out deve essere dopo il check-in",
     "roomFallback": "Camera {number}",
-    "actions": {
-      "view": "Vedi",
-      "viewTitle": "Vedi / modifica prenotazione",
-      "edit": "Modifica",
-      "editTitle": "Modifica prenotazione",
-      "delete": "Elimina",
-      "deleting": "Eliminazione..."
-    },
     "checkinMail": {
       "send": "Istruzioni check-in",
       "sendTitle": "Invia istruzioni check-in per email",
@@ -1426,7 +1430,13 @@
     "noEncontrado": "Non trovato",
     "comunicacionNoEncontrada": "Comunicazione non trovata",
     "noExisteEnSistema": "Non esiste nel sistema",
-    "countries": { "ES": "Spagna", "IT": "Italia", "PT": "Portogallo", "FR": "Francia", "DE": "Germania" },
+    "countries": {
+      "ES": "Spagna",
+      "IT": "Italia",
+      "PT": "Portogallo",
+      "FR": "Francia",
+      "DE": "Germania"
+    },
     "statusConfirmado": "CONFERMATO",
     "statusEnviado": "INVIATO",
     "statusError": "ERRORE",

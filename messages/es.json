@@ -568,16 +568,18 @@
       "hide": "Ocultar"
     },
     "step1": {
-      "title": "🔐 Cambiar Contraseña",
-      "intro": "Por seguridad, debes cambiar tu contraseña temporal antes de continuar. Usa la contraseña temporal del email de activación más reciente (si pediste un enlace nuevo, la del último correo).",
+      "title": "🔐 Crear tu contraseña",
+      "intro": "Por seguridad, debes cambiar tu contraseña temporal antes de continuar. Usa la del email de activación más reciente (si pediste un enlace nuevo, la del último correo). La contraseña temporal no caduca; solo deja de valer si se envía otra nueva.",
+      "introSkipCurrent": "Ya estás dentro con tu enlace de activación. Solo elige una contraseña nueva (mínimo 8 caracteres) para continuar. No hace falta volver a escribir la temporal del email.",
       "passwordChangedSuccess": "✅ Contraseña cambiada exitosamente",
-      "currentPassword": "Contraseña Actual *",
+      "currentPassword": "Contraseña temporal del email *",
+      "currentPasswordHint": "Cópiala del email (botón Ver). Cuidado: no confundas 1, I y l. Si pediste un enlace nuevo, usa solo el último correo.",
       "newPassword": "Nueva Contraseña *",
       "confirmPassword": "Confirmar Nueva Contraseña *",
       "minChars": "Mínimo 8 caracteres",
       "changing": "Cambiando...",
       "passwordChanged": "Contraseña Cambiada",
-      "changePassword": "Cambiar Contraseña",
+      "changePassword": "Guardar y continuar",
       "continueNext": "Continuar al siguiente paso"
     },
     "step2": {
@@ -720,6 +722,9 @@
       "resendEmailRequired": "Introduce el email con el que te registraste para recibir un enlace nuevo.",
       "resendEmailLabel": "Email de tu cuenta",
       "resendEmailPlaceholder": "tu@email.com",
+      "resendWillGoTo": "Se enviará un email nuevo a {email}. La contraseña y el enlace anteriores dejarán de funcionar.",
+      "passwordHelp": "Si la temporal del email no encaja, suele ser un fallo al copiar (1 / I / l) o un correo antiguo. Te podemos enviar un enlace y una contraseña nuevos.",
+      "forgotPasswordLink": "O restablecer contraseña desde «Olvidé mi contraseña»",
       "validatingMagicLink": "Validando tu enlace de activación…"
     },
     "antivirus": {

@@ -103,6 +103,7 @@ export default function OnboardingPage() {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showPasswordRecoveryHelp, setShowPasswordRecoveryHelp] = useState(false);
   const [pricing, setPricing] = useState<any>(null);
   const [pricingLoading, setPricingLoading] = useState(false);
   const [creatingCheckout, setCreatingCheckout] = useState(false);
@@ -356,6 +357,7 @@ export default function OnboardingPage() {
   const handleResendMagicLink = async () => {
     const email =
       searchParams?.get('email')?.trim().toLowerCase() ||
+      tenant?.email?.trim().toLowerCase() ||
       resendEmailInput.trim().toLowerCase();
     if (!email || !email.includes('@')) {
       setError(t('errors.resendEmailRequired'));
@@ -377,6 +379,7 @@ export default function OnboardingPage() {
       }
       setResendMessage(data?.message || t('errors.resendSuccess'));
       setMagicLinkFailed(false);
+      setShowPasswordRecoveryHelp(false);
     } catch {
       setError(t('errors.resendFailed'));
     } finally {
@@ -540,19 +543,24 @@ export default function OnboardingPage() {
     setError('');
     setLoading(true);
 
-    if (!formData.currentPassword || !formData.newPassword || !formData.confirmPassword) {
+    const canSkipCurrent = Boolean(tenant) && !magicLinkFailed;
+    const newPassword = formData.newPassword.trim();
+    const confirmPassword = formData.confirmPassword.trim();
+    const currentPassword = formData.currentPassword.trim();
+
+    if (!newPassword || !confirmPassword || (!canSkipCurrent && !currentPassword)) {
       setError(t('errors.allFieldsRequiredShort'));
       setLoading(false);
       return;
     }
 
-    if (formData.newPassword !== formData.confirmPassword) {
+    if (newPassword !== confirmPassword) {
       setError(t('errors.passwordsDoNotMatch'));
       setLoading(false);
       return;
     }
 
-    if (formData.newPassword.length < 8) {
+    if (newPassword.length < 8) {
       setError(t('errors.passwordMinLength'));
       setLoading(false);
       return;
@@ -564,24 +572,30 @@ export default function OnboardingPage() {
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({
-          currentPassword: formData.currentPassword,
-          newPassword: formData.newPassword
-        })
+          currentPassword: canSkipCurrent ? undefined : currentPassword,
+          newPassword,
+          skipCurrentIfOnboarding: canSkipCurrent,
+        }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
         setError(data.message || t('errors.changePasswordFailed'));
+        if (data?.canResendOnboarding || data?.code === 'CURRENT_PASSWORD_INVALID') {
+          setShowPasswordRecoveryHelp(true);
+          if (tenant?.email) setResendEmailInput(String(tenant.email));
+        }
         setLoading(false);
         return;
       }
 
-      setFormData(prev => ({ ...prev, passwordChanged: true }));
+      setFormData((prev) => ({ ...prev, passwordChanged: true }));
       setError('');
+      setShowPasswordRecoveryHelp(false);
       await advancePastPasswordStep();
     } catch (error) {
-      setError('Error al cambiar la contraseña');
+      setError(t('errors.changePasswordFailed'));
     } finally {
       setLoading(false);
     }
@@ -867,6 +881,7 @@ export default function OnboardingPage() {
   };
 
   // Paso 1: Cambiar contraseña
+  const canSkipCurrentPassword = Boolean(tenant) && !magicLinkFailed;
   const renderPasswordStep = () => (
     <div className={ONBOARDING_PAGE}>
       <div className={ONBOARDING_CARD}>
@@ -897,7 +912,7 @@ export default function OnboardingPage() {
         </h1>
         
         <p className="text-sm sm:text-base text-gray-600 mb-6 leading-relaxed">
-          {t('step1.intro')}
+          {canSkipCurrentPassword ? t('step1.introSkipCurrent') : t('step1.intro')}
         </p>
 
         {searchParams?.get('token') && !magicLinkFailed && (
@@ -924,14 +939,16 @@ export default function OnboardingPage() {
         {error && (
           <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
             <p className="text-red-800">{error}</p>
-            {magicLinkFailed && (
+            {(magicLinkFailed || showPasswordRecoveryHelp) && (
               <div className="mt-4 pt-4 border-t border-red-200">
                 <p className="text-sm text-red-900 mb-3">
-                  {searchParams?.get('email')
-                    ? t('errors.magicLinkHelp', { email: searchParams.get('email')! })
-                    : t('errors.magicLinkHelpNoEmail')}
+                  {showPasswordRecoveryHelp && !magicLinkFailed
+                    ? t('errors.passwordHelp')
+                    : searchParams?.get('email')
+                      ? t('errors.magicLinkHelp', { email: searchParams.get('email')! })
+                      : t('errors.magicLinkHelpNoEmail')}
                 </p>
-                {!searchParams?.get('email') && (
+                {!searchParams?.get('email') && !tenant?.email && (
                   <div className="mb-3">
                     <label className="block text-xs font-medium text-red-900 mb-1">
                       {t('errors.resendEmailLabel')}
@@ -946,6 +963,16 @@ export default function OnboardingPage() {
                     />
                   </div>
                 )}
+                {(tenant?.email || searchParams?.get('email') || resendEmailInput) && (
+                  <p className="text-xs text-red-800 mb-3">
+                    {t('errors.resendWillGoTo', {
+                      email:
+                        tenant?.email ||
+                        searchParams?.get('email') ||
+                        resendEmailInput,
+                    })}
+                  </p>
+                )}
                 <button
                   type="button"
                   onClick={() => void handleResendMagicLink()}
@@ -955,15 +982,22 @@ export default function OnboardingPage() {
                   {resendLoading ? t('errors.resending') : t('errors.resendMagicLink')}
                 </button>
                 <p className="mt-3 text-xs text-red-800">
-                  <a
-                    href={buildAntivirusHelpUrl(getLocaleFromPath())}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-semibold underline"
-                  >
-                    {t('antivirus.helpLink')}
+                  <a href="/forgot-password" className="font-semibold underline">
+                    {t('errors.forgotPasswordLink')}
                   </a>
                 </p>
+                {magicLinkFailed && (
+                  <p className="mt-3 text-xs text-red-800">
+                    <a
+                      href={buildAntivirusHelpUrl(getLocaleFromPath())}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-semibold underline"
+                    >
+                      {t('antivirus.helpLink')}
+                    </a>
+                  </p>
+                )}
               </div>
             )}
           </div>
@@ -982,29 +1016,33 @@ export default function OnboardingPage() {
         )}
 
         <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              {t('step1.currentPassword')}
-            </label>
-            <div className="relative">
-              <input
-                type={showCurrentPassword ? 'text' : 'password'}
-                value={formData.currentPassword}
-                onChange={(e) => handleInputChange('currentPassword', e.target.value)}
-                className="w-full px-3 py-2 pr-12 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                required
-                disabled={formData.passwordChanged || bootstrappingSession}
-              />
-              <button
-                type="button"
-                onClick={() => setShowCurrentPassword((v) => !v)}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-semibold text-gray-600 hover:text-gray-900"
-                disabled={formData.passwordChanged || bootstrappingSession}
-              >
+          {!canSkipCurrentPassword && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                {t('step1.currentPassword')}
+              </label>
+              <div className="relative">
+                <input
+                  type={showCurrentPassword ? 'text' : 'password'}
+                  value={formData.currentPassword}
+                  onChange={(e) => handleInputChange('currentPassword', e.target.value)}
+                  className="w-full px-3 py-2 pr-12 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 font-mono tracking-wide"
+                  required
+                  disabled={formData.passwordChanged || bootstrappingSession}
+                  autoComplete="current-password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowCurrentPassword((v) => !v)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-semibold text-gray-600 hover:text-gray-900"
+                  disabled={formData.passwordChanged || bootstrappingSession}
+                >
                   {showCurrentPassword ? t('common.hide') : t('common.show')}
-              </button>
+                </button>
+              </div>
+              <p className="text-xs text-gray-500 mt-1">{t('step1.currentPasswordHint')}</p>
             </div>
-          </div>
+          )}
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -1019,6 +1057,7 @@ export default function OnboardingPage() {
                 required
                 disabled={formData.passwordChanged || bootstrappingSession}
                 minLength={8}
+                autoComplete="new-password"
               />
               <button
                 type="button"
@@ -1026,7 +1065,7 @@ export default function OnboardingPage() {
                 className="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-semibold text-gray-600 hover:text-gray-900"
                 disabled={formData.passwordChanged || bootstrappingSession}
               >
-                  {showNewPassword ? t('common.hide') : t('common.show')}
+                {showNewPassword ? t('common.hide') : t('common.show')}
               </button>
             </div>
             <p className="text-xs text-gray-500 mt-1">{t('step1.minChars')}</p>
@@ -1044,6 +1083,7 @@ export default function OnboardingPage() {
                 className="w-full px-3 py-2 pr-12 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
                 required
                 disabled={formData.passwordChanged || bootstrappingSession}
+                autoComplete="new-password"
               />
               <button
                 type="button"
@@ -1051,7 +1091,7 @@ export default function OnboardingPage() {
                 className="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-semibold text-gray-600 hover:text-gray-900"
                 disabled={formData.passwordChanged || bootstrappingSession}
               >
-                  {showConfirmPassword ? t('common.hide') : t('common.show')}
+                {showConfirmPassword ? t('common.hide') : t('common.show')}
               </button>
             </div>
           </div>

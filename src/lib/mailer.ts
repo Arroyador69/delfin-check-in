@@ -131,7 +131,8 @@ function onboardingEmailCopy(locale: EmailLocale, variant: OnboardingEmailVarian
       antivirusHelpLink: 'Ver guía paso a paso',
       autoMsg: 'Este mensaje es automático; por favor no respondas a este correo.',
       tempPwdTitle: 'Contraseña temporal:',
-      tempPwdHint: 'En el paso 1 del asistente podrás cambiarla por la que prefieras.',
+      tempPwdHint:
+        'No caduca por tiempo. En el paso 1 del asistente (tras el enlace) eliges tu contraseña definitiva. Si pides otro enlace, solo vale la del último correo.',
       text: {
         waitlist_launch: (url: string, pwd?: string) =>
           [
@@ -230,7 +231,8 @@ function onboardingEmailCopy(locale: EmailLocale, variant: OnboardingEmailVarian
       antivirusHelpLink: 'Step-by-step guide',
       autoMsg: 'This is an automated message; please do not reply.',
       tempPwdTitle: 'Temporary password:',
-      tempPwdHint: 'You can change it in step 1 of the wizard.',
+      tempPwdHint:
+        'It does not expire by time. In step 1 (after the link) you choose your final password. If you request another link, only the latest email counts.',
       text: {
         waitlist_launch: (url: string, pwd?: string) =>
           [
@@ -329,7 +331,8 @@ function onboardingEmailCopy(locale: EmailLocale, variant: OnboardingEmailVarian
       antivirusHelpLink: 'Guida passo passo',
       autoMsg: 'Questo è un messaggio automatico; per favore non rispondere.',
       tempPwdTitle: 'Password temporanea:',
-      tempPwdHint: 'Potrai cambiarla durante l’onboarding.',
+      tempPwdHint:
+        'Non scade per tempo. Nel passo 1 (dopo il link) scegli la password definitiva. Se chiedi un altro link, vale solo l’ultima email.',
       text: {
         waitlist_launch: (url: string, pwd?: string) =>
           [
@@ -424,7 +427,8 @@ function onboardingEmailCopy(locale: EmailLocale, variant: OnboardingEmailVarian
       antivirusHelpLink: 'Guia passo a passo',
       autoMsg: 'Esta é uma mensagem automática; por favor não responda.',
       tempPwdTitle: 'Palavra-passe temporária:',
-      tempPwdHint: 'Pode alterá-la durante o onboarding.',
+      tempPwdHint:
+        'Não caduca por tempo. No passo 1 (após o link) escolhe a definitiva. Se pedir outro link, só vale o último email.',
       text: {
         waitlist_launch: (url: string, pwd?: string) =>
           [
@@ -519,7 +523,8 @@ function onboardingEmailCopy(locale: EmailLocale, variant: OnboardingEmailVarian
       antivirusHelpLink: 'Guide pas à pas',
       autoMsg: 'Ceci est un message automatique ; merci de ne pas répondre.',
       tempPwdTitle: 'Mot de passe temporaire :',
-      tempPwdHint: 'Vous pourrez le modifier pendant l’onboarding.',
+      tempPwdHint:
+        'Il n’expire pas dans le temps. À l’étape 1 (après le lien) vous choisissez le définitif. Si vous demandez un autre lien, seul le dernier e-mail compte.',
       text: {
         waitlist_launch: (url: string, pwd?: string) =>
           [
@@ -614,7 +619,8 @@ function onboardingEmailCopy(locale: EmailLocale, variant: OnboardingEmailVarian
       antivirusHelpLink: 'Ohje vaihe vaiheelta',
       autoMsg: 'Tämä on automaattinen viesti; älä vastaa tähän sähköpostiin.',
       tempPwdTitle: 'Väliaikainen salasana:',
-      tempPwdHint: 'Voit vaihtaa sen käyttöönoton aikana.',
+      tempPwdHint:
+        'Se ei vanhene ajan myötä. Vaiheessa 1 (linkin jälkeen) valitset lopullisen. Jos pyydät uuden linkin, vain viimeisin viesti pätee.',
       text: {
         waitlist_launch: (url: string, pwd?: string) =>
           [
@@ -709,7 +715,8 @@ function onboardingEmailCopy(locale: EmailLocale, variant: OnboardingEmailVarian
       antivirusHelpLink: 'Steg-för-steg-guide',
       autoMsg: 'Detta är ett automatiskt meddelande; vänligen svara inte på detta mejl.',
       tempPwdTitle: 'Tillfälligt lösenord:',
-      tempPwdHint: 'Du kan ändra det under onboarding.',
+      tempPwdHint:
+        'Det går inte ut med tiden. I steg 1 (efter länken) väljer du det slutliga. Begär du en ny länk gäller bara det senaste mejlet.',
       text: {
         waitlist_launch: (url: string, pwd?: string) =>
           [
