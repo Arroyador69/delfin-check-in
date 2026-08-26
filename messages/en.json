@@ -567,16 +567,18 @@
       "hide": "Hide"
     },
     "step1": {
-      "title": "🔐 Change Password",
-      "intro": "For security, you must change your temporary password before continuing. Use the temporary password from your most recent activation email (if you requested a new link, use the one in the latest email).",
+      "title": "🔐 Create your password",
+      "intro": "For security, you must change your temporary password before continuing. Use the one from your most recent activation email (if you requested a new link, use the latest email). The temporary password does not expire; it only stops working if a newer one is sent.",
+      "introSkipCurrent": "You are already signed in with your activation link. Just choose a new password (min. 8 characters) to continue. You do not need to re-enter the temporary password from the email.",
       "passwordChangedSuccess": "✅ Password changed successfully",
-      "currentPassword": "Current Password *",
+      "currentPassword": "Temporary password from email *",
+      "currentPasswordHint": "Copy it from the email (Show). Do not confuse 1, I and l. If you requested a new link, use only the latest email.",
       "newPassword": "New Password *",
       "confirmPassword": "Confirm New Password *",
       "minChars": "Minimum 8 characters",
       "changing": "Changing...",
       "passwordChanged": "Password Changed",
-      "changePassword": "Change Password",
+      "changePassword": "Save and continue",
       "continueNext": "Continue to next step"
     },
     "step2": {
@@ -719,6 +721,9 @@
       "resendEmailRequired": "Enter the email you registered with to receive a new link.",
       "resendEmailLabel": "Your account email",
       "resendEmailPlaceholder": "you@email.com",
+      "resendWillGoTo": "A new email will be sent to {email}. Previous password and link will stop working.",
+      "passwordHelp": "If the temporary password from the email does not match, it is often a copy typo (1 / I / l) or an older email. We can send you a new link and password.",
+      "forgotPasswordLink": "Or reset via «Forgot password»",
       "validatingMagicLink": "Validating your activation link…"
     },
     "antivirus": {

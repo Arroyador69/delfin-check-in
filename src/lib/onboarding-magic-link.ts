@@ -179,8 +179,15 @@ export async function issueFreshOnboardingToken(userId: string): Promise<{
   return { token, expires };
 }
 
-export function generateOnboardingTempPassword(): string {
-  return crypto.randomBytes(12).toString('base64').slice(0, 16);
+export function generateOnboardingTempPassword(length = 12): string {
+  // Sin 0/O/1/I/l para evitar confusión al copiar desde el email.
+  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+  const bytes = crypto.randomBytes(length);
+  let out = '';
+  for (let i = 0; i < length; i++) {
+    out += alphabet[bytes[i]! % alphabet.length];
+  }
+  return out;
 }
 
 export async function rotateOnboardingTempPassword(userId: string): Promise<string> {

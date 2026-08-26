@@ -508,17 +508,19 @@
       "hide": "Ocultar"
     },
     "step1": {
-      "title": "🔐 Alterar palavra-passe",
-      "intro": "Por segurança, deve alterar a sua palavra-passe temporária antes de continuar.",
+      "title": "🔐 Criar a sua palavra-passe",
+      "intro": "Por segurança, altere a palavra-passe temporária antes de continuar. Use a do email de ativação mais recente. Não caduca; deixa de valer se for enviada outra nova.",
       "passwordChangedSuccess": "✅ Palavra-passe alterada com sucesso",
-      "currentPassword": "Palavra-passe atual *",
+      "currentPassword": "Palavra-passe temporária do email *",
       "newPassword": "Nova palavra-passe *",
       "confirmPassword": "Confirmar nova palavra-passe *",
       "minChars": "Mínimo 8 caracteres",
       "changing": "A alterar...",
       "passwordChanged": "Palavra-passe alterada",
-      "changePassword": "Alterar palavra-passe",
-      "continueNext": "Continuar para o passo seguinte"
+      "changePassword": "Guardar e continuar",
+      "continueNext": "Continuar para o passo seguinte",
+      "introSkipCurrent": "Já entrou com o link de ativação. Escolha apenas uma palavra-passe nova (mín. 8 caracteres). Não precisa de voltar a escrever a temporária.",
+      "currentPasswordHint": "Copie do email. Cuidado com 1, I e l. Se pediu um link novo, use só o último email."
     },
     "step2": {
       "title": "📋 Dados do alojamento",
@@ -637,7 +639,10 @@
       "createPropertyFailed": "Erro ao criar a propriedade",
       "addPropertyFailed": "Erro ao adicionar a propriedade",
       "completeFailed": "Erro ao completar a configuração. Por favor, tente novamente.",
-      "generic": "Erro"
+      "generic": "Erro",
+      "passwordHelp": "Se a temporária não coincidir, costuma ser erro ao copiar (1 / I / l) ou um email antigo. Podemos enviar um link e palavra-passe novos.",
+      "forgotPasswordLink": "Ou repor em «Esqueci a palavra-passe»",
+      "resendWillGoTo": "Será enviado um novo email para {email}. O link e a palavra-passe anteriores deixam de funcionar."
     }
   },
   "reservations": {
@@ -722,7 +727,14 @@
     "channelExpedia": "Expedia",
     "channelTripadvisor": "Tripadvisor",
     "channelManual": "A partir do painel",
-    "actions": "Ações",
+    "actions": {
+      "view": "Ver",
+      "viewTitle": "Ver / editar reserva",
+      "edit": "Editar",
+      "editTitle": "Editar reserva",
+      "delete": "Eliminar",
+      "deleting": "A eliminar..."
+    },
     "created": "Criada",
     "updated": "Atualizada",
     "saving": "A guardar...",
@@ -745,14 +757,6 @@
     "invalidDates": "As datas são inválidas",
     "checkOutBeforeCheckIn": "O check-out deve ser posterior ao check-in",
     "roomFallback": "Quarto {number}",
-    "actions": {
-      "view": "Ver",
-      "viewTitle": "Ver / editar reserva",
-      "edit": "Editar",
-      "editTitle": "Editar reserva",
-      "delete": "Eliminar",
-      "deleting": "A eliminar..."
-    },
     "checkinMail": {
       "send": "Instruções check-in",
       "sendTitle": "Enviar instruções de check-in por e-mail",
@@ -1219,7 +1223,13 @@
     "noEncontrado": "Não encontrado",
     "comunicacionNoEncontrada": "Comunicação não encontrada",
     "noExisteEnSistema": "Não existe no sistema",
-    "countries": { "ES": "Espanha", "IT": "Itália", "PT": "Portugal", "FR": "França", "DE": "Alemanha" },
+    "countries": {
+      "ES": "Espanha",
+      "IT": "Itália",
+      "PT": "Portugal",
+      "FR": "França",
+      "DE": "Alemanha"
+    },
     "statusConfirmado": "CONFIRMADO",
     "statusEnviado": "ENVIADO",
     "statusError": "ERRO",
