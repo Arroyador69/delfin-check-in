@@ -8,7 +8,12 @@ interface FunnelStats {
   onboarding_incomplete: number;
   onboarding_complete: number;
   with_property: number;
-  paid_plan: number;
+  /** Cobro verificado (Polar/Stripe/subscription_events) */
+  paying_customers: number;
+  /** Plan checkin/standard/pro en BD (puede incluir cuentas internas sin cobro) */
+  plan_assigned: number;
+  /** @deprecated usar paying_customers */
+  paid_plan?: number;
 }
 
 interface EnrollmentRow {
@@ -401,11 +406,21 @@ export default function EmailSequencesPage() {
             { label: 'Onboarding incompleto', value: funnel.onboarding_incomplete },
             { label: 'Onboarding OK', value: funnel.onboarding_complete },
             { label: 'Con propiedad', value: funnel.with_property },
-            { label: 'Plan de pago', value: funnel.paid_plan },
+            {
+              label: 'Clientes de pago',
+              value: funnel.paying_customers ?? funnel.paid_plan ?? 0,
+              hint:
+                (funnel.plan_assigned ?? 0) > (funnel.paying_customers ?? 0)
+                  ? `${funnel.plan_assigned} con plan asignado en BD (sin cobro verificado)`
+                  : undefined,
+            },
           ].map((c) => (
             <div key={c.label} className="bg-white rounded-xl border p-4 shadow-sm">
               <div className="text-2xl font-bold text-gray-900">{c.value}</div>
               <div className="text-sm text-gray-600">{c.label}</div>
+              {'hint' in c && c.hint ? (
+                <div className="text-xs text-amber-700 mt-1 leading-snug">{c.hint}</div>
+              ) : null}
             </div>
           ))}
         </div>
@@ -538,7 +553,7 @@ export default function EmailSequencesPage() {
             {funnel && (
               <p className="text-xs text-gray-500">
                 Elegibles aprox.: Fase 1 ≈ {funnel.onboarding_incomplete} con onboarding incompleto · Fase 2 ≈{' '}
-                {Math.max(0, (funnel.with_property || 0) - (funnel.paid_plan || 0))} con propiedad sin plan de pago.
+                {Math.max(0, (funnel.with_property || 0) - (funnel.plan_assigned || 0))} con propiedad sin plan asignado (elegibles Fase 2).
               </p>
             )}
           </div>
