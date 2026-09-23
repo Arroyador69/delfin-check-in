@@ -13,6 +13,7 @@ import {
 import { withNeonRetry } from '@/lib/neon-retry';
 import { Octokit } from '@octokit/rest';
 import { injectPlansCaptureBlock, injectSoftPopup, stripLegacyPopups } from '@/lib/blog-capture-html';
+import { SEO_CONTENT_FREEZE_MESSAGE, SEO_CONTENT_PUBLISHING_FROZEN } from '@/lib/seo-content-freeze';
 
 type Batch = 'morning' | 'afternoon';
 
@@ -384,6 +385,14 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const batch = (searchParams.get('batch') || 'morning') as Batch;
     const mode = (searchParams.get('mode') || '').toLowerCase(); // 'test' para smoke
+    if (SEO_CONTENT_PUBLISHING_FROZEN) {
+      return NextResponse.json({
+        success: true,
+        skipped: 'seo_content_freeze',
+        message: SEO_CONTENT_FREEZE_MESSAGE,
+      });
+    }
+
     if (batch !== 'morning' && batch !== 'afternoon') {
       return NextResponse.json({ error: 'batch inválido (morning|afternoon)' }, { status: 400 });
     }

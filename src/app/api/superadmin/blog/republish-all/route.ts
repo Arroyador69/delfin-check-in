@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifySuperAdmin } from '@/lib/auth-superadmin';
 import { sql } from '@/lib/db';
+import { SEO_CONTENT_FREEZE_MESSAGE, SEO_CONTENT_PUBLISHING_FROZEN } from '@/lib/seo-content-freeze';
 
 /**
  * POST /api/superadmin/blog/republish-all
@@ -11,6 +12,10 @@ export async function POST(req: NextRequest) {
   try {
     const { error } = await verifySuperAdmin(req);
     if (error) return error;
+
+    if (SEO_CONTENT_PUBLISHING_FROZEN) {
+      return NextResponse.json({ error: SEO_CONTENT_FREEZE_MESSAGE }, { status: 403 });
+    }
 
     const body = await req.json().catch(() => ({}));
     const limit = Math.min(200, Math.max(1, Number(body.limit ?? 50)));

@@ -38,10 +38,6 @@ export default function BlogManagerPage() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
   const [importing, setImporting] = useState(false);
-  const [generating, setGenerating] = useState(false);
-  const [generateTopic, setGenerateTopic] = useState('');
-  const [generateStep, setGenerateStep] = useState<'idle' | 'enviando' | 'generando' | 'guardando'>('idle');
-  const [publishingToGitHubSlug, setPublishingToGitHubSlug] = useState<string | null>(null);
   const [lastPublishedUrl, setLastPublishedUrl] = useState<string | null>(null);
 
   useEffect(() => {
@@ -220,33 +216,6 @@ export default function BlogManagerPage() {
     }
   };
 
-  const handlePublishToGitHub = async (article: Article) => {
-    setMessage(null);
-    setPublishingToGitHubSlug(article.slug);
-    try {
-      const response = await fetch('/api/superadmin/blog/publish-to-github', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ slug: article.slug })
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Error al publicar en GitHub');
-      const url = data.url || `https://delfincheckin.com/articulos/${article.slug}.html`;
-      setLastPublishedUrl(url);
-      setMessage({
-        type: 'success',
-        text: data.message || `Artículo subido al repo. En unos minutos estará en la web.`
-      });
-      if (data.url) window.open(data.url, '_blank');
-    } catch (err: any) {
-      setMessage({ type: 'error', text: err.message || 'Error al publicar en GitHub' });
-      setLastPublishedUrl(null);
-    } finally {
-      setPublishingToGitHubSlug(null);
-    }
-  };
-
   const TEMAS_SUGERIDOS = [
     'Plazo para registrar viajeros y consecuencias de retraso',
     'Declaración informativa alquileres corta duración 2026',
@@ -259,46 +228,6 @@ export default function BlogManagerPage() {
     'Multas por no registrar en Airbnb y Booking (actualizado 2026)',
     '¿Quién debe registrar: propietario o plataforma?'
   ];
-
-  const handleGenerateArticle = async (topic: string) => {
-    const t = (topic || generateTopic || '').trim();
-    if (!t) {
-      setMessage({ type: 'error', text: 'Escribe o elige un tema para el artículo.' });
-      return;
-    }
-    setMessage(null);
-    setGenerating(true);
-    setGenerateStep('enviando');
-
-    // Mostrar progreso por pasos (visual)
-    const t1 = setTimeout(() => setGenerateStep('generando'), 1200);
-
-    try {
-      const response = await fetch('/api/superadmin/blog/generate-article', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ topic: t })
-      });
-
-      setGenerateStep('guardando');
-
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || 'Error al generar');
-      }
-      setLastPublishedUrl(null);
-      setMessage({ type: 'success', text: data.message || 'Artículo creado como borrador.' });
-      setGenerateTopic('');
-      await fetchArticles();
-    } catch (err: any) {
-      setMessage({ type: 'error', text: err.message || 'Error al generar el artículo.' });
-    } finally {
-      clearTimeout(t1);
-      setGenerating(false);
-      setGenerateStep('idle');
-    }
-  };
 
   const importFirstArticle = async () => {
     if (!confirm('¿Importar el artículo "Multas por no registrar viajeros" a la base de datos?')) {
@@ -378,49 +307,24 @@ export default function BlogManagerPage() {
           </div>
         )}
 
-        {/* Progreso visible al generar artículo */}
-        {generating && (
-          <div className="mt-6 bg-white border-2 border-violet-300 rounded-xl p-6 shadow-lg">
-            <div className="flex items-center gap-4">
-              <div className="flex-shrink-0 w-12 h-12 rounded-full border-4 border-violet-200 border-t-violet-600 animate-spin" />
-              <div>
-                <h3 className="text-lg font-bold text-gray-900">Generando artículo</h3>
-                <p className="text-gray-600 mt-1">
-                  {generateStep === 'enviando' && 'Enviando tema a la IA...'}
-                  {generateStep === 'generando' && 'Generando título, contenido y SEO (puede tardar unos segundos)...'}
-                  {generateStep === 'guardando' && 'Guardando borrador en la base de datos...'}
-                </p>
-              </div>
-            </div>
-            <div className="mt-4 flex flex-wrap gap-2">
-              <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium ${generateStep === 'enviando' ? 'bg-violet-100 text-violet-800' : generateStep === 'generando' || generateStep === 'guardando' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-500'}`}>
-                {(generateStep === 'generando' || generateStep === 'guardando') ? '✓' : '1'} Enviar
-              </span>
-              <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium ${generateStep === 'generando' ? 'bg-violet-100 text-violet-800' : generateStep === 'guardando' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-500'}`}>
-                {generateStep === 'guardando' ? '✓' : '2'} Generar contenido
-              </span>
-              <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium ${generateStep === 'guardando' ? 'bg-violet-100 text-violet-800' : 'bg-gray-100 text-gray-500'}`}>
-                3 Guardar borrador
-              </span>
-            </div>
-          </div>
-        )}
+        <div className="mb-4 rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950">
+          La generación con IA y la subida a la web están pausadas. Esos artículos automáticos estaban haciendo que Google y Bing confiaran menos en el dominio.
+        </div>
 
-        {/* Generar artículo con IA: solo eliges tema, sin escribir nada */}
+        {/* Generar artículo con IA: pausado a propósito */}
         {!showForm && (
-          <div className="mt-6 bg-gradient-to-r from-violet-50 to-indigo-50 border border-violet-200 rounded-xl p-6">
+          <div className="mt-6 bg-gradient-to-r from-violet-50 to-indigo-50 border border-violet-200 rounded-xl p-6 opacity-70">
             <h3 className="text-lg font-bold text-gray-900 mb-2">🤖 Generar artículo con IA</h3>
             <p className="text-sm text-gray-600 mb-4">
-              Elige un tema relacionado con registro de viajeros, Ministerio del Interior, multas, declaración informativa, etc. El artículo se crea como borrador (waitlist, popup y estilo como el resto).
+              Desactivado. No se crean borradores automáticos ni se publican en delfincheckin.com.
             </p>
             <div className="flex flex-wrap gap-2 mb-4">
               {TEMAS_SUGERIDOS.map((tema) => (
                 <button
                   key={tema}
                   type="button"
-                  onClick={() => handleGenerateArticle(tema)}
-                  disabled={generating}
-                  className="px-4 py-2 bg-white border border-violet-200 rounded-lg text-sm font-medium text-gray-800 hover:bg-violet-100 hover:border-violet-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled
+                  className="px-4 py-2 bg-white border border-violet-200 rounded-lg text-sm font-medium text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {tema}
                 </button>
@@ -429,19 +333,17 @@ export default function BlogManagerPage() {
             <div className="flex flex-wrap items-center gap-3">
               <input
                 type="text"
-                value={generateTopic}
-                onChange={(e) => setGenerateTopic(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleGenerateArticle(generateTopic))}
-                placeholder="Otro tema (ej: sanciones por no enviar el parte a tiempo)"
-                className="flex-1 min-w-[200px] px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
+                value=""
+                placeholder="Generación automática pausada"
+                disabled
+                className="flex-1 min-w-[200px] px-4 py-2 border border-gray-300 rounded-lg disabled:bg-gray-100"
               />
               <button
                 type="button"
-                onClick={() => handleGenerateArticle(generateTopic)}
-                disabled={generating}
-                className="px-5 py-2 bg-violet-600 text-white rounded-lg font-semibold hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled
+                className="px-5 py-2 bg-violet-600 text-white rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {generating ? 'Generando...' : 'Generar y crear borrador'}
+                Generar y crear borrador
               </button>
             </div>
           </div>
@@ -718,12 +620,12 @@ export default function BlogManagerPage() {
                             </button>
                           )}
                           <button
-                            onClick={() => handlePublishToGitHub(article)}
-                            disabled={publishingToGitHubSlug !== null}
-                            title="Subir HTML al repo delfincheckin.com para que aparezca en la web"
-                            className="px-3 py-1 bg-slate-100 text-slate-800 rounded hover:bg-slate-200 text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                            type="button"
+                            disabled
+                            title="Subida a la web pausada para recuperar el posicionamiento"
+                            className="px-3 py-1 bg-slate-100 text-slate-800 rounded text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                           >
-                            {publishingToGitHubSlug === article.slug ? 'Subiendo...' : '🚀 En GitHub'}
+                            GitHub pausado
                           </button>
                           <button
                             onClick={() => handleDelete(article.id, article.title)}
