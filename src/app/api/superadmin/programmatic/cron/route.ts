@@ -4,6 +4,7 @@ import { getScheduledPages } from '@/lib/programmatic-content';
 import { sql } from '@/lib/db';
 import { Octokit } from '@octokit/rest';
 import { marked } from 'marked';
+import { SEO_CONTENT_FREEZE_MESSAGE, SEO_CONTENT_PUBLISHING_FROZEN } from '@/lib/seo-content-freeze';
 
 const octokit = new Octokit({
   auth: process.env.GITHUB_TOKEN,
@@ -83,6 +84,14 @@ export async function GET(req: NextRequest) {
       });
     }
 
+    if (SEO_CONTENT_PUBLISHING_FROZEN) {
+      return NextResponse.json({
+        success: true,
+        skipped: 'seo_content_freeze',
+        message: SEO_CONTENT_FREEZE_MESSAGE,
+      });
+    }
+
     // Si no es Vercel cron y no tiene secret, verificar SuperAdmin
     if (!isVercelCron && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
       const { error } = await verifySuperAdmin(req);
@@ -113,6 +122,14 @@ export async function POST(req: NextRequest) {
   try {
     const { error } = await verifySuperAdmin(req);
     if (error) return error;
+
+    if (SEO_CONTENT_PUBLISHING_FROZEN) {
+      return NextResponse.json({
+        success: true,
+        skipped: 'seo_content_freeze',
+        message: SEO_CONTENT_FREEZE_MESSAGE,
+      });
+    }
 
     const body = await req.json().catch(() => ({}));
     const batch = body.batch || 'all'; // 'morning', 'afternoon', 'all'

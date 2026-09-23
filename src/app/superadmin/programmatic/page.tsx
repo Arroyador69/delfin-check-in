@@ -69,11 +69,6 @@ interface Metrics {
 export default function ProgrammaticPage() {
   const [metrics, setMetrics] = useState<Metrics | null>(null)
   const [loading, setLoading] = useState(true)
-  const [blogCronRunning, setBlogCronRunning] = useState<string | null>(null)
-  const [blogCronResult, setBlogCronResult] = useState<any>(null)
-  const [blogRepairRunning, setBlogRepairRunning] = useState(false)
-  const [blogRepairLimit, setBlogRepairLimit] = useState<number>(30)
-  const [blogRepairResult, setBlogRepairResult] = useState<any>(null)
 
   useEffect(() => {
     fetchMetrics()
@@ -95,39 +90,6 @@ export default function ProgrammaticPage() {
       console.error('Error obteniendo métricas:', error)
     } finally {
       setLoading(false)
-    }
-  }
-
-  const runBlogCron = async (qs: string) => {
-    setBlogCronRunning(qs)
-    setBlogCronResult(null)
-    try {
-      const res = await fetch(`/api/superadmin/blog/cron${qs}`, { method: 'GET', credentials: 'include' })
-      const data = await res.json().catch(() => ({}))
-      setBlogCronResult({ ok: res.ok, data })
-    } catch (e: any) {
-      setBlogCronResult({ ok: false, data: { error: e?.message || String(e) } })
-    } finally {
-      setBlogCronRunning(null)
-    }
-  }
-
-  const runBlogRepair = async () => {
-    setBlogRepairRunning(true)
-    setBlogRepairResult(null)
-    try {
-      const res = await fetch('/api/superadmin/blog/publish-to-github', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ republishAll: true, limit: blogRepairLimit }),
-      })
-      const data = await res.json().catch(() => ({}))
-      setBlogRepairResult({ ok: res.ok, data })
-    } catch (e: any) {
-      setBlogRepairResult({ ok: false, data: { error: e?.message || String(e) } })
-    } finally {
-      setBlogRepairRunning(false)
     }
   }
 
@@ -226,57 +188,53 @@ export default function ProgrammaticPage() {
         </div>
       </div>
 
+      <div className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950">
+        La publicación de páginas programáticas y de artículos automáticos está pausada. Ese volumen de páginas parecidas es lo que Google y Bing tratan como contenido a escala.
+      </div>
+
       {/* Cron artículos */}
       <div className="bg-white rounded-lg shadow p-6">
         <h2 className="text-xl font-bold mb-3 text-gray-900">📰 Cron de Artículos (Blog)</h2>
         <p className="text-sm text-gray-700 mb-4">
-          Esto ejecuta el mismo endpoint que Vercel llama automáticamente. Incluye un modo <strong>test</strong> para comprobar
-          publicación y CTA de planes (sin OpenAI).
+          Desactivado. No se ejecuta el cron de mañana ni el de tarde, tampoco en modo test.
         </p>
         <div className="flex flex-wrap gap-3">
           <button
-            onClick={() => runBlogCron('?batch=morning&mode=test')}
-            disabled={blogCronRunning !== null}
-            className="px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 disabled:opacity-50"
+            type="button"
+            disabled
+            className="px-4 py-2 bg-slate-900 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {blogCronRunning === '?batch=morning&mode=test' ? 'Ejecutando…' : 'Test morning'}
+            Test morning
           </button>
           <button
-            onClick={() => runBlogCron('?batch=afternoon&mode=test')}
-            disabled={blogCronRunning !== null}
-            className="px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 disabled:opacity-50"
+            type="button"
+            disabled
+            className="px-4 py-2 bg-slate-900 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {blogCronRunning === '?batch=afternoon&mode=test' ? 'Ejecutando…' : 'Test afternoon'}
+            Test afternoon
           </button>
           <button
-            onClick={() => runBlogCron('?batch=morning')}
-            disabled={blogCronRunning !== null}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+            type="button"
+            disabled
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {blogCronRunning === '?batch=morning' ? 'Ejecutando…' : 'Run morning real'}
+            Run morning real
           </button>
           <button
-            onClick={() => runBlogCron('?batch=afternoon')}
-            disabled={blogCronRunning !== null}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+            type="button"
+            disabled
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {blogCronRunning === '?batch=afternoon' ? 'Ejecutando…' : 'Run afternoon real'}
+            Run afternoon real
           </button>
         </div>
-
-        {blogCronResult && (
-          <div className={`mt-4 rounded-lg border p-4 text-sm ${blogCronResult.ok ? 'border-emerald-200 bg-emerald-50 text-emerald-900' : 'border-red-200 bg-red-50 text-red-800'}`}>
-            <div className="font-semibold mb-2">{blogCronResult.ok ? 'OK' : 'Error'}</div>
-            <pre className="whitespace-pre-wrap break-words">{JSON.stringify(blogCronResult.data, null, 2)}</pre>
-          </div>
-        )}
       </div>
 
       {/* Reparación artículos rotos */}
       <div className="bg-white rounded-lg shadow p-6">
         <h2 className="text-xl font-bold mb-3 text-gray-900">🛠️ Reparar artículos publicados (recuperar texto)</h2>
         <p className="text-sm text-gray-700 mb-4">
-          Re-publica en GitHub los últimos artículos publicados para aplicar el fix y que vuelva a aparecer el contenido del artículo.
+          Pausado. Volver a subir los artículos automáticos a GitHub devolvería a la web las páginas que estamos quitando del índice.
         </p>
         <div className="flex flex-wrap items-end gap-3">
           <div className="flex flex-col">
@@ -285,26 +243,19 @@ export default function ProgrammaticPage() {
               type="number"
               min={1}
               max={50}
-              value={blogRepairLimit}
-              onChange={(e) => setBlogRepairLimit(Math.max(1, Math.min(50, Number(e.target.value) || 1)))}
-              className="w-32 px-3 py-2 border rounded-lg"
+              value={30}
+              disabled
+              className="w-32 px-3 py-2 border rounded-lg disabled:bg-gray-100"
             />
           </div>
           <button
-            onClick={runBlogRepair}
-            disabled={blogRepairRunning || blogCronRunning !== null}
-            className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50"
+            type="button"
+            disabled
+            className="px-4 py-2 bg-emerald-600 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {blogRepairRunning ? 'Re-publicando…' : `Reparar ${blogRepairLimit} artículos`}
+            Reparación pausada
           </button>
         </div>
-
-        {blogRepairResult && (
-          <div className={`mt-4 rounded-lg border p-4 text-sm ${blogRepairResult.ok ? 'border-emerald-200 bg-emerald-50 text-emerald-900' : 'border-red-200 bg-red-50 text-red-800'}`}>
-            <div className="font-semibold mb-2">{blogRepairResult.ok ? 'OK' : 'Error'}</div>
-            <pre className="whitespace-pre-wrap break-words">{JSON.stringify(blogRepairResult.data, null, 2)}</pre>
-          </div>
-        )}
       </div>
 
       {/* Top Páginas */}

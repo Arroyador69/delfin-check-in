@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifySuperAdmin } from '@/lib/auth-superadmin';
 import { sql } from '@/lib/db';
 import { getOpenAI } from '@/lib/openai-server';
+import { SEO_CONTENT_FREEZE_MESSAGE, SEO_CONTENT_PUBLISHING_FROZEN } from '@/lib/seo-content-freeze';
 
 const BLOG_SYSTEM_PROMPT = `Eres un redactor SEO experto en contenido para Delfín Check-in (PMS y software de registro de viajeros para alquiler vacacional en España).
 
@@ -36,6 +37,10 @@ export async function POST(req: NextRequest) {
   try {
     const { error } = await verifySuperAdmin(req);
     if (error) return error;
+
+    if (SEO_CONTENT_PUBLISHING_FROZEN) {
+      return NextResponse.json({ error: SEO_CONTENT_FREEZE_MESSAGE }, { status: 403 });
+    }
 
     const body = await req.json().catch(() => ({}));
     const topic = (body.topic || '').trim();

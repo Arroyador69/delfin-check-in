@@ -3,6 +3,7 @@ import { verifySuperAdmin } from '@/lib/auth-superadmin';
 import { sql } from '@/lib/db';
 import { Octokit } from '@octokit/rest';
 import { marked } from 'marked';
+import { SEO_CONTENT_FREEZE_MESSAGE, SEO_CONTENT_PUBLISHING_FROZEN } from '@/lib/seo-content-freeze';
 
 // Inicializar Octokit con token de GitHub (repo landing)
 // Preferimos GITHUB_TOKEN_LANDING para diferenciar del resto de repos
@@ -25,6 +26,10 @@ export async function POST(req: NextRequest) {
     // Verificar SuperAdmin
     const { error } = await verifySuperAdmin(req);
     if (error) return error;
+
+    if (SEO_CONTENT_PUBLISHING_FROZEN) {
+      return NextResponse.json({ error: SEO_CONTENT_FREEZE_MESSAGE }, { status: 403 });
+    }
 
     const body = await req.json();
     const { page_id } = body;
