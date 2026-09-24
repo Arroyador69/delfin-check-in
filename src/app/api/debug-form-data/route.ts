@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { denyDebugApiInProduction } from '@/lib/security-deployment';
 
 export async function POST(req: NextRequest) {
+  const denied = denyDebugApiInProduction();
+  if (denied) return denied;
+
   try {
     console.log('🔬 DEBUG FORM DATA: Analizando datos del formulario...');
     

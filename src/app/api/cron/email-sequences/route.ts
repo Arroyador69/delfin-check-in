@@ -1,20 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { authorizeCronSecret } from '@/lib/cron-auth';
 import { processLifecycleEmailQueue } from '@/lib/email-sequences/engine';
-
-function authorizeCron(req: NextRequest): boolean {
-  const authHeader = req.headers.get('authorization');
-  const cronSecret = process.env.CRON_SECRET;
-  if (cronSecret && authHeader === `Bearer ${cronSecret}`) return true;
-  if (req.headers.get('x-vercel-cron') === '1') return true;
-  return false;
-}
 
 /**
  * Cron diario: sincroniza inscripciones y envía emails lifecycle pendientes.
  * GET /api/cron/email-sequences
+ * Auth: Authorization Bearer CRON_SECRET (no confiar en x-vercel-cron).
  */
 export async function GET(req: NextRequest) {
-  if (!authorizeCron(req)) {
+  if (!authorizeCronSecret(req)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 

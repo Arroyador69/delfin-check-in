@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { denyDebugApiInProduction } from '@/lib/security-deployment';
 
 export async function GET(req: NextRequest) {
+  const denied = denyDebugApiInProduction();
+  if (denied) return denied;
+
   try {
     // Verificar variables de entorno detalladamente
     const envCheck = {
