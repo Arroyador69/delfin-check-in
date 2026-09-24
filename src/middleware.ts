@@ -334,9 +334,7 @@ export async function middleware(req: NextRequest) {
     pathname.startsWith('/api/cleaning/public-link/') ||
     pathname.startsWith('/api/public/') ||
     pathname.startsWith('/api/direct-reservations/') ||
-    pathname.startsWith('/api/test-') ||
-    pathname.startsWith('/api/debug-') ||
-    pathname.startsWith('/api/check-') ||
+    // /api/test-* y /api/debug-* NO son públicas: en prod las corta isDangerousDiagnosticApiPath
     pathname.startsWith('/api/onboarding/') ||
     pathname.startsWith('/api/admin/login') ||
     pathname.startsWith('/api/auth/forgot-password') ||
@@ -422,9 +420,7 @@ export async function middleware(req: NextRequest) {
         pathname.startsWith('/api/public/') ||
         pathname.startsWith('/api/direct-reservations/') ||
         pathname === '/api/affiliate/go' ||
-        pathname.startsWith('/api/test-') ||
-        pathname.startsWith('/api/debug-') ||
-        pathname.startsWith('/api/check-') ||
+        // debug-/test-/check-* no son públicos; en prod 404 vía isDangerousDiagnosticApiPath
         pathname.startsWith('/api/onboarding/') ||
         pathname === '/api/admin/recover-onboarding' ||
         pathname.startsWith('/api/admin/login') ||

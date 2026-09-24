@@ -16,7 +16,8 @@ export function denyDebugApiInProduction(): NextResponse | null {
  * En producción devuelven 404 salvo DELFIN_ALLOW_DEBUG_ROUTES=true (emergencias).
  */
 export function isDangerousDiagnosticApiPath(pathname: string): boolean {
-  if (pathname.startsWith('/api/debug/')) return true;
+  // Incluye /api/debug-auth, debug-email, etc. (no solo /api/debug/…)
+  if (pathname.startsWith('/api/debug/') || pathname.startsWith('/api/debug-')) return true;
   if (pathname.startsWith('/api/test-')) return true;
   if (pathname.startsWith('/api/check-db')) return true;
   if (pathname === '/api/audit-mir-config') return true;

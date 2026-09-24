@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifySuperAdmin } from '@/lib/auth-superadmin';
+import { authorizeCronOrSuperAdmin } from '@/lib/cron-auth';
 import { getScheduledPages } from '@/lib/programmatic-content';
 import { sql } from '@/lib/db';
 import { Octokit } from '@octokit/rest';
@@ -40,25 +40,17 @@ const TARGET_CONVERSION_RATE = {
   comparison: 0.80
 };
 
-// GET: Ejecutar cron (Vercel cron usa GET, también funciona POST para manual)
+// GET: Ejecutar cron (Vercel cron usa GET + Bearer CRON_SECRET; panel usa SuperAdmin)
 export async function GET(req: NextRequest) {
   try {
-    // Verificar autenticación solo si hay token (para manual)
-    // Los crons de Vercel no pasan cookies, así que verificamos por header de autorización
-    const authHeader = req.headers.get('authorization');
-    const isVercelCron = req.headers.get('x-vercel-cron') === '1';
-    
+    const { error: authError } = await authorizeCronOrSuperAdmin(req);
+    if (authError) return authError;
+
     const { searchParams } = new URL(req.url);
     const action = searchParams.get('action'); // 'status' o 'run'
 
     // Si es status, devolver estado del cron
     if (action === 'status') {
-      // Verificar autenticación solo si NO es Vercel cron
-      if (!isVercelCron && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-        const { error } = await verifySuperAdmin(req);
-        if (error) return error;
-      }
-
       // Contar páginas por estado
       const stats = await sql`
         SELECT 
@@ -92,12 +84,6 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    // Si no es Vercel cron y no tiene secret, verificar SuperAdmin
-    if (!isVercelCron && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-      const { error } = await verifySuperAdmin(req);
-      if (error) return error;
-    }
-
     // Ejecutar cron
     const batch = searchParams.get('batch') || 'morning'; // 'morning', 'afternoon', 'all'
 
@@ -120,7 +106,7 @@ export async function GET(req: NextRequest) {
 // POST: Ejecutar cron manualmente (para testing)
 export async function POST(req: NextRequest) {
   try {
-    const { error } = await verifySuperAdmin(req);
+    const { error } = await authorizeCronOrSuperAdmin(req);
     if (error) return error;
 
     if (SEO_CONTENT_PUBLISHING_FROZEN) {

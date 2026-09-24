@@ -1,14 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken, AUTH_CONFIG } from '@/lib/auth';
+import { denyDebugApiInProduction } from '@/lib/security-deployment';
 
 /**
  * 🔍 API PARA DIAGNOSTICAR PROBLEMAS DE AUTENTICACIÓN
- * 
- * Este endpoint ayuda a diagnosticar problemas de autenticación
- * y verificar el estado de los tokens.
+ *
+ * Solo desarrollo / DELFIN_ALLOW_DEBUG_ROUTES=true. En producción → 404.
  */
 
 export async function GET(req: NextRequest) {
+  const denied = denyDebugApiInProduction();
+  if (denied) return denied;
+
   try {
     const authToken = req.cookies.get(AUTH_CONFIG.cookieName)?.value;
     const headers = req.headers;

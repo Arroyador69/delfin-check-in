@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
-import { verifySuperAdmin } from '@/lib/auth-superadmin';
+import { authorizeCronOrSuperAdmin } from '@/lib/cron-auth';
 import { getOpenAI } from '@/lib/openai-server';
 import {
   type BlogTopicAngle,
@@ -379,8 +379,8 @@ async function markPublished(id: string) {
 
 export async function GET(req: NextRequest) {
   try {
-    const isVercelCron = req.headers.get('x-vercel-cron') === '1';
-    const authHeader = req.headers.get('authorization');
+    const { error: authError } = await authorizeCronOrSuperAdmin(req);
+    if (authError) return authError;
 
     const { searchParams } = new URL(req.url);
     const batch = (searchParams.get('batch') || 'morning') as Batch;
@@ -395,13 +395,6 @@ export async function GET(req: NextRequest) {
 
     if (batch !== 'morning' && batch !== 'afternoon') {
       return NextResponse.json({ error: 'batch inválido (morning|afternoon)' }, { status: 400 });
-    }
-
-    // Auth: Vercel cron es público por diseño (solo Vercel lo llama).
-    // Manual: requiere superadmin o Bearer CRON_SECRET.
-    if (!isVercelCron && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-      const { error } = await verifySuperAdmin(req);
-      if (error) return error;
     }
 
     // Límite duro: 2 artículos/día (1 morning + 1 afternoon)
