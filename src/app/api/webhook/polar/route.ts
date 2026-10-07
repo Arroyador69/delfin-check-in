@@ -5,6 +5,7 @@ import {
   ensurePolarTenantColumns,
   syncTenantFromPolarSubscription,
 } from '@/lib/polar-subscription-sync';
+import { syncTapWallFromPolarSubscription } from '@/lib/tap-wall-polar';
 
 function safeTenantIdFromMetadata(meta: unknown): string | null {
   if (!meta || typeof meta !== 'object') return null;
@@ -48,9 +49,15 @@ export const POST = Webhooks({
         type === 'subscription.revoked' ||
         type === 'subscription.uncanceled'
       ) {
-        const sub = payload.data;
+        const sub = payload.data as Record<string, unknown>;
 
-        const syncResult = await syncTenantFromPolarSubscription(sub, type);
+        // Tap Wall (suscripción aparte): metadata.source === 'tap_wall'
+        const tapSync = await syncTapWallFromPolarSubscription(sub, type);
+        if (tapSync.ok) {
+          return;
+        }
+
+        const syncResult = await syncTenantFromPolarSubscription(sub as any, type);
 
         if (syncResult.action === 'activated' || syncResult.action === 'downgraded') {
           return;
@@ -58,7 +65,7 @@ export const POST = Webhooks({
 
         // Alta pública sin tenant (nuevo cliente desde landing/subscribe)
         if (type === 'subscription.active' && syncResult.detail === 'no_tenant') {
-          await provisionTenantFromPolarPublicSubscription(sub);
+          await provisionTenantFromPolarPublicSubscription(sub as any);
         }
         return;
       }

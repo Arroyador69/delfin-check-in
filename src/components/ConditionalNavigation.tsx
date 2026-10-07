@@ -20,6 +20,16 @@ export default function ConditionalNavigation() {
     return null;
   }
 
+  // Tap Wall: landing/panel/huésped sin menú del admin
+  if (
+    pathname === '/tap' ||
+    pathname?.startsWith('/tap/') ||
+    pathname === '/g' ||
+    pathname?.startsWith('/g/')
+  ) {
+    return null;
+  }
+
   // Rutas con idioma (/es/, /en/, etc.): la navegación la lleva el layout [locale], no duplicar aquí
   const localePrefix = /^\/(es|en|it|pt|fr)(\/|$)/;
   if (pathname && localePrefix.test(pathname)) {

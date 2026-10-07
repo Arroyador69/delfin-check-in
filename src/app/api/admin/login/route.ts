@@ -296,13 +296,20 @@ export async function POST(req: NextRequest) {
       }
     });
     
-    // Cookie de access token (2 horas). Sin domain = host-only (se envía siempre al mismo host que setea la cookie)
+    // Cookie compartida en *.delfincheckin.com (admin + tap + g APIs autenticadas).
+    const cookieDomain =
+      isProduction && (req.headers.get('host') || '').includes('delfincheckin.com')
+        ? '.delfincheckin.com'
+        : undefined;
+
+    // Cookie de access token (2 horas)
     response.cookies.set(AUTH_CONFIG.cookieName, accessToken, {
       httpOnly: true,
       secure: isProduction,
       sameSite: 'lax',
       maxAge: 60 * 60 * 2,
       path: '/',
+      ...(cookieDomain ? { domain: cookieDomain } : {}),
     });
     
     // Cookie de refresh token (7 días)
@@ -312,6 +319,7 @@ export async function POST(req: NextRequest) {
       sameSite: 'lax',
       maxAge: 60 * 60 * 24 * 7,
       path: '/api/auth',
+      ...(cookieDomain ? { domain: cookieDomain } : {}),
     });
 
     // Cookie de estado de onboarding (para redirección en middleware Edge)
@@ -331,6 +339,7 @@ export async function POST(req: NextRequest) {
       sameSite: 'lax',
       maxAge: 60 * 60 * 24 * 30, // 30 días
       path: '/',
+      ...(cookieDomain ? { domain: cookieDomain } : {}),
     });
 
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

@@ -55,6 +55,86 @@ function rewriteBookMicrositePath(req: NextRequest): NextResponse | null {
 }
 
 /**
+ * tap.delfincheckin.com → /tap/*
+ * g.delfincheckin.com/CODE → /g/CODE (huésped, sin login)
+ */
+async function rewriteTapWallHosts(req: NextRequest): Promise<NextResponse | null> {
+  const host = (req.headers.get('host') || '').split(':')[0].toLowerCase()
+  const isTapHost =
+    host === 'tap.delfincheckin.com' ||
+    (host.startsWith('tap.') && host.includes('delfincheckin.com'))
+  const isGuestHost =
+    host === 'g.delfincheckin.com' ||
+    (host.startsWith('g.') && host.includes('delfincheckin.com'))
+
+  if (!isTapHost && !isGuestHost) return null
+
+  const url = req.nextUrl.clone()
+  const pathname = url.pathname
+
+  if (
+    pathname.startsWith('/api/') ||
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/static') ||
+    pathname === '/favicon.ico' ||
+    pathname === '/robots.txt'
+  ) {
+    return null
+  }
+
+  if (isGuestHost) {
+    if (pathname === '/' || pathname === '') {
+      url.pathname = '/g'
+      return NextResponse.rewrite(url)
+    }
+    if (pathname.startsWith('/g/') || pathname === '/g') return null
+    const code = pathname.replace(/^\//, '').split('/')[0]
+    if (code && /^[a-zA-Z0-9_-]{4,32}$/.test(code)) {
+      url.pathname = `/g/${code}`
+      return NextResponse.rewrite(url)
+    }
+    return null
+  }
+
+  // tap host: solo rutas Tap Wall. El panel habitual sigue en admin.delfincheckin.com
+  if (pathname.startsWith('/tap')) return null
+
+  if (pathname === '/' || pathname === '') {
+    url.pathname = '/tap'
+    return NextResponse.rewrite(url)
+  }
+
+  if (pathname === '/contratar' || pathname.startsWith('/contratar/')) {
+    url.pathname = `/tap${pathname}`
+    return NextResponse.rewrite(url)
+  }
+
+  if (pathname === '/app' || pathname.startsWith('/app/')) {
+    const token = req.cookies.get('auth_token')?.value
+    if (!token) {
+      const login = new URL('https://admin.delfincheckin.com/admin-login')
+      login.searchParams.set('redirect', `https://tap.delfincheckin.com${pathname}`)
+      return NextResponse.redirect(login)
+    }
+    const payload = await verifyTokenEdge(token)
+    if (!payload) {
+      const login = new URL('https://admin.delfincheckin.com/admin-login')
+      login.searchParams.set('redirect', `https://tap.delfincheckin.com${pathname}`)
+      return NextResponse.redirect(login)
+    }
+    url.pathname = `/tap${pathname}`
+    return NextResponse.rewrite(url)
+  }
+
+  // /es/dashboard u otras rutas del admin → el panel normal, no Tap
+  const adminUrl = new URL(req.url)
+  adminUrl.host = 'admin.delfincheckin.com'
+  adminUrl.port = ''
+  adminUrl.protocol = 'https:'
+  return NextResponse.redirect(adminUrl)
+}
+
+/**
  * 🔒 MIDDLEWARE DE AUTENTICACIÓN + 🌍 I18N
  * 
  * Orden de ejecución:
@@ -149,6 +229,9 @@ export async function middleware(req: NextRequest) {
 
   const bookRewrite = rewriteBookMicrositePath(req)
   if (bookRewrite) return bookRewrite
+
+  const tapRewrite = await rewriteTapWallHosts(req)
+  if (tapRewrite) return tapRewrite
 
   // Raíz y login: no pasar por auth en edge para evitar 404; Next.js los sirve directo
   if (pathname === '/' || pathname === '/admin-login' || pathname === '/forgot-password') {
@@ -326,6 +409,11 @@ export async function middleware(req: NextRequest) {
     pathname.startsWith('/api/polar/checkout') ||
     pathname.startsWith('/api/polar/subscribe-redirect') ||
     pathname.startsWith('/book/') ||
+    pathname === '/tap' ||
+    pathname.startsWith('/tap/contratar') ||
+    pathname === '/g' ||
+    pathname.startsWith('/g/') ||
+    pathname.startsWith('/api/tap/public/') ||
     pathname.startsWith('/limpieza') ||
     /** Clic afiliado Amazon: GET sin sesión (app abre Safari / navegador externo). */
     pathname === '/api/affiliate/go' ||
@@ -418,6 +506,7 @@ export async function middleware(req: NextRequest) {
     if (!tenantId) {
       const isPublicApiRoute = (
         pathname.startsWith('/api/public/') ||
+        pathname.startsWith('/api/tap/public/') ||
         pathname.startsWith('/api/direct-reservations/') ||
         pathname === '/api/affiliate/go' ||
         // debug-/test-/check-* no son públicos; en prod 404 vía isDangerousDiagnosticApiPath
