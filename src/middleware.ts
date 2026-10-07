@@ -96,8 +96,18 @@ async function rewriteTapWallHosts(req: NextRequest): Promise<NextResponse | nul
     return null
   }
 
-  // tap host
+  // tap host: solo rutas Tap Wall. El panel habitual sigue en admin.delfincheckin.com
   if (pathname.startsWith('/tap')) return null
+
+  if (pathname === '/' || pathname === '') {
+    url.pathname = '/tap'
+    return NextResponse.rewrite(url)
+  }
+
+  if (pathname === '/contratar' || pathname.startsWith('/contratar/')) {
+    url.pathname = `/tap${pathname}`
+    return NextResponse.rewrite(url)
+  }
 
   if (pathname === '/app' || pathname.startsWith('/app/')) {
     const token = req.cookies.get('auth_token')?.value
@@ -116,13 +126,12 @@ async function rewriteTapWallHosts(req: NextRequest): Promise<NextResponse | nul
     return NextResponse.rewrite(url)
   }
 
-  if (pathname === '/' || pathname === '') {
-    url.pathname = '/tap'
-    return NextResponse.rewrite(url)
-  }
-
-  url.pathname = `/tap${pathname}`
-  return NextResponse.rewrite(url)
+  // /es/dashboard u otras rutas del admin → el panel normal, no Tap
+  const adminUrl = new URL(req.url)
+  adminUrl.host = 'admin.delfincheckin.com'
+  adminUrl.port = ''
+  adminUrl.protocol = 'https:'
+  return NextResponse.redirect(adminUrl)
 }
 
 /**

@@ -6,7 +6,7 @@
 |------|-----|
 | `tap.delfincheckin.com` | Panel propietario + contratar |
 | `g.delfincheckin.com` | Página pública del huésped (chip NFC) |
-| `admin.delfincheckin.com/admin/tap-wall` | Solo catálogo + contratar (sin configurar NFC) |
+| `admin.delfincheckin.com/{locale}/admin/tap-wall` | Info del producto en el menú admin (sin config NFC; contratar próximamente) |
 
 ## Productos en Polar (crear en dashboard)
 
