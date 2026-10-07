@@ -63,13 +63,13 @@ jobs:
     - name: Checkout código
       uses: actions/checkout@v5
       
+    - name: Instalar dependencias (audit)
+      run: npm ci
+
     - name: Audit de seguridad
-      # No bloquear por "moderate" transitorio de dependencias (ej. postcss dentro de next),
-      # porque forzaría upgrades mayores/breaking. Bloqueamos solo high/critical.
-      run: npm audit --audit-level high
-      
-    - name: Verificar vulnerabilidades
-      run: npx audit-ci --high
+      # Bloqueamos high/critical. Allowlist en audit-ci.jsonc solo para advisories sin parche
+      # (p.ej. braces GHSA-vfj7-8cjw-p6xm). Evita `npm audit --force` con breaking changes.
+      run: npx audit-ci --config ./audit-ci.jsonc
 
   lighthouse:
     runs-on: ubuntu-latest

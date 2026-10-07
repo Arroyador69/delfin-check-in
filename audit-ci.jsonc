@@ -1,0 +1,9 @@
+{
+  // CI: bloquear high/critical. Allowlist solo para advisories sin parche publicado.
+  "high": true,
+  "allowlist": [
+    // braces <=3.0.3 DoS stack-exhaustion; no hay release parcheado en npm (3.0.3 latest).
+    // Solo llega vía toolchain (tailwind/eslint micromatch), no runtime de producción.
+    "GHSA-vfj7-8cjw-p6xm"
+  ]
+}
