@@ -5,11 +5,22 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { isValidLocale } from '@/i18n/config'
 
-/** Redirigir solo a rutas internas (evita open redirect). */
+/** Redirigir solo a rutas internas o a tap.delfincheckin.com (evita open redirect). */
 function getSafeRedirect(redirect: string | null): string {
   if (!redirect || typeof redirect !== 'string') return '/'
   const decoded = decodeURIComponent(redirect.trim())
   if (decoded.startsWith('/') && !decoded.startsWith('//') && !decoded.includes(':')) return decoded
+  try {
+    const u = new URL(decoded)
+    if (
+      (u.protocol === 'https:' || u.protocol === 'http:') &&
+      (u.hostname === 'tap.delfincheckin.com' || u.hostname.endsWith('.tap.delfincheckin.com'))
+    ) {
+      return u.toString()
+    }
+  } catch {
+    /* ignore */
+  }
   return '/'
 }
 

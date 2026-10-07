@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { isOnboardingPath } from '@/lib/onboarding-route';
-import { Home, Bed, Calendar, Users, Settings, Menu, X, TrendingUp, FileText, Download, Shield, Calculator, Send, Receipt, Crown, Target, UserPlus, BarChart3, LifeBuoy, Star, MousePointerClick, Megaphone } from 'lucide-react';
+import { Home, Bed, Calendar, Users, Settings, Menu, X, TrendingUp, FileText, Download, Shield, Calculator, Send, Receipt, Crown, Target, UserPlus, BarChart3, LifeBuoy, Star, MousePointerClick, Megaphone, Smartphone } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { useTenant, hasLegalModule, isFreePlanMirPreview, isProPlanTenant } from '@/hooks/useTenant';
@@ -96,6 +96,7 @@ export default function Navigation() {
       ? [{ name: t('marketIntelligence'), href: '/market-intelligence', icon: BarChart3, requiresLegal: false }]
       : []),
     { name: t('referrals'), href: '/referrals', icon: UserPlus, requiresLegal: false },
+    { name: 'Tap Wall (NFC)', href: '/admin/tap-wall', icon: Smartphone, requiresLegal: false },
     { name: t('settings'), href: '/settings', icon: Settings, requiresLegal: false },
   ];
 
