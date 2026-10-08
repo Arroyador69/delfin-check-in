@@ -398,8 +398,8 @@ export default function GuestRegistrationsDashboard() {
 
       await loadRooms();
       
-      // Pedir el máximo permitido: el total real viene en stats/total (COUNT), no en items.length
-      const params = new URLSearchParams({ limit: '10000', offset: '0' });
+      // all=1: todos los registros del tenant (multitenant, sin tope). Stats = COUNT real.
+      const params = new URLSearchParams({ all: '1' });
       if (!showAllRegistrations && selectedDate) {
         params.set('date', selectedDate);
       }

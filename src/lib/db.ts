@@ -361,69 +361,86 @@ export async function getGuestRegistrationStats(tenantId: string): Promise<Guest
   }
 }
 
-// Función helper para obtener registros (listado paginado; el total real va por getGuestRegistrationStats)
+/**
+ * Listado de registros de un tenant.
+ * - Multitenant estricto: siempre filtra por tenant_id (sin fallback cross-tenant).
+ * - limit <= 0 o unlimited=true: sin LIMIT (todos los del tenant).
+ * - El total real de contabilidad va por getGuestRegistrationStats (COUNT sin tope).
+ */
 export async function getGuestRegistrations(
-  limit: number = 500,
+  limit: number = 0,
   tenantId?: string | null,
-  offset: number = 0
+  offset: number = 0,
+  options?: { unlimited?: boolean }
 ): Promise<any[]> {
-  const safeLimit = Math.max(1, Math.min(Number(limit) || 500, 10000));
+  if (!tenantId) {
+    console.error('❌ [getGuestRegistrations] Requiere tenantId (multitenant)');
+    return [];
+  }
+
+  const unlimited = Boolean(options?.unlimited) || !Number.isFinite(limit) || limit <= 0;
+  const safeLimit = unlimited ? 0 : Math.max(1, Math.floor(limit));
   const safeOffset = Math.max(0, Number(offset) || 0);
 
-  // Si se proporciona tenantId, filtrar por él
-  if (tenantId) {
-    console.log('🔍 [getGuestRegistrations] Buscando registros con tenantId:', tenantId, { limit: safeLimit, offset: safeOffset });
-    
-    // Intentar con UUID primero
-    try {
-      const result = await sql`
+  console.log('🔍 [getGuestRegistrations] tenant:', tenantId, {
+    unlimited,
+    limit: unlimited ? 'ALL' : safeLimit,
+    offset: safeOffset,
+  });
+
+  const runUuid = async () => {
+    if (unlimited) {
+      return sql`
         SELECT id, reserva_ref, fecha_entrada, fecha_salida, data, created_at, updated_at, tenant_id, signature_data, signature_date
         FROM guest_registrations
         WHERE tenant_id = ${tenantId}::uuid
         ORDER BY created_at DESC
-        LIMIT ${safeLimit}
-        OFFSET ${safeOffset};
       `;
-      console.log(`✅ [getGuestRegistrations] Encontrados ${result.rows.length} registros con UUID`);
+    }
+    return sql`
+      SELECT id, reserva_ref, fecha_entrada, fecha_salida, data, created_at, updated_at, tenant_id, signature_data, signature_date
+      FROM guest_registrations
+      WHERE tenant_id = ${tenantId}::uuid
+      ORDER BY created_at DESC
+      LIMIT ${safeLimit}
+      OFFSET ${safeOffset}
+    `;
+  };
+
+  const runText = async () => {
+    if (unlimited) {
+      return sql`
+        SELECT id, reserva_ref, fecha_entrada, fecha_salida, data, created_at, updated_at, tenant_id, signature_data, signature_date
+        FROM guest_registrations
+        WHERE tenant_id::text = ${tenantId}
+        ORDER BY created_at DESC
+      `;
+    }
+    return sql`
+      SELECT id, reserva_ref, fecha_entrada, fecha_salida, data, created_at, updated_at, tenant_id, signature_data, signature_date
+      FROM guest_registrations
+      WHERE tenant_id::text = ${tenantId}
+      ORDER BY created_at DESC
+      LIMIT ${safeLimit}
+      OFFSET ${safeOffset}
+    `;
+  };
+
+  try {
+    const result = await runUuid();
+    console.log(`✅ [getGuestRegistrations] ${result.rows.length} registros (uuid) para tenant ${tenantId}`);
+    return result.rows;
+  } catch (uuidError: any) {
+    console.log('⚠️ [getGuestRegistrations] Error con UUID, intentando con string:', uuidError.message);
+    try {
+      const result = await runText();
+      console.log(`✅ [getGuestRegistrations] ${result.rows.length} registros (text) para tenant ${tenantId}`);
       return result.rows;
-    } catch (uuidError: any) {
-      console.log('⚠️ [getGuestRegistrations] Error con UUID, intentando con string:', uuidError.message);
-      try {
-        const result = await sql`
-          SELECT id, reserva_ref, fecha_entrada, fecha_salida, data, created_at, updated_at, tenant_id, signature_data, signature_date
-          FROM guest_registrations
-          WHERE tenant_id::text = ${tenantId}
-          ORDER BY created_at DESC
-          LIMIT ${safeLimit}
-          OFFSET ${safeOffset};
-        `;
-        console.log(`✅ [getGuestRegistrations] Encontrados ${result.rows.length} registros con string`);
-        return result.rows;
-      } catch (stringError: any) {
-        console.error('❌ [getGuestRegistrations] Error con ambos métodos:', stringError.message);
-        const result = await sql`
-          SELECT id, reserva_ref, fecha_entrada, fecha_salida, data, created_at, updated_at, tenant_id, signature_data, signature_date
-          FROM guest_registrations
-          ORDER BY created_at DESC
-          LIMIT ${safeLimit}
-          OFFSET ${safeOffset};
-        `;
-        console.warn('⚠️ [getGuestRegistrations] Devolviendo todos los registros (sin filtro)');
-        return result.rows;
-      }
+    } catch (stringError: any) {
+      console.error('❌ [getGuestRegistrations] Error filtrando por tenant (sin fallback cross-tenant):', stringError.message);
+      return [];
     }
   }
-  
-  console.warn('⚠️ getGuestRegistrations llamado sin tenantId - devolviendo todos los registros');
-  const result = await sql`
-    SELECT id, reserva_ref, fecha_entrada, fecha_salida, data, created_at, updated_at, tenant_id, signature_data, signature_date
-    FROM guest_registrations
-    ORDER BY created_at DESC
-    LIMIT ${safeLimit}
-    OFFSET ${safeOffset};
-  `;
-  
-  return result.rows;
 }
 
 // Función helper para obtener registro por ID

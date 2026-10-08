@@ -13,17 +13,33 @@ import { isEffectiveSuperAdminPayload } from '@/lib/platform-owner';
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-const DEFAULT_LIST_LIMIT = 500;
-const MAX_LIST_LIMIT = 10000;
-
+/**
+ * Por defecto: listado completo del tenant (sin tope artificial).
+ * Opcional: limit/offset para paginar; all=0 fuerza paginación con limit.
+ */
 function parseListParams(req: NextRequest) {
   const url = new URL(req.url);
-  const limit = Math.min(
-    Math.max(parseInt(url.searchParams.get('limit') || String(DEFAULT_LIST_LIMIT), 10) || DEFAULT_LIST_LIMIT, 1),
-    MAX_LIST_LIMIT
-  );
+  const allParam = url.searchParams.get('all');
+  const limitRaw = url.searchParams.get('limit');
   const offset = Math.max(parseInt(url.searchParams.get('offset') || '0', 10) || 0, 0);
-  return { limit, offset, url };
+
+  // all=1 (default) o limit=all / limit ausente → sin límite por tenant
+  const wantsAll =
+    allParam !== '0' &&
+    (allParam === '1' ||
+      allParam === 'true' ||
+      !limitRaw ||
+      limitRaw === 'all' ||
+      limitRaw === '0' ||
+      limitRaw === '-1');
+
+  if (wantsAll) {
+    return { unlimited: true as const, limit: 0, offset: 0, url };
+  }
+
+  const parsed = parseInt(limitRaw || '500', 10);
+  const limit = Math.max(1, Number.isFinite(parsed) ? parsed : 500);
+  return { unlimited: false as const, limit, offset, url };
 }
 
 function formatGuestRegistrationItems(registros: any[]) {
@@ -57,12 +73,12 @@ function formatGuestRegistrationItems(registros: any[]) {
 
 async function buildGuestRegistrationsPayload(
   tenantId: string,
-  limit: number,
-  offset: number,
+  opts: { unlimited: boolean; limit: number; offset: number },
   extras: Record<string, unknown> = {}
 ) {
+  const { unlimited, limit, offset } = opts;
   const [registros, stats] = await Promise.all([
-    getGuestRegistrations(limit, tenantId, offset),
+    getGuestRegistrations(unlimited ? 0 : limit, tenantId, offset, { unlimited }),
     getGuestRegistrationStats(tenantId),
   ]);
   const items = formatGuestRegistrationItems(registros);
@@ -75,12 +91,14 @@ async function buildGuestRegistrationsPayload(
   return {
     ok: true,
     items,
-    // total = contabilidad real (COUNT), no length del listado limitado
+    // total = contabilidad real del tenant (COUNT SQL, sin tope)
     total: safeStats.totalRegistrations,
     stats: safeStats,
-    limit,
-    offset,
-    hasMore: offset + items.length < safeStats.totalRegistrations,
+    tenantId,
+    unlimited,
+    limit: unlimited ? null : limit,
+    offset: unlimited ? 0 : offset,
+    hasMore: unlimited ? false : offset + items.length < safeStats.totalRegistrations,
     timestamp: new Date().toISOString(),
     ...extras,
   };
@@ -240,8 +258,8 @@ export async function GET(req: NextRequest) {
       }
       
       console.log('👑 SuperAdmin: Obteniendo registros para tenant:', tenantId);
-      const { limit, offset } = parseListParams(req);
-      const payload = await buildGuestRegistrationsPayload(tenantId, limit, offset, { superadmin: true });
+      const listParams = parseListParams(req);
+      const payload = await buildGuestRegistrationsPayload(tenantId, listParams, { superadmin: true });
       return jsonNoStore(payload);
     }
     
@@ -266,9 +284,9 @@ export async function GET(req: NextRequest) {
               isSuperAdmin = true;
               console.log('👑 SuperAdmin detectado en último intento (decodificación directa)');
               const tenantId = headerTenantId;
-              const { limit, offset } = parseListParams(req);
+              const listParams = parseListParams(req);
               console.log('👑 SuperAdmin: Obteniendo registros para tenant:', tenantId);
-              const payload = await buildGuestRegistrationsPayload(tenantId, limit, offset, { superadmin: true });
+              const payload = await buildGuestRegistrationsPayload(tenantId, listParams, { superadmin: true });
               return jsonNoStore(payload);
             }
           }
@@ -291,10 +309,10 @@ export async function GET(req: NextRequest) {
     
     console.log('✅ Tenant activo, listando registros...');
     
-    const { limit, offset } = parseListParams(req);
+    const listParams = parseListParams(req);
     
     console.log('📊 Obteniendo registros de viajeros desde base de datos...');
-    console.log('🔢 Límite/offset:', { limit, offset });
+    console.log('🔢 List params:', listParams);
     
     // Verificar si la tabla existe, si no, crearla
     try {
@@ -400,8 +418,8 @@ export async function GET(req: NextRequest) {
     console.log('🔍 Tipo de tenantId:', typeof finalTenantId);
     console.log('🔍 Valor de tenantId:', finalTenantId);
     
-    console.log('📊 Llamando a getGuestRegistrations con:', { limit, offset, tenantId: finalTenantId });
-    const payload = await buildGuestRegistrationsPayload(finalTenantId, limit, offset);
+    console.log('📊 Llamando a getGuestRegistrations con:', { ...listParams, tenantId: finalTenantId });
+    const payload = await buildGuestRegistrationsPayload(finalTenantId, listParams);
     console.log(`✅ Listado ${payload.items.length} / total real ${payload.total} para tenant ${finalTenantId}`);
     return jsonNoStore(payload);
     
