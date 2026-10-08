@@ -1,11 +1,120 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getGuestRegistrations, deleteGuestRegistrationById, deleteGuestRegistrationsByIds } from '@/lib/db';
+import {
+  getGuestRegistrations,
+  getGuestRegistrationStats,
+  deleteGuestRegistrationById,
+  deleteGuestRegistrationsByIds,
+  type GuestRegistrationStats,
+} from '@/lib/db';
 import { sql } from '@/lib/db';
 import { isEffectiveSuperAdminPayload } from '@/lib/platform-owner';
 
 // Configuración para evitar caché
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
+
+/**
+ * Por defecto: listado completo del tenant (sin tope artificial).
+ * Opcional: limit/offset para paginar; all=0 fuerza paginación con limit.
+ */
+function parseListParams(req: NextRequest) {
+  const url = new URL(req.url);
+  const allParam = url.searchParams.get('all');
+  const limitRaw = url.searchParams.get('limit');
+  const offset = Math.max(parseInt(url.searchParams.get('offset') || '0', 10) || 0, 0);
+
+  // all=1 (default) o limit=all / limit ausente → sin límite por tenant
+  const wantsAll =
+    allParam !== '0' &&
+    (allParam === '1' ||
+      allParam === 'true' ||
+      !limitRaw ||
+      limitRaw === 'all' ||
+      limitRaw === '0' ||
+      limitRaw === '-1');
+
+  if (wantsAll) {
+    return { unlimited: true as const, limit: 0, offset: 0, url };
+  }
+
+  const parsed = parseInt(limitRaw || '500', 10);
+  const limit = Math.max(1, Number.isFinite(parsed) ? parsed : 500);
+  return { unlimited: false as const, limit, offset, url };
+}
+
+function formatGuestRegistrationItems(registros: any[]) {
+  return registros.map((registro) => ({
+    id: registro.id,
+    reserva_ref: registro.reserva_ref,
+    fecha_entrada: registro.fecha_entrada,
+    fecha_salida: registro.fecha_salida,
+    created_at: registro.created_at,
+    updated_at: registro.updated_at,
+    viajero: {
+      nombre: registro.data?.comunicaciones?.[0]?.personas?.[0]?.nombre || 'N/A',
+      apellido1: registro.data?.comunicaciones?.[0]?.personas?.[0]?.apellido1 || 'N/A',
+      apellido2: registro.data?.comunicaciones?.[0]?.personas?.[0]?.apellido2 || '',
+      nacionalidad: registro.data?.comunicaciones?.[0]?.personas?.[0]?.nacionalidad || 'N/A',
+      tipoDocumento: registro.data?.comunicaciones?.[0]?.personas?.[0]?.tipoDocumento || 'N/A',
+      numeroDocumento: registro.data?.comunicaciones?.[0]?.personas?.[0]?.numeroDocumento || 'N/A',
+    },
+    contrato: {
+      codigoEstablecimiento: registro.data?.codigoEstablecimiento || 'N/A',
+      referencia: registro.data?.comunicaciones?.[0]?.contrato?.referencia || 'N/A',
+      numHabitaciones: registro.data?.comunicaciones?.[0]?.contrato?.numHabitaciones || 1,
+      internet: registro.data?.comunicaciones?.[0]?.contrato?.internet || false,
+      tipoPago: registro.data?.comunicaciones?.[0]?.contrato?.pago?.tipoPago || 'N/A',
+    },
+    data: registro.data,
+    signature_data: registro.signature_data,
+    signature_date: registro.signature_date,
+  }));
+}
+
+async function buildGuestRegistrationsPayload(
+  tenantId: string,
+  opts: { unlimited: boolean; limit: number; offset: number },
+  extras: Record<string, unknown> = {}
+) {
+  const { unlimited, limit, offset } = opts;
+  const [registros, stats] = await Promise.all([
+    getGuestRegistrations(unlimited ? 0 : limit, tenantId, offset, { unlimited }),
+    getGuestRegistrationStats(tenantId),
+  ]);
+  const items = formatGuestRegistrationItems(registros);
+  const safeStats: GuestRegistrationStats = stats || {
+    totalRegistrations: 0,
+    totalTravelers: 0,
+    establishments: 0,
+  };
+
+  return {
+    ok: true,
+    items,
+    // total = contabilidad real del tenant (COUNT SQL, sin tope)
+    total: safeStats.totalRegistrations,
+    stats: safeStats,
+    tenantId,
+    unlimited,
+    limit: unlimited ? null : limit,
+    offset: unlimited ? 0 : offset,
+    hasMore: unlimited ? false : offset + items.length < safeStats.totalRegistrations,
+    timestamp: new Date().toISOString(),
+    ...extras,
+  };
+}
+
+function jsonNoStore(body: unknown, status = 200) {
+  return new NextResponse(JSON.stringify(body), {
+    status,
+    headers: {
+      'Content-Type': 'application/json',
+      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+      Pragma: 'no-cache',
+      Expires: '0',
+    },
+  });
+}
 
 // Función helper para verificar token de forma silenciosa (sin logs de error)
 function verifyTokenSilently(token: string): any | null {
@@ -149,54 +258,9 @@ export async function GET(req: NextRequest) {
       }
       
       console.log('👑 SuperAdmin: Obteniendo registros para tenant:', tenantId);
-      
-      const url = new URL(req.url);
-      const limit = Math.min(parseInt(url.searchParams.get("limit") || "200"), 500);
-      
-      // Obtener registros directamente sin validaciones
-      const registros = await getGuestRegistrations(limit, tenantId);
-      
-      // Formatear datos
-      const items = registros.map(registro => ({
-        id: registro.id,
-        reserva_ref: registro.reserva_ref,
-        fecha_entrada: registro.fecha_entrada,
-        fecha_salida: registro.fecha_salida,
-        created_at: registro.created_at,
-        updated_at: registro.updated_at,
-        viajero: {
-          nombre: registro.data?.comunicaciones?.[0]?.personas?.[0]?.nombre || 'N/A',
-          apellido1: registro.data?.comunicaciones?.[0]?.personas?.[0]?.apellido1 || 'N/A',
-          apellido2: registro.data?.comunicaciones?.[0]?.personas?.[0]?.apellido2 || '',
-          nacionalidad: registro.data?.comunicaciones?.[0]?.personas?.[0]?.nacionalidad || 'N/A',
-          tipoDocumento: registro.data?.comunicaciones?.[0]?.personas?.[0]?.tipoDocumento || 'N/A',
-          numeroDocumento: registro.data?.comunicaciones?.[0]?.personas?.[0]?.numeroDocumento || 'N/A',
-        },
-        contrato: {
-          codigoEstablecimiento: registro.data?.codigoEstablecimiento || 'N/A',
-          referencia: registro.data?.comunicaciones?.[0]?.contrato?.referencia || 'N/A',
-          numHabitaciones: registro.data?.comunicaciones?.[0]?.contrato?.numHabitaciones || 1,
-          internet: registro.data?.comunicaciones?.[0]?.contrato?.internet || false,
-          tipoPago: registro.data?.comunicaciones?.[0]?.contrato?.pago?.tipoPago || 'N/A',
-        },
-        data: registro.data
-      }));
-      
-      return new NextResponse(JSON.stringify({ 
-        ok: true, 
-        items: items,
-        total: items.length,
-        timestamp: new Date().toISOString(),
-        superadmin: true
-      }), {
-        status: 200,
-        headers: {
-          "Content-Type": "application/json",
-          "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
-          "Pragma": "no-cache",
-          "Expires": "0"
-        }
-      });
+      const listParams = parseListParams(req);
+      const payload = await buildGuestRegistrationsPayload(tenantId, listParams, { superadmin: true });
+      return jsonNoStore(payload);
     }
     
     // Para usuarios normales, validar acceso al módulo legal
@@ -219,51 +283,11 @@ export async function GET(req: NextRequest) {
             if (isEffectiveSuperAdminPayload(payload)) {
               isSuperAdmin = true;
               console.log('👑 SuperAdmin detectado en último intento (decodificación directa)');
-              // Si es superadmin, saltar validación y obtener datos directamente
               const tenantId = headerTenantId;
-              const url = new URL(req.url);
-              const limit = Math.min(parseInt(url.searchParams.get("limit") || "200"), 500);
+              const listParams = parseListParams(req);
               console.log('👑 SuperAdmin: Obteniendo registros para tenant:', tenantId);
-              const registros = await getGuestRegistrations(limit, tenantId);
-              const items = registros.map(registro => ({
-                id: registro.id,
-                reserva_ref: registro.reserva_ref,
-                fecha_entrada: registro.fecha_entrada,
-                fecha_salida: registro.fecha_salida,
-                created_at: registro.created_at,
-                updated_at: registro.updated_at,
-                viajero: {
-                  nombre: registro.data?.comunicaciones?.[0]?.personas?.[0]?.nombre || 'N/A',
-                  apellido1: registro.data?.comunicaciones?.[0]?.personas?.[0]?.apellido1 || 'N/A',
-                  apellido2: registro.data?.comunicaciones?.[0]?.personas?.[0]?.apellido2 || '',
-                  nacionalidad: registro.data?.comunicaciones?.[0]?.personas?.[0]?.nacionalidad || 'N/A',
-                  tipoDocumento: registro.data?.comunicaciones?.[0]?.personas?.[0]?.tipoDocumento || 'N/A',
-                  numeroDocumento: registro.data?.comunicaciones?.[0]?.personas?.[0]?.numeroDocumento || 'N/A',
-                },
-                contrato: {
-                  codigoEstablecimiento: registro.data?.codigoEstablecimiento || 'N/A',
-                  referencia: registro.data?.comunicaciones?.[0]?.contrato?.referencia || 'N/A',
-                  numHabitaciones: registro.data?.comunicaciones?.[0]?.contrato?.numHabitaciones || 1,
-                  internet: registro.data?.comunicaciones?.[0]?.contrato?.internet || false,
-                  tipoPago: registro.data?.comunicaciones?.[0]?.contrato?.pago?.tipoPago || 'N/A',
-                },
-                data: registro.data
-              }));
-              return new NextResponse(JSON.stringify({ 
-                ok: true, 
-                items: items,
-                total: items.length,
-                timestamp: new Date().toISOString(),
-                superadmin: true
-              }), {
-                status: 200,
-                headers: {
-                  "Content-Type": "application/json",
-                  "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
-                  "Pragma": "no-cache",
-                  "Expires": "0"
-                }
-              });
+              const payload = await buildGuestRegistrationsPayload(tenantId, listParams, { superadmin: true });
+              return jsonNoStore(payload);
             }
           }
         } catch (e) {
@@ -285,11 +309,10 @@ export async function GET(req: NextRequest) {
     
     console.log('✅ Tenant activo, listando registros...');
     
-    const url = new URL(req.url);
-    const limit = Math.min(parseInt(url.searchParams.get("limit") || "200"), 500);
+    const listParams = parseListParams(req);
     
     console.log('📊 Obteniendo registros de viajeros desde base de datos...');
-    console.log('🔢 Límite:', limit);
+    console.log('🔢 List params:', listParams);
     
     // Verificar si la tabla existe, si no, crearla
     try {
@@ -395,70 +418,10 @@ export async function GET(req: NextRequest) {
     console.log('🔍 Tipo de tenantId:', typeof finalTenantId);
     console.log('🔍 Valor de tenantId:', finalTenantId);
     
-    // Obtener registros desde la base de datos filtrados por tenant_id
-    console.log('📊 Llamando a getGuestRegistrations con:', { limit, tenantId: finalTenantId });
-    const registros = await getGuestRegistrations(limit, finalTenantId);
-    
-    console.log(`✅ Se encontraron ${registros.length} registros para tenant ${finalTenantId}`);
-    console.log('📋 Primeros registros:', registros.slice(0, 3).map(r => ({ id: r.id, tenant_id: r.tenant_id, reserva_ref: r.reserva_ref })));
-    
-    // DEBUG: Verificar algunos registros en la BD directamente
-    try {
-      const debugQuery = await sql`
-        SELECT 
-          COUNT(*) as total, 
-          COUNT(*) FILTER (WHERE tenant_id = ${finalTenantId}::uuid) as con_tenant_id,
-          COUNT(*) FILTER (WHERE tenant_id IS NULL) as sin_tenant_id
-        FROM guest_registrations
-      `;
-      console.log('🔍 DEBUG - Total registros en BD:', debugQuery.rows[0]);
-    } catch (debugError) {
-      console.error('⚠️ Error en query de debug:', debugError);
-    }
-    
-    // Formatear datos para el dashboard
-    const items = registros.map(registro => ({
-      id: registro.id,
-      reserva_ref: registro.reserva_ref,
-      fecha_entrada: registro.fecha_entrada,
-      fecha_salida: registro.fecha_salida,
-      created_at: registro.created_at,
-      updated_at: registro.updated_at,
-      // Extraer datos del viajero para mostrar en la tabla
-      viajero: {
-        nombre: registro.data?.comunicaciones?.[0]?.personas?.[0]?.nombre || 'N/A',
-        apellido1: registro.data?.comunicaciones?.[0]?.personas?.[0]?.apellido1 || 'N/A',
-        apellido2: registro.data?.comunicaciones?.[0]?.personas?.[0]?.apellido2 || '',
-        nacionalidad: registro.data?.comunicaciones?.[0]?.personas?.[0]?.nacionalidad || 'N/A',
-        tipoDocumento: registro.data?.comunicaciones?.[0]?.personas?.[0]?.tipoDocumento || 'N/A',
-        numeroDocumento: registro.data?.comunicaciones?.[0]?.personas?.[0]?.numeroDocumento || 'N/A',
-      },
-      // Datos del contrato
-      contrato: {
-        codigoEstablecimiento: registro.data?.codigoEstablecimiento || 'N/A',
-        referencia: registro.data?.comunicaciones?.[0]?.contrato?.referencia || 'N/A',
-        numHabitaciones: registro.data?.comunicaciones?.[0]?.contrato?.numHabitaciones || 1,
-        internet: registro.data?.comunicaciones?.[0]?.contrato?.internet || false,
-        tipoPago: registro.data?.comunicaciones?.[0]?.contrato?.pago?.tipoPago || 'N/A',
-      },
-      // Datos completos para XML
-      data: registro.data
-    }));
-    
-    return new NextResponse(JSON.stringify({ 
-      ok: true, 
-      items: items,
-      total: items.length,
-      timestamp: new Date().toISOString()
-    }), {
-      status: 200,
-      headers: {
-        "Content-Type": "application/json",
-        "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
-        "Pragma": "no-cache",
-        "Expires": "0"
-      }
-    });
+    console.log('📊 Llamando a getGuestRegistrations con:', { ...listParams, tenantId: finalTenantId });
+    const payload = await buildGuestRegistrationsPayload(finalTenantId, listParams);
+    console.log(`✅ Listado ${payload.items.length} / total real ${payload.total} para tenant ${finalTenantId}`);
+    return jsonNoStore(payload);
     
   } catch (error) {
     console.error('❌ Error al obtener registros:', error);

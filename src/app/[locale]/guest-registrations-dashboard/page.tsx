@@ -189,6 +189,13 @@ export default function GuestRegistrationsDashboard() {
   const [editData, setEditData] = useState<any | null>(null);
   const [selectedRegistrations, setSelectedRegistrations] = useState<Set<string>>(new Set());
   const [showAllRegistrations, setShowAllRegistrations] = useState(true);
+  /** Contabilidad real desde COUNT en servidor (no depende del LIMIT del listado). */
+  const [serverStats, setServerStats] = useState<{
+    totalRegistrations: number;
+    totalTravelers: number;
+    establishments: number;
+  } | null>(null);
+  const [listMeta, setListMeta] = useState<{ loaded: number; hasMore: boolean }>({ loaded: 0, hasMore: false });
   const [deleting, setDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<{
     type: 'single' | 'multiple';
@@ -391,9 +398,12 @@ export default function GuestRegistrationsDashboard() {
 
       await loadRooms();
       
-      const url = showAllRegistrations 
-        ? '/api/guest-registrations' 
-        : `/api/guest-registrations?date=${selectedDate}`;
+      // all=1: todos los registros del tenant (multitenant, sin tope). Stats = COUNT real.
+      const params = new URLSearchParams({ all: '1' });
+      if (!showAllRegistrations && selectedDate) {
+        params.set('date', selectedDate);
+      }
+      const url = `/api/guest-registrations?${params.toString()}`;
       
       const response = await fetch(url, {
         method: 'GET',
@@ -424,13 +434,31 @@ export default function GuestRegistrationsDashboard() {
         hasItems: !!data.items,
         itemsLength: data.items?.length || 0,
         ok: data.ok,
-        total: data.total
+        total: data.total,
+        stats: data.stats
       });
       
       // Manejar tanto array directo como objeto con items
       const registrationsData = Array.isArray(data) ? data : (data.items || []);
-      console.log(`✅ ${registrationsData.length} registros procesados para mostrar`);
+      const statsFromApi = data?.stats && typeof data.stats === 'object'
+        ? {
+            totalRegistrations: Number(data.stats.totalRegistrations) || Number(data.total) || 0,
+            totalTravelers: Number(data.stats.totalTravelers) || 0,
+            establishments: Number(data.stats.establishments) || 0,
+          }
+        : {
+            totalRegistrations: Number(data?.total) || registrationsData.length,
+            totalTravelers: registrationsData.length,
+            establishments: 0,
+          };
+
+      console.log(`✅ ${registrationsData.length} en listado / total real ${statsFromApi.totalRegistrations}`);
       setRegistrations(registrationsData);
+      setServerStats(statsFromApi);
+      setListMeta({
+        loaded: registrationsData.length,
+        hasMore: Boolean(data?.hasMore) || registrationsData.length < statsFromApi.totalRegistrations,
+      });
       setSelectedRegistrations(new Set()); // Reset selección
       
       if (registrationsData.length === 0) {
@@ -442,6 +470,8 @@ export default function GuestRegistrationsDashboard() {
       console.error('Error cargando registros:', error);
       // En caso de error, mostrar datos de ejemplo para desarrollo
       setRegistrations([]);
+      setServerStats(null);
+      setListMeta({ loaded: 0, hasMore: false });
       alert(t('loadError', { message: error instanceof Error ? error.message : 'Error desconocido' }));
     } finally {
       setLoading(false);
@@ -659,6 +689,41 @@ export default function GuestRegistrationsDashboard() {
                        reg.contrato.numHabitaciones.toString() === filterRoom;
     return matchesSearch && matchesEstablishment && matchesCheckIn && matchesCheckOut && matchesRoom;
   });
+
+  const hasActiveClientFilters = Boolean(
+    searchTerm || filterEstablishment || filterCheckIn || filterCheckOut || filterRoom
+  );
+
+  const countTravelersInRegistration = (reg: GuestRegistration): number => {
+    const personas =
+      reg.data?.comunicaciones?.[0]?.personas ||
+      reg.data?.comunicaciones?.[0]?.viajeros ||
+      reg.data?.personas ||
+      reg.data?.viajeros ||
+      [];
+    return Array.isArray(personas) && personas.length > 0 ? personas.length : 1;
+  };
+
+  // Sin filtros: contabilidad real del servidor. Con filtros: conteo sobre el listado cargado.
+  const displayStats = useMemo(() => {
+    if (!hasActiveClientFilters && serverStats) {
+      return {
+        totalRegistrations: serverStats.totalRegistrations,
+        totalTravelers: serverStats.totalTravelers,
+        establishments: serverStats.establishments,
+      };
+    }
+    const establishments = new Set(
+      filteredRegistrations
+        .map((r) => r.contrato.codigoEstablecimiento)
+        .filter((c) => c && c !== 'N/A')
+    );
+    return {
+      totalRegistrations: filteredRegistrations.length,
+      totalTravelers: filteredRegistrations.reduce((sum, r) => sum + countTravelersInRegistration(r), 0),
+      establishments: establishments.size,
+    };
+  }, [hasActiveClientFilters, serverStats, filteredRegistrations]);
 
   const uniqueEstablishments = [...new Set(registrations.map(r => r.contrato.codigoEstablecimiento))];
 
@@ -1135,7 +1200,7 @@ export default function GuestRegistrationsDashboard() {
                 <p className="text-sm font-medium text-gray-600">
                   {t('stats.totalRegistrations')}
                 </p>
-                <p className="text-2xl font-bold text-gray-900">{filteredRegistrations.length}</p>
+                <p className="text-2xl font-bold text-gray-900">{displayStats.totalRegistrations}</p>
               </div>
             </div>
           </div>
@@ -1149,7 +1214,7 @@ export default function GuestRegistrationsDashboard() {
                   {t('stats.totalTravelers')}
                 </p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {filteredRegistrations.length}
+                  {displayStats.totalTravelers}
                 </p>
               </div>
             </div>
@@ -1174,7 +1239,7 @@ export default function GuestRegistrationsDashboard() {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">{t('stats.establishments')}</p>
-                <p className="text-2xl font-bold text-gray-900">{uniqueEstablishments.length}</p>
+                <p className="text-2xl font-bold text-gray-900">{displayStats.establishments}</p>
               </div>
             </div>
           </div>
@@ -1213,7 +1278,16 @@ export default function GuestRegistrationsDashboard() {
             <div className="flex justify-between items-center">
               <div>
                 <h2 className="text-lg font-semibold text-gray-900">{t('list.title')}</h2>
-                <p className="text-sm text-gray-600 mt-1">{t('totalRegistrations', { count: filteredRegistrations.length })}</p>
+                <p className="text-sm text-gray-600 mt-1">
+                  {hasActiveClientFilters
+                    ? t('totalRegistrations', { count: filteredRegistrations.length })
+                    : t('totalRegistrations', { count: displayStats.totalRegistrations })}
+                  {!hasActiveClientFilters && listMeta.hasMore && (
+                    <span className="ml-1 text-amber-700">
+                      ({listMeta.loaded} en listado)
+                    </span>
+                  )}
+                </p>
               </div>
               {filteredRegistrations.length > 0 && (
                 <div className="flex items-center space-x-4">
