@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { insertGuestRegistration } from '@/lib/db';
+import {
+  insertGuestRegistration,
+  findGuestRegistrationByClientSubmissionId,
+  findRecentGuestRegistrationDuplicate,
+} from '@/lib/db';
 import { validateMirSoporteDocumento } from '@/lib/mir-soporte-documento';
 import { MIR_MAX_PERSONAS_PER_COMUNICACION } from '@/lib/form-max-guests';
 
@@ -24,7 +28,7 @@ const cors = (req: NextRequest) => {
     'Access-Control-Allow-Origin': isAllowed ? origin : 'https://form.delfincheckin.com',
     'Vary': 'Origin',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Accept, X-Dry-Run',
+    'Access-Control-Allow-Headers': 'Content-Type, Accept, X-Dry-Run, X-Client-Submission-Id, Idempotency-Key',
     'Access-Control-Max-Age': '86400'
   };
 };
@@ -566,8 +570,17 @@ export async function POST(req: NextRequest) {
       }
     }));
     
-    const storedData = {
+    const clientSubmissionId = String(
+      json.client_submission_id ||
+      json.clientSubmissionId ||
+      req.headers.get('x-client-submission-id') ||
+      req.headers.get('Idempotency-Key') ||
+      ''
+    ).trim();
+
+    const storedData: Record<string, unknown> = {
       codigoEstablecimiento: ESTABLISHMENT_CODE,
+      ...(clientSubmissionId ? { client_submission_id: clientSubmissionId } : {}),
       comunicaciones: [{
         contrato: {
           referencia: ESTABLISHMENT_REFERENCE,
@@ -589,6 +602,45 @@ export async function POST(req: NextRequest) {
       }]
     };
 
+    // Idempotencia / anti-duplicados (multitenant): si el huésped reenvía, devolver éxito sin crear otro parte
+    if (tenantId && clientSubmissionId) {
+      const byKey = await findGuestRegistrationByClientSubmissionId(tenantId, clientSubmissionId);
+      if (byKey) {
+        console.log('♻️ Envío idempotente (client_submission_id) — sin duplicar:', byKey.id);
+        const headers = cors(req);
+        return NextResponse.json({
+          success: true,
+          alreadySubmitted: true,
+          message: 'Este registro ya se había enviado correctamente. No es necesario volver a enviarlo.',
+          id: byKey.id,
+          reserva_ref: byKey.reserva_ref,
+          date: new Date().toISOString().split('T')[0],
+        }, { status: 200, headers });
+      }
+    }
+
+    const documentoPrincipal = String(personasDB?.[0]?.numeroDocumento || '').trim();
+    const fechaEntradaDate = String(c.entrada || '').split('T')[0];
+    if (tenantId && documentoPrincipal && fechaEntradaDate) {
+      const softDup = await findRecentGuestRegistrationDuplicate({
+        tenantId,
+        documento: documentoPrincipal,
+        fechaEntrada: fechaEntradaDate,
+      });
+      if (softDup) {
+        console.log('♻️ Dedupe suave (documento+entrada) — sin duplicar:', softDup.id);
+        const headers = cors(req);
+        return NextResponse.json({
+          success: true,
+          alreadySubmitted: true,
+          message: 'Ya existe un registro reciente con estos mismos datos. No es necesario volver a enviarlo.',
+          id: softDup.id,
+          reserva_ref: softDup.reserva_ref,
+          date: new Date().toISOString().split('T')[0],
+        }, { status: 200, headers });
+      }
+    }
+
     // ⚠️ CRÍTICO: Generar referencia única ANTES de guardar
     // Esta referencia se usará para reserva_ref, comunicacion_id y el envío al MIR
     // Usar Web Crypto API compatible con Edge Runtime
@@ -601,7 +653,7 @@ export async function POST(req: NextRequest) {
     console.log('🔖 Referencia única generada:', reserva_ref);
     
     // Actualizar dbData con la referencia única
-    storedData.comunicaciones[0].contrato.referencia = reserva_ref;
+    (storedData.comunicaciones as any)[0].contrato.referencia = reserva_ref;
 
     console.log('💾 Guardando en base de datos...');
     console.log('🔍 Debug - Datos finales que se van a guardar:', JSON.stringify(storedData, null, 2));
