@@ -6,7 +6,8 @@ import { checkRateLimit, getClientIP, RATE_LIMIT_CONFIGS } from '@/lib/rate-limi
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Tenant-ID, X-Tenant-Name',
+  'Access-Control-Allow-Headers':
+    'Content-Type, Authorization, X-Tenant-ID, X-Tenant-Name, X-Client-Submission-Id, Idempotency-Key',
 };
 
 /** Reenvía el cuerpo de error tal cual (JSON) para que el formulario pueda leer `issues`, `message`, etc. */

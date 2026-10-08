@@ -164,6 +164,63 @@ export function normalizeRoomId(roomId: string | null | undefined): string {
   return trimmed;
 }
 
+export type ExistingGuestRegistrationMatch = {
+  id: string;
+  reserva_ref: string | null;
+  created_at: string | null;
+};
+
+/** Busca un envío previo del mismo client_submission_id (idempotencia del formulario). */
+export async function findGuestRegistrationByClientSubmissionId(
+  tenantId: string,
+  clientSubmissionId: string
+): Promise<ExistingGuestRegistrationMatch | null> {
+  if (!tenantId || !clientSubmissionId) return null;
+  try {
+    const result = await sql`
+      SELECT id, reserva_ref, created_at
+      FROM guest_registrations
+      WHERE tenant_id = ${tenantId}::uuid
+        AND data->>'client_submission_id' = ${clientSubmissionId}
+      ORDER BY created_at DESC
+      LIMIT 1
+    `;
+    return (result.rows[0] as ExistingGuestRegistrationMatch) || null;
+  } catch (e: any) {
+    console.warn('⚠️ findGuestRegistrationByClientSubmissionId:', e?.message);
+    return null;
+  }
+}
+
+/**
+ * Dedupe suave multitenant: mismo documento + misma fecha de entrada en las últimas 48h.
+ * Evita partes duplicados cuando el huésped reenvía tras un timeout/error engañoso.
+ */
+export async function findRecentGuestRegistrationDuplicate(opts: {
+  tenantId: string;
+  documento: string;
+  fechaEntrada: string;
+}): Promise<ExistingGuestRegistrationMatch | null> {
+  const { tenantId, documento, fechaEntrada } = opts;
+  if (!tenantId || !documento || !fechaEntrada) return null;
+  try {
+    const result = await sql`
+      SELECT id, reserva_ref, created_at
+      FROM guest_registrations
+      WHERE tenant_id = ${tenantId}::uuid
+        AND fecha_entrada = ${fechaEntrada}::date
+        AND data->'comunicaciones'->0->'personas'->0->>'numeroDocumento' = ${documento}
+        AND created_at > NOW() - INTERVAL '48 hours'
+      ORDER BY created_at DESC
+      LIMIT 1
+    `;
+    return (result.rows[0] as ExistingGuestRegistrationMatch) || null;
+  } catch (e: any) {
+    console.warn('⚠️ findRecentGuestRegistrationDuplicate:', e?.message);
+    return null;
+  }
+}
+
 // Función helper para insertar un registro con prevención de duplicados
 export async function insertGuestRegistration(data: {
   reserva_ref?: string;
@@ -179,14 +236,15 @@ export async function insertGuestRegistration(data: {
   const nombre = data.data?.comunicaciones?.[0]?.personas?.[0]?.nombre;
   const apellido1 = data.data?.comunicaciones?.[0]?.personas?.[0]?.apellido1;
   
-  if (documento && nombre && apellido1) {
-    console.log('🔍 Verificando duplicados para documento:', documento);
+  if (documento && nombre && apellido1 && data.tenant_id) {
+    console.log('🔍 Verificando duplicados para documento:', documento, 'tenant:', data.tenant_id);
     
-    // Buscar registros existentes con el mismo documento en las últimas 24 horas
+    // Buscar registros existentes del MISMO tenant con el mismo documento en las últimas 24 horas
     const existingRegistrations = await sql`
       SELECT id, data, created_at
       FROM guest_registrations 
-      WHERE data->'comunicaciones'->0->'personas'->0->>'numeroDocumento' = ${documento}
+      WHERE tenant_id = ${data.tenant_id}::uuid
+        AND data->'comunicaciones'->0->'personas'->0->>'numeroDocumento' = ${documento}
         AND created_at > NOW() - INTERVAL '24 hours'
       ORDER BY created_at DESC
     `;
