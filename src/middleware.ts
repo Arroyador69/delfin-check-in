@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { verifyTokenEdge } from '@/lib/auth-edge'
-import { effectivePlatformAdmin } from '@/lib/platform-owner'
+import { effectivePlatformAdmin, isPlatformOwnerEmail } from '@/lib/platform-owner'
 import { checkRateLimit, getClientIP, isGlobalApiRateLimitExempt, RATE_LIMIT_CONFIGS } from '@/lib/rate-limit';
 import {
   isDangerousDiagnosticApiPath,
@@ -54,11 +54,41 @@ function rewriteBookMicrositePath(req: NextRequest): NextResponse | null {
   return null
 }
 
+/** Solo contacto@delfincheckin.com (DELFIN_PLATFORM_OWNER_EMAIL) puede usar Social. */
+async function requireSocialOwner(req: NextRequest): Promise<NextResponse | null> {
+  const pathname = req.nextUrl.pathname
+  const host = (req.headers.get('host') || '').split(':')[0].toLowerCase()
+  const returnTo = `https://social.delfincheckin.com${pathname === '/' ? '/' : pathname}${req.nextUrl.search}`
+  const login = new URL('https://admin.delfincheckin.com/admin-login')
+  login.searchParams.set('redirect', returnTo)
+
+  const token = req.cookies.get('auth_token')?.value
+  if (!token) {
+    return NextResponse.redirect(login)
+  }
+  const payload = await verifyTokenEdge(token)
+  if (!payload) {
+    return NextResponse.redirect(login)
+  }
+  if (!isPlatformOwnerEmail(payload.email)) {
+    return new NextResponse(
+      'Acceso denegado. social.delfincheckin.com solo está disponible para contacto@delfincheckin.com.',
+      {
+        status: 403,
+        headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+      }
+    )
+  }
+  // Evita que el gating de onboarding del tenant redirija fuera del hub social
+  void host
+  return null
+}
+
 /**
  * social.delfincheckin.com → /social/*
- * OAuth TikTok y pantalla de publicación del Mac Mini (mismo proyecto Vercel).
+ * Buffer de publicación (Postiz + TikTok) — privado, solo el owner de plataforma.
  */
-function rewriteSocialHost(req: NextRequest): NextResponse | null {
+async function rewriteSocialHost(req: NextRequest): Promise<NextResponse | null> {
   const host = (req.headers.get('host') || '').split(':')[0].toLowerCase()
   const isSocialHost =
     host === 'social.delfincheckin.com' ||
@@ -78,48 +108,31 @@ function rewriteSocialHost(req: NextRequest): NextResponse | null {
     return null
   }
 
-  // Ya estamos bajo /social → servir tal cual (archivos en public/social)
+  const denied = await requireSocialOwner(req)
+  if (denied) return denied
+
   if (pathname === '/social' || pathname.startsWith('/social/')) {
-    if (pathname === '/social' || pathname === '/social/') {
-      url.pathname = '/social/index.html'
-      return NextResponse.rewrite(url)
-    }
-    if (pathname === '/social/tiktok' || pathname === '/social/tiktok/') {
-      url.pathname = '/social/tiktok/index.html'
-      return NextResponse.rewrite(url)
-    }
-    if (pathname === '/social/oauth/tiktok' || pathname === '/social/oauth/tiktok/') {
-      url.pathname = '/social/oauth/tiktok/index.html'
-      return NextResponse.rewrite(url)
-    }
     return NextResponse.next()
   }
 
   if (pathname === '/' || pathname === '') {
-    url.pathname = '/social/index.html'
+    url.pathname = '/social'
     return NextResponse.rewrite(url)
   }
 
-  // URLs cortas en el subdominio: /tiktok y /oauth/tiktok
-  if (pathname === '/tiktok' || pathname === '/tiktok/') {
-    url.pathname = '/social/tiktok/index.html'
+  if (pathname === '/tiktok' || pathname.startsWith('/tiktok/')) {
+    url.pathname = pathname === '/tiktok' || pathname === '/tiktok/' ? '/social/tiktok' : `/social${pathname}`
     return NextResponse.rewrite(url)
   }
-  if (pathname.startsWith('/tiktok/')) {
-    url.pathname = `/social${pathname}`
-    return NextResponse.rewrite(url)
-  }
-  if (pathname === '/oauth/tiktok' || pathname === '/oauth/tiktok/') {
-    url.pathname = '/social/oauth/tiktok/index.html'
-    return NextResponse.rewrite(url)
-  }
-  if (pathname.startsWith('/oauth/tiktok/')) {
-    url.pathname = `/social${pathname}`
+  if (pathname === '/oauth/tiktok' || pathname.startsWith('/oauth/tiktok/')) {
+    url.pathname =
+      pathname === '/oauth/tiktok' || pathname === '/oauth/tiktok/'
+        ? '/social/oauth/tiktok'
+        : `/social${pathname}`
     return NextResponse.rewrite(url)
   }
 
-  // Cualquier otra ruta del host social → hub
-  url.pathname = '/social/index.html'
+  url.pathname = '/social'
   return NextResponse.rewrite(url)
 }
 
@@ -299,8 +312,23 @@ export async function middleware(req: NextRequest) {
   const bookRewrite = rewriteBookMicrositePath(req)
   if (bookRewrite) return bookRewrite
 
-  const socialRewrite = rewriteSocialHost(req)
+  const socialRewrite = await rewriteSocialHost(req)
   if (socialRewrite) return socialRewrite
+
+  // /social en admin u otro host: mismo candado (solo owner); sin onboarding i18n
+  if (
+    (pathname === '/social' ||
+      pathname.startsWith('/social/') ||
+      pathname === '/tiktok' ||
+      pathname.startsWith('/tiktok/') ||
+      pathname === '/oauth/tiktok' ||
+      pathname.startsWith('/oauth/tiktok/')) &&
+    !pathname.startsWith('/api/')
+  ) {
+    const denied = await requireSocialOwner(req)
+    if (denied) return denied
+    return NextResponse.next()
+  }
 
   const tapRewrite = await rewriteTapWallHosts(req)
   if (tapRewrite) return tapRewrite
@@ -492,11 +520,6 @@ export async function middleware(req: NextRequest) {
     pathname.startsWith('/g/') ||
     pathname.startsWith('/api/tap/public/') ||
     pathname.startsWith('/limpieza') ||
-    pathname.startsWith('/social') ||
-    pathname === '/tiktok' ||
-    pathname.startsWith('/tiktok/') ||
-    pathname === '/oauth/tiktok' ||
-    pathname.startsWith('/oauth/tiktok/') ||
     /** Clic afiliado Amazon: GET sin sesión (app abre Safari / navegador externo). */
     pathname === '/api/affiliate/go' ||
     pathname.startsWith('/api/ical/cleaning/') ||
