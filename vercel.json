@@ -4,6 +4,31 @@
   "rewrites": [
     {
       "source": "/",
+      "destination": "/social/index.html",
+      "has": [{ "type": "host", "value": "social.delfincheckin.com" }]
+    },
+    {
+      "source": "/tiktok",
+      "destination": "/social/tiktok/index.html",
+      "has": [{ "type": "host", "value": "social.delfincheckin.com" }]
+    },
+    {
+      "source": "/tiktok/",
+      "destination": "/social/tiktok/index.html",
+      "has": [{ "type": "host", "value": "social.delfincheckin.com" }]
+    },
+    {
+      "source": "/oauth/tiktok",
+      "destination": "/social/oauth/tiktok/index.html",
+      "has": [{ "type": "host", "value": "social.delfincheckin.com" }]
+    },
+    {
+      "source": "/oauth/tiktok/",
+      "destination": "/social/oauth/tiktok/index.html",
+      "has": [{ "type": "host", "value": "social.delfincheckin.com" }]
+    },
+    {
+      "source": "/",
       "destination": "/tap",
       "has": [{ "type": "host", "value": "tap.delfincheckin.com" }]
     },

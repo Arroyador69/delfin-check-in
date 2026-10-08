@@ -55,6 +55,75 @@ function rewriteBookMicrositePath(req: NextRequest): NextResponse | null {
 }
 
 /**
+ * social.delfincheckin.com → /social/*
+ * OAuth TikTok y pantalla de publicación del Mac Mini (mismo proyecto Vercel).
+ */
+function rewriteSocialHost(req: NextRequest): NextResponse | null {
+  const host = (req.headers.get('host') || '').split(':')[0].toLowerCase()
+  const isSocialHost =
+    host === 'social.delfincheckin.com' ||
+    (host.startsWith('social.') && host.includes('delfincheckin.com'))
+  if (!isSocialHost) return null
+
+  const url = req.nextUrl.clone()
+  const pathname = url.pathname
+
+  if (
+    pathname.startsWith('/api/') ||
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/static') ||
+    pathname === '/favicon.ico' ||
+    pathname === '/robots.txt'
+  ) {
+    return null
+  }
+
+  // Ya estamos bajo /social → servir tal cual (archivos en public/social)
+  if (pathname === '/social' || pathname.startsWith('/social/')) {
+    if (pathname === '/social' || pathname === '/social/') {
+      url.pathname = '/social/index.html'
+      return NextResponse.rewrite(url)
+    }
+    if (pathname === '/social/tiktok' || pathname === '/social/tiktok/') {
+      url.pathname = '/social/tiktok/index.html'
+      return NextResponse.rewrite(url)
+    }
+    if (pathname === '/social/oauth/tiktok' || pathname === '/social/oauth/tiktok/') {
+      url.pathname = '/social/oauth/tiktok/index.html'
+      return NextResponse.rewrite(url)
+    }
+    return NextResponse.next()
+  }
+
+  if (pathname === '/' || pathname === '') {
+    url.pathname = '/social/index.html'
+    return NextResponse.rewrite(url)
+  }
+
+  // URLs cortas en el subdominio: /tiktok y /oauth/tiktok
+  if (pathname === '/tiktok' || pathname === '/tiktok/') {
+    url.pathname = '/social/tiktok/index.html'
+    return NextResponse.rewrite(url)
+  }
+  if (pathname.startsWith('/tiktok/')) {
+    url.pathname = `/social${pathname}`
+    return NextResponse.rewrite(url)
+  }
+  if (pathname === '/oauth/tiktok' || pathname === '/oauth/tiktok/') {
+    url.pathname = '/social/oauth/tiktok/index.html'
+    return NextResponse.rewrite(url)
+  }
+  if (pathname.startsWith('/oauth/tiktok/')) {
+    url.pathname = `/social${pathname}`
+    return NextResponse.rewrite(url)
+  }
+
+  // Cualquier otra ruta del host social → hub
+  url.pathname = '/social/index.html'
+  return NextResponse.rewrite(url)
+}
+
+/**
  * tap.delfincheckin.com → /tap/*
  * g.delfincheckin.com/CODE → /g/CODE (huésped, sin login)
  */
@@ -230,6 +299,9 @@ export async function middleware(req: NextRequest) {
   const bookRewrite = rewriteBookMicrositePath(req)
   if (bookRewrite) return bookRewrite
 
+  const socialRewrite = rewriteSocialHost(req)
+  if (socialRewrite) return socialRewrite
+
   const tapRewrite = await rewriteTapWallHosts(req)
   if (tapRewrite) return tapRewrite
 
@@ -331,6 +403,11 @@ export async function middleware(req: NextRequest) {
     pathname.startsWith('/superadmin') ||
     pathname.startsWith('/book/') ||
     pathname.startsWith('/limpieza') ||
+    pathname.startsWith('/social') ||
+    pathname === '/tiktok' ||
+    pathname.startsWith('/tiktok/') ||
+    pathname === '/oauth/tiktok' ||
+    pathname.startsWith('/oauth/tiktok/') ||
     pathname === '/admin-login' ||
     pathname === '/forgot-password' ||
     pathname === '/' ||
@@ -415,6 +492,11 @@ export async function middleware(req: NextRequest) {
     pathname.startsWith('/g/') ||
     pathname.startsWith('/api/tap/public/') ||
     pathname.startsWith('/limpieza') ||
+    pathname.startsWith('/social') ||
+    pathname === '/tiktok' ||
+    pathname.startsWith('/tiktok/') ||
+    pathname === '/oauth/tiktok' ||
+    pathname.startsWith('/oauth/tiktok/') ||
     /** Clic afiliado Amazon: GET sin sesión (app abre Safari / navegador externo). */
     pathname === '/api/affiliate/go' ||
     pathname.startsWith('/api/ical/cleaning/') ||
