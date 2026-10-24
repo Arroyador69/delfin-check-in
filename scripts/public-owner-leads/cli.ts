@@ -25,7 +25,6 @@ import {
   readUrlList,
   saveLeads,
   upsertLead,
-  type Lead,
 } from './lib/store';
 import { buildColdOutreachEmail } from './lib/template';
 
@@ -265,6 +264,7 @@ async function cmdSend(argv: string[]): Promise<void> {
         subject: mail.subject,
         text: mail.text,
         html: mail.html,
+        optOutUrl,
       });
       lead.status = 'sent';
       lead.sent_at = new Date().toISOString();

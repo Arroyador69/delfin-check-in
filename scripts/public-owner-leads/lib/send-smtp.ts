@@ -37,8 +37,12 @@ export async function sendOutreachMail(opts: {
   subject: string;
   text: string;
   html: string;
+  optOutUrl?: string;
 }): Promise<{ messageId?: string }> {
   const transport = createOutreachTransport();
+  const listUnsub = opts.optOutUrl
+    ? `<${opts.optOutUrl}>, <mailto:soporte@delfincheckin.com?subject=baja>`
+    : `<mailto:soporte@delfincheckin.com?subject=baja>`;
   const info = await transport.sendMail({
     from: outreachFromAddress(),
     to: opts.to,
@@ -46,7 +50,8 @@ export async function sendOutreachMail(opts: {
     text: opts.text,
     html: opts.html,
     headers: {
-      'List-Unsubscribe': `<mailto:soporte@delfincheckin.com?subject=baja>`,
+      'List-Unsubscribe': listUnsub,
+      'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
       'X-Delfin-Campaign': 'public-owner-leads',
     },
   });
