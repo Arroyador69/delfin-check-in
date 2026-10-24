@@ -61,8 +61,8 @@ export async function sendTrackedOutreachLead(lead: {
           NULL,
           ${PUBLIC_OWNER_LEADS_EMAIL_TYPE},
           ${email},
-          ${`Prueba gratis Delfín Check-in para ${lead.domain || 'tu alojamiento'} (registro MIR)`},
-          'queued',
+          ${`${lead.domain || 'tu alojamiento'}: parte de viajeros MIR con prueba gratis`},
+          'sent',
           ${JSON.stringify({
             campaign: PUBLIC_OWNER_LEADS_CAMPAIGN,
             lead_id: lead.id,

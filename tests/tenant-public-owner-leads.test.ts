@@ -46,16 +46,22 @@ describe('public-owner-leads email extract', () => {
 });
 
 describe('cold template', () => {
-  it('incluye origen, CTA y baja', () => {
+  it('incluye origen, CTA, redes y baja', () => {
     const mail = buildColdOutreachEmail({
       toEmail: 'a@b.es',
       domain: 'b.es',
       sourceUrl: 'https://b.es/contacto',
       optOutUrl: 'https://admin.delfincheckin.com/es/baja-outreach?e=x&s=y',
     });
+    expect(mail.subject).toMatch(/parte de viajeros MIR/i);
     expect(mail.subject).toMatch(/prueba gratis/i);
     expect(mail.html).toContain('https://b.es/contacto');
     expect(mail.html).toContain('baja-outreach');
     expect(mail.text).toMatch(/web p[uú]blica/i);
+    expect(mail.text).toMatch(/Instagram:/);
+    expect(mail.text).toMatch(/Facebook:/);
+    expect(mail.text).toMatch(/X \(Twitter\):/);
+    expect(mail.text).toMatch(/YouTube:/);
+    expect(mail.html).toContain('Síguenos');
   });
 });
