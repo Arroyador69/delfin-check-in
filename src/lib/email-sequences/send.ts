@@ -5,7 +5,9 @@ import { buildUnsubscribeUrl } from '@/lib/email-sequences/unsubscribe';
 import {
   buildLifecycleAntivirusHelpUrl,
   getAppBaseUrl,
+  withOwnerOnboardingUtm,
 } from '@/lib/email-sequences/email-links';
+import { TAP_WALL_LANDING_URL } from '@/lib/email-sequences/constants';
 import { buildOpenTrackingPixelHtml } from '@/lib/email-tracking-pixel';
 import type { LifecycleTemplateParams } from '@/lib/email-sequences/templates';
 
@@ -141,15 +143,39 @@ export function buildTrackedCtaUrl(_trackingId: string, targetUrl: string): stri
   return targetUrl;
 }
 
-export function buildLifecycleUrls(_tenantId: string): {
+export function buildLifecycleUrls(tenantId: string): {
   onboardingUrl: string;
   billingUrl: string;
   checkinUpgradeUrl: string;
+  guestFormUrl: string;
+  tapWallUrl: string;
+  mirStatusUrl: string;
 } {
   const appBase = getAppBaseUrl();
   return {
     onboardingUrl: `${appBase}/es/onboarding`,
     billingUrl: `${appBase}/es/settings/billing`,
     checkinUpgradeUrl: `${appBase}/es/upgrade-plan?plan=checkin&source=lifecycle_f2`,
+    guestFormUrl: `${appBase}/api/public/form-redirect/${encodeURIComponent(tenantId)}`,
+    tapWallUrl: TAP_WALL_LANDING_URL,
+    mirStatusUrl: `${appBase}/es/estado-envios-mir`,
+  };
+}
+
+export function applyOwnerTrialMirUtms(urls: {
+  onboardingUrl: string;
+  billingUrl: string;
+  checkinUpgradeUrl: string;
+  guestFormUrl: string;
+  tapWallUrl: string;
+  mirStatusUrl: string;
+}): typeof urls {
+  return {
+    onboardingUrl: withOwnerOnboardingUtm(urls.onboardingUrl, 'onboarding'),
+    billingUrl: withOwnerOnboardingUtm(urls.billingUrl, 'billing'),
+    checkinUpgradeUrl: withOwnerOnboardingUtm(urls.checkinUpgradeUrl, 'upgrade'),
+    guestFormUrl: withOwnerOnboardingUtm(urls.guestFormUrl, 'guest_form'),
+    tapWallUrl: withOwnerOnboardingUtm(urls.tapWallUrl, 'tap_wall'),
+    mirStatusUrl: withOwnerOnboardingUtm(urls.mirStatusUrl, 'mir_status'),
   };
 }

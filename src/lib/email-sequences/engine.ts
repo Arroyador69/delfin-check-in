@@ -1,5 +1,6 @@
 import { sql } from '@/lib/db';
 import {
+  SEQUENCE_KEY_OWNER_TRIAL_MIR,
   SEQUENCE_KEY_PHASE_1,
   SEQUENCE_KEY_PHASE_2,
   LIFECYCLE_DAYS_AFTER_OPEN,
@@ -20,7 +21,11 @@ import {
   type TenantLifecycleState,
 } from '@/lib/email-sequences/segment';
 import { reconcileLifecycleEngagement } from '@/lib/email-sequences/engagement-reconcile';
-import { sendLifecycleEmail, buildLifecycleUrls } from '@/lib/email-sequences/send';
+import {
+  sendLifecycleEmail,
+  buildLifecycleUrls,
+  applyOwnerTrialMirUtms,
+} from '@/lib/email-sequences/send';
 import {
   buildOnboardingUrl,
   findOnboardingOwnerByEmail,
@@ -31,6 +36,7 @@ export interface ProcessResult {
   synced: number;
   enrolled_phase_1: number;
   enrolled_phase_2: number;
+  enrolled_owner_trial_mir: number;
   completed: number;
   sent: number;
   skipped: number;
@@ -44,6 +50,24 @@ type StepRow = {
   delay_days: number;
   condition_json: Record<string, unknown> | null;
 };
+
+
+function isCalendarDripSequence(sequenceKey: string): boolean {
+  return sequenceKey === SEQUENCE_KEY_OWNER_TRIAL_MIR;
+}
+
+function calendarDelayDaysUntil(
+  steps: StepRow[],
+  fromStepIdx: number,
+  toStepIdx: number
+): number {
+  let days = 0;
+  for (let i = fromStepIdx + 1; i <= toStepIdx; i++) {
+    days += Math.max(0, steps[i]?.delay_days ?? 0);
+  }
+  return days;
+}
+
 
 type EnrollmentRow = {
   id: string;
@@ -398,6 +422,7 @@ export async function syncLifecycleEnrollments(): Promise<{
   synced: number;
   enrolled_phase_1: number;
   enrolled_phase_2: number;
+  enrolled_owner_trial_mir: number;
   completed: number;
   bootstrapped: number;
   due_now: number;
@@ -410,11 +435,13 @@ export async function syncLifecycleEnrollments(): Promise<{
   await seedEmailSequences();
   const phase1 = await getSequenceByKey(SEQUENCE_KEY_PHASE_1);
   const phase2 = await getSequenceByKey(SEQUENCE_KEY_PHASE_2);
+  const trialMir = await getSequenceByKey(SEQUENCE_KEY_OWNER_TRIAL_MIR);
   if (!phase1) throw new Error('Secuencia Fase 1 no encontrada');
 
   const tenants = await loadAllTenantsForLifecycleSync();
   let enrolledP1 = 0;
   let enrolledP2 = 0;
+  let enrolledTrial = 0;
   let completed = 0;
   let bootstrapped = 0;
   let eligibleP1 = 0;
@@ -436,14 +463,36 @@ export async function syncLifecycleEnrollments(): Promise<{
 
     if (!state.phase_1_goal_met) {
       eligibleP1++;
-      const ok = await enrollTenant(
-        state.tenant_id,
-        phase1.id,
-        SEQUENCE_KEY_PHASE_1,
-        immediateSendAt(),
-        state
-      );
-      if (ok) enrolledP1++;
+      const existingActivation = await sql`
+        SELECT e.id, s.key
+        FROM email_sequence_enrollments e
+        JOIN email_sequences s ON s.id = e.sequence_id
+        WHERE e.tenant_id = ${state.tenant_id}::uuid
+          AND (
+            s.key = ${SEQUENCE_KEY_PHASE_1}
+            OR s.key = ${SEQUENCE_KEY_OWNER_TRIAL_MIR}
+          )
+        LIMIT 1
+      `;
+      if (existingActivation.rows.length === 0 && trialMir) {
+        const ok = await enrollTenant(
+          state.tenant_id,
+          trialMir.id,
+          SEQUENCE_KEY_OWNER_TRIAL_MIR,
+          immediateSendAt(),
+          state
+        );
+        if (ok) enrolledTrial++;
+      } else if (existingActivation.rows.length === 0) {
+        const ok = await enrollTenant(
+          state.tenant_id,
+          phase1.id,
+          SEQUENCE_KEY_PHASE_1,
+          immediateSendAt(),
+          state
+        );
+        if (ok) enrolledP1++;
+      }
     }
 
     if (state.phase_1_goal_met && !state.phase_2_goal_met && phase2) {
@@ -500,6 +549,7 @@ export async function syncLifecycleEnrollments(): Promise<{
     synced: tenants.length,
     enrolled_phase_1: enrolledP1,
     enrolled_phase_2: enrolledP2,
+    enrolled_owner_trial_mir: enrolledTrial,
     completed,
     bootstrapped,
     due_now: Number(dueR.rows[0]?.c || 0),
@@ -558,6 +608,7 @@ export async function processLifecycleEmailQueue(options?: {
     synced: sync.synced,
     enrolled_phase_1: sync.enrolled_phase_1,
     enrolled_phase_2: sync.enrolled_phase_2,
+    enrolled_owner_trial_mir: sync.enrolled_owner_trial_mir,
     completed: sync.completed,
     sent: 0,
     skipped: 0,
@@ -589,7 +640,9 @@ export async function processLifecycleEmailQueue(options?: {
       const goalMet =
         enrollment.sequence_key === SEQUENCE_KEY_PHASE_1
           ? state.phase_1_goal_met
-          : state.phase_2_goal_met;
+          : enrollment.sequence_key === SEQUENCE_KEY_OWNER_TRIAL_MIR
+            ? false
+            : state.phase_2_goal_met;
 
       if (goalMet) {
         await markEnrollmentCompleted(enrollment.id);
@@ -629,8 +682,25 @@ export async function processLifecycleEmailQueue(options?: {
         continue;
       }
 
-      const onboardingUrl = await resolveOnboardingUrlForTenant(state.email, state.tenant_id);
-      const { billingUrl, checkinUpgradeUrl } = buildLifecycleUrls(state.tenant_id);
+      const rawOnboardingUrl = await resolveOnboardingUrlForTenant(
+        state.email,
+        state.tenant_id
+      );
+      const baseUrls = buildLifecycleUrls(state.tenant_id);
+      const isTrial = isCalendarDripSequence(enrollment.sequence_key);
+      const trialUrls = isTrial
+        ? applyOwnerTrialMirUtms({
+            ...baseUrls,
+            onboardingUrl: rawOnboardingUrl,
+          })
+        : null;
+      const onboardingUrl = trialUrls?.onboardingUrl ?? rawOnboardingUrl;
+      const billingUrl = trialUrls?.billingUrl ?? baseUrls.billingUrl;
+      const checkinUpgradeUrl =
+        trialUrls?.checkinUpgradeUrl ?? baseUrls.checkinUpgradeUrl;
+      const guestFormUrl = trialUrls?.guestFormUrl ?? baseUrls.guestFormUrl;
+      const tapWallUrl = trialUrls?.tapWallUrl ?? baseUrls.tapWallUrl;
+      const mirStatusUrl = trialUrls?.mirStatusUrl ?? baseUrls.mirStatusUrl;
 
       const sendStep = async (isRetry: boolean, retryNumber: number) => {
         return sendLifecycleEmail({
@@ -647,11 +717,66 @@ export async function processLifecycleEmailQueue(options?: {
             onboardingUrl,
             billingUrl,
             checkinUpgradeUrl,
+            guestFormUrl,
+            tapWallUrl,
+            mirStatusUrl,
             onboardingStatus: state.onboarding_status,
             currentRooms: state.current_rooms,
           },
         });
       };
+
+      if (isTrial) {
+        if (emailState.has_any_send) {
+          const nextIdx = await resolveApplicableStepIndex(
+            steps,
+            stepIdx + 1,
+            state,
+            enrollment.sequence_key
+          );
+          if (nextIdx >= steps.length) {
+            await markEnrollmentCompleted(enrollment.id);
+            result.completed++;
+            continue;
+          }
+          const waitDays = calendarDelayDaysUntil(steps, stepIdx, nextIdx);
+          await updateEnrollmentSchedule(enrollment.id, {
+            current_step: nextIdx,
+            next_send_at: addDays(emailState.latest_sent_at || now, waitDays),
+            metadata: { step_retry_count: 0, calendar_drip: true },
+          });
+          result.skipped++;
+          continue;
+        }
+
+        const sendResult = await sendStep(false, 0);
+        if (!sendResult.success) {
+          result.errors.push(`${state.email}: ${sendResult.error || 'send failed'}`);
+          continue;
+        }
+
+        const nextIdx = await resolveApplicableStepIndex(
+          steps,
+          stepIdx + 1,
+          state,
+          enrollment.sequence_key
+        );
+        if (nextIdx >= steps.length) {
+          await markEnrollmentCompleted(enrollment.id);
+          result.completed++;
+          result.sent++;
+          continue;
+        }
+        const waitDays = calendarDelayDaysUntil(steps, stepIdx, nextIdx);
+        await updateEnrollmentSchedule(enrollment.id, {
+          current_step: nextIdx,
+          next_send_at: addDays(now, waitDays),
+          metadata: { step_retry_count: 0, calendar_drip: true },
+          touch_last_sent: true,
+        });
+        result.sent++;
+        continue;
+      }
 
       // --- Sin envío aún en este paso: primer mail del paso ---
       if (!emailState.has_any_send) {
@@ -707,6 +832,9 @@ export async function processLifecycleEmailQueue(options?: {
             onboardingUrl,
             billingUrl,
             checkinUpgradeUrl,
+            guestFormUrl,
+            tapWallUrl,
+            mirStatusUrl,
             onboardingStatus: state.onboarding_status,
             currentRooms: state.current_rooms,
           },
@@ -769,24 +897,96 @@ export async function processLifecycleEmailQueue(options?: {
   return result;
 }
 
-/** Inscribe un tenant recién creado en Fase 1 si aplica (no lanza errores). */
+/** Inscribe un tenant recién creado en owner_trial_mir (prueba gratis) si aplica. */
 export async function maybeEnrollNewTenantInLifecycle(tenantId: string): Promise<void> {
   try {
     await seedEmailSequences();
+    const trial = await getSequenceByKey(SEQUENCE_KEY_OWNER_TRIAL_MIR);
     const phase1 = await getSequenceByKey(SEQUENCE_KEY_PHASE_1);
-    if (!phase1) return;
+    if (!trial && !phase1) return;
 
     const state = await loadTenantLifecycleState(tenantId);
     if (!state || state.is_unsubscribed || state.phase_1_goal_met || state.phase_2_goal_met) return;
 
-    await enrollTenant(
-      tenantId,
-      phase1.id,
-      SEQUENCE_KEY_PHASE_1,
-      immediateSendAt(),
-      state
-    );
+    if (trial) {
+      await enrollTenant(
+        tenantId,
+        trial.id,
+        SEQUENCE_KEY_OWNER_TRIAL_MIR,
+        immediateSendAt(),
+        state
+      );
+      return;
+    }
+
+    if (phase1) {
+      await enrollTenant(
+        tenantId,
+        phase1.id,
+        SEQUENCE_KEY_PHASE_1,
+        immediateSendAt(),
+        state
+      );
+    }
   } catch (e) {
     console.warn('maybeEnrollNewTenantInLifecycle:', e);
   }
+}
+
+export async function enrollTenantInOwnerTrialMir(
+  tenantId: string,
+  options?: { force?: boolean }
+): Promise<{ ok: boolean; reason?: string; enrollment_id?: string }> {
+  await seedEmailSequences();
+  const trial = await getSequenceByKey(SEQUENCE_KEY_OWNER_TRIAL_MIR);
+  if (!trial) return { ok: false, reason: 'sequence_not_found' };
+
+  const state = await loadTenantLifecycleState(tenantId);
+  if (!state) return { ok: false, reason: 'tenant_not_found' };
+  if (!state.email) return { ok: false, reason: 'no_email' };
+  if (state.is_unsubscribed) return { ok: false, reason: 'unsubscribed' };
+
+  const existing = await sql`
+    SELECT id, status FROM email_sequence_enrollments
+    WHERE tenant_id = ${tenantId}::uuid AND sequence_id = ${trial.id}::uuid
+    LIMIT 1
+  `;
+  if (existing.rows.length > 0) {
+    if (!options?.force) {
+      return {
+        ok: false,
+        reason: 'already_enrolled',
+        enrollment_id: String(existing.rows[0].id),
+      };
+    }
+    await sql`
+      UPDATE email_sequence_enrollments
+      SET
+        status = 'active',
+        current_step = 0,
+        enrolled_at = NOW(),
+        next_send_at = ${immediateSendAt().toISOString()},
+        completed_at = NULL,
+        metadata = ${JSON.stringify({ step_retry_count: 0, calendar_drip: true, forced: true })}::jsonb,
+        updated_at = NOW()
+      WHERE id = ${String(existing.rows[0].id)}::uuid
+    `;
+    return { ok: true, enrollment_id: String(existing.rows[0].id) };
+  }
+
+  const ok = await enrollTenant(
+    tenantId,
+    trial.id,
+    SEQUENCE_KEY_OWNER_TRIAL_MIR,
+    immediateSendAt(),
+    state
+  );
+  if (!ok) return { ok: false, reason: 'enroll_failed' };
+
+  const row = await sql`
+    SELECT id FROM email_sequence_enrollments
+    WHERE tenant_id = ${tenantId}::uuid AND sequence_id = ${trial.id}::uuid
+    LIMIT 1
+  `;
+  return { ok: true, enrollment_id: row.rows[0] ? String(row.rows[0].id) : undefined };
 }
