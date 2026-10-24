@@ -10,6 +10,8 @@ import { useTranslations, useLocale } from 'next-intl';
 import LocalizedDateInput from '@/components/LocalizedDateInput';
 import { toIntlDateLocale, type Locale as AppLocale } from '@/i18n/config';
 import { Link } from '@/i18n/navigation';
+import { resolveMirHumanStatus } from '@/lib/mir-human-status';
+import { MirHumanStatusBadge } from '@/components/MirHumanStatus';
 
 type RoomLite = { id: string; name: string };
 
@@ -1375,27 +1377,46 @@ export default function GuestRegistrationsDashboard() {
                             </p>
                           </div>
                         </div>
-                        <div className="flex space-x-2">
-                          <button
-                            onClick={() => setSelectedRegistration(registration)}
-                            className="px-3 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500"
-                          >
-                            <Eye className="h-4 w-4 inline mr-1" />
-                            {t('list.view')}
-                          </button>
-                          <ExportButton
-                            solicitud={prepareSolicitudData(registration)}
-                            onSuccess={() => alert(t('xmlGenerated'))}
-                            onError={(error) => alert(t('exportError') + '\n' + error)}
+                        <div className="flex flex-col items-end gap-3">
+                          <MirHumanStatusBadge
+                            status={resolveMirHumanStatus({ mirStatus: registration.data?.mir_status })}
+                            labels={{
+                              ok: t('mirHuman.ok'),
+                              error: t('mirHuman.error'),
+                              pendiente: t('mirHuman.pendiente'),
+                              actionRetryOrSupport: t('mirHuman.actionRetryOrSupport'),
+                              actionSendGuestForm: t('mirHuman.actionSendGuestForm'),
+                              actionWaitConfirm: t('mirHuman.actionWaitConfirm'),
+                              ctaSendGuestForm: t('mirHuman.ctaSendGuestForm'),
+                            }}
+                            formUrl={formUrl || null}
+                            onCopyFormUrl={() => {
+                              if (formUrl) void copyToClipboard(formUrl);
+                            }}
+                            compact
                           />
-                          <button
-                            onClick={() => deleteRegistration(registration.id)}
-                            disabled={deleting}
-                            className="px-3 py-2 bg-red-100 text-red-700 rounded-md hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50"
-                          >
-                            <Trash2 className="h-4 w-4 inline mr-1" />
-                            {t('list.delete')}
-                          </button>
+                          <div className="flex space-x-2">
+                            <button
+                              onClick={() => setSelectedRegistration(registration)}
+                              className="px-3 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                            >
+                              <Eye className="h-4 w-4 inline mr-1" />
+                              {t('list.view')}
+                            </button>
+                            <ExportButton
+                              solicitud={prepareSolicitudData(registration)}
+                              onSuccess={() => alert(t('xmlGenerated'))}
+                              onError={(error) => alert(t('exportError') + '\n' + error)}
+                            />
+                            <button
+                              onClick={() => deleteRegistration(registration.id)}
+                              disabled={deleting}
+                              className="px-3 py-2 bg-red-100 text-red-700 rounded-md hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50"
+                            >
+                              <Trash2 className="h-4 w-4 inline mr-1" />
+                              {t('list.delete')}
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -1810,76 +1831,45 @@ export default function GuestRegistrationsDashboard() {
                 </div>
               </div>
 
-              {/* Status del envío al MIR */}
+              {/* Status del envío al MIR (legible: OK | Error | Pendiente) */}
               <div className="mb-6">
                 <h4 className="font-semibold text-gray-900 mb-3">{t('modal.mirStatus')}</h4>
-                <div className="bg-gray-50 border rounded-lg p-4">
+                <div className="bg-gray-50 border rounded-lg p-4 space-y-3">
                   {(() => {
                     const mirStatus = selectedRegistration?.data?.mir_status || {};
-                    const hasMirData = mirStatus.lote || mirStatus.error || mirStatus.codigoComunicacion;
-                    
-                    if (!hasMirData) {
-                      return (
-                        <div className="flex items-center text-gray-600">
-                          <div className="w-3 h-3 bg-gray-400 rounded-full mr-3"></div>
-                          <span>{t('modal.mirNotSent')}</span>
-                        </div>
-                      );
-                    }
-
-                    if (mirStatus.error) {
-                      return (
-                        <div className="flex items-center text-red-600">
-                          <div className="w-3 h-3 bg-red-500 rounded-full mr-3"></div>
-                          <div>
-                            <span className="font-medium">{t('modal.mirError')}</span>
-                            <p className="text-sm text-red-500 mt-1">{mirStatus.error}</p>
-                            {mirStatus.lote && (
-                              <p className="text-xs text-gray-500 mt-1">{t('modal.mirBatch')}: {mirStatus.lote}</p>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    }
-
-                    if (mirStatus.codigoComunicacion) {
-                      return (
-                        <div className="flex items-center text-green-600">
-                          <div className="w-3 h-3 bg-green-500 rounded-full mr-3"></div>
-                          <div>
-                            <span className="font-medium">{t('modal.mirSuccess')}</span>
-                            <p className="text-sm text-green-600 mt-1">{t('modal.mirCode')}: {mirStatus.codigoComunicacion}</p>
-                            {mirStatus.lote && (
-                              <p className="text-xs text-gray-500 mt-1">{t('modal.mirBatch')}: {mirStatus.lote}</p>
-                            )}
-                            {mirStatus.fechaEnvio && (
-                              <p className="text-xs text-gray-500 mt-1">{t('modal.mirSentDate')}: {new Date(mirStatus.fechaEnvio).toLocaleString(intlDateLocale)}</p>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    }
-
-                    if (mirStatus.lote) {
-                      return (
-                        <div className="flex items-center text-yellow-600">
-                          <div className="w-3 h-3 bg-yellow-500 rounded-full mr-3"></div>
-                          <div>
-                            <span className="font-medium">{t('modal.mirPending')}</span>
-                            <p className="text-sm text-yellow-600 mt-1">{t('modal.mirBatch')}: {mirStatus.lote}</p>
-                            {mirStatus.fechaEnvio && (
-                              <p className="text-xs text-gray-500 mt-1">{t('modal.mirSentDate')}: {new Date(mirStatus.fechaEnvio).toLocaleString(intlDateLocale)}</p>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    }
-
+                    const human = resolveMirHumanStatus({ mirStatus });
                     return (
-                      <div className="flex items-center text-gray-600">
-                        <div className="w-3 h-3 bg-gray-400 rounded-full mr-3"></div>
-                        <span>{t('modal.mirUnknown')}</span>
-                      </div>
+                      <>
+                        <MirHumanStatusBadge
+                          status={human}
+                          labels={{
+                            ok: t('mirHuman.ok'),
+                            error: t('mirHuman.error'),
+                            pendiente: t('mirHuman.pendiente'),
+                            actionRetryOrSupport: t('mirHuman.actionRetryOrSupport'),
+                            actionSendGuestForm: t('mirHuman.actionSendGuestForm'),
+                            actionWaitConfirm: t('mirHuman.actionWaitConfirm'),
+                            ctaSendGuestForm: t('mirHuman.ctaSendGuestForm'),
+                          }}
+                          formUrl={formUrl || null}
+                          onCopyFormUrl={() => {
+                            if (formUrl) void copyToClipboard(formUrl);
+                          }}
+                        />
+                        {(mirStatus.lote || mirStatus.codigoComunicacion || mirStatus.fechaEnvio) && (
+                          <div className="text-xs text-gray-500 space-y-0.5 border-t border-gray-200 pt-2">
+                            {mirStatus.codigoComunicacion && (
+                              <p>{t('modal.mirCode')}: {mirStatus.codigoComunicacion}</p>
+                            )}
+                            {mirStatus.lote && (
+                              <p>{t('modal.mirBatch')}: {mirStatus.lote}</p>
+                            )}
+                            {mirStatus.fechaEnvio && (
+                              <p>{t('modal.mirSentDate')}: {new Date(mirStatus.fechaEnvio).toLocaleString(intlDateLocale)}</p>
+                            )}
+                          </div>
+                        )}
+                      </>
                     );
                   })()}
                 </div>
