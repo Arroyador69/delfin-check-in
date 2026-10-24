@@ -63,7 +63,7 @@ function appBase(): string {
   );
 }
 
-function signupUrlWithUtm(): string {
+function signupUrlWithUtm(leadEmail?: string): string {
   // Sync con src/lib/public-owner-leads/send-tracked.ts → ancla #empezar (form registro)
   const raw = String(
     process.env.OUTREACH_SIGNUP_URL || 'https://delfincheckin.com/parte-viajeros/#empezar'
@@ -76,6 +76,9 @@ function signupUrlWithUtm(): string {
   u.searchParams.set('utm_campaign', CAMPAIGN);
   u.searchParams.set('utm_content', 'free_trial');
   u.searchParams.set('ref', 'owner_outreach');
+  if (leadEmail && leadEmail.includes('@')) {
+    u.searchParams.set('email', leadEmail.trim().toLowerCase());
+  }
   u.hash = hash || 'empezar';
   return u.toString();
 }
@@ -208,13 +211,15 @@ async function main(): Promise<void> {
   let sent = 0;
   let failed = 0;
   let skipped = 0;
-  const signupRaw = signupUrlWithUtm();
+  let lastSignup = signupUrlWithUtm();
 
   for (const row of queue.rows) {
     const id = String(row.id);
     const email = String(row.email).toLowerCase();
     const domain = String(row.domain || '');
     const sourceUrl = String(row.source_url || '');
+    const signupRaw = signupUrlWithUtm(email);
+    lastSignup = signupRaw;
 
     if (await isSuppressed(email)) {
       await sql`
@@ -349,7 +354,7 @@ async function main(): Promise<void> {
 
   console.log(
     JSON.stringify(
-      { ok: true, dryRun, imported, sent, failed, skipped, signup: signupRaw },
+      { ok: true, dryRun, imported, sent, failed, skipped, signup: lastSignup },
       null,
       2
     )

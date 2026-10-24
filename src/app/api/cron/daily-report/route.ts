@@ -1,39 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
 import { sendTelegramMessage, formatDailyReport } from '@/lib/telegram';
+import {
+  PUBLIC_OWNER_LEADS_DAILY_TARGET,
+  PUBLIC_OWNER_SIGNUPS_DAILY_GOAL,
+} from '@/lib/public-owner-leads/constants';
 
 /**
- * ========================================
- * CRON: Resumen Diario de Waitlist
- * ========================================
- * Se ejecuta automáticamente cada día a las 8:00 AM (hora española)
- * Envía resumen de registros del día anterior vía Telegram
+ * Cron informe diario Telegram ~11:00 Europe/Madrid (09:00 UTC en CEST).
+ * Incluye captación outreach (enviados / abiertos / clicks / bounce / altas) + waitlist.
  */
-
 export async function GET(req: NextRequest) {
   try {
-    // Verificar que la request viene de Vercel Cron o tiene el secret correcto
     const authHeader = req.headers.get('authorization');
     const cronSecret = process.env.CRON_SECRET;
-    
-    // Debug logs
-    console.log('🔍 [DEBUG] Auth header recibido:', authHeader ? 'Presente' : 'Ausente');
-    console.log('🔍 [DEBUG] CRON_SECRET configurado:', cronSecret ? 'Presente' : 'Ausente');
-    console.log('🔍 [DEBUG] Comparación:', authHeader === `Bearer ${cronSecret}`);
-    
+
     if (authHeader !== `Bearer ${cronSecret}`) {
-      console.log('❌ [AUTH] Autorización fallida');
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    console.log('🕐 [DAILY REPORT] Iniciando resumen diario...');
+    console.log('🕐 [DAILY REPORT] Informe 11:00 Madrid…');
 
-    // Obtener registros de las últimas 24 horas
     const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-    
+
     const newLeadsResult = await sql`
       SELECT email, name, source, created_at
       FROM waitlist
@@ -41,56 +30,87 @@ export async function GET(req: NextRequest) {
       ORDER BY created_at DESC
     `;
 
-    // Obtener total de registros en waitlist
     const totalResult = await sql`
       SELECT COUNT(*) as total
       FROM waitlist
     `;
 
     const newLeads = newLeadsResult.rows.length;
-    const totalLeads = parseInt(totalResult.rows[0].total);
-    const newLeadsList = newLeadsResult.rows.map(row => ({
+    const totalLeads = parseInt(String(totalResult.rows[0].total), 10);
+    const newLeadsList = newLeadsResult.rows.map((row) => ({
       email: row.email,
       name: row.name,
       source: row.source,
-      created_at: row.created_at
+      created_at: row.created_at,
     }));
 
-    console.log(`📊 [DAILY REPORT] Nuevos: ${newLeads}, Total: ${totalLeads}`);
+    let outreach = null;
+    try {
+      const meta = await sql`SELECT to_regclass('public.public_owner_leads') AS reg`;
+      if (meta.rows[0]?.reg) {
+        const o = await sql`
+          SELECT
+            COUNT(*) FILTER (
+              WHERE status = 'sent'
+                AND sent_at >= date_trunc('day', NOW() AT TIME ZONE 'Europe/Madrid')
+                  AT TIME ZONE 'Europe/Madrid'
+            )::int AS sent,
+            COUNT(*) FILTER (
+              WHERE opened_at >= date_trunc('day', NOW() AT TIME ZONE 'Europe/Madrid')
+                  AT TIME ZONE 'Europe/Madrid'
+            )::int AS opened,
+            COUNT(*) FILTER (
+              WHERE clicked_at >= date_trunc('day', NOW() AT TIME ZONE 'Europe/Madrid')
+                  AT TIME ZONE 'Europe/Madrid'
+            )::int AS clicked,
+            COUNT(*) FILTER (
+              WHERE status = 'bounced'
+                AND updated_at >= date_trunc('day', NOW() AT TIME ZONE 'Europe/Madrid')
+                  AT TIME ZONE 'Europe/Madrid'
+            )::int AS bounced,
+            COUNT(*) FILTER (
+              WHERE signed_up_at >= date_trunc('day', NOW() AT TIME ZONE 'Europe/Madrid')
+                  AT TIME ZONE 'Europe/Madrid'
+            )::int AS signed_up
+          FROM public_owner_leads
+        `;
+        const row = o.rows[0] || {};
+        outreach = {
+          sent: Number(row.sent || 0),
+          opened: Number(row.opened || 0),
+          clicked: Number(row.clicked || 0),
+          bounced: Number(row.bounced || 0),
+          signedUp: Number(row.signed_up || 0),
+          dailyCap: PUBLIC_OWNER_LEADS_DAILY_TARGET,
+          signupGoal: PUBLIC_OWNER_SIGNUPS_DAILY_GOAL,
+        };
+      }
+    } catch (e) {
+      console.warn('[DAILY REPORT] outreach stats skip', e);
+    }
 
-    // Formatear mensaje
     const message = formatDailyReport({
       newLeads,
       totalLeads,
       newLeadsList,
+      outreach,
     });
 
-    // Enviar a Telegram
     const sent = await sendTelegramMessage(message);
-
     if (!sent) {
       throw new Error('Failed to send Telegram message');
     }
 
-    console.log('✅ [DAILY REPORT] Resumen enviado correctamente');
+    console.log('✅ [DAILY REPORT] Enviado', { newLeads, totalLeads, outreach });
 
     return NextResponse.json({
       success: true,
-      message: 'Daily report sent',
-      stats: {
-        newLeads,
-        totalLeads,
-      },
+      message: 'Daily report sent (11:00 Madrid)',
+      stats: { newLeads, totalLeads, outreach },
     });
-
-  } catch (error: any) {
-    console.error('❌ [DAILY REPORT] Error:', error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: error.message,
-      },
-      { status: 500 }
-    );
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error('❌ [DAILY REPORT] Error:', msg);
+    return NextResponse.json({ success: false, error: msg }, { status: 500 });
   }
 }

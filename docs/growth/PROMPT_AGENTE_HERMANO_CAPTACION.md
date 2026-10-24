@@ -27,18 +27,15 @@ OBJETIVOS:
   botón "Registrarme gratis — sin tarjeta" al form de alta/onboarding.
 - Tracking opens/clicks en Superadmin via email_tracking + pixel/click wrap.
 
-HOY:
-1) Merge/deploy PR #216 si aún no está en producción (sin eso el panel/cron/pixel
-   en admin.delfincheckin.com no reflejan bien).
-2) Confirma OUTREACH_SIGNUP_URL=https://delfincheckin.com/parte-viajeros/ en Vercel.
-3) No vacíes public_owner_leads ni reenvíes a status=sent del mismo día.
-4) Si necesitas más URLs: añade a public_owner_lead_sources (pending), no reescribas
-   scripts/data/leads.csv a menos que coordines.
-5) Tras envíos del otro agente: abre /superadmin/public-owner-leads y reporta
-   sent_today / opened_today / clicked_today / signed_up_today vs meta 20.
-
-Si hay conflicto de merge en template.ts: conserva copy anti-spam (asunto
-"{dominio}: parte de viajeros MIR con prueba gratis") + redes + CTA parte-viajeros.
+HOY / REGLAS:
+1) Cap 50/día. No reenvíes status=sent del mismo día.
+2) OUTREACH_SIGNUP_URL=…/parte-viajeros/#empezar (con ?email= en envíos nuevos).
+3) Undelivered Zoho: pegar en panel Captación → «Marcar undelivered» (API OAuth
+   sin scopes / IMAP off). No reenviar bounced.
+4) Cola mañana: URLs en public_owner_lead_sources (pending); el cron 09:00 las
+   scrapea y envía solo.
+5) Informe Telegram 11:00 Madrid con sent/opened/clicked/bounce/altas.
+6) template.ts idéntica en src + scripts.
 ```
 
 ---

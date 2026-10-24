@@ -7,8 +7,10 @@ import {
   runDailyPublicOwnerLeads,
   syncOutreachEngagementFromTracking,
 } from '@/lib/public-owner-leads/daily-run';
+import { applyOutreachBouncesFromText } from '@/lib/public-owner-leads/apply-bounces';
 import { isBlockedOutreachHost, normalizeUrl } from '@/lib/public-owner-leads/extract-web';
 import { PUBLIC_OWNER_LEADS_DAILY_TARGET } from '@/lib/public-owner-leads/constants';
+import { syncZohoBounces } from '@/lib/zoho-bounce-sync';
 
 async function requireSuperAdmin(req: NextRequest) {
   const authToken = req.cookies.get('auth_token')?.value;
@@ -20,7 +22,7 @@ async function requireSuperAdmin(req: NextRequest) {
 
 /**
  * GET: métricas campaña + listado leads (opens/clicks/altas/fechas).
- * POST: { action: 'add_sources' | 'run_daily' | 'sync_engagement', urls?: string[], dryRun?: boolean }
+ * POST: { action: 'add_sources' | 'run_daily' | 'sync_engagement' | 'sync_bounces' | 'import_bounces', ... }
  */
 export async function GET(req: NextRequest) {
   const admin = await requireSuperAdmin(req);
@@ -55,6 +57,7 @@ export async function GET(req: NextRequest) {
         COUNT(*) FILTER (WHERE status = 'new' AND NOT opted_out)::int AS new_count,
         COUNT(*) FILTER (WHERE status = 'queued' AND NOT opted_out)::int AS queued,
         COUNT(*) FILTER (WHERE status = 'sent')::int AS sent,
+        COUNT(*) FILTER (WHERE status = 'bounced')::int AS bounced,
         COUNT(*) FILTER (WHERE opened_at IS NOT NULL)::int AS opened,
         COUNT(*) FILTER (WHERE clicked_at IS NOT NULL)::int AS clicked,
         COUNT(*) FILTER (WHERE signed_up_at IS NOT NULL)::int AS signed_up
@@ -67,6 +70,10 @@ export async function GET(req: NextRequest) {
           WHERE status = 'sent'
             AND sent_at >= date_trunc('day', NOW() AT TIME ZONE 'Europe/Madrid') AT TIME ZONE 'Europe/Madrid'
         )::int AS sent_today,
+        COUNT(*) FILTER (
+          WHERE status = 'bounced'
+            AND updated_at >= date_trunc('day', NOW() AT TIME ZONE 'Europe/Madrid') AT TIME ZONE 'Europe/Madrid'
+        )::int AS bounced_today,
         COUNT(*) FILTER (
           WHERE opened_at >= date_trunc('day', NOW() AT TIME ZONE 'Europe/Madrid') AT TIME ZONE 'Europe/Madrid'
         )::int AS opened_today,
@@ -151,6 +158,22 @@ export async function POST(req: NextRequest) {
     if (action === 'sync_engagement') {
       const r = await syncOutreachEngagementFromTracking();
       return NextResponse.json({ ok: true, ...r });
+    }
+
+    if (action === 'sync_bounces') {
+      const zoho = await syncZohoBounces({
+        limit: typeof body.limit === 'number' ? body.limit : 200,
+      });
+      return NextResponse.json({ ok: true, zoho });
+    }
+
+    if (action === 'import_bounces') {
+      const text = String(body.text || body.csv || '');
+      if (!text.trim()) {
+        return NextResponse.json({ ok: false, error: 'Pega emails o CSV de Zoho Undelivered' }, { status: 400 });
+      }
+      const result = await applyOutreachBouncesFromText(text, 'csv_import');
+      return NextResponse.json({ ok: true, result });
     }
 
     if (action === 'run_daily') {

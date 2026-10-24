@@ -9,6 +9,7 @@ type Stats = {
   new_count?: number;
   queued?: number;
   sent?: number;
+  bounced?: number;
   opened?: number;
   clicked?: number;
   signed_up?: number;
@@ -19,6 +20,7 @@ type Stats = {
 
 type Today = {
   sent_today?: number;
+  bounced_today?: number;
   opened_today?: number;
   clicked_today?: number;
   signed_up_today?: number;
@@ -53,6 +55,7 @@ function fmt(d: string | null | undefined): string {
 
 function statusBadge(lead: Lead): { label: string; className: string } {
   if (lead.opted_out) return { label: 'Baja', className: 'bg-rose-50 text-rose-800 ring-rose-200' };
+  if (lead.status === 'bounced') return { label: 'Undelivered', className: 'bg-rose-100 text-rose-900 ring-rose-300' };
   if (lead.signed_up_at) return { label: 'Alta', className: 'bg-emerald-50 text-emerald-800 ring-emerald-200' };
   if (lead.clicked_at) return { label: 'Click', className: 'bg-sky-50 text-sky-900 ring-sky-200' };
   if (lead.opened_at) return { label: 'Abierto', className: 'bg-amber-50 text-amber-900 ring-amber-200' };
@@ -72,6 +75,7 @@ export default function PublicOwnerLeadsAdminPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [sourcesSummary, setSourcesSummary] = useState<Record<string, number>>({});
   const [urlsText, setUrlsText] = useState('');
+  const [bounceText, setBounceText] = useState('');
   const [busy, setBusy] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
@@ -133,6 +137,19 @@ export default function PublicOwnerLeadsAdminPage() {
             ? `Dry-run OK · presupuesto ${r.budget ?? '—'} · descubiertos ${r.leadsDiscovered ?? 0}`
             : `Enviados ${r.sent ?? 0} · fallidos ${r.failed ?? 0} · suppressed ${r.skippedSuppressed ?? 0}`
         );
+      } else if (body.action === 'import_bounces') {
+        const r = data.result || {};
+        setToast(
+          `Undelivered: ${r.emails ?? 0} emails · leads marcados ${r.leadsMarked ?? 0} · suppression +${r.suppressed ?? 0}`
+        );
+        setBounceText('');
+      } else if (body.action === 'sync_bounces') {
+        const z = data.zoho || {};
+        setToast(
+          z.ok
+            ? `Zoho OK · escaneados ${z.messagesScanned ?? 0} · emails ${z.emailsFound ?? 0} · leads bounced ${z.leadsMarked ?? 0}`
+            : `Zoho no pudo leer Undelivered (${z.error || 'sin scope/IMAP'}). Pega el CSV abajo.`
+        );
       } else {
         setToast('Hecho');
       }
@@ -186,6 +203,14 @@ export default function PublicOwnerLeadsAdminPage() {
               className="px-3.5 py-2 text-sm font-semibold rounded-xl border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-50 shadow-sm"
             >
               Sync opens/clicks
+            </button>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => postAction({ action: 'sync_bounces' })}
+              className="px-3.5 py-2 text-sm font-semibold rounded-xl border border-rose-200 bg-rose-50 text-rose-900 hover:bg-rose-100 disabled:opacity-50 shadow-sm"
+            >
+              Sync Zoho undelivered
             </button>
             <button
               type="button"
@@ -268,16 +293,18 @@ export default function PublicOwnerLeadsAdminPage() {
                 <div className="mt-3 h-2.5 rounded-full bg-slate-100 overflow-hidden">
                   <div className="h-full rounded-full bg-slate-700/80 transition-all" style={{ width: `${sendPct}%` }} />
                 </div>
-                <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+                <div className="mt-3 grid grid-cols-4 gap-2 text-center">
                   <MiniStat label="Abiertos" value={today.opened_today} />
                   <MiniStat label="Clicks" value={today.clicked_today} />
+                  <MiniStat label="Undelivered" value={today.bounced_today} />
                   <MiniStat label="Descubiertos" value={today.discovered_today} />
                 </div>
               </div>
             </section>
 
-            <section className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <section className="grid grid-cols-2 sm:grid-cols-5 gap-3">
               <MetricCard label="Enviados total" value={stats.sent} />
+              <MetricCard label="Undelivered" value={stats.bounced} sub="no volver a enviar" />
               <MetricCard label="Abiertos" value={stats.opened} sub={`${stats.open_rate_pct ?? 0}%`} />
               <MetricCard label="Clicks" value={stats.clicked} sub={`${stats.click_rate_pct ?? 0}%`} />
               <MetricCard
@@ -286,6 +313,31 @@ export default function PublicOwnerLeadsAdminPage() {
                 sub={`${stats.signup_rate_pct ?? 0}%`}
                 accent
               />
+            </section>
+
+            <section className="rounded-2xl border border-rose-200/80 bg-rose-50/40 p-5 shadow-sm space-y-3">
+              <div>
+                <h2 className="font-semibold text-rose-950">Zoho Undelivered → eliminar de captación</h2>
+                <p className="text-sm text-rose-900/80 mt-0.5">
+                  Si el sync API falla (scopes OAuth / IMAP off), exporta Undelivered en Zoho Mail y pega aquí
+                  emails o CSV. Se marcan como <strong>bounced</strong> y entran en suppression (no se reenvían).
+                </p>
+              </div>
+              <textarea
+                value={bounceText}
+                onChange={(e) => setBounceText(e.target.value)}
+                rows={4}
+                placeholder={'email\nbad@casa-ejemplo.es\notro@fallo.com'}
+                className="w-full border border-rose-200 rounded-xl px-3 py-2.5 text-sm font-mono bg-white focus:outline-none focus:ring-2 focus:ring-rose-200"
+              />
+              <button
+                type="button"
+                disabled={busy || !bounceText.trim() || !tableReady}
+                onClick={() => postAction({ action: 'import_bounces', text: bounceText })}
+                className="px-3.5 py-2 text-sm font-semibold rounded-xl bg-rose-700 text-white hover:bg-rose-800 disabled:opacity-50"
+              >
+                Marcar undelivered y excluir
+              </button>
             </section>
 
             <section className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm space-y-3">
