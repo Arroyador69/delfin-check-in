@@ -16,6 +16,7 @@ import {
   normalizeSuppressionEmail,
   upsertEmailSuppression,
 } from '@/lib/email-suppression';
+import { applyOutreachBounceEmails } from '@/lib/public-owner-leads/apply-bounces';
 
 const ZOHO_ACCOUNTS_TOKEN = 'https://accounts.zoho.eu/oauth/v2/token';
 const ZOHO_MAIL_API = (process.env.ZOHO_MAIL_API_URL || 'https://mail.zoho.eu/api/accounts').replace(
@@ -50,6 +51,7 @@ export type ZohoBounceSyncResult = {
   emailsFound: number;
   inserted: number;
   skippedExisting: number;
+  leadsMarked?: number;
   error?: string;
   note?: string;
 };
@@ -313,6 +315,15 @@ export async function syncZohoBounces(options?: {
     else skippedExisting += 1;
   }
 
+  // Propaga a captación: status=bounced + tracking
+  let leadsMarked = 0;
+  try {
+    const applied = await applyOutreachBounceEmails([...allEmails], 'zoho_undelivered');
+    leadsMarked = applied.leadsMarked;
+  } catch (e) {
+    console.warn('[zoho-bounce-sync] applyOutreachBounceEmails', e);
+  }
+
   return {
     ok: true,
     accessTokenOk: true,
@@ -322,5 +333,6 @@ export async function syncZohoBounces(options?: {
     emailsFound: allEmails.size,
     inserted,
     skippedExisting,
+    leadsMarked,
   };
 }

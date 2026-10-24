@@ -156,7 +156,7 @@ export function isSmtpHardBounceError(error: unknown): boolean {
   return false;
 }
 
-/** Si el error es bounce duro, inserta suppression (best-effort). */
+/** Si el error es bounce duro, inserta suppression + marca lead outreach (best-effort). */
 export async function maybeSuppressOnSmtpBounce(
   email: string,
   error: unknown
@@ -168,6 +168,14 @@ export async function maybeSuppressOnSmtpBounce(
       reason: 'bounce',
       source: 'smtp_bounce',
     });
+    try {
+      const { applyOutreachBounceEmails } = await import(
+        '@/lib/public-owner-leads/apply-bounces'
+      );
+      await applyOutreachBounceEmails([email], 'smtp_bounce');
+    } catch {
+      /* tabla leads puede no existir */
+    }
     return true;
   } catch (e) {
     console.warn('maybeSuppressOnSmtpBounce: falló upsert', e);

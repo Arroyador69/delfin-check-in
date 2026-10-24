@@ -75,7 +75,7 @@ export function buildColdOutreachEmail(params: ColdEmailParams): {
     ``,
     `Como sabes, en España el RD 933/2021 obliga a registrar viajeros y remitir el parte al MIR / SES Hospedajes. Delfín Check-in es software para alojamientos: el huésped completa el parte, tú lo revisas y lo envías al Ministerio desde el panel, con onboarding guiado.`,
     ``,
-    `Puedes probarlo gratis (1 propiedad), solo con email y sin tarjeta. Si te encaja, después puedes pasar a un plan de pago; si no, te das de baja en un clic.`,
+    `Puedes probarlo gratis (1 propiedad), solo con email y sin tarjeta: creas la cuenta, entras al onboarding guiado y empiezas. Si te encaja, Check-in desde 2€/mes; si no, baja en un clic.`,
     ``,
     `Información y registro de prueba gratis:`,
     signup,
@@ -111,11 +111,12 @@ export function buildColdOutreachEmail(params: ColdEmailParams): {
           <p style="margin:0 0 14px;">El <strong>RD 933/2021</strong> obliga a registrar viajeros y remitir el parte al
             <strong>MIR / SES Hospedajes</strong>. Con <strong>Delfín Check-in</strong> el huésped completa el parte,
             tú lo revisas y lo envías al Ministerio desde el panel, con onboarding guiado.</p>
-          <p style="margin:0 0 8px;">Puedes <strong>probarlo gratis</strong> (1 propiedad), solo con email y <strong>sin tarjeta</strong>.</p>
+          <p style="margin:0 0 8px;">Puedes <strong>probarlo gratis</strong> (1 propiedad), solo con email y <strong>sin tarjeta</strong>:
+            creas la cuenta, onboarding guiado y listo. Luego Check-in desde <strong>2€/mes</strong> si te encaja.</p>
         </td></tr>
         <tr><td align="center" style="padding:12px 28px 8px;">
           <a href="${escapeAttr(signup)}" style="display:inline-block;background:#0284c7;color:#fff;text-decoration:none;font-weight:bold;padding:14px 26px;border-radius:8px;font-size:16px;">Registrarme gratis — sin tarjeta</a>
-          <p style="margin:12px 0 0;font-size:13px;color:#64748b;">Info + onboarding de prueba en el mismo enlace:<br/>
+          <p style="margin:12px 0 0;font-size:13px;color:#64748b;">Mismo enlace: info + formulario de alta (email prefijado si viene del mail).<br/>
             <a href="${escapeAttr(signup)}" style="color:#0284c7;word-break:break-all;">${escapeHtml(signup)}</a></p>
         </td></tr>
         <tr><td style="padding:4px 28px 20px;font-size:14px;line-height:1.6;color:#475569;">

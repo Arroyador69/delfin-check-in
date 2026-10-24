@@ -53,39 +53,74 @@ export async function sendTelegramMessage(text: string): Promise<boolean> {
   }
 }
 
+export type OutreachDailyStats = {
+  sent: number;
+  opened: number;
+  clicked: number;
+  bounced: number;
+  signedUp: number;
+  dailyCap: number;
+  signupGoal: number;
+};
+
 /**
- * Formatea un mensaje de resumen diario
+ * Formatea un mensaje de resumen diario (waitlist + captación outreach).
+ * Se envía ~11:00 Europe/Madrid (tras el cron de envío ~09:00).
  */
 export function formatDailyReport(data: {
   newLeads: number;
   totalLeads: number;
   newLeadsList: Array<{ email: string; name: string | null; source: string | null; created_at: string }>;
+  outreach?: OutreachDailyStats | null;
 }): string {
-  const { newLeads, totalLeads, newLeadsList } = data;
-  
-  let message = `🐬 <b>Delfín Check-in - Resumen Diario</b>\n\n`;
-  message += `📅 <b>Fecha:</b> ${new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}\n\n`;
-  message += `📊 <b>Estadísticas:</b>\n`;
-  message += `• Nuevos registros ayer: <b>${newLeads}</b>\n`;
-  message += `• Total en waitlist: <b>${totalLeads}</b>\n\n`;
+  const { newLeads, totalLeads, newLeadsList, outreach } = data;
+
+  const fecha = new Date().toLocaleDateString('es-ES', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    timeZone: 'Europe/Madrid',
+  });
+
+  let message = `🐬 <b>Delfín Check-in — Informe diario 11:00</b>\n\n`;
+  message += `📅 <b>Fecha:</b> ${fecha}\n\n`;
+
+  if (outreach) {
+    message += `📬 <b>Captación propietarios (outreach hoy)</b>\n`;
+    message += `• Enviados: <b>${outreach.sent}</b> / ${outreach.dailyCap}\n`;
+    message += `• Abiertos: <b>${outreach.opened}</b>\n`;
+    message += `• Clicks (landing): <b>${outreach.clicked}</b>\n`;
+    message += `• Undelivered/bounce: <b>${outreach.bounced}</b>\n`;
+    message += `• Altas atribuidas: <b>${outreach.signedUp}</b> / meta ${outreach.signupGoal}\n\n`;
+  }
+
+  message += `📋 <b>Waitlist / registros</b>\n`;
+  message += `• Nuevos (24h): <b>${newLeads}</b>\n`;
+  message += `• Total waitlist: <b>${totalLeads}</b>\n\n`;
 
   if (newLeads > 0) {
-    message += `✨ <b>Nuevos Registros:</b>\n`;
-    newLeadsList.forEach((lead, index) => {
+    message += `✨ <b>Nuevos registros:</b>\n`;
+    newLeadsList.slice(0, 15).forEach((lead, index) => {
       const name = lead.name || 'Sin nombre';
       const source = lead.source || 'landing';
-      const time = new Date(lead.created_at).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+      const time = new Date(lead.created_at).toLocaleTimeString('es-ES', {
+        hour: '2-digit',
+        minute: '2-digit',
+        timeZone: 'Europe/Madrid',
+      });
       message += `\n${index + 1}. <b>${name}</b>\n`;
       message += `   📧 ${lead.email}\n`;
       message += `   📍 Origen: ${source}\n`;
       message += `   ⏰ ${time}\n`;
     });
   } else {
-    message += `ℹ️ No hubo nuevos registros ayer.\n`;
+    message += `ℹ️ Sin nuevos registros waitlist en las últimas 24h.\n`;
   }
 
   message += `\n━━━━━━━━━━━━━━━━━━\n`;
-  message += `🔗 <a href="https://admin.delfincheckin.com/superadmin/waitlist-dashboard">Ver Dashboard Completo</a>`;
+  message += `🔗 <a href="https://admin.delfincheckin.com/superadmin/public-owner-leads">Captación</a> · `;
+  message += `<a href="https://admin.delfincheckin.com/superadmin/waitlist">Waitlist</a>`;
 
   return message;
 }
