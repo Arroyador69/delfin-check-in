@@ -31,7 +31,7 @@ describe('public-owner-leads daily campaign', () => {
       signupUrl: 'https://delfincheckin.com/?utm_campaign=public_owner_leads_es',
     });
     expect(mail.subject.toLowerCase()).toContain('prueba gratis');
-    expect(mail.html).toContain('Probar gratis');
+    expect(mail.html).toContain('Registrarme gratis');
     expect(mail.html).toContain('MIR');
     expect(mail.text).toContain('baja');
   });
