@@ -54,20 +54,29 @@ export function decodeOptOutEmail(encoded: string): string | null {
 /** Marca baja en email_unsubscribes (marketing) y public_owner_leads si existe. */
 export async function recordOutreachOptOut(email: string, reason?: string): Promise<void> {
   const normalized = email.trim().toLowerCase();
-  const { upsertEmailSuppression } = await import('@/lib/email-suppression');
 
-  await upsertEmailSuppression({
-    email: normalized,
-    reason: 'unsubscribe',
-    source: 'outreach_optout',
-    scope: SCOPE,
-  });
-  await upsertEmailSuppression({
-    email: normalized,
-    reason: 'unsubscribe',
-    source: reason || 'outreach_optout',
-    scope: 'all',
-  });
+  await sql`
+    CREATE TABLE IF NOT EXISTS email_unsubscribes (
+      id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+      email VARCHAR(255) NOT NULL,
+      scope VARCHAR(50) DEFAULT 'lifecycle',
+      reason TEXT,
+      unsubscribed_at TIMESTAMPTZ DEFAULT NOW(),
+      UNIQUE(email, scope)
+    )
+  `;
+
+  await sql`
+    INSERT INTO email_unsubscribes (email, scope, reason)
+    VALUES (${normalized}, ${SCOPE}, ${reason || 'owner_outreach_optout'})
+    ON CONFLICT (email, scope) DO NOTHING
+  `;
+
+  await sql`
+    INSERT INTO email_unsubscribes (email, scope, reason)
+    VALUES (${normalized}, 'all', ${reason || 'owner_outreach_optout'})
+    ON CONFLICT (email, scope) DO NOTHING
+  `;
 
   try {
     const meta = await sql`SELECT to_regclass('public.public_owner_leads') AS reg`;
