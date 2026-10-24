@@ -48,12 +48,13 @@ export function buildColdOutreachEmail(params: ColdEmailParams): {
   html: string;
 } {
   const domainLabel = params.domain || 'tu alojamiento';
-  const signup = params.signupUrl || 'https://delfincheckin.com/parte-viajeros/';
+  const signup =
+    params.signupUrl || 'https://delfincheckin.com/parte-viajeros/#empezar';
   const sender = params.senderName || 'Alberto · Delfín Check-in';
   const year = new Date().getFullYear();
   const socials = getOutreachSocialLinks();
 
-  const subject = `Prueba gratis Delfín Check-in para ${domainLabel} (registro MIR)`;
+  const subject = `Prueba gratis Delfín Check-in para ${domainLabel} (parte de viajeros MIR)`;
 
   const socialText = socials.map((s) => `${s.label}: ${s.url}`).join('\n');
   const socialHtml = socials
@@ -68,10 +69,13 @@ export function buildColdOutreachEmail(params: ColdEmailParams): {
     ``,
     `Soy ${sender}. He visto el email de contacto publicado en ${params.sourceUrl} y te escribo solo por eso — primera toma de contacto B2B, sin listas compradas.`,
     ``,
-    `Delfín Check-in ayuda a alojamientos en España a registrar viajeros y enviar los datos al MIR (RD 933/2021) con onboarding guiado.`,
-    `Puedes empezar con una prueba gratis (1 propiedad), solo con email y sin tarjeta.`,
+    `En España el RD 933/2021 obliga a comunicar los datos de huéspedes (parte de viajeros / SES Hospedajes).`,
+    `Delfín Check-in te deja: enviar el formulario al huésped → ver OK / Error / Pendiente en el panel → cumplir el MIR sin pelearte con el portal a mano.`,
     ``,
-    `Pruébalo aquí: ${signup}`,
+    `Puedes probarlo GRATIS (1 propiedad): solo tu email, sin tarjeta. En ~2 minutos entras al onboarding.`,
+    ``,
+    `Registro directo prueba gratis:`,
+    signup,
     ``,
     `También puedes vernos en redes:`,
     socialText,
@@ -100,11 +104,16 @@ export function buildColdOutreachEmail(params: ColdEmailParams): {
           <p style="margin:0 0 14px;">Soy <strong>${escapeHtml(sender)}</strong>. He visto el email de contacto publicado en
             <a href="${escapeAttr(params.sourceUrl)}" style="color:#0284c7;">${escapeHtml(params.sourceUrl)}</a>
             y te escribo solo por eso (contacto B2B a email público; sin listas compradas ni scrape de OTAs).</p>
-          <p style="margin:0 0 14px;"><strong>Delfín Check-in</strong> ayuda a alojamientos a registrar viajeros y completar el
-            <strong>onboarding MIR</strong> (RD 933/2021). Puedes empezar con <strong>prueba gratis</strong> (1 propiedad), sin tarjeta.</p>
+          <p style="margin:0 0 14px;">En España el <strong>RD 933/2021</strong> obliga a comunicar los datos de huéspedes
+            (parte de viajeros / SES Hospedajes). Con <strong>Delfín Check-in</strong> envías el formulario al huésped,
+            ves <strong>OK / Error / Pendiente</strong> en el panel y cumples el MIR sin pelearte con el portal a mano.</p>
+          <p style="margin:0 0 14px;">Puedes <strong>probarlo gratis</strong> (1 propiedad): solo tu email, <strong>sin tarjeta</strong>.
+            En ~2 minutos entras al onboarding.</p>
         </td></tr>
         <tr><td align="center" style="padding:8px 28px 16px;">
-          <a href="${escapeAttr(signup)}" style="display:inline-block;background:#0ea5e9;color:#fff;text-decoration:none;font-weight:bold;padding:12px 22px;border-radius:6px;">Probar gratis ahora</a>
+          <a href="${escapeAttr(signup)}" style="display:inline-block;background:#0ea5e9;color:#fff;text-decoration:none;font-weight:bold;padding:14px 26px;border-radius:8px;font-size:16px;">Registrarme gratis — sin tarjeta</a>
+          <p style="margin:12px 0 0;font-size:13px;color:#64748b;">Enlace directo al formulario de alta:<br/>
+            <a href="${escapeAttr(signup)}" style="color:#0284c7;word-break:break-all;">${escapeHtml(signup)}</a></p>
         </td></tr>
         <tr><td style="padding:4px 28px 20px;font-size:14px;line-height:1.6;color:#4b5563;">
           <p style="margin:0 0 8px;font-weight:700;color:#0f172a;">Síguenos</p>

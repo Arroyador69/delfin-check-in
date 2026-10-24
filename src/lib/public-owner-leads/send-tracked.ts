@@ -20,15 +20,18 @@ function wrapClick(trackingId: string, url: string): string {
 }
 
 function signupUrlWithUtm(): string {
-  const base = String(
-    process.env.OUTREACH_SIGNUP_URL || 'https://delfincheckin.com/parte-viajeros/'
-  ).replace(/\/+$/, '');
-  const u = new URL(base.includes('://') ? base : `https://${base}`);
+  const raw = String(
+    process.env.OUTREACH_SIGNUP_URL || 'https://delfincheckin.com/parte-viajeros/#empezar'
+  ).trim();
+  const withHash = raw.includes('#') ? raw : `${raw.replace(/\/+$/, '')}/#empezar`;
+  const [beforeHash, hash = 'empezar'] = withHash.split('#');
+  const u = new URL(beforeHash.includes('://') ? beforeHash : `https://${beforeHash}`);
   u.searchParams.set('utm_source', 'email');
   u.searchParams.set('utm_medium', 'outreach');
   u.searchParams.set('utm_campaign', PUBLIC_OWNER_LEADS_CAMPAIGN);
   u.searchParams.set('utm_content', 'free_trial');
   u.searchParams.set('ref', 'owner_outreach');
+  u.hash = hash || 'empezar';
   return u.toString();
 }
 
