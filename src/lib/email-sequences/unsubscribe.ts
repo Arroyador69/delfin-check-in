@@ -44,11 +44,21 @@ export async function recordUnsubscribe(
   reason?: string
 ): Promise<void> {
   const normalized = email.trim().toLowerCase();
-  await sql`
-    INSERT INTO email_unsubscribes (email, scope, reason)
-    VALUES (${normalized}, ${SCOPE}, ${reason || null})
-    ON CONFLICT (email, scope) DO NOTHING
-  `;
+  const { upsertEmailSuppression } = await import('@/lib/email-suppression');
+
+  await upsertEmailSuppression({
+    email: normalized,
+    reason: 'unsubscribe',
+    source: 'unsubscribe_web',
+    scope: SCOPE,
+  });
+  await upsertEmailSuppression({
+    email: normalized,
+    reason: 'unsubscribe',
+    source: 'unsubscribe_web',
+    scope: 'all',
+  });
+  void reason;
 
   await sql`
     UPDATE email_sequence_enrollments e

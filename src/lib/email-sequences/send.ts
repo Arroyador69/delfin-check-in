@@ -9,6 +9,10 @@ import {
 } from '@/lib/email-sequences/email-links';
 import { TAP_WALL_LANDING_URL } from '@/lib/email-sequences/constants';
 import { buildOpenTrackingPixelHtml } from '@/lib/email-tracking-pixel';
+import {
+  isEmailSuppressed,
+  maybeSuppressOnSmtpBounce,
+} from '@/lib/email-suppression';
 import type { LifecycleTemplateParams } from '@/lib/email-sequences/templates';
 
 export interface SendLifecycleEmailParams {
@@ -43,6 +47,11 @@ export async function sendLifecycleEmail(
   params: SendLifecycleEmailParams
 ): Promise<{ success: boolean; trackingId?: string; messageId?: string; error?: string }> {
   const to = params.to.trim().toLowerCase();
+
+  if (await isEmailSuppressed(to)) {
+    return { success: false, error: 'email_suppressed' };
+  }
+
   const unsubscribeUrl = buildUnsubscribeUrl(to);
   const content = renderLifecycleTemplate(params.templateKey, {
     ...params.templateParams,
@@ -129,6 +138,7 @@ export async function sendLifecycleEmail(
     return { success: true, trackingId: trackingId || undefined, messageId: info.messageId };
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : String(error);
+    await maybeSuppressOnSmtpBounce(to, error);
     if (trackingId) {
       await sql`
         UPDATE email_tracking SET status = 'failed', updated_at = NOW() WHERE id = ${trackingId}::uuid

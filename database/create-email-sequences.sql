@@ -56,13 +56,18 @@ CREATE TABLE IF NOT EXISTS email_unsubscribes (
   scope VARCHAR(50) DEFAULT 'lifecycle'
     CHECK (scope IN ('all', 'lifecycle', 'marketing')),
   reason TEXT,
+  source VARCHAR(80),
   unsubscribed_at TIMESTAMPTZ DEFAULT NOW(),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
   UNIQUE(email, scope)
 );
+
+ALTER TABLE email_unsubscribes ADD COLUMN IF NOT EXISTS source VARCHAR(80);
+ALTER TABLE email_unsubscribes ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW();
 
 CREATE INDEX IF NOT EXISTS idx_email_unsubscribes_email ON email_unsubscribes(LOWER(email));
 
 COMMENT ON TABLE email_sequences IS 'Definición de secuencias de nurture (Fase 1 activación, Fase 2 upgrade)';
 COMMENT ON TABLE email_sequence_steps IS 'Pasos de cada secuencia con delay y condiciones';
 COMMENT ON TABLE email_sequence_enrollments IS 'Inscripción de un tenant en una secuencia';
-COMMENT ON TABLE email_unsubscribes IS 'Bajas RGPD/LSSI de emails comerciales de lifecycle';
+COMMENT ON TABLE email_unsubscribes IS 'Suppression global: unsubscribe, bounce Zoho, tenant_inactive, manual (RGPD/LSSI + deliverability)';
