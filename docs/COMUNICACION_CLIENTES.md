@@ -30,9 +30,12 @@
 
 ## Objetivo diario
 
-- Meta: **20 altas nuevas / día**.  
-- Mañana (~09:00): hasta 50 mails a contactos **nuevos**.  
-- Si a las **15:00** aún hay menos de 20 altas → segunda oleada (solo emails **nunca contactados**).  
-- A las **11:00** y **19:00**: resumen a Telegram (enviados, abiertos, clicks, altas).
+- Meta: **20 propietarios nuevos / día**.  
+- Mañana (~09:00): hasta **50** mails a contactos **nuevos**.  
+- A las **15:00**: **solo si hay menos de 20 altas** (p. ej. 19 → sí se ejecuta). Envía hasta **50 mails nuevos** más. Si ya hay 20 o más → **no envía**.  
+- **Nunca** el mismo email dos veces.  
+- Siempre mantener **recámara** (cola new/queued + webs pending) para el envío de las 09:00 del día siguiente.  
+- En **todos** los mails: bloque **Síguenos** con las 4 redes (Instagram, Facebook, X, YouTube).  
+- Telegram **11:00** y **19:00**. Si superas 20 altas, el Superadmin lo marca (“¡Más de 20!”).
 
 Ver también: `docs/growth/EJECUCION_CAPTACION_20_PROPIETARIOS_DIA.md`.

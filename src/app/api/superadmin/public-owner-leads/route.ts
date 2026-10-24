@@ -9,7 +9,12 @@ import {
 } from '@/lib/public-owner-leads/daily-run';
 import { applyOutreachBouncesFromText } from '@/lib/public-owner-leads/apply-bounces';
 import { isBlockedOutreachHost, normalizeUrl } from '@/lib/public-owner-leads/extract-web';
-import { PUBLIC_OWNER_LEADS_DAILY_TARGET } from '@/lib/public-owner-leads/constants';
+import {
+  PUBLIC_OWNER_LEADS_AFTERNOON_MAX,
+  PUBLIC_OWNER_LEADS_DAILY_HARD_CAP,
+  PUBLIC_OWNER_LEADS_DAILY_TARGET,
+  PUBLIC_OWNER_SIGNUPS_DAILY_GOAL,
+} from '@/lib/public-owner-leads/constants';
 import { syncZohoBounces } from '@/lib/zoho-bounce-sync';
 
 async function requireSuperAdmin(req: NextRequest) {
@@ -126,10 +131,18 @@ export async function GET(req: NextRequest) {
     const clickRate = Math.round((Number(st.clicked || 0) / sent) * 1000) / 10;
     const signupRate = Math.round((Number(st.signed_up || 0) / sent) * 1000) / 10;
 
+    const reserve = Number(st.new_count || 0) + Number(st.queued || 0);
+    const signedToday = Number((today.rows[0] as { signed_up_today?: number })?.signed_up_today || 0);
+
     return NextResponse.json({
       ok: true,
       table_ready: true,
       daily_target: PUBLIC_OWNER_LEADS_DAILY_TARGET,
+      daily_hard_cap: PUBLIC_OWNER_LEADS_DAILY_HARD_CAP,
+      afternoon_max: PUBLIC_OWNER_LEADS_AFTERNOON_MAX,
+      signup_goal: PUBLIC_OWNER_SIGNUPS_DAILY_GOAL,
+      reserve_ready: reserve,
+      afternoon_will_run: signedToday < PUBLIC_OWNER_SIGNUPS_DAILY_GOAL,
       stats: { ...st, open_rate_pct: openRate, click_rate_pct: clickRate, signup_rate_pct: signupRate },
       today: today.rows[0] || {},
       sources,

@@ -70,6 +70,9 @@ export default function PublicOwnerLeadsAdminPage() {
   const [tableReady, setTableReady] = useState(false);
   const [migrationHint, setMigrationHint] = useState<string | null>(null);
   const [dailyTarget, setDailyTarget] = useState(50);
+  const [hardCap, setHardCap] = useState(100);
+  const [reserveReady, setReserveReady] = useState(0);
+  const [afternoonWillRun, setAfternoonWillRun] = useState(true);
   const [stats, setStats] = useState<Stats>({});
   const [today, setToday] = useState<Today>({});
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -94,6 +97,9 @@ export default function PublicOwnerLeadsAdminPage() {
       setTableReady(Boolean(data.table_ready));
       setMigrationHint(data.table_ready ? null : data.message || null);
       setDailyTarget(Number(data.daily_target || 50));
+      setHardCap(Number(data.daily_hard_cap || 100));
+      setReserveReady(Number(data.reserve_ready || 0));
+      setAfternoonWillRun(Boolean(data.afternoon_will_run));
       setStats(data.stats || {});
       setToday(data.today || {});
       setLeads(data.leads || []);
@@ -179,10 +185,11 @@ export default function PublicOwnerLeadsAdminPage() {
               Captación propietarios
             </h1>
             <p className="mt-1 text-slate-600 max-w-2xl text-[15px] leading-relaxed">
-              Solo <strong className="text-slate-900">España</strong> · solo vacacional · meta{' '}
-              <strong className="text-slate-900">{SIGNUP_DAILY_GOAL} altas / día</strong>. Mails mañana + tarde
-              (si faltan altas) · Telegram 11:00 y 19:00 · <strong>nunca el mismo email 2 veces</strong>.
-              Normas copy: <code className="text-xs bg-slate-100 px-1.5 py-0.5 rounded">docs/COMUNICACION_CLIENTES.md</code>
+              Meta <strong className="text-slate-900">{SIGNUP_DAILY_GOAL} propietarios nuevos / día</strong> ·
+              mañana 50 + tarde 50 <em>solo si hay &lt;20 altas</em> · tope día {hardCap} · recámara{' '}
+              <strong className="text-slate-900">{reserveReady}</strong> listos · Telegram 11:00 y 19:00 · nunca el
+              mismo email 2 veces. Normas:{' '}
+              <code className="text-xs bg-slate-100 px-1.5 py-0.5 rounded">docs/COMUNICACION_CLIENTES.md</code>
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -250,10 +257,18 @@ export default function PublicOwnerLeadsAdminPage() {
                   <h2 className="text-sm font-semibold text-slate-800">Altas nuevas hoy (KPI)</h2>
                   <span
                     className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-                      signupGoalMet ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-900'
+                      signupsToday > SIGNUP_DAILY_GOAL
+                        ? 'bg-emerald-200 text-emerald-900'
+                        : signupGoalMet
+                          ? 'bg-emerald-100 text-emerald-800'
+                          : 'bg-amber-100 text-amber-900'
                     }`}
                   >
-                    {signupGoalMet ? 'Meta OK' : 'Por debajo'}
+                    {signupsToday > SIGNUP_DAILY_GOAL
+                      ? `¡Más de ${SIGNUP_DAILY_GOAL}!`
+                      : signupGoalMet
+                        ? 'Meta OK (20)'
+                        : 'Por debajo → oleada 15:00'}
                   </span>
                 </div>
                 <p className="mt-2 text-3xl font-semibold tabular-nums tracking-tight">
@@ -267,14 +282,19 @@ export default function PublicOwnerLeadsAdminPage() {
                   />
                 </div>
                 <p className="mt-2 text-xs text-slate-500">
-                  Incluye atribución cuando el email del lead se registra (prueba gratis / waitlist).
+                  {afternoonWillRun
+                    ? 'Aún hay menos de 20 altas → a las 15:00 se envían hasta 50 mails nuevos (nunca repetidos).'
+                    : 'Ya hay 20 o más altas → la oleada de las 15:00 no envía. ¡Bien!'}{' '}
+                  Recámara para mañana: {reserveReady} leads listos.
                 </p>
               </div>
 
               <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
                 <div className="flex justify-between items-baseline gap-2">
                   <h2 className="text-sm font-semibold text-slate-800">Emails outreach hoy</h2>
-                  <span className="text-xs font-semibold text-slate-500">tope {dailyTarget}</span>
+                  <span className="text-xs font-semibold text-slate-500">
+                    mañana {dailyTarget} · tope día {hardCap}
+                  </span>
                 </div>
                 <p className="mt-2 text-3xl font-semibold tabular-nums tracking-tight">
                   {sentToday}

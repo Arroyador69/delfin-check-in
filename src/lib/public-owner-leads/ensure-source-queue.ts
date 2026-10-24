@@ -8,7 +8,8 @@ import { isBlockedOutreachHost, normalizeUrl } from './extract-web';
 import { SEED_SPAIN_VACATION_URLS } from './seed-spain-vacation-urls';
 import { hostSuggestsNonVacation } from './spain-vacation-filter';
 
-const MIN_PENDING = 25;
+/** Recámara: siempre webs pendientes para mañana 09:00 y oleada 15:00. */
+const MIN_PENDING = 40;
 
 export async function ensureSpainVacationSourceQueue(): Promise<{
   pendingBefore: number;

@@ -59,11 +59,14 @@ export function buildColdOutreachEmail(params: ColdEmailParams): {
 
   const subject = `${domainLabel}: parte de viajeros MIR — pruébalo gratis`;
 
-  const socialText = socials.map((s) => `${s.label}: ${s.url}`).join('\n');
+  const socialText = [
+    'Síguenos (por si te viene bien):',
+    ...socials.map((s) => `· ${s.label}: ${s.url}`),
+  ].join('\n');
   const socialHtml = socials
     .map(
       (s) =>
-        `<a href="${escapeAttr(s.url)}" style="color:#0284c7;text-decoration:none;margin:0 10px 0 0;font-weight:600;">${escapeHtml(s.label)}</a>`
+        `<a href="${escapeAttr(s.url)}" style="display:inline-block;margin:0 10px 8px 0;padding:8px 12px;border:1px solid #bae6fd;border-radius:8px;background:#f0f9ff;color:#0369a1;text-decoration:none;font-weight:700;font-size:13px;">${escapeHtml(s.label)}</a>`
     )
     .join('');
 
@@ -79,7 +82,6 @@ export function buildColdOutreachEmail(params: ColdEmailParams): {
     `Probar gratis ahora:`,
     signup,
     ``,
-    `También estamos en redes:`,
     socialText,
     ``,
     `Si no te interesa, baja aquí y no te escribiremos más:`,
@@ -120,7 +122,8 @@ export function buildColdOutreachEmail(params: ColdEmailParams): {
             <a href="${escapeAttr(signup)}" style="color:#0284c7;word-break:break-all;">${escapeHtml(signup)}</a></p>
         </td></tr>
         <tr><td style="padding:4px 28px 20px;font-size:14px;line-height:1.6;color:#475569;">
-          <p style="margin:0 0 8px;font-weight:700;color:#0f172a;">Síguenos</p>
+          <p style="margin:0 0 10px;font-weight:700;color:#0f172a;">Síguenos</p>
+          <p style="margin:0 0 8px;font-size:13px;color:#64748b;">Instagram, Facebook, X y YouTube — si te encaja, un follow nos ayuda.</p>
           <p style="margin:0;">${socialHtml}</p>
         </td></tr>
         <tr><td style="padding:0 28px 24px;font-size:14px;line-height:1.5;color:#64748b;">
