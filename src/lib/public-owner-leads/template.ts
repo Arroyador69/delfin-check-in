@@ -1,6 +1,7 @@
 /**
  * Plantilla cold B2B legal: email publicado en web del alojamiento.
- * Incluye origen, oferta prueba gratis + MIR, redes y link de baja.
+ * Anti-spam: tono profesional, info de valor primero, CTA prueba gratis después.
+ * Incluye origen, MIR/RD 933, redes y baja.
  */
 
 export interface ColdEmailParams {
@@ -49,12 +50,15 @@ export function buildColdOutreachEmail(params: ColdEmailParams): {
 } {
   const domainLabel = params.domain || 'tu alojamiento';
   const signup =
-    params.signupUrl || 'https://delfincheckin.com/parte-viajeros/#empezar';
+    params.signupUrl ||
+    process.env.OUTREACH_SIGNUP_URL?.trim() ||
+    'https://delfincheckin.com/parte-viajeros/#empezar';
   const sender = params.senderName || 'Alberto · Delfín Check-in';
   const year = new Date().getFullYear();
   const socials = getOutreachSocialLinks();
 
-  const subject = `Prueba gratis Delfín Check-in para ${domainLabel} (parte de viajeros MIR)`;
+  // Asunto sobrio (menos spam triggers); valor + cumplimiento
+  const subject = `${domainLabel}: parte de viajeros MIR con prueba gratis`;
 
   const socialText = socials.map((s) => `${s.label}: ${s.url}`).join('\n');
   const socialHtml = socials
@@ -67,63 +71,62 @@ export function buildColdOutreachEmail(params: ColdEmailParams): {
   const text = [
     `Hola,`,
     ``,
-    `Soy ${sender}. He visto el email de contacto publicado en ${params.sourceUrl} y te escribo solo por eso — primera toma de contacto B2B, sin listas compradas.`,
+    `Soy ${sender}. Te escribo porque el email de contacto de ${domainLabel} está publicado en ${params.sourceUrl} (contacto B2B a dato público; sin listas compradas ni OTAs).`,
     ``,
-    `En España el RD 933/2021 obliga a comunicar los datos de huéspedes (parte de viajeros / SES Hospedajes).`,
-    `Delfín Check-in te deja: enviar el formulario al huésped → ver OK / Error / Pendiente en el panel → cumplir el MIR sin pelearte con el portal a mano.`,
+    `Como sabes, en España el RD 933/2021 obliga a registrar viajeros y remitir el parte al MIR / SES Hospedajes. Delfín Check-in es software para alojamientos: el huésped completa el parte, tú lo revisas y lo envías al Ministerio desde el panel, con onboarding guiado.`,
     ``,
-    `Puedes probarlo GRATIS (1 propiedad): solo tu email, sin tarjeta. En ~2 minutos entras al onboarding.`,
+    `Puedes probarlo gratis (1 propiedad), solo con email y sin tarjeta. Si te encaja, después puedes pasar a un plan de pago; si no, te das de baja en un clic.`,
     ``,
-    `Registro directo prueba gratis:`,
+    `Información y registro de prueba gratis:`,
     signup,
     ``,
-    `También puedes vernos en redes:`,
+    `También estamos en redes:`,
     socialText,
     ``,
-    `Si no te interesa, date de baja en un clic y no te volveremos a escribir:`,
+    `Si no te interesa, baja aquí y no te escribiremos más:`,
     params.optOutUrl,
     ``,
     `También puedes responder “baja” o escribir a soporte@delfincheckin.com.`,
     ``,
-    `Gracias,`,
+    `Un saludo,`,
     sender,
     `https://delfincheckin.com`,
     ``,
-    `© ${year} Delfín Check-in · Email obtenido de web pública del negocio`,
+    `© ${year} Delfín Check-in · Origen: web pública del negocio`,
   ].join('\n');
 
   const html = `<!DOCTYPE html>
 <html lang="es">
 <head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/></head>
-<body style="margin:0;padding:0;background:#f5f5f5;font-family:Arial,Helvetica,sans-serif;color:#333;">
-  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#f5f5f5;">
+<body style="margin:0;padding:0;background:#f8fbff;font-family:Arial,Helvetica,sans-serif;color:#0f172a;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#f8fbff;">
     <tr><td align="center" style="padding:24px 12px;">
-      <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" style="width:100%;max-width:600px;background:#fff;border:1px solid #e5e7eb;border-radius:8px;">
-        <tr><td style="padding:28px 28px 8px;font-size:16px;line-height:1.55;">
+      <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" style="width:100%;max-width:600px;background:#fff;border:1px solid #e2e8f0;border-radius:10px;">
+        <tr><td style="padding:28px 28px 6px;font-size:16px;line-height:1.55;">
           <p style="margin:0 0 14px;">Hola,</p>
-          <p style="margin:0 0 14px;">Soy <strong>${escapeHtml(sender)}</strong>. He visto el email de contacto publicado en
+          <p style="margin:0 0 14px;">Soy <strong>${escapeHtml(sender)}</strong>. Te escribo porque el email de
+            <strong>${escapeHtml(domainLabel)}</strong> está publicado en
             <a href="${escapeAttr(params.sourceUrl)}" style="color:#0284c7;">${escapeHtml(params.sourceUrl)}</a>
-            y te escribo solo por eso (contacto B2B a email público; sin listas compradas ni scrape de OTAs).</p>
-          <p style="margin:0 0 14px;">En España el <strong>RD 933/2021</strong> obliga a comunicar los datos de huéspedes
-            (parte de viajeros / SES Hospedajes). Con <strong>Delfín Check-in</strong> envías el formulario al huésped,
-            ves <strong>OK / Error / Pendiente</strong> en el panel y cumples el MIR sin pelearte con el portal a mano.</p>
-          <p style="margin:0 0 14px;">Puedes <strong>probarlo gratis</strong> (1 propiedad): solo tu email, <strong>sin tarjeta</strong>.
-            En ~2 minutos entras al onboarding.</p>
+            (contacto B2B a dato público; sin listas compradas ni scrape de OTAs).</p>
+          <p style="margin:0 0 14px;">El <strong>RD 933/2021</strong> obliga a registrar viajeros y remitir el parte al
+            <strong>MIR / SES Hospedajes</strong>. Con <strong>Delfín Check-in</strong> el huésped completa el parte,
+            tú lo revisas y lo envías al Ministerio desde el panel, con onboarding guiado.</p>
+          <p style="margin:0 0 8px;">Puedes <strong>probarlo gratis</strong> (1 propiedad), solo con email y <strong>sin tarjeta</strong>.</p>
         </td></tr>
-        <tr><td align="center" style="padding:8px 28px 16px;">
-          <a href="${escapeAttr(signup)}" style="display:inline-block;background:#0ea5e9;color:#fff;text-decoration:none;font-weight:bold;padding:14px 26px;border-radius:8px;font-size:16px;">Registrarme gratis — sin tarjeta</a>
-          <p style="margin:12px 0 0;font-size:13px;color:#64748b;">Enlace directo al formulario de alta:<br/>
+        <tr><td align="center" style="padding:12px 28px 8px;">
+          <a href="${escapeAttr(signup)}" style="display:inline-block;background:#0284c7;color:#fff;text-decoration:none;font-weight:bold;padding:14px 26px;border-radius:8px;font-size:16px;">Registrarme gratis — sin tarjeta</a>
+          <p style="margin:12px 0 0;font-size:13px;color:#64748b;">Info + onboarding de prueba en el mismo enlace:<br/>
             <a href="${escapeAttr(signup)}" style="color:#0284c7;word-break:break-all;">${escapeHtml(signup)}</a></p>
         </td></tr>
-        <tr><td style="padding:4px 28px 20px;font-size:14px;line-height:1.6;color:#4b5563;">
+        <tr><td style="padding:4px 28px 20px;font-size:14px;line-height:1.6;color:#475569;">
           <p style="margin:0 0 8px;font-weight:700;color:#0f172a;">Síguenos</p>
           <p style="margin:0;">${socialHtml}</p>
         </td></tr>
-        <tr><td style="padding:0 28px 24px;font-size:14px;line-height:1.5;color:#4b5563;">
-          <p style="margin:0 0 10px;">Si no te interesa, <a href="${escapeAttr(params.optOutUrl)}" style="color:#0284c7;">darte de baja en un clic</a>
+        <tr><td style="padding:0 28px 24px;font-size:14px;line-height:1.5;color:#64748b;">
+          <p style="margin:0 0 10px;">Si no te interesa, <a href="${escapeAttr(params.optOutUrl)}" style="color:#0284c7;">date de baja en un clic</a>
             y no te volveremos a escribir. También puedes responder “baja” o escribir a
             <a href="mailto:soporte@delfincheckin.com">soporte@delfincheckin.com</a>.</p>
-          <p style="margin:0;font-size:12px;color:#9ca3af;">© ${year} Delfín Check-in · Origen: web pública del negocio (${escapeHtml(domainLabel)})</p>
+          <p style="margin:0;font-size:12px;color:#94a3b8;">© ${year} Delfín Check-in · Origen: web pública (${escapeHtml(domainLabel)})</p>
         </td></tr>
       </table>
     </td></tr>
