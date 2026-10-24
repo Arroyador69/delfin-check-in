@@ -315,6 +315,17 @@ export default function SuperAdminDashboard() {
               </a>
 
               <a 
+                href="/superadmin/public-owner-leads"
+                className="flex items-center p-4 border border-teal-200 rounded-lg hover:bg-teal-50 transition"
+              >
+                <span className="text-2xl mr-3">🎯</span>
+                <div>
+                  <p className="font-semibold text-gray-900">Captación propietarios</p>
+                  <p className="text-sm text-gray-700">50/día · opens, clicks y altas</p>
+                </div>
+              </a>
+
+              <a 
                 href="/superadmin/waitlist"
                 className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition"
               >

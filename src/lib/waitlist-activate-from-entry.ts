@@ -18,6 +18,7 @@ import {
   onboardingTokenExpiry,
 } from '@/lib/onboarding-magic-link';
 import { maybeEnrollNewTenantInLifecycle } from '@/lib/email-sequences/engine';
+import { markPublicOwnerLeadSignedUp } from '@/lib/public-owner-leads/attribution';
 
 export type WaitlistEntryForActivate = {
   id: string;
@@ -55,6 +56,7 @@ export async function activateWaitlistEntryFromRow(
 
   if (existingTenant.rows.length > 0) {
     tenantId = existingTenant.rows[0].id;
+    void markPublicOwnerLeadSignedUp({ email: waitlistEntry.email, tenantId });
 
     await sql`
       UPDATE waitlist
@@ -196,6 +198,7 @@ export async function activateWaitlistEntryFromRow(
   tenantId = tenantResult.rows[0].id;
 
   void maybeEnrollNewTenantInLifecycle(String(tenantId));
+  void markPublicOwnerLeadSignedUp({ email: waitlistEntry.email, tenantId: String(tenantId) });
 
   const tempPassword = crypto.randomBytes(12).toString('base64').slice(0, 16);
   const passwordHash = await hash(tempPassword, 12);

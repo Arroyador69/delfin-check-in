@@ -74,6 +74,7 @@
     {"path":"/api/cron/sync-calendars","schedule":"*/15 * * * *"},
     {"path":"/api/cron/google-review-reminders","schedule":"30 9 * * *"},
     {"path":"/api/cron/email-sequences","schedule":"30 9 * * *"},
-    {"path":"/api/cron/sync-zoho-bounces","schedule":"0 8 * * *"}
+    {"path":"/api/cron/sync-zoho-bounces","schedule":"0 6 * * *"},
+    {"path":"/api/cron/public-owner-leads","schedule":"0 7 * * *"}
   ]
 }

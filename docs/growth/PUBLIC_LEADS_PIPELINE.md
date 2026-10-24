@@ -30,7 +30,7 @@ El CLI rechaza estos hosts en código (`scripts/public-owner-leads/lib/blocked-h
 
 | Límite | Valor |
 |--------|--------|
-| Envíos fríos/día | **20–40 máx.** (default CLI: 25) |
+| Envíos fríos/día | **50** (norma interna captación ES; hard cap 50) |
 | Personalización | Mencionar dominio / nombre del alojamiento visto en la web |
 | Cadencia | 1 email inicial; follow-up solo si no hay respuesta y no hay opt-out (máx. 1–2) |
 | Rate limit scrape | ≥1–2 s entre requests; User-Agent identificable |
@@ -54,12 +54,15 @@ npx tsx scripts/public-owner-leads/cli.ts extract --input scripts/public-owner-l
 # 2) Ver cola
 npx tsx scripts/public-owner-leads/cli.ts status
 
-# 3) Preparar cola del día (máx. 25)
-npx tsx scripts/public-owner-leads/cli.ts queue --limit 25
+# 3) Preparar cola del día (máx. 50)
+npx tsx scripts/public-owner-leads/cli.ts queue --limit 50
 
 # 4) Vista previa / envío
-npx tsx scripts/public-owner-leads/cli.ts send --dry-run --limit 25
-npx tsx scripts/public-owner-leads/cli.ts send --limit 25   # requiere SMTP_*
+npx tsx scripts/public-owner-leads/cli.ts send --dry-run --limit 50
+npx tsx scripts/public-owner-leads/cli.ts send --limit 50   # requiere SMTP_*
+
+# Producción: cron 0 7 * * * → /api/cron/public-owner-leads (~09:00 Madrid CEST)
+# Panel: https://admin.delfincheckin.com/superadmin/public-owner-leads
 
 # 5) Opt-out manual (también hay link en el email)
 npx tsx scripts/public-owner-leads/cli.ts optout --email dueño@ejemplo.com

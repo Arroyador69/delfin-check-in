@@ -28,8 +28,8 @@ import {
 } from './lib/store';
 import { buildColdOutreachEmail } from './lib/template';
 
-const DEFAULT_DAILY = 25;
-const MAX_DAILY = 40;
+const DEFAULT_DAILY = 50;
+const MAX_DAILY = 50;
 const MIN_DELAY_MS = 1500;
 
 function loadEnvFiles(): void {

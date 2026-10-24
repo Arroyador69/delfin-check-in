@@ -61,7 +61,7 @@ export function buildColdOutreachEmail(params: ColdEmailParams): {
             <strong>onboarding MIR</strong>. Puedes empezar con <strong>prueba gratis</strong> (1 propiedad).</p>
         </td></tr>
         <tr><td align="center" style="padding:8px 28px 20px;">
-          <a href="${escapeAttr(signup)}" style="display:inline-block;background:#2563eb;color:#fff;text-decoration:none;font-weight:bold;padding:12px 22px;border-radius:6px;">Ver prueba gratis</a>
+          <a href="${escapeAttr(signup)}" style="display:inline-block;background:#0d9488;color:#fff;text-decoration:none;font-weight:bold;padding:12px 22px;border-radius:6px;">Probar gratis ahora</a>
         </td></tr>
         <tr><td style="padding:0 28px 24px;font-size:14px;line-height:1.5;color:#4b5563;">
           <p style="margin:0 0 10px;">Si no te interesa, <a href="${escapeAttr(params.optOutUrl)}" style="color:#2563eb;">darte de baja en un clic</a>
