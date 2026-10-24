@@ -164,6 +164,17 @@ export async function suspendTenantServices(tenantId: string, invoice: Stripe.In
   `;
   const tenant = tenantResult.rows[0];
 
+  try {
+    const { suppressTenantOwnerIfInactive } = await import('@/lib/email-suppression');
+    await suppressTenantOwnerIfInactive({
+      email: tenant?.email,
+      status: 'suspended',
+      source: 'tenant_status',
+    });
+  } catch (e) {
+    console.warn('suppressTenantOwnerIfInactive en suspensión:', e);
+  }
+
   // Enviar email de suspensión
   await sendSuspensionNotification(tenant, invoice);
   

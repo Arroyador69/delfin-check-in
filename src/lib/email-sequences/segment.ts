@@ -20,15 +20,13 @@ export interface TenantLifecycleState {
   is_unsubscribed: boolean;
 }
 
+/**
+ * Baja lifecycle / suppression global (bounce, unsubscribe, tenant inactivo, etc.).
+ * Delega en isEmailSuppressed para una sola fuente de verdad.
+ */
 export async function isEmailUnsubscribed(email: string): Promise<boolean> {
-  const normalized = email.trim().toLowerCase();
-  const r = await sql`
-    SELECT 1 FROM email_unsubscribes
-    WHERE LOWER(email) = ${normalized}
-      AND scope IN ('all', 'lifecycle')
-    LIMIT 1
-  `;
-  return r.rows.length > 0;
+  const { isEmailSuppressed } = await import('@/lib/email-suppression');
+  return isEmailSuppressed(email);
 }
 
 export async function getTenantPropertiesCount(tenantId: string): Promise<number> {

@@ -66,6 +66,9 @@ export async function ensureEmailSequenceSchema(): Promise<boolean> {
         UNIQUE(email, scope)
       )
     `;
+    // Suppression ampliada: bounce | unsubscribe | tenant_inactive | manual + source
+    await sql`ALTER TABLE email_unsubscribes ADD COLUMN IF NOT EXISTS source VARCHAR(80)`;
+    await sql`ALTER TABLE email_unsubscribes ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW()`;
     schemaReady = true;
     return true;
   } catch (e) {

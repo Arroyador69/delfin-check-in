@@ -754,6 +754,17 @@ export async function POST(req: NextRequest) {
                     status = 'cancelled'
                 WHERE id = ${tenant.id}
               `
+
+              try {
+                const { suppressTenantOwnerIfInactive } = await import('@/lib/email-suppression');
+                await suppressTenantOwnerIfInactive({
+                  email: tenant.email,
+                  status: 'cancelled',
+                  source: 'tenant_status',
+                });
+              } catch (supErr) {
+                console.warn('⚠️ Suppression owner en cancelación Stripe:', supErr);
+              }
               
               // Manejar referidos
               try {

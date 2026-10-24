@@ -15,6 +15,11 @@ interface EmailConfig {
   subject: string;
   html: string;
   text?: string;
+  /**
+   * Si true, no consulta la lista de suppression (p. ej. recovery password).
+   * Por defecto false: marketing/onboarding/broadcasts respetan suppression.
+   */
+  skipSuppression?: boolean;
 }
 
 interface RecoveryEmailData {
@@ -84,6 +89,14 @@ async function getZohoAccessToken(): Promise<string | null> {
  */
 export async function sendEmail(config: EmailConfig): Promise<{ success: boolean; messageId?: string; error?: string }> {
   try {
+    if (!config.skipSuppression) {
+      const { isEmailSuppressed } = await import('@/lib/email-suppression');
+      if (await isEmailSuppressed(config.to)) {
+        console.warn('📧 Email suppressed, no enviar:', { to: config.to });
+        return { success: false, error: 'email_suppressed' };
+      }
+    }
+
     // Usar 'from' del config si viene, si no usar la configuración SMTP/Zoho
     const fromEmail = config.from || SMTP_CONFIG.from || ZOHO_CONFIG.fromEmail;
     
@@ -157,6 +170,12 @@ export async function sendEmail(config: EmailConfig): Promise<{ success: boolean
         };
       } catch (smtpError: any) {
         console.log('⚠️ Error con SMTP:', smtpError.message || smtpError);
+        try {
+          const { maybeSuppressOnSmtpBounce } = await import('@/lib/email-suppression');
+          await maybeSuppressOnSmtpBounce(config.to, smtpError);
+        } catch {
+          // ignore
+        }
         // Continuar con otros métodos si SMTP falla
       }
     }
@@ -416,12 +435,14 @@ Saludos,
 Equipo de ${data.tenantName}
   `.trim();
 
+  // Recovery es transaccional crítico: puede saltarse suppression
   return await sendEmail({
     from: ZOHO_CONFIG.fromEmail,
     to: data.to,
     subject: subject,
     html: html,
-    text: textVersion
+    text: textVersion,
+    skipSuppression: true,
   });
 }
 
