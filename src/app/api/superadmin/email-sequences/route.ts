@@ -11,6 +11,7 @@ import { seedEmailSequences } from '@/lib/email-sequences/schema';
 import {
   MIR_CREDENTIALS_VIDEO_URL,
   ONBOARDING_VIDEO_URL,
+  SEQUENCE_KEY_OWNER_TRIAL_MIR,
   SEQUENCE_KEY_PHASE_1,
   SEQUENCE_KEY_PHASE_2,
 } from '@/lib/email-sequences/constants';
@@ -114,8 +115,15 @@ export async function GET(req: NextRequest) {
         'Solo avanza al siguiente mail si abrió el actual (+1 día). Sin apertura: reintento del mismo mail a los 4 días.',
     },
     sequences: [
-      { key: SEQUENCE_KEY_PHASE_1, phase: 1, steps: 7 },
-      { key: SEQUENCE_KEY_PHASE_2, phase: 2, steps: 4 },
+      {
+        key: SEQUENCE_KEY_OWNER_TRIAL_MIR,
+        phase: 1,
+        steps: 5,
+        mode: 'calendar_drip',
+        schedule: 'D0, D1, D3, D5, D7',
+      },
+      { key: SEQUENCE_KEY_PHASE_1, phase: 1, steps: 7, mode: 'engagement' },
+      { key: SEQUENCE_KEY_PHASE_2, phase: 2, steps: 4, mode: 'engagement' },
     ],
   });
 }

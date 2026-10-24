@@ -4,6 +4,7 @@ import {
   MIR_CREDENTIALS_VIDEO_URL,
   ONBOARDING_VIDEO_ID,
   ONBOARDING_VIDEO_URL,
+  SEQUENCE_KEY_OWNER_TRIAL_MIR,
   SEQUENCE_KEY_PHASE_1,
   SEQUENCE_KEY_PHASE_2,
 } from '@/lib/email-sequences/constants';
@@ -103,6 +104,19 @@ const PHASE_2_STEPS: StepSeed[] = [
   { step_order: 3, template_key: 'p2_questions', delay_days: 7 },
 ];
 
+const OWNER_TRIAL_MIR_STEPS: StepSeed[] = [
+  { step_order: 0, template_key: 'trial_d0_welcome', delay_days: 0 },
+  { step_order: 1, template_key: 'trial_d1_checklist', delay_days: 1 },
+  {
+    step_order: 2,
+    template_key: 'trial_d3_reminder',
+    delay_days: 2,
+    condition_json: { onboarding_status_in: ['in_progress', 'pending'] },
+  },
+  { step_order: 3, template_key: 'trial_d5_tap_wall', delay_days: 2 },
+  { step_order: 4, template_key: 'trial_d7_arrival_ok', delay_days: 2 },
+];
+
 async function upsertSequence(
   key: string,
   name: string,
@@ -171,6 +185,14 @@ export async function seedEmailSequences(): Promise<void> {
     2,
     'plan de pago activo (checkin, standard o pro)',
     PHASE_2_STEPS
+  );
+  await upsertSequence(
+    SEQUENCE_KEY_OWNER_TRIAL_MIR,
+    'Prueba gratis — Onboarding MIR (D0–D7)',
+    'Secuencia post-signup / prueba gratis: configurar Check-in (MIR) y formulario huésped en ~15 min. Tap Wall solo como add-on opcional (día 5). Solo opt-in/signup.',
+    1,
+    'secuencia enviada hasta D7 (o baja); día 3 solo si onboarding incompleto',
+    OWNER_TRIAL_MIR_STEPS
   );
 }
 
