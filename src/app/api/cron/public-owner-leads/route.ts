@@ -39,11 +39,13 @@ export async function GET(req: NextRequest) {
     const engagement = await syncOutreachEngagementFromTracking();
     const outreach = await runDailyPublicOwnerLeads({
       dryRun,
+      wave: 'morning',
       maxSend: Number.isFinite(max) ? max : 50,
     });
 
     return NextResponse.json({
       success: true,
+      wave: 'morning',
       dryRun,
       zoho,
       tenants,

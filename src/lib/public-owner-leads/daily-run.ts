@@ -6,10 +6,12 @@
 import { sql } from '@/lib/db';
 import { isEmailSuppressed } from '@/lib/email-suppression';
 import {
+  PUBLIC_OWNER_LEADS_AFTERNOON_MAX,
   PUBLIC_OWNER_LEADS_DAILY_HARD_CAP,
   PUBLIC_OWNER_LEADS_DAILY_TARGET,
   PUBLIC_OWNER_LEADS_EXTRACT_PER_RUN,
   PUBLIC_OWNER_LEADS_MIN_DELAY_MS,
+  PUBLIC_OWNER_SIGNUPS_DAILY_GOAL,
 } from './constants';
 import { extractPublicEmailsFromUrl, isBlockedOutreachHost, normalizeUrl } from './extract-web';
 import { ensureSpainVacationSourceQueue } from './ensure-source-queue';
@@ -17,12 +19,17 @@ import { sendTrackedOutreachLead } from './send-tracked';
 import { sleep } from './fetch-html';
 import { hostSuggestsNonVacation } from './spain-vacation-filter';
 
+export type OutreachWave = 'morning' | 'afternoon';
+
 export type DailyOutreachResult = {
   table_ready: boolean;
   dryRun: boolean;
+  wave: OutreachWave;
   dailyTarget: number;
   sentTodayBefore: number;
+  signupsTodayBefore: number;
   budget: number;
+  skippedBecauseGoalMet?: boolean;
   sourcesProcessed: number;
   leadsDiscovered: number;
   queued: number;
@@ -50,6 +57,16 @@ async function countSentToday(): Promise<number> {
     WHERE status = 'sent'
       AND sent_at >= date_trunc('day', NOW() AT TIME ZONE 'Europe/Madrid')
         AT TIME ZONE 'Europe/Madrid'
+  `;
+  return Number(r.rows[0]?.n || 0);
+}
+
+async function countSignupsToday(): Promise<number> {
+  const r = await sql`
+    SELECT COUNT(*)::int AS n
+    FROM public_owner_leads
+    WHERE signed_up_at >= date_trunc('day', NOW() AT TIME ZONE 'Europe/Madrid')
+      AT TIME ZONE 'Europe/Madrid'
   `;
   return Number(r.rows[0]?.n || 0);
 }
@@ -170,8 +187,11 @@ export async function runDailyPublicOwnerLeads(opts?: {
   dryRun?: boolean;
   maxSend?: number;
   extractLimit?: number;
+  /** morning = ~09:00; afternoon = ~15:00 solo si altas < meta 20 */
+  wave?: OutreachWave;
 }): Promise<DailyOutreachResult> {
   const dryRun = Boolean(opts?.dryRun);
+  const wave: OutreachWave = opts?.wave === 'afternoon' ? 'afternoon' : 'morning';
   const cap = dailyCap();
   const errors: string[] = [];
 
@@ -180,8 +200,10 @@ export async function runDailyPublicOwnerLeads(opts?: {
     return {
       table_ready: false,
       dryRun,
+      wave,
       dailyTarget: cap,
       sentTodayBefore: 0,
+      signupsTodayBefore: 0,
       budget: 0,
       sourcesProcessed: 0,
       leadsDiscovered: 0,
@@ -194,10 +216,33 @@ export async function runDailyPublicOwnerLeads(opts?: {
   }
 
   const sentTodayBefore = await countSentToday();
-  const budget = Math.max(
-    0,
-    Math.min(cap - sentTodayBefore, opts?.maxSend ?? PUBLIC_OWNER_LEADS_DAILY_TARGET)
-  );
+  const signupsTodayBefore = await countSignupsToday();
+
+  // Tarde: solo si aún no llegamos a 20 altas; nunca reenvía (solo status queued/new)
+  if (wave === 'afternoon' && signupsTodayBefore >= PUBLIC_OWNER_SIGNUPS_DAILY_GOAL) {
+    return {
+      table_ready: true,
+      dryRun,
+      wave,
+      dailyTarget: cap,
+      sentTodayBefore,
+      signupsTodayBefore,
+      budget: 0,
+      skippedBecauseGoalMet: true,
+      sourcesProcessed: 0,
+      leadsDiscovered: 0,
+      queued: 0,
+      sent: 0,
+      failed: 0,
+      skippedSuppressed: 0,
+      errors: [],
+    };
+  }
+
+  const waveMax =
+    opts?.maxSend ??
+    (wave === 'afternoon' ? PUBLIC_OWNER_LEADS_AFTERNOON_MAX : PUBLIC_OWNER_LEADS_DAILY_TARGET);
+  const budget = Math.max(0, Math.min(cap - sentTodayBefore, waveMax));
 
   // Autonomía: rellena cola ES vacacional si pending bajo (sin pegar URLs a mano)
   if (!dryRun) {
@@ -279,8 +324,10 @@ export async function runDailyPublicOwnerLeads(opts?: {
   return {
     table_ready: true,
     dryRun,
+    wave,
     dailyTarget: cap,
     sentTodayBefore,
+    signupsTodayBefore,
     budget,
     sourcesProcessed: extract.processed,
     leadsDiscovered: extract.discovered,

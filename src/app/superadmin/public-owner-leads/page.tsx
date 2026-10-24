@@ -179,14 +179,10 @@ export default function PublicOwnerLeadsAdminPage() {
               Captación propietarios
             </h1>
             <p className="mt-1 text-slate-600 max-w-2xl text-[15px] leading-relaxed">
-              Solo <strong className="text-slate-900">España</strong> · solo{' '}
-              <strong className="text-slate-900">alquiler vacacional / rural / turístico</strong> · meta{' '}
-              <strong className="text-slate-900">{SIGNUP_DAILY_GOAL} altas / día</strong> (tope{' '}
-              <strong className="text-slate-900">{dailyTarget} mails</strong>). El cron rellena webs solo; CTA 1
-              clic → tenant gratis + onboarding (plan Check-in 2€/mes opcional). Playbook:{' '}
-              <code className="text-xs bg-slate-100 px-1.5 py-0.5 rounded">
-                docs/growth/EJECUCION_CAPTACION_20_PROPIETARIOS_DIA.md
-              </code>
+              Solo <strong className="text-slate-900">España</strong> · solo vacacional · meta{' '}
+              <strong className="text-slate-900">{SIGNUP_DAILY_GOAL} altas / día</strong>. Mails mañana + tarde
+              (si faltan altas) · Telegram 11:00 y 19:00 · <strong>nunca el mismo email 2 veces</strong>.
+              Normas copy: <code className="text-xs bg-slate-100 px-1.5 py-0.5 rounded">docs/COMUNICACION_CLIENTES.md</code>
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
