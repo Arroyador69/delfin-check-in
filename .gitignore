@@ -199,3 +199,6 @@ $RECYCLE.BIN/
 *~
 .nfs*
 tools/__pycache__/
+
+# local landing clone
+external/

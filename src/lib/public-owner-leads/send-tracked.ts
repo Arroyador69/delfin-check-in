@@ -2,6 +2,7 @@ import { sql } from '@/lib/db';
 import { sendOutreachMail } from './send-smtp';
 import { buildColdOutreachEmail } from './template';
 import { buildOutreachOptOutUrl } from './optout';
+import { buildOutreachActivateUrl } from './activate-link';
 import {
   PUBLIC_OWNER_LEADS_CAMPAIGN,
   PUBLIC_OWNER_LEADS_EMAIL_TYPE,
@@ -19,7 +20,15 @@ function wrapClick(trackingId: string, url: string): string {
   return `${base}/api/track/email-click?tid=${encodeURIComponent(trackingId)}&url=${encodeURIComponent(url)}`;
 }
 
-function signupUrlWithUtm(leadEmail?: string): string {
+/**
+ * CTA principal: 1 clic → crea tenant FREE + email onboarding (enlace firmado).
+ * Fallback landing #empezar con email prefijado si OUTREACH_ONE_CLICK=0.
+ */
+function signupUrlForLead(leadEmail: string): string {
+  const oneClick = String(process.env.OUTREACH_ONE_CLICK || '1').trim() !== '0';
+  if (oneClick && leadEmail.includes('@')) {
+    return buildOutreachActivateUrl(leadEmail);
+  }
   const raw = String(
     process.env.OUTREACH_SIGNUP_URL || 'https://delfincheckin.com/parte-viajeros/#empezar'
   ).trim();
@@ -31,8 +40,7 @@ function signupUrlWithUtm(leadEmail?: string): string {
   u.searchParams.set('utm_campaign', PUBLIC_OWNER_LEADS_CAMPAIGN);
   u.searchParams.set('utm_content', 'free_trial');
   u.searchParams.set('ref', 'owner_outreach');
-  // Prefill en landing #empezar → un clic "Crear cuenta" crea tenant + mail onboarding
-  if (leadEmail && leadEmail.includes('@')) {
+  if (leadEmail.includes('@')) {
     u.searchParams.set('email', leadEmail.trim().toLowerCase());
   }
   u.hash = hash || 'empezar';
@@ -47,7 +55,7 @@ export async function sendTrackedOutreachLead(lead: {
 }): Promise<{ ok: boolean; trackingId?: string; error?: string }> {
   const email = lead.email.trim().toLowerCase();
   const optOutUrl = buildOutreachOptOutUrl(email, 'es');
-  const signupRaw = signupUrlWithUtm(email);
+  const signupRaw = signupUrlForLead(email);
 
   let trackingId = '';
   try {

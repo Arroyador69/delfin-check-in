@@ -179,17 +179,11 @@ export default function PublicOwnerLeadsAdminPage() {
               Captación propietarios
             </h1>
             <p className="mt-1 text-slate-600 max-w-2xl text-[15px] leading-relaxed">
-              Meta <strong className="text-slate-900">{SIGNUP_DAILY_GOAL} altas nuevas / día</strong> · soporte
-              outreach <strong className="text-slate-900">{dailyTarget} emails</strong> · destino landing{' '}
-              <a
-                className="text-sky-700 font-medium underline-offset-2 hover:underline"
-                href="https://delfincheckin.com/parte-viajeros/"
-                target="_blank"
-                rel="noreferrer"
-              >
-                /parte-viajeros/
-              </a>
-              . Playbook:{' '}
+              Solo <strong className="text-slate-900">España</strong> · solo{' '}
+              <strong className="text-slate-900">alquiler vacacional / rural / turístico</strong> · meta{' '}
+              <strong className="text-slate-900">{SIGNUP_DAILY_GOAL} altas / día</strong> (tope{' '}
+              <strong className="text-slate-900">{dailyTarget} mails</strong>). El cron rellena webs solo; CTA 1
+              clic → tenant gratis + onboarding (plan Check-in 2€/mes opcional). Playbook:{' '}
               <code className="text-xs bg-slate-100 px-1.5 py-0.5 rounded">
                 docs/growth/EJECUCION_CAPTACION_20_PROPIETARIOS_DIA.md
               </code>
@@ -343,10 +337,10 @@ export default function PublicOwnerLeadsAdminPage() {
             <section className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm space-y-3">
               <div className="flex flex-wrap justify-between gap-2 items-end">
                 <div>
-                  <h2 className="font-semibold text-slate-900">Cola de webs (España)</h2>
+                  <h2 className="font-semibold text-slate-900">Cola de webs (opcional)</h2>
                   <p className="text-sm text-slate-600 mt-0.5">
-                    Una URL por línea · solo web propia · pending {sourcesSummary.pending ?? 0} · done{' '}
-                    {sourcesSummary.done ?? 0}
+                    El cron ya siembra y descubre alojamientos ES solo. Puedes añadir URLs a mano si quieres ·
+                    pending {sourcesSummary.pending ?? 0} · done {sourcesSummary.done ?? 0}
                   </p>
                 </div>
               </div>

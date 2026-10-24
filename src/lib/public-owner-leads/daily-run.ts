@@ -12,8 +12,10 @@ import {
   PUBLIC_OWNER_LEADS_MIN_DELAY_MS,
 } from './constants';
 import { extractPublicEmailsFromUrl, isBlockedOutreachHost, normalizeUrl } from './extract-web';
+import { ensureSpainVacationSourceQueue } from './ensure-source-queue';
 import { sendTrackedOutreachLead } from './send-tracked';
 import { sleep } from './fetch-html';
+import { hostSuggestsNonVacation } from './spain-vacation-filter';
 
 export type DailyOutreachResult = {
   table_ready: boolean;
@@ -197,6 +199,18 @@ export async function runDailyPublicOwnerLeads(opts?: {
     Math.min(cap - sentTodayBefore, opts?.maxSend ?? PUBLIC_OWNER_LEADS_DAILY_TARGET)
   );
 
+  // Autonomía: rellena cola ES vacacional si pending bajo (sin pegar URLs a mano)
+  if (!dryRun) {
+    try {
+      const seeded = await ensureSpainVacationSourceQueue();
+      if (seeded.inserted > 0) {
+        errors.push(`seed:+${seeded.inserted} (pending era ${seeded.pendingBefore})`);
+      }
+    } catch (e) {
+      errors.push(`seed:${e instanceof Error ? e.message : String(e)}`);
+    }
+  }
+
   const extract = await processPendingSources(
     opts?.extractLimit ?? PUBLIC_OWNER_LEADS_EXTRACT_PER_RUN,
     dryRun
@@ -235,11 +249,13 @@ export async function runDailyPublicOwnerLeads(opts?: {
         /* si no hay tabla suppression, seguir */
       }
 
-      if (isBlockedOutreachHost(String(row.source_url || row.domain || ''))) {
+      const src = String(row.source_url || row.domain || '');
+      if (isBlockedOutreachHost(src) || hostSuggestsNonVacation(src)) {
         failed++;
         await sql`
           UPDATE public_owner_leads
-          SET status = 'skipped', updated_at = NOW(), notes = COALESCE(notes, '') || ' | blocked-host'
+          SET status = 'skipped', updated_at = NOW(),
+              notes = COALESCE(notes, '') || ' | blocked-non-vacation-es'
           WHERE id = ${row.id}::uuid
         `;
         continue;
