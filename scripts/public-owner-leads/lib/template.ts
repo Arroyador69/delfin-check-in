@@ -1,7 +1,7 @@
 /**
  * Plantilla cold B2B legal: email publicado en web del alojamiento.
- * Anti-spam: tono profesional, info de valor primero, CTA prueba gratis después.
- * Incluye origen, MIR/RD 933, redes y baja.
+ * Norma clientes: cero jerga técnica — ver docs/COMUNICACION_CLIENTES.md
+ * Mantener en sync con scripts/public-owner-leads/lib/template.ts
  */
 
 export interface ColdEmailParams {
@@ -57,8 +57,7 @@ export function buildColdOutreachEmail(params: ColdEmailParams): {
   const year = new Date().getFullYear();
   const socials = getOutreachSocialLinks();
 
-  // Asunto sobrio (menos spam triggers); valor + cumplimiento
-  const subject = `${domainLabel}: parte de viajeros MIR con prueba gratis`;
+  const subject = `${domainLabel}: parte de viajeros MIR — pruébalo gratis`;
 
   const socialText = socials.map((s) => `${s.label}: ${s.url}`).join('\n');
   const socialHtml = socials
@@ -71,13 +70,13 @@ export function buildColdOutreachEmail(params: ColdEmailParams): {
   const text = [
     `Hola,`,
     ``,
-    `Soy ${sender}. Te escribo porque el email de contacto de ${domainLabel} está publicado en ${params.sourceUrl} (contacto B2B a dato público; sin listas compradas ni OTAs).`,
+    `Soy ${sender}. Te escribo porque el email de contacto de ${domainLabel} está publicado en ${params.sourceUrl} (contacto a email público de tu web; sin listas compradas).`,
     ``,
-    `Como sabes, en España el RD 933/2021 obliga a registrar viajeros y remitir el parte al MIR / SES Hospedajes. Delfín Check-in es software para alojamientos: el huésped completa el parte, tú lo revisas y lo envías al Ministerio desde el panel, con onboarding guiado.`,
+    `En España el RD 933/2021 obliga a registrar a los viajeros y enviar el parte al MIR / SES Hospedajes. Con Delfín Check-in el huésped rellena el parte, tú lo revisas y lo envías al Ministerio — fácil, también desde el móvil.`,
     ``,
-    `Puedes probarlo GRATIS (1 propiedad), sin tarjeta: un solo clic en el botón crea tu cuenta y te enviamos el onboarding al móvil/email. Si más adelante te encaja, Check-in desde 2€/mes; si no, sigues en gratis o te das de baja.`,
+    `Puedes probarlo gratis (1 propiedad), sin tarjeta. Un clic y en un minutito estás registrado: te llega el correo para entrar y empezar. Si más adelante te encaja, desde 2€/mes; si no, te quedas en gratis o te das de baja.`,
     ``,
-    `Probar gratis (1 clic — crea tu cuenta):`,
+    `Probar gratis ahora:`,
     signup,
     ``,
     `También estamos en redes:`,
@@ -107,17 +106,17 @@ export function buildColdOutreachEmail(params: ColdEmailParams): {
           <p style="margin:0 0 14px;">Soy <strong>${escapeHtml(sender)}</strong>. Te escribo porque el email de
             <strong>${escapeHtml(domainLabel)}</strong> está publicado en
             <a href="${escapeAttr(params.sourceUrl)}" style="color:#0284c7;">${escapeHtml(params.sourceUrl)}</a>
-            (contacto B2B a dato público; sin listas compradas ni scrape de OTAs).</p>
-          <p style="margin:0 0 14px;">El <strong>RD 933/2021</strong> obliga a registrar viajeros y remitir el parte al
-            <strong>MIR / SES Hospedajes</strong>. Con <strong>Delfín Check-in</strong> el huésped completa el parte,
-            tú lo revisas y lo envías al Ministerio desde el panel, con onboarding guiado.</p>
-          <p style="margin:0 0 8px;">Puedes <strong>probarlo gratis</strong> (1 propiedad), <strong>sin tarjeta</strong>:
-            un clic crea tu cuenta y te llega el onboarding al móvil. Si quieres más adelante,
-            Check-in desde <strong>2€/mes</strong>; si no, puedes quedarte en el plan gratis.</p>
+            (contacto a email público de tu web; sin listas compradas).</p>
+          <p style="margin:0 0 14px;">El <strong>RD 933/2021</strong> obliga a registrar viajeros y enviar el parte al
+            <strong>MIR / SES Hospedajes</strong>. Con <strong>Delfín Check-in</strong> el huésped rellena el parte,
+            tú lo revisas y lo envías al Ministerio — fácil, también desde el móvil.</p>
+          <p style="margin:0 0 8px;">Puedes <strong>probarlo gratis</strong> (1 propiedad), <strong>sin tarjeta</strong>.
+            Un clic y <strong>en un minutito estás registrado</strong>: te llega el correo para entrar.
+            Si más adelante te encaja, desde <strong>2€/mes</strong>; si no, puedes quedarte en gratis.</p>
         </td></tr>
         <tr><td align="center" style="padding:12px 28px 8px;">
-          <a href="${escapeAttr(signup)}" style="display:inline-block;background:#0284c7;color:#fff;text-decoration:none;font-weight:bold;padding:14px 26px;border-radius:8px;font-size:16px;">Probar gratis en 1 clic — sin tarjeta</a>
-          <p style="margin:12px 0 0;font-size:13px;color:#64748b;">Enlace directo (móvil u ordenador): crea la cuenta y envía el onboarding.<br/>
+          <a href="${escapeAttr(signup)}" style="display:inline-block;background:#0284c7;color:#fff;text-decoration:none;font-weight:bold;padding:14px 26px;border-radius:8px;font-size:16px;">Probar gratis ahora</a>
+          <p style="margin:12px 0 0;font-size:13px;color:#64748b;">En un minutito estás dentro (móvil u ordenador).<br/>
             <a href="${escapeAttr(signup)}" style="color:#0284c7;word-break:break-all;">${escapeHtml(signup)}</a></p>
         </td></tr>
         <tr><td style="padding:4px 28px 20px;font-size:14px;line-height:1.6;color:#475569;">

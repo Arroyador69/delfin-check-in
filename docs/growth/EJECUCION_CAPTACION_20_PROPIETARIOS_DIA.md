@@ -55,7 +55,9 @@ SELECT COUNT(*) FROM public_owner_leads;
 | Clicks CTA | ≥ 3–8 % | Link trackeado |
 | **Altas nuevas** | **≥ 20** | Landing + Polar + waitlist; no solo cold |
 
-Si `signed_up_today < 20`: subir URLs, mejorar copy landing, activar directorios/SEO, referidos, o ads — no subir el cap de 50 fríos (quema dominio).
+Si a las **15:00** `signed_up_today < 20`: el cron de tarde envía otra oleada (emails **nunca contactados**; tope día 80).  
+**Nunca** reenviar al mismo email. Copy siempre sencillo: ver `docs/COMUNICACION_CLIENTES.md`.  
+Telegram: **11:00** y **19:00** Madrid.
 
 Panel: `https://admin.delfincheckin.com/superadmin/public-owner-leads`
 

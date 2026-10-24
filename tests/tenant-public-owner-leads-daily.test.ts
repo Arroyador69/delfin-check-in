@@ -8,9 +8,9 @@ import { isBlockedOutreachHost } from '../src/lib/public-owner-leads/blocked-hos
 import { buildColdOutreachEmail } from '../src/lib/public-owner-leads/template';
 
 describe('public-owner-leads daily campaign', () => {
-  it('objetivo diario es 50', () => {
+  it('mañana 50 / tope día 80 (tarde si faltan altas)', () => {
     expect(PUBLIC_OWNER_LEADS_DAILY_TARGET).toBe(50);
-    expect(PUBLIC_OWNER_LEADS_DAILY_HARD_CAP).toBe(50);
+    expect(PUBLIC_OWNER_LEADS_DAILY_HARD_CAP).toBe(80);
   });
 
   it('campaign key estable para UTM', () => {
@@ -30,8 +30,10 @@ describe('public-owner-leads daily campaign', () => {
       optOutUrl: 'https://admin.delfincheckin.com/es/baja-outreach?e=x&s=y',
       signupUrl: 'https://delfincheckin.com/?utm_campaign=public_owner_leads_es',
     });
-    expect(mail.subject.toLowerCase()).toContain('prueba gratis');
-    expect(mail.html).toMatch(/Probar gratis|Registrarme gratis/i);
+    expect(mail.subject.toLowerCase()).toMatch(/prueb[aeo].*gratis|gratis/);
+    expect(mail.html).toContain('Probar gratis ahora');
+    expect(mail.html).toMatch(/minutito/i);
+    expect(mail.html).not.toMatch(/tenant|onboarding|cron|API/i);
     expect(mail.html).toContain('MIR');
     expect(mail.html).toMatch(/2€/);
     expect(mail.text).toContain('baja');

@@ -87,10 +87,10 @@ export async function GET(req: NextRequest) {
 
     if (activateRes.status === 200 || data.success) {
       return htmlPage(
-        '¡Cuenta creada!',
-        `<p>Te hemos enviado el enlace de <strong>onboarding</strong> a <strong>${email}</strong>.</p>
-         <p>Ábrelo desde el móvil o el ordenador (revisa spam / promociones).</p>
-         <p class="fine">Plan gratis (1 propiedad), sin tarjeta. Cuando quieras, Check-in desde 2€/mes.</p>
+        '¡Listo! En un minutito estás dentro',
+        `<p>Te hemos enviado un correo a <strong>${email}</strong> para entrar a Delfín Check-in.</p>
+         <p>Ábrelo desde el <strong>móvil</strong> o el ordenador (mira también spam / promociones).</p>
+         <p class="fine">Gratis (1 propiedad), sin tarjeta. Si más adelante te encaja, desde 2€/mes.</p>
          <p><a class="btn" href="https://delfincheckin.com/parte-viajeros/">Ver cómo funciona</a></p>`,
         true
       );
@@ -102,10 +102,10 @@ export async function GET(req: NextRequest) {
       (data.alreadyActivated || /ya (tiene|está|está registrado)/i.test(err) || /already/i.test(err))
     ) {
       return htmlPage(
-        'Ya tienes cuenta',
-        `<p>Este email ya está registrado. Revisa tu correo (también spam) o inicia sesión en
+        'Ya estás registrado',
+        `<p>Con este email ya puedes entrar. Revisa tu correo (también spam) o inicia sesión en
           <a href="https://admin.delfincheckin.com">admin.delfincheckin.com</a>.</p>
-         <p class="fine">Si no encuentras el mail de onboarding, escribe a soporte@delfincheckin.com.</p>`,
+         <p class="fine">¿No encuentras el correo? Escríbenos a soporte@delfincheckin.com.</p>`,
         true
       );
     }
