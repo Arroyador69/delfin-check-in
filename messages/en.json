@@ -1297,7 +1297,10 @@
       "mirCode": "Code",
       "mirBatch": "Batch",
       "mirSentDate": "Sent",
-      "mirUnknown": "Unknown status"
+      "mirUnknown": "Unknown status",
+      "mirHumanOk": "OK — registered with MIR",
+      "mirHumanError": "Error — action needed",
+      "mirHumanPendiente": "Pending"
     },
     "instructions": {
       "title": "How to use your form",
@@ -1330,6 +1333,15 @@
       "PT": "Portugal",
       "FR": "France",
       "DE": "Germany"
+    },
+    "mirHuman": {
+      "ok": "OK",
+      "error": "Error",
+      "pendiente": "Pending",
+      "actionRetryOrSupport": "Review the error and retry from MIR status, or contact support if it repeats.",
+      "actionSendGuestForm": "The guest has not completed the form yet. Send them the guest form.",
+      "actionWaitConfirm": "Already sent to MIR; wait for confirmation or tap “Check live status”.",
+      "ctaSendGuestForm": "Send guest form"
     }
   },
   "estadoEnviosMir": {
@@ -1381,7 +1393,18 @@
     "errorLoad": "Error loading submissions status",
     "errorConexion": "Connection error while loading status",
     "errorConsulta": "Error querying MIR",
-    "errorConexionConsulta": "Connection error while querying MIR"
+    "errorConexionConsulta": "Connection error while querying MIR",
+    "humanOk": "OK",
+    "humanError": "Error",
+    "humanPendiente": "Pending",
+    "actionRetryOrSupport": "Review the error message, fix the data and retry.",
+    "actionSendGuestForm": "Send the guest form so they can complete check-in.",
+    "actionWaitConfirm": "Wait for MIR confirmation or check live status.",
+    "ctaSendGuestForm": "Send guest form",
+    "legendTitle": "MIR status (quick read)",
+    "legendOk": "OK — MIR confirmed the filing",
+    "legendError": "Error — something failed; see what to do below",
+    "legendPendiente": "Pending — waiting for send or confirmation"
   },
   "mirComunicaciones": {
     "title": "MIR Submissions Status",
@@ -1493,7 +1516,14 @@
     "statusEnviado": "SENT",
     "statusError": "ERROR",
     "statusAnulado": "CANCELLED",
-    "statusPendiente": "PENDING"
+    "statusPendiente": "PENDING",
+    "humanOk": "OK",
+    "humanError": "Error",
+    "humanPendiente": "Pending",
+    "actionRetryOrSupport": "Review the error, fix data and resend to MIR.",
+    "actionSendGuestForm": "Send the guest form if check-in is still incomplete.",
+    "actionWaitConfirm": "Sent; wait for confirmation or check live status.",
+    "ctaSendGuestForm": "Send guest form"
   },
   "costCalculator": {
     "title": "Cost Calculator",

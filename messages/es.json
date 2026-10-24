@@ -833,7 +833,14 @@
     "channelExpedia": "Expedia",
     "channelTripadvisor": "Tripadvisor",
     "channelManual": "Desde el panel",
-    "actions": "Acciones",
+    "actions": {
+      "view": "Ver",
+      "viewTitle": "Ver / editar reserva",
+      "edit": "Editar",
+      "editTitle": "Editar reserva",
+      "delete": "Eliminar",
+      "deleting": "Eliminando..."
+    },
     "created": "Creada",
     "updated": "Actualizada",
     "saving": "Guardando...",
@@ -856,14 +863,6 @@
     "invalidDates": "Las fechas son inválidas",
     "checkOutBeforeCheckIn": "El check-out debe ser después del check-in",
     "roomFallback": "Habitación {number}",
-    "actions": {
-      "view": "Ver",
-      "viewTitle": "Ver / editar reserva",
-      "edit": "Editar",
-      "editTitle": "Editar reserva",
-      "delete": "Eliminar",
-      "deleting": "Eliminando..."
-    },
     "checkinMail": {
       "send": "Instrucciones check-in",
       "sendTitle": "Enviar instrucciones de check-in por email",
@@ -1231,6 +1230,7 @@
       "checkInDate": "Fecha Check-in",
       "checkOutDate": "Fecha Check-out",
       "roomNumber": "Habitación",
+      "roomPlaceholder": "Nº de habitación",
       "applyFilters": "Filtrar"
     },
     "stats": {
@@ -1251,7 +1251,14 @@
       "registrationDate": "Fecha registro",
       "view": "Ver",
       "delete": "Eliminar",
-      "deleting": "Eliminando..."
+      "deleting": "Eliminando...",
+      "deleteCount": "Eliminar ({count})",
+      "deleteSelectedLabel": "Eliminar Seleccionados ({count})",
+      "referenceLabel": "Referencia",
+      "establishmentLabel": "Establecimiento",
+      "roomLabel": "Habitación",
+      "registrationDateLabel": "Fecha registro",
+      "travelerLabel": "Viajero"
     },
     "delete": {
       "title": "Confirmar Eliminación",
@@ -1317,7 +1324,10 @@
       "mirCode": "Código",
       "mirBatch": "Lote",
       "mirSentDate": "Enviado",
-      "mirUnknown": "Estado desconocido"
+      "mirUnknown": "Estado desconocido",
+      "mirHumanOk": "OK — registrado en el MIR",
+      "mirHumanError": "Error — hay que actuar",
+      "mirHumanPendiente": "Pendiente"
     },
     "instructions": {
       "title": "Cómo usar tu formulario",
@@ -1343,26 +1353,6 @@
     "selectOneForXml": "Por favor, selecciona al menos un registro para generar XML conjunto",
     "xmlConjuntoError": "Error al generar XML conjunto",
     "deleteErrorWithMessage": "Error al eliminar registros: {message}",
-    "list": {
-      "title": "Registros de Viajeros",
-      "selectAll": "Seleccionar todo",
-      "deselectAll": "Deseleccionar todo",
-      "reference": "Referencia",
-      "establishment": "Establecimiento",
-      "room": "Habitación",
-      "traveler": "Viajero",
-      "registrationDate": "Fecha registro",
-      "view": "Ver",
-      "delete": "Eliminar",
-      "deleting": "Eliminando...",
-      "deleteCount": "Eliminar ({count})",
-      "deleteSelectedLabel": "Eliminar Seleccionados ({count})",
-      "referenceLabel": "Referencia",
-      "establishmentLabel": "Establecimiento",
-      "roomLabel": "Habitación",
-      "registrationDateLabel": "Fecha registro",
-      "travelerLabel": "Viajero"
-    },
     "exportXMLConjuntoShort": "XML Conjunto",
     "countries": {
       "ES": "España",
@@ -1371,18 +1361,14 @@
       "FR": "Francia",
       "DE": "Alemania"
     },
-    "filters": {
-      "title": "Filtros y búsqueda",
-      "showAll": "Mostrar todos los registros",
-      "specificDate": "Fecha específica",
-      "establishment": "Establecimiento",
-      "allEstablishments": "Todos",
-      "search": "Búsqueda",
-      "checkInDate": "Fecha Check-in",
-      "checkOutDate": "Fecha Check-out",
-      "roomNumber": "Habitación",
-      "roomPlaceholder": "Nº de habitación",
-      "applyFilters": "Filtrar"
+    "mirHuman": {
+      "ok": "OK",
+      "error": "Error",
+      "pendiente": "Pendiente",
+      "actionRetryOrSupport": "Revisa el error y reintenta el envío desde Estado Envíos MIR, o contacta soporte si se repite.",
+      "actionSendGuestForm": "El huésped aún no ha completado el parte. Envíale el formulario.",
+      "actionWaitConfirm": "Ya enviado al MIR; espera confirmación o pulsa «Consultar estado real».",
+      "ctaSendGuestForm": "Enviar formulario al huésped"
     }
   },
   "estadoEnviosMir": {
@@ -1434,7 +1420,18 @@
     "errorLoad": "Error al cargar el estado de envíos",
     "errorConexion": "Error de conexión al cargar el estado",
     "errorConsulta": "Error consultando el MIR",
-    "errorConexionConsulta": "Error de conexión al consultar el MIR"
+    "errorConexionConsulta": "Error de conexión al consultar el MIR",
+    "humanOk": "OK",
+    "humanError": "Error",
+    "humanPendiente": "Pendiente",
+    "actionRetryOrSupport": "Revisa el mensaje de error, corrige los datos y reintenta el envío.",
+    "actionSendGuestForm": "Envía el formulario al huésped para completar el parte.",
+    "actionWaitConfirm": "Espera la confirmación del MIR o consulta el estado real.",
+    "ctaSendGuestForm": "Enviar formulario al huésped",
+    "legendTitle": "Estados MIR (lectura rápida)",
+    "legendOk": "OK — el MIR confirmó la comunicación",
+    "legendError": "Error — hay un fallo; mira qué hacer debajo",
+    "legendPendiente": "Pendiente — falta envío o confirmación"
   },
   "mirComunicaciones": {
     "title": "Estado Envíos MIR",
@@ -1546,7 +1543,14 @@
     "statusEnviado": "ENVIADO",
     "statusError": "ERROR",
     "statusAnulado": "ANULADO",
-    "statusPendiente": "PENDIENTE"
+    "statusPendiente": "PENDIENTE",
+    "humanOk": "OK",
+    "humanError": "Error",
+    "humanPendiente": "Pendiente",
+    "actionRetryOrSupport": "Revisa el error, corrige datos y vuelve a enviar al MIR.",
+    "actionSendGuestForm": "Envía el formulario al huésped si aún no hay parte completo.",
+    "actionWaitConfirm": "Comunicación enviada; espera confirmación o consulta estado real.",
+    "ctaSendGuestForm": "Enviar formulario al huésped"
   },
   "costCalculator": {
     "title": "Calculadora de Costos",
