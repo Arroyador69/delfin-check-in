@@ -543,6 +543,8 @@ export async function middleware(req: NextRequest) {
     pathname.startsWith('/m/o/') ||
     pathname.startsWith('/api/email/unsubscribe') ||
     locales.some((l) => pathname === `/${l}/baja-emails`) ||
+    locales.some((l) => pathname === `/${l}/baja-outreach`) ||
+    pathname.startsWith('/api/public-owner-leads/opt-out') ||
     pathname.startsWith('/api/blog/analytics/') ||
     pathname.startsWith('/api/blog/waitlist') ||
     pathname.startsWith('/api/superadmin/programmatic/cron') ||

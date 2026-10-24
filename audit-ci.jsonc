@@ -1,9 +1,10 @@
 {
-  // CI: bloquear high/critical. Allowlist solo para advisories sin parche publicado.
+  // CI: bloquear high/critical. Allowlist solo si no hay parche usable en el rango actual.
   "high": true,
   "allowlist": [
-    // braces <=3.0.3 DoS stack-exhaustion; no hay release parcheado en npm (3.0.3 latest).
-    // Solo llega vía toolchain (tailwind/eslint micromatch), no runtime de producción.
-    "GHSA-vfj7-8cjw-p6xm"
+    // braces <=3.0.3; sin release parcheado en npm.
+    "GHSA-vfj7-8cjw-p6xm",
+    // zod 3.x: fix en 4.6.6+ (major).
+    "GHSA-mrhx-c7xc-m3w5"
   ]
 }
