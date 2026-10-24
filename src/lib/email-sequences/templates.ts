@@ -16,6 +16,9 @@ export interface LifecycleTemplateParams {
   daysSinceSignup?: number;
   onboardingStatus?: string | null;
   currentRooms?: number;
+  guestFormUrl?: string;
+  tapWallUrl?: string;
+  mirStatusUrl?: string;
 }
 
 export interface LifecycleEmailContent {
@@ -340,6 +343,103 @@ const TEMPLATES: Record<
       text: `Hola ${name},\n\nPlan Check-in: ${p.checkinUpgradeUrl}\n\nComparar: ${p.billingUrl}\n\nBaja: ${p.unsubscribeUrl}`,
     };
   },
+
+  trial_d0_welcome: (p) => {
+    const name = firstName(p.ownerName);
+    const subject = `${name}, configura el MIR en 15 minutos (prueba gratis)`;
+    const body = contentBlock(`
+      <h1 style="margin:0 0 16px 0;font-size:22px;color:#0f172a;">Bienvenido/a, ${esc(name)}</h1>
+      <p style="margin:0 0 12px 0;">Tu prueba gratis de <strong>Delfín Check-in</strong> ya está activa. Check-in aquí = <strong>MIR / parte de viajeros</strong>: el huésped rellena el formulario y tú cumples el registro oficial sin papeles.</p>
+      ${infoBox('<strong>En 15 minutos puedes:</strong><br/>✓ Crear tu alojamiento<br/>✓ Conectar credenciales MIR<br/>✓ Tener listo el enlace del formulario para el huésped', '#f0f9ff', '#0284c7')}
+      ${infoBox('<strong>Qué es cada cosa</strong> (para no mezclar):<br/>· <strong>Check-in</strong> = MIR / parte de viajeros<br/>· <strong>Tap Wall</strong> = chip NFC WiFi (add-on opcional, otro día)<br/>· <strong>App</strong> = mando a distancia del panel', '#f8fafc', '#64748b')}
+      ${ctaButton(p.onboardingUrl, 'Configurar MIR en 15 min')}
+      <p style="margin:16px 0 0 0;font-size:13px;color:#64748b;">Si el botón no funciona, copia este enlace:<br/><span style="word-break:break-all;">${esc(p.onboardingUrl)}</span></p>
+    `);
+    return {
+      subject,
+      html: wrapEmail(body, p.unsubscribeUrl),
+      text: `Hola ${name},\n\nConfigura el MIR en 15 min: ${p.onboardingUrl}\n\nCheck-in = MIR · Tap Wall = NFC · App = mando a distancia\n\nBaja: ${p.unsubscribeUrl}`,
+    };
+  },
+
+  trial_d1_checklist: (p) => {
+    const name = firstName(p.ownerName);
+    const guestUrl = p.guestFormUrl || p.onboardingUrl;
+    const thumb = getMirVideoThumbnailUrl();
+    const subject = `${name}, checklist MIR + enlace del formulario huésped`;
+    const body = contentBlock(`
+      <h1 style="margin:0 0 16px 0;font-size:22px;color:#0f172a;">Checklist MIR (día 1)</h1>
+      <p style="margin:0 0 12px 0;">Hoy el objetivo es dejar el <strong>Check-in (MIR)</strong> usable para la próxima llegada:</p>
+      ${infoBox('☐ Credenciales MIR conectadas<br/>☐ Al menos una unidad / habitación<br/>☐ Enlace del formulario listo para mandar al huésped<br/>☐ (Opcional) vídeo de credenciales MIR si te atascas', '#f0fdf4', '#16a34a')}
+      ${videoBlock(MIR_CREDENTIALS_VIDEO_URL, thumb, 'Ver vídeo: credenciales MIR paso a paso')}
+      ${ctaButton(p.onboardingUrl, 'Seguir checklist MIR')}
+      ${ctaButton(guestUrl, 'Ver / copiar enlace formulario huésped')}
+      <p style="margin:12px 0 0 0;font-size:13px;color:#64748b;">El formulario es para el <strong>parte de viajeros</strong>. No es Tap Wall (NFC): eso es un add-on aparte.</p>
+    `);
+    return {
+      subject,
+      html: wrapEmail(body, p.unsubscribeUrl),
+      text: `Hola ${name},\n\nChecklist MIR: ${p.onboardingUrl}\nFormulario huésped: ${guestUrl}\nVídeo MIR: ${MIR_CREDENTIALS_VIDEO_URL}\n\nBaja: ${p.unsubscribeUrl}`,
+    };
+  },
+
+  trial_d3_reminder: (p) => {
+    const name = firstName(p.ownerName);
+    const statusLabel =
+      p.onboardingStatus === 'in_progress' ? 'a medias' : 'sin terminar';
+    const subject = `${name}, tu onboarding MIR sigue ${statusLabel}`;
+    const body = contentBlock(`
+      <h1 style="margin:0 0 16px 0;font-size:22px;color:#0f172a;">Recordatorio amable (día 3)</h1>
+      <p style="margin:0 0 12px 0;">Vimos que tu configuración Check-in / MIR sigue <strong>${esc(statusLabel)}</strong>. Sin terminarla no puedes mandar el formulario al huésped con tranquilidad ni ver el estado del parte.</p>
+      ${onboardingStepsBox()}
+      ${infoBox('Son ~15 minutos. No enviamos nada al Ministerio hasta que tú lo confirmes.', '#eff6ff', '#2563eb')}
+      ${ctaButton(p.onboardingUrl, 'Retomar onboarding MIR')}
+    `);
+    return {
+      subject,
+      html: wrapEmail(body, p.unsubscribeUrl),
+      text: `Hola ${name},\n\nRetoma onboarding MIR: ${p.onboardingUrl}\n\nBaja: ${p.unsubscribeUrl}`,
+    };
+  },
+
+  trial_d5_tap_wall: (p) => {
+    const name = firstName(p.ownerName);
+    const tapUrl = p.tapWallUrl || 'https://tap.delfincheckin.com';
+    const subject = `${name}, Tap Wall (NFC) es opcional — no es el Check-in`;
+    const body = contentBlock(`
+      <h1 style="margin:0 0 16px 0;font-size:22px;color:#0f172a;">Add-on opcional: Tap Wall</h1>
+      <p style="margin:0 0 12px 0;">Si ya tienes el <strong>Check-in (MIR)</strong> en marcha, genial. <strong>Tap Wall no sustituye al Check-in</strong>: es un chip NFC para WiFi / info en el alojamiento.</p>
+      ${infoBox('<strong>Recuerda</strong><br/>· Check-in = MIR / parte de viajeros (lo esencial)<br/>· Tap Wall = NFC WiFi (add-on, ~10€)<br/>· App = mando a distancia del panel<br/><br/>Si no lo necesitas ahora, ignora este mail: tu prueba gratis de Check-in sigue igual.', '#fef3c7', '#f59e0b')}
+      ${ctaButton(tapUrl, 'Ver Tap Wall (opcional)')}
+      ${ctaButton(p.onboardingUrl, 'Seguir con MIR / Check-in')}
+    `);
+    return {
+      subject,
+      html: wrapEmail(body, p.unsubscribeUrl),
+      text: `Hola ${name},\n\nTap Wall (opcional, NFC): ${tapUrl}\nCheck-in / MIR: ${p.onboardingUrl}\n\nTap Wall ≠ Check-in. Baja: ${p.unsubscribeUrl}`,
+    };
+  },
+
+  trial_d7_arrival_ok: (p) => {
+    const name = firstName(p.ownerName);
+    const mirUrl = p.mirStatusUrl || p.onboardingUrl;
+    const guestUrl = p.guestFormUrl || p.onboardingUrl;
+    const subject = `${name}, ¿tu próxima llegada está OK en el MIR?`;
+    const body = contentBlock(`
+      <h1 style="margin:0 0 16px 0;font-size:22px;color:#0f172a;">Valor del MIR (día 7)</h1>
+      <p style="margin:0 0 12px 0;">Con el Check-in bien configurado, antes de cada llegada deberías poder responder en 10 segundos: <strong>¿el parte MIR está OK, con error o pendiente?</strong> y mandar el formulario al huésped si falta.</p>
+      ${infoBox('✓ Estado claro por llegada (OK / Error / Pendiente)<br/>✓ Enlace del formulario al lado<br/>✓ Menos soporte, más tranquilidad el día del check-in', '#f0fdf4', '#16a34a')}
+      ${ctaButton(mirUrl, 'Ver estado MIR / próximas llegadas')}
+      ${ctaButton(guestUrl, 'Enlace formulario huésped')}
+      <p style="margin:16px 0 0 0;font-size:13px;color:#64748b;">Dudas: soporte@delfincheckin.com · Recuerda: Tap Wall es NFC, no sustituye al MIR.</p>
+    `);
+    return {
+      subject,
+      html: wrapEmail(body, p.unsubscribeUrl),
+      text: `Hola ${name},\n\nEstado MIR: ${mirUrl}\nFormulario: ${guestUrl}\n\nBaja: ${p.unsubscribeUrl}`,
+    };
+  },
+
 };
 
 export function renderLifecycleTemplate(

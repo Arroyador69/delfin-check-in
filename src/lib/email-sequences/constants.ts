@@ -12,6 +12,22 @@ export const SEQUENCE_KEY_PHASE_1 = 'phase_1_activation';
 
 export const SEQUENCE_KEY_PHASE_2 = 'phase_2_upgrade';
 
+/**
+ * Secuencia post-signup / prueba gratis (calendario fijo D0→D7).
+ * Solo leads con opt-in o signup. Copy MiroFish: Check-in=MIR · Tap Wall=NFC · App=mando.
+ */
+export const SEQUENCE_KEY_OWNER_TRIAL_MIR = 'owner_trial_mir';
+
+/** UTM de campaña trial MIR (todos los CTAs de owner_trial_mir). */
+export const OWNER_ONBOARDING_UTM = {
+  utm_source: 'email',
+  utm_medium: 'onboarding',
+  utm_campaign: 'trial_mir',
+} as const;
+
+/** Landing Tap Wall (add-on NFC; no confundir con Check-in/MIR). */
+export const TAP_WALL_LANDING_URL = 'https://tap.delfincheckin.com';
+
 /** Tras abrir un mail, esperar N días antes del siguiente paso. */
 export const LIFECYCLE_DAYS_AFTER_OPEN = 1;
 

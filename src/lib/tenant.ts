@@ -272,6 +272,22 @@ export async function updateTenantStatus(
     SET status = ${status}, updated_at = NOW() 
     WHERE id = ${tenant_id}
   `;
+
+  try {
+    const { suppressTenantOwnerIfInactive } = await import('@/lib/email-suppression');
+    const row = await sql`
+      SELECT email, status FROM tenants WHERE id = ${tenant_id} LIMIT 1
+    `;
+    if (row.rows[0]) {
+      await suppressTenantOwnerIfInactive({
+        email: String(row.rows[0].email || ''),
+        status: String(row.rows[0].status || status),
+        source: 'tenant_status',
+      });
+    }
+  } catch (e) {
+    console.warn('updateTenantStatus: suppression owner falló', e);
+  }
 }
 
 /**
@@ -289,6 +305,22 @@ export async function updateTenantStripeInfo(
         updated_at = NOW() 
     WHERE id = ${tenant_id}
   `;
+
+  try {
+    const { suppressTenantOwnerIfInactive } = await import('@/lib/email-suppression');
+    const row = await sql`
+      SELECT email FROM tenants WHERE id = ${tenant_id} LIMIT 1
+    `;
+    if (row.rows[0]) {
+      await suppressTenantOwnerIfInactive({
+        email: String(row.rows[0].email || ''),
+        status,
+        source: 'tenant_status',
+      });
+    }
+  } catch (e) {
+    console.warn('updateTenantStripeInfo: suppression owner falló', e);
+  }
 }
 
 /**

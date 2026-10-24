@@ -3,7 +3,6 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -21,6 +20,8 @@ import {
 } from 'lucide-react';
 import { useTenant, isFreePlanMirPreview } from '@/hooks/useTenant';
 import { PlanFreePreviewOverlay } from '@/components/PlanFreePreviewOverlay';
+import { resolveMirHumanStatus } from '@/lib/mir-human-status';
+import { MirHumanStatusBadge } from '@/components/MirHumanStatus';
 
 type EstadoComunicacion = 'pendiente' | 'enviado' | 'confirmado' | 'error';
 
@@ -57,24 +58,30 @@ type EstadoEnvio = {
   timestamp: string;
 };
 
-const ESTADO_BADGE_KEYS: Record<string, 'statusConfirmed' | 'statusPending' | 'statusError' | 'statusAnulado'> = {
-  '1': 'statusConfirmed',
-  '4': 'statusPending',
-  '5': 'statusError',
-  '6': 'statusAnulado'
-};
-
-const ESTADO_BADGE: Record<string, { color: string; icon: typeof CheckCircle }> = {
-  '1': { color: 'bg-green-100 text-green-800', icon: CheckCircle },
-  '4': { color: 'bg-yellow-100 text-yellow-800', icon: Clock },
-  '5': { color: 'bg-red-100 text-red-800', icon: XCircle },
-  '6': { color: 'bg-gray-100 text-gray-800', icon: XCircle }
-};
-
 export default function EstadoEnviosMIRPage() {
   const t = useTranslations('estadoEnviosMir');
   const locale = useLocale();
   const { tenant } = useTenant();
+
+  const mirHumanLabels = {
+    ok: t('humanOk'),
+    error: t('humanError'),
+    pendiente: t('humanPendiente'),
+    actionRetryOrSupport: t('actionRetryOrSupport'),
+    actionSendGuestForm: t('actionSendGuestForm'),
+    actionWaitConfirm: t('actionWaitConfirm'),
+    ctaSendGuestForm: t('ctaSendGuestForm'),
+  };
+
+  const [guestFormUrl, setGuestFormUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!tenant?.id) {
+      setGuestFormUrl(null);
+      return;
+    }
+    setGuestFormUrl(`${window.location.origin}/api/public/form-redirect/${tenant.id}`);
+  }, [tenant?.id]);
 
   function formatearFecha(valor: string) {
     return new Date(valor).toLocaleString(locale, {
@@ -191,22 +198,6 @@ export default function EstadoEnviosMIRPage() {
     }
   };
 
-  const renderEstadoBadge = (estado: EstadoComunicacion, codigo?: string) => {
-    const fallbackKey =
-      estado === 'confirmado' ? '1' : estado === 'enviado' ? '4' : estado === 'error' ? '5' : '4';
-    const badgeKey = (codigo && ESTADO_BADGE[codigo]) ? codigo : fallbackKey;
-    const badge = ESTADO_BADGE[badgeKey] || ESTADO_BADGE['4'];
-    const labelKey = ESTADO_BADGE_KEYS[badgeKey] || 'statusPending';
-    const Icon = badge.icon;
-
-    return (
-      <Badge className={`${badge.color} border-0 font-semibold px-3 py-1 rounded-lg`}>
-        <Icon className="w-3 h-3 mr-1" />
-        {t(labelKey)}
-      </Badge>
-    );
-  };
-
   const renderTarjetas = (lista: ComunicacionMIR[], titulo: string) => {
     if (!lista.length) {
       return (
@@ -260,8 +251,18 @@ export default function EstadoEnviosMIRPage() {
                   )}
                 </div>
 
-                <div className="flex items-center gap-2">
-                  {renderEstadoBadge(com.estado, com.codigoEstado)}
+                <div className="flex items-start gap-2">
+                  <MirHumanStatusBadge
+                    status={resolveMirHumanStatus({
+                      estado: com.estado,
+                      codigoEstado: com.codigoEstado,
+                      error: com.error,
+                      mirStatus: com.datos?.mir_status,
+                    })}
+                    labels={mirHumanLabels}
+                    formUrl={guestFormUrl}
+                    compact
+                  />
                   <Button size="sm" variant="outline" className="rounded-lg border hover:border-blue-300 hover:bg-blue-50">
                     <Eye className="h-4 w-4" />
                   </Button>
@@ -393,6 +394,12 @@ export default function EstadoEnviosMIRPage() {
                     <CardTitle className="flex items-center gap-2 text-lg font-bold text-blue-800">📊 {t('summaryTitle')}</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
+                    <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-3 text-xs text-slate-700 space-y-1">
+                      <p className="font-semibold text-slate-800">{t('legendTitle')}</p>
+                      <p>✅ {t('legendOk')}</p>
+                      <p>❌ {t('legendError')}</p>
+                      <p>⏳ {t('legendPendiente')}</p>
+                    </div>
                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                       <div className="rounded-xl border-2 border-blue-200 bg-gradient-to-br from-blue-50 via-indigo-50 to-blue-100 p-4 shadow-sm">
                         <div className="flex items-center justify-between">

@@ -13,6 +13,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useTenant, hasLegalModule, isFreePlanMirPreview } from '@/hooks/useTenant';
 import { PlanFreePreviewOverlay } from '@/components/PlanFreePreviewOverlay';
+import { resolveMirHumanStatus } from '@/lib/mir-human-status';
+import { MirHumanStatusBadge } from '@/components/MirHumanStatus';
 import { 
   Send, 
   Search, 
@@ -300,51 +302,27 @@ export default function MirComunicacionesPage() {
     }
   };
 
-  const getEstadoIcon = (estado: string) => {
-    switch (estado) {
-      case 'confirmado': return <CheckCircle className="h-4 w-4 text-green-600" />;
-      case 'enviado': return <Send className="h-4 w-4 text-blue-500" />;
-      case 'error': return <XCircle className="h-4 w-4 text-red-500" />;
-      case 'anulado': return <X className="h-4 w-4 text-gray-500" />;
-      case 'pendiente': return <Clock className="h-4 w-4 text-yellow-500" />;
-      default: return <AlertTriangle className="h-4 w-4 text-orange-500" />;
+  const mirHumanLabels = {
+    ok: t('humanOk'),
+    error: t('humanError'),
+    pendiente: t('humanPendiente'),
+    actionRetryOrSupport: t('actionRetryOrSupport'),
+    actionSendGuestForm: t('actionSendGuestForm'),
+    actionWaitConfirm: t('actionWaitConfirm'),
+    ctaSendGuestForm: t('ctaSendGuestForm'),
+  };
+
+  const [guestFormUrl, setGuestFormUrl] = useState<string | null>(null);
+  useEffect(() => {
+    if (!tenant?.id) {
+      setGuestFormUrl(null);
+      return;
     }
-  };
-
-  const getEstadoLabel = (estado: string) => {
-    const key = estado === 'confirmado' ? 'statusConfirmado' : estado === 'enviado' ? 'statusEnviado' : estado === 'error' ? 'statusError' : estado === 'anulado' ? 'statusAnulado' : 'statusPendiente';
-    return t(key);
-  };
-
-  const getEstadoBadge = (estado: string) => {
-    const getEstadoConfig = (estado: string) => {
-      switch (estado) {
-        case 'confirmado':
-          return { variant: 'default' as const, className: 'font-bold text-white bg-green-600 border-green-600' };
-        case 'enviado':
-          return { variant: 'default' as const, className: 'font-bold text-white bg-blue-600 border-blue-600' };
-        case 'error':
-          return { variant: 'destructive' as const, className: 'font-bold text-white bg-red-600 border-red-600' };
-        case 'pendiente':
-          return { variant: 'outline' as const, className: 'font-bold text-yellow-800 bg-yellow-100 border-yellow-300' };
-        default:
-          return { variant: 'outline' as const, className: 'font-bold text-gray-800 bg-gray-100 border-gray-300' };
-      }
-    };
-    
-    const config = getEstadoConfig(estado);
-    
-    return (
-      <Badge 
-        variant={config.variant}
-        className={config.className}
-      >
-        {getEstadoLabel(estado)}
-      </Badge>
-    );
-  };
+    setGuestFormUrl(`${window.location.origin}/api/public/form-redirect/${tenant.id}`);
+  }, [tenant?.id]);
 
   const showMirFreeOverlay =
+
     authResolved && tenant && isFreePlanMirPreview(tenant) && !isSuperAdminUser;
 
   return (
@@ -489,11 +467,31 @@ export default function MirComunicacionesPage() {
                       <Card key={registro.id} className="p-4 bg-blue-50 border-blue-200">
                         <div className="flex items-center justify-between">
                           <div className="space-y-2">
-                            {/* Nombre del huésped al lado del tick verde */}
-                            <div className="flex items-center gap-2">
-                              {getEstadoIcon(estado)}
+                            <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                               <span className="font-bold text-gray-900 text-lg">{nombreCompleto}</span>
-                              {getEstadoBadge(estado)}
+                              <MirHumanStatusBadge
+                                status={resolveMirHumanStatus({
+                                  estado,
+                                  error: registro.error,
+                                  mirStatus:
+                                    registro.datos &&
+                                    typeof registro.datos === 'object' &&
+                                    'mir_status' in (registro.datos as object)
+                                      ? (registro.datos as {
+                                          mir_status?: {
+                                            estado?: string;
+                                            lote?: string;
+                                            error?: string;
+                                            codigoComunicacion?: string;
+                                            fechaEnvio?: string;
+                                          };
+                                        }).mir_status
+                                      : undefined,
+                                })}
+                                labels={mirHumanLabels}
+                                formUrl={guestFormUrl}
+                                compact
+                              />
                             </div>
                             
                             {/* Información del registro organizada */}

@@ -809,6 +809,14 @@ export async function sendOnboardingEmail(params: {
 }) {
   let trackingId: string | null = null;
   try {
+    const { isEmailSuppressed } = await import('@/lib/email-suppression');
+    if (await isEmailSuppressed(params.to)) {
+      console.warn('⚠️ [SEND ONBOARDING EMAIL] Email suppressed, no enviar:', {
+        to: params.to,
+      });
+      return { success: false, error: 'email_suppressed' };
+    }
+
     // Validar que SMTP esté configurado antes de intentar enviar
     const transporter = getTransport();
     
@@ -1072,6 +1080,13 @@ export async function sendOnboardingEmail(params: {
       smtpUser: process.env.SMTP_USER,
       smtpConfigured: !!(process.env.SMTP_HOST && process.env.SMTP_USER && (process.env.SMTP_PASS || process.env.SMTP_PASSWORD))
     });
+
+    try {
+      const { maybeSuppressOnSmtpBounce } = await import('@/lib/email-suppression');
+      await maybeSuppressOnSmtpBounce(params.to, error);
+    } catch {
+      // ignore
+    }
     
     // Re-lanzar el error para que el webhook pueda manejarlo
     throw error;

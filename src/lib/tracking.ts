@@ -99,6 +99,26 @@ export async function trackEmail(params: {
   }
 }
 
+/** Propaga open/click a public_owner_leads si el tid es de outreach. */
+async function syncPublicOwnerLeadEngagement(emailId: string): Promise<void> {
+  try {
+    const meta = await sql`SELECT to_regclass('public.public_owner_leads') AS reg`
+    if (!meta.rows[0]?.reg) return
+    await sql`
+      UPDATE public_owner_leads p
+      SET
+        opened_at = COALESCE(p.opened_at, et.opened_at),
+        clicked_at = COALESCE(p.clicked_at, et.clicked_at),
+        updated_at = NOW()
+      FROM email_tracking et
+      WHERE p.tracking_id = et.id
+        AND et.id = ${emailId}::uuid
+    `
+  } catch {
+    /* no crítico */
+  }
+}
+
 /**
  * Actualiza el estado de un email (opened, clicked)
  */
@@ -126,6 +146,7 @@ export async function updateEmailTracking(params: {
         console.warn('[email-tracking] open: id no encontrado', emailId)
         return
       }
+      await syncPublicOwnerLeadEngagement(emailId)
       const { accelerateLifecycleOnEmailOpen } = await import('@/lib/email-sequences/on-open')
       await accelerateLifecycleOnEmailOpen(emailId)
     } else if (params.status === 'clicked') {
@@ -145,6 +166,7 @@ export async function updateEmailTracking(params: {
         console.warn('[email-tracking] click: id no encontrado', emailId)
         return
       }
+      await syncPublicOwnerLeadEngagement(emailId)
       const { accelerateLifecycleOnEmailOpen } = await import('@/lib/email-sequences/on-open')
       await accelerateLifecycleOnEmailOpen(emailId)
     }

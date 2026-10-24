@@ -1196,7 +1196,10 @@
       "mirCode": "Koodi",
       "mirBatch": "Erä",
       "mirSentDate": "Lähetetty",
-      "mirUnknown": "Tuntematon tila"
+      "mirUnknown": "Tuntematon tila",
+      "mirHumanOk": "OK — registrado en el MIR",
+      "mirHumanError": "Error — hay que actuar",
+      "mirHumanPendiente": "Pendiente"
     },
     "instructions": {
       "title": "Kuinka käyttää lomakettasi",
@@ -1229,6 +1232,15 @@
       "PT": "Portugali",
       "FR": "Ranska",
       "DE": "Saksa"
+    },
+    "mirHuman": {
+      "ok": "OK",
+      "error": "Error",
+      "pendiente": "Pendiente",
+      "actionRetryOrSupport": "Revisa el error y reintenta el envío desde Estado Envíos MIR, o contacta soporte si se repite.",
+      "actionSendGuestForm": "El huésped aún no ha completado el parte. Envíale el formulario.",
+      "actionWaitConfirm": "Ya enviado al MIR; espera confirmación o pulsa «Consultar estado real».",
+      "ctaSendGuestForm": "Enviar formulario al huésped"
     }
   },
   "estadoEnviosMir": {
@@ -1280,7 +1292,18 @@
     "errorLoad": "Virhe ladattaessa lähetysten tilaa",
     "errorConexion": "Yhteysvirhe ladattaessa tilaa",
     "errorConsulta": "Virhe kyselyssä MIR",
-    "errorConexionConsulta": "Yhteysvirhe kyselyn aikana MIR"
+    "errorConexionConsulta": "Yhteysvirhe kyselyn aikana MIR",
+    "humanOk": "OK",
+    "humanError": "Error",
+    "humanPendiente": "Pendiente",
+    "actionRetryOrSupport": "Revisa el mensaje de error, corrige los datos y reintenta el envío.",
+    "actionSendGuestForm": "Envía el formulario al huésped para completar el parte.",
+    "actionWaitConfirm": "Espera la confirmación del MIR o consulta el estado real.",
+    "ctaSendGuestForm": "Enviar formulario al huésped",
+    "legendTitle": "Estados MIR (lectura rápida)",
+    "legendOk": "OK — el MIR confirmó la comunicación",
+    "legendError": "Error — hay un fallo; mira qué hacer debajo",
+    "legendPendiente": "Pendiente — falta envío o confirmación"
   },
   "mirComunicaciones": {
     "title": "MIR-lähetysten tila",
@@ -1392,7 +1415,14 @@
     "statusEnviado": "LÄHETETTY",
     "statusError": "VIRHE",
     "statusAnulado": "PERUUTETTU",
-    "statusPendiente": "ODOTTAA"
+    "statusPendiente": "ODOTTAA",
+    "humanOk": "OK",
+    "humanError": "Error",
+    "humanPendiente": "Pendiente",
+    "actionRetryOrSupport": "Revisa el error, corrige datos y vuelve a enviar al MIR.",
+    "actionSendGuestForm": "Envía el formulario al huésped si aún no hay parte completo.",
+    "actionWaitConfirm": "Comunicación enviada; espera confirmación o consulta estado real.",
+    "ctaSendGuestForm": "Enviar formulario al huésped"
   },
   "costCalculator": {
     "title": "Kustannuslaskuri",
