@@ -8,9 +8,9 @@ import { isBlockedOutreachHost } from '../src/lib/public-owner-leads/blocked-hos
 import { buildColdOutreachEmail } from '../src/lib/public-owner-leads/template';
 
 describe('public-owner-leads daily campaign', () => {
-  it('mañana 50 / tope día 80 (tarde si faltan altas)', () => {
+  it('mañana 50 + tarde 50 si <20 altas (tope 100)', () => {
     expect(PUBLIC_OWNER_LEADS_DAILY_TARGET).toBe(50);
-    expect(PUBLIC_OWNER_LEADS_DAILY_HARD_CAP).toBe(80);
+    expect(PUBLIC_OWNER_LEADS_DAILY_HARD_CAP).toBe(100);
   });
 
   it('campaign key estable para UTM', () => {
@@ -33,6 +33,10 @@ describe('public-owner-leads daily campaign', () => {
     expect(mail.subject.toLowerCase()).toMatch(/prueb[aeo].*gratis|gratis/);
     expect(mail.html).toContain('Probar gratis ahora');
     expect(mail.html).toMatch(/minutito/i);
+    expect(mail.html).toContain('Síguenos');
+    expect(mail.html).toContain('Instagram');
+    expect(mail.html).toContain('Facebook');
+    expect(mail.html).toContain('YouTube');
     expect(mail.html).not.toMatch(/tenant|onboarding|cron|API/i);
     expect(mail.html).toContain('MIR');
     expect(mail.html).toMatch(/2€/);

@@ -321,6 +321,15 @@ export async function runDailyPublicOwnerLeads(opts?: {
     }
   }
 
+  // Recámara para la siguiente oleada / mañana 09:00
+  if (!dryRun) {
+    try {
+      await ensureSpainVacationSourceQueue();
+    } catch {
+      /* ignore */
+    }
+  }
+
   return {
     table_ready: true,
     dryRun,
