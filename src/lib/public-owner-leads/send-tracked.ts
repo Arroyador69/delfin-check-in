@@ -20,10 +20,9 @@ function wrapClick(trackingId: string, url: string): string {
 }
 
 function signupUrlWithUtm(): string {
-  const base = String(process.env.OUTREACH_SIGNUP_URL || 'https://delfincheckin.com').replace(
-    /\/+$/,
-    ''
-  );
+  const base = String(
+    process.env.OUTREACH_SIGNUP_URL || 'https://delfincheckin.com/parte-viajeros/'
+  ).replace(/\/+$/, '');
   const u = new URL(base.includes('://') ? base : `https://${base}`);
   u.searchParams.set('utm_source', 'email');
   u.searchParams.set('utm_medium', 'outreach');
