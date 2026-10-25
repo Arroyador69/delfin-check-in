@@ -26,6 +26,11 @@ export async function GET(req: NextRequest) {
   const max = parseInt(req.nextUrl.searchParams.get('max') || '50', 10);
   const skipZoho = req.nextUrl.searchParams.get('skipZoho') === '1';
 
+  // A+B: semillas + descubrimiento por lugares (OSM). No depende de env en Vercel.
+  if (!process.env.PUBLIC_OWNER_LEADS_FLOW) {
+    process.env.PUBLIC_OWNER_LEADS_FLOW = 'A+B';
+  }
+
   try {
     let zoho: unknown = null;
     let tenants: unknown = null;
@@ -38,16 +43,24 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    const engagement = await syncOutreachEngagementFromTracking();
+    let engagement: unknown = { updated: 0 };
+    try {
+      engagement = await syncOutreachEngagementFromTracking();
+    } catch (e) {
+      engagement = { error: e instanceof Error ? e.message : String(e) };
+    }
+
     const outreach = await runDailyPublicOwnerLeads({
       dryRun,
       wave: 'morning',
       maxSend: Number.isFinite(max) ? max : 50,
+      extractLimit: 18,
     });
 
     return NextResponse.json({
       success: true,
       wave: 'morning',
+      flow: process.env.PUBLIC_OWNER_LEADS_FLOW || 'A+B',
       dryRun,
       zoho,
       tenants,
@@ -57,7 +70,8 @@ export async function GET(req: NextRequest) {
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : String(error);
     console.error('[cron/public-owner-leads]', msg);
-    return NextResponse.json({ success: false, error: msg }, { status: 500 });
+    // 200 parcial: Vercel no reintenta en bucle; el error queda en body
+    return NextResponse.json({ success: false, wave: 'morning', error: msg }, { status: 200 });
   }
 }
 

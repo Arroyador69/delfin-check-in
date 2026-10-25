@@ -31,6 +31,10 @@ const BLOCKED_HOST_SUFFIXES = [
   'tiktok.com',
   'google.com',
   'maps.google.com',
+  'gob.es',
+  'rediris.es',
+  'fedcamping.com',
+  'campingred.es',
 ];
 
 export function isBlockedOutreachHost(hostnameOrUrl: string): boolean {

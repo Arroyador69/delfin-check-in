@@ -272,6 +272,66 @@ export async function runDailyPublicOwnerLeads(opts?: {
     }
   }
 
+  // Flujo A+B por defecto: semillas + OSM por lugares.
+  // Override: PUBLIC_OWNER_LEADS_FLOW=A | B | A+B
+  // Fallos OSM NUNCA tumban el cron (catch + deadline corto).
+  const flowMode = String(process.env.PUBLIC_OWNER_LEADS_FLOW || 'A+B').toUpperCase();
+  const useFlowB = flowMode === 'B' || flowMode === 'A+B' || flowMode === 'AB';
+  if (!dryRun && useFlowB) {
+    try {
+      const { discoverOwnerSitesByPlace } = await import('./discover-by-place');
+      const disc = await discoverOwnerSitesByPlace({
+        maxPlaces: wave === 'afternoon' ? 5 : 4,
+        maxCandidates: 20,
+        delayMs: 400,
+        deadlineMs: wave === 'afternoon' ? 75_000 : 60_000,
+      });
+      let inserted = 0;
+      for (const url of disc.candidateUrls) {
+        try {
+          const r = await sql`
+            INSERT INTO public_owner_lead_sources (url, status)
+            VALUES (${url}, 'pending')
+            ON CONFLICT (url) DO NOTHING
+            RETURNING id
+          `;
+          if (r.rows[0]?.id) inserted++;
+        } catch {
+          /* ignore row */
+        }
+      }
+      for (const row of disc.emailsFromOsm) {
+        try {
+          const host = String(row.website || '')
+            .replace(/^https?:\/\//i, '')
+            .replace(/^www\./i, '')
+            .split('/')[0]
+            .toLowerCase();
+          if (!host) continue;
+          await sql`
+            INSERT INTO public_owner_leads (email, domain, source_url, status, notes)
+            VALUES (
+              ${row.email},
+              ${host},
+              ${row.website},
+              'new',
+              ${`flow-b-osm:${row.place}`}
+            )
+            ON CONFLICT (email) DO NOTHING
+          `;
+        } catch {
+          /* ignore row */
+        }
+      }
+      errors.push(
+        `flow-b:ok places=${disc.places.length} candidates=+${inserted} osmEmails=${disc.emailsFromOsm.length}`
+      );
+    } catch (e) {
+      // No rethrow: seguir con semillas / cola existente
+      errors.push(`flow-b:soft-fail:${e instanceof Error ? e.message : String(e)}`);
+    }
+  }
+
   const extract = await processPendingSources(
     opts?.extractLimit ?? PUBLIC_OWNER_LEADS_EXTRACT_PER_RUN,
     dryRun
