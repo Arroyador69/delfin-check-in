@@ -81,7 +81,13 @@ Códigos:
 - `src/lib/public-owner-leads/discover-by-place.ts` — búsqueda + parseo de URLs
 - `scripts/public-owner-leads/flow-b-by-place.ts` — orquestación envío
 
-Flag: `PUBLIC_OWNER_LEADS_FLOW=B` (cuando se active en cron).
+Flag en Vercel / `.env`:
+
+- `PUBLIC_OWNER_LEADS_FLOW=A` — solo semillas (default)
+- `PUBLIC_OWNER_LEADS_FLOW=B` — solo descubrimiento por lugares (OSM)
+- `PUBLIC_OWNER_LEADS_FLOW=A+B` — ambos (recomendado tras validar)
+
+**Prueba 25/10/2026:** 12 lugares → 22 webs → **14 emails enviados** (casas/campings/albergues locales). Cumple umbral → listo para `A+B` en cron tras merge.
 
 ---
 
