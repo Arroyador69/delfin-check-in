@@ -48,6 +48,17 @@ describe('spain vacation filter', () => {
     );
     expect(v.ok).toBe(false);
   });
+
+  it('rechaza directorios / portales', () => {
+    const v = classifySpainVacationRental(
+      'https://www.casasruralesenasturias.com',
+      `<html lang="es"><body>
+        Directorio de casas rurales en Asturias. Más de 200 alojamientos. Busca tu casa rural.
+      </body></html>`
+    );
+    expect(v.ok).toBe(false);
+    expect(v.reason).toMatch(/directorio/);
+  });
 });
 
 describe('outreach activate signature', () => {

@@ -8,8 +8,13 @@ import { isPlausiblePublicEmail, scoreEmailForSource, domainFromUrl, normalizeUr
 import { extractPublicEmailsFromUrl } from '../../src/lib/public-owner-leads/extract-web';
 import { sendTrackedOutreachLead } from '../../src/lib/public-owner-leads/send-tracked';
 import { SEED_SPAIN_VACATION_URLS } from '../../src/lib/public-owner-leads/seed-spain-vacation-urls';
-import { PUBLIC_OWNER_LEADS_DAILY_TARGET, PUBLIC_OWNER_LEADS_MIN_DELAY_MS } from '../../src/lib/public-owner-leads/constants';
+import {
+  PUBLIC_OWNER_LEADS_DAILY_HARD_CAP,
+  PUBLIC_OWNER_LEADS_MIN_DELAY_MS,
+} from '../../src/lib/public-owner-leads/constants';
 import { sleep } from '../../src/lib/public-owner-leads/fetch-html';
+import { hostSuggestsNonVacation } from '../../src/lib/public-owner-leads/spain-vacation-filter';
+import { isBlockedOutreachHost } from '../../src/lib/public-owner-leads/blocked-hosts';
 
 async function main() {
   const sentEmails = new Set<string>();
@@ -31,26 +36,29 @@ async function main() {
         AT TIME ZONE 'Europe/Madrid'
   `;
   let sentToday = Number(today.rows[0]?.n || 0);
-  const budget = Math.max(0, PUBLIC_OWNER_LEADS_DAILY_TARGET - sentToday);
-  console.log({ sentToday, budget, alreadyDomains: sentDomains.size });
+  // Día completo = mañana 50 + tarde 50
+  const dayCap = PUBLIC_OWNER_LEADS_DAILY_HARD_CAP;
+  const budget = Math.max(0, dayCap - sentToday);
+  console.log({ sentToday, budget, dayCap, alreadyDomains: sentDomains.size });
 
   // Pending DB sources first (never scraped), then seeds
-  const pendingDb = await sql`
-    SELECT url FROM public_owner_lead_sources
-    WHERE status = 'pending'
-    ORDER BY CASE WHEN last_scraped_at IS NULL THEN 0 ELSE 1 END, created_at DESC
-    LIMIT 80
-  `;
-  const urls = [
-    ...pendingDb.rows.map((r) => String(r.url)),
-    ...SEED_SPAIN_VACATION_URLS,
-  ];
+  // Solo semillas de alojamientos concretos (no pending de outbound/portales)
+  const urls = [...SEED_SPAIN_VACATION_URLS];
   const seenHost = new Set<string>();
   const queue: string[] = [];
   for (const raw of urls) {
     const url = normalizeUrl(raw);
     const host = domainFromUrl(url);
     if (!host || seenHost.has(host) || sentDomains.has(host)) continue;
+    if (isBlockedOutreachHost(url) || hostSuggestsNonVacation(url)) continue;
+    // Evitar directorios genéricos “casasruralesen*” / provincia-portal
+    if (
+      /casasruralesen|turismo-rural\.com$|alojamientorural\.com$|campingsde|barcelonacampings|fedcamping|campingred/i.test(
+        host
+      )
+    ) {
+      continue;
+    }
     seenHost.add(host);
     queue.push(url);
   }
@@ -60,7 +68,7 @@ async function main() {
   let sent = 0;
 
   for (const url of queue) {
-    if (sentToday + sent >= PUBLIC_OWNER_LEADS_DAILY_TARGET) break;
+    if (sentToday + sent >= dayCap) break;
     const host = domainFromUrl(url);
     if (sentDomains.has(host)) continue;
 

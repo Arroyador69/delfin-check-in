@@ -3,6 +3,8 @@
  * Rechaza seguros, banca, inmobiliaria pura, clínicas, etc. (coste de oportunidad).
  */
 
+import { isBlockedOutreachHost } from './blocked-hosts';
+
 export type NicheVerdict = {
   ok: boolean;
   spain: boolean;
@@ -199,6 +201,11 @@ const HOST_NEGATIVE = [
   /\.de$/i,
   /\.pt$/i,
   /marina.?lucense/i,
+  /campingsde/i,
+  /barcelonacampings/i,
+  /campingsandalucia/i,
+  /campingsdecantabria/i,
+  /campingsdeasturias/i,
 ];
 
 function hostOf(url: string): string {
@@ -246,8 +253,28 @@ function countMatches(text: string, patterns: RegExp[]): number {
   return n;
 }
 
+/** Directorios / redes / grandes portales (no un dueño local). */
+const DIRECTORY_OR_PORTAL = [
+  /casas\s*rurales\s+en\s+/i,
+  /campings?\s+(de\s+)?(asturias|galicia|andaluc|cantabria|catalu)/i,
+  /\bdirectorio\b/i,
+  /\bcatalogo\s+de\s+alojamientos\b/i,
+  /\bm[aá]s\s+de\s+\d{2,}\s+(casas|alojamientos|establecimientos|campings)/i,
+  /\bbusca\s+tu\s+(casa\s+rural|camping)\b/i,
+  /\bcomparar\s+precios\b/i,
+  /\bfederaci[oó]n\b/i,
+  /\basociaci[oó]n\b/i,
+  /\bpatronato\b/i,
+  /\bconsejo\s+regulador\b/i,
+  /\bministerio\b/i,
+  /\bayuntamiento\b/i,
+  /\bred\s+de\s+camping/i,
+  /\blistad[oa]\s+de\s+(campings|casas|alojamientos)\b/i,
+];
+
 /**
- * Clasifica URL + HTML: debe ser España y alquiler vacacional / rural / turístico.
+ * Clasifica URL + HTML: España + UN alojamiento vacacional/rural local.
+ * Rechaza OTAs, directorios, federaciones, agencias y grandes empresas.
  */
 export function classifySpainVacationRental(
   url: string,
@@ -255,6 +282,9 @@ export function classifySpainVacationRental(
 ): NicheVerdict {
   if (hostSuggestsNonVacation(url)) {
     return { ok: false, spain: false, vacation: false, reason: 'host-no-vacacional' };
+  }
+  if (isBlockedOutreachHost(url)) {
+    return { ok: false, spain: false, vacation: false, reason: 'host-bloqueado' };
   }
 
   const text = String(html || '')
@@ -266,24 +296,23 @@ export function classifySpainVacationRental(
 
   const neg = countMatches(text, VACATION_NEGATIVE);
   const pos = countMatches(text, VACATION_POSITIVE);
+  const dir = countMatches(text, DIRECTORY_OR_PORTAL);
   const hostVac = hostSuggestsVacation(url);
   const spainHost = looksSpanishHost(url);
   const spainContent = countMatches(text, SPAIN_POSITIVE) >= 1 || /lang\s*=\s*["']?es/i.test(html);
+  const phoneEs = /\+34|0034|\b9\d{2}[\s.-]?\d{2,3}[\s.-]?\d{2,3}\b/.test(text);
 
-  // Negativos fuertes sin positivos claros → rechazo
-  if (neg >= 2 && pos === 0 && !hostVac) {
-    return { ok: false, spain: spainHost || spainContent, vacation: false, reason: 'contenido-no-vacacional' };
+  if (dir >= 1) {
+    return { ok: false, spain: spainHost || spainContent, vacation: false, reason: 'directorio-o-portal' };
   }
-  if (neg >= 1 && pos === 0 && !hostVac) {
+  if (neg >= 1 && pos < 2) {
     return { ok: false, spain: spainHost || spainContent, vacation: false, reason: 'negocio-ajeno' };
   }
 
-  // Vacacional por contenido o host (casa*, pazo*, rural…)
-  const vacation = pos >= 1 || hostVac;
-
-  // España: +34, provincias, lang=es, o TLD .es/.gal… — NO exigir solo .es
-  // Un .com español con "Galicia" / +34 / lang=es pasa; LatAm en inglés sin señales ES no.
-  const spain = spainHost || spainContent;
+  // Debe parecer UN alojamiento: host tipo casa/pazo/cortijo O varias señales de contenido
+  const vacation = (hostVac && pos >= 1) || pos >= 2;
+  // España: TLD ES / provincias / +34 / lang=es (NO exigir solo .es)
+  const spain = spainHost || spainContent || phoneEs;
 
   if (!vacation) {
     return { ok: false, spain, vacation: false, reason: 'sin-señal-alojamiento' };
