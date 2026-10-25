@@ -35,9 +35,36 @@ describe('public-owner-leads email extract', () => {
     expect(emails).not.toContain('noreply@casa.es');
   });
 
-  it('filtra placeholders', () => {
+  it('filtra placeholders y basura CSS', () => {
     expect(isPlausiblePublicEmail('test@example.com')).toBe(false);
     expect(isPlausiblePublicEmail('hola@midominio.es')).toBe(true);
+    expect(isPlausiblePublicEmail('anim@ions.min.css')).toBe(false);
+    expect(isPlausiblePublicEmail('api.wh@sapp.com')).toBe(false);
+    expect(isPlausiblePublicEmail('formin@or-icons.min.css')).toBe(false);
+    expect(isPlausiblePublicEmail('fa-map-loc@ion-.fa')).toBe(false);
+    expect(isPlausiblePublicEmail('reservas@casarural.com')).toBe(true);
+    expect(isPlausiblePublicEmail('www.avir@o.com')).toBe(false);
+    expect(isPlausiblePublicEmail('st@s.wp.com')).toBe(false);
+    expect(isPlausiblePublicEmail('il@ina.es')).toBe(false);
+    expect(isPlausiblePublicEmail('reservascasarellos@gmail.com')).toBe(true);
+    expect(isPlausiblePublicEmail('whatsapp-image-2023-06-14-@-15.24.05.jpeg')).toBe(false);
+    expect(isPlausiblePublicEmail('st@e.currentimage.alt')).toBe(false);
+    expect(isPlausiblePublicEmail('navig@ion-branding-flex.min.css')).toBe(false);
+    expect(isPlausiblePublicEmail('m@erial-design-iconic-font.min.css')).toBe(false);
+    expect(isPlausiblePublicEmail('window.loc@ion.href')).toBe(false);
+    expect(isPlausiblePublicEmail('n@uraleza.disfruta')).toBe(false);
+    expect(isPlausiblePublicEmail('des@ascoschiclana.org')).toBe(true); // sintaxis ok; score lo mata sin dominio web
+  });
+
+  it('no extrae falsos de CSS', () => {
+    const html = `
+      <link href="forminator-icons.min.css"/>
+      <p class="fa-map-location">x</p>
+      <a href="mailto:reservas@casarural.com">ok</a>
+      <style>.anim@ions.min.css{}</style>
+    `;
+    const emails = extractEmailsFromHtml(html);
+    expect(emails).toEqual(['reservas@casarural.com']);
   });
 
   it('normaliza URL', () => {

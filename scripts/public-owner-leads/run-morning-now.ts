@@ -12,7 +12,8 @@ async function main() {
     wave: 'morning',
     maxSend: 50,
     dryRun,
-    extractLimit: 20,
+    // Lotes medianos: evita timeouts Neon; el cron puede repetir
+    extractLimit: 18,
   });
   console.log(JSON.stringify(r, null, 2));
 }

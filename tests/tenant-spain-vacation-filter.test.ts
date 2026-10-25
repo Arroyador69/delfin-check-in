@@ -30,6 +30,17 @@ describe('spain vacation filter', () => {
     expect(v.vacation).toBe(true);
   });
 
+  it('acepta .com español con +34 / provincia (sin exigir .es)', () => {
+    const v = classifySpainVacationRental(
+      'https://www.casaruralasturias.com',
+      `<html lang="es"><body>
+        Casa rural en Asturias. Turismo rural. Reservas. Teléfono +34 985 000 000
+      </body></html>`
+    );
+    expect(v.ok).toBe(true);
+    expect(v.spain).toBe(true);
+  });
+
   it('rechaza .com sin señal España', () => {
     const v = classifySpainVacationRental(
       'https://www.beachvilla.mx',
