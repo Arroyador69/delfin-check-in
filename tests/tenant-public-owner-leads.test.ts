@@ -90,5 +90,8 @@ describe('cold template', () => {
     expect(mail.text).toMatch(/X \(Twitter\):/);
     expect(mail.text).toMatch(/YouTube:/);
     expect(mail.html).toContain('Síguenos');
+    expect(mail.html).toContain('sH4Yv5t5hdI');
+    expect(mail.html).toMatch(/Ver vídeo/i);
+    expect(mail.text).toMatch(/youtube\.com\/watch\?v=sH4Yv5t5hdI/);
   });
 });
