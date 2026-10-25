@@ -81,13 +81,15 @@ Códigos:
 - `src/lib/public-owner-leads/discover-by-place.ts` — búsqueda + parseo de URLs
 - `scripts/public-owner-leads/flow-b-by-place.ts` — orquestación envío
 
-Flag en Vercel / `.env`:
+Flag en Vercel / `.env` (opcional; el cron ya fuerza **A+B** si no hay valor):
 
-- `PUBLIC_OWNER_LEADS_FLOW=A` — solo semillas (default)
-- `PUBLIC_OWNER_LEADS_FLOW=B` — solo descubrimiento por lugares (OSM)
-- `PUBLIC_OWNER_LEADS_FLOW=A+B` — ambos (recomendado tras validar)
+- `PUBLIC_OWNER_LEADS_FLOW=A` — solo semillas
+- `PUBLIC_OWNER_LEADS_FLOW=B` — solo OSM por lugares
+- `PUBLIC_OWNER_LEADS_FLOW=A+B` — **default en cron** (semillas + OSM)
 
-**Prueba 25/10/2026:** 12 lugares → 22 webs → **14 emails enviados** (casas/campings/albergues locales). Cumple umbral → listo para `A+B` en cron tras merge.
+Resiliencia cron: Overpass con timeout corto, deadline 60–75s, fallos OSM = soft-fail (el envío con cola existente sigue).
+
+**Prueba 25/10/2026:** 12 lugares → 22 webs → **14 emails enviados**. Ya cableado en `/api/cron/public-owner-leads` y `-afternoon`.
 
 ---
 

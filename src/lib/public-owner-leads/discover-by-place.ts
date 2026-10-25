@@ -43,21 +43,21 @@ export type PlaceDiscoveryResult = {
 };
 
 function overpassQueryForPlace(place: string): string {
-  // area por nombre (municipio/comarca); tourism con website
+  // timeout OSM bajo: el cron Vercel tiene ~300s totales
   const esc = place.replace(/"/g, '\\"');
   return `
-[out:json][timeout:75];
+[out:json][timeout:22];
 area["name"="${esc}"]["admin_level"~"^[6-8]$"]->.searchArea;
 (
   nwr(area.searchArea)["tourism"~"^(apartment|chalet|guest_house|hostel|camp_site|alpine_hut)$"]["website"];
   nwr(area.searchArea)["tourism"~"^(apartment|chalet|guest_house|hostel|camp_site)$"]["contact:website"];
   nwr(area.searchArea)["tourism"="hotel"]["stars"~"^[123]$"]["website"];
 );
-out tags 35;
+out tags 25;
 `.trim();
 }
 
-async function fetchOverpass(query: string): Promise<unknown[]> {
+async function fetchOverpass(query: string, timeoutMs = 28_000): Promise<unknown[]> {
   let lastErr: unknown;
   for (const endpoint of OVERPASS_ENDPOINTS) {
     try {
@@ -69,7 +69,7 @@ async function fetchOverpass(query: string): Promise<unknown[]> {
           Accept: 'application/json',
         },
         body: 'data=' + encodeURIComponent(query),
-        signal: AbortSignal.timeout(90_000),
+        signal: AbortSignal.timeout(timeoutMs),
       });
       if (!res.ok) {
         lastErr = new Error(`overpass ${res.status}`);
@@ -79,9 +79,15 @@ async function fetchOverpass(query: string): Promise<unknown[]> {
       return Array.isArray(j.elements) ? j.elements : [];
     } catch (e) {
       lastErr = e;
+      // Siguiente endpoint; no tumbar el job
     }
   }
-  if (lastErr) console.warn('[discover-by-place] overpass fail', lastErr);
+  if (lastErr) {
+    console.warn(
+      '[discover-by-place] overpass skip',
+      lastErr instanceof Error ? lastErr.message : String(lastErr)
+    );
+  }
   return [];
 }
 
@@ -101,10 +107,14 @@ export async function discoverOwnerSitesByPlace(opts?: {
   maxPlaces?: number;
   maxCandidates?: number;
   delayMs?: number;
+  /** Tope duro de wall-clock (cron ~300s: usar 60–90s para OSM). */
+  deadlineMs?: number;
 }): Promise<PlaceDiscoveryResult> {
   const maxPlaces = opts?.maxPlaces ?? 10;
   const maxCandidates = opts?.maxCandidates ?? 40;
-  const delayMs = opts?.delayMs ?? 1200;
+  const delayMs = opts?.delayMs ?? 600;
+  const deadlineMs = opts?.deadlineMs ?? 90_000;
+  const started = Date.now();
 
   const places = pickPlacesForRun(maxPlaces);
   const candidateUrls: string[] = [];
@@ -114,48 +124,57 @@ export async function discoverOwnerSitesByPlace(opts?: {
   let osmHits = 0;
 
   for (const place of places) {
-    const elements = await fetchOverpass(overpassQueryForPlace(place));
+    if (Date.now() - started > deadlineMs) break;
+    let elements: unknown[] = [];
+    try {
+      elements = await fetchOverpass(overpassQueryForPlace(place), 26_000);
+    } catch {
+      elements = [];
+    }
     await sleep(delayMs);
 
     for (const raw of elements) {
-      const el = raw as { tags?: Record<string, string> };
-      const tags = el.tags || {};
-      const website = String(tags.website || tags['contact:website'] || '').trim();
-      const emailRaw = String(tags.email || tags['contact:email'] || '').trim();
-      const name = String(tags.name || tags['name:es'] || '').trim();
-      const tourism = String(tags.tourism || '');
-      if (!website) continue;
-      osmHits++;
-
-      if (!isOwnerWebsite(website)) continue;
-      const url = normalizeUrl(website);
-      const host = domainFromUrl(url);
-      if (!host || seenHost.has(host)) continue;
-
-      // Preferir host vacacional; si no, aún aceptar si OSM lo etiquetó como tourism lodging
-      if (!hostSuggestsVacation(url) && !/apartment|chalet|guest_house|camp_site/i.test(tourism)) {
-        continue;
-      }
-
-      seenHost.add(host);
-      let home = url;
       try {
-        home = new URL(url).origin + '/';
-      } catch {
-        /* keep */
-      }
-      candidateUrls.push(home);
-      leads.push({ place, name, website: home, email: emailRaw || undefined, tourism });
+        const el = raw as { tags?: Record<string, string> };
+        const tags = el.tags || {};
+        const website = String(tags.website || tags['contact:website'] || '').trim();
+        const emailRaw = String(tags.email || tags['contact:email'] || '').trim();
+        const name = String(tags.name || tags['name:es'] || '').trim();
+        const tourism = String(tags.tourism || '');
+        if (!website) continue;
+        osmHits++;
 
-      if (emailRaw) {
-        const email = normalizeEmail(emailRaw);
-        if (isPlausiblePublicEmail(email)) {
-          emailsFromOsm.push({ email, website: home, place, name });
+        if (!isOwnerWebsite(website)) continue;
+        const url = normalizeUrl(website);
+        const host = domainFromUrl(url);
+        if (!host || seenHost.has(host)) continue;
+
+        if (!hostSuggestsVacation(url) && !/apartment|chalet|guest_house|camp_site/i.test(tourism)) {
+          continue;
         }
-      }
 
-      if (candidateUrls.length >= maxCandidates) {
-        return { places, osmHits, candidateUrls, emailsFromOsm, leads };
+        seenHost.add(host);
+        let home = url;
+        try {
+          home = new URL(url).origin + '/';
+        } catch {
+          /* keep */
+        }
+        candidateUrls.push(home);
+        leads.push({ place, name, website: home, email: emailRaw || undefined, tourism });
+
+        if (emailRaw) {
+          const email = normalizeEmail(emailRaw);
+          if (isPlausiblePublicEmail(email)) {
+            emailsFromOsm.push({ email, website: home, place, name });
+          }
+        }
+
+        if (candidateUrls.length >= maxCandidates) {
+          return { places, osmHits, candidateUrls, emailsFromOsm, leads };
+        }
+      } catch {
+        /* elemento OSM raro: seguir */
       }
     }
   }

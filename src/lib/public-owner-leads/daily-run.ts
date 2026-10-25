@@ -272,52 +272,63 @@ export async function runDailyPublicOwnerLeads(opts?: {
     }
   }
 
-  // Flujo B (opcional): descubrir por lugares vía OSM → encola sources
-  // Activar con PUBLIC_OWNER_LEADS_FLOW=B o =A+B (docs/growth/CAPTACION_FLUJO_B_POR_LUGARES.md)
-  const flowMode = String(process.env.PUBLIC_OWNER_LEADS_FLOW || 'A').toUpperCase();
-  if (!dryRun && (flowMode === 'B' || flowMode === 'A+B' || flowMode === 'AB')) {
+  // Flujo A+B por defecto: semillas + OSM por lugares.
+  // Override: PUBLIC_OWNER_LEADS_FLOW=A | B | A+B
+  // Fallos OSM NUNCA tumban el cron (catch + deadline corto).
+  const flowMode = String(process.env.PUBLIC_OWNER_LEADS_FLOW || 'A+B').toUpperCase();
+  const useFlowB = flowMode === 'B' || flowMode === 'A+B' || flowMode === 'AB';
+  if (!dryRun && useFlowB) {
     try {
       const { discoverOwnerSitesByPlace } = await import('./discover-by-place');
       const disc = await discoverOwnerSitesByPlace({
-        maxPlaces: wave === 'afternoon' ? 8 : 6,
-        maxCandidates: 25,
-        delayMs: 900,
+        maxPlaces: wave === 'afternoon' ? 5 : 4,
+        maxCandidates: 20,
+        delayMs: 400,
+        deadlineMs: wave === 'afternoon' ? 75_000 : 60_000,
       });
       let inserted = 0;
       for (const url of disc.candidateUrls) {
-        const r = await sql`
-          INSERT INTO public_owner_lead_sources (url, status)
-          VALUES (${url}, 'pending')
-          ON CONFLICT (url) DO NOTHING
-          RETURNING id
-        `;
-        if (r.rows[0]?.id) inserted++;
+        try {
+          const r = await sql`
+            INSERT INTO public_owner_lead_sources (url, status)
+            VALUES (${url}, 'pending')
+            ON CONFLICT (url) DO NOTHING
+            RETURNING id
+          `;
+          if (r.rows[0]?.id) inserted++;
+        } catch {
+          /* ignore row */
+        }
       }
-      // Emails OSM directos → leads new
       for (const row of disc.emailsFromOsm) {
-        const host = String(row.website || '')
-          .replace(/^https?:\/\//i, '')
-          .replace(/^www\./i, '')
-          .split('/')[0]
-          .toLowerCase();
-        if (!host) continue;
-        await sql`
-          INSERT INTO public_owner_leads (email, domain, source_url, status, notes)
-          VALUES (
-            ${row.email},
-            ${host},
-            ${row.website},
-            'new',
-            ${`flow-b-osm:${row.place}`}
-          )
-          ON CONFLICT (email) DO NOTHING
-        `;
+        try {
+          const host = String(row.website || '')
+            .replace(/^https?:\/\//i, '')
+            .replace(/^www\./i, '')
+            .split('/')[0]
+            .toLowerCase();
+          if (!host) continue;
+          await sql`
+            INSERT INTO public_owner_leads (email, domain, source_url, status, notes)
+            VALUES (
+              ${row.email},
+              ${host},
+              ${row.website},
+              'new',
+              ${`flow-b-osm:${row.place}`}
+            )
+            ON CONFLICT (email) DO NOTHING
+          `;
+        } catch {
+          /* ignore row */
+        }
       }
       errors.push(
-        `flow-b:places=${disc.places.length} candidates=+${inserted} osmEmails=${disc.emailsFromOsm.length}`
+        `flow-b:ok places=${disc.places.length} candidates=+${inserted} osmEmails=${disc.emailsFromOsm.length}`
       );
     } catch (e) {
-      errors.push(`flow-b:${e instanceof Error ? e.message : String(e)}`);
+      // No rethrow: seguir con semillas / cola existente
+      errors.push(`flow-b:soft-fail:${e instanceof Error ? e.message : String(e)}`);
     }
   }
 

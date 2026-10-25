@@ -19,19 +19,30 @@ export async function GET(req: NextRequest) {
 
   const dryRun = req.nextUrl.searchParams.get('dryRun') === '1';
 
+  if (!process.env.PUBLIC_OWNER_LEADS_FLOW) {
+    process.env.PUBLIC_OWNER_LEADS_FLOW = 'A+B';
+  }
+
   try {
-    const engagement = await syncOutreachEngagementFromTracking();
-    // Más scrape que la mañana: cupo tarde + cola suele estar más vacía a las 15:00
+    let engagement: unknown = { updated: 0 };
+    try {
+      engagement = await syncOutreachEngagementFromTracking();
+    } catch (e) {
+      engagement = { error: e instanceof Error ? e.message : String(e) };
+    }
+
+    // Tarde: A+B + más scrape; OSM con deadline corto para no comerse los 300s
     const outreach = await runDailyPublicOwnerLeads({
       dryRun,
       wave: 'afternoon',
       maxSend: 50,
-      extractLimit: 30,
+      extractLimit: 22,
     });
 
     return NextResponse.json({
       success: true,
       wave: 'afternoon',
+      flow: process.env.PUBLIC_OWNER_LEADS_FLOW || 'A+B',
       signupGoal: PUBLIC_OWNER_SIGNUPS_DAILY_GOAL,
       dryRun,
       engagement,
@@ -40,7 +51,10 @@ export async function GET(req: NextRequest) {
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : String(error);
     console.error('[cron/public-owner-leads-afternoon]', msg);
-    return NextResponse.json({ success: false, error: msg }, { status: 500 });
+    return NextResponse.json(
+      { success: false, wave: 'afternoon', error: msg },
+      { status: 200 }
+    );
   }
 }
 
