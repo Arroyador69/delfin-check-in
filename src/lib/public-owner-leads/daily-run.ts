@@ -13,6 +13,7 @@ import {
   PUBLIC_OWNER_LEADS_MIN_DELAY_MS,
   PUBLIC_OWNER_SIGNUPS_DAILY_GOAL,
 } from './constants';
+import { isPlausiblePublicEmail, scoreEmailForSource } from './emails';
 import { extractPublicEmailsFromUrl, isBlockedOutreachHost, normalizeUrl } from './extract-web';
 import { ensureSpainVacationSourceQueue } from './ensure-source-queue';
 import { sendTrackedOutreachLead } from './send-tracked';
@@ -44,9 +45,15 @@ async function ensureTables(): Promise<boolean> {
   return Boolean(meta.rows[0]?.reg);
 }
 
+/**
+ * Tope del DÍA = mañana 50 + tarde 50 → HARD_CAP 100.
+ * No usar DAILY_TARGET (50) aquí: si no, la oleada 15:00 se queda sin cupo.
+ */
 function dailyCap(): number {
-  const raw = Number(process.env.PUBLIC_OWNER_LEADS_DAILY_CAP || PUBLIC_OWNER_LEADS_DAILY_TARGET);
-  if (!Number.isFinite(raw) || raw < 1) return PUBLIC_OWNER_LEADS_DAILY_TARGET;
+  const raw = Number(
+    process.env.PUBLIC_OWNER_LEADS_DAILY_CAP || PUBLIC_OWNER_LEADS_DAILY_HARD_CAP
+  );
+  if (!Number.isFinite(raw) || raw < 1) return PUBLIC_OWNER_LEADS_DAILY_HARD_CAP;
   return Math.min(PUBLIC_OWNER_LEADS_DAILY_HARD_CAP, Math.floor(raw));
 }
 
@@ -84,7 +91,9 @@ async function processPendingSources(
     SELECT id, url
     FROM public_owner_lead_sources
     WHERE status = 'pending'
-    ORDER BY created_at ASC
+    ORDER BY
+      CASE WHEN last_scraped_at IS NULL THEN 0 ELSE 1 END ASC,
+      created_at DESC
     LIMIT ${limit}
   `;
 
@@ -152,11 +161,18 @@ async function processPendingSources(
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       errors.push(`${url}: ${msg}`);
-      await sql`
-        UPDATE public_owner_lead_sources
-        SET status = 'failed', last_error = ${msg.slice(0, 400)}, updated_at = NOW(), last_scraped_at = NOW()
-        WHERE id = ${id}::uuid
-      `;
+      try {
+        await sql`
+          UPDATE public_owner_lead_sources
+          SET status = 'failed', last_error = ${msg.slice(0, 400)}, updated_at = NOW(), last_scraped_at = NOW()
+          WHERE id = ${id}::uuid
+        `;
+      } catch {
+        /* Neon caído: no tumbar toda la oleada */
+      }
+      if (/fetch failed|Connect Timeout|NeonDbError/i.test(msg)) {
+        await sleep(2000);
+      }
     }
   }
 
@@ -277,8 +293,65 @@ export async function runDailyPublicOwnerLeads(opts?: {
       LIMIT ${budget}
     `;
 
+    /** Dominios ya contactados (nunca 2 mails al mismo alojamiento). */
+    const domainsSent = new Set<string>();
+    const already = await sql`
+      SELECT DISTINCT lower(domain) AS d
+      FROM public_owner_leads
+      WHERE status = 'sent' AND domain IS NOT NULL AND domain <> ''
+    `;
+    for (const r of already.rows) {
+      const d = String(r.d || '').replace(/^www\./i, '');
+      if (d) domainsSent.add(d);
+    }
+    /** Emails ya enviados (nunca reenviar el mismo). */
+    const emailsSent = new Set<string>();
+    const alreadyEmail = await sql`
+      SELECT lower(email) AS e FROM public_owner_leads WHERE status = 'sent'
+    `;
+    for (const r of alreadyEmail.rows) {
+      if (r.e) emailsSent.add(String(r.e));
+    }
+
     for (const row of queue.rows) {
       const email = String(row.email || '').toLowerCase();
+      const domain = String(row.domain || '')
+        .toLowerCase()
+        .replace(/^www\./i, '');
+      const src = String(row.source_url || row.domain || '');
+
+      if (emailsSent.has(email)) {
+        skippedSuppressed++;
+        await sql`
+          UPDATE public_owner_leads
+          SET status = 'skipped', updated_at = NOW(),
+              notes = COALESCE(notes, '') || ' | skip:email-already-sent'
+          WHERE id = ${row.id}::uuid
+        `;
+        continue;
+      }
+
+      if (domain && domainsSent.has(domain)) {
+        skippedSuppressed++;
+        await sql`
+          UPDATE public_owner_leads
+          SET status = 'skipped', updated_at = NOW(),
+              notes = COALESCE(notes, '') || ' | skip:domain-already-sent'
+          WHERE id = ${row.id}::uuid
+        `;
+        continue;
+      }
+
+      if (!isPlausiblePublicEmail(email) || scoreEmailForSource(email, src || domain) < 0) {
+        skippedSuppressed++;
+        await sql`
+          UPDATE public_owner_leads
+          SET status = 'bounced', last_error = 'invalid-extract', updated_at = NOW(),
+              notes = COALESCE(notes, '') || ' | bounced:pre-send-filter'
+          WHERE id = ${row.id}::uuid
+        `;
+        continue;
+      }
       try {
         if (await isEmailSuppressed(email)) {
           skippedSuppressed++;
@@ -294,7 +367,6 @@ export async function runDailyPublicOwnerLeads(opts?: {
         /* si no hay tabla suppression, seguir */
       }
 
-      const src = String(row.source_url || row.domain || '');
       if (isBlockedOutreachHost(src) || hostSuggestsNonVacation(src)) {
         failed++;
         await sql`
@@ -312,8 +384,11 @@ export async function runDailyPublicOwnerLeads(opts?: {
         domain: String(row.domain || ''),
         source_url: String(row.source_url || ''),
       });
-      if (result.ok) sent++;
-      else {
+      if (result.ok) {
+        sent++;
+        emailsSent.add(email);
+        if (domain) domainsSent.add(domain);
+      } else {
         failed++;
         if (result.error) errors.push(`${email}: ${result.error}`);
       }

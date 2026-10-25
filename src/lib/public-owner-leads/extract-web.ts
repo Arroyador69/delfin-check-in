@@ -5,13 +5,19 @@
 
 import { sql } from '@/lib/db';
 import { isBlockedOutreachHost } from './blocked-hosts';
-import { domainFromUrl, extractEmailsFromHtml, normalizeUrl } from './emails';
+import {
+  domainFromUrl,
+  extractEmailsFromHtml,
+  normalizeUrl,
+  scoreEmailForSource,
+} from './emails';
 import { contactCandidateUrls, fetchHtml, sleep } from './fetch-html';
 import { PUBLIC_OWNER_LEADS_MIN_DELAY_MS } from './constants';
 import {
   classifySpainVacationRental,
   extractSpainVacationOutboundLinks,
   hostSuggestsNonVacation,
+  hostSuggestsVacation,
 } from './spain-vacation-filter';
 
 export { isBlockedOutreachHost, domainFromUrl, normalizeUrl };
@@ -110,9 +116,19 @@ export async function extractPublicEmailsFromUrl(
     discoveredSources = await enqueueDiscoveredSources(outbound);
   }
 
-  const leads: ExtractedLead[] = [...emailsFound.entries()].map(([email, source_url]) => ({
+  const ranked = [...emailsFound.entries()]
+    .map(([email, source_url]) => ({
+      email,
+      source_url,
+      score: scoreEmailForSource(email, source_url || url),
+    }))
+    .filter((x) => x.score >= 0)
+    .sort((a, b) => b.score - a.score);
+
+  // Un solo email por web (el mejor: dominio coincidente / reservas@ / info@)
+  const leads: ExtractedLead[] = ranked.slice(0, 1).map(({ email, source_url }) => ({
     email,
-    domain: domainFromUrl(source_url) || domainFromUrl(url),
+    domain: domainFromUrl(url) || domainFromUrl(source_url),
     source_url,
   }));
 

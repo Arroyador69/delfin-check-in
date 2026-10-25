@@ -75,6 +75,16 @@ const VACATION_NEGATIVE = [
   /\bmarketing\s+digital\b/i,
   /\bgestor[ií]a\b/i,
   /\basesor[ií]a\s+fiscal\b/i,
+  /\bdirectorio\s+de\s+casas\b/i,
+  /\bcomparador\b/i,
+  /\bmetabuscador\b/i,
+  /\breserva\s+online\s+de\s+hoteles\b/i,
+  /\bspa\s+wellness\b/i,
+  /\bfotograf[ií]a\b/i,
+  /\bagencia\s+de\s+comunicaci[oó]n\b/i,
+  /\bdestino\s+tur[ií]stico\b/i,
+  /\boficina\s+de\s+turismo\b/i,
+  /\bpatronato\s+de\s+turismo\b/i,
 ];
 
 const SPAIN_POSITIVE = [
@@ -149,6 +159,30 @@ const HOST_NEGATIVE = [
   /inmobiliaria/i,
   /gestoria/i,
   /asesoria/i,
+  /misterplan/i,
+  /ruralgest/i,
+  /comunicacion/i,
+  /marketing/i,
+  /software/i,
+  /globales\.es/i,
+  /kayak/i,
+  /rusticae/i,
+  /smugmug/i,
+  /booking/i,
+  /airbnb/i,
+  /expedia/i,
+  /tripadvisor/i,
+  /infonova/i,
+  /turismoslow/i,
+  /turismoferrol/i,
+  /massagium/i,
+  /wellness/i,
+  /\.pe$/i,
+  /\.mx$/i,
+  /\.ar$/i,
+  /\.co$/i,
+  /\.cl$/i,
+  /peru/i,
 ];
 
 function hostOf(url: string): string {
@@ -161,15 +195,19 @@ function hostOf(url: string): string {
   }
 }
 
-/** Host .es o CC TLD español / conocido en ES. */
+/**
+ * Host con TLD típico ES (opcional). NO es requisito:
+ * muchas casas rurales usan .com — la España se confirma con +34 / provincias / lang=es.
+ */
 export function looksSpanishHost(urlOrHost: string): boolean {
   const host = hostOf(urlOrHost);
   if (!host) return false;
-  if (host.endsWith('.es') || host.endsWith('.gal') || host.endsWith('.cat') || host.endsWith('.eus')) {
-    return true;
-  }
-  // .com/.net de casas rurales ES frecuentes: se valida con HTML
-  return false;
+  return (
+    host.endsWith('.es') ||
+    host.endsWith('.gal') ||
+    host.endsWith('.cat') ||
+    host.endsWith('.eus')
+  );
 }
 
 export function hostSuggestsVacation(urlOrHost: string): boolean {
@@ -224,13 +262,12 @@ export function classifySpainVacationRental(
     return { ok: false, spain: spainHost || spainContent, vacation: false, reason: 'negocio-ajeno' };
   }
 
-  // Host tipo casa*/pazo*/finca* en ES/.com rural: aceptar aunque el HTML sea pobre (SPA)
+  // Vacacional por contenido o host (casa*, pazo*, rural…)
   const vacation = pos >= 1 || hostVac;
-  const spain =
-    spainHost ||
-    spainContent ||
-    (vacation && /\.(es|gal|cat|eus)\b/i.test(hostOf(url))) ||
-    (hostVac && /\.(com|net|org)\b/i.test(hostOf(url)) && neg === 0);
+
+  // España: +34, provincias, lang=es, o TLD .es/.gal… — NO exigir solo .es
+  // Un .com español con "Galicia" / +34 / lang=es pasa; LatAm en inglés sin señales ES no.
+  const spain = spainHost || spainContent;
 
   if (!vacation) {
     return { ok: false, spain, vacation: false, reason: 'sin-señal-alojamiento' };
