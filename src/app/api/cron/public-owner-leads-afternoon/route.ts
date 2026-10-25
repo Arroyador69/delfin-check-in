@@ -21,9 +21,12 @@ export async function GET(req: NextRequest) {
 
   try {
     const engagement = await syncOutreachEngagementFromTracking();
+    // Más scrape que la mañana: cupo tarde + cola suele estar más vacía a las 15:00
     const outreach = await runDailyPublicOwnerLeads({
       dryRun,
       wave: 'afternoon',
+      maxSend: 50,
+      extractLimit: 30,
     });
 
     return NextResponse.json({

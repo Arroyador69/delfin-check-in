@@ -75,6 +75,16 @@ const VACATION_NEGATIVE = [
   /\bmarketing\s+digital\b/i,
   /\bgestor[ií]a\b/i,
   /\basesor[ií]a\s+fiscal\b/i,
+  /\bdirectorio\s+de\s+casas\b/i,
+  /\bcomparador\b/i,
+  /\bmetabuscador\b/i,
+  /\breserva\s+online\s+de\s+hoteles\b/i,
+  /\bspa\s+wellness\b/i,
+  /\bfotograf[ií]a\b/i,
+  /\bagencia\s+de\s+comunicaci[oó]n\b/i,
+  /\bdestino\s+tur[ií]stico\b/i,
+  /\boficina\s+de\s+turismo\b/i,
+  /\bpatronato\s+de\s+turismo\b/i,
 ];
 
 const SPAIN_POSITIVE = [
@@ -155,6 +165,24 @@ const HOST_NEGATIVE = [
   /marketing/i,
   /software/i,
   /globales\.es/i,
+  /kayak/i,
+  /rusticae/i,
+  /smugmug/i,
+  /booking/i,
+  /airbnb/i,
+  /expedia/i,
+  /tripadvisor/i,
+  /infonova/i,
+  /turismoslow/i,
+  /turismoferrol/i,
+  /massagium/i,
+  /wellness/i,
+  /\.pe$/i,
+  /\.mx$/i,
+  /\.ar$/i,
+  /\.co$/i,
+  /\.cl$/i,
+  /peru/i,
 ];
 
 function hostOf(url: string): string {

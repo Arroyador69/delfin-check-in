@@ -45,9 +45,15 @@ async function ensureTables(): Promise<boolean> {
   return Boolean(meta.rows[0]?.reg);
 }
 
+/**
+ * Tope del DÍA = mañana 50 + tarde 50 → HARD_CAP 100.
+ * No usar DAILY_TARGET (50) aquí: si no, la oleada 15:00 se queda sin cupo.
+ */
 function dailyCap(): number {
-  const raw = Number(process.env.PUBLIC_OWNER_LEADS_DAILY_CAP || PUBLIC_OWNER_LEADS_DAILY_TARGET);
-  if (!Number.isFinite(raw) || raw < 1) return PUBLIC_OWNER_LEADS_DAILY_TARGET;
+  const raw = Number(
+    process.env.PUBLIC_OWNER_LEADS_DAILY_CAP || PUBLIC_OWNER_LEADS_DAILY_HARD_CAP
+  );
+  if (!Number.isFinite(raw) || raw < 1) return PUBLIC_OWNER_LEADS_DAILY_HARD_CAP;
   return Math.min(PUBLIC_OWNER_LEADS_DAILY_HARD_CAP, Math.floor(raw));
 }
 
