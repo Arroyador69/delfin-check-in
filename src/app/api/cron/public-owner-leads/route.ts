@@ -7,12 +7,14 @@ import {
 import { syncZohoBounces } from '@/lib/zoho-bounce-sync';
 import { syncInactiveTenantSuppressions } from '@/lib/email-suppression';
 
+/** Scrape + envío: necesita margen (Pro 300s). */
+export const maxDuration = 300;
+
 /**
- * Cron ~09:00 Europe/Madrid (07:00 UTC en CEST):
- * 1) refresca suppression Zoho (si hay credenciales)
- * 2) sincroniza opens/clicks
- * 3) descubre emails de URLs pendientes + envía hasta 50 prueba gratis
- *
+ * Cron ~09:00 Europe/Madrid:
+ * - Invierno (CET UTC+1): vercel `0 8 * * *`
+ * - Verano (CEST UTC+2): preferible `0 7 * * *` (ajustar en cambio horario)
+ * 1) Zoho undelivered 2) opens/clicks 3) scrape + hasta 50 mails nuevos
  * Auth: Authorization Bearer CRON_SECRET
  */
 export async function GET(req: NextRequest) {

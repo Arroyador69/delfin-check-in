@@ -5,17 +5,14 @@ import { isBlockedOutreachHost } from './blocked-hosts';
 const USER_AGENT =
   'DelfinCheckInPublicLeadsBot/1.0 (+https://delfincheckin.com; outreach-research; contact=soporte@delfincheckin.com)';
 
+/** Pocas rutas: priorizar contacto/legal (donde suele estar el email). */
 const CONTACT_PATHS = [
   '/contacto',
   '/contact',
   '/contactanos',
-  '/contact-us',
   '/aviso-legal',
   '/legal',
-  '/privacidad',
-  '/privacy',
-  '/sobre-nosotros',
-  '/about',
+  '/reservas',
 ];
 
 export function sleep(ms: number): Promise<void> {

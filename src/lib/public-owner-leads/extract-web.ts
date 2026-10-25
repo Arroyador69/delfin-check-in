@@ -72,15 +72,16 @@ export async function extractPublicEmailsFromUrl(
 
   for (const candidate of candidates) {
     if (isBlockedOutreachHost(candidate)) continue;
-    const res = await fetchHtml(candidate);
-    await sleep(delayMs);
+    const res = await fetchHtml(candidate, 12000);
+    if (res.html) await sleep(delayMs);
     if (!res.html) continue;
 
     const verdict = classifySpainVacationRental(res.finalUrl || candidate, res.html);
     lastReason = verdict.reason;
     if (!verdict.ok) {
-      // Si la home no pasa, no extraemos emails de esta web
-      continue;
+      // Home puede fallar filtro; probar rutas contacto igual si host sugiere VR
+      if (!hostSuggestsVacation(url) && candidate === url) continue;
+      if (!hostSuggestsVacation(url)) continue;
     }
     nicheOk = true;
     if (!firstHtml) {
@@ -93,7 +94,7 @@ export async function extractPublicEmailsFromUrl(
         emailsFound.set(email, res.finalUrl || candidate);
       }
     }
-    if (emailsFound.size > 0 && candidate !== url) break;
+    if (emailsFound.size > 0) break;
   }
 
   if (!nicheOk) {

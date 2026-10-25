@@ -119,6 +119,7 @@ const SPAIN_POSITIVE = [
 const HOST_VACATION = [
   /casarural/i,
   /casa-rural/i,
+  /\bcasa[s]?[a-z0-9-]*/i,
   /turismo.?rural/i,
   /rural/i,
   /vacacional/i,
@@ -133,6 +134,8 @@ const HOST_VACATION = [
   /camping/i,
   /albergue/i,
   /hosped/i,
+  /agrotur/i,
+  /turismorural/i,
 ];
 
 const HOST_NEGATIVE = [
@@ -221,15 +224,18 @@ export function classifySpainVacationRental(
     return { ok: false, spain: spainHost || spainContent, vacation: false, reason: 'negocio-ajeno' };
   }
 
+  // Host tipo casa*/pazo*/finca* en ES/.com rural: aceptar aunque el HTML sea pobre (SPA)
   const vacation = pos >= 1 || hostVac;
-  const spain = spainHost || spainContent || (vacation && /\.(es|gal|cat|eus)\b/i.test(hostOf(url)));
+  const spain =
+    spainHost ||
+    spainContent ||
+    (vacation && /\.(es|gal|cat|eus)\b/i.test(hostOf(url))) ||
+    (hostVac && /\.(com|net|org)\b/i.test(hostOf(url)) && neg === 0);
 
-  // Exigimos ambos: ES + vacacional
   if (!vacation) {
     return { ok: false, spain, vacation: false, reason: 'sin-señal-alojamiento' };
   }
-  if (!spain && !spainHost) {
-    // .com sin señal España → rechazo (evitar LatAm / otros)
+  if (!spain) {
     return { ok: false, spain: false, vacation: true, reason: 'sin-señal-españa' };
   }
 
@@ -251,22 +257,31 @@ export function extractSpainVacationOutboundLinks(
     return [];
   }
 
-  const re = /href\s*=\s*["'](https?:\/\/[^"'#?]+)/gi;
+  const junkPath = /\.(png|jpe?g|gif|svg|webp|pdf|css|js|ico|xml|json)(\?|$)/i;
+  const re = /href\s*=\s*["'](https?:\/\/[^"'#]+)/gi;
   let m: RegExpExecArray | null;
   while ((m = re.exec(html)) && out.length < limit) {
-    const href = m[1];
+    const href = m[1].split('?')[0];
+    if (junkPath.test(href)) continue;
     let host = '';
     try {
-      host = new URL(href).hostname.replace(/^www\./, '').toLowerCase();
+      const u = new URL(href);
+      host = u.hostname.replace(/^www\./, '').toLowerCase();
+      // Solo home o contacto, no assets CDN
+      if (u.pathname.length > 80) continue;
     } catch {
       continue;
     }
     if (!host || host === baseHost) continue;
     if (seen.has(host)) continue;
-    if (!looksSpanishHost(href) && !hostSuggestsVacation(href)) continue;
     if (hostSuggestsNonVacation(href)) continue;
+    if (!looksSpanishHost(href) && !hostSuggestsVacation(href)) continue;
+    // Evitar directorios/agregadores y soft
+    if (/escapada|booking|airbnb|siweb|soft|cdn|cloudflare|wix|wordpress\.com/i.test(host)) {
+      continue;
+    }
     seen.add(host);
-    out.push(href.replace(/\/$/, ''));
+    out.push(`https://${host}`);
   }
   return out;
 }
