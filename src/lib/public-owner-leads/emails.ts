@@ -42,6 +42,20 @@ export function isPlausiblePublicEmail(email: string): boolean {
   return true;
 }
 
+/** Cloudflare Email Protection (data-cfemail). */
+function decodeCfEmail(hex: string): string | null {
+  try {
+    const r = parseInt(hex.slice(0, 2), 16);
+    let out = '';
+    for (let i = 2; i < hex.length; i += 2) {
+      out += String.fromCharCode(parseInt(hex.slice(i, i + 2), 16) ^ r);
+    }
+    return out;
+  } catch {
+    return null;
+  }
+}
+
 export function extractEmailsFromHtml(html: string): string[] {
   const found = new Set<string>();
 
@@ -50,11 +64,22 @@ export function extractEmailsFromHtml(html: string): string[] {
     if (isPlausiblePublicEmail(e)) found.add(e);
   }
 
+  for (const m of html.matchAll(/data-cfemail=["']([a-f0-9]+)["']/gi)) {
+    const decoded = decodeCfEmail(m[1] || '');
+    if (decoded && isPlausiblePublicEmail(decoded)) found.add(normalizeEmail(decoded));
+  }
+
   const stripped = html
     .replace(/<script[\s\S]*?<\/script>/gi, ' ')
     .replace(/<style[\s\S]*?<\/style>/gi, ' ');
 
-  for (const m of stripped.matchAll(EMAIL_RE)) {
+  // info [at] dominio.com / info(at)dominio.com
+  const obfuscated = stripped.replace(
+    /([a-z0-9._%+\-]+)\s*(?:\[?\s*at\s*\]?|\(at\)|@)\s*([a-z0-9.\-]+)\s*(?:\[?\s*dot\s*\]?|\(dot\)|\.)\s*([a-z]{2,})/gi,
+    '$1@$2.$3'
+  );
+
+  for (const m of obfuscated.matchAll(EMAIL_RE)) {
     const e = normalizeEmail(m[0] || '');
     if (isPlausiblePublicEmail(e)) found.add(e);
   }

@@ -20,7 +20,11 @@ export const PUBLIC_OWNER_LEADS_EMAIL_TYPE = 'public_owner_outreach';
 
 export const PUBLIC_OWNER_LEADS_CAMPAIGN = 'public_owner_leads_es';
 
-export const PUBLIC_OWNER_LEADS_MIN_DELAY_MS = 1500;
+/** Delay entre fetches (ms). Bajo para caber en timeout Vercel + envío. */
+export const PUBLIC_OWNER_LEADS_MIN_DELAY_MS = 400;
 
-/** Fuentes a scrapear por cron (mantener recámara). */
-export const PUBLIC_OWNER_LEADS_EXTRACT_PER_RUN = 50;
+/**
+ * Fuentes a scrapear por cron. Pocas + rápidas: el envío debe ocurrir
+ * en la misma invocación (límite ~300s Pro / menos en Hobby).
+ */
+export const PUBLIC_OWNER_LEADS_EXTRACT_PER_RUN = 15;

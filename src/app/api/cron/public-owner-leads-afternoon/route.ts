@@ -6,9 +6,11 @@ import {
 } from '@/lib/public-owner-leads/daily-run';
 import { PUBLIC_OWNER_SIGNUPS_DAILY_GOAL } from '@/lib/public-owner-leads/constants';
 
+export const maxDuration = 300;
+
 /**
- * Cron ~15:00 Europe/Madrid (13:00 UTC en CEST).
- * Si altas atribuidas hoy < 20 → misma captación (emails NUEVOS, nunca reenvío).
+ * Cron ~15:00 Europe/Madrid (invierno CET: vercel `0 14 * * *`).
+ * Solo si altas hoy < 20 → hasta 50 emails NUEVOS (nunca reenvío).
  */
 export async function GET(req: NextRequest) {
   if (!authorizeCronSecret(req)) {
