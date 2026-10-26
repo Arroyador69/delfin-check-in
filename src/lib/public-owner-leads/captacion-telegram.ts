@@ -1,6 +1,7 @@
 /**
- * Telegram de captación: progreso cada 150 mails + meta 20 + cierre del día.
- * No notificar en cada oleada de 50 (ruido); sí en hitos 150/300/…/1000.
+ * Telegram de captación: solo 3/día.
+ * 12:00 progreso · 16:00 progreso · 21:00 cierre.
+ * No notificar en cada oleada de 50.
  */
 
 import { sql } from '@/lib/db';
@@ -38,7 +39,7 @@ const WAVE_TITLE: Record<CaptacionWaveLabel, string> = {
   evening: 'Oleada (franja tarde-noche)',
   night: 'Oleada (franja cierre)',
   prepare: 'Prepare (solo cola)',
-  progress: 'Progreso del día',
+  progress: 'Progreso captación',
   day_end: 'Cierre del día',
 };
 

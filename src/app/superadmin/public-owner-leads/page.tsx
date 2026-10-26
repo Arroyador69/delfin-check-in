@@ -81,10 +81,9 @@ export default function PublicOwnerLeadsAdminPage() {
   const [dailyTarget, setDailyTarget] = useState(50);
   const [hardCap, setHardCap] = useState(1000);
   const [wavesPerDay, setWavesPerDay] = useState(20);
-  const [progressEvery, setProgressEvery] = useState(150);
   const [delayMs, setDelayMs] = useState(1800);
   const [scheduleHint, setScheduleHint] = useState(
-    '08:00–17:30 Madrid · cada 30 min · 50/oleada · Telegram cada 150'
+    '08:00–17:30 Madrid · cada 30 min · 50/oleada · Telegram 12:00 + 16:00 + 21:00'
   );
   const [reserveReady, setReserveReady] = useState(0);
   const [wavesStillRun, setWavesStillRun] = useState(true);
@@ -122,12 +121,11 @@ export default function PublicOwnerLeadsAdminPage() {
       setDailyTarget(Number(data.wave_max || data.daily_target || 50));
       setHardCap(Number(data.daily_hard_cap || 1000));
       setWavesPerDay(Number(data.waves_per_day || 20));
-      setProgressEvery(Number(data.progress_every || 150));
       setDelayMs(Number(data.delay_ms || 1800));
       setScheduleHint(
         String(
           data.schedule_hint ||
-            '08:00–17:30 Madrid · cada 30 min · 50/oleada · Telegram cada 150'
+            '08:00–17:30 Madrid · cada 30 min · 50/oleada · Telegram 12:00 + 16:00 + 21:00'
         )
       );
       setReserveReady(Number(data.reserve_ready || 0));
@@ -231,9 +229,9 @@ export default function PublicOwnerLeadsAdminPage() {
             <p className="mt-1 text-slate-600 max-w-2xl text-[15px] leading-relaxed">
               Meta <strong className="text-slate-900">{SIGNUP_DAILY_GOAL} altas / día</strong> · tope{' '}
               <strong className="text-slate-900">{hardCap} mails / día</strong> en {wavesPerDay} oleadas ×
-              {waveSize} ({scheduleHint}) · delay {delaySec}s · Telegram cada {progressEvery} · si
-              altas ≥20 se para y la cola queda para mañana · cola siempre ≥{queueTarget}. Cola ahora:{' '}
-              <strong className="text-slate-900">{reserveReady}</strong>.
+              {waveSize} ({scheduleHint}) · delay {delaySec}s · solo <strong>3 Telegram/día</strong> (12:00 ·
+              16:00 · cierre 21:00) · si altas ≥20 se para y la cola queda para mañana · cola siempre ≥
+              {queueTarget}. Cola ahora: <strong className="text-slate-900">{reserveReady}</strong>.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -359,8 +357,8 @@ export default function PublicOwnerLeadsAdminPage() {
                   <MiniStat label="Descubiertos" value={today.discovered_today} />
                 </div>
                 <p className="mt-3 text-xs text-slate-500">
-                  Zoho-safe: {waveSize}/oleada · delay {delaySec}s · Telegram al cruzar{' '}
-                  {progressEvery}/{progressEvery * 2}/… mails · cron todo el día hasta tope o meta 20.
+                  Zoho-safe: {waveSize}/oleada · delay {delaySec}s · Telegram solo 12:00 + 16:00 + cierre
+                  21:00 · cron todo el día hasta tope o meta 20.
                 </p>
               </div>
             </section>
@@ -368,9 +366,9 @@ export default function PublicOwnerLeadsAdminPage() {
             <section className="rounded-2xl border border-sky-100 bg-sky-50/60 px-5 py-4 text-sm text-slate-700">
               <p className="font-semibold text-slate-900">Horario de trabajo (Europe/Madrid)</p>
               <p className="mt-1 leading-relaxed">
-                Prepare ~07:00 (solo cola ≥{queueTarget}) · oleadas {scheduleHint} · cierre Telegram
-                ~21:00. Si la meta de altas se cumple antes, se deja de enviar y el stock queda para el
-                día siguiente.
+                Prepare ~07:00 (solo cola ≥{queueTarget}) · oleadas cada 30 min 08:00–17:30 · Telegram
+                progreso 12:00 y 16:00 · cierre 21:00 (3 en total). Si la meta de altas se cumple antes,
+                se deja de enviar y el stock queda para el día siguiente.
               </p>
             </section>
 

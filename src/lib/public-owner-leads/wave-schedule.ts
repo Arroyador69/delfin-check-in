@@ -2,12 +2,16 @@
  * Horario de oleadas Zoho-safe: 50 mails × 20 slots ≈ 1000/día.
  * Ventana Europe/Madrid ~08:00–17:30 (cada 30 min).
  * Vercel cron UTC invierno (CET): `0,30 7-16 * * *`.
+ *
+ * Telegram: solo 3/día → 12:00 progreso · 16:00 progreso · 21:00 cierre.
  */
 
 import {
   PUBLIC_OWNER_LEADS_WAVE_MAX,
   PUBLIC_OWNER_LEADS_WAVES_PER_DAY,
   PUBLIC_OWNER_LEADS_DAILY_HARD_CAP,
+  PUBLIC_OWNER_LEADS_TG_MORNING_SLOT,
+  PUBLIC_OWNER_LEADS_TG_AFTERNOON_SLOT,
 } from './constants';
 
 type SendWave = 'morning' | 'afternoon' | 'evening' | 'night';
@@ -35,7 +39,6 @@ export function madridHalfHourSlot(now = new Date()): number | null {
   const endExclusive = start + PUBLIC_OWNER_LEADS_WAVES_PER_DAY * 30; // 20×30 = 600 → 18:00
   if (mins < start || mins >= endExclusive) return null;
 
-  // Alinear a franja de 30 min (08:00, 08:30, …)
   const offset = mins - start;
   return Math.floor(offset / 30);
 }
@@ -56,12 +59,23 @@ export function osmOffsetFromSlot(slot: number): number {
   return Math.max(0, Math.floor(slot));
 }
 
+/** ¿Esta oleada debe disparar uno de los 2 Telegram de progreso? */
+export function isProgressTelegramSlot(
+  slot: number | null
+): 'morning' | 'afternoon' | null {
+  if (slot == null) return null;
+  if (slot === PUBLIC_OWNER_LEADS_TG_MORNING_SLOT) return 'morning';
+  if (slot === PUBLIC_OWNER_LEADS_TG_AFTERNOON_SLOT) return 'afternoon';
+  return null;
+}
+
 export function waveScheduleSummary(): {
   waveMax: number;
   wavesPerDay: number;
   dailyHardCap: number;
   windowMadrid: string;
   cronUtcHint: string;
+  telegramDay: string;
 } {
   return {
     waveMax: PUBLIC_OWNER_LEADS_WAVE_MAX,
@@ -69,5 +83,6 @@ export function waveScheduleSummary(): {
     dailyHardCap: PUBLIC_OWNER_LEADS_DAILY_HARD_CAP,
     windowMadrid: '08:00–17:30 cada 30 min',
     cronUtcHint: '0,30 7-16 * * * (CET invierno ≈ Madrid)',
+    telegramDay: '12:00 progreso · 16:00 progreso · 21:00 cierre (3/día)',
   };
 }

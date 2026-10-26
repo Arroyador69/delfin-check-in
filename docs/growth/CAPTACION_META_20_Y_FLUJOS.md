@@ -5,7 +5,7 @@
 - **≥ 20 propietarios/agencias nuevas al día** (`signed_up_today`).
 - Oleadas: **50 × 20** (~08:00–17:30 Madrid, cada 30 min) si altas &lt; 20 (tope día **1000**).
 - Delay **1.8 s** entre mails (Zoho-safe).
-- Telegram progreso cada **150** mails + cierre ~21h.
+- Telegram solo **3/día**: progreso **12:00** + **16:00** + cierre **21:00**.
 - **Tras cada envío: refill automático a ~1000 `queued`** (nunca dejar la cola a 0).
 - Si altas ≥ 20 → **stop** el resto del día; stock para mañana.
 - Nunca reenviar el mismo email ni 2 al mismo dominio.

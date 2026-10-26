@@ -10,7 +10,7 @@ Playbook reutilizable (Delfín Check-in y otros proyectos). Solo fuentes **open 
 | Tope día | **1000** (= 20 oleadas × 50) si altas &lt; 20 |
 | Delay SMTP | **1.8 s** entre mails |
 | Ventana | ~**08:00–17:30** Europe/Madrid, cada **30 min** |
-| Telegram | Cada **150** mails acumulados + cierre ~21:00 |
+| Telegram | Solo **3/día**: progreso **12:00** + **16:00** + cierre **21:00** |
 | Meta altas | **20** → si se cumple, **stop** y cola para mañana |
 | Cola | Siempre ≥ **1000** `queued` tras cada cron |
 
@@ -53,7 +53,7 @@ Metas de negocio diarias:
 | 08:00–17:30 cada 30′ | `0,30 7-16 * * *` | `public-owner-leads-wave` — hasta **50** si altas &lt;20 · refill **1000** |
 | ~21:00 | `0 20 * * *` | `captacion-evening-report` — Telegram cierre vs meta 20 |
 
-Telegram progreso: al cruzar **150 / 300 / 450 / …** mails del día (no en cada oleada de 50).
+Telegram: **12:00** progreso fin mañana · **16:00** media tarde · **21:00** cierre (no en cada oleada).
 
 Rotación: `provinces-es.ts` + slot OSM. Refill: `refill-queue.ts` (opendata JCyL + extract).
 
@@ -98,4 +98,4 @@ npx tsx scripts/public-owner-leads/stats-today.ts
 3. Conectar SMTP + `email_tracking` + tabla leads.
 4. Enganchar fuentes opendata del país/nicho.
 5. KPI: `sent_today`, `signups_today`, `queued_ready`, `paid_today`.
-6. Mantener **50/oleada · 1000/día · delay ≥1.5 s · Telegram cada 150** si usáis Zoho Mail.
+6. Mantener **50/oleada · 1000/día · delay ≥1.5 s · 3 Telegram/día (12h · 16h · 21h)** si usáis Zoho Mail.

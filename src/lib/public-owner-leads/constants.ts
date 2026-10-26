@@ -40,10 +40,17 @@ export const PUBLIC_OWNER_SIGNUPS_DAILY_GOAL = 20;
 export const PUBLIC_OWNER_LEADS_MIN_QUEUED = 1000;
 
 /**
- * Telegram de progreso cada N mails acumulados del día (150, 300, …).
- * No spamear en cada oleada de 50.
+ * Solo 3 Telegram/día: 2 progreso (slots) + cierre 21h.
+ * Slot 8 = 12:00 Madrid (fin mañana) · slot 16 = 16:00 (media tarde).
+ * @deprecated ya no se usa hito por volumen; se mantiene por compat tests/docs.
  */
 export const PUBLIC_OWNER_LEADS_PROGRESS_EVERY = 150;
+
+/** Slot oleada → Telegram progreso “fin de mañana” (12:00 Madrid). */
+export const PUBLIC_OWNER_LEADS_TG_MORNING_SLOT = 8;
+
+/** Slot oleada → Telegram progreso “media tarde” (16:00 Madrid). */
+export const PUBLIC_OWNER_LEADS_TG_AFTERNOON_SLOT = 16;
 
 export const PUBLIC_OWNER_LEADS_EMAIL_TYPE = 'public_owner_outreach';
 

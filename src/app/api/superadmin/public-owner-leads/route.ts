@@ -204,7 +204,8 @@ export async function GET(req: NextRequest) {
       reserve_ready: reserve,
       afternoon_will_run: wavesStillRun,
       waves_still_run: wavesStillRun,
-      schedule_hint: '08:00–17:30 Madrid · cada 30 min · 50/oleada · Telegram cada 150',
+      schedule_hint:
+        '08:00–17:30 Madrid · cada 30 min · 50/oleada · Telegram 12:00 + 16:00 + cierre 21:00',
       stats: { ...st, open_rate_pct: openRate, click_rate_pct: clickRate, signup_rate_pct: signupRate },
       today: today.rows[0] || {},
       by_day: byDay.rows,

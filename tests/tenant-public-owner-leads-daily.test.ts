@@ -7,16 +7,20 @@ import {
   PUBLIC_OWNER_LEADS_WAVE_MAX,
   PUBLIC_OWNER_LEADS_WAVES_PER_DAY,
   PUBLIC_OWNER_LEADS_MIN_DELAY_MS,
-  PUBLIC_OWNER_LEADS_PROGRESS_EVERY,
+  PUBLIC_OWNER_LEADS_TG_MORNING_SLOT,
+  PUBLIC_OWNER_LEADS_TG_AFTERNOON_SLOT,
   PUBLIC_OWNER_SIGNUPS_DAILY_GOAL,
 } from '../src/lib/public-owner-leads/constants';
 import { isBlockedOutreachHost } from '../src/lib/public-owner-leads/blocked-hosts';
 import { buildColdOutreachEmail } from '../src/lib/public-owner-leads/template';
-import { progressMilestonesCrossed } from '../src/lib/public-owner-leads/captacion-telegram';
-import { waveFromSlot, osmOffsetFromSlot } from '../src/lib/public-owner-leads/wave-schedule';
+import {
+  waveFromSlot,
+  osmOffsetFromSlot,
+  isProgressTelegramSlot,
+} from '../src/lib/public-owner-leads/wave-schedule';
 
 describe('public-owner-leads daily campaign', () => {
-  it('20 oleadas ×50 = tope 1000; cola 1000; delay ≥1.5s; meta 20; Telegram cada 150', () => {
+  it('20 oleadas ×50 = tope 1000; cola 1000; delay ≥1.5s; meta 20; 3 Telegram/día', () => {
     expect(PUBLIC_OWNER_LEADS_WAVE_MAX).toBe(50);
     expect(PUBLIC_OWNER_LEADS_DAILY_TARGET).toBe(50);
     expect(PUBLIC_OWNER_LEADS_WAVES_PER_DAY).toBe(20);
@@ -27,17 +31,19 @@ describe('public-owner-leads daily campaign', () => {
       PUBLIC_OWNER_LEADS_DAILY_HARD_CAP
     );
     expect(PUBLIC_OWNER_LEADS_MIN_DELAY_MS).toBeGreaterThanOrEqual(1500);
-    expect(PUBLIC_OWNER_LEADS_PROGRESS_EVERY).toBe(150);
+    expect(PUBLIC_OWNER_LEADS_TG_MORNING_SLOT).toBe(8); // 12:00
+    expect(PUBLIC_OWNER_LEADS_TG_AFTERNOON_SLOT).toBe(16); // 16:00
   });
 
   it('campaign key estable para UTM', () => {
     expect(PUBLIC_OWNER_LEADS_CAMPAIGN).toBe('public_owner_leads_es');
   });
 
-  it('hitos Telegram cada 150', () => {
-    expect(progressMilestonesCrossed(140, 160, 150)).toEqual([150]);
-    expect(progressMilestonesCrossed(0, 50, 150)).toEqual([]);
-    expect(progressMilestonesCrossed(140, 310, 150)).toEqual([150, 300]);
+  it('Telegram progreso solo en slots 12:00 y 16:00', () => {
+    expect(isProgressTelegramSlot(8)).toBe('morning');
+    expect(isProgressTelegramSlot(16)).toBe('afternoon');
+    expect(isProgressTelegramSlot(0)).toBeNull();
+    expect(isProgressTelegramSlot(10)).toBeNull();
   });
 
   it('slots mapean a franjas legacy', () => {

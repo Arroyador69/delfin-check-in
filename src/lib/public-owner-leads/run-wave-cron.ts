@@ -1,11 +1,11 @@
 /**
  * Runner compartido de oleada de captación (cron cada ~30 min).
- * Envía ≤50, para si meta 20 altas, refill cola ≥1000, Telegram cada 150.
+ * Envía ≤50, para si meta 20 altas, refill cola ≥1000.
+ * Telegram: solo en slots 12:00 y 16:00 (+ cierre 21h aparte).
  */
 
 import {
   PUBLIC_OWNER_LEADS_EXTRACT_PER_RUN,
-  PUBLIC_OWNER_LEADS_PROGRESS_EVERY,
   PUBLIC_OWNER_LEADS_WAVE_MAX,
   PUBLIC_OWNER_SIGNUPS_DAILY_GOAL,
 } from './constants';
@@ -14,8 +14,12 @@ import {
   syncOutreachEngagementFromTracking,
   type OutreachWave,
 } from './daily-run';
-import { notifyCaptacionProgressMilestones } from './captacion-telegram';
-import { madridHalfHourSlot, waveFromSlot } from './wave-schedule';
+import { notifyCaptacionWave } from './captacion-telegram';
+import {
+  isProgressTelegramSlot,
+  madridHalfHourSlot,
+  waveFromSlot,
+} from './wave-schedule';
 
 export type WaveCronResult = {
   success: boolean;
@@ -75,23 +79,27 @@ export async function runPublicOwnerLeadsWaveCron(opts?: {
     });
 
     let telegram: unknown = null;
-    if (!dryRun && !outreach.skippedBecauseGoalMet) {
-      // Telegram solo al cruzar 150 / 300 / … (no cada oleada de 50)
-      telegram = await notifyCaptacionProgressMilestones({
-        sentBefore: outreach.sentTodayBefore,
-        sentAfter: outreach.sentTodayBefore + outreach.sent,
-        wave,
+    const progressKind = isProgressTelegramSlot(slot);
+
+    if (!dryRun && progressKind && !outreach.skippedBecauseGoalMet) {
+      // Solo 2 progreso/día: fin mañana (12:00) y media tarde (16:00)
+      telegram = await notifyCaptacionWave({
+        wave: 'progress',
         waveSent: outreach.sent,
         waveFailed: outreach.failed,
-        every: PUBLIC_OWNER_LEADS_PROGRESS_EVERY,
+        extraNote:
+          progressKind === 'morning'
+            ? 'Progreso fin de mañana (12:00) · 1/2 del día'
+            : 'Progreso media tarde (16:00) · 2/2 del día · cierre a las 21:00',
       });
     } else if (!dryRun && outreach.skippedBecauseGoalMet) {
-      // Meta 20: sin spam cada 30 min; el informe de cierre confirma CUMPLIDA.
       telegram = {
         skippedNotify: true,
         reason: 'goal_met_saved_for_tomorrow',
         signupGoal: PUBLIC_OWNER_SIGNUPS_DAILY_GOAL,
       };
+    } else {
+      telegram = { skippedNotify: true, reason: 'no_telegram_slot' };
     }
 
     return {
