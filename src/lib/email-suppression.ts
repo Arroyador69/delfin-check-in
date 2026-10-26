@@ -125,22 +125,53 @@ export async function upsertEmailSuppressions(
   return { processed: seen.size, inserted, skipped };
 }
 
-/** Detecta errores SMTP típicos de bounce permanente (550, mailbox unavailable, etc.). */
-export function isSmtpHardBounceError(error: unknown): boolean {
-  const msg = error instanceof Error ? error.message : String(error || '');
-  const code =
-    typeof error === 'object' && error !== null && 'responseCode' in error
-      ? Number((error as { responseCode?: number }).responseCode)
-      : NaN;
+function smtpErrorBlob(error: unknown): { msg: string; response: string; code: number; blob: string } {
+  const msg =
+    error instanceof Error
+      ? error.message
+      : typeof error === 'object' && error !== null && 'message' in error
+        ? String((error as { message?: string }).message || '')
+        : String(error || '');
   const response =
     typeof error === 'object' && error !== null && 'response' in error
       ? String((error as { response?: string }).response || '')
       : '';
+  const code =
+    typeof error === 'object' && error !== null && 'responseCode' in error
+      ? Number((error as { responseCode?: number }).responseCode)
+      : NaN;
+  return { msg, response, code, blob: `${msg} ${response}`.toLowerCase() };
+}
 
-  const blob = `${msg} ${response}`.toLowerCase();
+/** Rate-limit / temporales Zoho u otros: NO son bounce del destinatario. */
+export function isSmtpTransientOrRateLimitError(error: unknown): boolean {
+  const { blob } = smtpErrorBlob(error);
+  return (
+    blob.includes('unusual sending activity') ||
+    blob.includes('try after sometime') ||
+    blob.includes('try again later') ||
+    blob.includes('rate limit') ||
+    blob.includes('too many') ||
+    blob.includes('421') ||
+    blob.includes('450') ||
+    blob.includes('451') ||
+    blob.includes('452') ||
+    blob.includes('4.4.6') ||
+    blob.includes('5.4.6') ||
+    blob.includes('temporar') ||
+    blob.includes('greylist') ||
+    blob.includes('throttl')
+  );
+}
 
-  if (code === 550 || code === 551 || code === 552 || code === 553) return true;
-  if (/\b550\b/.test(blob) || /\b551\b/.test(blob) || /\b553\b/.test(blob)) return true;
+/** Detecta errores SMTP típicos de bounce permanente (mailbox inexistente, etc.). */
+export function isSmtpHardBounceError(error: unknown): boolean {
+  const { blob, code } = smtpErrorBlob(error);
+
+  // Zoho 550 “Unusual sending activity” NO es bounce del destinatario
+  if (isSmtpTransientOrRateLimitError(error)) return false;
+
+  // Textos claros de destinatario inválido (prioridad sobre el código genérico)
   if (
     blob.includes('user unknown') ||
     blob.includes('mailbox unavailable') ||
@@ -149,11 +180,78 @@ export function isSmtpHardBounceError(error: unknown): boolean {
     blob.includes('no such user') ||
     blob.includes('does not exist') ||
     blob.includes('invalid recipient') ||
-    blob.includes('address rejected')
+    blob.includes('address rejected') ||
+    blob.includes('user does not exist')
   ) {
     return true;
   }
+
+  // 551/553 casi siempre destinatario; 550 solo si no es rate-limit (arriba)
+  if (code === 551 || code === 553) return true;
+  if (code === 550 || code === 552) {
+    // 550 genérico sin texto de mailbox → tratar como duro solo con pista de recipiente
+    if (/\b(recipient|mailbox|user|address|rcpt)\b/.test(blob)) return true;
+    // 550 solo (p.ej. política remitente) → no suppress al destinatario
+    return false;
+  }
+  if (/\b551\b/.test(blob) || /\b553\b/.test(blob)) return true;
+  if (/\b550\b/.test(blob) && /\b(recipient|mailbox|user|address)\b/.test(blob)) return true;
+
   return false;
+}
+
+/**
+ * Suppression que bloquea emails TRANSACCIONALES (onboarding / magic link).
+ * Solo bounce duro o baja manual. Opt-out outreach / unsubscribe marketing NO bloquean.
+ */
+export async function isEmailBlockedForTransactional(email: string): Promise<{
+  blocked: boolean;
+  reason?: string;
+  source?: string;
+}> {
+  const normalized = normalizeSuppressionEmail(email);
+  if (!normalized || !normalized.includes('@')) return { blocked: false };
+
+  await ensureEmailSuppressionSchema();
+  try {
+    const r = await sql`
+      SELECT reason, source FROM email_unsubscribes
+      WHERE LOWER(TRIM(email)) = ${normalized}
+      ORDER BY unsubscribed_at DESC NULLS LAST
+      LIMIT 1
+    `;
+    const row = r.rows[0] as { reason?: string; source?: string } | undefined;
+    if (!row) return { blocked: false };
+    const reason = String(row.reason || '').toLowerCase();
+    // Solo bounce real bloquea el mail de acceso
+    if (reason === 'bounce') {
+      return { blocked: true, reason, source: row.source };
+    }
+    return { blocked: false, reason, source: row.source };
+  } catch (e) {
+    console.warn('isEmailBlockedForTransactional: consulta falló, no bloquear', e);
+    return { blocked: false };
+  }
+}
+
+/** Quita suppression smtp_bounce errónea (p.ej. rate-limit Zoho marcado como bounce). */
+export async function liftFalseSmtpBounceSuppression(email: string): Promise<boolean> {
+  const normalized = normalizeSuppressionEmail(email);
+  if (!normalized) return false;
+  await ensureEmailSuppressionSchema();
+  try {
+    const r = await sql`
+      DELETE FROM email_unsubscribes
+      WHERE LOWER(TRIM(email)) = ${normalized}
+        AND reason = 'bounce'
+        AND COALESCE(source, '') = 'smtp_bounce'
+      RETURNING email
+    `;
+    return r.rows.length > 0;
+  } catch (e) {
+    console.warn('liftFalseSmtpBounceSuppression:', e);
+    return false;
+  }
 }
 
 /** Si el error es bounce duro, inserta suppression + marca lead outreach (best-effort). */

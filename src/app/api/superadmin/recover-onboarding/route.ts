@@ -8,6 +8,7 @@ import {
   onboardingEmailVariantForOwner,
 } from '@/lib/onboarding-magic-link';
 import { sql } from '@/lib/db';
+import { liftFalseSmtpBounceSuppression } from '@/lib/email-suppression';
 
 export const runtime = 'nodejs';
 
@@ -49,11 +50,14 @@ export async function POST(req: NextRequest) {
       `;
     }
 
+    // Limpiar falso bounce por rate-limit Zoho antes de reenviar
+    await liftFalseSmtpBounceSuppression(email);
+
     const { token, tempPassword } = await issueFreshOnboardingCredentials(owner.user_id);
     const onboardingUrl = buildOnboardingUrl(token, locale.startsWith('es') ? 'es' : locale.slice(0, 2));
 
     try {
-      await sendOnboardingEmail({
+      const mail = await sendOnboardingEmail({
         to: email,
         onboardingUrl,
         tempPassword,
@@ -61,6 +65,20 @@ export async function POST(req: NextRequest) {
         variant: onboardingEmailVariantForOwner(owner.plan_type),
         locale: locale.startsWith('es') ? 'es' : locale.slice(0, 2),
       });
+      if (!mail?.success) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Credenciales regeneradas pero falló el envío del email',
+            emailError: mail?.error || 'send_failed',
+            onboardingUrl,
+            tempPassword,
+            resetOnboardingFlow,
+            note: 'Puedes copiar el enlace y la contraseña temporal y enviárselos al cliente por otro canal.',
+          },
+          { status: 502 }
+        );
+      }
     } catch (mailErr: any) {
       console.error('[superadmin/recover-onboarding] mail', mailErr);
       return NextResponse.json(

@@ -809,10 +809,23 @@ export async function sendOnboardingEmail(params: {
 }) {
   let trackingId: string | null = null;
   try {
-    const { isEmailSuppressed } = await import('@/lib/email-suppression');
-    if (await isEmailSuppressed(params.to)) {
-      console.warn('⚠️ [SEND ONBOARDING EMAIL] Email suppressed, no enviar:', {
+    const {
+      isEmailBlockedForTransactional,
+      liftFalseSmtpBounceSuppression,
+      isSmtpTransientOrRateLimitError,
+    } = await import('@/lib/email-suppression');
+
+    // Quitar falsos “bounce” por rate-limit Zoho (550 Unusual sending…)
+    await liftFalseSmtpBounceSuppression(params.to);
+
+    // Onboarding es TRANSACCIONAL: opt-out outreach / unsubscribe marketing NO bloquean.
+    // Solo bounce real (mailbox inexistente) bloquea.
+    const block = await isEmailBlockedForTransactional(params.to);
+    if (block.blocked) {
+      console.warn('⚠️ [SEND ONBOARDING EMAIL] Bounce real — no enviar:', {
         to: params.to,
+        reason: block.reason,
+        source: block.source,
       });
       return { success: false, error: 'email_suppressed' };
     }
@@ -1013,19 +1026,43 @@ export async function sendOnboardingEmail(params: {
       smtpConfigured: !!(process.env.SMTP_HOST && process.env.SMTP_USER && (process.env.SMTP_PASS || process.env.SMTP_PASSWORD))
     });
 
-    const result = await transporter.sendMail({
+    const mailPayload = {
       from,
       to: params.to,
       subject,
       html,
-      text, // Versión texto plano para mejor deliverability
-      // Headers adicionales para evitar spam
+      text,
       headers: {
         'X-Priority': '1',
         'X-MSMail-Priority': 'High',
-        'Importance': 'high',
+        Importance: 'high',
       },
-    });
+    };
+
+    // Reintentos ante rate-limit Zoho / temporales (mismo buzón que outreach)
+    let result: Awaited<ReturnType<typeof transporter.sendMail>> | null = null;
+    let lastSendErr: unknown = null;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        result = await transporter.sendMail(mailPayload);
+        lastSendErr = null;
+        break;
+      } catch (sendErr) {
+        lastSendErr = sendErr;
+        const retryable = isSmtpTransientOrRateLimitError(sendErr);
+        console.warn(`⚠️ [SEND ONBOARDING EMAIL] intento ${attempt}/3 falló:`, {
+          retryable,
+          message: sendErr instanceof Error ? sendErr.message : String(sendErr),
+        });
+        if (!retryable || attempt === 3) break;
+        await new Promise((r) => setTimeout(r, 2500 * attempt));
+      }
+    }
+    if (!result) {
+      throw lastSendErr instanceof Error
+        ? lastSendErr
+        : new Error(String(lastSendErr || 'send_failed'));
+    }
 
     console.log('✅ [SEND ONBOARDING EMAIL] Email enviado exitosamente:', {
       messageId: result.messageId,
