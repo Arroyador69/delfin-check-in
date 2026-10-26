@@ -74,6 +74,8 @@ describe('public-owner-leads daily campaign', () => {
     expect(mail.html).toContain('Instagram');
     expect(mail.html).toContain('Facebook');
     expect(mail.html).toContain('YouTube');
+    expect(mail.html).toContain('/email/social/instagram.png');
+    expect(mail.html).toMatch(/width="24"[^>]*height="24"|height="24"[^>]*width="24"/);
     expect(mail.html).not.toMatch(/tenant|onboarding|cron|API/i);
     expect(mail.html).toContain('MIR');
     expect(mail.html).toMatch(/2€/);
