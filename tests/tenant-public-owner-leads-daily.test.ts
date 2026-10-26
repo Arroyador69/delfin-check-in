@@ -2,15 +2,20 @@ import { describe, expect, it } from 'vitest';
 import {
   PUBLIC_OWNER_LEADS_DAILY_HARD_CAP,
   PUBLIC_OWNER_LEADS_DAILY_TARGET,
+  PUBLIC_OWNER_LEADS_MIN_QUEUED,
   PUBLIC_OWNER_LEADS_CAMPAIGN,
+  PUBLIC_OWNER_SIGNUPS_DAILY_GOAL,
 } from '../src/lib/public-owner-leads/constants';
 import { isBlockedOutreachHost } from '../src/lib/public-owner-leads/blocked-hosts';
 import { buildColdOutreachEmail } from '../src/lib/public-owner-leads/template';
 
 describe('public-owner-leads daily campaign', () => {
-  it('mañana 50 + tarde 50 si <20 altas (tope 100)', () => {
-    expect(PUBLIC_OWNER_LEADS_DAILY_TARGET).toBe(50);
-    expect(PUBLIC_OWNER_LEADS_DAILY_HARD_CAP).toBe(100);
+  it('4 oleadas ×250 = tope 1000; cola mínima 1000; meta 20 altas', () => {
+    expect(PUBLIC_OWNER_LEADS_DAILY_TARGET).toBe(250);
+    expect(PUBLIC_OWNER_LEADS_DAILY_HARD_CAP).toBe(1000);
+    expect(PUBLIC_OWNER_LEADS_MIN_QUEUED).toBe(1000);
+    expect(PUBLIC_OWNER_SIGNUPS_DAILY_GOAL).toBe(20);
+    expect(PUBLIC_OWNER_LEADS_DAILY_TARGET * 4).toBe(PUBLIC_OWNER_LEADS_DAILY_HARD_CAP);
   });
 
   it('campaign key estable para UTM', () => {
@@ -43,4 +48,3 @@ describe('public-owner-leads daily campaign', () => {
     expect(mail.text).toContain('baja');
   });
 });
-
