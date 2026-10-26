@@ -6,14 +6,11 @@
 import { sql } from '@/lib/db';
 import { isEmailSuppressed } from '@/lib/email-suppression';
 import {
-  PUBLIC_OWNER_LEADS_AFTERNOON_MAX,
   PUBLIC_OWNER_LEADS_DAILY_HARD_CAP,
-  PUBLIC_OWNER_LEADS_DAILY_TARGET,
-  PUBLIC_OWNER_LEADS_EVENING_MAX,
   PUBLIC_OWNER_LEADS_EXTRACT_PER_RUN,
   PUBLIC_OWNER_LEADS_MIN_DELAY_MS,
   PUBLIC_OWNER_LEADS_MIN_QUEUED,
-  PUBLIC_OWNER_LEADS_NIGHT_MAX,
+  PUBLIC_OWNER_LEADS_WAVE_MAX,
   PUBLIC_OWNER_SIGNUPS_DAILY_GOAL,
 } from './constants';
 import { isPlausiblePublicEmail, scoreEmailForSource } from './emails';
@@ -61,17 +58,17 @@ async function ensureTables(): Promise<boolean> {
 }
 
 /**
- * Tope del DÍA = 4 oleadas × 250 → HARD_CAP 1000.
- * No usar DAILY_TARGET aquí como tope diario: si no, las oleadas posteriores se quedan sin cupo.
+ * Tope del DÍA = 20 oleadas × 50 → HARD_CAP 1000.
+ * No usar WAVE_MAX aquí como tope diario: si no, las oleadas posteriores se quedan sin cupo.
  */
 function dailyCap(): number {
   const raw = Number(
     process.env.PUBLIC_OWNER_LEADS_DAILY_CAP || PUBLIC_OWNER_LEADS_DAILY_HARD_CAP
   );
   if (!Number.isFinite(raw) || raw < 1) return PUBLIC_OWNER_LEADS_DAILY_HARD_CAP;
-  // Legacy: env 150/200 con hard cap subido → usar hard cap nuevo
+  // Legacy: env 150/200/250 con hard cap 1000 → usar hard cap
   if (
-    (raw === 150 || raw === 200) &&
+    (raw === 150 || raw === 200 || raw === 250) &&
     PUBLIC_OWNER_LEADS_DAILY_HARD_CAP > raw
   ) {
     return PUBLIC_OWNER_LEADS_DAILY_HARD_CAP;
@@ -235,10 +232,7 @@ function normalizeWave(w?: OutreachWave): OutreachWave {
 
 function waveMaxDefault(wave: OutreachWave): number {
   if (wave === 'prepare') return 0; // solo rellenar cola, no enviar
-  if (wave === 'afternoon') return PUBLIC_OWNER_LEADS_AFTERNOON_MAX;
-  if (wave === 'evening') return PUBLIC_OWNER_LEADS_EVENING_MAX;
-  if (wave === 'night') return PUBLIC_OWNER_LEADS_NIGHT_MAX;
-  return PUBLIC_OWNER_LEADS_DAILY_TARGET;
+  return PUBLIC_OWNER_LEADS_WAVE_MAX; // 50 — Zoho-safe, todas las franjas
 }
 
 function waveOsmOffset(wave: OutreachWave): number {
@@ -253,7 +247,7 @@ export async function runDailyPublicOwnerLeads(opts?: {
   dryRun?: boolean;
   maxSend?: number;
   extractLimit?: number;
-  /** morning ~09:00; afternoon ~15:00 / evening ~18:00 si altas < meta 20 */
+  /** Franja del día (morning…night) o prepare. Meta 20 → skip envío, cola para mañana. */
   wave?: OutreachWave;
 }): Promise<DailyOutreachResult> {
   const dryRun = Boolean(opts?.dryRun);
@@ -284,11 +278,10 @@ export async function runDailyPublicOwnerLeads(opts?: {
   const sentTodayBefore = await countSentToday();
   const signupsTodayBefore = await countSignupsToday();
 
-  // Tarde/noche/cierre 20h: solo si aún no llegamos a 20 altas; nunca reenvía
-  // prepare: siempre rellena cola (maxSend=0)
-  // Aunque no enviemos: SIEMPRE recargar cola (norma MIN_QUEUED).
+  // Cualquier oleada de envío: si ya hay ≥20 altas → no enviar; cola queda para mañana.
+  // prepare: siempre rellena cola (maxSend=0). Aunque no enviemos: SIEMPRE refill MIN_QUEUED.
   if (
-    (wave === 'afternoon' || wave === 'evening' || wave === 'night') &&
+    wave !== 'prepare' &&
     signupsTodayBefore >= PUBLIC_OWNER_SIGNUPS_DAILY_GOAL
   ) {
     let refillSummary: DailyOutreachResult['refill'];
@@ -376,7 +369,7 @@ export async function runDailyPublicOwnerLeads(opts?: {
   }
 
   // Si ya hay cola suficiente para esta oleada, no gastar el timeout en OSM:
-  // prioridad = enviar hasta 250 y luego refill.
+  // prioridad = enviar hasta 50 y luego refill.
   let queuedAhead = 0;
   if (!dryRun) {
     try {

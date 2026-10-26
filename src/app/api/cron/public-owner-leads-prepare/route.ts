@@ -9,8 +9,8 @@ export const maxDuration = 300;
 /**
  * ~07:00 Europe/Madrid (invierno: vercel `0 6 * * *`).
  * Solo PREPARA cola (agencias/hoteles/dueños): NUNCA envía.
- * Rota provincias distintas a las oleadas 09/15/18.
- * Objetivo: ≥100 queued antes de la primera oleada.
+ * Rota provincias distintas a las oleadas del día (08:00–17:30).
+ * Objetivo: ≥1000 queued antes de la primera oleada.
  */
 export async function GET(req: NextRequest) {
   if (!authorizeCronSecret(req)) {

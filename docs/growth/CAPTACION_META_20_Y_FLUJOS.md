@@ -3,13 +3,13 @@
 ## Objetivo de negocio (duro)
 
 - **≥ 20 propietarios/agencias nuevas al día** (`signed_up_today`).
-- Oleadas de mail: **250×4** (09 / 15 / 18 / 20h) si altas &lt; 20 (tope día **1000**).
+- Oleadas: **50 × 20** (~08:00–17:30 Madrid, cada 30 min) si altas &lt; 20 (tope día **1000**).
+- Delay **1.8 s** entre mails (Zoho-safe).
+- Telegram solo **3/día**: progreso **12:00** + **16:00** + cierre **21:00**.
 - **Tras cada envío: refill automático a ~1000 `queued`** (nunca dejar la cola a 0).
-- Telegram tras cada oleada + cierre ~21h con acumulado del día vs meta 20.
+- Si altas ≥ 20 → **stop** el resto del día; stock para mañana.
 - Nunca reenviar el mismo email ni 2 al mismo dominio.
 - Solo **España** + alojamiento turístico / vacacional (dueños, **agencias gestoras**, hoteles, hostales).
-
-Si a las 15:00 / 18:00 / 20:00 aún &lt; 20 altas → seguir descubriendo y enviando hasta el tope 1000.
 
 ---
 
@@ -19,7 +19,7 @@ El dry-run de Flujo C solo prueba **~47 semillas de agencias** (lista curada). N
 
 - **300 000 viviendas ≠ 300 000 emails.** La mayoría solo está en Airbnb/Booking **sin web propia** ni email público. Solo podemos contactar webs con correo visible (legal, sin listas compradas).
 - Volumen real = **oleadas diarias** (A semillas dueños + B OSM por coords costa/ciudades + C agencias) rotando ~100+ lugares. Cada día webs nuevas; en semanas → cientos/miles.
-- Tope envío: 50+50+50/día hasta meta **20 altas** (no spam masivo del mismo dominio).
+- Tope envío: **50/oleada** hasta meta **20 altas** o hard cap **1000/día**.
 
 ## Por qué antes no llegábamos a 50 mails “de verdad”
 
@@ -77,16 +77,14 @@ Quien se dio de baja del *outreach* puede igual registrarse por el enlace; la ba
 
 | Hora Madrid | UTC | Ruta |
 |-------------|-----|------|
-| ~07:00 | `0 6 * * *` | **Prepare** — rellena cola ≥100, **no envía**; provincias distintas |
-| ~09:00 | `0 8 * * *` | Oleada 50 (A+B+C), provincias del día bloque mañana |
-| ~15:00 | `0 14 * * *` | Oleada 50 si altas &lt; 20; **otras provincias** |
-| ~18:00 | `0 17 * * *` | Oleada 50 si altas &lt; 20; prioridad agencias; **otras provincias** |
-| ~19:00 | `0 18 * * *` | Telegram informe captación |
+| ~07:00 | `0 6 * * *` | **Prepare** — rellena cola ≥1000, **no envía** |
+| 08:00–17:30 / 30′ | `0,30 7-16 * * *` | **Wave** — hasta 50 si altas &lt; 20 |
+| ~21:00 | `0 20 * * *` | Telegram informe captación |
 
-La rotación de provincias es automática (`provinces-es.ts` + coords OSM por `waveOffset`).
+La rotación de provincias es automática (`provinces-es.ts` + slot OSM).
 
 ---
 
 ## KPI panel
 
-Superadmin → Captación: `altas hoy / 20`, `emails hoy / 1000`, opens, undelivered.
+Superadmin → Captación: `altas hoy / 20`, `emails hoy / 1000`, opens, undelivered, horario todo el día.

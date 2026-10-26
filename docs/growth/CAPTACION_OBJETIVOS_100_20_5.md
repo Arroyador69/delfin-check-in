@@ -1,21 +1,35 @@
-# Captación diaria: 100 mails · 20 altas · ≥5 pagos
+# Captación diaria: 1000 mails · 20 altas · ≥5 pagos (Zoho-safe)
 
 Playbook reutilizable (Delfín Check-in y otros proyectos). Solo fuentes **open source / datos abiertos** + webs públicas con email visible. Sin listas compradas.
+
+## Normas Zoho (obligatorio)
+
+| Norma | Valor |
+|-------|--------|
+| Oleada | **50** mails (no 250: rate-limit / “Unusual sending activity”) |
+| Tope día | **1000** (= 20 oleadas × 50) si altas &lt; 20 |
+| Delay SMTP | **1.8 s** entre mails |
+| Ventana | ~**08:00–17:30** Europe/Madrid, cada **30 min** |
+| Telegram | Solo **3/día**: progreso **12:00** + **16:00** + cierre **21:00** |
+| Meta altas | **20** → si se cumple, **stop** y cola para mañana |
+| Cola | Siempre ≥ **1000** `queued` tras cada cron |
+
+Zoho Mail externos: **50–500/h** dinámico. Bulk/burst no permitido. Por eso 50/oleada espaciadas, no 250 de golpe.
 
 ## KPIs (qué significa el panel)
 
 | Métrica en UI | Significado |
 |---------------|-------------|
-| **Altas nuevas hoy 2/20** | Leads outreach que se dieron de alta hoy. Meta **20**. Si &lt;20 → oleada 15:00 (y 18:00). |
-| **Emails outreach hoy** | Cold mails. Oleada = hasta **250**. Tope día = **1000** (250×4). |
+| **Altas nuevas hoy 2/20** | Leads outreach que se dieron de alta hoy. Meta **20**. Si ≥20 → no más envíos hoy. |
+| **Emails outreach hoy** | Cold mails. Oleada = hasta **50**. Tope día = **1000** (50×20). |
 | **Abiertos / Clicks** | Abrir / clic del cold mail (tracking). |
 | **Undelivered** | Bounce Zoho → no reenviar nunca. |
-| **Recámara 0 leads listos** | `status=queued`. Si es 0, la siguiente oleada **no puede enviar**. Objetivo recámara ≥**100**. |
+| **Recámara 0 leads listos** | `status=queued`. Si es 0, la siguiente oleada **no puede enviar**. Objetivo recámara ≥**1000**. |
 | **Altas atribuidas** | Signups ligados a un lead outreach. |
 
 Metas de negocio diarias:
 
-1. **≥100 emails buenos enviados** (reales, VR / agencia / hotel ES).
+1. **Hasta 1000 emails** buenos enviados (reales, VR / agencia / hotel ES), o menos si meta 20 altas antes.
 2. **≥20 altas nuevas** al producto.
 3. **≥5 pagos** (conversión a plan de pago; medir aparte en Polar/Stripe).
 
@@ -33,28 +47,34 @@ Metas de negocio diarias:
 
 ## Flujo automático (cron Europe/Madrid)
 
-| Hora | Cron | Acción |
-|------|------|--------|
-| 07:00 | `public-owner-leads-prepare` | Rellena cola ≥**1000** · **no envía** |
-| 09:00 | `public-owner-leads` | Envía hasta **250** → refill **1000** + Telegram |
-| 15:00 | `public-owner-leads-afternoon` | Si altas &lt;20 → **250** → refill + Telegram |
-| 18:00 | `public-owner-leads-evening` | Si altas &lt;20 → **250** → refill + Telegram |
-| 20:00 | `public-owner-leads-night` | Si altas &lt;20 → **250** → refill + Telegram |
-| 21:00 | `captacion-evening-report` | Telegram cierre del día vs meta 20 |
-| 19:00 | `captacion-evening-report` | Telegram |
+| Hora (Madrid ≈) | Cron UTC (CET) | Acción |
+|-----------------|----------------|--------|
+| ~07:00 | `0 6 * * *` | `public-owner-leads-prepare` — cola ≥**1000** · **no envía** |
+| 08:00–17:30 cada 30′ | `0,30 7-16 * * *` | `public-owner-leads-wave` — hasta **50** si altas &lt;20 · refill **1000** |
+| ~21:00 | `0 20 * * *` | `captacion-evening-report` — Telegram cierre vs meta 20 |
 
-Rotación: `provinces-es.ts` + `waveOffset`. Refill: `refill-queue.ts` (opendata JCyL + extract).
+Telegram: **12:00** progreso fin mañana · **16:00** media tarde · **21:00** cierre (no en cada oleada).
+
+Rotación: `provinces-es.ts` + slot OSM. Refill: `refill-queue.ts` (opendata JCyL + extract).
+
+Código referencia:
+
+- `src/lib/public-owner-leads/constants.ts`
+- `src/lib/public-owner-leads/wave-schedule.ts`
+- `src/lib/public-owner-leads/run-wave-cron.ts`
+- `src/lib/public-owner-leads/daily-run.ts`
 
 ## Cómo ejecutar a mano
 
 ```bash
 cd delfin-check-in
 
-# Catch-up: enviar cupo del día + rellenar cola a 150
-npx tsx scripts/public-owner-leads/catchup-send-and-refill.ts --max 60
+# Oleada 50 (force fuera de ventana)
+curl -H "Authorization: Bearer $CRON_SECRET" \
+  "https://admin.delfincheckin.com/api/cron/public-owner-leads-wave?force=1"
 
-# Solo rellenar sin enviar
-npx tsx scripts/public-owner-leads/import-opendata-queue.ts --limit 150
+# Catch-up con pacing lento
+npx tsx scripts/public-owner-leads/catchup-to-daily-cap.ts
 
 # Ver stock
 npx tsx scripts/public-owner-leads/stats-today.ts
@@ -68,8 +88,8 @@ npx tsx scripts/public-owner-leads/stats-today.ts
 - Undelivered → suppression.
 - Onboarding 1-clic → redirect magic link.
 - **Tras CADA envío del cron: rellenar cola hasta ~1000** (`refillQueuedStock`). Nunca dejar recámara a 0.
-- Pacing ~0.8s entre mails (evitar 550 Zoho “Unusual sending activity”).
-  Fuentes: datos abiertos JCyL (GitHub) + semillas + extract + OSM.
+- Pacing **~1.8 s** entre mails (evitar 550 Zoho “Unusual sending activity”).
+- Si **altas ≥ 20**: no enviar más ese día; cola lista para mañana.
 
 ## Reutilizar en otros proyectos
 
@@ -78,3 +98,4 @@ npx tsx scripts/public-owner-leads/stats-today.ts
 3. Conectar SMTP + `email_tracking` + tabla leads.
 4. Enganchar fuentes opendata del país/nicho.
 5. KPI: `sent_today`, `signups_today`, `queued_ready`, `paid_today`.
+6. Mantener **50/oleada · 1000/día · delay ≥1.5 s · 3 Telegram/día (12h · 16h · 21h)** si usáis Zoho Mail.
