@@ -59,7 +59,7 @@ describe('public-owner-leads daily campaign', () => {
     expect(isBlockedOutreachHost('https://casa-rural-andalucia.es/contacto')).toBe(false);
   });
 
-  it('plantilla vende prueba gratis MIR', () => {
+  it('plantilla vende prueba gratis MIR + valor extra (sin origen del lead)', () => {
     const mail = buildColdOutreachEmail({
       toEmail: 'owner@ejemplo.es',
       domain: 'ejemplo.es',
@@ -67,18 +67,22 @@ describe('public-owner-leads daily campaign', () => {
       optOutUrl: 'https://admin.delfincheckin.com/es/baja-outreach?e=x&s=y',
       signupUrl: 'https://delfincheckin.com/?utm_campaign=public_owner_leads_es',
     });
-    expect(mail.subject.toLowerCase()).toMatch(/prueb[aeo].*gratis|gratis/);
+    expect(mail.subject.toLowerCase()).toMatch(/gratis/);
     expect(mail.html).toContain('Probar gratis ahora');
     expect(mail.html).toMatch(/minutito/i);
     expect(mail.html).toContain('Síguenos');
     expect(mail.html).toContain('Instagram');
     expect(mail.html).toContain('Facebook');
+    expect(mail.html).toContain('TikTok');
     expect(mail.html).toContain('YouTube');
-    expect(mail.html).toContain('/email/social/instagram.png');
+    expect(mail.html).toContain('/email/social/tiktok.png');
     expect(mail.html).toMatch(/width="24"[^>]*height="24"|height="24"[^>]*width="24"/);
     expect(mail.html).not.toMatch(/tenant|onboarding|cron|API/i);
+    expect(mail.html).not.toMatch(/listas compradas|publicado en/i);
     expect(mail.html).toContain('MIR');
     expect(mail.html).toMatch(/2€/);
+    expect(mail.html).toMatch(/Reservas directas|limpieza/i);
     expect(mail.text).toContain('baja');
   });
 });
+
