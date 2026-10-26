@@ -13,6 +13,7 @@ import {
   PUBLIC_OWNER_LEADS_AFTERNOON_MAX,
   PUBLIC_OWNER_LEADS_DAILY_HARD_CAP,
   PUBLIC_OWNER_LEADS_DAILY_TARGET,
+  PUBLIC_OWNER_LEADS_MIN_QUEUED,
   PUBLIC_OWNER_SIGNUPS_DAILY_GOAL,
 } from '@/lib/public-owner-leads/constants';
 import { syncZohoBounces } from '@/lib/zoho-bounce-sync';
@@ -46,6 +47,7 @@ export async function GET(req: NextRequest) {
           'Ejecuta database/migration-public-owner-leads.sql y migration-public-owner-leads-tracking.sql en Neon.',
         stats: {},
         today: {},
+        by_day: [],
         leads: [],
         sources: [],
       });
@@ -54,6 +56,8 @@ export async function GET(req: NextRequest) {
     await syncOutreachEngagementFromTracking();
 
     const limit = Math.min(Number(req.nextUrl.searchParams.get('limit') || 100), 500);
+    const dayFilter = (req.nextUrl.searchParams.get('day') || '').trim(); // YYYY-MM-DD Madrid o '' = todos
+    const statusFilter = (req.nextUrl.searchParams.get('status') || '').trim().toLowerCase();
 
     const stats = await sql`
       SELECT
@@ -94,15 +98,62 @@ export async function GET(req: NextRequest) {
       FROM public_owner_leads
     `;
 
-    const rows = await sql`
+    const byDay = await sql`
       SELECT
-        id, email, domain, source_url, status, opted_out,
-        queued_at, sent_at, opened_at, clicked_at, signed_up_at,
-        signed_up_tenant_id, created_at, updated_at, notes, last_error
+        to_char(
+          (sent_at AT TIME ZONE 'Europe/Madrid')::date,
+          'YYYY-MM-DD'
+        ) AS day,
+        COUNT(*)::int AS sent,
+        COUNT(*) FILTER (WHERE opened_at IS NOT NULL)::int AS opened,
+        COUNT(*) FILTER (WHERE clicked_at IS NOT NULL)::int AS clicked,
+        COUNT(*) FILTER (WHERE signed_up_at IS NOT NULL)::int AS signed_up,
+        COUNT(*) FILTER (WHERE status = 'bounced')::int AS bounced
       FROM public_owner_leads
-      ORDER BY COALESCE(sent_at, created_at) DESC
-      LIMIT ${limit}
+      WHERE status = 'sent'
+        AND sent_at IS NOT NULL
+        AND sent_at >= NOW() - INTERVAL '30 days'
+      GROUP BY 1
+      ORDER BY 1 DESC
+      LIMIT 30
     `;
+
+    let rows;
+    if (dayFilter && /^\d{4}-\d{2}-\d{2}$/.test(dayFilter)) {
+      rows = await sql`
+        SELECT
+          id, email, domain, source_url, status, opted_out,
+          queued_at, sent_at, opened_at, clicked_at, signed_up_at,
+          signed_up_tenant_id, created_at, updated_at, notes, last_error
+        FROM public_owner_leads
+        WHERE status = 'sent'
+          AND sent_at IS NOT NULL
+          AND (sent_at AT TIME ZONE 'Europe/Madrid')::date = ${dayFilter}::date
+        ORDER BY sent_at DESC
+        LIMIT ${limit}
+      `;
+    } else if (statusFilter === 'sent') {
+      rows = await sql`
+        SELECT
+          id, email, domain, source_url, status, opted_out,
+          queued_at, sent_at, opened_at, clicked_at, signed_up_at,
+          signed_up_tenant_id, created_at, updated_at, notes, last_error
+        FROM public_owner_leads
+        WHERE status = 'sent'
+        ORDER BY sent_at DESC NULLS LAST
+        LIMIT ${limit}
+      `;
+    } else {
+      rows = await sql`
+        SELECT
+          id, email, domain, source_url, status, opted_out,
+          queued_at, sent_at, opened_at, clicked_at, signed_up_at,
+          signed_up_tenant_id, created_at, updated_at, notes, last_error
+        FROM public_owner_leads
+        ORDER BY COALESCE(sent_at, created_at) DESC
+        LIMIT ${limit}
+      `;
+    }
 
     let sources: unknown[] = [];
     const sourcesMeta = await sql`SELECT to_regclass('public.public_owner_lead_sources') AS reg`;
@@ -140,11 +191,16 @@ export async function GET(req: NextRequest) {
       daily_target: PUBLIC_OWNER_LEADS_DAILY_TARGET,
       daily_hard_cap: PUBLIC_OWNER_LEADS_DAILY_HARD_CAP,
       afternoon_max: PUBLIC_OWNER_LEADS_AFTERNOON_MAX,
+      wave_max: PUBLIC_OWNER_LEADS_DAILY_TARGET,
+      min_queued: PUBLIC_OWNER_LEADS_MIN_QUEUED,
+      waves_per_day: 4,
       signup_goal: PUBLIC_OWNER_SIGNUPS_DAILY_GOAL,
       reserve_ready: reserve,
       afternoon_will_run: signedToday < PUBLIC_OWNER_SIGNUPS_DAILY_GOAL,
       stats: { ...st, open_rate_pct: openRate, click_rate_pct: clickRate, signup_rate_pct: signupRate },
       today: today.rows[0] || {},
+      by_day: byDay.rows,
+      filter: { day: dayFilter || null, status: statusFilter || null },
       sources,
       leads: rows.rows,
     });

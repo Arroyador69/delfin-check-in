@@ -103,6 +103,7 @@ export async function activateWaitlistEntryFromRow(
         message: 'Usuario ya tenía tenant, se reenvió email de onboarding',
         tenant_id: tenantId,
         email_sent: true,
+        onboarding_url: onboardingUrl,
       });
     }
 
@@ -145,6 +146,7 @@ export async function activateWaitlistEntryFromRow(
         message: 'Tenant existente: se creó usuario y se envió email de acceso',
         tenant_id: tenantId,
         email_sent: true,
+        onboarding_url: onboardingUrlOrphan,
       });
     } catch (emailError: unknown) {
       const msg = emailError instanceof Error ? emailError.message : String(emailError);
@@ -155,6 +157,7 @@ export async function activateWaitlistEntryFromRow(
         tenant_id: tenantId,
         email_sent: false,
         email_error: msg,
+        onboarding_url: onboardingUrlOrphan,
       });
     }
   }
@@ -346,30 +349,26 @@ export async function activateWaitlistEntryFromRow(
 
     console.log(`✅ Usuario activado: ${waitlistEntry.email} -> Tenant ${tenantId}`);
 
-    const payload: Record<string, unknown> = {
+    // Siempre devolver onboarding_url: el caller (outreach 1-clic) muestra CTA
+    // inmediato sin esperar al correo. El token solo llega a quien acaba de activar.
+    return NextResponse.json({
       success: true,
       message: 'Usuario activado correctamente',
       tenant_id: tenantId,
       email_sent: true,
-    };
-    if (process.env.NODE_ENV !== 'production') {
-      payload.onboarding_url = onboardingUrl;
-    }
-    return NextResponse.json(payload);
+      onboarding_url: onboardingUrl,
+    });
   } catch (emailError: unknown) {
     const msg = emailError instanceof Error ? emailError.message : String(emailError);
     console.error('Error enviando email de onboarding:', emailError);
 
-    const payload: Record<string, unknown> = {
+    return NextResponse.json({
       success: true,
       message: 'Usuario activado pero error enviando email',
       tenant_id: tenantId,
       email_sent: false,
       email_error: msg,
-    };
-    if (process.env.NODE_ENV !== 'production') {
-      payload.onboarding_url = onboardingUrl;
-    }
-    return NextResponse.json(payload);
+      onboarding_url: onboardingUrl,
+    });
   }
 }

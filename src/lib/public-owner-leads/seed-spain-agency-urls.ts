@@ -1,0 +1,57 @@
+/**
+ * Flujo C: gestoras / agencias de alquiler vacacional ES + webs multi-vivienda.
+ * Ampliar continuamente — objetivo volumen, sin OTAs ni directorios.
+ */
+export const SEED_SPAIN_AGENCY_URLS: readonly string[] = [
+  // Ya validados (dry-run con email)
+  'https://www.gatu.es',
+  'https://www.toledoap.com',
+  'https://www.silastur.es',
+  'https://www.rentit-properties.com',
+  'https://likhahomes.com',
+  'https://malagasuite.es',
+  'https://alquiva.es',
+  'https://solymarproperties.es',
+  'https://morrazoholiday.es',
+  'https://larecepcion.es',
+  // Gestoras nacionales / multi-ciudad
+  'https://www.guestready.com/es',
+  'https://weguest.com',
+  'https://www.thecharmingconcept.com',
+  'https://mintyhost.com',
+  'https://www.hosticasa.com',
+  'https://winahost.com',
+  'https://www.homerti.com',
+  'https://www.vacalia.com',
+  'https://www.alojateensevilla.es',
+  'https://www.happyguest.es',
+  'https://www.hosthelper.es',
+  // Costa / islas / locales
+  'https://www.costablanca-holidays.com',
+  'https://www.apartamentosbarcelonastyle.com',
+  'https://www.ibizavillaspremium.com',
+  'https://www.galiciaholidayhomes.com',
+  'https://www.asturiana-de-alquileres.es',
+  'https://www.myflathome.es',
+  'https://www.lovhome.es',
+  'https://www.rentalsmalaga.com',
+  'https://www.canarias-online.com',
+  'https://www.apartamentoscostadelsol.com',
+  'https://nubagestion.es',
+  'https://www.keyvi.es',
+  'https://www.checkin-experience.com',
+  'https://www.passporterhost.com',
+  'https://www.urbanhosting.es',
+  'https://www.staybnb.es',
+  'https://www.homyspace.com',
+  'https://www.rusticaltravel.com',
+  // Gestoras / operadores locales (web propia, no OTAs)
+  'https://www.friendlyrentals.com',
+  'https://www.abitarebcn.com',
+  'https://www.oh-barcelona.com',
+  'https://www.barcelona-home.com',
+  'https://www.habitatapartments.com',
+  'https://www.madreamadrid.com',
+  'https://www.mallorcavillas.es',
+  'https://www.menorcavillas.com',
+];

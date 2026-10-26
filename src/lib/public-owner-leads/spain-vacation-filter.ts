@@ -1,19 +1,26 @@
 /**
- * Solo España + solo alquiler vacacional / turismo rural / apartamentos turísticos.
- * Rechaza seguros, banca, inmobiliaria pura, clínicas, etc. (coste de oportunidad).
+ * España + alojamiento turístico / vacacional:
+ * dueños, agencias gestoras, hoteles, hostales.
+ * Rechaza seguros, banca, inmobiliaria pura (sin gestión vacacional), OTAs, etc.
  */
 
 import { isBlockedOutreachHost } from './blocked-hosts';
+
+export type OutreachAudience = 'owner' | 'agency' | 'hotel';
 
 export type NicheVerdict = {
   ok: boolean;
   spain: boolean;
   vacation: boolean;
   reason: string;
+  audience?: OutreachAudience;
 };
 
-/** Señales positivas de alojamiento vacacional / rural / turístico. */
-const VACATION_POSITIVE = [
+/**
+ * Señales FUERTES de alojamiento vacacional / rural / hotel.
+ * Obligatorio ≥1 fuerte (o host vacacional / agencia) para no colar webs genéricas.
+ */
+const VACATION_STRONG = [
   /casa\s*rural/i,
   /casas\s*rurales/i,
   /alquiler\s*vacacional/i,
@@ -28,28 +35,59 @@ const VACATION_POSITIVE = [
   /ses\s*hospedajes/i,
   /parte\s*de\s*viajeros/i,
   /rd\s*933/i,
-  /\bhuesped(es)?\b/i,
-  /\bhuésped(es)?\b/i,
-  /\breserva(s|r)?\b/i,
-  /\bcheck[- ]?in\b/i,
   /\bpazo\b/i,
-  /\bfinca\b/i,
   /\bcortijo\b/i,
-  /\bvilla\b/i,
-  /\bcottage\b/i,
   /\bglamping\b/i,
-  /\bcamping\b/i,
   /\balbergue\b/i,
   /\bhostal\b/i,
   /\bpension\b/i,
   /\bpensión\b/i,
   /\bhotel\s*rural\b/i,
-  /noches?\s*(m[ií]nimas?|disponibles?)/i,
-  /capacidad\s*\d+\s*personas/i,
-  /habitaciones?\s*(dobles?|individuales?)/i,
+  /\bhotel\b/i,
+  /\bhostales?\b/i,
+  /casa\s+de\s+hu[eé]spedes/i,
+  /apartahotel/i,
 ];
 
-/** Negocios que NO son nuestro ICP (gasto de cuota 50/día). */
+/** Señales débiles: solo cuentan junto a una fuerte / host tipico. */
+const VACATION_WEAK = [
+  /\bhuesped(es)?\b/i,
+  /\bhuésped(es)?\b/i,
+  /\breserva(s|r)?\b/i,
+  /\bcheck[- ]?in\b/i,
+  /\bfinca\b/i,
+  /\bvilla\b/i,
+  /\bcottage\b/i,
+  /\bcamping\b/i,
+  /noches?\s*(m[ií]nimas?|disponibles?)/i,
+  /capacidad\s*\d+\s*personas/i,
+  /habitaciones?\s*(dobles?|individuales?|disponibles?)/i,
+];
+
+const VACATION_POSITIVE = [...VACATION_STRONG, ...VACATION_WEAK];
+
+/**
+ * Agencias / gestoras de alquiler vacacional (multi-vivienda).
+ * Prioridad comercial: muchas propiedades → prioridad de atención.
+ */
+const AGENCY_POSITIVE = [
+  /gesti[oó]n\s+(integral\s+)?(de\s+)?(alquiler\s+)?vacacional/i,
+  /gesti[oó]n\s+(de\s+)?(viviendas?|apartamentos?|alojamientos?)\s+tur[ií]stic/i,
+  /gestora\s+(de\s+)?(alquiler|viviendas?|apartamentos?)/i,
+  /gestionamos\s+(tu|sus|vuestras?)\s+(vivienda|casa|apartamento|propiedad)/i,
+  /para\s+propietarios/i,
+  /property\s+management/i,
+  /channel\s+manager/i,
+  /pisos?\s+tur[ií]sticos?/i,
+  /explotaci[oó]n\s+tur[ií]stica/i,
+  /portfolio\s+de\s+(alojamientos?|viviendas?)/i,
+  /m[aá]s\s+de\s+\d{2,}\s+(viviendas?|apartamentos?|alojamientos?)\s+(gestionad|operad)/i,
+  /\b\d{2,}\s+alojamientos?\s+gestionad/i,
+  /central\s+de\s+reservas\s+propia/i,
+  /registro\s+de\s+viajeros/i,
+];
+
+/** Negocios que NO son nuestro ICP (gasto de cuota). */
 const VACATION_NEGATIVE = [
   /\bseguros?\b/i,
   /\binsurance\b/i,
@@ -66,7 +104,6 @@ const VACATION_NEGATIVE = [
   /\bconcesionario\b/i,
   /\brestaurante\b(?!.*aloj)/i,
   /\bcatering\b/i,
-  /\binmobiliaria\b/i,
   /\bcompraventa\b/i,
   /\bpromotora\b/i,
   /\bconstructora\b/i,
@@ -75,8 +112,8 @@ const VACATION_NEGATIVE = [
   /\bsoftware\s+house\b/i,
   /\bconsultor[ií]a\b/i,
   /\bmarketing\s+digital\b/i,
-  /\bgestor[ií]a\b/i,
   /\basesor[ií]a\s+fiscal\b/i,
+  /\bgestor[ií]a\s+fiscal\b/i,
   /\bdirectorio\s+de\s+casas\b/i,
   /\bcomparador\b/i,
   /\bmetabuscador\b/i,
@@ -94,6 +131,9 @@ const VACATION_NEGATIVE = [
   /\bministerio\b/i,
   /\bayuntamiento\b/i,
 ];
+
+/** Inmobiliaria / gestoría pura: solo bloquea si NO hay señal de gestión vacacional. */
+const REAL_ESTATE_PURE = [/\binmobiliaria\b/i, /\bgestor[ií]a\b/i];
 
 const SPAIN_POSITIVE = [
   /\bespaña\b/i,
@@ -154,6 +194,26 @@ const HOST_VACATION = [
   /hosped/i,
   /agrotur/i,
   /turismorural/i,
+  /hotel/i,
+  /hostal/i,
+  /pension/i,
+  /gestion/i,
+  /gesti[oó]n/i,
+  /holiday/i,
+  /rentals?/i,
+  /vacation/i,
+];
+
+const HOST_AGENCY = [
+  /gestion/i,
+  /gesti/i,
+  /vacacional/i,
+  /holiday/i,
+  /rentals?/i,
+  /property/i,
+  /hosthelper/i,
+  /guestready/i,
+  /apartamentos/i,
 ];
 
 const HOST_NEGATIVE = [
@@ -164,9 +224,7 @@ const HOST_NEGATIVE = [
   /abogad/i,
   /clinica/i,
   /dental/i,
-  /inmobiliaria/i,
-  /gestoria/i,
-  /asesoria/i,
+  /asesoria.?fiscal/i,
   /misterplan/i,
   /ruralgest/i,
   /comunicacion/i,
@@ -219,8 +277,8 @@ function hostOf(url: string): string {
 }
 
 /**
- * Host con TLD típico ES (opcional). NO es requisito:
- * muchas casas rurales usan .com — la España se confirma con +34 / provincias / lang=es.
+ * TLD .es/.gal/.cat/.eus = pista débil. NUNCA es requisito de España:
+ * muchas gestoras/hoteles usan .com. España = +34 / texto / lang=es.
  */
 export function looksSpanishHost(urlOrHost: string): boolean {
   const host = hostOf(urlOrHost);
@@ -233,11 +291,39 @@ export function looksSpanishHost(urlOrHost: string): boolean {
   );
 }
 
+/** España por contenido: teléfono +34, provincias, lang=es, palabras UI en español. */
+export function hasSpainContentSignals(html: string, text: string): boolean {
+  if (/lang\s*=\s*["']?es\b/i.test(html)) return true;
+  if (countMatches(text, SPAIN_POSITIVE) >= 1) return true;
+  // Móvil/fijo ES: +34, 0034, o 6xx/7xx/8xx/9xx
+  if (/\+34\b|0034\b/.test(text)) return true;
+  if (/\b(?:6|7)\d{2}[\s.-]?\d{2,3}[\s.-]?\d{2,3}\b/.test(text)) return true;
+  if (/\b(?:8|9)\d{2}[\s.-]?\d{2,3}[\s.-]?\d{2,3}\b/.test(text)) return true;
+  const esUi = [
+    /\breserva(s|r)?\b/i,
+    /\bhu[eé]sped(es)?\b/i,
+    /\bhabitaci[oó]n(es)?\b/i,
+    /\balojamiento\b/i,
+    /\bcontacto\b/i,
+    /\bpol[ií]tica\s+de\s+privacidad\b/i,
+    /\baviso\s+legal\b/i,
+    /\bcondiciones\s+generales\b/i,
+    /\bprotecci[oó]n\s+de\s+datos\b/i,
+  ];
+  return countMatches(text, esUi) >= 2;
+}
+
 export function hostSuggestsVacation(urlOrHost: string): boolean {
   const host = hostOf(urlOrHost);
   if (!host) return false;
   if (HOST_NEGATIVE.some((r) => r.test(host))) return false;
-  return HOST_VACATION.some((r) => r.test(host));
+  return HOST_VACATION.some((r) => r.test(host)) || HOST_AGENCY.some((r) => r.test(host));
+}
+
+export function hostSuggestsAgency(urlOrHost: string): boolean {
+  const host = hostOf(urlOrHost);
+  if (!host || HOST_NEGATIVE.some((r) => r.test(host))) return false;
+  return HOST_AGENCY.some((r) => r.test(host));
 }
 
 export function hostSuggestsNonVacation(urlOrHost: string): boolean {
@@ -273,8 +359,9 @@ const DIRECTORY_OR_PORTAL = [
 ];
 
 /**
- * Clasifica URL + HTML: España + UN alojamiento vacacional/rural local.
- * Rechaza OTAs, directorios, federaciones, agencias y grandes empresas.
+ * Clasifica URL + HTML: alojamiento/agencia/hotel en España.
+ * España ≠ TLD .es → +34, provincias, lang=es, UI en español.
+ * Rechaza OTAs, directorios, federaciones y negocio ajeno.
  */
 export function classifySpainVacationRental(
   url: string,
@@ -295,33 +382,57 @@ export function classifySpainVacationRental(
     .slice(0, 120_000);
 
   const neg = countMatches(text, VACATION_NEGATIVE);
-  const pos = countMatches(text, VACATION_POSITIVE);
+  const strong = countMatches(text, VACATION_STRONG);
+  const weak = countMatches(text, VACATION_WEAK);
+  const pos = strong + weak;
+  const agencyPos = countMatches(text, AGENCY_POSITIVE);
+  const realEstatePure = countMatches(text, REAL_ESTATE_PURE);
   const dir = countMatches(text, DIRECTORY_OR_PORTAL);
   const hostVac = hostSuggestsVacation(url);
-  const spainHost = looksSpanishHost(url);
-  const spainContent = countMatches(text, SPAIN_POSITIVE) >= 1 || /lang\s*=\s*["']?es/i.test(html);
-  const phoneEs = /\+34|0034|\b9\d{2}[\s.-]?\d{2,3}[\s.-]?\d{2,3}\b/.test(text);
+  const hostAgency = hostSuggestsAgency(url);
+  // .es solo es pista; no decide solo
+  const spain =
+    hasSpainContentSignals(html, text) || looksSpanishHost(url);
 
   if (dir >= 1) {
-    return { ok: false, spain: spainHost || spainContent, vacation: false, reason: 'directorio-o-portal' };
-  }
-  if (neg >= 1 && pos < 2) {
-    return { ok: false, spain: spainHost || spainContent, vacation: false, reason: 'negocio-ajeno' };
+    return { ok: false, spain, vacation: false, reason: 'directorio-o-portal' };
   }
 
-  // Debe parecer UN alojamiento: host tipo casa/pazo/cortijo O varias señales de contenido
-  const vacation = (hostVac && pos >= 1) || pos >= 2;
-  // España: TLD ES / provincias / +34 / lang=es (NO exigir solo .es)
-  const spain = spainHost || spainContent || phoneEs;
+  // Agencia: 1 señal fuerte basta (volumen comercial)
+  const looksAgency =
+    agencyPos >= 1 || (hostAgency && strong >= 1) || (hostAgency && agencyPos >= 1);
+  if (realEstatePure >= 1 && !looksAgency && strong < 1) {
+    return { ok: false, spain, vacation: false, reason: 'inmobiliaria-pura' };
+  }
+  if (neg >= 1 && strong < 1 && !looksAgency) {
+    return { ok: false, spain, vacation: false, reason: 'negocio-ajeno' };
+  }
+
+  const hostHotel = /\bhotel\b|\bhostal\b|\bpension\b|\bpensión\b/i.test(hostOf(url));
+  const hotelish =
+    hostHotel ||
+    (/\bhotel\b|\bhostal\b|\bpensi[oó]n\b/i.test(text) && (strong >= 1 || weak >= 2));
+  // Solo vacacional: host tipico O ≥1 señal FUERTE O hotel claro. Débiles solas = fuera.
+  const lodging = hostVac || strong >= 1 || hotelish;
+  const vacation = lodging || looksAgency;
 
   if (!vacation) {
-    return { ok: false, spain, vacation: false, reason: 'sin-señal-alojamiento' };
+    return {
+      ok: false,
+      spain,
+      vacation: false,
+      reason: strong < 1 && weak >= 1 ? 'solo-señales-débiles' : 'sin-señal-alojamiento',
+    };
   }
   if (!spain) {
     return { ok: false, spain: false, vacation: true, reason: 'sin-señal-españa' };
   }
 
-  return { ok: true, spain: true, vacation: true, reason: 'ok' };
+  let audience: OutreachAudience = 'owner';
+  if (looksAgency) audience = 'agency';
+  else if (hotelish) audience = 'hotel';
+
+  return { ok: true, spain: true, vacation: true, reason: 'ok', audience };
 }
 
 /** Extrae enlaces candidatos a otras webs de alojamiento ES (descubrimiento). */
@@ -357,8 +468,13 @@ export function extractSpainVacationOutboundLinks(
     if (!host || host === baseHost) continue;
     if (seen.has(host)) continue;
     if (hostSuggestsNonVacation(href)) continue;
-    if (!looksSpanishHost(href) && !hostSuggestsVacation(href)) continue;
-    // Evitar directorios/agregadores y soft
+    // NO exigir .es: .com con hotel/rural/vacation/agencia también vale
+    if (
+      !hostSuggestsVacation(href) &&
+      !/hotel|hostal|rural|villa|apartment|vacation|holiday|gestion|gesti/i.test(host)
+    ) {
+      continue;
+    }
     if (/escapada|booking|airbnb|siweb|soft|cdn|cloudflare|wix|wordpress\.com/i.test(host)) {
       continue;
     }

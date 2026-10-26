@@ -42,6 +42,15 @@ type Lead = {
   last_error?: string | null;
 };
 
+type DayRow = {
+  day: string;
+  sent?: number;
+  opened?: number;
+  clicked?: number;
+  signed_up?: number;
+  bounced?: number;
+};
+
 const SIGNUP_DAILY_GOAL = 20;
 
 function fmt(d: string | null | undefined): string {
@@ -69,13 +78,15 @@ export default function PublicOwnerLeadsAdminPage() {
   const [error, setError] = useState<string | null>(null);
   const [tableReady, setTableReady] = useState(false);
   const [migrationHint, setMigrationHint] = useState<string | null>(null);
-  const [dailyTarget, setDailyTarget] = useState(50);
-  const [hardCap, setHardCap] = useState(100);
+  const [dailyTarget, setDailyTarget] = useState(250);
+  const [hardCap, setHardCap] = useState(1000);
   const [reserveReady, setReserveReady] = useState(0);
   const [afternoonWillRun, setAfternoonWillRun] = useState(true);
   const [stats, setStats] = useState<Stats>({});
   const [today, setToday] = useState<Today>({});
+  const [byDay, setByDay] = useState<DayRow[]>([]);
   const [leads, setLeads] = useState<Lead[]>([]);
+  const [dayFilter, setDayFilter] = useState<string>(''); // '' = todos · YYYY-MM-DD = ese día
   const [sourcesSummary, setSourcesSummary] = useState<Record<string, number>>({});
   const [urlsText, setUrlsText] = useState('');
   const [bounceText, setBounceText] = useState('');
@@ -86,7 +97,13 @@ export default function PublicOwnerLeadsAdminPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch('/api/superadmin/public-owner-leads?limit=150', {
+      const params = new URLSearchParams({ limit: '200' });
+      if (dayFilter) {
+        params.set('day', dayFilter);
+      } else {
+        params.set('status', 'sent');
+      }
+      const res = await fetch(`/api/superadmin/public-owner-leads?${params}`, {
         credentials: 'include',
       });
       const data = await res.json();
@@ -97,11 +114,12 @@ export default function PublicOwnerLeadsAdminPage() {
       setTableReady(Boolean(data.table_ready));
       setMigrationHint(data.table_ready ? null : data.message || null);
       setDailyTarget(Number(data.daily_target || 50));
-      setHardCap(Number(data.daily_hard_cap || 100));
+      setHardCap(Number(data.daily_hard_cap || 1000));
       setReserveReady(Number(data.reserve_ready || 0));
       setAfternoonWillRun(Boolean(data.afternoon_will_run));
       setStats(data.stats || {});
       setToday(data.today || {});
+      setByDay(Array.isArray(data.by_day) ? data.by_day : []);
       setLeads(data.leads || []);
       setSourcesSummary(data.sources?.[0]?.summary || {});
     } catch (e) {
@@ -109,11 +127,15 @@ export default function PublicOwnerLeadsAdminPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [dayFilter]);
 
   useEffect(() => {
     load();
   }, [load]);
+
+  function selectDay(day: string) {
+    setDayFilter(day);
+  }
 
   async function postAction(body: Record<string, unknown>) {
     setBusy(true);
@@ -169,9 +191,11 @@ export default function PublicOwnerLeadsAdminPage() {
 
   const sentToday = Number(today.sent_today || 0);
   const signupsToday = Number(today.signed_up_today || 0);
-  const sendPct = Math.min(100, Math.round((sentToday / Math.max(dailyTarget, 1)) * 100));
+  const sendPct = Math.min(100, Math.round((sentToday / Math.max(hardCap, 1)) * 100));
   const signupPct = Math.min(100, Math.round((signupsToday / SIGNUP_DAILY_GOAL) * 100));
   const signupGoalMet = signupsToday >= SIGNUP_DAILY_GOAL;
+  const waveSize = dailyTarget; // 250 por oleada
+  const queueTarget = hardCap; // recámara = tope día (1000)
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-sky-50/40">
@@ -185,11 +209,11 @@ export default function PublicOwnerLeadsAdminPage() {
               Captación propietarios
             </h1>
             <p className="mt-1 text-slate-600 max-w-2xl text-[15px] leading-relaxed">
-              Meta <strong className="text-slate-900">{SIGNUP_DAILY_GOAL} propietarios nuevos / día</strong> ·
-              mañana 50 + tarde 50 <em>solo si hay &lt;20 altas</em> · tope día {hardCap} · recámara{' '}
-              <strong className="text-slate-900">{reserveReady}</strong> listos · Telegram 11:00 y 19:00 · nunca el
-              mismo email 2 veces. Normas:{' '}
-              <code className="text-xs bg-slate-100 px-1.5 py-0.5 rounded">docs/COMUNICACION_CLIENTES.md</code>
+              Meta <strong className="text-slate-900">{SIGNUP_DAILY_GOAL} altas / día</strong> · tope{' '}
+              <strong className="text-slate-900">{hardCap} mails / día</strong> en 4 oleadas ×{waveSize}{' '}
+              (09 / 15 / 18 / 20h) si altas &lt;20 · cola siempre ≥{queueTarget} · solo alquiler
+              vacacional / agencias / hoteles ES · nunca el mismo email 2 veces. Cola ahora:{' '}
+              <strong className="text-slate-900">{reserveReady}</strong>.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -268,7 +292,7 @@ export default function PublicOwnerLeadsAdminPage() {
                       ? `¡Más de ${SIGNUP_DAILY_GOAL}!`
                       : signupGoalMet
                         ? 'Meta OK (20)'
-                        : 'Por debajo → oleada 15:00'}
+                        : 'Por debajo → siguen oleadas 15/18/20h'}
                   </span>
                 </div>
                 <p className="mt-2 text-3xl font-semibold tabular-nums tracking-tight">
@@ -283,9 +307,9 @@ export default function PublicOwnerLeadsAdminPage() {
                 </div>
                 <p className="mt-2 text-xs text-slate-500">
                   {afternoonWillRun
-                    ? 'Aún hay menos de 20 altas → a las 15:00 se envían hasta 50 mails nuevos (nunca repetidos).'
-                    : 'Ya hay 20 o más altas → la oleada de las 15:00 no envía. ¡Bien!'}{' '}
-                  Recámara para mañana: {reserveReady} leads listos.
+                    ? `Aún <20 altas → oleadas 15/18/20h envían hasta ${waveSize} cada una (nunca repetidos).`
+                    : 'Ya hay 20+ altas → las oleadas 15/18/20h no envían. ¡Bien!'}{' '}
+                  Cola objetivo ≥{queueTarget}: {reserveReady} listos.
                 </p>
               </div>
 
@@ -293,12 +317,12 @@ export default function PublicOwnerLeadsAdminPage() {
                 <div className="flex justify-between items-baseline gap-2">
                   <h2 className="text-sm font-semibold text-slate-800">Emails outreach hoy</h2>
                   <span className="text-xs font-semibold text-slate-500">
-                    mañana {dailyTarget} · tope día {hardCap}
+                    4×{waveSize} · tope {hardCap}
                   </span>
                 </div>
                 <p className="mt-2 text-3xl font-semibold tabular-nums tracking-tight">
                   {sentToday}
-                  <span className="text-lg text-slate-400 font-medium"> / {dailyTarget}</span>
+                  <span className="text-lg text-slate-400 font-medium"> / {hardCap}</span>
                 </p>
                 <div className="mt-3 h-2.5 rounded-full bg-slate-100 overflow-hidden">
                   <div className="h-full rounded-full bg-slate-700/80 transition-all" style={{ width: `${sendPct}%` }} />
@@ -323,6 +347,81 @@ export default function PublicOwnerLeadsAdminPage() {
                 sub={`${stats.signup_rate_pct ?? 0}%`}
                 accent
               />
+            </section>
+
+            <section className="rounded-2xl border border-slate-200/80 bg-white shadow-sm overflow-hidden">
+              <div className="px-5 py-3.5 border-b border-slate-100 flex flex-wrap justify-between gap-2 items-center">
+                <div>
+                  <h2 className="font-semibold text-slate-900">Envíos por día (últimos 30)</h2>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Pulsa un día para ver solo esos envíos · timezone Europe/Madrid
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => selectDay('')}
+                  className={`text-xs font-semibold px-2.5 py-1 rounded-lg ring-1 ring-inset ${
+                    !dayFilter
+                      ? 'bg-slate-900 text-white ring-slate-900'
+                      : 'bg-white text-slate-700 ring-slate-200 hover:bg-slate-50'
+                  }`}
+                >
+                  Ver todos los enviados
+                </button>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-sm">
+                  <thead className="bg-slate-50/80 text-left text-slate-500 text-xs uppercase tracking-wide">
+                    <tr>
+                      <th className="px-4 py-2.5 font-semibold">Día</th>
+                      <th className="px-4 py-2.5 font-semibold">Enviados</th>
+                      <th className="px-4 py-2.5 font-semibold">Abiertos</th>
+                      <th className="px-4 py-2.5 font-semibold">Clicks</th>
+                      <th className="px-4 py-2.5 font-semibold">Altas</th>
+                      <th className="px-4 py-2.5 font-semibold">Undelivered</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {byDay.length === 0 && (
+                      <tr>
+                        <td colSpan={6} className="px-4 py-8 text-center text-slate-500">
+                          Aún no hay envíos registrados.
+                        </td>
+                      </tr>
+                    )}
+                    {byDay.map((row) => {
+                      const active = dayFilter === row.day;
+                      return (
+                        <tr
+                          key={row.day}
+                          onClick={() => selectDay(row.day)}
+                          className={`border-t border-slate-100 cursor-pointer hover:bg-sky-50/60 ${
+                            active ? 'bg-sky-50' : ''
+                          }`}
+                        >
+                          <td className="px-4 py-2.5 font-medium text-slate-900 whitespace-nowrap">
+                            {row.day}
+                            {active ? (
+                              <span className="ml-2 text-[10px] uppercase tracking-wide text-sky-700 font-semibold">
+                                filtro
+                              </span>
+                            ) : null}
+                          </td>
+                          <td className="px-4 py-2.5 tabular-nums font-semibold text-slate-900">
+                            {row.sent ?? 0}
+                          </td>
+                          <td className="px-4 py-2.5 tabular-nums text-slate-700">{row.opened ?? 0}</td>
+                          <td className="px-4 py-2.5 tabular-nums text-slate-700">{row.clicked ?? 0}</td>
+                          <td className="px-4 py-2.5 tabular-nums font-semibold text-emerald-800">
+                            {row.signed_up ?? 0}
+                          </td>
+                          <td className="px-4 py-2.5 tabular-nums text-rose-800">{row.bounced ?? 0}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </section>
 
             <section className="rounded-2xl border border-rose-200/80 bg-rose-50/40 p-5 shadow-sm space-y-3">
@@ -379,9 +478,13 @@ export default function PublicOwnerLeadsAdminPage() {
 
             <section className="rounded-2xl border border-slate-200/80 bg-white shadow-sm overflow-hidden">
               <div className="px-5 py-3.5 border-b border-slate-100 flex flex-wrap justify-between gap-2">
-                <h2 className="font-semibold text-slate-900">Leads · fecha envío / open / click / alta</h2>
+                <h2 className="font-semibold text-slate-900">
+                  {dayFilter
+                    ? `Envíos del ${dayFilter}`
+                    : 'Todos los enviados · fecha envío / open / click / alta'}
+                </h2>
                 <span className="text-xs text-slate-500 self-center">
-                  cola {stats.queued ?? 0} · nuevos {stats.new_count ?? 0} · bajas {stats.opted_out ?? 0}
+                  {leads.length} filas · cola {stats.queued ?? 0} · nuevos {stats.new_count ?? 0}
                 </span>
               </div>
               <div className="overflow-x-auto">

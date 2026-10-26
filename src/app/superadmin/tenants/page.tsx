@@ -42,15 +42,33 @@ function onboardingBadgeClasses(status?: string | null): string {
 
 function onboardingLabel(status?: string | null): string {
   const s = String(status || '').toLowerCase()
-  if (!s) return 'sin registro'
+  // Sin fila en email_tracking: el tenant existe pero no se registró el mail de acceso
+  if (!s) return 'sin email enviado'
   if (s === 'pending') return 'pendiente envío'
-  if (s === 'sent') return 'enviado'
+  if (s === 'sent') return 'enviado (sin abrir)'
   if (s === 'delivered') return 'entregado'
-  if (s === 'opened') return 'abierto'
-  if (s === 'clicked') return 'clic'
+  if (s === 'opened') return 'abrió el email'
+  if (s === 'clicked') return 'clic al enlace'
   if (s === 'failed') return 'fallido'
   if (s === 'bounced') return 'rebotado'
   return s
+}
+
+function onboardingTitle(status?: string | null, completed?: boolean): string {
+  const s = String(status || '').toLowerCase()
+  if (!s) {
+    return completed
+      ? 'No hay fila en email_tracking (alta antigua o sin track), pero el wizard ya está completado.'
+      : 'Sin registro del email de acceso: no se envió o no se trackeó. Cuello de botella: no pueden entrar al onboarding.'
+  }
+  if (s === 'opened') {
+    return 'Abrió el email de acceso pero aún no completó el wizard (o no hizo clic trackeado). Reenviar si hace falta.'
+  }
+  if (s === 'sent' || s === 'delivered') {
+    return 'Email de acceso enviado; aún no hay open/click trackeado.'
+  }
+  if (s === 'clicked') return 'Hizo clic en el enlace del email de acceso.'
+  return `Estado email_tracking: ${s}`
 }
 
 function tenantOnboardingProgressLabel(status?: string | null): string {
@@ -69,6 +87,8 @@ export default function TenantsPage() {
     Array<{ key: string; reason: string; tenants: Array<{ id: string; email: string; name: string }> }>
   >([])
   const [cleanupLoading, setCleanupLoading] = useState(false)
+  const [resendBusy, setResendBusy] = useState<string | null>(null)
+  const [resendToast, setResendToast] = useState<string | null>(null)
   const [cleanupResult, setCleanupResult] = useState<{
     success?: boolean
     dry_run?: boolean
@@ -121,14 +141,16 @@ export default function TenantsPage() {
     }
   }
 
-  const handleRecoverOnboarding = async () => {
-    const email = recoverEmail.trim().toLowerCase()
+  const sendRecoverOnboarding = async (emailRaw: string, resetFlow: boolean) => {
+    const email = emailRaw.trim().toLowerCase()
     if (!email || !email.includes('@')) {
       setRecoverResult({ success: false, error: 'Introduce un email válido' })
       return
     }
     setRecoverLoading(true)
+    setResendBusy(email)
     setRecoverResult(null)
+    setResendToast(null)
     try {
       const res = await fetch('/api/superadmin/recover-onboarding', {
         method: 'POST',
@@ -136,7 +158,7 @@ export default function TenantsPage() {
         credentials: 'include',
         body: JSON.stringify({
           email,
-          resetOnboardingFlow: recoverResetFlow,
+          resetOnboardingFlow: resetFlow,
           locale: 'es',
         }),
       })
@@ -146,6 +168,7 @@ export default function TenantsPage() {
           success: false,
           error: data?.error || 'No se pudo reenviar el onboarding',
         })
+        setResendToast(`Error: ${data?.error || 'fallo al reenviar'}`)
         return
       }
       setRecoverResult({
@@ -156,11 +179,20 @@ export default function TenantsPage() {
         tempPassword: data?.tempPassword,
         note: data?.note,
       })
+      setResendToast(`Onboarding reenviado a ${email}`)
+      setRecoverEmail(email)
+      await fetchTenants()
     } catch {
       setRecoverResult({ success: false, error: 'Error de red al reenviar onboarding' })
+      setResendToast('Error de red al reenviar')
     } finally {
       setRecoverLoading(false)
+      setResendBusy(null)
     }
+  }
+
+  const handleRecoverOnboarding = async () => {
+    await sendRecoverOnboarding(recoverEmail, recoverResetFlow)
   }
 
   const runPropertyCleanup = async (dryRun: boolean, offset = 0) => {
@@ -191,11 +223,38 @@ export default function TenantsPage() {
         <p className="text-gray-700 mt-2">Gestión de todos los clientes de la plataforma</p>
       </div>
 
+      <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 p-4">
+        <h2 className="font-semibold text-amber-950 mb-2">Qué significa «Email onboarding»</h2>
+        <ul className="text-sm text-amber-950 space-y-1.5 list-disc list-inside">
+          <li>
+            <strong>sin email enviado</strong> — no hay registro del mail de acceso (no se envió o es histórico sin
+            track). El cliente no tiene enlace → cuello de botella. Usa «Reenviar».
+          </li>
+          <li>
+            <strong>enviado (sin abrir)</strong> — el mail salió; aún no hay open trackeado.
+          </li>
+          <li>
+            <strong>abrió el email</strong> — abrió el mail de acceso pero no completó el wizard (o no hizo clic
+            trackeado). Suelen estar atascados aquí.
+          </li>
+          <li>
+            <strong>clic al enlace</strong> — entró al onboarding desde el email.
+          </li>
+          <li>
+            La columna <strong>Progreso onboarding</strong> es el wizard en la app (pendiente / en curso /
+            completado), independiente del estado del email.
+          </li>
+        </ul>
+        {resendToast ? (
+          <p className="mt-3 text-xs font-medium text-amber-900 bg-white/70 rounded px-2 py-1.5">{resendToast}</p>
+        ) : null}
+      </div>
+
       <div className="mb-6 rounded-lg border border-emerald-200 bg-emerald-50 p-4">
         <h2 className="font-semibold text-emerald-950 mb-2">🔑 Reenviar onboarding (enlace + contraseña temporal)</h2>
         <p className="text-sm text-emerald-900 mb-3">
-          Para clientes atascados en el paso Contraseña: regenera enlace y temp, invalida las anteriores y envía un
-          email nuevo. Usa el email del tenant.
+          Para clientes atascados (sin email o «abrió» sin completar): regenera enlace y temp, invalida las
+          anteriores y envía un email nuevo. Usa el email del tenant o el botón «Reenviar» en la tabla.
         </p>
         <div className="flex flex-col sm:flex-row gap-2 sm:items-end mb-3">
           <div className="flex-1">
@@ -398,17 +457,30 @@ export default function TenantsPage() {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                   Fecha Creación
                 </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                  Acción
+                </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {tenants.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="px-6 py-4 text-center text-gray-500">
+                  <td colSpan={10} className="px-6 py-4 text-center text-gray-500">
                     No hay tenants registrados
                   </td>
                 </tr>
               ) : (
-                tenants.map((tenant) => (
+                tenants.map((tenant) => {
+                  const emailStatus = String(tenant.onboarding_email_status || '').toLowerCase()
+                  const needsResend =
+                    !emailStatus ||
+                    emailStatus === 'opened' ||
+                    emailStatus === 'sent' ||
+                    emailStatus === 'failed' ||
+                    emailStatus === 'bounced' ||
+                    tenant.onboarding_status === 'pending' ||
+                    tenant.onboarding_status === 'in_progress'
+                  return (
                   <tr key={tenant.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">{tenant.name}</div>
@@ -438,13 +510,10 @@ export default function TenantsPage() {
                         className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${onboardingBadgeClasses(
                           tenant.onboarding_email_status
                         )}`}
-                        title={
-                          tenant.onboarding_email_id
-                            ? `email_tracking.id=${tenant.onboarding_email_id}`
-                            : tenant.onboarding_status === 'completed'
-                              ? 'Sin tracking de email, pero el onboarding del tenant está marcado como completado en BD.'
-                              : 'Sin registro en email_tracking (histórico previo o no se trackeó el envío).'
-                        }
+                        title={onboardingTitle(
+                          tenant.onboarding_email_status,
+                          tenant.onboarding_status === 'completed'
+                        )}
                       >
                         {onboardingLabel(tenant.onboarding_email_status)}
                       </span>
@@ -464,8 +533,24 @@ export default function TenantsPage() {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {new Date(tenant.created_at).toLocaleDateString('es-ES')}
                     </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {needsResend && tenant.onboarding_status !== 'completed' ? (
+                        <button
+                          type="button"
+                          disabled={resendBusy === tenant.email.toLowerCase() || recoverLoading}
+                          onClick={() => void sendRecoverOnboarding(tenant.email, false)}
+                          className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-emerald-700 text-white hover:bg-emerald-800 disabled:opacity-50"
+                          title="Regenera enlace + temp y reenvía el email de acceso"
+                        >
+                          {resendBusy === tenant.email.toLowerCase() ? '…' : 'Reenviar'}
+                        </button>
+                      ) : (
+                        <span className="text-xs text-gray-400">—</span>
+                      )}
+                    </td>
                   </tr>
-                ))
+                  )
+                })
               )}
             </tbody>
           </table>

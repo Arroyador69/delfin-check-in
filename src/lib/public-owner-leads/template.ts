@@ -7,6 +7,8 @@
  * Copy estable: no cambiar el texto del cuerpo sin acuerdo.
  */
 
+export type ColdEmailAudience = 'owner' | 'agency' | 'hotel';
+
 export interface ColdEmailParams {
   toEmail: string;
   domain: string;
@@ -14,6 +16,8 @@ export interface ColdEmailParams {
   optOutUrl: string;
   signupUrl?: string;
   senderName?: string;
+  /** Agencias multi-vivienda / hoteles: copy de prioridad. */
+  audience?: ColdEmailAudience;
 }
 
 /** Vídeo del principio de la landing: «¿Qué es Delfín Check-in?» */
@@ -56,7 +60,12 @@ export function buildColdOutreachEmail(params: ColdEmailParams): {
   text: string;
   html: string;
 } {
-  const domainLabel = params.domain || 'tu alojamiento';
+  const audience = params.audience || 'owner';
+  const isAgency = audience === 'agency';
+  const isHotel = audience === 'hotel';
+  const domainLabel =
+    params.domain ||
+    (isAgency ? 'vuestra gestora' : isHotel ? 'vuestro hotel' : 'tu alojamiento');
   const signup =
     params.signupUrl ||
     process.env.OUTREACH_SIGNUP_URL?.trim() ||
@@ -69,9 +78,28 @@ export function buildColdOutreachEmail(params: ColdEmailParams): {
   const videoThumb =
     process.env.OUTREACH_INTRO_VIDEO_THUMB?.trim() || OUTREACH_INTRO_VIDEO_THUMB;
 
-  const subject = `${domainLabel}: parte de viajeros MIR — pruébalo gratis`;
-  const preheader =
-    'Parte de viajeros MIR · pruébalo gratis sin tarjeta. Vídeo en 1 min.';
+  const subject = isAgency
+    ? `${domainLabel}: parte MIR para todo vuestro portfolio — trato prioritario`
+    : isHotel
+      ? `${domainLabel}: parte de viajeros MIR por habitaciones — prueba prioritaria`
+      : `${domainLabel}: parte de viajeros MIR — pruébalo gratis`;
+  const preheader = isAgency
+    ? 'Os escribimos a vosotros: gestoras con muchas viviendas. Prioridad de onboarding y soporte.'
+    : isHotel
+      ? 'Hoteles y hostales: parte MIR por habitación, prueba sencilla y atención directa.'
+      : 'Parte de viajeros MIR · pruébalo gratis sin tarjeta. Vídeo en 1 min.';
+
+  const pitchBody = isAgency
+    ? `Os escribo directamente a ${domainLabel}: sé que gestionáis varias (o muchas) viviendas de uso turístico / vacacional. Con Delfín Check-in cada propiedad puede enviar el parte al MIR / SES Hospedajes sin líos: el huésped rellena, vosotros revisáis y enviáis — también desde el móvil. Para gestoras con volumen alto os damos trato priorizado y onboarding especializado (no es el mismo flujo que un dueño con una sola casa).`
+    : isHotel
+      ? `Os escribo a ${domainLabel}: en hoteles y hostales el RD 933/2021 también obliga a registrar viajeros y enviar el parte al MIR / SES Hospedajes. Con Delfín Check-in el huésped rellena el parte por habitación/estancia, lo revisáis y lo enviáis al Ministerio — fácil en móvil. Si tenéis varias habitaciones o varios establecimientos, prioridad de atención al probarlo.`
+      : `En España el RD 933/2021 obliga a registrar a los viajeros y enviar el parte al MIR / SES Hospedajes. Con Delfín Check-in el huésped rellena el parte, tú lo revisas y lo envías al Ministerio — fácil, también desde el móvil.`;
+
+  const trialLine = isAgency
+    ? `Probadlo gratis, sin tarjeta. Un clic y en un minutito estáis dentro (email ya asociado). Si tenéis muchas viviendas: prioridad de onboarding y soporte dedicado. Luego, si encaja, desde 2€/mes por propiedad.`
+    : isHotel
+      ? `Probadlo gratis, sin tarjeta. Un clic y en un minutito estáis registrados. Si operáis varias habitaciones o más de un establecimiento, prioridad de atención. Si más adelante encaja, desde 2€/mes.`
+      : `Puedes probarlo gratis (1 propiedad), sin tarjeta. Un clic y en un minutito estás registrado: te llega el correo para entrar y empezar. Si más adelante te encaja, desde 2€/mes; si no, te quedas en gratis o te das de baja.`;
 
   const socialText = [
     'Síguenos (por si te viene bien):',
@@ -84,18 +112,18 @@ export function buildColdOutreachEmail(params: ColdEmailParams): {
     )
     .join('');
 
-  // Texto plano: mismo contenido de siempre + enlace al vídeo
+  // Texto plano
   const text = [
     `Hola,`,
     ``,
     `Soy ${sender}. Te escribo porque el email de contacto de ${domainLabel} está publicado en ${params.sourceUrl} (contacto a email público de tu web; sin listas compradas).`,
     ``,
-    `En España el RD 933/2021 obliga a registrar a los viajeros y enviar el parte al MIR / SES Hospedajes. Con Delfín Check-in el huésped rellena el parte, tú lo revisas y lo envías al Ministerio — fácil, también desde el móvil.`,
+    pitchBody,
     ``,
     `Vídeo (qué es Delfín Check-in):`,
     videoUrl,
     ``,
-    `Puedes probarlo gratis (1 propiedad), sin tarjeta. Un clic y en un minutito estás registrado: te llega el correo para entrar y empezar. Si más adelante te encaja, desde 2€/mes; si no, te quedas en gratis o te das de baja.`,
+    trialLine,
     ``,
     `Probar gratis ahora:`,
     signup,
@@ -160,9 +188,7 @@ export function buildColdOutreachEmail(params: ColdEmailParams): {
                 <strong>${escapeHtml(domainLabel)}</strong> está publicado en
                 <a href="${escapeAttr(params.sourceUrl)}" style="color:#0284c7;text-decoration:underline;">${escapeHtml(params.sourceUrl)}</a>
                 (contacto a email público de tu web; sin listas compradas).</p>
-              <p style="margin:0 0 8px;">El <strong>RD 933/2021</strong> obliga a registrar viajeros y enviar el parte al
-                <strong>MIR / SES Hospedajes</strong>. Con <strong>Delfín Check-in</strong> el huésped rellena el parte,
-                tú lo revisas y lo envías al Ministerio — fácil, también desde el móvil.</p>
+              <p style="margin:0 0 8px;">${escapeHtml(pitchBody)}</p>
             </td>
           </tr>
 
@@ -186,9 +212,7 @@ export function buildColdOutreachEmail(params: ColdEmailParams): {
 
           <tr>
             <td style="padding:16px 28px 8px;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.6;color:#0f172a;">
-              <p style="margin:0;">Puedes <strong>probarlo gratis</strong> (1 propiedad), <strong>sin tarjeta</strong>.
-                Un clic y <strong>en un minutito estás registrado</strong>: te llega el correo para entrar.
-                Si más adelante te encaja, desde <strong>2€/mes</strong>; si no, puedes quedarte en gratis.</p>
+              <p style="margin:0;">${escapeHtml(trialLine)}</p>
             </td>
           </tr>
 

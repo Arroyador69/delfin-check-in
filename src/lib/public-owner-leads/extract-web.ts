@@ -13,11 +13,14 @@ import {
 } from './emails';
 import { contactCandidateUrls, fetchHtml, sleep } from './fetch-html';
 import { PUBLIC_OWNER_LEADS_MIN_DELAY_MS } from './constants';
+import { SEED_SPAIN_AGENCY_URLS } from './seed-spain-agency-urls';
+import { SEED_SPAIN_HOTEL_URLS } from './seed-spain-hotel-urls';
 import {
   classifySpainVacationRental,
   extractSpainVacationOutboundLinks,
   hostSuggestsNonVacation,
   hostSuggestsVacation,
+  type OutreachAudience,
 } from './spain-vacation-filter';
 
 export { isBlockedOutreachHost, domainFromUrl, normalizeUrl };
@@ -26,7 +29,20 @@ export type ExtractedLead = {
   email: string;
   domain: string;
   source_url: string;
+  audience?: OutreachAudience;
 };
+
+function seedAudience(url: string): OutreachAudience | null {
+  const host = domainFromUrl(url);
+  if (!host) return null;
+  for (const raw of SEED_SPAIN_AGENCY_URLS) {
+    if (domainFromUrl(normalizeUrl(raw) || raw) === host) return 'agency';
+  }
+  for (const raw of SEED_SPAIN_HOTEL_URLS) {
+    if (domainFromUrl(normalizeUrl(raw) || raw) === host) return 'hotel';
+  }
+  return null;
+}
 
 async function enqueueDiscoveredSources(urls: string[]): Promise<number> {
   const sourcesMeta = await sql`SELECT to_regclass('public.public_owner_lead_sources') AS reg`;
@@ -75,6 +91,7 @@ export async function extractPublicEmailsFromUrl(
   let discoveredSources = 0;
   let firstHtml = '';
   let firstUrl = url;
+  let audience: OutreachAudience = 'owner';
 
   for (const candidate of candidates) {
     if (isBlockedOutreachHost(candidate)) continue;
@@ -84,12 +101,25 @@ export async function extractPublicEmailsFromUrl(
 
     const verdict = classifySpainVacationRental(res.finalUrl || candidate, res.html);
     lastReason = verdict.reason;
+    const seeded = seedAudience(url);
     if (!verdict.ok) {
-      // Home puede fallar filtro; probar rutas contacto igual si host sugiere VR
-      if (!hostSuggestsVacation(url) && candidate === url) continue;
-      if (!hostSuggestsVacation(url)) continue;
+      // Semillas curadas (agencia/hotel): no tumbar por HTML JS / sin .es
+      if (seeded) {
+        nicheOk = true;
+        audience = seeded;
+      } else if (!hostSuggestsVacation(url) && candidate === url) {
+        continue;
+      } else if (!hostSuggestsVacation(url)) {
+        continue;
+      } else {
+        // Host tipico VR aunque el clasificador falle por umbral → seguir
+        nicheOk = true;
+      }
+    } else {
+      nicheOk = true;
+      if (verdict.audience) audience = verdict.audience;
     }
-    nicheOk = true;
+    if (seeded) audience = seeded;
     if (!firstHtml) {
       firstHtml = res.html;
       firstUrl = res.finalUrl || candidate;
@@ -107,7 +137,8 @@ export async function extractPublicEmailsFromUrl(
     return {
       leads: [],
       blocked: true,
-      error: `no-es-alojamiento-ES:${lastReason}`,
+      // Antes: "no-es-alojamiento-ES" confundía con exigir TLD .es
+      error: `fuera-de-nicho:${lastReason}`,
     };
   }
 
@@ -130,6 +161,7 @@ export async function extractPublicEmailsFromUrl(
     email,
     domain: domainFromUrl(url) || domainFromUrl(source_url),
     source_url,
+    audience,
   }));
 
   return { leads, blocked: false, discoveredSources };

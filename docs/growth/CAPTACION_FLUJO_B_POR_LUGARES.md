@@ -85,7 +85,10 @@ Flag en Vercel / `.env` (opcional; el cron ya fuerza **A+B** si no hay valor):
 
 - `PUBLIC_OWNER_LEADS_FLOW=A` — solo semillas
 - `PUBLIC_OWNER_LEADS_FLOW=B` — solo OSM por lugares
-- `PUBLIC_OWNER_LEADS_FLOW=A+B` — **default en cron** (semillas + OSM)
+- `PUBLIC_OWNER_LEADS_FLOW=A+B` — semillas + OSM
+- `PUBLIC_OWNER_LEADS_FLOW=A+B+C` — **default en cron** (semillas + OSM + agencias/hoteles)
+
+Ver también: `CAPTACION_FLUJO_C_AGENCIAS.md` y `CAPTACION_META_20_Y_FLUJOS.md`.
 
 Resiliencia cron: Overpass con timeout corto, deadline 60–75s, fallos OSM = soft-fail (el envío con cola existente sigue).
 

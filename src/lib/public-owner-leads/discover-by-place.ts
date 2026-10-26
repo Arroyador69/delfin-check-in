@@ -1,15 +1,13 @@
 /**
- * Flujo B: descubrir webs de alojamiento ES por lugar vía OpenStreetMap (Overpass).
+ * Flujo B/C: descubrir webs de alojamiento ES vía OpenStreetMap (Overpass).
+ * Preferimos `around:lat,lon` (rápido) frente a area=name (timeouts).
  * Normas: docs/growth/CAPTACION_FLUJO_B_POR_LUGARES.md
- *
- * No usamos Google/Bing/DDG (captchas). OSM da `website` + a veces `email` de
- * tourism=apartment|chalet|guest_house|camp_site en el área del pueblo/comarca.
  */
 
 import { isBlockedOutreachHost } from './blocked-hosts';
 import { domainFromUrl, isPlausiblePublicEmail, normalizeEmail, normalizeUrl } from './emails';
 import { sleep } from './fetch-html';
-import { pickPlacesForRun } from './places-es';
+import { pickPlaceCoordsForRun, type PlaceCoord } from './places-coords-es';
 import {
   hostSuggestsNonVacation,
   hostSuggestsVacation,
@@ -19,11 +17,12 @@ const UA =
   'DelfinCheckInPublicLeadsBot/1.0 (+https://delfincheckin.com; osm-place-discovery; contact=soporte@delfincheckin.com)';
 
 const PORTAL_HOST =
-  /casasruralesen|campingsde|barcelonacampings|alojamientorural|turismo-rural|escapada|booking|airbnb|kayak|rusticae|tripadvisor|fedcamping|campingred|misterplan|ruralgest|idealista|fotocasa|wordpress\.com|wix\.com|facebook|instagram|gob\.es|rediris/i;
+  /casasruralesen|campingsde|barcelonacampings|alojamientorural|turismo-rural|escapada|booking|airbnb|kayak|rusticae|tripadvisor|fedcamping|campingred|misterplan|ruralgest|idealista|fotocasa|wordpress\.com|wix\.com|facebook|instagram|gob\.es|rediris|toprural|spain-holiday/i;
 
 const OVERPASS_ENDPOINTS = [
-  'https://overpass-api.de/api/interpreter',
   'https://overpass.kumi.systems/api/interpreter',
+  'https://overpass-api.de/api/interpreter',
+  'https://overpass.openstreetmap.ru/api/interpreter',
 ];
 
 export type PlaceOsmLead = {
@@ -42,22 +41,24 @@ export type PlaceDiscoveryResult = {
   leads: PlaceOsmLead[];
 };
 
-function overpassQueryForPlace(place: string): string {
-  // timeout OSM bajo: el cron Vercel tiene ~300s totales
-  const esc = place.replace(/"/g, '\\"');
-  return `
-[out:json][timeout:22];
-area["name"="${esc}"]["admin_level"~"^[6-8]$"]->.searchArea;
-(
-  nwr(area.searchArea)["tourism"~"^(apartment|chalet|guest_house|hostel|camp_site|alpine_hut)$"]["website"];
-  nwr(area.searchArea)["tourism"~"^(apartment|chalet|guest_house|hostel|camp_site)$"]["contact:website"];
-  nwr(area.searchArea)["tourism"="hotel"]["stars"~"^[123]$"]["website"];
-);
-out tags 25;
-`.trim();
+/**
+ * Queries muy ligeras (solo node + un tag tourism): Overpass público
+ * aborta si pedimos nwr + regex + radio grande.
+ */
+function overpassQueriesAround(c: PlaceCoord): string[] {
+  const r = Math.min(c.radiusM ?? 10000, 10000);
+  const types = ['apartment', 'guest_house', 'chalet', 'hostel', 'hotel', 'camp_site'] as const;
+  return types.map(
+    (t) =>
+      `
+[out:json][timeout:8];
+node(around:${r},${c.lat},${c.lon})["tourism"="${t}"]["website"];
+out tags 20;
+`.trim()
+  );
 }
 
-async function fetchOverpass(query: string, timeoutMs = 28_000): Promise<unknown[]> {
+async function fetchOverpass(query: string, timeoutMs = 12_000): Promise<unknown[]> {
   let lastErr: unknown;
   for (const endpoint of OVERPASS_ENDPOINTS) {
     try {
@@ -79,7 +80,6 @@ async function fetchOverpass(query: string, timeoutMs = 28_000): Promise<unknown
       return Array.isArray(j.elements) ? j.elements : [];
     } catch (e) {
       lastErr = e;
-      // Siguiente endpoint; no tumbar el job
     }
   }
   if (lastErr) {
@@ -100,6 +100,66 @@ function isOwnerWebsite(raw: string): boolean {
   return true;
 }
 
+function ingestElements(
+  elements: unknown[],
+  place: string,
+  state: {
+    osmHits: number;
+    seenHost: Set<string>;
+    candidateUrls: string[];
+    emailsFromOsm: PlaceDiscoveryResult['emailsFromOsm'];
+    leads: PlaceOsmLead[];
+    maxCandidates: number;
+  }
+): boolean {
+  for (const raw of elements) {
+    try {
+      const el = raw as { tags?: Record<string, string> };
+      const tags = el.tags || {};
+      const website = String(tags.website || tags['contact:website'] || '').trim();
+      const emailRaw = String(tags.email || tags['contact:email'] || '').trim();
+      const name = String(tags.name || tags['name:es'] || '').trim();
+      const tourism = String(tags.tourism || '');
+      if (!website) continue;
+      state.osmHits++;
+
+      if (!isOwnerWebsite(website)) continue;
+      const url = normalizeUrl(website);
+      const host = domainFromUrl(url);
+      if (!host || state.seenHost.has(host)) continue;
+
+      if (
+        !hostSuggestsVacation(url) &&
+        !/apartment|chalet|guest_house|camp_site|hotel|hostel|motel|alpine_hut/i.test(tourism)
+      ) {
+        continue;
+      }
+
+      state.seenHost.add(host);
+      let home = url;
+      try {
+        home = new URL(url).origin + '/';
+      } catch {
+        /* keep */
+      }
+      state.candidateUrls.push(home);
+      state.leads.push({ place, name, website: home, email: emailRaw || undefined, tourism });
+
+      if (emailRaw) {
+        const email = normalizeEmail(emailRaw);
+        if (isPlausiblePublicEmail(email)) {
+          state.emailsFromOsm.push({ email, website: home, place, name });
+        }
+      }
+
+      if (state.candidateUrls.length >= state.maxCandidates) return true;
+    } catch {
+      /* elemento OSM raro */
+    }
+  }
+  return false;
+}
+
 /**
  * Descubre webs (y emails OSM si existen) de alojamientos locales por lugar.
  */
@@ -109,75 +169,55 @@ export async function discoverOwnerSitesByPlace(opts?: {
   delayMs?: number;
   /** Tope duro de wall-clock (cron ~300s: usar 60–90s para OSM). */
   deadlineMs?: number;
+  /** 0 mañana / 1 tarde / 2 noche → provincias distintas automáticamente. */
+  waveOffset?: number;
 }): Promise<PlaceDiscoveryResult> {
   const maxPlaces = opts?.maxPlaces ?? 10;
   const maxCandidates = opts?.maxCandidates ?? 40;
-  const delayMs = opts?.delayMs ?? 600;
+  const delayMs = opts?.delayMs ?? 400;
   const deadlineMs = opts?.deadlineMs ?? 90_000;
+  const waveOffset = opts?.waveOffset ?? 0;
   const started = Date.now();
 
-  const places = pickPlacesForRun(maxPlaces);
-  const candidateUrls: string[] = [];
-  const emailsFromOsm: PlaceDiscoveryResult['emailsFromOsm'] = [];
-  const leads: PlaceOsmLead[] = [];
-  const seenHost = new Set<string>();
-  let osmHits = 0;
+  const coords = pickPlaceCoordsForRun(maxPlaces, 0, waveOffset);
+  const places = coords.map((c) => c.name);
+  const state = {
+    osmHits: 0,
+    seenHost: new Set<string>(),
+    candidateUrls: [] as string[],
+    emailsFromOsm: [] as PlaceDiscoveryResult['emailsFromOsm'],
+    leads: [] as PlaceOsmLead[],
+    maxCandidates,
+  };
 
-  for (const place of places) {
+  for (const c of coords) {
     if (Date.now() - started > deadlineMs) break;
-    let elements: unknown[] = [];
-    try {
-      elements = await fetchOverpass(overpassQueryForPlace(place), 26_000);
-    } catch {
-      elements = [];
-    }
-    await sleep(delayMs);
-
-    for (const raw of elements) {
+    for (const q of overpassQueriesAround(c)) {
+      if (Date.now() - started > deadlineMs) break;
+      let elements: unknown[] = [];
       try {
-        const el = raw as { tags?: Record<string, string> };
-        const tags = el.tags || {};
-        const website = String(tags.website || tags['contact:website'] || '').trim();
-        const emailRaw = String(tags.email || tags['contact:email'] || '').trim();
-        const name = String(tags.name || tags['name:es'] || '').trim();
-        const tourism = String(tags.tourism || '');
-        if (!website) continue;
-        osmHits++;
-
-        if (!isOwnerWebsite(website)) continue;
-        const url = normalizeUrl(website);
-        const host = domainFromUrl(url);
-        if (!host || seenHost.has(host)) continue;
-
-        if (!hostSuggestsVacation(url) && !/apartment|chalet|guest_house|camp_site/i.test(tourism)) {
-          continue;
-        }
-
-        seenHost.add(host);
-        let home = url;
-        try {
-          home = new URL(url).origin + '/';
-        } catch {
-          /* keep */
-        }
-        candidateUrls.push(home);
-        leads.push({ place, name, website: home, email: emailRaw || undefined, tourism });
-
-        if (emailRaw) {
-          const email = normalizeEmail(emailRaw);
-          if (isPlausiblePublicEmail(email)) {
-            emailsFromOsm.push({ email, website: home, place, name });
-          }
-        }
-
-        if (candidateUrls.length >= maxCandidates) {
-          return { places, osmHits, candidateUrls, emailsFromOsm, leads };
-        }
+        elements = await fetchOverpass(q, 11_000);
       } catch {
-        /* elemento OSM raro: seguir */
+        elements = [];
+      }
+      await sleep(Math.min(delayMs, 250));
+      if (ingestElements(elements, c.name, state)) {
+        return {
+          places,
+          osmHits: state.osmHits,
+          candidateUrls: state.candidateUrls,
+          emailsFromOsm: state.emailsFromOsm,
+          leads: state.leads,
+        };
       }
     }
   }
 
-  return { places, osmHits, candidateUrls, emailsFromOsm, leads };
+  return {
+    places,
+    osmHits: state.osmHits,
+    candidateUrls: state.candidateUrls,
+    emailsFromOsm: state.emailsFromOsm,
+    leads: state.leads,
+  };
 }
