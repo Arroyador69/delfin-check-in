@@ -4,22 +4,48 @@ import {
   PUBLIC_OWNER_LEADS_DAILY_TARGET,
   PUBLIC_OWNER_LEADS_MIN_QUEUED,
   PUBLIC_OWNER_LEADS_CAMPAIGN,
+  PUBLIC_OWNER_LEADS_WAVE_MAX,
+  PUBLIC_OWNER_LEADS_WAVES_PER_DAY,
+  PUBLIC_OWNER_LEADS_MIN_DELAY_MS,
+  PUBLIC_OWNER_LEADS_PROGRESS_EVERY,
   PUBLIC_OWNER_SIGNUPS_DAILY_GOAL,
 } from '../src/lib/public-owner-leads/constants';
 import { isBlockedOutreachHost } from '../src/lib/public-owner-leads/blocked-hosts';
 import { buildColdOutreachEmail } from '../src/lib/public-owner-leads/template';
+import { progressMilestonesCrossed } from '../src/lib/public-owner-leads/captacion-telegram';
+import { waveFromSlot, osmOffsetFromSlot } from '../src/lib/public-owner-leads/wave-schedule';
 
 describe('public-owner-leads daily campaign', () => {
-  it('4 oleadas ×250 = tope 1000; cola mínima 1000; meta 20 altas', () => {
-    expect(PUBLIC_OWNER_LEADS_DAILY_TARGET).toBe(250);
+  it('20 oleadas ×50 = tope 1000; cola 1000; delay ≥1.5s; meta 20; Telegram cada 150', () => {
+    expect(PUBLIC_OWNER_LEADS_WAVE_MAX).toBe(50);
+    expect(PUBLIC_OWNER_LEADS_DAILY_TARGET).toBe(50);
+    expect(PUBLIC_OWNER_LEADS_WAVES_PER_DAY).toBe(20);
     expect(PUBLIC_OWNER_LEADS_DAILY_HARD_CAP).toBe(1000);
     expect(PUBLIC_OWNER_LEADS_MIN_QUEUED).toBe(1000);
     expect(PUBLIC_OWNER_SIGNUPS_DAILY_GOAL).toBe(20);
-    expect(PUBLIC_OWNER_LEADS_DAILY_TARGET * 4).toBe(PUBLIC_OWNER_LEADS_DAILY_HARD_CAP);
+    expect(PUBLIC_OWNER_LEADS_WAVE_MAX * PUBLIC_OWNER_LEADS_WAVES_PER_DAY).toBe(
+      PUBLIC_OWNER_LEADS_DAILY_HARD_CAP
+    );
+    expect(PUBLIC_OWNER_LEADS_MIN_DELAY_MS).toBeGreaterThanOrEqual(1500);
+    expect(PUBLIC_OWNER_LEADS_PROGRESS_EVERY).toBe(150);
   });
 
   it('campaign key estable para UTM', () => {
     expect(PUBLIC_OWNER_LEADS_CAMPAIGN).toBe('public_owner_leads_es');
+  });
+
+  it('hitos Telegram cada 150', () => {
+    expect(progressMilestonesCrossed(140, 160, 150)).toEqual([150]);
+    expect(progressMilestonesCrossed(0, 50, 150)).toEqual([]);
+    expect(progressMilestonesCrossed(140, 310, 150)).toEqual([150, 300]);
+  });
+
+  it('slots mapean a franjas legacy', () => {
+    expect(waveFromSlot(0)).toBe('morning');
+    expect(waveFromSlot(5)).toBe('afternoon');
+    expect(waveFromSlot(10)).toBe('evening');
+    expect(waveFromSlot(19)).toBe('night');
+    expect(osmOffsetFromSlot(7)).toBe(7);
   });
 
   it('bloquea OTAs y permite web propia', () => {

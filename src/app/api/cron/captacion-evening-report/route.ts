@@ -12,7 +12,7 @@ import {
 
 /**
  * Cron ~21:00 Europe/Madrid (invierno: vercel `0 20 * * *`).
- * Telegram de cierre del día: acumulado tras las 4 oleadas vs meta 20 altas.
+ * Telegram de cierre: acumulado tras oleadas 50×20 (tope 1000) vs meta 20 altas.
  */
 export async function GET(req: NextRequest) {
   const authHeader = req.headers.get('authorization');
@@ -44,7 +44,7 @@ export async function GET(req: NextRequest) {
     let message = formatCaptacionWaveTelegram({
       wave: 'day_end',
       stats,
-      extraNote: `Tope día ${PUBLIC_OWNER_LEADS_DAILY_HARD_CAP} · 4 oleadas · waitlist +${waitlistNew} (total ${waitlistTotal})`,
+      extraNote: `Tope día ${PUBLIC_OWNER_LEADS_DAILY_HARD_CAP} · 20×50 Zoho-safe · waitlist +${waitlistNew} (total ${waitlistTotal})`,
     });
 
     if (waitlistNew > 0) {

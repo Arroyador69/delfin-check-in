@@ -78,10 +78,16 @@ export default function PublicOwnerLeadsAdminPage() {
   const [error, setError] = useState<string | null>(null);
   const [tableReady, setTableReady] = useState(false);
   const [migrationHint, setMigrationHint] = useState<string | null>(null);
-  const [dailyTarget, setDailyTarget] = useState(250);
+  const [dailyTarget, setDailyTarget] = useState(50);
   const [hardCap, setHardCap] = useState(1000);
+  const [wavesPerDay, setWavesPerDay] = useState(20);
+  const [progressEvery, setProgressEvery] = useState(150);
+  const [delayMs, setDelayMs] = useState(1800);
+  const [scheduleHint, setScheduleHint] = useState(
+    '08:00–17:30 Madrid · cada 30 min · 50/oleada · Telegram cada 150'
+  );
   const [reserveReady, setReserveReady] = useState(0);
-  const [afternoonWillRun, setAfternoonWillRun] = useState(true);
+  const [wavesStillRun, setWavesStillRun] = useState(true);
   const [stats, setStats] = useState<Stats>({});
   const [today, setToday] = useState<Today>({});
   const [byDay, setByDay] = useState<DayRow[]>([]);
@@ -113,10 +119,23 @@ export default function PublicOwnerLeadsAdminPage() {
       }
       setTableReady(Boolean(data.table_ready));
       setMigrationHint(data.table_ready ? null : data.message || null);
-      setDailyTarget(Number(data.daily_target || 50));
+      setDailyTarget(Number(data.wave_max || data.daily_target || 50));
       setHardCap(Number(data.daily_hard_cap || 1000));
+      setWavesPerDay(Number(data.waves_per_day || 20));
+      setProgressEvery(Number(data.progress_every || 150));
+      setDelayMs(Number(data.delay_ms || 1800));
+      setScheduleHint(
+        String(
+          data.schedule_hint ||
+            '08:00–17:30 Madrid · cada 30 min · 50/oleada · Telegram cada 150'
+        )
+      );
       setReserveReady(Number(data.reserve_ready || 0));
-      setAfternoonWillRun(Boolean(data.afternoon_will_run));
+      setWavesStillRun(
+        data.waves_still_run != null
+          ? Boolean(data.waves_still_run)
+          : Boolean(data.afternoon_will_run)
+      );
       setStats(data.stats || {});
       setToday(data.today || {});
       setByDay(Array.isArray(data.by_day) ? data.by_day : []);
@@ -194,8 +213,9 @@ export default function PublicOwnerLeadsAdminPage() {
   const sendPct = Math.min(100, Math.round((sentToday / Math.max(hardCap, 1)) * 100));
   const signupPct = Math.min(100, Math.round((signupsToday / SIGNUP_DAILY_GOAL) * 100));
   const signupGoalMet = signupsToday >= SIGNUP_DAILY_GOAL;
-  const waveSize = dailyTarget; // 250 por oleada
+  const waveSize = dailyTarget; // 50 por oleada (Zoho-safe)
   const queueTarget = hardCap; // recámara = tope día (1000)
+  const delaySec = Math.round((delayMs / 1000) * 10) / 10;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-sky-50/40">
@@ -210,9 +230,9 @@ export default function PublicOwnerLeadsAdminPage() {
             </h1>
             <p className="mt-1 text-slate-600 max-w-2xl text-[15px] leading-relaxed">
               Meta <strong className="text-slate-900">{SIGNUP_DAILY_GOAL} altas / día</strong> · tope{' '}
-              <strong className="text-slate-900">{hardCap} mails / día</strong> en 4 oleadas ×{waveSize}{' '}
-              (09 / 15 / 18 / 20h) si altas &lt;20 · cola siempre ≥{queueTarget} · solo alquiler
-              vacacional / agencias / hoteles ES · nunca el mismo email 2 veces. Cola ahora:{' '}
+              <strong className="text-slate-900">{hardCap} mails / día</strong> en {wavesPerDay} oleadas ×
+              {waveSize} ({scheduleHint}) · delay {delaySec}s · Telegram cada {progressEvery} · si
+              altas ≥20 se para y la cola queda para mañana · cola siempre ≥{queueTarget}. Cola ahora:{' '}
               <strong className="text-slate-900">{reserveReady}</strong>.
             </p>
           </div>
@@ -239,18 +259,23 @@ export default function PublicOwnerLeadsAdminPage() {
               onClick={() => postAction({ action: 'run_daily', dryRun: true })}
               className="px-3.5 py-2 text-sm font-semibold rounded-xl border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-50 shadow-sm"
             >
-              Dry-run 09:00
+              Dry-run oleada ({waveSize})
             </button>
             <button
               type="button"
-              disabled={busy || !tableReady}
+              disabled={busy || !tableReady || signupGoalMet}
               onClick={() => {
-                if (!confirm(`¿Enviar hasta ${dailyTarget} emails de prueba gratis ahora?`)) return;
-                postAction({ action: 'run_daily', dryRun: false });
+                if (
+                  !confirm(
+                    `¿Enviar hasta ${waveSize} emails ahora? (delay ${delaySec}s · Zoho-safe · tope día ${hardCap})`
+                  )
+                )
+                  return;
+                postAction({ action: 'run_daily', dryRun: false, max: waveSize });
               }}
               className="px-3.5 py-2 text-sm font-semibold rounded-xl bg-sky-600 text-white hover:bg-sky-700 disabled:opacity-50 shadow-md shadow-sky-600/20"
             >
-              Ejecutar envío
+              Ejecutar oleada ({waveSize})
             </button>
           </div>
         </header>
@@ -291,8 +316,8 @@ export default function PublicOwnerLeadsAdminPage() {
                     {signupsToday > SIGNUP_DAILY_GOAL
                       ? `¡Más de ${SIGNUP_DAILY_GOAL}!`
                       : signupGoalMet
-                        ? 'Meta OK (20)'
-                        : 'Por debajo → siguen oleadas 15/18/20h'}
+                        ? 'Meta OK — cola para mañana'
+                        : 'Por debajo → oleadas todo el día'}
                   </span>
                 </div>
                 <p className="mt-2 text-3xl font-semibold tabular-nums tracking-tight">
@@ -306,9 +331,9 @@ export default function PublicOwnerLeadsAdminPage() {
                   />
                 </div>
                 <p className="mt-2 text-xs text-slate-500">
-                  {afternoonWillRun
-                    ? `Aún <20 altas → oleadas 15/18/20h envían hasta ${waveSize} cada una (nunca repetidos).`
-                    : 'Ya hay 20+ altas → las oleadas 15/18/20h no envían. ¡Bien!'}{' '}
+                  {wavesStillRun
+                    ? `Aún <${SIGNUP_DAILY_GOAL} altas → cada ~30 min se envían hasta ${waveSize} (nunca repetidos).`
+                    : `Ya hay ${SIGNUP_DAILY_GOAL}+ altas → no más envíos hoy; cola guardada para mañana.`}{' '}
                   Cola objetivo ≥{queueTarget}: {reserveReady} listos.
                 </p>
               </div>
@@ -317,7 +342,7 @@ export default function PublicOwnerLeadsAdminPage() {
                 <div className="flex justify-between items-baseline gap-2">
                   <h2 className="text-sm font-semibold text-slate-800">Emails outreach hoy</h2>
                   <span className="text-xs font-semibold text-slate-500">
-                    4×{waveSize} · tope {hardCap}
+                    {wavesPerDay}×{waveSize} · tope {hardCap}
                   </span>
                 </div>
                 <p className="mt-2 text-3xl font-semibold tabular-nums tracking-tight">
@@ -333,7 +358,20 @@ export default function PublicOwnerLeadsAdminPage() {
                   <MiniStat label="Undelivered" value={today.bounced_today} />
                   <MiniStat label="Descubiertos" value={today.discovered_today} />
                 </div>
+                <p className="mt-3 text-xs text-slate-500">
+                  Zoho-safe: {waveSize}/oleada · delay {delaySec}s · Telegram al cruzar{' '}
+                  {progressEvery}/{progressEvery * 2}/… mails · cron todo el día hasta tope o meta 20.
+                </p>
               </div>
+            </section>
+
+            <section className="rounded-2xl border border-sky-100 bg-sky-50/60 px-5 py-4 text-sm text-slate-700">
+              <p className="font-semibold text-slate-900">Horario de trabajo (Europe/Madrid)</p>
+              <p className="mt-1 leading-relaxed">
+                Prepare ~07:00 (solo cola ≥{queueTarget}) · oleadas {scheduleHint} · cierre Telegram
+                ~21:00. Si la meta de altas se cumple antes, se deja de enviar y el stock queda para el
+                día siguiente.
+              </p>
             </section>
 
             <section className="grid grid-cols-2 sm:grid-cols-5 gap-3">

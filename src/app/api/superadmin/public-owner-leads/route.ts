@@ -10,10 +10,13 @@ import {
 import { applyOutreachBouncesFromText } from '@/lib/public-owner-leads/apply-bounces';
 import { isBlockedOutreachHost, normalizeUrl } from '@/lib/public-owner-leads/extract-web';
 import {
-  PUBLIC_OWNER_LEADS_AFTERNOON_MAX,
   PUBLIC_OWNER_LEADS_DAILY_HARD_CAP,
   PUBLIC_OWNER_LEADS_DAILY_TARGET,
   PUBLIC_OWNER_LEADS_MIN_QUEUED,
+  PUBLIC_OWNER_LEADS_PROGRESS_EVERY,
+  PUBLIC_OWNER_LEADS_WAVE_MAX,
+  PUBLIC_OWNER_LEADS_WAVES_PER_DAY,
+  PUBLIC_OWNER_LEADS_MIN_DELAY_MS,
   PUBLIC_OWNER_SIGNUPS_DAILY_GOAL,
 } from '@/lib/public-owner-leads/constants';
 import { syncZohoBounces } from '@/lib/zoho-bounce-sync';
@@ -184,19 +187,24 @@ export async function GET(req: NextRequest) {
 
     const reserve = Number(st.new_count || 0) + Number(st.queued || 0);
     const signedToday = Number((today.rows[0] as { signed_up_today?: number })?.signed_up_today || 0);
+    const wavesStillRun = signedToday < PUBLIC_OWNER_SIGNUPS_DAILY_GOAL;
 
     return NextResponse.json({
       ok: true,
       table_ready: true,
       daily_target: PUBLIC_OWNER_LEADS_DAILY_TARGET,
       daily_hard_cap: PUBLIC_OWNER_LEADS_DAILY_HARD_CAP,
-      afternoon_max: PUBLIC_OWNER_LEADS_AFTERNOON_MAX,
-      wave_max: PUBLIC_OWNER_LEADS_DAILY_TARGET,
+      afternoon_max: PUBLIC_OWNER_LEADS_WAVE_MAX,
+      wave_max: PUBLIC_OWNER_LEADS_WAVE_MAX,
       min_queued: PUBLIC_OWNER_LEADS_MIN_QUEUED,
-      waves_per_day: 4,
+      waves_per_day: PUBLIC_OWNER_LEADS_WAVES_PER_DAY,
+      progress_every: PUBLIC_OWNER_LEADS_PROGRESS_EVERY,
+      delay_ms: PUBLIC_OWNER_LEADS_MIN_DELAY_MS,
       signup_goal: PUBLIC_OWNER_SIGNUPS_DAILY_GOAL,
       reserve_ready: reserve,
-      afternoon_will_run: signedToday < PUBLIC_OWNER_SIGNUPS_DAILY_GOAL,
+      afternoon_will_run: wavesStillRun,
+      waves_still_run: wavesStillRun,
+      schedule_hint: '08:00–17:30 Madrid · cada 30 min · 50/oleada · Telegram cada 150',
       stats: { ...st, open_rate_pct: openRate, click_rate_pct: clickRate, signup_rate_pct: signupRate },
       today: today.rows[0] || {},
       by_day: byDay.rows,

@@ -1,19 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authorizeCronSecret } from '@/lib/cron-auth';
-import {
-  runDailyPublicOwnerLeads,
-  syncOutreachEngagementFromTracking,
-} from '@/lib/public-owner-leads/daily-run';
+import { runPublicOwnerLeadsWaveCron } from '@/lib/public-owner-leads/run-wave-cron';
+import { PUBLIC_OWNER_LEADS_WAVE_MAX } from '@/lib/public-owner-leads/constants';
 import { syncZohoBounces } from '@/lib/zoho-bounce-sync';
 import { syncInactiveTenantSuppressions } from '@/lib/email-suppression';
-import { notifyCaptacionWave } from '@/lib/public-owner-leads/captacion-telegram';
 
-/** Scrape + envío: necesita margen (Pro 300s). */
 export const maxDuration = 300;
 
 /**
- * Cron ~09:00 Europe/Madrid (1ª de 4 oleadas; tope día 200 si altas < 20).
- * Auth: Authorization Bearer CRON_SECRET
+ * Compat: antigua oleada “mañana”. Preferir `/api/cron/public-owner-leads-wave`.
+ * Fuerza franja morning · máx 50.
  */
 export async function GET(req: NextRequest) {
   if (!authorizeCronSecret(req)) {
@@ -21,71 +17,27 @@ export async function GET(req: NextRequest) {
   }
 
   const dryRun = req.nextUrl.searchParams.get('dryRun') === '1';
-  const max = parseInt(req.nextUrl.searchParams.get('max') || '250', 10);
   const skipZoho = req.nextUrl.searchParams.get('skipZoho') === '1';
 
-  // A+B+C: semillas + OSM + agencias/hoteles. No depende de env en Vercel.
-  if (!process.env.PUBLIC_OWNER_LEADS_FLOW) {
-    process.env.PUBLIC_OWNER_LEADS_FLOW = 'A+B+C';
-  }
-
-  try {
-    let zoho: unknown = null;
-    let tenants: unknown = null;
-    if (!skipZoho && !dryRun) {
-      try {
-        zoho = await syncZohoBounces({ limit: 80 });
-        tenants = await syncInactiveTenantSuppressions();
-      } catch (e) {
-        zoho = { error: e instanceof Error ? e.message : String(e) };
-      }
-    }
-
-    let engagement: unknown = { updated: 0 };
+  let zoho: unknown = null;
+  let tenants: unknown = null;
+  if (!skipZoho && !dryRun) {
     try {
-      engagement = await syncOutreachEngagementFromTracking();
+      zoho = await syncZohoBounces({ limit: 80 });
+      tenants = await syncInactiveTenantSuppressions();
     } catch (e) {
-      engagement = { error: e instanceof Error ? e.message : String(e) };
+      zoho = { error: e instanceof Error ? e.message : String(e) };
     }
-
-    const { provincesForWave } = await import('@/lib/public-owner-leads/provinces-es');
-    const provinces = provincesForWave('morning', 4);
-
-    const outreach = await runDailyPublicOwnerLeads({
-      dryRun,
-      wave: 'morning',
-      maxSend: Number.isFinite(max) ? max : 50,
-      extractLimit: 32,
-    });
-
-    let telegram: unknown = null;
-    if (!dryRun) {
-      telegram = await notifyCaptacionWave({
-        wave: 'morning',
-        waveSent: outreach.sent,
-        waveFailed: outreach.failed,
-        skippedBecauseGoalMet: Boolean(outreach.skippedBecauseGoalMet),
-      });
-    }
-
-    return NextResponse.json({
-      success: true,
-      wave: 'morning',
-      provinces,
-      flow: process.env.PUBLIC_OWNER_LEADS_FLOW || 'A+B+C',
-      dryRun,
-      zoho,
-      tenants,
-      engagement,
-      outreach,
-      telegram,
-    });
-  } catch (error: unknown) {
-    const msg = error instanceof Error ? error.message : String(error);
-    console.error('[cron/public-owner-leads]', msg);
-    // 200 parcial: Vercel no reintenta en bucle; el error queda en body
-    return NextResponse.json({ success: false, wave: 'morning', error: msg }, { status: 200 });
   }
+
+  const result = await runPublicOwnerLeadsWaveCron({
+    dryRun,
+    force: true,
+    wave: 'morning',
+    maxSend: PUBLIC_OWNER_LEADS_WAVE_MAX,
+  });
+
+  return NextResponse.json({ ...result, zoho, tenants, legacy: 'morning' }, { status: 200 });
 }
 
 export async function POST(req: NextRequest) {

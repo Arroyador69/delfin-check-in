@@ -1,12 +1,14 @@
 /**
- * Telegram tras cada oleada de captación + cierre del día.
- * Siempre muestra totales ACUMULADOS del día (Europe/Madrid) vs meta 20 altas.
+ * Telegram de captación: progreso cada 150 mails + meta 20 + cierre del día.
+ * No notificar en cada oleada de 50 (ruido); sí en hitos 150/300/…/1000.
  */
 
 import { sql } from '@/lib/db';
 import { sendTelegramMessage } from '@/lib/telegram';
 import {
   PUBLIC_OWNER_LEADS_DAILY_HARD_CAP,
+  PUBLIC_OWNER_LEADS_PROGRESS_EVERY,
+  PUBLIC_OWNER_LEADS_WAVE_MAX,
   PUBLIC_OWNER_SIGNUPS_DAILY_GOAL,
 } from './constants';
 
@@ -16,6 +18,7 @@ export type CaptacionWaveLabel =
   | 'evening'
   | 'night'
   | 'prepare'
+  | 'progress'
   | 'day_end';
 
 export type CaptacionDayStats = {
@@ -30,11 +33,12 @@ export type CaptacionDayStats = {
 };
 
 const WAVE_TITLE: Record<CaptacionWaveLabel, string> = {
-  morning: 'Oleada mañana (~09:00)',
-  afternoon: 'Oleada tarde (~15:00)',
-  evening: 'Oleada noche (~18:00)',
-  night: 'Oleada cierre (~20:00)',
+  morning: 'Oleada (franja mañana)',
+  afternoon: 'Oleada (franja tarde)',
+  evening: 'Oleada (franja tarde-noche)',
+  night: 'Oleada (franja cierre)',
   prepare: 'Prepare (solo cola)',
+  progress: 'Progreso del día',
   day_end: 'Cierre del día',
 };
 
@@ -160,5 +164,59 @@ export async function notifyCaptacionWave(opts: {
   } catch (e) {
     console.error('[captacion-telegram]', e);
     return { ok: false, stats: null };
+  }
+}
+
+/**
+ * Hitos cruzados al pasar de sentBefore → sentAfter (p.ej. 149→160 cruza 150).
+ */
+export function progressMilestonesCrossed(
+  sentBefore: number,
+  sentAfter: number,
+  every: number = PUBLIC_OWNER_LEADS_PROGRESS_EVERY
+): number[] {
+  if (every < 1 || sentAfter <= sentBefore) return [];
+  const first = Math.floor(sentBefore / every) + 1;
+  const last = Math.floor(sentAfter / every);
+  const out: number[] = [];
+  for (let m = first; m <= last; m++) {
+    out.push(m * every);
+  }
+  return out;
+}
+
+/**
+ * Telegram solo si se cruzó un múltiplo de 150 (u `every`).
+ * Una sola notificación con el hito más alto cruzado en esta oleada.
+ */
+export async function notifyCaptacionProgressMilestones(opts: {
+  sentBefore: number;
+  sentAfter: number;
+  wave?: CaptacionWaveLabel;
+  waveSent?: number;
+  waveFailed?: number;
+  every?: number;
+}): Promise<{ ok: boolean; milestones: number[]; stats: CaptacionDayStats | null }> {
+  const every = opts.every ?? PUBLIC_OWNER_LEADS_PROGRESS_EVERY;
+  const milestones = progressMilestonesCrossed(opts.sentBefore, opts.sentAfter, every);
+  if (milestones.length === 0) {
+    return { ok: true, milestones: [], stats: null };
+  }
+  const top = milestones[milestones.length - 1]!;
+  try {
+    const stats = await fetchCaptacionDayStats();
+    if (!stats) return { ok: false, milestones, stats: null };
+    const text = formatCaptacionWaveTelegram({
+      wave: 'progress',
+      waveSent: opts.waveSent,
+      waveFailed: opts.waveFailed,
+      stats,
+      extraNote: `Hito <b>${top}</b> mails hoy (cada ${every}) · oleada ≤${PUBLIC_OWNER_LEADS_WAVE_MAX} · Zoho-safe`,
+    });
+    const ok = await sendTelegramMessage(text);
+    return { ok, milestones, stats };
+  } catch (e) {
+    console.error('[captacion-telegram-progress]', e);
+    return { ok: false, milestones, stats: null };
   }
 }
