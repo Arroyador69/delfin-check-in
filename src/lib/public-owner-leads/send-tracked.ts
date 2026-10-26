@@ -53,7 +53,7 @@ export async function sendTrackedOutreachLead(lead: {
   domain: string;
   source_url: string;
   audience?: ColdEmailAudience;
-}): Promise<{ ok: boolean; trackingId?: string; error?: string }> {
+}): Promise<{ ok: boolean; trackingId?: string; error?: string; retryable?: boolean }> {
   const email = lead.email.trim().toLowerCase();
   const audience: ColdEmailAudience = lead.audience || 'owner';
   const optOutUrl = buildOutreachOptOutUrl(email, 'es');
@@ -148,6 +148,11 @@ export async function sendTrackedOutreachLead(lead: {
     return { ok: true, trackingId: trackingId || undefined };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
+    // Rate-limit Zoho / temporal: dejar en cola para reintento (NO skipped).
+    const retryable =
+      /Unusual sending activity|550 5\.4\.6|try after sometime|rate.?limit|temporar|timeout|ECONNRESET|ETIMEDOUT/i.test(
+        msg
+      );
     if (trackingId) {
       try {
         await sql`
@@ -158,6 +163,19 @@ export async function sendTrackedOutreachLead(lead: {
       } catch {
         /* ignore */
       }
+    }
+    if (retryable) {
+      await sql`
+        UPDATE public_owner_leads
+        SET
+          status = 'queued',
+          queued_at = COALESCE(queued_at, NOW()),
+          updated_at = NOW(),
+          last_error = ${msg.slice(0, 400)},
+          notes = COALESCE(notes, '') || ' | send-retry-zoho'
+        WHERE id = ${lead.id}::uuid
+      `;
+      return { ok: false, error: msg, retryable: true };
     }
     await sql`
       UPDATE public_owner_leads

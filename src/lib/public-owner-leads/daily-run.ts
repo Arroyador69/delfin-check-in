@@ -618,6 +618,11 @@ export async function runDailyPublicOwnerLeads(opts?: {
       } else {
         failed++;
         if (result.error) errors.push(`${email}: ${result.error}`);
+        // Zoho rate-limit: cortar oleada ya; el resto sigue en cola.
+        if (result.retryable) {
+          errors.push('abort:zoho-rate-limit');
+          break;
+        }
       }
       await sleep(PUBLIC_OWNER_LEADS_MIN_DELAY_MS);
     }
