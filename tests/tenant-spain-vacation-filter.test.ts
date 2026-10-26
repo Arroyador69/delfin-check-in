@@ -41,6 +41,18 @@ describe('spain vacation filter', () => {
     expect(v.spain).toBe(true);
   });
 
+  it('acepta .com con teléfono móvil ES sin TLD .es', () => {
+    const v = classifySpainVacationRental(
+      'https://www.gestora-vacacional.com',
+      `<html><body>
+        Gestión alquiler vacacional. Para propietarios. Reservas. Contacto 612 345 678.
+        Política de privacidad. Aviso legal.
+      </body></html>`
+    );
+    expect(v.ok).toBe(true);
+    expect(v.audience).toBe('agency');
+  });
+
   it('rechaza .com sin señal España', () => {
     const v = classifySpainVacationRental(
       'https://www.beachvilla.mx',
@@ -58,6 +70,39 @@ describe('spain vacation filter', () => {
     );
     expect(v.ok).toBe(false);
     expect(v.reason).toMatch(/directorio/);
+  });
+
+  it('acepta agencia gestión alquiler vacacional ES', () => {
+    const v = classifySpainVacationRental(
+      'https://www.silastur.es',
+      `<html lang="es"><body>
+        Gestión alquiler vacacional Asturias. Para propietarios. Gestionamos tu vivienda vacacional.
+        Registro de viajeros. Teléfono +34 985 875 010. España.
+      </body></html>`
+    );
+    expect(v.ok).toBe(true);
+    expect(v.audience).toBe('agency');
+  });
+
+  it('acepta hotel ES con parte viajeros', () => {
+    const v = classifySpainVacationRental(
+      'https://www.hoteldemo.es',
+      `<html lang="es"><body>
+        Hotel en Sevilla. Habitaciones dobles. Reservas. Check-in. Tel +34 954 000 000
+      </body></html>`
+    );
+    expect(v.ok).toBe(true);
+    expect(v.audience).toBe('hotel');
+  });
+
+  it('rechaza inmobiliaria pura sin vacacional', () => {
+    const v = classifySpainVacationRental(
+      'https://www.inmo-ejemplo.es',
+      `<html lang="es"><body>
+        Inmobiliaria en Madrid. Compraventa de pisos y locales. Hipotecas.
+      </body></html>`
+    );
+    expect(v.ok).toBe(false);
   });
 });
 

@@ -1,9 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { signupFreeActivate } from '@/lib/signup-free-activate';
-import {
-  decodeOptOutEmail,
-} from '@/lib/public-owner-leads/optout';
+import { decodeOptOutEmail } from '@/lib/public-owner-leads/optout';
 import { verifyOutreachActivateSignature } from '@/lib/public-owner-leads/activate-link';
+import {
+  buildOnboardingUrl,
+  findOnboardingOwnerByEmail,
+  issueFreshOnboardingCredentials,
+} from '@/lib/onboarding-magic-link';
+import { sendOnboardingEmail } from '@/lib/mailer';
+import { markPublicOwnerLeadSignedUp } from '@/lib/public-owner-leads/attribution';
 
 export const runtime = 'nodejs';
 
@@ -21,8 +26,10 @@ function htmlPage(title: string, body: string, ok: boolean): NextResponse {
     .card{background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:28px 24px;box-shadow:0 8px 30px rgba(15,23,42,.06);}
     h1{font-size:1.35rem;margin:0 0 12px;color:${color};}
     p{line-height:1.55;margin:0 0 12px;font-size:1rem;}
-    a.btn{display:inline-block;margin-top:8px;background:#0284c7;color:#fff;text-decoration:none;font-weight:700;padding:12px 18px;border-radius:10px;}
+    a.btn{display:inline-block;margin-top:8px;background:#0284c7;color:#fff;text-decoration:none;font-weight:700;padding:14px 20px;border-radius:10px;font-size:1.05rem;}
+    a.btn-secondary{display:inline-block;margin-top:10px;color:#0284c7;font-weight:600;text-decoration:underline;}
     .fine{font-size:.85rem;color:#64748b;}
+    .email{word-break:break-all;font-weight:600;}
   </style>
 </head>
 <body>
@@ -39,9 +46,35 @@ function htmlPage(title: string, body: string, ok: boolean): NextResponse {
   });
 }
 
+/** Reemite magic link + email si ya tenía cuenta (onboarding a medias / “sin registro”). */
+async function resumeOnboardingRedirect(email: string): Promise<string | null> {
+  const owner = await findOnboardingOwnerByEmail(email);
+  if (!owner?.user_id) return null;
+
+  const { token, tempPassword } = await issueFreshOnboardingCredentials(owner.user_id);
+  const onboardingUrl = buildOnboardingUrl(token, 'es');
+
+  try {
+    await sendOnboardingEmail({
+      to: email,
+      onboardingUrl,
+      tempPassword,
+      tenantId: owner.tenant_id,
+      variant: 'waitlist_launch',
+      locale: 'es',
+    });
+  } catch (e) {
+    console.warn('[outreach-activate] resume email:', e);
+  }
+
+  void markPublicOwnerLeadSignedUp({ email, tenantId: owner.tenant_id });
+  return onboardingUrl;
+}
+
 /**
- * GET 1-clic desde mail outreach (móvil-friendly):
- * verifica firma → crea tenant FREE + email onboarding.
+ * GET 1-clic desde mail outreach:
+ * alta FREE → redirect inmediato al onboarding (email ya asociado).
+ * No depender del correo para “entrar”: el CTA del mail te deja dentro.
  */
 export async function GET(req: NextRequest) {
   const e = req.nextUrl.searchParams.get('e') || '';
@@ -83,42 +116,54 @@ export async function GET(req: NextRequest) {
       success?: boolean;
       error?: string;
       alreadyActivated?: boolean;
+      onboarding_url?: string;
     };
+
+    let onboardingUrl =
+      typeof data.onboarding_url === 'string' && data.onboarding_url.startsWith('http')
+        ? data.onboarding_url
+        : '';
+
+    // Ya tenía cuenta / onboarding a medias → reemitir enlace y entrar igual
+    if (
+      !onboardingUrl &&
+      (data.alreadyActivated ||
+        activateRes.status === 400 ||
+        /ya (tiene|está|está registrado)/i.test(String(data.error || '')))
+    ) {
+      onboardingUrl = (await resumeOnboardingRedirect(email)) || '';
+    }
+
+    if (onboardingUrl) {
+      return NextResponse.redirect(onboardingUrl, 302);
+    }
 
     if (activateRes.status === 200 || data.success) {
       return htmlPage(
-        '¡Listo! En un minutito estás dentro',
-        `<p>Te hemos enviado un correo a <strong>${email}</strong> para entrar a Delfín Check-in.</p>
-         <p>Ábrelo desde el <strong>móvil</strong> o el ordenador (mira también spam / promociones).</p>
-         <p class="fine">Gratis (1 propiedad), sin tarjeta. Si más adelante te encaja, desde 2€/mes.</p>
-         <p><a class="btn" href="https://delfincheckin.com/parte-viajeros/">Ver cómo funciona</a></p>`,
-        true
-      );
-    }
-
-    const err = String(data.error || '');
-    if (
-      activateRes.status === 400 &&
-      (data.alreadyActivated || /ya (tiene|está|está registrado)/i.test(err) || /already/i.test(err))
-    ) {
-      return htmlPage(
-        'Ya estás registrado',
-        `<p>Con este email ya puedes entrar. Revisa tu correo (también spam) o inicia sesión en
-          <a href="https://admin.delfincheckin.com">admin.delfincheckin.com</a>.</p>
-         <p class="fine">¿No encuentras el correo? Escríbenos a soporte@delfincheckin.com.</p>`,
+        '¡Listo! Revisa tu correo',
+        `<p>Cuenta creada para <span class="email">${email}</span>. Te enviamos el enlace para entrar (mira también spam).</p>
+         <p><a class="btn" href="https://admin.delfincheckin.com/es/login?email=${encodeURIComponent(email)}">Ir al login</a></p>
+         <p class="fine">Gratis, sin tarjeta. En el asistente puedes saltar horario, MIR y datos opcionales.</p>`,
         true
       );
     }
 
     return htmlPage(
       'No se pudo completar',
-      `<p>${err || 'Inténtalo de nuevo en unos minutos.'}</p>
+      `<p>${String(data.error || 'Inténtalo de nuevo en unos minutos.')}</p>
        <p><a class="btn" href="https://delfincheckin.com/parte-viajeros/?email=${encodeURIComponent(email)}#empezar">Probar desde la web</a></p>`,
       false
     );
-  } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : String(e);
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
     console.error('[outreach-activate]', msg);
+    // Último recurso: si ya existe tenant, intentar magic link
+    try {
+      const url = await resumeOnboardingRedirect(email);
+      if (url) return NextResponse.redirect(url, 302);
+    } catch {
+      /* ignore */
+    }
     return htmlPage(
       'Error temporal',
       '<p>No se pudo crear la cuenta ahora. Prueba en unos minutos o escribe a soporte@delfincheckin.com.</p>',

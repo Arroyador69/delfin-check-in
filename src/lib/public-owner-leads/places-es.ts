@@ -1,6 +1,7 @@
 /**
- * Flujo B: lugares de España para descubrir webs propias de alquiler vacacional.
- * Ver docs/growth/CAPTACION_FLUJO_B_POR_LUGARES.md
+ * Flujo B/C: lugares ES para descubrir webs propias (rural + costa + ciudades).
+ * ~300k VUT en España: muchas sin web propia (solo Airbnb), pero OSM + semillas
+ * deben cubrir miles de webs locales. Ver CAPTACION_FLUJO_B / META_20.
  */
 
 export const SPAIN_RURAL_PLACES: readonly string[] = [
@@ -15,6 +16,12 @@ export const SPAIN_RURAL_PLACES: readonly string[] = [
   'Tui',
   'Verín',
   'Monforte de Lemos',
+  'Santiago de Compostela',
+  'A Coruña',
+  'Vigo',
+  'Pontevedra',
+  'Sanxenxo',
+  'Baiona',
   // Asturias
   'Llanes',
   'Cangas de Onís',
@@ -22,11 +29,21 @@ export const SPAIN_RURAL_PLACES: readonly string[] = [
   'Taramundi',
   'Cudillero',
   'Lastres',
+  'Gijón',
+  'Oviedo',
+  'Ribadesella',
   // Cantabria / Norte
   'Liébana',
   'Santillana del Mar',
   'Potes',
   'Cabuérniga',
+  'Santander',
+  'Comillas',
+  'Laredo',
+  'San Sebastián',
+  'Bilbao',
+  'Getaria',
+  'Hondarribia',
   // Interior / Castilla
   'Hoces del Duratón',
   'Pedraza',
@@ -34,17 +51,32 @@ export const SPAIN_RURAL_PLACES: readonly string[] = [
   'La Alberca',
   'Candelario',
   'Riaza',
+  'Segovia',
+  'Ávila',
+  'Salamanca',
+  'Toledo',
+  'Cuenca',
   // Aragón / Pirineo
   'Jaca',
   'Benasque',
   'Aínsa',
   'Ansó',
-  // Cataluña interior
+  'Zaragoza',
+  'Huesca',
+  // Cataluña
   'La Garrotxa',
   'Ripoll',
   'Berga',
   'Priorat',
-  // Extremadura / Andalucía rural
+  'Barcelona',
+  'Girona',
+  'Tarragona',
+  'Sitges',
+  'Cadaqués',
+  'Lloret de Mar',
+  'Salou',
+  'Lleida',
+  // Extremadura / Andalucía
   'Jerte',
   'Guadalupe',
   'Grazalema',
@@ -52,10 +84,54 @@ export const SPAIN_RURAL_PLACES: readonly string[] = [
   'Cazorla',
   'Alpujarras',
   'Zahara de la Sierra',
-  // Valencia / Murcia interior
+  'Sevilla',
+  'Córdoba',
+  'Granada',
+  'Málaga',
+  'Marbella',
+  'Nerja',
+  'Torremolinos',
+  'Cádiz',
+  'Jerez de la Frontera',
+  'Tarifa',
+  'Almería',
+  'Roquetas de Mar',
+  'Huelva',
+  'Jaén',
+  // Valencia / Murcia / Costa Blanca
   'Morella',
   'Albarracín',
   'Moratalla',
+  'Valencia',
+  'Alicante',
+  'Benidorm',
+  'Denia',
+  'Jávea',
+  'Calpe',
+  'Torrevieja',
+  'Murcia',
+  'Cartagena',
+  'Águilas',
+  // Baleares / Canarias
+  'Palma',
+  'Alcúdia',
+  'Sóller',
+  'Ibiza',
+  'Santa Eulalia del Río',
+  'Ciutadella',
+  'Mahón',
+  'Las Palmas de Gran Canaria',
+  'Maspalomas',
+  'Puerto del Carmen',
+  'Playa Blanca',
+  'Adeje',
+  'Puerto de la Cruz',
+  'Corralejo',
+  // Madrid / centro
+  'Madrid',
+  'Aranjuez',
+  'Chinchón',
+  'Alcalá de Henares',
 ];
 
 /** Plantillas de búsqueda (se sustituye {lugar}). */

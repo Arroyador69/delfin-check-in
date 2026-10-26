@@ -1,6 +1,6 @@
 import { sql } from '@/lib/db';
 import { sendOutreachMail } from './send-smtp';
-import { buildColdOutreachEmail } from './template';
+import { buildColdOutreachEmail, type ColdEmailAudience } from './template';
 import { buildOutreachOptOutUrl } from './optout';
 import { buildOutreachActivateUrl } from './activate-link';
 import {
@@ -52,10 +52,16 @@ export async function sendTrackedOutreachLead(lead: {
   email: string;
   domain: string;
   source_url: string;
+  audience?: ColdEmailAudience;
 }): Promise<{ ok: boolean; trackingId?: string; error?: string }> {
   const email = lead.email.trim().toLowerCase();
+  const audience: ColdEmailAudience = lead.audience || 'owner';
   const optOutUrl = buildOutreachOptOutUrl(email, 'es');
   const signupRaw = signupUrlForLead(email);
+  const subjectPreview =
+    audience === 'agency'
+      ? `${lead.domain || 'gestora'}: parte MIR multi-vivienda — prueba gratis`
+      : `${lead.domain || 'tu alojamiento'}: parte de viajeros MIR con prueba gratis`;
 
   let trackingId = '';
   try {
@@ -73,13 +79,14 @@ export async function sendTrackedOutreachLead(lead: {
           NULL,
           ${PUBLIC_OWNER_LEADS_EMAIL_TYPE},
           ${email},
-          ${`${lead.domain || 'tu alojamiento'}: parte de viajeros MIR con prueba gratis`},
+          ${subjectPreview},
           'sent',
           ${JSON.stringify({
             campaign: PUBLIC_OWNER_LEADS_CAMPAIGN,
             lead_id: lead.id,
             source_url: lead.source_url,
             domain: lead.domain,
+            audience,
           })}::jsonb
         )
         RETURNING id
@@ -97,6 +104,7 @@ export async function sendTrackedOutreachLead(lead: {
     sourceUrl: lead.source_url,
     optOutUrl,
     signupUrl: trackedSignup,
+    audience,
   });
 
   let html = mail.html;

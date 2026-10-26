@@ -9,18 +9,26 @@ import {
   PUBLIC_OWNER_LEADS_AFTERNOON_MAX,
   PUBLIC_OWNER_LEADS_DAILY_HARD_CAP,
   PUBLIC_OWNER_LEADS_DAILY_TARGET,
+  PUBLIC_OWNER_LEADS_EVENING_MAX,
   PUBLIC_OWNER_LEADS_EXTRACT_PER_RUN,
   PUBLIC_OWNER_LEADS_MIN_DELAY_MS,
+  PUBLIC_OWNER_LEADS_MIN_QUEUED,
+  PUBLIC_OWNER_LEADS_NIGHT_MAX,
   PUBLIC_OWNER_SIGNUPS_DAILY_GOAL,
 } from './constants';
 import { isPlausiblePublicEmail, scoreEmailForSource } from './emails';
 import { extractPublicEmailsFromUrl, isBlockedOutreachHost, normalizeUrl } from './extract-web';
-import { ensureSpainVacationSourceQueue } from './ensure-source-queue';
+import {
+  ensureSpainAgencySourceQueue,
+  ensureSpainVacationSourceQueue,
+  recycleEmptySources,
+} from './ensure-source-queue';
 import { sendTrackedOutreachLead } from './send-tracked';
 import { sleep } from './fetch-html';
 import { hostSuggestsNonVacation } from './spain-vacation-filter';
+import type { OutreachAudience } from './spain-vacation-filter';
 
-export type OutreachWave = 'morning' | 'afternoon';
+export type OutreachWave = 'morning' | 'afternoon' | 'evening' | 'night' | 'prepare';
 
 export type DailyOutreachResult = {
   table_ready: boolean;
@@ -37,6 +45,13 @@ export type DailyOutreachResult = {
   sent: number;
   failed: number;
   skippedSuppressed: number;
+  /** Tras enviar: stock rellenado (norma: nunca dejar cola a 0). */
+  refill?: {
+    queuedBefore: number;
+    queuedAfter: number;
+    opendataQueued: number;
+    extracted: number;
+  };
   errors: string[];
 };
 
@@ -46,14 +61,21 @@ async function ensureTables(): Promise<boolean> {
 }
 
 /**
- * Tope del DÍA = mañana 50 + tarde 50 → HARD_CAP 100.
- * No usar DAILY_TARGET (50) aquí: si no, la oleada 15:00 se queda sin cupo.
+ * Tope del DÍA = 4 oleadas × 250 → HARD_CAP 1000.
+ * No usar DAILY_TARGET aquí como tope diario: si no, las oleadas posteriores se quedan sin cupo.
  */
 function dailyCap(): number {
   const raw = Number(
     process.env.PUBLIC_OWNER_LEADS_DAILY_CAP || PUBLIC_OWNER_LEADS_DAILY_HARD_CAP
   );
   if (!Number.isFinite(raw) || raw < 1) return PUBLIC_OWNER_LEADS_DAILY_HARD_CAP;
+  // Legacy: env 150/200 con hard cap subido → usar hard cap nuevo
+  if (
+    (raw === 150 || raw === 200) &&
+    PUBLIC_OWNER_LEADS_DAILY_HARD_CAP > raw
+  ) {
+    return PUBLIC_OWNER_LEADS_DAILY_HARD_CAP;
+  }
   return Math.min(PUBLIC_OWNER_LEADS_DAILY_HARD_CAP, Math.floor(raw));
 }
 
@@ -130,6 +152,13 @@ async function processPendingSources(
 
       let found = 0;
       for (const lead of leads) {
+        const aud = lead.audience || 'owner';
+        const noteTag =
+          aud === 'agency'
+            ? `flow-c:agency:${new Date().toISOString().slice(0, 10)}`
+            : aud === 'hotel'
+              ? `extract:hotel:${new Date().toISOString().slice(0, 10)}`
+              : `extract:${new Date().toISOString().slice(0, 10)}`;
         const ins = await sql`
           INSERT INTO public_owner_leads (email, domain, source_url, status, notes)
           VALUES (
@@ -137,7 +166,7 @@ async function processPendingSources(
             ${lead.domain},
             ${lead.source_url},
             'new',
-            ${`extract:${new Date().toISOString().slice(0, 10)}`}
+            ${noteTag}
           )
           ON CONFLICT (email) DO NOTHING
           RETURNING id
@@ -199,15 +228,36 @@ async function queueNewLeads(limit: number, dryRun: boolean): Promise<number> {
   return r.rows.length;
 }
 
+function normalizeWave(w?: OutreachWave): OutreachWave {
+  if (w === 'afternoon' || w === 'evening' || w === 'night' || w === 'prepare') return w;
+  return 'morning';
+}
+
+function waveMaxDefault(wave: OutreachWave): number {
+  if (wave === 'prepare') return 0; // solo rellenar cola, no enviar
+  if (wave === 'afternoon') return PUBLIC_OWNER_LEADS_AFTERNOON_MAX;
+  if (wave === 'evening') return PUBLIC_OWNER_LEADS_EVENING_MAX;
+  if (wave === 'night') return PUBLIC_OWNER_LEADS_NIGHT_MAX;
+  return PUBLIC_OWNER_LEADS_DAILY_TARGET;
+}
+
+function waveOsmOffset(wave: OutreachWave): number {
+  if (wave === 'afternoon') return 1;
+  if (wave === 'evening') return 2;
+  if (wave === 'night') return 3;
+  if (wave === 'prepare') return 4;
+  return 0;
+}
+
 export async function runDailyPublicOwnerLeads(opts?: {
   dryRun?: boolean;
   maxSend?: number;
   extractLimit?: number;
-  /** morning = ~09:00; afternoon = ~15:00 solo si altas < meta 20 */
+  /** morning ~09:00; afternoon ~15:00 / evening ~18:00 si altas < meta 20 */
   wave?: OutreachWave;
 }): Promise<DailyOutreachResult> {
   const dryRun = Boolean(opts?.dryRun);
-  const wave: OutreachWave = opts?.wave === 'afternoon' ? 'afternoon' : 'morning';
+  const wave = normalizeWave(opts?.wave);
   const cap = dailyCap();
   const errors: string[] = [];
 
@@ -234,8 +284,32 @@ export async function runDailyPublicOwnerLeads(opts?: {
   const sentTodayBefore = await countSentToday();
   const signupsTodayBefore = await countSignupsToday();
 
-  // Tarde: solo si aún no llegamos a 20 altas; nunca reenvía (solo status queued/new)
-  if (wave === 'afternoon' && signupsTodayBefore >= PUBLIC_OWNER_SIGNUPS_DAILY_GOAL) {
+  // Tarde/noche/cierre 20h: solo si aún no llegamos a 20 altas; nunca reenvía
+  // prepare: siempre rellena cola (maxSend=0)
+  // Aunque no enviemos: SIEMPRE recargar cola (norma MIN_QUEUED).
+  if (
+    (wave === 'afternoon' || wave === 'evening' || wave === 'night') &&
+    signupsTodayBefore >= PUBLIC_OWNER_SIGNUPS_DAILY_GOAL
+  ) {
+    let refillSummary: DailyOutreachResult['refill'];
+    if (!dryRun) {
+      try {
+        const { refillQueuedStock } = await import('./refill-queue');
+        const refill = await refillQueuedStock({
+          target: PUBLIC_OWNER_LEADS_MIN_QUEUED,
+          extractLimit: 28,
+          opendataLimit: 120,
+        });
+        refillSummary = {
+          queuedBefore: refill.queuedBefore,
+          queuedAfter: refill.queuedAfter,
+          opendataQueued: refill.opendataQueued,
+          extracted: refill.extracted,
+        };
+      } catch (e) {
+        errors.push(`refill:fail:${e instanceof Error ? e.message : String(e)}`);
+      }
+    }
     return {
       table_ready: true,
       dryRun,
@@ -251,40 +325,93 @@ export async function runDailyPublicOwnerLeads(opts?: {
       sent: 0,
       failed: 0,
       skippedSuppressed: 0,
-      errors: [],
+      refill: refillSummary,
+      errors,
     };
   }
 
-  const waveMax =
-    opts?.maxSend ??
-    (wave === 'afternoon' ? PUBLIC_OWNER_LEADS_AFTERNOON_MAX : PUBLIC_OWNER_LEADS_DAILY_TARGET);
+  const waveMax = opts?.maxSend ?? waveMaxDefault(wave);
   const budget = Math.max(0, Math.min(cap - sentTodayBefore, waveMax));
 
-  // Autonomía: rellena cola ES vacacional si pending bajo (sin pegar URLs a mano)
+  // Autonomía: semillas + reabrir fuentes vacías (rotar provincias vía OSM/wave)
   if (!dryRun) {
     try {
       const seeded = await ensureSpainVacationSourceQueue();
       if (seeded.inserted > 0) {
         errors.push(`seed:+${seeded.inserted} (pending era ${seeded.pendingBefore})`);
       }
+      const recycled = await recycleEmptySources(wave === 'prepare' ? 80 : 40);
+      if (recycled > 0) errors.push(`recycle:+${recycled}`);
     } catch (e) {
       errors.push(`seed:${e instanceof Error ? e.message : String(e)}`);
     }
   }
 
-  // Flujo A+B por defecto: semillas + OSM por lugares.
-  // Override: PUBLIC_OWNER_LEADS_FLOW=A | B | A+B
+  // Flujo A+B+C por defecto: semillas + OSM + agencias.
+  // Override: PUBLIC_OWNER_LEADS_FLOW=A | B | C | A+B | A+B+C
   // Fallos OSM NUNCA tumban el cron (catch + deadline corto).
-  const flowMode = String(process.env.PUBLIC_OWNER_LEADS_FLOW || 'A+B').toUpperCase();
-  const useFlowB = flowMode === 'B' || flowMode === 'A+B' || flowMode === 'AB';
-  if (!dryRun && useFlowB) {
+  const flowMode = String(process.env.PUBLIC_OWNER_LEADS_FLOW || 'A+B+C').toUpperCase();
+  const useFlowB =
+    flowMode === 'B' ||
+    flowMode.includes('B') ||
+    flowMode === 'AB' ||
+    flowMode === 'A+B' ||
+    flowMode === 'A+B+C';
+  const useFlowC =
+    flowMode === 'C' ||
+    flowMode.includes('C') ||
+    flowMode === 'A+B+C' ||
+    wave === 'evening' ||
+    wave === 'night';
+
+  if (!dryRun && useFlowC) {
+    try {
+      const agencySeed = await ensureSpainAgencySourceQueue();
+      if (agencySeed.inserted > 0) {
+        errors.push(`flow-c:seed:+${agencySeed.inserted}`);
+      }
+    } catch (e) {
+      errors.push(`flow-c:soft-fail:${e instanceof Error ? e.message : String(e)}`);
+    }
+  }
+
+  // Si ya hay cola suficiente para esta oleada, no gastar el timeout en OSM:
+  // prioridad = enviar hasta 250 y luego refill.
+  let queuedAhead = 0;
+  if (!dryRun) {
+    try {
+      const q = await sql`
+        SELECT COUNT(*)::int AS n FROM public_owner_leads
+        WHERE status = 'queued' AND opted_out = false
+      `;
+      queuedAhead = Number(q.rows[0]?.n || 0);
+    } catch {
+      queuedAhead = 0;
+    }
+  }
+  const needDiscover = wave === 'prepare' || queuedAhead < Math.max(budget * 2, 80);
+
+  if (!dryRun && useFlowB && needDiscover) {
     try {
       const { discoverOwnerSitesByPlace } = await import('./discover-by-place');
+      const { provincesForWave } = await import('./provinces-es');
+      const provs = provincesForWave(wave, 4);
+      errors.push(`provincias:${provs.join('|')}`);
       const disc = await discoverOwnerSitesByPlace({
-        maxPlaces: wave === 'afternoon' ? 5 : 4,
-        maxCandidates: 20,
-        delayMs: 400,
-        deadlineMs: wave === 'afternoon' ? 75_000 : 60_000,
+        maxPlaces:
+          wave === 'prepare' ? 8 : wave === 'night' || wave === 'evening' ? 4 : wave === 'afternoon' ? 4 : 3,
+        maxCandidates:
+          wave === 'prepare' ? 40 : wave === 'night' || wave === 'evening' ? 20 : 16,
+        delayMs: 300,
+        deadlineMs:
+          wave === 'prepare'
+            ? 90_000
+            : wave === 'night' || wave === 'evening'
+              ? 45_000
+              : wave === 'afternoon'
+                ? 40_000
+                : 35_000,
+        waveOffset: waveOsmOffset(wave),
       });
       let inserted = 0;
       for (const url of disc.candidateUrls) {
@@ -330,27 +457,61 @@ export async function runDailyPublicOwnerLeads(opts?: {
       // No rethrow: seguir con semillas / cola existente
       errors.push(`flow-b:soft-fail:${e instanceof Error ? e.message : String(e)}`);
     }
+  } else if (!dryRun && useFlowB && !needDiscover) {
+    errors.push(`flow-b:skip cola=${queuedAhead}≥budget×2 (prioridad enviar)`);
   }
 
-  const extract = await processPendingSources(
-    opts?.extractLimit ?? PUBLIC_OWNER_LEADS_EXTRACT_PER_RUN,
-    dryRun
-  );
+  // Extraer si cola baja. Prepare/mañana priorizan relleno.
+  let extractLimit = opts?.extractLimit ?? PUBLIC_OWNER_LEADS_EXTRACT_PER_RUN;
+  if (!dryRun) {
+    try {
+      const qn = await sql`
+        SELECT COUNT(*)::int AS n FROM public_owner_leads
+        WHERE status = 'queued' AND opted_out = false
+      `;
+      const queuedNow = Number(qn.rows[0]?.n || 0);
+      if (queuedNow < PUBLIC_OWNER_LEADS_MIN_QUEUED || wave === 'prepare') {
+        extractLimit = Math.max(
+          extractLimit,
+          wave === 'prepare' ? 45 : 32
+        );
+        errors.push(`stock:queued=${queuedNow}<${PUBLIC_OWNER_LEADS_MIN_QUEUED} → extract↑${extractLimit}`);
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+
+  const extract = await processPendingSources(extractLimit, dryRun);
   errors.push(...extract.errors);
 
-  const queued = await queueNewLeads(Math.max(budget, PUBLIC_OWNER_LEADS_EXTRACT_PER_RUN), dryRun);
+  const queued = await queueNewLeads(
+    Math.max(budget, extractLimit, PUBLIC_OWNER_LEADS_MIN_QUEUED),
+    dryRun
+  );
+
+  // Prepare: forzar budget 0 (nunca enviar en esta oleada)
+  const sendBudget = wave === 'prepare' ? 0 : budget;
 
   let sent = 0;
   let failed = 0;
   let skippedSuppressed = 0;
 
-  if (budget > 0 && !dryRun) {
+  if (sendBudget > 0 && !dryRun) {
+    // Prioridad: agencias (flow-c / audience) primero en oleadas tarde/noche
     const queue = await sql`
-      SELECT id, email, domain, source_url
+      SELECT id, email, domain, source_url, notes
       FROM public_owner_leads
       WHERE status = 'queued' AND opted_out = false
-      ORDER BY queued_at ASC NULLS LAST, created_at ASC
-      LIMIT ${budget}
+      ORDER BY
+        CASE
+          WHEN notes ILIKE '%flow-c%' OR notes ILIKE '%agency%' OR notes ILIKE '%prepare:agency%' THEN 0
+          WHEN notes ILIKE '%hotel%' THEN 1
+          ELSE 2
+        END ASC,
+        queued_at ASC NULLS LAST,
+        created_at ASC
+      LIMIT ${sendBudget}
     `;
 
     /** Dominios ya contactados (nunca 2 mails al mismo alojamiento). */
@@ -438,11 +599,17 @@ export async function runDailyPublicOwnerLeads(opts?: {
         continue;
       }
 
+      const notes = String(row.notes || '');
+      let audience: OutreachAudience = 'owner';
+      if (/agency|flow-c|gestora|gesti[oó]n/i.test(notes)) audience = 'agency';
+      else if (/hotel|hostal/i.test(notes)) audience = 'hotel';
+
       const result = await sendTrackedOutreachLead({
         id: String(row.id),
         email,
         domain: String(row.domain || ''),
         source_url: String(row.source_url || ''),
+        audience,
       });
       if (result.ok) {
         sent++;
@@ -456,12 +623,35 @@ export async function runDailyPublicOwnerLeads(opts?: {
     }
   }
 
-  // Recámara para la siguiente oleada / mañana 09:00
+  // NORMA: tras CADA envío (o prepare), rellenar cola hasta ~150. Nunca a 0.
+  let refillSummary: DailyOutreachResult['refill'];
   if (!dryRun) {
     try {
-      await ensureSpainVacationSourceQueue();
-    } catch {
-      /* ignore */
+      const { refillQueuedStock } = await import('./refill-queue');
+      const refill = await refillQueuedStock({
+        target: PUBLIC_OWNER_LEADS_MIN_QUEUED,
+        extractLimit: wave === 'prepare' ? 40 : 28,
+        opendataLimit: 120,
+      });
+      refillSummary = {
+        queuedBefore: refill.queuedBefore,
+        queuedAfter: refill.queuedAfter,
+        opendataQueued: refill.opendataQueued,
+        extracted: refill.extracted,
+      };
+      if (refill.errors.length) {
+        errors.push(...refill.errors.map((e) => `refill:${e}`));
+      }
+      errors.push(
+        `refill:ok queued ${refill.queuedBefore}→${refill.queuedAfter} (target ${PUBLIC_OWNER_LEADS_MIN_QUEUED})`
+      );
+    } catch (e) {
+      errors.push(`refill:fail:${e instanceof Error ? e.message : String(e)}`);
+      try {
+        await ensureSpainVacationSourceQueue();
+      } catch {
+        /* ignore */
+      }
     }
   }
 
@@ -472,14 +662,15 @@ export async function runDailyPublicOwnerLeads(opts?: {
     dailyTarget: cap,
     sentTodayBefore,
     signupsTodayBefore,
-    budget,
+    budget: sendBudget,
     sourcesProcessed: extract.processed,
     leadsDiscovered: extract.discovered,
     queued,
     sent,
     failed,
     skippedSuppressed,
-    errors: errors.slice(0, 20),
+    refill: refillSummary,
+    errors: errors.slice(0, 28),
   };
 }
 
