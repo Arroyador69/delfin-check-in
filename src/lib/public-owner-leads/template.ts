@@ -25,32 +25,53 @@ export const OUTREACH_INTRO_VIDEO_ID = 'sH4Yv5t5hdI';
 export const OUTREACH_INTRO_VIDEO_URL = `https://www.youtube.com/watch?v=${OUTREACH_INTRO_VIDEO_ID}`;
 export const OUTREACH_INTRO_VIDEO_THUMB = `https://img.youtube.com/vi/${OUTREACH_INTRO_VIDEO_ID}/hqdefault.jpg`;
 
-/** 4 redes oficiales (override con OUTREACH_SOCIAL_* en .env). */
-export function getOutreachSocialLinks(): Array<{ label: string; url: string }> {
+function socialIconBase(): string {
+  return String(process.env.NEXT_PUBLIC_APP_URL || 'https://admin.delfincheckin.com').replace(
+    /\/+$/,
+    ''
+  );
+}
+
+/** 4 redes oficiales (override con OUTREACH_SOCIAL_* en .env). Logos 24×24 iguales. */
+export function getOutreachSocialLinks(): Array<{
+  label: string;
+  url: string;
+  icon: string;
+  iconFile: string;
+}> {
+  const base = socialIconBase();
   return [
     {
       label: 'Instagram',
       url:
         process.env.OUTREACH_SOCIAL_INSTAGRAM?.trim() ||
         'https://www.instagram.com/delfincheckin',
+      iconFile: 'instagram.png',
+      icon: `${base}/email/social/instagram.png`,
     },
     {
       label: 'Facebook',
       url:
         process.env.OUTREACH_SOCIAL_FACEBOOK?.trim() ||
         'https://www.facebook.com/delfincheckin',
+      iconFile: 'facebook.png',
+      icon: `${base}/email/social/facebook.png`,
     },
     {
-      label: 'X (Twitter)',
+      label: 'X',
       url:
         process.env.OUTREACH_SOCIAL_TWITTER?.trim() ||
         'https://twitter.com/delfincheckin',
+      iconFile: 'x.png',
+      icon: `${base}/email/social/x.png`,
     },
     {
       label: 'YouTube',
       url:
         process.env.OUTREACH_SOCIAL_YOUTUBE?.trim() ||
         'https://www.youtube.com/@delfincheckin',
+      iconFile: 'youtube.png',
+      icon: `${base}/email/social/youtube.png`,
     },
   ];
 }
@@ -105,12 +126,26 @@ export function buildColdOutreachEmail(params: ColdEmailParams): {
     'Síguenos (por si te viene bien):',
     ...socials.map((s) => `· ${s.label}: ${s.url}`),
   ].join('\n');
-  const socialHtml = socials
+  // Fila profesional: logo 24×24 + nombre, mismo tamaño en las 4 redes (tablas email-safe)
+  const socialHtml = `<table role="presentation" cellspacing="0" cellpadding="0" border="0" style="border-collapse:collapse;"><tr>${socials
     .map(
       (s) =>
-        `<a href="${escapeAttr(s.url)}" style="display:inline-block;margin:0 8px 8px 0;padding:10px 14px;border:1px solid #bae6fd;border-radius:8px;background:#f0f9ff;color:#0369a1;text-decoration:none;font-weight:700;font-size:13px;line-height:1.2;">${escapeHtml(s.label)}</a>`
+        `<td align="center" style="padding:0 10px 8px 0;vertical-align:middle;">
+          <a href="${escapeAttr(s.url)}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;color:#0f172a;">
+            <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="border-collapse:collapse;">
+              <tr>
+                <td style="vertical-align:middle;padding:0 8px 0 0;">
+                  <img src="${escapeAttr(s.icon)}" width="24" height="24" alt="" style="display:block;width:24px;height:24px;border:0;border-radius:6px;" />
+                </td>
+                <td style="vertical-align:middle;font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:700;color:#0369a1;line-height:24px;white-space:nowrap;">
+                  ${escapeHtml(s.label)}
+                </td>
+              </tr>
+            </table>
+          </a>
+        </td>`
     )
-    .join('');
+    .join('')}</tr></table>`;
 
   // Texto plano
   const text = [
@@ -239,8 +274,8 @@ export function buildColdOutreachEmail(params: ColdEmailParams): {
           <tr>
             <td style="padding:20px 28px 8px;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.6;color:#475569;border-top:1px solid #e2e8f0;">
               <p style="margin:0 0 8px;font-weight:700;color:#0f172a;font-size:15px;">Síguenos</p>
-              <p style="margin:0 0 12px;font-size:13px;color:#64748b;">Instagram, Facebook, X y YouTube — si te encaja, un follow nos ayuda.</p>
-              <p style="margin:0;">${socialHtml}</p>
+              <p style="margin:0 0 14px;font-size:13px;color:#64748b;">Si te encaja, un follow nos ayuda a llegar a más anfitriones.</p>
+              ${socialHtml}
             </td>
           </tr>
 

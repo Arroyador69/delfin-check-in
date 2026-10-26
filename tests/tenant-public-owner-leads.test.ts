@@ -87,7 +87,7 @@ describe('cold template', () => {
     expect(mail.text).toMatch(/web p[uú]blica/i);
     expect(mail.text).toMatch(/Instagram:/);
     expect(mail.text).toMatch(/Facebook:/);
-    expect(mail.text).toMatch(/X \(Twitter\):/);
+    expect(mail.text).toMatch(/X:/);
     expect(mail.text).toMatch(/YouTube:/);
     expect(mail.html).toContain('Síguenos');
     expect(mail.html).toContain('sH4Yv5t5hdI');

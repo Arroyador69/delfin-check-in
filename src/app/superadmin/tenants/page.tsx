@@ -61,6 +61,9 @@ function onboardingTitle(status?: string | null, completed?: boolean): string {
       ? 'No hay fila en email_tracking (alta antigua o sin track), pero el wizard ya está completado.'
       : 'Sin registro del email de acceso: no se envió o no se trackeó. Cuello de botella: no pueden entrar al onboarding.'
   }
+  if (s === 'failed') {
+    return 'Falló el SMTP del email de acceso (a menudo rate-limit Zoho). Usa «Reenviar onboarding»; el alta 1-clic ya deja entrar al wizard aunque el mail falle.'
+  }
   if (s === 'opened') {
     return 'Abrió el email de acceso pero aún no completó el wizard (o no hizo clic trackeado). Reenviar si hace falta.'
   }

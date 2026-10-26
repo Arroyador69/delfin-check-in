@@ -337,8 +337,9 @@ export async function activateWaitlistEntryFromRow(
 
   const onboardingUrl = buildOnboardingUrl(onboardingToken, requestedLocale);
 
+  // Siempre devolver onboarding_url: el CTA 1-clic entra al wizard aunque el SMTP falle.
   try {
-    await sendOnboardingEmail({
+    const mail = await sendOnboardingEmail({
       to: waitlistEntry.email,
       onboardingUrl,
       tempPassword,
@@ -347,15 +348,19 @@ export async function activateWaitlistEntryFromRow(
       locale: requestedLocale,
     });
 
-    console.log(`✅ Usuario activado: ${waitlistEntry.email} -> Tenant ${tenantId}`);
+    const emailSent = Boolean(mail?.success);
+    console.log(
+      `✅ Usuario activado: ${waitlistEntry.email} -> Tenant ${tenantId} · email_sent=${emailSent}`
+    );
 
-    // Siempre devolver onboarding_url: el caller (outreach 1-clic) muestra CTA
-    // inmediato sin esperar al correo. El token solo llega a quien acaba de activar.
     return NextResponse.json({
       success: true,
-      message: 'Usuario activado correctamente',
+      message: emailSent
+        ? 'Usuario activado correctamente'
+        : 'Usuario activado; email pendiente de reintento',
       tenant_id: tenantId,
-      email_sent: true,
+      email_sent: emailSent,
+      email_error: emailSent ? undefined : mail?.error || 'send_failed',
       onboarding_url: onboardingUrl,
     });
   } catch (emailError: unknown) {
@@ -364,7 +369,7 @@ export async function activateWaitlistEntryFromRow(
 
     return NextResponse.json({
       success: true,
-      message: 'Usuario activado pero error enviando email',
+      message: 'Usuario activado; entra con el enlace (email se reintentará)',
       tenant_id: tenantId,
       email_sent: false,
       email_error: msg,

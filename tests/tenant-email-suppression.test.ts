@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   isInactiveTenantStatus,
   isSmtpHardBounceError,
+  isSmtpTransientOrRateLimitError,
   parseEmailsFromCsvText,
 } from '@/lib/email-suppression';
 import { extractBounceEmailsFromText } from '@/lib/zoho-bounce-sync';
@@ -13,9 +14,29 @@ describe('email-suppression helpers', () => {
     expect(parseEmailsFromCsvText('solo@dominio.es')).toEqual(['solo@dominio.es']);
   });
 
-  it('isSmtpHardBounceError detecta 550', () => {
-    expect(isSmtpHardBounceError({ message: 'fail', responseCode: 550 })).toBe(true);
+  it('isSmtpHardBounceError: mailbox real sí; rate-limit Zoho no', () => {
     expect(isSmtpHardBounceError(new Error('Mailbox unavailable'))).toBe(true);
+    expect(
+      isSmtpHardBounceError({
+        message: '550 5.1.1 User unknown',
+        responseCode: 550,
+        response: '550 5.1.1 User unknown',
+      })
+    ).toBe(true);
+    // Zoho rate-limit: 550 Unusual sending — NO suppress destinatario
+    expect(
+      isSmtpHardBounceError({
+        message: '550 5.4.6 Unusual sending activity',
+        responseCode: 550,
+        response: '550 5.4.6 Unusual sending activity. Try after sometime',
+      })
+    ).toBe(false);
+    expect(
+      isSmtpTransientOrRateLimitError({
+        message: '550 5.4.6 Unusual sending activity',
+        responseCode: 550,
+      })
+    ).toBe(true);
     expect(isSmtpHardBounceError(new Error('temporary greylist'))).toBe(false);
   });
 
