@@ -128,7 +128,8 @@ async function main() {
 
     if (zohoHit) {
       zohoBlocks++;
-      const wait = Math.min(15 * 60_000, 90_000 * zohoBlocks); // hasta 15 min
+      // Zoho “Unusual sending activity” suele necesitar 15–30 min de pausa.
+      const wait = Math.min(30 * 60_000, 15 * 60_000 * zohoBlocks);
       console.log(`[zoho] rate-limit → espera ${Math.round(wait / 1000)}s (intento ${zohoBlocks})`);
       await sleep(wait);
     } else if (result.sent === 0 && result.failed === 0 && result.budget === 0) {
